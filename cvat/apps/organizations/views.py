@@ -4,8 +4,7 @@
 
 from rest_framework import mixins, viewsets
 from django.utils.crypto import get_random_string
-from cvat.apps.iam.permissions import (InvitationPermission,
-                                       MembershipPermission,
+from cvat.apps.iam.permissions import (InvitationPermission, MembershipPermission,
                                        OrganizationPermission)
 from cvat.apps.organizations.models import Invitation, Membership, Organization
 
@@ -19,12 +18,11 @@ class OrganizationViewSet(viewsets.ModelViewSet):
     serializer_class = OrganizationSerializer
     ordering = ['-id']
     http_method_names = ['get', 'post', 'patch', 'delete', 'head', 'options']
-
-    def get_permissions(self):
-        return super().get_permissions() + [OrganizationPermission()]
+    pagination_class = None
 
     def get_queryset(self):
-         return OrganizationPermission().filter(self.request, super().get_queryset())
+        queryset = super().get_queryset()
+        return OrganizationPermission(self.request, self, None).filter(queryset)
 
     def perform_create(self, serializer):
         extra_kwargs = { 'owner': self.request.user }
@@ -33,14 +31,20 @@ class OrganizationViewSet(viewsets.ModelViewSet):
         serializer.save(**extra_kwargs)
 
 class MembershipViewSet(mixins.RetrieveModelMixin, mixins.DestroyModelMixin,
-    mixins.ListModelMixin, viewsets.GenericViewSet):
+    mixins.ListModelMixin, mixins.UpdateModelMixin, viewsets.GenericViewSet):
 
     queryset = Membership.objects.all()
     serializer_class = MembershipSerializer
     ordering = ['-id']
+    http_method_names = ['get', 'patch', 'delete', 'head', 'options']
 
-    def get_permissions(self):
-        return super().get_permissions() + [MembershipPermission()]
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        organization = self.request.iam_context['organization']
+        if organization:
+            queryset = queryset.filter(organization=organization)
+        return MembershipPermission(self.request, self, None).filter(queryset)
+
 
 class InvitationViewSet(viewsets.ModelViewSet):
     queryset = Invitation.objects.all()
@@ -48,15 +52,12 @@ class InvitationViewSet(viewsets.ModelViewSet):
     ordering = ['-created_date']
     http_method_names = ['get', 'post', 'patch', 'delete', 'head', 'options']
 
-    def get_permissions(self):
-        return super().get_permissions() + [InvitationPermission()]
-
     def get_queryset(self):
         queryset = super().get_queryset()
         organization = self.request.iam_context['organization']
         if organization:
             queryset = queryset.filter(membership__organization=organization)
-        return InvitationPermission().filter(self.request, queryset)
+        return InvitationPermission(self.request, self, None).filter(queryset)
 
     def perform_create(self, serializer):
         extra_kwargs = {

@@ -1,6 +1,25 @@
 package lambda
 import data.utils
 
+# input: {
+#     "scope": <"LIST"|"VIEW"|"CALL_ONLINE"|"CALL_OFFLINE"> or null,
+#     "auth": {
+#         "user": {
+#             "id": <num>,
+#             "privilege": <"admin"|"business"|"user"|"worker"> or null
+#         },
+#         "organization": {
+#             "id": <num>,
+#             "is_owner": <true|false>,
+#             "owner": {
+#                 "id": <num>
+#             },
+#             "role": <"maintainer"|"supervisor"|"worker"> or null
+#         } or null,
+#     }
+# }
+
+
 default allow = false
 allow {
     utils.is_admin

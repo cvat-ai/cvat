@@ -24,6 +24,7 @@ CALL_OFFLINE := "CALL_OFFLINE"
 SEND_EXCEPTION := "SEND_EXCEPTION"
 SEND_LOGS := "SEND_LOGS"
 VIEW_SELF := "VIEW_SELF"
+CHANGE_ROLE := "CHANGE_ROLE"
 
 get_priority(privilege) = priority {
     priority := {
@@ -35,21 +36,21 @@ get_priority(privilege) = priority {
 }
 
 has_privilege(privilege) {
-    get_priority(input.user.privilege) <= get_priority(privilege)
+    get_priority(input.auth.user.privilege) <= get_priority(privilege)
 }
 
 is_admin {
-    input.user.privilege == ADMIN
+    input.auth.user.privilege == ADMIN
 }
 
 is_business {
-    input.user.privilege == BUSINESS
+    input.auth.user.privilege == BUSINESS
 }
 
 is_user {
-    input.user.privilege == USER
+    input.auth.user.privilege == USER
 }
 
 is_worker {
-    input.user.privilege == WORKER
+    input.auth.user.privilege == WORKER
 }
