@@ -105,12 +105,12 @@ Click `create` and create a storage account.
 
 #### Basics
 
-![](/images/azure_blob_container_tutorial4.jpg)
-
 Enter storage account name (will be used in CVAT to access your container), select a region,
 select performance in our case will be standard enough, select redundancy enough LRS
 [more about redundancy](https://docs.microsoft.com/en-us/azure/storage/common/storage-redundancy).
 Click next to go to the advanced section.
+
+![](/images/azure_blob_container_tutorial4.jpg)
 
 #### Advanced
 
@@ -151,7 +151,7 @@ Click `upload`,when the images are loaded you will need to upload a manifest fil
 and select it, the structure of your dataset in the container should be the same as when creating the manifest file,
 so the `upload to folder` should be empty.
 
-Now you can [attach new cloud storage into CVAT](#attach-new-cloud-storage).
+Now you can attach new cloud storage into CVAT.
 
 ## Attach new cloud storage
 
