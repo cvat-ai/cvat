@@ -78,7 +78,7 @@ Now you can [attach new cloud storage into CVAT](#attach-new-cloud-storage).
 
 ## Using Azure Blob Container
 
-### Create Azure Blob Container account
+### Create microsoft account
 
 First, create a microsoft account by [registering](https://signup.live.com/signup?ru=https://login.live.com/),
 or you can use your GitHub account to log in. After signing up for Azure, you'll need to choose a subscription plan,
