@@ -102,10 +102,10 @@ Click `create` for create a storage account.
 
 - **Basics**
 
-  Enter storage account name (will be used in CVAT to access your container), select a region,
-  select performance in our case will be standard enough, select redundancy enough LRS
+  Enter `storage account name` (will be used in CVAT to access your container), select a `region`,
+  select `performance` in our case will be `standard` enough, select `redundancy` enough `LRS`
   [more about redundancy](https://docs.microsoft.com/en-us/azure/storage/common/storage-redundancy).
-  Click next to go to the advanced section.
+  Click `next` to go to the advanced section.
 
   ![](/images/azure_blob_container_tutorial4.jpg)
 
@@ -126,7 +126,7 @@ navigate to the resource by clicking on `go to resource`.
 
 ### Create a container
 
-Go to the containers section and create a new container. Enter the name of the container
+Go to the containers section and create a new container. Enter the `name` of the container
 (will be used in CVAT to access your container) and select `container` in `public access level`.
 
 ![](/images/azure_blob_container_tutorial7.jpg)
@@ -142,13 +142,13 @@ in the `security + networking` section. Click `show keys` to show the key.
 
 Prepare the dataset as in the point [prepare dataset](#prepare-dataset).
 
-- When the dataset is ready, go to your container and click `upload`
-- Click select a files and select all images from the images folder
-  in the `upload` to folder item write the name of the folder in which you want to upload images in this case "images".
+- When the dataset is ready, go to your container and click `upload`.
+- Click `select a files` and select all images from the images folder
+  in the `upload to folder` item write the name of the folder in which you want to upload images in this case "images".
 
   ![](/images/azure_blob_container_tutorial9.jpg)
 
-- Click `upload`,when the images are loaded you will need to upload a manifest file to do this click `select a file`
+- Click `upload`, when the images are loaded you will need to upload a manifest file to do this click `select a file`
   and select it, the structure of your dataset in the container should be the same as when creating the manifest file,
   so the `upload to folder` should be empty.
 
