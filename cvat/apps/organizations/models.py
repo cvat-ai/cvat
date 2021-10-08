@@ -23,6 +23,7 @@ class Membership(models.Model):
     WORKER = 'W'
     SUPERVISOR = 'S'
     MAINTAINER = 'M'
+    OWNER = 'O'
 
     user = models.ForeignKey(get_user_model(), on_delete=models.SET_NULL,
         null=True, related_name='+')
@@ -34,6 +35,7 @@ class Membership(models.Model):
         (WORKER, 'Worker'),
         (SUPERVISOR, 'Supervisor'),
         (MAINTAINER, 'Maintainer'),
+        (OWNER, 'Owner'),
     ])
 
     class Meta:

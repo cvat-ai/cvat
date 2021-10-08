@@ -13,17 +13,31 @@ class OrganizationSerializer(serializers.ModelSerializer):
             'updated_date', 'company', 'email', 'location', 'owner']
         read_only_fields = ['created_date', 'updated_date', 'owner']
 
+    def create(self, validated_data):
+        organization = super().create(validated_data)
+        Membership.objects.create(**{
+            'user': organization.owner,
+            'organization': organization,
+            'is_active': True,
+            'joined_date': organization.created_date,
+            'role': Membership.OWNER
+        })
+
+        return organization
+
 class MembershipSerializer(serializers.ModelSerializer):
     class Meta:
         model = Membership
         fields = ['id', 'user', 'organization', 'is_active', 'joined_date', 'role']
         read_only_fields = ['is_active', 'joined_date', 'user', 'organization']
 
+
 class InvitationSerializer(serializers.ModelSerializer):
     role = serializers.ChoiceField(choices=[
         (Membership.WORKER, 'Worker'),
         (Membership.SUPERVISOR, 'Supervisor'),
         (Membership.MAINTAINER, 'Maintainer'),
+        (Membership.OWNER, 'Owner'),
     ], source='membership.role')
     user = serializers.PrimaryKeyRelatedField(
         queryset=get_user_model().objects.all(),
