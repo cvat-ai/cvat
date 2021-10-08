@@ -28,6 +28,7 @@ import data.utils
 #     }
 # }
 
+OWNER := "owner"
 MAINTAINER := "maintainer"
 SUPERVISOR := "supervisor"
 WORKER     := "worker"
@@ -69,7 +70,7 @@ filter = [] { # Django Q object to filter list of entries
 
 allow {
     input.scope == utils.VIEW
-    input.resource.owner.id == input.auth.user.id
+    utils.is_resource_owner
 }
 
 allow {
@@ -80,7 +81,7 @@ allow {
 allow {
     input.scope == utils.UPDATE
     utils.has_privilege(utils.WORKER)
-    input.resource.owner.id == input.auth.user.id
+    utils.is_resource_owner
 }
 
 allow {
@@ -92,5 +93,5 @@ allow {
 allow {
     input.scope == utils.DELETE
     utils.has_privilege(utils.WORKER)
-    input.resource.owner.id == input.auth.user.id
+    utils.is_resource_owner
 }

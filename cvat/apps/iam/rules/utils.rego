@@ -55,3 +55,7 @@ is_user {
 is_worker {
     input.auth.user.privilege == WORKER
 }
+
+is_resource_owner {
+    input.resource.owner.id == input.auth.user.id
+}
