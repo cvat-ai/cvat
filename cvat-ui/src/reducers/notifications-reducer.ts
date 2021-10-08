@@ -1162,6 +1162,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         jobFetching: {
                             message: 'Could not fetch frame data from the server',
                             reason: action.payload.error,
+                            className: 'cvat-notification-notice-fetch-frame-data-from-the-server-failed',
                         },
                     },
                 },
