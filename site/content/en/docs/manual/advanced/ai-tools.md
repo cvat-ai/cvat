@@ -99,3 +99,29 @@ Detectors are used to automatically annotate one frame. Supported DL models are 
 - This action will automatically annotates one frame.
   In the [Automatic annotation](/docs/manual/advanced/automatic-annotation/) section you can read
   how to make automatic annotation of all frames.
+
+## Trackers
+
+Trackers are used to automatically annotate an object using bounding box.
+Supported DL models are not bound to the label and can be used for any objects.
+
+- Before you start, select the `magic wand` on the controls sidebar and go to the `Trackers` tab.
+  Then select a label for the object and сlick `Track`. Then annotate the desired objects with the
+  bounding box in the first frame.
+
+  ![Start tracking an object](/images/trackers_tab.png)
+
+- All annotated objects will be automatically tracked when you move to the next frame.
+  For tracking, use `Next` button on the top panel or the `F` button to move on to the next frame.
+
+- You can enable/disable tracking using `tracker switcher` on sidebar.
+
+  ![Tracker switcher](/images/tracker_switcher.jpg)
+
+- Trackable objects have indication on canvas with a model indication.
+
+  ![Tracker indication](/images/tracker_indication.png)
+
+- A pop-up window displays information about the number of tracked objects.
+
+  ![Tracker pop-up window](/images/tracker_pop-up_window.png)
