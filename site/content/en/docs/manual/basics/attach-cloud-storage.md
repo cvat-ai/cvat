@@ -92,14 +92,14 @@ Hover over the resource groups and click `create` in the window that appears.
 
 ![](/images/azure_blob_container_tutorial1.jpg)
 
-Enter a name for the group and click review + create, check the entered data and click create.
+Enter a name for the group and click `review + create`, check the entered data and click `create`.
 After the resource group is created,
 go to the [resource groups page](https://portal.azure.com/#blade/HubsExtension/BrowseResourceGroups)
 and navigate to the resource group that you created.
 
-![](/images/azure_blob_container_tutorial2.jpg)
+Click `create` for create a storage account.
 
-Click `create` and create a storage account.
+![](/images/azure_blob_container_tutorial2.jpg)
 
 ![](/images/azure_blob_container_tutorial3.jpg)
 
