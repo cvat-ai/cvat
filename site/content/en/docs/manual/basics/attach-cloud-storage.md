@@ -56,23 +56,23 @@ they will need to be used in CVAT when adding cloud storage.
 #### Prepare dataset
 
 For example, let's take [The Oxford-IIIT Pet Dataset](https://www.robots.ox.ac.uk/~vgg/data/pets/):
-Download the [archive with images](https://www.robots.ox.ac.uk/~vgg/data/pets/data/images.tar.gz).
-Unpack the archive into the prepared folder
-and create a manifest file as described in [prepare manifest file section](/docs/manual/advanced/dataset_manifest/):
+  - Download the [archive with images](https://www.robots.ox.ac.uk/~vgg/data/pets/data/images.tar.gz).
+  - Unpack the archive into the prepared folder
+    and create a manifest file as described in [prepare manifest file section](/docs/manual/advanced/dataset_manifest/):
 
-```
-python <cvat repository>/utils/dataset_manifest/create.py --output-dir <yourfolder> <yourfolder>
-```
+    ```
+    python <cvat repository>/utils/dataset_manifest/create.py --output-dir <yourfolder> <yourfolder>
+    ```
 
 #### Upload
 
-When the manifest file is ready, open the previously prepared bucket and click `Upload`:
+- When the manifest file is ready, open the previously prepared bucket and click `Upload`:
 
-![](/images/aws-s3_tutorial_5.jpg)
+  ![](/images/aws-s3_tutorial_5.jpg)
 
-Drag the manifest file and image folder on the page and click `Upload`:
+- Drag the manifest file and image folder on the page and click `Upload`:
 
-![](/images/aws-s3_tutorial_1.gif)
+  ![](/images/aws-s3_tutorial_1.gif)
 
 Now you can [attach new cloud storage into CVAT](#attach-new-cloud-storage).
 
@@ -96,30 +96,28 @@ Enter a name for the group and click `review + create`, check the entered data a
 After the resource group is created,
 go to the [resource groups page](https://portal.azure.com/#blade/HubsExtension/BrowseResourceGroups)
 and navigate to the resource group that you created.
-
 Click `create` for create a storage account.
 
-![](/images/azure_blob_container_tutorial2.jpg)
+  ![](/images/azure_blob_container_tutorial2.jpg)
 
-![](/images/azure_blob_container_tutorial3.jpg)
+- **Basics**
 
-#### Basics
+  Enter storage account name (will be used in CVAT to access your container), select a region,
+  select performance in our case will be standard enough, select redundancy enough LRS
+  [more about redundancy](https://docs.microsoft.com/en-us/azure/storage/common/storage-redundancy).
+  Click next to go to the advanced section.
 
-Enter storage account name (will be used in CVAT to access your container), select a region,
-select performance in our case will be standard enough, select redundancy enough LRS
-[more about redundancy](https://docs.microsoft.com/en-us/azure/storage/common/storage-redundancy).
-Click next to go to the advanced section.
+  ![](/images/azure_blob_container_tutorial4.jpg)
 
-![](/images/azure_blob_container_tutorial4.jpg)
+- **Advanced**
 
-#### Advanced
+  In the advanced section, you can change public access, disabled `enable blob public access`
+  for denied anonymous access to the container.
+  If you want to change public access you can find this switch in the `configuration` section of your storage account.
 
-In the advanced section, you can change public access, disabled `enable blob public access`
-for denied anonymous access to the container
-If you want to change public access you can find this switch in the `configuration` section of your storage account.
-After that, go to the review section, check the entered data and click `create`.
+  After that, go to the review section, check the entered data and click `create`.
 
-![](/images/azure_blob_container_tutorial5.jpg)
+  ![](/images/azure_blob_container_tutorial5.jpg)
 
 You will be reached to the deployment page after the finished,
 navigate to the resource by clicking on `go to resource`.
@@ -143,15 +141,16 @@ in the `security + networking` section. Click `show keys` to show the key.
 ### Upload dataset
 
 Prepare the dataset as in the point [prepare dataset](#prepare-dataset).
-When the dataset is ready, go to your container and click `upload`
-Click select a files and select all images from the images folder
-in the `upload` to folder item write the name of the folder in which you want to upload images in this case "images".
 
-![](/images/azure_blob_container_tutorial9.jpg)
+- When the dataset is ready, go to your container and click `upload`
+- Click select a files and select all images from the images folder
+  in the `upload` to folder item write the name of the folder in which you want to upload images in this case "images".
 
-Click `upload`,when the images are loaded you will need to upload a manifest file to do this click `select a file`
-and select it, the structure of your dataset in the container should be the same as when creating the manifest file,
-so the `upload to folder` should be empty.
+  ![](/images/azure_blob_container_tutorial9.jpg)
+
+- Click `upload`,when the images are loaded you will need to upload a manifest file to do this click `select a file`
+  and select it, the structure of your dataset in the container should be the same as when creating the manifest file,
+  so the `upload to folder` should be empty.
 
 Now you can attach new cloud storage into CVAT.
 
