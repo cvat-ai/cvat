@@ -168,38 +168,38 @@ button on the `Cloud storages` page and fill out the following form:
 
   - [AWS-S3](#using-aws-s3):
 
-    - [`Bucket`](https://docs.aws.amazon.com/AmazonS3/latest/userguide/UsingBucket) - cloud storage bucket name
+    - [`Bucket`](https://docs.aws.amazon.com/AmazonS3/latest/userguide/UsingBucket) - cloud storage bucket name.
 
     - [`Authorization type`](https://docs.aws.amazon.com/AmazonS3/latest/userguide/access-control-best-practices.html):
 
       - `Key id and secret access key pair` - available on [IAM](https://console.aws.amazon.com/iamv2/home?#/users)
-        to obtain an access key and a secret key, create a user using IAM and grant the appropriate rights [learn more](#create-user-and-configure-permissions)
+        to obtain an access key and a secret key, create a user using IAM and grant the appropriate rights [learn more](#create-user-and-configure-permissions).
 
         - `ACCESS KEY ID`
         - `SECRET ACCESS KEY ID`
 
-      - `Anonymous access` - For anonymous access, you need to enable public access to bucket
+      - `Anonymous access` - For anonymous access, you need to enable public access to bucket.
 
     - `Region` - here you can choose a region from the list or add a new one. To get more information click
-      on [`?`](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-regions-availability-zones.html#concepts-available-regions)
+      on [`?`](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-regions-availability-zones.html#concepts-available-regions).
 
     </br>
 
   - [Azure Blob Container](https://docs.microsoft.com/en-us/azure/storage/blobs/):
 
-    - `Container name` - name of the cloud storage container
+    - `Container name` - name of the cloud storage container.
 
       - `Authorization type`:
 
         - [`Account name and SAS token`](https://docs.microsoft.com/en-us/azure/cognitive-services/translator/document-translation/create-sas-tokens?tabs=blobs):
 
-          - `Account name` - storage account name
-          - `SAS token` - is located in the `access keys` section of your `storage account`
+          - `Account name` - storage account name.
+          - `SAS token` - is located in the `access keys` section of your `storage account` [learn more](#sas-token).
 
         - [`Anonymous access`](https://docs.microsoft.com/en-us/azure/storage/blobs/anonymous-read-access-configure?tabs=portal) -
           for anonymous access `enable blob public access` in the `configuration` section of your storage account.
           in this case, you only need the storage account name to gain anonymous access.
-          - `Account name` - storage account name
+          - `Account name` - storage account name.
 
     </br>
 - `Manifest` - the path to the manifest file on your cloud storage.
