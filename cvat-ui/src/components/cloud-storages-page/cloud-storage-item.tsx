@@ -23,15 +23,14 @@ import Status from './cloud-storage-status';
 import Preview from './cloud-storage-preview';
 
 interface Props {
-    cloudStorageInstance: CloudStorage;
+    cloudStorage: CloudStorage;
 }
 
 export default function CloudStorageItemComponent(props: Props): JSX.Element {
     const history = useHistory();
     const dispatch = useDispatch();
 
-    // cloudStorageInstance: {storage, preview}
-    const { cloudStorageInstance } = props;
+    const { cloudStorage } = props;
     const {
         id,
         displayName,
@@ -40,10 +39,9 @@ export default function CloudStorageItemComponent(props: Props): JSX.Element {
         createdDate,
         updatedDate,
         description,
-    } = cloudStorageInstance.storage;
-    // const { preview } = cloudStorageInstance;
+    } = cloudStorage;
     const deletes = useSelector((state: CombinedState) => state.cloudStorages.activities.deletes);
-    const deleted = cloudStorageInstance.storage.id in deletes ? deletes[cloudStorageInstance.storage.id] : false;
+    const deleted = cloudStorage.id in deletes ? deletes[cloudStorage.id] : false;
 
     const style: React.CSSProperties = {};
 
@@ -62,7 +60,7 @@ export default function CloudStorageItemComponent(props: Props): JSX.Element {
             content: `You are going to remove the cloudstorage "${displayName}". Continue?`,
             className: 'cvat-delete-cloud-storage-modal',
             onOk: () => {
-                dispatch(deleteCloudStorageAsync(cloudStorageInstance.storage));
+                dispatch(deleteCloudStorageAsync(cloudStorage));
             },
             okButtonProps: {
                 type: 'primary',
@@ -70,13 +68,13 @@ export default function CloudStorageItemComponent(props: Props): JSX.Element {
             },
             okText: 'Delete',
         });
-    }, [cloudStorageInstance.storage.id]);
+    }, [cloudStorage.id]);
 
     return (
         <Card
             cover={(
                 <>
-                    <Preview cloudStorage={cloudStorageInstance.storage} />
+                    <Preview cloudStorage={cloudStorage} />
                     {description ? (
                         <CVATTooltip overlay={description}>
                             <QuestionCircleOutlined className='cvat-cloud-storage-description-icon' />
@@ -111,7 +109,7 @@ export default function CloudStorageItemComponent(props: Props): JSX.Element {
                             <Text type='secondary'>Last updated </Text>
                             <Text type='secondary'>{moment(updatedDate).fromNow()}</Text>
                         </Paragraph>
-                        <Status cloudStorage={cloudStorageInstance.storage} />
+                        <Status cloudStorage={cloudStorage} />
                         <Dropdown
                             overlay={(
                                 <Menu className='cvat-project-actions-menu'>

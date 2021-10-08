@@ -27,28 +27,19 @@ export default function Status(props: Props): JSX.Element {
         }
     }, [status]);
 
+    let message: JSX.Element;
     if (!status || (status && status.fetching)) {
-        return (
-            <Paragraph>
-                <Text type='secondary'>Status: </Text>
-                <Text type='warning'>Loading ...</Text>
-            </Paragraph>
-        );
-    }
-
-    if (status.initialized && status.error) {
-        return (
-            <Paragraph>
-                <Text type='secondary'>Status: </Text>
-                <Text type='danger'>Error</Text>
-            </Paragraph>
-        );
+        message = <Text type='warning'>Loading ...</Text>;
+    } else if (status.initialized && status.error) {
+        message = <Text type='danger'>Error</Text>;
+    } else {
+        message = <Text type={status.status === StorageStatuses.AVAILABLE ? 'success' : 'danger'}>{status.status}</Text>;
     }
 
     return (
         <Paragraph>
             <Text type='secondary'>Status: </Text>
-            <Text type={status.status === StorageStatuses.AVAILABLE ? 'success' : 'danger'}>{status.status}</Text>
+            {message}
         </Paragraph>
     );
 }

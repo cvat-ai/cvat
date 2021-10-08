@@ -44,13 +44,11 @@ export default function Preview(props: Props): JSX.Element {
     }
 
     return (
-        <>
-            <img
-                className='cvat-cloud-storage-item-preview'
-                src={preview.preview}
-                alt='Preview image'
-                aria-hidden
-            />
-        </>
+        <img
+            className='cvat-cloud-storage-item-preview'
+            src={preview.preview}
+            alt='Preview image'
+            aria-hidden
+        />
     );
 }

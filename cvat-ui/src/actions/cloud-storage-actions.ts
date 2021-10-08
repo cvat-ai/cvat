@@ -107,15 +107,9 @@ export function getCloudStoragesAsync(query: Partial<CloudStoragesQuery>): Thunk
         }
 
         const array = Array.from(result);
-        // const promises = array.map((cloudStorage: CloudStorage): string =>
-        //     (cloudStorage as any).getPreview().catch((error: any) => {
-        //         dispatch(cloudStoragesActions.getCloudStoragePreiewFailed(cloudStorage.id, error));
-        //         return '';
-        //     }));
 
         dispatch(cloudStoragesActions.getCloudStoragesSuccess(
             array,
-            // await Promise.all(promises),
             result.count,
             query,
         ));

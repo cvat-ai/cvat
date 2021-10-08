@@ -74,12 +74,6 @@ export default (
         case CloudStorageActionTypes.GET_CLOUD_STORAGE_SUCCESS: {
             const { count, query, array } = action.payload;
 
-            // const combined = action.payload.array.map(
-            //     (cloudStorage: any, index: number): CloudStorage => ({
-            //         instance: cloudStorage,
-            //         preview: action.payload.previews[index],
-            //     }),
-            // );
             return {
                 ...state,
                 initialized: true,
@@ -309,13 +303,6 @@ export default (
                     fetching: false,
                 };
             }
-            // TODO
-            // } else {
-            //     statuses.push({
-            //         id: cloudStorageID,
-            //         status,
-            //     });
-            // }
             return {
                 ...state,
                 ...statuses,
@@ -371,13 +358,6 @@ export default (
                     fetching: false,
                 };
             }
-            // TODO
-            // } else {
-            //     statuses.push({
-            //         id: cloudStorageID,
-            //         status,
-            //     });
-            // }
             return {
                 ...state,
                 ...previews,

@@ -22,9 +22,6 @@ export default function StoragesPageComponent(): JSX.Element {
     const totalCount = useSelector((state: CombinedState) => state.cloudStorages.count);
     const isFetching = useSelector((state: CombinedState) => state.cloudStorages.fetching);
     const current = useSelector((state: CombinedState) => state.cloudStorages.current);
-    // .map((cloudStrage: CloudStorage) => cloudStrage.instance);
-    // const previews = useSelector((state: CombinedState) => state.cloudStorages.current)
-    //     .map((cloudStrage: CloudStorage) => cloudStrage.preview as string);
     const query = useSelector((state: CombinedState) => state.cloudStorages.gettingQuery);
     const onSearch = useCallback(
         (_query: CloudStoragesQuery) => {
@@ -96,7 +93,6 @@ export default function StoragesPageComponent(): JSX.Element {
                         totalCount={totalCount}
                         page={query.page}
                         storages={current}
-                        // previews={previews}
                         onChangePage={onChangePage}
                     />
                 ) : (
