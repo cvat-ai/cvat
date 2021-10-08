@@ -56,13 +56,13 @@ they will need to be used in CVAT when adding cloud storage.
 #### Prepare dataset
 
 For example, let's take [The Oxford-IIIT Pet Dataset](https://www.robots.ox.ac.uk/~vgg/data/pets/):
-  - Download the [archive with images](https://www.robots.ox.ac.uk/~vgg/data/pets/data/images.tar.gz).
-  - Unpack the archive into the prepared folder
-    and create a manifest file as described in [prepare manifest file section](/docs/manual/advanced/dataset_manifest/):
+- Download the [archive with images](https://www.robots.ox.ac.uk/~vgg/data/pets/data/images.tar.gz).
+- Unpack the archive into the prepared folder
+  and create a manifest file as described in [prepare manifest file section](/docs/manual/advanced/dataset_manifest/):
 
-    ```
-    python <cvat repository>/utils/dataset_manifest/create.py --output-dir <yourfolder> <yourfolder>
-    ```
+  ```
+  python <cvat repository>/utils/dataset_manifest/create.py --output-dir <yourfolder> <yourfolder>
+  ```
 
 #### Upload
 
@@ -98,7 +98,7 @@ go to the [resource groups page](https://portal.azure.com/#blade/HubsExtension/B
 and navigate to the resource group that you created.
 Click `create` for create a storage account.
 
-  ![](/images/azure_blob_container_tutorial2.jpg)
+![](/images/azure_blob_container_tutorial2.jpg)
 
 - **Basics**
 
