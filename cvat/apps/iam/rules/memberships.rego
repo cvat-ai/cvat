@@ -11,7 +11,6 @@ import data.organizations
 #         },
 #         "organization": {
 #             "id": <num>,
-#             "is_owner": <true|false>,
 #             "owner": {
 #                 "id": <num>
 #             },
@@ -33,7 +32,7 @@ allow {
 
 allow {
     { utils.LIST, utils.VIEW }[input.scope]
-    input.auth.organization.is_owner
+    input.auth.organization.owner.id == input.auth.user.id
 }
 
 allow {
@@ -43,7 +42,7 @@ allow {
 
 allow {
     { utils.CHANGE_ROLE, utils.DELETE }[input.scope]
-    input.auth.organization.is_owner
+    input.auth.organization.owner.id == input.auth.user.id
 }
 
 allow {
@@ -54,7 +53,8 @@ allow {
 
 filter = [] { # Django Q object to filter list of entries
     utils.is_admin
-} else = qobject {
-    user = input.auth.user
-    qobject := [ {"user_id": user.id} ]
+} else = [] {
+    input.auth.organization.owner.id == input.auth.user.id
+} else = [] {
+    input.auth.organization.role != null
 }

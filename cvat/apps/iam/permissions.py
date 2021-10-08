@@ -31,7 +31,9 @@ class OpenPolicyAgentPermission:
                     },
                     'organization': {
                         'id': organization.id,
-                        'is_owner': organization.owner.id == user.id,
+                        'owner': {
+                            'id': organization.owner.id,
+                        },
                         'role': getattr(membership, 'role', None),
                     } if organization else None
                 }
@@ -43,31 +45,34 @@ class OpenPolicyAgentPermission:
         return r.json()['result']
 
     def filter(self, queryset):
-        url = self.url.replace('/allow', '/filter')
-        r = requests.post(url, json=self.payload)
-        qobjects = []
-        ops_dict = {
-            '|': operator.or_,
-            '&': operator.and_,
-            '~': operator.not_,
-        }
-        for token in r.json()['result']:
-            if isinstance(token, str):
-                val1 = qobjects.pop()
-                if token == '~':
-                    qobjects.append(ops_dict[token](val1))
+        if self.view.action == 'list':
+            url = self.url.replace('/allow', '/filter')
+            r = requests.post(url, json=self.payload)
+            qobjects = []
+            ops_dict = {
+                '|': operator.or_,
+                '&': operator.and_,
+                '~': operator.not_,
+            }
+            for token in r.json()['result']:
+                if isinstance(token, str):
+                    val1 = qobjects.pop()
+                    if token == '~':
+                        qobjects.append(ops_dict[token](val1))
+                    else:
+                        val2 = qobjects.pop()
+                        qobjects.append(ops_dict[token](val1, val2))
                 else:
-                    val2 = qobjects.pop()
-                    qobjects.append(ops_dict[token](val1, val2))
+                    qobjects.append(Q(**token))
+
+            if qobjects:
+                assert len(qobjects) == 1
             else:
-                qobjects.append(Q(**token))
+                qobjects.append(Q())
 
-        if qobjects:
-            assert len(qobjects) == 1
+            return queryset.filter(qobjects[0])
         else:
-            qobjects.append(Q())
-
-        return queryset.filter(qobjects[0])
+            return queryset
 
 
 class ServerPermission(OpenPolicyAgentPermission):
@@ -190,7 +195,6 @@ class OrganizationPermission(OpenPolicyAgentPermission):
             membership = Membership.objects.filter(organization=self.obj, user=user).first()
             return {
                 'id': self.obj.id,
-                'is_owner': self.obj.owner.id == user.id,
                 'owner': {
                     'id': self.obj.owner.id
                 },
@@ -223,7 +227,7 @@ class MembershipPermission(OpenPolicyAgentPermission):
             'list': 'LIST',
             'partial_update': 'CHANGE_ROLE',
             'retrieve': 'VIEW',
-            'delete': 'DELETE'
+            'destroy': 'DELETE'
         }.get(self.view.action, None)
 
     @property
@@ -240,25 +244,59 @@ class MembershipPermission(OpenPolicyAgentPermission):
 class InvitationPermission(OpenPolicyAgentPermission):
     @classmethod
     def create(cls, request, view, obj):
-        return []
+        permissions = []
+        if view.basename == 'invitation':
+            self = cls(request, view, obj)
+            permissions.append(self)
+
+        return permissions
 
     def __init__(self, request, view, obj):
         super().__init__(request, view, obj)
+        self.url = settings.IAM_OPA_DATA_URL + '/invitations/allow'
+        self.payload['input']['scope'] = self.scope
+        self.payload['input']['resource'] = self.resource
 
-    def get_scope(self, request, view, obj):
-        scope = None # filter, OPTIONS
-        if getattr(view, 'action', None):
-            scope = {
-                'list': 'LIST',
-                'create': 'CREATE',
-                'destroy': 'DELETE',
-                'partial_update': 'UPDATE',
-                'retrieve': 'VIEW',
-            }[view.action]
+    @property
+    def scope(self):
+        return {
+            ('list', False): 'LIST',
+            ('create', False): 'CREATE',
+            ('destroy', False): 'DELETE',
+            ('partial_update', False): 'RESEND',
+            ('partial_update', True): 'ACCEPT',
+            ('retrieve', False): 'VIEW'
+        }.get((self.view.action, 'accepted' in self.request.data))
 
-        return scope
 
-    url = settings.IAM_OPA_DATA_URL + '/invitations/allow'
+    @property
+    def resource(self):
+        data = None
+        if self.obj:
+            data = {
+                'owner': { 'id': self.obj.owner.id },
+                'invitee': { 'id': self.obj.membership.user.id },
+                'accepted': self.obj.accepted,
+                'role': self.obj.membership.role,
+                'organization': {
+                    'id': self.obj.membership.organization.id
+                }
+            }
+        elif self.view.action == 'create':
+            data = {
+                'owner': { 'id': self.request.user.id },
+                'invitee': {
+                    'id': self.request.data.get('user')
+                },
+                'accepted': False,
+                'role': self.request.data.get('role'),
+                'organization': {
+                    'id': self.request.data.get('organization')
+                }
+            }
+
+        return data
+
 
 class CloudStoragePermission(OpenPolicyAgentPermission):
     @classmethod

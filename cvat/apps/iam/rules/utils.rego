@@ -25,6 +25,7 @@ SEND_EXCEPTION := "SEND_EXCEPTION"
 SEND_LOGS := "SEND_LOGS"
 VIEW_SELF := "VIEW_SELF"
 CHANGE_ROLE := "CHANGE_ROLE"
+RESEND := "RESEND"
 
 get_priority(privilege) = priority {
     priority := {

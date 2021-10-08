@@ -10,7 +10,6 @@ import data.utils
 #         },
 #         "organization": {
 #             "id": <num>,
-#             "is_owner": <true|false>,
 #             "owner": {
 #                 "id": <num>
 #             },

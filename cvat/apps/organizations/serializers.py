@@ -40,7 +40,11 @@ class InvitationSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         membership_data = validated_data.pop('membership')
-        membership = Membership.objects.create(**membership_data)
+
+        membership, created = Membership.objects.get_or_create(**membership_data)
+        if not created:
+            raise serializers.ValidationError('The user is a member of '
+                'the organization already.')
         invitation = Invitation.objects.create(**validated_data,
             membership=membership)
 
