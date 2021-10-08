@@ -6,6 +6,14 @@
   "directories": {
     "test": "tests"
   },
+  "workspaces": [
+    "cvat-data",
+    "cvat-core",
+    "cvat-canvas",
+    "cvat-canvas3d",
+    "cvat-ui",
+    "tests"
+  ],
   "dependencies": {},
   "devDependencies": {
     "@babel/cli": "^7.13.16",

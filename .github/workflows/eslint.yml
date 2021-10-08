@@ -21,9 +21,7 @@ jobs:
           done
 
           if [[ ! -z ${changed_files_eslint} ]]; then
-            for package_files in `find -maxdepth 2 -name "package.json" -type f`; do
-              cd $(dirname $package_files) && npm ci && cd ${{ github.workspace }}
-            done
+            npm ci
             npm install eslint-detailed-reporter --save-dev
             mkdir -p eslint_report
 
