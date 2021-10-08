@@ -74,6 +74,7 @@ context('Filters, sorting jobs.', () => {
                     cy.contains('[type="button"]', 'Reset').should('be.visible').click();
                 }
             });
+        cy.get('.ant-dropdown').last().should('be.hidden');
     }
 
     before(() => {
