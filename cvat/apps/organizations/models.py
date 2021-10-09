@@ -9,13 +9,13 @@ class Organization(models.Model):
     description = models.TextField(blank=True)
     created_date = models.DateTimeField(auto_now_add=True)
     updated_date = models.DateTimeField(auto_now=True)
-    company = models.CharField(max_length=64, blank=True)
-    email = models.EmailField(blank=True)
-    location = models.CharField(max_length=256, blank=True)
+    contact = models.JSONField(blank=True, default=dict)
 
     owner = models.ForeignKey(get_user_model(), null=True,
         blank=True, on_delete=models.SET_NULL, related_name='+')
 
+    def __str__(self):
+        return self.slug
     class Meta:
         default_permissions = ()
 

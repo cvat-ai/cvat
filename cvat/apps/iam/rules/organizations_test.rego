@@ -70,55 +70,55 @@ test_anybody_list_allow {
 }
 
 data_worker2 := {
-    "auth": {"organization": null, "user": {"id": 5, "privilege": "worker"}},
-    "resource": {"id": 10, "owner": {"id": 5}, "role": null},
-    "scope": "VIEW",
-    "user": {"num_resources": 2}
+	"auth": {"organization": null, "user": {"id": 5, "privilege": "worker"}},
+	"resource": {"id": 10, "owner": {"id": 5}, "user": {"role": null}},
+	"scope": "VIEW",
+	"user": {"num_resources": 2},
 }
 
 test_owner_view_allow {
-    allow with input as data_worker2
+	allow with input as data_worker2
 }
 
 data_worker3 := {
-    "auth": {"organization": null, "user": {"id": 7, "privilege": "worker"}},
-    "resource": {"id": 10, "owner": {"id": 5}, "role": "worker"},
-    "scope": "VIEW",
-    "user": {"num_resources": 2}
+	"auth": {"organization": null, "user": {"id": 7, "privilege": "worker"}},
+	"resource": {"id": 10, "owner": {"id": 5}, "user": {"role": "owner"}},
+	"scope": "VIEW",
+	"user": {"num_resources": 2},
 }
 
 test_member_view_allow {
-    allow with input as data_worker3
+	allow with input as data_worker3
 }
 
 data_user3 := {
-    "auth": {"organization": null, "user": {"id": 7, "privilege": "user"}},
-    "resource": {"id": 10, "owner": {"id": 5}, "role": null},
-    "scope": "VIEW",
+	"auth": {"organization": null, "user": {"id": 7, "privilege": "user"}},
+	"resource": {"id": 10, "owner": {"id": 5}, "user": {"role": null}},
+	"scope": "VIEW",
 }
 
 test_non_member_view_not_allow {
-    not allow with input as data_user3
+	not allow with input as data_user3
 }
 
 data_worker4 := {
-    "auth": {"organization": null, "user": {"id": 7, "privilege": "worker"}},
-    "resource": {"id": 10, "owner": {"id": 7}, "role": "owner"},
-    "scope": "UPDATE",
-    "user": {"num_resources": 1}
+	"auth": {"organization": null, "user": {"id": 7, "privilege": "worker"}},
+	"resource": {"id": 10, "owner": {"id": 7}, "user": {"role": "owner"}},
+	"scope": "UPDATE",
+	"user": {"num_resources": 1},
 }
 
 test_owner_update_allow {
-    allow with input as data_worker4
+	allow with input as data_worker4
 }
 
 data_nobody := {
-    "auth": {"organization": null, "user": {"id": 7, "privilege": null}},
-    "resource": {"id": 10, "owner": {"id": 7}, "role": "owner"},
-    "scope": "UPDATE",
-    "user": {"num_resources": 1}
+	"auth": {"organization": null, "user": {"id": 7, "privilege": null}},
+	"resource": {"id": 10, "owner": {"id": 7}, "user": {"role": "owner"}},
+	"scope": "UPDATE",
+	"user": {"num_resources": 1},
 }
 
 test_nobody_update_not_allow {
-    not allow with input as data_nobody
+	not allow with input as data_nobody
 }

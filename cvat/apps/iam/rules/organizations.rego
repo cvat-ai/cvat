@@ -3,28 +3,22 @@ import data.utils
 
 # input: {
 #     "scope": <"CREATE"|"LIST"|"UPDATE"|"VIEW"|"DELETE"> or null,
-#     "user": {
-#         "num_resources": <num>
-#     },
 #     "auth": {
 #         "user": {
 #             "id": <num>,
 #             "privilege": <"admin"|"business"|"user"|"worker"> or null
 #         },
-#         "organization": {
-#             "id": <num>,
-#             "owner": {
-#                 "id": <num>
-#             },
-#             "role": <"maintainer"|"supervisor"|"worker"> or null
-#         } or null,
+#         "organization": null,
 #     },
 #     "resource": {
 #         "id": <num>,
 #         "owner": {
 #             "id": <num>
 #         },
-#         "role": <"maintainer"|"supervisor"|"worker"> or null
+#         "user": {
+#             "num_resources": <num>,
+#             "role": <"maintainer"|"supervisor"|"worker"> or null
+#         }
 #     }
 # }
 
@@ -38,7 +32,7 @@ is_maintainer {
 }
 
 is_maintainer {
-    input.auth.organization.role == MAINTAINER
+    input.auth.organization.user.role == MAINTAINER
 }
 
 default allow = false
@@ -48,7 +42,7 @@ allow {
 
 allow {
     input.scope == utils.CREATE
-    input.user.num_resources == 0
+    input.resource.user.num_resources == 0
     utils.has_privilege(utils.USER)
 }
 
@@ -75,7 +69,7 @@ allow {
 
 allow {
     input.scope == utils.VIEW
-    input.resource.role != null
+    input.resource.user.role != null
 }
 
 allow {
@@ -87,7 +81,7 @@ allow {
 allow {
     input.scope == utils.UPDATE
     utils.has_privilege(utils.USER)
-    input.resource.role == MAINTAINER
+    input.resource.user.role == MAINTAINER
 }
 
 allow {

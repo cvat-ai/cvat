@@ -16,7 +16,9 @@ import data.organizations
 #             "owner": {
 #                 "id": <num>
 #             },
-#             "role": <"maintainer"|"supervisor"|"worker"> or null
+#             "user": {
+#                 "role": <"maintainer"|"supervisor"|"worker"> or null
+#             }
 #         } or null,
 #     },
 #     "resource": {

@@ -34,7 +34,9 @@ class OpenPolicyAgentPermission:
                         'owner': {
                             'id': organization.owner.id,
                         },
-                        'role': getattr(membership, 'role', None),
+                        'user': {
+                            'role': getattr(membership, 'role', None)
+                        },
                     } if organization else None
                 }
             }
@@ -171,12 +173,7 @@ class OrganizationPermission(OpenPolicyAgentPermission):
         super().__init__(request, view, obj)
         self.url = settings.IAM_OPA_DATA_URL + '/organizations/allow'
         self.payload['input']['scope'] = self.scope
-        if view.detail:
-            self.payload['input']['resource'] = self.resource
-        self.payload['input']['user'] = {
-            'num_resources': Organization.objects.filter(
-                owner_id=self.request.user.id).count()
-        }
+        self.payload['input']['resource'] = self.resource
 
     @property
     def scope(self):
@@ -190,15 +187,29 @@ class OrganizationPermission(OpenPolicyAgentPermission):
 
     @property
     def resource(self):
+        user = self.request.user
         if self.obj:
-            user = self.request.user
             membership = Membership.objects.filter(organization=self.obj, user=user).first()
             return {
                 'id': self.obj.id,
                 'owner': {
                     'id': self.obj.owner.id
                 },
-                'role': membership.role if membership else None,
+                'user': {
+                    'role': membership.role if membership else None
+                }
+            }
+        elif self.view.action == 'create':
+            return {
+                'id': None,
+                'owner': {
+                    'id': user.id
+                },
+                'user': {
+                    'num_resources': Organization.objects.filter(
+                        owner_id=user.id).count(),
+                    'role': 'owner'
+                }
             }
         else:
             return None

@@ -10,7 +10,7 @@ class OrganizationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Organization
         fields = ['id', 'slug', 'name', 'description', 'created_date',
-            'updated_date', 'company', 'email', 'location', 'owner']
+            'updated_date', 'contact', 'owner']
         read_only_fields = ['created_date', 'updated_date', 'owner']
 
     def create(self, validated_data):
