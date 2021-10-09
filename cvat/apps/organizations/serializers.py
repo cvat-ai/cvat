@@ -11,6 +11,9 @@ class OrganizationSerializer(serializers.ModelSerializer):
         model = Organization
         fields = ['id', 'slug', 'name', 'description', 'created_date',
             'updated_date', 'contact', 'owner']
+        # TODO: at the moment isn't possible to change the owner. It should
+        # be a separate feature. Need to change it together with corresponding
+        # Membership. Also such operation should be well protected.
         read_only_fields = ['created_date', 'updated_date', 'owner']
 
     def create(self, validated_data):
@@ -33,12 +36,8 @@ class MembershipSerializer(serializers.ModelSerializer):
 
 
 class InvitationSerializer(serializers.ModelSerializer):
-    role = serializers.ChoiceField(choices=[
-        (Membership.WORKER, 'Worker'),
-        (Membership.SUPERVISOR, 'Supervisor'),
-        (Membership.MAINTAINER, 'Maintainer'),
-        (Membership.OWNER, 'Owner'),
-    ], source='membership.role')
+    role = serializers.ChoiceField(Membership.role.field.choices,
+        source='membership.role')
     user = serializers.PrimaryKeyRelatedField(
         queryset=get_user_model().objects.all(),
         source='membership.user')

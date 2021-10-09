@@ -20,10 +20,10 @@ class Organization(models.Model):
         default_permissions = ()
 
 class Membership(models.Model):
-    WORKER = 'W'
-    SUPERVISOR = 'S'
-    MAINTAINER = 'M'
-    OWNER = 'O'
+    WORKER = 'worker'
+    SUPERVISOR = 'supervisor'
+    MAINTAINER = 'maintainer'
+    OWNER = 'owner'
 
     user = models.ForeignKey(get_user_model(), on_delete=models.SET_NULL,
         null=True, related_name='+')
@@ -31,7 +31,7 @@ class Membership(models.Model):
         related_name='members')
     is_active = models.BooleanField(default=False)
     joined_date = models.DateTimeField(null=True)
-    role = models.CharField(max_length=1, choices=[
+    role = models.CharField(max_length=16, choices=[
         (WORKER, 'Worker'),
         (SUPERVISOR, 'Supervisor'),
         (MAINTAINER, 'Maintainer'),
