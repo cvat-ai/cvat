@@ -25,6 +25,7 @@ SEND_EXCEPTION := "SEND_EXCEPTION"
 SEND_LOGS := "SEND_LOGS"
 VIEW_SELF := "VIEW_SELF"
 CHANGE_ROLE := "CHANGE_ROLE"
+RESEND := "RESEND"
 
 get_priority(privilege) = priority {
     priority := {
@@ -53,4 +54,8 @@ is_user {
 
 is_worker {
     input.auth.user.privilege == WORKER
+}
+
+is_resource_owner {
+    input.resource.owner.id == input.auth.user.id
 }

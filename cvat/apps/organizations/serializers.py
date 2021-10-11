@@ -10,8 +10,23 @@ class OrganizationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Organization
         fields = ['id', 'slug', 'name', 'description', 'created_date',
-            'updated_date', 'company', 'email', 'location', 'owner']
+            'updated_date', 'contact', 'owner']
+        # TODO: at the moment isn't possible to change the owner. It should
+        # be a separate feature. Need to change it together with corresponding
+        # Membership. Also such operation should be well protected.
         read_only_fields = ['created_date', 'updated_date', 'owner']
+
+    def create(self, validated_data):
+        organization = super().create(validated_data)
+        Membership.objects.create(**{
+            'user': organization.owner,
+            'organization': organization,
+            'is_active': True,
+            'joined_date': organization.created_date,
+            'role': Membership.OWNER
+        })
+
+        return organization
 
 class MembershipSerializer(serializers.ModelSerializer):
     class Meta:
@@ -19,12 +34,10 @@ class MembershipSerializer(serializers.ModelSerializer):
         fields = ['id', 'user', 'organization', 'is_active', 'joined_date', 'role']
         read_only_fields = ['is_active', 'joined_date', 'user', 'organization']
 
+
 class InvitationSerializer(serializers.ModelSerializer):
-    role = serializers.ChoiceField(choices=[
-        (Membership.WORKER, 'Worker'),
-        (Membership.SUPERVISOR, 'Supervisor'),
-        (Membership.MAINTAINER, 'Maintainer'),
-    ], source='membership.role')
+    role = serializers.ChoiceField(Membership.role.field.choices,
+        source='membership.role')
     user = serializers.PrimaryKeyRelatedField(
         queryset=get_user_model().objects.all(),
         source='membership.user')
@@ -40,7 +53,11 @@ class InvitationSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         membership_data = validated_data.pop('membership')
-        membership = Membership.objects.create(**membership_data)
+
+        membership, created = Membership.objects.get_or_create(**membership_data)
+        if not created:
+            raise serializers.ValidationError('The user is a member of '
+                'the organization already.')
         invitation = Invitation.objects.create(**validated_data,
             membership=membership)
 

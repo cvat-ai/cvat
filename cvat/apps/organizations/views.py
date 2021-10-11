@@ -22,7 +22,8 @@ class OrganizationViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        return OrganizationPermission(self.request, self, None).filter(queryset)
+        permission = OrganizationPermission(self.request, self, None)
+        return permission.filter(queryset)
 
     def perform_create(self, serializer):
         extra_kwargs = { 'owner': self.request.user }
@@ -43,7 +44,8 @@ class MembershipViewSet(mixins.RetrieveModelMixin, mixins.DestroyModelMixin,
         organization = self.request.iam_context['organization']
         if organization:
             queryset = queryset.filter(organization=organization)
-        return MembershipPermission(self.request, self, None).filter(queryset)
+        permission = MembershipPermission(self.request, self, None)
+        return permission.filter(queryset)
 
 
 class InvitationViewSet(viewsets.ModelViewSet):
@@ -57,7 +59,8 @@ class InvitationViewSet(viewsets.ModelViewSet):
         organization = self.request.iam_context['organization']
         if organization:
             queryset = queryset.filter(membership__organization=organization)
-        return InvitationPermission(self.request, self, None).filter(queryset)
+        permission = InvitationPermission(self.request, self, None)
+        return permission.filter(queryset)
 
     def perform_create(self, serializer):
         extra_kwargs = {

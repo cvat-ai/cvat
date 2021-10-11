@@ -3,40 +3,36 @@ import data.utils
 
 # input: {
 #     "scope": <"CREATE"|"LIST"|"UPDATE"|"VIEW"|"DELETE"> or null,
-#     "user": {
-#         "num_resources": <num>
-#     },
 #     "auth": {
 #         "user": {
 #             "id": <num>,
 #             "privilege": <"admin"|"business"|"user"|"worker"> or null
 #         },
-#         "organization": {
-#             "id": <num>,
-#             "is_owner": <true|false>,
-#             "owner": {
-#                 "id": <num>
-#             },
-#             "role": <"maintainer"|"supervisor"|"worker"> or null
-#         } or null,
+#         "organization": null,
 #     },
 #     "resource": {
 #         "id": <num>,
-#         "is_owner": <true|false>,
-#         "role": <"maintainer"|"supervisor"|"worker"> or null
+#         "owner": {
+#             "id": <num>
+#         },
+#         "user": {
+#             "num_resources": <num>,
+#             "role": <"maintainer"|"supervisor"|"worker"> or null
+#         }
 #     }
 # }
 
+OWNER := "owner"
 MAINTAINER := "maintainer"
 SUPERVISOR := "supervisor"
 WORKER     := "worker"
 
 is_maintainer {
-    input.auth.organization.is_owner
+    input.auth.organization.owner.id == input.auth.user.id
 }
 
 is_maintainer {
-    input.auth.organization.role == MAINTAINER
+    input.auth.organization.user.role == MAINTAINER
 }
 
 default allow = false
@@ -46,7 +42,7 @@ allow {
 
 allow {
     input.scope == utils.CREATE
-    input.user.num_resources == 0
+    input.resource.user.num_resources == 0
     utils.has_privilege(utils.USER)
 }
 
@@ -68,28 +64,28 @@ filter = [] { # Django Q object to filter list of entries
 
 allow {
     input.scope == utils.VIEW
-    input.resource.is_owner
+    utils.is_resource_owner
 }
 
 allow {
     input.scope == utils.VIEW
-    input.resource.role != null
+    input.resource.user.role != null
 }
 
 allow {
     input.scope == utils.UPDATE
     utils.has_privilege(utils.WORKER)
-    input.resource.is_owner
+    utils.is_resource_owner
 }
 
 allow {
     input.scope == utils.UPDATE
     utils.has_privilege(utils.USER)
-    input.resource.role == MAINTAINER
+    input.resource.user.role == MAINTAINER
 }
 
 allow {
     input.scope == utils.DELETE
     utils.has_privilege(utils.WORKER)
-    input.resource.is_owner
+    utils.is_resource_owner
 }

@@ -9,20 +9,21 @@ class Organization(models.Model):
     description = models.TextField(blank=True)
     created_date = models.DateTimeField(auto_now_add=True)
     updated_date = models.DateTimeField(auto_now=True)
-    company = models.CharField(max_length=64, blank=True)
-    email = models.EmailField(blank=True)
-    location = models.CharField(max_length=256, blank=True)
+    contact = models.JSONField(blank=True, default=dict)
 
     owner = models.ForeignKey(get_user_model(), null=True,
         blank=True, on_delete=models.SET_NULL, related_name='+')
 
+    def __str__(self):
+        return self.slug
     class Meta:
         default_permissions = ()
 
 class Membership(models.Model):
-    WORKER = 'W'
-    SUPERVISOR = 'S'
-    MAINTAINER = 'M'
+    WORKER = 'worker'
+    SUPERVISOR = 'supervisor'
+    MAINTAINER = 'maintainer'
+    OWNER = 'owner'
 
     user = models.ForeignKey(get_user_model(), on_delete=models.SET_NULL,
         null=True, related_name='+')
@@ -30,10 +31,11 @@ class Membership(models.Model):
         related_name='members')
     is_active = models.BooleanField(default=False)
     joined_date = models.DateTimeField(null=True)
-    role = models.CharField(max_length=1, choices=[
+    role = models.CharField(max_length=16, choices=[
         (WORKER, 'Worker'),
         (SUPERVISOR, 'Supervisor'),
         (MAINTAINER, 'Maintainer'),
+        (OWNER, 'Owner'),
     ])
 
     class Meta:

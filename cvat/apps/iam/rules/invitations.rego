@@ -3,25 +3,35 @@ import data.utils
 import data.organizations
 
 
+
 # input: {
-#     "scope": <"LIST"|"CREATE"|"VIEW"|"UPDATE"|"ACCEPT"|"DELETE">,
-#     "user": {
-#         "id": <num>,
-#         "privilege": <"admin"|"business"|"user"|"worker"|null>,
-#     },
-#     "organization": {
-#         "id": <num>,
-#         "is_owner": <true|false>,
+#     "scope": <"LIST"|"CREATE"|"VIEW"|"RESEND"|"ACCEPT"|"DELETE"> or null,
+#     "auth": {
+#         "user": {
+#             "id": <num>,
+#             "privilege": <"admin"|"business"|"user"|"worker"> or null
+#         },
+#         "organization": {
+#             "id": <num>,
 #             "owner": {
 #                 "id": <num>
 #             },
-#         "role": <"maintainer"|"supervisor"|"worker"|null>
-#     } or null,
-#     "resources": {
-#         "invitation": {
-#             "id": <num>,
-#             "is_owner": <true|false>,
-#             "is_invitee": <true|false>,
+#             "user": {
+#                 "role": <"maintainer"|"supervisor"|"worker"> or null
+#             }
+#         } or null,
+#     },
+#     "resource": {
+#         "owner": {
+#             "id": <num>
+#         },
+#         "invitee": {
+#             "id": <num>
+#         },
+#         "accepted": <true|false>,
+#         "role": <"maintainer"|"supervisor"|"worker">,
+#         "organization": {
+#             "id": <num>
 #         }
 #     }
 # }
@@ -32,58 +42,7 @@ allow {
 }
 
 allow {
-    input.scope == utils.CREATE
-    utils.has_privilege(utils.USER)
-    organizations.is_maintainer
-}
-
-allow {
     input.scope == utils.LIST
-}
-
-allow {
-    input.scope == utils.VIEW
-    input.resources.invitation.is_owner
-}
-
-allow {
-    input.scope == utils.VIEW
-    input.resources.invitation.is_invitee
-}
-
-allow {
-    input.scope == utils.VIEW
-    utils.has_privilege(utils.USER)
-    organizations.is_maintainer
-}
-
-allow {
-    input.scope == utils.UPDATE
-    utils.has_privilege(utils.WORKER)
-    input.resources.invitation.is_owner
-}
-
-allow {
-    input.scope == utils.UPDATE
-    utils.has_privilege(utils.WORKER)
-    organizations.is_maintainer
-}
-
-allow {
-    input.scope == utils.ACCEPT
-    input.resources.invitation.is_invitee
-}
-
-allow {
-    input.scope == utils.DELETE
-    utils.has_privilege(utils.WORKER)
-    input.resources.invitation.is_owner
-}
-
-allow {
-    input.scope == utils.DELETE
-    utils.has_privilege(utils.WORKER)
-    organizations.is_maintainer
 }
 
 filter = [] { # Django Q object to filter list of entries
@@ -94,4 +53,62 @@ filter = [] { # Django Q object to filter list of entries
 } else = qobject {
     user := input.auth.user
     qobject := [ {"owner": user.id}, {"membership__user": user.id}, "|" ]
+}
+
+allow {
+    input.scope == utils.CREATE
+    utils.has_privilege(utils.USER)
+    input.auth.organization.role == organizations.MAINTAINER
+    input.resource.role != organizations.MAINTAINER
+}
+
+allow {
+    input.scope == utils.CREATE
+    utils.has_privilege(utils.USER)
+    input.auth.organization.owner.id == input.auth.user.id
+}
+
+allow {
+    input.scope == utils.VIEW
+    input.resource.owner.id == input.auth.user.id
+}
+
+allow {
+    input.scope == utils.VIEW
+    input.resource.invitee.id == input.auth.user.id
+}
+
+allow {
+    input.scope == utils.VIEW
+    utils.has_privilege(utils.USER)
+    organizations.is_maintainer
+}
+
+allow {
+    input.scope == utils.RESEND
+    utils.has_privilege(utils.WORKER)
+    input.resource.owner.id == input.auth.user.id
+}
+
+allow {
+    input.scope == utils.RESEND
+    utils.has_privilege(utils.WORKER)
+    organizations.is_maintainer
+}
+
+allow {
+    input.scope == utils.DELETE
+    utils.has_privilege(utils.WORKER)
+    input.resource.owner.id == input.auth.user.id
+}
+
+allow {
+    input.scope == utils.DELETE
+    utils.has_privilege(utils.USER)
+    organizations.is_maintainer
+}
+
+allow {
+    input.scope == utils.ACCEPT
+    input.resource.invitee.id == input.auth.user.id
 }

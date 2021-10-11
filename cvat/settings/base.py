@@ -95,6 +95,7 @@ try:
 except Exception as ex:
     print(str(ex))
 
+DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
