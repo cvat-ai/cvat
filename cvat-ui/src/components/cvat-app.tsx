@@ -66,9 +66,11 @@ interface CVATAppProps {
     switchShortcutsDialog: () => void;
     switchSettingsDialog: () => void;
     loadAuthActions: () => void;
+    loadOrganizations: () => void;
     keyMap: KeyMap;
     userInitialized: boolean;
     userFetching: boolean;
+    organizationsFetching: boolean;
     pluginsInitialized: boolean;
     pluginsFetching: boolean;
     modelsInitialized: boolean;
@@ -151,7 +153,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
         }
     }
 
-    public componentDidUpdate(): void {
+    public componentDidUpdate(prevProps: CVATAppProps): void {
         const {
             verifyAuthorized,
             loadFormats,
@@ -159,9 +161,11 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             loadUserAgreements,
             initPlugins,
             initModels,
+            loadOrganizations,
             loadAuthActions,
             userInitialized,
             userFetching,
+            organizationsFetching,
             formatsInitialized,
             formatsFetching,
             aboutInitialized,
@@ -183,6 +187,15 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
 
         if (!userInitialized && !userFetching) {
             verifyAuthorized();
+            return;
+        }
+
+        if (user && !prevProps.user) {
+            loadOrganizations();
+            return;
+        }
+
+        if (organizationsFetching) {
             return;
         }
 

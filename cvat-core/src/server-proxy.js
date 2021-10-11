@@ -117,7 +117,7 @@
             Axios.defaults.xsrfHeaderName = 'X-CSRFTOKEN';
             Axios.defaults.xsrfCookieName = 'csrftoken';
             Axios.interceptors.request.use((reqConfig) => {
-                if ('params' in reqConfig && 'org' && reqConfig.params) {
+                if ('params' in reqConfig && 'org' in reqConfig.params) {
                     return reqConfig;
                 }
 

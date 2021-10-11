@@ -55,7 +55,7 @@ function MembersList(props: Props): JSX.Element {
             <div>
                 {members.map(
                     (member: any): JSX.Element => (
-                        <MemberItem ownerID={owner.id} membershipInstance={member} />
+                        <MemberItem key={member.user.id} ownerID={owner.id} membershipInstance={member} />
                     ),
                 )}
             </div>

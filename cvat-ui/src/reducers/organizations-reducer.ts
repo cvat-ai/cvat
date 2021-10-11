@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
+import { AuthActions, AuthActionTypes } from 'actions/auth-actions';
 import { OrganizationActions, OrganizationActionsTypes } from 'actions/organization-actions';
 import { OrganizationState } from './interfaces';
 
@@ -13,7 +14,10 @@ const defaultState: OrganizationState = {
     saving: false,
 };
 
-export default function (state: OrganizationState = defaultState, action: OrganizationActions): OrganizationState {
+export default function (
+    state: OrganizationState = defaultState,
+    action: OrganizationActions | AuthActions,
+): OrganizationState {
     switch (action.type) {
         case OrganizationActionsTypes.GET_ORGANIZATIONS: {
             return {
@@ -32,12 +36,6 @@ export default function (state: OrganizationState = defaultState, action: Organi
                 ...state,
                 fetching: false,
             };
-        case OrganizationActionsTypes.ACTIVATE_ORGANIZATION: {
-            return {
-                ...state,
-                fetching: true,
-            };
-        }
         case OrganizationActionsTypes.ACTIVATE_ORGANIZATION_SUCCESS: {
             return {
                 ...state,
@@ -76,6 +74,9 @@ export default function (state: OrganizationState = defaultState, action: Organi
                 current: null,
                 list: state.list.filter((org: any) => org.slug !== action.payload.slug),
             };
+        }
+        case AuthActionTypes.LOGOUT_SUCCESS: {
+            return { ...defaultState };
         }
         default:
             return state;

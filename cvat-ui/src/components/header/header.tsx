@@ -3,8 +3,8 @@
 // SPDX-License-Identifier: MIT
 
 import './styles.scss';
-import React, { useEffect } from 'react';
-import { connect, useDispatch } from 'react-redux';
+import React from 'react';
+import { connect } from 'react-redux';
 import { useHistory } from 'react-router';
 import { Row, Col } from 'antd/lib/grid';
 import Icon, {
@@ -38,7 +38,6 @@ import ChangePasswordDialog from 'components/change-password-modal/change-passwo
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { switchSettingsDialog as switchSettingsDialogAction } from 'actions/settings-actions';
 import { logoutAsync, authActions } from 'actions/auth-actions';
-import { getOrganizationsAsync } from 'actions/organization-actions';
 import { CombinedState } from 'reducers/interfaces';
 import SettingsModal from './settings-modal/settings-modal';
 
@@ -169,11 +168,6 @@ function HeaderContainer(props: Props): JSX.Element {
     } = consts;
 
     const history = useHistory();
-    const dispatch = useDispatch();
-
-    useEffect(() => {
-        dispatch(getOrganizationsAsync());
-    }, []);
 
     function showAboutModal(): void {
         Modal.info({
@@ -310,7 +304,12 @@ function HeaderContainer(props: Props): JSX.Element {
                     key='$disable'
                     onClick={() => {
                         localStorage.removeItem('currentOrganization');
-                        window.location.reload();
+                        if (/\d+$/.test(window.location.pathname)) {
+                            // some data are opened
+                            window.location.pathname = '/';
+                        } else {
+                            window.location.reload();
+                        }
                     }}
                 >
                     <CloseOutlined />
