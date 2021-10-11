@@ -1,0 +1,7 @@
+Scope,Resource,Context,Ownership,Limit,Method,URL,Group,Membership
+LIST,Membership,Organization,Organization Member,,GET,/memberships,None,Worker
+VIEW,Membership,Organization,Organization Member,,GET,/membership/{id},None,Worker
+CHANGE_ROLE,Membership,Organization,Organization Maintainer,role != Maintainer,PATCH,/membership/{id},User,Maintainer
+CHANGE_ROLE,Membership,Organization,Organization Owner,,PATCH,/membership/{id},User,Maintainer
+DELETE,Membership,Organization,Organization Maintainer,role != Maintainer,DELETE,/membership/{id},User,Maintainer
+DELETE,Membership,Organization,Organization Owner,,DELETE,/membership/{id},User,Maintainer
