@@ -33,7 +33,7 @@ COPY cvat-core/ /tmp/cvat-core/
 COPY cvat-canvas3d/ /tmp/cvat-canvas3d/
 COPY cvat-canvas/ /tmp/cvat-canvas/
 COPY cvat-ui/ /tmp/cvat-ui/
-RUN npm run build
+RUN npm run build:ui
 
 FROM nginx:mainline-alpine
 # Replace default.conf configuration to remove unnecessary rules

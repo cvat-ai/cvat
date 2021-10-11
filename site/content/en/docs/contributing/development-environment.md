@@ -62,7 +62,7 @@ description: 'Installing a development environment for different operating syste
 - Install npm packages for UI and start UI debug server (run the following command from CVAT root directory):
 
   ```sh
-  npm ci && npm start
+  npm ci && npm run start:ui
   ```
 
   > Note for Mac users
