@@ -25,13 +25,13 @@ function MemberItem(props: Props): JSX.Element {
                 <Text strong>{username}</Text>
             </Col>
             <Col span={6} className='cvat-organization-member-item-name'>
-                <Text strong>{`${firstName}Boris Sekachev ${lastName}`}</Text>
+                <Text strong>{`${firstName || ''} ${lastName || ''}`}</Text>
             </Col>
             <Col span={8} className='cvat-organization-member-item-dates'>
                 <Text type='secondary'>{`Joined ${moment(joinedDate).fromNow()}`}</Text>
             </Col>
             <Col span={3} className='cvat-organization-member-item-role'>
-                <Select value={role} disabled={user.id === ownerID}>
+                <Select value={role === 'owner' ? 'maintainer' : role} disabled={user.id === ownerID}>
                     <Select.Option value='worker'>Worker</Select.Option>
                     <Select.Option value='supervisor'>Supervisor</Select.Option>
                     <Select.Option value='maintainer'>Maintainer</Select.Option>

@@ -70,6 +70,13 @@ export default function (state: OrganizationState = defaultState, action: Organi
                 creating: false,
             };
         }
+        case OrganizationActionsTypes.REMOVE_ORGANIZATION_SUCCESS: {
+            return {
+                ...state,
+                current: null,
+                list: state.list.filter((org: any) => org.slug !== action.payload.slug),
+            };
+        }
         default:
             return state;
     }

@@ -169,6 +169,7 @@ class Organization {
      * @async
      * @throws {module:API.cvat.exceptions.ServerError}
      * @throws {module:API.cvat.exceptions.PluginError}
+     * @throws {module:API.cvat.exceptions.ArgumentError}
      */
     async members(page = 1, page_size = 10) {
         const result = await PluginRegistry.apiWrapper.call(
@@ -180,10 +181,26 @@ class Organization {
         );
         return result;
     }
+
+    /**
+     * Method removes the organization
+     * @method remove
+     * @returns {module:API.cvat.classes.Organization}
+     * @memberof module:API.cvat.classes.Organization
+     * @readonly
+     * @instance
+     * @async
+     * @throws {module:API.cvat.exceptions.ServerError}
+     * @throws {module:API.cvat.exceptions.PluginError}
+     */
+    async remove() {
+        const result = await PluginRegistry.apiWrapper.call(this, Organization.prototype.remove);
+        return result;
+    }
 }
 
 Organization.prototype.save.implementation = async function () {
-    if (this.id !== null) {
+    if (typeof this.id === 'number') {
         // TODO: patch data
         return this;
     }
@@ -199,25 +216,18 @@ Organization.prototype.save.implementation = async function () {
 };
 
 Organization.prototype.members.implementation = async function (orgSlug, page, pageSize) {
-    if (page === 1) {
-        pageSize -= 1;
-    }
+    checkObjectType('orgSlug', orgSlug, 'string');
+    checkObjectType('page', page, 'number');
+    checkObjectType('pageSize', pageSize, 'number');
+
     const result = await serverProxy.organizations.members(orgSlug, page, pageSize);
-    const members = [
-        {
-            id: -1,
-            user: this.owner,
-            organization: this.id,
-            is_active: true,
-            joined_date: this.createdDate,
-            role: 'maintainer', // add owner role to the list artificially
-        },
-        ...result.results,
-    ];
-    members.count = result.count;
-    return members;
+    return result.results;
+};
+
+Organization.prototype.remove.implementation = async function () {
+    if (typeof this.id === 'number') {
+        await serverProxy.organizations.delete(this.id);
+    }
 };
 
 module.exports = Organization;
-
-// TODO: add patch method, actions and reducers

@@ -1404,7 +1404,23 @@
                     throw generateError(errorData);
                 }
 
+                [response.data.owner] = await getUsers({ id: response.data.owner });
                 return response.data;
+            }
+
+            async function deleteOrganization(id) {
+                const { backendAPI } = config;
+
+                try {
+                    await Axios.delete(`${backendAPI}/organizations/${id}`, {
+                        proxy: config.proxy,
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                    });
+                } catch (errorData) {
+                    throw generateError(errorData);
+                }
             }
 
             async function getOrganizationMembers(orgSlug, page, pageSize) {
@@ -1423,6 +1439,18 @@
                 } catch (errorData) {
                     throw generateError(errorData);
                 }
+
+                // TODO: Remove after server fix
+                await Promise.all(
+                    response.data.results.map(
+                        (result) => new Promise((resolve) => {
+                            getUsers({ id: result.user }).then((users) => {
+                                [result.user] = users;
+                                resolve();
+                            });
+                        }),
+                    ),
+                );
 
                 return response.data;
             }
@@ -1575,6 +1603,7 @@
                             get: getOrganizations,
                             create: createOrganization,
                             members: getOrganizationMembers,
+                            delete: deleteOrganization,
                         }),
                         writable: false,
                     },

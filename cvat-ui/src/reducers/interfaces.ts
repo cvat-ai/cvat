@@ -396,6 +396,7 @@ export interface NotificationsState {
             creating: null | ErrorState;
             updating: null | ErrorState;
             activation: null | ErrorState;
+            deleting: null | ErrorState;
         };
     };
     messages: {

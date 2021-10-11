@@ -126,6 +126,7 @@ const defaultState: NotificationsState = {
             creating: null,
             updating: null,
             activation: null,
+            deleting: null,
         },
     },
     messages: {
@@ -1354,10 +1355,26 @@ export default function (state = defaultState, action: AnyAction): Notifications
                     ...state.errors,
                     organizations: {
                         ...state.errors.organizations,
-                        creating: {
+                        activation: {
                             message: `Could not activate organization ${action.payload.slug || ''}`,
                             reason: action.payload.error.toString(),
                             className: 'cvat-notification-notice-activate-organization-failed',
+                        },
+                    },
+                },
+            };
+        }
+        case OrganizationActionsTypes.REMOVE_ORGANIZATION_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    organizations: {
+                        ...state.errors.organizations,
+                        deleting: {
+                            message: `Could not remove organization ${action.payload.slug}`,
+                            reason: action.payload.error.toString(),
+                            className: 'cvat-notification-notice-remove-organization-failed',
                         },
                     },
                 },
