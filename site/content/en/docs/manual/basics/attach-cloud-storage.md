@@ -133,8 +133,19 @@ Go to the containers section and create a new container. Enter the `name` of the
 
 ### SAS token
 
-To access with SAS token from CVAT, you will need an `access key` which can be found
-in the `security + networking` section. Click `show keys` to show the key.
+Using the `SAS token`, you can securely transfer access to the container to other people by preconfiguring rights,
+as well as the date/time of the starting and expiration of the token.
+To generate a SAS token, go to `Shared access signature` section of your storage account.
+Here you should enable `Blob` in the `Allowed services`, `Container` and `Object` in the `Allowed resource types`,
+`Read` and `List` in the `Allowed permissions`, `HTTPS and HTTP` in the `Allowed protocols`,
+also here you can set the date/time of the starting and expiration for the token. Click `Generation SAS token`.
+and copy `SAS token` (will be used in CVAT to access your container).
+
+![](/images/azure_blob_container_tutorial3.jpg)
+
+For personal use, you can enter `Access Key` from the your storage account in the `SAS Token` field,
+`access key` can be found in the `security + networking` section.
+Click `show keys` to show the key.
 
 ![](/images/azure_blob_container_tutorial8.jpg)
 
@@ -195,7 +206,7 @@ button on the `Cloud storages` page and fill out the following form:
         - [`Account name and SAS token`](https://docs.microsoft.com/en-us/azure/cognitive-services/translator/document-translation/create-sas-tokens?tabs=blobs):
 
           - `Account name` - storage account name.
-          - `SAS token` - is located in the `access keys` section of your `storage account` [learn more](#sas-token).
+          - `SAS token` - is located in the `Shared access signature` section of your `Storage account` [learn more](#sas-token).
 
         - [`Anonymous access`](https://docs.microsoft.com/en-us/azure/storage/blobs/anonymous-read-access-configure?tabs=portal) -
           for anonymous access `enable blob public access` in the `configuration` section of your storage account.
