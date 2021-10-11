@@ -1,9 +1,0 @@
-{
-  "input": {
-    "method": "POST",
-    "path": ["lambda", "functions", "omz.intel.dextr"],
-    "user": {
-      "roles": ["worker"]
-    }
-  }
-}
