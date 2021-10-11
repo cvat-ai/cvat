@@ -117,7 +117,7 @@ class UserPermission(OpenPolicyAgentPermission):
         super().__init__(request, view, obj)
         self.url = settings.IAM_OPA_DATA_URL + '/users/allow'
         self.payload['input']['scope'] = self.scope
-        if view.detail:
+        if obj:
             self.payload['input']['resource'] = {
                 'id': obj.id
             }
@@ -229,7 +229,7 @@ class MembershipPermission(OpenPolicyAgentPermission):
         super().__init__(request, view, obj)
         self.url = settings.IAM_OPA_DATA_URL + '/memberships/allow'
         self.payload['input']['scope'] = self.scope
-        if view.detail:
+        if obj:
             self.payload['input']['resource'] = self.resource
 
     @property

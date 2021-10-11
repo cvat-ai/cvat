@@ -5,12 +5,22 @@
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
 from .models import Invitation, Membership, Organization
+from cvat.apps.engine.serializers import BasicUserSerializer
 
-class OrganizationSerializer(serializers.ModelSerializer):
+class OrganizationReadSerializer(serializers.ModelSerializer):
+    owner = BasicUserSerializer()
     class Meta:
         model = Organization
         fields = ['id', 'slug', 'name', 'description', 'created_date',
             'updated_date', 'contact', 'owner']
+        read_only_fields = fields
+
+class OrganizationWriteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Organization
+        fields = ['id', 'slug', 'name', 'description', 'created_date',
+            'updated_date', 'contact', 'owner']
+
         # TODO: at the moment isn't possible to change the owner. It should
         # be a separate feature. Need to change it together with corresponding
         # Membership. Also such operation should be well protected.
@@ -27,6 +37,7 @@ class OrganizationSerializer(serializers.ModelSerializer):
         })
 
         return organization
+
 
 class MembershipSerializer(serializers.ModelSerializer):
     class Meta:

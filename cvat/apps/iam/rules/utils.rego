@@ -32,7 +32,8 @@ get_priority(privilege) = priority {
         ADMIN: 0,
         BUSINESS: 50,
         USER: 75,
-        WORKER: 100
+        WORKER: 100,
+        null: 1000
     }[privilege]
 }
 

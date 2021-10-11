@@ -3,19 +3,19 @@
 # SPDX-License-Identifier: MIT
 
 from rest_framework import mixins, viewsets
+from rest_framework.permissions import SAFE_METHODS
 from django.utils.crypto import get_random_string
 from cvat.apps.iam.permissions import (InvitationPermission, MembershipPermission,
                                        OrganizationPermission)
 from cvat.apps.organizations.models import Invitation, Membership, Organization
 
 from .serializers import (InvitationSerializer, MembershipSerializer,
-                          OrganizationSerializer)
+    OrganizationReadSerializer, OrganizationWriteSerializer)
 
 
 
 class OrganizationViewSet(viewsets.ModelViewSet):
     queryset = Organization.objects.all()
-    serializer_class = OrganizationSerializer
     ordering = ['-id']
     http_method_names = ['get', 'post', 'patch', 'delete', 'head', 'options']
     pagination_class = None
@@ -24,6 +24,12 @@ class OrganizationViewSet(viewsets.ModelViewSet):
         queryset = super().get_queryset()
         permission = OrganizationPermission(self.request, self, None)
         return permission.filter(queryset)
+
+    def get_serializer_class(self):
+        if self.request.method in SAFE_METHODS:
+            return OrganizationReadSerializer
+        else:
+            return OrganizationWriteSerializer
 
     def perform_create(self, serializer):
         extra_kwargs = { 'owner': self.request.user }
