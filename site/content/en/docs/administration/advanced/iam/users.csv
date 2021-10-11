@@ -1,0 +1,5 @@
+Scope,Resource,Context,Ownership,Limit,Method,URL,Group,Membership,[No Role],Worker,User,Business,Admin,Worker,Supervisor,Maintainer,Owner,Comment
+LIST,User,N/A,N/A,,GET,/users,Admin,N/A,,,,,x,,,,,
+VIEW_SELF,User,N/A,N/A,,GET,/users/self,None,N/A,x,x,x,x,x,,,,,
+VIEW,User,N/A,None,,GET,/users/{id},Admin,N/A,,,,,x,,,,,
+VIEW,User,N/A,Self,,GET,/users/{id},None,N/A,x,x,x,x,x,,,,,The same as /user/self

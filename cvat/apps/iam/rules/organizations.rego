@@ -2,7 +2,7 @@ package organizations
 import data.utils
 
 # input: {
-#     "scope": <"CREATE"|"LIST"|"UPDATE"|"VIEW"|"DELETE"> or null,
+#     "scope": <"create"|"list"|"update"|"view"|"delete"> or null,
 #     "auth": {
 #         "user": {
 #             "id": <num>,
@@ -27,11 +27,15 @@ MAINTAINER := "maintainer"
 SUPERVISOR := "supervisor"
 WORKER     := "worker"
 
-is_maintainer {
+is_staff {
     input.auth.organization.owner.id == input.auth.user.id
 }
 
-is_maintainer {
+is_staff {
+    input.auth.organization.user.role == OWNER
+}
+
+is_staff {
     input.auth.organization.user.role == MAINTAINER
 }
 

@@ -49,7 +49,7 @@ filter = [] { # Django Q object to filter list of entries
     utils.is_admin
 } else = [] {
     utils.has_privilege(utils.USER)
-    organizations.is_maintainer
+    organizations.is_staff
 } else = qobject {
     user := input.auth.user
     qobject := [ {"owner": user.id}, {"membership__user": user.id}, "|" ]
@@ -81,7 +81,7 @@ allow {
 allow {
     input.scope == utils.VIEW
     utils.has_privilege(utils.USER)
-    organizations.is_maintainer
+    organizations.is_staff
 }
 
 allow {
@@ -93,7 +93,7 @@ allow {
 allow {
     input.scope == utils.RESEND
     utils.has_privilege(utils.WORKER)
-    organizations.is_maintainer
+    organizations.is_staff
 }
 
 allow {
@@ -105,7 +105,7 @@ allow {
 allow {
     input.scope == utils.DELETE
     utils.has_privilege(utils.USER)
-    organizations.is_maintainer
+    organizations.is_staff
 }
 
 allow {
