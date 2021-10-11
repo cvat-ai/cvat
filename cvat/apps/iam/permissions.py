@@ -27,7 +27,7 @@ class OpenPolicyAgentPermission:
                 'auth': {
                     'user': {
                         'id': user.id,
-                        'privilege': privilege.name,
+                        'privilege': getattr(privilege, 'name', None),
                     },
                     'organization': {
                         'id': organization.id,
