@@ -34,7 +34,7 @@ export default function Preview(props: Props): JSX.Element {
         );
     }
 
-    if (preview.initialized && preview.error) {
+    if (preview.initialized && !preview.preview) {
         return (
             <div className='cvat-cloud-storage-item-empty-preview' aria-hidden>
                 <CloudSyncOutlined />

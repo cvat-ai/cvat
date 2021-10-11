@@ -272,11 +272,9 @@ export default (
             const { id } = action.payload;
             const { statuses } = state;
             statuses[id] = {
-                id,
                 status: null,
                 fetching: true,
                 initialized: false,
-                error: null,
             };
             return {
                 ...state,
@@ -298,11 +296,10 @@ export default (
             };
         }
         case CloudStorageActionTypes.GET_CLOUD_STORAGE_STATUS_FAILED: {
-            const { cloudStorageID, error } = action.payload;
+            const { cloudStorageID } = action.payload;
             const { statuses } = state;
             statuses[cloudStorageID] = {
                 ...statuses[cloudStorageID],
-                error,
                 initialized: true,
                 fetching: false,
             };
@@ -315,11 +312,9 @@ export default (
             const { cloudStorageID } = action.payload;
             const { previews } = state;
             previews[cloudStorageID] = {
-                id: cloudStorageID,
                 preview: '',
                 fetching: true,
                 initialized: false,
-                error: null,
             };
             return {
                 ...state,
@@ -341,11 +336,10 @@ export default (
             };
         }
         case CloudStorageActionTypes.GET_CLOUD_STORAGE_PREVIEW_FAILED: {
-            const { cloudStorageID, error } = action.payload;
+            const { cloudStorageID } = action.payload;
             const { previews } = state;
             previews[cloudStorageID] = {
                 ...previews[cloudStorageID],
-                error,
                 initialized: true,
                 fetching: false,
             };

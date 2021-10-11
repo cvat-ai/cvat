@@ -137,13 +137,11 @@ export interface CloudStoragesQuery {
 interface CloudStorageAdditional {
     fetching: boolean;
     initialized: boolean;
-    id: number | null;
     status: string | null;
     preview: string;
-    error: string | null;
 }
-type CloudStorageStatus = Pick<CloudStorageAdditional, 'fetching' | 'initialized' | 'id' | 'error' | 'status'>;
-type CloudStoragePreview = Pick<CloudStorageAdditional, 'fetching' | 'initialized' | 'id' | 'error' | 'preview'>;
+type CloudStorageStatus = Pick<CloudStorageAdditional, 'fetching' | 'initialized' | 'status'>;
+type CloudStoragePreview = Pick<CloudStorageAdditional, 'fetching' | 'initialized' | 'preview'>;
 
 export type CloudStorage = any;
 

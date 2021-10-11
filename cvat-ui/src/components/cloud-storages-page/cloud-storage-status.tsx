@@ -29,7 +29,7 @@ export default function Status(props: Props): JSX.Element {
     let message: JSX.Element;
     if (!status || (status && status.fetching)) {
         message = <Text type='warning'>Loading ...</Text>;
-    } else if (status.initialized && status.error) {
+    } else if (status.initialized && !status.status) {
         message = <Text type='danger'>Error</Text>;
     } else {
         message = <Text type={status.status === StorageStatuses.AVAILABLE ? 'success' : 'danger'}>{status.status}</Text>;
