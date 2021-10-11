@@ -18,7 +18,7 @@ import notification from 'antd/lib/notification';
 import { CombinedState, CloudStorage } from 'reducers/interfaces';
 import { createCloudStorageAsync, updateCloudStorageAsync } from 'actions/cloud-storage-actions';
 import { ProviderType, CredentialsType } from 'utils/enums';
-import { AzureProvider, S3Provider } from '../../icons';
+import { AzureProvider, S3Provider, GoogleCloudProvider } from '../../icons';
 import S3Region from './s3-region';
 import ManifestsManager from './manifests-manager';
 
@@ -26,8 +26,8 @@ export interface Props {
     cloudStorage?: CloudStorage;
 }
 
-type CredentialsFormNames = 'key' | 'secret_key' | 'account_name' | 'session_token';
-type CredentialsCamelCaseNames = 'key' | 'secretKey' | 'accountName' | 'sessionToken';
+type CredentialsFormNames = 'key' | 'secret_key' | 'account_name' | 'session_token' | 'key_file_path';
+type CredentialsCamelCaseNames = 'key' | 'secretKey' | 'accountName' | 'sessionToken' | 'keyFilePath';
 
 interface CloudStorageForm {
     credentials_type: CredentialsType;
@@ -39,8 +39,10 @@ interface CloudStorageForm {
     key?: string;
     secret_key?: string;
     SAS_token?: string;
+    key_file_path?: string;
     description?: string;
     region?: string;
+    prefix?: string;
     manifests: string[];
 }
 
@@ -66,12 +68,14 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
         sessionToken: 'X'.repeat(300),
         key: 'X'.repeat(20),
         secretKey: 'X'.repeat(40),
+        keyFilePath: 'X'.repeat(10),
     };
 
     const [keyVisibility, setKeyVisibility] = useState(false);
     const [secretKeyVisibility, setSecretKeyVisibility] = useState(false);
     const [sessionTokenVisibility, setSessionTokenVisibility] = useState(false);
     const [accountNameVisibility, setAccountNameVisibility] = useState(false);
+    const [keyFilePathVisibility, setKeyFilePathVisibility] = useState(false);
 
     const [manifestNames, setManifestNames] = useState<string[]>([]);
 
@@ -98,9 +102,14 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
         }
 
         if (cloudStorage.providerType === ProviderType.AWS_S3_BUCKET && cloudStorage.specificAttributes) {
-            const region = new URLSearchParams(cloudStorage.specificAttributes).get('region');
+            const parsedOptions = new URLSearchParams(cloudStorage.specificAttributes);
+            const region = parsedOptions.get('region');
+            const prefix = parsedOptions.get('prefix');
             if (region) {
                 setSelectedRegion(region);
+            }
+            if (prefix) {
+                fieldsValue.prefix = prefix;
             }
         }
 
@@ -195,6 +204,7 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
 
         if (cloudStorage) {
             cloudStorageData.id = cloudStorage.id;
+            // TODO: combine that
             if (cloudStorageData.account_name === fakeCredentialsData.accountName) {
                 delete cloudStorageData.account_name;
             }
@@ -206,6 +216,9 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
             }
             if (cloudStorageData.session_token === fakeCredentialsData.sessionToken) {
                 delete cloudStorageData.session_token;
+            }
+            if (cloudStorageData.key_file_path === fakeCredentialsData.keyFilePath) {
+                delete cloudStorageData.key_file_path;
             }
             dispatch(updateCloudStorageAsync(cloudStorageData));
         } else {
@@ -219,6 +232,7 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
             secret_key: undefined,
             session_token: undefined,
             account_name: undefined,
+            key_file_path: undefined,
         });
     };
 
@@ -363,6 +377,24 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
             );
         }
 
+        if (providerType === ProviderType.GOOGLE_CLOUD_STORAGE && credentialsType === CredentialsType.KEY_FILE_PATH) {
+            return (
+                <>
+                    <Form.Item
+                        label='Key file path'
+                        name='key_file_path'
+                        rules={[{ required: true, message: 'Please, specify your key file path' }]}
+                        {...internalCommonProps}
+                    >
+                        <Input.Password
+                            visibilityToggle={keyFilePathVisibility}
+                            onChange={() => setKeyFilePathVisibility(true)}
+                        />
+                    </Form.Item>
+                </>
+            );
+        }
+
         return <></>;
     };
 
@@ -442,6 +474,56 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
         );
     };
 
+    const GoogleCloudStorageConfiguration = (): JSX.Element => {
+        const internalCommonProps = {
+            ...commonProps,
+            labelCol: { span: 6, offset: 1 },
+            wrapperCol: { offset: 1 },
+        };
+
+        // FIXME maxlength https://cloud.google.com/storage/docs/naming-buckets#requirements
+        // FIXME move specific_attributes into advanced section
+        // FIXME loocation https://cloud.google.com/storage/docs/locations
+        return (
+            <>
+                <Form.Item
+                    label='Bucket name'
+                    name='resource'
+                    rules={[{ required: true, message: 'Please, specify a bucket name' }]}
+                    {...internalCommonProps}
+                >
+                    <Input disabled={!!cloudStorage} maxLength={63} />
+                </Form.Item>
+                <Form.Item
+                    label='Authorization type'
+                    name='credentials_type'
+                    rules={[{ required: true, message: 'Please, specify credentials type' }]}
+                    {...internalCommonProps}
+                >
+                    <Select onSelect={(value: CredentialsType) => onChangeCredentialsType(value)}>
+                        <Select.Option value={CredentialsType.KEY_FILE_PATH}>
+                            Key file path
+                        </Select.Option>
+                        <Select.Option value={CredentialsType.ANONYMOUS_ACCESS}>Anonymous access</Select.Option>
+                    </Select>
+                </Form.Item>
+                {credentialsBlok()}
+                <Form.Item
+                    label='Prefix'
+                    name='prefix'
+                    {...internalCommonProps}
+                >
+                    <Input />
+                </Form.Item>
+                <S3Region
+                    selectedRegion={selectedRegion}
+                    onSelectRegion={onSelectRegion}
+                    internalCommonProps={internalCommonProps}
+                />
+            </>
+        );
+    };
+
     return (
         <Form className='cvat-cloud-storage-form' layout='horizontal' form={form}>
             <Form.Item
@@ -481,10 +563,17 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
                             Azure Blob Container
                         </span>
                     </Select.Option>
+                    <Select.Option value={ProviderType.GOOGLE_CLOUD_STORAGE}>
+                        <span className='cvat-cloud-storage-select-provider'>
+                            <GoogleCloudProvider />
+                            Google Cloud Storage
+                        </span>
+                    </Select.Option>
                 </Select>
             </Form.Item>
             {providerType === ProviderType.AWS_S3_BUCKET && AWSS3Configuration()}
             {providerType === ProviderType.AZURE_CONTAINER && AzureBlobStorageConfiguration()}
+            {providerType === ProviderType.GOOGLE_CLOUD_STORAGE && GoogleCloudStorageConfiguration()}
             <ManifestsManager form={form} manifestNames={manifestNames} setManifestNames={setManifestNames} />
             <Row justify='end'>
                 <Col>

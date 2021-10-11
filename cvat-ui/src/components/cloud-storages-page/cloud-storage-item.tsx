@@ -97,6 +97,7 @@ export default function CloudStorageItemComponent(props: Props): JSX.Element {
             size='small'
             style={style}
             className='cvat-cloud-storage-item'
+            hoverable
         >
             <Meta
                 title={(

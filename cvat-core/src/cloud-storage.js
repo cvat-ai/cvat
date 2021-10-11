@@ -14,7 +14,6 @@
      * @memberof module:API.cvat.classes
      */
     class CloudStorage {
-        // TODO: add storage availability status (avaliable/unavaliable)
         constructor(initialData) {
             const data = {
                 id: undefined,
@@ -27,6 +26,7 @@
                 key: undefined,
                 secret_key: undefined,
                 session_token: undefined,
+                key_file_path: undefined,
                 specific_attributes: undefined,
                 owner: undefined,
                 created_date: undefined,
@@ -170,6 +170,28 @@
                             if (typeof value === 'string') {
                                 if (value.trim().length) {
                                     data.session_token = value;
+                                } else {
+                                    throw new ArgumentError('Value must not be empty');
+                                }
+                            } else {
+                                throw new ArgumentError(`Value must be a string. ${typeof value} was found`);
+                            }
+                        },
+                    },
+                    /**
+                     * Key file path
+                     * @name keyFilePath
+                     * @type {string}
+                     * @memberof module:API.cvat.classes.CloudStorage
+                     * @instance
+                     * @throws {module:API.cvat.exceptions.ArgumentError}
+                     */
+                    keyFilePath: {
+                        get: () => data.key_file_path,
+                        set: (value) => {
+                            if (typeof value === 'string') {
+                                if (value.trim().length) {
+                                    data.key_file_path = value;
                                 } else {
                                     throw new ArgumentError('Value must not be empty');
                                 }
@@ -430,6 +452,10 @@
                 data.session_token = cloudStorageInstance.token;
             }
 
+            if (cloudStorageInstance.keyFilePath) {
+                data.key_file_path = cloudStorageInstance.keyFilePath;
+            }
+
             if (cloudStorageInstance.specificAttributes) {
                 data.specific_attributes = cloudStorageInstance.specificAttributes;
             }
@@ -437,7 +463,7 @@
         }
         // update
         if (typeof this.id !== 'undefined') {
-            // providr_type and recource should not change;
+            // provider_type and recource should not change;
             // send to the server only the values that have changed
             const initialData = {};
             if (this.displayName) {
