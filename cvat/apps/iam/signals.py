@@ -15,8 +15,6 @@ if settings.IAM_TYPE == 'BASIC':
     from allauth.account.models import EmailAddress
 
     def create_user(sender, instance, created, **kwargs):
-        from django.contrib.auth.models import Group
-
         if instance.is_superuser and instance.is_staff:
             db_group = Group.objects.get(name=settings.IAM_ADMIN_ROLE)
             instance.groups.add(db_group)
@@ -25,10 +23,10 @@ if settings.IAM_TYPE == 'BASIC':
             if allauth_settings.EMAIL_REQUIRED:
                 EmailAddress.objects.get_or_create(user=instance,
                     email=instance.email, primary=True, verified=True)
-
-        for role in settings.IAM_DEFAULT_ROLES:
-            db_group = Group.objects.get(name=role)
-            instance.groups.add(db_group)
+        else: # don't need to add default groups for superuser
+            for role in settings.IAM_DEFAULT_ROLES:
+                db_group = Group.objects.get(name=role)
+                instance.groups.add(db_group)
 
     # Add default groups and add admin rights to super users.
     post_save.connect(create_user, sender=User)
