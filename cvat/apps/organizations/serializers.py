@@ -39,14 +39,35 @@ class OrganizationWriteSerializer(serializers.ModelSerializer):
         return organization
 
 
-class MembershipSerializer(serializers.ModelSerializer):
+class MembershipReadSerializer(serializers.ModelSerializer):
+    user = BasicUserSerializer()
     class Meta:
         model = Membership
         fields = ['id', 'user', 'organization', 'is_active', 'joined_date', 'role']
-        read_only_fields = ['is_active', 'joined_date', 'user', 'organization']
+        read_only_fields = fields
+
+class MembershipWriteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Membership
+        fields = ['id', 'user', 'organization', 'is_active', 'joined_date', 'role']
+        read_only_fields = ['user', 'organization', 'is_active', 'joined_date']
+
+class InvitationReadSerializer(serializers.ModelSerializer):
+    role = serializers.ChoiceField(Membership.role.field.choices,
+        source='membership.role')
+    user = BasicUserSerializer(source='membership.user')
+    organization = serializers.PrimaryKeyRelatedField(
+        queryset=Organization.objects.all(),
+        source='membership.organization')
+
+    class Meta:
+        model = Invitation
+        fields = ['key', 'accepted', 'created_date', 'owner', 'role',
+            'user', 'organization']
+        read_only_fields = fields
 
 
-class InvitationSerializer(serializers.ModelSerializer):
+class InvitationWriteSerializer(serializers.ModelSerializer):
     role = serializers.ChoiceField(Membership.role.field.choices,
         source='membership.role')
     user = serializers.PrimaryKeyRelatedField(
