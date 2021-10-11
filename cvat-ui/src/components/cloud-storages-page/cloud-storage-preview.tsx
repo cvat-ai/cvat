@@ -4,7 +4,7 @@
 
 import React, { useEffect } from 'react';
 
-import { useDispatch, useSelector, shallowEqual } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { CloudSyncOutlined } from '@ant-design/icons';
 import Spin from 'antd/lib/spin';
 import { getCloudStoragePreviewAsync } from 'actions/cloud-storage-actions';
@@ -14,11 +14,9 @@ interface Props {
     cloudStorage: CloudStorage;
 }
 
-export default function Preview(props: Props): JSX.Element {
-    const { cloudStorage } = props;
+export default function Preview({ cloudStorage }: Props): JSX.Element {
     const dispatch = useDispatch();
-    const previews = useSelector((state: CombinedState) => state.cloudStorages.previews, shallowEqual);
-    const preview = previews[cloudStorage.id];
+    const preview = useSelector((state: CombinedState) => state.cloudStorages.previews[cloudStorage.id]);
 
     useEffect(() => {
         if (preview === undefined) {

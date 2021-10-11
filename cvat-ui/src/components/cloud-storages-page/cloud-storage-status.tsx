@@ -5,7 +5,7 @@
 import React, { useEffect } from 'react';
 import Paragraph from 'antd/lib/typography/Paragraph';
 import Text from 'antd/lib/typography/Text';
-import { useDispatch, useSelector, shallowEqual } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { getCloudStorageStatusAsync } from 'actions/cloud-storage-actions';
 import { CombinedState, CloudStorage } from 'reducers/interfaces';
 import { StorageStatuses } from '../../utils/enums';
@@ -14,11 +14,9 @@ interface Props {
     cloudStorage: CloudStorage;
 }
 
-export default function Status(props: Props): JSX.Element {
-    const { cloudStorage } = props;
+export default function Status({ cloudStorage }: Props): JSX.Element {
     const dispatch = useDispatch();
-    const statuses = useSelector((state: CombinedState) => state.cloudStorages.statuses, shallowEqual);
-    const status = statuses[cloudStorage.id];
+    const status = useSelector((state: CombinedState) => state.cloudStorages.statuses[cloudStorage.id]);
 
     useEffect(() => {
         if (status === undefined) {

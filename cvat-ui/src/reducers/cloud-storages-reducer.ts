@@ -278,7 +278,7 @@ export default (
             };
             return {
                 ...state,
-                ...statuses,
+                statuses,
             };
         }
         case CloudStorageActionTypes.GET_CLOUD_STORAGE_STATUS_SUCCESS: {
@@ -292,7 +292,7 @@ export default (
             };
             return {
                 ...state,
-                ...statuses,
+                statuses,
             };
         }
         case CloudStorageActionTypes.GET_CLOUD_STORAGE_STATUS_FAILED: {
@@ -305,7 +305,7 @@ export default (
             };
             return {
                 ...state,
-                ...statuses,
+                statuses,
             };
         }
         case CloudStorageActionTypes.GET_CLOUD_STORAGE_PREVIEW: {
@@ -318,7 +318,7 @@ export default (
             };
             return {
                 ...state,
-                ...previews,
+                previews,
             };
         }
         case CloudStorageActionTypes.GET_CLOUD_STORAGE_PREVIEW_SUCCESS: {
@@ -332,7 +332,7 @@ export default (
             };
             return {
                 ...state,
-                ...previews,
+                previews,
             };
         }
         case CloudStorageActionTypes.GET_CLOUD_STORAGE_PREVIEW_FAILED: {
@@ -345,7 +345,7 @@ export default (
             };
             return {
                 ...state,
-                ...previews,
+                previews,
             };
         }
         case AuthActionTypes.LOGOUT_SUCCESS: {
