@@ -104,7 +104,16 @@
     "precommit:cvat-core": "cd cvat-ui && eslint --fix",
     "precommit:cvat-canvas": "cd cvat-ui && eslint --fix",
     "precommit:cvat-canvas3d": "cd cvat-ui && eslint --fix",
-    "precommit:cvat-ui": "cd cvat-ui && eslint --fix"
+    "precommit:cvat-ui": "cd cvat-ui && eslint --fix",
+    "build": "npm run build --workspace=cvat-ui",
+    "start": "npm run start --workspace=cvat-ui",
+    "build:canvas": "npm run build --workspace=cvat-canvas",
+    "server:canvas": "npm run server --workspace=cvat-canvas",
+    "build:canvas3d": "npm run build --workspace=cvat-canvas3d",
+    "server:canvas3d": "npm run server --workspace=cvat-canvas3d",
+    "build:core": "npm run build --workspace=cvat-core",
+    "build:data": "npm run build --workspace=cvat-data",
+    "server:data": "npm run server --workspace=cvat-data"
   },
   "repository": {
     "type": "git",
