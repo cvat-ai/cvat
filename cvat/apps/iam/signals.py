@@ -24,9 +24,10 @@ if settings.IAM_TYPE == 'BASIC':
                 EmailAddress.objects.get_or_create(user=instance,
                     email=instance.email, primary=True, verified=True)
         else: # don't need to add default groups for superuser
-            for role in settings.IAM_DEFAULT_ROLES:
-                db_group = Group.objects.get(name=role)
-                instance.groups.add(db_group)
+            if created:
+                for role in settings.IAM_DEFAULT_ROLES:
+                    db_group = Group.objects.get(name=role)
+                    instance.groups.add(db_group)
 
     # Add default groups and add admin rights to super users.
     post_save.connect(create_user, sender=User)
