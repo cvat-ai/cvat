@@ -135,6 +135,7 @@ class ProjectAnnotationAndData:
             db_project=self.db_project,
             task_annotations=self.task_annotations,
         )
+        project_data.soft_attribute_import = True
 
         importer(dataset_file, project_data, self.load_dataset_data)
 

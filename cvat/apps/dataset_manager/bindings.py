@@ -15,7 +15,7 @@ from datumaro.components.dataset import Dataset
 import datumaro.components.extractor as datumaro
 from cvat.apps.dataset_manager.formats.utils import get_label_color
 from cvat.apps.engine.frame_provider import FrameProvider
-from cvat.apps.engine.models import AttributeType, ShapeType, Project, Task, Label, DimensionType, Image as Img
+from cvat.apps.engine.models import AttributeType, AttributeSpec, ShapeType, Project, Task, Label, DimensionType, Image as Img
 from datumaro.util import cast
 from datumaro.util.image import ByteImage, Image
 
@@ -30,6 +30,7 @@ class InstanceLabelData:
 
         db_labels = instance.label_set.all().prefetch_related('attributespec_set').order_by('pk')
 
+        self._soft_attribute_import = False
         self._label_mapping = OrderedDict[int, Label](
             ((db_label.id, db_label) for db_label in db_labels),
         )
@@ -105,6 +106,40 @@ class InstanceLabelData:
             except Exception as e:
                 raise Exception("Failed to convert attribute '%s'='%s': %s" %
                     (self._get_label_name(label_id), value, e))
+
+        elif self._soft_attribute_import:
+            if isinstance(value, (int, float)):
+                attr_type = AttributeType.NUMBER
+            elif isinstance(value, bool):
+                attr_type = AttributeType.CHECKBOX
+            else:
+                value = str(value)
+                if value.lower() in {'true', 'false'}:
+                    value = value.lower() == 'true'
+                    attr_type = AttributeType.CHECKBOX
+                else:
+                    attr_type = AttributeType.TEXT
+
+            attr_spec = AttributeSpec(
+                label_id=label_id,
+                name=attribute.name,
+                input_type=attr_type,
+                # Could be changed after Datumaro tracks support
+                mutable=True,
+            )
+            attr_spec.save()
+            spec_id = attr_spec.id
+            if label_id not in self._label_mapping:
+                self._label_mapping[label_id] = Label.objects.get(id=label_id)
+            if label_id not in self._attribute_mapping:
+                self._attribute_mapping[label_id] = {'mutable': {}, 'immutable': {}, 'spec': {}}
+            self._attribute_mapping[label_id]['immutable'][spec_id] = attribute.name
+            self._attribute_mapping[label_id]['spec'][spec_id] = attr_spec
+            self._attribute_mapping_merged[label_id] = {
+                **self._attribute_mapping[label_id]['mutable'],
+                **self._attribute_mapping[label_id]['immutable'],
+            }
+
 
         return { 'spec_id': spec_id, 'value': value }
 
@@ -393,6 +428,14 @@ class TaskData(InstanceLabelData):
     def meta(self):
         return self._meta
 
+    @property
+    def soft_attribute_import(self):
+        return self._soft_attribute_import
+
+    @soft_attribute_import.setter
+    def soft_attribute_import(self, value: bool):
+        self._soft_attribute_import = value
+
     def _import_tag(self, tag):
         _tag = tag._asdict()
         label_id = self._get_label_id(_tag.pop('label'))
@@ -410,7 +453,10 @@ class TaskData(InstanceLabelData):
         _shape['label_id'] = label_id
         _shape['attributes'] = [self._import_attribute(label_id, attrib)
             for attrib in _shape['attributes']
-            if self._get_attribute_id(label_id, attrib.name)]
+            if self._get_attribute_id(label_id, attrib.name) or (
+                self.soft_attribute_import and attrib.name not in {'ooccluded', 'track_id', 'keyframe'}
+            )
+        ]
         _shape['points'] = list(map(float, _shape['points']))
         return _shape
 
@@ -524,6 +570,8 @@ class ProjectData(InstanceLabelData):
         self._host = host
         self._create_callback = create_callback
         self._MAX_ANNO_SIZE = 30000
+        self._soft_attribute_import = False
+        self._tasks_data: Dict[int, TaskData] = {}
         self._frame_info: Dict[Tuple[int, int], Literal["path", "width", "height", "subset"]] = dict()
         self._frame_mapping: Dict[Tuple[str, str], Tuple[str, str]] = dict()
         self._frame_steps: Dict[int, int] = {}
@@ -794,14 +842,30 @@ class ProjectData(InstanceLabelData):
         return list(self._db_tasks.values())
 
     @property
+    def soft_attribute_import(self):
+        return self._soft_attribute_import
+
+    @soft_attribute_import.setter
+    def soft_attribute_import(self, value: bool):
+        self._soft_attribute_import =  value
+        for task_data in self._tasks_data.values():
+            task_data.soft_attribute_import = value
+
+    @property
     def task_data(self):
         for task_id, task in self._db_tasks.items():
-            yield TaskData(
-                annotation_ir=self._annotation_irs[task_id],
-                db_task=task,
-                host=self._host,
-                create_callback=self._task_annotaions[task_id].create,
-            )
+            if task_id in self._tasks_data:
+                yield self._tasks_data[task_id]
+            else:
+                task_data = TaskData(
+                    annotation_ir=self._annotation_irs[task_id],
+                    db_task=task,
+                    host=self._host,
+                    create_callback=self._task_annotaions[task_id].create,
+                )
+                task_data.soft_attribute_import = self.soft_attribute_import
+                self._tasks_data[task_id] = task_data
+                yield task_data
 
     @staticmethod
     def _get_filename(path):
@@ -1265,9 +1329,9 @@ def import_dm_annotations(dm_dataset: Dataset, instance_data: Union[TaskData, Pr
                     instance_data.add_shape(instance_data.LabeledShape(
                         type=shapes[ann.type],
                         frame=frame_number,
-                        points = ann.points,
+                        points=ann.points,
                         label=label_cat.items[ann.label].name,
-                        occluded=ann.attributes.get('occluded') == True,
+                        occluded=ann.attributes.pop('occluded', None) == True,
                         z_order=ann.z_order,
                         group=group_map.get(ann.group, 0),
                         source='manual',
