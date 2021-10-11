@@ -1376,7 +1376,7 @@
 
                 // TODO: Remove after server fix
                 await Promise.all(
-                    response.data.results.map(
+                    response.data.map(
                         (result) => new Promise((resolve) => {
                             getUsers({ id: result.owner }).then((users) => {
                                 [result.owner] = users;

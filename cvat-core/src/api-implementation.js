@@ -316,9 +316,7 @@ const config = require('./config');
 
         cvat.organizations.get.implementation = async () => {
             const organizationsData = await serverProxy.organizations.get();
-            const organizations = organizationsData.results.map(
-                (organizationData) => new Organization(organizationData),
-            );
+            const organizations = organizationsData.map((organizationData) => new Organization(organizationData));
             return organizations;
         };
 
