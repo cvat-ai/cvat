@@ -143,7 +143,7 @@ and copy `SAS token` (will be used in CVAT to access your container).
 
 ![](/images/azure_blob_container_tutorial3.jpg)
 
-For personal use, you can enter `Access Key` from the your storage account in the `SAS Token` field,
+For personal use, you can enter the `Access Key` from the your storage account in the `SAS Token` field,
 `access key` can be found in the `security + networking` section.
 Click `show keys` to show the key.
 
