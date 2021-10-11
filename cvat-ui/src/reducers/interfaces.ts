@@ -134,21 +134,16 @@ export interface CloudStoragesQuery {
     [key: string]: string | number | null | undefined;
 }
 
-export interface CloudStorageStatus {
+interface CloudStorageAdditional {
     fetching: boolean;
     initialized: boolean;
     id: number | null;
     status: string | null;
-    error: string | null;
-}
-
-export interface CloudStoragePreview {
-    fetching: boolean;
-    initialized: boolean;
-    id: number | null;
     preview: string;
     error: string | null;
 }
+type CloudStorageStatus = Pick<CloudStorageAdditional, 'fetching' | 'initialized' | 'id' | 'error' | 'status'>;
+type CloudStoragePreview = Pick<CloudStorageAdditional, 'fetching' | 'initialized' | 'id' | 'error' | 'preview'>;
 
 export type CloudStorage = any;
 
@@ -157,8 +152,12 @@ export interface CloudStoragesState {
     fetching: boolean;
     count: number;
     current: CloudStorage[];
-    statuses: CloudStorageStatus[];
-    previews: CloudStoragePreview[];
+    statuses: {
+        [index: number]: CloudStorageStatus;
+    };
+    previews: {
+        [index: number]: CloudStoragePreview;
+    };
     gettingQuery: CloudStoragesQuery;
     activities: {
         creates: {

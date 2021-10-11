@@ -4,17 +4,15 @@
 
 import { CloudStorageActions, CloudStorageActionTypes } from 'actions/cloud-storage-actions';
 import { AuthActions, AuthActionTypes } from 'actions/auth-actions';
-import {
-    CloudStoragesState, CloudStorage, CloudStorageStatus, CloudStoragePreview,
-} from './interfaces';
+import { CloudStoragesState, CloudStorage } from './interfaces';
 
 const defaultState: CloudStoragesState = {
     initialized: false,
     fetching: false,
     count: 0,
     current: [],
-    statuses: [],
-    previews: [],
+    statuses: {},
+    previews: {},
     gettingQuery: {
         page: 1,
         id: null,
@@ -68,8 +66,8 @@ export default (
                 fetching: true,
                 count: 0,
                 current: [],
-                statuses: [],
-                previews: [],
+                statuses: {},
+                previews: {},
             };
         case CloudStorageActionTypes.GET_CLOUD_STORAGE_SUCCESS: {
             const { count, query, array } = action.payload;
@@ -273,19 +271,13 @@ export default (
         case CloudStorageActionTypes.GET_CLOUD_STORAGE_STATUS: {
             const { id } = action.payload;
             const { statuses } = state;
-            const index = statuses.findIndex((item: CloudStorageStatus) => item.id === id);
-            const newItem: CloudStorageStatus = {
+            statuses[id] = {
                 id,
                 status: null,
                 fetching: true,
                 initialized: false,
                 error: null,
             };
-            if (index !== -1) {
-                statuses[index] = newItem;
-            } else {
-                statuses.push(newItem);
-            }
             return {
                 ...state,
                 ...statuses,
@@ -294,15 +286,12 @@ export default (
         case CloudStorageActionTypes.GET_CLOUD_STORAGE_STATUS_SUCCESS: {
             const { cloudStorageID, status } = action.payload;
             const { statuses } = state;
-            const index = statuses.findIndex((item) => item.id === cloudStorageID);
-            if (index !== -1) {
-                statuses[index] = {
-                    ...statuses[index],
-                    status,
-                    initialized: true,
-                    fetching: false,
-                };
-            }
+            statuses[cloudStorageID] = {
+                ...statuses[cloudStorageID],
+                status,
+                initialized: true,
+                fetching: false,
+            };
             return {
                 ...state,
                 ...statuses,
@@ -311,15 +300,12 @@ export default (
         case CloudStorageActionTypes.GET_CLOUD_STORAGE_STATUS_FAILED: {
             const { cloudStorageID, error } = action.payload;
             const { statuses } = state;
-            const index = statuses.findIndex((item) => item.id === cloudStorageID);
-            if (index !== -1) {
-                statuses[index] = {
-                    ...statuses[index],
-                    error,
-                    initialized: true,
-                    fetching: false,
-                };
-            }
+            statuses[cloudStorageID] = {
+                ...statuses[cloudStorageID],
+                error,
+                initialized: true,
+                fetching: false,
+            };
             return {
                 ...state,
                 ...statuses,
@@ -328,19 +314,13 @@ export default (
         case CloudStorageActionTypes.GET_CLOUD_STORAGE_PREVIEW: {
             const { cloudStorageID } = action.payload;
             const { previews } = state;
-            const index = previews.findIndex((item: CloudStoragePreview) => item.id === cloudStorageID);
-            const newItem: CloudStoragePreview = {
+            previews[cloudStorageID] = {
                 id: cloudStorageID,
                 preview: '',
                 fetching: true,
                 initialized: false,
                 error: null,
             };
-            if (index !== -1) {
-                previews[index] = newItem;
-            } else {
-                previews.push(newItem);
-            }
             return {
                 ...state,
                 ...previews,
@@ -349,15 +329,12 @@ export default (
         case CloudStorageActionTypes.GET_CLOUD_STORAGE_PREVIEW_SUCCESS: {
             const { cloudStorageID, preview } = action.payload;
             const { previews } = state;
-            const index = previews.findIndex((item) => item.id === cloudStorageID);
-            if (index !== -1) {
-                previews[index] = {
-                    ...previews[index],
-                    preview,
-                    initialized: true,
-                    fetching: false,
-                };
-            }
+            previews[cloudStorageID] = {
+                ...previews[cloudStorageID],
+                preview,
+                initialized: true,
+                fetching: false,
+            };
             return {
                 ...state,
                 ...previews,
@@ -366,15 +343,12 @@ export default (
         case CloudStorageActionTypes.GET_CLOUD_STORAGE_PREVIEW_FAILED: {
             const { cloudStorageID, error } = action.payload;
             const { previews } = state;
-            const index = previews.findIndex((item) => item.id === cloudStorageID);
-            if (index !== -1) {
-                previews[index] = {
-                    ...previews[index],
-                    error,
-                    initialized: true,
-                    fetching: false,
-                };
-            }
+            previews[cloudStorageID] = {
+                ...previews[cloudStorageID],
+                error,
+                initialized: true,
+                fetching: false,
+            };
             return {
                 ...state,
                 ...previews,
