@@ -31,7 +31,7 @@ const organizationActions = {
     createOrganizationFailed: (slug: string, error: any) =>
         createAction(OrganizationActionsTypes.CREATE_ORGANIZATION_FAILED, { slug, error }),
     activateOrganization: () => createAction(OrganizationActionsTypes.ACTIVATE_ORGANIZATION),
-    activateOrganizationSuccess: (organization: any) =>
+    activateOrganizationSuccess: (organization: any | null) =>
         createAction(OrganizationActionsTypes.ACTIVATE_ORGANIZATION_SUCCESS, { organization }),
     activateOrganizationFailed: (error: any, slug: string | null) =>
         createAction(OrganizationActionsTypes.ACTIVATE_ORGANIZATION_FAILED, { slug, error }),
@@ -46,6 +46,8 @@ export function activateOrganizationAsync(organizations: any[]): ThunkAction {
                 const currentOrganization = organizations.find((organization) => organization.slug === curSlug);
                 await core.organizations.activate(currentOrganization);
                 dispatch(organizationActions.activateOrganizationSuccess(currentOrganization));
+            } else {
+                dispatch(organizationActions.activateOrganizationSuccess(null));
             }
         } catch (error) {
             dispatch(

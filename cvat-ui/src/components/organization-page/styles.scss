@@ -20,6 +20,10 @@
     > div:nth-child(1) {
         align-items: flex-end;
 
+        .cvat-organization-top-bar-buttons-block {
+            text-align: end;
+        }
+
         .cvat-organization-top-bar-descriptions {
             > span {
                 display: block;
@@ -87,4 +91,10 @@
     justify-content: center;
     margin-top: 8px;
     margin-bottom: 8px;
+}
+
+.cvat-remove-organization-submit {
+    > input {
+        margin-top: $grid-unit-size;
+    }
 }
