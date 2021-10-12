@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2020 Intel Corporation
+// Copyright (C) 2019-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -9,6 +9,7 @@ module.exports = {
     parserOptions: {
         parser: '@typescript-eslint/parser',
         ecmaVersion: 6,
+        project: ['./tsconfig.json'],
     },
     plugins: ['@typescript-eslint', 'import'],
     extends: [
