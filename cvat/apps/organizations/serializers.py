@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ObjectDoesNotExist
 from rest_framework import serializers
 from .models import Invitation, Membership, Organization
 from cvat.apps.engine.serializers import BasicUserSerializer
@@ -70,9 +71,7 @@ class InvitationReadSerializer(serializers.ModelSerializer):
 class InvitationWriteSerializer(serializers.ModelSerializer):
     role = serializers.ChoiceField(Membership.role.field.choices,
         source='membership.role')
-    user = serializers.PrimaryKeyRelatedField(
-        queryset=get_user_model().objects.all(),
-        source='membership.user')
+    email = serializers.EmailField(source='membership.user.email')
     organization = serializers.PrimaryKeyRelatedField(
         queryset=Organization.objects.all(),
         source='membership.organization')
@@ -80,13 +79,20 @@ class InvitationWriteSerializer(serializers.ModelSerializer):
     class Meta:
         model = Invitation
         fields = ['key', 'accepted', 'created_date', 'owner', 'role',
-            'user', 'organization']
+            'email', 'organization']
         read_only_fields = ['key', 'created_date', 'owner']
 
     def create(self, validated_data):
         membership_data = validated_data.pop('membership')
+        try:
+            user = get_user_model().objects.get(**membership_data['user'])
+            del membership_data['user']
+        except ObjectDoesNotExist:
+            raise serializers.ValidationError(f'You cannot invite an user '
+                f'with {membership_data["user"]["email"]} email. It is not '
+                f'a valid email in the system.')
 
-        membership, created = Membership.objects.get_or_create(**membership_data)
+        membership, created = Membership.objects.get_or_create(**membership_data, user=user)
         if not created:
             raise serializers.ValidationError('The user is a member of '
                 'the organization already.')
