@@ -95,17 +95,8 @@ class InvitationWriteSerializer(serializers.ModelSerializer):
 
         return invitation
 
-class InvitationBasicSerializer(serializers.ModelSerializer):
-    owner = BasicUserSerializer()
-    class Meta:
-        model = Invitation
-        fields = ['key', 'accepted', 'created_date', 'owner']
-        read_only_fields = fields
-
-
 class MembershipReadSerializer(serializers.ModelSerializer):
     user = BasicUserSerializer()
-    invitation = InvitationBasicSerializer()
     class Meta:
         model = Membership
         fields = ['id', 'user', 'organization', 'is_active', 'joined_date', 'role',
