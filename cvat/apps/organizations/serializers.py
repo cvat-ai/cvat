@@ -39,20 +39,6 @@ class OrganizationWriteSerializer(serializers.ModelSerializer):
 
         return organization
 
-
-class MembershipReadSerializer(serializers.ModelSerializer):
-    user = BasicUserSerializer()
-    class Meta:
-        model = Membership
-        fields = ['id', 'user', 'organization', 'is_active', 'joined_date', 'role']
-        read_only_fields = fields
-
-class MembershipWriteSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Membership
-        fields = ['id', 'user', 'organization', 'is_active', 'joined_date', 'role']
-        read_only_fields = ['user', 'organization', 'is_active', 'joined_date']
-
 class InvitationReadSerializer(serializers.ModelSerializer):
     role = serializers.ChoiceField(Membership.role.field.choices,
         source='membership.role')
@@ -60,6 +46,7 @@ class InvitationReadSerializer(serializers.ModelSerializer):
     organization = serializers.PrimaryKeyRelatedField(
         queryset=Organization.objects.all(),
         source='membership.organization')
+    owner = BasicUserSerializer()
 
     class Meta:
         model = Invitation
@@ -107,3 +94,26 @@ class InvitationWriteSerializer(serializers.ModelSerializer):
         invitation.send()
 
         return invitation
+
+class InvitationBasicSerializer(serializers.ModelSerializer):
+    owner = BasicUserSerializer()
+    class Meta:
+        model = Invitation
+        fields = ['key', 'accepted', 'created_date', 'owner']
+        read_only_fields = fields
+
+
+class MembershipReadSerializer(serializers.ModelSerializer):
+    user = BasicUserSerializer()
+    invitation = InvitationBasicSerializer()
+    class Meta:
+        model = Membership
+        fields = ['id', 'user', 'organization', 'is_active', 'joined_date', 'role',
+            'invitation']
+        read_only_fields = fields
+
+class MembershipWriteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Membership
+        fields = ['id', 'user', 'organization', 'is_active', 'joined_date', 'role']
+        read_only_fields = ['user', 'organization', 'is_active', 'joined_date']
