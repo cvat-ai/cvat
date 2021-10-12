@@ -169,8 +169,6 @@ export enum AnnotationActionTypes {
     REMOVE_JOB_ANNOTATIONS_FAILED = 'REMOVE_JOB_ANNOTATIONS_FAILED',
     REMOVE_ANNOTATIONS_INRANGE_SUCCESS = 'REMOVE_ANNOTATIONS_INRANGE_SUCCESS',
     REMOVE_ANNOTATIONS_INRANGE_FAILED = 'REMOVE_ANNOTATIONS_INRANGE_FAILED',
-    REMOVE_ANNOTATIONS_INRANGE = 'REMOVE_ANNOTATIONS_INRANGE',
-    CHANGE_REMOVE_ANNOTATIONS_RANGE = 'CHANGE_REMOVE_ANNOTATIONS_RANGE',
     UPDATE_CANVAS_CONTEXT_MENU = 'UPDATE_CANVAS_CONTEXT_MENU',
     UNDO_ACTION_SUCCESS = 'UNDO_ACTION_SUCCESS',
     UNDO_ACTION_FAILED = 'UNDO_ACTION_FAILED',
@@ -527,10 +525,7 @@ export function removeAnnotationsinRangeAsync(sessionInstance: any, startFrame: 
 
             dispatch({
                 type: AnnotationActionTypes.REMOVE_ANNOTATIONS_INRANGE_SUCCESS,
-                payload: {
-                    startFrame,
-                    endFrame,
-                },
+                payload: { },
             });
 
         }catch(error){
@@ -542,26 +537,6 @@ export function removeAnnotationsinRangeAsync(sessionInstance: any, startFrame: 
             });
         }
     }
-}
-
-
-export function removeAnnotationsinRange(sessionInstance: any | null): AnyAction {
-    return {
-        type: AnnotationActionTypes.REMOVE_ANNOTATIONS_INRANGE,
-        payload: {
-            sessionInstance,
-        },
-    };
-}
-
-export function changeRemoveAnnotationRange(startFrame: number, endFrame: number): AnyAction {
-    return {
-        type: AnnotationActionTypes.CHANGE_REMOVE_ANNOTATIONS_RANGE,
-        payload: {
-            startFrame,
-            endFrame,
-        },
-    };
 }
 
 export function removeObjectAsync(sessionInstance: any, objectState: any, force: boolean): ThunkAction {

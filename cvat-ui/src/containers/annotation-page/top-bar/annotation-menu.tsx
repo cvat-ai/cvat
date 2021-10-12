@@ -19,12 +19,14 @@ import {
     switchSubmitReviewDialog as switchSubmitReviewDialogAction,
     setForceExitAnnotationFlag as setForceExitAnnotationFlagAction,
     removeAnnotationsinRange as removeAnnotationsinRangeAction,
+    removeAnnotationsinRangeAsync as removeAnnotationsinRangeAsyncAction,
 } from 'actions/annotation-actions';
 import { exportActions } from 'actions/export-actions';
 
 interface StateToProps {
     annotationFormats: any;
     jobInstance: any;
+    stopFrame: any;
     loadActivity: string | null;
     user: any;
 }
@@ -34,6 +36,7 @@ interface DispatchToProps {
     showExportModal(task: any): void;
     removeAnnotations(sessionInstance: any): void;
     removeAnnotationsinRange(sessionInstance: any): void;
+    removeAnnotationinRangeAsync(sessionInstance: any, startnumber:number, endnumber:number): void;
     switchRequestReviewDialog(visible: boolean): void;
     switchSubmitReviewDialog(visible: boolean): void;
     setForceExitAnnotationFlag(forceExit: boolean): void;
@@ -45,7 +48,10 @@ function mapStateToProps(state: CombinedState): StateToProps {
     const {
         annotation: {
             activities: { loads: jobLoads },
-            job: { instance: jobInstance },
+            job: {
+                instance: jobInstance,
+                instance: { stopFrame },
+            },
         },
         formats: { annotationFormats },
         tasks: {
@@ -60,6 +66,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
     return {
         loadActivity: taskID in loads || jobID in jobLoads ? loads[taskID] || jobLoads[jobID] : null,
         jobInstance,
+        stopFrame,
         annotationFormats,
         user,
     };
@@ -78,6 +85,9 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         },
         removeAnnotationsinRange(sessionInstance: any){
             dispatch(removeAnnotationsinRangeAction(sessionInstance));
+        },
+        removeAnnotationinRangeAsync(sessionInstance:any, startnumber: number, endnumber: number){
+            dispatch(removeAnnotationsinRangeAsyncAction(sessionInstance, startnumber, endnumber, false));
         },
         switchRequestReviewDialog(visible: boolean): void {
             dispatch(switchRequestReviewDialogAction(visible));
@@ -102,6 +112,7 @@ type Props = StateToProps & DispatchToProps & RouteComponentProps;
 function AnnotationMenuContainer(props: Props): JSX.Element {
     const {
         jobInstance,
+        stopFrame,
         user,
         annotationFormats: { loaders, dumpers },
         history,
@@ -109,6 +120,7 @@ function AnnotationMenuContainer(props: Props): JSX.Element {
         loadAnnotations,
         showExportModal,
         removeAnnotationsinRange,
+        removeAnnotationinRangeAsync,
         removeAnnotations,
         switchRequestReviewDialog,
         switchSubmitReviewDialog,
@@ -116,10 +128,6 @@ function AnnotationMenuContainer(props: Props): JSX.Element {
         saveAnnotations,
         updateJob,
     } = props;
-
-    const removeRange= (): void => {
-        removeAnnotationsinRange(jobInstance);
-    }
 
     const onClickMenu = (params: MenuInfo, file?: File): void => {
         if (params.keyPath.length > 1) {
@@ -155,6 +163,10 @@ function AnnotationMenuContainer(props: Props): JSX.Element {
         }
     };
 
+    const removeRange = (startFrame: number, endFrame: number) : void=>{
+        removeAnnotationinRangeAsync(jobInstance, startFrame ,endFrame);
+    }
+
     const isReviewer = jobInstance.reviewer?.id === user.id || user.isSuperuser;
 
     return (
@@ -169,6 +181,7 @@ function AnnotationMenuContainer(props: Props): JSX.Element {
             saveAnnotations={saveAnnotations}
             jobInstance={jobInstance}
             isReviewer={isReviewer}
+            stopFrame= {stopFrame}
         />
     );
 }

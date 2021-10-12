@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
+import { useState } from 'react';
 import Menu from 'antd/lib/menu';
 import Modal from 'antd/lib/modal';
 import Button from 'antd/lib/button';
@@ -13,7 +14,7 @@ import ExportDatasetModal from 'components/export-dataset/export-dataset-modal';
 import LoadSubmenu from 'components/actions-menu/load-submenu';
 import { DimensionType } from '../../../reducers/interfaces';
 
-import RemoveAnnotationsRangeContainer from 'containers/annotation-page/top-bar/remove-range-confirm';
+import RemoveAnnotationsRangeComponent from './remove-range-confirm';
 
 interface Props {
     taskMode: string;
@@ -22,8 +23,9 @@ interface Props {
     loadActivity: string | null;
     isReviewer: boolean;
     jobInstance: any;
+    stopFrame: number;
     onClickMenu(params: MenuInfo, file?: File): void;
-    removeRange(): void;
+    removeRange(startnumber: number, endnumber: number): void;
     setForceExitAnnotationFlag(forceExit: boolean): void;
     saveAnnotations(jobInstance: any, afterSave?: () => void): void;
 }
@@ -45,11 +47,14 @@ export default function AnnotationMenuComponent(props: Props): JSX.Element {
         loadActivity,
         isReviewer,
         jobInstance,
+        stopFrame,
         onClickMenu,
         removeRange,
         setForceExitAnnotationFlag,
         saveAnnotations,
     } = props;
+
+    const [openRemoveRangeComponent, toggleOpenRemoveRangeComponent] = useState(false);
 
     const jobStatus = jobInstance.status;
     const taskID = jobInstance.task.id;
@@ -141,7 +146,7 @@ export default function AnnotationMenuComponent(props: Props): JSX.Element {
                 },
                 okText: 'Remove All',
                 onCancel: () => {
-                    removeRange();
+                    toggleOpenRemoveRangeComponent(!openRemoveRangeComponent);
                 },
                 cancelText: "Select Range",
                 cancelButtonProps: {
@@ -179,6 +184,7 @@ export default function AnnotationMenuComponent(props: Props): JSX.Element {
 
     const is2d = jobInstance.task.dimension === DimensionType.DIM_2D;
 
+
     return (
         <Menu onClick={onClickMenuWrapper} className='cvat-annotation-menu' selectable={false}>
             {LoadSubmenu({
@@ -204,7 +210,14 @@ export default function AnnotationMenuComponent(props: Props): JSX.Element {
             )}
             {jobStatus === 'completed' && <Menu.Item key={Actions.RENEW_JOB}>Renew the job</Menu.Item>}
             <ExportDatasetModal />
-            <RemoveAnnotationsRangeContainer/>
+            <RemoveAnnotationsRangeComponent
+                visible={openRemoveRangeComponent}
+                removeinRange={removeRange}
+                stopFrame={stopFrame}
+                cancel= {()=>{toggleOpenRemoveRangeComponent(!openRemoveRangeComponent)}}
+            ></RemoveAnnotationsRangeComponent>
+            {/* <RemoveAnnotationsRangeContainer/> */}
+
         </Menu>
     );
 }

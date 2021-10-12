@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
+import { useState } from 'react';
 
 import Modal from 'antd/lib/modal';
 import InputNumber from 'antd/lib/input-number';
@@ -11,37 +12,32 @@ import { clamp } from 'utils/math';
 
 interface Props {
     visible: boolean;
-    startFrame: number;
-    endFrame: number;
-    frameNumber: number;
     stopFrame: number;
-    removeinRange(): void;
+    removeinRange(startnumber:number, endnumber:number): void;
     cancel(): void;
-    changeRemoveAnnotationsRange(startFrame: number, endFrame: number): void;
 }
 
 export default function RemoveRangeConfirmComponent(props: Props): JSX.Element {
     const {
         visible,
-        startFrame,
-        endFrame,
-        frameNumber,
         stopFrame,
         removeinRange,
-        changeRemoveAnnotationsRange,
         cancel,
     } = props;
 
     const minStartFrames = 0;
 
-    const minEndFrames = Math.max(startFrame,0);
+    const [startFrame, managestart] = useState<number>(0);
+    const [endFrame, manageend] = useState<number>(1);
+
+    const minEndFrames = Math.max(startFrame,1);
 
     return (
         <Modal
             okType='primary'
             okText='Yes'
             cancelText='Cancel'
-            onOk={removeinRange}
+            onOk={()=>{removeinRange(startFrame,endFrame);}}
             onCancel={cancel}
             title='Confirm to remove annotations in range'
             visible={visible}
@@ -57,7 +53,7 @@ export default function RemoveRangeConfirmComponent(props: Props): JSX.Element {
                     onChange={(value: number | undefined | string) => {
                         if (typeof value !== 'undefined') {
                             value=Math.floor(clamp(+value, 0, stopFrame-1));
-                            changeRemoveAnnotationsRange(value,endFrame);
+                            managestart(value);
                         }
                     }}
                 />
@@ -71,8 +67,8 @@ export default function RemoveRangeConfirmComponent(props: Props): JSX.Element {
                     value={endFrame}
                     onChange={(value: number | undefined | string) => {
                         if (typeof value !== 'undefined') {
-                            value=Math.floor(clamp(+value, 1, stopFrame));
-                            changeRemoveAnnotationsRange(startFrame,value);
+                            value= Math.floor(clamp(+value, 1, stopFrame));
+                            manageend(value);
                         }
                     }}
                 />

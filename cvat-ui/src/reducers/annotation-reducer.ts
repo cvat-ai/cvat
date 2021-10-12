@@ -952,36 +952,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
         }
         //Added Remove Annotations in Range
         case AnnotationActionTypes.REMOVE_ANNOTATIONS_INRANGE_SUCCESS: {
-            const { sessionInstance, startFrame, endFrame } = action.payload;
-            return {
-                ...state,
-                removeinrange: {
-                    ...state.removeinrange,
-                    startFrame,
-                    endFrame,
-                },
-            };
-        }
-        case AnnotationActionTypes.REMOVE_ANNOTATIONS_INRANGE: {
-            const { sessionInstance } = action.payload;
-            return {
-                ...state,
-                removeinrange: {
-                    ...state.removeinrange,
-                    sessionInstance,
-                },
-            };
-        }
-        case AnnotationActionTypes.CHANGE_REMOVE_ANNOTATIONS_RANGE: {
-            const { startFrame, endFrame } = action.payload;
-            return {
-                ...state,
-                removeinrange: {
-                    ...state.removeinrange,
-                    startFrame,
-                    endFrame,
-                },
-            };
+            console.log("REMOVE_ANNOTATIONS_INRANGE_SUCCESS");
         }
         case AnnotationActionTypes.UPDATE_CANVAS_CONTEXT_MENU: {
             const {
