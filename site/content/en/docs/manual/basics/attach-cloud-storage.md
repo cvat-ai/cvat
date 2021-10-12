@@ -78,9 +78,9 @@ Now you can [attach new cloud storage into CVAT](#attach-new-cloud-storage).
 
 ## Using Azure Blob Container
 
-### Create microsoft account
+### Create Microsoft account
 
-First, create a microsoft account by [registering](https://signup.live.com/signup?ru=https://login.live.com/),
+First, create a Microsoft account by [registering](https://signup.live.com/signup?ru=https://login.live.com/),
 or you can use your GitHub account to log in. After signing up for Azure, you'll need to choose a subscription plan,
 you can choose a free 12-month subscription, but you'll need to enter your credit card details to verify your identity.
 To learn more about Azure, read [documentation](https://docs.microsoft.com/en-us/azure/).
@@ -111,8 +111,8 @@ Click `create` for create a storage account.
 
 - **Advanced**
 
-  In the advanced section, you can change public access, disabled `enable blob public access`
-  for denied anonymous access to the container.
+  In the advanced section, you can change public access by disabling `enable blob public access`
+  to deny anonymous access to the container.
   If you want to change public access you can find this switch in the `configuration` section of your storage account.
 
   After that, go to the review section, check the entered data and click `create`.
@@ -159,9 +159,10 @@ Prepare the dataset as in the point [prepare dataset](#prepare-dataset).
 
   ![](/images/azure_blob_container_tutorial9.jpg)
 
-- Click `upload`, when the images are loaded you will need to upload a manifest file to do this click `select a file`
-  and select it, the structure of your dataset in the container should be the same as when creating the manifest file,
-  so the `upload to folder` should be empty.
+- Click `upload`, when the images are loaded you will need to upload a manifest file. When loading a manifest, you
+  need to make sure that the relative paths specified in the manifest file match the paths
+  to the files in the container. Click `select a file` and select manifest file, in order to upload file to the root
+  of the container leave blank `upload to folder` field.
 
 Now you can attach new cloud storage into CVAT.
 
