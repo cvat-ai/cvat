@@ -1374,18 +1374,6 @@
                     throw generateError(errorData);
                 }
 
-                // TODO: Remove after server fix
-                await Promise.all(
-                    response.data.map(
-                        (result) => new Promise((resolve) => {
-                            getUsers({ id: result.owner }).then((users) => {
-                                [result.owner] = users;
-                                resolve();
-                            });
-                        }),
-                    ),
-                );
-
                 return response.data;
             }
 
@@ -1404,7 +1392,6 @@
                     throw generateError(errorData);
                 }
 
-                [response.data.owner] = await getUsers({ id: response.data.owner });
                 return response.data;
             }
 
@@ -1439,18 +1426,6 @@
                 } catch (errorData) {
                     throw generateError(errorData);
                 }
-
-                // TODO: Remove after server fix
-                await Promise.all(
-                    response.data.results.map(
-                        (result) => new Promise((resolve) => {
-                            getUsers({ id: result.user }).then((users) => {
-                                [result.user] = users;
-                                resolve();
-                            });
-                        }),
-                    ),
-                );
 
                 return response.data;
             }
