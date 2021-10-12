@@ -2,7 +2,7 @@ package organizations
 import data.utils
 
 # input: {
-#     "scope": <"CREATE"|"LIST"|"UPDATE"|"VIEW"|"DELETE"> or null,
+#     "scope": <"create"|"list"|"update"|"view"|"delete"> or null,
 #     "auth": {
 #         "user": {
 #             "id": <num>,
@@ -27,11 +27,15 @@ MAINTAINER := "maintainer"
 SUPERVISOR := "supervisor"
 WORKER     := "worker"
 
-is_maintainer {
+is_staff {
     input.auth.organization.owner.id == input.auth.user.id
 }
 
-is_maintainer {
+is_staff {
+    input.auth.organization.user.role == OWNER
+}
+
+is_staff {
     input.auth.organization.user.role == MAINTAINER
 }
 
@@ -58,7 +62,7 @@ allow {
 filter = [] { # Django Q object to filter list of entries
     utils.is_admin
 } else = qobject {
-    user = input.auth.user
+    user := input.auth.user
     qobject := [ {"owner_id": user.id}, {"members__user_id": user.id}, "|" ]
 }
 

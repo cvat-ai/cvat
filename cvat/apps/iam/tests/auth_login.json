@@ -1,6 +1,0 @@
-{
-  "input": {
-    "method": "POST",
-    "path": ["auth", "login"]
-  }
-}

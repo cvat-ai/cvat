@@ -76,89 +76,6 @@ class OpenPolicyAgentPermission:
         else:
             return queryset
 
-
-class ServerPermission(OpenPolicyAgentPermission):
-    @classmethod
-    def create(cls, request, view, obj):
-        permissions = []
-        if view.basename == 'server':
-            self = cls(request, view, obj)
-            permissions.append(self)
-
-        return permissions
-
-    def __init__(self, request, view, obj):
-        super().__init__(request, view, obj)
-        self.url = settings.IAM_OPA_DATA_URL + '/server/allow'
-        self.payload['input']['scope'] = self.scope
-
-    @property
-    def scope(self):
-        return {
-            'annotation_formats': 'VIEW',
-            'about': 'VIEW',
-            'plugins': 'VIEW',
-            'exception': 'SEND_EXCEPTION',
-            'logs': 'SEND_LOGS',
-            'share': 'LIST_CONTENT'
-        }.get(self.view.action, None)
-
-class UserPermission(OpenPolicyAgentPermission):
-    @classmethod
-    def create(cls, request, view, obj):
-        permissions = []
-        if view.basename == 'user':
-            self = cls(request, view, obj)
-            permissions.append(self)
-
-        return permissions
-
-    def __init__(self, request, view, obj):
-        super().__init__(request, view, obj)
-        self.url = settings.IAM_OPA_DATA_URL + '/users/allow'
-        self.payload['input']['scope'] = self.scope
-        if view.detail:
-            self.payload['input']['resource'] = {
-                'id': obj.id
-            }
-
-    @property
-    def scope(self):
-        return {
-            'list': 'LIST',
-            'self': 'VIEW_SELF',
-            'retrieve': 'VIEW'
-        }.get(self.view.action, None)
-
-
-class LambdaPermission(OpenPolicyAgentPermission):
-    @classmethod
-    def create(cls, request, view, obj):
-        permissions = []
-        if view.basename == 'function' or view.basename == 'request':
-            self = cls(request, view, obj)
-            permissions.append(self)
-
-        return permissions
-
-    def __init__(self, request, view, obj):
-        super().__init__(request, view, obj)
-        self.url = settings.IAM_OPA_DATA_URL + '/lambda/allow'
-        self.payload['input']['scope'] = self.scope
-
-    @property
-    def scope(self):
-        return {
-            ('function', 'list'): 'LIST',
-            ('function', 'retrieve'): 'VIEW',
-            ('function', 'call'): 'CALL_ONLINE',
-            ('request', 'create'): 'CALL_OFFLINE',
-            ('request', 'list'): 'CALL_OFFLINE',
-            ('request', 'retrieve'): 'CALL_OFFLINE',
-            ('request', 'destroy'): 'CALL_OFFLINE',
-        }.get((self.view.basename, self.view.action), None)
-
-
 class OrganizationPermission(OpenPolicyAgentPermission):
     @classmethod
     def create(cls, request, view, obj):
@@ -178,11 +95,11 @@ class OrganizationPermission(OpenPolicyAgentPermission):
     @property
     def scope(self):
         return {
-            'list': 'LIST',
-            'create': 'CREATE',
-            'destroy': 'DELETE',
-            'partial_update': 'UPDATE',
-            'retrieve': 'VIEW'
+            'list': 'list',
+            'create': 'create',
+            'destroy': 'delete',
+            'partial_update': 'update',
+            'retrieve': 'view'
         }.get(self.view.action, None)
 
     @property
@@ -215,6 +132,90 @@ class OrganizationPermission(OpenPolicyAgentPermission):
             return None
 
 
+
+class ServerPermission(OpenPolicyAgentPermission):
+    @classmethod
+    def create(cls, request, view, obj):
+        permissions = []
+        if view.basename == 'server':
+            self = cls(request, view, obj)
+            permissions.append(self)
+
+        return permissions
+
+    def __init__(self, request, view, obj):
+        super().__init__(request, view, obj)
+        self.url = settings.IAM_OPA_DATA_URL + '/server/allow'
+        self.payload['input']['scope'] = self.scope
+
+    @property
+    def scope(self):
+        return {
+            'annotation_formats': 'view',
+            'about': 'view',
+            'plugins': 'view',
+            'exception': 'send:exception',
+            'logs': 'send:logs',
+            'share': 'list:content'
+        }.get(self.view.action, None)
+
+class UserPermission(OpenPolicyAgentPermission):
+    @classmethod
+    def create(cls, request, view, obj):
+        permissions = []
+        if view.basename == 'user':
+            self = cls(request, view, obj)
+            permissions.append(self)
+
+        return permissions
+
+    def __init__(self, request, view, obj):
+        super().__init__(request, view, obj)
+        self.url = settings.IAM_OPA_DATA_URL + '/users/allow'
+        self.payload['input']['scope'] = self.scope
+        if obj:
+            self.payload['input']['resource'] = {
+                'id': obj.id
+            }
+
+    @property
+    def scope(self):
+        return {
+            'list': 'list',
+            'self': 'view:self',
+            'retrieve': 'view'
+        }.get(self.view.action, None)
+
+
+class LambdaPermission(OpenPolicyAgentPermission):
+    @classmethod
+    def create(cls, request, view, obj):
+        permissions = []
+        if view.basename == 'function' or view.basename == 'request':
+            self = cls(request, view, obj)
+            permissions.append(self)
+
+        return permissions
+
+    def __init__(self, request, view, obj):
+        super().__init__(request, view, obj)
+        self.url = settings.IAM_OPA_DATA_URL + '/lambda/allow'
+        self.payload['input']['scope'] = self.scope
+
+    @property
+    def scope(self):
+        return {
+            ('function', 'list'): 'list',
+            ('function', 'retrieve'): 'view',
+            ('function', 'call'): 'call:online',
+            ('request', 'create'): 'call:offline',
+            ('request', 'list'): 'call:offline',
+            ('request', 'retrieve'): 'call:offline',
+            ('request', 'destroy'): 'call:offline',
+        }.get((self.view.basename, self.view.action), None)
+
+
+
 class MembershipPermission(OpenPolicyAgentPermission):
     @classmethod
     def create(cls, request, view, obj):
@@ -229,16 +230,16 @@ class MembershipPermission(OpenPolicyAgentPermission):
         super().__init__(request, view, obj)
         self.url = settings.IAM_OPA_DATA_URL + '/memberships/allow'
         self.payload['input']['scope'] = self.scope
-        if view.detail:
+        if obj:
             self.payload['input']['resource'] = self.resource
 
     @property
     def scope(self):
         return {
-            'list': 'LIST',
-            'partial_update': 'CHANGE_ROLE',
-            'retrieve': 'VIEW',
-            'destroy': 'DELETE'
+            'list': 'list',
+            'partial_update': 'change:role',
+            'retrieve': 'view',
+            'destroy': 'delete'
         }.get(self.view.action, None)
 
     @property
@@ -271,12 +272,12 @@ class InvitationPermission(OpenPolicyAgentPermission):
     @property
     def scope(self):
         return {
-            ('list', False): 'LIST',
-            ('create', False): 'CREATE',
-            ('destroy', False): 'DELETE',
-            ('partial_update', False): 'RESEND',
-            ('partial_update', True): 'ACCEPT',
-            ('retrieve', False): 'VIEW'
+            ('list', False): 'list',
+            ('create', False): 'create',
+            ('destroy', False): 'delete',
+            ('partial_update', False): 'resend',
+            ('partial_update', True): 'accept',
+            ('retrieve', False): 'view'
         }.get((self.view.action, 'accepted' in self.request.data))
 
 
@@ -345,8 +346,8 @@ class TaskPermission(OpenPolicyAgentPermission):
 
     def get_scope(self, request, view, obj):
         return {
-            'list': 'LIST',
-            'destroy': 'DELETE',
+            'list': 'list',
+            'destroy': 'delete',
         }[view.action]
 
     url = settings.IAM_OPA_DATA_URL + '/tasks/allow'

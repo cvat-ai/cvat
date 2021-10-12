@@ -1,0 +1,3 @@
+Scope,Resource,Context,Ownership,Limit,Method,URL,Group,Membership,[No Role],Worker,User,Business,Admin,Worker,Supervisor,Maintainer,Owner,Comment
+View user aggreements,N/A,N/A,N/A,,POST,/auth/login,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,Anyone should be able to view user agreements
+View terms of use,N/A,N/A,N/A,,"GET, POST",/auth/logout,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,Anyone should be able to view terms of use

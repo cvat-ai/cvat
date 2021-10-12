@@ -12,27 +12,28 @@ PRIVATE := "private"
 INTERNAL := "internal"
 
 # Scopes
-CREATE := "CREATE"
-LIST := "LIST"
-VIEW := "VIEW"
-UPDATE := "UPDATE"
-ACCEPT := "ACCEPT"
-DELETE := "DELETE"
-LIST_CONTENT := "LIST_CONTENT"
-CALL_ONLINE := "CALL_ONLINE"
-CALL_OFFLINE := "CALL_OFFLINE"
-SEND_EXCEPTION := "SEND_EXCEPTION"
-SEND_LOGS := "SEND_LOGS"
-VIEW_SELF := "VIEW_SELF"
-CHANGE_ROLE := "CHANGE_ROLE"
-RESEND := "RESEND"
+CREATE := "create"
+LIST := "list"
+VIEW := "view"
+UPDATE := "update"
+ACCEPT := "accept"
+DELETE := "delete"
+LIST_CONTENT := "list:content"
+CALL_ONLINE := "call:online"
+CALL_OFFLINE := "call:offline"
+SEND_EXCEPTION := "send:exception"
+SEND_LOGS := "send:logs"
+VIEW_SELF := "view:self"
+CHANGE_ROLE := "change:role"
+RESEND := "resend"
 
 get_priority(privilege) = priority {
     priority := {
         ADMIN: 0,
         BUSINESS: 50,
         USER: 75,
-        WORKER: 100
+        WORKER: 100,
+        null: 1000
     }[privilege]
 }
 

@@ -3,14 +3,25 @@
 # SPDX-License-Identifier: MIT
 
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ObjectDoesNotExist
 from rest_framework import serializers
 from .models import Invitation, Membership, Organization
+from cvat.apps.engine.serializers import BasicUserSerializer
 
-class OrganizationSerializer(serializers.ModelSerializer):
+class OrganizationReadSerializer(serializers.ModelSerializer):
+    owner = BasicUserSerializer()
     class Meta:
         model = Organization
         fields = ['id', 'slug', 'name', 'description', 'created_date',
             'updated_date', 'contact', 'owner']
+        read_only_fields = fields
+
+class OrganizationWriteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Organization
+        fields = ['id', 'slug', 'name', 'description', 'created_date',
+            'updated_date', 'contact', 'owner']
+
         # TODO: at the moment isn't possible to change the owner. It should
         # be a separate feature. Need to change it together with corresponding
         # Membership. Also such operation should be well protected.
@@ -28,19 +39,26 @@ class OrganizationSerializer(serializers.ModelSerializer):
 
         return organization
 
-class MembershipSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Membership
-        fields = ['id', 'user', 'organization', 'is_active', 'joined_date', 'role']
-        read_only_fields = ['is_active', 'joined_date', 'user', 'organization']
-
-
-class InvitationSerializer(serializers.ModelSerializer):
+class InvitationReadSerializer(serializers.ModelSerializer):
     role = serializers.ChoiceField(Membership.role.field.choices,
         source='membership.role')
-    user = serializers.PrimaryKeyRelatedField(
-        queryset=get_user_model().objects.all(),
-        source='membership.user')
+    user = BasicUserSerializer(source='membership.user')
+    organization = serializers.PrimaryKeyRelatedField(
+        queryset=Organization.objects.all(),
+        source='membership.organization')
+    owner = BasicUserSerializer()
+
+    class Meta:
+        model = Invitation
+        fields = ['key', 'accepted', 'created_date', 'owner', 'role',
+            'user', 'organization']
+        read_only_fields = fields
+
+
+class InvitationWriteSerializer(serializers.ModelSerializer):
+    role = serializers.ChoiceField(Membership.role.field.choices,
+        source='membership.role')
+    email = serializers.EmailField(source='membership.user.email')
     organization = serializers.PrimaryKeyRelatedField(
         queryset=Organization.objects.all(),
         source='membership.organization')
@@ -48,13 +66,20 @@ class InvitationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Invitation
         fields = ['key', 'accepted', 'created_date', 'owner', 'role',
-            'user', 'organization']
+            'email', 'organization']
         read_only_fields = ['key', 'created_date', 'owner']
 
     def create(self, validated_data):
         membership_data = validated_data.pop('membership')
+        try:
+            user = get_user_model().objects.get(**membership_data['user'])
+            del membership_data['user']
+        except ObjectDoesNotExist:
+            raise serializers.ValidationError(f'You cannot invite an user '
+                f'with {membership_data["user"]["email"]} email. It is not '
+                f'a valid email in the system.')
 
-        membership, created = Membership.objects.get_or_create(**membership_data)
+        membership, created = Membership.objects.get_or_create(**membership_data, user=user)
         if not created:
             raise serializers.ValidationError('The user is a member of '
                 'the organization already.')
@@ -69,3 +94,17 @@ class InvitationSerializer(serializers.ModelSerializer):
         invitation.send()
 
         return invitation
+
+class MembershipReadSerializer(serializers.ModelSerializer):
+    user = BasicUserSerializer()
+    class Meta:
+        model = Membership
+        fields = ['id', 'user', 'organization', 'is_active', 'joined_date', 'role',
+            'invitation']
+        read_only_fields = fields
+
+class MembershipWriteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Membership
+        fields = ['id', 'user', 'organization', 'is_active', 'joined_date', 'role']
+        read_only_fields = ['user', 'organization', 'is_active', 'joined_date']

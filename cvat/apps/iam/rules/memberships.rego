@@ -59,4 +59,7 @@ filter = [] { # Django Q object to filter list of entries
     input.auth.organization.owner.id == input.auth.user.id
 } else = [] {
     input.auth.organization.role != null
+} else = qobject {
+    user := input.auth.user
+    qobject := [ {"user_id": user.id} ]
 }
