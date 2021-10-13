@@ -15,7 +15,6 @@ from .serializers import (
     OrganizationReadSerializer, OrganizationWriteSerializer)
 
 class OrganizationViewSet(viewsets.ModelViewSet):
-    queryset = Organization.objects.all()
     ordering = ['-id']
     http_method_names = ['get', 'post', 'patch', 'delete', 'head', 'options']
     pagination_class = None
@@ -39,8 +38,6 @@ class OrganizationViewSet(viewsets.ModelViewSet):
 
 class MembershipViewSet(mixins.RetrieveModelMixin, mixins.DestroyModelMixin,
     mixins.ListModelMixin, mixins.UpdateModelMixin, viewsets.GenericViewSet):
-
-    queryset = Membership.objects.all()
     ordering = ['-id']
     http_method_names = ['get', 'patch', 'delete', 'head', 'options']
 
@@ -61,7 +58,6 @@ class MembershipViewSet(mixins.RetrieveModelMixin, mixins.DestroyModelMixin,
 
 
 class InvitationViewSet(viewsets.ModelViewSet):
-    queryset = Invitation.objects.all()
     ordering = ['-created_date']
     http_method_names = ['get', 'post', 'patch', 'delete', 'head', 'options']
 

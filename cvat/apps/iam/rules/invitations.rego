@@ -2,10 +2,8 @@ package invitations
 import data.utils
 import data.organizations
 
-
-
 # input: {
-#     "scope": <"LIST"|"CREATE"|"VIEW"|"RESEND"|"ACCEPT"|"DELETE"> or null,
+#     "scope": <"list"|"create"|"view"|"resend"|"accept"|"delete"> or null,
 #     "auth": {
 #         "user": {
 #             "id": <num>,
@@ -29,7 +27,7 @@ import data.organizations
 #             "id": <num>
 #         },
 #         "accepted": <true|false>,
-#         "role": <"maintainer"|"supervisor"|"worker">,
+#         "role": <"owner"|"maintainer"|"supervisor"|"worker">,
 #         "organization": {
 #             "id": <num>
 #         }
@@ -57,20 +55,27 @@ filter = [] { # Django Q object to filter list of entries
 
 allow {
     input.scope == utils.CREATE
+    input.auth.organization.id == input.resource.organization.id
     utils.has_privilege(utils.USER)
-    input.auth.organization.role == organizations.MAINTAINER
+    input.auth.organization.user.role == organizations.MAINTAINER
+    # a maintainer cannot invite an user with owner or  maintainer roles
+    input.resource.role != organizations.OWNER
     input.resource.role != organizations.MAINTAINER
+
 }
 
 allow {
     input.scope == utils.CREATE
+    input.auth.organization.id == input.resource.organization.id
     utils.has_privilege(utils.USER)
-    input.auth.organization.owner.id == input.auth.user.id
+    organizations.is_owner
+    # it isn't possible to create one more owner at the moment
+    input.resource.role != organizations.OWNER
 }
 
 allow {
     input.scope == utils.VIEW
-    input.resource.owner.id == input.auth.user.id
+    utils.is_resource_owner
 }
 
 allow {
@@ -80,6 +85,7 @@ allow {
 
 allow {
     input.scope == utils.VIEW
+    input.auth.organization.id == input.resource.organization.id
     utils.has_privilege(utils.USER)
     organizations.is_staff
 }
@@ -87,23 +93,25 @@ allow {
 allow {
     input.scope == utils.RESEND
     utils.has_privilege(utils.WORKER)
-    input.resource.owner.id == input.auth.user.id
+    utils.is_resource_owner
 }
 
 allow {
     input.scope == utils.RESEND
-    utils.has_privilege(utils.WORKER)
+    input.auth.organization.id == input.resource.organization.id
+    utils.has_privilege(utils.USER)
     organizations.is_staff
 }
 
 allow {
     input.scope == utils.DELETE
     utils.has_privilege(utils.WORKER)
-    input.resource.owner.id == input.auth.user.id
+    utils.is_resource_owner
 }
 
 allow {
     input.scope == utils.DELETE
+    input.auth.organization.id == input.resource.organization.id
     utils.has_privilege(utils.USER)
     organizations.is_staff
 }
