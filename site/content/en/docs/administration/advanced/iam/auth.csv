@@ -1,9 +1,0 @@
-Scope,Resource,Context,Ownership,Limit,Method,URL,Group,Membership,[No Role],Worker,User,Business,Admin,Worker,Supervisor,Maintainer,Owner,Comment
-Login,N/A,N/A,N/A,,POST,/auth/login,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,
-Logout,N/A,N/A,N/A,,"GET, POST",/auth/logout,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,
-Change password,N/A,N/A,N/A,,"POST, OPTIONS",/auth/password/change,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,
-Reset password,N/A,N/A,N/A,,"POST, OPTIONS","/auth/password/reset, /auth/password/reset/confirm",N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,
-Register,N/A,N/A,N/A,,POST,/auth/register,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,
-Sign URL,N/A,N/A,N/A,,POST,/auth/signing,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,
-Confirm email,N/A,N/A,N/A,,GET,/account-confirm-email/<key>,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,
-Confirm email,N/A,N/A,N/A,,"GET, POST",register/account-email-verification-sent,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,N/A,

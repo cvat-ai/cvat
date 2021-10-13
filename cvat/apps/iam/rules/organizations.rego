@@ -17,7 +17,7 @@ import data.utils
 #         },
 #         "user": {
 #             "num_resources": <num>,
-#             "role": <"maintainer"|"supervisor"|"worker"> or null
+#             "role": <"owner"|"maintainer"|"supervisor"|"worker"> or null
 #         }
 #     }
 # }
@@ -42,6 +42,10 @@ is_staff {
 
 is_staff {
     is_maintainer
+}
+
+is_member {
+    input.auth.organization.role != null
 }
 
 default allow = false

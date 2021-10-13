@@ -3,7 +3,7 @@ import data.utils
 import data.organizations
 
 # input: {
-#     "scope": <"LIST"|"UPDATE"|"VIEW"|"DELETE"> or null,
+#     "scope": <"list"|"update"|"view"|"delete"> or null,
 #     "auth": {
 #         "user": {
 #             "id": <num>,
@@ -15,12 +15,12 @@ import data.organizations
 #                 "id": <num>
 #             },
 #             "user": {
-#                 "role": <"maintainer"|"supervisor"|"worker"> or null
+#                 "role": <"owner"|"maintainer"|"supervisor"|"worker"> or null
 #             }
 #         } or null,
 #     },
 #     "resource": {
-#         "role": <"maintainer"|"supervisor"|"worker">,
+#         "role": <"owner"|"maintainer"|"supervisor"|"worker">,
 #         "user": {
 #             "id": <num>
 #         }
@@ -56,9 +56,9 @@ allow {
 filter = [] { # Django Q object to filter list of entries
     utils.is_admin
 } else = [] {
-    input.auth.organization.owner.id == input.auth.user.id
+    organizations.is_owner
 } else = [] {
-    input.auth.organization.role != null
+    organizations.is_member
 } else = qobject {
     user := input.auth.user
     qobject := [ {"user_id": user.id} ]
