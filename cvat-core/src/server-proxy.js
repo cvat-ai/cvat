@@ -1410,7 +1410,7 @@
                 }
             }
 
-            async function getOrganizationMembers(orgSlug, page, pageSize) {
+            async function getOrganizationMembers(orgSlug, page, pageSize, filters = {}) {
                 const { backendAPI } = config;
 
                 let response = null;
@@ -1418,6 +1418,7 @@
                     response = await Axios.get(`${backendAPI}/memberships`, {
                         proxy: config.proxy,
                         params: {
+                            ...filters,
                             org: orgSlug,
                             page,
                             pageSize,

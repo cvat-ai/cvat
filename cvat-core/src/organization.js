@@ -4,7 +4,7 @@
 
 const { checkObjectType, isEnum } = require('./common');
 const { MembershipRole } = require('./enums');
-const { ArgumentError } = require('./exceptions');
+const { ArgumentError, ServerError } = require('./exceptions');
 const PluginRegistry = require('./plugins');
 const serverProxy = require('./server-proxy');
 const User = require('./user');
@@ -345,9 +345,11 @@ Organization.prototype.deleteMembership.implementation = async function (members
 Organization.prototype.leave.implementation = async function (user) {
     checkObjectType('user', user, null, User);
     if (typeof this.id === 'number') {
-        // TODO: find membership for the user
-        // TODO: remove it from the
-        // await serverProxy.organizations.deleteMembership(membershipId);
+        const [membership] = await serverProxy.organizations.members(this.slug, 1, 10, { user: user.id });
+        if (!membership) {
+            throw new ServerError(`Could not find membership for user ${user.username} in organization ${this.slug}`);
+        }
+        await serverProxy.organizations.deleteMembership(membership.id);
     }
 };
 
