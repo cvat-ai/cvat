@@ -1,4 +1,4 @@
-FROM node:lts-buster AS cvat-ui
+FROM node:stretch AS cvat-ui
 
 ARG http_proxy
 ARG https_proxy
@@ -16,31 +16,16 @@ ENV TERM=xterm \
     LC_ALL='C.UTF-8'
 
 # Install dependencies
+COPY package*.json /tmp/
 COPY cvat-core/package*.json /tmp/cvat-core/
 COPY cvat-canvas/package*.json /tmp/cvat-canvas/
 COPY cvat-canvas3d/package*.json /tmp/cvat-canvas3d/
 COPY cvat-ui/package*.json /tmp/cvat-ui/
 COPY cvat-data/package*.json /tmp/cvat-data/
 
-# Install cvat-data dependencies
-WORKDIR /tmp/cvat-data/
-RUN npm ci
-
-# Install cvat-core dependencies
-WORKDIR /tmp/cvat-core/
-RUN npm ci
-
-# Install cvat-canvas dependencies
-WORKDIR /tmp/cvat-canvas/
-RUN npm ci
-
-# Install cvat-canvas dependencies
-WORKDIR /tmp/cvat-canvas3d/
-RUN npm ci
-
-# Install cvat-ui dependencies
-WORKDIR /tmp/cvat-ui/
-RUN npm ci
+# Install common dependencies
+WORKDIR /tmp/
+RUN npm ci --ignore-scripts
 
 # Build source code
 COPY cvat-data/ /tmp/cvat-data/
@@ -48,7 +33,7 @@ COPY cvat-core/ /tmp/cvat-core/
 COPY cvat-canvas3d/ /tmp/cvat-canvas3d/
 COPY cvat-canvas/ /tmp/cvat-canvas/
 COPY cvat-ui/ /tmp/cvat-ui/
-RUN npm run build
+RUN npm run build:cvat-ui
 
 FROM nginx:mainline-alpine
 # Replace default.conf configuration to remove unnecessary rules

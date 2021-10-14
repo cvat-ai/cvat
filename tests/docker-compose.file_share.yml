@@ -1,0 +1,15 @@
+version: '3.3'
+
+services:
+  cvat:
+    environment:
+      CVAT_SHARE_URL: 'Mounted from asset for case 107 host directory'
+    volumes:
+      - cvat_share:/home/django/share:rw
+
+volumes:
+  cvat_share:
+    driver_opts:
+      type: none
+      device: tests/cypress/integration/actions_tasks3/assets/case_107
+      o: bind
