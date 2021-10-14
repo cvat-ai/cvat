@@ -587,6 +587,7 @@ Cypress.Commands.add('changeColorViaBadge', (labelColor) => {
             cy.contains('hex').prev().clear().type(labelColor);
             cy.contains('button', 'Ok').click();
         });
+    cy.get('.cvat-label-color-picker').should('be.hidden');
 });
 
 Cypress.Commands.add('collectLabelsName', () => {
