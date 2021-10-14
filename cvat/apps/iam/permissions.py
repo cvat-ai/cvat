@@ -397,7 +397,7 @@ class PolicyEnforcer(BasePermission):
         return all(permissions)
 
     def has_permission(self, request, view):
-        if view.detail:
+        if not view.detail:
             return self.check_permission(request, view, None)
         else:
             return True # has_object_permision will be called later

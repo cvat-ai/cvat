@@ -34,12 +34,16 @@ allow {
 }
 
 allow {
-    { utils.LIST, utils.VIEW }[input.scope]
+    input.scope == utils.LIST
+}
+
+allow {
+    input.scope == utils.VIEW
     organizations.is_member
 }
 
 allow {
-    { utils.LIST, utils.VIEW }[input.scope]
+    input.scope == utils.VIEW
     input.resource.user.id == input.auth.user.id
 }
 
