@@ -85,7 +85,7 @@ class InstanceLabelData:
     def _get_immutable_attribute_id(self, label_id, attribute_name):
         return self._get_attribute_id(label_id, attribute_name, 'immutable')
 
-    def _import_attribute(self, label_id, attribute):
+    def _import_attribute(self, label_id, attribute, mutable=False):
         spec_id = self._get_attribute_id(label_id, attribute.name)
         value = attribute.value
 
@@ -124,8 +124,7 @@ class InstanceLabelData:
                 label_id=label_id,
                 name=attribute.name,
                 input_type=attr_type,
-                # Could be changed after Datumaro tracks support
-                mutable=True,
+                mutable=mutable,
             )
             attr_spec.save()
             spec_id = attr_spec.id
@@ -443,7 +442,10 @@ class TaskData(InstanceLabelData):
         _tag['label_id'] = label_id
         _tag['attributes'] = [self._import_attribute(label_id, attrib)
             for attrib in _tag['attributes']
-            if self._get_attribute_id(label_id, attrib.name)]
+            if self._get_attribute_id(label_id, attrib.name) or (
+                self.soft_attribute_import and attrib.name not in {'ooccluded', 'track_id', 'keyframe'}
+            )
+        ]
         return _tag
 
     def _import_shape(self, shape):
@@ -472,10 +474,16 @@ class TaskData(InstanceLabelData):
             shape['frame'] = self.rel_frame_id(int(shape['frame']))
             _track['attributes'] = [self._import_attribute(label_id, attrib)
                 for attrib in shape['attributes']
-                if self._get_immutable_attribute_id(label_id, attrib.name)]
-            shape['attributes'] = [self._import_attribute(label_id, attrib)
+                if self._get_immutable_attribute_id(label_id, attrib.name) or (
+                    self.soft_attribute_import and attrib.name not in {'ooccluded', 'track_id', 'keyframe'}
+                )
+            ]
+            shape['attributes'] = [self._import_attribute(label_id, attrib, mutable=True)
                 for attrib in shape['attributes']
-                if self._get_mutable_attribute_id(label_id, attrib.name)]
+                if self._get_mutable_attribute_id(label_id, attrib.name) or (
+                    self.soft_attribute_import and attrib.name not in {'ooccluded', 'track_id', 'keyframe'}
+                )
+            ]
             shape['points'] = list(map(float, shape['points']))
 
         return _track
@@ -566,14 +574,15 @@ class ProjectData(InstanceLabelData):
     def __init__(self, annotation_irs: Mapping[str, AnnotationIR], db_project: Project, host: str = '', create_callback: Callable = None, task_annotations: Mapping[int, Any] = None):
         self._annotation_irs = annotation_irs
         self._db_project = db_project
-        self._task_annotaions = task_annotations
+        self._task_annotations = task_annotations
         self._host = host
         self._create_callback = create_callback
         self._MAX_ANNO_SIZE = 30000
         self._soft_attribute_import = False
         self._tasks_data: Dict[int, TaskData] = {}
         self._frame_info: Dict[Tuple[int, int], Literal["path", "width", "height", "subset"]] = dict()
-        self._frame_mapping: Dict[Tuple[str, str], Tuple[str, str]] = dict()
+        # (subset, path): (task id, frame number)
+        self._frame_mapping: Dict[Tuple[str, str], Tuple[int, int]] = dict()
         self._frame_steps: Dict[int, int] = {}
         self.new_tasks: Set[int] = set()
 
@@ -861,7 +870,8 @@ class ProjectData(InstanceLabelData):
                     annotation_ir=self._annotation_irs[task_id],
                     db_task=task,
                     host=self._host,
-                    create_callback=self._task_annotaions[task_id].create,
+                    create_callback=self._task_annotations[task_id].create \
+                        if self._task_annotations is not None else None,
                 )
                 task_data.soft_attribute_import = self.soft_attribute_import
                 self._tasks_data[task_id] = task_data
@@ -871,6 +881,28 @@ class ProjectData(InstanceLabelData):
     def _get_filename(path):
         return osp.splitext(path)[0]
 
+    def match_frame(self, path: str, subset: str=datumaro.DEFAULT_SUBSET_NAME, root_hint: str=None, path_has_ext: bool=True):
+        if path_has_ext:
+            path = self._get_filename(path)
+        match_task, match_frame = self._frame_mapping.get((subset, path), (None, None))
+        if not match_frame and root_hint and not path.startswith(root_hint):
+            path = osp.join(root_hint, path)
+            match_task, match_frame = self._frame_mapping.get((subset, path), (None, None))
+        return match_task, match_frame
+
+    def match_frame_fuzzy(self, path):
+        path = Path(self._get_filename(path)).parts
+        for (_subset, _path), (_tid, frame_number) in self._frame_mapping.items():
+            if Path(_path).parts[-len(path):] == path :
+                return frame_number
+        return None
+
+    def split_dataset(self, dataset: Dataset):
+        for task_data in self.task_data:
+            if task_data._db_task.id not in self.new_tasks:
+                continue
+            subset_dataset: Dataset = dataset.subsets()[task_data.db_task.subset].as_dataset()
+            yield subset_dataset, task_data
 
 class CVATDataExtractorMixin:
     def __init__(self):
@@ -1255,17 +1287,17 @@ def match_dm_item(item, task_data, root_hint=None):
             "'%s' with any task frame" % item.id)
     return frame_number
 
-def find_dataset_root(dm_dataset, task_data):
+def find_dataset_root(dm_dataset, instance_data: Union[TaskData, ProjectData]):
     longest_path = max(dm_dataset, key=lambda x: len(Path(x.id).parts),
         default=None)
     if longest_path is None:
         return None
     longest_path = longest_path.id
 
-    longest_match = task_data.match_frame_fuzzy(longest_path)
+    longest_match = instance_data.match_frame_fuzzy(longest_path)
     if longest_match is None:
         return None
-    longest_match = osp.dirname(task_data.frame_info[longest_match]['path'])
+    longest_match = osp.dirname(instance_data.frame_info[longest_match]['path'])
     prefix = longest_match[:-len(osp.dirname(longest_path)) or None]
     if prefix.endswith('/'):
         prefix = prefix[:-1]
@@ -1284,11 +1316,8 @@ def import_dm_annotations(dm_dataset: Dataset, instance_data: Union[TaskData, Pr
         return
 
     if isinstance(instance_data, ProjectData):
-        for task_data in instance_data.task_data:
-            if task_data._db_task.id not in instance_data.new_tasks:
-                continue
-            subset_dataset = dm_dataset.subsets()[task_data.db_task.subset].as_dataset()
-            import_dm_annotations(subset_dataset, task_data)
+        for sub_dataset, task_data in instance_data.split_dataset(dm_dataset):
+            import_dm_annotations(sub_dataset, task_data)
         return
 
     label_cat = dm_dataset.categories()[datumaro.AnnotationType.label]

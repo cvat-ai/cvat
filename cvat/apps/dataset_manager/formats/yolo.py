@@ -28,7 +28,7 @@ def _export(dst_file, instance_data, save_images=False):
         make_zip_archive(temp_dir, dst_file)
 
 @importer(name='YOLO', ext='ZIP', version='1.1')
-def _import(src_file, task_data):
+def _import(src_file, instance_data, load_data_callback=None):
     with TemporaryDirectory() as tmp_dir:
         Archive(src_file.name).extractall(tmp_dir)
 
@@ -36,13 +36,13 @@ def _import(src_file, task_data):
         frames = [YoloExtractor.name_from_path(osp.relpath(p, tmp_dir))
             for p in glob(osp.join(tmp_dir, '**', '*.txt'), recursive=True)]
         root_hint = find_dataset_root(
-            [DatasetItem(id=frame) for frame in frames], task_data)
+            [DatasetItem(id=frame) for frame in frames], instance_data)
         for frame in frames:
             frame_info = None
             try:
-                frame_id = match_dm_item(DatasetItem(id=frame), task_data,
+                frame_id = match_dm_item(DatasetItem(id=frame), instance_data,
                     root_hint=root_hint)
-                frame_info = task_data.frame_info[frame_id]
+                frame_info = instance_data.frame_info[frame_id]
             except Exception: # nosec
                 pass
             if frame_info is not None:
@@ -50,4 +50,6 @@ def _import(src_file, task_data):
 
         dataset = Dataset.import_from(tmp_dir, 'yolo',
             env=dm_env, image_info=image_info)
-        import_dm_annotations(dataset, task_data)
+        if load_data_callback is not None:
+            load_data_callback(dataset, instance_data)
+        import_dm_annotations(dataset, instance_data)

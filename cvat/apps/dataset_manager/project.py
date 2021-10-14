@@ -139,7 +139,7 @@ class ProjectAnnotationAndData:
 
         importer(dataset_file, project_data, self.load_dataset_data)
 
-        self.create({tid: ir for tid, ir in self.annotation_irs.items() if tid in project_data.new_tasks})
+        self.create({tid: ir.serialize() for tid, ir in self.annotation_irs.items() if tid in project_data.new_tasks})
 
     @property
     def data(self) -> dict:
