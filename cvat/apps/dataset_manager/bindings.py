@@ -1414,6 +1414,8 @@ def load_dataset_data(project_annotation, dataset: Dataset, project_data):
         for dataset_item in subset_dataset:
             if dataset_item.image and dataset_item.image.has_data:
                 dataset_files.append(dataset_item.image.path)
+            elif dataset_item.point_cloud:
+                dataset_files.append(dataset_item.point_cloud)
 
         project_annotation.add_task(task_fields, dataset_files, project_data)
         # Need to add data to a task here
