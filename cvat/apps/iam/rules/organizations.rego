@@ -45,7 +45,7 @@ is_staff {
 }
 
 is_member {
-    input.auth.organization.role != null
+    input.auth.organization.user.role != null
 }
 
 default allow = false

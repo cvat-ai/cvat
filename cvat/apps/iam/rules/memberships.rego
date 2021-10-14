@@ -35,6 +35,12 @@ allow {
 
 allow {
     input.scope == utils.LIST
+    input.auth.organization == null
+}
+
+allow {
+    input.scope == utils.LIST
+    organizations.is_member
 }
 
 allow {
@@ -44,12 +50,14 @@ allow {
 
 allow {
     input.scope == utils.VIEW
+    input.auth.organization == null
     input.resource.user.id == input.auth.user.id
 }
 
 allow {
     { utils.CHANGE_ROLE, utils.DELETE }[input.scope]
     organizations.is_owner
+    utils.has_privilege(utils.USER)
     input.resource.role != organizations.OWNER
 }
 
@@ -57,6 +65,7 @@ allow {
     { utils.CHANGE_ROLE, utils.DELETE }[input.scope]
     input.resource.role != organizations.OWNER
     input.resource.role != organizations.MAINTAINER
+    utils.has_privilege(utils.USER)
     organizations.is_maintainer
 }
 
@@ -71,7 +80,6 @@ filter = [] { # Django Q object to filter list of entries
     utils.is_admin
     qobject := [ {"organization": input.auth.organization.id} ]
 } else = qobject {
-    input.auth.organization != null
     organizations.is_member
     qobject := [ {"organization": input.auth.organization.id} ]
 }

@@ -50,19 +50,14 @@ filter = [] { # Django Q object to filter list of entries
     input.auth.organization != null
     utils.is_admin
     qobject := [ {"membership__organization": input.auth.organization.id} ]
-} else = [] {
-    input.auth.organization == null
-    utils.has_privilege(utils.USER)
-    organizations.is_staff
 } else = qobject {
-    input.auth.organization != null
-    utils.has_privilege(utils.USER)
     organizations.is_staff
+    utils.has_privilege(utils.USER)
     qobject := [ {"membership__organization": input.auth.organization.id} ]
 } else = qobject {
     input.auth.organization != null
     user := input.auth.user
-    org_id = input.auth.organization.id
+    org_id := input.auth.organization.id
     qobject := [ {"owner": user.id}, {"membership__user": user.id}, "|",
         {"membership__organization": org_id}, "&" ]
 } else = qobject {

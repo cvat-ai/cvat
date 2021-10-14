@@ -1,9 +1,10 @@
 Scope,Resource,Context,Ownership,Limit,Method,URL,Privilege,Membership
-list,Membership,Sandbox,User_Self,,GET,/memberships,None,N/A
-list,Membership,Organization,Organization_Member,,GET,/memberships,None,Worker
+list,Membership,Sandbox,N/A,filter(organization=None),GET,/memberships,None,N/A
+list,Membership,Organization,N/A,filter(organization),GET,/memberships,None,Worker
+view,Membership,Sandbox,None,,GET,/membership/{id},Admin,N/A
 view,Membership,Sandbox,User_Self,,GET,/membership/{id},None,N/A
-view,Membership,Organization,Organization_Member,,GET,/membership/{id},None,Worker
-change:role,Membership,Organization,Organization_Maintainer,"resource[""role""] not in [""maintainer"", ""owner""]",PATCH,/membership/{id},User,Maintainer
-change:role,Membership,Organization,Organization_Owner,"resource[""role""] != ""owner""",PATCH,/membership/{id},User,Maintainer
-delete,Membership,Organization,Organization_Maintainer,"resource[""role""] not in [""maintainer"", ""owner""]",DELETE,/membership/{id},User,Maintainer
-delete,Membership,Organization,Organization_Owner,"resource[""role""] != ""owner""",DELETE,/membership/{id},User,Maintainer
+view,Membership,Organization,"None, User_Self",,GET,/membership/{id},None,Worker
+change:role,Membership,Organization,"None, User_Self","resource[""role""] not in [""maintainer"", ""owner""]",PATCH,/membership/{id},User,Maintainer
+change:role,Membership,Organization,"None, User_Self","resource[""role""] != ""owner""",PATCH,/membership/{id},User,Owner
+delete,Membership,Organization,"None, User_Self","resource[""role""] not in [""maintainer"", ""owner""]",DELETE,/membership/{id},User,Maintainer
+delete,Membership,Organization,"None, User_Self","resource[""role""] != ""owner""",DELETE,/membership/{id},User,Owner
