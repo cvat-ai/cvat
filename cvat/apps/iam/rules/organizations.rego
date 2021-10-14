@@ -66,7 +66,6 @@ allow {
 
 allow {
     input.scope == utils.LIST
-    input.resource.user.role != null
 }
 
 filter = [] { # Django Q object to filter list of entries
