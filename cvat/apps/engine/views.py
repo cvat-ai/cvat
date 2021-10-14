@@ -254,7 +254,7 @@ class ProjectViewSet(auth.ProjectGetQuerySetMixin, viewsets.ModelViewSet):
 
     def get_permissions(self):
         http_method = self.request.method
-        permissions = [IsAuthenticated]
+        permissions = [IsAuthenticated, auth.ExportPermission]
 
         if http_method in SAFE_METHODS:
             permissions.append(auth.ProjectAccessPermission)
@@ -428,7 +428,7 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
 
     def get_permissions(self):
         http_method = self.request.method
-        permissions = [IsAuthenticated]
+        permissions = [IsAuthenticated, auth.ExportPermission]
 
         if http_method in SAFE_METHODS:
             permissions.append(auth.TaskAccessPermission)

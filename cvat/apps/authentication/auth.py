@@ -247,6 +247,16 @@ class TaskAccessPermission(BasePermission):
     def has_object_permission(self, request, view, obj):
         return request.user.has_perm('engine.task.access', obj)
 
+class ExportPermission(BasePermission):
+    # pylint: disable=no-self-use
+    def has_object_permission(self, request, view, obj):
+        if request.user.has_perm('engine.role.admin'):
+            return True
+        elif view.action in ['dataset_export', 'annotations', 'retrieve']:
+            return False
+        else:
+            return True
+
 
 class ProjectGetQuerySetMixin(object):
     def get_queryset(self):
