@@ -3,7 +3,7 @@ import data.utils
 import data.organizations
 
 # input: {
-#     "scope": <"list"|"update"|"view"|"delete"> or null,
+#     "scope": <"list"|"change:role"|"view"|"delete"> or null,
 #     "auth": {
 #         "user": {
 #             "id": <num>,
@@ -21,10 +21,11 @@ import data.organizations
 #     },
 #     "resource": {
 #         "role": <"owner"|"maintainer"|"supervisor"|"worker">,
+#         "is_active": <true|false>,
 #         "user": {
 #             "id": <num>
 #         }
-#     }
+#     } or null
 # }
 
 default allow = false
@@ -34,32 +35,39 @@ allow {
 
 allow {
     { utils.LIST, utils.VIEW }[input.scope]
-    input.auth.organization.owner.id == input.auth.user.id
+    organizations.is_member
 }
 
 allow {
     { utils.LIST, utils.VIEW }[input.scope]
-    input.auth.organization.role != null
+    input.resource.user.id == input.auth.user.id
 }
 
 allow {
     { utils.CHANGE_ROLE, utils.DELETE }[input.scope]
-    input.auth.organization.owner.id == input.auth.user.id
+    organizations.is_owner
+    input.resource.role != organizations.OWNER
 }
 
 allow {
     { utils.CHANGE_ROLE, utils.DELETE }[input.scope]
+    input.resource.role != organizations.OWNER
     input.resource.role != organizations.MAINTAINER
-    input.auth.organization.role == organizations.MAINTAINER
+    organizations.is_maintainer
 }
 
 filter = [] { # Django Q object to filter list of entries
+    input.auth.organization == null
     utils.is_admin
-} else = [] {
-    organizations.is_owner
-} else = [] {
-    organizations.is_member
 } else = qobject {
-    user := input.auth.user
-    qobject := [ {"user_id": user.id} ]
+    input.auth.organization == null
+    qobject := [ {"user": input.auth.user.id} ]
+} else = qobject {
+    input.auth.organization != null
+    utils.is_admin
+    qobject := [ {"organization": input.auth.organization.id} ]
+} else = qobject {
+    input.auth.organization != null
+    organizations.is_member
+    qobject := [ {"organization": input.auth.organization.id} ]
 }

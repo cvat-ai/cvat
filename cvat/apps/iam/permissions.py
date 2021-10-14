@@ -186,6 +186,41 @@ class InvitationPermission(OpenPolicyAgentPermission):
 
         return data
 
+class MembershipPermission(OpenPolicyAgentPermission):
+    @classmethod
+    def create(cls, request, view, obj):
+        permissions = []
+        if view.basename == 'membership':
+            self = cls(request, view, obj)
+            permissions.append(self)
+
+        return permissions
+
+    def __init__(self, request, view, obj):
+        super().__init__(request, view, obj)
+        self.url = settings.IAM_OPA_DATA_URL + '/memberships/allow'
+        self.payload['input']['scope'] = self.scope
+        if obj:
+            self.payload['input']['resource'] = self.resource
+
+    @property
+    def scope(self):
+        return {
+            'list': 'list',
+            'partial_update': 'change:role',
+            'retrieve': 'view',
+            'destroy': 'delete'
+        }.get(self.view.action, None)
+
+    @property
+    def resource(self):
+        return {
+            'role': self.obj.role,
+            'is_active': self.obj.is_active,
+            'user': {
+                'id': self.obj.user.id
+            }
+        }
 
 class ServerPermission(OpenPolicyAgentPermission):
     @classmethod
@@ -267,43 +302,6 @@ class LambdaPermission(OpenPolicyAgentPermission):
             ('request', 'retrieve'): 'call:offline',
             ('request', 'destroy'): 'call:offline',
         }.get((self.view.basename, self.view.action), None)
-
-
-
-class MembershipPermission(OpenPolicyAgentPermission):
-    @classmethod
-    def create(cls, request, view, obj):
-        permissions = []
-        if view.basename == 'membership':
-            self = cls(request, view, obj)
-            permissions.append(self)
-
-        return permissions
-
-    def __init__(self, request, view, obj):
-        super().__init__(request, view, obj)
-        self.url = settings.IAM_OPA_DATA_URL + '/memberships/allow'
-        self.payload['input']['scope'] = self.scope
-        if obj:
-            self.payload['input']['resource'] = self.resource
-
-    @property
-    def scope(self):
-        return {
-            'list': 'list',
-            'partial_update': 'change:role',
-            'retrieve': 'view',
-            'destroy': 'delete'
-        }.get(self.view.action, None)
-
-    @property
-    def resource(self):
-        return {
-            'role': self.obj.role,
-            'user': {
-                'id': self.obj.user.id
-            }
-        }
 
 class CloudStoragePermission(OpenPolicyAgentPermission):
     @classmethod

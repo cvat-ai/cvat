@@ -49,15 +49,10 @@ class MembershipViewSet(mixins.RetrieveModelMixin, mixins.DestroyModelMixin,
         else:
             return MembershipWriteSerializer
 
-
     def get_queryset(self):
         queryset = super().get_queryset()
-        organization = self.request.iam_context['organization']
-        if organization:
-            queryset = queryset.filter(organization=organization)
         permission = MembershipPermission(self.request, self, None)
         return permission.filter(queryset)
-
 
 class InvitationViewSet(viewsets.ModelViewSet):
     queryset = Invitation.objects.all()
