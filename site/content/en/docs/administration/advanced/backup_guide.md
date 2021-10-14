@@ -38,6 +38,12 @@ docker-compose stop
 Please don't forget to include all the compose config files that were used in the docker-compose command
 using the `-f` parameter.
 
+For archiving you will need an ubuntu image, If there is no ubuntu image among your local docker images, run.
+
+```console
+docker pull ubuntu
+```
+
 Backup data:
 
 ```console

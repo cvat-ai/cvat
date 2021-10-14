@@ -38,7 +38,7 @@ description: 'Information about the installation of components needed for semi-a
   wget https://github.com/nuclio/nuclio/releases/download/<version>/nuctl-<version>-linux-amd64
   ```
 
-  After downloading the nuclio, give it a proper permission and do a softlink
+  After downloading the nuclio, give it a proper permission and do a softlink.
 
   ```
   sudo chmod +x nuctl-<version>-linux-amd64
