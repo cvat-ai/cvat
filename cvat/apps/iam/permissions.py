@@ -131,6 +131,60 @@ class OrganizationPermission(OpenPolicyAgentPermission):
         else:
             return None
 
+class InvitationPermission(OpenPolicyAgentPermission):
+    @classmethod
+    def create(cls, request, view, obj):
+        permissions = []
+        if view.basename == 'invitation':
+            self = cls(request, view, obj)
+            permissions.append(self)
+
+        return permissions
+
+    def __init__(self, request, view, obj):
+        super().__init__(request, view, obj)
+        self.url = settings.IAM_OPA_DATA_URL + '/invitations/allow'
+        self.payload['input']['scope'] = self.scope
+        self.payload['input']['resource'] = self.resource
+
+    @property
+    def scope(self):
+        return {
+            ('list', False): 'list',
+            ('create', False): 'create',
+            ('destroy', False): 'delete',
+            ('partial_update', False): 'resend',
+            ('partial_update', True): 'accept',
+            ('retrieve', False): 'view'
+        }.get((self.view.action, 'accepted' in self.request.data))
+
+
+    @property
+    def resource(self):
+        data = None
+        if self.obj:
+            data = {
+                'owner': { 'id': self.obj.owner.id },
+                'invitee': { 'id': self.obj.membership.user.id },
+                'accepted': self.obj.accepted,
+                'role': self.obj.membership.role,
+                'organization': {
+                    'id': self.obj.membership.organization.id
+                }
+            }
+        elif self.view.action == 'create':
+            data = {
+                'owner': { 'id': self.request.user.id },
+                'invitee': {
+                    'id': self.request.data.get('user')
+                },
+                'role': self.request.data.get('role'),
+                'organization': {
+                    'id': self.request.data.get('organization')
+                }
+            }
+
+        return data
 
 
 class ServerPermission(OpenPolicyAgentPermission):
@@ -250,65 +304,6 @@ class MembershipPermission(OpenPolicyAgentPermission):
                 'id': self.obj.user.id
             }
         }
-
-
-
-class InvitationPermission(OpenPolicyAgentPermission):
-    @classmethod
-    def create(cls, request, view, obj):
-        permissions = []
-        if view.basename == 'invitation':
-            self = cls(request, view, obj)
-            permissions.append(self)
-
-        return permissions
-
-    def __init__(self, request, view, obj):
-        super().__init__(request, view, obj)
-        self.url = settings.IAM_OPA_DATA_URL + '/invitations/allow'
-        self.payload['input']['scope'] = self.scope
-        self.payload['input']['resource'] = self.resource
-
-    @property
-    def scope(self):
-        return {
-            ('list', False): 'list',
-            ('create', False): 'create',
-            ('destroy', False): 'delete',
-            ('partial_update', False): 'resend',
-            ('partial_update', True): 'accept',
-            ('retrieve', False): 'view'
-        }.get((self.view.action, 'accepted' in self.request.data))
-
-
-    @property
-    def resource(self):
-        data = None
-        if self.obj:
-            data = {
-                'owner': { 'id': self.obj.owner.id },
-                'invitee': { 'id': self.obj.membership.user.id },
-                'accepted': self.obj.accepted,
-                'role': self.obj.membership.role,
-                'organization': {
-                    'id': self.obj.membership.organization.id
-                }
-            }
-        elif self.view.action == 'create':
-            data = {
-                'owner': { 'id': self.request.user.id },
-                'invitee': {
-                    'id': self.request.data.get('user')
-                },
-                'accepted': False,
-                'role': self.request.data.get('role'),
-                'organization': {
-                    'id': self.request.data.get('organization')
-                }
-            }
-
-        return data
-
 
 class CloudStoragePermission(OpenPolicyAgentPermission):
     @classmethod

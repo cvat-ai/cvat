@@ -17,7 +17,7 @@ import data.utils
 #         },
 #         "user": {
 #             "num_resources": <num>,
-#             "role": <"maintainer"|"supervisor"|"worker"> or null
+#             "role": <"owner"|"maintainer"|"supervisor"|"worker"> or null
 #         }
 #     }
 # }
@@ -27,16 +27,25 @@ MAINTAINER := "maintainer"
 SUPERVISOR := "supervisor"
 WORKER     := "worker"
 
-is_staff {
+is_owner {
     input.auth.organization.owner.id == input.auth.user.id
-}
-
-is_staff {
     input.auth.organization.user.role == OWNER
 }
 
-is_staff {
+is_maintainer {
     input.auth.organization.user.role == MAINTAINER
+}
+
+is_staff {
+    is_owner
+}
+
+is_staff {
+    is_maintainer
+}
+
+is_member {
+    input.auth.organization.role != null
 }
 
 default allow = false
@@ -57,6 +66,7 @@ allow {
 
 allow {
     input.scope == utils.LIST
+    input.resource.user.role != null
 }
 
 filter = [] { # Django Q object to filter list of entries

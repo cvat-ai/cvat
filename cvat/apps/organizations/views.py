@@ -39,7 +39,6 @@ class OrganizationViewSet(viewsets.ModelViewSet):
 
 class MembershipViewSet(mixins.RetrieveModelMixin, mixins.DestroyModelMixin,
     mixins.ListModelMixin, mixins.UpdateModelMixin, viewsets.GenericViewSet):
-
     queryset = Membership.objects.all()
     ordering = ['-id']
     http_method_names = ['get', 'patch', 'delete', 'head', 'options']
@@ -73,9 +72,6 @@ class InvitationViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        organization = self.request.iam_context['organization']
-        if organization:
-            queryset = queryset.filter(membership__organization=organization)
         permission = InvitationPermission(self.request, self, None)
         return permission.filter(queryset)
 
