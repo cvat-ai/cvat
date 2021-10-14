@@ -14,17 +14,23 @@ import Input from 'antd/lib/input';
 import Form from 'antd/lib/form';
 import Select from 'antd/lib/select';
 import { useForm } from 'antd/lib/form/Form';
+import { Store } from 'antd/lib/form/interface';
 import { CloseOutlined, PlusCircleOutlined } from '@ant-design/icons';
 
-import { removeOrganizationAsync } from 'actions/organization-actions';
+import {
+    inviteOrganizationMembersAsync,
+    leaveOrganizationAsync,
+    removeOrganizationAsync,
+} from 'actions/organization-actions';
 
 export interface Props {
     organizationInstance: any;
     userInstance: any;
+    fetchMembers: () => void;
 }
 
 function OrganizationTopBar(props: Props): JSX.Element {
-    const { organizationInstance, userInstance } = props;
+    const { organizationInstance, userInstance, fetchMembers } = props;
     const {
         owner, description, createdDate, updatedDate, slug,
     } = organizationInstance;
@@ -53,7 +59,7 @@ function OrganizationTopBar(props: Props): JSX.Element {
                                 onClick={() => {
                                     Modal.confirm({
                                         onOk: () => {
-                                            // TODO
+                                            dispatch(leaveOrganizationAsync(organizationInstance));
                                         },
                                         content: (
                                             <>
@@ -135,8 +141,12 @@ function OrganizationTopBar(props: Props): JSX.Element {
                     initialValues={{
                         users: [{ email: '', role: 'worker' }],
                     }}
-                    onFinish={() => {
-                        // TODO: submit server request
+                    onFinish={(values: Store) => {
+                        dispatch(
+                            inviteOrganizationMembersAsync(organizationInstance, values.users, () => {
+                                fetchMembers();
+                            }),
+                        );
                         setVisibleInviteModal(false);
                         form.resetFields(['users']);
                     }}

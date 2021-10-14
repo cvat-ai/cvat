@@ -127,6 +127,10 @@ const defaultState: NotificationsState = {
             updating: null,
             activation: null,
             deleting: null,
+            leaving: null,
+            inviting: null,
+            updatingMembership: null,
+            removingMembership: null,
         },
     },
     messages: {
@@ -1327,11 +1331,6 @@ export default function (state = defaultState, action: AnyAction): Notifications
                 },
             };
         }
-        case OrganizationActionsTypes.CREATE_ORGANIZATION_SUCCESS: {
-            return {
-                ...state,
-            };
-        }
         case OrganizationActionsTypes.CREATE_ORGANIZATION_FAILED: {
             return {
                 ...state,
@@ -1375,6 +1374,87 @@ export default function (state = defaultState, action: AnyAction): Notifications
                             message: `Could not remove organization ${action.payload.slug}`,
                             reason: action.payload.error.toString(),
                             className: 'cvat-notification-notice-remove-organization-failed',
+                        },
+                    },
+                },
+            };
+        }
+        case OrganizationActionsTypes.INVITE_ORGANIZATION_MEMBERS_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    organizations: {
+                        ...state.errors.organizations,
+                        inviting: {
+                            message: 'Could not invite organization members',
+                            reason: action.payload.error.toString(),
+                            className: 'cvat-notification-notice-invite-organization-members-failed',
+                        },
+                    },
+                },
+            };
+        }
+        case OrganizationActionsTypes.INVITE_ORGANIZATION_MEMBER_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    organizations: {
+                        ...state.errors.organizations,
+                        inviting: {
+                            message: `Could not invite this member "${action.payload.email}" to the organization`,
+                            reason: action.payload.error.toString(),
+                            className: 'cvat-notification-notice-invite-organization-member-failed',
+                        },
+                    },
+                },
+            };
+        }
+        case OrganizationActionsTypes.LEAVE_ORGANIZATION_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    organizations: {
+                        ...state.errors.organizations,
+                        leaving: {
+                            message: 'Could not leave the organization',
+                            reason: action.payload.error.toString(),
+                            className: 'cvat-notification-notice-leave-organization-failed',
+                        },
+                    },
+                },
+            };
+        }
+        case OrganizationActionsTypes.REMOVE_ORGANIZATION_MEMBER_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    organizations: {
+                        ...state.errors.organizations,
+                        removingMembership: {
+                            message: `Could not remove member "${action.payload.username}" from the organization`,
+                            reason: action.payload.error.toString(),
+                            className: 'cvat-notification-notice-remove-organization-member-failed',
+                        },
+                    },
+                },
+            };
+        }
+        case OrganizationActionsTypes.UPDATE_ORGANIZATION_MEMBER_FAILED: {
+            const { role, username } = action.payload;
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    organizations: {
+                        ...state.errors.organizations,
+                        updatingMembership: {
+                            message: `Could not assign role "${role}" to the user "${username}"`,
+                            reason: action.payload.error.toString(),
+                            className: 'cvat-notification-notice-update-organization-membership-failed',
                         },
                     },
                 },

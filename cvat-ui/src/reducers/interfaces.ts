@@ -397,6 +397,10 @@ export interface NotificationsState {
             updating: null | ErrorState;
             activation: null | ErrorState;
             deleting: null | ErrorState;
+            leaving: null | ErrorState;
+            inviting: null | ErrorState;
+            updatingMembership: null | ErrorState;
+            removingMembership: null | ErrorState;
         };
     };
     messages: {
@@ -685,7 +689,10 @@ export interface OrganizationState {
     current: any | null;
     fetching: boolean;
     creating: boolean;
-    saving: boolean;
+    inviting: boolean;
+    leaving: boolean;
+    removingMember: boolean;
+    updatingMember: boolean;
 }
 
 export interface CombinedState {

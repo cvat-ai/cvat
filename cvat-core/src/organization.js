@@ -2,7 +2,8 @@
 //
 // SPDX-License-Identifier: MIT
 
-const { checkObjectType } = require('./common');
+const { checkObjectType, isEnum } = require('./common');
+const { MembershipRole } = require('./enums');
 const { ArgumentError } = require('./exceptions');
 const PluginRegistry = require('./plugins');
 const serverProxy = require('./server-proxy');
@@ -20,9 +21,7 @@ class Organization {
 
      * <br> It can contains keys:
      * <br> <li style="margin-left: 10px;"> name
-     * <br> <li style="margin-left: 10px;"> company
-     * <br> <li style="margin-left: 10px;"> email
-     * <br> <li style="margin-left: 10px;"> location
+     * <br> <li style="margin-left: 10px;"> description
      */
     constructor(initialData) {
         const data = {
@@ -35,7 +34,6 @@ class Organization {
             company: undefined,
             email: undefined,
             location: undefined,
-            owner: undefined,
         };
 
         for (const prop of Object.keys(data)) {
@@ -197,6 +195,90 @@ class Organization {
         const result = await PluginRegistry.apiWrapper.call(this, Organization.prototype.remove);
         return result;
     }
+
+    /**
+     * Method invites new members by email
+     * @method invite
+     * @returns {module:API.cvat.classes.Organization}
+     * @param {string} email
+     * @param {string} role
+     * @memberof module:API.cvat.classes.Organization
+     * @readonly
+     * @instance
+     * @async
+     * @throws {module:API.cvat.exceptions.ArgumentError}
+     * @throws {module:API.cvat.exceptions.ServerError}
+     * @throws {module:API.cvat.exceptions.PluginError}
+     */
+    async invite(email, role) {
+        const result = await PluginRegistry.apiWrapper.call(this, Organization.prototype.invite, email, role);
+        return result;
+    }
+
+    /**
+     * Method allows a user to get out from an organization
+     * The difference between deleteMembership is that membershipId is unknown in this case
+     * @method leave
+     * @returns {module:API.cvat.classes.Organization}
+     * @memberof module:API.cvat.classes.Organization
+     * @param {module:API.cvat.classes.User} user
+     * @readonly
+     * @instance
+     * @async
+     * @throws {module:API.cvat.exceptions.ServerError}
+     * @throws {module:API.cvat.exceptions.ArgumentError}
+     * @throws {module:API.cvat.exceptions.PluginError}
+     */
+    async leave(user) {
+        const result = await PluginRegistry.apiWrapper.call(this, Organization.prototype.leave, user);
+        return result;
+    }
+
+    /**
+     * Method allows to change a membership role
+     * @method updateMembership
+     * @returns {module:API.cvat.classes.Organization}
+     * @param {number} membershipId
+     * @param {string} role
+     * @memberof module:API.cvat.classes.Organization
+     * @readonly
+     * @instance
+     * @async
+     * @throws {module:API.cvat.exceptions.ArgumentError}
+     * @throws {module:API.cvat.exceptions.ServerError}
+     * @throws {module:API.cvat.exceptions.PluginError}
+     */
+    async updateMembership(membershipId, role) {
+        const result = await PluginRegistry.apiWrapper.call(
+            this,
+            Organization.prototype.updateMembership,
+            membershipId,
+            role,
+        );
+        return result;
+    }
+
+    /**
+     * Method allows to kick a user from an organization
+     * @method deleteMembership
+     * @returns {module:API.cvat.classes.Organization}
+     * @param {number} membershipId
+     * @memberof module:API.cvat.classes.Organization
+     * @readonly
+     * @instance
+     * @async
+     * @throws {module:API.cvat.exceptions.ArgumentError}
+     * @throws {module:API.cvat.exceptions.ServerError}
+     * @throws {module:API.cvat.exceptions.PluginError}
+     */
+    async deleteMembership(membershipId) {
+        const result = await PluginRegistry.apiWrapper.call(
+            this,
+            Organization.prototype.deleteMembership,
+            membershipId,
+        );
+        return result;
+    }
 }
 
 Organization.prototype.save.implementation = async function () {
@@ -227,6 +309,44 @@ Organization.prototype.members.implementation = async function (orgSlug, page, p
 Organization.prototype.remove.implementation = async function () {
     if (typeof this.id === 'number') {
         await serverProxy.organizations.delete(this.id);
+    }
+};
+
+Organization.prototype.invite.implementation = async function (email, role) {
+    checkObjectType('email', email, 'string');
+    if (!isEnum.bind(MembershipRole)(role)) {
+        throw new ArgumentError(`Role must be one of: ${Object.values(MembershipRole).toString()}`);
+    }
+
+    if (typeof this.id === 'number') {
+        await serverProxy.organizations.invite(this.id, { email, role });
+    }
+};
+
+Organization.prototype.updateMembership.implementation = async function (membershipId, role) {
+    checkObjectType('membershipId', membershipId, 'number');
+    if (!isEnum.bind(MembershipRole)(role)) {
+        throw new ArgumentError(`Role must be one of: ${Object.values(MembershipRole).toString()}`);
+    }
+
+    if (typeof this.id === 'number') {
+        await serverProxy.organizations.updateMembership(membershipId, { role });
+    }
+};
+
+Organization.prototype.deleteMembership.implementation = async function (membershipId) {
+    checkObjectType('membershipId', membershipId, 'number');
+    if (typeof this.id === 'number') {
+        await serverProxy.organizations.deleteMembership(membershipId);
+    }
+};
+
+Organization.prototype.leave.implementation = async function (user) {
+    checkObjectType('user', user, null, User);
+    if (typeof this.id === 'number') {
+        // TODO: find membership for the user
+        // TODO: remove it from the
+        // await serverProxy.organizations.deleteMembership(membershipId);
     }
 };
 

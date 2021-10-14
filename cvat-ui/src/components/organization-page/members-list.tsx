@@ -2,73 +2,75 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import Pagination from 'antd/lib/pagination';
 import Spin from 'antd/lib/spin';
 
+import { useDispatch, useSelector } from 'react-redux';
+import { CombinedState } from 'reducers/interfaces';
+import { removeOrganizationMemberAsync, updateOrganizationMemberAsync } from 'actions/organization-actions';
 import MemberItem from './member-item';
 
 export interface Props {
     organizationInstance: any;
     userInstance: any;
-}
-
-function fetchMembers(
-    organizationInstance: any,
-    page: number,
-    pageSize: number,
-    setMembers: (members: any[]) => void,
-    setFetching: (fetching: boolean) => void,
-): void {
-    setFetching(true);
-    organizationInstance
-        .members(page, pageSize)
-        .then((_members: any[]) => {
-            setMembers(_members);
-        })
-        .catch(() => {})
-        .finally(() => {
-            setFetching(false);
-        });
+    fetching: boolean;
+    pageSize: number;
+    members: any[];
+    setPageNumber: (pageNumber: number) => void;
+    setPageSize: (pageSize: number) => void;
+    fetchMembers: () => void;
 }
 
 function MembersList(props: Props): JSX.Element {
-    const { organizationInstance } = props;
+    const {
+        organizationInstance, fetching, members, pageSize, fetchMembers, setPageNumber, setPageSize,
+    } = props;
     const { owner } = organizationInstance;
-    const [pageNumber, setPageNumber] = useState<number>(1);
-    const [pageSize, setPageSize] = useState<number>(10);
-    const [fetching, setFetching] = useState<boolean>(true);
-    const [members, setMembers] = useState<any[]>([]);
+    const dispatch = useDispatch();
+    const inviting = useSelector((state: CombinedState) => state.organizations.inviting);
+    const updatingMember = useSelector((state: CombinedState) => state.organizations.updatingMember);
+    const removingMember = useSelector((state: CombinedState) => state.organizations.removingMember);
 
-    useEffect(() => {
-        fetchMembers(organizationInstance, pageNumber, pageSize, setMembers, setFetching);
-    }, []);
-
-    useEffect(() => {
-        fetchMembers(organizationInstance, pageNumber, pageSize, setMembers, setFetching);
-    }, [pageSize]);
-
-    return fetching ? (
+    return fetching || inviting || updatingMember || removingMember ? (
         <Spin className='cvat-spinner' />
     ) : (
         <>
             <div>
                 {members.map(
                     (member: any): JSX.Element => (
-                        <MemberItem key={member.user.id} ownerID={owner.id} membershipInstance={member} />
+                        <MemberItem
+                            key={member.user.id}
+                            ownerID={owner.id}
+                            membershipInstance={member}
+                            onRemoveMembership={() => {
+                                dispatch(
+                                    removeOrganizationMemberAsync(organizationInstance, member, () => {
+                                        fetchMembers();
+                                    }),
+                                );
+                            }}
+                            onUpdateMembershipRole={(role: string) => {
+                                dispatch(
+                                    updateOrganizationMemberAsync(organizationInstance, member, role, () => {
+                                        fetchMembers();
+                                    }),
+                                );
+                            }}
+                        />
                     ),
                 )}
             </div>
             <div className='cvat-organization-members-pagination-block'>
                 <Pagination
                     total={members.length ? (members as any).count : 0}
-                    pageSize={pageSize}
                     onShowSizeChange={(_: number, newShowSize: number) => {
                         setPageSize(newShowSize);
                     }}
                     onChange={(current: number) => {
                         setPageNumber(current);
                     }}
+                    pageSize={pageSize}
                     showSizeChanger
                     showQuickJumper
                 />

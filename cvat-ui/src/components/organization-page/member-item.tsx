@@ -8,14 +8,19 @@ import Text from 'antd/lib/typography/Text';
 import { Row, Col } from 'antd/lib/grid';
 import moment from 'moment';
 import { CloseOutlined } from '@ant-design/icons';
+import Modal from 'antd/lib/modal';
 
 export interface Props {
     ownerID: number;
     membershipInstance: any;
+    onRemoveMembership(): void;
+    onUpdateMembershipRole(role: string): void;
 }
 
 function MemberItem(props: Props): JSX.Element {
-    const { membershipInstance, ownerID } = props;
+    const {
+        membershipInstance, ownerID, onRemoveMembership, onUpdateMembershipRole,
+    } = props;
     const { user, joined_date: joinedDate, role } = membershipInstance;
     const { username, firstName, lastName } = user;
 
@@ -31,23 +36,38 @@ function MemberItem(props: Props): JSX.Element {
                 <Text type='secondary'>{`Joined ${moment(joinedDate).fromNow()}`}</Text>
             </Col>
             <Col span={3} className='cvat-organization-member-item-role'>
-                <Select value={role === 'owner' ? 'maintainer' : role} disabled={user.id === ownerID}>
+                <Select
+                    onChange={(_role: string) => {
+                        onUpdateMembershipRole(_role);
+                    }}
+                    value={role === 'owner' ? 'maintainer' : role}
+                    disabled={user.id === ownerID}
+                >
                     <Select.Option value='worker'>Worker</Select.Option>
                     <Select.Option value='supervisor'>Supervisor</Select.Option>
                     <Select.Option value='maintainer'>Maintainer</Select.Option>
                 </Select>
             </Col>
             <Col span={1} className='cvat-organization-member-item-remove'>
-                <CloseOutlined />
+                {ownerID !== membershipInstance.user.id ? (
+                    <CloseOutlined
+                        onClick={() => {
+                            Modal.confirm({
+                                content: `Do you want to remove "${username}" from this organization. Continue?`,
+                                okText: 'Yes, remove',
+                                okButtonProps: {
+                                    danger: true,
+                                },
+                                onOk: () => {
+                                    onRemoveMembership();
+                                },
+                            });
+                        }}
+                    />
+                ) : null}
             </Col>
         </Row>
     );
 }
 
 export default React.memo(MemberItem);
-
-// TODO: get information about who invited
-// TODO: add dialog to leave organization
-// TODO: add dialog to remove organization
-// TODO: add dialog to kick user
-// Write core code to invite/kick and remove organization

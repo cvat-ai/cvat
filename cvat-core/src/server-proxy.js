@@ -1430,6 +1430,56 @@
                 return response.data;
             }
 
+            async function inviteOrganizationMembers(orgId, data) {
+                const { backendAPI } = config;
+                try {
+                    await Axios.post(
+                        `${backendAPI}/invitations`,
+                        {
+                            ...data,
+                            organization: orgId,
+                        },
+                        {
+                            proxy: config.proxy,
+                        },
+                    );
+                } catch (errorData) {
+                    throw generateError(errorData);
+                }
+            }
+
+            async function updateOrganizationMembership(membershipId, data) {
+                const { backendAPI } = config;
+                let response = null;
+                try {
+                    response = await Axios.patch(
+                        `${backendAPI}/memberships/${membershipId}`,
+                        {
+                            ...data,
+                        },
+                        {
+                            proxy: config.proxy,
+                        },
+                    );
+                } catch (errorData) {
+                    throw generateError(errorData);
+                }
+
+                return response.data;
+            }
+
+            async function deleteOrganizationMembership(membershipId) {
+                const { backendAPI } = config;
+
+                try {
+                    await Axios.delete(`${backendAPI}/memberships/${membershipId}`, {
+                        proxy: config.proxy,
+                    });
+                } catch (errorData) {
+                    throw generateError(errorData);
+                }
+            }
+
             Object.defineProperties(
                 this,
                 Object.freeze({
@@ -1579,6 +1629,9 @@
                             create: createOrganization,
                             members: getOrganizationMembers,
                             delete: deleteOrganization,
+                            invite: inviteOrganizationMembers,
+                            updateMembership: updateOrganizationMembership,
+                            deleteMembership: deleteOrganizationMembership,
                         }),
                         writable: false,
                     },
