@@ -41,8 +41,10 @@ function OrganizationPage(): JSX.Element | null {
     const [pageSize, setPageSize] = useState<number>(10);
 
     useEffect(() => {
-        fetchMembers(organization, pageNumber, pageSize, setMembers, setFetching);
-    }, [pageSize, pageNumber]);
+        if (organization) {
+            fetchMembers(organization, pageNumber, pageSize, setMembers, setFetching);
+        }
+    }, [pageSize, pageNumber, organization]);
 
     if (organizationsFetching) {
         return <Spin className='cvat-spinner' />;

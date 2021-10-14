@@ -33,6 +33,7 @@ class Organization {
             updated_date: undefined,
             company: undefined,
             email: undefined,
+            owner: undefined,
             location: undefined,
         };
 
