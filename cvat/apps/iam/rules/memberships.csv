@@ -7,4 +7,6 @@ view,Membership,Organization,"None, User_Self",,GET,/membership/{id},None,Worker
 change:role,Membership,Organization,"None, User_Self","resource[""role""] not in [""maintainer"", ""owner""]",PATCH,/membership/{id},User,Maintainer
 change:role,Membership,Organization,"None, User_Self","resource[""role""] != ""owner""",PATCH,/membership/{id},User,Owner
 delete,Membership,Organization,"None, User_Self","resource[""role""] not in [""maintainer"", ""owner""]",DELETE,/membership/{id},User,Maintainer
-delete,Membership,Organization,"None, User_Self","resource[""role""] != ""owner""",DELETE,/membership/{id},User,Owner
+delete,Membership,Organization,None,"resource[""role""] != ""owner""",DELETE,/membership/{id},User,Owner
+delete,Membership,Organization,User_Self,"resource[""role""] != ""owner""",DELETE,/membership/{id},Worker,Worker
+delete,Membership,Sandbox,User_Self,"resource[""role""] != ""owner""",DELETE,/membership/{id},Worker,N/A

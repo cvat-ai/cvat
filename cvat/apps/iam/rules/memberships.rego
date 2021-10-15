@@ -69,6 +69,23 @@ allow {
     organizations.is_maintainer
 }
 
+allow {
+    input.scope == utils.DELETE
+    input.resource.role != organizations.OWNER
+    input.resource.user.id == input.auth.user.id
+    utils.has_privilege(utils.WORKER)
+    organizations.is_member
+}
+
+allow {
+    input.scope == utils.DELETE
+    input.resource.role != organizations.OWNER
+    input.resource.user.id == input.auth.user.id
+    utils.has_privilege(utils.WORKER)
+    input.auth.organization == null
+}
+
+
 filter = [] { # Django Q object to filter list of entries
     input.auth.organization == null
     utils.is_admin
