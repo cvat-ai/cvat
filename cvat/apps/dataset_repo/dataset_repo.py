@@ -70,7 +70,7 @@ class Git:
 
 
     # Method parses an got URL.
-    # SSH: git@github.com/proj/repos[.git]
+    # SSH: [ssh://]git@github.com/proj/repos[.git]
     # HTTP/HTTPS: [http://]github.com/proj/repos[.git]
     def _parse_url(self):
         try:
