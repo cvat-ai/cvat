@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - interactor: add HRNet interactive segmentation serverless function (<https://github.com/openvinotoolkit/cvat/pull/3740>)
 - Added GPU implementation for SiamMask, reworked tracking approach (<https://github.com/openvinotoolkit/cvat/pull/3571>)
 - Progress bar for manifest creating (<https://github.com/openvinotoolkit/cvat/pull/3712>)
+- Add a tutorial on attaching cloud storage AWS-S3 (<https://github.com/openvinotoolkit/cvat/pull/3745>)
+  and Azure Blob Container (<https://github.com/openvinotoolkit/cvat/pull/3778>)
 
 ### Changed
 
