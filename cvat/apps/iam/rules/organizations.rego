@@ -45,7 +45,7 @@ is_staff {
 }
 
 is_member {
-    input.auth.organization.role != null
+    input.auth.organization.user.role != null
 }
 
 default allow = false
@@ -66,7 +66,6 @@ allow {
 
 allow {
     input.scope == utils.LIST
-    input.resource.user.role != null
 }
 
 filter = [] { # Django Q object to filter list of entries
