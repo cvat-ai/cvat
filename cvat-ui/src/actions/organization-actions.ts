@@ -18,6 +18,9 @@ export enum OrganizationActionsTypes {
     CREATE_ORGANIZATION = 'CREATE_ORGANIZATION',
     CREATE_ORGANIZATION_SUCCESS = 'CREATE_ORGANIZATION_SUCCESS',
     CREATE_ORGANIZATION_FAILED = 'CREATE_ORGANIZATION_FAILED',
+    UPDATE_ORGANIZATION = 'UPDATE_ORGANIZATION',
+    UPDATE_ORGANIZATION_SUCCESS = 'UPDATE_ORGANIZATION_SUCCESS',
+    UPDATE_ORGANIZATION_FAILED = 'UPDATE_ORGANIZATION_FAILED',
     REMOVE_ORGANIZATION = 'REMOVE_ORGANIZATION',
     REMOVE_ORGANIZATION_SUCCESS = 'REMOVE_ORGANIZATION_SUCCESS',
     REMOVE_ORGANIZATION_FAILED = 'REMOVE_ORGANIZATION_FAILED',
@@ -47,6 +50,11 @@ const organizationActions = {
         createAction(OrganizationActionsTypes.CREATE_ORGANIZATION_SUCCESS, { organization }),
     createOrganizationFailed: (slug: string, error: any) =>
         createAction(OrganizationActionsTypes.CREATE_ORGANIZATION_FAILED, { slug, error }),
+    updateOrganization: () => createAction(OrganizationActionsTypes.UPDATE_ORGANIZATION),
+    updateOrganizationSuccess: (organization: any) =>
+        createAction(OrganizationActionsTypes.UPDATE_ORGANIZATION_SUCCESS, { organization }),
+    updateOrganizationFailed: (slug: string, error: any) =>
+        createAction(OrganizationActionsTypes.UPDATE_ORGANIZATION_FAILED, { slug, error }),
     activateOrganizationSuccess: (organization: any | null) =>
         createAction(OrganizationActionsTypes.ACTIVATE_ORGANIZATION_SUCCESS, { organization }),
     activateOrganizationFailed: (error: any, slug: string | null) =>
@@ -134,6 +142,19 @@ export function createOrganizationAsync(
     };
 }
 
+export function updateOrganizationAsync(organization: any): ThunkAction {
+    return async function (dispatch) {
+        dispatch(organizationActions.updateOrganization());
+
+        try {
+            const updatedOrganization = await organization.save();
+            dispatch(organizationActions.updateOrganizationSuccess(updatedOrganization));
+        } catch (error) {
+            dispatch(organizationActions.updateOrganizationFailed(organization.slug, error));
+        }
+    };
+}
+
 export function removeOrganizationAsync(organization: any): ThunkAction {
     return async function (dispatch) {
         try {
@@ -178,10 +199,11 @@ export function inviteOrganizationMembersAsync(
 }
 
 export function leaveOrganizationAsync(organization: any): ThunkAction {
-    return async function (dispatch) {
+    return async function (dispatch, getState) {
+        const { user } = getState().auth;
         dispatch(organizationActions.leaveOrganization());
         try {
-            await organization.leave();
+            await organization.leave(user);
             dispatch(organizationActions.leaveOrganizationSuccess());
             localStorage.removeItem('currentOrganization');
         } catch (error) {

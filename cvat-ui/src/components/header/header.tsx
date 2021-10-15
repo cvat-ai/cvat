@@ -21,7 +21,6 @@ import Icon, {
     PlusOutlined,
     UserOutlined,
     ExpandAltOutlined,
-    CloseOutlined,
 } from '@ant-design/icons';
 import Layout from 'antd/lib/layout';
 import Button from 'antd/lib/button';
@@ -248,7 +247,7 @@ function HeaderContainer(props: Props): JSX.Element {
                 <SettingOutlined />
                 Settings
             </Menu.Item>
-            <Menu.Item key='about' onClick={showAboutModal}>
+            <Menu.Item key='about' onClick={() => showAboutModal()}>
                 <InfoCircleOutlined />
                 About
             </Menu.Item>
@@ -299,25 +298,22 @@ function HeaderContainer(props: Props): JSX.Element {
                     Open
                 </Menu.Item>
             ) : null}
-            {currentOrganization ? (
-                <Menu.Item
-                    key='$disable'
-                    onClick={() => {
-                        localStorage.removeItem('currentOrganization');
-                        if (/\d+$/.test(window.location.pathname)) {
-                            // some data are opened
-                            window.location.pathname = '/';
-                        } else {
-                            window.location.reload();
-                        }
-                    }}
-                >
-                    <CloseOutlined />
-                    <Text strong>Disable</Text>
-                </Menu.Item>
-            ) : null}
             {organizationsList.length ? (
                 <Menu.ItemGroup title='Your organizations' key={OrganizationMenuKeys.LIST}>
+                    <Menu.Item
+                        key='$personalWorkspace'
+                        onClick={() => {
+                            localStorage.removeItem('currentOrganization');
+                            if (/\d+$/.test(window.location.pathname)) {
+                                // some data are opened
+                                window.location.pathname = '/';
+                            } else {
+                                window.location.reload();
+                            }
+                        }}
+                    >
+                        <Text strong={!currentOrganization}>Personal workspace</Text>
+                    </Menu.Item>
                     {organizationsList.map(
                         (organization: any): JSX.Element => (
                             <Menu.Item
@@ -335,7 +331,11 @@ function HeaderContainer(props: Props): JSX.Element {
                                 }}
                             >
                                 <CVATTooltip overlay={organization.name}>
-                                    <div>{organization.slug}</div>
+                                    <Text
+                                        strong={currentOrganization && organization.slug === currentOrganization.slug}
+                                    >
+                                        {organization.slug}
+                                    </Text>
                                 </CVATTooltip>
                             </Menu.Item>
                         ),

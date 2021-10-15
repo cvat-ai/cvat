@@ -1395,6 +1395,24 @@
                 return response.data;
             }
 
+            async function updateOrganization(id, data) {
+                const { backendAPI } = config;
+
+                let response = null;
+                try {
+                    response = await Axios.patch(`${backendAPI}/organizations/${id}`, JSON.stringify(data), {
+                        proxy: config.proxy,
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                    });
+                } catch (errorData) {
+                    throw generateError(errorData);
+                }
+
+                return response.data;
+            }
+
             async function deleteOrganization(id) {
                 const { backendAPI } = config;
 
@@ -1479,6 +1497,21 @@
                 } catch (errorData) {
                     throw generateError(errorData);
                 }
+            }
+
+            async function getMembershipInvitation(id) {
+                const { backendAPI } = config;
+
+                let response = null;
+                try {
+                    response = await Axios.get(`${backendAPI}/invitations/${id}`, {
+                        proxy: config.proxy,
+                    });
+                } catch (errorData) {
+                    throw generateError(errorData);
+                }
+
+                return response.data;
             }
 
             Object.defineProperties(
@@ -1628,7 +1661,9 @@
                         value: Object.freeze({
                             get: getOrganizations,
                             create: createOrganization,
+                            update: updateOrganization,
                             members: getOrganizationMembers,
+                            invitation: getMembershipInvitation,
                             delete: deleteOrganization,
                             invite: inviteOrganizationMembers,
                             updateMembership: updateOrganizationMembership,

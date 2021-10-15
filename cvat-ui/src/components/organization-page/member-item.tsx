@@ -21,7 +21,9 @@ function MemberItem(props: Props): JSX.Element {
     const {
         membershipInstance, ownerID, onRemoveMembership, onUpdateMembershipRole,
     } = props;
-    const { user, joined_date: joinedDate, role } = membershipInstance;
+    const {
+        user, joined_date: joinedDate, role, invitation,
+    } = membershipInstance;
     const { username, firstName, lastName } = user;
 
     return (
@@ -33,7 +35,14 @@ function MemberItem(props: Props): JSX.Element {
                 <Text strong>{`${firstName || ''} ${lastName || ''}`}</Text>
             </Col>
             <Col span={8} className='cvat-organization-member-item-dates'>
-                <Text type='secondary'>{`Joined ${moment(joinedDate).fromNow()}`}</Text>
+                {invitation ? (
+                    <Text type='secondary'>
+                        {`Invited ${moment(invitation.created_date).fromNow()} by ${
+                            invitation.owner.username
+                        }`}
+                    </Text>
+                ) : null}
+                {joinedDate ? <Text type='secondary'>{`Joined ${moment(joinedDate).fromNow()}`}</Text> : null}
             </Col>
             <Col span={3} className='cvat-organization-member-item-role'>
                 <Select

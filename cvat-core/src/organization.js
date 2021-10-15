@@ -284,8 +284,13 @@ class Organization {
 
 Organization.prototype.save.implementation = async function () {
     if (typeof this.id === 'number') {
-        // TODO: patch data
-        return this;
+        const organizationData = {
+            name: this.name || this.slug,
+            description: this.description,
+        };
+
+        const result = await serverProxy.organizations.update(this.id, organizationData);
+        return new Organization(result);
     }
 
     const organizationData = {
@@ -304,6 +309,25 @@ Organization.prototype.members.implementation = async function (orgSlug, page, p
     checkObjectType('pageSize', pageSize, 'number');
 
     const result = await serverProxy.organizations.members(orgSlug, page, pageSize);
+    await Promise.all(
+        result.results.map((membership) => {
+            const { invitation } = membership;
+            membership.user = new User(membership.user);
+            if (invitation) {
+                return serverProxy.organizations
+                    .invitation(invitation)
+                    .then((invitationData) => {
+                        membership.invitation = invitationData;
+                    })
+                    .catch(() => {
+                        membership.invitation = null;
+                    });
+            }
+
+            return Promise.resolve();
+        }),
+    );
+
     return result.results;
 };
 
@@ -345,7 +369,8 @@ Organization.prototype.deleteMembership.implementation = async function (members
 Organization.prototype.leave.implementation = async function (user) {
     checkObjectType('user', user, null, User);
     if (typeof this.id === 'number') {
-        const [membership] = await serverProxy.organizations.members(this.slug, 1, 10, { user: user.id });
+        const result = await serverProxy.organizations.members(this.slug, 1, 10, { user: user.id });
+        const [membership] = result.results;
         if (!membership) {
             throw new ServerError(`Could not find membership for user ${user.username} in organization ${this.slug}`);
         }

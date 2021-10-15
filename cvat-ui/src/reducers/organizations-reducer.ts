@@ -11,6 +11,7 @@ const defaultState: OrganizationState = {
     current: null,
     fetching: false,
     creating: false,
+    updating: false,
     inviting: false,
     leaving: false,
     removingMember: false,
@@ -69,6 +70,27 @@ export default function (
             return {
                 ...state,
                 creating: false,
+            };
+        }
+        case OrganizationActionsTypes.UPDATE_ORGANIZATION: {
+            return {
+                ...state,
+                updating: true,
+            };
+        }
+        case OrganizationActionsTypes.UPDATE_ORGANIZATION_SUCCESS: {
+            const { organization } = action.payload;
+            return {
+                ...state,
+                list: [...state.list.filter((org) => org.slug !== organization.slug), organization],
+                current: state.current && state.current.slug === organization.slug ? organization : state.current,
+                updating: false,
+            };
+        }
+        case OrganizationActionsTypes.UPDATE_ORGANIZATION_FAILED: {
+            return {
+                ...state,
+                updating: false,
             };
         }
         case OrganizationActionsTypes.REMOVE_ORGANIZATION: {

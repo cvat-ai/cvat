@@ -21,6 +21,7 @@ import {
     inviteOrganizationMembersAsync,
     leaveOrganizationAsync,
     removeOrganizationAsync,
+    updateOrganizationAsync,
 } from 'actions/organization-actions';
 
 export interface Props {
@@ -32,7 +33,7 @@ export interface Props {
 function OrganizationTopBar(props: Props): JSX.Element {
     const { organizationInstance, userInstance, fetchMembers } = props;
     const {
-        owner, description, createdDate, updatedDate, slug,
+        owner, description, createdDate, updatedDate, slug, name,
     } = organizationInstance;
     const { id: userID } = userInstance;
     const [form] = useForm();
@@ -44,8 +45,37 @@ function OrganizationTopBar(props: Props): JSX.Element {
             <Row justify='space-between'>
                 <Col span={12}>
                     <div className='cvat-organization-top-bar-descriptions'>
-                        <Text className='cvat-title'>{`Organization: ${slug}`}</Text>
-                        {description ? <Text type='secondary'>{description}</Text> : null}
+                        <Text>
+                            <Text className='cvat-title'>{`Organization: ${slug} `}</Text>
+                        </Text>
+                        <Text
+                            editable={{
+                                onChange: (value: string) => {
+                                    organizationInstance.name = value;
+                                },
+                                onEnd: () => {
+                                    dispatch(updateOrganizationAsync(organizationInstance));
+                                },
+                            }}
+                            type='secondary'
+                        >
+                            {name}
+                        </Text>
+                        {description ? (
+                            <Text
+                                editable={{
+                                    onChange: (value: string) => {
+                                        organizationInstance.description = value;
+                                    },
+                                    onEnd: () => {
+                                        dispatch(updateOrganizationAsync(organizationInstance));
+                                    },
+                                }}
+                                type='secondary'
+                            >
+                                {description}
+                            </Text>
+                        ) : null}
                         <Text type='secondary'>{`Created ${moment(createdDate).format('MMMM Do YYYY')}`}</Text>
                         <Text type='secondary'>{`Updated ${moment(updatedDate).fromNow()}`}</Text>
                     </div>
@@ -89,7 +119,7 @@ function OrganizationTopBar(props: Props): JSX.Element {
                                         },
                                         content: (
                                             <div className='cvat-remove-organization-submit'>
-                                                <Text type='danger'>
+                                                <Text type='warning'>
                                                     To remove the organization, enter its short name below
                                                 </Text>
                                                 <Input

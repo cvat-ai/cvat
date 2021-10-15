@@ -697,6 +697,7 @@ export interface OrganizationState {
     current: any | null;
     fetching: boolean;
     creating: boolean;
+    updating: boolean;
     inviting: boolean;
     leaving: boolean;
     removingMember: boolean;

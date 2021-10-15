@@ -33,20 +33,21 @@ function fetchMembers(
 
 function OrganizationPage(): JSX.Element | null {
     const organization = useSelector((state: CombinedState) => state.organizations.current);
-    const organizationsFetching = useSelector((state: CombinedState) => state.organizations.fetching);
+    const fetching = useSelector((state: CombinedState) => state.organizations.fetching);
+    const updating = useSelector((state: CombinedState) => state.organizations.updating);
     const user = useSelector((state: CombinedState) => state.auth.user);
-    const [fetching, setFetching] = useState<boolean>(true);
+    const [membersFetching, setMembersFetching] = useState<boolean>(true);
     const [members, setMembers] = useState<any[]>([]);
     const [pageNumber, setPageNumber] = useState<number>(0);
     const [pageSize, setPageSize] = useState<number>(10);
 
     useEffect(() => {
         if (organization) {
-            fetchMembers(organization, pageNumber, pageSize, setMembers, setFetching);
+            fetchMembers(organization, pageNumber, pageSize, setMembers, setMembersFetching);
         }
     }, [pageSize, pageNumber, organization]);
 
-    if (organizationsFetching) {
+    if (fetching || updating) {
         return <Spin className='cvat-spinner' />;
     }
 
@@ -59,17 +60,19 @@ function OrganizationPage(): JSX.Element | null {
                     <TopBarComponent
                         organizationInstance={organization}
                         userInstance={user}
-                        fetchMembers={() => fetchMembers(organization, pageNumber, pageSize, setMembers, setFetching)}
+                        fetchMembers={() =>
+                            fetchMembers(organization, pageNumber, pageSize, setMembers, setMembersFetching)}
                     />
                     <MembersList
-                        fetching={fetching}
+                        fetching={membersFetching}
                         members={members}
                         organizationInstance={organization}
                         userInstance={user}
                         pageSize={pageSize}
                         setPageNumber={setPageNumber}
                         setPageSize={setPageSize}
-                        fetchMembers={() => fetchMembers(organization, pageNumber, pageSize, setMembers, setFetching)}
+                        fetchMembers={() =>
+                            fetchMembers(organization, pageNumber, pageSize, setMembers, setMembersFetching)}
                     />
                 </>
             )}

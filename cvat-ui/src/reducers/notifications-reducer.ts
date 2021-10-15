@@ -1347,6 +1347,23 @@ export default function (state = defaultState, action: AnyAction): Notifications
                 },
             };
         }
+        case OrganizationActionsTypes.UPDATE_ORGANIZATION_FAILED: {
+            const { slug } = action.payload;
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    organizations: {
+                        ...state.errors.organizations,
+                        updating: {
+                            message: `Could not update organization "${slug}"`,
+                            reason: action.payload.error.toString(),
+                            className: 'cvat-notification-notice-update-organization-failed',
+                        },
+                    },
+                },
+            };
+        }
         case OrganizationActionsTypes.ACTIVATE_ORGANIZATION_FAILED: {
             return {
                 ...state,

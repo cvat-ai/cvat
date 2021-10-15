@@ -29,7 +29,7 @@
                 display: block;
             }
 
-            > span:nth-child(2) {
+            > span:nth-child(3) {
                 height: 3em;
                 overflow: hidden;
                 white-space: nowrap;
@@ -83,6 +83,16 @@
 
     > .cvat-organization-member-item-remove {
         text-align: center;
+    }
+
+    > .cvat-organization-member-item-dates {
+        display: grid;
+    }
+
+    > .cvat-organization-member-item-role {
+        > .ant-select {
+            width: 100%;
+        }
     }
 }
 
