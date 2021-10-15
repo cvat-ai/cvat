@@ -37,6 +37,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Exception `DataCloneError: The object could not be cloned` (<https://github.com/openvinotoolkit/cvat/pull/3733>)
 - Fixed extension comparison in task frames CLI (<https://github.com/openvinotoolkit/cvat/pull/3674>)
 - Incorrect work when copy job list with "Copy" button (<https://github.com/openvinotoolkit/cvat/pull/3749>)
+- Iterating over manifest (<https://github.com/openvinotoolkit/cvat/pull/3792>)
 - Manifest removing (<https://github.com/openvinotoolkit/cvat/pull/3791>)
 
 ### Security

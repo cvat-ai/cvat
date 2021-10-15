@@ -396,12 +396,11 @@ class _ManifestManager(ABC):
             image_number = 0
             line = manifest_file.readline()
             while line:
-                if not line.strip():
-                    continue
-                parsed_properties = json.loads(line)
-                self._json_item_is_valid(**parsed_properties)
-                yield (image_number, parsed_properties)
-                image_number += 1
+                if line.strip():
+                    parsed_properties = json.loads(line)
+                    self._json_item_is_valid(**parsed_properties)
+                    yield (image_number, parsed_properties)
+                    image_number += 1
                 line = manifest_file.readline()
 
     @property
