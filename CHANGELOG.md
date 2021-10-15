@@ -13,11 +13,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - interactor: add HRNet interactive segmentation serverless function (<https://github.com/openvinotoolkit/cvat/pull/3740>)
 - Added GPU implementation for SiamMask, reworked tracking approach (<https://github.com/openvinotoolkit/cvat/pull/3571>)
 - Progress bar for manifest creating (<https://github.com/openvinotoolkit/cvat/pull/3712>)
+- Add a tutorial on attaching cloud storage AWS-S3 (<https://github.com/openvinotoolkit/cvat/pull/3745>)
+  and Azure Blob Container (<https://github.com/openvinotoolkit/cvat/pull/3778>)
 
 ### Changed
 
 - UI tracking has been reworked (<https://github.com/openvinotoolkit/cvat/pull/3571>)
 - Manifest generation: Reduce creating time (<https://github.com/openvinotoolkit/cvat/pull/3712>)
+- Migration from NPM 6 to NPM 7 (<https://github.com/openvinotoolkit/cvat/pull/3773>)
 
 ### Deprecated
 
@@ -35,6 +38,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed extension comparison in task frames CLI (<https://github.com/openvinotoolkit/cvat/pull/3674>)
 - Incorrect work when copy job list with "Copy" button (<https://github.com/openvinotoolkit/cvat/pull/3749>)
 - Iterating over manifest (<https://github.com/openvinotoolkit/cvat/pull/3792>)
+- Manifest removing (<https://github.com/openvinotoolkit/cvat/pull/3791>)
 
 ### Security
 

@@ -379,8 +379,8 @@ class _ManifestManager(ABC):
 
     def remove(self):
         self.reset_index()
-        if os.path.exists(self.path):
-            os.remove(self.path)
+        if os.path.exists(self.manifest.path):
+            os.remove(self.manifest.path)
 
     @abstractmethod
     def create(self, content=None, _tqdm=None):
