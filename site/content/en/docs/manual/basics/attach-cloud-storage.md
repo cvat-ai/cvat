@@ -53,13 +53,19 @@ they will need to be used in CVAT when adding cloud storage.
 
 ### Upload dataset
 
-For example, let's take [The Oxford-IIIT Pet Dataset](https://www.robots.ox.ac.uk/~vgg/data/pets/):
+#### Prepare dataset
+
+For example, let's take [The Oxford-IIIT Pet Dataset](https://www.robots.ox.ac.uk/~vgg/data/pets/):
 - Download the [archive with images](https://www.robots.ox.ac.uk/~vgg/data/pets/data/images.tar.gz).
 - Unpack the archive into the prepared folder
   and create a manifest file as described in [prepare manifest file section](/docs/manual/advanced/dataset_manifest/):
+
   ```
   python <cvat repository>/utils/dataset_manifest/create.py --output-dir <yourfolder> <yourfolder>
   ```
+
+#### Upload
+
 - When the manifest file is ready, open the previously prepared bucket and click `Upload`:
 
   ![](/images/aws-s3_tutorial_5.jpg)
@@ -68,54 +74,150 @@ For example, let's take [The Oxford-IIIT Pet Dataset](https://www.robots.ox.ac.
 
   ![](/images/aws-s3_tutorial_1.gif)
 
+Now you can [attach new cloud storage into CVAT](#attach-new-cloud-storage).
+
+## Using Azure Blob Container
+
+### Create Microsoft account
+
+First, create a Microsoft account by [registering](https://signup.live.com/signup?ru=https://login.live.com/),
+or you can use your GitHub account to log in. After signing up for Azure, you'll need to choose a subscription plan,
+you can choose a free 12-month subscription, but you'll need to enter your credit card details to verify your identity.
+To learn more about Azure, read [documentation](https://docs.microsoft.com/en-us/azure/).
+
+### Create a storage account
+
+After registration, go to [Azure portal](https://portal.azure.com/#home).
+Hover over the resource groups and click `create` in the window that appears.
+
+![](/images/azure_blob_container_tutorial1.jpg)
+
+Enter a name for the group and click `review + create`, check the entered data and click `create`.
+After the resource group is created,
+go to the [resource groups page](https://portal.azure.com/#blade/HubsExtension/BrowseResourceGroups)
+and navigate to the resource group that you created.
+Click `create` for create a storage account.
+
+![](/images/azure_blob_container_tutorial2.jpg)
+
+- **Basics**
+
+  Enter `storage account name` (will be used in CVAT to access your container), select a `region`,
+  select `performance` in our case will be `standard` enough, select `redundancy` enough `LRS`
+  [more about redundancy](https://docs.microsoft.com/en-us/azure/storage/common/storage-redundancy).
+  Click `next` to go to the advanced section.
+
+  ![](/images/azure_blob_container_tutorial4.jpg)
+
+- **Advanced**
+
+  In the advanced section, you can change public access by disabling `enable blob public access`
+  to deny anonymous access to the container.
+  If you want to change public access you can find this switch in the `configuration` section of your storage account.
+
+  After that, go to the review section, check the entered data and click `create`.
+
+  ![](/images/azure_blob_container_tutorial5.jpg)
+
+You will be reached to the deployment page after the finished,
+navigate to the resource by clicking on `go to resource`.
+
+![](/images/azure_blob_container_tutorial6.jpg)
+
+### Create a container
+
+Go to the containers section and create a new container. Enter the `name` of the container
+(will be used in CVAT to access your container) and select `container` in `public access level`.
+
+![](/images/azure_blob_container_tutorial7.jpg)
+
+### SAS token
+
+Using the `SAS token`, you can securely transfer access to the container to other people by preconfiguring rights,
+as well as the date/time of the starting and expiration of the token.
+To generate a SAS token, go to `Shared access signature` section of your storage account.
+Here you should enable `Blob` in the `Allowed services`, `Container` and `Object` in the `Allowed resource types`,
+`Read` and `List` in the `Allowed permissions`, `HTTPS and HTTP` in the `Allowed protocols`,
+also here you can set the date/time of the starting and expiration for the token. Click `Generation SAS token`.
+and copy `SAS token` (will be used in CVAT to access your container).
+
+![](/images/azure_blob_container_tutorial3.jpg)
+
+For personal use, you can enter the `Access Key` from the your storage account in the `SAS Token` field,
+`access key` can be found in the `security + networking` section.
+Click `show keys` to show the key.
+
+![](/images/azure_blob_container_tutorial8.jpg)
+
+### Upload dataset
+
+Prepare the dataset as in the point [prepare dataset](#prepare-dataset).
+
+- When the dataset is ready, go to your container and click `upload`.
+- Click `select a files` and select all images from the images folder
+  in the `upload to folder` item write the name of the folder in which you want to upload images in this case "images".
+
+  ![](/images/azure_blob_container_tutorial9.jpg)
+
+- Click `upload`, when the images are loaded you will need to upload a manifest file. When loading a manifest, you
+  need to make sure that the relative paths specified in the manifest file match the paths
+  to the files in the container. Click `select a file` and select manifest file, in order to upload file to the root
+  of the container leave blank `upload to folder` field.
+
+Now you can attach new cloud storage into CVAT.
+
 ## Attach new cloud storage
 
 After you upload the dataset and manifest file to AWS-S3 or Azure Blob Container
-you will be able to attach a cloud storage. To do this, press the `Attach new cloud storage`
+you will be able to attach a cloud storage. To do this, press the `Attach new cloud storage`
 button on the `Cloud storages` page and fill out the following form:
 
 ![](/images/image228.jpg)
 
 - `Display name` - the display name of the cloud storage.
 - `Description` (optional) - description of the cloud storage, appears when you click on the `?` button
-of an item on cloud storages page.
+  of an item on cloud storages page.
 - `Provider` - choose provider of the cloud storage:
 
   - [AWS-S3](#using-aws-s3):
 
-    - [`Bucket`](https://docs.aws.amazon.com/AmazonS3/latest/userguide/UsingBucket) - cloud storage bucket name
+    - [`Bucket`](https://docs.aws.amazon.com/AmazonS3/latest/userguide/UsingBucket) - cloud storage bucket name.
 
     - [`Authorization type`](https://docs.aws.amazon.com/AmazonS3/latest/userguide/access-control-best-practices.html):
 
-      - `Key id and secret access key pair` - available on [IAM](https://console.aws.amazon.com/iamv2/home?#/users)
+      - `Key id and secret access key pair` - available on [IAM](https://console.aws.amazon.com/iamv2/home?#/users)
+        to obtain an access key and a secret key, create a user using IAM and grant the appropriate rights [learn more](#create-user-and-configure-permissions).
+
         - `ACCESS KEY ID`
         - `SECRET ACCESS KEY ID`
 
-      - `Anonymous access` - For anonymous access, you need to enable public access to bucket
+      - `Anonymous access` - For anonymous access, you need to enable public access to bucket.
 
     - `Region` - here you can choose a region from the list or add a new one. To get more information click
-    on [`?`](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-regions-availability-zones.html#concepts-available-regions)
+      on [`?`](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-regions-availability-zones.html#concepts-available-regions).
 
     </br>
 
   - [Azure Blob Container](https://docs.microsoft.com/en-us/azure/storage/blobs/):
 
-    - `Container name` - name of the cloud storage container
+    - `Container name` - name of the cloud storage container.
 
       - `Authorization type`:
 
         - [`Account name and SAS token`](https://docs.microsoft.com/en-us/azure/cognitive-services/translator/document-translation/create-sas-tokens?tabs=blobs):
 
-          - `Account name`
-          - `SAS token`
+          - `Account name` - storage account name.
+          - `SAS token` - is located in the `Shared access signature` section of your `Storage account` [learn more](#sas-token).
 
-        - [`Anonymous access`](https://docs.microsoft.com/en-us/azure/storage/blobs/anonymous-read-access-configure?tabs=portal)
-          - `Account name`
+        - [`Anonymous access`](https://docs.microsoft.com/en-us/azure/storage/blobs/anonymous-read-access-configure?tabs=portal) -
+          for anonymous access `enable blob public access` in the `configuration` section of your storage account.
+          in this case, you only need the storage account name to gain anonymous access.
+          - `Account name` - storage account name.
 
     </br>
 - `Manifest` - the path to the manifest file on your cloud storage.
-You can add multiple file manifests using the `Add manifest` button.
-For more information click on [`?`](/docs/manual/advanced/dataset_manifest/).
+  You can add multiple file manifests using the `Add manifest` button.
+  For more information click on [`?`](/docs/manual/advanced/dataset_manifest/).
 
 To publish the cloud storage, click `submit`, after which it will be available on
 the [Cloud storages page](/docs/manual/basics/cloud-storages/).
