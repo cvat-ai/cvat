@@ -271,9 +271,10 @@ class UserPermission(OpenPolicyAgentPermission):
         return {
             'list': 'list',
             'self': 'view:self',
-            'retrieve': 'view'
+            'retrieve': 'view',
+            'partial_update': 'update',
+            'destroy': 'delete'
         }.get(self.view.action, None)
-
 
 class LambdaPermission(OpenPolicyAgentPermission):
     @classmethod

@@ -2,7 +2,7 @@ package users
 import data.utils
 
 # input: {
-#     "scope": <"LIST"|"VIEW"|"VIEW_SELF"> or null,
+#     "scope": <"list"|"view"|"view:self"|"delete"|"update"> or null,
 #     "auth": {
 #         "user": {
 #             "id": <num>,
@@ -14,7 +14,7 @@ import data.utils
 #                 "id": <num>
 #             },
 #             "user": {
-#                 "role": <"maintainer"|"supervisor"|"worker"> or null
+#                 "role": <"owner"|"maintainer"|"supervisor"|"worker"> or null
 #             }
 #         } or null,
 #     },
@@ -34,5 +34,15 @@ allow {
 
 allow {
     input.scope == utils.VIEW
+    input.auth.user.id == input.resource.id
+}
+
+allow {
+    input.scope == utils.UPDATE
+    input.auth.user.id == input.resource.id
+}
+
+allow {
+    input.scope == utils.DELETE
     input.auth.user.id == input.resource.id
 }
