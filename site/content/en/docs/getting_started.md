@@ -13,7 +13,8 @@ First step is to install CVAT on your system:
 - [Installation on Windows 10](/docs/administration/basics/installation/#windows-10)
 - [Installation on Mac OS](/docs/administration/basics/installation/#mac-os-mojave)
 
-To learn how to create a superuser and log in to CVAT, go to the [authorization](/docs/manual/basics/authorization/) section.
+To learn how to create a superuser and log in to CVAT,
+go to the [authorization](/docs/manual/basics/authorization/) section.
 
 ## Getting started in CVAT
 
