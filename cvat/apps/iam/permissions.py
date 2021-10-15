@@ -166,7 +166,6 @@ class InvitationPermission(OpenPolicyAgentPermission):
             data = {
                 'owner': { 'id': self.obj.owner.id },
                 'invitee': { 'id': self.obj.membership.user.id },
-                'accepted': self.obj.accepted,
                 'role': self.obj.membership.role,
                 'organization': {
                     'id': self.obj.membership.organization.id

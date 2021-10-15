@@ -45,17 +45,20 @@ allow {
 
 allow {
     input.scope == utils.VIEW
+    input.resource.is_active
     organizations.is_member
 }
 
 allow {
     input.scope == utils.VIEW
+    input.resource.is_active
     input.auth.organization == null
     input.resource.user.id == input.auth.user.id
 }
 
 allow {
     { utils.CHANGE_ROLE, utils.DELETE }[input.scope]
+    input.resource.is_active
     organizations.is_owner
     utils.has_privilege(utils.USER)
     input.resource.role != organizations.OWNER
@@ -63,6 +66,7 @@ allow {
 
 allow {
     { utils.CHANGE_ROLE, utils.DELETE }[input.scope]
+    input.resource.is_active
     input.resource.role != organizations.OWNER
     input.resource.role != organizations.MAINTAINER
     utils.has_privilege(utils.USER)
@@ -71,6 +75,7 @@ allow {
 
 allow {
     input.scope == utils.DELETE
+    input.resource.is_active
     input.resource.role != organizations.OWNER
     input.resource.user.id == input.auth.user.id
     utils.has_privilege(utils.WORKER)
@@ -79,6 +84,7 @@ allow {
 
 allow {
     input.scope == utils.DELETE
+    input.resource.is_active
     input.resource.role != organizations.OWNER
     input.resource.user.id == input.auth.user.id
     utils.has_privilege(utils.WORKER)
@@ -91,12 +97,12 @@ filter = [] { # Django Q object to filter list of entries
     utils.is_admin
 } else = qobject {
     input.auth.organization == null
-    qobject := [ {"user": input.auth.user.id} ]
+    qobject := [ {"user": input.auth.user.id}, {"is_active": true}, "&" ]
 } else = qobject {
     input.auth.organization != null
     utils.is_admin
-    qobject := [ {"organization": input.auth.organization.id} ]
+    qobject := [ {"organization": input.auth.organization.id}, {"is_active": true}, "&"]
 } else = qobject {
     organizations.is_member
-    qobject := [ {"organization": input.auth.organization.id} ]
+    qobject := [ {"organization": input.auth.organization.id}, {"is_active": true}, "&" ]
 }

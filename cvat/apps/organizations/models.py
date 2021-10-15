@@ -46,7 +46,6 @@ class Membership(models.Model):
 # Inspried by https://github.com/bee-keeper/django-invitations
 class Invitation(models.Model):
     key = models.CharField(max_length=64, primary_key=True)
-    accepted = models.BooleanField(default=False)
     created_date = models.DateTimeField(auto_now_add=True)
     owner = models.ForeignKey(get_user_model(), null=True, on_delete=models.SET_NULL)
     membership = models.OneToOneField(Membership, on_delete=models.CASCADE)

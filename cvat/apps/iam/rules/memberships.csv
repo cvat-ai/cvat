@@ -1,12 +1,13 @@
 Scope,Resource,Context,Ownership,Limit,Method,URL,Privilege,Membership
-list,Membership,Sandbox,N/A,filter(organization=None),GET,/memberships,None,N/A
-list,Membership,Organization,N/A,filter(organization),GET,/memberships,None,Worker
+list,Membership,Sandbox,N/A,filter(organization=None),GET,/memberships,Admin,N/A
+list,Membership,Sandbox,N/A,"filter(organization=None, is_active=True)",GET,/memberships,None,N/A
+list,Membership,Organization,N/A,"filter(organization, is_active=True)",GET,/memberships,None,Worker
 view,Membership,Sandbox,None,,GET,/membership/{id},Admin,N/A
-view,Membership,Sandbox,User_Self,,GET,/membership/{id},None,N/A
-view,Membership,Organization,"None, User_Self",,GET,/membership/{id},None,Worker
-change:role,Membership,Organization,"None, User_Self","resource[""role""] not in [""maintainer"", ""owner""]",PATCH,/membership/{id},User,Maintainer
-change:role,Membership,Organization,"None, User_Self","resource[""role""] != ""owner""",PATCH,/membership/{id},User,Owner
-delete,Membership,Organization,"None, User_Self","resource[""role""] not in [""maintainer"", ""owner""]",DELETE,/membership/{id},User,Maintainer
-delete,Membership,Organization,None,"resource[""role""] != ""owner""",DELETE,/membership/{id},User,Owner
-delete,Membership,Organization,User_Self,"resource[""role""] != ""owner""",DELETE,/membership/{id},Worker,Worker
-delete,Membership,Sandbox,User_Self,"resource[""role""] != ""owner""",DELETE,/membership/{id},Worker,N/A
+view,Membership,Sandbox,User_Self,"resource[""is_active""]==True",GET,/membership/{id},None,N/A
+view,Membership,Organization,"None, User_Self","resource[""is_active""]==True",GET,/membership/{id},None,Worker
+change:role,Membership,Organization,"None, User_Self","resource[""role""] not in [""maintainer"", ""owner""] and resource[""is_active""]==True",PATCH,/membership/{id},User,Maintainer
+change:role,Membership,Organization,"None, User_Self","resource[""role""] != ""owner"" and resource[""is_active""]==True",PATCH,/membership/{id},User,Owner
+delete,Membership,Organization,"None, User_Self","resource[""role""] not in [""maintainer"", ""owner""] and resource[""is_active""]==True",DELETE,/membership/{id},User,Maintainer
+delete,Membership,Organization,None,"resource[""role""] != ""owner"" and resource[""is_active""]==True",DELETE,/membership/{id},User,Owner
+delete,Membership,Organization,User_Self,"resource[""role""] != ""owner"" and resource[""is_active""]==True",DELETE,/membership/{id},Worker,Worker
+delete,Membership,Sandbox,User_Self,"resource[""role""] != ""owner"" and resource[""is_active""]==True",DELETE,/membership/{id},Worker,N/A

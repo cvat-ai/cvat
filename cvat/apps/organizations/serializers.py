@@ -54,7 +54,7 @@ class InvitationReadSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Invitation
-        fields = ['key', 'accepted', 'created_date', 'owner', 'role',
+        fields = ['key', 'created_date', 'owner', 'role',
             'user', 'organization']
         read_only_fields = fields
 
@@ -73,7 +73,7 @@ class InvitationWriteSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Invitation
-        fields = ['key', 'accepted', 'created_date', 'owner', 'role',
+        fields = ['key', 'created_date', 'owner', 'role',
             'email', 'organization']
         read_only_fields = ['key', 'created_date', 'owner']
 

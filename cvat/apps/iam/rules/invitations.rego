@@ -26,7 +26,6 @@ import data.organizations
 #         "invitee": {
 #             "id": <num>
 #         },
-#         "accepted": <true|false>,
 #         "role": <"owner"|"maintainer"|"supervisor"|"worker">,
 #         "organization": {
 #             "id": <num>
@@ -63,7 +62,7 @@ filter = [] { # Django Q object to filter list of entries
 } else = qobject {
     input.auth.organization == null
     user := input.auth.user
-    qobject := [ {"owner": user.id}, {"membership__user": user.id} ]
+    qobject := [ {"owner": user.id}, {"membership__user": user.id}, "|" ]
 }
 
 allow {
