@@ -1141,8 +1141,9 @@ class CloudStorageViewSet(viewsets.ModelViewSet):
             return BaseCloudStorageSerializer
 
     def get_queryset(self):
-        queryset = super().get_queryset()
         provider_type = self.request.query_params.get('provider_type', None)
+        perm = CloudStoragePermission(self.request, self, None)
+        queryset = perm.filter(super().get_queryset())
         if provider_type:
             if provider_type in CloudProviderChoice.list():
                 return queryset.filter(provider_type=provider_type)
@@ -1150,7 +1151,9 @@ class CloudStorageViewSet(viewsets.ModelViewSet):
         return queryset
 
     def perform_create(self, serializer):
-        serializer.save(owner=self.request.user)
+        serializer.save(
+            owner=self.request.user,
+            organization=self.request.iam_context['organization'])
 
     def perform_destroy(self, instance):
         cloud_storage_dirname = instance.get_storage_dirname()

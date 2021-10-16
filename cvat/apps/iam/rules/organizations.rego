@@ -48,6 +48,19 @@ is_member {
     input.auth.organization.user.role != null
 }
 
+get_priority(role) = priority {
+    priority := {
+        OWNER: 0,
+        MAINTAINER: 50,
+        SUPERVISOR: 75,
+        WORKER: 100
+    }[role]
+}
+
+has_role(role) {
+    get_priority(input.auth.organization.user.role) <= get_priority(role)
+}
+
 default allow = false
 allow {
     utils.is_admin
@@ -56,12 +69,12 @@ allow {
 allow {
     input.scope == utils.CREATE
     input.resource.user.num_resources == 0
-    utils.has_privilege(utils.USER)
+    utils.has_perm(utils.USER)
 }
 
 allow {
     input.scope == utils.CREATE
-    utils.has_privilege(utils.BUSINESS)
+    utils.has_perm(utils.BUSINESS)
 }
 
 allow {
@@ -87,18 +100,18 @@ allow {
 
 allow {
     input.scope == utils.UPDATE
-    utils.has_privilege(utils.WORKER)
+    utils.has_perm(utils.WORKER)
     utils.is_resource_owner
 }
 
 allow {
     input.scope == utils.UPDATE
-    utils.has_privilege(utils.USER)
+    utils.has_perm(utils.USER)
     input.resource.user.role == MAINTAINER
 }
 
 allow {
     input.scope == utils.DELETE
-    utils.has_privilege(utils.WORKER)
+    utils.has_perm(utils.WORKER)
     utils.is_resource_owner
 }

@@ -54,8 +54,7 @@ class InvitationReadSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Invitation
-        fields = ['key', 'created_date', 'owner', 'role',
-            'user', 'organization']
+        fields = ['key', 'created_date', 'owner', 'role', 'user', 'organization']
         read_only_fields = fields
 
 
@@ -64,8 +63,7 @@ class InvitationWriteSerializer(serializers.ModelSerializer):
         source='membership.role')
     email = serializers.EmailField(source='membership.user.email')
     organization = serializers.PrimaryKeyRelatedField(
-        queryset=Organization.objects.all(),
-        source='membership.organization')
+        source='membership.organization', read_only=True)
 
     def to_representation(self, instance):
         serializer = InvitationReadSerializer(instance, context=self.context)
@@ -73,9 +71,8 @@ class InvitationWriteSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Invitation
-        fields = ['key', 'created_date', 'owner', 'role',
-            'email', 'organization']
-        read_only_fields = ['key', 'created_date', 'owner']
+        fields = ['key', 'created_date', 'owner', 'role', 'organization', 'email']
+        read_only_fields = ['key', 'created_date', 'owner', 'organization']
 
     def create(self, validated_data):
         membership_data = validated_data.pop('membership')

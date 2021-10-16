@@ -51,7 +51,7 @@ filter = [] { # Django Q object to filter list of entries
     qobject := [ {"membership__organization": input.auth.organization.id} ]
 } else = qobject {
     organizations.is_staff
-    utils.has_privilege(utils.USER)
+    utils.has_perm(utils.USER)
     qobject := [ {"membership__organization": input.auth.organization.id} ]
 } else = qobject {
     input.auth.organization != null
@@ -68,7 +68,7 @@ filter = [] { # Django Q object to filter list of entries
 allow {
     input.scope == utils.CREATE
     input.auth.organization.id == input.resource.organization.id
-    utils.has_privilege(utils.USER)
+    utils.has_perm(utils.USER)
     input.auth.organization.user.role == organizations.MAINTAINER
     # a maintainer cannot invite an user with owner or  maintainer roles
     input.resource.role != organizations.OWNER
@@ -79,7 +79,7 @@ allow {
 allow {
     input.scope == utils.CREATE
     input.auth.organization.id == input.resource.organization.id
-    utils.has_privilege(utils.USER)
+    utils.has_perm(utils.USER)
     organizations.is_owner
     # it isn't possible to create one more owner at the moment
     input.resource.role != organizations.OWNER
@@ -98,33 +98,33 @@ allow {
 allow {
     input.scope == utils.VIEW
     input.auth.organization.id == input.resource.organization.id
-    utils.has_privilege(utils.USER)
+    utils.has_perm(utils.USER)
     organizations.is_staff
 }
 
 allow {
     input.scope == utils.RESEND
-    utils.has_privilege(utils.WORKER)
+    utils.has_perm(utils.WORKER)
     utils.is_resource_owner
 }
 
 allow {
     input.scope == utils.RESEND
     input.auth.organization.id == input.resource.organization.id
-    utils.has_privilege(utils.USER)
+    utils.has_perm(utils.USER)
     organizations.is_staff
 }
 
 allow {
     input.scope == utils.DELETE
-    utils.has_privilege(utils.WORKER)
+    utils.has_perm(utils.WORKER)
     utils.is_resource_owner
 }
 
 allow {
     input.scope == utils.DELETE
     input.auth.organization.id == input.resource.organization.id
-    utils.has_privilege(utils.USER)
+    utils.has_perm(utils.USER)
     organizations.is_staff
 }
 

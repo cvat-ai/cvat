@@ -74,5 +74,6 @@ class InvitationViewSet(viewsets.ModelViewSet):
         extra_kwargs = {
             'owner': self.request.user,
             'key': get_random_string(length=64),
+            'organization': self.request.iam_context['organization']
         }
         serializer.save(**extra_kwargs)

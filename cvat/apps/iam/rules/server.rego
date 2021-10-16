@@ -35,5 +35,5 @@ allow {
 
 allow {
     input.scope == utils.LIST_CONTENT
-    utils.has_privilege(utils.USER)
+    utils.has_perm(utils.USER)
 }

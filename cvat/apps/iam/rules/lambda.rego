@@ -36,11 +36,11 @@ allow {
 
 allow {
     input.scope == utils.CALL_ONLINE
-    utils.has_privilege(utils.WORKER)
+    utils.has_perm(utils.WORKER)
 }
 
 # Business can call a lambda function for own jobs, tasks, and projects
 allow {
     input.scope == utils.CALL_OFFLINE
-    utils.has_privilege(utils.BUSINESS)
+    utils.has_perm(utils.BUSINESS)
 }

@@ -60,7 +60,7 @@ allow {
     { utils.CHANGE_ROLE, utils.DELETE }[input.scope]
     input.resource.is_active
     organizations.is_owner
-    utils.has_privilege(utils.USER)
+    utils.has_perm(utils.USER)
     input.resource.role != organizations.OWNER
 }
 
@@ -69,7 +69,7 @@ allow {
     input.resource.is_active
     input.resource.role != organizations.OWNER
     input.resource.role != organizations.MAINTAINER
-    utils.has_privilege(utils.USER)
+    utils.has_perm(utils.USER)
     organizations.is_maintainer
 }
 
@@ -78,7 +78,7 @@ allow {
     input.resource.is_active
     input.resource.role != organizations.OWNER
     input.resource.user.id == input.auth.user.id
-    utils.has_privilege(utils.WORKER)
+    utils.has_perm(utils.WORKER)
     organizations.is_member
 }
 
@@ -87,7 +87,7 @@ allow {
     input.resource.is_active
     input.resource.role != organizations.OWNER
     input.resource.user.id == input.auth.user.id
-    utils.has_privilege(utils.WORKER)
+    utils.has_perm(utils.WORKER)
     input.auth.organization == null
 }
 

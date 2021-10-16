@@ -306,15 +306,44 @@ class LambdaPermission(OpenPolicyAgentPermission):
 class CloudStoragePermission(OpenPolicyAgentPermission):
     @classmethod
     def create(cls, request, view, obj):
-        return []
+        permissions = []
+        if view.basename == 'cloudstorage':
+            self = cls(request, view, obj)
+            permissions.append(self)
+
+        return permissions
 
     def __init__(self, request, view, obj):
         super().__init__(request, view, obj)
+        self.url = settings.IAM_OPA_DATA_URL + '/cloudstorages/allow'
+        self.payload['input']['scope'] = self.scope
+        self.payload['input']['resource'] = self.resource
 
-    def get_scope(self, request, view, obj):
-        return super().get_scope(request, view, obj)
+    @property
+    def scope(self):
+        return {
+            'list': 'list',
+            'create': 'create',
+            'retrieve': 'view',
+            'partial_update': 'update',
+            'destroy': 'delete',
+            'content': 'list:content'
+        }.get(self.view.action, None)
 
-    url = settings.IAM_OPA_DATA_URL + '/cloudstorages/allow'
+    @property
+    def resource(self):
+        data = None
+        if self.obj:
+            data = {
+                'owner': { 'id': self.obj.owner.id },
+                'organization': {
+                    'id': self.obj.organization.id
+                } if self.obj.organization else None
+            }
+
+        return data
+
+
 
 class ProjectPermission(OpenPolicyAgentPermission):
     @classmethod

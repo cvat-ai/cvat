@@ -3,7 +3,6 @@ list,Invitation,Sandbox,N/A,"filter(organization=None, ownership=None)",GET,/inv
 list,Invitation,Sandbox,N/A,"filter(organization=None, ownership=[""owner"", ""invitee""])",GET,/invitations,None,N/A
 list,Invitation,Organization,N/A,"filter(organization=organization, ownership=[""owner"", ""invitee""])",GET,/invitations,None,Worker
 list,Invitation,Organization,N/A,filter(organization=organization),GET,/invitations,User,Maintainer
-create,Invitation,Sandbox,N/A,,POST,/invitations,Admin,N/A
 create,Invitation,Organization,N/A,"resource[""role""] not in [""maintainer"", ""owner""]",POST,/invitations,User,Maintainer
 create,Invitation,Organization,N/A,"resource[""role""] != ""owner""",POST,/invitations,User,Owner
 view,Invitation,Sandbox,None,,GET,/invitations/{id},Admin,N/A

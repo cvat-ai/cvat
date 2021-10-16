@@ -800,7 +800,7 @@ class BaseCloudStorageSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.CloudStorage
         exclude = ['credentials']
-        read_only_fields = ('created_date', 'updated_date', 'owner')
+        read_only_fields = ('created_date', 'updated_date', 'owner', 'organization')
 
 class CloudStorageSerializer(serializers.ModelSerializer):
     owner = BasicUserSerializer(required=False)
@@ -817,8 +817,9 @@ class CloudStorageSerializer(serializers.ModelSerializer):
             'provider_type', 'resource', 'display_name', 'owner', 'credentials_type',
             'created_date', 'updated_date', 'session_token', 'account_name', 'key',
             'secret_key', 'key_file_path', 'specific_attributes', 'description', 'id', 'manifests',
+            'organization'
         )
-        read_only_fields = ('created_date', 'updated_date', 'owner')
+        read_only_fields = ('created_date', 'updated_date', 'owner', 'organization')
 
     # pylint: disable=no-self-use
     def validate_specific_attributes(self, value):

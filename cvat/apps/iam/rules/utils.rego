@@ -37,8 +37,8 @@ get_priority(privilege) = priority {
     }[privilege]
 }
 
-has_privilege(privilege) {
-    get_priority(input.auth.user.privilege) <= get_priority(privilege)
+has_perm(group) {
+    get_priority(input.auth.user.privilege) <= get_priority(group)
 }
 
 is_admin {

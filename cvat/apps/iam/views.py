@@ -17,7 +17,6 @@ from drf_yasg import openapi
 
 from .authentication import Signer
 
-
 def get_context(request):
     from cvat.apps.organizations.models import Organization, Membership
 
