@@ -2,7 +2,7 @@ package server
 import data.utils
 
 # input: {
-#     "scope": <"SEND_LOGS"|"SEND_EXCEPTION"|"VIEW"|"LIST_CONTENT"> or null,
+#     "scope": <"send:logs"|"send:exception"|"view"|"list:content"> or null,
 #     "auth": {
 #         "user": {
 #             "id": <num>,
@@ -10,13 +10,11 @@ import data.utils
 #         },
 #         "organization": {
 #             "id": <num>,
-#             "owner": {
-#                 "id": <num>
-#             },
+#             "owner": { "id": <num> },
 #             "user": {
-#                 "role": <"maintainer"|"supervisor"|"worker"> or null
+#                 "role": <"owner"|"maintainer"|"supervisor"|"worker"> or null
 #             }
-#         } or null,
+#         } or null
 #     }
 # }
 
@@ -35,5 +33,5 @@ allow {
 
 allow {
     input.scope == utils.LIST_CONTENT
-    utils.has_perm(utils.USER)
+    utils.has_perm(utils.WORKER)
 }
