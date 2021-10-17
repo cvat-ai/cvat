@@ -2,6 +2,29 @@ package cloudstorages
 import data.utils
 import data.organizations
 
+# input: {
+#     "scope": <"create"|"list"|"update"|"view"|"delete"> or null,
+#     "auth": {
+#         "user": {
+#             "id": <num>,
+#             "privilege": <"admin"|"business"|"user"|"worker"> or null
+#         },
+#         "organization": {
+#             "id": <num>,
+#             "owner": { "id": <num> },
+#             "user": {
+#                 "role": <"owner"|"maintainer"|"supervisor"|"worker"> or null
+#             }
+#         } or null,
+#     },
+#     "resource": {
+#         "id": <num>,
+#         "owner": { "id": <num> },
+#         "organization": { "id": <num> } or null
+#     }
+# }
+
+
 default allow = false
 
 # Admin has no restrictions
@@ -34,39 +57,26 @@ allow {
 allow {
     input.scope == utils.VIEW
     utils.is_resource_owner
-    input.auth.organization == null
 }
 
 allow {
     input.scope == utils.VIEW
     utils.has_perm(utils.USER)
     organizations.has_role(organizations.SUPERVISOR)
-}
-
-allow {
-    input.scope == utils.VIEW
-    utils.is_resource_owner
-    organizations.is_member
+    input.auth.organization.id == input.resource.organization.id
 }
 
 allow {
     { utils.UPDATE, utils.DELETE }[input.scope]
     utils.has_perm(utils.WORKER)
     utils.is_resource_owner
-    input.auth.organization == null
 }
 
 allow {
     { utils.UPDATE, utils.DELETE }[input.scope]
     utils.has_perm(utils.USER)
     organizations.has_role(organizations.MAINTAINER)
-}
-
-allow {
-    { utils.UPDATE, utils.DELETE }[input.scope]
-    utils.has_perm(utils.WORKER)
-    utils.is_resource_owner
-    organizations.is_member
+    input.auth.organization.id == input.resource.organization.id
 }
 
 allow {
@@ -78,12 +88,7 @@ allow {
     input.scope == utils.LIST_CONTENT
     utils.has_perm(utils.USER)
     organizations.has_role(organizations.SUPERVISOR)
-}
-
-allow {
-    input.scope == utils.LIST_CONTENT
-    utils.is_resource_owner
-    organizations.is_member
+    input.auth.organization.id == input.resource.organization.id
 }
 
 filter = [] { # Django Q object to filter list of entries

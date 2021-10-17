@@ -335,6 +335,7 @@ class CloudStoragePermission(OpenPolicyAgentPermission):
         data = None
         if self.obj:
             data = {
+                'id': self.obj.id,
                 'owner': { 'id': self.obj.owner.id },
                 'organization': {
                     'id': self.obj.organization.id
