@@ -2,10 +2,6 @@ name: Linter
 on: pull_request
 jobs:
   ESLint:
-    if: |
-      github.event.pull_request.draft == false &&
-      !contains(github.event.pull_request.title, '[WIP]') &&
-      !contains(github.event.pull_request.title, '[Dependent]')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2

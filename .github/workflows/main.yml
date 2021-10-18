@@ -8,7 +8,10 @@ on:
 
 jobs:
   Unit_testing:
-      if: github.event.pull_request.draft == false
+      if: |
+        github.event.pull_request.draft == false &&
+        !contains(github.event.pull_request.title, '[WIP]') &&
+        !contains(github.event.pull_request.title, '[Dependent]')
       runs-on: ubuntu-latest
       steps:
       - uses: actions/checkout@v2
@@ -76,7 +79,10 @@ jobs:
             ${{ github.workspace }}/lcov.info
 
   E2E_testing:
-    if: github.event.pull_request.draft == false
+    if: |
+      github.event.pull_request.draft == false &&
+      !contains(github.event.pull_request.title, '[WIP]') &&
+      !contains(github.event.pull_request.title, '[Dependent]')
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
