@@ -1,7 +1,7 @@
 ---
 title: '3D task workspace'
 linkTitle: '3D task workspace'
-weight: 5
+weight: 11
 ---
 
 ![](/images/image214_carla_town3.jpg)

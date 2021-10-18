@@ -1,7 +1,7 @@
 ---
 title: 'Standard 3D mode (basics)'
 linkTitle: 'Standard 3D mode'
-weight: 12.5
+weight: 12
 ---
 
 `Standard 3d mode` - Designed to work with 3D data.

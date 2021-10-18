@@ -71,8 +71,8 @@ Cypress.Commands.add('exportProject', ({ projectName, as, type, dumpType, archiv
     cy.projectActions(projectName);
     cy.intercept('GET', `/api/v1/projects/**/${type}**`).as(as);
     cy.get('.cvat-project-actions-menu').contains('Export project dataset').click();
-    cy.get('.cvat-modal-export-project').find('.cvat-modal-export-select').click();
-    cy.contains('.cvat-modal-export-option-item', dumpType).click();
+    cy.get('.cvat-modal-export-project').should('be.visible').find('.cvat-modal-export-select').click();
+    cy.contains('.cvat-modal-export-option-item', dumpType).should('be.visible').click();
     cy.get('.cvat-modal-export-select').should('contain.text', dumpType);
     if (type === 'dataset') {
         cy.get('.cvat-modal-export-project').find('[type="checkbox"]').should('not.be.checked').check();
@@ -128,16 +128,20 @@ Cypress.Commands.add('movingTask', (taskName, projectName, labelMappingFrom, lab
         .click();
     cy.get('.cvat-task-move-modal').find('.cvat-project-search-field').click();
     cy.get('.ant-select-dropdown')
-        .not('.ant-select-dropdown-hidden')
+        .last()
+        .should('be.visible')
         .within(() => {
             cy.get(`[title="${projectName}"]`).click();
         });
     if (labelMappingFrom !== labelMappingTo) {
         cy.get('.cvat-move-task-label-mapper-item').within(() => {
             cy.contains(labelMappingFrom).should('exist');
-            cy.get('.cvat-move-task-label-mapper-item-select').click();
+            cy.get('.cvat-move-task-label-mapper-item-select').should('be.visible').click();
         });
-        cy.get('.ant-select-dropdown').not('.ant-select-dropdown-hidden').find(`[title="${labelMappingTo}"]`).click();
+        cy.get('.ant-select-dropdown')
+            .last()
+            .should('be.visible')
+            .find(`[title="${labelMappingTo}"]`).click();
     } else {
         cy.get('.cvat-move-task-label-mapper-item').within(() => {
             cy.get('.cvat-move-task-label-mapper-item-select').should('have.text', labelMappingFrom);

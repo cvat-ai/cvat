@@ -15,13 +15,7 @@ import moment from 'moment';
 import copy from 'copy-to-clipboard';
 
 import CVATTooltip from 'components/common/cvat-tooltip';
-
-import getCore from 'cvat-core-wrapper';
 import UserSelector, { User } from './user-selector';
-
-const core = getCore();
-
-const baseURL = core.config.backendAPI.slice(0, -7);
 
 interface Props {
     taskInstance: any;
@@ -292,8 +286,9 @@ function JobListComponent(props: Props & RouteComponentProps): JSX.Element {
                                 let serialized = '';
                                 const [latestJob] = [...taskInstance.jobs].reverse();
                                 for (const job of taskInstance.jobs) {
+                                    const baseURL = window.location.origin;
                                     serialized += `Job #${job.id}`.padEnd(`${latestJob.id}`.length + 6, ' ');
-                                    serialized += `: ${baseURL}/?id=${job.id}`.padEnd(
+                                    serialized += `: ${baseURL}/tasks/${taskInstance.id}/jobs/${job.id}`.padEnd(
                                         `${latestJob.id}`.length + baseURL.length + 8,
                                         ' ',
                                     );

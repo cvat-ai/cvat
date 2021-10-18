@@ -6,12 +6,21 @@
 
 let selectedValueGlobal = '';
 
+Cypress.Commands.add('interactOpenCVControlButton', () => {
+    cy.get('body').focus();
+    cy.get('.cvat-tools-control').trigger('mouseleave').trigger('mouseout').trigger('mousemove').trigger('mouseover');
+    cy.get('.cvat-tools-control').should('have.class', 'ant-popover-open');
+    cy.get('.cvat-opencv-control-popover')
+        .should('be.visible')
+        .should('have.attr', 'style')
+        .should('not.include', 'pointer-events: none');
+});
+
 Cypress.Commands.add('opencvCreateShape', (opencvShapeParams) => {
     if (!opencvShapeParams.reDraw) {
-        cy.get('body').focus();
-        cy.get('.cvat-tools-control').trigger('mouseleave').trigger('mouseout').trigger('mouseover');
+        cy.interactOpenCVControlButton();
         cy.switchLabel(opencvShapeParams.labelName, 'opencv-control');
-        cy.get('.cvat-opencv-control-popover-visible').within(() => {
+        cy.get('.cvat-opencv-control-popover').within(() => {
             cy.get('.ant-select-selection-item').then(($labelValue) => {
                 selectedValueGlobal = $labelValue.text();
             });
@@ -29,10 +38,11 @@ Cypress.Commands.add('opencvCreateShape', (opencvShapeParams) => {
             .trigger('keydown', { keyCode: keyCodeN })
             .trigger('keyup', { keyCode: keyCodeN });
     }
-    cy.opncvCheckObjectParameters('POLYGON');
+    cy.checkPopoverHidden('opencv-control');
+    cy.opencvCheckObjectParameters('POLYGON');
 });
 
-Cypress.Commands.add('opncvCheckObjectParameters', (objectType) => {
+Cypress.Commands.add('opencvCheckObjectParameters', (objectType) => {
     let listCanvasShapeId = [];
     cy.document().then((doc) => {
         const listCanvasShape = Array.from(doc.querySelectorAll('.cvat_canvas_shape'));

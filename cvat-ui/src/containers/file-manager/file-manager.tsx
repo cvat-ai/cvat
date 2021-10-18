@@ -13,7 +13,6 @@ import { ShareItem, CombinedState } from 'reducers/interfaces';
 
 interface OwnProps {
     ref: any;
-    withRemote: boolean;
     onChangeActiveKey(key: string): void;
 }
 
@@ -60,8 +59,18 @@ type Props = StateToProps & DispatchToProps & OwnProps;
 export class FileManagerContainer extends React.PureComponent<Props> {
     private managerComponentRef: any;
 
+    public constructor(props: Props) {
+        super(props);
+
+        this.managerComponentRef = React.createRef();
+    }
+
     public getFiles(): Files {
         return this.managerComponentRef.getFiles();
+    }
+
+    public getCloudStorageId(): number | null {
+        return this.managerComponentRef.getCloudStorageId();
     }
 
     public reset(): Files {
@@ -69,16 +78,13 @@ export class FileManagerContainer extends React.PureComponent<Props> {
     }
 
     public render(): JSX.Element {
-        const {
-            treeData, getTreeData, withRemote, onChangeActiveKey,
-        } = this.props;
+        const { treeData, getTreeData, onChangeActiveKey } = this.props;
 
         return (
             <FileManagerComponent
                 treeData={treeData}
                 onLoadData={getTreeData}
                 onChangeActiveKey={onChangeActiveKey}
-                withRemote={withRemote}
                 ref={(component): void => {
                     this.managerComponentRef = component;
                 }}

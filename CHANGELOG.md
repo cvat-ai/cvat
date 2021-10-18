@@ -5,7 +5,46 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## \[1.6.0] - Unreleased
+## \[1.7.0] - Unreleased
+
+### Added
+
+- cvat-ui: support cloud storages (<https://github.com/openvinotoolkit/cvat/pull/3372>)
+- interactor: add HRNet interactive segmentation serverless function (<https://github.com/openvinotoolkit/cvat/pull/3740>)
+- Added GPU implementation for SiamMask, reworked tracking approach (<https://github.com/openvinotoolkit/cvat/pull/3571>)
+- Progress bar for manifest creating (<https://github.com/openvinotoolkit/cvat/pull/3712>)
+- Add a tutorial on attaching cloud storage AWS-S3 (<https://github.com/openvinotoolkit/cvat/pull/3745>)
+  and Azure Blob Container (<https://github.com/openvinotoolkit/cvat/pull/3778>)
+
+### Changed
+
+- UI tracking has been reworked (<https://github.com/openvinotoolkit/cvat/pull/3571>)
+- Manifest generation: Reduce creating time (<https://github.com/openvinotoolkit/cvat/pull/3712>)
+- Migration from NPM 6 to NPM 7 (<https://github.com/openvinotoolkit/cvat/pull/3773>)
+
+### Deprecated
+
+- TDB
+
+### Removed
+
+- TDB
+
+### Fixed
+
+- Fixed JSON transform issues in network requests (<https://github.com/openvinotoolkit/cvat/pull/3706>)
+- Display a more user-friendly exception message (<https://github.com/openvinotoolkit/cvat/pull/3721>)
+- Exception `DataCloneError: The object could not be cloned` (<https://github.com/openvinotoolkit/cvat/pull/3733>)
+- Fixed extension comparison in task frames CLI (<https://github.com/openvinotoolkit/cvat/pull/3674>)
+- Incorrect work when copy job list with "Copy" button (<https://github.com/openvinotoolkit/cvat/pull/3749>)
+- Iterating over manifest (<https://github.com/openvinotoolkit/cvat/pull/3792>)
+- Manifest removing (<https://github.com/openvinotoolkit/cvat/pull/3791>)
+
+### Security
+
+- TDB
+
+## \[1.6.0] - 2021-09-17
 
 ### Added
 
@@ -26,10 +65,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Cloud storage creating and updating (<https://github.com/openvinotoolkit/cvat/pull/3386>)
 - Way of working with cloud storage content (<https://github.com/openvinotoolkit/cvat/pull/3386>)
 
-### Deprecated
-
-- TDB
-
 ### Removed
 
 - Support TEMP_KEY_SECRET_KEY_TOKEN_SET for AWS S3 cloud storage (<https://github.com/openvinotoolkit/cvat/pull/3386>)
@@ -39,10 +74,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed multiple tasks moving (<https://github.com/openvinotoolkit/cvat/pull/3517>)
 - Fixed task creating CLI parameter (<https://github.com/openvinotoolkit/cvat/pull/3519>)
 - Fixed import for MOTS format (<https://github.com/openvinotoolkit/cvat/pull/3612>)
-
-### Security
-
-- TDB
 
 ## \[1.5.0] - 2021-08-02
 
@@ -885,7 +916,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Template
 
 ```
-## [Unreleased]
+## \[Unreleased]
 ### Added
 - TDB
 

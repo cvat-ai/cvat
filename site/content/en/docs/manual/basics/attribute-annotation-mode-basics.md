@@ -1,7 +1,7 @@
 ---
 title: 'Attribute annotation mode (basics)'
 linkTitle: 'Attribute annotation mode'
-weight: 12
+weight: 18
 description: 'Usage examples and basic operations available in attribute annotation mode.'
 ---
 - In this mode you can edit attributes with fast navigation between objects and frames using a keyboard.

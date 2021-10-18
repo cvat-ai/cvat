@@ -1,0 +1,80 @@
+// Copyright (C) 2021 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
+
+@import '../../base.scss';
+
+.cvat-cloud-storages-page {
+    padding: $grid-unit-size * 2;
+    height: 100%;
+    overflow: auto;
+
+    .ant-spin {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+    }
+}
+
+.cvat-empty-cloud-storages-list-icon {
+    font-size: $grid-unit-size * 14;
+}
+
+.cvat-cloud-storages-pagination {
+    margin-top: $grid-unit-size * 2;
+}
+
+.cvat-cloud-storages-list-top-bar {
+    > div:first-child {
+        .cvat-title {
+            margin-right: $grid-unit-size;
+        }
+
+        display: flex;
+    }
+
+    > div:last-child {
+        text-align: right;
+    }
+}
+
+.cvat-cloud-storages-list,
+.cvat-empty-cloud-storages-list {
+    margin-top: $grid-unit-size * 2;
+}
+
+.cvat-cloud-storage-item {
+    div.ant-typography {
+        margin-bottom: 0;
+    }
+
+    .cvat-cloud-storage-item-loading-preview,
+    .cvat-cloud-storage-item-empty-preview {
+        .ant-spin {
+            position: inherit;
+        }
+
+        font-size: $grid-unit-size * 15;
+        text-align: center;
+        height: $grid-unit-size * 24;
+    }
+
+    img {
+        height: $grid-unit-size * 24;
+        object-fit: cover;
+        margin: auto;
+    }
+
+    .cvat-cloud-storage-item-menu-button {
+        position: absolute;
+        bottom: 0;
+        right: 0;
+    }
+
+    .cvat-cloud-storage-description-icon {
+        position: absolute;
+        top: $grid-unit-size;
+        width: auto;
+        right: $grid-unit-size;
+    }
+}
