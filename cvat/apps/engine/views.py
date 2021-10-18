@@ -254,6 +254,11 @@ class ProjectViewSet(viewsets.ModelViewSet):
         else:
             return ProjectSerializer
 
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        perm = ProjectPermission('list', self.request, self, None)
+        return perm.filter(queryset)
+
     def perform_create(self, serializer):
         owner = self.request.data.get('owner', None)
         if owner:

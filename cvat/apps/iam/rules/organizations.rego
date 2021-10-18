@@ -57,7 +57,7 @@ get_priority(role) = priority {
     }[role]
 }
 
-has_role(role) {
+has_perm(role) {
     get_priority(input.auth.organization.user.role) <= get_priority(role)
 }
 

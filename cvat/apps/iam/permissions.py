@@ -10,6 +10,7 @@ from django.db.models import Q
 from rest_framework.permissions import BasePermission
 
 from cvat.apps.organizations.models import Membership, Organization
+from cvat.apps.engine.models import Project
 
 class OpenPolicyAgentPermission:
     def __init__(self, request, view, obj):
@@ -344,20 +345,57 @@ class CloudStoragePermission(OpenPolicyAgentPermission):
 
         return data
 
-
-
 class ProjectPermission(OpenPolicyAgentPermission):
     @classmethod
     def create(cls, request, view, obj):
-        return []
+        permissions = []
+        if view.basename == 'project':
+            for scope in cls.get_scopes(request, view, obj):
+                self = cls(scope, request, view, obj)
+                permissions.append(self)
 
-    def __init__(self, request, view, obj):
+    def __init__(self, scope, request, view, obj):
         super().__init__(request, view, obj)
+        self.url = settings.IAM_OPA_DATA_URL + '/projects/allow'
+        self.payload['input']['scope'] = scope
+        self.payload['input']['resource'] = self.resource
 
-    def get_scope(self, request, view, obj):
-        return super().get_scope(request, view, obj)
+    @staticmethod
+    def get_scopes(request, view, obj):
+        scope = {
+            'list': 'list',
+            'create': 'create',
+            'destroy': 'delete',
+            'partial_update': 'update',
+            'retrieve': 'view'
+        }.get(view.action)
 
-    url = settings.IAM_OPA_DATA_URL + '/projects/allow'
+        if scope == 'update':
+            if 'owner' in request.data:
+                yield [scope + ':owner']
+            if 'assignee' in request.data:
+                yield [scope + ':assignee']
+            for field in ('name', 'labels', 'bug_tracker'):
+                if field in request.data:
+                    yield [scope + ':desc']
+                    break
+        else:
+            return [scope]
+
+    @property
+    def resource(self):
+        if self.obj:
+            return {
+                "owner": { "id": self.obj.owner.id },
+                "assignee": { "id": self.obj.assignee.id },
+                "organization": {
+                    "id": getattr(self.obj.organization, 'id', None)
+                },
+                "user": {
+                    "num_resources": Project.objects.filter(
+                        owner_id=self.request.user.id).count()
+                }
+            }
 
 class TaskPermission(OpenPolicyAgentPermission):
     @classmethod

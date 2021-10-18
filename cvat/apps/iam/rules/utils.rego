@@ -26,6 +26,9 @@ SEND_LOGS := "send:logs"
 VIEW_SELF := "view:self"
 CHANGE_ROLE := "change:role"
 RESEND := "resend"
+UPDATE_DESC := "update:desc"
+UPDATE_ASSIGNEE := "update:assignee"
+UPDATE_OWNER := "update:owner"
 
 get_priority(privilege) = priority {
     priority := {

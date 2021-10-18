@@ -41,7 +41,7 @@ allow {
 allow {
     input.scope == utils.CREATE
     utils.has_perm(utils.USER)
-    organizations.has_role(organizations.MAINTAINER)
+    organizations.has_perm(organizations.MAINTAINER)
 }
 
 allow {
@@ -62,7 +62,7 @@ allow {
 allow {
     input.scope == utils.VIEW
     utils.has_perm(utils.USER)
-    organizations.has_role(organizations.SUPERVISOR)
+    organizations.has_perm(organizations.SUPERVISOR)
     input.auth.organization.id == input.resource.organization.id
 }
 
@@ -75,7 +75,7 @@ allow {
 allow {
     { utils.UPDATE, utils.DELETE }[input.scope]
     utils.has_perm(utils.USER)
-    organizations.has_role(organizations.MAINTAINER)
+    organizations.has_perm(organizations.MAINTAINER)
     input.auth.organization.id == input.resource.organization.id
 }
 
@@ -87,7 +87,7 @@ allow {
 allow {
     input.scope == utils.LIST_CONTENT
     utils.has_perm(utils.USER)
-    organizations.has_role(organizations.SUPERVISOR)
+    organizations.has_perm(organizations.SUPERVISOR)
     input.auth.organization.id == input.resource.organization.id
 }
 
@@ -100,7 +100,7 @@ filter = [] { # Django Q object to filter list of entries
     qobject := [ {"organization": input.auth.organization.id} ]
 } else = qobject {
     utils.has_perm(utils.USER)
-    organizations.has_role(organizations.SUPERVISOR)
+    organizations.has_perm(organizations.SUPERVISOR)
     qobject := [ {"organization": input.auth.organization.id} ]
 } else = qobject {
     input.auth.organization == null

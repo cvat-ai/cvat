@@ -1,37 +1,22 @@
-Scope,Resource,Context,Ownership,Limit,Method,URL,Group,Membership,[No Role],Worker,User,Business,Admin,Worker,Supervisor,Maintainer,Owner,Comment
-Create,Project,Sandbox,N/A,3,POST,/projects,User,N/A,,,x,x,x,,,,,
-Create,Project,Organization,N/A,3,POST,/projects,User,Supervisor,,,x,x,x,,x,x,x,
-Create,Project,Sandbox,N/A,,POST,/projects,Business,N/A,,,,x,x,,,,,
-Create,Project,Organization,N/A,,POST,/projects,Business,Supervisor,,,,x,x,,x,x,x,
-List,Project,Sandbox,None,,GET,/projects,Admin,N/A,,,,,x,,,,,
-List,Project,Sandbox,"Owner, Assignee",,GET,/projects,None,N/A,x,x,x,x,x,,,,,
-List,Project,Organization,None,,GET,/projects,User,Maintainer,,,x,x,x,,,x,x,
-List,Project,Organization,"Owner, Assignee",,GET,/projects,None,Worker,x,x,x,x,x,x,x,x,x,
-View,Project,Sandbox,None,,GET,/projects/{id},Admin,N/A,,,,,x,,,,,
-View,Project,Sandbox,"Owner, Assignee",,GET,/projects/{id},None,N/A,x,x,x,x,x,,,,,
-View,Project,Organization,None,,GET,/projects/{id},User,Maintainer,,,x,x,x,,,x,x,
-View,Project,Organization,"Owner, Assignee",,GET,/projects/{id},None,Worker,x,x,x,x,x,x,x,x,x,
-Delete,Project,Sandbox,None,,DELETE,/projects/{id},Admin,N/A,,,,,x,,,,,
-Delete,Project,Sandbox,Owner,,DELETE,/projects/{id},Worker,N/A,,x,x,x,x,,,,,
-Delete,Project,Sandbox,Assignee,,DELETE,/projects/{id},Admin,N/A,,,,,x,,,,,
-Delete,Project,Organization,None,,DELETE,/projects/{id},Admin,N/A,,,,,x,,,,,
-Delete,Project,Organization,Owner,,DELETE,/projects/{id},Worker,Worker,,x,x,x,x,x,x,x,x,
-Delete,Project,Organization,Assignee,,DELETE,/projects/{id},User,Maintainer,,,x,x,x,,,x,x,
-"Update description, labels",Project,Sandbox,None,,PATCH,/projects/{id},Admin,N/A,,,,,x,,,,,
-"Update description, labels",Project,Sandbox,Owner,,PATCH,/projects/{id},Worker,N/A,,x,x,x,x,,,,,
-"Update description, labels",Project,Sandbox,Assignee,,PATCH,/projects/{id},User,N/A,,,x,x,x,,,,,
-"Update description, labels",Project,Organization,None,,PATCH,/projects/{id},User,Maintainer,,,x,x,x,,,x,x,
-"Update description, labels",Project,Organization,Owner,,PATCH,/projects/{id},Worker,Worker,,x,x,x,x,x,x,x,x,
-"Update description, labels",Project,Organization,Assignee,,PATCH,/projects/{id},User,Supervisor,,,x,x,x,,x,x,x,
-Update the assignee,Project,Sandbox,None,,PATCH,/projects/{id},Admin,N/A,,,,,x,,,,,
-Update the assignee,Project,Sandbox,Owner,,PATCH,/projects/{id},Worker,N/A,,x,x,x,x,,,,,
-Update the assignee,Project,Sandbox,Assignee,,PATCH,/projects/{id},Admin,N/A,,,,,x,,,,,
-Update the assignee,Project,Organization,None,,PATCH,/projects/{id},User,Maintainer,,,x,x,x,,,x,x,
-Update the assignee,Project,Organization,Owner,,PATCH,/projects/{id},Worker,Worker,,x,x,x,x,x,x,x,x,
-Update the assignee,Project,Organization,Assignee,,PATCH,/projects/{id},User,Maintainer,,,x,x,x,,,x,x,
-Update the owner,Project,Sandbox,None,,PATCH,/projects/{id},Admin,N/A,,,,,x,,,,,It is not possible to see other users for non-admin users. Thus it is not possible to change the owner.
-Update the owner,Project,Sandbox,Owner,,PATCH,/projects/{id},Admin,N/A,,,,,x,,,,,
-Update the owner,Project,Sandbox,Assignee,,PATCH,/projects/{id},Admin,N/A,,,,,x,,,,,
-Update the owner,Project,Organization,None,,PATCH,/projects/{id},User,Maintainer,,,x,x,x,,,x,x,
-Update the owner,Project,Organization,Owner,,PATCH,/projects/{id},Worker,Maintainer,,x,x,x,x,,,x,x,
-Update the owner,Project,Organization,Assignee,,PATCH,/projects/{id},User,Maintainer,,,x,x,x,,,x,x,
+Scope,Resource,Context,Ownership,Limit,Method,URL,Privilege,Membership
+create,Project,Sandbox,N/A,3,POST,/projects,User,N/A
+create,Project,Organization,N/A,3,POST,/projects,User,Supervisor
+create,Project,Sandbox,N/A,,POST,/projects,Business,N/A
+create,Project,Organization,N/A,,POST,/projects,Business,Supervisor
+list,Project,Sandbox,N/A,"filter(organization=None, ownership=[""Owner"", ""Assignee""])",GET,/projects,None,N/A
+list,Project,Organization,N/A,filter(organization),GET,/projects,None,Worker
+view,Project,Sandbox,None,,GET,/projects/{id},Admin,N/A
+view,Project,N/A,"Owner, Assignee",,GET,/projects/{id},None,N/A
+view,Project,Organization,Organization,,GET,/projects/{id},None,Worker
+delete,Project,Sandbox,"None, Assignee",,DELETE,/projects/{id},Admin,N/A
+delete,Project,N/A,Owner,,DELETE,/projects/{id},Worker,N/A
+delete,Project,Organization,"Organization, Assignee",,DELETE,/projects/{id},User,Maintainer
+update:desc,Project,Sandbox,None,,PATCH,/projects/{id},Admin,N/A
+update:desc,Project,N/A,"Owner, Assignee",,PATCH,/projects/{id},Worker,N/A
+update:desc,Project,Organization,Organization,,PATCH,/projects/{id},User,Maintainer
+update:assignee,Project,Sandbox,"None, Assignee",,PATCH,/projects/{id},Admin,N/A
+update:assignee,Project,N/A,Owner,,PATCH,/projects/{id},Worker,N/A
+update:assignee,Project,Organization,"Organization, Assignee",,PATCH,/projects/{id},User,Maintainer
+update:owner,Project,Sandbox,None,,PATCH,/projects/{id},Admin,N/A
+update:owner,Project,Organization,"Organization, Assignee",,PATCH,/projects/{id},User,Maintainer
+update:owner,Project,Organization,Owner,,PATCH,/projects/{id},Worker,Maintainer
