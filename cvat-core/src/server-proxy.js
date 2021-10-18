@@ -593,7 +593,6 @@
                     });
                 }
 
-
                 const chunkSize = 1024 * 1024 * 100; // 100 mb
                 const clientFiles = taskDataSpec.client_files;
                 const chunkFiles = [];
@@ -620,7 +619,6 @@
                     }
                     return taskData;
                 }
-
 
                 let response = null;
 
@@ -659,7 +657,7 @@
                             proxy: config.proxy,
                         });
                         const tag = tagResponse.data;
-                        tags.push({'chunk_number': currentChunkNumber, tag})
+                        tags.push({ chunk_number: currentChunkNumber, tag });
                         currentChunkNumber++;
                     }
                     const finishUploadData = createTaskData();
