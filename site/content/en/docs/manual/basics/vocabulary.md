@@ -46,6 +46,6 @@ Can be used to reduce the annotation file and to facilitate editing polygons.
 ---
 
 **Trackable** object will be tracked automatically if the previous frame was
-a latest keyframe for the object.
+a latest keyframe for the object. More details in the section [trackers](/docs/manual/advanced/ai-tools/#trackers).
 
 ![](/images/tracker_indication.jpg)

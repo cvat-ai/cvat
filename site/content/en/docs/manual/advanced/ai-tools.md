@@ -135,8 +135,8 @@ Supported DL models are not bound to the label and can be used for any objects.
   ![Tracker indication](/images/tracker_indication.jpg)
 
 - You can monitoring the process by the messages appearing at the top.
-  If on one of the frames you changed one or more objects you will see a message that
-  the initialization of changes is taking place, the objects that you do not change are already on the server
+  If you change one or more objects, before moving to the next frame, you will see a message that
+  the objects states initialization is taking place. The objects that you do not change are already on the server
   and therefore do not require initialization. After the objects are initialized, tracking will occur.
 
   ![Tracker pop-up window](/images/tracker_pop-up_window.jpg)
