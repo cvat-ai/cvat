@@ -76,6 +76,7 @@ jobs:
             ${{ github.workspace }}/lcov.info
 
   E2E_testing:
+    if: github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
