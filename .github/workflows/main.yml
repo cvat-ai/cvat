@@ -5,7 +5,7 @@ on:
       - 'master'
       - 'develop'
   pull_request:
-    types: [edited, ready_for_review]
+    types: [edited, ready_for_review, opened, synchronize, reopened]
 
 jobs:
   Unit_testing:
