@@ -27,10 +27,17 @@ export default function ProjectListComponent(): JSX.Element {
         );
     }
 
+    const dimensions = {
+        md: 22,
+        lg: 18,
+        xl: 16,
+        xxl: 16,
+    };
+
     return (
         <>
             <Row justify='center' align='middle' className='cvat-project-list-content'>
-                <Col className='cvat-projects-list' md={22} lg={18} xl={16} xxl={14}>
+                <Col className='cvat-projects-list' {...dimensions}>
                     {projects.map(
                         (project: Project): JSX.Element => (
                             <ProjectItem key={project.instance.id} projectInstance={project} />
@@ -39,7 +46,7 @@ export default function ProjectListComponent(): JSX.Element {
                 </Col>
             </Row>
             <Row justify='center' align='middle'>
-                <Col md={22} lg={18} xl={16} xxl={14}>
+                <Col {...dimensions}>
                     <Pagination
                         className='cvat-projects-pagination'
                         onChange={changePage}

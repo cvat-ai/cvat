@@ -23,7 +23,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v2
         with:
-          node-version: '14.x'
+          node-version: '16.x'
 
       - name: Install npm packages
         working-directory: ./site
@@ -32,7 +32,7 @@ jobs:
 
       - name: Build docs
         run: |
-          pip install gitpython packaging
+          pip install gitpython packaging toml
           python site/build_docs.py
 
       - name: Deploy

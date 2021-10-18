@@ -18,7 +18,7 @@ context('Canvas 3D functionality. Save a job. Remove annotations.', () => {
         cy.openTask(taskName);
         cy.openJob();
         cy.wait(1000); // Waiting for the point cloud to display
-        cy.get('.cvat-canvas3d-topview').find('.cvat-canvas3d-fullsize').screenshot('canvas3d_topview_before_all');
+        cy.customScreenshot('.cvat-canvas3d-topview', 'canvas3d_topview_before_all');
         cy.create3DCuboid(cuboidCreationParams);
     });
 
@@ -36,9 +36,7 @@ context('Canvas 3D functionality. Save a job. Remove annotations.', () => {
                 expect(sidebarStateItem.length).to.be.equal(1);
             });
             cy.wait(waitTime);
-            cy.get('.cvat-canvas3d-topview')
-                .find('.cvat-canvas3d-fullsize')
-                .screenshot('canvas3d_topview_after_reopen_job');
+            cy.customScreenshot('.cvat-canvas3d-topview', 'canvas3d_topview_after_reopen_job');
             cy.wait(waitTime);
             cy.compareImagesAndCheckResult(
                 `${screenshotsPath}/canvas3d_topview_before_all.png`,
@@ -51,9 +49,7 @@ context('Canvas 3D functionality. Save a job. Remove annotations.', () => {
             cy.saveJob('PUT');
             cy.contains('Saving changes on the server').should('be.hidden');
             cy.get('.cvat-objects-sidebar-state-item').should('not.exist');
-            cy.get('.cvat-canvas3d-topview')
-                .find('.cvat-canvas3d-fullsize')
-                .screenshot('canvas3d_topview_after_remove_annotations');
+            cy.customScreenshot('.cvat-canvas3d-topview', 'canvas3d_topview_after_remove_annotations');
             cy.compareImagesAndCheckResult(
                 `${screenshotsPath}/canvas3d_topview_after_reopen_job.png`,
                 `${screenshotsPath}/canvas3d_topview_after_remove_annotations.png`,

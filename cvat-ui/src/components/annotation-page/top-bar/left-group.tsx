@@ -64,83 +64,83 @@ function LeftGroup(props: Props): JSX.Element {
         ActiveControl.OPENCV_TOOLS,
     ].includes(activeControl);
 
-    const includesToolsBlockerButton = [
-        ActiveControl.OPENCV_TOOLS,
-        ActiveControl.AI_TOOLS,
-    ].includes(activeControl) && toolsBlockerState.buttonVisible;
+    const includesToolsBlockerButton =
+        [ActiveControl.OPENCV_TOOLS, ActiveControl.AI_TOOLS].includes(activeControl) && toolsBlockerState.buttonVisible;
 
-    const shouldEnableToolsBlockerOnClick = [
-        ActiveControl.OPENCV_TOOLS,
-    ].includes(activeControl);
+    const shouldEnableToolsBlockerOnClick = [ActiveControl.OPENCV_TOOLS].includes(activeControl);
 
     return (
-        <Col className='cvat-annotation-header-left-group'>
-            <Dropdown overlay={<AnnotationMenuContainer />}>
-                <Button type='link' className='cvat-annotation-header-button'>
-                    <Icon component={MainMenuIcon} />
-                    Menu
-                </Button>
-            </Dropdown>
-            <CVATTooltip overlay={`Save current changes ${saveShortcut}`}>
-                <Button
-                    onClick={saving ? undefined : onSaveAnnotation}
-                    type='link'
-                    className={saving ? 'cvat-annotation-disabled-header-button' : 'cvat-annotation-header-button'}
-                >
-                    <Icon component={SaveIcon} />
-                    {saving ? 'Saving...' : 'Save'}
-                    <Modal title='Saving changes on the server' visible={saving} footer={[]} closable={false}>
-                        <Timeline pending={savingStatuses[savingStatuses.length - 1] || 'Pending..'}>
-                            {savingStatuses.slice(0, -1).map((status: string, id: number) => (
-                                <Timeline.Item key={id}>{status}</Timeline.Item>
-                            ))}
-                        </Timeline>
-                    </Modal>
-                </Button>
-            </CVATTooltip>
-            <CVATTooltip overlay={`Undo: ${undoAction} ${undoShortcut}`}>
-                <Button
-                    style={{ pointerEvents: undoAction ? 'initial' : 'none', opacity: undoAction ? 1 : 0.5 }}
-                    type='link'
-                    className='cvat-annotation-header-button'
-                    onClick={onUndoClick}
-                >
-                    <Icon component={UndoIcon} />
-                    <span>Undo</span>
-                </Button>
-            </CVATTooltip>
-            <CVATTooltip overlay={`Redo: ${redoAction} ${redoShortcut}`}>
-                <Button
-                    style={{ pointerEvents: redoAction ? 'initial' : 'none', opacity: redoAction ? 1 : 0.5 }}
-                    type='link'
-                    className='cvat-annotation-header-button'
-                    onClick={onRedoClick}
-                >
-                    <Icon component={RedoIcon} />
-                    Redo
-                </Button>
-            </CVATTooltip>
-            {includesDoneButton ? (
-                <CVATTooltip overlay={`Press "${drawShortcut}" to finish`}>
-                    <Button type='link' className='cvat-annotation-header-button' onClick={onFinishDraw}>
-                        <CheckOutlined />
-                        Done
+        <>
+            <Modal title='Saving changes on the server' visible={saving} footer={[]} closable={false}>
+                <Timeline pending={savingStatuses[savingStatuses.length - 1] || 'Pending..'}>
+                    {savingStatuses.slice(0, -1).map((status: string, id: number) => (
+                        <Timeline.Item key={id}>{status}</Timeline.Item>
+                    ))}
+                </Timeline>
+            </Modal>
+            <Col className='cvat-annotation-header-left-group'>
+                <Dropdown overlay={<AnnotationMenuContainer />}>
+                    <Button type='link' className='cvat-annotation-header-button'>
+                        <Icon component={MainMenuIcon} />
+                        Menu
                     </Button>
-                </CVATTooltip>
-            ) : null}
-            {includesToolsBlockerButton ? (
-                <CVATTooltip overlay={`Press "${switchToolsBlockerShortcut}" to postpone running the algorithm `}>
+                </Dropdown>
+                <CVATTooltip overlay={`Save current changes ${saveShortcut}`}>
                     <Button
+                        onClick={saving ? undefined : onSaveAnnotation}
                         type='link'
-                        className={`cvat-annotation-header-button ${toolsBlockerState.algorithmsLocked ? 'cvat-button-active' : ''}`}
-                        onClick={shouldEnableToolsBlockerOnClick ? onSwitchToolsBlockerState : undefined}
+                        className={saving ? 'cvat-annotation-disabled-header-button' : 'cvat-annotation-header-button'}
                     >
-                        <StopOutlined />
-                        Block
+                        <Icon component={SaveIcon} />
+                        {saving ? 'Saving...' : 'Save'}
                     </Button>
                 </CVATTooltip>
-            ) : null}
-        </Col>
+                <CVATTooltip overlay={`Undo: ${undoAction} ${undoShortcut}`}>
+                    <Button
+                        style={{ pointerEvents: undoAction ? 'initial' : 'none', opacity: undoAction ? 1 : 0.5 }}
+                        type='link'
+                        className='cvat-annotation-header-button'
+                        onClick={onUndoClick}
+                    >
+                        <Icon component={UndoIcon} />
+                        <span>Undo</span>
+                    </Button>
+                </CVATTooltip>
+                <CVATTooltip overlay={`Redo: ${redoAction} ${redoShortcut}`}>
+                    <Button
+                        style={{ pointerEvents: redoAction ? 'initial' : 'none', opacity: redoAction ? 1 : 0.5 }}
+                        type='link'
+                        className='cvat-annotation-header-button'
+                        onClick={onRedoClick}
+                    >
+                        <Icon component={RedoIcon} />
+                        Redo
+                    </Button>
+                </CVATTooltip>
+                {includesDoneButton ? (
+                    <CVATTooltip overlay={`Press "${drawShortcut}" to finish`}>
+                        <Button type='link' className='cvat-annotation-header-button' onClick={onFinishDraw}>
+                            <CheckOutlined />
+                            Done
+                        </Button>
+                    </CVATTooltip>
+                ) : null}
+                {includesToolsBlockerButton ? (
+                    <CVATTooltip overlay={`Press "${switchToolsBlockerShortcut}" to postpone running the algorithm `}>
+                        <Button
+                            type='link'
+                            className={`cvat-annotation-header-button ${
+                                toolsBlockerState.algorithmsLocked ? 'cvat-button-active' : ''
+                            }`}
+                            onClick={shouldEnableToolsBlockerOnClick ? onSwitchToolsBlockerState : undefined}
+                        >
+                            <StopOutlined />
+                            Block
+                        </Button>
+                    </CVATTooltip>
+                ) : null}
+            </Col>
+        </>
     );
 }
 

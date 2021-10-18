@@ -3,7 +3,8 @@
 // SPDX-License-Identifier: MIT
 
 import './styles.scss';
-import React, { ReactText } from 'react';
+import React, { ReactText, RefObject } from 'react';
+
 import Tabs from 'antd/lib/tabs';
 import Input from 'antd/lib/input';
 import Text from 'antd/lib/typography/Text';
@@ -11,46 +12,72 @@ import Paragraph from 'antd/lib/typography/Paragraph';
 import Upload, { RcFile } from 'antd/lib/upload';
 import Empty from 'antd/lib/empty';
 import Tree, { TreeNodeNormal } from 'antd/lib/tree/Tree';
+import { FormInstance } from 'antd/lib/form';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { EventDataNode } from 'rc-tree/lib/interface';
 import { InboxOutlined } from '@ant-design/icons';
 
 import consts from 'consts';
+import { CloudStorage } from 'reducers/interfaces';
+import CloudStorageTab from './cloud-storages-tab';
 
 export interface Files {
     local: File[];
     share: string[];
     remote: string[];
+    cloudStorage: string[];
 }
 
 interface State {
     files: Files;
     expandedKeys: string[];
-    active: 'local' | 'share' | 'remote';
+    active: 'local' | 'share' | 'remote' | 'cloudStorage';
+    cloudStorage: CloudStorage | null;
+    potentialCloudStorage: string;
 }
 
 interface Props {
-    withRemote: boolean;
     treeData: TreeNodeNormal[];
     onLoadData: (key: string, success: () => void, failure: () => void) => void;
     onChangeActiveKey(key: string): void;
 }
 
-export default class FileManager extends React.PureComponent<Props, State> {
+export class FileManager extends React.PureComponent<Props, State> {
+    private cloudStorageTabFormRef: RefObject<FormInstance>;
+
     public constructor(props: Props) {
         super(props);
+        this.cloudStorageTabFormRef = React.createRef<FormInstance>();
 
         this.state = {
             files: {
                 local: [],
                 share: [],
                 remote: [],
+                cloudStorage: [],
             },
+            cloudStorage: null,
+            potentialCloudStorage: '',
             expandedKeys: [],
             active: 'local',
         };
 
         this.loadData('/');
+    }
+
+    private onSelectCloudStorageFiles = (cloudStorageFiles: string[]): void => {
+        const { files } = this.state;
+        this.setState({
+            files: {
+                ...files,
+                cloudStorage: cloudStorageFiles,
+            },
+        });
+    };
+
+    public getCloudStorageId(): number | null {
+        const { cloudStorage } = this.state;
+        return cloudStorage?.id || null;
     }
 
     public getFiles(): Files {
@@ -59,6 +86,7 @@ export default class FileManager extends React.PureComponent<Props, State> {
             local: active === 'local' ? files.local : [],
             share: active === 'share' ? files.share : [],
             remote: active === 'remote' ? files.remote : [],
+            cloudStorage: active === 'cloudStorage' ? files.cloudStorage : [],
         };
     }
 
@@ -72,6 +100,10 @@ export default class FileManager extends React.PureComponent<Props, State> {
         });
 
     public reset(): void {
+        const { active } = this.state;
+        if (active === 'cloudStorage') {
+            this.cloudStorageTabFormRef.current?.resetFields();
+        }
         this.setState({
             expandedKeys: [],
             active: 'local',
@@ -79,7 +111,10 @@ export default class FileManager extends React.PureComponent<Props, State> {
                 local: [],
                 share: [],
                 remote: [],
+                cloudStorage: [],
             },
+            cloudStorage: null,
+            potentialCloudStorage: '',
         });
     }
 
@@ -221,8 +256,33 @@ export default class FileManager extends React.PureComponent<Props, State> {
         );
     }
 
+    private renderCloudStorageSelector(): JSX.Element {
+        const { cloudStorage, potentialCloudStorage, files } = this.state;
+        return (
+            <Tabs.TabPane
+                key='cloudStorage'
+                className='cvat-create-task-page-cloud-storage-tab'
+                tab={<span> Cloud Storage </span>}
+            >
+                <CloudStorageTab
+                    formRef={this.cloudStorageTabFormRef}
+                    cloudStorage={cloudStorage}
+                    selectedFiles={files.cloudStorage.filter((item) => !item.endsWith('manifest.jsonl'))}
+                    onSelectCloudStorage={(_cloudStorage: CloudStorage | null) => {
+                        this.setState({ cloudStorage: _cloudStorage });
+                    }}
+                    searchPhrase={potentialCloudStorage}
+                    setSearchPhrase={(_potentialCloudStorage: string) => {
+                        this.setState({ potentialCloudStorage: _potentialCloudStorage });
+                    }}
+                    onSelectFiles={this.onSelectCloudStorageFiles}
+                />
+            </Tabs.TabPane>
+        );
+    }
+
     public render(): JSX.Element {
-        const { withRemote, onChangeActiveKey } = this.props;
+        const { onChangeActiveKey } = this.props;
         const { active } = this.state;
 
         return (
@@ -240,9 +300,12 @@ export default class FileManager extends React.PureComponent<Props, State> {
                 >
                     {this.renderLocalSelector()}
                     {this.renderShareSelector()}
-                    {withRemote && this.renderRemoteSelector()}
+                    {this.renderRemoteSelector()}
+                    {this.renderCloudStorageSelector()}
                 </Tabs>
             </>
         );
     }
 }
+
+export default FileManager;

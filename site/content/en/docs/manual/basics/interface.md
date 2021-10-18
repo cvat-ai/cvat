@@ -1,7 +1,7 @@
 ---
 title: 'Interface of the annotation tool'
 linkTitle: 'Interface'
-weight: 4
+weight: 5
 ---
 The tool consists of:
 

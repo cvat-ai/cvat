@@ -1,7 +1,7 @@
 ---
 title: 'Formats'
 linkTitle: 'Formats'
-weight: 31
+weight: 20
 description: 'List of annotation formats supported by CVAT.'
 ---
 

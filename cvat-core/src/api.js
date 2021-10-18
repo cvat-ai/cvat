@@ -24,7 +24,6 @@ function build() {
     const { FrameData } = require('./frames');
     const { CloudStorage } = require('./cloud-storage');
 
-
     const enums = require('./enums');
 
     const {

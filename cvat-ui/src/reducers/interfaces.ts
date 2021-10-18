@@ -2,7 +2,6 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { MutableRefObject } from 'react';
 import { Canvas3d } from 'cvat-canvas3d/src/typescript/canvas3d';
 import { Canvas, RectDrawingMethod, CuboidDrawingMethod } from 'cvat-canvas-wrapper';
 import { IntelligentScissors } from 'utils/opencv-wrapper/intelligent-scissors';
@@ -30,6 +29,7 @@ export interface ProjectsQuery {
     owner: string | null;
     name: string | null;
     status: string | null;
+    assignee: string | null;
     [key: string]: string | boolean | number | null | undefined;
 }
 
@@ -121,6 +121,65 @@ export interface FormatsState {
     initialized: boolean;
 }
 
+export interface CloudStoragesQuery {
+    page: number;
+    id: number | null;
+    search: string | null;
+    owner: string | null;
+    displayName: string | null;
+    description: string | null;
+    resourceName: string | null;
+    providerType: string | null;
+    credentialsType: string | null;
+    [key: string]: string | number | null | undefined;
+}
+
+interface CloudStorageAdditional {
+    fetching: boolean;
+    initialized: boolean;
+    status: string | null;
+    preview: string;
+}
+type CloudStorageStatus = Pick<CloudStorageAdditional, 'fetching' | 'initialized' | 'status'>;
+type CloudStoragePreview = Pick<CloudStorageAdditional, 'fetching' | 'initialized' | 'preview'>;
+
+export type CloudStorage = any;
+
+export interface CloudStoragesState {
+    initialized: boolean;
+    fetching: boolean;
+    count: number;
+    current: CloudStorage[];
+    statuses: {
+        [index: number]: CloudStorageStatus;
+    };
+    previews: {
+        [index: number]: CloudStoragePreview;
+    };
+    gettingQuery: CloudStoragesQuery;
+    activities: {
+        creates: {
+            attaching: boolean;
+            id: null | number;
+            error: string;
+        };
+        updates: {
+            updating: boolean;
+            cloudStorageID: null | number;
+            error: string;
+        };
+        deletes: {
+            [cloudStorageID: number]: boolean;
+        };
+        contentLoads: {
+            cloudStorageID: number | null;
+            content: any | null;
+            fetching: boolean;
+            error: string;
+        };
+    };
+}
+
 export enum SupportedPlugins {
     GIT_INTEGRATION = 'GIT_INTEGRATION',
     ANALYTICS = 'ANALYTICS',
@@ -185,7 +244,7 @@ export interface Model {
     framework: string;
     description: string;
     type: string;
-    onChangeToolsBlockerState: (event:string) => void;
+    onChangeToolsBlockerState: (event: string) => void;
     tip: {
         message: string;
         gif: string;
@@ -334,6 +393,12 @@ export interface NotificationsState {
         predictor: {
             prediction: null | ErrorState;
         };
+        cloudStorages: {
+            creating: null | ErrorState;
+            fetching: null | ErrorState;
+            updating: null | ErrorState;
+            deleting: null | ErrorState;
+        };
     };
     messages: {
         tasks: {
@@ -454,6 +519,7 @@ export interface AnnotationState {
             delay: number;
             changeTime: number | null;
         };
+        navigationBlocked: boolean;
         playing: boolean;
         frameAngles: number[];
         contextImage: {
@@ -473,7 +539,6 @@ export interface AnnotationState {
         activeInitialState?: any;
     };
     annotations: {
-        selectedStatesID: number[];
         activatedStateID: number | null;
         activatedAttributeID: number | null;
         collapsed: Record<number, boolean>;
@@ -513,7 +578,6 @@ export interface AnnotationState {
     appearanceCollapsed: boolean;
     workspace: Workspace;
     predictor: PredictorState;
-    aiToolsRef: MutableRefObject<any>;
 }
 
 export enum Workspace {
@@ -633,6 +697,7 @@ export interface CombinedState {
     shortcuts: ShortcutsState;
     review: ReviewState;
     export: ExportState;
+    cloudStorages: CloudStoragesState;
 }
 
 export enum DimensionType {

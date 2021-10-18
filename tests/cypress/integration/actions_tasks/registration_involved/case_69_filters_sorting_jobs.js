@@ -59,7 +59,7 @@ context('Filters, sorting jobs.', () => {
     }
 
     function testSetJobFilter({ column, menuItem, reset }) {
-        cy.get(column).find('[role="button"]').click().wait(300); // Waiting for dropdown menu transition
+        cy.get(column).find('[role="button"]').trigger('mouseover').click().wait(300); // Waiting for dropdown menu transition
         cy.get('.ant-dropdown')
             .not('.ant-dropdown-hidden')
             .within(() => {
@@ -69,11 +69,12 @@ context('Filters, sorting jobs.', () => {
                         .should('not.be.checked')
                         .check()
                         .should('be.checked');
-                    cy.contains('[type="button"]', 'OK').click();
+                    cy.contains('[type="button"]', 'OK').should('be.visible').click();
                 } else {
-                    cy.contains('[type="button"]', 'Reset').click();
+                    cy.contains('[type="button"]', 'Reset').should('be.visible').click();
                 }
             });
+        cy.get('.ant-dropdown').last().should('be.hidden');
     }
 
     before(() => {
