@@ -4,6 +4,7 @@
 
 import errno
 import io
+import json
 import os
 import os.path as osp
 import pytz
@@ -635,29 +636,54 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
 
             action = request.query_params.get('action', None)
             if action == 'init-chunk-upload':
+                size = int(request.query_params.get('size'))
+                file_name = request.query_params.get('file_name')
                 upload_id = uuid.uuid4().hex
                 chunk_dir = os.path.join(upload_dir, upload_id)
                 os.makedirs(chunk_dir)
+                with open(os.path.join(chunk_dir, file_name), "wb") as destination:
+                    destination.seek((size) - 1)
+                    destination.write(b'\0')
+                with open(os.path.join(chunk_dir, 'meta.json'),"w") as meta:
+                    json.dump({"chunks_tags_sent":[]}, meta)
                 return Response(data=upload_id, status=status.HTTP_200_OK)
             elif action == 'finish-chunk-upload':
                 upload_id = request.query_params.get('upload_id', None)
+                file_name = request.query_params.get('file_name', None)
                 chunk_dir = os.path.join(upload_dir, upload_id)
-                chunks = [os.path.join(chunk_dir, file) for file in os.listdir(chunk_dir) if os.path.isfile(os.path.join(chunk_dir, file))]
-                chunks.sort()
-                with open(os.path.join(upload_dir, data.get('chunk_file_name')), 'ab+') as destination:
-                    for chunk in chunks:
-                        chunk_file = open(chunk, 'rb')
-                        destination.write(chunk_file.read())
-                        chunk_file.close()
-                shutil.rmtree(chunk_dir)
+                with open(os.path.join(chunk_dir, 'meta.json'), "r+") as meta_json:
+                    meta = json.load(meta_json)
+                    uploaded_chunks = meta['chunks_tags_sent']
+                    client_chunks = data.get('chunks_tags')
+                    if len(uploaded_chunks) != len(client_chunks):
+                        return Response(data='Invalid chunks tags',
+                            status=status.HTTP_400_BAD_REQUEST)
+
+                    uploaded_chunks.sort(key=lambda k: k['chunk_number'])
+                    client_chunks.sort(key=lambda k: k['chunk_number'])
+                    if any(x!=y for x, y in zip(uploaded_chunks, client_chunks)):
+                        return Response(data='Invalid chunks tags',
+                            status=status.HTTP_400_BAD_REQUEST)
+
+                    shutil.move(os.path.join(chunk_dir, file_name), os.path.join(upload_dir, file_name))
+                    shutil.rmtree(chunk_dir)
                 return Response(status=status.HTTP_200_OK)
             elif action == 'append':
                 file = data.get('client_files')[0]['file']
                 upload_id = request.query_params.get('upload_id', None)
                 if upload_id: # write chunk
-                    file_dir = os.path.join(upload_dir, upload_id)
-                    with open(os.path.join(file_dir, str(data.get('chunk_number'))), 'wb') as destination:
+                    chunk_dir = os.path.join(upload_dir, upload_id)
+                    chunk_number = data.get('chunk_number')
+                    chunk_tag = uuid.uuid4().hex
+                    with open(os.path.join(chunk_dir, file.name), 'rb+') as destination:
+                        destination.seek((chunk_number-1)*1024*1024*100)
                         destination.write(file.read())
+                    with open(os.path.join(chunk_dir, 'meta.json'), "r+") as meta_json:
+                        meta = json.load(meta_json)
+                        meta['chunks_tags_sent'].append({'chunk_number': chunk_number, 'tag': chunk_tag})
+                        meta_json.seek(0)
+                        json.dump(meta, meta_json)
+                    return Response(data=chunk_tag, status=status.HTTP_202_ACCEPTED)
                 else: # write each file
                     for client_file in data.get('client_files'):
                         with open(os.path.join(upload_dir, client_file['file'].name), 'ab+') as destination:

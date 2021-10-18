@@ -5,6 +5,7 @@
 import os
 import re
 import shutil
+import json
 
 from rest_framework import serializers, exceptions
 from django.contrib.auth.models import User, Group
@@ -219,6 +220,15 @@ class RqStatusSerializer(serializers.Serializer):
         "Queued", "Started", "Finished", "Failed"])
     message = serializers.CharField(allow_blank=True, default="")
 
+class ChunksTagsSerializer(serializers.Serializer):
+    chunk_number = serializers.IntegerField()
+    tag = serializers.CharField()
+
+    # pylint: disable=no-self-use
+    def to_internal_value(self, data):
+        data = json.loads(data)
+        return data
+
 class WriteOnceMixin:
 
     """Adds support for write once fields to serializers.
@@ -276,12 +286,13 @@ class DataSerializer(serializers.ModelSerializer):
     cloud_storage_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)
     chunk_number = serializers.IntegerField(required=False)
     chunk_file_name = serializers.CharField(allow_null=True, required=False)
+    chunks_tags = ChunksTagsSerializer(many=True, default=[])
 
     class Meta:
         model = models.Data
         fields = ('chunk_size', 'size', 'image_quality', 'start_frame', 'stop_frame', 'frame_filter',
             'compressed_chunk_type', 'original_chunk_type', 'client_files', 'server_files', 'remote_files', 'use_zip_chunks',
-            'cloud_storage_id', 'use_cache', 'copy_data', 'storage_method', 'storage', 'chunk_number', 'chunk_file_name')
+            'cloud_storage_id', 'use_cache', 'copy_data', 'storage_method', 'storage', 'chunk_number', 'chunk_file_name', 'chunks_tags')
 
     # pylint: disable=no-self-use
     def validate_frame_filter(self, value):
@@ -321,7 +332,7 @@ class DataSerializer(serializers.ModelSerializer):
         return db_data
 
     def update(self, instance, validated_data):
-        files = self._pop_data(validated_data);
+        files = self._pop_data(validated_data)
         for k, v in validated_data.items():
             setattr(instance, k, v)
         self._create_files(instance, files)
@@ -336,6 +347,7 @@ class DataSerializer(serializers.ModelSerializer):
         validated_data.pop('use_zip_chunks')
         validated_data.pop('use_cache')
         validated_data.pop('copy_data')
+        validated_data.pop('chunks_tags')
         files = {'client_files': client_files, 'server_files': server_files, 'remote_files': remote_files}
         return files
 
