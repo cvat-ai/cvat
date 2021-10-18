@@ -205,9 +205,9 @@ Follow the first 7 mounting steps above.
 
 1. Edit `/etc/fstab` with the blobfuse script. Add the following line(replace paths):
 
-```bash
-/absolute/path/to/azure_fuse </path/to/desired/mountpoint> fuse allow_other,user,_netdev
-```
+   ```bash
+   /absolute/path/to/azure_fuse </path/to/desired/mountpoint> fuse allow_other,user,_netdev
+   ```
 
 ##### <a name="azure_using_systemd">Using systemd</a>
 

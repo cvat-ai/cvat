@@ -4,6 +4,10 @@ linkTitle: 'Models'
 weight: 13
 ---
 
+To deploy the models, you will need to install the necessary components using
+[Semi-automatic and Automatic Annotation guide](/docs/administration/advanced/installation_automatic_annotation/).
+To learn how to deploy the model, read [Serverless tutorial](/docs/manual/advanced/serverless-tutorial/).
+
 The Models page contains a list of deep learning (DL) models deployed for semi-automatic and automatic annotation.
 To open the Models page, click the Models button on the navigation bar.
 The list of models is presented in the form of a table. The parameters indicated for each model are the following:
@@ -20,5 +24,3 @@ The list of models is presented in the form of a table. The parameters indicated
 - `Labels` - list of the supported labels (only for the models of the `detectors` type)
 
 ![](/images/image099.jpg)
-
-Read how to install your model [here](/docs/administration/basics/installation/#semi-automatic-and-automatic-annotation).
