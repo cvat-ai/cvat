@@ -10,6 +10,7 @@ on:
 jobs:
   Unit_testing:
       if: |
+        github.event.pull_request.draft == false &&
         !startsWith(github.event.pull_request.title, '[WIP]') &&
         !startsWith(github.event.pull_request.title, '[Dependent]')
       runs-on: ubuntu-latest
@@ -80,6 +81,7 @@ jobs:
 
   E2E_testing:
     if: |
+      github.event.pull_request.draft == false &&
       !startsWith(github.event.pull_request.title, '[WIP]') &&
       !startsWith(github.event.pull_request.title, '[Dependent]')
     runs-on: ubuntu-latest
