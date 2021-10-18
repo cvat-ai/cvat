@@ -37,7 +37,10 @@ export default function RemoveRangeConfirmComponent(props: Props): JSX.Element {
             okType='primary'
             okText='Yes'
             cancelText='Cancel'
-            onOk={()=>{removeinRange(startFrame,endFrame);}}
+            onOk={()=>{
+                removeinRange(startFrame,endFrame);
+                cancel();
+            }}
             onCancel={cancel}
             title='Confirm to remove annotations in range'
             visible={visible}

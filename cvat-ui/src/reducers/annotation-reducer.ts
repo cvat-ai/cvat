@@ -108,11 +108,6 @@ const defaultState: AnnotationState = {
         collecting: false,
         data: null,
     },
-    removeinrange: {
-        sessionInstance: null,
-        startFrame: 0,
-        endFrame: 0,
-    },
     aiToolsRef: React.createRef(),
     colors: [],
     sidebarCollapsed: false,
@@ -952,7 +947,19 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
         }
         //Added Remove Annotations in Range
         case AnnotationActionTypes.REMOVE_ANNOTATIONS_INRANGE_SUCCESS: {
-            console.log("REMOVE_ANNOTATIONS_INRANGE_SUCCESS");
+            const { history } = action.payload;
+            const { states } = action.payload;
+            return {
+                ...state,
+                annotations: {
+                    ...state.annotations,
+                    history,
+                    states,
+                    selectedStatesID: [],
+                    activatedStateID: null,
+                    collapsed: {},
+                },
+            };
         }
         case AnnotationActionTypes.UPDATE_CANVAS_CONTEXT_MENU: {
             const {

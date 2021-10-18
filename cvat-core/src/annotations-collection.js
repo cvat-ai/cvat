@@ -553,7 +553,52 @@
             return groupIdx;
         }
 
-        clear() {
+
+        clear(startframe, endframe, deltrack_keyframes_only) {
+            let objects_removable = [];
+            //If only a range of annotations need to be cleared
+            if (startframe!=undefined && endframe !=undefined ){
+                for(let frame=startframe; frame<=endframe; frame++){
+                    const shapes = this.shapes[frame] || [];
+                    const tags = this.tags[frame] || [];
+                    objects_removable = objects_removable.concat(shapes,tags);
+                    this.shapes[frame]=[];
+                    this.tags[frame]=[];
+                }
+                const {tracks} = this;
+                tracks.forEach((track)=>{
+                    if(track.frame<=endframe){
+                        if(deltrack_keyframes_only){
+                            for(let keyframe in track.shapes){
+                                if (keyframe <= endframe)
+                                    delete track.shapes[keyframe];
+                            }
+                        }
+                        else if(track.frame>=startframe){
+                            objects_removable.push(track);
+                            var index = tracks.indexOf(track);
+                            if (index > -1)
+                              tracks.splice(index, 1);
+                        }
+                    }
+                });
+
+
+
+                objects_removable.forEach((object)=>{
+                    console.log(object.clientID);
+                    console.log(object);
+                    delete this.objects[object.clientID];
+                });
+
+                this.count = this.count - objects_removable.length;
+                console.log("Count");
+                console.log(this.count);
+
+                this.flush = true;
+                return;
+            }
+            //If all annotations need to be cleared
             this.shapes = {};
             this.tags = {};
             this.tracks = [];
@@ -561,6 +606,7 @@
             this.count = 0;
 
             this.flush = true;
+
         }
 
         statistics() {

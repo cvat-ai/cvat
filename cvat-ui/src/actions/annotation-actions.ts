@@ -510,22 +510,21 @@ export function changePropagateFrames(frames: number): AnyAction {
 //To remove annotation objects present in given range of frames
 export function removeAnnotationsinRangeAsync(sessionInstance: any, startFrame: number, endFrame: number, force: boolean): ThunkAction{
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
-        const { filters, showAllInterpolationTracks } = receiveAnnotationsParameters();
         try {
-
-            for(let frame = startFrame; frame<=endFrame; frame++){
-                await dispatch(changeFrameAsync(frame));
-
-                const states = await sessionInstance.annotations.get(frame, showAllInterpolationTracks, filters );
-
-                states.forEach(async (state: any) => {
-                    await   dispatch(removeObjectAsync(sessionInstance,state,force));
-                });
-            }
+            await sessionInstance.annotations.clear(false,startFrame,endFrame);
+            await sessionInstance.actions.clear();
+            const history = await sessionInstance.actions.get();
+            const {
+                filters, frame, showAllInterpolationTracks, jobInstance,
+            } = receiveAnnotationsParameters();
+            const states = await jobInstance.annotations.get(frame, showAllInterpolationTracks, filters);
 
             dispatch({
                 type: AnnotationActionTypes.REMOVE_ANNOTATIONS_INRANGE_SUCCESS,
-                payload: { },
+                payload: {
+                    history,
+                    states,
+                },
             });
 
         }catch(error){
