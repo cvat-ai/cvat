@@ -3,13 +3,17 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
+import { useState } from 'react';
 import Menu from 'antd/lib/menu';
 import Modal from 'antd/lib/modal';
+import Button from 'antd/lib/button';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { MenuInfo } from 'rc-menu/lib/interface';
 
 import LoadSubmenu from 'components/actions-menu/load-submenu';
 import { DimensionType } from '../../../reducers/interfaces';
+
+import RemoveAnnotationsRangeComponent from './remove-range-confirm';
 
 interface Props {
     taskMode: string;
@@ -20,6 +24,8 @@ interface Props {
     jobInstance: any;
     onClickMenu(params: MenuInfo): void;
     onUploadAnnotations(format: string, file: File): void;
+    stopFrame: number;
+    removeRange(startnumber: number, endnumber: number): void;
     setForceExitAnnotationFlag(forceExit: boolean): void;
     saveAnnotations(jobInstance: any, afterSave?: () => void): void;
 }
@@ -41,11 +47,15 @@ export default function AnnotationMenuComponent(props: Props): JSX.Element {
         loadActivity,
         isReviewer,
         jobInstance,
+        stopFrame,
         onClickMenu,
         onUploadAnnotations,
+        removeRange,
         setForceExitAnnotationFlag,
         saveAnnotations,
     } = props;
+
+    const [openRemoveRangeComponent, toggleOpenRemoveRangeComponent] = useState(false);
 
     const jobStatus = jobInstance.status;
     const taskID = jobInstance.task.id;
@@ -81,19 +91,40 @@ export default function AnnotationMenuComponent(props: Props): JSX.Element {
 
         if (params.key === Actions.REMOVE_ANNO) {
             Modal.confirm({
-                title: 'All the annotations will be removed',
+                title: 'Remove Annotations',
                 content:
-                    'You are going to remove all the annotations from the client. ' +
+                    'Select whether to remove all annotations from the job or remove within a range' + '\n' +
                     'It will stay on the server till you save the job. Continue?',
                 className: 'cvat-modal-confirm-remove-annotation',
                 onOk: () => {
-                    onClickMenu(params);
+                    Modal.confirm({
+                        title: 'All the annotations will be removed',
+                        content:
+                            'You are going to remove all the annotations from the client. ' +
+                            'It will stay on the server till you save the job. Continue?',
+                        className: 'cvat-modal-confirm-remove-annotation',
+                        onOk: () => {
+                            onClickMenu(copyParams);
+                        },
+                        okButtonProps: {
+                            type: 'primary',
+                            danger: true,
+                        },
+                        okText: 'Delete',
+                    });
                 },
                 okButtonProps: {
                     type: 'primary',
-                    danger: true,
+                    danger: true
                 },
-                okText: 'Delete',
+                okText: 'Remove All',
+                onCancel: () => {
+                    toggleOpenRemoveRangeComponent(!openRemoveRangeComponent);
+                },
+                cancelText: "Select Range",
+                cancelButtonProps: {
+                    type: 'primary',
+                },
             });
         } else if (params.key === Actions.REQUEST_REVIEW) {
             checkUnsavedChanges(params);
@@ -125,6 +156,7 @@ export default function AnnotationMenuComponent(props: Props): JSX.Element {
     }
 
     const is2d = jobInstance.task.dimension === DimensionType.DIM_2D;
+
 
     return (
         <Menu onClick={onClickMenuWrapper} className='cvat-annotation-menu' selectable={false}>
@@ -164,6 +196,12 @@ export default function AnnotationMenuComponent(props: Props): JSX.Element {
                 <Menu.Item key={Actions.SUBMIT_REVIEW}>Submit the review</Menu.Item>
             )}
             {jobStatus === 'completed' && <Menu.Item key={Actions.RENEW_JOB}>Renew the job</Menu.Item>}
+            <RemoveAnnotationsRangeComponent
+                visible={openRemoveRangeComponent}
+                removeinRange={removeRange}
+                stopFrame={stopFrame}
+                cancel= {()=>{toggleOpenRemoveRangeComponent(!openRemoveRangeComponent)}}
+            ></RemoveAnnotationsRangeComponent>
         </Menu>
     );
 }

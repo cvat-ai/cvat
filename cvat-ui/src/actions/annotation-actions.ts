@@ -165,6 +165,8 @@ export enum AnnotationActionTypes {
     UPLOAD_JOB_ANNOTATIONS_FAILED = 'UPLOAD_JOB_ANNOTATIONS_FAILED',
     REMOVE_JOB_ANNOTATIONS_SUCCESS = 'REMOVE_JOB_ANNOTATIONS_SUCCESS',
     REMOVE_JOB_ANNOTATIONS_FAILED = 'REMOVE_JOB_ANNOTATIONS_FAILED',
+    REMOVE_ANNOTATIONS_INRANGE_SUCCESS = 'REMOVE_ANNOTATIONS_INRANGE_SUCCESS',
+    REMOVE_ANNOTATIONS_INRANGE_FAILED = 'REMOVE_ANNOTATIONS_INRANGE_FAILED',
     UPDATE_CANVAS_CONTEXT_MENU = 'UPDATE_CANVAS_CONTEXT_MENU',
     UNDO_ACTION_SUCCESS = 'UNDO_ACTION_SUCCESS',
     UNDO_ACTION_FAILED = 'UNDO_ACTION_FAILED',
@@ -502,6 +504,38 @@ export function changePropagateFrames(frames: number): AnyAction {
             frames,
         },
     };
+}
+
+
+//To remove annotation objects present in given range of frames
+export function removeAnnotationsinRangeAsync(sessionInstance: any, startFrame: number, endFrame: number, force: boolean): ThunkAction{
+    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+        try {
+            await sessionInstance.annotations.clear(false,startFrame,endFrame);
+            await sessionInstance.actions.clear();
+            const history = await sessionInstance.actions.get();
+            const {
+                filters, frame, showAllInterpolationTracks, jobInstance,
+            } = receiveAnnotationsParameters();
+            const states = await jobInstance.annotations.get(frame, showAllInterpolationTracks, filters);
+
+            dispatch({
+                type: AnnotationActionTypes.REMOVE_ANNOTATIONS_INRANGE_SUCCESS,
+                payload: {
+                    history,
+                    states,
+                },
+            });
+
+        }catch(error){
+            dispatch({
+                type: AnnotationActionTypes.REMOVE_ANNOTATIONS_INRANGE_FAILED,
+                payload: {
+                    error,
+                },
+            });
+        }
+    }
 }
 
 export function removeObjectAsync(sessionInstance: any, objectState: any, force: boolean): ThunkAction {

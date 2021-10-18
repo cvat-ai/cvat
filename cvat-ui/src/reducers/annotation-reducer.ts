@@ -930,6 +930,22 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
             };
         }
+        //Added Remove Annotations in Range
+        case AnnotationActionTypes.REMOVE_ANNOTATIONS_INRANGE_SUCCESS: {
+            const { history } = action.payload;
+            const { states } = action.payload;
+            return {
+                ...state,
+                annotations: {
+                    ...state.annotations,
+                    history,
+                    states,
+                    selectedStatesID: [],
+                    activatedStateID: null,
+                    collapsed: {},
+                },
+            };
+        }
         case AnnotationActionTypes.UPDATE_CANVAS_CONTEXT_MENU: {
             const {
                 visible, left, top, type, pointID,
