@@ -18,11 +18,9 @@ context('Canvas 3D functionality. "Move the image" button interaction.', () => {
         cy.openJob();
         cy.wait(1000); // Waiting for the point cloud to display
         cy.create3DCuboid(cuboidCreationParams);
-        cy.get('.cvat-canvas3d-perspective').screenshot('canvas3d_perspective_after_add_cuboid');
+        cy.customScreenshot('.cvat-canvas3d-perspective', 'canvas3d_perspective_after_add_cuboid');
         ['topview', 'sideview', 'frontview'].forEach((view) => {
-            cy.get(`.cvat-canvas3d-${view}`)
-                .find('.cvat-canvas3d-fullsize')
-                .screenshot(`canvas3d_${view}_after_add_cuboid`);
+            cy.customScreenshot(`.cvat-canvas3d-${view}`, `canvas3d_${view}_after_add_cuboid`);
         });
     });
 
@@ -32,11 +30,9 @@ context('Canvas 3D functionality. "Move the image" button interaction.', () => {
             cy.get('.cvat-canvas3d-perspective').trigger('mousemove', 300, 200); // Interacting with the canvas before interacting with the cuboid.
             cy.get('.cvat-canvas3d-perspective').trigger('mousemove');
             cy.get('#cvat-objects-sidebar-state-item-1').should('not.have.class', 'cvat-objects-sidebar-state-active-item');
-            cy.get('.cvat-canvas3d-perspective').screenshot('canvas3d_perspective_move_the_image_clicked');
+            cy.customScreenshot('.cvat-canvas3d-perspective', 'canvas3d_perspective_move_the_image_clicked');
             ['topview', 'sideview', 'frontview'].forEach((view) => {
-                cy.get(`.cvat-canvas3d-${view}`)
-                    .find('.cvat-canvas3d-fullsize')
-                    .screenshot(`canvas3d_${view}_move_the_image_clicked`);
+                cy.customScreenshot(`.cvat-canvas3d-${view}`, `canvas3d_${view}_move_the_image_clicked`);
             });
             cy.compareImagesAndCheckResult(
                 `${screenshotsPath}/canvas3d_perspective_after_add_cuboid.png`,
