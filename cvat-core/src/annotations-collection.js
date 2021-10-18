@@ -570,7 +570,7 @@
                     if(track.frame<=endframe){
                         if(deltrack_keyframes_only){
                             for(let keyframe in track.shapes){
-                                if (keyframe <= endframe)
+                                if (keyframe>=startframe && keyframe <= endframe)
                                     delete track.shapes[keyframe];
                             }
                         }
@@ -586,14 +586,10 @@
 
 
                 objects_removable.forEach((object)=>{
-                    console.log(object.clientID);
-                    console.log(object);
                     delete this.objects[object.clientID];
                 });
 
                 this.count = this.count - objects_removable.length;
-                console.log("Count");
-                console.log(this.count);
 
                 this.flush = true;
                 return;
