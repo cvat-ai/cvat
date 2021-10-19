@@ -346,7 +346,11 @@ context('Review pipeline feature', () => {
             cy.get('.cvat-objects-sidebar-issues-list-header').should('be.visible');
             cy.get('.cvat-objects-sidebar-issue-item').then((sidebarIssueItems) => {
                 cy.get('.cvat-hidden-issue-label').then((issueLabels) => {
-                    expect(sidebarIssueItems.length).to.be.equal(issueLabels.length);
+                    cy.get('.cvat_canvas_issue_region').then((issueRegion) => {
+                        expect(sidebarIssueItems.length).to.be.equal(4);
+                        expect(issueRegion.length).to.be.equal(4);
+                        expect(issueLabels.length).to.be.equal(4);
+                    })
                 });
             });
         });
