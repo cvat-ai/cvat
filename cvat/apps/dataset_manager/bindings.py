@@ -1411,7 +1411,6 @@ def load_dataset_data(project_annotation, dataset: Dataset, project_data):
 
         dataset_files = {
             'media': [],
-            'related_images': [],
             'data_root': dataset.data_path + osp.sep,
         }
 
@@ -1421,7 +1420,7 @@ def load_dataset_data(project_annotation, dataset: Dataset, project_data):
             elif dataset_item.point_cloud:
                 dataset_files['media'].append(dataset_item.point_cloud)
             if isinstance(dataset_item.related_images, list):
-                dataset_files['related_images'] += \
+                dataset_files['media'] += \
                     list(map(lambda ri: ri.path, dataset_item.related_images))
 
         project_annotation.add_task(task_fields, dataset_files, project_data)

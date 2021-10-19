@@ -91,8 +91,6 @@ class ProjectAnnotationAndData:
         data['server_files_path'] = files['data_root']
         data['stop_frame'] = None
         data['server_files'] = list(map(split_name, data['server_files']))
-        if files['related_images']:
-            data['related_images'] = list(map(split_name, files['related_images']))
 
         create_task(db_task, data, isDatasetImport=True)
         self.db_tasks = models.Task.objects.filter(project__id=self.db_project.id).order_by('id')
