@@ -103,7 +103,7 @@ Detectors are used to automatically annotate one frame. Supported DL models are 
 
 ### Mask RCNN
 
-The model generates bounding boxes for each instance of an object in the image.
+The model generates polygons for each instance of an object in the image.
 
 ### Faster RCNN
 
