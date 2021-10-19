@@ -95,7 +95,9 @@ Cypress.Commands.add('checkIssueRegion', () => {
     const sccSelectorIssueRegionId = '#cvat_canvas_issue_region_';
     cy.collectIssueRegionId().then((issueRegionIdList) => {
         const maxId = Math.max(...issueRegionIdList);
-        cy.get(`${sccSelectorIssueRegionId}${maxId}`).should('be.visible');
+        cy.get(`${sccSelectorIssueRegionId}${maxId}`)
+            .trigger('mousemove')
+            .should('be.visible');
     });
 });
 
