@@ -172,14 +172,14 @@
         return false;
     }
 
-    async function clearAnnotations(session, reload, startframe, endframe) {
+    async function clearAnnotations(session, reload, startframe, endframe, deltrack_keyframes_only) {
         checkObjectType('reload', reload, 'boolean', null);
         const sessionType = session instanceof Task ? 'task' : 'job';
         const cache = getCache(sessionType);
 
         if (cache.has(session)) {
             if(startframe!=undefined && endframe !=undefined){
-                cache.get(session).collection.clear(startframe,endframe, deltrack_keyframes_only = true);
+                cache.get(session).collection.clear(startframe,endframe, deltrack_keyframes_only);
             }else{
                 cache.get(session).collection.clear();
             }

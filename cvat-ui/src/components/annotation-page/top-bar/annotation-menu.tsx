@@ -25,7 +25,7 @@ interface Props {
     onClickMenu(params: MenuInfo): void;
     onUploadAnnotations(format: string, file: File): void;
     stopFrame: number;
-    removeRange(startnumber: number, endnumber: number): void;
+    removeRange(startnumber: number, endnumber: number, deltrack_keyframes_only:boolean): void;
     setForceExitAnnotationFlag(forceExit: boolean): void;
     saveAnnotations(jobInstance: any, afterSave?: () => void): void;
 }

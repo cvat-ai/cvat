@@ -18,7 +18,6 @@ import {
     switchRequestReviewDialog as switchRequestReviewDialogAction,
     switchSubmitReviewDialog as switchSubmitReviewDialogAction,
     setForceExitAnnotationFlag as setForceExitAnnotationFlagAction,
-    removeAnnotationsinRange as removeAnnotationsinRangeAction,
     removeAnnotationsinRangeAsync as removeAnnotationsinRangeAsyncAction,
 } from 'actions/annotation-actions';
 import { exportActions } from 'actions/export-actions';
@@ -35,8 +34,7 @@ interface DispatchToProps {
     loadAnnotations(job: any, loader: any, file: File): void;
     showExportModal(task: any): void;
     removeAnnotations(sessionInstance: any): void;
-    removeAnnotationsinRange(sessionInstance: any): void;
-    removeAnnotationinRangeAsync(sessionInstance: any, startnumber:number, endnumber:number): void;
+    removeAnnotationinRangeAsync(sessionInstance: any, startnumber:number, endnumber:number, deltrack_keyframes_only:boolean): void;
     switchRequestReviewDialog(visible: boolean): void;
     switchSubmitReviewDialog(visible: boolean): void;
     setForceExitAnnotationFlag(forceExit: boolean): void;
@@ -83,11 +81,8 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         removeAnnotations(sessionInstance: any): void {
             dispatch(removeAnnotationsAsync(sessionInstance));
         },
-        removeAnnotationsinRange(sessionInstance: any){
-            dispatch(removeAnnotationsinRangeAction(sessionInstance));
-        },
-        removeAnnotationinRangeAsync(sessionInstance:any, startnumber: number, endnumber: number){
-            dispatch(removeAnnotationsinRangeAsyncAction(sessionInstance, startnumber, endnumber, false));
+        removeAnnotationinRangeAsync(sessionInstance:any, startnumber: number, endnumber: number, deltrack_keyframes_only:boolean){
+            dispatch(removeAnnotationsinRangeAsyncAction(sessionInstance, startnumber, endnumber, deltrack_keyframes_only));
         },
         switchRequestReviewDialog(visible: boolean): void {
             dispatch(switchRequestReviewDialogAction(visible));
@@ -119,7 +114,6 @@ function AnnotationMenuContainer(props: Props): JSX.Element {
         loadActivity,
         loadAnnotations,
         showExportModal,
-        removeAnnotationsinRange,
         removeAnnotationinRangeAsync,
         removeAnnotations,
         switchRequestReviewDialog,
@@ -159,8 +153,8 @@ function AnnotationMenuContainer(props: Props): JSX.Element {
         }
     };
 
-    const removeRange = (startFrame: number, endFrame: number) : void=>{
-        removeAnnotationinRangeAsync(jobInstance, startFrame ,endFrame);
+    const removeRange = (startFrame: number, endFrame: number, deltrack_keyframes_only:boolean) : void=>{
+        removeAnnotationinRangeAsync(jobInstance, startFrame ,endFrame, deltrack_keyframes_only);
     }
 
     const isReviewer = jobInstance.reviewer?.id === user.id || user.isSuperuser;

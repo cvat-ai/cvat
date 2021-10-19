@@ -508,10 +508,10 @@ export function changePropagateFrames(frames: number): AnyAction {
 
 
 //To remove annotation objects present in given range of frames
-export function removeAnnotationsinRangeAsync(sessionInstance: any, startFrame: number, endFrame: number, force: boolean): ThunkAction{
+export function removeAnnotationsinRangeAsync(sessionInstance: any, startFrame: number, endFrame: number, deltrack_keyframes_only: boolean): ThunkAction{
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         try {
-            await sessionInstance.annotations.clear(false,startFrame,endFrame);
+            await sessionInstance.annotations.clear(false,startFrame,endFrame,deltrack_keyframes_only);
             await sessionInstance.actions.clear();
             const history = await sessionInstance.actions.get();
             const {

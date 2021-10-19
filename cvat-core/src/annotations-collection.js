@@ -570,7 +570,7 @@
                     if(track.frame<=endframe){
                         if(deltrack_keyframes_only){
                             for(let keyframe in track.shapes){
-                                if (keyframe>=startframe && keyframe <= endframe)
+                                if (keyframe >= startframe && keyframe <= endframe)
                                     delete track.shapes[keyframe];
                             }
                         }

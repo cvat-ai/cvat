@@ -37,8 +37,8 @@
                         return result;
                     },
 
-                    async clear(reload = false, startframe, endframe) {
-                        const result = await PluginRegistry.apiWrapper.call(this, prototype.annotations.clear, reload, startframe, endframe);
+                    async clear(reload = false, startframe, endframe, deltrack_keyframes_only = true) {
+                        const result = await PluginRegistry.apiWrapper.call(this, prototype.annotations.clear, reload, startframe, endframe, deltrack_keyframes_only);
                         return result;
                     },
 
@@ -1897,8 +1897,8 @@
         return result;
     };
 
-    Job.prototype.annotations.clear.implementation = async function (reload, startframe, endframe) {
-        const result = await clearAnnotations(this, reload, startframe, endframe);
+    Job.prototype.annotations.clear.implementation = async function (reload, startframe, endframe, deltrack_keyframes_only) {
+        const result = await clearAnnotations(this, reload, startframe, endframe, deltrack_keyframes_only);
         return result;
     };
 

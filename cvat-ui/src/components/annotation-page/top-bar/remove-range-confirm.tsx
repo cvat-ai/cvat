@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -9,11 +9,12 @@ import Modal from 'antd/lib/modal';
 import InputNumber from 'antd/lib/input-number';
 import Text from 'antd/lib/typography/Text';
 import { clamp } from 'utils/math';
+import Checkbox from 'antd/lib/checkbox';
 
 interface Props {
     visible: boolean;
     stopFrame: number;
-    removeinRange(startnumber:number, endnumber:number): void;
+    removeinRange(startnumber:number, endnumber:number, deltrack_keyframes_only:boolean): void;
     cancel(): void;
 }
 
@@ -29,6 +30,7 @@ export default function RemoveRangeConfirmComponent(props: Props): JSX.Element {
 
     const [startFrame, managestart] = useState<number>(0);
     const [endFrame, manageend] = useState<number>(1);
+    const [deltrack_keyframes_only, managedeltrack_keyframes_only] = useState<Boolean>(false);
 
     const minEndFrames = Math.max(startFrame,1);
 
@@ -38,7 +40,7 @@ export default function RemoveRangeConfirmComponent(props: Props): JSX.Element {
             okText='Yes'
             cancelText='Cancel'
             onOk={()=>{
-                removeinRange(startFrame,endFrame);
+                removeinRange(startFrame,endFrame,deltrack_keyframes_only);
                 cancel();
             }}
             onCancel={cancel}
@@ -75,7 +77,8 @@ export default function RemoveRangeConfirmComponent(props: Props): JSX.Element {
                         }
                     }}
                 />
-                <Text>frame</Text>
+                <Text>frame</Text>,<br></br><br></br>
+                <Checkbox onChange={()=>{ managedeltrack_keyframes_only(!deltrack_keyframes_only);}}>Delete only track keyframes</Checkbox>
             </div>
         </Modal>
     );
