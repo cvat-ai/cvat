@@ -288,6 +288,7 @@ context('Review pipeline feature', () => {
         it('Reload page. All the issue still exists.', () => {
             cy.reload();
             cy.get('.cvat-canvas-container').should('exist');
+            cy.get('.cvat_canvas_issue_region').should('have.length', 2);
             cy.checkIssueLabel(customeIssueDescription);
             cy.checkIssueLabel('Wrong position');
         });
