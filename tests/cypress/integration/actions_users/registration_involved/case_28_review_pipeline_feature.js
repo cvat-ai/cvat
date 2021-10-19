@@ -278,6 +278,7 @@ context('Review pipeline feature', () => {
         it('Use one of items to create quick issue on another object on another frame. Issue has been created.', () => {
             cy.goCheckFrameNumber(2);
             cy.createIssueFromObject('#cvat_canvas_shape_4', 'Quick issue: incorrect attribute');
+            cy.get('.cvat_canvas_issue_region').should('have.length', 1);
             cy.checkIssueLabel('Wrong attribute');
             cy.goCheckFrameNumber(0); // Back to first frame
         });
@@ -344,15 +345,9 @@ context('Review pipeline feature', () => {
                 cy.contains('[role="tab"]', 'Issues').click().should('have.attr', 'aria-selected', 'true');
             });
             cy.get('.cvat-objects-sidebar-issues-list-header').should('be.visible');
-            cy.get('.cvat-objects-sidebar-issue-item').then((sidebarIssueItems) => {
-                cy.get('.cvat-hidden-issue-label').then((issueLabels) => {
-                    cy.get('.cvat_canvas_issue_region').then((issueRegion) => {
-                        expect(sidebarIssueItems.length).to.be.equal(4);
-                        expect(issueRegion.length).to.be.equal(4);
-                        expect(issueLabels.length).to.be.equal(4);
-                    })
-                });
-            });
+            cy.get('.cvat-objects-sidebar-issue-item').should('have.length', 4);
+            cy.get('.cvat-hidden-issue-label').should('have.length', 4);
+            cy.get('.cvat_canvas_issue_region').should('have.length', 4);
         });
 
         it('Select an issue on sidebar. Issue indication has changed the color for highlighted issue', () => {
