@@ -95,7 +95,7 @@ Cypress.Commands.add('checkIssueRegion', () => {
     const sccSelectorIssueRegionId = '#cvat_canvas_issue_region_';
     cy.collectIssueRegionId().then((issueRegionIdList) => {
         const maxId = Math.max(...issueRegionIdList);
-        cy.get(`${sccSelectorIssueRegionId}${maxId}`).trigger('mousemove').and('be.visible');
+        cy.get(`${sccSelectorIssueRegionId}${maxId}`).should('be.visible');
     });
 });
 
@@ -122,6 +122,7 @@ Cypress.Commands.add('createIssueFromObject', (object, issueType, customeIssueDe
             .contains('.cvat-context-menu-item', new RegExp(`^${customeIssueDescription}$`))
             .click();
     }
+    cy.get('.cvat-canvas-context-menu').should('not.exist');
     cy.checkIssueRegion();
 });
 
