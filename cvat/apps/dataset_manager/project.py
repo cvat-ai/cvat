@@ -2,7 +2,6 @@
 #
 # SPDX-License-Identifier: MIT
 
-import os
 from typing import Any, Callable, List, Mapping
 
 from django.db import transaction
@@ -65,18 +64,14 @@ class ProjectAnnotationAndData:
             for task_annotation in self.task_annotations.values():
                 task_annotation.delete()
 
-    def add_task(self, task_fields: dict, files: List[str], project_data: ProjectData = None):
+    def add_task(self, task_fields: dict, files: dict, project_data: ProjectData = None):
         def split_name(file):
-            path, name = os.path.split(file)
-            if os.path.exists(path):
-                data['server_files_path'] = path
-            else:
-                data['server_files_path'] = os.path.join(os.path.abspath(os.sep), path)
+            _, name = file.split(files['data_root'])
             return name
 
 
         data_serializer = DataSerializer(data={
-            "server_files": files,
+            "server_files": files['media'],
             #TODO: followed fields whould be replaced with proper input values from request in future
             "use_cache": False,
             "use_zip_chunks": True,
@@ -93,8 +88,11 @@ class ProjectAnnotationAndData:
         data['use_zip_chunks'] = data_serializer.validated_data['use_zip_chunks']
         data['use_cache'] = data_serializer.validated_data['use_cache']
         data['copy_data'] = data_serializer.validated_data['copy_data']
+        data['server_files_path'] = files['data_root']
         data['stop_frame'] = None
         data['server_files'] = list(map(split_name, data['server_files']))
+        if files['related_images']:
+            data['related_images'] = list(map(split_name, files['related_images']))
 
         create_task(db_task, data, isDatasetImport=True)
         self.db_tasks = models.Task.objects.filter(project__id=self.db_project.id).order_by('id')

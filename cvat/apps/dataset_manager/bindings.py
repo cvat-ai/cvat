@@ -1409,15 +1409,19 @@ def load_dataset_data(project_annotation, dataset: Dataset, project_data):
 
         subset_dataset = subset.as_dataset()
 
-        dataset_files = []
+        dataset_files = {
+            'media': [],
+            'related_images': [],
+            'data_root': dataset.data_path + osp.sep,
+        }
 
         for dataset_item in subset_dataset:
             if dataset_item.image and dataset_item.image.has_data:
-                dataset_files.append(dataset_item.image.path)
+                dataset_files['media'].append(dataset_item.image.path)
             elif dataset_item.point_cloud:
-                dataset_files.append(dataset_item.point_cloud)
+                dataset_files['media'].append(dataset_item.point_cloud)
+            if isinstance(dataset_item.related_images, list):
+                dataset_files['related_images'] += \
+                    list(map(lambda ri: ri.path, dataset_item.related_images))
 
         project_annotation.add_task(task_fields, dataset_files, project_data)
-        # Need to add data to a task here
-
-

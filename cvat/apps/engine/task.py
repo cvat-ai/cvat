@@ -342,6 +342,8 @@ def _create_thread(db_task, data, isBackupRestore=False, isDatasetImport=False):
 
     related_images = {}
     if isinstance(extractor, MEDIA_TYPES['image']['extractor']):
+        if isinstance(data.get('related_images', None), list):
+            _copy_data_from_source(data['related_images'], upload_dir, data.get('server_files_path'))
         extractor.filter(lambda x: not re.search(r'(^|{0})related_images{0}'.format(os.sep), x))
         related_images = detect_related_images(extractor.absolute_source_paths, upload_dir)
 
