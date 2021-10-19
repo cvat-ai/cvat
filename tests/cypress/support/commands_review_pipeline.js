@@ -104,6 +104,7 @@ Cypress.Commands.add('createIssueFromObject', (object, issueType, customeIssueDe
         const objectFillOpacity = $object.attr('fill-opacity');
         cy.get($object)
             .trigger('mousemove')
+            .trigger('mouseover')
             .should('have.attr', 'fill-opacity', Number(objectFillOpacity) * 10)
             .rightclick();
     });

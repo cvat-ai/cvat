@@ -246,6 +246,7 @@ context('Review pipeline feature', () => {
         it('Use quick issues "Incorrect position". Issue will be created immediately.', () => {
             cy.createIssueFromObject('#cvat_canvas_shape_1', 'Quick issue: incorrect position');
             cy.checkIssueLabel('Wrong position');
+            cy.get('.cvat_canvas_issue_region').should('have.length', 1);
         });
 
         it('Item submenu: "Quick issue ..." does not appear.', () => {
@@ -259,6 +260,7 @@ context('Review pipeline feature', () => {
         it('Create different issues with a custom text.', () => {
             cy.createIssueFromObject('#cvat_canvas_shape_2', 'Open an issue ...', customeIssueDescription);
             cy.checkIssueLabel(customeIssueDescription);
+            cy.get('.cvat_canvas_issue_region').should('have.length', 2);
         });
 
         it('Now item submenu: "Quick issue ..." appears and it contains several latest options.', () => {
