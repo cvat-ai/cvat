@@ -2,11 +2,10 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React from 'react';
-import { useState } from 'react';
+import React, { useState } from 'react';
+
 import Menu from 'antd/lib/menu';
 import Modal from 'antd/lib/modal';
-import Button from 'antd/lib/button';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { MenuInfo } from 'rc-menu/lib/interface';
 
@@ -93,7 +92,7 @@ export default function AnnotationMenuComponent(props: Props): JSX.Element {
             Modal.confirm({
                 title: 'Remove Annotations',
                 content:
-                    'Select whether to remove all annotations from the job or remove within a range' + '\n' +
+                    'Select whether to remove all annotations from the job or remove within a range\n' +
                     'It will stay on the server till you save the job. Continue?',
                 className: 'cvat-modal-confirm-remove-annotation',
                 onOk: () => {
@@ -115,13 +114,13 @@ export default function AnnotationMenuComponent(props: Props): JSX.Element {
                 },
                 okButtonProps: {
                     type: 'primary',
-                    danger: true
+                    danger: true,
                 },
                 okText: 'Remove All',
                 onCancel: () => {
                     toggleOpenRemoveRangeComponent(!openRemoveRangeComponent);
                 },
-                cancelText: "Select Range",
+                cancelText: 'Select Range',
                 cancelButtonProps: {
                     type: 'primary',
                 },
@@ -156,7 +155,6 @@ export default function AnnotationMenuComponent(props: Props): JSX.Element {
     }
 
     const is2d = jobInstance.task.dimension === DimensionType.DIM_2D;
-
 
     return (
         <Menu onClick={onClickMenuWrapper} className='cvat-annotation-menu' selectable={false}>
@@ -200,8 +198,8 @@ export default function AnnotationMenuComponent(props: Props): JSX.Element {
                 visible={openRemoveRangeComponent}
                 removeinRange={removeRange}
                 stopFrame={stopFrame}
-                cancel= {()=>{toggleOpenRemoveRangeComponent(!openRemoveRangeComponent)}}
-            ></RemoveAnnotationsRangeComponent>
+                cancel={() => { toggleOpenRemoveRangeComponent(!openRemoveRangeComponent); }}
+            />
         </Menu>
     );
 }

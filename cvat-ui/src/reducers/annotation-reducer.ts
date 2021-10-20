@@ -930,7 +930,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
             };
         }
-        //Added Remove Annotations in Range
+        // Added Remove Annotations in Range
         case AnnotationActionTypes.REMOVE_ANNOTATIONS_INRANGE_SUCCESS: {
             const { history } = action.payload;
             const { states } = action.payload;

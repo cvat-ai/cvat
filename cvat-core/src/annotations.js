@@ -172,15 +172,15 @@
         return false;
     }
 
-    async function clearAnnotations(session, reload, startframe, endframe, deltrack_keyframes_only) {
+    async function clearAnnotations(session, reload, startframe, endframe, delTrackKeyframesOnly) {
         checkObjectType('reload', reload, 'boolean', null);
         const sessionType = session instanceof Task ? 'task' : 'job';
         const cache = getCache(sessionType);
 
         if (cache.has(session)) {
-            if(startframe!=undefined && endframe !=undefined){
-                cache.get(session).collection.clear(startframe,endframe, deltrack_keyframes_only);
-            }else{
+            if (startframe !== undefined && endframe !== undefined) {
+                cache.get(session).collection.clear(startframe, endframe, delTrackKeyframesOnly);
+            } else {
                 cache.get(session).collection.clear();
             }
         }

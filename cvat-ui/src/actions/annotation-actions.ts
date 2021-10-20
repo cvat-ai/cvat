@@ -506,12 +506,12 @@ export function changePropagateFrames(frames: number): AnyAction {
     };
 }
 
-
-//To remove annotation objects present in given range of frames
-export function removeAnnotationsinRangeAsync(sessionInstance: any, startFrame: number, endFrame: number, deltrack_keyframes_only: boolean): ThunkAction{
+// To remove annotation objects present in given range of frames
+// eslint-disable-next-line max-len
+export function removeAnnotationsinRangeAsync(sessionInstance: any, startFrame: number, endFrame: number, delTrackKeyframesOnly: boolean): ThunkAction {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         try {
-            await sessionInstance.annotations.clear(false,startFrame,endFrame,deltrack_keyframes_only);
+            await sessionInstance.annotations.clear(false, startFrame, endFrame, delTrackKeyframesOnly);
             await sessionInstance.actions.clear();
             const history = await sessionInstance.actions.get();
             const {
@@ -526,8 +526,7 @@ export function removeAnnotationsinRangeAsync(sessionInstance: any, startFrame: 
                     states,
                 },
             });
-
-        }catch(error){
+        } catch (error) {
             dispatch({
                 type: AnnotationActionTypes.REMOVE_ANNOTATIONS_INRANGE_FAILED,
                 payload: {
@@ -535,7 +534,7 @@ export function removeAnnotationsinRangeAsync(sessionInstance: any, startFrame: 
                 },
             });
         }
-    }
+    };
 }
 
 export function removeObjectAsync(sessionInstance: any, objectState: any, force: boolean): ThunkAction {

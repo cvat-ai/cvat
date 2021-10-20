@@ -553,48 +553,42 @@
             return groupIdx;
         }
 
-
-        clear(startframe, endframe, deltrack_keyframes_only) {
-            let objects_removable = [];
-            //If only a range of annotations need to be cleared
-            if (startframe!=undefined && endframe !=undefined ){
-                for(let frame=startframe; frame<=endframe; frame++){
+        clear(startframe, endframe, delTrackKeyframesOnly) {
+            let objectsRemovable = [];
+            // If only a range of annotations need to be cleared
+            if (startframe !== undefined && endframe !== undefined) {
+                for (let frame = startframe; frame <= endframe; frame++) {
                     const shapes = this.shapes[frame] || [];
                     const tags = this.tags[frame] || [];
-                    objects_removable = objects_removable.concat(shapes,tags);
-                    this.shapes[frame]=[];
-                    this.tags[frame]=[];
+                    objectsRemovable = objectsRemovable.concat(shapes, tags);
+                    this.shapes[frame] = [];
+                    this.tags[frame] = [];
                 }
-                const {tracks} = this;
-                tracks.forEach((track)=>{
-                    if(track.frame<=endframe){
-                        if(deltrack_keyframes_only){
-                            for(let keyframe in track.shapes){
-                                if (keyframe >= startframe && keyframe <= endframe)
-                                    delete track.shapes[keyframe];
+                const { tracks } = this;
+                tracks.forEach((track) => {
+                    if (track.frame <= endframe) {
+                        if (delTrackKeyframesOnly) {
+                            for (const keyframe in track.shapes) {
+                                if (keyframe >= startframe && keyframe <= endframe) { delete track.shapes[keyframe]; }
                             }
-                        }
-                        else if(track.frame>=startframe){
-                            objects_removable.push(track);
-                            var index = tracks.indexOf(track);
-                            if (index > -1)
-                              tracks.splice(index, 1);
+                        } else if (track.frame >= startframe) {
+                            objectsRemovable.push(track);
+                            const index = tracks.indexOf(track);
+                            if (index > -1) { tracks.splice(index, 1); }
                         }
                     }
                 });
 
-
-
-                objects_removable.forEach((object)=>{
+                objectsRemovable.forEach((object) => {
                     delete this.objects[object.clientID];
                 });
 
-                this.count = this.count - objects_removable.length;
+                this.count -= objectsRemovable.length;
 
                 this.flush = true;
                 return;
             }
-            //If all annotations need to be cleared
+            // If all annotations need to be cleared
             this.shapes = {};
             this.tags = {};
             this.tracks = [];
@@ -602,7 +596,6 @@
             this.count = 0;
 
             this.flush = true;
-
         }
 
         statistics() {
