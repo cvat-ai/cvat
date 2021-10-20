@@ -1874,6 +1874,11 @@ export class CanvasViewImpl implements CanvasView, Listener {
                                     + `${shape.attr('y') + shape.attr('height')}`,
                         );
 
+                        // these points !== translated points from a rotated shape, nevertheless it looks the same
+                        // additional transformations are applied to the shape currently
+                        // transformation will be reset and right points will be set in updateObjects
+                        this.drawnStates[clientID].points = this.translateFromCanvas(points);
+
                         const { rotation } = shape.transform();
                         if (rotation) {
                             points = this.translatePointsFromRotatedShape(shape, points);
@@ -1946,6 +1951,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 this.mode = Mode.IDLE;
 
                 if (resized) {
+                    const { rotation } = shape.transform();
                     let points = pointsToNumberArray(
                         shape.attr('points')
                             || `${shape.attr('x')},${shape.attr('y')} `
@@ -1953,7 +1959,11 @@ export class CanvasViewImpl implements CanvasView, Listener {
                                 + `${shape.attr('y') + shape.attr('height')}`,
                     );
 
-                    const { rotation } = shape.transform();
+                    // these points !== translated points from a rotated shape, nevertheless it looks the same
+                    // additional transformations are applied to the shape currently
+                    // transformation will be reset and right points will be set in updateObjects
+                    this.drawnStates[clientID].points = this.translateFromCanvas(points);
+                    this.drawnStates[clientID].rotation = rotation;
                     if (rotation) {
                         points = this.translatePointsFromRotatedShape(shape, points);
                     }

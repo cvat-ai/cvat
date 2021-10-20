@@ -114,16 +114,6 @@
         return fittedPoints;
     }
 
-    function checkOutside(points, width, height) {
-        let inside = false;
-        for (let i = 0; i < points.length - 1; i += 2) {
-            const [x, y] = points.slice(i);
-            inside = inside || (x >= 0 && x <= width && y >= 0 && y <= height);
-        }
-
-        return !inside;
-    }
-
     function validateAttributeValue(value, attr) {
         const { values } = attr;
         const type = attr.inputType;
@@ -365,7 +355,7 @@
                     check = false;
                 }
                 if (check) {
-                    if (!checkShapeArea(this.shapeType, fittedPoints) || checkOutside(fittedPoints, width, height)) {
+                    if (!checkShapeArea(this.shapeType, fittedPoints)) {
                         fittedPoints = [];
                     }
                 }
