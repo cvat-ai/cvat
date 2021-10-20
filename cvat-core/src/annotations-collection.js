@@ -579,13 +579,6 @@
                     }
                 });
 
-                objectsRemovable.forEach((object) => {
-                    delete this.objects[object.clientID];
-                });
-
-                this.count -= objectsRemovable.length;
-
-                this.flush = true;
                 return;
             }
             // If all annotations need to be cleared

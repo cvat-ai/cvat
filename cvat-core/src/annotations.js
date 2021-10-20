@@ -178,11 +178,7 @@
         const cache = getCache(sessionType);
 
         if (cache.has(session)) {
-            if (startframe !== undefined && endframe !== undefined) {
-                cache.get(session).collection.clear(startframe, endframe, delTrackKeyframesOnly);
-            } else {
-                cache.get(session).collection.clear();
-            }
+            cache.get(session).collection.clear(startframe, endframe, delTrackKeyframesOnly);
         }
 
         if (reload) {

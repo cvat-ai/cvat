@@ -25,7 +25,7 @@ import { exportActions } from 'actions/export-actions';
 interface StateToProps {
     annotationFormats: any;
     jobInstance: any;
-    stopFrame: any;
+    stopFrame: number;
     loadActivity: string | null;
     user: any;
 }
@@ -34,8 +34,7 @@ interface DispatchToProps {
     loadAnnotations(job: any, loader: any, file: File): void;
     showExportModal(task: any): void;
     removeAnnotations(sessionInstance: any): void;
-    // eslint-disable-next-line max-len
-    removeAnnotationinRangeAsync(sessionInstance: any, startnumber:number, endnumber:number, delTrackKeyframesOnly:boolean): void;
+    removeAnnotationsinRange(startnumber:number, endnumber:number, delTrackKeyframesOnly:boolean): void;
     switchRequestReviewDialog(visible: boolean): void;
     switchSubmitReviewDialog(visible: boolean): void;
     setForceExitAnnotationFlag(forceExit: boolean): void;
@@ -82,10 +81,8 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         removeAnnotations(sessionInstance: any): void {
             dispatch(removeAnnotationsAsync(sessionInstance));
         },
-        // eslint-disable-next-line max-len
-        removeAnnotationinRangeAsync(sessionInstance:any, startnumber: number, endnumber: number, delTrackKeyframesOnly:boolean) {
-            // eslint-disable-next-line max-len
-            dispatch(removeAnnotationsinRangeAsyncAction(sessionInstance, startnumber, endnumber, delTrackKeyframesOnly));
+        removeAnnotationsinRange(startnumber: number, endnumber: number, delTrackKeyframesOnly:boolean) {
+            dispatch(removeAnnotationsinRangeAsyncAction(startnumber, endnumber, delTrackKeyframesOnly));
         },
         switchRequestReviewDialog(visible: boolean): void {
             dispatch(switchRequestReviewDialogAction(visible));
@@ -117,7 +114,7 @@ function AnnotationMenuContainer(props: Props): JSX.Element {
         loadActivity,
         loadAnnotations,
         showExportModal,
-        removeAnnotationinRangeAsync,
+        removeAnnotationsinRange,
         removeAnnotations,
         switchRequestReviewDialog,
         switchSubmitReviewDialog,
@@ -156,10 +153,6 @@ function AnnotationMenuContainer(props: Props): JSX.Element {
         }
     };
 
-    const removeRange = (startFrame: number, endFrame: number, delTrackKeyframesOnly:boolean) : void => {
-        removeAnnotationinRangeAsync(jobInstance, startFrame, endFrame, delTrackKeyframesOnly);
-    };
-
     const isReviewer = jobInstance.reviewer?.id === user.id || user.isSuperuser;
 
     return (
@@ -170,7 +163,7 @@ function AnnotationMenuContainer(props: Props): JSX.Element {
             loadActivity={loadActivity}
             onUploadAnnotations={onUploadAnnotations}
             onClickMenu={onClickMenu}
-            removeRange={removeRange}
+            removeRange={removeAnnotationsinRange}
             setForceExitAnnotationFlag={setForceExitAnnotationFlag}
             saveAnnotations={saveAnnotations}
             jobInstance={jobInstance}

@@ -157,7 +157,7 @@ export default function AnnotationMenuComponent(props: Props): JSX.Element {
     const is2d = jobInstance.task.dimension === DimensionType.DIM_2D;
 
     return (
-        <Menu onClick={onClickMenuWrapper} className='cvat-annotation-menu' selectable={false}>
+        <Menu onClick={(params: MenuInfo) => onClickMenuWrapper(params)} className='cvat-annotation-menu' selectable={false}>
             {LoadSubmenu({
                 loaders,
                 loadActivity,

@@ -37,7 +37,7 @@
                         return result;
                     },
 
-                    async clear(reload = false, startframe, endframe, delTrackKeyframesOnly = true) {
+                    async clear(reload = false, startframe = undefined, endframe = undefined, delTrackKeyframesOnly = true) {
                         const result = await PluginRegistry.apiWrapper.call(this, prototype.annotations.clear, reload, startframe, endframe, delTrackKeyframesOnly);
                         return result;
                     },

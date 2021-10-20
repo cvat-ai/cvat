@@ -507,16 +507,17 @@ export function changePropagateFrames(frames: number): AnyAction {
 }
 
 // To remove annotation objects present in given range of frames
-// eslint-disable-next-line max-len
-export function removeAnnotationsinRangeAsync(sessionInstance: any, startFrame: number, endFrame: number, delTrackKeyframesOnly: boolean): ThunkAction {
+export function removeAnnotationsinRangeAsync(
+    startFrame: number, endFrame: number, delTrackKeyframesOnly: boolean,
+): ThunkAction {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         try {
-            await sessionInstance.annotations.clear(false, startFrame, endFrame, delTrackKeyframesOnly);
-            await sessionInstance.actions.clear();
-            const history = await sessionInstance.actions.get();
             const {
                 filters, frame, showAllInterpolationTracks, jobInstance,
             } = receiveAnnotationsParameters();
+            await jobInstance.annotations.clear(false, startFrame, endFrame, delTrackKeyframesOnly);
+            await jobInstance.actions.clear();
+            const history = await jobInstance.actions.get();
             const states = await jobInstance.annotations.get(frame, showAllInterpolationTracks, filters);
 
             dispatch({
