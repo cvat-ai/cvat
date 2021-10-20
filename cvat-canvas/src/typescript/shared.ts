@@ -96,8 +96,7 @@ export function displayShapeSize(shapesContainer: SVG.Container, textContainer: 
             .fill('white')
             .addClass('cvat_canvas_text'),
         update(shape: SVG.Shape): void {
-            const bbox = shape.bbox();
-            const text = `${bbox.width.toFixed(1)}x${bbox.height.toFixed(1)}`;
+            const text = `${Math.round(shape.width())}x${Math.round(shape.height())}px`;
             const [x, y, cx, cy]: number[] = translateToSVG(
                 (textContainer.node as any) as SVGSVGElement,
                 translateFromSVG((shapesContainer.node as any) as SVGSVGElement, [
@@ -106,7 +105,7 @@ export function displayShapeSize(shapesContainer: SVG.Container, textContainer: 
                     shape.cx(),
                     shape.cy(),
                 ]),
-            );
+            ).map((coord: number): number => Math.round(coord));
             this.sizeElement
                 .clear()
                 .plain(text)

@@ -95,6 +95,12 @@
     function fitPoints(shapeType, points, rotation, maxX, maxY) {
         checkObjectType('rotation', rotation, 'number', null);
         points.forEach((coordinate) => checkObjectType('coordinate', coordinate, 'number', null));
+
+        if (shapeType === ObjectShape.CUBOID || !!rotation) {
+            // cuboids and rotated bounding boxes cannot be fitted
+            return points;
+        }
+
         const fittedPoints = [];
 
         for (let i = 0; i < points.length - 1; i += 2) {
@@ -105,7 +111,7 @@
             fittedPoints.push(clampedX, clampedY);
         }
 
-        return shapeType === ObjectShape.CUBOID || rotation ? points : fittedPoints;
+        return fittedPoints;
     }
 
     function checkOutside(points, width, height) {
@@ -1035,7 +1041,7 @@
             const redoSource = Source.MANUAL;
             const undoShape = wasKeyframe ? this.shapes[frame] : undefined;
             const redoShape = wasKeyframe
-                ? { ...this.shapes[frame], points }
+                ? { ...this.shapes[frame], points, rotation }
                 : {
                     frame,
                     points,

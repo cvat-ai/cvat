@@ -143,6 +143,45 @@ export class CanvasViewImpl implements CanvasView, Listener {
         return points.map((coord: number): number => coord - offset);
     }
 
+    private translatePointsFromRotatedShape(shape: SVG.Shape, points: number[]): number[] {
+        const { rotation } = shape.transform();
+        // we need to reset rotation from transformation to get coordinates "as is"
+        // because we store rotation separately
+        shape.rotate(0);
+        const result = [];
+
+        try {
+            // get each point and apply matrix transformation to it
+            // it moves coordinates from element's coordinate system (which is transformed by rotation)
+            // to canvas coordinate system
+            const point = this.content.createSVGPoint();
+            for (let i = 0; i < points.length; i += 2) {
+                point.x = points[i];
+                point.y = points[i + 1];
+                const transformedPoint = point.matrixTransform(
+                    ((shape.node as any) as SVGRectElement | SVGPolygonElement | SVGPolylineElement).getCTM(),
+                );
+                result.push(transformedPoint.x, transformedPoint.y);
+            }
+        } finally {
+            shape.rotate(rotation);
+        }
+
+        return result;
+    }
+
+    private updateRotatedShapeAfterDragResize(shape: SVG.Rect, points: number[]): void {
+        if (shape.type !== 'rect') {
+            throw new Error('Getting points from a rotated shape implemented only for boxes');
+        }
+        const { rotation } = shape.transform();
+        shape
+            .untransform()
+            .move(points[0], points[1])
+            .size(points[2] - points[0], points[3] - points[1])
+            .rotate(rotation);
+    }
+
     private stringifyToCanvas(points: number[]): string {
         return points.reduce((acc: string, val: number, idx: number): string => {
             if (idx % 2) {
@@ -1549,8 +1588,9 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 this.activate(activeElement);
             }
 
-            if (drawnState.rotation !== state.rotation) {
-                shape.rotate(state.rotation);
+            if (drawnState.rotation) {
+                // need to rotate it back before changing points
+                shape.untransform();
             }
 
             if (
@@ -1580,6 +1620,11 @@ export class CanvasViewImpl implements CanvasView, Listener {
                         this.setupPoints(shape as SVG.PolyLine, state);
                     }
                 }
+            }
+
+            if (drawnState.rotation) {
+                // now, when points changed, need to rotate it to new angle
+                shape.rotate(state.rotation);
             }
 
             const stateDescriptions = state.descriptions;
@@ -1832,18 +1877,22 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     const p1 = e.detail.handler.startPoints.point;
                     const p2 = e.detail.p;
                     const delta = 1;
-                    const { offset } = this.controller.geometry;
                     const dx2 = (p1.x - p2.x) ** 2;
                     const dy2 = (p1.y - p2.y) ** 2;
                     if (Math.sqrt(dx2 + dy2) >= delta) {
-                        const points = pointsToNumberArray(
+                        let points = pointsToNumberArray(
                             shape.attr('points')
                                 || `${shape.attr('x')},${shape.attr('y')} `
                                     + `${shape.attr('x') + shape.attr('width')},`
                                     + `${shape.attr('y') + shape.attr('height')}`,
-                        ).map((x: number): number => x - offset);
+                        );
 
-                        this.drawnStates[state.clientID].points = points;
+                        const { rotation } = shape.transform();
+                        if (rotation) {
+                            points = this.translatePointsFromRotatedShape(shape, points);
+                        }
+
+                        points = this.translateFromCanvas(points);
                         this.canvas.dispatchEvent(
                             new CustomEvent('canvas.dragshape', {
                                 bubbles: false,
@@ -1901,6 +1950,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             .on('resizedone', (): void => {
                 if (shapeSizeElement) {
                     shapeSizeElement.rm();
+                    shapeSizeElement = null;
                 }
 
                 showDirection();
@@ -1909,18 +1959,19 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 this.mode = Mode.IDLE;
 
                 if (resized) {
-                    const { offset } = this.controller.geometry;
-                    const { rotation } = shape.transform();
-
-                    const points = pointsToNumberArray(
+                    let points = pointsToNumberArray(
                         shape.attr('points')
                             || `${shape.attr('x')},${shape.attr('y')} `
                                 + `${shape.attr('x') + shape.attr('width')},`
                                 + `${shape.attr('y') + shape.attr('height')}`,
-                    ).map((x: number): number => x - offset);
+                    );
 
-                    this.drawnStates[state.clientID].points = points;
-                    this.drawnStates[state.clientID].rotation = rotation;
+                    const { rotation } = shape.transform();
+                    if (rotation) {
+                        points = this.translatePointsFromRotatedShape(shape, points);
+                    }
+
+                    points = this.translateFromCanvas(points);
                     this.canvas.dispatchEvent(
                         new CustomEvent('canvas.resizeshape', {
                             bubbles: false,
@@ -2066,7 +2117,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 'data-z-order': state.zOrder,
             })
             .move(xtl, ytl)
-            .rotate(state.rotation)
             .addClass('cvat_canvas_shape');
 
         if (state.occluded) {
