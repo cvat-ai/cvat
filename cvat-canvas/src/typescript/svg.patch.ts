@@ -167,6 +167,7 @@ SVG.Element.prototype.resize = function constructor(...args: any): any {
         handler = this.remember('_resizeHandler');
         handler.resize = function (e: any) {
             const { event } = e.detail;
+            this.rotationPointPressed = e.type === 'rot';
             if (
                 event.button === 0 &&
                 // ignore shift key for cuboid change perspective
@@ -177,8 +178,10 @@ SVG.Element.prototype.resize = function constructor(...args: any): any {
             }
         };
         handler.update = function (e: any) {
-            this.m = this.el.node.getScreenCTM().inverse();
-            return handler.constructor.prototype.update.call(this, e);
+            if (!this.rotationPointPressed) {
+                this.m = this.el.node.getScreenCTM().inverse();
+            }
+            handler.constructor.prototype.update.call(this, e);
         };
     } else {
         originalResize.call(this, ...args);

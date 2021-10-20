@@ -44,6 +44,7 @@ export interface DrawnState {
     source: 'AUTO' | 'MANUAL';
     shapeType: string;
     points?: number[];
+    rotation: number;
     attributes: Record<number, string>;
     descriptions: string[];
     zOrder?: number;
@@ -97,14 +98,20 @@ export function displayShapeSize(shapesContainer: SVG.Container, textContainer: 
         update(shape: SVG.Shape): void {
             const bbox = shape.bbox();
             const text = `${bbox.width.toFixed(1)}x${bbox.height.toFixed(1)}`;
-            const [x, y]: number[] = translateToSVG(
+            const [x, y, cx, cy]: number[] = translateToSVG(
                 (textContainer.node as any) as SVGSVGElement,
-                translateFromSVG((shapesContainer.node as any) as SVGSVGElement, [bbox.x, bbox.y]),
+                translateFromSVG((shapesContainer.node as any) as SVGSVGElement, [
+                    shape.x(),
+                    shape.y(),
+                    shape.cx(),
+                    shape.cy(),
+                ]),
             );
             this.sizeElement
                 .clear()
                 .plain(text)
-                .move(x + consts.TEXT_MARGIN, y + consts.TEXT_MARGIN);
+                .move(x + consts.TEXT_MARGIN, y + consts.TEXT_MARGIN)
+                .rotate(shape.transform().rotation, cx, cy);
         },
         rm(): void {
             if (this.sizeElement) {

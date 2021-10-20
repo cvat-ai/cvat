@@ -820,7 +820,7 @@
                 if (typeof object === 'undefined') {
                     throw new ArgumentError('The object has not been saved yet. Call annotations.put([state]) before');
                 }
-                const distance = object.constructor.distance(state.points, x, y);
+                const distance = object.constructor.distance(state.points, x, y, state.rotation);
                 if (distance !== null && (minimumDistance === null || distance < minimumDistance)) {
                     minimumDistance = distance;
                     minimumState = state;
