@@ -103,7 +103,7 @@ export default function AnnotationMenuComponent(props: Props): JSX.Element {
                             'It will stay on the server till you save the job. Continue?',
                         className: 'cvat-modal-confirm-remove-annotation',
                         onOk: () => {
-                            onClickMenu(copyParams);
+                            onClickMenu(params);
                         },
                         okButtonProps: {
                             type: 'primary',
