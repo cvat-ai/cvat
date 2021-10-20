@@ -363,6 +363,24 @@
         ANONYMOUS_ACCESS: 'ANONYMOUS_ACCESS',
     });
 
+    /**
+     * Task statuses
+     * @enum {string}
+     * @name MembershipRole
+     * @memberof module:API.cvat.enums
+     * @property {string} WORKER 'worker'
+     * @property {string} SUPERVISOR 'supervisor'
+     * @property {string} MAINTAINER 'maintainer'
+     * @property {string} OWNER 'owner'
+     * @readonly
+     */
+    const MembershipRole = Object.freeze({
+        WORKER: 'worker',
+        SUPERVISOR: 'supervisor',
+        MAINTAINER: 'maintainer',
+        OWNER: 'owner',
+    });
+
     module.exports = {
         ShareFileType,
         TaskStatus,
@@ -380,5 +398,6 @@
         DimensionType,
         CloudStorageProviderType,
         CloudStorageCredentialsType,
+        MembershipRole,
     };
 })();

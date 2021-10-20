@@ -5,7 +5,6 @@
 import React from 'react';
 
 import SVGCVATLogo from './assets/cvat-logo.svg';
-import SVGAccountIcon from './assets/account-icon.svg';
 import SVGEmptyTasksIcon from './assets/empty-tasks-icon.svg';
 import SVGMenuIcon from './assets/menu-icon.svg';
 import SVGCursorIcon from './assets/cursor-icon.svg';
@@ -54,7 +53,6 @@ import SVGCVATAzureProvider from './assets/vscode-icons_file-type-azure.svg';
 import SVGCVATS3Provider from './assets/S3.svg';
 
 export const CVATLogo = React.memo((): JSX.Element => <SVGCVATLogo />);
-export const AccountIcon = React.memo((): JSX.Element => <SVGAccountIcon />);
 export const EmptyTasksIcon = React.memo((): JSX.Element => <SVGEmptyTasksIcon />);
 export const MenuIcon = React.memo((): JSX.Element => <SVGMenuIcon />);
 export const CursorIcon = React.memo((): JSX.Element => <SVGCursorIcon />);

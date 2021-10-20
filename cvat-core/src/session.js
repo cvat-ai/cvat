@@ -2020,7 +2020,7 @@
                 }
             }
 
-            await serverProxy.tasks.saveTask(this.id, taskData);
+            await serverProxy.tasks.save(this.id, taskData);
 
             this.__updatedFields.reset();
 
@@ -2076,22 +2076,23 @@
             taskDataSpec.cloud_storage_id = this.cloudStorageId;
         }
 
-        const task = await serverProxy.tasks.createTask(taskSpec, taskDataSpec, onUpdate);
+        const task = await serverProxy.tasks.create(taskSpec, taskDataSpec, onUpdate);
         return new Task(task);
     };
 
     Task.prototype.delete.implementation = async function () {
-        const result = await serverProxy.tasks.deleteTask(this.id);
+        const result = await serverProxy.tasks.delete(this.id);
         return result;
     };
 
     Task.prototype.export.implementation = async function () {
-        const result = await serverProxy.tasks.exportTask(this.id);
+        const result = await serverProxy.tasks.export(this.id);
         return result;
     };
 
     Task.import.implementation = async function (file) {
-        const result = await serverProxy.tasks.importTask(file);
+        // eslint-disable-next-line no-unsanitized/method
+        const result = await serverProxy.tasks.import(file);
         return result;
     };
 

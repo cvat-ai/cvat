@@ -18,6 +18,7 @@ import { UserAgreementsActionTypes } from 'actions/useragreements-actions';
 import { ReviewActionTypes } from 'actions/review-actions';
 import { ExportActionTypes } from 'actions/export-actions';
 import { CloudStorageActionTypes } from 'actions/cloud-storage-actions';
+import { OrganizationActionsTypes } from 'actions/organization-actions';
 
 import getCore from 'cvat-core-wrapper';
 import { NotificationsState } from './interfaces';
@@ -119,6 +120,17 @@ const defaultState: NotificationsState = {
             fetching: null,
             updating: null,
             deleting: null,
+        },
+        organizations: {
+            fetching: null,
+            creating: null,
+            updating: null,
+            activation: null,
+            deleting: null,
+            leaving: null,
+            inviting: null,
+            updatingMembership: null,
+            removingMembership: null,
         },
     },
     messages: {
@@ -1298,6 +1310,168 @@ export default function (state = defaultState, action: AnyAction): Notifications
                             message: `Could not fetch preview for cloud storage #${cloudStorageID}`,
                             reason: action.payload.error.toString(),
                             className: 'cvat-notification-notice-fetch-cloud-storage-preview-failed',
+                        },
+                    },
+                },
+            };
+        }
+        case OrganizationActionsTypes.GET_ORGANIZATIONS_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    organizations: {
+                        ...state.errors.organizations,
+                        fetching: {
+                            message: 'Could not fetch organizations list',
+                            reason: action.payload.error.toString(),
+                            className: 'cvat-notification-notice-fetch-organizations-failed',
+                        },
+                    },
+                },
+            };
+        }
+        case OrganizationActionsTypes.CREATE_ORGANIZATION_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    organizations: {
+                        ...state.errors.organizations,
+                        creating: {
+                            message: `Could not create organization ${action.payload.slug}`,
+                            reason: action.payload.error.toString(),
+                            className: 'cvat-notification-notice-create-organization-failed',
+                        },
+                    },
+                },
+            };
+        }
+        case OrganizationActionsTypes.UPDATE_ORGANIZATION_FAILED: {
+            const { slug } = action.payload;
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    organizations: {
+                        ...state.errors.organizations,
+                        updating: {
+                            message: `Could not update organization "${slug}"`,
+                            reason: action.payload.error.toString(),
+                            className: 'cvat-notification-notice-update-organization-failed',
+                        },
+                    },
+                },
+            };
+        }
+        case OrganizationActionsTypes.ACTIVATE_ORGANIZATION_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    organizations: {
+                        ...state.errors.organizations,
+                        activation: {
+                            message: `Could not activate organization ${action.payload.slug || ''}`,
+                            reason: action.payload.error.toString(),
+                            className: 'cvat-notification-notice-activate-organization-failed',
+                        },
+                    },
+                },
+            };
+        }
+        case OrganizationActionsTypes.REMOVE_ORGANIZATION_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    organizations: {
+                        ...state.errors.organizations,
+                        deleting: {
+                            message: `Could not remove organization ${action.payload.slug}`,
+                            reason: action.payload.error.toString(),
+                            className: 'cvat-notification-notice-remove-organization-failed',
+                        },
+                    },
+                },
+            };
+        }
+        case OrganizationActionsTypes.INVITE_ORGANIZATION_MEMBERS_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    organizations: {
+                        ...state.errors.organizations,
+                        inviting: {
+                            message: 'Could not invite organization members',
+                            reason: action.payload.error.toString(),
+                            className: 'cvat-notification-notice-invite-organization-members-failed',
+                        },
+                    },
+                },
+            };
+        }
+        case OrganizationActionsTypes.INVITE_ORGANIZATION_MEMBER_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    organizations: {
+                        ...state.errors.organizations,
+                        inviting: {
+                            message: `Could not invite this member "${action.payload.email}" to the organization`,
+                            reason: action.payload.error.toString(),
+                            className: 'cvat-notification-notice-invite-organization-member-failed',
+                        },
+                    },
+                },
+            };
+        }
+        case OrganizationActionsTypes.LEAVE_ORGANIZATION_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    organizations: {
+                        ...state.errors.organizations,
+                        leaving: {
+                            message: 'Could not leave the organization',
+                            reason: action.payload.error.toString(),
+                            className: 'cvat-notification-notice-leave-organization-failed',
+                        },
+                    },
+                },
+            };
+        }
+        case OrganizationActionsTypes.REMOVE_ORGANIZATION_MEMBER_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    organizations: {
+                        ...state.errors.organizations,
+                        removingMembership: {
+                            message: `Could not remove member "${action.payload.username}" from the organization`,
+                            reason: action.payload.error.toString(),
+                            className: 'cvat-notification-notice-remove-organization-member-failed',
+                        },
+                    },
+                },
+            };
+        }
+        case OrganizationActionsTypes.UPDATE_ORGANIZATION_MEMBER_FAILED: {
+            const { role, username } = action.payload;
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    organizations: {
+                        ...state.errors.organizations,
+                        updatingMembership: {
+                            message: `Could not assign role "${role}" to the user "${username}"`,
+                            reason: action.payload.error.toString(),
+                            className: 'cvat-notification-notice-update-organization-membership-failed',
                         },
                     },
                 },

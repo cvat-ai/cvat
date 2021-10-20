@@ -5,6 +5,8 @@
 from rest_framework import mixins, viewsets
 from rest_framework.permissions import SAFE_METHODS
 from django.utils.crypto import get_random_string
+from django_filters import rest_framework as filters
+
 from cvat.apps.iam.permissions import (
     InvitationPermission, MembershipPermission, OrganizationPermission)
 from .models import Invitation, Membership, Organization
@@ -37,11 +39,19 @@ class OrganizationViewSet(viewsets.ModelViewSet):
             extra_kwargs.update({ 'name': serializer.validated_data['slug'] })
         serializer.save(**extra_kwargs)
 
+class MembershipFilter(filters.FilterSet):
+    user = filters.CharFilter(field_name="user__id")
+
+    class Meta:
+        model = Membership
+        fields = ("user", )
+
 class MembershipViewSet(mixins.RetrieveModelMixin, mixins.DestroyModelMixin,
     mixins.ListModelMixin, mixins.UpdateModelMixin, viewsets.GenericViewSet):
     queryset = Membership.objects.all()
     ordering = ['-id']
     http_method_names = ['get', 'patch', 'delete', 'head', 'options']
+    filterset_class = MembershipFilter
 
     def get_serializer_class(self):
         if self.request.method in SAFE_METHODS:

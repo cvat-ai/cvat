@@ -2,6 +2,8 @@
 //
 // SPDX-License-Identifier: MIT
 
+const config = require('./config');
+
 (() => {
     const PluginRegistry = require('./plugins');
     const serverProxy = require('./server-proxy');
@@ -14,6 +16,7 @@
         checkFilter,
         checkExclusiveFields,
         camelToSnake,
+        checkObjectType,
     } = require('./common');
 
     const {
@@ -30,6 +33,7 @@
     const { Task } = require('./session');
     const { Project } = require('./project');
     const { CloudStorage } = require('./cloud-storage');
+    const Organization = require('./organization');
 
     function implementAPI(cvat) {
         cvat.plugins.list.implementation = PluginRegistry.list;
@@ -139,7 +143,7 @@
                         searchParams[key] = filter[key];
                     }
                 }
-                users = await serverProxy.users.get(new URLSearchParams(searchParams).toString());
+                users = await serverProxy.users.get(searchParams);
             }
 
             users = users.map((user) => new User(user));
@@ -162,11 +166,11 @@
 
             let tasks = [];
             if ('taskID' in filter) {
-                tasks = await serverProxy.tasks.getTasks(`id=${filter.taskID}`);
+                tasks = await serverProxy.tasks.get({ id: filter.taskID });
             } else {
                 const job = await serverProxy.jobs.get(filter.jobID);
                 if (typeof job.task_id !== 'undefined') {
-                    tasks = await serverProxy.tasks.getTasks(`id=${job.task_id}`);
+                    tasks = await serverProxy.tasks.get({ id: job.task_id });
                 }
             }
 
@@ -195,7 +199,7 @@
 
             checkExclusiveFields(filter, ['id', 'search', 'projectId'], ['page']);
 
-            const searchParams = new URLSearchParams();
+            const searchParams = {};
             for (const field of [
                 'name',
                 'owner',
@@ -209,11 +213,11 @@
                 'dimension',
             ]) {
                 if (Object.prototype.hasOwnProperty.call(filter, field)) {
-                    searchParams.set(field, filter[field]);
+                    searchParams[field] = filter[field];
                 }
             }
 
-            const tasksData = await serverProxy.tasks.getTasks(searchParams.toString());
+            const tasksData = await serverProxy.tasks.get(searchParams);
             const tasks = tasksData.map((task) => new Task(task));
 
             tasks.count = tasksData.count;
@@ -243,14 +247,14 @@
                 }
             }
 
-            const searchParams = new URLSearchParams();
+            const searchParams = {};
             for (const field of ['name', 'assignee', 'owner', 'search', 'status', 'id', 'page', 'withoutTasks']) {
                 if (Object.prototype.hasOwnProperty.call(filter, field)) {
-                    searchParams.set(camelToSnake(field), filter[field]);
+                    searchParams[camelToSnake(field)] = filter[field];
                 }
             }
 
-            const projectsData = await serverProxy.projects.get(searchParams.toString());
+            const projectsData = await serverProxy.projects.get(searchParams);
             // prettier-ignore
             const projects = projectsData.map((project) => {
                 if (filter.withoutTasks) {
@@ -306,10 +310,23 @@
 
             const cloudStoragesData = await serverProxy.cloudStorages.get(searchParams.toString());
             const cloudStorages = cloudStoragesData.map((cloudStorage) => new CloudStorage(cloudStorage));
-
             cloudStorages.count = cloudStoragesData.count;
-
             return cloudStorages;
+        };
+
+        cvat.organizations.get.implementation = async () => {
+            const organizationsData = await serverProxy.organizations.get();
+            const organizations = organizationsData.map((organizationData) => new Organization(organizationData));
+            return organizations;
+        };
+
+        cvat.organizations.activate.implementation = (organization) => {
+            checkObjectType('organization', organization, null, Organization);
+            config.organizationID = organization.slug;
+        };
+
+        cvat.organizations.deactivate.implementation = async () => {
+            config.organizationID = null;
         };
 
         return cvat;
