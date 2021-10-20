@@ -155,12 +155,11 @@ export class CanvasViewImpl implements CanvasView, Listener {
             // it moves coordinates from element's coordinate system (which is transformed by rotation)
             // to canvas coordinate system
             const point = this.content.createSVGPoint();
+            const ctm = ((shape.node as any) as SVGRectElement | SVGPolygonElement | SVGPolylineElement).getCTM();
             for (let i = 0; i < points.length; i += 2) {
                 point.x = points[i];
                 point.y = points[i + 1];
-                const transformedPoint = point.matrixTransform(
-                    ((shape.node as any) as SVGRectElement | SVGPolygonElement | SVGPolylineElement).getCTM(),
-                );
+                const transformedPoint = point.matrixTransform(ctm);
                 result.push(transformedPoint.x, transformedPoint.y);
             }
         } finally {
@@ -168,18 +167,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
         }
 
         return result;
-    }
-
-    private updateRotatedShapeAfterDragResize(shape: SVG.Rect, points: number[]): void {
-        if (shape.type !== 'rect') {
-            throw new Error('Getting points from a rotated shape implemented only for boxes');
-        }
-        const { rotation } = shape.transform();
-        shape
-            .untransform()
-            .move(points[0], points[1])
-            .size(points[2] - points[0], points[3] - points[1])
-            .rotate(rotation);
     }
 
     private stringifyToCanvas(points: number[]): string {
