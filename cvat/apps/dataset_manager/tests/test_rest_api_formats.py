@@ -368,7 +368,7 @@ class TaskDumpUploadTest(_DbTestBase):
                         "MOT 1.1", "MOTS PNG 1.0", \
                         "PASCAL VOC 1.1", "Segmentation mask 1.1", \
                         "TFRecord 1.0", "YOLO 1.1", "ImageNet 1.0", \
-                        "WiderFace 1.0", "VGGFace2 1.0", \
+                        "WiderFace 1.0", "VGGFace2 1.0", "Datumaro 1.0"\
                     ]:
                         self._create_annotations(task, dump_format_name, "default")
                     else:
@@ -897,10 +897,8 @@ class TaskDumpUploadTest(_DbTestBase):
                 with self.subTest(format=dump_format_name):
                     if dump_format_name in [
                         "MOTS PNG 1.0",  # issue #2925 and changed points values
-                        "Datumaro 1.0", # Datumaro 1.0 is not in the list of import format
                         'Kitti Raw Format 1.0',
                         'Sly Point Cloud Format 1.0'
-
                     ]:
                         self.skipTest("Format is fail")
                     images = self._generate_task_images(3)
@@ -917,7 +915,7 @@ class TaskDumpUploadTest(_DbTestBase):
                         "MOT 1.1", "MOTS PNG 1.0", \
                         "PASCAL VOC 1.1", "Segmentation mask 1.1", \
                         "TFRecord 1.0", "YOLO 1.1", "ImageNet 1.0", \
-                        "WiderFace 1.0", "VGGFace2 1.0", \
+                        "WiderFace 1.0", "VGGFace2 1.0", "Datumaro 1.0" \
                     ]:
                         self._create_annotations(task, dump_format_name, "default")
                     else:
@@ -1002,7 +1000,6 @@ class TaskDumpUploadTest(_DbTestBase):
                 with self.subTest(dump_format_name):
                     if dump_format_name in [
                         "MOT 1.1",
-                        "Datumaro 1.0", # not uploaded
                         "CamVid 1.0", # issue #2840 and changed points values
                         "MOTS PNG 1.0", # changed points values
                         "Segmentation mask 1.1", # changed points values
@@ -1029,7 +1026,7 @@ class TaskDumpUploadTest(_DbTestBase):
                         "MOT 1.1", "MOTS PNG 1.0", \
                         "PASCAL VOC 1.1", "Segmentation mask 1.1", \
                         "TFRecord 1.0", "YOLO 1.1", "ImageNet 1.0", \
-                        "WiderFace 1.0", "VGGFace2 1.0", \
+                        "WiderFace 1.0", "VGGFace2 1.0", "Datumaro 1.0", \
                     ]:
                         self._create_annotations(task, dump_format_name, "default")
                     else:
