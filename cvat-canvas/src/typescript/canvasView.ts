@@ -883,10 +883,10 @@ export class CanvasViewImpl implements CanvasView, Listener {
         };
 
         if (value) {
-            const { geometry } = this;
+            const getGeometry = () => this.geometry;
             (shape as any).selectize(value, {
                 deepSelect: true,
-                pointSize: (2 * consts.BASE_POINT_SIZE) / geometry.scale,
+                pointSize: (2 * consts.BASE_POINT_SIZE) / getGeometry().scale,
                 rotationPoint: shape.type === 'rect',
                 pointType(cx: number, cy: number): SVG.Circle {
                     const circle: SVG.Circle = this.nested
@@ -896,12 +896,12 @@ export class CanvasViewImpl implements CanvasView, Listener {
                         .center(cx, cy)
                         .attr({
                             'fill-opacity': 1,
-                            'stroke-width': consts.POINTS_STROKE_WIDTH / geometry.scale,
+                            'stroke-width': consts.POINTS_STROKE_WIDTH / getGeometry().scale,
                         });
 
                     circle.on('mouseenter', (): void => {
                         circle.attr({
-                            'stroke-width': consts.POINTS_SELECTED_STROKE_WIDTH / geometry.scale,
+                            'stroke-width': consts.POINTS_SELECTED_STROKE_WIDTH / getGeometry().scale,
                         });
 
                         circle.on('dblclick', dblClickHandler);
@@ -912,7 +912,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
                     circle.on('mouseleave', (): void => {
                         circle.attr({
-                            'stroke-width': consts.POINTS_STROKE_WIDTH / geometry.scale,
+                            'stroke-width': consts.POINTS_STROKE_WIDTH / getGeometry().scale,
                         });
 
                         circle.off('dblclick', dblClickHandler);
