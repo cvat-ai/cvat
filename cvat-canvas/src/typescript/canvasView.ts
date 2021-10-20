@@ -2021,6 +2021,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
     // Update text position after corresponding box has been moved, resized, etc.
     private updateTextPosition(text: SVG.Text, shape: SVG.Shape): void {
         if (text.node.style.display === 'none') return; // wrong transformation matrix
+        const { rotation } = shape.transform();
         let box = (shape.node as any).getBBox();
 
         // Translate the whole box to the client coordinate system
@@ -2048,13 +2049,19 @@ export class CanvasViewImpl implements CanvasView, Listener {
         }
 
         // Translate back to text SVG
-        const [x, y]: number[] = translateToSVG(this.text, [
+        const [x, y, cx, cy]: number[] = translateToSVG(this.text, [
             clientX + consts.TEXT_MARGIN,
             clientY + consts.TEXT_MARGIN,
+            x1 + (x2 - x1) / 2,
+            y1 + (y2 - y1) / 2,
         ]);
 
         // Finally draw a text
         text.move(x, y);
+        if (rotation) {
+            text.rotate(rotation, cx, cy);
+        }
+
         for (const tspan of (text.lines() as any).members) {
             tspan.attr('x', text.attr('x'));
         }
