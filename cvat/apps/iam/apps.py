@@ -4,4 +4,5 @@ class IAMConfig(AppConfig):
     name = 'cvat.apps.iam'
 
     def ready(self):
-        from . import signals # pylint: disable=unused-import
+        from .signals import register_signals
+        register_signals(self)

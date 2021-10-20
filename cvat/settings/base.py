@@ -103,14 +103,6 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'cvat.apps.iam',
-    'cvat.apps.dataset_manager',
-    'cvat.apps.organizations',
-    'cvat.apps.engine',
-    'cvat.apps.dataset_repo',
-    'cvat.apps.restrictions',
-    'cvat.apps.lambda_manager',
-    'cvat.apps.opencv',
     'django_rq',
     'compressor',
     'cacheops',
@@ -127,7 +119,15 @@ INSTALLED_APPS = [
     'allauth.account',
     'corsheaders',
     'allauth.socialaccount',
-    'rest_auth.registration'
+    'rest_auth.registration',
+    'cvat.apps.iam',
+    'cvat.apps.dataset_manager',
+    'cvat.apps.organizations',
+    'cvat.apps.engine',
+    'cvat.apps.dataset_repo',
+    'cvat.apps.restrictions',
+    'cvat.apps.lambda_manager',
+    'cvat.apps.opencv'
 ]
 
 SITE_ID = 1

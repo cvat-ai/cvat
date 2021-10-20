@@ -354,6 +354,8 @@ class ProjectPermission(OpenPolicyAgentPermission):
                 self = cls(scope, request, view, obj)
                 permissions.append(self)
 
+        return permissions
+
     def __init__(self, scope, request, view, obj):
         super().__init__(request, view, obj)
         self.url = settings.IAM_OPA_DATA_URL + '/projects/allow'

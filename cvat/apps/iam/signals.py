@@ -4,17 +4,19 @@
 
 from django.conf import settings
 from django.contrib.auth.models import User, Group
-from django.db.models.signals import post_save
+from django.db.models.signals import post_save, post_migrate
 
-# Create all groups which corresponds system roles
-for role in settings.IAM_ROLES:
-    Group.objects.get_or_create(name=role)
+
+def register_groups(sender, **kwargs):
+    # Create all groups which corresponds system roles
+    for role in settings.IAM_ROLES:
+        Group.objects.get_or_create(name=role)
 
 if settings.IAM_TYPE == 'BASIC':
-    from allauth.account import app_settings as allauth_settings
-    from allauth.account.models import EmailAddress
-
     def create_user(sender, instance, created, **kwargs):
+        from allauth.account import app_settings as allauth_settings
+        from allauth.account.models import EmailAddress
+
         if instance.is_superuser and instance.is_staff:
             db_group = Group.objects.get(name=settings.IAM_ADMIN_ROLE)
             instance.groups.add(db_group)
@@ -29,12 +31,7 @@ if settings.IAM_TYPE == 'BASIC':
                     db_group = Group.objects.get(name=role)
                     instance.groups.add(db_group)
 
-    # Add default groups and add admin rights to super users.
-    post_save.connect(create_user, sender=User)
-
 elif settings.IAM_TYPE == 'LDAP':
-    import django_auth_ldap.backend
-
     def create_user(sender, user=None, ldap_user=None, **kwargs):
         user_groups = []
         for role in settings.IAM_ROLES:
@@ -54,6 +51,14 @@ elif settings.IAM_TYPE == 'LDAP':
         user.save()
         user.groups.set(user_groups)
 
-    # Map groups from LDAP to roles, convert a user to super user if he/she
-    # has an admin group.
-    django_auth_ldap.backend.populate_user.connect(create_user)
+
+def register_signals(app_config):
+    post_migrate.connect(register_groups, app_config)
+    if settings.IAM_TYPE == 'BASIC':
+        # Add default groups and add admin rights to super users.
+        post_save.connect(create_user, sender=User)
+    elif settings.IAM_TYPE == 'LDAP':
+        import django_auth_ldap.backend
+        # Map groups from LDAP to roles, convert a user to super user if he/she
+        # has an admin group.
+        django_auth_ldap.backend.populate_user.connect(create_user)
