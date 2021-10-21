@@ -56,8 +56,8 @@ export default function RemoveRangeConfirmComponent(props: Props): JSX.Element {
                     value={startFrame}
                     onChange={(value: number | undefined | string) => {
                         if (typeof value !== 'undefined') {
-                            value = Math.floor(clamp(+value, 0, stopFrame - 1));
-                            managestart(value);
+                            const newvalue = Math.floor(clamp(+value, 0, stopFrame - 1));
+                            managestart(newvalue);
                         }
                     }}
                 />
@@ -71,8 +71,8 @@ export default function RemoveRangeConfirmComponent(props: Props): JSX.Element {
                     value={endFrame}
                     onChange={(value: number | undefined | string) => {
                         if (typeof value !== 'undefined') {
-                            value = Math.floor(clamp(+value, 1, stopFrame));
-                            manageend(value);
+                            const newvalue = Math.floor(clamp(+value, 1, stopFrame));
+                            manageend(newvalue);
                         }
                     }}
                 />
