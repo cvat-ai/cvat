@@ -501,7 +501,7 @@ class TrainingProjectSerializer(serializers.ModelSerializer):
 
 class ProjectWithoutTaskSerializer(serializers.ModelSerializer):
     labels = LabelSerializer(many=True, source='label_set', partial=True, default=[])
-    owner = BasicUserSerializer(required=False)
+    owner = BasicUserSerializer(required=False, read_only=True)
     owner_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)
     assignee = BasicUserSerializer(allow_null=True, required=False)
     assignee_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)
@@ -511,11 +511,13 @@ class ProjectWithoutTaskSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.Project
-        fields = ('url', 'id', 'name', 'labels', 'tasks', 'owner', 'assignee', 'owner_id', 'assignee_id',
-                  'bug_tracker', 'task_subsets', 'created_date', 'updated_date', 'status', 'training_project', 'dimension')
-        read_only_fields = ('created_date', 'updated_date', 'status', 'owner', 'asignee', 'task_subsets', 'dimension')
+        fields = ('url', 'id', 'name', 'labels', 'tasks', 'owner', 'assignee',
+            'owner_id', 'assignee_id', 'bug_tracker', 'task_subsets',
+            'created_date', 'updated_date', 'status', 'training_project',
+            'dimension', 'organization')
+        read_only_fields = ('created_date', 'updated_date', 'status', 'owner',
+            'assignee', 'task_subsets', 'dimension')
         ordering = ['-id']
-
 
     def to_representation(self, instance):
         response = super().to_representation(instance)

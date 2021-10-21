@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 import coreapi
+from django.core.exceptions import FieldError
 from rest_framework.filters import BaseFilterBackend
 
 class OrganizationFilterBackend(BaseFilterBackend):
@@ -15,5 +16,8 @@ class OrganizationFilterBackend(BaseFilterBackend):
         ]
 
     def filter_queryset(self, request, queryset, view):
-        # Open Policy Agent is responsible for all necessary filtration
-        return queryset
+        try:
+            organization = request.iam_context['organization']
+            return queryset.filter(organization=organization)
+        except FieldError:
+            return queryset

@@ -76,6 +76,7 @@ class InvitationWriteSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         membership_data = validated_data.pop('membership')
+        organization = validated_data.pop('organization')
         try:
             user = get_user_model().objects.get(**membership_data['user'])
             del membership_data['user']
@@ -84,7 +85,8 @@ class InvitationWriteSerializer(serializers.ModelSerializer):
                 f'with {membership_data["user"]["email"]} email. It is not '
                 f'a valid email in the system.')
 
-        membership, created = Membership.objects.get_or_create(**membership_data, user=user)
+        membership, created = Membership.objects.get_or_create(**membership_data,
+            user=user, organization=organization)
         if not created:
             raise serializers.ValidationError('The user is a member of '
                 'the organization already.')
