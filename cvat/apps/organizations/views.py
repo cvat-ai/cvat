@@ -24,7 +24,7 @@ class OrganizationViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        permission = OrganizationPermission(self.request, self, None)
+        permission = OrganizationPermission(self.request, self)
         return permission.filter(queryset)
 
     def get_serializer_class(self):

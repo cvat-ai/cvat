@@ -87,7 +87,7 @@ class OrganizationPermission(OpenPolicyAgentPermission):
 
         return permissions
 
-    def __init__(self, request, view, obj):
+    def __init__(self, request, view, obj=None):
         super().__init__(request, view, obj)
         self.url = settings.IAM_OPA_DATA_URL + '/organizations/allow'
         self.payload['input']['scope'] = self.scope

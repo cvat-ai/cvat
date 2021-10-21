@@ -106,7 +106,7 @@ allow {
 
 allow {
     input.scope == utils.UPDATE
-    utils.has_perm(utils.USER)
+    utils.has_perm(utils.WORKER)
     input.resource.user.role == MAINTAINER
 }
 

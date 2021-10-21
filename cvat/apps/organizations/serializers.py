@@ -33,13 +33,12 @@ class OrganizationWriteSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         organization = super().create(validated_data)
-        Membership.objects.create(**{
-            'user': organization.owner,
-            'organization': organization,
-            'is_active': True,
-            'joined_date': organization.created_date,
-            'role': Membership.OWNER
-        })
+        Membership.objects.create(
+            user=organization.owner,
+            organization=organization,
+            is_active=True,
+            joined_date=organization.created_date,
+            role=Membership.OWNER)
 
         return organization
 
