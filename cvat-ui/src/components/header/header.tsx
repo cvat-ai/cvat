@@ -276,6 +276,7 @@ function HeaderContainer(props: Props): JSX.Element {
         LIST = 'list',
     }
 
+    const notInOrganizationTitle = 'Personal workspace';
     const organizationMenu = (
         <Menu className='cvat-header-menu'>
             <Menu.Item
@@ -301,7 +302,7 @@ function HeaderContainer(props: Props): JSX.Element {
             {organizationsList.length ? (
                 <Menu.ItemGroup title='Your organizations' key={OrganizationMenuKeys.LIST}>
                     <Menu.Item
-                        key='$personalWorkspace'
+                        key='$notInOrganization'
                         onClick={() => {
                             localStorage.removeItem('currentOrganization');
                             if (/\d+$/.test(window.location.pathname)) {
@@ -312,7 +313,7 @@ function HeaderContainer(props: Props): JSX.Element {
                             }
                         }}
                     >
-                        <Text strong={!currentOrganization}>Personal workspace</Text>
+                        <Text strong={!currentOrganization}>{notInOrganizationTitle}</Text>
                     </Menu.Item>
                     {organizationsList.map(
                         (organization: any): JSX.Element => (
@@ -452,7 +453,7 @@ function HeaderContainer(props: Props): JSX.Element {
                         {currentOrganization ? (
                             <Text strong>{currentOrganization.slug}</Text>
                         ) : (
-                            <Text type='secondary'>Not selected</Text>
+                            <Text type='secondary'>{notInOrganizationTitle}</Text>
                         )}
                         {organizationsFetching ? (
                             <LoadingOutlined className='cvat-header-dropdown-icon' />

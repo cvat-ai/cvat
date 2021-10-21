@@ -62,7 +62,7 @@ function CreateOrganizationForm(): JSX.Element {
                 <Input />
             </Form.Item>
             <Form.Item hasFeedback name='description' label='Description'>
-                <Input />
+                <Input.TextArea rows={3} />
             </Form.Item>
             <Form.Item>
                 <Space className='cvat-create-organization-form-buttons-block' align='end'>

@@ -631,6 +631,10 @@ export default function (state = defaultState, action: AnyAction): Notifications
             };
         }
         case ModelsActionTypes.FETCH_META_FAILED: {
+            if (action.payload.error.toString().includes('status code 403')) {
+                return state;
+            }
+
             return {
                 ...state,
                 errors: {

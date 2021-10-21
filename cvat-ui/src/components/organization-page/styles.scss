@@ -25,19 +25,29 @@
         }
 
         .cvat-organization-top-bar-descriptions {
+            button {
+                margin-top: $grid-unit-size;
+                float: right;
+            }
+
             > span {
                 display: block;
             }
 
             > span:nth-child(3) {
-                height: 3em;
-                overflow: hidden;
-                white-space: nowrap;
-                text-overflow: ellipsis;
+                max-height: 7em;
+                display: grid;
+                overflow: auto;
+                margin-bottom: $grid-unit-size;
             }
 
-            > span:not(.cvat-title) {
+            > span:not(.cvat-title),
+            div {
                 font-size: 12px;
+
+                span.anticon {
+                    margin-left: $grid-unit-size;
+                }
             }
         }
     }

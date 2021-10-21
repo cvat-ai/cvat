@@ -37,9 +37,7 @@ function MemberItem(props: Props): JSX.Element {
             <Col span={8} className='cvat-organization-member-item-dates'>
                 {invitation ? (
                     <Text type='secondary'>
-                        {`Invited ${moment(invitation.created_date).fromNow()} by ${
-                            invitation.owner.username
-                        }`}
+                        {`Invited ${moment(invitation.created_date).fromNow()} by ${invitation.owner.username}`}
                     </Text>
                 ) : null}
                 {joinedDate ? <Text type='secondary'>{`Joined ${moment(joinedDate).fromNow()}`}</Text> : null}
@@ -49,9 +47,10 @@ function MemberItem(props: Props): JSX.Element {
                     onChange={(_role: string) => {
                         onUpdateMembershipRole(_role);
                     }}
-                    value={role === 'owner' ? 'maintainer' : role}
+                    value={role}
                     disabled={user.id === ownerID}
                 >
+                    {role === 'owner' ? <Select.Option value='owner'>Owner</Select.Option> : null}
                     <Select.Option value='worker'>Worker</Select.Option>
                     <Select.Option value='supervisor'>Supervisor</Select.Option>
                     <Select.Option value='maintainer'>Maintainer</Select.Option>
