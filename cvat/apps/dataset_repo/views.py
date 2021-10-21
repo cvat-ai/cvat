@@ -55,8 +55,6 @@ def create(request, tid):
 
 
 @login_required
-@permission_required(perm=['engine.task.access'],
-    fn=objectgetter(models.Task, 'tid'), raise_exception=True)
 def push_repository(request, tid):
     try:
         slogger.task[tid].info("push repository request")
@@ -75,8 +73,6 @@ def push_repository(request, tid):
 
 
 @login_required
-@permission_required(perm=['engine.task.access'],
-    fn=objectgetter(models.Task, 'tid'), raise_exception=True)
 def get_repository(request, tid):
     try:
         slogger.task[tid].info("get repository request")

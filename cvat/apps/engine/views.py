@@ -260,11 +260,8 @@ class ProjectViewSet(viewsets.ModelViewSet):
         return perm.filter(queryset)
 
     def perform_create(self, serializer):
-        owner = self.request.data.get('owner', None)
-        if owner:
-            serializer.save()
-        else:
-            serializer.save(owner=self.request.user)
+        serializer.save(owner=self.request.user,
+            organization=self.request.iam_context['organization'])
 
     @swagger_auto_schema(method='get', operation_summary='Returns information of the tasks of the project with the selected id',
         responses={'200': TaskSerializer(many=True)})
@@ -520,11 +517,8 @@ class TaskViewSet(viewsets.ModelViewSet):
                 "Unexpected action specified for the request")
 
     def perform_create(self, serializer):
-        owner = self.request.data.get('owner', None)
-        if owner:
-            serializer.save()
-        else:
-            serializer.save(owner=self.request.user)
+        serializer.save(owner=self.request.user,
+            organization=self.request.iam_context['organization'])
 
     def perform_destroy(self, instance):
         task_dirname = instance.get_task_dirname()
