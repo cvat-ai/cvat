@@ -15,7 +15,7 @@ import Form from 'antd/lib/form';
 import Select from 'antd/lib/select';
 import { useForm } from 'antd/lib/form/Form';
 import { Store } from 'antd/lib/form/interface';
-import { CloseOutlined, PlusCircleOutlined } from '@ant-design/icons';
+import { CloseOutlined, EditTwoTone, PlusCircleOutlined } from '@ant-design/icons';
 
 import {
     inviteOrganizationMembersAsync,
@@ -33,13 +33,15 @@ export interface Props {
 function OrganizationTopBar(props: Props): JSX.Element {
     const { organizationInstance, userInstance, fetchMembers } = props;
     const {
-        owner, description, createdDate, updatedDate, slug, name,
+        owner, createdDate, description, updatedDate, slug, name,
     } = organizationInstance;
     const { id: userID } = userInstance;
     const [form] = useForm();
     const [visibleInviteModal, setVisibleInviteModal] = useState<boolean>(false);
+    const [editingDescription, setEditingDescription] = useState<boolean>(false);
     const dispatch = useDispatch();
 
+    let descriptionChanged = false;
     return (
         <>
             <Row justify='space-between'>
@@ -61,21 +63,39 @@ function OrganizationTopBar(props: Props): JSX.Element {
                         >
                             {name}
                         </Text>
-                        {description ? (
-                            <Text
-                                editable={{
-                                    onChange: (value: string) => {
-                                        organizationInstance.description = value;
-                                    },
-                                    onEnd: () => {
-                                        dispatch(updateOrganizationAsync(organizationInstance));
-                                    },
-                                }}
-                                type='secondary'
-                            >
-                                {description}
-                            </Text>
-                        ) : null}
+                        {description && !editingDescription ? (
+                            <span style={{ display: 'grid' }}>
+                                {description.split('\n').map((val: string, idx: number) => (
+                                    <Text key={idx} type='secondary'>
+                                        {val}
+                                        {idx === 0 ? <EditTwoTone onClick={() => setEditingDescription(true)} /> : null}
+                                    </Text>
+                                ))}
+                            </span>
+                        ) : (
+                            <div>
+                                <Input.TextArea
+                                    defaultValue={description}
+                                    onChange={(event: React.ChangeEvent<HTMLTextAreaElement>) => {
+                                        organizationInstance.description = event.target.value;
+                                        descriptionChanged = true;
+                                    }}
+                                />
+                                <Button
+                                    size='small'
+                                    type='primary'
+                                    onClick={() => {
+                                        if (descriptionChanged) {
+                                            dispatch(updateOrganizationAsync(organizationInstance));
+                                        }
+                                        setEditingDescription(false);
+                                        descriptionChanged = false;
+                                    }}
+                                >
+                                    Submit
+                                </Button>
+                            </div>
+                        )}
                         <Text type='secondary'>{`Created ${moment(createdDate).format('MMMM Do YYYY')}`}</Text>
                         <Text type='secondary'>{`Updated ${moment(updatedDate).fromNow()}`}</Text>
                     </div>
