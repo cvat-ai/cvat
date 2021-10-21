@@ -597,12 +597,15 @@
                 const clientFiles = taskDataSpec.client_files;
                 const chunkFiles = [];
                 const bulkFiles = [];
+                let totalSize = 0;
+                let totalSentSize = 0;
                 for (const file of clientFiles) {
                     if (file.size > chunkSize) {
                         chunkFiles.push(file);
                     } else {
                         bulkFiles.push(file);
                     }
+                    totalSize += file.size;
                 }
                 delete taskDataSpec.client_files;
 
@@ -647,13 +650,16 @@
                         const fileChunk = file.slice(chunkOffset, Math.min(chunkOffset + chunkSize, file.size));
                         taskData.set('client_files[0]', fileChunk, file.name);
                         taskData.set('chunk_number', currentChunkNumber);
-                        onUpdate(`The data are being uploaded to the server ${Math.round((currentChunkNumber / totalChunks) * 100)}%`);
+                        onUpdate(`The data are being uploaded to the server
+                                    ${Math.round((totalSentSize / totalSize) * 100)}%`);
                         const tagResponse = await Axios.post(`${backendAPI}/tasks/${response.data.id}/data?action=append&upload_id=${uploadId}`, taskData, {
                             proxy: config.proxy,
                         });
                         const tag = tagResponse.data;
                         tags.push({ chunk_number: currentChunkNumber, tag });
                         taskData.delete('client_files[0]');
+                        const sentSize = Math.min(chunkOffset + chunkSize, file.size) - chunkOffset;
+                        totalSentSize += sentSize;
                         currentChunkNumber++;
                     }
                     tags.forEach((element, idx) => {
@@ -681,13 +687,15 @@
                         for (const [idx, element] of fileBulks[currentChunkNumber - 1].files.entries()) {
                             taskData.append(`client_files[${idx}]`, element);
                         }
-                        onUpdate(`The data are being uploaded to the server ${Math.round((currentChunkNumber / totalBulks) * 100)}%`);
+                        onUpdate(`The data are being uploaded to the server
+                                    ${Math.round((totalSentSize / totalSize) * 100)}%`);
                         await Axios.post(`${backendAPI}/tasks/${taskId}/data?action=append`, taskData, {
                             proxy: config.proxy,
                         });
                         for (let i = 0; i < fileBulks[currentChunkNumber - 1].files.length; i++) {
                             taskData.delete(`client_files[${i}]`);
                         }
+                        totalSentSize += fileBulks[currentChunkNumber - 1].size;
                         currentChunkNumber++;
                     }
                 }

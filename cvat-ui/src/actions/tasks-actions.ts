@@ -407,6 +407,7 @@ export function createTaskAsync(data: any): ThunkAction<Promise<void>, {}, {}, A
                 gitPlugin.data.lfs = data.advanced.lfs;
             }
         }
+
         dispatch(createTask());
         try {
             const savedTask = await taskInstance.save((status: string): void => {
