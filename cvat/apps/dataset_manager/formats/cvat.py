@@ -445,12 +445,7 @@ def dump_as_cvat_interpolation(dumper, annotations):
 
     dumper.close_root()
 
-def load(file_object, annotations):
-    from defusedxml import ElementTree
-    context = ElementTree.iterparse(file_object, events=("start", "end"))
-    context = iter(context)
-    ev, _ = next(context)
-
+def load_anno(context, annotations):
     supported_shapes = ('box', 'polygon', 'polyline', 'points', 'cuboid')
 
     track = None
@@ -556,6 +551,75 @@ def load(file_object, annotations):
                 tag = None
             el.clear()
 
+def load_task(file_object, task_data):
+    from defusedxml import ElementTree
+    context = ElementTree.iterparse(file_object, events=("start", "end"))
+    context = iter(context)
+    next(context)
+    load_anno(context, task_data)
+
+def load_project(tmp_dir, project_data):
+    from defusedxml import ElementTree
+    context = ElementTree.iterparse(osp.join(tmp_dir, 'annotations.xml'), events=("start", "end"))
+    context = iter(context)
+    next(context)
+    subsets = None
+    labels = []
+    attributes = []
+    current_attribute = {}
+    current_label = {}
+    label_opened = False
+    attribute_opened = False
+    for ev, el in context:
+        if ev == 'start':
+            if el.tag == 'subsets':
+                subsets = el.text.split('\n')
+            elif el.tag == 'label':
+                label_opened = True
+            elif el.tag == 'name' and label_opened and not attribute_opened:
+                current_label['name'] = el.text
+            elif el.tag == 'color' and label_opened:
+                current_label['color'] = el.text
+            elif el.tag == 'attribute':
+                attribute_opened = True
+            elif el.tag == 'name' and attribute_opened:
+                current_attribute['name'] = el.text
+            elif el.tag == 'mutable' and attribute_opened:
+                current_attribute['mutable'] = el.text == 'True'
+            elif el.tag == 'input_type' and attribute_opened:
+                current_attribute['input_type'] = el.text
+            elif el.tag == 'default_value' and attribute_opened:
+                current_attribute['default_value'] = el.text or ''
+            elif el.tag == 'values' and attribute_opened:
+                current_attribute['values'] = el.text or ''
+        elif ev == 'end':
+            if el.tag == 'label':
+                labels.append(current_label)
+                current_label = {}
+                label_opened = False
+            elif el.tag == 'attribute':
+                attributes.append(current_attribute)
+                current_attribute = {}
+                attribute_opened = False
+            elif el.tag == 'attributes' and label_opened:
+                current_label['attributes'] = attributes
+                attributes = []
+            elif el.tag == 'meta':
+                project_data.add_labels(labels)
+                for subset in subsets:
+                    files = {
+                        'media': glob(osp.join(tmp_dir, 'images', subset, '**', '*.PNG'), recursive=True),
+                        'data_root': osp.join(tmp_dir, 'images', subset, ''),
+                    }
+                    task_fields = {
+                        'project': project_data.db_project,
+                        'name': subset,
+                        'owner': project_data.db_project.owner,
+                        'subset': subset,
+                    }
+                    project_data.add_task(task_fields, files)
+                    # load_anno(context, project_data)
+
 def dump_task_anno(dst_file, task_data, callback):
     dumper = create_xml_dumper(dst_file)
     dumper.open_document()
@@ -628,15 +692,18 @@ def _export_images(dst_file, instance_data, save_images=False):
             anno_callback=dump_as_cvat_annotation, save_images=save_images)
 
 @importer(name='CVAT', ext='XML, ZIP', version='1.1')
-def _import(src_file, task_data):
+def _import(src_file, instance_data, _data_load_callback):
     is_zip = zipfile.is_zipfile(src_file)
     src_file.seek(0)
     if is_zip:
         with TemporaryDirectory() as tmp_dir:
             zipfile.ZipFile(src_file).extractall(tmp_dir)
 
-            anno_paths = glob(osp.join(tmp_dir, '**', '*.xml'), recursive=True)
-            for p in anno_paths:
-                load(p, task_data)
+            if hasattr(instance_data, '_db_project'):
+                load_project(tmp_dir, instance_data)
+            else:
+                anno_paths = glob(osp.join(tmp_dir, '**', '*.xml'), recursive=True)
+                for p in anno_paths:
+                    load_task(p, instance_data)
     else:
-        load(src_file, task_data)
+        load_task(src_file, instance_data)

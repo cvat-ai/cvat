@@ -571,14 +571,13 @@ class ProjectData(InstanceLabelData):
     Tag.__new__.__defaults__ = (0, )
     Frame = NamedTuple('Frame', [('task_id', int), ('subset', str), ('idx', int), ('id', int), ('frame', int), ('name', str), ('width', int), ('height', int), ('labeled_shapes', List[Union[LabeledShape, TrackedShape]]), ('tags', List[Tag])])
 
-    def __init__(self, annotation_irs: Mapping[str, AnnotationIR], db_project: Project, host: str = '', create_callback: Callable = None, task_annotations: Mapping[int, Any] = None):
+    def __init__(self, annotation_irs: Mapping[str, AnnotationIR], db_project: Project, host: str = '', task_annotations: Mapping[int, Any] = None, project_annotation=None):
         self._annotation_irs = annotation_irs
         self._db_project = db_project
         self._task_annotations = task_annotations
         self._host = host
-        self._create_callback = create_callback
-        self._MAX_ANNO_SIZE = 30000
         self._soft_attribute_import = False
+        self._project_annotation = project_annotation
         self._tasks_data: Dict[int, TaskData] = {}
         self._frame_info: Dict[Tuple[int, int], Literal["path", "width", "height", "subset"]] = dict()
         # (subset, path): (task id, frame number)
@@ -689,6 +688,8 @@ class ProjectData(InstanceLabelData):
                             for db_attr in db_label.attributespec_set.all()])
                     ])) for db_label in self._label_mapping.values()
                 ]),
+
+                ("subsets", '\n'.join(self._subsets)),
 
                 ("owner", OrderedDict([
                     ("username", self._db_project.owner.username),
@@ -873,6 +874,7 @@ class ProjectData(InstanceLabelData):
                     create_callback=self._task_annotations[task_id].create \
                         if self._task_annotations is not None else None,
                 )
+                task_data._MAX_ANNO_SIZE //= len(self._db_tasks)
                 task_data.soft_attribute_import = self.soft_attribute_import
                 self._tasks_data[task_id] = task_data
                 yield task_data
@@ -903,6 +905,18 @@ class ProjectData(InstanceLabelData):
                 continue
             subset_dataset: Dataset = dataset.subsets()[task_data.db_task.subset].as_dataset()
             yield subset_dataset, task_data
+
+    def add_labels(self, labels: List[dict]):
+        attributes = []
+        _labels = []
+        for label in labels:
+            _attributes = label.pop('attributes')
+            _labels.append(Label(**label))
+            attributes += [(label['name'], AttributeSpec(**at)) for at in _attributes]
+        self._project_annotation.add_labels(_labels, attributes)
+
+    def add_task(self, task, files):
+        self._project_annotation.add_task(task, files, self)
 
 class CVATDataExtractorMixin:
     def __init__(self):
@@ -1304,14 +1318,6 @@ def find_dataset_root(dm_dataset, instance_data: Union[TaskData, ProjectData]):
     return prefix
 
 def import_dm_annotations(dm_dataset: Dataset, instance_data: Union[TaskData, ProjectData]):
-    shapes = {
-        datumaro.AnnotationType.bbox: ShapeType.RECTANGLE,
-        datumaro.AnnotationType.polygon: ShapeType.POLYGON,
-        datumaro.AnnotationType.polyline: ShapeType.POLYLINE,
-        datumaro.AnnotationType.points: ShapeType.POINTS,
-        datumaro.AnnotationType.cuboid_3d: ShapeType.CUBOID
-    }
-
     if len(dm_dataset) == 0:
         return
 
@@ -1319,6 +1325,14 @@ def import_dm_annotations(dm_dataset: Dataset, instance_data: Union[TaskData, Pr
         for sub_dataset, task_data in instance_data.split_dataset(dm_dataset):
             import_dm_annotations(sub_dataset, task_data)
         return
+
+    shapes = {
+        datumaro.AnnotationType.bbox: ShapeType.RECTANGLE,
+        datumaro.AnnotationType.polygon: ShapeType.POLYGON,
+        datumaro.AnnotationType.polyline: ShapeType.POLYLINE,
+        datumaro.AnnotationType.points: ShapeType.POINTS,
+        datumaro.AnnotationType.cuboid_3d: ShapeType.CUBOID
+    }
 
     label_cat = dm_dataset.categories()[datumaro.AnnotationType.label]
 

@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-from typing import Any, Callable, List, Mapping
+from typing import Any, Callable, List, Mapping, Tuple
 
 from django.db import transaction
 
@@ -95,14 +95,22 @@ class ProjectAnnotationAndData:
         create_task(db_task, data, isDatasetImport=True)
         self.db_tasks = models.Task.objects.filter(project__id=self.db_project.id).order_by('id')
         self.init_from_db()
-        project_data.new_tasks.add(db_task.id)
-        project_data.init()
+        if project_data is not None:
+            project_data.new_tasks.add(db_task.id)
+            project_data.init()
 
-    def add_labels(self, labels: List[models.Label]):
+    def add_labels(self, labels: List[models.Label], attributes: List[Tuple[str, models.AttributeSpec]] = None):
         for label in labels:
             label.project = self.db_project
+            # We need label_id here, so we can't use bulk_create here
+            label.save()
 
-        models.Label.objects.bulk_create(labels)
+        for label_name, attribute in attributes:
+            label, = filter(lambda l: l.name == label_name, labels)
+            attribute.label = label
+        if attributes:
+            models.AttributeSpec.objects.bulk_create([a[1] for a in attributes])
+
 
     def init_from_db(self):
         self.reset()
@@ -130,6 +138,7 @@ class ProjectAnnotationAndData:
             annotation_irs=self.annotation_irs,
             db_project=self.db_project,
             task_annotations=self.task_annotations,
+            project_annotation=self,
         )
         project_data.soft_attribute_import = True
 
