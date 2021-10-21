@@ -606,18 +606,15 @@
                 }
                 delete taskDataSpec.client_files;
 
-                function createTaskData() {
-                    const taskData = new FormData();
-                    for (const [key, value] of Object.entries(taskDataSpec)) {
-                        if (Array.isArray(value)) {
-                            value.forEach((element, idx) => {
-                                taskData.append(`${key}[${idx}]`, element);
-                            });
-                        } else {
-                            taskData.set(key, value);
-                        }
+                const taskData = new FormData();
+                for (const [key, value] of Object.entries(taskDataSpec)) {
+                    if (Array.isArray(value)) {
+                        value.forEach((element, idx) => {
+                            taskData.append(`${key}[${idx}]`, element);
+                        });
+                    } else {
+                        taskData.set(key, value);
                     }
-                    return taskData;
                 }
 
                 let response = null;
@@ -636,9 +633,8 @@
 
                 onUpdate('The data are being uploaded to the server 0%');
 
-                async function chunkUpload(file) {
-                    const startUploadData = createTaskData();
-                    const initChunkUpload = await Axios.post(`${backendAPI}/tasks/${response.data.id}/data?action=init-chunk-upload&size=${file.size}&file_name=${file.name}`, startUploadData, {
+                async function chunkUpload(taskId, file) {
+                    const initChunkUpload = await Axios.post(`${backendAPI}/tasks/${response.data.id}/data?action=init-chunk-upload&size=${file.size}&file_name=${file.name}`, taskData, {
                         proxy: config.proxy,
                     });
                     const uploadId = initChunkUpload.data;
@@ -649,7 +645,6 @@
                         const prevChunkNumber = currentChunkNumber - 1;
                         const chunkOffset = prevChunkNumber * chunkSize;
                         const fileChunk = file.slice(chunkOffset, Math.min(chunkOffset + chunkSize, file.size));
-                        const taskData = createTaskData();
                         taskData.set('client_files[0]', fileChunk, file.name);
                         taskData.set('chunk_number', currentChunkNumber);
                         onUpdate(`The data are being uploaded to the server ${Math.round((currentChunkNumber / totalChunks) * 100)}%`);
@@ -658,18 +653,18 @@
                         });
                         const tag = tagResponse.data;
                         tags.push({ chunk_number: currentChunkNumber, tag });
+                        taskData.delete('client_files[0]');
                         currentChunkNumber++;
                     }
-                    const finishUploadData = createTaskData();
                     tags.forEach((element, idx) => {
-                        finishUploadData.append(`chunks_tags[${idx}]`, JSON.stringify(element));
+                        taskData.set(`chunks_tags[${idx}]`, JSON.stringify(element));
                     });
-                    await Axios.post(`${backendAPI}/tasks/${response.data.id}/data?action=finish-chunk-upload&upload_id=${uploadId}&file_name=${file.name}`, finishUploadData, {
+                    await Axios.post(`${backendAPI}/tasks/${taskId}/data?action=finish-chunk-upload&upload_id=${uploadId}&file_name=${file.name}`, taskData, {
                         proxy: config.proxy,
                     });
                 }
 
-                async function bulkUpload(files) {
+                async function bulkUpload(taskId, files) {
                     const fileBulks = files.reduce((fileGroups, file) => {
                         const lastBulk = fileGroups[fileGroups.length - 1];
                         if (chunkSize - lastBulk.size >= file.size) {
@@ -683,26 +678,27 @@
                     const totalBulks = fileBulks.length;
                     let currentChunkNumber = 1;
                     while (currentChunkNumber <= totalBulks) {
-                        const taskData = createTaskData();
                         for (const [idx, element] of fileBulks[currentChunkNumber - 1].files.entries()) {
-                            taskData.set(`client_files[${idx}]`, element);
+                            taskData.append(`client_files[${idx}]`, element);
                         }
                         onUpdate(`The data are being uploaded to the server ${Math.round((currentChunkNumber / totalBulks) * 100)}%`);
-                        await Axios.post(`${backendAPI}/tasks/${response.data.id}/data?action=append`, taskData, {
+                        await Axios.post(`${backendAPI}/tasks/${taskId}/data?action=append`, taskData, {
                             proxy: config.proxy,
                         });
+                        for (let i = 0; i < fileBulks[currentChunkNumber - 1].files.length; i++) {
+                            taskData.delete(`client_files[${i}]`);
+                        }
                         currentChunkNumber++;
                     }
                 }
 
                 try {
                     for (const file of chunkFiles) {
-                        await chunkUpload(file);
+                        await chunkUpload(response.data.id, file);
                     }
                     if (bulkFiles.length > 0) {
-                        await bulkUpload(bulkFiles);
+                        await bulkUpload(response.data.id, bulkFiles);
                     }
-                    const taskData = createTaskData();
                     Axios.post(`${backendAPI}/tasks/${response.data.id}/data?action=submit`, taskData, {
                         proxy: config.proxy,
                     });

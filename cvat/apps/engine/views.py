@@ -640,8 +640,12 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
                 file_name = request.query_params.get('file_name')
                 upload_id = uuid.uuid4().hex
                 chunk_dir = os.path.join(upload_dir, upload_id)
+                file_path = os.path.join(chunk_dir, file_name)
+                if os.path.commonprefix((os.path.realpath(file_path), upload_dir)) != upload_dir:
+                    return Response(data='Detected path traversal attempt',
+                        status=status.HTTP_400_BAD_REQUEST)
                 os.makedirs(chunk_dir)
-                with open(os.path.join(chunk_dir, file_name), "wb") as destination:
+                with open(file_path, "wb") as destination:
                     destination.seek((size) - 1)
                     destination.write(b'\0')
                 with open(os.path.join(chunk_dir, 'meta.json'),"w") as meta:
@@ -651,6 +655,10 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
                 upload_id = request.query_params.get('upload_id', None)
                 file_name = request.query_params.get('file_name', None)
                 chunk_dir = os.path.join(upload_dir, upload_id)
+                file_path = os.path.join(chunk_dir, file_name)
+                if os.path.commonprefix((os.path.realpath(file_path), upload_dir)) != upload_dir:
+                    return Response(data='Detected path traversal attempt',
+                        status=status.HTTP_400_BAD_REQUEST)
                 with open(os.path.join(chunk_dir, 'meta.json'), "r+") as meta_json:
                     meta = json.load(meta_json)
                     uploaded_chunks = meta['chunks_tags_sent']
@@ -665,7 +673,7 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
                         return Response(data='Invalid chunks tags',
                             status=status.HTTP_400_BAD_REQUEST)
 
-                    shutil.move(os.path.join(chunk_dir, file_name), os.path.join(upload_dir, file_name))
+                    shutil.move(file_path, os.path.join(upload_dir, file_name))
                     shutil.rmtree(chunk_dir)
                 return Response(status=status.HTTP_200_OK)
             elif action == 'append':
