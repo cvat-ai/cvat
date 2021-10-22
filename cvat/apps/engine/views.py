@@ -633,7 +633,7 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
                 upload_id = uuid.uuid4().hex
                 chunk_dir = os.path.join(upload_dir, upload_id)
                 file_path = os.path.join(chunk_dir, file_name)
-                if os.path.commonprefix((os.path.realpath(file_path), upload_dir)) != upload_dir:
+                if os.path.commonprefix((os.path.realpath(file_path), chunk_dir)) != chunk_dir:
                     return Response(data='Detected path traversal attempt',
                         status=status.HTTP_400_BAD_REQUEST)
                 os.makedirs(chunk_dir)
@@ -648,7 +648,7 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
                 file_name = request.query_params.get('file_name', None)
                 chunk_dir = os.path.join(upload_dir, upload_id)
                 file_path = os.path.join(chunk_dir, file_name)
-                if os.path.commonprefix((os.path.realpath(file_path), upload_dir)) != upload_dir:
+                if os.path.commonprefix((os.path.realpath(file_path), chunk_dir)) != chunk_dir:
                     return Response(data='Detected path traversal attempt',
                         status=status.HTTP_400_BAD_REQUEST)
                 with open(os.path.join(chunk_dir, 'meta.json'), "r+") as meta_json:
