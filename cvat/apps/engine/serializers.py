@@ -315,16 +315,9 @@ class DataSerializer(serializers.ModelSerializer):
         return data
 
     def create(self, validated_data):
-        files = self._pop_data(validated_data);
+        files = self._pop_data(validated_data)
         db_data = models.Data.objects.create(**validated_data)
-
-        data_path = db_data.get_data_dirname()
-        if os.path.isdir(data_path):
-            shutil.rmtree(data_path)
-
-        os.makedirs(db_data.get_compressed_cache_dirname())
-        os.makedirs(db_data.get_original_cache_dirname())
-        os.makedirs(db_data.get_upload_dirname())
+        db_data.make_dirs()
 
         self._create_files(db_data, files)
 
@@ -333,8 +326,8 @@ class DataSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         files = self._pop_data(validated_data)
-        for k, v in validated_data.items():
-            setattr(instance, k, v)
+        for key, value in validated_data.items():
+            setattr(instance, key, value)
         self._create_files(instance, files)
         instance.save()
         return instance

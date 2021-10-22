@@ -4,6 +4,7 @@
 
 import os
 import re
+import shutil
 from enum import Enum
 
 from django.conf import settings
@@ -144,8 +145,17 @@ class Data(models.Model):
 
     def get_manifest_path(self):
         return os.path.join(self.get_upload_dirname(), 'manifest.jsonl')
+
     def get_index_path(self):
         return os.path.join(self.get_upload_dirname(), 'index.json')
+
+    def make_dirs(self):
+        data_path = self.get_data_dirname()
+        if os.path.isdir(data_path):
+            shutil.rmtree(data_path)
+        os.makedirs(self.get_compressed_cache_dirname())
+        os.makedirs(self.get_original_cache_dirname())
+        os.makedirs(self.get_upload_dirname())
 
 class Video(models.Model):
     data = models.OneToOneField(Data, on_delete=models.CASCADE, related_name="video", null=True)

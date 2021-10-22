@@ -452,20 +452,7 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
     def create(self, request):
         action = self.request.query_params.get('action', None)
         if action is None:
-            serializer = TaskSerializer(data=request.data, context={'request': request})
-            serializer.is_valid(raise_exception=True)
-            db_task = self.perform_create(serializer)
-            empty_data = Data.objects.create()
-            data_path = empty_data.get_data_dirname()
-            if os.path.isdir(data_path):
-                shutil.rmtree(data_path)
-            os.makedirs(empty_data.get_compressed_cache_dirname())
-            os.makedirs(empty_data.get_original_cache_dirname())
-            os.makedirs(empty_data.get_upload_dirname())
-            db_task.data = empty_data
-            db_task.save()
-            headers = super().get_success_headers(serializer.data)
-            return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+            return super().create(request)
         elif action == 'import':
             self._validate_task_limit(owner=self.request.user)
             if 'rq_id' in request.data:
@@ -625,7 +612,12 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
         db_task = self.get_object() # call check_object_permissions as well
         if request.method == 'POST':
             task_data = db_task.data
-            if task_data.size != 0:
+            if not task_data:
+                task_data = Data.objects.create()
+                task_data.make_dirs()
+                db_task.data = task_data
+                db_task.save()
+            elif task_data.size != 0:
                 return Response(data='Adding more data is not supported',
                     status=status.HTTP_400_BAD_REQUEST)
 
