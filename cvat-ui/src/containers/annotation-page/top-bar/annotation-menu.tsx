@@ -13,12 +13,11 @@ import AnnotationMenuComponent, { Actions } from 'components/annotation-page/top
 import { updateJobAsync } from 'actions/tasks-actions';
 import {
     uploadJobAnnotationsAsync,
-    removeAnnotationsAsync,
     saveAnnotationsAsync,
     switchRequestReviewDialog as switchRequestReviewDialogAction,
     switchSubmitReviewDialog as switchSubmitReviewDialogAction,
     setForceExitAnnotationFlag as setForceExitAnnotationFlagAction,
-    removeAnnotationsinRangeAsync as removeAnnotationsinRangeAsyncAction,
+    removeAnnotationsAsync as removeAnnotationsAsyncAction,
 } from 'actions/annotation-actions';
 import { exportActions } from 'actions/export-actions';
 
@@ -33,8 +32,7 @@ interface StateToProps {
 interface DispatchToProps {
     loadAnnotations(job: any, loader: any, file: File): void;
     showExportModal(task: any): void;
-    removeAnnotations(sessionInstance: any): void;
-    removeAnnotationsinRange(startnumber:number, endnumber:number, delTrackKeyframesOnly:boolean): void;
+    removeAnnotations(startnumber:number, endnumber:number, delTrackKeyframesOnly:boolean): void;
     switchRequestReviewDialog(visible: boolean): void;
     switchSubmitReviewDialog(visible: boolean): void;
     setForceExitAnnotationFlag(forceExit: boolean): void;
@@ -78,11 +76,8 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         showExportModal(task: any): void {
             dispatch(exportActions.openExportModal(task));
         },
-        removeAnnotations(sessionInstance: any): void {
-            dispatch(removeAnnotationsAsync(sessionInstance));
-        },
-        removeAnnotationsinRange(startnumber: number, endnumber: number, delTrackKeyframesOnly:boolean) {
-            dispatch(removeAnnotationsinRangeAsyncAction(startnumber, endnumber, delTrackKeyframesOnly));
+        removeAnnotations(startnumber: number, endnumber: number, delTrackKeyframesOnly:boolean) {
+            dispatch(removeAnnotationsAsyncAction(startnumber, endnumber, delTrackKeyframesOnly));
         },
         switchRequestReviewDialog(visible: boolean): void {
             dispatch(switchRequestReviewDialogAction(visible));
@@ -114,7 +109,6 @@ function AnnotationMenuContainer(props: Props): JSX.Element {
         loadActivity,
         loadAnnotations,
         showExportModal,
-        removeAnnotationsinRange,
         removeAnnotations,
         switchRequestReviewDialog,
         switchSubmitReviewDialog,
@@ -134,8 +128,6 @@ function AnnotationMenuContainer(props: Props): JSX.Element {
         const [action] = params.keyPath;
         if (action === Actions.EXPORT_TASK_DATASET) {
             showExportModal(jobInstance.task);
-        } else if (action === Actions.REMOVE_ANNO) {
-            removeAnnotations(jobInstance);
         } else if (action === Actions.REQUEST_REVIEW) {
             switchRequestReviewDialog(true);
         } else if (action === Actions.SUBMIT_REVIEW) {
@@ -163,7 +155,7 @@ function AnnotationMenuContainer(props: Props): JSX.Element {
             loadActivity={loadActivity}
             onUploadAnnotations={onUploadAnnotations}
             onClickMenu={onClickMenu}
-            removeRange={removeAnnotationsinRange}
+            removeAnnotations={removeAnnotations}
             setForceExitAnnotationFlag={setForceExitAnnotationFlag}
             saveAnnotations={saveAnnotations}
             jobInstance={jobInstance}

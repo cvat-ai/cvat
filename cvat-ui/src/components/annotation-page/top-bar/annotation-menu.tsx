@@ -2,17 +2,19 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useState } from 'react';
+import React from 'react';
 
 import Menu from 'antd/lib/menu';
 import Modal from 'antd/lib/modal';
+import Text from 'antd/lib/typography/Text';
+import {
+    InputNumber, Tooltip, Checkbox, Collapse,
+} from 'antd';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { MenuInfo } from 'rc-menu/lib/interface';
 
 import LoadSubmenu from 'components/actions-menu/load-submenu';
 import { DimensionType } from '../../../reducers/interfaces';
-
-import RemoveAnnotationsRangeComponent from './remove-range-confirm';
 
 interface Props {
     taskMode: string;
@@ -24,7 +26,7 @@ interface Props {
     onClickMenu(params: MenuInfo): void;
     onUploadAnnotations(format: string, file: File): void;
     stopFrame: number;
-    removeRange(startnumber: number, endnumber: number, deltrack_keyframes_only:boolean): void;
+    removeAnnotations(startnumber: number, endnumber: number, delTrackKeyframesOnly:boolean): void;
     setForceExitAnnotationFlag(forceExit: boolean): void;
     saveAnnotations(jobInstance: any, afterSave?: () => void): void;
 }
@@ -49,12 +51,10 @@ export default function AnnotationMenuComponent(props: Props): JSX.Element {
         stopFrame,
         onClickMenu,
         onUploadAnnotations,
-        removeRange,
+        removeAnnotations,
         setForceExitAnnotationFlag,
         saveAnnotations,
     } = props;
-
-    const [openRemoveRangeComponent, toggleOpenRemoveRangeComponent] = useState(false);
 
     const jobStatus = jobInstance.status;
     const taskID = jobInstance.task.id;
@@ -89,41 +89,58 @@ export default function AnnotationMenuComponent(props: Props): JSX.Element {
         }
 
         if (params.key === Actions.REMOVE_ANNO) {
+            let removeFrom: any;
+            let removeUpTo: any;
+            let removeOnlyKeyframes: any = false;
+            const { Panel } = Collapse;
             Modal.confirm({
                 title: 'Remove Annotations',
-                content:
-                    'Select whether to remove all annotations from the job or remove within a range\n' +
-                    'It will stay on the server till you save the job. Continue?',
+                content: (
+                    <div>
+                        <Text>You are going to remove the annotations from the client. </Text>
+                        <Text>It will stay on the server till you save the job. Continue?</Text>
+                        <br />
+                        <br />
+                        <Collapse bordered={false}>
+                            <Panel header={<Text>Select Range</Text>} key={1}>
+                                <Text>From: </Text>
+                                <InputNumber
+                                    min={0}
+                                    max={stopFrame}
+                                    onChange={(value) => {
+                                        removeFrom = value;
+                                    }}
+                                />
+                                <Text>  To: </Text>
+                                <InputNumber
+                                    min={0}
+                                    max={stopFrame}
+                                    onChange={(value) => { removeUpTo = value; }}
+                                />
+                                <Tooltip title='Applicable only for annotations in range'>
+                                    <br />
+                                    <br />
+                                    <Checkbox
+                                        onChange={(check) => {
+                                            removeOnlyKeyframes = check.target.checked;
+                                        }}
+                                    >
+                                        Delete only keyframes for tracks
+                                    </Checkbox>
+                                </Tooltip>
+                            </Panel>
+                        </Collapse>
+                    </div>
+                ),
                 className: 'cvat-modal-confirm-remove-annotation',
                 onOk: () => {
-                    Modal.confirm({
-                        title: 'All the annotations will be removed',
-                        content:
-                            'You are going to remove all the annotations from the client. ' +
-                            'It will stay on the server till you save the job. Continue?',
-                        className: 'cvat-modal-confirm-remove-annotation',
-                        onOk: () => {
-                            onClickMenu(params);
-                        },
-                        okButtonProps: {
-                            type: 'primary',
-                            danger: true,
-                        },
-                        okText: 'Delete',
-                    });
+                    removeAnnotations(removeFrom, removeUpTo, removeOnlyKeyframes);
                 },
                 okButtonProps: {
                     type: 'primary',
                     danger: true,
                 },
-                okText: 'Remove All',
-                onCancel: () => {
-                    toggleOpenRemoveRangeComponent(!openRemoveRangeComponent);
-                },
-                cancelText: 'Select Range',
-                cancelButtonProps: {
-                    type: 'primary',
-                },
+                okText: 'Delete',
             });
         } else if (params.key === Actions.REQUEST_REVIEW) {
             checkUnsavedChanges(params);
@@ -194,12 +211,6 @@ export default function AnnotationMenuComponent(props: Props): JSX.Element {
                 <Menu.Item key={Actions.SUBMIT_REVIEW}>Submit the review</Menu.Item>
             )}
             {jobStatus === 'completed' && <Menu.Item key={Actions.RENEW_JOB}>Renew the job</Menu.Item>}
-            <RemoveAnnotationsRangeComponent
-                visible={openRemoveRangeComponent}
-                removeinRange={removeRange}
-                stopFrame={stopFrame}
-                cancel={() => { toggleOpenRemoveRangeComponent(!openRemoveRangeComponent); }}
-            />
         </Menu>
     );
 }

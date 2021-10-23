@@ -165,8 +165,6 @@ export enum AnnotationActionTypes {
     UPLOAD_JOB_ANNOTATIONS_FAILED = 'UPLOAD_JOB_ANNOTATIONS_FAILED',
     REMOVE_JOB_ANNOTATIONS_SUCCESS = 'REMOVE_JOB_ANNOTATIONS_SUCCESS',
     REMOVE_JOB_ANNOTATIONS_FAILED = 'REMOVE_JOB_ANNOTATIONS_FAILED',
-    REMOVE_ANNOTATIONS_INRANGE_SUCCESS = 'REMOVE_ANNOTATIONS_INRANGE_SUCCESS',
-    REMOVE_ANNOTATIONS_INRANGE_FAILED = 'REMOVE_ANNOTATIONS_INRANGE_FAILED',
     UPDATE_CANVAS_CONTEXT_MENU = 'UPDATE_CANVAS_CONTEXT_MENU',
     UNDO_ACTION_SUCCESS = 'UNDO_ACTION_SUCCESS',
     UNDO_ACTION_FAILED = 'UNDO_ACTION_FAILED',
@@ -308,17 +306,24 @@ export function updateCanvasContextMenu(
     };
 }
 
-export function removeAnnotationsAsync(sessionInstance: any): ThunkAction {
+export function removeAnnotationsAsync(
+    startFrame: number, endFrame: number, delTrackKeyframesOnly: boolean,
+): ThunkAction {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         try {
-            await sessionInstance.annotations.clear();
-            await sessionInstance.actions.clear();
-            const history = await sessionInstance.actions.get();
+            const {
+                filters, frame, showAllInterpolationTracks, jobInstance,
+            } = receiveAnnotationsParameters();
+            await jobInstance.annotations.clear(false, startFrame, endFrame, delTrackKeyframesOnly);
+            await jobInstance.actions.clear();
+            const history = await jobInstance.actions.get();
+            const states = await jobInstance.annotations.get(frame, showAllInterpolationTracks, filters);
 
             dispatch({
                 type: AnnotationActionTypes.REMOVE_JOB_ANNOTATIONS_SUCCESS,
                 payload: {
                     history,
+                    states,
                 },
             });
         } catch (error) {
@@ -503,38 +508,6 @@ export function changePropagateFrames(frames: number): AnyAction {
         payload: {
             frames,
         },
-    };
-}
-
-// To remove annotation objects present in given range of frames
-export function removeAnnotationsinRangeAsync(
-    startFrame: number, endFrame: number, delTrackKeyframesOnly: boolean,
-): ThunkAction {
-    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
-        try {
-            const {
-                filters, frame, showAllInterpolationTracks, jobInstance,
-            } = receiveAnnotationsParameters();
-            await jobInstance.annotations.clear(false, startFrame, endFrame, delTrackKeyframesOnly);
-            await jobInstance.actions.clear();
-            const history = await jobInstance.actions.get();
-            const states = await jobInstance.annotations.get(frame, showAllInterpolationTracks, filters);
-
-            dispatch({
-                type: AnnotationActionTypes.REMOVE_ANNOTATIONS_INRANGE_SUCCESS,
-                payload: {
-                    history,
-                    states,
-                },
-            });
-        } catch (error) {
-            dispatch({
-                type: AnnotationActionTypes.REMOVE_ANNOTATIONS_INRANGE_FAILED,
-                payload: {
-                    error,
-                },
-            });
-        }
     };
 }
 

@@ -554,13 +554,9 @@
         }
 
         clear(startframe, endframe, delTrackKeyframesOnly) {
-            let objectsRemovable = [];
-            // If only a range of annotations need to be cleared
             if (startframe !== undefined && endframe !== undefined) {
+                // If only a range of annotations need to be cleared
                 for (let frame = startframe; frame <= endframe; frame++) {
-                    const shapes = this.shapes[frame] || [];
-                    const tags = this.tags[frame] || [];
-                    objectsRemovable = objectsRemovable.concat(shapes, tags);
                     this.shapes[frame] = [];
                     this.tags[frame] = [];
                 }
@@ -572,23 +568,25 @@
                                 if (keyframe >= startframe && keyframe <= endframe) { delete track.shapes[keyframe]; }
                             }
                         } else if (track.frame >= startframe) {
-                            objectsRemovable.push(track);
                             const index = tracks.indexOf(track);
                             if (index > -1) { tracks.splice(index, 1); }
                         }
                     }
                 });
+            } else if (startframe === undefined && endframe === undefined) {
+                // If all annotations need to be cleared
+                this.shapes = {};
+                this.tags = {};
+                this.tracks = [];
+                this.objects = {}; // by id
+                this.count = 0;
 
-                return;
+                this.flush = true;
+            } else {
+                // If inputs provided were wrong
+                throw Error('Could not remove the annotations, please provide both inputs or'
+                + ' leave the inputs below empty to remove all the annotations from this job');
             }
-            // If all annotations need to be cleared
-            this.shapes = {};
-            this.tags = {};
-            this.tracks = [];
-            this.objects = {}; // by id
-            this.count = 0;
-
-            this.flush = true;
         }
 
         statistics() {
