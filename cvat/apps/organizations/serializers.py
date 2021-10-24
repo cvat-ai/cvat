@@ -94,6 +94,8 @@ class InvitationWriteSerializer(serializers.ModelSerializer):
 
         return invitation
 
+    def update(self, instance, validated_data):
+        return super().update(instance, {})
 
     def save(self, **kwargs):
         invitation = super().save(**kwargs)

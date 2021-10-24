@@ -11,6 +11,10 @@ PUBLIC := "public"
 PRIVATE := "private"
 INTERNAL := "internal"
 
+# Context
+SANDBOX := "sandbox"
+ORGANIZATION := "organization"
+
 # Scopes
 CREATE := "create"
 LIST := "list"
@@ -62,4 +66,12 @@ is_worker {
 
 is_resource_owner {
     input.resource.owner.id == input.auth.user.id
+}
+
+is_sandbox {
+    input.auth.organization == null
+}
+
+is_organization {
+    input.auth.organization != null
 }

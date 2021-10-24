@@ -1,21 +1,16 @@
 Scope,Resource,Context,Ownership,Limit,Method,URL,Privilege,Membership
-list,Invitation,Sandbox,N/A,"filter(organization=None, ownership=None)",GET,/invitations,Admin,N/A
-list,Invitation,Sandbox,N/A,"filter(organization=None, ownership=[""owner"", ""invitee""])",GET,/invitations,None,N/A
-list,Invitation,Organization,N/A,"filter(organization=organization, ownership=[""owner"", ""invitee""])",GET,/invitations,None,Worker
-list,Invitation,Organization,N/A,filter(organization=organization),GET,/invitations,User,Maintainer
+list,Invitation,Sandbox,N/A,,GET,/invitations,None,N/A
+list,Invitation,Organization,N/A,,GET,/invitations,None,Worker
 create,Invitation,Organization,N/A,"resource[""role""] not in [""maintainer"", ""owner""]",POST,/invitations,User,Maintainer
 create,Invitation,Organization,N/A,"resource[""role""] != ""owner""",POST,/invitations,User,Owner
 view,Invitation,Sandbox,None,,GET,/invitations/{id},Admin,N/A
-view,Invitation,Sandbox,"Owner, Invitee",,GET,/invitations/{id},None,N/A
+view,Invitation,N/A,"Owner, Invitee",,GET,/invitations/{id},None,N/A
 view,Invitation,Organization,None,,GET,/invitations/{id},User,Maintainer
-view,Invitation,Organization,"Owner, Invitee",,GET,/invitations/{id},None,Worker
 resend,Invitation,Sandbox,"None, Invitee",,PATCH,/invitations/{id},Admin,N/A
-resend,Invitation,Sandbox,Owner,,PATCH,/invitations/{id},Worker,N/A
+resend,Invitation,N/A,Owner,,PATCH,/invitations/{id},Worker,N/A
 resend,Invitation,Organization,"None, Invitee",,PATCH,/invitations/{id},User,Maintainer
-resend,Invitation,Organization,Owner,,PATCH,/invitations/{id},Worker,Worker
 delete,Invitation,Sandbox,"None, Invitee",,DELETE,/invitations/{id},Admin,N/A
-delete,Invitation,Sandbox,Owner,,DELETE,/invitations/{id},Worker,N/A
+delete,Invitation,N/A,Owner,,DELETE,/invitations/{id},Worker,N/A
 delete,Invitation,Organization,"None, Invitee",,DELETE,/invitations/{id},User,Maintainer
-delete,Invitation,Organization,Owner,,DELETE,/invitations/{id},Worker,Worker
 accept,Invitation,N/A,None,,PATCH,/invitations/{id},Admin,N/A
 accept,Invitation,N/A,Invitee,,PATCH,/invitations/{id},None,N/A

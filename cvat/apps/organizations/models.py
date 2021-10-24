@@ -2,6 +2,7 @@ from distutils.util import strtobool
 from django.conf import settings
 from django.db import models
 from django.contrib.auth import get_user_model
+from django.utils import timezone
 
 class Organization(models.Model):
     slug = models.SlugField(max_length=16, blank=False, unique=True)
@@ -52,11 +53,18 @@ class Invitation(models.Model):
 
     def send(self):
         if not strtobool(settings.ORG_INVITATION_CONFIRM):
-            self.membership.is_active = True
-            self.membership.joined_date = self.created_date
-            self.membership.save()
+            self.accept(self.created_date)
 
         # TODO: use email backend to send invitations as well
+
+    def accept(self, date=None):
+        if not self.membership.is_active:
+            self.membership.is_active = True
+            if date is None:
+                self.membership.joined_date = timezone.now()
+            else:
+                self.membership.joined_date = date
+            self.membership.save()
 
     class Meta:
         default_permissions = ()

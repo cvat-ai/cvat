@@ -77,7 +77,7 @@ class InvitationViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        permission = InvitationPermission(self.request, self, None)
+        permission = InvitationPermission(self.request, self)
         return permission.filter(queryset)
 
     def perform_create(self, serializer):
@@ -87,3 +87,9 @@ class InvitationViewSet(viewsets.ModelViewSet):
             'organization': self.request.iam_context['organization']
         }
         serializer.save(**extra_kwargs)
+
+    def perform_update(self, serializer):
+        if 'accepted' in self.request.query_params:
+            serializer.instance.accept()
+        else:
+            super().perform_update(serializer)

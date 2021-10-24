@@ -142,7 +142,7 @@ class InvitationPermission(OpenPolicyAgentPermission):
 
         return permissions
 
-    def __init__(self, request, view, obj):
+    def __init__(self, request, view, obj=None):
         super().__init__(request, view, obj)
         self.url = settings.IAM_OPA_DATA_URL + '/invitations/allow'
         self.payload['input']['scope'] = self.scope
@@ -151,14 +151,13 @@ class InvitationPermission(OpenPolicyAgentPermission):
     @property
     def scope(self):
         return {
-            ('list', False): 'list',
-            ('create', False): 'create',
-            ('destroy', False): 'delete',
-            ('partial_update', False): 'resend',
-            ('partial_update', True): 'accept',
-            ('retrieve', False): 'view'
-        }.get((self.view.action, 'accepted' in self.request.data))
-
+            'list': 'list',
+            'create': 'create',
+            'destroy': 'delete',
+            'partial_update': 'accept' if 'accepted' in
+                self.request.query_params else 'resend',
+            'retrieve': 'view'
+        }.get(self.view.action)
 
     @property
     def resource(self):
@@ -176,7 +175,7 @@ class InvitationPermission(OpenPolicyAgentPermission):
             data = {
                 'owner': { 'id': self.request.user.id },
                 'invitee': {
-                    'id': self.request.data.get('user')
+                    'id': None # unknown yet
                 },
                 'role': self.request.data.get('role'),
                 'organization': {
