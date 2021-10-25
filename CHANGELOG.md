@@ -42,7 +42,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Security
 
-- TDB
+- Fix security issues on the documentation website unsafe use of target blank
+  and potential clickjacking on legacy browsers (<https://github.com/openvinotoolkit/cvat/pull/3789>)
 
 ## \[1.6.0] - 2021-09-17
 
