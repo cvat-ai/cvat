@@ -61,7 +61,7 @@ class MembershipViewSet(mixins.RetrieveModelMixin, mixins.DestroyModelMixin,
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        permission = MembershipPermission(self.request, self, None)
+        permission = MembershipPermission(self.request, self)
         return permission.filter(queryset)
 
 class InvitationViewSet(viewsets.ModelViewSet):

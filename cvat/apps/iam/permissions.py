@@ -195,12 +195,11 @@ class MembershipPermission(OpenPolicyAgentPermission):
 
         return permissions
 
-    def __init__(self, request, view, obj):
+    def __init__(self, request, view, obj=None):
         super().__init__(request, view, obj)
         self.url = settings.IAM_OPA_DATA_URL + '/memberships/allow'
         self.payload['input']['scope'] = self.scope
-        if obj:
-            self.payload['input']['resource'] = self.resource
+        self.payload['input']['resource'] = self.resource
 
     @property
     def scope(self):
@@ -209,17 +208,19 @@ class MembershipPermission(OpenPolicyAgentPermission):
             'partial_update': 'change:role',
             'retrieve': 'view',
             'destroy': 'delete'
-        }.get(self.view.action, None)
+        }.get(self.view.action)
 
     @property
     def resource(self):
-        return {
-            'role': self.obj.role,
-            'is_active': self.obj.is_active,
-            'user': {
-                'id': self.obj.user.id
+        if self.obj:
+            return {
+                'role': self.obj.role,
+                'is_active': self.obj.is_active,
+                'user': { 'id': self.obj.user.id },
+                'organization': { 'id': self.obj.organization.id }
             }
-        }
+        else:
+            return None
 
 class ServerPermission(OpenPolicyAgentPermission):
     @classmethod

@@ -38,6 +38,9 @@ def get_context(request):
             membership = Membership.objects.filter(organization=organization,
                 user=request.user).first()
 
+    if membership and not membership.is_active:
+        membership = None
+
     context = {
         "privilege": groups[0] if groups else None,
         "membership": membership,

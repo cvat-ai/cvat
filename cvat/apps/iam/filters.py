@@ -16,8 +16,15 @@ class OrganizationFilterBackend(BaseFilterBackend):
         ]
 
     def filter_queryset(self, request, queryset, view):
+        # Rego rules should filter objects correctly (see filter rule). The
+        # filter isn't necessary but it is an extra check that we show only
+        # objects inside an organization if the request in context of the
+        # organization.
         try:
             organization = request.iam_context['organization']
-            return queryset.filter(organization=organization)
+            if organization:
+                return queryset.filter(organization=organization)
+            else:
+                return queryset
         except FieldError:
             return queryset

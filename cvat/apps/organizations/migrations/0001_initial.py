@@ -38,7 +38,7 @@ class Migration(migrations.Migration):
                 ('joined_date', models.DateTimeField(null=True)),
                 ('role', models.CharField(choices=[('worker', 'Worker'), ('supervisor', 'Supervisor'), ('maintainer', 'Maintainer'), ('owner', 'Owner')], max_length=16)),
                 ('organization', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='members', to='organizations.organization')),
-                ('user', models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='+', to=settings.AUTH_USER_MODEL)),
+                ('user', models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, related_name='+', to=settings.AUTH_USER_MODEL)),
             ],
             options={
                 'default_permissions': (),

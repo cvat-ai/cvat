@@ -26,7 +26,7 @@ class Membership(models.Model):
     MAINTAINER = 'maintainer'
     OWNER = 'owner'
 
-    user = models.ForeignKey(get_user_model(), on_delete=models.SET_NULL,
+    user = models.ForeignKey(get_user_model(), on_delete=models.CASCADE,
         null=True, related_name='+')
     organization = models.ForeignKey(Organization, on_delete=models.CASCADE,
         related_name='members')

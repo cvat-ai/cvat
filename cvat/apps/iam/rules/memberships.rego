@@ -22,9 +22,8 @@ import data.organizations
 #     "resource": {
 #         "role": <"owner"|"maintainer"|"supervisor"|"worker">,
 #         "is_active": <true|false>,
-#         "user": {
-#             "id": <num>
-#         }
+#         "user": { "id": <num> },
+#         "organization": { "id": <num> }
 #     } or null
 # }
 
@@ -35,74 +34,63 @@ allow {
 
 allow {
     input.scope == utils.LIST
-    input.auth.organization == null
 }
-
-allow {
-    input.scope == utils.LIST
-    organizations.is_member
-}
-
-allow {
-    input.scope == utils.VIEW
-    input.resource.is_active
-    organizations.is_member
-}
-
-allow {
-    input.scope == utils.VIEW
-    input.resource.is_active
-    input.auth.organization == null
-    input.resource.user.id == input.auth.user.id
-}
-
-allow {
-    { utils.CHANGE_ROLE, utils.DELETE }[input.scope]
-    input.resource.is_active
-    organizations.is_owner
-    utils.has_perm(utils.USER)
-    input.resource.role != organizations.OWNER
-}
-
-allow {
-    { utils.CHANGE_ROLE, utils.DELETE }[input.scope]
-    input.resource.is_active
-    input.resource.role != organizations.OWNER
-    input.resource.role != organizations.MAINTAINER
-    utils.has_perm(utils.USER)
-    organizations.is_maintainer
-}
-
-allow {
-    input.scope == utils.DELETE
-    input.resource.is_active
-    input.resource.role != organizations.OWNER
-    input.resource.user.id == input.auth.user.id
-    utils.has_perm(utils.WORKER)
-    organizations.is_member
-}
-
-allow {
-    input.scope == utils.DELETE
-    input.resource.is_active
-    input.resource.role != organizations.OWNER
-    input.resource.user.id == input.auth.user.id
-    utils.has_perm(utils.WORKER)
-    input.auth.organization == null
-}
-
 
 filter = [] { # Django Q object to filter list of entries
-    input.auth.organization == null
     utils.is_admin
+    utils.is_sandbox
 } else = qobject {
-    input.auth.organization == null
+    utils.is_sandbox
     qobject := [ {"user": input.auth.user.id}, {"is_active": true}, "&" ]
 } else = qobject {
-    input.auth.organization != null
     utils.is_admin
-    qobject := [ {"organization": input.auth.organization.id}, {"is_active": true}, "&"]
+    org_id := input.auth.organization.id
+    qobject := [ {"organization": org_id} ]
 } else = qobject {
+    org_id := input.auth.organization.id
+    qobject := [ {"organization": org_id}, {"is_active": true}, "&" ]
+}
+
+allow {
+    input.scope == utils.VIEW
+    input.resource.is_active
+    utils.is_sandbox
+    input.resource.user.id == input.auth.user.id
+}
+
+allow {
+    input.scope == utils.VIEW
+    input.resource.is_active
     organizations.is_member
-    qobject := [ {"organization": input.auth.organization.id}, {"is_active": true}, "&" ]
+    input.resource.organization.id == input.auth.organization.id
+}
+
+allow {
+    { utils.CHANGE_ROLE, utils.DELETE }[input.scope]
+    input.resource.is_active
+    input.resource.organization.id == input.auth.organization.id
+    utils.has_perm(utils.USER)
+    organizations.is_maintainer
+    not {
+        organizations.OWNER,
+        organizations.MAINTAINER
+    }[input.resource.role]
+}
+
+allow {
+    { utils.CHANGE_ROLE, utils.DELETE }[input.scope]
+    input.resource.is_active
+    input.resource.organization.id == input.auth.organization.id
+    utils.has_perm(utils.USER)
+    organizations.is_owner
+    input.resource.role != organizations.OWNER
+}
+
+allow {
+    input.scope == utils.DELETE
+    input.resource.is_active
+    utils.is_sandbox
+    input.resource.role != organizations.OWNER
+    input.resource.user.id == input.auth.user.id
+    utils.has_perm(utils.WORKER)
 }
