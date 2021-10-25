@@ -278,6 +278,7 @@ class TaskExportTest(_DbTestBase):
             'CVAT for images 1.1',
             'CVAT for video 1.1',
             'Datumaro 1.0',
+            'Datumaro 3D 1.0',
             'LabelMe 3.0',
             'MOT 1.1',
             'MOTS PNG 1.0',
@@ -322,7 +323,8 @@ class TaskExportTest(_DbTestBase):
             'ICDAR Segmentation 1.0',
             'Kitti Raw Format 1.0',
             'Sly Point Cloud Format 1.0',
-            'Datumaro 1.0'
+            'Datumaro 1.0',
+            'Datumaro 3D 1.0'
         })
 
     def test_exports(self):
