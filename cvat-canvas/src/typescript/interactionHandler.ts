@@ -450,7 +450,7 @@ export class InteractionHandlerImpl implements InteractionHandler {
         });
 
         window.addEventListener('keydown', (e: KeyboardEvent): void => {
-            if (this.interactionData.enabled && e.keyCode === 17) {
+            if (!e.repeat && this.interactionData.enabled && e.keyCode === 17) {
                 if (this.interactionData.onChangeToolsBlockerState && !this.thresholdWasModified) {
                     this.interactionData.onChangeToolsBlockerState('keydown');
                 }
