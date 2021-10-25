@@ -172,6 +172,7 @@ class InvitationPermission(OpenPolicyAgentPermission):
                 }
             }
         elif self.view.action == 'create':
+            organization = self.request.iam_context['organization']
             data = {
                 'owner': { 'id': self.request.user.id },
                 'invitee': {
@@ -179,8 +180,8 @@ class InvitationPermission(OpenPolicyAgentPermission):
                 },
                 'role': self.request.data.get('role'),
                 'organization': {
-                    'id': self.request.data.get('organization')
-                }
+                    'id': organization.id
+                } if organization else None
             }
 
         return data
@@ -314,7 +315,7 @@ class CloudStoragePermission(OpenPolicyAgentPermission):
 
         return permissions
 
-    def __init__(self, request, view, obj):
+    def __init__(self, request, view, obj=None):
         super().__init__(request, view, obj)
         self.url = settings.IAM_OPA_DATA_URL + '/cloudstorages/allow'
         self.payload['input']['scope'] = self.scope
@@ -328,13 +329,28 @@ class CloudStoragePermission(OpenPolicyAgentPermission):
             'retrieve': 'view',
             'partial_update': 'update',
             'destroy': 'delete',
-            'content': 'list:content'
-        }.get(self.view.action, None)
+            'content': 'list:content',
+            'preview': 'view',
+            'status': 'view'
+        }.get(self.view.action)
 
     @property
     def resource(self):
         data = None
-        if self.obj:
+        if self.view.action == 'create':
+            user_id = self.request.user.id
+            organization = self.request.iam_context['organization']
+            data = {
+                'owner': { 'id': user_id },
+                'organization': {
+                    'id': organization.id
+                } if organization else None,
+                'user': {
+                    'num_resources': Organization.objects.filter(
+                        owner=user_id).count()
+                }
+            }
+        elif self.obj:
             data = {
                 'id': self.obj.id,
                 'owner': { 'id': self.obj.owner.id },

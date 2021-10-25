@@ -33,9 +33,10 @@ from drf_yasg.utils import swagger_auto_schema
 from rest_framework import mixins, serializers, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import APIException, NotFound, ValidationError
-from rest_framework.permissions import SAFE_METHODS, IsAuthenticated
+from rest_framework.permissions import SAFE_METHODS
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
+from rest_framework.exceptions import PermissionDenied
 from sendfile import sendfile
 
 import cvat.apps.dataset_manager as dm
@@ -1141,7 +1142,7 @@ class CloudStorageViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         provider_type = self.request.query_params.get('provider_type', None)
-        perm = CloudStoragePermission(self.request, self, None)
+        perm = CloudStoragePermission(self.request, self)
         queryset = perm.filter(super().get_queryset())
         if provider_type:
             if provider_type in CloudProviderChoice.list():
@@ -1202,7 +1203,7 @@ class CloudStorageViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['GET'], url_path='content')
     def content(self, request, pk):
         try:
-            db_storage = CloudStorageModel.objects.get(pk=pk)
+            db_storage = self.get_object()
             credentials = Credentials()
             credentials.convert_from_db({
                 'type': db_storage.credentials_type,
@@ -1265,7 +1266,7 @@ class CloudStorageViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['GET'], url_path='preview')
     def preview(self, request, pk):
         try:
-            db_storage = CloudStorageModel.objects.get(pk=pk)
+            db_storage = self.get_object()
             if not os.path.exists(db_storage.get_preview_path()):
                 credentials = Credentials()
                 credentials.convert_from_db({
@@ -1320,6 +1321,8 @@ class CloudStorageViewSet(viewsets.ModelViewSet):
             message = f"Storage {pk} does not exist"
             slogger.glob.error(message)
             return HttpResponseNotFound(message)
+        except PermissionDenied:
+            raise
         except Exception as ex:
             # check that cloud storage was not deleted
             storage_status = storage.get_status()
@@ -1342,7 +1345,7 @@ class CloudStorageViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['GET'], url_path='status')
     def status(self, request, pk):
         try:
-            db_storage = CloudStorageModel.objects.get(pk=pk)
+            db_storage = self.get_object()
             credentials = Credentials()
             credentials.convert_from_db({
                 'type': db_storage.credentials_type,

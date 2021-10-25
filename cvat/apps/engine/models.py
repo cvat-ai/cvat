@@ -613,7 +613,7 @@ class CloudStorage(models.Model):
 
     class Meta:
         default_permissions = ()
-        unique_together = (('provider_type', 'resource', 'credentials'),)
+        unique_together = ('provider_type', 'resource', 'credentials')
 
     def __str__(self):
         return "{} {} {}".format(self.provider_type, self.display_name, self.id)

@@ -901,7 +901,7 @@ class CloudStorageSerializer(serializers.ModelSerializer):
             field = 'credentials'
             message = 'Cannot create resource {} with specified credentials. Access forbidden.'.format(storage.name)
         else:
-            field = 'recource'
+            field = 'resource'
             message = 'The resource {} not found. It may have been deleted.'.format(storage.name)
         slogger.glob.error(message)
         raise serializers.ValidationError({field: message})
@@ -959,7 +959,7 @@ class CloudStorageSerializer(serializers.ModelSerializer):
             field = 'credentials'
             message = 'Cannot update resource {} with specified credentials. Access forbidden.'.format(storage.name)
         else:
-            field = 'recource'
+            field = 'resource'
             message = 'The resource {} not found. It may have been deleted.'.format(storage.name)
         slogger.glob.error(message)
         raise serializers.ValidationError({field: message})

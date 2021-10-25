@@ -34,6 +34,12 @@ allow {
 
 allow {
     input.scope == utils.LIST
+    utils.is_sandbox
+}
+
+allow {
+    input.scope == utils.LIST
+    organizations.is_member
 }
 
 filter = [] { # Django Q object to filter list of entries
