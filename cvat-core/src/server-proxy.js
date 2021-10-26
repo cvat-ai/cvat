@@ -50,8 +50,8 @@
     }
 
     class WorkerWrappedAxios {
-        constructor() {
-            const worker = new DownloadWorker();
+        constructor(requestInterseptor) {
+            const worker = new DownloadWorker(requestInterseptor);
             const requests = {};
             let requestId = 0;
 
@@ -116,6 +116,7 @@
             Axios.defaults.withCredentials = true;
             Axios.defaults.xsrfHeaderName = 'X-CSRFTOKEN';
             Axios.defaults.xsrfCookieName = 'csrftoken';
+            const workerAxios = new WorkerWrappedAxios();
             Axios.interceptors.request.use((reqConfig) => {
                 if ('params' in reqConfig && 'org' in reqConfig.params) {
                     return reqConfig;
@@ -124,7 +125,6 @@
                 reqConfig.params = { ...enableOrganization(), ...(reqConfig.params || {}) };
                 return reqConfig;
             });
-            const workerAxios = new WorkerWrappedAxios();
 
             let token = store.get('token');
             if (token) {
@@ -885,6 +885,7 @@
                 try {
                     response = await workerAxios.get(`${backendAPI}/tasks/${tid}/data`, {
                         params: {
+                            ...enableOrganization(),
                             quality: 'compressed',
                             type: 'chunk',
                             number: chunk,
@@ -1318,6 +1319,7 @@
                 try {
                     const url = `${backendAPI}/cloudstorages/${id}/preview`;
                     response = await workerAxios.get(url, {
+                        params: enableOrganization(),
                         proxy: config.proxy,
                         responseType: 'arraybuffer',
                     });
