@@ -89,9 +89,9 @@ export default function AnnotationMenuComponent(props: Props): JSX.Element {
         }
 
         if (params.key === Actions.REMOVE_ANNO) {
-            let removeFrom: any;
-            let removeUpTo: any;
-            let removeOnlyKeyframes: any = false;
+            let removeFrom: number;
+            let removeUpTo: number;
+            let removeOnlyKeyframes = false;
             const { Panel } = Collapse;
             Modal.confirm({
                 title: 'Remove Annotations',
