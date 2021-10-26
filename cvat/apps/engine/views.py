@@ -567,11 +567,10 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
         owner = self.request.data.get('owner', None)
         if owner:
             self._validate_task_limit(owner)
-            db_task = serializer.save()
+            serializer.save()
         else:
             self._validate_task_limit(self.request.user)
-            db_task = serializer.save(owner=self.request.user)
-        return db_task
+            serializer.save(owner=self.request.user)
 
     def perform_destroy(self, instance):
         task_dirname = instance.get_task_dirname()

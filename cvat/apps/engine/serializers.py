@@ -220,7 +220,7 @@ class RqStatusSerializer(serializers.Serializer):
         "Queued", "Started", "Finished", "Failed"])
     message = serializers.CharField(allow_blank=True, default="")
 
-class ChunksTagsSerializer(serializers.Serializer):
+class ChunkTagSerializer(serializers.Serializer):
     chunk_number = serializers.IntegerField()
     tag = serializers.CharField()
 
@@ -286,7 +286,7 @@ class DataSerializer(serializers.ModelSerializer):
     cloud_storage_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)
     chunk_number = serializers.IntegerField(required=False)
     chunk_file_name = serializers.CharField(allow_null=True, required=False)
-    chunks_tags = ChunksTagsSerializer(many=True, default=[])
+    chunks_tags = ChunkTagSerializer(many=True, default=[])
 
     class Meta:
         model = models.Data
