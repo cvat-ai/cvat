@@ -1609,7 +1609,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 }
             }
 
-            if (drawnState.rotation) {
+            if (state.rotation) {
                 // now, when points changed, need to rotate it to new angle
                 shape.rotate(state.rotation);
             }
@@ -1951,7 +1951,10 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 this.mode = Mode.IDLE;
 
                 if (resized) {
-                    const { rotation } = shape.transform();
+                    let rotation = Math.round(shape.transform().rotation || 0);
+                    if (rotation < 0) {
+                        rotation = 360 + rotation;
+                    }
                     let points = pointsToNumberArray(
                         shape.attr('points')
                             || `${shape.attr('x')},${shape.attr('y')} `
@@ -2122,6 +2125,10 @@ export class CanvasViewImpl implements CanvasView, Listener {
             })
             .move(xtl, ytl)
             .addClass('cvat_canvas_shape');
+
+        if (state.rotation) {
+            rect.rotate(state.rotation);
+        }
 
         if (state.occluded) {
             rect.addClass('cvat_canvas_shape_occluded');

@@ -429,10 +429,12 @@ class TrackManager(ObjectManager):
 
     @staticmethod
     def get_interpolated_shapes(track, start_frame, end_frame):
-        def copy_shape(source, frame, points=None):
+        def copy_shape(source, frame, points=None, rotation=None):
             copied = deepcopy(source)
             copied["keyframe"] = False
             copied["frame"] = frame
+            if rotation is not None:
+                copied["rotation"] = rotation
             if points is not None:
                 copied["points"] = points
             return copied
@@ -441,12 +443,14 @@ class TrackManager(ObjectManager):
             shapes = []
             distance = shape1["frame"] - shape0["frame"]
             diff = np.subtract(shape1["points"], shape0["points"])
+            rotation_diff = shape1["rotation"] - shape0["rotation"]
 
             for frame in range(shape0["frame"] + 1, shape1["frame"]):
                 offset = (frame - shape0["frame"]) / distance
+                rotation = shape0["rotation"] + rotation_diff * offset
                 points = shape0["points"] + diff * offset
 
-                shapes.append(copy_shape(shape0, frame, points.tolist()))
+                shapes.append(copy_shape(shape0, frame, points.tolist(), rotation))
 
             return shapes
 

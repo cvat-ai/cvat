@@ -100,6 +100,7 @@
                 'occluded',
                 'z_order',
                 'points',
+                'rotation',
                 'type',
                 'shapes',
                 'attributes',

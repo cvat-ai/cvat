@@ -120,10 +120,10 @@ class InstanceLabelData:
 class TaskData(InstanceLabelData):
     Shape = namedtuple("Shape", 'id, label_id')  # 3d
     LabeledShape = namedtuple(
-        'LabeledShape', 'type, frame, label, points, occluded, attributes, source, group, z_order')
+        'LabeledShape', 'type, frame, label, points, rotation, occluded, attributes, source, group, z_order')
     LabeledShape.__new__.__defaults__ = (0, 0)
     TrackedShape = namedtuple(
-        'TrackedShape', 'type, frame, points, occluded, outside, keyframe, attributes, source, group, z_order, label, track_id')
+        'TrackedShape', 'type, frame, points, rotation, occluded, outside, keyframe, attributes, source, group, z_order, label, track_id')
     TrackedShape.__new__.__defaults__ = ('manual', 0, 0, None, 0)
     Track = namedtuple('Track', 'label, group, source, shapes')
     Tag = namedtuple('Tag', 'frame, label, attributes, source, group')
@@ -259,6 +259,7 @@ class TaskData(InstanceLabelData):
             frame=self.abs_frame_id(shape["frame"]),
             label=self._get_label_name(shape["label_id"]),
             points=shape["points"],
+            rotation=shape["rotation"],
             occluded=shape["occluded"],
             z_order=shape.get("z_order", 0),
             group=shape.get("group", 0),
@@ -275,6 +276,7 @@ class TaskData(InstanceLabelData):
             label=self._get_label_name(shape["label_id"]),
             frame=self.abs_frame_id(shape["frame"]),
             points=shape["points"],
+            rotation=shape["rotation"],
             occluded=shape["occluded"],
             z_order=shape.get("z_order", 0),
             group=shape.get("group", 0),
@@ -504,10 +506,10 @@ class TaskData(InstanceLabelData):
         return None
 
 class ProjectData(InstanceLabelData):
-    LabeledShape = NamedTuple('LabledShape', [('type', str), ('frame', int), ('label', str), ('points', List[float]), ('occluded', bool), ('attributes', List[InstanceLabelData.Attribute]), ('source', str), ('group', int), ('z_order', int), ('task_id', int)])
+    LabeledShape = NamedTuple('LabledShape', [('type', str), ('frame', int), ('label', str), ('points', List[float]), ('rotation', int), ('occluded', bool), ('attributes', List[InstanceLabelData.Attribute]), ('source', str), ('group', int), ('z_order', int), ('task_id', int)])
     LabeledShape.__new__.__defaults__ = (0,0)
     TrackedShape = NamedTuple('TrackedShape',
-        [('type', str), ('frame', int), ('points', List[float]), ('occluded', bool), ('outside', bool), ('keyframe', bool), ('attributes', List[InstanceLabelData.Attribute]), ('source', str), ('group', int), ('z_order', int), ('label', str), ('track_id', int)],
+        [('type', str), ('frame', int), ('points', List[float]), ('rotation', int), ('occluded', bool), ('outside', bool), ('keyframe', bool), ('attributes', List[InstanceLabelData.Attribute]), ('source', str), ('group', int), ('z_order', int), ('label', str), ('track_id', int)],
     )
     TrackedShape.__new__.__defaults__ = ('manual', 0, 0, None, 0)
     Track = NamedTuple('Track', [('label', str), ('group', int), ('source', str), ('shapes', List[TrackedShape]), ('task_id', int)])
@@ -640,6 +642,7 @@ class ProjectData(InstanceLabelData):
             frame=self.abs_frame_id(task_id, shape["frame"]),
             label=self._get_label_name(shape["label_id"]),
             points=shape["points"],
+            rotation=shape["rotation"],
             occluded=shape["occluded"],
             z_order=shape.get("z_order", 0),
             group=shape.get("group", 0),
@@ -656,6 +659,7 @@ class ProjectData(InstanceLabelData):
             label=self._get_label_name(shape["label_id"]),
             frame=self.abs_frame_id(task_id, shape["frame"]),
             points=shape["points"],
+            rotation=shape["rotation"],
             occluded=shape["occluded"],
             z_order=shape.get("z_order", 0),
             group=shape.get("group", 0),

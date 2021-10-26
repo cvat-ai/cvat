@@ -215,6 +215,11 @@ def dump_as_cvat_annotation(dumper, annotations):
                     ("xbr", "{:.2f}".format(shape.points[2])),
                     ("ybr", "{:.2f}".format(shape.points[3]))
                 ]))
+
+                if shape.rotation:
+                    dump_data.update(OrderedDict([
+                        ("rotation", "{:.0f}".format(shape.rotation))
+                    ]))
             elif shape.type == "cuboid":
                 dump_data.update(OrderedDict([
                     ("xtl1", "{:.2f}".format(shape.points[0])),
@@ -338,6 +343,11 @@ def dump_as_cvat_interpolation(dumper, annotations):
                     ("xbr", "{:.2f}".format(shape.points[2])),
                     ("ybr", "{:.2f}".format(shape.points[3])),
                 ]))
+
+                if shape.rotation:
+                    dump_data.update(OrderedDict([
+                        ("rotation", "{:.0f}".format(shape.rotation))
+                    ]))
             elif shape.type == "cuboid":
                 dump_data.update(OrderedDict([
                     ("xtl1", "{:.2f}".format(shape.points[0])),
@@ -513,6 +523,7 @@ def load(file_object, annotations):
                 shape['z_order'] = int(el.attrib.get('z_order', 0))
 
                 if el.tag == 'box':
+                    shape['rotation'] = int(el.attrib.get('rotation', 0))
                     shape['points'].append(el.attrib['xtl'])
                     shape['points'].append(el.attrib['ytl'])
                     shape['points'].append(el.attrib['xbr'])
