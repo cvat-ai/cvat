@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+from collections import namedtuple
 import operator
 
 import requests
@@ -259,7 +260,13 @@ class UserPermission(OpenPolicyAgentPermission):
 
         return permissions
 
-    def __init__(self, request, view, obj):
+    @classmethod
+    def create_view(cls, user_id, request):
+        obj = namedtuple('User', ['id'])(id=int(user_id))
+        view = namedtuple('View', ['action'])(action='view')
+        return cls(request, view, obj)
+
+    def __init__(self, request, view, obj=None):
         super().__init__(request, view, obj)
         self.url = settings.IAM_OPA_DATA_URL + '/users/allow'
         self.payload['input']['scope'] = self.scope
@@ -276,7 +283,7 @@ class UserPermission(OpenPolicyAgentPermission):
             'retrieve': 'view',
             'partial_update': 'update',
             'destroy': 'delete'
-        }.get(self.view.action, None)
+        }.get(self.view.action)
 
 class LambdaPermission(OpenPolicyAgentPermission):
     @classmethod
@@ -370,9 +377,23 @@ class ProjectPermission(OpenPolicyAgentPermission):
                 self = cls(scope, request, view, obj)
                 permissions.append(self)
 
+            if view.action == 'tasks':
+                perm = TaskPermission.create_list(request)
+                permissions.append(perm)
+
+            owner = request.data.get('owner_id')
+            if owner:
+                perm = UserPermission.create_view(owner, request)
+                permissions.append(perm)
+
+            assignee = request.data.get('assignee_id')
+            if assignee:
+                perm = UserPermission.create_view(assignee, request)
+                permissions.append(perm)
+
         return permissions
 
-    def __init__(self, scope, request, view, obj):
+    def __init__(self, scope, request, view, obj=None):
         super().__init__(request, view, obj)
         self.url = settings.IAM_OPA_DATA_URL + '/projects/allow'
         self.payload['input']['scope'] = scope
@@ -385,29 +406,49 @@ class ProjectPermission(OpenPolicyAgentPermission):
             'create': 'create',
             'destroy': 'delete',
             'partial_update': 'update',
-            'retrieve': 'view'
+            'retrieve': 'view',
+            'tasks': 'view',
+            'annotations': 'export:annotations',
+            'dataset': 'export:dataset'
         }.get(view.action)
 
+        scopes = []
         if scope == 'update':
-            if 'owner' in request.data:
-                yield [scope + ':owner']
-            if 'assignee' in request.data:
-                yield [scope + ':assignee']
+            if 'owner_id' in request.data:
+                scopes.append(scope + ':owner')
+            if 'assignee_id' in request.data:
+                scopes.append(scope + ':assignee')
             for field in ('name', 'labels', 'bug_tracker'):
                 if field in request.data:
-                    yield [scope + ':desc']
+                    scopes.append(scope + ':desc')
                     break
         else:
-            return [scope]
+            scopes.append(scope)
+
+        return scopes
 
     @property
     def resource(self):
+        data = None
         if self.obj:
-            return {
-                "owner": { "id": self.obj.owner.id },
-                "assignee": { "id": self.obj.assignee.id },
-                "organization": {
+            data = {
+                "id": self.obj.id,
+                "owner": { "id": getattr(self.obj.owner, 'id', None) },
+                "assignee": { "id": getattr(self.obj.assignee, 'id', None) },
+                'organization': {
                     "id": getattr(self.obj.organization, 'id', None)
+                }
+            }
+        elif self.view.action == 'create':
+            organization = self.request.iam_context['organization']
+            data = {
+                "id": None,
+                "owner": { "id": self.request.user.id },
+                "assignee": {
+                    "id": self.request.data.get('assignee_id')
+                },
+                'organization': {
+                    "id": organization.id if organization else None
                 },
                 "user": {
                     "num_resources": Project.objects.filter(
@@ -415,12 +456,21 @@ class ProjectPermission(OpenPolicyAgentPermission):
                 }
             }
 
+        return data
+
+
+
 class TaskPermission(OpenPolicyAgentPermission):
     @classmethod
     def create(cls, request, view, obj):
         return []
 
-    def __init__(self, request, view, obj):
+    @classmethod
+    def create_list(cls, request):
+        view = namedtuple('View', ['action'])(action='view')
+        return cls(request, view)
+
+    def __init__(self, request, view, obj=None):
         super().__init__(request, view, obj)
 
     def get_scope(self, request, view, obj):
