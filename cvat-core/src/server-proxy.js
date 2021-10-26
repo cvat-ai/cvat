@@ -382,6 +382,15 @@
 
                 let response = null;
                 try {
+                    if ('id' in filter) {
+                        response = await Axios.get(`${backendAPI}/projects/${filter.id}`, {
+                            proxy: config.proxy,
+                        });
+                        const results = [response.data];
+                        results.count = 1;
+                        return results;
+                    }
+
                     response = await Axios.get(`${backendAPI}/projects`, {
                         proxy,
                         params: {
@@ -445,6 +454,15 @@
 
                 let response = null;
                 try {
+                    if ('id' in filter) {
+                        response = await Axios.get(`${backendAPI}/tasks/${filter.id}`, {
+                            proxy: config.proxy,
+                        });
+                        const results = [response.data];
+                        results.count = 1;
+                        return results;
+                    }
+
                     response = await Axios.get(`${backendAPI}/tasks`, {
                         params: {
                             ...filter,
