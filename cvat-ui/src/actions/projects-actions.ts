@@ -86,7 +86,7 @@ export function getProjectsAsync(query: Partial<ProjectsQuery>): ThunkAction {
         const array = Array.from(result);
 
         // Appropriate tasks fetching proccess needs with retrieving only a single project
-        if (Object.keys(filteredQuery).includes('id')) {
+        if (array.length && Object.keys(filteredQuery).includes('id')) {
             const tasks: any[] = [];
             const [project] = array;
             const taskPreviewPromises: Promise<string>[] = (project as any).tasks.map((task: any): string => {
