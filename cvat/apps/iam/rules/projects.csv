@@ -1,22 +1,33 @@
 Scope,Resource,Context,Ownership,Limit,Method,URL,Privilege,Membership
-create,Project,Sandbox,N/A,3,POST,/projects,User,N/A
-create,Project,Organization,N/A,3,POST,/projects,User,Supervisor
+create,Project,Sandbox,N/A,"resource[""user""][""num_resources""] < 3",POST,/projects,User,N/A
+create,Project,Organization,N/A,"resource[""user""][""num_resources""] < 3",POST,/projects,User,Supervisor
 create,Project,Sandbox,N/A,,POST,/projects,Business,N/A
 create,Project,Organization,N/A,,POST,/projects,Business,Supervisor
-list,Project,Sandbox,N/A,"filter(organization=None, ownership=[""Owner"", ""Assignee""])",GET,/projects,None,N/A
-list,Project,Organization,N/A,filter(organization),GET,/projects,None,Worker
+list,Project,Sandbox,N/A,,GET,/projects,None,N/A
+list,Project,Organization,N/A,,GET,/projects,None,Worker
 view,Project,Sandbox,None,,GET,/projects/{id},Admin,N/A
-view,Project,N/A,"Owner, Assignee",,GET,/projects/{id},None,N/A
-view,Project,Organization,Organization,,GET,/projects/{id},None,Worker
+view,Project,Sandbox,"Owner, Assignee",,GET,/projects/{id},None,N/A
+view,Project,Organization,"Owner, Assignee, None",,GET,/projects/{id},None,Worker
 delete,Project,Sandbox,"None, Assignee",,DELETE,/projects/{id},Admin,N/A
-delete,Project,N/A,Owner,,DELETE,/projects/{id},Worker,N/A
-delete,Project,Organization,"Organization, Assignee",,DELETE,/projects/{id},User,Maintainer
+delete,Project,Sandbox,Owner,,DELETE,/projects/{id},Worker,N/A
+delete,Project,Organization,Owner,,DELETE,/projects/{id},Worker,Worker
+delete,Project,Organization,"None, Assignee",,DELETE,/projects/{id},User,Maintainer
 update:desc,Project,Sandbox,None,,PATCH,/projects/{id},Admin,N/A
-update:desc,Project,N/A,"Owner, Assignee",,PATCH,/projects/{id},Worker,N/A
-update:desc,Project,Organization,Organization,,PATCH,/projects/{id},User,Maintainer
+update:desc,Project,Sandbox,"Owner, Assignee",,PATCH,/projects/{id},Worker,N/A
+update:desc,Project,Organization,"Owner, Assignee",,PATCH,/projects/{id},Worker,Worker
+update:desc,Project,Organization,None,,PATCH,/projects/{id},User,Maintainer
 update:assignee,Project,Sandbox,"None, Assignee",,PATCH,/projects/{id},Admin,N/A
-update:assignee,Project,N/A,Owner,,PATCH,/projects/{id},Worker,N/A
-update:assignee,Project,Organization,"Organization, Assignee",,PATCH,/projects/{id},User,Maintainer
-update:owner,Project,Sandbox,None,,PATCH,/projects/{id},Admin,N/A
-update:owner,Project,Organization,"Organization, Assignee",,PATCH,/projects/{id},User,Maintainer
+update:assignee,Project,Sandbox,Owner,,PATCH,/projects/{id},Worker,N/A
+update:assignee,Project,Organization,Owner,,PATCH,/projects/{id},Worker,Worker
+update:assignee,Project,Organization,"None, Assignee",,PATCH,/projects/{id},User,Maintainer
+update:owner,Project,Sandbox,"None, Assignee, Owner",,PATCH,/projects/{id},Admin,N/A
+update:owner,Project,Organization,"None, Assignee",,PATCH,/projects/{id},User,Maintainer
 update:owner,Project,Organization,Owner,,PATCH,/projects/{id},Worker,Maintainer
+export:annotations,Project,Sandbox,None,,GET,/projects/{id}/annotations,Admin,N/A
+export:annotations,Project,Sandbox,"Owner, Assignee",,GET,/projects/{id}/annotations,None,N/A
+export:annotations,Project,Organization,"Owner, Assignee",,GET,/projects/{id}/annotations,None,Worker
+export:annotations,Project,Organization,None,,GET,/projects/{id}/annotations,Worker,Supervisor
+export:dataset,Project,Sandbox,None,,GET,/projects/{id}/dataset,Admin,N/A
+export:dataset,Project,Sandbox,"Owner, Assignee",,GET,/projects/{id}/dataset,None,N/A
+export:dataset,Project,Organization,"Owner, Assignee",,GET,/projects/{id}/dataset,None,Worker
+export:dataset,Project,Organization,None,,GET,/projects/{id}/dataset,Worker,Supervisor

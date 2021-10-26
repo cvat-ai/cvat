@@ -33,6 +33,8 @@ RESEND := "resend"
 UPDATE_DESC := "update:desc"
 UPDATE_ASSIGNEE := "update:assignee"
 UPDATE_OWNER := "update:owner"
+EXPORT_ANNOTATIONS := "export:annotations"
+EXPORT_DATASET := "export:dataset"
 
 get_priority(privilege) = priority {
     priority := {
@@ -66,6 +68,10 @@ is_worker {
 
 is_resource_owner {
     input.resource.owner.id == input.auth.user.id
+}
+
+is_resource_assignee {
+    input.resource.assignee.id == input.auth.user.id
 }
 
 is_sandbox {

@@ -516,7 +516,7 @@ class ProjectWithoutTaskSerializer(serializers.ModelSerializer):
             'created_date', 'updated_date', 'status', 'training_project',
             'dimension', 'organization')
         read_only_fields = ('created_date', 'updated_date', 'status', 'owner',
-            'assignee', 'task_subsets', 'dimension')
+            'assignee', 'task_subsets', 'dimension', 'organization')
         ordering = ['-id']
 
     def to_representation(self, instance):

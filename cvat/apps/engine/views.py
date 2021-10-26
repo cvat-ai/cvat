@@ -257,7 +257,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        perm = ProjectPermission('list', self.request, self, None)
+        perm = ProjectPermission('list', self.request, self)
         return perm.filter(queryset)
 
     def perform_create(self, serializer):
