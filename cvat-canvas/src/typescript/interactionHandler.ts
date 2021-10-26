@@ -22,19 +22,33 @@ export interface InteractionHandler {
 
 export class InteractionHandlerImpl implements InteractionHandler {
     private onInteraction: (shapes: InteractionResult[] | null, shapesUpdated?: boolean, isDone?: boolean) => void;
+
     private configuration: Configuration;
+
     private geometry: Geometry;
+
     private canvas: SVG.Container;
+
     private interactionData: InteractionData;
+
     private cursorPosition: { x: number; y: number };
+
     private shapesWereUpdated: boolean;
+
     private interactionShapes: SVG.Shape[];
+
     private currentInteractionShape: SVG.Shape | null;
+
     private crosshair: Crosshair;
+
     private threshold: SVG.Rect | null;
+
     private thresholdRectSize: number;
+
     private intermediateShape: PropType<InteractionData, 'intermediateShape'>;
+
     private drawnIntermediateShape: SVG.Shape;
+
     private thresholdWasModified: boolean;
 
     private prepareResult(): InteractionResult[] {
@@ -310,6 +324,7 @@ export class InteractionHandlerImpl implements InteractionHandler {
     }
 
     private selectize(value: boolean, shape: SVG.Element, erroredShape = false): void {
+        // eslint-disable-next-line @typescript-eslint/no-this-alias
         const self = this;
 
         if (value) {
@@ -450,7 +465,7 @@ export class InteractionHandlerImpl implements InteractionHandler {
         });
 
         window.addEventListener('keydown', (e: KeyboardEvent): void => {
-            if (this.interactionData.enabled && e.keyCode === 17) {
+            if (!e.repeat && this.interactionData.enabled && e.keyCode === 17) {
                 if (this.interactionData.onChangeToolsBlockerState && !this.thresholdWasModified) {
                     this.interactionData.onChangeToolsBlockerState('keydown');
                 }
