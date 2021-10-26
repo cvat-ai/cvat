@@ -110,3 +110,6 @@ You develop CVAT under WSL (Windows subsystem for Linux) following next steps.
   ```
 
 - Run all commands from this installation guide in WSL Ubuntu shell.
+- You might have to manually start the redis server in wsl before you can start the configuration inside
+  Visual Studio Code. You can do this with `sudo service redis-server start`. Alternatively you can also
+  use a redis docker image instead of using the redis-server locally.
