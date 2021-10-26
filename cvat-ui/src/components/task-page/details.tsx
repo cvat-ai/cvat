@@ -12,11 +12,11 @@ import Text from 'antd/lib/typography/Text';
 import Title from 'antd/lib/typography/Title';
 import moment from 'moment';
 
+import Descriptions from 'antd/lib/descriptions';
 import getCore from 'cvat-core-wrapper';
 import { getReposData, syncRepos } from 'utils/git-utils';
 import { ActiveInference } from 'reducers/interfaces';
 import AutomaticAnnotationProgress from 'components/tasks-page/automatic-annotation-progress';
-import Descriptions from 'antd/lib/descriptions';
 import UserSelector, { User } from './user-selector';
 import BugTrackerEditor from './bug-tracker-editor';
 import LabelsEditorComponent from '../labels-editor/labels-editor';
@@ -39,6 +39,7 @@ interface State {
     subset: string;
     repository: string;
     repositoryStatus: string;
+    format: string;
 }
 
 export default class DetailsComponent extends React.PureComponent<Props, State> {
@@ -60,6 +61,7 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
             name: taskInstance.name,
             subset: taskInstance.subset,
             repository: '',
+            format: '',
             repositoryStatus: '',
         };
     }
@@ -100,6 +102,7 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
 
                     this.setState({
                         repository: data.url,
+                        format: data.format,
                     });
                 }
             })
@@ -203,7 +206,7 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
 
     private renderDatasetRepository(): JSX.Element | boolean {
         const { taskInstance } = this.props;
-        const { repository, repositoryStatus } = this.state;
+        const { repository, repositoryStatus, format } = this.state;
 
         return (
             !!repository && (
@@ -216,6 +219,14 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
                         <a href={repository} rel='noopener noreferrer' target='_blank'>
                             {repository}
                         </a>
+                        <br />
+                        <p>
+                            Using format
+                            {' '}
+                            <Text strong>
+                                {format}
+                            </Text>
+                        </p>
                         {repositoryStatus === 'sync' && (
                             <Tag color='blue'>
                                 <CheckCircleOutlined />

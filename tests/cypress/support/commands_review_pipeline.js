@@ -95,31 +95,41 @@ Cypress.Commands.add('checkIssueRegion', () => {
     const sccSelectorIssueRegionId = '#cvat_canvas_issue_region_';
     cy.collectIssueRegionId().then((issueRegionIdList) => {
         const maxId = Math.max(...issueRegionIdList);
-        cy.get(`${sccSelectorIssueRegionId}${maxId}`).trigger('mousemove').should('exist').and('be.visible');
+        cy.get(`${sccSelectorIssueRegionId}${maxId}`)
+            .trigger('mousemove')
+            .should('be.visible');
     });
 });
 
 Cypress.Commands.add('createIssueFromObject', (object, issueType, customeIssueDescription) => {
-    cy.get(object).trigger('mousemove').rightclick();
-    cy.get('.cvat-canvas-context-menu').within(() => {
-        cy.contains('.cvat-context-menu-item', new RegExp(`^${issueType}$`, 'g')).click();
+    cy.get(object).then(($object) => {
+        const objectFillOpacity = $object.attr('fill-opacity');
+        cy.get($object)
+            .trigger('mousemove')
+            .trigger('mouseover')
+            .should('have.attr', 'fill-opacity', Number(objectFillOpacity) * 10)
+            .rightclick();
+    });
+    cy.get('.cvat-canvas-context-menu').should('be.visible').within(() => {
+        cy.contains('.cvat-context-menu-item', new RegExp(`^${issueType}$`)).click();
     });
     if (issueType === 'Open an issue ...') {
-        cy.get('.cvat-create-issue-dialog').within(() => {
+        cy.get('.cvat-create-issue-dialog').should('be.visible').within(() => {
             cy.get('#issue_description').type(customeIssueDescription);
             cy.get('[type="submit"]').click();
         });
     } else if (issueType === 'Quick issue ...') {
         cy.get('.cvat-quick-issue-from-latest-item')
             .should('be.visible')
-            .contains('.cvat-context-menu-item', new RegExp(`^${customeIssueDescription}$`, 'g'))
+            .contains('.cvat-context-menu-item', new RegExp(`^${customeIssueDescription}$`))
             .click();
     }
+    cy.get('.cvat-canvas-context-menu').should('not.exist');
     cy.checkIssueRegion();
 });
 
 Cypress.Commands.add('createIssueFromControlButton', (createIssueParams) => {
-    cy.get('.cvat-issue-control').click();
+    cy.get('.cvat-issue-control').click().should('have.class', 'cvat-active-canvas-control');
     if (createIssueParams.type === 'rectangle') {
         cy.get('.cvat-canvas-container')
             .trigger('mousedown', createIssueParams.firstX, createIssueParams.firstY, { button: 0 })
