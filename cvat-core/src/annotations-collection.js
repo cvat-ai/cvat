@@ -553,14 +553,40 @@
             return groupIdx;
         }
 
-        clear() {
-            this.shapes = {};
-            this.tags = {};
-            this.tracks = [];
-            this.objects = {}; // by id
-            this.count = 0;
+        clear(startframe, endframe, delTrackKeyframesOnly) {
+            if (startframe !== undefined && endframe !== undefined) {
+                // If only a range of annotations need to be cleared
+                for (let frame = startframe; frame <= endframe; frame++) {
+                    this.shapes[frame] = [];
+                    this.tags[frame] = [];
+                }
+                const { tracks } = this;
+                tracks.forEach((track) => {
+                    if (track.frame <= endframe) {
+                        if (delTrackKeyframesOnly) {
+                            for (const keyframe in track.shapes) {
+                                if (keyframe >= startframe && keyframe <= endframe) { delete track.shapes[keyframe]; }
+                            }
+                        } else if (track.frame >= startframe) {
+                            const index = tracks.indexOf(track);
+                            if (index > -1) { tracks.splice(index, 1); }
+                        }
+                    }
+                });
+            } else if (startframe === undefined && endframe === undefined) {
+                // If all annotations need to be cleared
+                this.shapes = {};
+                this.tags = {};
+                this.tracks = [];
+                this.objects = {}; // by id
+                this.count = 0;
 
-            this.flush = true;
+                this.flush = true;
+            } else {
+                // If inputs provided were wrong
+                throw Error('Could not remove the annotations, please provide both inputs or'
+                + ' leave the inputs below empty to remove all the annotations from this job');
+            }
         }
 
         statistics() {
