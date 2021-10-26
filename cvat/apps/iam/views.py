@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+from django.core.exceptions import BadRequest
 from django.utils.functional import SimpleLazyObject
 from rest_framework import views
 from rest_framework.exceptions import ValidationError
@@ -24,19 +25,24 @@ def get_context(request):
     groups = list(request.user.groups.filter(name__in=list(IAM_ROLES.keys())))
     groups.sort(key=lambda group: IAM_ROLES[group.name])
 
-    org_slug = request.GET.get('org', None)
     organization = None
     membership = None
-    if org_slug:
-        organization = Organization.objects.get(slug=org_slug)
-        membership = Membership.objects.filter(organization=organization,
-            user=request.user).first()
-    else:
-        org_id = request.GET.get('org_id', None)
-        if org_id:
-            organization = Organization.objects.get(id=int(org_id))
+    try:
+        org_slug = request.GET.get('org')
+        org_id = request.GET.get('org_id')
+        if org_slug and org_id:
+            raise BadRequest('You cannot specify org and org_id query parameters at the same time.')
+
+        if org_slug:
+            organization = Organization.objects.get(slug=org_slug)
             membership = Membership.objects.filter(organization=organization,
                 user=request.user).first()
+        elif org_id:
+                organization = Organization.objects.get(id=int(org_id))
+                membership = Membership.objects.filter(organization=organization,
+                    user=request.user).first()
+    except Organization.DoesNotExist:
+        raise BadRequest(f'{org_slug or org_id} organization does not exist.')
 
     if membership and not membership.is_active:
         membership = None

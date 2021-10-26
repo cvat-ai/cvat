@@ -541,4 +541,16 @@ class PolicyEnforcer(BasePermission):
     def has_object_permission(self, request, view, obj):
         return self.check_permission(request, view, obj)
 
+class IsMemberInOrganization(BasePermission):
+    message = 'You should be an active member in the organization.'
 
+    # pylint: disable=no-self-use
+    def has_permission(self, request, view):
+        user = request.user
+        organization = request.iam_context['organization']
+        membership = request.iam_context['membership']
+
+        if organization and not user.is_superuser:
+            return membership is not None
+
+        return True

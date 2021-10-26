@@ -135,6 +135,7 @@ SITE_ID = 1
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
+        'cvat.apps.iam.permissions.IsMemberInOrganization',
         'cvat.apps.iam.permissions.PolicyEnforcer',
     ],
     'DEFAULT_AUTHENTICATION_CLASSES': [

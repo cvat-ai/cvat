@@ -27,7 +27,7 @@ class Membership(models.Model):
     OWNER = 'owner'
 
     user = models.ForeignKey(get_user_model(), on_delete=models.CASCADE,
-        null=True, related_name='+')
+        null=True, related_name='memberships')
     organization = models.ForeignKey(Organization, on_delete=models.CASCADE,
         related_name='members')
     is_active = models.BooleanField(default=False)
