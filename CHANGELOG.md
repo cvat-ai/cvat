@@ -39,7 +39,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Incorrect work when copy job list with "Copy" button (<https://github.com/openvinotoolkit/cvat/pull/3749>)
 - Iterating over manifest (<https://github.com/openvinotoolkit/cvat/pull/3792>)
 - Manifest removing (<https://github.com/openvinotoolkit/cvat/pull/3791>)
-- Fixed dextr deployment (https://github.com/openvinotoolkit/cvat/issues/3819)
+- Fixed dextr deployment (<https://github.com/openvinotoolkit/cvat/pull/3820>)
 
 ### Security
 
