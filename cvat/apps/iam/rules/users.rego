@@ -1,8 +1,9 @@
 package users
 import data.utils
+import data.organizations
 
 # input: {
-#     "scope": <"list"|"view"|"view:self"|"delete"|"update"> or null,
+#     "scope": <"list"|"view"|"delete"|"update"> or null,
 #     "auth": {
 #         "user": {
 #             "id": <num>,
@@ -19,7 +20,10 @@ import data.utils
 #         } or null,
 #     },
 #     "resource": {
-#         "id": <num>
+#         "id": <num>,
+#         "membership": {
+#             "role": <"owner"|"maintainer"|"supervisor"|"worker"> or null
+#         }
 #     } or null,
 # }
 
@@ -29,20 +33,31 @@ allow {
 }
 
 allow {
-    input.scope == utils.VIEW_SELF
+    input.scope == utils.LIST
+}
+
+filter = [] { # Django Q object to filter list of entries
+    utils.is_admin
+    utils.is_sandbox
+} else = qobject {
+    utils.is_sandbox
+    qobject := [ {"id": input.auth.user.id} ]
+} else = qobject {
+    org_id := input.auth.organization.id
+    qobject := [ {"memberships__organization": org_id} ]
 }
 
 allow {
     input.scope == utils.VIEW
-    input.auth.user.id == input.resource.id
+    input.resource.id == input.auth.user.id
 }
 
 allow {
-    input.scope == utils.UPDATE
-    input.auth.user.id == input.resource.id
+    input.scope == utils.VIEW
+    input.resource.membership.role != null
 }
 
 allow {
-    input.scope == utils.DELETE
+    { utils.UPDATE, utils.DELETE }[input.scope]
     input.auth.user.id == input.resource.id
 }

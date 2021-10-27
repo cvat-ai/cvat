@@ -270,20 +270,40 @@ class UserPermission(OpenPolicyAgentPermission):
         super().__init__(request, view, obj)
         self.url = settings.IAM_OPA_DATA_URL + '/users/allow'
         self.payload['input']['scope'] = self.scope
-        if obj:
-            self.payload['input']['resource'] = {
-                'id': obj.id
-            }
+        self.payload['input']['resource'] = self.resource
 
     @property
     def scope(self):
         return {
             'list': 'list',
-            'self': 'view:self',
+            'self': 'view',
             'retrieve': 'view',
             'partial_update': 'update',
             'destroy': 'delete'
         }.get(self.view.action)
+
+    @property
+    def resource(self):
+        data = None
+        organization = self.payload['input']['auth']['organization']
+        if self.obj:
+            data = {
+                'id': self.obj.id
+            }
+        elif self.view.action == 'self':
+            data = {
+                'id': self.request.user.id
+            }
+
+        if data:
+            data.update({
+                'membership': {
+                    'role': organization['user']['role']
+                        if organization else None
+                }
+            })
+
+        return data
 
 class LambdaPermission(OpenPolicyAgentPermission):
     @classmethod

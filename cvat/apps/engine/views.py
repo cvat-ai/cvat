@@ -1049,6 +1049,11 @@ class UserViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     search_fields = ('username', 'first_name', 'last_name')
     filterset_class = UserFilter
 
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        perm = UserPermission(self.request, self)
+        return perm.filter(queryset)
+
     def get_serializer_class(self):
         user = self.request.user
         if user.is_staff:
