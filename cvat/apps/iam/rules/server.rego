@@ -10,11 +10,13 @@ import data.utils
 #         },
 #         "organization": {
 #             "id": <num>,
-#             "owner": { "id": <num> },
+#             "owner": {
+#                 "id": <num>
+#             },
 #             "user": {
 #                 "role": <"owner"|"maintainer"|"supervisor"|"worker"> or null
 #             }
-#         } or null
+#         } or null,
 #     }
 # }
 

@@ -71,10 +71,10 @@ filter = [] { # Django Q object to filter list of entries
     qobject := [ {"organization": input.auth.organization.id} ]
 } else = qobject {
     utils.is_sandbox
-    qobject := [ {"owner_id": input.auth.user} ]
+    qobject := [ {"owner": input.auth.user.id} ]
 } else = qobject {
     utils.is_organization
-    qobject := [ {"owner_id": input.auth.user}, {"organization": input.auth.organization.id}, "&" ]
+    qobject := [ {"owner": input.auth.user.id}, {"organization": input.auth.organization.id}, "&" ]
 }
 
 allow {

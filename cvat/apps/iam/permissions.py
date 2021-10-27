@@ -49,34 +49,31 @@ class OpenPolicyAgentPermission:
         return r.json()['result']
 
     def filter(self, queryset):
-        if self.view.action == 'list':
-            url = self.url.replace('/allow', '/filter')
-            r = requests.post(url, json=self.payload)
-            qobjects = []
-            ops_dict = {
-                '|': operator.or_,
-                '&': operator.and_,
-                '~': operator.not_,
-            }
-            for token in r.json()['result']:
-                if isinstance(token, str):
-                    val1 = qobjects.pop()
-                    if token == '~':
-                        qobjects.append(ops_dict[token](val1))
-                    else:
-                        val2 = qobjects.pop()
-                        qobjects.append(ops_dict[token](val1, val2))
+        url = self.url.replace('/allow', '/filter')
+        r = requests.post(url, json=self.payload)
+        qobjects = []
+        ops_dict = {
+            '|': operator.or_,
+            '&': operator.and_,
+            '~': operator.not_,
+        }
+        for token in r.json()['result']:
+            if isinstance(token, str):
+                val1 = qobjects.pop()
+                if token == '~':
+                    qobjects.append(ops_dict[token](val1))
                 else:
-                    qobjects.append(Q(**token))
-
-            if qobjects:
-                assert len(qobjects) == 1
+                    val2 = qobjects.pop()
+                    qobjects.append(ops_dict[token](val1, val2))
             else:
-                qobjects.append(Q())
+                qobjects.append(Q(**token))
 
-            return queryset.filter(qobjects[0])
+        if qobjects:
+            assert len(qobjects) == 1
         else:
-            return queryset
+            qobjects.append(Q())
+
+        return queryset.filter(qobjects[0])
 
 class OrganizationPermission(OpenPolicyAgentPermission):
     @classmethod
