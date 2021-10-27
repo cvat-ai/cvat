@@ -564,23 +564,13 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
             raise serializers.ValidationError(
                 "Unexpected action specified for the request")
 
-    def update(self, request, *args, **kwargs):
-        partial = kwargs.pop('partial', False)
+    def perform_update(self, serializer):
         instance = self.get_object()
         project_id = instance.project_id
-        serializer = self.get_serializer(instance, data=request.data, partial=partial)
-        serializer.is_valid(raise_exception=True)
-        self.perform_update(serializer)
-
-        if getattr(instance, '_prefetched_objects_cache', None):
-            # If 'prefetch_related' has been applied to a queryset, we need to
-            # forcibly invalidate the prefetch cache on the instance.
-            instance._prefetched_objects_cache = {}
-        if project_id != instance.project_id:
-            db_projects = Project.objects.filter(id__in=(project_id, instance.project_id))
-            db_projects.update(updated_date=timezone.now())
-
-        return Response(serializer.data)
+        updated_instance = serializer.save()
+        if project_id != updated_instance.project_id:
+            Project.objects.get(id=project_id).save()
+            Project.objects.get(id=updated_instance.project_id).save()
 
     def perform_create(self, serializer):
         owner = self.request.data.get('owner', None)
@@ -592,7 +582,6 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
             instance = serializer.save(owner=self.request.user)
         if instance.project:
             db_project = instance.project
-            db_project.updated_date = timezone.now()
             db_project.save()
 
     def perform_destroy(self, instance):
@@ -604,7 +593,6 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
             instance.data.delete()
         if instance.project:
             db_project = instance.project
-            db_project.updated_date = timezone.now()
             db_project.save()
 
     @swagger_auto_schema(method='get', operation_summary='Returns a list of jobs for a specific task',
