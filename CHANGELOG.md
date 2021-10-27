@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Progress bar for manifest creating (<https://github.com/openvinotoolkit/cvat/pull/3712>)
 - Add a tutorial on attaching cloud storage AWS-S3 (<https://github.com/openvinotoolkit/cvat/pull/3745>)
   and Azure Blob Container (<https://github.com/openvinotoolkit/cvat/pull/3778>)
+- The feature to remove annotations in a specified range of frames (<https://github.com/openvinotoolkit/cvat/pull/3617>)
 
 ### Changed
 
@@ -40,10 +41,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Iterating over manifest (<https://github.com/openvinotoolkit/cvat/pull/3792>)
 - Manifest removing (<https://github.com/openvinotoolkit/cvat/pull/3791>)
 - Fixed project updated date (<https://github.com/openvinotoolkit/cvat/pull/3814>)
+- Fixed dextr deployment (<https://github.com/openvinotoolkit/cvat/pull/3820>)
+- Migration of `dataset_repo` application (<https://github.com/openvinotoolkit/cvat/pull/3827>)
 
 ### Security
 
-- TDB
+- Fix security issues on the documentation website unsafe use of target blank
+  and potential clickjacking on legacy browsers (<https://github.com/openvinotoolkit/cvat/pull/3789>)
 
 ## \[1.6.0] - 2021-09-17
 

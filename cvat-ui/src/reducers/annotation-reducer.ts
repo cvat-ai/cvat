@@ -917,16 +917,19 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
             };
         }
+        // Added Remove Annotations
         case AnnotationActionTypes.REMOVE_JOB_ANNOTATIONS_SUCCESS: {
             const { history } = action.payload;
+            const { states } = action.payload;
             return {
                 ...state,
                 annotations: {
                     ...state.annotations,
                     history,
+                    states,
+                    selectedStatesID: [],
                     activatedStateID: null,
                     collapsed: {},
-                    states: [],
                 },
             };
         }
