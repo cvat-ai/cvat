@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 module.exports = {
+    root: true,
     env: {
         node: true,
         browser: true,

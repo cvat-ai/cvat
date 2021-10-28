@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -8,6 +8,7 @@ module.exports = {
         sourceType: 'module',
         ecmaVersion: 2018,
     },
+    ignorePatterns: ['.eslintrc.js', 'webpack.config.js', 'src/3rdparty/**', 'node_modules/**', 'dist/**'],
     plugins: ['security', 'no-unsanitized', 'no-unsafe-innerhtml'],
     extends: ['eslint:recommended', 'plugin:security/recommended', 'plugin:no-unsanitized/DOM', 'airbnb-base'],
     rules: {

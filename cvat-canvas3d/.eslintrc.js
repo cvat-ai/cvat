@@ -12,6 +12,12 @@ module.exports = {
         project: './tsconfig.json',
         tsconfigRootDir: __dirname,
     },
+    ignorePatterns: [
+        '.eslintrc.js',
+        'webpack.config.js',
+        'node_modules/**',
+        'dist/**',
+    ],
     plugins: ['@typescript-eslint', 'import'],
     extends: [
         'plugin:@typescript-eslint/recommended',
@@ -20,7 +26,6 @@ module.exports = {
         'plugin:import/warnings',
         'plugin:import/typescript',
     ],
-    ignorePatterns: ['.eslintrc.js'],
     rules: {
         '@typescript-eslint/no-explicit-any': 0,
         '@typescript-eslint/indent': ['warn', 4],

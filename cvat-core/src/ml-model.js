@@ -101,7 +101,12 @@ class MLModel {
     }
 
     /**
-     * @param {(event:string)=>void} onChangeToolsBlockerState Set canvas onChangeToolsBlockerState callback
+     * @callback onRequestStatusChange
+     * @param {string} event
+     * @global
+     */
+    /**
+     * @param {onRequestStatusChange} onRequestStatusChange Set canvas onChangeToolsBlockerState callback
      * @returns {void}
      */
     set onChangeToolsBlockerState(onChangeToolsBlockerState) {

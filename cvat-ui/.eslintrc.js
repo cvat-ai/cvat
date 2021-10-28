@@ -20,7 +20,12 @@ module.exports = {
         'plugin:import/warnings',
         'plugin:import/typescript',
     ],
-    ignorePatterns: ['.eslintrc.js'],
+    ignorePatterns: [
+        '.eslintrc.js',
+        'webpack.config.js',
+        'node_modules/**',
+        'dist/**',
+    ],
     rules: {
         '@typescript-eslint/indent': ['warn', 4],
         '@typescript-eslint/lines-between-class-members': 0,

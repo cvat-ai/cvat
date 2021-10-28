@@ -6,6 +6,12 @@ module.exports = {
     env: {
         node: true,
     },
+    ignorePatterns: [
+        '.eslintrc.js',
+        'webpack.config.js',
+        'node_modules/**',
+        'dist/**',
+    ],
     parserOptions: {
         parser: '@typescript-eslint/parser',
         ecmaVersion: 6,
@@ -20,7 +26,6 @@ module.exports = {
         'plugin:import/warnings',
         'plugin:import/typescript',
     ],
-    ignorePatterns: ['.eslintrc.js'],
     rules: {
         '@typescript-eslint/no-explicit-any': 0,
         '@typescript-eslint/indent': ['warn', 4],
