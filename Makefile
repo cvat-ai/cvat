@@ -16,7 +16,6 @@ prod-deploy:
 	docker-compose \
 	    -f docker-compose.yml \
 			-f docker-compose.dev.yml \
-			-f docker-compose.production.yml \
 			-f components/analytics/docker-compose.analytics.yml \
 			up --detach --build
 

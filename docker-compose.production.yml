@@ -1,7 +1,0 @@
-version: '3.3'
-services:
-  cvat_proxy:
-    environment:
-      CVAT_HOST: .cvat.voxelsafety.com
-    ports:
-      - '80:80'

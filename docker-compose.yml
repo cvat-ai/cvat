@@ -42,7 +42,7 @@ services:
     labels:
       - traefik.enable=true
       - traefik.http.services.cvat.loadbalancer.server.port=8080
-      - traefik.http.routers.cvat.rule=Host(`${CVAT_HOST:-localhost}`) &&
+      - traefik.http.routers.cvat.rule=(Host(`cvat.voxelsafety.com`) || Host(`localhost`)) &&
           PathPrefix(`/api/`, `/git/`, `/opencv/`, `/analytics/`, `/static/`, `/admin`, `/documentation/`, `/django-rq`)
       - traefik.http.routers.cvat.entrypoints=web
     volumes:
@@ -62,7 +62,7 @@ services:
     labels:
       - traefik.enable=true
       - traefik.http.services.cvat-ui.loadbalancer.server.port=80
-      - traefik.http.routers.cvat-ui.rule=Host(`${CVAT_HOST:-localhost}`)
+      - traefik.http.routers.cvat-ui.rule=(Host(`cvat.voxelsafety.com`) || Host(`localhost`))
       - traefik.http.routers.cvat-ui.entrypoints=web
     networks:
       - cvat
@@ -86,6 +86,7 @@ services:
     ports:
       - 8080:8080
       - 8090:8090
+      - 80:8080
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
     networks:
