@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2020 Intel Corporation
+// Copyright (C) 2019-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -108,7 +108,7 @@ class CanvasImpl implements Canvas {
         this.model.rotate(rotationAngle);
     }
 
-    public focus(clientID: number, padding: number = 0): void {
+    public focus(clientID: number, padding = 0): void {
         this.model.focus(clientID, padding);
     }
 

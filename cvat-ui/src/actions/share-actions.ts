@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -17,11 +17,12 @@ export enum ShareActionTypes {
 
 const shareActions = {
     loadShareData: () => createAction(ShareActionTypes.LOAD_SHARE_DATA),
-    loadShareDataSuccess: (values: ShareFileInfo[], directory: string) =>
+    loadShareDataSuccess: (values: ShareFileInfo[], directory: string) => (
         createAction(ShareActionTypes.LOAD_SHARE_DATA_SUCCESS, {
             values,
             directory,
-        }),
+        })
+    ),
     loadShareDataFailed: (error: any) => createAction(ShareActionTypes.LOAD_SHARE_DATA_FAILED, { error }),
 };
 

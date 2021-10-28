@@ -637,18 +637,17 @@ export function getPredictionsAsync(): ThunkAction {
                 return;
             }
             annotations = annotations.map(
-                (data: any): any =>
-                    new cvat.classes.ObjectState({
-                        shapeType: data.type,
-                        label: job.task.labels.filter((label: any): boolean => label.id === data.label)[0],
-                        points: data.points,
-                        objectType: ObjectType.SHAPE,
-                        frame,
-                        occluded: false,
-                        source: 'auto',
-                        attributes: {},
-                        zOrder: curZOrder,
-                    }),
+                (data: any): any => new cvat.classes.ObjectState({
+                    shapeType: data.type,
+                    label: job.task.labels.filter((label: any): boolean => label.id === data.label)[0],
+                    points: data.points,
+                    objectType: ObjectType.SHAPE,
+                    frame,
+                    occluded: false,
+                    source: 'auto',
+                    attributes: {},
+                    zOrder: curZOrder,
+                }),
             );
 
             dispatch({
