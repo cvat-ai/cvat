@@ -10,7 +10,7 @@ from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.files.storage import FileSystemStorage
 from django.db import models
-from django.db.models.fields import FloatField, PositiveIntegerField
+from django.db.models.fields import FloatField
 from django.utils.translation import gettext_lazy as _
 
 from cvat.apps.engine.utils import parse_specific_attributes
