@@ -32,8 +32,6 @@ const defaultState: TasksState = {
         mode: null,
     },
     activities: {
-        dumps: {},
-        exports: {},
         loads: {},
         deletes: {},
         creates: {
@@ -85,84 +83,6 @@ export default (state: TasksState = defaultState, action: AnyAction): TasksState
                 initialized: true,
                 fetching: false,
             };
-        case TasksActionTypes.DUMP_ANNOTATIONS: {
-            const { task } = action.payload;
-            const { dumper } = action.payload;
-            const { dumps } = state.activities;
-
-            dumps[task.id] =
-                task.id in dumps && !dumps[task.id].includes(dumper.name) ?
-                    [...dumps[task.id], dumper.name] :
-                    dumps[task.id] || [dumper.name];
-
-            return {
-                ...state,
-                activities: {
-                    ...state.activities,
-                    dumps: {
-                        ...dumps,
-                    },
-                },
-            };
-        }
-        case TasksActionTypes.DUMP_ANNOTATIONS_FAILED:
-        case TasksActionTypes.DUMP_ANNOTATIONS_SUCCESS: {
-            const { task } = action.payload;
-            const { dumper } = action.payload;
-            const { dumps } = state.activities;
-
-            dumps[task.id] = dumps[task.id].filter((dumperName: string): boolean => dumperName !== dumper.name);
-
-            return {
-                ...state,
-                activities: {
-                    ...state.activities,
-                    dumps: {
-                        ...dumps,
-                    },
-                },
-            };
-        }
-        case TasksActionTypes.EXPORT_DATASET: {
-            const { task } = action.payload;
-            const { exporter } = action.payload;
-            const { exports: activeExports } = state.activities;
-
-            activeExports[task.id] =
-                task.id in activeExports && !activeExports[task.id].includes(exporter.name) ?
-                    [...activeExports[task.id], exporter.name] :
-                    activeExports[task.id] || [exporter.name];
-
-            return {
-                ...state,
-                activities: {
-                    ...state.activities,
-                    exports: {
-                        ...activeExports,
-                    },
-                },
-            };
-        }
-        case TasksActionTypes.EXPORT_DATASET_FAILED:
-        case TasksActionTypes.EXPORT_DATASET_SUCCESS: {
-            const { task } = action.payload;
-            const { exporter } = action.payload;
-            const { exports: activeExports } = state.activities;
-
-            activeExports[task.id] = activeExports[task.id].filter(
-                (exporterName: string): boolean => exporterName !== exporter.name,
-            );
-
-            return {
-                ...state,
-                activities: {
-                    ...state.activities,
-                    exports: {
-                        ...activeExports,
-                    },
-                },
-            };
-        }
         case TasksActionTypes.LOAD_ANNOTATIONS: {
             const { task } = action.payload;
             const { loader } = action.payload;

@@ -2,6 +2,7 @@
 title: 'Review'
 linkTitle: 'Review'
 weight: 22
+description: 'Guide to using the Review mode for task validation.'
 ---
 
 A special mode to check the annotation allows you to point to an object or area in the frame containing an error.

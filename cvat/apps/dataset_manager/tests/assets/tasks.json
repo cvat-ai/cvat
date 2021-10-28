@@ -282,17 +282,20 @@
       }
     ]
   },
-  "many jobs": {
-    "name": "many jobs",
+  "task in project #1": {
+    "name": "First task in project",
+    "project_id": 1,
     "overlap": 0,
-    "segment_size": 5,
+    "segment_size": 100,
     "owner_id": 1,
-    "labels": [
-      {
-        "name": "car",
-        "color": "#2080c0",
-        "attributes": []
-      }
-    ]
+    "assignee_id": 2
+  },
+  "task in project #2": {
+    "name": "Second task in project",
+    "project_id": 1,
+    "overlap": 0,
+    "segment_size": 100,
+    "owner_id": 1,
+    "assignee_id": 2
   }
 }

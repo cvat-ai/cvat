@@ -1,5 +1,4 @@
 {
-    "eslint.enable": true,
     "eslint.probe": [
         "javascript",
         "typescript",
@@ -24,5 +23,14 @@
     "python.linting.pycodestyleEnabled": false,
     "licenser.license": "Custom",
     "licenser.customHeader": "Copyright (C) @YEAR@ Intel Corporation\n\nSPDX-License-Identifier: MIT",
-    "files.trimTrailingWhitespace": true
+    "files.trimTrailingWhitespace": true,
+    "python.pythonPath": ".env/bin/python",
+    "sqltools.connections": [
+        {
+            "previewLimit": 50,
+            "driver": "SQLite",
+            "name": "cvat",
+            "database": "${workspaceFolder:cvat}/db.sqlite3"
+        }
+    ]
 }

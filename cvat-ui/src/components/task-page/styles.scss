@@ -88,9 +88,7 @@
 .cvat-task-preview-wrapper {
     overflow: hidden;
     margin-bottom: 20px;
-    width: $grid-unit-size * 32;
     height: $grid-unit-size * 18;
-    display: table-cell;
     text-align: center;
     vertical-align: middle;
     background-color: $background-color-2;
@@ -98,7 +96,6 @@
 
 .cvat-task-parameters {
     margin-top: $grid-unit-size * 2;
-    width: $grid-unit-size * 32;
 }
 
 .cvat-open-bug-tracker-button {

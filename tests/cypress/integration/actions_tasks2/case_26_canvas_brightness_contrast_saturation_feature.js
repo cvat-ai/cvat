@@ -5,6 +5,7 @@
 /// <reference types="cypress" />
 
 import { taskName } from '../../support/const';
+import { generateString } from '../../support/utils';
 
 context('Canvas brightness/contrast/saturation feature', () => {
     const caseId = '26';
@@ -16,14 +17,6 @@ context('Canvas brightness/contrast/saturation feature', () => {
         '.cvat-image-setups-contrast',
         '.cvat-image-setups-saturation',
     ];
-
-    function generateStringCountAction(countAction) {
-        let stringAction = '';
-        for (let i = 0; i < countAction; i++) {
-            stringAction += '{rightarrow}';
-        }
-        return stringAction;
-    }
 
     function checkStateValuesInBackground(expectedValue) {
         cy.get('#cvat_canvas_background')
@@ -41,7 +34,7 @@ context('Canvas brightness/contrast/saturation feature', () => {
 
     describe(`Testing case "${caseId}"`, () => {
         it('Check apply of settings', () => {
-            let stringAction = generateStringCountAction(countActionMoveSlider);
+            let stringAction = generateString(countActionMoveSlider, 'rightarrow');
             cy.get('.cvat-canvas-image-setups-content').within(() => {
                 cy.wrap(classNameSliders).each(($el) => {
                     cy.wrap($el)

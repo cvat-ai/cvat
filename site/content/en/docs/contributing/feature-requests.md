@@ -2,6 +2,7 @@
 title: 'Feature requests'
 linkTitle: 'Feature requests'
 weight: 8
+description: 'Information on requesting new features.'
 ---
 
 Feature requests are welcome. But take a moment to find out whether your idea

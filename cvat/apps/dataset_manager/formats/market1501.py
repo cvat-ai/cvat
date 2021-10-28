@@ -7,15 +7,15 @@ from tempfile import TemporaryDirectory
 
 from datumaro.components.dataset import Dataset
 from datumaro.components.extractor import (AnnotationType, Label,
-    LabelCategories, Transform)
+    LabelCategories, ItemTransform)
 
-from cvat.apps.dataset_manager.bindings import (CvatTaskDataExtractor,
+from cvat.apps.dataset_manager.bindings import (GetCVATDataExtractor,
     import_dm_annotations)
 from cvat.apps.dataset_manager.util import make_zip_archive
 
 from .registry import dm_env, exporter, importer
 
-class AttrToLabelAttr(Transform):
+class AttrToLabelAttr(ItemTransform):
     def __init__(self, extractor, label):
         super().__init__(extractor)
 
@@ -31,13 +31,14 @@ class AttrToLabelAttr(Transform):
         return self._categories
 
     def transform_item(self, item):
-        annotations = item.annotations
+        annotations = list(item.annotations)
+        attributes = item.attributes
         if item.attributes:
             annotations.append(Label(self._label, attributes=item.attributes))
-            item.attributes = {}
-        return item.wrap(annotations=annotations)
+            attributes = {}
+        return item.wrap(annotations=annotations, attributes=attributes)
 
-class LabelAttrToAttr(Transform):
+class LabelAttrToAttr(ItemTransform):
     def __init__(self, extractor, label):
         super().__init__(extractor)
 
@@ -46,8 +47,8 @@ class LabelAttrToAttr(Transform):
         self._label = label_cat.find(label)[0]
 
     def transform_item(self, item):
-        annotations = item.annotations
-        attributes = item.attributes
+        annotations = list(item.annotations)
+        attributes = dict(item.attributes)
         if self._label != None:
             labels = [ann for ann in annotations
                 if ann.type == AnnotationType.label \
@@ -59,19 +60,19 @@ class LabelAttrToAttr(Transform):
 
 
 @exporter(name='Market-1501', ext='ZIP', version='1.0')
-def _export(dst_file, task_data, save_images=False):
-    dataset = Dataset.from_extractors(CvatTaskDataExtractor(
-        task_data, include_images=save_images), env=dm_env)
+def _export(dst_file, instance_data, save_images=False):
+    dataset = Dataset.from_extractors(GetCVATDataExtractor(
+        instance_data, include_images=save_images), env=dm_env)
     with TemporaryDirectory() as temp_dir:
         dataset.transform(LabelAttrToAttr, 'market-1501')
         dataset.export(temp_dir, 'market1501', save_images=save_images)
         make_zip_archive(temp_dir, dst_file)
 
 @importer(name='Market-1501', ext='ZIP', version='1.0')
-def _import(src_file, task_data):
+def _import(src_file, instance_data):
     with TemporaryDirectory() as tmp_dir:
         zipfile.ZipFile(src_file).extractall(tmp_dir)
 
         dataset = Dataset.import_from(tmp_dir, 'market1501', env=dm_env)
         dataset.transform(AttrToLabelAttr, 'market-1501')
-        import_dm_annotations(dataset, task_data)
+        import_dm_annotations(dataset, instance_data)

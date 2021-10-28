@@ -2,6 +2,7 @@
 title: '3D Object annotation (advanced)'
 linkTitle: '3D Object annotation'
 weight: 18
+description: 'Overview of advanced operations available when annotating 3D objects.'
 ---
 
 As well as 2D-task objects, 3D-task objects support the ability to change appearance, attributes,

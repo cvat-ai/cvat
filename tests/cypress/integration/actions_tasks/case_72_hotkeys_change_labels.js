@@ -9,7 +9,7 @@ context('Hotkeys to change labels feature.', () => {
     const labelName = `Case ${caseId}`;
     const taskName = labelName;
     const attrName = `Attr for ${labelName}`;
-    const textDefaultValue = 'Some default value for type Text';
+    const textDefaultValue = '2';
     const imagesCount = 1;
     const imageFileName = `image_${labelName.replace(' ', '_').toLowerCase()}`;
     const width = 800;
@@ -22,6 +22,9 @@ context('Hotkeys to change labels feature.', () => {
     const imagesFolder = `cypress/fixtures/${imageFileName}`;
     const directoryToArchive = imagesFolder;
     const secondLabel = `Case ${caseId} second`
+    const additionalAttrsSecondLabel = [
+        { additionalAttrName: attrName, additionalValue: '0;3;1', typeAttribute: 'Number', mutable: false },
+    ];
     let firstLabelCurrentVal = '';
     let secondLabelCurrentVal = '';
 
@@ -45,7 +48,7 @@ context('Hotkeys to change labels feature.', () => {
         cy.createZipArchive(directoryToArchive, archivePath);
         cy.createAnnotationTask(taskName, labelName, attrName, textDefaultValue, archiveName);
         cy.openTask(taskName);
-        cy.addNewLabel(secondLabel);
+        cy.addNewLabel(secondLabel, additionalAttrsSecondLabel);
         cy.openJob();
     });
 
@@ -69,7 +72,7 @@ context('Hotkeys to change labels feature.', () => {
             });
         });
 
-        it('Changing a label for a shape using hotkey.', () => {
+        it('Changing a label for a shape using hotkey. Check "Attribute keeping when changing label" feature.', () => {
             const createPolygonShape = {
                 reDraw: false,
                 type: 'Shape',
@@ -89,9 +92,18 @@ context('Hotkeys to change labels feature.', () => {
             cy.get('.cvat-canvas-container').click(270, 260);
             cy.get('#cvat_canvas_shape_1').should('have.class', 'cvat_canvas_shape_activated');
             cy.contains('tspan', `${firstLabelCurrentVal} 1 (manual)`).should('be.visible');
+
+            // Check "Attribute keeping when changing label" feature
+            cy.get('#cvat-objects-sidebar-state-item-1').find('.cvat-objects-sidebar-state-item-collapse').click();
             cy.get('body').type('{Ctrl}2')
             cy.get('#cvat-objects-sidebar-state-item-1').find('.cvat-objects-sidebar-state-item-label-selector').should('have.text', secondLabelCurrentVal);
             cy.contains('tspan', `${secondLabelCurrentVal} 1 (manual)`).should('be.visible');
+            // The value of the attribute of the 2nd label corresponds to the value of the attribute of the same name of the 1st label
+            cy.get('#cvat-objects-sidebar-state-item-1')
+                .find('.cvat-object-item-number-attribute')
+                .find('input')
+                .should('have.attr', 'aria-valuenow', textDefaultValue);
+
             // Unset settings "Always show object details"
             testCheckingAlwaysShowObjectDetails();
         });

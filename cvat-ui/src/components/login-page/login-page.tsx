@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -8,9 +8,11 @@ import { Link, withRouter } from 'react-router-dom';
 import Title from 'antd/lib/typography/Title';
 import Text from 'antd/lib/typography/Text';
 import { Row, Col } from 'antd/lib/grid';
+import { Layout } from 'antd';
+
+import FooterDrawer from 'components/login-page/intel-footer-drawer';
 
 import LoginForm, { LoginData } from './login-form';
-import CookieDrawer from './cookie-policy-drawer';
 
 interface LoginPageComponentProps {
     fetching: boolean;
@@ -27,40 +29,44 @@ function LoginPageComponent(props: LoginPageComponentProps & RouteComponentProps
         xl: { span: 4 },
     };
 
+    const { Content } = Layout;
+
     const { fetching, onLogin, renderResetPassword } = props;
 
     return (
-        <>
-            <Row justify='center' align='middle'>
-                <Col {...sizes}>
-                    <Title level={2}> Login </Title>
-                    <LoginForm
-                        fetching={fetching}
-                        onSubmit={(loginData: LoginData): void => {
-                            onLogin(loginData.username, loginData.password);
-                        }}
-                    />
-                    <Row justify='start' align='top'>
-                        <Col>
-                            <Text strong>
-                                New to CVAT? Create
-                                <Link to='/auth/register'> an account</Link>
-                            </Text>
-                        </Col>
-                    </Row>
-                    {renderResetPassword && (
+        <Layout>
+            <Content>
+                <Row justify='center' align='middle' style={{ height: '100%' }}>
+                    <Col {...sizes}>
+                        <Title level={2}> Login </Title>
+                        <LoginForm
+                            fetching={fetching}
+                            onSubmit={(loginData: LoginData): void => {
+                                onLogin(loginData.username, loginData.password);
+                            }}
+                        />
                         <Row justify='start' align='top'>
                             <Col>
                                 <Text strong>
-                                    <Link to='/auth/password/reset'>Forgot your password?</Link>
+                                    New to CVAT? Create
+                                    <Link to='/auth/register'> an account</Link>
                                 </Text>
                             </Col>
                         </Row>
-                    )}
-                </Col>
-            </Row>
-            <CookieDrawer />
-        </>
+                        {renderResetPassword && (
+                            <Row justify='start' align='top'>
+                                <Col>
+                                    <Text strong>
+                                        <Link to='/auth/password/reset'>Forgot your password?</Link>
+                                    </Text>
+                                </Col>
+                            </Row>
+                        )}
+                    </Col>
+                </Row>
+            </Content>
+            <FooterDrawer />
+        </Layout>
     );
 }
 
