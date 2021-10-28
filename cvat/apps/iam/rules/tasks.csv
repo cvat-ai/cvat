@@ -1,83 +1,83 @@
-Scope,Resource,Context,Ownership,Limit,Method,URL,Group,Membership,[No Role],Worker,User,Business,Admin,Worker,Supervisor,Maintainer,Owner,Comment
-Create outside a project,Task,Sandbox,N/A,10,POST,/tasks,User,N/A,,,x,x,x,,,,,
-Create outside a project,Task,Sandbox,N/A,10,GET,/tasks/{id}/status,User,N/A,,,x,x,x,,,,,
-Create outside a project,Task,Organization,N/A,10,POST,/tasks,User,Supervisor,,,x,x,x,,x,x,x,
-Create outside a project,Task,Organization,N/A,10,GET,/tasks/{id}/status,User,Supervisor,,,x,x,x,,x,x,x,
-Create outside a project,Task,Sandbox,N/A,,POST,/tasks,Business,N/A,,,,x,x,,,,,
-Create outside a project,Task,Sandbox,N/A,,GET,/tasks/{id}/status,Business,N/A,,,,x,x,,,,,
-Create outside a project,Task,Organization,N/A,,POST,/tasks,Business,Supervisor,,,,x,x,,x,x,x,
-Create outside a project,Task,Organization,N/A,,GET,/tasks/{id}/status,Business,Supervisor,,,,x,x,,x,x,x,
-Create inside a project,Task,Sandbox,None,,POST,/tasks,Admin,N/A,,,,,x,,,,,
-Create inside a project,Task,Sandbox,None,,GET,/tasks/{id}/status,Admin,N/A,,,,,x,,,,,
-Create inside a project,Task,Sandbox,"Project owner, project assignee",10,POST,/tasks,Worker,N/A,,x,x,x,x,,,,,
-Create inside a project,Task,Sandbox,"Project owner, project assignee",10,GET,/tasks/{id}/status,Worker,N/A,,x,x,x,x,,,,,
-Create inside a project,Task,Organization,None,10,POST,/tasks,User,Maintainer,,,x,x,x,,,x,x,
-Create inside a project,Task,Organization,None,10,GET,/tasks/{id}/status,User,Maintainer,,,x,x,x,,,x,x,
-Create inside a project,Task,Organization,"Project owner, project assignee",10,POST,/tasks,Worker,Worker,,x,x,x,x,x,x,x,x,
-Create inside a project,Task,Organization,"Project owner, project assignee",10,GET,/tasks/{id}/status,Worker,Worker,,x,x,x,x,x,x,x,x,
-Create inside a project,Task,Sandbox,"Project owner, project assignee",,POST,/tasks,Business,N/A,,,,x,x,,,,,
-Create inside a project,Task,Sandbox,"Project owner, project assignee",,GET,/tasks/{id}/status,Business,N/A,,,,x,x,,,,,
-Create inside a project,Task,Organization,None,,POST,/tasks,Business,Maintainer,,,,x,x,,,x,x,
-Create inside a project,Task,Organization,None,,GET,/tasks/{id}/status,Business,Maintainer,,,,x,x,,,x,x,
-Create inside a project,Task,Organization,"Project owner, project assignee",,POST,/tasks,Business,Worker,,,,x,x,x,x,x,x,
-Create inside a project,Task,Organization,"Project owner, project assignee",,GET,/tasks/{id}/status,Business,Worker,,,,x,x,x,x,x,x,
-View,Task,Sandbox,None,,GET,/tasks/{id},Admin,N/A,,,,,x,,,,,
-View,Task,Sandbox,"Owner, Project owner",,GET,/tasks/{id},None,N/A,x,x,x,x,x,,,,,
-View,Task,Sandbox,"Assignee, Project assignee",,GET,/tasks/{id},None,N/A,x,x,x,x,x,,,,,
-View,Task,Organization,None,,GET,/tasks/{id},User,Maintainer,,,x,x,x,,,x,x,
-View,Task,Organization,"Owner, Project owner",,GET,/tasks/{id},None,Worker,x,x,x,x,x,x,x,x,x,
-View,Task,Organization,"Assignee, Project assignee",,GET,/tasks/{id},None,Worker,x,x,x,x,x,x,x,x,x,
-List,Task,Sandbox,None,,GET,"/tasks, /projects/{id}/tasks",Admin,N/A,,,,,x,,,,,It should correspond to action = Get a task
-List,Task,Sandbox,"Owner, Project owner",,GET,"/tasks, /projects/{id}/tasks",None,N/A,x,x,x,x,x,,,,,
-List,Task,Sandbox,"Assignee, Project assignee",,GET,"/tasks, /projects/{id}/tasks",None,N/A,x,x,x,x,x,,,,,
-List,Task,Organization,None,,GET,"/tasks, /projects/{id}/tasks",User,Maintainer,,,x,x,x,,,x,x,
-List,Task,Organization,"Owner, Project owner",,GET,"/tasks, /projects/{id}/tasks",None,Worker,x,x,x,x,x,x,x,x,x,
-List,Task,Organization,"Assignee, Project assignee",,GET,"/tasks, /projects/{id}/tasks",None,Worker,x,x,x,x,x,x,x,x,x,
-"Update description, labels",Task,Sandbox,None,,PATCH,/tasks/{id},Admin,N/A,,,,,x,,,,,
-"Update description, labels",Task,Sandbox,"Owner, Project owner",,PATCH,/tasks/{id},Worker,N/A,,x,x,x,x,,,,,
-"Update description, labels",Task,Sandbox,"Assignee, Project assignee",,PATCH,/tasks/{id},Worker,N/A,,x,x,x,x,,,,,
-"Update description, labels",Task,Organization,None,,PATCH,/tasks/{id},User,Maintainer,,,x,x,x,,,x,x,
-"Update description, labels",Task,Organization,"Owner, Project owner",,PATCH,/tasks/{id},Worker,Worker,,x,x,x,x,x,x,x,x,
-"Update description, labels",Task,Organization,"Assignee, Project assignee",,PATCH,/tasks/{id},Worker,Worker,,x,x,x,x,x,x,x,x,
-Update the project,Task,Sandbox,None,,PATCH,/tasks/{id},Admin,N/A,,,,,x,,,,,
-Update the project,Task,Sandbox,"Owner, Project owner",,PATCH,/tasks/{id},Worker,N/A,,x,x,x,x,,,,,
-Update the project,Task,Sandbox,"Assignee, Project assignee",,PATCH,/tasks/{id},Admin,N/A,,,,,x,,,,,
-Update the project,Task,Organization,None,,PATCH,/tasks/{id},User,Maintainer,,,x,x,x,,,x,x,
-Update the project,Task,Organization,"Owner, Project owner",,PATCH,/tasks/{id},Worker,Worker,,x,x,x,x,x,x,x,x,
-Update the project,Task,Organization,"Assignee, Project assignee",,PATCH,/tasks/{id},User,Maintainer,,,x,x,x,,,x,x,
-Delete,Task,Sandbox,None,,DELETE,/tasks/{id},Admin,N/A,,,,,x,,,,,
-Delete,Task,Sandbox,"Owner, Project owner",,DELETE,/tasks/{id},Worker,N/A,,x,x,x,x,,,,,
-Delete,Task,Sandbox,"Assignee, Project assignee",,DELETE,/tasks/{id},Admin,N/A,,,,,x,,,,,
-Delete,Task,Organization,None,,DELETE,/tasks/{id},User,Maintainer,,,x,x,x,,,x,x,
-Delete,Task,Organization,"Owner, Project owner",,DELETE,/tasks/{id},Worker,Worker,,x,x,x,x,x,x,x,x,
-Delete,Task,Organization,"Assignee, Project assignee",,DELETE,/tasks/{id},User,Maintainer,,,x,x,x,,,x,x,
-View annotations,Task,Sandbox,None,,GET,/tasks/{id}/annotations,Admin,N/A,,,,,x,,,,,
-View annotations,Task,Sandbox,"Owner, Project owner, Assignee, Project assignee",,GET,/tasks/{id}/annotations,None,N/A,x,x,x,x,x,,,,,
-View annotations,Task,Organization,None,,GET,/tasks/{id}/annotations,User,Maintainer,,,x,x,x,,,x,x,
-View annotations,Task,Organization,"Owner, Project owner, Assignee, Project assignee",,GET,/tasks/{id}/annotations,None,Worker,x,x,x,x,x,x,x,x,x,
-Update annotations,Task,Sandbox,None,,"PATCH, PUT",/tasks/{id}/annotations,Admin,N/A,,,,,x,,,,,
-Update annotations,Task,Sandbox,"Owner, Project owner, Assignee, Project assignee",,"PATCH, PUT",/tasks/{id}/annotations,Worker,Worker,,x,x,x,x,x,x,x,x,
-Update annotations,Task,Organization,None,,"PATCH, PUT",/tasks/{id}/annotations,User,Maintainer,,,x,x,x,,,x,x,
-Update annotations,Task,Organization,"Owner, Project owner, Assignee, Project assignee",,"PATCH, PUT",/tasks/{id}/annotations,Worker,Worker,,x,x,x,x,x,x,x,x,
-Delete annotations,Task,Sandbox,None,,DELETE,/tasks/{id}/annotations,Admin,N/A,,,,,x,,,,,
-Delete annotations,Task,Sandbox,"Owner, Project owner, Assignee, Project assignee",,DELETE,/tasks/{id}/annotations,Worker,Worker,,x,x,x,x,x,x,x,x,
-Delete annotations,Task,Organization,None,,DELETE,/tasks/{id}/annotations,User,Maintainer,,,x,x,x,,,x,x,
-Delete annotations,Task,Organization,"Owner, Project owner, Assignee, Project assignee",,DELETE,/tasks/{id}/annotations,Worker,Worker,,x,x,x,x,x,x,x,x,
-Export dataset,Task,Sandbox,None,,GET,/tasks/{id}/dataset,Admin,N/A,,,,,x,,,,,
-Export dataset,Task,Sandbox,"Owner, Project owner, Assignee, Project assignee",,GET,/tasks/{id}/dataset,None,Worker,x,x,x,x,x,x,x,x,x,
-Export dataset,Task,Organization,None,,GET,/tasks/{id}/dataset,User,Maintainer,,,x,x,x,,,x,x,
-Export dataset,Task,Organization,"Owner, Project owner, Assignee, Project assignee",,GET,/tasks/{id}/dataset,None,Worker,x,x,x,x,x,x,x,x,x,
-View data,Task,Sandbox,None,,GET,/tasks/{id}/data,Admin,N/A,,,,,x,,,,,
-View data,Task,Sandbox,"Owner, Project owner, Assignee, Project assignee",,GET,/tasks/{id}/data,None,N/A,x,x,x,x,x,,,,,
-View data,Task,Organization,None,,GET,/tasks/{id}/data,User,Maintainer,,,x,x,x,,,x,x,
-View data,Task,Organization,"Owner, Project owner, Assignee, Project assignee",,GET,/tasks/{id}/data,None,Worker,x,x,x,x,x,x,x,x,x,
-Upload data,Task,Sandbox,None,,POST,/tasks/{id}/data,Admin,N/A,,,,,x,,,,,
-Upload data,Task,Sandbox,"Owner, Project owner, Assignee, Project assignee",,POST,/tasks/{id}/data,Worker,N/A,,x,x,x,x,,,,,
-Upload data,Task,Organization,None,,POST,/tasks/{id}/data,User,Maintainer,,,x,x,x,,,x,x,
-Upload data,Task,Organization,"Owner, Project owner, Assignee, Project assignee",,POST,/tasks/{id}/data,Worker,Worker,,x,x,x,x,x,x,x,x,
-View data info,Task,Sandbox,None,,GET,/tasks/{id}/data/meta,Admin,N/A,,,,,x,,,,,
-View data info,Task,Sandbox,"Owner, Project owner, Assignee, Project assignee",,GET,/tasks/{id}/data/meta,None,N/A,x,x,x,x,x,,,,,
-View data info,Task,Organization,None,,GET,/tasks/{id}/data/meta,User,Maintainer,,,x,x,x,,,x,x,
-View data info,Task,Organization,"Owner, Project owner, Assignee, Project assignee",,GET,/tasks/{id}/data/meta,None,Worker,x,x,x,x,x,x,x,x,x,
-Move a task to a project within the same organization,"(Scope = Update the project, Resource = Task, Context1, Ownership1) && (Scope = Create inside a project,  Resource = Task, Context2, Ownership2) && Context1 == Context2",,,,,,,,,,,,,,,,,
-Move a task outside a project within the same organization,"(Scope = Update the project, Resource = Task, Context1, Ownership1) && (Scope = Create outside a project,  Resource = Task, Context2, Ownership2) && Context1 == Context2",,,,,,,,,,,,,,,,,
+Scope,Resource,Context,Ownership,Limit,Method,URL,Privilege,Membership
+create,Task,Sandbox,None,resource['user']['num_resources'] < 10,POST,/tasks,User,N/A
+create,Task,Sandbox,None,resource['user']['num_resources'] < 10,GET,/tasks/{id}/status,User,N/A
+create,Task,Organization,None,resource['user']['num_resources'] < 10,POST,/tasks,User,Supervisor
+create,Task,Organization,None,resource['user']['num_resources'] < 10,GET,/tasks/{id}/status,User,Supervisor
+create,Task,Sandbox,None,,POST,/tasks,Business,N/A
+create,Task,Sandbox,None,,GET,/tasks/{id}/status,Business,N/A
+create,Task,Organization,None,,POST,/tasks,Business,Supervisor
+create,Task,Organization,None,,GET,/tasks/{id}/status,Business,Supervisor
+create@project,"Task, Project",Sandbox,None,,POST,/tasks,Admin,N/A
+create@project,"Task, Project",Sandbox,None,,GET,/tasks/{id}/status,Admin,N/A
+create@project,"Task, Project",Sandbox,"Project:owner, Project:assignee",resource['user']['num_resources'] < 10,POST,/tasks,User,N/A
+create@project,"Task, Project",Sandbox,"Project:owner, Project:assignee",resource['user']['num_resources'] < 10,GET,/tasks/{id}/status,User,N/A
+create@project,"Task, Project",Organization,None,resource['user']['num_resources'] < 10,POST,/tasks,User,Supervisor
+create@project,"Task, Project",Organization,None,resource['user']['num_resources'] < 10,GET,/tasks/{id}/status,User,Supervisor
+create@project,"Task, Project",Organization,"Project:owner, Project:assignee",resource['user']['num_resources'] < 10,POST,/tasks,User,Worker
+create@project,"Task, Project",Organization,"Project:owner, Project:assignee",resource['user']['num_resources'] < 10,GET,/tasks/{id}/status,User,Worker
+create@project,"Task, Project",Sandbox,"Project:owner, Project:assignee",,POST,/tasks,Business,N/A
+create@project,"Task, Project",Sandbox,"Project:owner, Project:assignee",,GET,/tasks/{id}/status,Business,N/A
+create@project,"Task, Project",Organization,None,,POST,/tasks,Business,Supervisor
+create@project,"Task, Project",Organization,None,,GET,/tasks/{id}/status,Business,Supervisor
+create@project,"Task, Project",Organization,"Project:owner, Project:assignee",,POST,/tasks,Business,Worker
+create@project,"Task, Project",Organization,"Project:owner, Project:assignee",,GET,/tasks/{id}/status,Business,Worker
+view,Task,Sandbox,None,,GET,/tasks/{id},Admin,N/A
+view,Task,Sandbox,"Owner, Project:owner, Assignee, Project:assignee",,GET,/tasks/{id},None,N/A
+view,Task,Organization,None,,GET,/tasks/{id},User,Maintainer
+view,Task,Organization,"Owner, Project:owner, Assignee, Project:assignee",,GET,/tasks/{id},None,Worker
+list,Task,Sandbox,None,,GET,"/tasks, /projects/{id}/tasks",Admin,N/A
+list,Task,Sandbox,"Owner, Project:owner, Assignee, Project:assignee",,GET,"/tasks, /projects/{id}/tasks",None,N/A
+list,Task,Organization,None,,GET,"/tasks, /projects/{id}/tasks",User,Maintainer
+list,Task,Organization,"Owner, Project:owner, Assignee, Project:assignee",,GET,"/tasks, /projects/{id}/tasks",None,Worker
+update:desc,Task,Sandbox,None,,PATCH,/tasks/{id},Admin,N/A
+update:desc,Task,Sandbox,"Owner, Project:owner, Assignee, Project:assignee",,PATCH,/tasks/{id},Worker,N/A
+update:desc,Task,Organization,None,,PATCH,/tasks/{id},User,Maintainer
+update:desc,Task,Organization,"Owner, Project:owner, Assignee, Project:assignee",,PATCH,/tasks/{id},Worker,Worker
+update:owner,"Task, User",Sandbox,"None, Assignee",,PATCH,/tasks/{id},Admin,N/A
+update:owner,"Task, User",Sandbox,"Owner, Project:owner, Project:assignee",,PATCH,/tasks/{id},Worker,N/A
+update:owner,"Task, User",Organization,"None, Assignee",,PATCH,/tasks/{id},User,Maintainer
+update:owner,"Task, User",Organization,"Owner, Project:owner, Project:assignee",,PATCH,/tasks/{id},Worker,Worker
+update:assignee,"Task, User",Sandbox,"None, Assignee",,PATCH,/tasks/{id},Admin,N/A
+update:assignee,"Task, User",Sandbox,"Owner, Project:owner, Project:assignee",,PATCH,/tasks/{id},Worker,N/A
+update:assignee,"Task, User",Organization,"None, Assignee",,PATCH,/tasks/{id},User,Maintainer
+update:assignee,"Task, User",Organization,"Owner, Project:owner, Project:assignee",,PATCH,/tasks/{id},Worker,Worker
+update:project,"Task, Project",Sandbox,"None, Assignee",,PATCH,/tasks/{id},Admin,N/A
+update:project,"Task, Project",Sandbox,"Owner, Project:owner, Project:assignee",,PATCH,/tasks/{id},Worker,N/A
+update:project,"Task, Project",Organization,"None, Assignee",,PATCH,/tasks/{id},User,Maintainer
+update:project,"Task, Project",Organization,"Owner, Project:owner, Project:assignee",,PATCH,/tasks/{id},Worker,Worker
+delete,Task,Sandbox,"None, Assignee",,DELETE,/tasks/{id},Admin,N/A
+delete,Task,Sandbox,"Owner, Project:owner, Project:assignee",,DELETE,/tasks/{id},Worker,N/A
+delete,Task,Organization,"None, Assignee",,DELETE,/tasks/{id},User,Maintainer
+delete,Task,Organization,"Owner, Project:owner, Project:assignee",,DELETE,/tasks/{id},Worker,Worker
+view:annotations,Task,Sandbox,None,,GET,/tasks/{id}/annotations,Admin,N/A
+view:annotations,Task,Sandbox,"Owner, Project:owner, Assignee, Project:assignee",,GET,/tasks/{id}/annotations,None,N/A
+view:annotations,Task,Organization,None,,GET,/tasks/{id}/annotations,User,Maintainer
+view:annotations,Task,Organization,"Owner, Project:owner, Assignee, Project:assignee",,GET,/tasks/{id}/annotations,None,Worker
+update:annotations,Task,Sandbox,None,,"PATCH, PUT",/tasks/{id}/annotations,Admin,N/A
+update:annotations,Task,Sandbox,"Owner, Project:owner, Assignee, Project:assignee",,"PATCH, PUT",/tasks/{id}/annotations,Worker,N/A
+update:annotations,Task,Organization,None,,"PATCH, PUT",/tasks/{id}/annotations,User,Maintainer
+update:annotations,Task,Organization,"Owner, Project:owner, Assignee, Project:assignee",,"PATCH, PUT",/tasks/{id}/annotations,Worker,Worker
+delete:annotations,Task,Sandbox,None,,DELETE,/tasks/{id}/annotations,Admin,N/A
+delete:annotations,Task,Sandbox,"Owner, Project:owner, Assignee, Project:assignee",,DELETE,/tasks/{id}/annotations,Worker,N/A
+delete:annotations,Task,Organization,None,,DELETE,/tasks/{id}/annotations,User,Maintainer
+delete:annotations,Task,Organization,"Owner, Project:owner, Assignee, Project:assignee",,DELETE,/tasks/{id}/annotations,Worker,Worker
+export:dataset,Task,Sandbox,None,,GET,/tasks/{id}/dataset,Admin,N/A
+export:dataset,Task,Sandbox,"Owner, Project:owner, Assignee, Project:assignee",,GET,/tasks/{id}/dataset,None,N/A
+export:dataset,Task,Organization,None,,GET,/tasks/{id}/dataset,User,Maintainer
+export:dataset,Task,Organization,"Owner, Project:owner, Assignee, Project:assignee",,GET,/tasks/{id}/dataset,None,Worker
+view:data,Task,Sandbox,None,,GET,"/tasks/{id}/data, /tasks/{id}/data/meta",Admin,N/A
+view:data,Task,Sandbox,"Owner, Project:owner, Assignee, Project:assignee",,GET,"/tasks/{id}/data, /tasks/{id}/data/meta",None,N/A
+view:data,Task,Organization,None,,GET,"/tasks/{id}/data, /tasks/{id}/data/meta",User,Maintainer
+view:data,Task,Organization,"Owner, Project:owner, Assignee, Project:assignee",,GET,"/tasks/{id}/data, /tasks/{id}/data/meta",None,Worker
+upload:data,Task,Sandbox,None,,POST,/tasks/{id}/data,Admin,N/A
+upload:data,Task,Sandbox,"Owner, Project:owner, Assignee, Project:assignee",,POST,/tasks/{id}/data,Worker,N/A
+upload:data,Task,Organization,None,,POST,/tasks/{id}/data,User,Maintainer
+upload:data,Task,Organization,"Owner, Project:owner, Assignee, Project:assignee",,POST,/tasks/{id}/data,Worker,Worker
+import:annotations,Task,Sandbox,None,,PUT,/tasks/{id}/annotations,Admin,N/A
+import:annotations,Task,Sandbox,"Owner, Project:owner, Assignee, Project:assignee",,PUT,/tasks/{id}/annotations,Worker,N/A
+import:annotations,Task,Organization,None,,PUT,/tasks/{id}/annotations,User,Maintainer
+import:annotations,Task,Organization,"Owner, Project:owner, Assignee, Project:assignee",,PUT,/tasks/{id}/annotations,Worker,Worker
+export:annotations,Task,Sandbox,None,,GET,/tasks/{id}/dataset,Admin,N/A
+export:annotations,Task,Sandbox,"Owner, Project:owner, Assignee, Project:assignee",,GET,/tasks/{id}/dataset,None,N/A
+export:annotations,Task,Organization,None,,GET,/tasks/{id}/dataset,User,Maintainer
+export:annotations,Task,Organization,"Owner, Project:owner, Assignee, Project:assignee",,GET,/tasks/{id}/dataset,None,Worker

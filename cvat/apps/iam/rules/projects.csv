@@ -16,13 +16,13 @@ update:desc,Project,Sandbox,None,,PATCH,/projects/{id},Admin,N/A
 update:desc,Project,Sandbox,"Owner, Assignee",,PATCH,/projects/{id},Worker,N/A
 update:desc,Project,Organization,"Owner, Assignee",,PATCH,/projects/{id},Worker,Worker
 update:desc,Project,Organization,None,,PATCH,/projects/{id},User,Maintainer
-update:assignee,Project,Sandbox,"None, Assignee",,PATCH,/projects/{id},Admin,N/A
-update:assignee,Project,Sandbox,Owner,,PATCH,/projects/{id},Worker,N/A
-update:assignee,Project,Organization,Owner,,PATCH,/projects/{id},Worker,Worker
-update:assignee,Project,Organization,"None, Assignee",,PATCH,/projects/{id},User,Maintainer
-update:owner,Project,Sandbox,"None, Assignee, Owner",,PATCH,/projects/{id},Admin,N/A
-update:owner,Project,Organization,"None, Assignee",,PATCH,/projects/{id},User,Maintainer
-update:owner,Project,Organization,Owner,,PATCH,/projects/{id},Worker,Maintainer
+update:assignee,"Project, User",Sandbox,"None, Assignee",,PATCH,/projects/{id},Admin,N/A
+update:assignee,"Project, User",Sandbox,Owner,,PATCH,/projects/{id},Worker,N/A
+update:assignee,"Project, User",Organization,Owner,,PATCH,/projects/{id},Worker,Worker
+update:assignee,"Project, User",Organization,"None, Assignee",,PATCH,/projects/{id},User,Maintainer
+update:owner,"Project, User",Sandbox,"None, Assignee, Owner",,PATCH,/projects/{id},Admin,N/A
+update:owner,"Project, User",Organization,"None, Assignee",,PATCH,/projects/{id},User,Maintainer
+update:owner,"Project, User",Organization,Owner,,PATCH,/projects/{id},Worker,Maintainer
 export:annotations,Project,Sandbox,None,,GET,/projects/{id}/annotations,Admin,N/A
 export:annotations,Project,Sandbox,"Owner, Assignee",,GET,/projects/{id}/annotations,None,N/A
 export:annotations,Project,Organization,"Owner, Assignee",,GET,/projects/{id}/annotations,None,Worker

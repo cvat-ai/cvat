@@ -27,7 +27,6 @@ CALL_ONLINE := "call:online"
 CALL_OFFLINE := "call:offline"
 SEND_EXCEPTION := "send:exception"
 SEND_LOGS := "send:logs"
-VIEW_SELF := "view:self"
 CHANGE_ROLE := "change:role"
 RESEND := "resend"
 UPDATE_DESC := "update:desc"
@@ -35,6 +34,15 @@ UPDATE_ASSIGNEE := "update:assignee"
 UPDATE_OWNER := "update:owner"
 EXPORT_ANNOTATIONS := "export:annotations"
 EXPORT_DATASET := "export:dataset"
+CREATE_IN_PROJECT := "create@project"
+UPDATE_PROJECT := "update:project"
+VIEW_ANNOTATIONS := "view:annotations"
+UPDATE_ANNOTATIONS := "update:annotations"
+DELETE_ANNOTATIONS := "delete:annotations"
+VIEW_DATA := "view:data"
+UPLOAD_DATA := "upload:data"
+IMPORT_ANNOTATIONS := "import:annotations"
+
 
 get_priority(privilege) = priority {
     priority := {
