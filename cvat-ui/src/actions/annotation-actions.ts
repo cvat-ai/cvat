@@ -306,17 +306,24 @@ export function updateCanvasContextMenu(
     };
 }
 
-export function removeAnnotationsAsync(sessionInstance: any): ThunkAction {
+export function removeAnnotationsAsync(
+    startFrame: number, endFrame: number, delTrackKeyframesOnly: boolean,
+): ThunkAction {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         try {
-            await sessionInstance.annotations.clear();
-            await sessionInstance.actions.clear();
-            const history = await sessionInstance.actions.get();
+            const {
+                filters, frame, showAllInterpolationTracks, jobInstance,
+            } = receiveAnnotationsParameters();
+            await jobInstance.annotations.clear(false, startFrame, endFrame, delTrackKeyframesOnly);
+            await jobInstance.actions.clear();
+            const history = await jobInstance.actions.get();
+            const states = await jobInstance.annotations.get(frame, showAllInterpolationTracks, filters);
 
             dispatch({
                 type: AnnotationActionTypes.REMOVE_JOB_ANNOTATIONS_SUCCESS,
                 payload: {
                     history,
+                    states,
                 },
             });
         } catch (error) {

@@ -38,7 +38,7 @@ spec:
         - kind: RUN
           value: unzip dextr_model_v1.zip
         - kind: RUN
-          value: pip3 install Pillow
+          value: pip3 install -U pip && pip3 install wheel Pillow
 
   triggers:
     myHttpTrigger:
