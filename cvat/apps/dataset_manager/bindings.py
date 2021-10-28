@@ -443,7 +443,7 @@ class TaskData(InstanceLabelData):
         _tag['attributes'] = [self._import_attribute(label_id, attrib)
             for attrib in _tag['attributes']
             if self._get_attribute_id(label_id, attrib.name) or (
-                self.soft_attribute_import and attrib.name not in {'ooccluded', 'track_id', 'keyframe'}
+                self.soft_attribute_import and attrib.name not in {'occluded', 'outside', 'keyframe', 'track_id'}
             )
         ]
         return _tag
@@ -456,7 +456,7 @@ class TaskData(InstanceLabelData):
         _shape['attributes'] = [self._import_attribute(label_id, attrib)
             for attrib in _shape['attributes']
             if self._get_attribute_id(label_id, attrib.name) or (
-                self.soft_attribute_import and attrib.name not in {'ooccluded', 'track_id', 'keyframe'}
+                self.soft_attribute_import and attrib.name not in {'occluded', 'outside', 'keyframe', 'track_id'}
             )
         ]
         _shape['points'] = list(map(float, _shape['points']))
@@ -475,13 +475,13 @@ class TaskData(InstanceLabelData):
             _track['attributes'] = [self._import_attribute(label_id, attrib)
                 for attrib in shape['attributes']
                 if self._get_immutable_attribute_id(label_id, attrib.name) or (
-                    self.soft_attribute_import and attrib.name not in {'ooccluded', 'track_id', 'keyframe'}
+                    self.soft_attribute_import and attrib.name not in {'occluded', 'outside', 'keyframe', 'track_id'}
                 )
             ]
             shape['attributes'] = [self._import_attribute(label_id, attrib, mutable=True)
                 for attrib in shape['attributes']
                 if self._get_mutable_attribute_id(label_id, attrib.name) or (
-                    self.soft_attribute_import and attrib.name not in {'ooccluded', 'track_id', 'keyframe'}
+                    self.soft_attribute_import and attrib.name not in {'occluded', 'outside', 'keyframe', 'track_id'}
                 )
             ]
             shape['points'] = list(map(float, shape['points']))
@@ -560,16 +560,26 @@ class TaskData(InstanceLabelData):
         return None
 
 class ProjectData(InstanceLabelData):
-    LabeledShape = NamedTuple('LabledShape', [('type', str), ('frame', int), ('label', str), ('points', List[float]), ('occluded', bool), ('attributes', List[InstanceLabelData.Attribute]), ('source', str), ('group', int), ('z_order', int), ('task_id', int)])
-    LabeledShape.__new__.__defaults__ = (0,0)
+    LabeledShape = NamedTuple('LabledShape',
+        [('type', str), ('frame', int), ('label', str), ('points', List[float]), ('occluded', bool), ('attributes', List[InstanceLabelData.Attribute]), ('source', str), ('group', int), ('z_order', int), ('task_id', int), ('subset', str)],
+    )
+    LabeledShape.__new__.__defaults__ = ('manual', 0, 0, None, None)
     TrackedShape = NamedTuple('TrackedShape',
         [('type', str), ('frame', int), ('points', List[float]), ('occluded', bool), ('outside', bool), ('keyframe', bool), ('attributes', List[InstanceLabelData.Attribute]), ('source', str), ('group', int), ('z_order', int), ('label', str), ('track_id', int)],
     )
     TrackedShape.__new__.__defaults__ = ('manual', 0, 0, None, 0)
-    Track = NamedTuple('Track', [('label', str), ('group', int), ('source', str), ('shapes', List[TrackedShape]), ('task_id', int)])
-    Tag = NamedTuple('Tag', [('frame', int), ('label', str), ('attributes', List[InstanceLabelData.Attribute]), ('source', str), ('group', int), ('task_id', int)])
-    Tag.__new__.__defaults__ = (0, )
-    Frame = NamedTuple('Frame', [('task_id', int), ('subset', str), ('idx', int), ('id', int), ('frame', int), ('name', str), ('width', int), ('height', int), ('labeled_shapes', List[Union[LabeledShape, TrackedShape]]), ('tags', List[Tag])])
+    Track = NamedTuple('Track',
+        [('label', str), ('shapes', List[TrackedShape]), ('source', str), ('group', int),  ('task_id', int), ('subset', str)],
+    )
+    Track.__new__.__defaults__ = ('manual', 0, None, None)
+    Tag = NamedTuple('Tag',
+        [('frame', int), ('label', str), ('attributes', List[InstanceLabelData.Attribute]), ('source', str), ('group', int), ('task_id', int), ('subset', str)],
+    )
+    Tag.__new__.__defaults__ = ('manual', 0, None, None)
+    Frame = NamedTuple('Frame',
+        [('idx', int), ('id', int), ('frame', int), ('name', str), ('width', int), ('height', int), ('labeled_shapes', List[Union[LabeledShape, TrackedShape]]), ('tags', List[Tag]), ('task_id', int), ('subset', str)],
+    )
+    Frame.__new__.__defaults__ = (None, None)
 
     def __init__(self, annotation_irs: Mapping[str, AnnotationIR], db_project: Project, host: str = '', task_annotations: Mapping[int, Any] = None, project_annotation=None):
         self._annotation_irs = annotation_irs

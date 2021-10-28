@@ -105,12 +105,11 @@ class ProjectAnnotationAndData:
             # We need label_id here, so we can't use bulk_create here
             label.save()
 
-        for label_name, attribute in attributes:
+        for label_name, attribute in attributes or []:
             label, = filter(lambda l: l.name == label_name, labels)
             attribute.label = label
         if attributes:
             models.AttributeSpec.objects.bulk_create([a[1] for a in attributes])
-
 
     def init_from_db(self):
         self.reset()
@@ -131,7 +130,6 @@ class ProjectAnnotationAndData:
 
     def load_dataset_data(self, *args, **kwargs):
         load_dataset_data(self, *args, **kwargs)
-
 
     def import_dataset(self, dataset_file, importer):
         project_data = ProjectData(
