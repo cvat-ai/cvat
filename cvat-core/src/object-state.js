@@ -208,7 +208,7 @@ const { Source } = require('./enums');
                     rotation: {
                         /**
                          * @name rotation
-                         * @type {number} rad
+                         * @type {number} angle measured by degrees
                          * @memberof module:API.cvat.classes.ObjectState
                          * @throws {module:API.cvat.exceptions.ArgumentError}
                          * @instance
