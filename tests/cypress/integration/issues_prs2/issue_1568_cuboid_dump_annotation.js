@@ -6,7 +6,7 @@
 
 import { taskName, labelName } from '../../support/const';
 
-context('Dump annotation if cuboid created', () => {
+context('Dump annotation if cuboid created.', () => {
     const issueId = '1568';
     const createCuboidShape2Points = {
         points: 'From rectangle',
@@ -17,30 +17,28 @@ context('Dump annotation if cuboid created', () => {
         secondX: 350,
         secondY: 450,
     };
+    const exportFormat = 'Datumaro';
 
     before(() => {
         cy.openTaskJob(taskName);
     });
 
     describe(`Testing issue "${issueId}"`, () => {
-        it('Create a cuboid', () => {
+        it('Create a cuboid.', () => {
             cy.createCuboid(createCuboidShape2Points);
-            cy.get('#cvat-objects-sidebar-state-item-1').should('contain', '1').and('contain', 'CUBOID SHAPE');
+            cy.saveJob('PATCH', 200, `dump${exportFormat}Format`);
         });
-        it('Dump an annotation', () => {
-            cy.get('.cvat-annotation-header-left-group').within(() => {
-                cy.saveJob();
-                cy.get('button').contains('Menu').trigger('mouseover', { force: true });
-            });
-            cy.get('.cvat-annotation-menu').within(() => {
-                cy.get('[title="Dump annotations"]').trigger('mouseover');
-            });
-            cy.get('.cvat-menu-dump-submenu-item').within(() => {
-                cy.contains('Datumaro').click();
-            });
+
+        it('Dump an annotation.', () => {
+            const exportAnnotation = {
+                as: 'exportAnnotations',
+                type: 'annotations',
+                format: exportFormat,
+            };
+            cy.exportTask(exportAnnotation);
         });
-        it('Error notification is not exists', () => {
-            cy.wait(5000);
+
+        it('Error notification is not exists.', () => {
             cy.get('.ant-notification-notice').should('not.exist');
         });
     });

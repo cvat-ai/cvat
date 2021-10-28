@@ -11,8 +11,9 @@ from django.contrib.auth.models import User, Group
 
 from cvat.apps.dataset_manager.formats.utils import get_label_color
 from cvat.apps.engine import models
-from cvat.apps.engine.cloud_provider import get_cloud_storage_instance, Credentials
+from cvat.apps.engine.cloud_provider import get_cloud_storage_instance, Credentials, Status
 from cvat.apps.engine.log import slogger
+from cvat.apps.engine.utils import parse_specific_attributes
 
 class BasicUserSerializer(serializers.ModelSerializer):
     def validate(self, data):
@@ -411,6 +412,8 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
         validated_project_id = validated_data.get('project_id', None)
         if validated_project_id is not None and validated_project_id != instance.project_id:
             project = models.Project.objects.get(id=validated_data.get('project_id', None))
+            if project.tasks.count() and project.tasks.first().dimension != instance.dimension:
+                    raise serializers.ValidationError(f'Dimension ({instance.dimension}) of the task must be the same as other tasks in project ({project.tasks.first().dimension})')
             if instance.project_id is None:
                 for old_label in instance.label_set.all():
                     try:
@@ -453,8 +456,10 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
         # When moving task labels can be mapped to one, but when not names must be unique
         if 'project_id' in attrs.keys() and self.instance is not None:
             project_id = attrs.get('project_id')
-            if project_id is not None and not models.Project.objects.filter(id=project_id).count():
-                raise serializers.ValidationError(f'Cannot find project with ID {project_id}')
+            if project_id is not None:
+                project = models.Project.objects.filter(id=project_id).first()
+                if project is None:
+                    raise serializers.ValidationError(f'Cannot find project with ID {project_id}')
             # Check that all labels can be mapped
             new_label_names = set()
             old_labels = self.instance.project.label_set.all() if self.instance.project_id else self.instance.label_set.all()
@@ -500,13 +505,15 @@ class ProjectWithoutTaskSerializer(serializers.ModelSerializer):
     owner_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)
     assignee = BasicUserSerializer(allow_null=True, required=False)
     assignee_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)
+    task_subsets = serializers.ListField(child=serializers.CharField(), required=False)
     training_project = TrainingProjectSerializer(required=False, allow_null=True)
+    dimension = serializers.CharField(max_length=16, required=False)
 
     class Meta:
         model = models.Project
         fields = ('url', 'id', 'name', 'labels', 'tasks', 'owner', 'assignee', 'owner_id', 'assignee_id',
-                  'bug_tracker', 'created_date', 'updated_date', 'status', 'training_project')
-        read_only_fields = ('created_date', 'updated_date', 'status', 'owner', 'asignee')
+                  'bug_tracker', 'task_subsets', 'created_date', 'updated_date', 'status', 'training_project', 'dimension')
+        read_only_fields = ('created_date', 'updated_date', 'status', 'owner', 'asignee', 'task_subsets', 'dimension')
         ordering = ['-id']
 
 
@@ -515,6 +522,7 @@ class ProjectWithoutTaskSerializer(serializers.ModelSerializer):
         task_subsets = set(instance.tasks.values_list('subset', flat=True))
         task_subsets.discard('')
         response['task_subsets'] = list(task_subsets)
+        response['dimension'] = instance.tasks.first().dimension if instance.tasks.count() else None
         return response
 
 class ProjectSerializer(ProjectWithoutTaskSerializer):
@@ -576,7 +584,9 @@ class ProjectSerializer(ProjectWithoutTaskSerializer):
         return value
 
     def to_representation(self, instance):
-        return serializers.ModelSerializer.to_representation(self, instance)  # ignoring subsets here
+        response = serializers.ModelSerializer.to_representation(self, instance)  # ignoring subsets here
+        response['dimension'] = instance.tasks.first().dimension if instance.tasks.count() else None
+        return response
 
 class ExceptionSerializer(serializers.Serializer):
     system = serializers.CharField(max_length=255)
@@ -771,8 +781,22 @@ class CombinedReviewSerializer(ReviewSerializer):
 
         return db_review
 
+class ManifestSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.Manifest
+        fields = ('filename', )
+
+    # pylint: disable=no-self-use
+    def to_internal_value(self, data):
+        return {'filename': data }
+
+    # pylint: disable=no-self-use
+    def to_representation(self, instance):
+        return instance.filename if instance else instance
+
 class BaseCloudStorageSerializer(serializers.ModelSerializer):
     owner = BasicUserSerializer(required=False)
+    manifests = ManifestSerializer(many=True, default=[])
     class Meta:
         model = models.CloudStorage
         exclude = ['credentials']
@@ -783,14 +807,16 @@ class CloudStorageSerializer(serializers.ModelSerializer):
     session_token = serializers.CharField(max_length=440, allow_blank=True, required=False)
     key = serializers.CharField(max_length=20, allow_blank=True, required=False)
     secret_key = serializers.CharField(max_length=40, allow_blank=True, required=False)
+    key_file_path = serializers.CharField(max_length=64, allow_blank=True, required=False)
     account_name = serializers.CharField(max_length=24, allow_blank=True, required=False)
+    manifests = ManifestSerializer(many=True, default=[])
 
     class Meta:
         model = models.CloudStorage
         fields = (
             'provider_type', 'resource', 'display_name', 'owner', 'credentials_type',
             'created_date', 'updated_date', 'session_token', 'account_name', 'key',
-            'secret_key', 'specific_attributes', 'description'
+            'secret_key', 'key_file_path', 'specific_attributes', 'description', 'id', 'manifests',
         )
         read_only_fields = ('created_date', 'updated_date', 'owner')
 
@@ -807,6 +833,9 @@ class CloudStorageSerializer(serializers.ModelSerializer):
         if attrs.get('provider_type') == models.CloudProviderChoice.AZURE_CONTAINER:
             if not attrs.get('account_name', ''):
                 raise serializers.ValidationError('Account name for Azure container was not specified')
+        if attrs.get('provider_type') == models.CloudProviderChoice.GOOGLE_CLOUD_STORAGE:
+            if not attrs.get('key_file_path', ''):
+                raise serializers.ValidationError('Key file path for Google cloud storage was not specified')
         return attrs
 
     def create(self, validated_data):
@@ -817,31 +846,62 @@ class CloudStorageSerializer(serializers.ModelSerializer):
             key=validated_data.pop('key', ''),
             secret_key=validated_data.pop('secret_key', ''),
             session_token=validated_data.pop('session_token', ''),
+            key_file_path=validated_data.pop('key_file_path', ''),
             credentials_type = validated_data.get('credentials_type')
         )
+        details = {
+            'resource': validated_data.get('resource'),
+            'credentials': credentials,
+            'specific_attributes': parse_specific_attributes(validated_data.get('specific_attributes', ''))
+        }
+        storage = get_cloud_storage_instance(cloud_provider=provider_type, **details)
         if should_be_created:
-            details = {
-                'resource': validated_data.get('resource'),
-                'credentials': credentials,
-                'specific_attributes': {
-                    item.split('=')[0].strip(): item.split('=')[1].strip()
-                        for item in validated_data.get('specific_attributes').split('&')
-                    } if len(validated_data.get('specific_attributes', ''))
-                        else dict()
-            }
-            storage = get_cloud_storage_instance(cloud_provider=provider_type, **details)
             try:
                 storage.create()
             except Exception as ex:
                 slogger.glob.warning("Failed with creating storage\n{}".format(str(ex)))
                 raise
 
-        db_storage = models.CloudStorage.objects.create(
-            credentials=credentials.convert_to_db(),
-            **validated_data
-        )
-        db_storage.save()
-        return db_storage
+        storage_status = storage.get_status()
+        if storage_status == Status.AVAILABLE:
+            manifests = validated_data.pop('manifests')
+            # check manifest files availability
+            for manifest in manifests:
+                file_status = storage.get_file_status(manifest.get('filename'))
+                if file_status == Status.NOT_FOUND:
+                    raise serializers.ValidationError({
+                        'manifests': "The '{}' file does not exist on '{}' cloud storage" \
+                            .format(manifest.get('filename'), storage.name)
+                    })
+                elif file_status == Status.FORBIDDEN:
+                    raise serializers.ValidationError({
+                        'manifests': "The '{}' file does not available on '{}' cloud storage. Access denied" \
+                            .format(manifest.get('filename'), storage.name)
+                    })
+
+            db_storage = models.CloudStorage.objects.create(
+                credentials=credentials.convert_to_db(),
+                **validated_data
+            )
+            db_storage.save()
+
+            manifest_file_instances = [models.Manifest(**manifest, cloud_storage=db_storage) for manifest in manifests]
+            models.Manifest.objects.bulk_create(manifest_file_instances)
+
+            cloud_storage_path = db_storage.get_storage_dirname()
+            if os.path.isdir(cloud_storage_path):
+                shutil.rmtree(cloud_storage_path)
+
+            os.makedirs(db_storage.get_storage_logs_dirname(), exist_ok=True)
+            return db_storage
+        elif storage_status == Status.FORBIDDEN:
+            field = 'credentials'
+            message = 'Cannot create resource {} with specified credentials. Access forbidden.'.format(storage.name)
+        else:
+            field = 'recource'
+            message = 'The resource {} not found. It may have been deleted.'.format(storage.name)
+        slogger.glob.error(message)
+        raise serializers.ValidationError({field: message})
 
     # pylint: disable=no-self-use
     def update(self, instance, validated_data):
@@ -850,15 +910,56 @@ class CloudStorageSerializer(serializers.ModelSerializer):
             'type': instance.credentials_type,
             'value': instance.credentials,
         })
-        tmp = {k:v for k,v in validated_data.items() if k in {'key', 'secret_key', 'account_name', 'session_token', 'credentials_type'}}
+        tmp = {k:v for k,v in validated_data.items() if k in {'key', 'secret_key', 'account_name', 'session_token', 'key_file_path', 'credentials_type'}}
         credentials.mapping_with_new_values(tmp)
         instance.credentials = credentials.convert_to_db()
         instance.credentials_type = validated_data.get('credentials_type', instance.credentials_type)
         instance.resource = validated_data.get('resource', instance.resource)
         instance.display_name = validated_data.get('display_name', instance.display_name)
+        instance.description = validated_data.get('description', instance.description)
+        instance.specific_attributes = validated_data.get('specific_attributes', instance.specific_attributes)
 
-        instance.save()
-        return instance
+        # check cloud storage existing
+        details = {
+            'resource': instance.resource,
+            'credentials': credentials,
+            'specific_attributes': parse_specific_attributes(instance.specific_attributes)
+        }
+        storage = get_cloud_storage_instance(cloud_provider=instance.provider_type, **details)
+        storage_status = storage.get_status()
+        if storage_status == Status.AVAILABLE:
+            new_manifest_names = set(i.get('filename') for i in validated_data.get('manifests', []))
+            previos_manifest_names = set(i.filename for i in instance.manifests.all())
+            delta_to_delete = tuple(previos_manifest_names - new_manifest_names)
+            delta_to_create = tuple(new_manifest_names - previos_manifest_names)
+            if delta_to_delete:
+                instance.manifests.filter(filename__in=delta_to_delete).delete()
+            if delta_to_create:
+                # check manifest files existing
+                for manifest in delta_to_create:
+                    file_status = storage.get_file_status(manifest)
+                    if file_status == Status.NOT_FOUND:
+                        raise serializers.ValidationError({
+                            'manifests': "The '{}' file does not exist on '{}' cloud storage"
+                                .format(manifest, storage.name)
+                        })
+                    elif file_status == Status.FORBIDDEN:
+                        raise serializers.ValidationError({
+                            'manifests': "The '{}' file does not available on '{}' cloud storage. Access denied" \
+                                .format(manifest.get('filename'), storage.name)
+                        })
+                manifest_instances = [models.Manifest(filename=f, cloud_storage=instance) for f in delta_to_create]
+                models.Manifest.objects.bulk_create(manifest_instances)
+            instance.save()
+            return instance
+        elif storage_status == Status.FORBIDDEN:
+            field = 'credentials'
+            message = 'Cannot update resource {} with specified credentials. Access forbidden.'.format(storage.name)
+        else:
+            field = 'recource'
+            message = 'The resource {} not found. It may have been deleted.'.format(storage.name)
+        slogger.glob.error(message)
+        raise serializers.ValidationError({field: message})
 
 class RelatedFileSerializer(serializers.ModelSerializer):
 

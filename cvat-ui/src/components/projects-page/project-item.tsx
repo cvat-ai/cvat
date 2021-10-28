@@ -15,11 +15,19 @@ import Button from 'antd/lib/button';
 import { MoreOutlined } from '@ant-design/icons';
 
 import { CombinedState, Project } from 'reducers/interfaces';
+import { useCardHeightHOC } from 'utils/hooks';
 import ProjectActionsMenuComponent from './actions-menu';
 
 interface Props {
     projectInstance: Project;
 }
+
+const useCardHeight = useCardHeightHOC({
+    containerClassName: 'cvat-projects-page',
+    siblingClassNames: ['cvat-projects-pagination', 'cvat-projects-top-bar'],
+    paddings: 40,
+    numberOfRows: 3,
+});
 
 export default function ProjectItemComponent(props: Props): JSX.Element {
     const {
@@ -27,6 +35,7 @@ export default function ProjectItemComponent(props: Props): JSX.Element {
     } = props;
 
     const history = useHistory();
+    const height = useCardHeight();
     const ownerName = instance.owner ? instance.owner.username : null;
     const updated = moment(instance.updatedDate).fromNow();
     const deletes = useSelector((state: CombinedState) => state.projects.activities.deletes);
@@ -36,8 +45,7 @@ export default function ProjectItemComponent(props: Props): JSX.Element {
         history.push(`/projects/${instance.id}`);
     };
 
-    const style: React.CSSProperties = {};
-
+    const style: React.CSSProperties = { height };
     if (deleted) {
         style.pointerEvents = 'none';
         style.opacity = 0.5;

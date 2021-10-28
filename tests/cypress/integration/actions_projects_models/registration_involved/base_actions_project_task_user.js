@@ -42,6 +42,7 @@ context('Base actions on the project', () => {
     const emailAddr = `${userName}@local.local`;
     const password = 'GDrb41RguF!';
     let projectID = '';
+    const projectSubsetFieldValue = 'Test';
 
     function getProjectID(projectName) {
         cy.contains('.cvat-project-name', projectName)
@@ -99,7 +100,7 @@ context('Base actions on the project', () => {
             );
             cy.goToProjectsList();
             cy.openProject(projectName);
-            cy.openTask(taskName.secondTask);
+            cy.openTask(taskName.secondTask, projectSubsetFieldValue);
             cy.assignTaskToUser(Cypress.env('user'));
         });
         it('The task is successfully opened. No label editor on task page.', () => {

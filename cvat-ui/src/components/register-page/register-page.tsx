@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -9,9 +9,10 @@ import { Link, withRouter } from 'react-router-dom';
 import Title from 'antd/lib/typography/Title';
 import Text from 'antd/lib/typography/Text';
 import { Row, Col } from 'antd/lib/grid';
+import { Layout } from 'antd';
 
 import { UserAgreement } from 'reducers/interfaces';
-import CookieDrawer from 'components/login-page/cookie-policy-drawer';
+import FooterDrawer from 'components/login-page/intel-footer-drawer';
 import RegisterForm, { RegisterData, UserConfirmation } from './register-form';
 
 interface RegisterPageComponentProps {
@@ -38,39 +39,42 @@ function RegisterPageComponent(props: RegisterPageComponentProps & RouteComponen
     };
 
     const { fetching, userAgreements, onRegister } = props;
+    const { Content } = Layout;
 
     return (
-        <>
-            <Row justify='center' align='middle'>
-                <Col {...sizes}>
-                    <Title level={2}> Create an account </Title>
-                    <RegisterForm
-                        fetching={fetching}
-                        userAgreements={userAgreements}
-                        onSubmit={(registerData: RegisterData): void => {
-                            onRegister(
-                                registerData.username,
-                                registerData.firstName,
-                                registerData.lastName,
-                                registerData.email,
-                                registerData.password1,
-                                registerData.password2,
-                                registerData.confirmations,
-                            );
-                        }}
-                    />
-                    <Row justify='start' align='top'>
-                        <Col>
-                            <Text strong>
-                                Already have an account?
-                                <Link to='/auth/login'> Login </Link>
-                            </Text>
-                        </Col>
-                    </Row>
-                </Col>
-            </Row>
-            <CookieDrawer />
-        </>
+        <Layout>
+            <Content>
+                <Row justify='center' align='middle' style={{ height: '100%' }}>
+                    <Col {...sizes}>
+                        <Title level={2}> Create an account </Title>
+                        <RegisterForm
+                            fetching={fetching}
+                            userAgreements={userAgreements}
+                            onSubmit={(registerData: RegisterData): void => {
+                                onRegister(
+                                    registerData.username,
+                                    registerData.firstName,
+                                    registerData.lastName,
+                                    registerData.email,
+                                    registerData.password1,
+                                    registerData.password2,
+                                    registerData.confirmations,
+                                );
+                            }}
+                        />
+                        <Row justify='start' align='top'>
+                            <Col>
+                                <Text strong>
+                                    Already have an account?
+                                    <Link to='/auth/login'> Login </Link>
+                                </Text>
+                            </Col>
+                        </Row>
+                    </Col>
+                </Row>
+            </Content>
+            <FooterDrawer />
+        </Layout>
     );
 }
 

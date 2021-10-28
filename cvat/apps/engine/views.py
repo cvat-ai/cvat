@@ -2,16 +2,17 @@
 #
 # SPDX-License-Identifier: MIT
 
+import errno
 import io
-import json
 import os
 import os.path as osp
+import pytz
 import shutil
 import traceback
 import uuid
 from datetime import datetime
 from distutils.util import strtobool
-from tempfile import mkstemp, TemporaryDirectory
+from tempfile import mkstemp, NamedTemporaryFile
 
 import cv2
 from django.db.models.query import Prefetch
@@ -40,10 +41,12 @@ from sendfile import sendfile
 import cvat.apps.dataset_manager as dm
 import cvat.apps.dataset_manager.views  # pylint: disable=unused-import
 from cvat.apps.authentication import auth
-from cvat.apps.engine.cloud_provider import get_cloud_storage_instance, Credentials
+from cvat.apps.engine.cloud_provider import get_cloud_storage_instance, Credentials, Status
 from cvat.apps.dataset_manager.bindings import CvatImportError
 from cvat.apps.dataset_manager.serializers import DatasetFormatsSerializer
 from cvat.apps.engine.frame_provider import FrameProvider
+from cvat.apps.engine.media_extractors import ImageListReader
+from cvat.apps.engine.mime_types import mimetypes
 from cvat.apps.engine.models import (
     Job, StatusChoice, Task, Project, Review, Issue,
     Comment, StorageMethodChoice, ReviewStatus, StorageChoice, Image,
@@ -206,6 +209,7 @@ class ServerViewSet(viewsets.ViewSet):
 class ProjectFilter(filters.FilterSet):
     name = filters.CharFilter(field_name="name", lookup_expr="icontains")
     owner = filters.CharFilter(field_name="owner__username", lookup_expr="icontains")
+    assignee = filters.CharFilter(field_name="assignee__username", lookup_expr="icontains")
     status = filters.CharFilter(field_name="status", lookup_expr="icontains")
 
     class Meta:
@@ -233,12 +237,14 @@ class ProjectFilter(filters.FilterSet):
 @method_decorator(name='partial_update', decorator=swagger_auto_schema(operation_summary='Methods does a partial update of chosen fields in a project'))
 class ProjectViewSet(auth.ProjectGetQuerySetMixin, viewsets.ModelViewSet):
     queryset = models.Project.objects.all().order_by('-id')
-    search_fields = ("name", "owner__username", "status")
+    search_fields = ("name", "owner__username", "assignee__username", "status")
     filterset_class = ProjectFilter
     ordering_fields = ("id", "name", "owner", "status", "assignee")
     http_method_names = ['get', 'post', 'head', 'patch', 'delete']
 
     def get_serializer_class(self):
+        if self.request.path.endswith('tasks'):
+            return TaskSerializer
         if self.request.query_params and self.request.query_params.get("names_only") == "true":
             return ProjectSearchSerializer
         if self.request.query_params and self.request.query_params.get("without_tasks") == "true":
@@ -297,6 +303,76 @@ class ProjectViewSet(auth.ProjectGetQuerySetMixin, viewsets.ModelViewSet):
             context={"request": request})
         return Response(serializer.data)
 
+
+    @swagger_auto_schema(method='get', operation_summary='Export project as a dataset in a specific format',
+        manual_parameters=[
+            openapi.Parameter('format', openapi.IN_QUERY,
+                description="Desired output format name\nYou can get the list of supported formats at:\n/server/annotation/formats",
+                type=openapi.TYPE_STRING, required=True),
+            openapi.Parameter('filename', openapi.IN_QUERY,
+                description="Desired output file name",
+                type=openapi.TYPE_STRING, required=False),
+            openapi.Parameter('action', in_=openapi.IN_QUERY,
+                description='Used to start downloading process after annotation file had been created',
+                type=openapi.TYPE_STRING, required=False, enum=['download'])
+        ],
+        responses={'202': openapi.Response(description='Exporting has been started'),
+            '201': openapi.Response(description='Output file is ready for downloading'),
+            '200': openapi.Response(description='Download of file started'),
+            '405': openapi.Response(description='Format is not available'),
+        }
+    )
+    @action(detail=True, methods=['GET'], serializer_class=None,
+        url_path='dataset')
+    def dataset_export(self, request, pk):
+        db_project = self.get_object() # force to call check_object_permissions
+
+        format_name = request.query_params.get("format", "")
+        return _export_annotations(db_instance=db_project,
+            rq_id="/api/v1/project/{}/dataset/{}".format(pk, format_name),
+            request=request,
+            action=request.query_params.get("action", "").lower(),
+            callback=dm.views.export_project_as_dataset,
+            format_name=format_name,
+            filename=request.query_params.get("filename", "").lower(),
+        )
+
+    @swagger_auto_schema(method='get', operation_summary='Method allows to download project annotations',
+        manual_parameters=[
+            openapi.Parameter('format', openapi.IN_QUERY,
+                description="Desired output format name\nYou can get the list of supported formats at:\n/server/annotation/formats",
+                type=openapi.TYPE_STRING, required=True),
+            openapi.Parameter('filename', openapi.IN_QUERY,
+                description="Desired output file name",
+                type=openapi.TYPE_STRING, required=False),
+            openapi.Parameter('action', in_=openapi.IN_QUERY,
+                description='Used to start downloading process after annotation file had been created',
+                type=openapi.TYPE_STRING, required=False, enum=['download'])
+        ],
+        responses={
+            '202': openapi.Response(description='Dump of annotations has been started'),
+            '201': openapi.Response(description='Annotations file is ready to download'),
+            '200': openapi.Response(description='Download of file started'),
+            '405': openapi.Response(description='Format is not available'),
+            '401': openapi.Response(description='Format is not specified'),
+        }
+    )
+    @action(detail=True, methods=['GET'],
+        serializer_class=LabeledDataSerializer)
+    def annotations(self, request, pk):
+        db_project = self.get_object() # force to call check_object_permissions
+        format_name = request.query_params.get('format')
+        if format_name:
+            return _export_annotations(db_instance=db_project,
+                rq_id="/api/v1/projects/{}/annotations/{}".format(pk, format_name),
+                request=request,
+                action=request.query_params.get("action", "").lower(),
+                callback=dm.views.export_project_annotations,
+                format_name=format_name,
+                filename=request.query_params.get("filename", "").lower(),
+            )
+        else:
+            return Response("Format is not specified",status=status.HTTP_400_BAD_REQUEST)
 
 class TaskFilter(filters.FilterSet):
     project = filters.CharFilter(field_name="project__name", lookup_expr="icontains")
@@ -475,7 +551,7 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
                     else:
                         return Response(status=status.HTTP_202_ACCEPTED)
 
-            ttl = dm.views.CACHE_TTL.total_seconds()
+            ttl = dm.views.TASK_CACHE_TTL.total_seconds()
             queue.enqueue_call(
                 func=dm.views.backup_task,
                 args=(pk, 'task_dump.zip'),
@@ -679,7 +755,7 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
         if request.method == 'GET':
             format_name = request.query_params.get('format')
             if format_name:
-                return _export_annotations(db_task=db_task,
+                return _export_annotations(db_instance=db_task,
                     rq_id="/api/v1/tasks/{}/annotations/{}".format(pk, format_name),
                     request=request,
                     action=request.query_params.get("action", "").lower(),
@@ -806,7 +882,7 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
         db_task = self.get_object() # force to call check_object_permissions
 
         format_name = request.query_params.get("format", "")
-        return _export_annotations(db_task=db_task,
+        return _export_annotations(db_instance=db_task,
             rq_id="/api/v1/tasks/{}/dataset/{}".format(pk, format_name),
             request=request,
             action=request.query_params.get("action", "").lower(),
@@ -1114,6 +1190,18 @@ class RedefineDescriptionField(FieldInspector):
                     'supported: range=aws_range'
         return result
 
+class CloudStorageFilter(filters.FilterSet):
+    display_name = filters.CharFilter(field_name='display_name', lookup_expr='icontains')
+    provider_type = filters.CharFilter(field_name='provider_type', lookup_expr='icontains')
+    resource = filters.CharFilter(field_name='resource', lookup_expr='icontains')
+    credentials_type = filters.CharFilter(field_name='credentials_type', lookup_expr='icontains')
+    description = filters.CharFilter(field_name='description', lookup_expr='icontains')
+    owner = filters.CharFilter(field_name='owner__username', lookup_expr='icontains')
+
+    class Meta:
+        model = models.CloudStorage
+        fields = ('id', 'display_name', 'provider_type', 'resource', 'credentials_type', 'description', 'owner')
+
 @method_decorator(
     name='retrieve',
     decorator=swagger_auto_schema(
@@ -1153,8 +1241,8 @@ class RedefineDescriptionField(FieldInspector):
 class CloudStorageViewSet(auth.CloudStorageGetQuerySetMixin, viewsets.ModelViewSet):
     http_method_names = ['get', 'post', 'patch', 'delete']
     queryset = CloudStorageModel.objects.all().prefetch_related('data').order_by('-id')
-    search_fields = ('provider_type', 'display_name', 'resource', 'owner__username')
-    filterset_fields = ['provider_type', 'display_name', 'resource', 'credentials_type']
+    search_fields = ('provider_type', 'display_name', 'resource', 'credentials_type', 'owner__username', 'description')
+    filterset_class = CloudStorageFilter
 
     def get_permissions(self):
         http_method = self.request.method
@@ -1184,36 +1272,7 @@ class CloudStorageViewSet(auth.CloudStorageGetQuerySetMixin, viewsets.ModelViewS
         return queryset
 
     def perform_create(self, serializer):
-        # check that instance of cloud storage exists
-        provider_type = serializer.validated_data.get('provider_type')
-        credentials = Credentials(
-            session_token=serializer.validated_data.get('session_token', ''),
-            account_name=serializer.validated_data.get('account_name', ''),
-            key=serializer.validated_data.get('key', ''),
-            secret_key=serializer.validated_data.get('secret_key', '')
-        )
-        details = {
-            'resource': serializer.validated_data.get('resource'),
-            'credentials': credentials,
-            'specific_attributes': {
-                    item.split('=')[0].strip(): item.split('=')[1].strip()
-                        for item in serializer.validated_data.get('specific_attributes').split('&')
-                    } if len(serializer.validated_data.get('specific_attributes', ''))
-                        else dict()
-        }
-        storage = get_cloud_storage_instance(cloud_provider=provider_type, **details)
-        try:
-            storage.exists()
-        except Exception as ex:
-            message = str(ex)
-            slogger.glob.error(message)
-            raise
-
-        owner = self.request.data.get('owner')
-        if owner:
-            serializer.save()
-        else:
-            serializer.save(owner=self.request.user)
+        serializer.save(owner=self.request.user)
 
     def perform_destroy(self, instance):
         cloud_storage_dirname = instance.get_storage_dirname()
@@ -1238,7 +1297,7 @@ class CloudStorageViewSet(auth.CloudStorageGetQuerySetMixin, viewsets.ModelViewS
                 msg_body = ""
                 for ex in exceptions.args:
                     for field, ex_msg in ex.items():
-                        msg_body += ": ".join([field, str(ex_msg[0])])
+                        msg_body += ': '.join([field, ex_msg if isinstance(ex_msg, str) else str(ex_msg[0])])
                         msg_body += '\n'
                 return HttpResponseBadRequest(msg_body)
         except APIException as ex:
@@ -1249,14 +1308,14 @@ class CloudStorageViewSet(auth.CloudStorageGetQuerySetMixin, viewsets.ModelViewS
 
     @swagger_auto_schema(
         method='get',
-        operation_summary='Method returns a mapped names of an available files from a storage and a manifest content',
+        operation_summary='Method returns a manifest content',
         manual_parameters=[
             openapi.Parameter('manifest_path', openapi.IN_QUERY,
                 description="Path to the manifest file in a cloud storage",
                 type=openapi.TYPE_STRING)
         ],
         responses={
-            '200': openapi.Response(description='Mapped names of an available files from a storage and a manifest content'),
+            '200': openapi.Response(description='A manifest content'),
         },
         tags=['cloud storages']
     )
@@ -1275,30 +1334,152 @@ class CloudStorageViewSet(auth.CloudStorageGetQuerySetMixin, viewsets.ModelViewS
                 'specific_attributes': db_storage.get_specific_attributes()
             }
             storage = get_cloud_storage_instance(cloud_provider=db_storage.provider_type, **details)
-            storage.initialize_content()
-            storage_files = storage.content
-
+            if not db_storage.manifests.count():
+                raise Exception('There is no manifest file')
             manifest_path = request.query_params.get('manifest_path', 'manifest.jsonl')
-            with TemporaryDirectory(suffix='manifest', prefix='cvat') as tmp_dir:
-                tmp_manifest_path = os.path.join(tmp_dir, 'manifest.jsonl')
-                storage.download_file(manifest_path, tmp_manifest_path)
-                manifest = ImageManifestManager(tmp_manifest_path)
-                manifest.init_index()
-                manifest_files = manifest.data
-            content = {f:[] for f in set(storage_files) | set(manifest_files)}
-            for key, _ in content.items():
-                if key in storage_files: content[key].append('s') # storage
-                if key in manifest_files: content[key].append('m') # manifest
+            file_status = storage.get_file_status(manifest_path)
+            if file_status == Status.NOT_FOUND:
+                raise FileNotFoundError(errno.ENOENT,
+                    "Not found on the cloud storage {}".format(db_storage.display_name), manifest_path)
+            elif file_status == Status.FORBIDDEN:
+                raise PermissionError(errno.EACCES,
+                    "Access to the file on the '{}' cloud storage is denied".format(db_storage.display_name), manifest_path)
 
-            data = json.dumps(content)
-            return Response(data=data, content_type="aplication/json")
+            full_manifest_path = os.path.join(db_storage.get_storage_dirname(), manifest_path)
+            if not os.path.exists(full_manifest_path) or \
+                    datetime.utcfromtimestamp(os.path.getmtime(full_manifest_path)).replace(tzinfo=pytz.UTC) < storage.get_file_last_modified(manifest_path):
+                storage.download_file(manifest_path, full_manifest_path)
+            manifest = ImageManifestManager(full_manifest_path)
+            # need to update index
+            manifest.set_index()
+            manifest_files = manifest.data
+            return Response(data=manifest_files, content_type="text/plain")
 
         except CloudStorageModel.DoesNotExist:
             message = f"Storage {pk} does not exist"
             slogger.glob.error(message)
             return HttpResponseNotFound(message)
+        except FileNotFoundError as ex:
+            msg = f"{ex.strerror} {ex.filename}"
+            slogger.cloud_storage[pk].info(msg)
+            return Response(data=msg, status=status.HTTP_404_NOT_FOUND)
         except Exception as ex:
-            return HttpResponseBadRequest(str(ex))
+            # check that cloud storage was not deleted
+            storage_status = storage.get_status()
+            if storage_status == Status.FORBIDDEN:
+                msg = 'The resource {} is no longer available. Access forbidden.'.format(storage.name)
+            elif storage_status == Status.NOT_FOUND:
+                msg = 'The resource {} not found. It may have been deleted.'.format(storage.name)
+            else:
+                msg = str(ex)
+            return HttpResponseBadRequest(msg)
+
+    @swagger_auto_schema(
+        method='get',
+        operation_summary='Method returns a preview image from a cloud storage',
+        responses={
+            '200': openapi.Response(description='Preview'),
+        },
+        tags=['cloud storages']
+    )
+    @action(detail=True, methods=['GET'], url_path='preview')
+    def preview(self, request, pk):
+        try:
+            db_storage = CloudStorageModel.objects.get(pk=pk)
+            if not os.path.exists(db_storage.get_preview_path()):
+                credentials = Credentials()
+                credentials.convert_from_db({
+                    'type': db_storage.credentials_type,
+                    'value': db_storage.credentials,
+                })
+                details = {
+                    'resource': db_storage.resource,
+                    'credentials': credentials,
+                    'specific_attributes': db_storage.get_specific_attributes()
+                }
+                storage = get_cloud_storage_instance(cloud_provider=db_storage.provider_type, **details)
+                if not db_storage.manifests.count():
+                    raise Exception('Cannot get the cloud storage preview. There is no manifest file')
+                preview_path = None
+                for manifest_model in db_storage.manifests.all():
+                    full_manifest_path = os.path.join(db_storage.get_storage_dirname(), manifest_model.filename)
+                    if not os.path.exists(full_manifest_path) or \
+                            datetime.utcfromtimestamp(os.path.getmtime(full_manifest_path)).replace(tzinfo=pytz.UTC) < storage.get_file_last_modified(manifest_model.filename):
+                        storage.download_file(manifest_model.filename, full_manifest_path)
+                    manifest = ImageManifestManager(os.path.join(db_storage.get_storage_dirname(), manifest_model.filename))
+                    # need to update index
+                    manifest.set_index()
+                    if not len(manifest):
+                        continue
+                    preview_info = manifest[0]
+                    preview_path = ''.join([preview_info['name'], preview_info['extension']])
+                    break
+                if not preview_path:
+                    msg = 'Cloud storage {} does not contain any images'.format(pk)
+                    slogger.cloud_storage[pk].info(msg)
+                    return HttpResponseBadRequest(msg)
+
+                file_status = storage.get_file_status(preview_path)
+                if file_status == Status.NOT_FOUND:
+                    raise FileNotFoundError(errno.ENOENT,
+                        "Not found on the cloud storage {}".format(db_storage.display_name), preview_path)
+                elif file_status == Status.FORBIDDEN:
+                    raise PermissionError(errno.EACCES,
+                        "Access to the file on the '{}' cloud storage is denied".format(db_storage.display_name), preview_path)
+                with NamedTemporaryFile() as temp_image:
+                    storage.download_file(preview_path, temp_image.name)
+                    reader = ImageListReader([temp_image.name])
+                    preview = reader.get_preview()
+                    preview.save(db_storage.get_preview_path())
+            content_type = mimetypes.guess_type(db_storage.get_preview_path())[0]
+            return HttpResponse(open(db_storage.get_preview_path(), 'rb').read(), content_type)
+        except CloudStorageModel.DoesNotExist:
+            message = f"Storage {pk} does not exist"
+            slogger.glob.error(message)
+            return HttpResponseNotFound(message)
+        except Exception as ex:
+            # check that cloud storage was not deleted
+            storage_status = storage.get_status()
+            if storage_status == Status.FORBIDDEN:
+                msg = 'The resource {} is no longer available. Access forbidden.'.format(storage.name)
+            elif storage_status == Status.NOT_FOUND:
+                msg = 'The resource {} not found. It may have been deleted.'.format(storage.name)
+            else:
+                msg = str(ex)
+            return HttpResponseBadRequest(msg)
+
+    @swagger_auto_schema(
+        method='get',
+        operation_summary='Method returns a cloud storage status',
+        responses={
+            '200': openapi.Response(description='Status'),
+        },
+        tags=['cloud storages']
+    )
+    @action(detail=True, methods=['GET'], url_path='status')
+    def status(self, request, pk):
+        try:
+            db_storage = CloudStorageModel.objects.get(pk=pk)
+            credentials = Credentials()
+            credentials.convert_from_db({
+                'type': db_storage.credentials_type,
+                'value': db_storage.credentials,
+            })
+            details = {
+                'resource': db_storage.resource,
+                'credentials': credentials,
+                'specific_attributes': db_storage.get_specific_attributes()
+            }
+            storage = get_cloud_storage_instance(cloud_provider=db_storage.provider_type, **details)
+            storage_status = storage.get_status()
+            return HttpResponse(storage_status)
+        except CloudStorageModel.DoesNotExist:
+            message = f"Storage {pk} does not exist"
+            slogger.glob.error(message)
+            return HttpResponseNotFound(message)
+        except Exception as ex:
+            msg = str(ex)
+            return HttpResponseBadRequest(msg)
 
 def rq_handler(job, exc_type, exc_value, tb):
     job.exc_info = "".join(
@@ -1373,7 +1554,7 @@ def _import_annotations(request, rq_id, rq_func, pk, format_name):
 
     return Response(status=status.HTTP_202_ACCEPTED)
 
-def _export_annotations(db_task, rq_id, request, format_name, action, callback, filename):
+def _export_annotations(db_instance, rq_id, request, format_name, action, callback, filename):
     if action not in {"", "download"}:
         raise serializers.ValidationError(
             "Unexpected action specified for the request")
@@ -1390,9 +1571,12 @@ def _export_annotations(db_task, rq_id, request, format_name, action, callback, 
 
     rq_job = queue.fetch_job(rq_id)
     if rq_job:
-        last_task_update_time = timezone.localtime(db_task.updated_date)
+        last_instance_update_time = timezone.localtime(db_instance.updated_date)
+        if isinstance(db_instance, Project):
+            tasks_update = list(map(lambda db_task: timezone.localtime(db_task.updated_date), db_instance.tasks.all()))
+            last_instance_update_time = max(tasks_update + [last_instance_update_time])
         request_time = rq_job.meta.get('request_time', None)
-        if request_time is None or request_time < last_task_update_time:
+        if request_time is None or request_time < last_instance_update_time:
             rq_job.cancel()
             rq_job.delete()
         else:
@@ -1401,12 +1585,14 @@ def _export_annotations(db_task, rq_id, request, format_name, action, callback, 
                 if action == "download" and osp.exists(file_path):
                     rq_job.delete()
 
-                    timestamp = datetime.strftime(last_task_update_time,
+                    timestamp = datetime.strftime(last_instance_update_time,
                         "%Y_%m_%d_%H_%M_%S")
                     filename = filename or \
-                        "task_{}-{}-{}{}".format(
-                        db_task.name, timestamp,
-                        format_name, osp.splitext(file_path)[1])
+                        "{}_{}-{}-{}{}".format(
+                            "project" if isinstance(db_instance, models.Project) else "task",
+                            db_instance.name, timestamp,
+                            format_name, osp.splitext(file_path)[1]
+                        )
                     return sendfile(request, file_path, attachment=True,
                         attachment_filename=filename.lower())
                 else:
@@ -1427,11 +1613,9 @@ def _export_annotations(db_task, rq_id, request, format_name, action, callback, 
     except Exception:
         server_address = None
 
-    ttl = dm.views.CACHE_TTL.total_seconds()
+    ttl = (dm.views.PROJECT_CACHE_TTL if isinstance(db_instance, Project) else dm.views.TASK_CACHE_TTL).total_seconds()
     queue.enqueue_call(func=callback,
-        args=(db_task.id, format_name, server_address), job_id=rq_id,
+        args=(db_instance.id, format_name, server_address), job_id=rq_id,
         meta={ 'request_time': timezone.localtime() },
         result_ttl=ttl, failure_ttl=ttl)
     return Response(status=status.HTTP_202_ACCEPTED)
-
-

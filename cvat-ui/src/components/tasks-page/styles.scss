@@ -6,8 +6,8 @@
 @import '../../styles.scss';
 
 .cvat-tasks-page {
-    padding-top: 15px;
-    padding-bottom: 40px;
+    padding-top: $grid-unit-size * 2;
+    padding-bottom: $grid-unit-size;
     height: 100%;
     width: 100%;
 
@@ -31,6 +31,18 @@
     > div:nth-child(2) {
         height: 83%;
         padding-top: 10px;
+    }
+
+    @media screen and (min-height: 900px) {
+        > div:nth-child(2) {
+            height: 88%;
+        }
+    }
+
+    @media screen and (min-height: 1200px) {
+        > div:nth-child(2) {
+            height: 93%;
+        }
     }
 
     > div:nth-child(3) {

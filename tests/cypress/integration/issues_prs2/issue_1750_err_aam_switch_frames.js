@@ -37,7 +37,8 @@ context('An error occurs in AAM when switching to 2 frames, if the frames have o
             cy.createRectangle(createRectangleShape2PointsSecond);
         });
         it('Go to AAM', () => {
-            cy.changeWorkspace('Attribute annotation', labelName);
+            cy.changeWorkspace('Attribute annotation');
+            cy.changeLabelAAM(labelName);
         });
         it('Go to next frame', () => {
             cy.get('.cvat-player-next-button').click();

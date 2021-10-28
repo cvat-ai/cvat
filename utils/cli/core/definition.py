@@ -113,7 +113,7 @@ task_create_parser.add_argument(
     help='string or file containing JSON labels specification'
 )
 task_create_parser.add_argument(
-    '--project',
+    '--project_id',
     default=None,
     type=int,
     help='project ID if project exists'
@@ -194,6 +194,19 @@ task_create_parser.add_argument(
     type=int,
     help='''set the frame step option in the advanced configuration
             when uploading image series or videos (default: %(default)s)'''
+)
+task_create_parser.add_argument(
+    '--copy_data',
+    default=False,
+    action='store_true',
+    help='''set the option to copy the data, only used when resource type is
+            share (default: %(default)s)'''
+)
+task_create_parser.add_argument(
+    '--use_cache',
+    default=True,
+    action='store_false',
+    help='''set the option to use the cache (default: %(default)s)'''
 )
 #######################################################################
 # Delete

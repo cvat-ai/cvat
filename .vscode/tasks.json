@@ -4,11 +4,35 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "ui.js: server",
             "type": "npm",
             "script": "start",
             "path": "cvat-ui/",
-            "problemMatcher": []
+            "label": "npm: start - cvat-ui",
+            "detail": "webpack-dev-server --env.API_URL=http://localhost:7000 --config ./webpack.config.js --mode=development",
+            "promptOnClose": true,
+            "isBackground": true,
+            "problemMatcher": {
+                "owner": "webpack",
+                "severity": "error",
+                "fileLocation": "absolute",
+                "pattern": [
+                  {
+                    "regexp": "ERROR in (.*)",
+                    "file": 1
+                  },
+                  {
+                    "regexp": "\\((\\d+),(\\d+)\\):(.*)",
+                    "line": 1,
+                    "column": 2,
+                    "message": 3
+                  }
+                ],
+                "background": {
+                  "activeOnStart": true,
+                  "beginsPattern": "webpack-dev-server",
+                  "endsPattern": "Compiled"
+                }
+            }
         }
     ]
 }

@@ -1,6 +1,6 @@
 {
   "name": "cvat-core",
-  "version": "3.13.3",
+  "version": "3.16.0",
   "description": "Part of Computer Vision Tool which presents an interface for client-side integration",
   "main": "babel.config.js",
   "scripts": {
@@ -11,6 +11,12 @@
   },
   "author": "Intel",
   "license": "MIT",
+  "browserslist": [
+    "Chrome >= 63",
+    "Firefox > 58",
+    "not IE 11",
+    "> 2%"
+  ],
   "devDependencies": {
     "@babel/cli": "^7.4.4",
     "@babel/core": "^7.4.4",
@@ -33,7 +39,7 @@
     "webpack-cli": "^3.3.2"
   },
   "dependencies": {
-    "axios": "^0.21.1",
+    "axios": "^0.21.3",
     "browser-or-node": "^1.2.1",
     "cvat-data": "../cvat-data",
     "detect-browser": "^5.2.0",
