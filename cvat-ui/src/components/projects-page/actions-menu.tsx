@@ -7,7 +7,6 @@ import { useDispatch } from 'react-redux';
 import Modal from 'antd/lib/modal';
 import Menu from 'antd/lib/menu';
 
-import { MenuItem } from 'rc-menu';
 import { deleteProjectAsync } from 'actions/projects-actions';
 import { exportActions } from 'actions/export-actions';
 import { importActions } from 'actions/import-actions';
@@ -42,7 +41,9 @@ export default function ProjectActionsMenuComponent(props: Props): JSX.Element {
             <Menu.Item onClick={() => dispatch(exportActions.openExportModal(projectInstance))}>
                 Export dataset
             </Menu.Item>
-            <MenuItem onClick={() => dispatch(importActions.openImportModal(projectInstance))}>Import dataset</MenuItem>
+            <Menu.Item onClick={() => dispatch(importActions.openImportModal(projectInstance))}>
+                Import dataset
+            </Menu.Item>
             <hr />
             <Menu.Item onClick={onDeleteProject}>Delete</Menu.Item>
         </Menu>

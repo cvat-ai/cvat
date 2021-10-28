@@ -61,9 +61,9 @@ class CvatExtractor(Extractor):
     def __len__(self):
         return len(self._items)
 
-    def get(self, id, subset=DEFAULT_SUBSET_NAME):
+    def get(self, _id, subset=DEFAULT_SUBSET_NAME):
         assert subset in self._subsets, '{} not in {}'.format(subset, ', '.join(self._subsets))
-        return super().get(id, subset)
+        return super().get(_id, subset)
 
     @staticmethod
     def _get_subsets_from_anno(path):
@@ -820,7 +820,6 @@ def dump_as_cvat_interpolation(dumper, annotations):
     dumper.close_root()
 
 def load_anno(file_object, annotations):
-    from defusedxml import ElementTree
     supported_shapes = ('box', 'polygon', 'polyline', 'points', 'cuboid')
     context = ElementTree.iterparse(file_object, events=("start", "end"))
     context = iter(context)
@@ -1013,4 +1012,4 @@ def _import(src_file, instance_data, load_data_callback=None):
                 load_data_callback(dataset, instance_data)
             import_dm_annotations(dataset, instance_data)
     else:
-        load_task(src_file, instance_data)
+        load_anno(src_file, instance_data)
