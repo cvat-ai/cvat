@@ -379,8 +379,8 @@ class _ManifestManager(ABC):
 
     def remove(self):
         self.reset_index()
-        if os.path.exists(self.path):
-            os.remove(self.path)
+        if os.path.exists(self.manifest.path):
+            os.remove(self.manifest.path)
 
     @abstractmethod
     def create(self, content=None, _tqdm=None):
@@ -396,12 +396,11 @@ class _ManifestManager(ABC):
             image_number = 0
             line = manifest_file.readline()
             while line:
-                if not line.strip():
-                    continue
-                parsed_properties = json.loads(line)
-                self._json_item_is_valid(**parsed_properties)
-                yield (image_number, parsed_properties)
-                image_number += 1
+                if line.strip():
+                    parsed_properties = json.loads(line)
+                    self._json_item_is_valid(**parsed_properties)
+                    yield (image_number, parsed_properties)
+                    image_number += 1
                 line = manifest_file.readline()
 
     @property
