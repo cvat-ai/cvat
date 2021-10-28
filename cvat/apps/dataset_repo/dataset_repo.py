@@ -9,7 +9,6 @@ import os
 import re
 import shutil
 import subprocess
-from glob import glob
 import zipfile
 
 import django_rq
@@ -18,11 +17,12 @@ from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
 
+from cvat.apps.dataset_manager.formats.registry import format_for
 from cvat.apps.dataset_manager.task import export_task
+from cvat.apps.dataset_repo.models import GitData, GitStatusChoice
 from cvat.apps.engine.log import slogger
 from cvat.apps.engine.models import Job, Task, User
 from cvat.apps.engine.plugins import add_plugin
-from cvat.apps.dataset_repo.models import GitData, GitStatusChoice
 
 
 def _have_no_access_exception(ex):
@@ -69,6 +69,7 @@ class Git:
         self._branch_name = 'cvat_{}_{}'.format(db_task.id, self._task_name)
         self._annotation_file = os.path.join(self._cwd, self._path)
         self._sync_date = db_git.sync_date
+        self._format = db_git.format
         self._lfs = db_git.lfs
 
     # Method parses an got URL.
@@ -276,16 +277,13 @@ class Git:
 
         # Dump an annotation
         timestamp = datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
-        if self._task_mode == "annotation":
-            format_name = "CVAT for images 1.1"
-        else:
-            format_name = "CVAT for video 1.1"
         dump_name = os.path.join(db_task.get_task_dirname(),
-                                 "git_annotation_{}.zip".format(timestamp))
+                                 "git_annotation_{}_{}.zip".format(self._format, timestamp))
+
         export_task(
             task_id=self._tid,
             dst_file=dump_name,
-            format_name=format_name,
+            format_name=self._format,
             server_url=scheme + host,
             save_images=False,
         )
@@ -373,7 +371,7 @@ class Git:
                     return GitStatusChoice.NON_SYNCED
 
 
-def initial_create(tid, git_path, lfs, user):
+def initial_create(tid, git_path, export_format, lfs, user):
     try:
         db_task = Task.objects.get(pk=tid)
         path_pattern = r"\[(.+)\]"
@@ -393,9 +391,12 @@ def initial_create(tid, git_path, lfs, user):
         if len(_split) < 2 or _split[1] not in [".xml", ".zip"]:
             raise Exception("Only .xml and .zip formats are supported")
 
+        format_name = format_for(export_format, db_task.mode)
+
         db_git = GitData()
         db_git.url = git_path
         db_git.path = path
+        db_git.format = format_name
         db_git.task = db_task
         db_git.lfs = lfs
 
@@ -437,10 +438,10 @@ def get(tid, user):
     response = {}
     response["url"] = {"value": None}
     response["status"] = {"value": None, "error": None}
-
-    db_task = Task.objects.get(pk=tid)
-    if GitData.objects.filter(pk=db_task).exists():
-        db_git = GitData.objects.select_for_update().get(pk=db_task)
+    response["format"] = {"format": None}
+    db_task = Task.objects.get(pk = tid)
+    if GitData.objects.filter(pk = db_task).exists():
+        db_git = GitData.objects.select_for_update().get(pk = db_task)
         response['url']['value'] = '{} [{}]'.format(db_git.url, db_git.path)
         try:
             rq_id = "git.push.{}".format(tid)
@@ -449,12 +450,14 @@ def get(tid, user):
             if rq_job is not None and (rq_job.is_queued or rq_job.is_started):
                 db_git.status = GitStatusChoice.SYNCING
                 response['status']['value'] = str(db_git.status)
+                response['format'] = str(db_git.format)
             else:
                 try:
                     _git = Git(db_git, db_task, user)
                     _git.init_repos(True)
                     db_git.status = _git.remote_status(db_task.updated_date)
                     response['status']['value'] = str(db_git.status)
+                    response['format'] = str(db_git.format)
                 except git.exc.GitCommandError as ex:
                     _have_no_access_exception(ex)
             db_git.save()

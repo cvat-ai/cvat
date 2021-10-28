@@ -6,13 +6,15 @@ import React, { RefObject } from 'react';
 import { Row, Col } from 'antd/lib/grid';
 import { PercentageOutlined } from '@ant-design/icons';
 import Input from 'antd/lib/input';
+import Select from 'antd/lib/select';
 import Checkbox from 'antd/lib/checkbox';
 import Form, { FormInstance, RuleObject, RuleRender } from 'antd/lib/form';
 import Text from 'antd/lib/typography/Text';
 import { Store } from 'antd/lib/form/interface';
-
 import CVATTooltip from 'components/common/cvat-tooltip';
 import patterns from 'utils/validation-patterns';
+
+const { Option } = Select;
 
 export interface AdvancedConfiguration {
     bugTracker?: string;
@@ -23,6 +25,7 @@ export interface AdvancedConfiguration {
     stopFrame?: number;
     frameFilter?: string;
     lfs: boolean;
+    format?: string,
     repository?: string;
     useZipChunks: boolean;
     dataChunkSize?: number;
@@ -42,6 +45,7 @@ interface Props {
     onSubmit(values: AdvancedConfiguration): void;
     installedGit: boolean;
     activeFileManagerTab: string;
+    dumpers: []
 }
 
 function validateURL(_: RuleObject, value: string): Promise<void> {
@@ -276,6 +280,24 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
         );
     }
 
+    private renderGitFormat(): JSX.Element {
+        const { dumpers } = this.props;
+        return (
+            <Form.Item
+                initialValue='CVAT for video 1.1'
+                name='format'
+                label='Choose format'
+            >
+                <Select style={{ width: '100%' }} initialValue='CVAT for video 1.1'>
+                    {
+                        dumpers.map((dumper: any) =>
+                            <Option value={dumper.name}>{dumper.name}</Option>)
+                    }
+                </Select>
+            </Form.Item>
+        );
+    }
+
     private renderGit(): JSX.Element {
         return (
             <>
@@ -283,8 +305,12 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
                     <Col span={24}>{this.renderGitRepositoryURL()}</Col>
                 </Row>
                 <Row>
+                    <Col span={24}>{this.renderGitFormat()}</Col>
+                </Row>
+                <Row>
                     <Col span={24}>{this.renderGitLFSBox()}</Col>
                 </Row>
+
             </>
         );
     }

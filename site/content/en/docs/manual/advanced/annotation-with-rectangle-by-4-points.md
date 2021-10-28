@@ -1,7 +1,7 @@
 ---
 title: 'Annotation with rectangle by 4 points'
 linkTitle: 'Annotation with rectangle by 4 points'
-weight: 10
+weight: 7
 ---
 
 It is an efficient method of bounding box annotation, proposed

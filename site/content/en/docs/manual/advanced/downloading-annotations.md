@@ -1,7 +1,7 @@
 ---
 title: 'Downloading annotations'
 linkTitle: 'Downloading annotations'
-weight: 1
+weight: 18
 ---
 
 1. To download the latest annotations, you have to save all changes first.

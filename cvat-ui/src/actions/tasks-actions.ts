@@ -386,10 +386,13 @@ export function createTaskAsync(data: any): ThunkAction<Promise<void>, {}, {}, A
         if (data.subset) {
             description.subset = data.subset;
         }
+        if (data.cloudStorageId) {
+            description.cloud_storage_id = data.cloudStorageId;
+        }
 
         const taskInstance = new cvat.classes.Task(description);
         taskInstance.clientFiles = data.files.local;
-        taskInstance.serverFiles = data.files.share;
+        taskInstance.serverFiles = data.files.share.concat(data.files.cloudStorage);
         taskInstance.remoteFiles = data.files.remote;
 
         if (data.advanced.repository) {
@@ -401,6 +404,7 @@ export function createTaskAsync(data: any): ThunkAction<Promise<void>, {}, {}, A
                 };
                 gitPlugin.data.task = taskInstance;
                 gitPlugin.data.repos = data.advanced.repository;
+                gitPlugin.data.format = data.advanced.format;
                 gitPlugin.data.lfs = data.advanced.lfs;
             }
         }
