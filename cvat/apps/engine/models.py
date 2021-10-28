@@ -480,7 +480,7 @@ class Shape(models.Model):
     occluded = models.BooleanField(default=False)
     z_order = models.IntegerField(default=0)
     points = FloatArrayField()
-    rotation = PositiveIntegerField(default=0)
+    rotation = FloatField(default=0)
 
     class Meta:
         abstract = True

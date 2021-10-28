@@ -218,7 +218,7 @@ def dump_as_cvat_annotation(dumper, annotations):
 
                 if shape.rotation:
                     dump_data.update(OrderedDict([
-                        ("rotation", "{:.0f}".format(shape.rotation))
+                        ("rotation", "{:.2f}".format(shape.rotation))
                     ]))
             elif shape.type == "cuboid":
                 dump_data.update(OrderedDict([
@@ -346,7 +346,7 @@ def dump_as_cvat_interpolation(dumper, annotations):
 
                 if shape.rotation:
                     dump_data.update(OrderedDict([
-                        ("rotation", "{:.0f}".format(shape.rotation))
+                        ("rotation", "{:.2f}".format(shape.rotation))
                     ]))
             elif shape.type == "cuboid":
                 dump_data.update(OrderedDict([

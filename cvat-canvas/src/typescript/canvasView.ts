@@ -1922,7 +1922,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         (shape as any)
             .resize({
                 snapToGrid: 0.1,
-                snapToAngle: 1,
+                snapToAngle: 0.1,
             })
             .on('resizestart', (): void => {
                 this.mode = Mode.RESIZE;
@@ -1952,9 +1952,13 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
                 if (resized) {
                     let rotation = Math.round(shape.transform().rotation || 0);
-                    if (rotation < 0) {
-                        rotation = 360 + rotation;
+
+                    // be sure, that rotation in range [0; 360]
+                    while (rotation < 0) {
+                        rotation += 360;
                     }
+                    rotation %= 360;
+
                     let points = pointsToNumberArray(
                         shape.attr('points')
                             || `${shape.attr('x')},${shape.attr('y')} `

@@ -1276,9 +1276,9 @@
                     points: [...rightPosition.points],
                     rotation: rightPosition.rotation,
                     occluded: rightPosition.occluded,
-                    outside: true,
                     zOrder: rightPosition.zOrder,
                     keyframe: targetFrame in this.shapes,
+                    outside: true,
                 };
             }
 
@@ -1398,6 +1398,7 @@
     class PolyShape extends Shape {
         constructor(data, clientID, color, injection) {
             super(data, clientID, color, injection);
+            this.rotation = 0; // is not supported
         }
     }
 
@@ -1539,6 +1540,7 @@
     class CuboidShape extends Shape {
         constructor(data, clientID, color, injection) {
             super(data, clientID, color, injection);
+            this.rotation = 0;
             this.shapeType = ObjectShape.CUBOID;
             this.pinned = false;
             checkNumberOfPoints(this.shapeType, this.points);
@@ -1668,11 +1670,26 @@
         }
 
         interpolatePosition(leftPosition, rightPosition, offset) {
+            function findAngleDiff(rightAngle, leftAngle) {
+                let angleDiff = rightAngle - leftAngle;
+                angleDiff = ((angleDiff + 180) % 360) - 180;
+                if (Math.abs(angleDiff) >= 180) {
+                    // if the main arc is bigger than 180, go another arc
+                    // to find it, just substract absolute value from 360 and inverse sign
+                    angleDiff = 360 - Math.abs(angleDiff) * Math.sign(angleDiff) * -1;
+                }
+                return angleDiff;
+            }
+
             const positionOffset = leftPosition.points.map((point, index) => rightPosition.points[index] - point);
 
             return {
                 points: leftPosition.points.map((point, index) => point + positionOffset[index] * offset),
-                rotation: leftPosition.rotation + (rightPosition.rotation - leftPosition.rotation) * offset,
+                rotation:
+                    (leftPosition.rotation
+                        + findAngleDiff(rightPosition.rotation, leftPosition.rotation) * offset
+                        + 360)
+                    % 360,
                 occluded: leftPosition.occluded,
                 outside: leftPosition.outside,
                 zOrder: leftPosition.zOrder,
@@ -1683,6 +1700,9 @@
     class PolyTrack extends Track {
         constructor(data, clientID, color, injection) {
             super(data, clientID, color, injection);
+            for (const shape of this.shapes) {
+                shape.rotation = 0; // is not supported
+            }
         }
 
         interpolatePosition(leftPosition, rightPosition, offset) {
@@ -1936,7 +1956,7 @@
 
             return {
                 points: toArray(reducedPoints),
-                rotation: leftPosition.rotation + (rightPosition.rotation - leftPosition.rotation) * offset,
+                rotation: leftPosition.rotation,
                 occluded: leftPosition.occluded,
                 outside: leftPosition.outside,
                 zOrder: leftPosition.zOrder,
@@ -1999,7 +2019,7 @@
                     points: leftPosition.points.map(
                         (value, index) => value + (rightPosition.points[index] - value) * offset,
                     ),
-                    rotation: leftPosition.rotation + (rightPosition.rotation - leftPosition.rotation) * offset,
+                    rotation: leftPosition.rotation,
                     occluded: leftPosition.occluded,
                     outside: leftPosition.outside,
                     zOrder: leftPosition.zOrder,
@@ -2023,6 +2043,7 @@
             this.pinned = false;
             for (const shape of Object.values(this.shapes)) {
                 checkNumberOfPoints(this.shapeType, shape.points);
+                shape.rotation = 0; // is not supported
             }
         }
 
@@ -2031,6 +2052,7 @@
 
             return {
                 points: leftPosition.points.map((point, index) => point + positionOffset[index] * offset),
+                rotation: leftPosition.rotation,
                 occluded: leftPosition.occluded,
                 outside: leftPosition.outside,
                 zOrder: leftPosition.zOrder,
