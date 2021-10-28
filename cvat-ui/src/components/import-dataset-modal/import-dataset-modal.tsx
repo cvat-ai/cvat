@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
+import './styles.scss';
 import React, { useCallback, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import Modal from 'antd/lib/modal';
@@ -13,10 +14,7 @@ import message from 'antd/lib/message';
 import Upload, { RcFile } from 'antd/lib/upload';
 
 import {
-    DownloadOutlined,
-    InboxOutlined,
-    LoadingOutlined,
-    QuestionCircleFilled,
+    DownloadOutlined, InboxOutlined, LoadingOutlined, QuestionCircleFilled,
 } from '@ant-design/icons';
 
 import CVATTooltip from 'components/common/cvat-tooltip';
@@ -66,13 +64,14 @@ function ImportDatasetModal(): JSX.Element {
             title={(
                 <>
                     <Text>Import dataset to project</Text>
-                    <CVATTooltip title={
-                        instance && !instance.labels.length ?
-                            'Labels will be imported from dataset' :
-                            'Labels from project will be used'
-                    }
+                    <CVATTooltip
+                        title={
+                            instance && !instance.labels.length ?
+                                'Labels will be imported from dataset' :
+                                'Labels from project will be used'
+                        }
                     >
-                        <QuestionCircleFilled />
+                        <QuestionCircleFilled className='cvat-modal-import-header-question-icon' />
                     </CVATTooltip>
                 </>
             )}
@@ -95,10 +94,11 @@ function ImportDatasetModal(): JSX.Element {
                     <Select placeholder='Select dataset format' className='cvat-modal-import-select'>
                         {importers
                             .sort((a: any, b: any) => a.name.localeCompare(b.name))
-                            .filter((importer: any): boolean =>
-                                instance !== null && (!instance?.dimension ||
-                                    importer.dimension === instance.dimension
-                                ))
+                            .filter(
+                                (importer: any): boolean =>
+                                    instance !== null &&
+                                    (!instance?.dimension || importer.dimension === instance.dimension),
+                            )
                             .map(
                                 (importer: any): JSX.Element => {
                                     const pending = !!projects[instance.id];
