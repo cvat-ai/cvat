@@ -3,21 +3,25 @@
 #
 # SPDX-License-Identifier: MIT
 
-import sys
 import os.path as osp
+import sys
 from collections import namedtuple
-from typing import Any, Callable, DefaultDict, Dict, List, Literal, Mapping, NamedTuple, OrderedDict, Tuple, Union
 from pathlib import Path
+from typing import (Any, Callable, DefaultDict, Dict, List, Literal, Mapping,
+    NamedTuple, OrderedDict, Tuple, Union)
 
-from django.utils import timezone
-
-import datumaro.components.extractor as datumaro
-from cvat.apps.engine.frame_provider import FrameProvider
-from cvat.apps.engine.models import AttributeType, ShapeType, Project, Task, Label, DimensionType, Image as Img
+import datumaro.components.annotation as datum_annotation
+import datumaro.components.extractor as datum_extractor
 from datumaro.util import cast
 from datumaro.util.image import ByteImage, Image
+from django.utils import timezone
 
-from .annotation import AnnotationManager, TrackManager, AnnotationIR
+from cvat.apps.engine.frame_provider import FrameProvider
+from cvat.apps.engine.models import AttributeType, DimensionType
+from cvat.apps.engine.models import Image as Img
+from cvat.apps.engine.models import Label, Project, ShapeType, Task
+
+from .annotation import AnnotationIR, AnnotationManager, TrackManager
 
 
 class InstanceLabelData:
@@ -192,7 +196,7 @@ class TaskData(InstanceLabelData):
             ("bugtracker", db_task.bug_tracker),
             ("created", str(timezone.localtime(db_task.created_date))),
             ("updated", str(timezone.localtime(db_task.updated_date))),
-            ("subset", db_task.subset or datumaro.DEFAULT_SUBSET_NAME),
+            ("subset", db_task.subset or datum_extractor.DEFAULT_SUBSET_NAME),
             ("start_frame", str(db_task.data.start_frame)),
             ("stop_frame", str(db_task.data.stop_frame)),
             ("frame_filter", db_task.data.frame_filter),
@@ -800,9 +804,10 @@ class CVATDataExtractorMixin:
 
     @staticmethod
     def _load_categories(labels: list):
-        categories: Dict[datumaro.AnnotationType, datumaro.Categories] = {}
+        categories: Dict[datum_annotation.AnnotationType,
+            datum_annotation.Categories] = {}
 
-        label_categories = datumaro.LabelCategories(attributes=['occluded'])
+        label_categories = datum_annotation.LabelCategories(attributes=['occluded'])
 
         for _, label in labels:
             label_categories.add(label['name'])
@@ -810,7 +815,7 @@ class CVATDataExtractorMixin:
                 label_categories.attributes.add(attr['name'])
 
 
-        categories[datumaro.AnnotationType.label] = label_categories
+        categories[datum_annotation.AnnotationType.label] = label_categories
 
         return categories
 
@@ -824,7 +829,7 @@ class CVATDataExtractorMixin:
 
     def _read_cvat_anno(self, cvat_frame_anno: Union[ProjectData.Frame, TaskData.Frame], labels: list):
         categories = self.categories()
-        label_cat = categories[datumaro.AnnotationType.label]
+        label_cat = categories[datum_annotation.AnnotationType.label]
         def map_label(name): return label_cat.find(name)[0]
         label_attrs = {
             label['name']: label['attributes']
@@ -834,7 +839,7 @@ class CVATDataExtractorMixin:
         return convert_cvat_anno_to_dm(cvat_frame_anno, label_attrs, map_label)
 
 
-class CvatTaskDataExtractor(datumaro.SourceExtractor, CVATDataExtractorMixin):
+class CvatTaskDataExtractor(datum_extractor.SourceExtractor, CVATDataExtractorMixin):
     def __init__(self, task_data, include_images=False, format_type=None, dimension=DimensionType.DIM_2D):
         super().__init__()
         self._categories = self._load_categories(task_data.meta['task']['labels'])
@@ -893,7 +898,8 @@ class CvatTaskDataExtractor(datumaro.SourceExtractor, CVATDataExtractorMixin):
             dm_anno = self._read_cvat_anno(frame_data, task_data.meta['task']['labels'])
 
             if dimension == DimensionType.DIM_2D:
-                dm_item = datumaro.DatasetItem(id=osp.splitext(frame_data.name)[0],
+                dm_item = datum_extractor.DatasetItem(
+                        id=osp.splitext(frame_data.name)[0],
                         annotations=dm_anno, image=dm_image,
                         attributes={'frame': frame_data.frame
                     })
@@ -908,9 +914,11 @@ class CvatTaskDataExtractor(datumaro.SourceExtractor, CVATDataExtractorMixin):
                         attributes["labels"].append({"label_id": idx, "name": label["name"], "color": label["color"]})
                         attributes["track_id"] = -1
 
-                dm_item = datumaro.DatasetItem(id=osp.splitext(osp.split(frame_data.name)[-1])[0],
-                                               annotations=dm_anno, point_cloud=dm_image[0], related_images=dm_image[1],
-                                               attributes=attributes)
+                dm_item = datum_extractor.DatasetItem(
+                    id=osp.splitext(osp.split(frame_data.name)[-1])[0],
+                    annotations=dm_anno, point_cloud=dm_image[0], related_images=dm_image[1],
+                    attributes=attributes
+                )
 
             dm_items.append(dm_item)
 
@@ -918,7 +926,7 @@ class CvatTaskDataExtractor(datumaro.SourceExtractor, CVATDataExtractorMixin):
 
     def _read_cvat_anno(self, cvat_frame_anno: TaskData.Frame, labels: list):
         categories = self.categories()
-        label_cat = categories[datumaro.AnnotationType.label]
+        label_cat = categories[datum_annotation.AnnotationType.label]
         def map_label(name): return label_cat.find(name)[0]
         label_attrs = {
             label['name']: label['attributes']
@@ -927,7 +935,7 @@ class CvatTaskDataExtractor(datumaro.SourceExtractor, CVATDataExtractorMixin):
 
         return convert_cvat_anno_to_dm(cvat_frame_anno, label_attrs, map_label, self._format_type, self._dimension)
 
-class CVATProjectDataExtractor(datumaro.Extractor, CVATDataExtractorMixin):
+class CVATProjectDataExtractor(datum_extractor.Extractor, CVATDataExtractorMixin):
     def __init__(self, project_data: ProjectData, include_images: bool = False, format_type: str = None, dimension: DimensionType = DimensionType.DIM_2D):
         super().__init__()
         self._categories = self._load_categories(project_data.meta['project']['labels'])
@@ -935,7 +943,7 @@ class CVATProjectDataExtractor(datumaro.Extractor, CVATDataExtractorMixin):
         self._dimension = dimension
         self._format_type = format_type
 
-        dm_items: List[datumaro.DatasetItem] = []
+        dm_items: List[datum_extractor.DatasetItem] = []
 
         ext_per_task: Dict[int, str] = {}
         image_maker_per_task: Dict[int, Callable] = {}
@@ -996,7 +1004,8 @@ class CVATProjectDataExtractor(datumaro.Extractor, CVATDataExtractorMixin):
                 dm_image = Image(**image_args)
             dm_anno = self._read_cvat_anno(frame_data, project_data.meta['project']['labels'])
             if self._dimension == DimensionType.DIM_2D:
-                dm_item = datumaro.DatasetItem(id=osp.splitext(frame_data.name)[0],
+                dm_item = datum_extractor.DatasetItem(
+                    id=osp.splitext(frame_data.name)[0],
                     annotations=dm_anno, image=dm_image,
                     subset=frame_data.subset,
                     attributes={'frame': frame_data.frame}
@@ -1012,9 +1021,11 @@ class CVATProjectDataExtractor(datumaro.Extractor, CVATDataExtractorMixin):
                         attributes["labels"].append({"label_id": idx, "name": label["name"], "color": label["color"]})
                         attributes["track_id"] = -1
 
-                dm_item = datumaro.DatasetItem(id=osp.splitext(osp.split(frame_data.name)[-1])[0],
-                                               annotations=dm_anno, point_cloud=dm_image[0], related_images=dm_image[1],
-                                               attributes=attributes, subset=frame_data.subset)
+                dm_item = datum_extractor.DatasetItem(
+                    id=osp.splitext(osp.split(frame_data.name)[-1])[0],
+                    annotations=dm_anno, point_cloud=dm_image[0], related_images=dm_image[1],
+                    attributes=attributes, subset=frame_data.subset
+                )
             dm_items.append(dm_item)
 
         self._items = dm_items
@@ -1063,13 +1074,13 @@ def get_defaulted_subset(subset: str, subsets: List[str]) -> str:
     if subset:
         return subset
     else:
-        if datumaro.DEFAULT_SUBSET_NAME not in subsets:
-            return datumaro.DEFAULT_SUBSET_NAME
+        if datum_extractor.DEFAULT_SUBSET_NAME not in subsets:
+            return datum_extractor.DEFAULT_SUBSET_NAME
         else:
             i = 1
             while i < sys.maxsize:
-                if f'{datumaro.DEFAULT_SUBSET_NAME}_{i}' not in subsets:
-                    return f'{datumaro.DEFAULT_SUBSET_NAME}_{i}'
+                if f'{datum_extractor.DEFAULT_SUBSET_NAME}_{i}' not in subsets:
+                    return f'{datum_extractor.DEFAULT_SUBSET_NAME}_{i}'
                 i += 1
             raise Exception('Cannot find default name for subset')
 
@@ -1100,7 +1111,7 @@ def convert_cvat_anno_to_dm(cvat_frame_anno, label_attrs, map_label, format_name
         anno_label = map_label(tag_obj.label)
         anno_attr = convert_attrs(tag_obj.label, tag_obj.attributes)
 
-        anno = datumaro.Label(label=anno_label,
+        anno = datum_annotation.Label(label=anno_label,
             attributes=anno_attr, group=anno_group)
         item_anno.append(anno)
 
@@ -1121,20 +1132,20 @@ def convert_cvat_anno_to_dm(cvat_frame_anno, label_attrs, map_label, format_name
 
         anno_points = shape_obj.points
         if shape_obj.type == ShapeType.POINTS:
-            anno = datumaro.Points(anno_points,
+            anno = datum_annotation.Points(anno_points,
                 label=anno_label, attributes=anno_attr, group=anno_group,
                 z_order=shape_obj.z_order)
         elif shape_obj.type == ShapeType.POLYLINE:
-            anno = datumaro.PolyLine(anno_points,
+            anno = datum_annotation.PolyLine(anno_points,
                 label=anno_label, attributes=anno_attr, group=anno_group,
                 z_order=shape_obj.z_order)
         elif shape_obj.type == ShapeType.POLYGON:
-            anno = datumaro.Polygon(anno_points,
+            anno = datum_annotation.Polygon(anno_points,
                 label=anno_label, attributes=anno_attr, group=anno_group,
                 z_order=shape_obj.z_order)
         elif shape_obj.type == ShapeType.RECTANGLE:
             x0, y0, x1, y1 = anno_points
-            anno = datumaro.Bbox(x0, y0, x1 - x0, y1 - y0,
+            anno = datum_annotation.Bbox(x0, y0, x1 - x0, y1 - y0,
                 label=anno_label, attributes=anno_attr, group=anno_group,
                 z_order=shape_obj.z_order)
         elif shape_obj.type == ShapeType.CUBOID:
@@ -1144,9 +1155,10 @@ def convert_cvat_anno_to_dm(cvat_frame_anno, label_attrs, map_label, format_name
                 else:
                     anno_id = index
                 position, rotation, scale = anno_points[0:3], anno_points[3:6], anno_points[6:9]
-                anno = datumaro.Cuboid3d(id=anno_id, position=position, rotation=rotation, scale=scale,
-                                            label=anno_label, attributes=anno_attr, group=anno_group
-                                            )
+                anno = datum_annotation.Cuboid3d(
+                    id=anno_id, position=position, rotation=rotation, scale=scale,
+                    label=anno_label, attributes=anno_attr, group=anno_group
+                )
             else:
                 continue
         else:
@@ -1192,17 +1204,17 @@ def find_dataset_root(dm_dataset, task_data):
 
 def import_dm_annotations(dm_dataset, task_data):
     shapes = {
-        datumaro.AnnotationType.bbox: ShapeType.RECTANGLE,
-        datumaro.AnnotationType.polygon: ShapeType.POLYGON,
-        datumaro.AnnotationType.polyline: ShapeType.POLYLINE,
-        datumaro.AnnotationType.points: ShapeType.POINTS,
-        datumaro.AnnotationType.cuboid_3d: ShapeType.CUBOID
+        datum_annotation.AnnotationType.bbox: ShapeType.RECTANGLE,
+        datum_annotation.AnnotationType.polygon: ShapeType.POLYGON,
+        datum_annotation.AnnotationType.polyline: ShapeType.POLYLINE,
+        datum_annotation.AnnotationType.points: ShapeType.POINTS,
+        datum_annotation.AnnotationType.cuboid_3d: ShapeType.CUBOID
     }
 
     if len(dm_dataset) == 0:
         return
 
-    label_cat = dm_dataset.categories()[datumaro.AnnotationType.label]
+    label_cat = dm_dataset.categories()[datum_annotation.AnnotationType.label]
 
     root_hint = find_dataset_root(dm_dataset, task_data)
 
@@ -1231,7 +1243,7 @@ def import_dm_annotations(dm_dataset, task_data):
                 if hasattr(ann, 'label') and ann.label is None:
                     raise CvatImportError("annotation has no label")
                 if ann.type in shapes:
-                    if ann.type == datumaro.AnnotationType.cuboid_3d:
+                    if ann.type == datum_annotation.AnnotationType.cuboid_3d:
                         try:
                             ann.points = [*ann.position,*ann.rotation,*ann.scale,0,0,0,0,0,0,0]
                         except Exception as e:
@@ -1249,7 +1261,7 @@ def import_dm_annotations(dm_dataset, task_data):
                         attributes=[task_data.Attribute(name=n, value=str(v))
                             for n, v in ann.attributes.items()],
                     ))
-                elif ann.type == datumaro.AnnotationType.label:
+                elif ann.type == datum_annotation.AnnotationType.label:
                     task_data.add_tag(task_data.Tag(
                         frame=frame_number,
                         label=label_cat.items[ann.label].name,
