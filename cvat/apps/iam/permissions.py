@@ -410,6 +410,13 @@ class ProjectPermission(OpenPolicyAgentPermission):
 
         return permissions
 
+    @classmethod
+    def create_view(cls, request, project_id):
+        obj = Project.objects.get(id=project_id)
+        view = namedtuple('View', ['action'])(action='retrieve')
+        return cls('view', request, view, obj)
+
+
     def __init__(self, scope, request, view, obj=None):
         super().__init__(request, view, obj)
         self.url = settings.IAM_OPA_DATA_URL + '/projects/allow'
@@ -502,9 +509,9 @@ class TaskPermission(OpenPolicyAgentPermission):
                 perm = UserPermission.create_view(assignee, request)
                 permissions.append(perm)
 
-            project = request.data.get('project_id') or request.data.get('project')
-            if project:
-                perm = ProjectPermission.create_view(request)
+            project_id = request.data.get('project_id') or request.data.get('project')
+            if project_id:
+                perm = ProjectPermission.create_view(request, project_id)
                 permissions.append(perm)
 
         return permissions
@@ -538,7 +545,7 @@ class TaskPermission(OpenPolicyAgentPermission):
                     'organization': {
                         "id": getattr(self.obj.project.organization, 'id', None)
                     },
-                } if self.project else None
+                } if self.obj.project else None
             }
         elif self.view.action == 'create':
             organization = self.request.iam_context['organization']
@@ -546,7 +553,7 @@ class TaskPermission(OpenPolicyAgentPermission):
             project = None
             if project_id:
                 try:
-                    project = Project.objects.get(project_id)
+                    project = Project.objects.get(id=project_id)
                 except Project.DoesNotExist:
                     pass # it will be handled in view
 

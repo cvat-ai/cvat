@@ -166,6 +166,30 @@ allow {
     organizations.is_member
 }
 
+filter = [] { # Django Q object to filter list of entries
+    utils.is_admin
+    utils.is_sandbox
+} else = qobject {
+    utils.is_admin
+    utils.is_organization
+    qobject := [ {"organization": input.auth.organization.id} ]
+} else = qobject {
+    utils.is_sandbox
+    user := input.auth.user
+    qobject := [ {"owner_id": user.id}, {"assignee_id": user.id}, "|",
+        {"project__owner_id": user.id}, "|", {"project__assignee_id": user.id}, "|"]
+} else = qobject {
+    utils.is_organization
+    utils.has_perm(utils.USER)
+    organizations.has_perm(organizations.MAINTAINER)
+    qobject := [ {"organization": input.auth.organization.id} ]
+} else = qobject {
+    organizations.has_perm(organizations.WORKER)
+    user := input.auth.user
+    qobject := [ {"owner_id": user.id}, {"assignee_id": user.id}, "|",
+        {"project__owner_id": user.id}, "|", {"project__assignee_id": user.id}, "|"]
+}
+
 allow {
     { utils.VIEW, utils.VIEW_ANNOTATIONS, utils.EXPORT_DATASET,
       utils.VIEW_DATA, utils.EXPORT_ANNOTATIONS }[input.scope]

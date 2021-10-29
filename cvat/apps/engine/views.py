@@ -404,6 +404,11 @@ class TaskViewSet(viewsets.ModelViewSet):
     filterset_class = TaskFilter
     ordering_fields = ("id", "name", "owner", "status", "assignee")
 
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        perm = TaskPermission('list', self.request, self)
+        return perm.filter(queryset)
+
     def create(self, request):
         action = self.request.query_params.get('action', None)
         if action is None:

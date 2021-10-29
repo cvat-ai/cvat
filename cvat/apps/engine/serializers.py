@@ -375,7 +375,7 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
         project = None
         if project_id:
             try:
-                project = models.Project.objects.get(project_id)
+                project = models.Project.objects.get(id=project_id)
             except models.Project.DoesNotExist:
                 raise serializers.ValidationError(f'The specified project #{project_id} does not exist.')
 
