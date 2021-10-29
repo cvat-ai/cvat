@@ -267,7 +267,8 @@
             return projects;
         };
 
-        cvat.projects.searchNames.implementation = async (search, limit) => serverProxy.projects.searchNames(search, limit);
+        cvat.projects.searchNames
+            .implementation = async (search, limit) => serverProxy.projects.searchNames(search, limit);
 
         cvat.cloudStorages.get.implementation = async (filter) => {
             checkFilter(filter, {

@@ -11,7 +11,7 @@ from io import BytesIO
 
 import datumaro
 from datumaro.components.dataset import Dataset, DatasetItem
-from datumaro.components.extractor import Mask
+from datumaro.components.annotation import Mask
 from django.contrib.auth.models import Group, User
 from PIL import Image
 
@@ -278,6 +278,7 @@ class TaskExportTest(_DbTestBase):
             'CVAT for images 1.1',
             'CVAT for video 1.1',
             'Datumaro 1.0',
+            'Datumaro 3D 1.0',
             'LabelMe 3.0',
             'MOT 1.1',
             'MOTS PNG 1.0',
@@ -321,7 +322,9 @@ class TaskExportTest(_DbTestBase):
             'ICDAR Localization 1.0',
             'ICDAR Segmentation 1.0',
             'Kitti Raw Format 1.0',
-            'Sly Point Cloud Format 1.0'
+            'Sly Point Cloud Format 1.0',
+            'Datumaro 1.0',
+            'Datumaro 3D 1.0'
         })
 
     def test_exports(self):
@@ -352,7 +355,7 @@ class TaskExportTest(_DbTestBase):
             ('COCO 1.0', 'coco'),
             ('CVAT for images 1.1', 'cvat'),
             # ('CVAT for video 1.1', 'cvat'), # does not support
-            ('Datumaro 1.0', 'datumaro_project'),
+            ('Datumaro 1.0', 'datumaro'),
             ('LabelMe 3.0', 'label_me'),
             # ('MOT 1.1', 'mot_seq'), # does not support
             # ('MOTS PNG 1.0', 'mots_png'), # does not support
