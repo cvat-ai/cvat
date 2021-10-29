@@ -352,22 +352,35 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
 
     class Meta:
         model = models.Task
-        fields = ('url', 'id', 'name', 'project_id', 'mode', 'owner', 'assignee', 'owner_id', 'assignee_id',
-            'bug_tracker', 'created_date', 'updated_date', 'overlap',
-            'segment_size', 'status', 'labels', 'segments',
-            'data_chunk_size', 'data_compressed_chunk_type', 'data_original_chunk_type', 'size', 'image_quality',
-            'data', 'dimension', 'subset')
-        read_only_fields = ('mode', 'created_date', 'updated_date', 'status', 'data_chunk_size', 'owner', 'assignee',
-            'data_compressed_chunk_type', 'data_original_chunk_type', 'size', 'image_quality', 'data')
+        fields = ('url', 'id', 'name', 'project_id', 'mode', 'owner', 'assignee',
+            'owner_id', 'assignee_id', 'bug_tracker', 'created_date', 'updated_date',
+            'overlap', 'segment_size', 'status', 'labels', 'segments',
+            'data_chunk_size', 'data_compressed_chunk_type', 'data_original_chunk_type',
+            'size', 'image_quality', 'data', 'dimension', 'subset', 'organization')
+        read_only_fields = ('mode', 'created_date', 'updated_date', 'status',
+            'data_chunk_size', 'owner', 'assignee', 'data_compressed_chunk_type',
+            'data_original_chunk_type', 'size', 'image_quality', 'data',
+            'organization')
         write_once_fields = ('overlap', 'segment_size', 'project_id')
         ordering = ['-id']
 
     # pylint: disable=no-self-use
     def create(self, validated_data):
-        if not (validated_data.get("label_set") or validated_data.get("project_id")):
+        project_id = validated_data.get("project_id")
+        if not (validated_data.get("label_set") or project_id):
             raise serializers.ValidationError('Label set or project_id must be present')
-        if validated_data.get("label_set") and validated_data.get("project_id"):
+        if validated_data.get("label_set") and project_id:
             raise serializers.ValidationError('Project must have only one of Label set or project_id')
+
+        project = None
+        if project_id:
+            try:
+                project = models.Project.objects.get(project_id)
+            except models.Project.DoesNotExist:
+                raise serializers.ValidationError(f'The specified project #{project_id} does not exist.')
+
+            if getattr(project.organization, 'id', None) != validated_data['organization']:
+                raise serializers.ValidationError(f'The task and its project should be in the same organization.')
 
         labels = validated_data.pop('label_set', [])
         db_task = models.Task.objects.create(**validated_data)
@@ -409,9 +422,9 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
         if instance.project_id is None:
             for label in labels:
                 LabelSerializer.update_instance(label, instance)
-        validated_project_id = validated_data.get('project_id', None)
+        validated_project_id = validated_data.get('project_id')
         if validated_project_id is not None and validated_project_id != instance.project_id:
-            project = models.Project.objects.get(id=validated_data.get('project_id', None))
+            project = models.Project.objects.get(id=validated_project_id)
             if project.tasks.count() and project.tasks.first().dimension != instance.dimension:
                     raise serializers.ValidationError(f'Dimension ({instance.dimension}) of the task must be the same as other tasks in project ({project.tasks.first().dimension})')
             if instance.project_id is None:

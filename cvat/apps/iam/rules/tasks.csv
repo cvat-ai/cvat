@@ -1,30 +1,19 @@
 Scope,Resource,Context,Ownership,Limit,Method,URL,Privilege,Membership
 create,Task,Sandbox,None,resource['user']['num_resources'] < 10,POST,/tasks,User,N/A
-create,Task,Sandbox,None,resource['user']['num_resources'] < 10,GET,/tasks/{id}/status,User,N/A
 create,Task,Organization,None,resource['user']['num_resources'] < 10,POST,/tasks,User,Supervisor
-create,Task,Organization,None,resource['user']['num_resources'] < 10,GET,/tasks/{id}/status,User,Supervisor
 create,Task,Sandbox,None,,POST,/tasks,Business,N/A
-create,Task,Sandbox,None,,GET,/tasks/{id}/status,Business,N/A
 create,Task,Organization,None,,POST,/tasks,Business,Supervisor
-create,Task,Organization,None,,GET,/tasks/{id}/status,Business,Supervisor
 create@project,"Task, Project",Sandbox,None,,POST,/tasks,Admin,N/A
-create@project,"Task, Project",Sandbox,None,,GET,/tasks/{id}/status,Admin,N/A
 create@project,"Task, Project",Sandbox,"Project:owner, Project:assignee",resource['user']['num_resources'] < 10,POST,/tasks,User,N/A
-create@project,"Task, Project",Sandbox,"Project:owner, Project:assignee",resource['user']['num_resources'] < 10,GET,/tasks/{id}/status,User,N/A
 create@project,"Task, Project",Organization,None,resource['user']['num_resources'] < 10,POST,/tasks,User,Supervisor
-create@project,"Task, Project",Organization,None,resource['user']['num_resources'] < 10,GET,/tasks/{id}/status,User,Supervisor
 create@project,"Task, Project",Organization,"Project:owner, Project:assignee",resource['user']['num_resources'] < 10,POST,/tasks,User,Worker
-create@project,"Task, Project",Organization,"Project:owner, Project:assignee",resource['user']['num_resources'] < 10,GET,/tasks/{id}/status,User,Worker
 create@project,"Task, Project",Sandbox,"Project:owner, Project:assignee",,POST,/tasks,Business,N/A
-create@project,"Task, Project",Sandbox,"Project:owner, Project:assignee",,GET,/tasks/{id}/status,Business,N/A
 create@project,"Task, Project",Organization,None,,POST,/tasks,Business,Supervisor
-create@project,"Task, Project",Organization,None,,GET,/tasks/{id}/status,Business,Supervisor
 create@project,"Task, Project",Organization,"Project:owner, Project:assignee",,POST,/tasks,Business,Worker
-create@project,"Task, Project",Organization,"Project:owner, Project:assignee",,GET,/tasks/{id}/status,Business,Worker
-view,Task,Sandbox,None,,GET,/tasks/{id},Admin,N/A
-view,Task,Sandbox,"Owner, Project:owner, Assignee, Project:assignee",,GET,/tasks/{id},None,N/A
-view,Task,Organization,None,,GET,/tasks/{id},User,Maintainer
-view,Task,Organization,"Owner, Project:owner, Assignee, Project:assignee",,GET,/tasks/{id},None,Worker
+view,Task,Sandbox,None,,GET,"/tasks/{id}, /tasks/{id}/status",Admin,N/A
+view,Task,Sandbox,"Owner, Project:owner, Assignee, Project:assignee",,GET,"/tasks/{id}, /tasks/{id}/status",None,N/A
+view,Task,Organization,None,,GET,"/tasks/{id}, /tasks/{id}/status",User,Maintainer
+view,Task,Organization,"Owner, Project:owner, Assignee, Project:assignee",,GET,"/tasks/{id}, /tasks/{id}/status",None,Worker
 list,Task,Sandbox,None,,GET,"/tasks, /projects/{id}/tasks",Admin,N/A
 list,Task,Sandbox,"Owner, Project:owner, Assignee, Project:assignee",,GET,"/tasks, /projects/{id}/tasks",None,N/A
 list,Task,Organization,None,,GET,"/tasks, /projects/{id}/tasks",User,Maintainer
@@ -61,10 +50,10 @@ delete:annotations,Task,Sandbox,None,,DELETE,/tasks/{id}/annotations,Admin,N/A
 delete:annotations,Task,Sandbox,"Owner, Project:owner, Assignee, Project:assignee",,DELETE,/tasks/{id}/annotations,Worker,N/A
 delete:annotations,Task,Organization,None,,DELETE,/tasks/{id}/annotations,User,Maintainer
 delete:annotations,Task,Organization,"Owner, Project:owner, Assignee, Project:assignee",,DELETE,/tasks/{id}/annotations,Worker,Worker
-export:dataset,Task,Sandbox,None,,GET,/tasks/{id}/dataset,Admin,N/A
-export:dataset,Task,Sandbox,"Owner, Project:owner, Assignee, Project:assignee",,GET,/tasks/{id}/dataset,None,N/A
-export:dataset,Task,Organization,None,,GET,/tasks/{id}/dataset,User,Maintainer
-export:dataset,Task,Organization,"Owner, Project:owner, Assignee, Project:assignee",,GET,/tasks/{id}/dataset,None,Worker
+export:dataset,Task,Sandbox,None,,GET,/tasks/{id}/dataset?format=,Admin,N/A
+export:dataset,Task,Sandbox,"Owner, Project:owner, Assignee, Project:assignee",,GET,/tasks/{id}/dataset?format=,None,N/A
+export:dataset,Task,Organization,None,,GET,/tasks/{id}/dataset?format=,User,Maintainer
+export:dataset,Task,Organization,"Owner, Project:owner, Assignee, Project:assignee",,GET,/tasks/{id}/dataset?format=,None,Worker
 view:data,Task,Sandbox,None,,GET,"/tasks/{id}/data, /tasks/{id}/data/meta",Admin,N/A
 view:data,Task,Sandbox,"Owner, Project:owner, Assignee, Project:assignee",,GET,"/tasks/{id}/data, /tasks/{id}/data/meta",None,N/A
 view:data,Task,Organization,None,,GET,"/tasks/{id}/data, /tasks/{id}/data/meta",User,Maintainer
@@ -73,11 +62,11 @@ upload:data,Task,Sandbox,None,,POST,/tasks/{id}/data,Admin,N/A
 upload:data,Task,Sandbox,"Owner, Project:owner, Assignee, Project:assignee",,POST,/tasks/{id}/data,Worker,N/A
 upload:data,Task,Organization,None,,POST,/tasks/{id}/data,User,Maintainer
 upload:data,Task,Organization,"Owner, Project:owner, Assignee, Project:assignee",,POST,/tasks/{id}/data,Worker,Worker
-import:annotations,Task,Sandbox,None,,PUT,/tasks/{id}/annotations,Admin,N/A
-import:annotations,Task,Sandbox,"Owner, Project:owner, Assignee, Project:assignee",,PUT,/tasks/{id}/annotations,Worker,N/A
-import:annotations,Task,Organization,None,,PUT,/tasks/{id}/annotations,User,Maintainer
-import:annotations,Task,Organization,"Owner, Project:owner, Assignee, Project:assignee",,PUT,/tasks/{id}/annotations,Worker,Worker
-export:annotations,Task,Sandbox,None,,GET,/tasks/{id}/dataset,Admin,N/A
-export:annotations,Task,Sandbox,"Owner, Project:owner, Assignee, Project:assignee",,GET,/tasks/{id}/dataset,None,N/A
-export:annotations,Task,Organization,None,,GET,/tasks/{id}/dataset,User,Maintainer
-export:annotations,Task,Organization,"Owner, Project:owner, Assignee, Project:assignee",,GET,/tasks/{id}/dataset,None,Worker
+import:annotations,Task,Sandbox,None,,PUT,/tasks/{id}/annotations?format=,Admin,N/A
+import:annotations,Task,Sandbox,"Owner, Project:owner, Assignee, Project:assignee",,PUT,/tasks/{id}/annotations?format=,Worker,N/A
+import:annotations,Task,Organization,None,,PUT,/tasks/{id}/annotations?format=,User,Maintainer
+import:annotations,Task,Organization,"Owner, Project:owner, Assignee, Project:assignee",,PUT,/tasks/{id}/annotations?format=,Worker,Worker
+export:annotations,Task,Sandbox,None,,GET,/tasks/{id}/annotations?format=,Admin,N/A
+export:annotations,Task,Sandbox,"Owner, Project:owner, Assignee, Project:assignee",,GET,/tasks/{id}/annotations?format=,None,N/A
+export:annotations,Task,Organization,None,,GET,/tasks/{id}/annotations?format=,User,Maintainer
+export:annotations,Task,Organization,"Owner, Project:owner, Assignee, Project:assignee",,GET,/tasks/{id}/annotations?format=,None,Worker

@@ -390,7 +390,7 @@ class ProjectPermission(OpenPolicyAgentPermission):
     def create(cls, request, view, obj):
         permissions = []
         if view.basename == 'project':
-            for scope in cls.get_scopes(request, view, obj):
+            for scope in cls.get_scopes(request, view):
                 self = cls(scope, request, view, obj)
                 permissions.append(self)
 
@@ -398,12 +398,12 @@ class ProjectPermission(OpenPolicyAgentPermission):
                 perm = TaskPermission.create_list(request)
                 permissions.append(perm)
 
-            owner = request.data.get('owner_id')
+            owner = request.data.get('owner_id') or request.data.get('owner')
             if owner:
                 perm = UserPermission.create_view(owner, request)
                 permissions.append(perm)
 
-            assignee = request.data.get('assignee_id')
+            assignee = request.data.get('assignee_id') or request.data.get('assignee')
             if assignee:
                 perm = UserPermission.create_view(assignee, request)
                 permissions.append(perm)
@@ -417,7 +417,7 @@ class ProjectPermission(OpenPolicyAgentPermission):
         self.payload['input']['resource'] = self.resource
 
     @staticmethod
-    def get_scopes(request, view, obj):
+    def get_scopes(request, view):
         scope = {
             'list': 'list',
             'create': 'create',
@@ -431,9 +431,9 @@ class ProjectPermission(OpenPolicyAgentPermission):
 
         scopes = []
         if scope == 'update':
-            if 'owner_id' in request.data:
+            if any(k in request.data for k in ('owner_id', 'owner')):
                 scopes.append(scope + ':owner')
-            if 'assignee_id' in request.data:
+            if any(k in request.data for k in ('assignee_id', 'assignee')):
                 scopes.append(scope + ':assignee')
             for field in ('name', 'labels', 'bug_tracker'):
                 if field in request.data:
@@ -475,34 +475,163 @@ class ProjectPermission(OpenPolicyAgentPermission):
 
         return data
 
-
-
 class TaskPermission(OpenPolicyAgentPermission):
     @classmethod
     def create(cls, request, view, obj):
-        return []
+        permissions = []
+        if view.basename == 'task':
+            for scope in cls.get_scopes(request, view):
+                self = cls(scope, request, view, obj)
+                permissions.append(self)
+
+            if view.action == 'jobs':
+                perm = JobPermission.create_list(request)
+                permissions.append(perm)
+
+            owner = request.data.get('owner_id') or request.data.get('owner')
+            if owner:
+                perm = UserPermission.create_view(owner, request)
+                permissions.append(perm)
+
+            assignee = request.data.get('assignee_id') or request.data.get('assignee')
+            if assignee:
+                perm = UserPermission.create_view(assignee, request)
+                permissions.append(perm)
+
+            project = request.data.get('project_id') or request.data.get('project')
+            if project:
+                perm = ProjectPermission.create_view(request)
+                permissions.append(perm)
+
+        return permissions
+
 
     @classmethod
     def create_list(cls, request):
-        view = namedtuple('View', ['action'])(action='view')
-        return cls(request, view)
+        view = namedtuple('View', ['action'])(action='list')
+        return cls('list', request, view)
 
-    def __init__(self, request, view, obj=None):
+    def __init__(self, scope, request, view, obj=None):
         super().__init__(request, view, obj)
+        self.url = settings.IAM_OPA_DATA_URL + '/tasks/allow'
+        self.payload['input']['scope'] = scope
+        self.payload['input']['resource'] = self.resource
 
-    def get_scope(self, request, view, obj):
-        return {
-            'list': 'list',
-            'destroy': 'delete',
-        }[view.action]
+    @property
+    def resource(self):
+        data = None
+        if self.obj:
+            data = {
+                "id": self.obj.id,
+                "owner": { "id": getattr(self.obj.owner, 'id', None) },
+                "assignee": { "id": getattr(self.obj.assignee, 'id', None) },
+                'organization': {
+                    "id": getattr(self.obj.organization, 'id', None)
+                },
+                "project": {
+                    "owner": { "id": getattr(self.obj.project.owner, 'id', None) },
+                    "assignee": { "id": getattr(self.obj.project.assignee, 'id', None) },
+                    'organization': {
+                        "id": getattr(self.obj.project.organization, 'id', None)
+                    },
+                } if self.project else None
+            }
+        elif self.view.action == 'create':
+            organization = self.request.iam_context['organization']
+            project_id = self.request.data.get('project_id') or self.request.data.get('project')
+            project = None
+            if project_id:
+                try:
+                    project = Project.objects.get(project_id)
+                except Project.DoesNotExist:
+                    pass # it will be handled in view
 
-    url = settings.IAM_OPA_DATA_URL + '/tasks/allow'
+            data = {
+                "id": None,
+                "owner": { "id": self.request.user.id },
+                "assignee": {
+                    "id": self.request.data.get('assignee_id') or
+                        self.request.data.get('assignee')
+                },
+                'organization': {
+                    "id": organization.id if organization else None
+                },
+                "project": {
+                    "owner": { "id": getattr(project.owner, 'id', None) },
+                    "assignee": { "id": getattr(project.assignee, 'id', None) },
+                    'organization': {
+                        "id": getattr(project.organization, 'id', None)
+                    },
+                } if project else None,
+                "user": {
+                    "num_resources": Project.objects.filter(
+                        owner_id=self.request.user.id).count()
+                }
+            }
+
+        return data
+
+    @classmethod
+    def get_scopes(cls, request, view):
+        scope = {
+            ('list', 'GET'): 'list',
+            ('create', 'POST'): 'create',
+            ('retrieve', 'GET'): 'view',
+            ('status', 'GET'): 'view',
+            ('partial_update', 'PATCH'): 'update',
+            ('destroy', 'DELETE'): 'delete',
+            ('annotations', 'GET'): 'view:annotations',
+            ('annotations', 'PATCH'): 'update:annotations',
+            ('annotations', 'DELETE'): 'delete:annotations',
+            ('annotations', 'PUT'): 'update:annotations',
+            ('dataset_export', 'GET'): 'export:dataset',
+            ('data', 'GET'): 'view:data',
+            ('data_info', 'GET'): 'view:data',
+            ('data', 'POST'): 'upload:data',
+            ('jobs', 'GET'): 'view',
+        }.get((view.action, request.method))
+
+        scopes = []
+        if scope == 'create':
+            if any(k in request.data for k in ('project_id', 'project')):
+                scope = scope + '@project'
+
+            scopes.append(scope)
+        elif scope == 'update':
+            if any(k in request.data for k in ('owner_id', 'owner')):
+                scopes.append(scope + ':owner')
+            if any(k in request.data for k in ('assignee_id', 'assignee')):
+                scopes.append(scope + ':assignee')
+            if any(k in request.data for k in ('project_id', 'project')):
+                scopes.append(scope + ':project')
+
+            if any(k in request.data for k in ('name', 'labels', 'bug_tracker', 'subset')):
+                scopes.append(scope + ':desc')
+        elif scope == 'view:annotations':
+            if 'format' in request.query_params:
+                scope = 'export:annotations'
+
+            scopes.append(scope)
+        elif scope == 'update:annotations':
+            if 'format' in request.query_params and request.method == 'PUT':
+                scope = 'import:annotations'
+
+            scopes.append(scope)
+        else:
+            scopes.append(scope)
+
+        return scopes
 
 class JobPermission(OpenPolicyAgentPermission):
     @classmethod
     def create(cls, request, view, obj):
         # TODO: check jobs and tasks from lambda calls
         return []
+
+    @classmethod
+    def create_list(cls, request):
+        view = namedtuple('View', ['action'])(action='list')
+        return cls('list', request, view)
 
     def __init__(self, request, view, obj):
         super().__init__(request, view, obj)
