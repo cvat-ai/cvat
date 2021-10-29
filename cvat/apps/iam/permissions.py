@@ -260,7 +260,7 @@ class UserPermission(OpenPolicyAgentPermission):
     @classmethod
     def create_view(cls, user_id, request):
         obj = namedtuple('User', ['id'])(id=int(user_id))
-        view = namedtuple('View', ['action'])(action='view')
+        view = namedtuple('View', ['action'])(action='retrieve')
         return cls(request, view, obj)
 
     def __init__(self, request, view, obj=None):
@@ -390,7 +390,7 @@ class ProjectPermission(OpenPolicyAgentPermission):
     def create(cls, request, view, obj):
         permissions = []
         if view.basename == 'project':
-            for scope in cls.get_scopes(request, view):
+            for scope in cls.get_scopes(request, view, obj):
                 self = cls(scope, request, view, obj)
                 permissions.append(self)
 
@@ -417,7 +417,7 @@ class ProjectPermission(OpenPolicyAgentPermission):
         self.payload['input']['resource'] = self.resource
 
     @staticmethod
-    def get_scopes(request, view):
+    def get_scopes(request, view, obj):
         scope = {
             'list': 'list',
             'create': 'create',
@@ -432,9 +432,13 @@ class ProjectPermission(OpenPolicyAgentPermission):
         scopes = []
         if scope == 'update':
             if any(k in request.data for k in ('owner_id', 'owner')):
-                scopes.append(scope + ':owner')
+                owner_id = request.data.get('owner_id') or request.data.get('owner')
+                if owner_id != getattr(obj.owner, 'id', None):
+                    scopes.append(scope + ':owner')
             if any(k in request.data for k in ('assignee_id', 'assignee')):
-                scopes.append(scope + ':assignee')
+                assignee_id = request.data.get('assignee_id') or request.data.get('assignee')
+                if assignee_id != getattr(obj.assignee, 'id', None):
+                    scopes.append(scope + ':assignee')
             for field in ('name', 'labels', 'bug_tracker'):
                 if field in request.data:
                     scopes.append(scope + ':desc')
@@ -480,7 +484,7 @@ class TaskPermission(OpenPolicyAgentPermission):
     def create(cls, request, view, obj):
         permissions = []
         if view.basename == 'task':
-            for scope in cls.get_scopes(request, view):
+            for scope in cls.get_scopes(request, view, obj):
                 self = cls(scope, request, view, obj)
                 permissions.append(self)
 
@@ -572,7 +576,7 @@ class TaskPermission(OpenPolicyAgentPermission):
         return data
 
     @classmethod
-    def get_scopes(cls, request, view):
+    def get_scopes(cls, request, view, obj):
         scope = {
             ('list', 'GET'): 'list',
             ('create', 'POST'): 'create',
@@ -599,11 +603,17 @@ class TaskPermission(OpenPolicyAgentPermission):
             scopes.append(scope)
         elif scope == 'update':
             if any(k in request.data for k in ('owner_id', 'owner')):
-                scopes.append(scope + ':owner')
+                owner_id = request.data.get('owner_id') or request.data.get('owner')
+                if owner_id != getattr(obj.owner, 'id', None):
+                    scopes.append(scope + ':owner')
             if any(k in request.data for k in ('assignee_id', 'assignee')):
-                scopes.append(scope + ':assignee')
+                assignee_id = request.data.get('assignee_id') or request.data.get('assignee')
+                if assignee_id != getattr(obj.assignee, 'id', None):
+                    scopes.append(scope + ':assignee')
             if any(k in request.data for k in ('project_id', 'project')):
-                scopes.append(scope + ':project')
+                project_id = request.data.get('project_id') or request.data.get('project')
+                if project_id != getattr(obj.project, 'id', None):
+                    scopes.append(scope + ':project')
 
             if any(k in request.data for k in ('name', 'labels', 'bug_tracker', 'subset')):
                 scopes.append(scope + ':desc')
