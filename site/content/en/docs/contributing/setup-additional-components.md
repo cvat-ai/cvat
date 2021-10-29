@@ -25,7 +25,7 @@ nuctl create project cvat
 ```bash
 nuctl deploy --project-name cvat \
     --path serverless/openvino/dextr/nuclio \
-    --volume `pwd`/serverless/openvino/common:/opt/nuclio/common \
+    --volume `pwd`/serverless/common:/opt/nuclio/common \
     --platform local
 ```
 

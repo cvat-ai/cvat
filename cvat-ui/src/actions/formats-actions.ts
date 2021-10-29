@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -15,10 +15,11 @@ export enum FormatsActionTypes {
 
 const formatsActions = {
     getFormats: () => createAction(FormatsActionTypes.GET_FORMATS),
-    getFormatsSuccess: (annotationFormats: any) =>
+    getFormatsSuccess: (annotationFormats: any) => (
         createAction(FormatsActionTypes.GET_FORMATS_SUCCESS, {
             annotationFormats,
-        }),
+        })
+    ),
     getFormatsFailed: (error: any) => createAction(FormatsActionTypes.GET_FORMATS_FAILED, { error }),
 };
 

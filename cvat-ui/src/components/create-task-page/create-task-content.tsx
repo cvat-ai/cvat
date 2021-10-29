@@ -39,6 +39,7 @@ interface Props {
     taskId: number | null;
     projectId: number | null;
     installedGit: boolean;
+    dumpers:[]
 }
 
 type State = CreateTaskData;
@@ -311,13 +312,14 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
     }
 
     private renderAdvancedBlock(): JSX.Element {
-        const { installedGit } = this.props;
+        const { installedGit, dumpers } = this.props;
         const { activeFileManagerTab } = this.state;
         return (
             <Col span={24}>
                 <Collapse>
                     <Collapse.Panel key='1' header={<Text className='cvat-title'>Advanced configuration</Text>}>
                         <AdvancedConfigurationForm
+                            dumpers={dumpers}
                             installedGit={installedGit}
                             activeFileManagerTab={activeFileManagerTab}
                             ref={this.advancedConfigurationComponent}

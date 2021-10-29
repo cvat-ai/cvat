@@ -2,7 +2,6 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { MutableRefObject } from 'react';
 import { Canvas3d } from 'cvat-canvas3d/src/typescript/canvas3d';
 import { Canvas, RectDrawingMethod, CuboidDrawingMethod } from 'cvat-canvas-wrapper';
 import { IntelligentScissors } from 'utils/opencv-wrapper/intelligent-scissors';
@@ -135,6 +134,15 @@ export interface CloudStoragesQuery {
     [key: string]: string | number | null | undefined;
 }
 
+interface CloudStorageAdditional {
+    fetching: boolean;
+    initialized: boolean;
+    status: string | null;
+    preview: string;
+}
+type CloudStorageStatus = Pick<CloudStorageAdditional, 'fetching' | 'initialized' | 'status'>;
+type CloudStoragePreview = Pick<CloudStorageAdditional, 'fetching' | 'initialized' | 'preview'>;
+
 export type CloudStorage = any;
 
 export interface CloudStoragesState {
@@ -142,7 +150,12 @@ export interface CloudStoragesState {
     fetching: boolean;
     count: number;
     current: CloudStorage[];
-    // currentStatuses: any[];
+    statuses: {
+        [index: number]: CloudStorageStatus;
+    };
+    previews: {
+        [index: number]: CloudStoragePreview;
+    };
     gettingQuery: CloudStoragesQuery;
     activities: {
         creates: {
@@ -164,12 +177,6 @@ export interface CloudStoragesState {
             fetching: boolean;
             error: string;
         };
-        // getsStatus: {
-        //     cloudStorageID: number | null;
-        //     status: string | null;
-        //     fetching: boolean;
-        //     error: string;
-        // };
     };
 }
 
@@ -237,7 +244,7 @@ export interface Model {
     framework: string;
     description: string;
     type: string;
-    onChangeToolsBlockerState: (event:string) => void;
+    onChangeToolsBlockerState: (event: string) => void;
     tip: {
         message: string;
         gif: string;
@@ -512,6 +519,7 @@ export interface AnnotationState {
             delay: number;
             changeTime: number | null;
         };
+        navigationBlocked: boolean;
         playing: boolean;
         frameAngles: number[];
         contextImage: {
@@ -531,7 +539,6 @@ export interface AnnotationState {
         activeInitialState?: any;
     };
     annotations: {
-        selectedStatesID: number[];
         activatedStateID: number | null;
         activatedAttributeID: number | null;
         collapsed: Record<number, boolean>;
@@ -571,7 +578,6 @@ export interface AnnotationState {
     appearanceCollapsed: boolean;
     workspace: Workspace;
     predictor: PredictorState;
-    aiToolsRef: MutableRefObject<any>;
 }
 
 export enum Workspace {

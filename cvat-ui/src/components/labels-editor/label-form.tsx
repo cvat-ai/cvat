@@ -53,7 +53,7 @@ export default class LabelForm extends React.Component<Props> {
             name: values.name,
             id: label ? label.id : idGenerator(),
             color: values.color,
-            attributes: values.attributes.map((attribute: Store) => {
+            attributes: (values.attributes || []).map((attribute: Store) => {
                 let attrValues: string | string[] = attribute.values;
                 if (!Array.isArray(attrValues)) {
                     if (attribute.type === AttributeType.NUMBER) {
@@ -73,8 +73,9 @@ export default class LabelForm extends React.Component<Props> {
         });
 
         if (this.formRef.current) {
+            // resetFields does not remove existed attributes
+            this.formRef.current.setFieldsValue({ attributes: undefined });
             this.formRef.current.resetFields();
-            this.formRef.current.setFieldsValue({ attributes: [] });
         }
 
         if (!this.continueAfterSubmit) {
@@ -85,7 +86,7 @@ export default class LabelForm extends React.Component<Props> {
     private addAttribute = (): void => {
         if (this.formRef.current) {
             const attributes = this.formRef.current.getFieldValue('attributes');
-            this.formRef.current.setFieldsValue({ attributes: [...attributes, { id: idGenerator() }] });
+            this.formRef.current.setFieldsValue({ attributes: [...(attributes || []), { id: idGenerator() }] });
         }
     };
 
@@ -159,11 +160,11 @@ export default class LabelForm extends React.Component<Props> {
     private renderAttributeValuesInput(fieldInstance: any, attr: Attribute | null): JSX.Element {
         const { key } = fieldInstance;
         const locked = attr ? attr.id >= 0 : false;
-        const existedValues = attr ? attr.values : [];
+        const existingValues = attr ? attr.values : [];
 
         const validator = (_: any, values: string[]): Promise<void> => {
-            if (locked && existedValues) {
-                if (!equalArrayHead(existedValues, values)) {
+            if (locked && existingValues) {
+                if (!equalArrayHead(existingValues, values)) {
                     return Promise.reject(new Error('You can only append new values'));
                 }
             }
@@ -182,7 +183,7 @@ export default class LabelForm extends React.Component<Props> {
                 <Form.Item
                     name={[key, 'values']}
                     fieldKey={[fieldInstance.fieldKey, 'values']}
-                    initialValue={existedValues}
+                    initialValue={existingValues}
                     rules={[
                         {
                             required: true,
@@ -502,19 +503,15 @@ export default class LabelForm extends React.Component<Props> {
     // eslint-disable-next-line react/sort-comp
     public componentDidMount(): void {
         const { label } = this.props;
-        if (this.formRef.current) {
-            const convertedAttributes = label ?
-                label.attributes.map(
-                    (attribute: Attribute): Store => ({
-                        ...attribute,
-                        values:
-                              attribute.input_type.toUpperCase() === 'NUMBER' ?
-                                  attribute.values.join(';') :
-                                  attribute.values,
-                        type: attribute.input_type.toUpperCase(),
-                    }),
-                ) :
-                [];
+        if (this.formRef.current && label && label.attributes.length) {
+            const convertedAttributes = label.attributes.map(
+                (attribute: Attribute): Store => ({
+                    ...attribute,
+                    values:
+                        attribute.input_type.toUpperCase() === 'NUMBER' ? attribute.values.join(';') : attribute.values,
+                    type: attribute.input_type.toUpperCase(),
+                }),
+            );
 
             for (const attr of convertedAttributes) {
                 delete attr.input_type;

@@ -313,13 +313,14 @@ class FrameProvider {
                         const createImageBitmap = async function (blob) {
                             return new Promise((resolve) => {
                                 const img = document.createElement('img');
-                                img.addEventListener('load', function () {
+                                img.addEventListener('load', function loadListener() {
                                     resolve(this);
                                 });
                                 img.src = URL.createObjectURL(blob);
                             });
                         };
 
+                        // eslint-disable-next-line
                         event.data.data = await createImageBitmap(event.data.data);
                     }
 

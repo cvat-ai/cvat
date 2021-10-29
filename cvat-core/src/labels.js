@@ -147,8 +147,8 @@
             data.attributes = [];
 
             if (
-                Object.prototype.hasOwnProperty.call(initialData, 'attributes')
-                && Array.isArray(initialData.attributes)
+                Object.prototype.hasOwnProperty.call(initialData, 'attributes') &&
+                Array.isArray(initialData.attributes)
             ) {
                 for (const attrData of initialData.attributes) {
                     data.attributes.push(new Attribute(attrData));

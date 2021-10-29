@@ -92,6 +92,7 @@ function ExportDatasetModal(): JSX.Element {
             onCancel={closeModal}
             onOk={() => form.submit()}
             className={`cvat-modal-export-${instanceType}`}
+            destroyOnClose
         >
             <Form
                 name='Export dataset'
@@ -140,7 +141,11 @@ function ExportDatasetModal(): JSX.Element {
                     <Checkbox>Save images</Checkbox>
                 </Form.Item>
                 <Form.Item label='Custom name' name='customName'>
-                    <Input placeholder='Custom name for a dataset' suffix='.zip' className='cvat-modal-export-filename-input' />
+                    <Input
+                        placeholder='Custom name for a dataset'
+                        suffix='.zip'
+                        className='cvat-modal-export-filename-input'
+                    />
                 </Form.Item>
             </Form>
         </Modal>

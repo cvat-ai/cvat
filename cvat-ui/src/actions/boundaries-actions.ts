@@ -25,16 +25,15 @@ export const boundariesActions = {
         minZ: number,
         maxZ: number,
         colors: string[],
-    ) =>
-        createAction(BoundariesActionTypes.RESET_AFTER_ERROR, {
-            job,
-            states,
-            frameNumber,
-            frameData,
-            minZ,
-            maxZ,
-            colors,
-        }),
+    ) => createAction(BoundariesActionTypes.RESET_AFTER_ERROR, {
+        job,
+        states,
+        frameNumber,
+        frameData,
+        minZ,
+        maxZ,
+        colors,
+    }),
     throwResetError: () => createAction(BoundariesActionTypes.THROW_RESET_ERROR),
 };
 
