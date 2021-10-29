@@ -675,13 +675,17 @@ def patch_job_data(pk, data, action):
         annotation.create(data)
     elif action == PatchAction.UPDATE:
         annotation.update(data)
-        # TODO: move this to execute once per save button click (new action type from client?)
-        # Sync with Firestore
+        # Sync Voxel labels to cloud storage
         task = annotation.db_job.segment.task
         with transaction.atomic():
             task_annotation = TaskAnnotation(task.id)
             task_annotation.init_from_db()
-        SyncLabels(task.id, task.name).execute(task_annotation)
+        SyncLabels(task.id, task.name).execute(
+            TaskData(
+                annotation_ir=task_annotation.ir_data,
+                db_task=task,
+            )
+        )
     elif action == PatchAction.DELETE:
         annotation.delete(data)
 

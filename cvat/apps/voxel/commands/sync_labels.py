@@ -4,7 +4,8 @@ from django.conf import settings
 from cvat.apps.voxel.commands.voxel_command import VoxelCommand
 from google.cloud import storage
 from google.oauth2 import service_account
-from cvat.apps.dataset_manager.formats.cvat import dump_as_cvat_interpolation
+from cvat.apps.dataset_manager.bindings import TaskData
+from cvat.apps.dataset_manager.formats.cvat import dump_task_anno, dump_as_cvat_interpolation
 
 
 class SyncLabels(VoxelCommand):
@@ -20,12 +21,12 @@ class SyncLabels(VoxelCommand):
             service_account.Credentials.from_service_account_file(key_path)
         )
 
-    def _sanitize_video_uuid(self, video_uuid):
+    def _sanitize_video_uuid(self, video_uuid: str) -> str:
         """Sanitize UUIDs since it most likely comes from CVAT task name."""
         # Strip file extensions
         return video_uuid.strip().split(".")[0]
 
-    def _sync_cvat_xml_to_gcs(self, cvat_xml):
+    def _sync_cvat_xml_to_gcs(self, cvat_xml: str):
         """Pushes CVAT XML to Google Cloud Storage bucket."""
         project = os.getenv("VOXEL_GCP_PROJECT", "missing_env_var_VOXEL_GCP_PROJECT")
         client = storage.Client(
@@ -35,10 +36,8 @@ class SyncLabels(VoxelCommand):
         blob = bucket.blob(blob_name)
         blob.upload_from_string(cvat_xml, content_type='text/xml')
 
-    def execute(self, task_annotation):
-        # TODO: re-enable sync after 1.6.0 export changes
-        return
+    def execute(self, task_data: TaskData):
         xml_stream = io.StringIO()
-        task_annotation.export(xml_stream, dump_as_cvat_interpolation)
+        dump_task_anno(xml_stream, task_data, dump_as_cvat_interpolation)
         cvat_xml = xml_stream.getvalue()
         self._sync_cvat_xml_to_gcs(cvat_xml)
