@@ -70,7 +70,7 @@ def _import(src_file, task_data):
                     frame_id = match_dm_item(DatasetItem(id=item_id),
                         task_data, root_hint)
                     frame_info = task_data.frame_info[frame_id]
-                except Exception:
+                except Exception: # nosec
                     pass
                 if frame_info is not None:
                     image_meta[item_id] = (frame_info['height'], frame_info['width'])
