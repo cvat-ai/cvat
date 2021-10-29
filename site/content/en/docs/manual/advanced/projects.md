@@ -1,7 +1,7 @@
 ---
 title: 'Projects'
 linkTitle: 'Projects'
-weight: 3
+weight: 1
 description: 'Creating and exporting projects in CVAT.'
 ---
 

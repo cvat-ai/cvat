@@ -57,7 +57,6 @@
                         requests[e.data.id].resolve(e.data.responseData);
                     } else {
                         requests[e.data.id].reject({
-                            error: e.data.error,
                             response: {
                                 status: e.data.status,
                                 data: e.data.responseData,
@@ -135,9 +134,9 @@
                 return response.data;
             }
 
-            async function share(directory) {
+            async function share(directoryArg) {
                 const { backendAPI } = config;
-                directory = encodeURIComponent(directory);
+                const directory = encodeURIComponent(directoryArg);
 
                 let response = null;
                 try {
@@ -839,7 +838,6 @@
                     );
                 } catch (errorData) {
                     throw generateError({
-                        ...errorData,
                         message: '',
                         response: {
                             ...errorData.response,
@@ -1145,7 +1143,8 @@
 
                     const closureId = Date.now();
                     predictAnnotations.latestRequest.id = closureId;
-                    const predicate = () => !predictAnnotations.latestRequest.fetching || predictAnnotations.latestRequest.id !== closureId;
+                    const predicate = () => !predictAnnotations.latestRequest.fetching ||
+                        predictAnnotations.latestRequest.id !== closureId;
                     if (predictAnnotations.latestRequest.fetching) {
                         waitFor(5, predicate).then(() => {
                             if (predictAnnotations.latestRequest.id !== closureId) {
@@ -1256,7 +1255,6 @@
                     });
                 } catch (errorData) {
                     throw generateError({
-                        ...errorData,
                         message: '',
                         response: {
                             ...errorData.response,

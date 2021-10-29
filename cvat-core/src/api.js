@@ -24,7 +24,6 @@ function build() {
     const { FrameData } = require('./frames');
     const { CloudStorage } = require('./cloud-storage');
 
-
     const enums = require('./enums');
 
     const {
@@ -822,7 +821,7 @@ function build() {
 
     const implementAPI = require('./api-implementation');
 
-    Math.clamp = function (value, min, max) {
+    Math.clamp = function clamp(value, min, max) {
         return Math.min(Math.max(value, min), max);
     };
 

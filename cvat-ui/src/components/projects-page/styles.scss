@@ -46,13 +46,12 @@
 }
 
 .cvat-projects-top-bar {
-    > div:nth-child(1) {
-        display: flex;
-
-        > span:nth-child(2) {
-            width: $grid-unit-size * 25;
-            margin-left: $grid-unit-size;
+    > div:first-child {
+        .cvat-title {
+            margin-right: $grid-unit-size;
         }
+
+        display: flex;
     }
 
     > div:nth-child(2) {

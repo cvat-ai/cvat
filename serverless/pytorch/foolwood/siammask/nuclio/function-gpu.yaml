@@ -1,0 +1,73 @@
+metadata:
+  name: pth-foolwood-siammask
+  namespace: cvat
+  annotations:
+    name: SiamMask
+    type: tracker
+    spec:
+    framework: pytorch
+
+spec:
+  description: Fast Online Object Tracking and Segmentation
+  runtime: 'python:3.6'
+  handler: main:handler
+  eventTimeout: 30s
+  env:
+    - name: PYTHONPATH
+      value: /opt/nuclio/SiamMask:/opt/nuclio/SiamMask/experiments/siammask_sharp
+
+  build:
+    image: cvat/pth.foolwood.siammask
+    baseImage: nvidia/cuda:11.1-devel-ubuntu20.04
+
+    directives:
+      preCopy:
+        - kind: ENV
+          value: PATH="/root/miniconda3/bin:${PATH}"
+        - kind: ARG
+          value: PATH="/root/miniconda3/bin:${PATH}"
+        - kind: RUN
+          value: apt update && apt install -y --no-install-recommends wget git ca-certificates libglib2.0-0 libsm6 libxrender1 libxext6 && rm -rf /var/lib/apt/lists/*
+        - kind: RUN
+          value: wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh &&
+            chmod +x Miniconda3-latest-Linux-x86_64.sh && ./Miniconda3-latest-Linux-x86_64.sh -b &&
+            rm -f Miniconda3-latest-Linux-x86_64.sh
+        - kind: WORKDIR
+          value: /opt/nuclio
+        - kind: RUN
+          value: conda create -y -n siammask python=3.7
+        - kind: SHELL
+          value: '["conda", "run", "-n", "siammask", "/bin/bash", "-c"]'
+        - kind: RUN
+          value: git clone https://github.com/foolwood/SiamMask.git
+        - kind: RUN
+          value: pip install -r SiamMask/requirements.txt jsonpickle
+        - kind: RUN
+          value: pip install torch==1.9.0+cu111 torchvision==0.10.0+cu111 torchaudio==0.9.0 -f https://download.pytorch.org/whl/torch_stable.html
+        - kind: RUN
+          value: conda install -y gcc_linux-64
+        - kind: RUN
+          value: cd SiamMask && bash make.sh && cd -
+        - kind: RUN
+          value: wget -P SiamMask/experiments/siammask_sharp http://www.robots.ox.ac.uk/~qwang/SiamMask_DAVIS.pth
+        - kind: ENTRYPOINT
+          value: '["conda", "run", "-n", "siammask"]'
+
+  triggers:
+    myHttpTrigger:
+      maxWorkers: 2
+      kind: 'http'
+      workerAvailabilityTimeoutMilliseconds: 10000
+      attributes:
+        maxRequestBodySize: 33554432 # 32MB
+
+  resources:
+    limits:
+      nvidia.com/gpu: 1
+
+  platform:
+    attributes:
+      restartPolicy:
+        name: always
+        maximumRetryCount: 3
+      mountMode: volume

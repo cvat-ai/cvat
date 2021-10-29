@@ -19,11 +19,12 @@ interface Props {
     error: string;
     taskId: number | null;
     installedGit: boolean;
+    dumpers: []
 }
 
 export default function CreateTaskPage(props: Props): JSX.Element {
     const {
-        error, status, taskId, onCreate, installedGit,
+        error, status, taskId, onCreate, installedGit, dumpers,
     } = props;
 
     const location = useLocation();
@@ -79,6 +80,7 @@ export default function CreateTaskPage(props: Props): JSX.Element {
                     status={status}
                     onCreate={onCreate}
                     installedGit={installedGit}
+                    dumpers={dumpers}
                 />
             </Col>
         </Row>

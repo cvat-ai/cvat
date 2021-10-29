@@ -246,6 +246,7 @@ context('Review pipeline feature', () => {
         it('Use quick issues "Incorrect position". Issue will be created immediately.', () => {
             cy.createIssueFromObject('#cvat_canvas_shape_1', 'Quick issue: incorrect position');
             cy.checkIssueLabel('Wrong position');
+            cy.get('.cvat_canvas_issue_region').should('have.length', 1);
         });
 
         it('Item submenu: "Quick issue ..." does not appear.', () => {
@@ -259,6 +260,7 @@ context('Review pipeline feature', () => {
         it('Create different issues with a custom text.', () => {
             cy.createIssueFromObject('#cvat_canvas_shape_2', 'Open an issue ...', customeIssueDescription);
             cy.checkIssueLabel(customeIssueDescription);
+            cy.get('.cvat_canvas_issue_region').should('have.length', 2);
         });
 
         it('Now item submenu: "Quick issue ..." appears and it contains several latest options.', () => {
@@ -268,7 +270,7 @@ context('Review pipeline feature', () => {
                 .should('exist')
                 .trigger('mousemove')
                 .trigger('mouseover');
-            cy.get('[id="quick_issue_from_latest$Menu"]').within(() => {
+            cy.get('.cvat-quick-issue-from-latest-item').within(() => {
                 cy.contains('.cvat-context-menu-item', new RegExp(`^${customeIssueDescription}$`, 'g'))
                     .should('exist')
                     .and('have.text', customeIssueDescription);
@@ -278,6 +280,7 @@ context('Review pipeline feature', () => {
         it('Use one of items to create quick issue on another object on another frame. Issue has been created.', () => {
             cy.goCheckFrameNumber(2);
             cy.createIssueFromObject('#cvat_canvas_shape_4', 'Quick issue: incorrect attribute');
+            cy.get('.cvat_canvas_issue_region').should('have.length', 1);
             cy.checkIssueLabel('Wrong attribute');
             cy.goCheckFrameNumber(0); // Back to first frame
         });
@@ -285,6 +288,7 @@ context('Review pipeline feature', () => {
         it('Reload page. All the issue still exists.', () => {
             cy.reload();
             cy.get('.cvat-canvas-container').should('exist');
+            cy.get('.cvat_canvas_issue_region').should('have.length', 2);
             cy.checkIssueLabel(customeIssueDescription);
             cy.checkIssueLabel('Wrong position');
         });
@@ -341,13 +345,12 @@ context('Review pipeline feature', () => {
 
         it('Go to "Issues" tab at right sidebar and select an issue.', () => {
             cy.get('.cvat-objects-sidebar').within(() => {
-                cy.contains('Issues').click();
+                cy.contains('[role="tab"]', 'Issues').click().should('have.attr', 'aria-selected', 'true');
             });
-            cy.get('.cvat-objects-sidebar-issue-item').then((sidebarIssueItems) => {
-                cy.get('.cvat-hidden-issue-label').then((issueLabels) => {
-                    expect(sidebarIssueItems.length).to.be.equal(issueLabels.length);
-                });
-            });
+            cy.get('.cvat-objects-sidebar-issues-list-header').should('be.visible');
+            cy.get('.cvat-objects-sidebar-issue-item').should('have.length', 4);
+            cy.get('.cvat-hidden-issue-label').should('have.length', 4);
+            cy.get('.cvat_canvas_issue_region').should('have.length', 4);
         });
 
         it('Select an issue on sidebar. Issue indication has changed the color for highlighted issue', () => {
@@ -365,10 +368,10 @@ context('Review pipeline feature', () => {
 
         it('Issue navigation. Navigation works and go only to frames with issues.', () => {
             cy.get('.cvat-issues-sidebar-previous-frame').should('have.attr', 'style').and('contain', 'opacity: 0.5;'); // The element is not active
-            cy.get('.cvat-issues-sidebar-next-frame').click();
+            cy.get('.cvat-issues-sidebar-next-frame').should('be.visible').click();
             cy.checkFrameNum(2); // Frame changed to 2
             cy.get('.cvat-issues-sidebar-next-frame').should('have.attr', 'style').and('contain', 'opacity: 0.5;'); // The element is not active
-            cy.get('.cvat-issues-sidebar-previous-frame').click();
+            cy.get('.cvat-issues-sidebar-previous-frame').should('be.visible').click();
             cy.checkFrameNum(0); // Frame changed to 0
         });
 
