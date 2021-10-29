@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -32,14 +32,17 @@ export enum ReviewActionTypes {
 }
 
 export const reviewActions = {
-    initializeReviewSuccess: (reviewInstance: any, frame: number) =>
-        createAction(ReviewActionTypes.INITIALIZE_REVIEW_SUCCESS, { reviewInstance, frame }),
+    initializeReviewSuccess: (reviewInstance: any, frame: number) => (
+        createAction(ReviewActionTypes.INITIALIZE_REVIEW_SUCCESS, { reviewInstance, frame })
+    ),
     initializeReviewFailed: (error: any) => createAction(ReviewActionTypes.INITIALIZE_REVIEW_FAILED, { error }),
     createIssue: () => createAction(ReviewActionTypes.CREATE_ISSUE, {}),
-    startIssue: (position: number[]) =>
-        createAction(ReviewActionTypes.START_ISSUE, { position: cvat.classes.Issue.hull(position) }),
-    finishIssueSuccess: (frame: number, issue: any) =>
-        createAction(ReviewActionTypes.FINISH_ISSUE_SUCCESS, { frame, issue }),
+    startIssue: (position: number[]) => (
+        createAction(ReviewActionTypes.START_ISSUE, { position: cvat.classes.Issue.hull(position) })
+    ),
+    finishIssueSuccess: (frame: number, issue: any) => (
+        createAction(ReviewActionTypes.FINISH_ISSUE_SUCCESS, { frame, issue })
+    ),
     finishIssueFailed: (error: any) => createAction(ReviewActionTypes.FINISH_ISSUE_FAILED, { error }),
     cancelIssue: () => createAction(ReviewActionTypes.CANCEL_ISSUE),
     commentIssue: (issueId: number) => createAction(ReviewActionTypes.COMMENT_ISSUE, { issueId }),

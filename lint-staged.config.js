@@ -12,11 +12,6 @@ function makePattern(extension) {
 
 module.exports = (stagedFiles) => {
     const eslintExtensions = ['ts', 'tsx', 'js'].map(makePattern);
-    const prettierExtensions = ['html', 'css', 'scss', 'json', 'yaml', 'yml', 'md']
-        .map(makePattern)
-        .concat(eslintExtensions);
-
-    const prettierFiles = micromatch(stagedFiles, prettierExtensions);
     const eslintFiles = micromatch(stagedFiles, eslintExtensions);
 
     const cvatData = containsInPath('/cvat-data/', eslintFiles);
@@ -27,7 +22,6 @@ module.exports = (stagedFiles) => {
 
     const mapping = {};
     const commands = [];
-    mapping['prettier --write '] = prettierFiles.join(' ');
     mapping['npm run precommit:cvat-ui -- '] = cvatUI.join(' ');
     mapping['npm run precommit:cvat-data -- '] = cvatData.join(' ');
     mapping['npm run precommit:cvat-core -- '] = cvatCore.join(' ');

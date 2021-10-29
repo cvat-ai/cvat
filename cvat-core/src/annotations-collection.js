@@ -36,23 +36,23 @@
 
         let shapeModel = null;
         switch (type) {
-        case 'rectangle':
-            shapeModel = new RectangleShape(shapeData, clientID, color, injection);
-            break;
-        case 'polygon':
-            shapeModel = new PolygonShape(shapeData, clientID, color, injection);
-            break;
-        case 'polyline':
-            shapeModel = new PolylineShape(shapeData, clientID, color, injection);
-            break;
-        case 'points':
-            shapeModel = new PointsShape(shapeData, clientID, color, injection);
-            break;
-        case 'cuboid':
-            shapeModel = new CuboidShape(shapeData, clientID, color, injection);
-            break;
-        default:
-            throw new DataError(`An unexpected type of shape "${type}"`);
+            case 'rectangle':
+                shapeModel = new RectangleShape(shapeData, clientID, color, injection);
+                break;
+            case 'polygon':
+                shapeModel = new PolygonShape(shapeData, clientID, color, injection);
+                break;
+            case 'polyline':
+                shapeModel = new PolylineShape(shapeData, clientID, color, injection);
+                break;
+            case 'points':
+                shapeModel = new PointsShape(shapeData, clientID, color, injection);
+                break;
+            case 'cuboid':
+                shapeModel = new CuboidShape(shapeData, clientID, color, injection);
+                break;
+            default:
+                throw new DataError(`An unexpected type of shape "${type}"`);
         }
 
         return shapeModel;
@@ -65,23 +65,23 @@
 
             let trackModel = null;
             switch (type) {
-            case 'rectangle':
-                trackModel = new RectangleTrack(trackData, clientID, color, injection);
-                break;
-            case 'polygon':
-                trackModel = new PolygonTrack(trackData, clientID, color, injection);
-                break;
-            case 'polyline':
-                trackModel = new PolylineTrack(trackData, clientID, color, injection);
-                break;
-            case 'points':
-                trackModel = new PointsTrack(trackData, clientID, color, injection);
-                break;
-            case 'cuboid':
-                trackModel = new CuboidTrack(trackData, clientID, color, injection);
-                break;
-            default:
-                throw new DataError(`An unexpected type of track "${type}"`);
+                case 'rectangle':
+                    trackModel = new RectangleTrack(trackData, clientID, color, injection);
+                    break;
+                case 'polygon':
+                    trackModel = new PolygonTrack(trackData, clientID, color, injection);
+                    break;
+                case 'polyline':
+                    trackModel = new PolylineTrack(trackData, clientID, color, injection);
+                    break;
+                case 'points':
+                    trackModel = new PointsTrack(trackData, clientID, color, injection);
+                    break;
+                case 'cuboid':
+                    trackModel = new CuboidTrack(trackData, clientID, color, injection);
+                    break;
+                default:
+                    throw new DataError(`An unexpected type of track "${type}"`);
             }
 
             return trackModel;
@@ -336,22 +336,20 @@
                             occluded: shape.occluded,
                             outside: shape.outside,
                             zOrder: shape.zOrder,
-                            attributes: updatedAttributes
-                                ? Object.keys(attributes).reduce((accumulator, attrID) => {
-                                    accumulator.push({
-                                        spec_id: +attrID,
-                                        value: attributes[attrID],
-                                    });
+                            attributes: updatedAttributes ? Object.keys(attributes).reduce((accumulator, attrID) => {
+                                accumulator.push({
+                                    spec_id: +attrID,
+                                    value: attributes[attrID],
+                                });
 
-                                    return accumulator;
-                                }, [])
-                                : [],
+                                return accumulator;
+                            }, []) : [],
                         };
                     }
                 } else {
                     throw new ArgumentError(
-                        `Trying to merge unknown object type: ${object.constructor.name}. `
-                            + 'Only shapes and tracks are expected.',
+                        `Trying to merge unknown object type: ${object.constructor.name}. ` +
+                            'Only shapes and tracks are expected.',
                     );
                 }
             }
@@ -584,8 +582,8 @@
                 this.flush = true;
             } else {
                 // If inputs provided were wrong
-                throw Error('Could not remove the annotations, please provide both inputs or'
-                + ' leave the inputs below empty to remove all the annotations from this job');
+                throw Error('Could not remove the annotations, please provide both inputs or' +
+                    ' leave the inputs below empty to remove all the annotations from this job');
             }
         }
 
