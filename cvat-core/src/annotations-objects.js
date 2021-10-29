@@ -1693,7 +1693,7 @@
     class PolyTrack extends Track {
         constructor(data, clientID, color, injection) {
             super(data, clientID, color, injection);
-            for (const shape of this.shapes) {
+            for (const shape of Object.values(this.shapes)) {
                 shape.rotation = 0; // is not supported
             }
         }

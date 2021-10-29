@@ -521,9 +521,9 @@ def load(file_object, annotations):
                 shape['type'] = 'rectangle' if el.tag == 'box' else el.tag
                 shape['occluded'] = el.attrib['occluded'] == '1'
                 shape['z_order'] = int(el.attrib.get('z_order', 0))
+                shape['rotation'] = float(el.attrib.get('rotation', 0))
 
                 if el.tag == 'box':
-                    shape['rotation'] = float(el.attrib.get('rotation', 0))
                     shape['points'].append(el.attrib['xtl'])
                     shape['points'].append(el.attrib['ytl'])
                     shape['points'].append(el.attrib['xbr'])
