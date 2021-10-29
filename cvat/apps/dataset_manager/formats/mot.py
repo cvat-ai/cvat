@@ -51,6 +51,7 @@ def _import(src_file, task_data):
                         occluded=ann.attributes.get('occluded') == True,
                         z_order=ann.z_order,
                         group=0,
+                        rotation=0,
                         frame=frame_number,
                         attributes=[],
                         source='manual',
@@ -60,6 +61,7 @@ def _import(src_file, task_data):
                 shape = task_data.TrackedShape(
                     type='rectangle',
                     points=ann.points,
+                    rotation=0,
                     occluded=ann.attributes.get('occluded') == True,
                     outside=False,
                     keyframe=True,
