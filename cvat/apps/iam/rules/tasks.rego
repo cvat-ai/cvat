@@ -157,14 +157,24 @@ allow {
 }
 
 allow {
-    { utils.VIEW, utils.VIEW_ANNOTATIONS, utils.LIST, utils.EXPORT_DATASET,
+    input.scope == utils.LIST
+    utils.is_sandbox
+}
+
+allow {
+    input.scope == utils.LIST
+    organizations.is_member
+}
+
+allow {
+    { utils.VIEW, utils.VIEW_ANNOTATIONS, utils.EXPORT_DATASET,
       utils.VIEW_DATA, utils.EXPORT_ANNOTATIONS }[input.scope]
     utils.is_sandbox
     is_task_staff
 }
 
 allow {
-    { utils.VIEW, utils.VIEW_ANNOTATIONS, utils.LIST, utils.EXPORT_DATASET,
+    { utils.VIEW, utils.VIEW_ANNOTATIONS, utils.EXPORT_DATASET,
       utils.VIEW_DATA, utils.EXPORT_ANNOTATIONS }[input.scope]
     input.auth.organization.id == input.resource.organization.id
     utils.has_perm(utils.USER)
@@ -172,7 +182,7 @@ allow {
 }
 
 allow {
-    { utils.VIEW, utils.VIEW_ANNOTATIONS, utils.LIST, utils.EXPORT_DATASET,
+    { utils.VIEW, utils.VIEW_ANNOTATIONS, utils.EXPORT_DATASET,
       utils.VIEW_DATA, utils.EXPORT_ANNOTATIONS }[input.scope]
     input.auth.organization.id == input.resource.organization.id
     organizations.has_perm(organizations.WORKER)

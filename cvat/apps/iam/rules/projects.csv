@@ -3,11 +3,11 @@ create,Project,Sandbox,N/A,"resource[""user""][""num_resources""] < 3",POST,/pro
 create,Project,Organization,N/A,"resource[""user""][""num_resources""] < 3",POST,/projects,User,Supervisor
 create,Project,Sandbox,N/A,,POST,/projects,Business,N/A
 create,Project,Organization,N/A,,POST,/projects,Business,Supervisor
-list,Project,Sandbox,N/A,,GET,/projects,None,N/A
-list,Project,Organization,N/A,,GET,/projects,None,Worker
-view,Project,Sandbox,None,,GET,/projects/{id},Admin,N/A
-view,Project,Sandbox,"Owner, Assignee",,GET,/projects/{id},None,N/A
-view,Project,Organization,"Owner, Assignee, None",,GET,/projects/{id},None,Worker
+list,N/A,Sandbox,N/A,,GET,/projects,None,N/A
+list,N/A,Organization,N/A,,GET,/projects,None,Worker
+view,Project,Sandbox,None,,GET,"/projects/{id}, /projects/{id}/tasks",Admin,N/A
+view,Project,Sandbox,"Owner, Assignee",,GET,"/projects/{id}, /projects/{id}/tasks",None,N/A
+view,Project,Organization,"Owner, Assignee, None",,GET,"/projects/{id}, /projects/{id}/tasks",None,Worker
 delete,Project,Sandbox,"None, Assignee",,DELETE,/projects/{id},Admin,N/A
 delete,Project,Sandbox,Owner,,DELETE,/projects/{id},Worker,N/A
 delete,Project,Organization,Owner,,DELETE,/projects/{id},Worker,Worker

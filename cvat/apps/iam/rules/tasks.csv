@@ -14,10 +14,8 @@ view,Task,Sandbox,None,,GET,"/tasks/{id}, /tasks/{id}/status",Admin,N/A
 view,Task,Sandbox,"Owner, Project:owner, Assignee, Project:assignee",,GET,"/tasks/{id}, /tasks/{id}/status",None,N/A
 view,Task,Organization,None,,GET,"/tasks/{id}, /tasks/{id}/status",User,Maintainer
 view,Task,Organization,"Owner, Project:owner, Assignee, Project:assignee",,GET,"/tasks/{id}, /tasks/{id}/status",None,Worker
-list,Task,Sandbox,None,,GET,"/tasks, /projects/{id}/tasks",Admin,N/A
-list,Task,Sandbox,"Owner, Project:owner, Assignee, Project:assignee",,GET,"/tasks, /projects/{id}/tasks",None,N/A
-list,Task,Organization,None,,GET,"/tasks, /projects/{id}/tasks",User,Maintainer
-list,Task,Organization,"Owner, Project:owner, Assignee, Project:assignee",,GET,"/tasks, /projects/{id}/tasks",None,Worker
+list,N/A,Sandbox,N/A,,GET,/tasks,None,N/A
+list,N/A,Organization,N/A,,GET,/tasks,None,Worker
 update:desc,Task,Sandbox,None,,PATCH,/tasks/{id},Admin,N/A
 update:desc,Task,Sandbox,"Owner, Project:owner, Assignee, Project:assignee",,PATCH,/tasks/{id},Worker,N/A
 update:desc,Task,Organization,None,,PATCH,/tasks/{id},User,Maintainer
