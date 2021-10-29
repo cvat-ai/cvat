@@ -55,67 +55,36 @@ export interface CanvasView {
 
 export class CanvasViewImpl implements CanvasView, Listener {
     private loadingAnimation: SVGSVGElement;
-
     private text: SVGSVGElement;
-
     private adoptedText: SVG.Container;
-
     private background: HTMLCanvasElement;
-
     private bitmap: HTMLCanvasElement;
-
     private grid: SVGSVGElement;
-
     private content: SVGSVGElement;
-
     private attachmentBoard: HTMLDivElement;
-
     private adoptedContent: SVG.Container;
-
     private canvas: HTMLDivElement;
-
     private gridPath: SVGPathElement;
-
     private gridPattern: SVGPatternElement;
-
     private controller: CanvasController;
-
     private svgShapes: Record<number, SVG.Shape>;
-
     private svgTexts: Record<number, SVG.Text>;
-
     private issueRegionPattern_1: SVG.Pattern;
-
     private issueRegionPattern_2: SVG.Pattern;
-
     private drawnStates: Record<number, DrawnState>;
-
     private drawnIssueRegions: Record<number, SVG.Shape>;
-
     private geometry: Geometry;
-
     private drawHandler: DrawHandler;
-
     private editHandler: EditHandler;
-
     private mergeHandler: MergeHandler;
-
     private splitHandler: SplitHandler;
-
     private groupHandler: GroupHandler;
-
     private regionSelector: RegionSelector;
-
     private zoomHandler: ZoomHandler;
-
     private autoborderHandler: AutoborderHandler;
-
     private interactionHandler: InteractionHandler;
-
     private activeElement: ActiveElement;
-
     private configuration: Configuration;
-
     private serviceFlags: {
         drawHidden: Record<number, boolean>;
     };
