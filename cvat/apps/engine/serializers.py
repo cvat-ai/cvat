@@ -526,10 +526,12 @@ class ProjectWithoutTaskSerializer(serializers.ModelSerializer):
         return response
 
 class ProjectSerializer(ProjectWithoutTaskSerializer):
-    tasks = TaskSerializer(many=True, read_only=True)
+    # Voxel hack - exclude tasks
+    # tasks = TaskSerializer(many=True, read_only=True)
 
     class Meta(ProjectWithoutTaskSerializer.Meta):
-        fields = ProjectWithoutTaskSerializer.Meta.fields + ('tasks',)
+        # Voxel hack - exclude tasks
+        fields = tuple(f for f in ProjectWithoutTaskSerializer.Meta.fields if f != 'tasks')
 
     # pylint: disable=no-self-use
     def create(self, validated_data):

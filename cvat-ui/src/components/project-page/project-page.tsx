@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import './styles.scss';
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useHistory, useParams } from 'react-router';
 import Spin from 'antd/lib/spin';
@@ -21,6 +21,8 @@ import MoveTaskModal from 'components/move-task-modal/move-task-modal';
 import ModelRunnerDialog from 'components/model-runner-modal/model-runner-dialog';
 import DetailsComponent from './details';
 import ProjectTopBar from './top-bar';
+import Pagination from 'antd/lib/pagination';
+import { message } from 'antd';
 
 interface ParamType {
     id: string;
@@ -35,12 +37,41 @@ export default function ProjectPageComponent(): JSX.Element {
     const deletes = useSelector((state: CombinedState) => state.projects.activities.deletes);
     const taskDeletes = useSelector((state: CombinedState) => state.tasks.activities.deletes);
     const tasksActiveInferences = useSelector((state: CombinedState) => state.models.inferences);
-    const tasks = useSelector((state: CombinedState) => state.tasks.current);
+    // const tasks = useSelector((state: CombinedState) => state.tasks.current);
 
     const [project] = projects.filter((_project) => _project.id === id);
     const projectSubsets = [''];
     if (project) projectSubsets.push(...project.subsets);
     const deleteActivity = project && id in deletes ? deletes[id] : null;
+
+    const [tasksLoading, setTasksLoading] = useState(true);
+    const [tasks, setTasks] = useState([]);
+    const [taskCount, setTaskCount] = useState(0);
+    const [page, setPage] = useState(1);
+
+    const fetchTasks = (page: number) => {
+        setTasksLoading(true);
+        setPage(page);
+        fetch(`/api/v1/tasks?page_size=10&page=${page}&project_id=${id}`)
+            .then((response: any) => response.json())
+            .then((data: any) => {
+                setTasks(data.results);
+                setTaskCount(data.count);
+            })
+            .catch((error: any) => {
+                console.error(error);
+                message.error(error);
+            })
+            .finally(() => {
+                setTasksLoading(false);
+            });
+    }
+
+    useEffect(() => {
+        if (id) {
+            fetchTasks(page);
+        }
+    }, [id]);
 
     useEffect(() => {
         dispatch(
@@ -90,26 +121,47 @@ export default function ProjectPageComponent(): JSX.Element {
                         </Button>
                     </Col>
                 </Row>
-                {projectSubsets.map((subset: string) => (
-                    <React.Fragment key={subset}>
-                        {subset && <Title level={4}>{subset}</Title>}
+                {tasksLoading ? (
+                    <Spin size='large' className='cvat-spinner' />
+                ) : (
+                    <div style={{ paddingBottom: 50 }}>
                         {tasks
-                            .filter((task) => task.instance.projectId === project.id && task.instance.subset === subset)
-                            .map((task: Task) => (
+                            .map((task: any) => {
+                                // Hack to generate `jobs` property
+                                task.jobs = task.segments.reduce((jobs: any[], segment: any) => {
+                                    return [...jobs, ...segment.jobs];
+                                }, []);
+                                return task;
+                            })
+                            .map((task: any) => (
                                 <TaskItem
-                                    key={task.instance.id}
-                                    deleted={task.instance.id in taskDeletes ? taskDeletes[task.instance.id] : false}
+                                    key={task.id}
+                                    deleted={task.id in taskDeletes ? taskDeletes[task.id] : false}
                                     hidden={false}
-                                    activeInference={tasksActiveInferences[task.instance.id] || null}
+                                    activeInference={tasksActiveInferences[task.id] || null}
                                     cancelAutoAnnotation={() => {
-                                        dispatch(cancelInferenceAsync(task.instance.id));
+                                        dispatch(cancelInferenceAsync(task.id));
                                     }}
                                     previewImage={task.preview}
-                                    taskInstance={task.instance}
+                                    taskInstance={task}
                                 />
-                            ))}
-                    </React.Fragment>
-                ))}
+                            ))
+                        }
+                        <Row justify='center' align='middle'>
+                            <Col md={22} lg={18} xl={16} xxl={14}>
+                                <Pagination
+                                    className='cvat-tasks-pagination'
+                                    onChange={fetchTasks}
+                                    showSizeChanger={false}
+                                    total={taskCount}
+                                    pageSize={10}
+                                    current={page}
+                                    showQuickJumper
+                                />
+                            </Col>
+                        </Row>
+                    </div>
+                )}
             </Col>
             <MoveTaskModal />
             <ModelRunnerDialog />

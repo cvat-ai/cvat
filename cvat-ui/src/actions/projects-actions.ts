@@ -89,12 +89,14 @@ export function getProjectsAsync(query: Partial<ProjectsQuery>): ThunkAction {
         if (Object.keys(filteredQuery).includes('id')) {
             const tasks: any[] = [];
             const [project] = array;
-            const taskPreviewPromises: Promise<string>[] = (project as any).tasks.map((task: any): string => {
-                tasks.push(task);
-                return (task as any).frames.preview().catch(() => '');
-            });
+            // Voxel hack - skip task previews
+            // const taskPreviewPromises: Promise<string>[] = (project as any).tasks.map((task: any): string => {
+            //     tasks.push(task);
+            //     return (task as any).frames.preview().catch(() => '');
+            // });
 
-            const taskPreviews = await Promise.all(taskPreviewPromises);
+            const taskPreviews = await Promise.all([]);
+            // const taskPreviews = await Promise.all(taskPreviewPromises);
 
             const state = getState();
 

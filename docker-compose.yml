@@ -38,6 +38,8 @@ services:
       CVAT_REDIS_HOST: 'cvat_redis'
       CVAT_POSTGRES_HOST: '10.41.0.3'
       CVAT_POSTGRES_PASSWORD: '${CVAT_POSTGRES_PASSWORD}'
+      VOXEL_KEY_FILENAME: '${VOXEL_KEY_FILENAME}'
+      VOXEL_GCP_PROJECT: '${VOXEL_GCP_PROJECT}'
       ADAPTIVE_AUTO_ANNOTATION: 'false'
     labels:
       - traefik.enable=true

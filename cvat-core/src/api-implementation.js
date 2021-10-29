@@ -253,12 +253,13 @@
             const projectsData = await serverProxy.projects.get(searchParams.toString());
             // prettier-ignore
             const projects = projectsData.map((project) => {
-                if (filter.withoutTasks) {
+                // Voxel hack - exclude tasks
+                // if (filter.withoutTasks) {
                     project.task_ids = project.tasks;
                     project.tasks = [];
-                } else {
-                    project.task_ids = project.tasks.map((task) => task.id);
-                }
+                // } else {
+                //     project.task_ids = project.tasks.map((task) => task.id);
+                // }
                 return project;
             }).map((project) => new Project(project));
 

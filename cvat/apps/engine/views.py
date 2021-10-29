@@ -393,9 +393,10 @@ class DjangoFilterInspector(CoreAPICompatInspector):
             result = super(DjangoFilterInspector, self).get_filter_parameters(filter_backend)
             res = result.copy()
 
-            for param in result:
-                if param.get('name') == 'project_id' or param.get('name') == 'project':
-                    res.remove(param)
+            # Voxel hack - allow filtering by project
+            # for param in result:
+            #     if param.get('name') == 'project_id' or param.get('name') == 'project':
+            #         res.remove(param)
             return res
 
         return NotHandled
@@ -404,6 +405,9 @@ class DjangoFilterInspector(CoreAPICompatInspector):
     operation_summary='Returns a paginated list of tasks according to query parameters (10 tasks per page)',
     manual_parameters=[
             openapi.Parameter('id',openapi.IN_QUERY,description="A unique number value identifying this task",type=openapi.TYPE_NUMBER),
+            # Voxel hack - allow filtering by project
+            openapi.Parameter('project_id',openapi.IN_QUERY,description="Find all tasks where project_id matches a parameter value",type=openapi.TYPE_NUMBER),
+            openapi.Parameter('projectId',openapi.IN_QUERY,description="Find all tasks where project_id matches a parameter value",type=openapi.TYPE_NUMBER),
             openapi.Parameter('name', openapi.IN_QUERY, description="Find all tasks where name contains a parameter value", type=openapi.TYPE_STRING),
             openapi.Parameter('owner', openapi.IN_QUERY, description="Find all tasks where owner name contains a parameter value", type=openapi.TYPE_STRING),
             openapi.Parameter('mode', openapi.IN_QUERY, description="Find all tasks with a specific mode", type=openapi.TYPE_STRING, enum=['annotation', 'interpolation']),
