@@ -1011,7 +1011,7 @@ class TaskDumpUploadTest(_DbTestBase):
                         "ICDAR Segmentation 1.0", # changed points values
                         'Kitti Raw Format 1.0',
                         'Sly Point Cloud Format 1.0',
-                        'Cityscapes 1.0' # changed points value
+                        'Cityscapes 1.0', # changed points value
                         'Datumaro 3D 1.0'
                     ]:
                         self.skipTest("Format is fail")
