@@ -202,7 +202,8 @@ class Data(models.Model):
             shutil.rmtree(chunk_dir)
 
     def append(self, client_files):
-        for client_file in data.get('client_files'):
+        upload_dir = self.get_upload_dirname()
+        for client_file in client_files:
             with open(os.path.join(upload_dir, client_file['file'].name), 'ab+') as destination:
                 destination.write(client_file['file'].read())
 
