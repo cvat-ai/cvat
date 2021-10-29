@@ -196,8 +196,8 @@ const { Source } = require('./enums');
                                 data.points = [...points];
                             } else {
                                 throw new ArgumentError(
-                                    'Points are expected to be an array '
-                                        + `but got ${
+                                    'Points are expected to be an array ' +
+                                        `but got ${
                                             typeof points === 'object' ? points.constructor.name : typeof points
                                         }`,
                                 );
@@ -341,11 +341,11 @@ const { Source } = require('./enums');
                         set: (attributes) => {
                             if (typeof attributes !== 'object') {
                                 throw new ArgumentError(
-                                    'Attributes are expected to be an object '
-                                        + `but got ${
-                                            typeof attributes === 'object'
-                                                ? attributes.constructor.name
-                                                : typeof attributes
+                                    'Attributes are expected to be an object ' +
+                                        `but got ${
+                                            typeof attributes === 'object' ?
+                                                attributes.constructor.name :
+                                                typeof attributes
                                         }`,
                                 );
                             }
@@ -368,8 +368,8 @@ const { Source } = require('./enums');
                         get: () => [...data.descriptions],
                         set: (descriptions) => {
                             if (
-                                !Array.isArray(descriptions)
-                                || descriptions.some((description) => typeof description !== 'string')
+                                !Array.isArray(descriptions) ||
+                                descriptions.some((description) => typeof description !== 'string')
                             ) {
                                 throw new ArgumentError(
                                     `Descriptions are expected to be an array of strings but got ${data.descriptions}`,
@@ -414,8 +414,8 @@ const { Source } = require('./enums');
                 this.points = serialized.points;
             }
             if (
-                Array.isArray(serialized.descriptions)
-                && serialized.descriptions.every((desc) => typeof desc === 'string')
+                Array.isArray(serialized.descriptions) &&
+                serialized.descriptions.every((desc) => typeof desc === 'string')
             ) {
                 this.descriptions = serialized.descriptions;
             }

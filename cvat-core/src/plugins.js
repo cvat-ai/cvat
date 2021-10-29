@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2020 Intel Corporation
+// Copyright (C) 2019-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -74,9 +74,9 @@
                                 traverse(plugin[key], api[key]);
                             }
                         } else if (
-                            ['enter', 'leave'].includes(key)
-                            && typeof api === 'function'
-                            && typeof (plugin[key] === 'function')
+                            ['enter', 'leave'].includes(key) &&
+                            typeof api === 'function' &&
+                            typeof (plugin[key] === 'function')
                         ) {
                             decorator.callback = api;
                             decorator[key] = plugin[key];

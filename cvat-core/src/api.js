@@ -821,7 +821,7 @@ function build() {
 
     const implementAPI = require('./api-implementation');
 
-    Math.clamp = function (value, min, max) {
+    Math.clamp = function clamp(value, min, max) {
         return Math.min(Math.max(value, min), max);
     };
 

@@ -5,9 +5,10 @@
 import zipfile
 from tempfile import TemporaryDirectory
 
+from datumaro.components.annotation import (AnnotationType, Label,
+    LabelCategories)
 from datumaro.components.dataset import Dataset
-from datumaro.components.extractor import (AnnotationType, Label,
-    LabelCategories, ItemTransform)
+from datumaro.components.extractor import ItemTransform
 
 from cvat.apps.dataset_manager.bindings import (GetCVATDataExtractor,
     import_dm_annotations)
