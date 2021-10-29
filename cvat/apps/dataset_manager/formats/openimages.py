@@ -12,9 +12,7 @@ from datumaro.util.image import DEFAULT_IMAGE_META_FILE_NAME
 from pyunpack import Archive
 
 from cvat.apps.dataset_manager.bindings import (GetCVATDataExtractor,
-                                                find_dataset_root,
-                                                import_dm_annotations,
-                                                match_dm_item)
+    find_dataset_root, import_dm_annotations, match_dm_item)
 from cvat.apps.dataset_manager.util import make_zip_archive
 
 from .registry import dm_env, exporter, importer
@@ -38,7 +36,7 @@ def find_item_ids(path):
                 for row in desc:
                     yield row.split(',')[0]
 
-@exporter(name='Open Images', ext='ZIP', version='V6')
+@exporter(name='Open Images', ext='ZIP', version='1.0')
 def _export(dst_file, task_data, save_images=False):
     dataset = Dataset.from_extractors(GetCVATDataExtractor(
         task_data, include_images=save_images), env=dm_env)
@@ -50,16 +48,17 @@ def _export(dst_file, task_data, save_images=False):
 
         make_zip_archive(temp_dir, dst_file)
 
-@importer(name='Open Images', ext='ZIP', version='V6')
+@importer(name='Open Images', ext='ZIP', version='1.0')
 def _import(src_file, task_data):
     with TemporaryDirectory() as tmp_dir:
         Archive(src_file.name).extractall(tmp_dir)
 
         image_meta_path = osp.join(tmp_dir, OpenImagesPath.ANNOTATIONS_DIR,
             DEFAULT_IMAGE_META_FILE_NAME)
-        image_meta = {}
+        image_meta = None
 
         if not osp.isfile(image_meta_path):
+            image_meta = {}
             item_ids = list(find_item_ids(tmp_dir))
 
             root_hint = find_dataset_root(
