@@ -36,6 +36,8 @@ class SyncLabels(VoxelCommand):
         blob.upload_from_string(cvat_xml, content_type='text/xml')
 
     def execute(self, task_annotation):
+        # TODO: re-enable sync after 1.6.0 export changes
+        return
         xml_stream = io.StringIO()
         task_annotation.export(xml_stream, dump_as_cvat_interpolation)
         cvat_xml = xml_stream.getvalue()

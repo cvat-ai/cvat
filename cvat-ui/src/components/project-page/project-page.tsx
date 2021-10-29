@@ -127,10 +127,11 @@ export default function ProjectPageComponent(): JSX.Element {
                     <div style={{ paddingBottom: 50 }}>
                         {tasks
                             .map((task: any) => {
-                                // Hack to generate `jobs` property
+                                // Hack to generate missing properties for our hacked API response
                                 task.jobs = task.segments.reduce((jobs: any[], segment: any) => {
                                     return [...jobs, ...segment.jobs];
                                 }, []);
+                                task.updatedDate = task.updated_date;
                                 return task;
                             })
                             .map((task: any) => (
