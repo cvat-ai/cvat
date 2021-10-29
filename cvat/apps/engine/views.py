@@ -565,7 +565,7 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
                 "Unexpected action specified for the request")
 
     def perform_update(self, serializer):
-        instance = self.get_object()
+        instance = serializer.instance
         project_id = instance.project_id
         updated_instance = serializer.save()
         if project_id != updated_instance.project_id:
