@@ -427,6 +427,7 @@ def dump_as_cvat_interpolation(dumper, annotations):
             'shapes': [annotations.TrackedShape(
                 type=shape.type,
                 points=shape.points,
+                rotation=shape.rotation,
                 occluded=shape.occluded,
                 outside=False,
                 keyframe=True,
@@ -438,6 +439,7 @@ def dump_as_cvat_interpolation(dumper, annotations):
             [annotations.TrackedShape(
                 type=shape.type,
                 points=shape.points,
+                rotation=shape.rotation,
                 occluded=shape.occluded,
                 outside=True,
                 keyframe=True,
