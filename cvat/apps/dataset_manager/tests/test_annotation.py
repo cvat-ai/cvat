@@ -104,6 +104,7 @@ class TrackManagerTest(TestCase):
                 {
                     "frame": 0,
                     "points": [1.0, 2.0, 3.0, 4.0],
+                    "rotation": 0,
                     "type": "rectangle",
                     "occluded": False,
                     "outside": False,
@@ -113,6 +114,7 @@ class TrackManagerTest(TestCase):
                     "frame": 2,
                     "attributes": [],
                     "points": [3.0, 4.0, 5.0, 6.0],
+                    "rotation": 0,
                     "type": "rectangle",
                     "occluded": False,
                     "outside": True
@@ -121,6 +123,7 @@ class TrackManagerTest(TestCase):
                     "frame": 4,
                     "attributes": [],
                     "points": [3.0, 4.0, 5.0, 6.0],
+                    "rotation": 0,
                     "type": "rectangle",
                     "occluded": False,
                     "outside": False
@@ -178,6 +181,7 @@ class TrackManagerTest(TestCase):
                 {
                     "frame": 0,
                     "points": [1.0, 2.0, 3.0, 4.0],
+                    "rotation": 0,
                     "type": "rectangle",
                     "occluded": False,
                     "outside": False,
@@ -186,6 +190,7 @@ class TrackManagerTest(TestCase):
                 {
                     "frame": 2,
                     "points": [3.0, 4.0, 5.0, 6.0],
+                    "rotation": 0,
                     "type": "rectangle",
                     "occluded": False,
                     "outside": True,
@@ -194,6 +199,7 @@ class TrackManagerTest(TestCase):
                 {
                     "frame": 4,
                     "points": [5.0, 6.0, 7.0, 8.0],
+                    "rotation": 0,
                     "type": "rectangle",
                     "occluded": False,
                     "outside": True,
