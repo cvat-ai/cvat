@@ -575,8 +575,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
         // Transform all text
         for (const key in this.svgShapes) {
             if (
-                Object.prototype.hasOwnProperty.call(this.svgShapes, key)
-                && Object.prototype.hasOwnProperty.call(this.svgTexts, key)
+                Object.prototype.hasOwnProperty.call(this.svgShapes, key) &&
+                    Object.prototype.hasOwnProperty.call(this.svgTexts, key)
             ) {
                 this.updateTextPosition(this.svgTexts[key], this.svgShapes[key]);
             }
@@ -883,10 +883,10 @@ export class CanvasViewImpl implements CanvasView, Listener {
         };
 
         if (value) {
-            const getGeometry = () => this.geometry;
+            const getGeometry = (): Geometry => this.geometry;
             (shape as any).selectize(value, {
                 deepSelect: true,
-                pointSize: (2 * consts.BASE_POINT_SIZE) / getGeometry().scale,
+                pointSize: (2 * consts.BASE_POINT_SIZE) / this.geometry.scale,
                 rotationPoint: shape.type === 'rect',
                 pointType(cx: number, cy: number): SVG.Circle {
                     const circle: SVG.Circle = this.nested
@@ -1098,9 +1098,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
         this.content.addEventListener('mousedown', (event): void => {
             if ([0, 1].includes(event.button)) {
                 if (
-                    [Mode.IDLE, Mode.DRAG_CANVAS, Mode.MERGE, Mode.SPLIT].includes(this.mode)
-                    || event.button === 1
-                    || event.altKey
+                    [Mode.IDLE, Mode.DRAG_CANVAS, Mode.MERGE, Mode.SPLIT]
+                        .includes(this.mode) || event.button === 1 || event.altKey
                 ) {
                     this.controller.enableDrag(event.clientX, event.clientY);
                 }
@@ -1581,8 +1580,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
             }
 
             if (
-                state.points.length !== drawnState.points.length
-                || state.points.some((p: number, id: number): boolean => p !== drawnState.points[id])
+                state.points.length !== drawnState.points.length ||
+                state.points.some((p: number, id: number): boolean => p !== drawnState.points[id])
             ) {
                 const translatedPoints: number[] = this.translateToCanvas(state.points);
 
@@ -1618,9 +1617,9 @@ export class CanvasViewImpl implements CanvasView, Listener {
             const drawnStateDescriptions = drawnState.descriptions;
 
             if (
-                drawnState.label.id !== state.label.id
-                || drawnStateDescriptions.length !== stateDescriptions.length
-                || drawnStateDescriptions.some((desc: string, id: number): boolean => desc !== stateDescriptions[id])
+                drawnState.label.id !== state.label.id ||
+                drawnStateDescriptions.length !== stateDescriptions.length ||
+                drawnStateDescriptions.some((desc: string, id: number): boolean => desc !== stateDescriptions[id])
             ) {
                 // need to remove created text and create it again
                 if (text) {
@@ -1868,10 +1867,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     const dy2 = (p1.y - p2.y) ** 2;
                     if (Math.sqrt(dx2 + dy2) >= delta) {
                         let points = pointsToNumberArray(
-                            shape.attr('points')
-                                || `${shape.attr('x')},${shape.attr('y')} `
-                                    + `${shape.attr('x') + shape.attr('width')},`
-                                    + `${shape.attr('y') + shape.attr('height')}`,
+                            shape.attr('points') || `${shape.attr('x')},${shape.attr('y')} ` +
+                                `${shape.attr('x') + shape.attr('width')},${shape.attr('y') + shape.attr('height')}`,
                         );
 
                         // these points !== translated points from a rotated shape, nevertheless it looks the same
@@ -1960,10 +1957,9 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     rotation %= 360;
 
                     let points = pointsToNumberArray(
-                        shape.attr('points')
-                            || `${shape.attr('x')},${shape.attr('y')} `
-                                + `${shape.attr('x') + shape.attr('width')},`
-                                + `${shape.attr('y') + shape.attr('height')}`,
+                        shape.attr('points') || `${shape.attr('x')},${shape.attr('y')} ` +
+                        `${shape.attr('x') + shape.attr('width')},` +
+                        `${shape.attr('y') + shape.attr('height')}`,
                     );
 
                     // these points !== translated points from a rotated shape, nevertheless it looks the same
@@ -2049,8 +2045,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
         // Find the best place for a text
         let [clientX, clientY]: number[] = [box.x + box.width, box.y];
         if (
-            clientX + ((text.node as any) as SVGTextElement).getBBox().width + consts.TEXT_MARGIN
-            > this.canvas.offsetWidth
+            clientX + ((text.node as any) as SVGTextElement)
+                .getBBox().width + consts.TEXT_MARGIN > this.canvas.offsetWidth
         ) {
             [clientX, clientY] = [box.x, box.y];
         }

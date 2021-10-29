@@ -244,7 +244,7 @@
         "type": "polygon",
         "occluded": false,
         "z_order": 0,
-        "points":  [35.0, 22.5, 53.32, 30.63, 22.34, 29.45, 47.43, 38.21],
+        "points": [35.0, 22.5, 53.32, 30.63, 22.34, 29.45, 47.43, 38.21],
         "frame": 0,
         "label_id": null,
         "group": 0,
@@ -661,7 +661,7 @@
         "points": [27.15, 26.7, 53.25, 24.8],
         "frame": 0,
         "label_id": null,
-        "group": 2,
+        "group": 1,
         "source": "manual",
         "attributes": []
       },
@@ -673,34 +673,6 @@
         "frame": 1,
         "label_id": null,
         "group": 0,
-        "source": "manual",
-        "attributes": []
-      },
-      {
-        "type": "cuboid",
-        "occluded": false,
-        "z_order": 2,
-        "points": [
-          51.65,
-          37.3,
-          51.65,
-          46.8,
-          70.25,
-          37.2,
-          70.25,
-          46.8,
-          72.11,
-          36.34,
-          72.11,
-          45.74,
-          53.51,
-          36.34,
-          53.51,
-          45.74
-        ],
-        "frame": 0,
-        "label_id": null,
-        "group": 1,
         "source": "manual",
         "attributes": []
       }
@@ -920,7 +892,7 @@
       }
     ]
   },
-   "CVAT for images 1.1 tag": {
+  "CVAT for images 1.1 tag": {
     "version": 0,
     "tags": [
       {
@@ -982,7 +954,7 @@
     "shapes": [],
     "tracks": []
   },
-    "CVAT for images 1.1 different types": {
+  "CVAT for images 1.1 different types": {
     "version": 0,
     "tags": [],
     "shapes": [
@@ -1028,7 +1000,7 @@
       }
     ]
   },
- "CVAT for video 1.1 polygon": {
+  "CVAT for video 1.1 polygon": {
     "version": 0,
     "tags": [],
     "shapes": [],
@@ -1069,7 +1041,7 @@
         ],
         "attributes": []
       },
-       {
+      {
         "frame": 0,
         "label_id": null,
         "group": 1,

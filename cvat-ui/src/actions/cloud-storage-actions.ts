@@ -35,53 +35,68 @@ export enum CloudStorageActionTypes {
 }
 
 const cloudStoragesActions = {
-    updateCloudStoragesGettingQuery: (query: Partial<CloudStoragesQuery>) =>
-        createAction(CloudStorageActionTypes.UPDATE_CLOUD_STORAGES_GETTING_QUERY, { query }),
+    updateCloudStoragesGettingQuery: (query: Partial<CloudStoragesQuery>) => (
+        createAction(CloudStorageActionTypes.UPDATE_CLOUD_STORAGES_GETTING_QUERY, { query })
+    ),
     getCloudStorages: () => createAction(CloudStorageActionTypes.GET_CLOUD_STORAGES),
     getCloudStoragesSuccess: (
         array: any[],
         count: number,
         query: Partial<CloudStoragesQuery>,
-    ) =>
-        createAction(CloudStorageActionTypes.GET_CLOUD_STORAGE_SUCCESS, {
-            array,
-            count,
-            query,
-        }),
-    getCloudStoragesFailed: (error: any, query: Partial<CloudStoragesQuery>) =>
-        createAction(CloudStorageActionTypes.GET_CLOUD_STORAGE_FAILED, { error, query }),
-    deleteCloudStorage: (cloudStorageID: number) =>
-        createAction(CloudStorageActionTypes.DELETE_CLOUD_STORAGE, { cloudStorageID }),
-    deleteCloudStorageSuccess: (cloudStorageID: number) =>
-        createAction(CloudStorageActionTypes.DELETE_CLOUD_STORAGE_SUCCESS, { cloudStorageID }),
-    deleteCloudStorageFailed: (error: any, cloudStorageID: number) =>
-        createAction(CloudStorageActionTypes.DELETE_CLOUD_STORAGE_FAILED, { error, cloudStorageID }),
+    ) => createAction(CloudStorageActionTypes.GET_CLOUD_STORAGE_SUCCESS, {
+        array,
+        count,
+        query,
+    }),
+    getCloudStoragesFailed: (error: any, query: Partial<CloudStoragesQuery>) => (
+        createAction(CloudStorageActionTypes.GET_CLOUD_STORAGE_FAILED, { error, query })
+    ),
+    deleteCloudStorage: (cloudStorageID: number) => (
+        createAction(CloudStorageActionTypes.DELETE_CLOUD_STORAGE, { cloudStorageID })
+    ),
+    deleteCloudStorageSuccess: (cloudStorageID: number) => (
+        createAction(CloudStorageActionTypes.DELETE_CLOUD_STORAGE_SUCCESS, { cloudStorageID })
+    ),
+    deleteCloudStorageFailed: (error: any, cloudStorageID: number) => (
+        createAction(CloudStorageActionTypes.DELETE_CLOUD_STORAGE_FAILED, { error, cloudStorageID })
+    ),
     createCloudStorage: () => createAction(CloudStorageActionTypes.CREATE_CLOUD_STORAGE),
-    createCloudStorageSuccess: (cloudStorageID: number) =>
-        createAction(CloudStorageActionTypes.CREATE_CLOUD_STORAGE_SUCCESS, { cloudStorageID }),
-    createCloudStorageFailed: (error: any) =>
-        createAction(CloudStorageActionTypes.CREATE_CLOUD_STORAGE_FAILED, { error }),
+    createCloudStorageSuccess: (cloudStorageID: number) => (
+        createAction(CloudStorageActionTypes.CREATE_CLOUD_STORAGE_SUCCESS, { cloudStorageID })
+    ),
+    createCloudStorageFailed: (error: any) => (
+        createAction(CloudStorageActionTypes.CREATE_CLOUD_STORAGE_FAILED, { error })
+    ),
     updateCloudStorage: () => createAction(CloudStorageActionTypes.UPDATE_CLOUD_STORAGE, {}),
-    updateCloudStorageSuccess: (cloudStorage: CloudStorage) =>
-        createAction(CloudStorageActionTypes.UPDATE_CLOUD_STORAGE_SUCCESS, { cloudStorage }),
-    updateCloudStorageFailed: (cloudStorage: CloudStorage, error: any) =>
-        createAction(CloudStorageActionTypes.UPDATE_CLOUD_STORAGE_FAILED, { cloudStorage, error }),
+    updateCloudStorageSuccess: (cloudStorage: CloudStorage) => (
+        createAction(CloudStorageActionTypes.UPDATE_CLOUD_STORAGE_SUCCESS, { cloudStorage })
+    ),
+    updateCloudStorageFailed: (cloudStorage: CloudStorage, error: any) => (
+        createAction(CloudStorageActionTypes.UPDATE_CLOUD_STORAGE_FAILED, { cloudStorage, error })
+    ),
     loadCloudStorageContent: () => createAction(CloudStorageActionTypes.LOAD_CLOUD_STORAGE_CONTENT),
-    loadCloudStorageContentSuccess: (cloudStorageID: number, content: any) =>
-        createAction(CloudStorageActionTypes.LOAD_CLOUD_STORAGE_CONTENT_SUCCESS, { cloudStorageID, content }),
-    loadCloudStorageContentFailed: (cloudStorageID: number, error: any) =>
-        createAction(CloudStorageActionTypes.LOAD_CLOUD_STORAGE_CONTENT_FAILED, { cloudStorageID, error }),
+    loadCloudStorageContentSuccess: (cloudStorageID: number, content: any) => (
+        createAction(CloudStorageActionTypes.LOAD_CLOUD_STORAGE_CONTENT_SUCCESS, { cloudStorageID, content })
+    ),
+    loadCloudStorageContentFailed: (cloudStorageID: number, error: any) => (
+        createAction(CloudStorageActionTypes.LOAD_CLOUD_STORAGE_CONTENT_FAILED, { cloudStorageID, error })
+    ),
     getCloudStorageStatus: (id: number) => createAction(CloudStorageActionTypes.GET_CLOUD_STORAGE_STATUS, { id }),
-    getCloudStorageStatusSuccess: (cloudStorageID: number, status: string) =>
-        createAction(CloudStorageActionTypes.GET_CLOUD_STORAGE_STATUS_SUCCESS, { cloudStorageID, status }),
-    getCloudStorageStatusFailed: (cloudStorageID: number, error: any) =>
-        createAction(CloudStorageActionTypes.GET_CLOUD_STORAGE_STATUS_FAILED, { cloudStorageID, error }),
-    getCloudStoragePreiew: (cloudStorageID: number) =>
-        createAction(CloudStorageActionTypes.GET_CLOUD_STORAGE_PREVIEW, { cloudStorageID }),
-    getCloudStoragePreiewSuccess: (cloudStorageID: number, preview: string) =>
-        createAction(CloudStorageActionTypes.GET_CLOUD_STORAGE_PREVIEW_SUCCESS, { cloudStorageID, preview }),
-    getCloudStoragePreiewFailed: (cloudStorageID: number, error: any) =>
-        createAction(CloudStorageActionTypes.GET_CLOUD_STORAGE_PREVIEW_FAILED, { cloudStorageID, error }),
+    getCloudStorageStatusSuccess: (cloudStorageID: number, status: string) => (
+        createAction(CloudStorageActionTypes.GET_CLOUD_STORAGE_STATUS_SUCCESS, { cloudStorageID, status })
+    ),
+    getCloudStorageStatusFailed: (cloudStorageID: number, error: any) => (
+        createAction(CloudStorageActionTypes.GET_CLOUD_STORAGE_STATUS_FAILED, { cloudStorageID, error })
+    ),
+    getCloudStoragePreiew: (cloudStorageID: number) => (
+        createAction(CloudStorageActionTypes.GET_CLOUD_STORAGE_PREVIEW, { cloudStorageID })
+    ),
+    getCloudStoragePreiewSuccess: (cloudStorageID: number, preview: string) => (
+        createAction(CloudStorageActionTypes.GET_CLOUD_STORAGE_PREVIEW_SUCCESS, { cloudStorageID, preview })
+    ),
+    getCloudStoragePreiewFailed: (cloudStorageID: number, error: any) => (
+        createAction(CloudStorageActionTypes.GET_CLOUD_STORAGE_PREVIEW_FAILED, { cloudStorageID, error })
+    ),
 };
 
 export type CloudStorageActions = ActionUnion<typeof cloudStoragesActions>;

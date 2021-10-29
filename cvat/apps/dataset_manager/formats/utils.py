@@ -5,7 +5,7 @@
 import os.path as osp
 from hashlib import blake2s
 
-from datumaro.cli.util import make_file_name
+from datumaro.util.os_util import make_file_name
 
 
 def get_color_from_index(index):
