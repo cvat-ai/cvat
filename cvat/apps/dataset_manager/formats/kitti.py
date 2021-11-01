@@ -25,8 +25,6 @@ def _export(dst_file, instance_data, save_images=False):
     with TemporaryDirectory() as tmp_dir:
         dataset.transform('polygons_to_masks')
         dataset.transform('merge_instance_segments')
-        for i in list(dataset):
-            print(f'Item: {i}')
         dataset.export(tmp_dir, format='kitti',
             label_map={k: v[0] for k, v in make_colormap(instance_data).items()},
             apply_colormap=True, save_images=save_images

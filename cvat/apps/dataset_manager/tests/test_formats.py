@@ -786,17 +786,6 @@ class TaskAnnotationsImportTest(_DbTestBase):
                 "type": "rectangle",
                 "occluded": False,
             }]
-        elif annotation_format == "VGGFace2 1.0":
-            shapes = [{
-                "frame": 1,
-                "label_id": task["labels"][1]["id"],
-                "group": None,
-                "source": "manual",
-                "attributes": [],
-                "points": [2.0, 2.1, 40, 50.7],
-                "type": "rectangle",
-                "occluded": False
-            }]
         else:
             rectangle_shape_wo_attrs = {
                 "frame": 1,
@@ -872,7 +861,7 @@ class TaskAnnotationsImportTest(_DbTestBase):
             }
 
             if annotation_format == "VGGFace2 1.0":
-                shapes = rectangle_shape_wo_attrs
+                shapes = [rectangle_shape_wo_attrs]
             elif annotation_format == "CVAT 1.1":
                 shapes = [rectangle_shape_wo_attrs,
                     rectangle_shape_with_attrs]
@@ -882,8 +871,8 @@ class TaskAnnotationsImportTest(_DbTestBase):
             else:
                 shapes = [rectangle_shape_wo_attrs,
                     rectangle_shape_with_attrs]
-                tags = tag_wo_attrs
-                tracks = track_wo_attrs
+                tags = [tag_wo_attrs]
+                tracks = [track_wo_attrs]
 
         annotations = {
             "version": 0,
@@ -891,7 +880,6 @@ class TaskAnnotationsImportTest(_DbTestBase):
             "shapes": shapes,
             "tracks": tracks
         }
-        print(f'{annotation_format}: {shapes}')
 
         return self._generate_custom_annotations(annotations, task)
 
@@ -917,13 +905,9 @@ class TaskAnnotationsImportTest(_DbTestBase):
     def test_can_import_annotations_for_image_with_dots_in_filename(self):
         for f in dm.views.get_import_formats():
             format_name = f.DISPLAY_NAME
-            if format_name != 'KITTI 1.0':
-                continue
 
             images = self._generate_task_images(3, "img0.0.0")
             task = self._generate_task(images, format_name)
-            print('Anns %s' % self._generate_annotations(task, format_name))
-
 
             with self.subTest(format=format_name):
                 if not f.ENABLED:
