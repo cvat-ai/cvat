@@ -119,6 +119,8 @@ export interface ImportState {
     projects: {
         [pid: number]: string;
     };
+    progress: number;
+    status: string;
     instance: any;
     modalVisible: boolean;
 }

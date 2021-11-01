@@ -13,6 +13,7 @@ export enum ImportActionTypes {
     IMPORT_DATASET = 'IMPORT_DATASET',
     IMPORT_DATASET_SUCCESS = 'IMPORT_DATASET_SUCCESS',
     IMPORT_DATASET_FAILED = 'IMPORT_DATASET_FAILED',
+    IMPORT_DATASET_UPDATE_STATUS = 'IMPORT_DATASET_UPDATE_STATUS',
 }
 
 export const importActions = {
@@ -27,6 +28,8 @@ export const importActions = {
             instance,
             error,
         }),
+    importDatasetUpdateStatus: (progress: number, status: string) =>
+        createAction(ImportActionTypes.IMPORT_DATASET_UPDATE_STATUS, { progress, status }),
 };
 
 export const importDatasetAsync = (instance: any, format: string, file: File): ThunkAction => async (dispatch) => {
@@ -37,7 +40,8 @@ export const importDatasetAsync = (instance: any, format: string, file: File): T
             throw Error('Only one importing of dataset allowed at the same time');
         }
         dispatch(importActions.importDataset(instance, format));
-        await instance.annotations.importDataset(format, file);
+        await instance.annotations.importDataset(format, file, (response: any) =>
+            dispatch(importActions.importDatasetUpdateStatus(response.progress * 100, response.message)));
     } catch (error) {
         dispatch(importActions.importDatasetFailed(instance, error));
         return;

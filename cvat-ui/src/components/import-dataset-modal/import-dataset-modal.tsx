@@ -21,6 +21,8 @@ import CVATTooltip from 'components/common/cvat-tooltip';
 import { CombinedState } from 'reducers/interfaces';
 import { importActions, importDatasetAsync } from 'actions/import-actions';
 
+import ImportDatasetStatusModal from './import-dataset-status-modal';
+
 type FormValues = {
     selectedFormat: string | undefined;
 };
@@ -60,87 +62,90 @@ function ImportDatasetModal(): JSX.Element {
     );
 
     return (
-        <Modal
-            title={(
-                <>
-                    <Text>Import dataset to project</Text>
-                    <CVATTooltip
-                        title={
-                            instance && !instance.labels.length ?
-                                'Labels will be imported from dataset' :
-                                'Labels from project will be used'
-                        }
-                    >
-                        <QuestionCircleFilled className='cvat-modal-import-header-question-icon' />
-                    </CVATTooltip>
-                </>
-            )}
-            visible={modalVisible}
-            onCancel={closeModal}
-            onOk={() => form.submit()}
-            className='cvat-modal-import-project'
-        >
-            <Form
-                name='Import dataset'
-                form={form}
-                initialValues={{ selectedFormat: undefined } as FormValues}
-                onFinish={handleImport}
+        <>
+            <Modal
+                title={(
+                    <>
+                        <Text>Import dataset to project</Text>
+                        <CVATTooltip
+                            title={
+                                instance && !instance.labels.length ?
+                                    'Labels will be imported from dataset' :
+                                    'Labels from project will be used'
+                            }
+                        >
+                            <QuestionCircleFilled className='cvat-modal-import-header-question-icon' />
+                        </CVATTooltip>
+                    </>
+                )}
+                visible={modalVisible}
+                onCancel={closeModal}
+                onOk={() => form.submit()}
+                className='cvat-modal-import-project'
             >
-                <Form.Item
-                    name='selectedFormat'
-                    label='Export format'
-                    rules={[{ required: true, message: 'Format must be selected' }]}
+                <Form
+                    name='Import dataset'
+                    form={form}
+                    initialValues={{ selectedFormat: undefined } as FormValues}
+                    onFinish={handleImport}
                 >
-                    <Select placeholder='Select dataset format' className='cvat-modal-import-select'>
-                        {importers
-                            .sort((a: any, b: any) => a.name.localeCompare(b.name))
-                            .filter(
-                                (importer: any): boolean =>
-                                    instance !== null &&
-                                    (!instance?.dimension || importer.dimension === instance.dimension),
-                            )
-                            .map(
-                                (importer: any): JSX.Element => {
-                                    const pending = !!projects[instance.id];
-                                    const disabled = !importer.enabled || pending;
-                                    return (
-                                        <Select.Option
-                                            value={importer.name}
-                                            key={importer.name}
-                                            disabled={disabled}
-                                            className='cvat-modal-import-option-item'
-                                        >
-                                            <DownloadOutlined />
-                                            <Text disabled={disabled}>{importer.name}</Text>
-                                            {pending && <LoadingOutlined style={{ marginLeft: 10 }} />}
-                                        </Select.Option>
-                                    );
-                                },
-                            )}
-                    </Select>
-                </Form.Item>
-                <Upload.Dragger
-                    listType='text'
-                    fileList={file ? [file] : ([] as any[])}
-                    beforeUpload={(_file: RcFile): boolean => {
-                        if (!['application/zip', 'application/x-zip-compressed'].includes(_file.type)) {
-                            message.error('Only ZIP archive is supported');
-                        } else {
-                            setFile(_file);
-                        }
-                        return false;
-                    }}
-                    onRemove={() => {
-                        setFile(null);
-                    }}
-                >
-                    <p className='ant-upload-drag-icon'>
-                        <InboxOutlined />
-                    </p>
-                    <p className='ant-upload-text'>Click or drag file to this area</p>
-                </Upload.Dragger>
-            </Form>
-        </Modal>
+                    <Form.Item
+                        name='selectedFormat'
+                        label='Export format'
+                        rules={[{ required: true, message: 'Format must be selected' }]}
+                    >
+                        <Select placeholder='Select dataset format' className='cvat-modal-import-select'>
+                            {importers
+                                .sort((a: any, b: any) => a.name.localeCompare(b.name))
+                                .filter(
+                                    (importer: any): boolean =>
+                                        instance !== null &&
+                                        (!instance?.dimension || importer.dimension === instance.dimension),
+                                )
+                                .map(
+                                    (importer: any): JSX.Element => {
+                                        const pending = !!projects[instance.id];
+                                        const disabled = !importer.enabled || pending;
+                                        return (
+                                            <Select.Option
+                                                value={importer.name}
+                                                key={importer.name}
+                                                disabled={disabled}
+                                                className='cvat-modal-import-option-item'
+                                            >
+                                                <DownloadOutlined />
+                                                <Text disabled={disabled}>{importer.name}</Text>
+                                                {pending && <LoadingOutlined style={{ marginLeft: 10 }} />}
+                                            </Select.Option>
+                                        );
+                                    },
+                                )}
+                        </Select>
+                    </Form.Item>
+                    <Upload.Dragger
+                        listType='text'
+                        fileList={file ? [file] : ([] as any[])}
+                        beforeUpload={(_file: RcFile): boolean => {
+                            if (!['application/zip', 'application/x-zip-compressed'].includes(_file.type)) {
+                                message.error('Only ZIP archive is supported');
+                            } else {
+                                setFile(_file);
+                            }
+                            return false;
+                        }}
+                        onRemove={() => {
+                            setFile(null);
+                        }}
+                    >
+                        <p className='ant-upload-drag-icon'>
+                            <InboxOutlined />
+                        </p>
+                        <p className='ant-upload-text'>Click or drag file to this area</p>
+                    </Upload.Dragger>
+                </Form>
+            </Modal>
+            <ImportDatasetStatusModal />
+        </>
     );
 }
 

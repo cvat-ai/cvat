@@ -4,6 +4,7 @@
 # SPDX-License-Identifier: MIT
 
 import sys
+import rq
 import os.path as osp
 from collections import namedtuple
 from typing import Any, Callable, DefaultDict, Dict, List, Literal, Mapping, NamedTuple, OrderedDict, Tuple, Union, Set
@@ -1423,7 +1424,12 @@ def load_dataset_data(project_annotation, dataset: Dataset, project_data):
         for label in dataset.categories()[datumaro.AnnotationType.label].items:
             if not project_annotation.db_project.label_set.filter(name=label.name).exists():
                 raise CvatImportError(f'Target project does not have label with name "{label.name}"')
-    for subset in dataset.subsets().values():
+    for subset_id, subset in enumerate(dataset.subsets().values()):
+        job = rq.get_current_job()
+        job.meta['status'] = 'Task from dataset is being created...'
+        job.meta['progress'] = subset_id / len(dataset.subsets().keys())
+        job.save_meta()
+
         task_fields = {
             'project': project_annotation.db_project,
             'name': subset.name,

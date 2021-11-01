@@ -5,6 +5,8 @@
 from io import BufferedWriter
 import os
 import os.path as osp
+from glob import glob
+from posixpath import basename
 from typing import Callable
 import zipfile
 from collections import OrderedDict
@@ -48,8 +50,9 @@ class CvatExtractor(Extractor):
         self._subsets = subsets
         super().__init__(subsets=self._subsets)
 
+        image_items = self._parse_images(images_dir, self._subsets)
         items, categories = self._parse(path)
-        self._items = list(self._load_items(items).values())
+        self._items = list(self._load_items(items, image_items).values())
         self._categories = categories
 
     def categories(self):
@@ -80,6 +83,25 @@ class CvatExtractor(Extractor):
                     return [DEFAULT_SUBSET_NAME]
                 el.clear()
         return [DEFAULT_SUBSET_NAME]
+
+    @staticmethod
+    def _parse_images(image_dir, subsets):
+        items = OrderedDict()
+
+        if subsets == [DEFAULT_SUBSET_NAME] and not osp.isdir(osp.join(image_dir, DEFAULT_SUBSET_NAME)):
+            for file in sorted(glob(osp.join(image_dir, '*.PNG')), key=osp.basename):
+                name = osp.splitext(osp.basename(file))[0]
+                items[(None, name)] = DatasetItem(id=name, annotations=[],
+                    image=Image(path=file), subset=DEFAULT_SUBSET_NAME,
+                )
+        else:
+            for subset in subsets:
+                for file in sorted(glob(osp.join(image_dir, subset, '*.PNG')), key=osp.basename):
+                    name = osp.splitext(osp.basename(file))[0]
+                    items[(subset, name)] = DatasetItem(id=name, annotations=[],
+                        image=Image(path=file), subset=subset,
+                    )
+        return items
 
     @classmethod
     def _parse(cls, path):
@@ -369,20 +391,20 @@ class CvatExtractor(Extractor):
         attributes = ann.get('attributes')
         return Label(label_id, attributes=attributes, group=group)
 
-    def _load_items(self, parsed):
+    def _load_items(self, parsed, image_items):
         for (subset, frame_id), item_desc in parsed.items():
             name = item_desc.get('name', 'frame_%06d.PNG' % int(frame_id))
             image = osp.join(self._images_dir, subset, name) if subset else osp.join(self._images_dir, name)
             image_size = (item_desc.get('height'), item_desc.get('width'))
             if all(image_size):
                 image = Image(path=image, size=tuple(map(int, image_size)))
-
-            parsed[(subset, frame_id)] = DatasetItem(id=osp.splitext(name)[0],
-                subset=subset or DEFAULT_SUBSET_NAME, image=image,
-                annotations=item_desc.get('annotations'),
-                attributes={'frame': int(frame_id)})
-        return parsed
-
+            di = image_items.get((subset, osp.splitext(name)[0]))
+            di.subset = subset or DEFAULT_SUBSET_NAME
+            di.annotations = item_desc.get('annotations')
+            di.attributes = {'frame': int(frame_id)}
+            di.image = image if isinstance(image, Image) else di.image
+            image_items[(subset, osp.splitext(name)[0])] = di
+        return image_items
 
 dm_env.extractors.register('cvat', CvatExtractor)
 

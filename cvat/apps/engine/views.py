@@ -370,7 +370,10 @@ class ProjectViewSet(auth.ProjectGetQuerySetMixin, viewsets.ModelViewSet):
                         status=status.HTTP_500_INTERNAL_SERVER_ERROR
                     )
                 else:
-                    return Response(status=status.HTTP_202_ACCEPTED)
+                    return Response(
+                        data=self._get_rq_response('default', f'/api/v1/project/{pk}/dataset_import'),
+                        status=status.HTTP_202_ACCEPTED
+                    )
             else:
                 format_name = request.query_params.get("format", "")
                 return _export_annotations(
@@ -419,6 +422,25 @@ class ProjectViewSet(auth.ProjectGetQuerySetMixin, viewsets.ModelViewSet):
             )
         else:
             return Response("Format is not specified",status=status.HTTP_400_BAD_REQUEST)
+
+    @staticmethod
+    def _get_rq_response(queue, job_id):
+        queue = django_rq.get_queue(queue)
+        job = queue.fetch_job(job_id)
+        response = {}
+        if job is None or job.is_finished:
+            response = { "state": "Finished" }
+        elif job.is_queued:
+            response = { "state": "Queued" }
+        elif job.is_failed:
+            response = { "state": "Failed", "message": job.exc_info }
+        else:
+            response = { "state": "Started" }
+            response['message'] = job.meta.get('status', '')
+            response['progress'] = job.meta.get('progress', 0.)
+
+
+        return response
 
 class TaskFilter(filters.FilterSet):
     project = filters.CharFilter(field_name="project__name", lookup_expr="icontains")
@@ -1698,6 +1720,8 @@ def _import_project_dataset(request, rq_id, rq_func, pk, format_name):
             )
             rq_job.meta['tmp_file'] = filename
             rq_job.meta['tmp_file_descriptor'] = fd
+            rq_job.meta['status'] = 'Dataset import has been started...'
+            rq_job.meta['progress'] = 0.
             rq_job.save_meta()
     else:
         #TODO: Should it be a response?

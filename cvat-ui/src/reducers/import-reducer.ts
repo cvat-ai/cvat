@@ -9,6 +9,8 @@ import { ImportState } from './interfaces';
 
 const defaultState: ImportState = {
     projects: {},
+    progress: 0.0,
+    status: '',
     instance: null,
     modalVisible: false,
 };
@@ -37,6 +39,14 @@ export default (state: ImportState = defaultState, action: ImportActions): Impor
             return {
                 ...state,
                 projects: activities,
+            };
+        }
+        case ImportActionTypes.IMPORT_DATASET_UPDATE_STATUS: {
+            const { progress, status } = action.payload;
+            return {
+                ...state,
+                progress,
+                status,
             };
         }
         case ImportActionTypes.IMPORT_DATASET_FAILED:

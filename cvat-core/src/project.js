@@ -337,12 +337,13 @@
                         );
                         return result;
                     },
-                    async importDataset(format, file) {
+                    async importDataset(format, file, updateStatusCallback = null) {
                         const result = await PluginRegistry.apiWrapper.call(
                             this,
                             Project.prototype.annotations.importDataset,
                             format,
                             file,
+                            updateStatusCallback,
                         );
                         return result;
                     },

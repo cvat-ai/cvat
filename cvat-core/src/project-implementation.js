@@ -68,8 +68,12 @@
             const result = exportDataset(this, format, customName, saveImages);
             return result;
         };
-        projectClass.prototype.annotations.importDataset.implementation = async function (format, file) {
-            return importDataset(this, format, file);
+        projectClass.prototype.annotations.importDataset.implementation = async function (
+            format,
+            file,
+            updateStatusCallback,
+        ) {
+            return importDataset(this, format, file, updateStatusCallback);
         };
 
         return projectClass;

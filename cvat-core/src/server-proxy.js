@@ -499,7 +499,7 @@
                 };
             }
 
-            async function importDataset(id, format, file) {
+            async function importDataset(id, format, file, callback) {
                 const { backendAPI } = config;
                 const url = `${backendAPI}/projects/${id}/dataset`;
 
@@ -513,6 +513,7 @@
                                 proxy: config.proxy,
                             });
                             if (response.status === 202) {
+                                if (typeof callback === 'function') callback(response.data);
                                 setTimeout(request, 3000);
                             } else if (response.status === 201) {
                                 resolve();
@@ -525,7 +526,7 @@
                                     await Axios.post(`${url}?format=${format}`, formData, {
                                         proxy: config.proxy,
                                     });
-                                    setTimeout(request, 3000);
+                                    setTimeout(request, 2000);
                                 } catch (_error) {
                                     reject(generateError(error));
                                 }

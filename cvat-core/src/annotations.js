@@ -284,15 +284,18 @@
         return result;
     }
 
-    async function importDataset(instance, format, file) {
+    async function importDataset(instance, format, file, updateStatusCallback) {
         if (!(format instanceof String || typeof format === 'string')) {
             throw new ArgumentError('Format must be a string');
         }
         if (!(instance instanceof Project)) {
             throw new ArgumentError('Instance should ne a Project isntance');
         }
+        if (!(typeof updateStatusCallback === 'function' || updateStatusCallback === null)) {
+            throw new ArgumentError('Callback should ne a function or null');
+        }
         // TODO: check file
-        return serverProxy.projects.importDataset(instance.id, format, file);
+        return serverProxy.projects.importDataset(instance.id, format, file, updateStatusCallback);
     }
 
     function undoActions(session, count) {
