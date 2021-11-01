@@ -11,7 +11,7 @@ from io import BytesIO
 
 import datumaro
 from datumaro.components.dataset import Dataset, DatasetItem
-from datumaro.components.extractor import Mask
+from datumaro.components.annotation import Mask
 from django.contrib.auth.models import Group, User
 from PIL import Image
 
@@ -278,6 +278,7 @@ class TaskExportTest(_DbTestBase):
             'CVAT for images 1.1',
             'CVAT for video 1.1',
             'Datumaro 1.0',
+            'Datumaro 3D 1.0',
             'LabelMe 3.0',
             'MOT 1.1',
             'MOTS PNG 1.0',
@@ -322,7 +323,9 @@ class TaskExportTest(_DbTestBase):
             'ICDAR Segmentation 1.0',
             'Kitti Raw Format 1.0',
             'Sly Point Cloud Format 1.0',
-            'KITTI 1.0'
+            'KITTI 1.0',
+            'Datumaro 1.0',
+            'Datumaro 3D 1.0'
         })
 
     def test_exports(self):
@@ -353,7 +356,7 @@ class TaskExportTest(_DbTestBase):
             ('COCO 1.0', 'coco'),
             ('CVAT for images 1.1', 'cvat'),
             # ('CVAT for video 1.1', 'cvat'), # does not support
-            ('Datumaro 1.0', 'datumaro_project'),
+            ('Datumaro 1.0', 'datumaro'),
             ('LabelMe 3.0', 'label_me'),
             # ('MOT 1.1', 'mot_seq'), # does not support
             # ('MOTS PNG 1.0', 'mots_png'), # does not support
@@ -801,7 +804,7 @@ class TaskAnnotationsImportTest(_DbTestBase):
                 "group": 0,
                 "source": "manual",
                 "attributes": [],
-                "points": [2.0, 2.1, 40, 50.7],
+                "points": [2.0, 2.1, 40, 10.7],
                 "type": "rectangle",
                 "occluded": False,
             }
@@ -821,7 +824,7 @@ class TaskAnnotationsImportTest(_DbTestBase):
                         "value": task["labels"][0]["attributes"][1]["default_value"]
                     }
                 ],
-                "points": [1.0, 2.1, 10.6, 53.22],
+                "points": [1.0, 2.1, 10.6, 13.22],
                 "type": "rectangle",
                 "occluded": False,
             }
@@ -836,7 +839,7 @@ class TaskAnnotationsImportTest(_DbTestBase):
                     {
                         "frame": 0,
                         "attributes": [],
-                        "points": [1.0, 2.1, 10.6, 53.22, 100, 300.222],
+                        "points": [1.0, 2.1, 10.6, 53.22, 30, 20.222],
                         "type": "polygon",
                         "occluded": False,
                         "outside": False
@@ -888,6 +891,7 @@ class TaskAnnotationsImportTest(_DbTestBase):
             "shapes": shapes,
             "tracks": tracks
         }
+        print(f'{annotation_format}: {shapes}')
 
         return self._generate_custom_annotations(annotations, task)
 
@@ -913,10 +917,13 @@ class TaskAnnotationsImportTest(_DbTestBase):
     def test_can_import_annotations_for_image_with_dots_in_filename(self):
         for f in dm.views.get_import_formats():
             format_name = f.DISPLAY_NAME
+            if format_name != 'KITTI 1.0':
+                continue
 
             images = self._generate_task_images(3, "img0.0.0")
             task = self._generate_task(images, format_name)
-            self._generate_annotations(task, format_name)
+            print('Anns %s' % self._generate_annotations(task, format_name))
+
 
             with self.subTest(format=format_name):
                 if not f.ENABLED:

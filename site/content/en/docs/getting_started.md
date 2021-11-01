@@ -8,17 +8,21 @@ This section contains basic information and links to sections necessary for a qu
 
 ## Installation
 
-First step is to install CVAT on your system. Use the [Installation Guide](/docs/administration/basics/installation/).
+First step is to install CVAT on your system:
+- [Installation on Ubuntu](/docs/administration/basics/installation/#ubuntu-1804-x86_64amd64)
+- [Installation on Windows 10](/docs/administration/basics/installation/#windows-10)
+- [Installation on Mac OS](/docs/administration/basics/installation/#mac-os-mojave)
+
+To learn how to create a superuser and log in to CVAT,
+go to the [authorization](/docs/manual/basics/authorization/) section.
 
 ## Getting started in CVAT
-
-To find out more, go to the [authorization](/docs/manual/basics/authorization/) section.
 
 To create a task, go to `Tasks` section. Click `Create new task` to go to the task creation page.
 
 Set the name of the future task.
 
-Set the label using the constructor: first click "add label", then enter the name of the label and choose the color.
+Set the label using the constructor: first click `Add label`, then enter the name of the label and choose the color.
 
 ![](/images/create_a_new_task.gif)
 
@@ -26,10 +30,12 @@ You need to upload images or videos for your future annotation. To do so, simply
 
 To learn more, go to [creating an annotation task](/docs/manual/basics/creating_an_annotation_task/)
 
-## Basic annotation
+## Annotation
+
+### Basic
 
 When the task is created, you will see a corresponding message in the top right corner.
-Click the "Open task" button to go to the task page.
+Click the `Open task` button to go to the task page.
 
 Once on the task page, open a link to the job in the jobs list.
 
@@ -44,16 +50,24 @@ Choose a correct section for your type of the task and start annotation.
 | Cuboids   | [Annotation with cuboids](/docs/manual/advanced/annotation-with-cuboids/)                  | [Editing the cuboid](/docs/manual/advanced/annotation-with-cuboids/editing-the-cuboid/)              |
 | Tag       | [Annotation with tags](/docs/manual/advanced/annotation-with-tags/)                        |                                                                                                     |
 
+### Advanced
+
+In CVAT there is the possibility of using automatic and semi-automatic annotation what gives
+you the opportunity to speed up the execution of the annotation:
+- [OpenCV tools](/docs/manual/advanced/opencv-tools/) - tools included in CVAT by default.
+- [AI tools](/docs/manual/advanced/ai-tools/) - tools requiring installation.
+- [Automatic annotation](/docs/manual/advanced/automatic-annotation/) - automatic annotation with using DL models.
+
 ## Dump annotation
 
 ![](/images/image028.jpg)
 
 1. To download the annotations, first you have to save all changes.
-   Click the Save button or press `Ctrl+S`to save annotations quickly.
+   Click the `Save` button or press `Ctrl+S`to save annotations quickly.
 
-2. After you saved the changes, click the Menu button.
+2. After you saved the changes, click the `Menu` button.
 
-3. Then click the Dump Annotation button.
+3. Then click the `Dump Annotation` button.
 
 4. Lastly choose a format of the dump annotation file.
 

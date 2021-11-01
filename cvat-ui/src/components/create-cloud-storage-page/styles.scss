@@ -22,7 +22,7 @@
         width: 100%;
         height: auto;
         border: 1px solid $border-color-1;
-        border-radius: $grid-unit-size / 2;
+        border-radius: $grid-unit-size * 0.5;
         padding: $grid-unit-size * 2;
         background: $background-color-1;
         text-align: initial;

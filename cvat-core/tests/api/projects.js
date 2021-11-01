@@ -99,7 +99,7 @@ describe('Feature: save a project', () => {
 
         const labelsLength = result[0].labels.length;
         const newLabel = new window.cvat.classes.Label({
-            name: "My boss's car",
+            name: 'My boss\'s car',
             attributes: [
                 {
                     default_value: 'false',
@@ -119,7 +119,7 @@ describe('Feature: save a project', () => {
         });
 
         expect(result[0].labels).toHaveLength(labelsLength + 1);
-        const appendedLabel = result[0].labels.filter((el) => el.name === "My boss's car");
+        const appendedLabel = result[0].labels.filter((el) => el.name === 'My boss\'s car');
         expect(appendedLabel).toHaveLength(1);
         expect(appendedLabel[0].attributes).toHaveLength(1);
         expect(appendedLabel[0].attributes[0].name).toBe('parked');

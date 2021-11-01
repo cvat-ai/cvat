@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -22,44 +22,48 @@ export enum ModelsActionTypes {
 
 export const modelsActions = {
     getModels: () => createAction(ModelsActionTypes.GET_MODELS),
-    getModelsSuccess: (models: Model[]) =>
-        createAction(ModelsActionTypes.GET_MODELS_SUCCESS, {
-            models,
-        }),
-    getModelsFailed: (error: any) =>
-        createAction(ModelsActionTypes.GET_MODELS_FAILED, {
-            error,
-        }),
+    getModelsSuccess: (models: Model[]) => createAction(ModelsActionTypes.GET_MODELS_SUCCESS, {
+        models,
+    }),
+    getModelsFailed: (error: any) => createAction(ModelsActionTypes.GET_MODELS_FAILED, {
+        error,
+    }),
     fetchMetaFailed: (error: any) => createAction(ModelsActionTypes.FETCH_META_FAILED, { error }),
-    getInferenceStatusSuccess: (taskID: number, activeInference: ActiveInference) =>
+    getInferenceStatusSuccess: (taskID: number, activeInference: ActiveInference) => (
         createAction(ModelsActionTypes.GET_INFERENCE_STATUS_SUCCESS, {
             taskID,
             activeInference,
-        }),
-    getInferenceStatusFailed: (taskID: number, error: any) =>
+        })
+    ),
+    getInferenceStatusFailed: (taskID: number, error: any) => (
         createAction(ModelsActionTypes.GET_INFERENCE_STATUS_FAILED, {
             taskID,
             error,
-        }),
-    startInferenceFailed: (taskID: number, error: any) =>
+        })
+    ),
+    startInferenceFailed: (taskID: number, error: any) => (
         createAction(ModelsActionTypes.START_INFERENCE_FAILED, {
             taskID,
             error,
-        }),
-    cancelInferenceSuccess: (taskID: number) =>
+        })
+    ),
+    cancelInferenceSuccess: (taskID: number) => (
         createAction(ModelsActionTypes.CANCEL_INFERENCE_SUCCESS, {
             taskID,
-        }),
-    cancelInferenceFailed: (taskID: number, error: any) =>
+        })
+    ),
+    cancelInferenceFailed: (taskID: number, error: any) => (
         createAction(ModelsActionTypes.CANCEL_INFERENCE_FAILED, {
             taskID,
             error,
-        }),
+        })
+    ),
     closeRunModelDialog: () => createAction(ModelsActionTypes.CLOSE_RUN_MODEL_DIALOG),
-    showRunModelDialog: (taskInstance: any) =>
+    showRunModelDialog: (taskInstance: any) => (
         createAction(ModelsActionTypes.SHOW_RUN_MODEL_DIALOG, {
             taskInstance,
-        }),
+        })
+    ),
 };
 
 export type ModelsActions = ActionUnion<typeof modelsActions>;
