@@ -6,7 +6,6 @@ from io import BufferedWriter
 import os
 import os.path as osp
 from glob import glob
-from posixpath import basename
 from typing import Callable
 import zipfile
 from collections import OrderedDict

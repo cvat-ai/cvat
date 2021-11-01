@@ -98,9 +98,10 @@ function ImportDatasetModal(): JSX.Element {
                             {importers
                                 .sort((a: any, b: any) => a.name.localeCompare(b.name))
                                 .filter(
-                                    (importer: any): boolean =>
+                                    (importer: any): boolean => (
                                         instance !== null &&
-                                        (!instance?.dimension || importer.dimension === instance.dimension),
+                                        (!instance?.dimension || importer.dimension === instance.dimension)
+                                    ),
                                 )
                                 .map(
                                     (importer: any): JSX.Element => {
