@@ -908,6 +908,7 @@ class TaskAnnotationsImportTest(_DbTestBase):
 
             images = self._generate_task_images(3, "img0.0.0")
             task = self._generate_task(images, format_name)
+            self._generate_annotations(task, format_name)
 
             with self.subTest(format=format_name):
                 if not f.ENABLED:
