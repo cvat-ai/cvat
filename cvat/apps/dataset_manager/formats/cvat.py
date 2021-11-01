@@ -12,11 +12,12 @@ from collections import OrderedDict
 from tempfile import TemporaryDirectory
 from defusedxml import ElementTree
 
-from datumaro.components.dataset import Dataset
-from datumaro.components.extractor import (
-    AnnotationType, Bbox, DatasetItem, Importer, Label, LabelCategories, Points,
-    Polygon, PolyLine, Extractor, DEFAULT_SUBSET_NAME
+from datumaro.components.dataset import Dataset, DatasetItem
+from datumaro.components.extractor import Importer, Extractor, DEFAULT_SUBSET_NAME
+from datumaro.components.annotation import (
+    AnnotationType, Bbox, Points, Polygon, PolyLine, Label, LabelCategories,
 )
+
 from datumaro.util.image import Image
 
 from cvat.apps.dataset_manager.bindings import TaskData, match_dm_item, ProjectData, get_defaulted_subset, import_dm_annotations
