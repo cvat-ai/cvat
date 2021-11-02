@@ -43,6 +43,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Manifest removing (<https://github.com/openvinotoolkit/cvat/pull/3791>)
 - Fixed dextr deployment (<https://github.com/openvinotoolkit/cvat/pull/3820>)
 - Migration of `dataset_repo` application (<https://github.com/openvinotoolkit/cvat/pull/3827>)
+- Helm settings for external psql database were unused by backend (<https://github.com/openvinotoolkit/cvat/pull/3779>)
 
 ### Security
 
