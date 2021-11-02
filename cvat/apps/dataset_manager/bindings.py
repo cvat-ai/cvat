@@ -1400,7 +1400,7 @@ def import_dm_annotations(dm_dataset: Dataset, instance_data: Union[TaskData, Pr
                         occluded=ann.attributes.pop('occluded', None) == True,
                         z_order=ann.z_order,
                         group=group_map.get(ann.group, 0),
-                        source='manual',
+                        source=str(attributes.pop('source')).lower() if str(attributes.get('source', None)).lower() in {'auto', 'manual'} else 'manual',
                         attributes=[instance_data.Attribute(name=n, value=str(v))
                             for n, v in ann.attributes.items()],
                     ))
