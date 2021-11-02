@@ -1,4 +1,4 @@
-FROM node:stretch AS cvat-ui
+FROM node:lts-slim AS cvat-ui
 
 ARG http_proxy
 ARG https_proxy

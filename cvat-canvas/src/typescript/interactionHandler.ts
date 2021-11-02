@@ -363,12 +363,12 @@ export class InteractionHandlerImpl implements InteractionHandler {
     private visualComponentsChanged(interactionData: InteractionData): boolean {
         const allowedKeys = ['enabled', 'crosshair', 'enableThreshold', 'onChangeToolsBlockerState'];
         if (Object.keys(interactionData).every((key: string): boolean => allowedKeys.includes(key))) {
-            if (this.interactionData.enableThreshold !== undefined && interactionData.enableThreshold !== undefined
-                && this.interactionData.enableThreshold !== interactionData.enableThreshold) {
+            if (this.interactionData.enableThreshold !== undefined && interactionData.enableThreshold !== undefined &&
+                this.interactionData.enableThreshold !== interactionData.enableThreshold) {
                 return true;
             }
-            if (this.interactionData.crosshair !== undefined && interactionData.crosshair !== undefined
-                && this.interactionData.crosshair !== interactionData.crosshair) {
+            if (this.interactionData.crosshair !== undefined && interactionData.crosshair !== undefined &&
+                this.interactionData.crosshair !== interactionData.crosshair) {
                 return true;
             }
         }
@@ -481,9 +481,9 @@ export class InteractionHandlerImpl implements InteractionHandler {
             this.crosshair.scale(this.geometry.scale);
         }
 
-        const shapesToBeScaled = this.currentInteractionShape
-            ? [...this.interactionShapes, this.currentInteractionShape]
-            : [...this.interactionShapes];
+        const shapesToBeScaled = this.currentInteractionShape ?
+            [...this.interactionShapes, this.currentInteractionShape] :
+            [...this.interactionShapes];
         for (const shape of shapesToBeScaled) {
             if (shape.type === 'circle') {
                 if (shape.hasClass('cvat_canvas_removable_interaction_point')) {

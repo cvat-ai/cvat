@@ -15,16 +15,19 @@ export enum ExportActionTypes {
 export const exportActions = {
     openExportModal: (instance: any) => createAction(ExportActionTypes.OPEN_EXPORT_MODAL, { instance }),
     closeExportModal: () => createAction(ExportActionTypes.CLOSE_EXPORT_MODAL),
-    exportDataset: (instance: any, format: string) =>
-        createAction(ExportActionTypes.EXPORT_DATASET, { instance, format }),
-    exportDatasetSuccess: (instance: any, format: string) =>
-        createAction(ExportActionTypes.EXPORT_DATASET_SUCCESS, { instance, format }),
-    exportDatasetFailed: (instance: any, format: string, error: any) =>
+    exportDataset: (instance: any, format: string) => (
+        createAction(ExportActionTypes.EXPORT_DATASET, { instance, format })
+    ),
+    exportDatasetSuccess: (instance: any, format: string) => (
+        createAction(ExportActionTypes.EXPORT_DATASET_SUCCESS, { instance, format })
+    ),
+    exportDatasetFailed: (instance: any, format: string, error: any) => (
         createAction(ExportActionTypes.EXPORT_DATASET_FAILED, {
             instance,
             format,
             error,
-        }),
+        })
+    ),
 };
 
 export const exportDatasetAsync = (

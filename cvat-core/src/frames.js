@@ -158,8 +158,8 @@
 
             const onDecodeAll = async (frameNumber) => {
                 if (
-                    frameDataCache[this.tid].activeChunkRequest
-                    && chunkNumber === frameDataCache[this.tid].activeChunkRequest.chunkNumber
+                    frameDataCache[this.tid].activeChunkRequest &&
+                    chunkNumber === frameDataCache[this.tid].activeChunkRequest.chunkNumber
                 ) {
                     const callbackArray = frameDataCache[this.tid].activeChunkRequest.callbacks;
                     for (let i = callbackArray.length - 1; i >= 0; --i) {
@@ -177,8 +177,8 @@
 
             const rejectRequestAll = () => {
                 if (
-                    frameDataCache[this.tid].activeChunkRequest
-                    && chunkNumber === frameDataCache[this.tid].activeChunkRequest.chunkNumber
+                    frameDataCache[this.tid].activeChunkRequest &&
+                    chunkNumber === frameDataCache[this.tid].activeChunkRequest.chunkNumber
                 ) {
                     for (const r of frameDataCache[this.tid].activeChunkRequest.callbacks) {
                         r.reject(r.frameNumber);
@@ -236,10 +236,10 @@
                             const activeRequest = frameDataCache[this.tid].activeChunkRequest;
                             if (!provider.isChunkCached(start, stop)) {
                                 if (
-                                    !activeRequest
-                                    || (activeRequest
-                                        && activeRequest.completed
-                                        && activeRequest.chunkNumber !== chunkNumber)
+                                    !activeRequest ||
+                                    (activeRequest &&
+                                        activeRequest.completed &&
+                                        activeRequest.chunkNumber !== chunkNumber)
                                 ) {
                                     if (activeRequest && activeRequest.rejectRequestAll) {
                                         activeRequest.rejectRequestAll();
@@ -305,10 +305,10 @@
                             }
                         } else {
                             if (
-                                this.number % chunkSize > chunkSize / 4
-                                && provider.decodedBlocksCacheSize > 1
-                                && this.decodeForward
-                                && !provider.isNextChunkExists(this.number)
+                                this.number % chunkSize > chunkSize / 4 &&
+                                provider.decodedBlocksCacheSize > 1 &&
+                                this.decodeForward &&
+                                !provider.isNextChunkExists(this.number)
                             ) {
                                 const nextChunkNumber = Math.floor(this.number / chunkSize) + 1;
                                 if (nextChunkNumber * chunkSize < this.stopFrame) {
@@ -421,8 +421,8 @@
                         .data()
                         .then(() => {
                             if (
-                                !(chunkIdx in this._requestedChunks)
-                                || !this._requestedChunks[chunkIdx].requestedFrames.has(requestedFrame)
+                                !(chunkIdx in this._requestedChunks) ||
+                                !this._requestedChunks[chunkIdx].requestedFrames.has(requestedFrame)
                             ) {
                                 reject(chunkIdx);
                             } else {
@@ -531,10 +531,10 @@
                 delete this._buffer[frameNumber];
                 const cachedFrames = this.cachedFrames();
                 if (
-                    fillBuffer
-                    && !this._activeFillBufferRequest
-                    && this._size > this._chunkSize
-                    && cachedFrames.length < (this._size * 3) / 4
+                    fillBuffer &&
+                    !this._activeFillBufferRequest &&
+                    this._size > this._chunkSize &&
+                    cachedFrames.length < (this._size * 3) / 4
                 ) {
                     const maxFrame = cachedFrames ? Math.max(...cachedFrames) : frameNumber;
                     if (maxFrame < this._stopFrame) {
@@ -560,8 +560,8 @@
         clear() {
             for (const chunkIdx in this._requestedChunks) {
                 if (
-                    Object.prototype.hasOwnProperty.call(this._requestedChunks, chunkIdx)
-                    && this._requestedChunks[chunkIdx].reject
+                    Object.prototype.hasOwnProperty.call(this._requestedChunks, chunkIdx) &&
+                    this._requestedChunks[chunkIdx].reject
                 ) {
                     this._requestedChunks[chunkIdx].reject('not needed');
                 }
@@ -648,8 +648,8 @@
             const meta = await serverProxy.frames.getMeta(taskID);
             const mean = meta.frames.reduce((a, b) => a + b.width * b.height, 0) / meta.frames.length;
             const stdDev = Math.sqrt(
-                meta.frames.map((x) => Math.pow(x.width * x.height - mean, 2)).reduce((a, b) => a + b)
-                    / meta.frames.length,
+                meta.frames.map((x) => (x.width * x.height - mean) ** 2).reduce((a, b) => a + b) /
+                    meta.frames.length,
             );
 
             // limit of decoded frames cache by 2GB
