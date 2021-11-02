@@ -56,7 +56,7 @@ from cvat.apps.engine.models import CloudStorage as CloudStorageModel
 from cvat.apps.engine.serializers import (
     AboutSerializer, AnnotationFileSerializer, BasicUserSerializer,
     DataMetaSerializer, DataSerializer, ExceptionSerializer,
-    FileInfoSerializer, JobSerializer, LabeledDataSerializer,
+    FileInfoSerializer, JobReadSerializer, JobWriteSerializer, LabeledDataSerializer,
     LogEventSerializer, ProjectSerializer, ProjectSearchSerializer, ProjectWithoutTaskSerializer,
     RqStatusSerializer, TaskSerializer, UserSerializer, PluginsSerializer, ReviewSerializer,
     CombinedReviewSerializer, IssueSerializer, CombinedIssueSerializer, CommentSerializer,
@@ -270,6 +270,8 @@ class ProjectViewSet(viewsets.ModelViewSet):
     def tasks(self, request, pk):
         self.get_object() # force to call check_object_permissions
         queryset = Task.objects.filter(project_id=pk).order_by('-id')
+        perm = TaskPermission.create_list(request)
+        queryset = perm.filter(queryset)
 
         page = self.paginate_queryset(queryset)
         if page is not None:
@@ -535,12 +537,14 @@ class TaskViewSet(viewsets.ModelViewSet):
             instance.data.delete()
 
     @swagger_auto_schema(method='get', operation_summary='Returns a list of jobs for a specific task',
-        responses={'200': JobSerializer(many=True)})
-    @action(detail=True, methods=['GET'], serializer_class=JobSerializer)
+        responses={'200': JobReadSerializer(many=True)})
+    @action(detail=True, methods=['GET'], serializer_class=JobReadSerializer)
     def jobs(self, request, pk):
         self.get_object() # force to call check_object_permissions
         queryset = Job.objects.filter(segment__task_id=pk)
-        serializer = JobSerializer(queryset, many=True,
+        perm = JobPermission.create_list(request)
+        queryset = perm.filter(queryset)
+        serializer = JobReadSerializer(queryset, many=True,
             context={"request": request})
 
         return Response(serializer.data)
@@ -851,7 +855,17 @@ class TaskViewSet(viewsets.ModelViewSet):
 class JobViewSet(viewsets.GenericViewSet,
     mixins.RetrieveModelMixin, mixins.UpdateModelMixin):
     queryset = Job.objects.all().order_by('id')
-    serializer_class = JobSerializer
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        perm = JobPermission.create_list(self.request)
+        return perm.filter(queryset)
+
+    def get_serializer_class(self):
+        if self.request.method in SAFE_METHODS:
+            return JobReadSerializer
+        else:
+            return JobWriteSerializer
 
     @swagger_auto_schema(method='get', operation_summary='Method returns annotations for a specific job')
     @swagger_auto_schema(method='put', operation_summary='Method performs an update of all annotations in a specific job')

@@ -138,31 +138,52 @@ class JobCommitSerializer(serializers.ModelSerializer):
         model = models.JobCommit
         fields = ('id', 'version', 'author', 'message', 'timestamp')
 
-class JobSerializer(serializers.ModelSerializer):
+class JobReadSerializer(serializers.ModelSerializer):
     task_id = serializers.ReadOnlyField(source="segment.task.id")
     start_frame = serializers.ReadOnlyField(source="segment.start_frame")
     stop_frame = serializers.ReadOnlyField(source="segment.stop_frame")
     assignee = BasicUserSerializer(allow_null=True, required=False)
-    assignee_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)
-    reviewer = BasicUserSerializer(allow_null=True, required=False)
-    reviewer_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)
 
     class Meta:
         model = models.Job
-        fields = ('url', 'id', 'assignee', 'assignee_id', 'reviewer',
-            'reviewer_id', 'status', 'start_frame', 'stop_frame', 'task_id')
-        read_only_fields = ('assignee', 'reviewer')
+        fields = ('url', 'id', 'assignee', 'status', 'stage', 'state',
+            'start_frame', 'stop_frame', 'task_id')
+        read_only_fields = fields
+
+class JobWriteSerializer(JobReadSerializer):
+    assignee = serializers.IntegerField(write_only=True, allow_null=True, required=False)
+
+    def to_representation(self, instance):
+        serializer = JobReadSerializer(instance, context=self.context)
+        return serializer.data
+
+    def update(self, instance, validated_data):
+        state = validated_data.get('state')
+        stage = validated_data.get('stage')
+        if stage:
+            if stage == models.StageChoice.ANNOTATION:
+                status = models.StatusChoice.ANNOTATION
+            elif stage == models.StageChoice.ACCEPTANCE and state == models.StateChoice.COMPLETED:
+                status = models.StatusChoice.COMPLETED
+            else:
+                status = models.StatusChoice.VALIDATION
+
+            validated_data['status'] = status
+            if not state:
+                validated_data['state'] = models.StateChoice.NEW
+
+        return super().update(instance, validated_data)
+
+    class Meta(JobReadSerializer.Meta):
+        read_only_fields = ('status', 'start_frame', 'stop_frame', 'task_id')
 
 class SimpleJobSerializer(serializers.ModelSerializer):
     assignee = BasicUserSerializer(allow_null=True)
-    assignee_id = serializers.IntegerField(write_only=True, allow_null=True)
-    reviewer = BasicUserSerializer(allow_null=True, required=False)
-    reviewer_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)
 
     class Meta:
         model = models.Job
-        fields = ('url', 'id', 'assignee', 'assignee_id', 'reviewer', 'reviewer_id', 'status')
-        read_only_fields = ('assignee', 'reviewer')
+        fields = ('url', 'id', 'assignee', 'status', 'stage', 'state')
+        read_only_fields = fields
 
 class SegmentSerializer(serializers.ModelSerializer):
     jobs = SimpleJobSerializer(many=True, source='job_set')
@@ -170,6 +191,7 @@ class SegmentSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Segment
         fields = ('start_frame', 'stop_frame', 'jobs')
+        read_only_fields = fields
 
 class ClientFileSerializer(serializers.ModelSerializer):
     class Meta:

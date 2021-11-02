@@ -317,7 +317,6 @@ class TaskExporter(_TaskBackupBase):
             job_serializer = SimpleJobSerializer(db_job)
             job_serializer.fields.pop('url')
             job_serializer.fields.pop('assignee')
-            job_serializer.fields.pop('reviewer')
             job_data = self._prepare_job_meta(job_serializer.data)
 
             segment_serailizer = SegmentSerializer(db_segment)
