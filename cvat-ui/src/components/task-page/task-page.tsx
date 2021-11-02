@@ -52,9 +52,9 @@ class TaskPageComponent extends React.PureComponent<Props> {
     }
 
     public render(): JSX.Element {
-        const { task, updating } = this.props;
+        const { task, updating, fetching } = this.props;
 
-        if (task === null) {
+        if (task === null || fetching || updating) {
             return <Spin size='large' className='cvat-spinner' />;
         }
 
