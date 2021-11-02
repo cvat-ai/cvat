@@ -67,6 +67,16 @@
             return result;
         };
 
+        projectClass.prototype.export.implementation = async function () {
+            const result = await serverProxy.projects.exportProject(this.id);
+            return result;
+        };
+
+        projectClass.import.implementation = async function (file) {
+            const result = await serverProxy.projects.importProject(file);
+            return result.id;
+        };
+
         return projectClass;
     }
 

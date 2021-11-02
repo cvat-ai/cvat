@@ -25,6 +25,12 @@ export enum ProjectsActionTypes {
     DELETE_PROJECT = 'DELETE_PROJECT',
     DELETE_PROJECT_SUCCESS = 'DELETE_PROJECT_SUCCESS',
     DELETE_PROJECT_FAILED = 'DELETE_PROJECT_FAILED',
+    EXPORT_PROJECT = 'EXPORT_PROJECT',
+    EXPORT_PROJECT_SUCCESS = 'EXPORT_PROJECT_SUCCESS',
+    EXPORT_PROJECT_FAILED = 'EXPORT_PROJECT_FAILED',
+    IMPORT_PROJECT = 'IMPORT_PROJECT',
+    IMPORT_PROJECT_SUCCESS = 'IMPORT_PROJECT_SUCCESS',
+    IMPORT_PROJECT_FAILED = 'IMPORT_PROJECT_FAILED',
 }
 
 // prettier-ignore
@@ -53,6 +59,20 @@ const projectActions = {
     ),
     deleteProjectFailed: (projectId: number, error: any) => (
         createAction(ProjectsActionTypes.DELETE_PROJECT_FAILED, { projectId, error })
+    ),
+    exportProject: (projectId: number) => createAction(ProjectsActionTypes.EXPORT_PROJECT, { projectId }),
+    exportProjectSuccess: (projectID: number) => (
+        createAction(ProjectsActionTypes.EXPORT_PROJECT_SUCCESS, { projectID })
+    ),
+    exportProjectFailed: (projectID: number, error: any) => (
+        createAction(ProjectsActionTypes.EXPORT_PROJECT_FAILED, { projectId: projectID, error })
+    ),
+    importProject: () => createAction(ProjectsActionTypes.IMPORT_PROJECT),
+    importProjectSuccess: (projectID: number) => (
+        createAction(ProjectsActionTypes.IMPORT_PROJECT_SUCCESS, { projectID })
+    ),
+    importProjectFailed: (error: any) => (
+        createAction(ProjectsActionTypes.IMPORT_PROJECT_FAILED, { error })
     ),
 };
 
@@ -168,6 +188,34 @@ export function deleteProjectAsync(projectInstance: any): ThunkAction {
             dispatch(projectActions.deleteProjectSuccess(projectInstance.id));
         } catch (error) {
             dispatch(projectActions.deleteProjectFailed(projectInstance.id, error));
+        }
+    };
+}
+
+export function importProjectAsync(file: File): ThunkAction {
+    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+        dispatch(projectActions.importProject());
+        try {
+            const projectInstance = await cvat.classes.Project.import(file);
+            dispatch(projectActions.importProjectSuccess(projectInstance));
+        } catch (error) {
+            dispatch(projectActions.importProjectFailed(error));
+        }
+    };
+}
+
+export function exportProjectAsync(projectInstance: any): ThunkAction {
+    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+        dispatch(projectActions.exportProject(projectInstance.id));
+
+        try {
+            const url = await projectInstance.export();
+            const downloadAnchor = window.document.getElementById('downloadAnchor') as HTMLAnchorElement;
+            downloadAnchor.href = url;
+            downloadAnchor.click();
+            dispatch(projectActions.exportProjectSuccess(projectInstance.id));
+        } catch (error) {
+            dispatch(projectActions.exportProjectFailed(projectInstance.id, error));
         }
     };
 }

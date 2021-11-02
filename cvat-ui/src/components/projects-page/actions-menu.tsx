@@ -3,11 +3,13 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import Modal from 'antd/lib/modal';
 import Menu from 'antd/lib/menu';
+import { LoadingOutlined } from '@ant-design/icons';
 
-import { deleteProjectAsync } from 'actions/projects-actions';
+import { CombinedState } from 'reducers/interfaces';
+import { deleteProjectAsync, exportProjectAsync } from 'actions/projects-actions';
 import { exportActions } from 'actions/export-actions';
 
 interface Props {
@@ -18,6 +20,8 @@ export default function ProjectActionsMenuComponent(props: Props): JSX.Element {
     const { projectInstance } = props;
 
     const dispatch = useDispatch();
+    const activeBackups = useSelector((state: CombinedState) => state.projects.activities.backups);
+    const exportIsActive = projectInstance.id in activeBackups;
 
     const onDeleteProject = (): void => {
         Modal.confirm({
@@ -41,6 +45,13 @@ export default function ProjectActionsMenuComponent(props: Props): JSX.Element {
                 onClick={() => dispatch(exportActions.openExportModal(projectInstance))}
             >
                 Export project dataset
+            </Menu.Item>
+            <Menu.Item
+                disabled={exportIsActive}
+                onClick={() => dispatch(exportProjectAsync(projectInstance))}
+            >
+                {exportIsActive && <LoadingOutlined id='cvat-export-project-loading' />}
+                Backup Project
             </Menu.Item>
             <hr />
             <Menu.Item onClick={onDeleteProject}>Delete</Menu.Item>

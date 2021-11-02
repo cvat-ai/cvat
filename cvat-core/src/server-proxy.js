@@ -501,12 +501,12 @@
 
             async function exportTask(id) {
                 const { backendAPI } = config;
-                const url = `${backendAPI}/tasks/${id}`;
+                const url = `${backendAPI}/tasks/${id}/backup`;
 
                 return new Promise((resolve, reject) => {
                     async function request() {
                         try {
-                            const response = await Axios.get(`${url}?action=export`, {
+                            const response = await Axios.get(url, {
                                 proxy: config.proxy,
                             });
                             if (response.status === 202) {
@@ -532,7 +532,7 @@
                 return new Promise((resolve, reject) => {
                     async function request() {
                         try {
-                            const response = await Axios.post(`${backendAPI}/tasks?action=import`, taskData, {
+                            const response = await Axios.post(`${backendAPI}/tasks/backup`, taskData, {
                                 proxy: config.proxy,
                             });
                             if (response.status === 202) {
@@ -542,6 +542,59 @@
                             } else {
                                 const importedTask = await getTasks(`?id=${response.data.id}`);
                                 resolve(importedTask[0]);
+                            }
+                        } catch (errorData) {
+                            reject(generateError(errorData));
+                        }
+                    }
+
+                    setTimeout(request);
+                });
+            }
+
+            async function exportProject(id) {
+                const { backendAPI } = config;
+                const url = `${backendAPI}/projects/${id}/backup`;
+
+                return new Promise((resolve, reject) => {
+                    async function request() {
+                        try {
+                            const response = await Axios.get(url, {
+                                proxy: config.proxy,
+                            });
+                            if (response.status === 202) {
+                                setTimeout(request, 3000);
+                            } else {
+                                resolve(`${url}?action=download`);
+                            }
+                        } catch (errorData) {
+                            reject(generateError(errorData));
+                        }
+                    }
+
+                    setTimeout(request);
+                });
+            }
+
+            async function importProject(file) {
+                const { backendAPI } = config;
+
+                let taskData = new FormData();
+                taskData.append('project_file', file);
+
+                return new Promise((resolve, reject) => {
+                    async function request() {
+                        try {
+                            const response = await Axios.post(`${backendAPI}/projects/backup`, taskData, {
+                                proxy: config.proxy,
+                            });
+                            if (response.status === 202) {
+                                taskData = new FormData();
+                                taskData.append('rq_id', response.data.rq_id);
+                                setTimeout(request, 3000);
+                            } else {
+                                const importedProject = await getProjects(`?id=${response.data.id}`);
+                                resolve(importedProject[0]);
                             }
                         } catch (errorData) {
                             reject(generateError(errorData));
@@ -1323,6 +1376,8 @@
                             create: createProject,
                             delete: deleteProject,
                             exportDataset: exportDataset('projects'),
+                            exportProject,
+                            importProject,
                         }),
                         writable: false,
                     },

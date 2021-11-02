@@ -41,6 +41,8 @@ const defaultState: NotificationsState = {
             updating: null,
             deleting: null,
             creating: null,
+            importing: null,
+            exporting: null,
         },
         tasks: {
             fetching: null,
@@ -135,6 +137,9 @@ const defaultState: NotificationsState = {
             registerDone: '',
             requestPasswordResetDone: '',
             resetPasswordDone: '',
+        },
+        projects: {
+            importingDone: '',
         },
     },
 };
@@ -548,6 +553,50 @@ export default function (state = defaultState, action: AnyAction): Notifications
                             reason: action.payload.error.toString(),
                             className: 'cvat-notification-notice-delete-project-failed',
                         },
+                    },
+                },
+            };
+        }
+        case ProjectsActionTypes.EXPORT_PROJECT_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    projects: {
+                        ...state.errors.projects,
+                        exporting: {
+                            message: 'Could not export the project',
+                            reason: action.payload.error.toString(),
+                        },
+                    },
+                },
+            };
+        }
+        case ProjectsActionTypes.IMPORT_PROJECT_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    projects: {
+                        ...state.errors.projects,
+                        importing: {
+                            message: 'Could not import the project',
+                            reason: action.payload.error.toString(),
+                        },
+                    },
+                },
+            };
+        }
+        case ProjectsActionTypes.IMPORT_PROJECT_SUCCESS: {
+            const { projectID } = action.payload;
+            return {
+                ...state,
+                messages: {
+                    ...state.messages,
+                    projects: {
+                        ...state.messages.projects,
+                        importingDone:
+                            `Project has been imported succesfully <a href="/projects/${projectID}">Open project</a>`,
                     },
                 },
             };

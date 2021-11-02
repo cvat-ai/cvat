@@ -2324,13 +2324,13 @@ class TaskImportExportAPITestCase(APITestCase):
 
     def _run_api_v1_tasks_id_export(self, tid, user, query_params=""):
         with ForceLogin(user, self.client):
-            response = self.client.get('/api/v1/tasks/{}?{}'.format(tid, query_params), format="json")
+            response = self.client.get('/api/v1/tasks/{}/backup?{}'.format(tid, query_params), format="json")
 
         return response
 
     def _run_api_v1_tasks_id_import(self, user, data):
         with ForceLogin(user, self.client):
-            response = self.client.post('/api/v1/tasks?action=import', data=data, format="multipart")
+            response = self.client.post('/api/v1/tasks/backup', data=data, format="multipart")
 
         return response
 
@@ -2358,10 +2358,10 @@ class TaskImportExportAPITestCase(APITestCase):
         self._create_tasks()
         for task in self.tasks:
             tid = task["id"]
-            response = self._run_api_v1_tasks_id_export(tid, user, "action=export")
+            response = self._run_api_v1_tasks_id_export(tid, user)
             self.assertEqual(response.status_code, HTTP_202_ACCEPTED)
 
-            response = self._run_api_v1_tasks_id_export(tid, user, "action=export")
+            response = self._run_api_v1_tasks_id_export(tid, user)
             self.assertEqual(response.status_code, HTTP_201_CREATED)
 
             response = self._run_api_v1_tasks_id_export(tid, user, "action=download")

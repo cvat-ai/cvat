@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import { AnyAction } from 'redux';
+import { omit } from 'lodash';
 import { ProjectsActionTypes } from 'actions/projects-actions';
 import { BoundariesActionTypes } from 'actions/boundaries-actions';
 import { AuthActionTypes } from 'actions/auth-actions';
@@ -29,7 +30,9 @@ const defaultState: ProjectsState = {
             id: null,
             error: '',
         },
+        backups: {},
     },
+    importing: false,
 };
 
 export default (state: ProjectsState = defaultState, action: AnyAction): ProjectsState => {
@@ -190,6 +193,50 @@ export default (state: ProjectsState = defaultState, action: AnyAction): Project
                 },
             };
         }
+        case ProjectsActionTypes.EXPORT_PROJECT: {
+            const { projectId } = action.payload;
+            const { backups } = state.activities;
+
+            return {
+                ...state,
+                activities: {
+                    ...state.activities,
+                    backups: {
+                        ...backups,
+                        ...Object.fromEntries([[projectId, true]]),
+                    },
+                },
+            };
+        }
+        case ProjectsActionTypes.EXPORT_PROJECT_FAILED:
+        case ProjectsActionTypes.EXPORT_PROJECT_SUCCESS: {
+            const { projectID } = action.payload;
+            const { backups } = state.activities;
+
+            delete backups[projectID];
+
+            return {
+                ...state,
+                activities: {
+                    ...state.activities,
+                    backups: omit(backups, [projectID]),
+                },
+            };
+        }
+        case ProjectsActionTypes.IMPORT_PROJECT: {
+            return {
+                ...state,
+                importing: true,
+            };
+        }
+        case ProjectsActionTypes.IMPORT_PROJECT_FAILED:
+        case ProjectsActionTypes.IMPORT_PROJECT_SUCCESS: {
+            return {
+                ...state,
+                importing: false,
+            };
+        }
+
         case BoundariesActionTypes.RESET_AFTER_ERROR:
         case AuthActionTypes.LOGOUT_SUCCESS: {
             return { ...defaultState };

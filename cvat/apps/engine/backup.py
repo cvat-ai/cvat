@@ -5,6 +5,7 @@
 import io
 import os
 from enum import Enum
+import re
 import shutil
 from zipfile import ZipFile
 
@@ -18,7 +19,7 @@ from cvat.apps.engine import models
 from cvat.apps.engine.log import slogger
 from cvat.apps.engine.serializers import (AttributeSerializer, DataSerializer,
     LabeledDataSerializer, SegmentSerializer, SimpleJobSerializer, TaskSerializer,
-    ReviewSerializer, IssueSerializer, CommentSerializer)
+    ReviewSerializer, IssueSerializer, CommentSerializer, ProjectSerializer)
 from cvat.apps.engine.utils import av_scan_paths
 from cvat.apps.engine.models import StorageChoice, StorageMethodChoice, DataChoice
 from cvat.apps.engine.task import _create_thread
@@ -27,22 +28,57 @@ from cvat.apps.engine.task import _create_thread
 class Version(Enum):
         V1 = '1.0'
 
-class _TaskBackupBase():
-    MANIFEST_FILENAME = 'task.json'
-    ANNOTATIONS_FILENAME = 'annotations.json'
-    DATA_DIRNAME = 'data'
-    TASK_DIRNAME = 'task'
+
+def _get_label_mapping(db_labels):
+    label_mapping = {db_label.id: db_label.name for db_label in db_labels}
+    for db_label in db_labels:
+        label_mapping[db_label.id] = {
+            'value': db_label.name,
+            'attributes': {},
+        }
+        for db_attribute in db_label.attributespec_set.all():
+            label_mapping[db_label.id]['attributes'][db_attribute.id] = db_attribute.name
+
+    return label_mapping
+
+class _BackupBase():
+    def __init__(self, *args, logger=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._logger = logger
 
     def _prepare_meta(self, allowed_keys, meta):
         keys_to_drop = set(meta.keys()) - allowed_keys
         if keys_to_drop:
-            logger = slogger.task[self._db_task.id] if hasattr(self, '_db_task') else slogger.glob
-
-            logger.warning('the following keys are dropped {}'.format(keys_to_drop))
+            if self._logger:
+                self._logger.warning('the following keys are dropped {}'.format(keys_to_drop))
             for key in keys_to_drop:
                 del meta[key]
 
         return meta
+
+    def _prepare_label_meta(self, labels):
+        allowed_fields = {
+            'name',
+            'color',
+            'attributes',
+        }
+        return self._prepare_meta(allowed_fields, labels)
+
+    def _prepare_attribute_meta(self, attribute):
+        allowed_fields = {
+            'name',
+            'mutable',
+            'input_type',
+            'default_value',
+            'values',
+        }
+        return self._prepare_meta(allowed_fields, attribute)
+
+class _TaskBackupBase(_BackupBase):
+    MANIFEST_FILENAME = 'task.json'
+    ANNOTATIONS_FILENAME = 'annotations.json'
+    DATA_DIRNAME = 'data'
+    TASK_DIRNAME = 'task'
 
     def _prepare_task_meta(self, task):
         allowed_fields = {
@@ -78,24 +114,6 @@ class _TaskBackupBase():
             'status',
         }
         return self._prepare_meta(allowed_fields, job)
-
-    def _prepare_attribute_meta(self, attribute):
-        allowed_fields = {
-            'name',
-            'mutable',
-            'input_type',
-            'default_value',
-            'values',
-        }
-        return self._prepare_meta(allowed_fields, attribute)
-
-    def _prepare_label_meta(self, labels):
-        allowed_fields = {
-            'name',
-            'color',
-            'attributes',
-        }
-        return self._prepare_meta(allowed_fields, labels)
 
     def _prepare_annotations(self, annotations, label_mapping):
         allowed_fields = {
@@ -188,27 +206,12 @@ class _TaskBackupBase():
             return db_jobs
         return ()
 
-class TaskExporter(_TaskBackupBase):
-    def __init__(self, pk, version=Version.V1):
-        self._db_task = models.Task.objects.prefetch_related('data__images').select_related('data__video').get(pk=pk)
-        self._db_data = self._db_task.data
-        self._version = version
+class _ExporterBase():
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
-        db_labels = (self._db_task.project if self._db_task.project_id else self._db_task).label_set.all().prefetch_related(
-            'attributespec_set')
-
-        self._label_mapping = {}
-        self._label_mapping = {db_label.id: db_label.name for db_label in db_labels}
-        self._attribute_mapping = {}
-        for db_label in db_labels:
-            self._label_mapping[db_label.id] = {
-                'value': db_label.name,
-                'attributes': {},
-            }
-            for db_attribute in db_label.attributespec_set.all():
-                self._label_mapping[db_label.id]['attributes'][db_attribute.id] = db_attribute.name
-
-    def _write_files(self, source_dir, zip_object, files, target_dir):
+    @staticmethod
+    def _write_files(source_dir, zip_object, files, target_dir):
         for filename in files:
             arcname = os.path.normpath(
                 os.path.join(
@@ -231,12 +234,24 @@ class TaskExporter(_TaskBackupBase):
                     target_dir=target_dir,
                 )
 
-    def _write_data(self, zip_object):
+class TaskExporter(_ExporterBase, _TaskBackupBase):
+    def __init__(self, pk, version=Version.V1):
+        super().__init__(logger=slogger.task[pk])
+        self._db_task = models.Task.objects.prefetch_related('data__images').select_related('data__video').get(pk=pk)
+        self._db_data = self._db_task.data
+        self._version = version
+
+        db_labels = (self._db_task.project if self._db_task.project_id else self._db_task).label_set.all().prefetch_related(
+            'attributespec_set')
+        self._label_mapping = _get_label_mapping(db_labels)
+
+    def _write_data(self, zip_object, target_dir=None):
+        target_data_dir = os.path.join(target_dir, self.DATA_DIRNAME) if target_dir else self.DATA_DIRNAME
         if self._db_data.storage == StorageChoice.LOCAL:
             self._write_directory(
                 source_dir=self._db_data.get_upload_dirname(),
                 zip_object=zip_object,
-                target_dir=self.DATA_DIRNAME,
+                target_dir=target_data_dir,
             )
         elif self._db_data.storage == StorageChoice.SHARE:
             data_dir = settings.SHARE_ROOT
@@ -249,7 +264,7 @@ class TaskExporter(_TaskBackupBase):
                 source_dir=data_dir,
                 zip_object=zip_object,
                 files=media_files,
-                target_dir=self.DATA_DIRNAME
+                target_dir=target_data_dir,
             )
 
             upload_dir = self._db_data.get_upload_dirname()
@@ -257,21 +272,22 @@ class TaskExporter(_TaskBackupBase):
                 source_dir=upload_dir,
                 zip_object=zip_object,
                 files=(os.path.join(upload_dir, f) for f in ('manifest.jsonl',)),
-                target_dir=self.DATA_DIRNAME
+                target_dir=target_data_dir,
             )
         else:
             raise NotImplementedError()
 
-    def _write_task(self, zip_object):
+    def _write_task(self, zip_object, target_dir=None):
         task_dir = self._db_task.get_task_dirname()
+        target_task_dir = os.path.join(target_dir, self.TASK_DIRNAME) if target_dir else self.TASK_DIRNAME
         self._write_directory(
             source_dir=task_dir,
             zip_object=zip_object,
-            target_dir=self.TASK_DIRNAME,
+            target_dir=target_task_dir,
             recursive=False,
         )
 
-    def _write_manifest(self, zip_object):
+    def _write_manifest(self, zip_object, target_dir=None):
         def serialize_task():
             task_serializer = TaskSerializer(self._db_task)
             task_serializer.fields.pop('url')
@@ -346,9 +362,10 @@ class TaskExporter(_TaskBackupBase):
         task['data'] = serialize_data()
         task['jobs'] = serialize_jobs()
 
-        zip_object.writestr(self.MANIFEST_FILENAME, data=JSONRenderer().render(task))
+        target_manifest_file = os.path.join(target_dir, self.MANIFEST_FILENAME) if target_dir else self.MANIFEST_FILENAME
+        zip_object.writestr(target_manifest_file, data=JSONRenderer().render(task))
 
-    def _write_annotations(self, zip_object):
+    def _write_annotations(self, zip_object, target_dir=None):
         def serialize_annotations():
             job_annotations = []
             db_jobs = self._get_db_jobs()
@@ -362,36 +379,35 @@ class TaskExporter(_TaskBackupBase):
             return job_annotations
 
         annotations = serialize_annotations()
-        zip_object.writestr(self.ANNOTATIONS_FILENAME, data=JSONRenderer().render(annotations))
+        target_annotations_file = os.path.join(target_dir, self.ANNOTATIONS_FILENAME) if target_dir else self.ANNOTATIONS_FILENAME
+        zip_object.writestr(target_annotations_file, data=JSONRenderer().render(annotations))
 
-    def export_to(self, filename):
+    def _export_task(self, zip_obj, target_dir=None):
+        self._write_data(zip_obj, target_dir)
+        self._write_task(zip_obj, target_dir)
+        self._write_manifest(zip_obj, target_dir)
+        self._write_annotations(zip_obj, target_dir)
+
+    def export_to(self, file, target_dir=None):
         if self._db_task.data.storage_method == StorageMethodChoice.FILE_SYSTEM and \
            self._db_task.data.storage == StorageChoice.SHARE:
            raise Exception('The task cannot be exported because it does not contain any raw data')
-        with ZipFile(filename, 'w') as output_file:
-            self._write_data(output_file)
-            self._write_task(output_file)
-            self._write_manifest(output_file)
-            self._write_annotations(output_file)
 
-class TaskImporter(_TaskBackupBase):
-    def __init__(self, filename, user_id):
-        self._filename = filename
-        self._user_id = user_id
-        self._manifest, self._annotations = self._read_meta()
-        self._version = self._read_version()
-        self._labels_mapping = {}
-        self._db_task = None
+        if isinstance(file, str):
+            with ZipFile(file, 'w') as zf:
+                self._export_task(zip_obj=zf, target_dir=target_dir)
+        elif isinstance(file, ZipFile):
+            self._export_task(zip_obj=file, target_dir=target_dir)
+        else:
+            raise ValueError('Unsuported type of file argument')
 
-    def _read_meta(self):
-        with ZipFile(self._filename, 'r') as input_file:
-            manifest = JSONParser().parse(io.BytesIO(input_file.read(self.MANIFEST_FILENAME)))
-            annotations = JSONParser().parse(io.BytesIO(input_file.read(self.ANNOTATIONS_FILENAME)))
+class _ImporterBase():
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
-            return manifest, annotations
-
-    def _read_version(self):
-        version = self._manifest.pop('version')
+    @staticmethod
+    def _read_version(manifest):
+        version = manifest.pop('version')
         try:
             return Version(version)
         except ValueError:
@@ -402,6 +418,33 @@ class TaskImporter(_TaskBackupBase):
         target_dir = os.path.dirname(filepath)
         if not os.path.exists(target_dir):
             os.makedirs(target_dir)
+
+class TaskImporter(_ImporterBase, _TaskBackupBase):
+    def __init__(self, file, user_id, subdir=None):
+        super().__init__(logger=slogger.glob)
+        self._file = file
+        self._subdir = subdir
+        self._user_id = user_id
+        self._manifest, self._annotations = self._read_meta()
+        self._version = self._read_version(self._manifest)
+        self._labels_mapping = {}
+        self._db_task = None
+
+    def _read_meta(self):
+        def read(zip_object):
+            manifest_filename = os.path.join(self._subdir, self.MANIFEST_FILENAME) if self._subdir else self.MANIFEST_FILENAME
+            annotations_filename = os.path.join(self._subdir, self.ANNOTATIONS_FILENAME) if self._subdir else self.ANNOTATIONS_FILENAME
+            manifest = JSONParser().parse(io.BytesIO(zip_object.read(manifest_filename)))
+            annotations = JSONParser().parse(io.BytesIO(zip_object.read(annotations_filename)))
+            return manifest, annotations
+
+        if isinstance(self._file, str):
+            with ZipFile(self._file, 'r') as input_file:
+                return read(input_file)
+        elif isinstance(self._file, ZipFile):
+            return read(self._file)
+
+        raise ValueError('Unsuported type of file argument')
 
     def _create_labels(self, db_task, labels):
         label_mapping = {}
@@ -439,7 +482,6 @@ class TaskImporter(_TaskBackupBase):
         return segment_size, overlap
 
     def _import_task(self):
-
         def _create_comment(comment, db_issue):
             comment['issue'] = db_issue.id
             comment_serializer = CommentSerializer(data=comment)
@@ -474,6 +516,26 @@ class TaskImporter(_TaskBackupBase):
 
             return db_review
 
+        def _write_data(zip_object):
+            data_path = self._db_task.data.get_upload_dirname()
+            task_dirname = os.path.join(self._subdir, self.TASK_DIRNAME) if self._subdir else self.TASK_DIRNAME
+            data_dirname = os.path.join(self._subdir, self.DATA_DIRNAME) if self._subdir else self.DATA_DIRNAME
+            uploaded_files = []
+            for f in zip_object.namelist():
+                if f.startswith(data_dirname + os.path.sep):
+                    target_file = os.path.join(data_path, os.path.relpath(f, data_dirname))
+                    self._prepare_dirs(target_file)
+                    with open(target_file, "wb") as out:
+                        out.write(zip_object.read(f))
+                    uploaded_files.append(os.path.relpath(f, data_dirname))
+                elif f.startswith(task_dirname + os.path.sep):
+                    target_file = os.path.join(task_path, os.path.relpath(f, task_dirname))
+                    self._prepare_dirs(target_file)
+                    with open(target_file, "wb") as out:
+                        out.write(zip_object.read(f))
+
+            return uploaded_files
+
         data = self._manifest.pop('data')
         labels = self._manifest.pop('labels')
         jobs = self._manifest.pop('jobs')
@@ -499,21 +561,11 @@ class TaskImporter(_TaskBackupBase):
         self._db_task.data = db_data
         self._db_task.save()
 
-        data_path = self._db_task.data.get_upload_dirname()
-        uploaded_files = []
-        with ZipFile(self._filename, 'r') as input_file:
-            for f in input_file.namelist():
-                if f.startswith(self.DATA_DIRNAME + os.path.sep):
-                    target_file = os.path.join(data_path, os.path.relpath(f, self.DATA_DIRNAME))
-                    self._prepare_dirs(target_file)
-                    with open(target_file, "wb") as out:
-                        out.write(input_file.read(f))
-                    uploaded_files.append(os.path.relpath(f, self.DATA_DIRNAME))
-                elif f.startswith(self.TASK_DIRNAME + os.path.sep):
-                    target_file = os.path.join(task_path, os.path.relpath(f, self.TASK_DIRNAME))
-                    self._prepare_dirs(target_file)
-                    with open(target_file, "wb") as out:
-                        out.write(input_file.read(f))
+        if isinstance(self._file, str):
+            with ZipFile(self._file, 'r') as zf:
+                uploaded_files = _write_data(zf)
+        else:
+            uploaded_files = _write_data(self._file)
 
         data['use_zip_chunks'] = data.pop('chunk_type') == DataChoice.IMAGESET
         data = data_serializer.data
@@ -548,3 +600,131 @@ def import_task(filename, user):
     task_importer = TaskImporter(filename, user)
     db_task = task_importer.import_task()
     return db_task.id
+
+
+class _ProjectBackupBase(_BackupBase):
+    MANIFEST_FILENAME = 'project.json'
+    TASKNAME_TEMPLATE = 'task_{}'
+
+    def _prepare_project_meta(self, project):
+        allowed_fields = {
+            'bug_tracker',
+            # TODO
+            'deimension',
+            'labels',
+            'name',
+            'status',
+        }
+
+        return self._prepare_meta(allowed_fields, project)
+
+class ProjectExporter(_ExporterBase, _ProjectBackupBase):
+    def __init__(self, pk, version=Version.V1):
+        super().__init__(logger=slogger.project[pk])
+        self._db_project = models.Project.objects.prefetch_related('tasks').get(pk=pk)
+        self._version = version
+
+        db_labels = self._db_project.label_set.all().prefetch_related('attributespec_set')
+        self._label_mapping = _get_label_mapping(db_labels)
+
+    def _write_tasks(self, zip_object):
+        for idx, db_task in enumerate(self._db_project.tasks.all().order_by('id')):
+            TaskExporter(db_task.id, self._version).export_to(zip_object, self.TASKNAME_TEMPLATE.format(idx))
+
+    def _write_manifest(self, zip_object):
+        def serialize_project():
+            project_serializer = ProjectSerializer(self._db_project)
+            project_serializer.fields.pop('assignee')
+            project_serializer.fields.pop('owner')
+            project_serializer.fields.pop('tasks')
+            project_serializer.fields.pop('training_project')
+            project_serializer.fields.pop('url')
+
+            project = self._prepare_project_meta(project_serializer.data)
+            project['labels'] = [self._prepare_label_meta(l) for l in project['labels']]
+            for label in project['labels']:
+                label['attributes'] = [self._prepare_attribute_meta(a) for a in label['attributes']]
+
+            return project
+
+        project = serialize_project()
+        project['version'] = self._version.value
+
+        zip_object.writestr(self.MANIFEST_FILENAME, data=JSONRenderer().render(project))
+
+    def export_to(self, filename):
+        with ZipFile(filename, 'w') as output_file:
+            self._write_tasks(output_file)
+            self._write_manifest(output_file)
+
+class ProjectImporter(_ImporterBase, _ProjectBackupBase):
+    TASKNAME_RE = 'task_\d+/'
+
+    def __init__(self, filename, user_id):
+        super().__init__(logger=slogger.glob)
+        self._filename = filename
+        self._user_id = user_id
+        self._manifest = self._read_meta()
+        self._version = self._read_version(self._manifest)
+        self._db_project = None
+
+    def _read_meta(self):
+        with ZipFile(self._filename, 'r') as input_file:
+            manifest = JSONParser().parse(io.BytesIO(input_file.read(self.MANIFEST_FILENAME)))
+
+        return manifest
+
+    def _create_labels(self, db_project, labels):
+        for label in labels:
+            attributes = label.pop('attributes', [])
+            db_label = models.Label.objects.create(project=db_project, **label)
+
+            for attribute in attributes:
+                attribute_serializer = AttributeSerializer(data=attribute)
+                attribute_serializer.is_valid(raise_exception=True)
+                attribute_serializer.save(label=db_label)
+
+    def _import_project(self):
+        labels = self._manifest.pop('labels')
+
+        self._prepare_project_meta(self._manifest)
+        self._manifest["owner_id"] = self._user_id
+
+        self._db_project = models.Project.objects.create(**self._manifest)
+        project_path = self._db_project.get_project_dirname()
+        if os.path.isdir(project_path):
+            shutil.rmtree(project_path)
+        os.makedirs(self._db_project.get_project_logs_dirname())
+
+        self._create_labels(self._db_project, labels)
+
+    def _import_tasks(self):
+        def get_tasks(zip_object):
+            task_list = set()
+            for fname in zip_object.namelist():
+                m = re.match(self.TASKNAME_RE, fname)
+                if m:
+                    task_list.add(m.group(0))
+            return task_list
+
+        with ZipFile(self._filename, 'r') as zf:
+            task_dirs = get_tasks(zf)
+            for task_dir in task_dirs:
+                db_task = TaskImporter(file=zf, user_id=self._user_id, subdir=task_dir).import_task()
+                db_task.refresh_from_db()
+                serializer = TaskSerializer(db_task, data={'project_id': self._db_project.id}, partial=True)
+                serializer.is_valid(raise_exception=True)
+                serializer.save()
+
+    def import_project(self):
+        self._import_project()
+        self._import_tasks()
+
+        return self._db_project
+
+@transaction.atomic
+def import_project(filename, user):
+    av_scan_paths(filename)
+    project_importer = ProjectImporter(filename, user)
+    db_project = project_importer.import_project()
+    return db_project.id

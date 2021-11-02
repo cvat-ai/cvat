@@ -52,7 +52,11 @@ export interface ProjectsState {
         deletes: {
             [projectId: number]: boolean; // deleted (deleting if in dictionary)
         };
+        backups: {
+            [projectId: number]: boolean;
+        }
     };
+    importing: boolean;
 }
 
 export interface TasksQuery {
@@ -320,6 +324,8 @@ export interface NotificationsState {
             updating: null | ErrorState;
             deleting: null | ErrorState;
             creating: null | ErrorState;
+            importing: null | ErrorState;
+            exporting: null | ErrorState;
         };
         tasks: {
             fetching: null | ErrorState;
@@ -415,6 +421,9 @@ export interface NotificationsState {
             requestPasswordResetDone: string;
             resetPasswordDone: string;
         };
+        projects: {
+            importingDone: string;
+        }
     };
 }
 

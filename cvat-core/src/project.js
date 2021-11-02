@@ -319,6 +319,36 @@
             const result = await PluginRegistry.apiWrapper.call(this, Project.prototype.delete);
             return result;
         }
+
+        /**
+         * Method makes a backup of a project
+         * @method export
+         * @memberof module:API.cvat.classes.Project
+         * @readonly
+         * @instance
+         * @async
+         * @throws {module:API.cvat.exceptions.ServerError}
+         * @throws {module:API.cvat.exceptions.PluginError}
+         */
+        async export() {
+            const result = await PluginRegistry.apiWrapper.call(this, Project.prototype.export);
+            return result;
+        }
+
+        /**
+         * Method imports a project from a backup
+         * @method import
+         * @memberof module:API.cvat.classes.Project
+         * @readonly
+         * @instance
+         * @async
+         * @throws {module:API.cvat.exceptions.ServerError}
+         * @throws {module:API.cvat.exceptions.PluginError}
+         */
+        static async import(file) {
+            const result = await PluginRegistry.apiWrapper.call(this, Project.import, file);
+            return result;
+        }
     }
 
     Object.defineProperties(

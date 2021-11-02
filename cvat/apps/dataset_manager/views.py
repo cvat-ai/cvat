@@ -16,7 +16,7 @@ import cvat.apps.dataset_manager.task as task
 import cvat.apps.dataset_manager.project as project
 from cvat.apps.engine.log import slogger
 from cvat.apps.engine.models import Project, Task
-from cvat.apps.engine.backup import TaskExporter
+from cvat.apps.engine.backup import TaskExporter, ProjectExporter
 
 from .formats.registry import EXPORT_FORMATS, IMPORT_FORMATS
 from .util import current_function_name
@@ -78,6 +78,7 @@ def export(dst_format, task_id=None, project_id=None, server_url=None, save_imag
 
             archive_ctime = osp.getctime(output_path)
             scheduler = django_rq.get_scheduler()
+            #FIXME cleaning job for projects
             cleaning_job = scheduler.enqueue_in(time_delta=cache_ttl,
                 func=clear_export_cache,
                 task_id=task_id,
@@ -120,39 +121,50 @@ def clear_export_cache(task_id, file_path, file_ctime):
         log_exception(slogger.task[task_id])
         raise
 
-def backup_task(task_id, output_path):
+def backup(task_id, project_id, output_path):
     try:
-        db_task = Task.objects.get(pk=task_id)
+        if task_id is not None:
+            db_instance = Task.objects.get(pk=task_id)
+            logger = slogger.task[task_id]
+            cache_ttl = TASK_CACHE_TTL
+            Exporter = TaskExporter
+        else:
+            db_instance = Project.objects.get(pk=project_id)
+            logger = slogger.project[project_id]
+            cache_ttl = PROJECT_CACHE_TTL
+            Exporter = ProjectExporter
 
-        cache_dir = get_export_cache_dir(db_task)
+        cache_dir = get_export_cache_dir(db_instance)
         output_path = osp.join(cache_dir, output_path)
 
-        task_time = timezone.localtime(db_task.updated_date).timestamp()
+        instance_time = timezone.localtime(db_instance.updated_date).timestamp()
         if not (osp.exists(output_path) and \
-                task_time <= osp.getmtime(output_path)):
+                instance_time <= osp.getmtime(output_path)):
             os.makedirs(cache_dir, exist_ok=True)
             with tempfile.TemporaryDirectory(dir=cache_dir) as temp_dir:
                 temp_file = osp.join(temp_dir, 'dump')
-                task_exporter = TaskExporter(task_id)
-                task_exporter.export_to(temp_file)
+                exporter = Exporter(db_instance.id)
+                exporter.export_to(temp_file)
                 os.replace(temp_file, output_path)
 
             archive_ctime = osp.getctime(output_path)
             scheduler = django_rq.get_scheduler()
-            cleaning_job = scheduler.enqueue_in(time_delta=TASK_CACHE_TTL,
+            #FIXME cleaning job for projects
+            cleaning_job = scheduler.enqueue_in(time_delta=cache_ttl,
                 func=clear_export_cache,
                 task_id=task_id,
                 file_path=output_path, file_ctime=archive_ctime)
-            slogger.task[task_id].info(
-                "The task '{}' is backuped at '{}' "
+            logger.info(
+                "The {} '{}' is backuped at '{}' "
                 "and available for downloading for the next {}. "
                 "Export cache cleaning job is enqueued, id '{}'".format(
-                db_task.name, output_path, TASK_CACHE_TTL,
-                cleaning_job.id))
+                    "project" if isinstance(db_instance, Project) else 'task',
+                    db_instance.name, output_path, cache_ttl,
+                    cleaning_job.id))
 
         return output_path
     except Exception:
-        log_exception(slogger.task[task_id])
+        log_exception(logger)
         raise
 
 def get_export_formats():

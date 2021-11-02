@@ -106,7 +106,7 @@ function ActionsMenuComponent(props: Props): JSX.Element {
             </Menu.Item>
             <Menu.Item key={Actions.EXPORT_TASK} disabled={exportIsActive}>
                 {exportIsActive && <LoadingOutlined id='cvat-export-task-loading' />}
-                Export task
+                Backup task
             </Menu.Item>
             <Menu.Divider />
             <Menu.Item key={Actions.MOVE_TASK_TO_PROJECT}>Move to project</Menu.Item>
