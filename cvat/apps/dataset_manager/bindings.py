@@ -27,6 +27,8 @@ from cvat.apps.dataset_manager.formats.utils import get_label_color
 from .annotation import AnnotationIR, AnnotationManager, TrackManager
 
 
+CVAT_INTERNAL_ATTRIBUTES = {'occluded', 'outside', 'keyframe', 'track_id'}
+
 class InstanceLabelData:
     Attribute = NamedTuple('Attribute', [('name', str), ('value', Any)])
 
@@ -35,6 +37,7 @@ class InstanceLabelData:
 
         db_labels = instance.label_set.all().prefetch_related('attributespec_set').order_by('pk')
 
+        # If this flag is set to true, create attribute within anntations import
         self._soft_attribute_import = False
         self._label_mapping = OrderedDict[int, Label](
             ((db_label.id, db_label) for db_label in db_labels),
@@ -448,7 +451,7 @@ class TaskData(InstanceLabelData):
         _tag['attributes'] = [self._import_attribute(label_id, attrib)
             for attrib in _tag['attributes']
             if self._get_attribute_id(label_id, attrib.name) or (
-                self.soft_attribute_import and attrib.name not in {'occluded', 'outside', 'keyframe', 'track_id'}
+                self.soft_attribute_import and attrib.name not in CVAT_INTERNAL_ATTRIBUTES
             )
         ]
         return _tag
@@ -461,7 +464,7 @@ class TaskData(InstanceLabelData):
         _shape['attributes'] = [self._import_attribute(label_id, attrib)
             for attrib in _shape['attributes']
             if self._get_attribute_id(label_id, attrib.name) or (
-                self.soft_attribute_import and attrib.name not in {'occluded', 'outside', 'keyframe', 'track_id'}
+                self.soft_attribute_import and attrib.name not in CVAT_INTERNAL_ATTRIBUTES
             )
         ]
         _shape['points'] = list(map(float, _shape['points']))
@@ -480,13 +483,13 @@ class TaskData(InstanceLabelData):
             _track['attributes'] = [self._import_attribute(label_id, attrib)
                 for attrib in shape['attributes']
                 if self._get_immutable_attribute_id(label_id, attrib.name) or (
-                    self.soft_attribute_import and attrib.name not in {'occluded', 'outside', 'keyframe', 'track_id'}
+                    self.soft_attribute_import and attrib.name not in CVAT_INTERNAL_ATTRIBUTES
                 )
             ]
             shape['attributes'] = [self._import_attribute(label_id, attrib, mutable=True)
                 for attrib in shape['attributes']
                 if self._get_mutable_attribute_id(label_id, attrib.name) or (
-                    self.soft_attribute_import and attrib.name not in {'occluded', 'outside', 'keyframe', 'track_id'}
+                    self.soft_attribute_import and attrib.name not in CVAT_INTERNAL_ATTRIBUTES
                 )
             ]
             shape['points'] = list(map(float, shape['points']))
@@ -565,27 +568,6 @@ class TaskData(InstanceLabelData):
         return None
 
 class ProjectData(InstanceLabelData):
-    LabeledShape = NamedTuple('LabledShape',
-        [('type', str), ('frame', int), ('label', str), ('points', List[float]), ('occluded', bool), ('attributes', List[InstanceLabelData.Attribute]), ('source', str), ('group', int), ('z_order', int), ('task_id', int), ('subset', str)],
-    )
-    LabeledShape.__new__.__defaults__ = ('manual', 0, 0, None, None)
-    TrackedShape = NamedTuple('TrackedShape',
-        [('type', str), ('frame', int), ('points', List[float]), ('occluded', bool), ('outside', bool), ('keyframe', bool), ('attributes', List[InstanceLabelData.Attribute]), ('source', str), ('group', int), ('z_order', int), ('label', str), ('track_id', int)],
-    )
-    TrackedShape.__new__.__defaults__ = ('manual', 0, 0, None, 0)
-    Track = NamedTuple('Track',
-        [('label', str), ('shapes', List[TrackedShape]), ('source', str), ('group', int),  ('task_id', int), ('subset', str)],
-    )
-    Track.__new__.__defaults__ = ('manual', 0, None, None)
-    Tag = NamedTuple('Tag',
-        [('frame', int), ('label', str), ('attributes', List[InstanceLabelData.Attribute]), ('source', str), ('group', int), ('task_id', int), ('subset', str)],
-    )
-    Tag.__new__.__defaults__ = ('manual', 0, None, None)
-    Frame = NamedTuple('Frame',
-        [('idx', int), ('id', int), ('frame', int), ('name', str), ('width', int), ('height', int), ('labeled_shapes', List[Union[LabeledShape, TrackedShape]]), ('tags', List[Tag]), ('task_id', int), ('subset', str)],
-    )
-    Frame.__new__.__defaults__ = (None, None)
-
     def __init__(self, annotation_irs: Mapping[str, AnnotationIR], db_project: Project, host: str = '', task_annotations: Mapping[int, Any] = None, project_annotation=None):
         self._annotation_irs = annotation_irs
         self._db_project = db_project
@@ -1400,7 +1382,8 @@ def import_dm_annotations(dm_dataset: Dataset, instance_data: Union[TaskData, Pr
                         occluded=ann.attributes.pop('occluded', None) == True,
                         z_order=ann.z_order,
                         group=group_map.get(ann.group, 0),
-                        source=str(attributes.pop('source')).lower() if str(attributes.get('source', None)).lower() in {'auto', 'manual'} else 'manual',
+                        source=str(ann.attributes.pop('source')).lower() \
+                            if str(ann.attributes.get('source', None)).lower() in {'auto', 'manual'} else 'manual',
                         attributes=[instance_data.Attribute(name=n, value=str(v))
                             for n, v in ann.attributes.items()],
                     ))
