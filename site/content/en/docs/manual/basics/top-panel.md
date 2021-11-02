@@ -19,8 +19,8 @@ Button assignment:
 
 - `Dump Annotations` — downloads annotations from a task.
 - `Upload Annotations` — uploads annotations into a task.
-- `Remove Annotations` — calls the delete confirmation window if you click `Delete` the annotation of the current job
-  will be deleted, if you expand `Select range` you can remove annotation on certain frames, if you activate checkbox
+- `Remove Annotations` — calls the confirmation window if you click `Delete`, the annotation of the current job
+  will be removed, if you click `Select range` you can remove annotation on range frames, if you activate checkbox
   `Delete only keyframe for tracks` then only keyframes will be deleted from the tracks, on the selected range.
 
   ![](/images/image229.jpg)
