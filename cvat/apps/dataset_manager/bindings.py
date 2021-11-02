@@ -1415,7 +1415,7 @@ def import_dm_annotations(dm_dataset: Dataset, instance_data: Union[TaskData, Pr
                     ))
             except Exception as e:
                 raise CvatImportError("Image {}: can't import annotation "
-                    "#{} ({}): {}".format(item.id, idx, ann.type.name, e))
+                    "#{} ({}): {}".format(item.id, idx, ann.type.name, e)) from e
 
 def import_labels_to_project(project_annotation, dataset: Dataset):
     labels = []
