@@ -38,7 +38,7 @@ class Status(str, Enum):
 class _CloudStorage(ABC):
 
     def __init__(self):
-        pass
+        self._files = []
 
     @abstractproperty
     def name(self):
@@ -69,6 +69,10 @@ class _CloudStorage(ABC):
         pass
 
     @abstractmethod
+    def initialize_content(self):
+        pass
+
+    @abstractmethod
     def download_fileobj(self, key):
         pass
 
@@ -84,6 +88,16 @@ class _CloudStorage(ABC):
     @abstractmethod
     def upload_file(self, file_obj, file_name):
         pass
+
+    def __contains__(self, file_name):
+        return file_name in (item['name'] for item in self._files)
+
+    def __len__(self):
+        return len(self._files)
+
+    @property
+    def content(self):
+        return list(map(lambda x: x['name'] , self._files))
 
 def get_cloud_storage_instance(cloud_provider, resource, credentials, specific_attributes=None):
     instance = None
@@ -197,6 +211,12 @@ class AWS_S3(_CloudStorage):
             Config=TransferConfig(max_io_queue=self.transfer_config['max_io_queue'])
         )
 
+    def initialize_content(self):
+        files = self._bucket.objects.all()
+        self._files = [{
+            'name': item.key,
+        } for item in files]
+
     def download_fileobj(self, key):
         buf = BytesIO()
         self.bucket.download_fileobj(
@@ -300,6 +320,12 @@ class AzureBlobContainer(_CloudStorage):
     # def multipart_upload(self, file_obj):
     #     pass
 
+    def initialize_content(self):
+        files = self._container_client.list_blobs()
+        self._files = [{
+            'name': item.name
+        } for item in files]
+
     def download_fileobj(self, key):
         buf = BytesIO()
         storage_stream_downloader = self._container_client.download_blob(
@@ -367,6 +393,16 @@ class GoogleCloudStorage(_CloudStorage):
     @_define_gcs_status
     def get_file_status(self, key):
         self._head_file(key)
+
+    def initialize_content(self):
+        self._files = [
+            {
+                'name': blob.name
+            }
+            for blob in self._storage_client.list_blobs(
+                self.bucket, prefix=self._prefix
+            )
+        ]
 
     def download_fileobj(self, key):
         buf = BytesIO()
