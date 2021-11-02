@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+import rq
 from typing import Any, Callable, List, Mapping, Tuple
 
 from django.db import transaction
@@ -150,6 +151,11 @@ class ProjectAnnotationAndData:
 
 @transaction.atomic
 def import_dataset_as_project(project_id, dataset_file, format_name):
+    rq_job = rq.get_current_job()
+    rq_job.meta['status'] = 'Dataset import has been started...'
+    rq_job.meta['progress'] = 0.
+    rq_job.save_meta()
+
     project = ProjectAnnotationAndData(project_id)
     project.init_from_db()
 

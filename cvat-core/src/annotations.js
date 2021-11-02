@@ -294,7 +294,9 @@
         if (!(typeof updateStatusCallback === 'function' || updateStatusCallback === null)) {
             throw new ArgumentError('Callback should ne a function or null');
         }
-        // TODO: check file
+        if (!(file instanceof File && file.name.split('.').reverse()[0])) {
+            throw new ArgumentError('File should be file instance with ZIP extension');
+        }
         return serverProxy.projects.importDataset(instance.id, format, file, updateStatusCallback);
     }
 

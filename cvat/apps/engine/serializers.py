@@ -720,6 +720,11 @@ class AnnotationFileSerializer(serializers.Serializer):
 class DatasetFileSerializer(serializers.Serializer):
     dataset_file = serializers.FileField()
 
+    def validate_dataset_file(value):
+        if os.path.splitext(value.name)[1] != '.zip':
+            raise serializers.ValidationError('Dataset file should be zip archive')
+        return value
+
 class TaskFileSerializer(serializers.Serializer):
     task_file = serializers.FileField()
 

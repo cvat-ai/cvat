@@ -53,7 +53,6 @@ export const importDatasetAsync = (instance: any, format: string, file: File): T
     }
 
     dispatch(importActions.importDatasetSuccess(instance, format));
-    // TODO: should we call this in component or here?
     dispatch(getProjectsAsync({ id: instance.id }));
 };
 

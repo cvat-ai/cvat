@@ -364,7 +364,6 @@ class ProjectViewSet(auth.ProjectGetQuerySetMixin, viewsets.ModelViewSet):
                     os.close(rq_job.meta['tmp_file_descriptor'])
                     os.remove(rq_job.meta['tmp_file'])
                     rq_job.delete()
-                    #TODO: Should we check CVATImportError here?
                     return Response(
                         data=str(rq_job.exc_info),
                         status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -1712,7 +1711,6 @@ def _import_project_dataset(request, rq_id, rq_func, pk, format_name):
                 for chunk in dataset_file.chunks():
                     f.write(chunk)
 
-            #TODO: should we check zip here?
             rq_job = queue.enqueue_call(
                 func=rq_func,
                 args=(pk, filename, format_name),
@@ -1720,11 +1718,8 @@ def _import_project_dataset(request, rq_id, rq_func, pk, format_name):
             )
             rq_job.meta['tmp_file'] = filename
             rq_job.meta['tmp_file_descriptor'] = fd
-            rq_job.meta['status'] = 'Dataset import has been started...'
-            rq_job.meta['progress'] = 0.
             rq_job.save_meta()
     else:
-        #TODO: Should it be a response?
-        raise ValidationError("Import job already exists")
+        return Response(status=status.HTTP_409_CONFLICT, data='Import job already exists')
 
     return Response(status=status.HTTP_202_ACCEPTED)
