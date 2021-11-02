@@ -19,7 +19,12 @@ Button assignment:
 
 - `Dump Annotations` — downloads annotations from a task.
 - `Upload Annotations` — uploads annotations into a task.
-- `Remove Annotations` — removes annotations from the current job.
+- `Remove Annotations` — calls the delete confirmation window if you click `Delete` the annotation of the current job
+  will be deleted, if you expand `Select range` you can remove annotation on certain frames, if you activate checkbox
+  `Delete only keyframe for tracks` then only keyframes will be deleted from the tracks, on the selected range.
+
+  ![](/images/image229.jpg)
+
 - `Export as a dataset` — download a data set from a task. Several formats are available:
   - [Datumaro](https://github.com/openvinotoolkit/cvat/tree/develop/cvat/apps/dataset_manager/formats/datumaro)
   - [Pascal VOC 2012](http://host.robots.ox.ac.uk/pascal/VOC/)
