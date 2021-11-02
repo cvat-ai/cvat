@@ -36,7 +36,7 @@ export default function createRootReducer(): Reducer {
         shortcuts: shortcutsReducer,
         userAgreements: userAgreementsReducer,
         review: reviewReducer,
-        export: exportReducer,  
+        export: exportReducer,
         cloudStorages: cloudStoragesReducer,
     });
 }

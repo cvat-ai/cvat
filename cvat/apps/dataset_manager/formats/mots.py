@@ -4,8 +4,9 @@
 
 from tempfile import TemporaryDirectory
 
+from datumaro.components.annotation import AnnotationType
 from datumaro.components.dataset import Dataset
-from datumaro.components.extractor import AnnotationType, ItemTransform
+from datumaro.components.extractor import ItemTransform
 from pyunpack import Archive
 
 from cvat.apps.dataset_manager.bindings import (GetCVATDataExtractor,

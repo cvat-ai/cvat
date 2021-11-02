@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2020 Intel Corporation
+// Copyright (C) 2019-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -143,9 +143,10 @@ class LogWithWorkingTime extends Log {
         Log.prototype.validatePayload.call(this);
 
         if (
-            !('working_time' in this.payload)
-            || !typeof this.payload.working_time === 'number'
-            || this.payload.working_time < 0
+            !(
+                'working_time' in this.payload) ||
+                !typeof this.payload.working_time === 'number' ||
+                this.payload.working_time < 0
         ) {
             const message = `
                 The field "working_time" is required for ${this.type} log. It must be a number not less than 0
