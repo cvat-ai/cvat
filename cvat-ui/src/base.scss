@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -6,7 +6,7 @@ $grid-unit-size: 8px;
 
 $header-height: $grid-unit-size * 7;
 
-$layout-sm-grid-size: $grid-unit-size / 2;
+$layout-sm-grid-size: $grid-unit-size * 0.5;
 $layout-lg-grid-size: $grid-unit-size * 2;
 $layout-sm-grid-color: rgba(0, 0, 0, 0.15);
 $layout-lg-grid-color: rgba(0, 0, 0, 0.15);

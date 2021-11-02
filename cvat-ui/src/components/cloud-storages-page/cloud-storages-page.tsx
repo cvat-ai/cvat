@@ -9,7 +9,7 @@ import { useHistory } from 'react-router';
 import { Row, Col } from 'antd/lib/grid';
 import Spin from 'antd/lib/spin';
 
-import { CloudStorage, CloudStoragesQuery, CombinedState } from 'reducers/interfaces';
+import { CloudStoragesQuery, CombinedState } from 'reducers/interfaces';
 import { getCloudStoragesAsync } from 'actions/cloud-storage-actions';
 import CloudStoragesListComponent from './cloud-storages-list';
 import EmptyCloudStorageListComponent from './empty-cloud-storages-list';
@@ -21,12 +21,7 @@ export default function StoragesPageComponent(): JSX.Element {
     const { search } = history.location;
     const totalCount = useSelector((state: CombinedState) => state.cloudStorages.count);
     const isFetching = useSelector((state: CombinedState) => state.cloudStorages.fetching);
-    const current = useSelector((state: CombinedState) => state.cloudStorages.current)
-        .map((cloudStrage: CloudStorage) => cloudStrage.instance);
-    const previews = useSelector((state: CombinedState) => state.cloudStorages.current)
-        .map((cloudStrage: CloudStorage) => cloudStrage.preview as string);
-    const statuses = useSelector((state: CombinedState) => state.cloudStorages.current)
-        .map((cloudStrage: CloudStorage) => cloudStrage.status as string);
+    const current = useSelector((state: CombinedState) => state.cloudStorages.current);
     const query = useSelector((state: CombinedState) => state.cloudStorages.gettingQuery);
     const onSearch = useCallback(
         (_query: CloudStoragesQuery) => {
@@ -98,8 +93,6 @@ export default function StoragesPageComponent(): JSX.Element {
                         totalCount={totalCount}
                         page={query.page}
                         storages={current}
-                        previews={previews}
-                        statuses={statuses}
                         onChangePage={onChangePage}
                     />
                 ) : (

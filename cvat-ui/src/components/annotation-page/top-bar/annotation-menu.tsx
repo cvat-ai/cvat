@@ -3,8 +3,13 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
+
 import Menu from 'antd/lib/menu';
 import Modal from 'antd/lib/modal';
+import Text from 'antd/lib/typography/Text';
+import {
+    InputNumber, Tooltip, Checkbox, Collapse,
+} from 'antd';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { MenuInfo } from 'rc-menu/lib/interface';
 
@@ -20,6 +25,8 @@ interface Props {
     jobInstance: any;
     onClickMenu(params: MenuInfo): void;
     onUploadAnnotations(format: string, file: File): void;
+    stopFrame: number;
+    removeAnnotations(startnumber: number, endnumber: number, delTrackKeyframesOnly:boolean): void;
     setForceExitAnnotationFlag(forceExit: boolean): void;
     saveAnnotations(jobInstance: any, afterSave?: () => void): void;
 }
@@ -41,8 +48,10 @@ export default function AnnotationMenuComponent(props: Props): JSX.Element {
         loadActivity,
         isReviewer,
         jobInstance,
+        stopFrame,
         onClickMenu,
         onUploadAnnotations,
+        removeAnnotations,
         setForceExitAnnotationFlag,
         saveAnnotations,
     } = props;
@@ -80,14 +89,52 @@ export default function AnnotationMenuComponent(props: Props): JSX.Element {
         }
 
         if (params.key === Actions.REMOVE_ANNO) {
+            let removeFrom: number;
+            let removeUpTo: number;
+            let removeOnlyKeyframes = false;
+            const { Panel } = Collapse;
             Modal.confirm({
-                title: 'All the annotations will be removed',
-                content:
-                    'You are going to remove all the annotations from the client. ' +
-                    'It will stay on the server till you save the job. Continue?',
+                title: 'Remove Annotations',
+                content: (
+                    <div>
+                        <Text>You are going to remove the annotations from the client. </Text>
+                        <Text>It will stay on the server till you save the job. Continue?</Text>
+                        <br />
+                        <br />
+                        <Collapse bordered={false}>
+                            <Panel header={<Text>Select Range</Text>} key={1}>
+                                <Text>From: </Text>
+                                <InputNumber
+                                    min={0}
+                                    max={stopFrame}
+                                    onChange={(value) => {
+                                        removeFrom = value;
+                                    }}
+                                />
+                                <Text>  To: </Text>
+                                <InputNumber
+                                    min={0}
+                                    max={stopFrame}
+                                    onChange={(value) => { removeUpTo = value; }}
+                                />
+                                <Tooltip title='Applicable only for annotations in range'>
+                                    <br />
+                                    <br />
+                                    <Checkbox
+                                        onChange={(check) => {
+                                            removeOnlyKeyframes = check.target.checked;
+                                        }}
+                                    >
+                                        Delete only keyframes for tracks
+                                    </Checkbox>
+                                </Tooltip>
+                            </Panel>
+                        </Collapse>
+                    </div>
+                ),
                 className: 'cvat-modal-confirm-remove-annotation',
                 onOk: () => {
-                    onClickMenu(params);
+                    removeAnnotations(removeFrom, removeUpTo, removeOnlyKeyframes);
                 },
                 okButtonProps: {
                     type: 'primary',
@@ -127,7 +174,7 @@ export default function AnnotationMenuComponent(props: Props): JSX.Element {
     const is2d = jobInstance.task.dimension === DimensionType.DIM_2D;
 
     return (
-        <Menu onClick={onClickMenuWrapper} className='cvat-annotation-menu' selectable={false}>
+        <Menu onClick={(params: MenuInfo) => onClickMenuWrapper(params)} className='cvat-annotation-menu' selectable={false}>
             {LoadSubmenu({
                 loaders,
                 loadActivity,

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2020 Intel Corporation
+// Copyright (C) 2019-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -47,11 +47,11 @@ export class ZoomHandlerImpl implements ZoomHandler {
     private getSelectionBox(
         event: MouseEvent,
     ): {
-        x: number;
-        y: number;
-        width: number;
-        height: number;
-    } {
+            x: number;
+            y: number;
+            width: number;
+            height: number;
+        } {
         const point = translateToSVG((this.canvas.node as any) as SVGSVGElement, [event.clientX, event.clientY]);
         const stopSelectionPoint = {
             x: point[0],

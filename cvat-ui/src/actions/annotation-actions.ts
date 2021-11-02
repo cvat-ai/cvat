@@ -306,17 +306,24 @@ export function updateCanvasContextMenu(
     };
 }
 
-export function removeAnnotationsAsync(sessionInstance: any): ThunkAction {
+export function removeAnnotationsAsync(
+    startFrame: number, endFrame: number, delTrackKeyframesOnly: boolean,
+): ThunkAction {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         try {
-            await sessionInstance.annotations.clear();
-            await sessionInstance.actions.clear();
-            const history = await sessionInstance.actions.get();
+            const {
+                filters, frame, showAllInterpolationTracks, jobInstance,
+            } = receiveAnnotationsParameters();
+            await jobInstance.annotations.clear(false, startFrame, endFrame, delTrackKeyframesOnly);
+            await jobInstance.actions.clear();
+            const history = await jobInstance.actions.get();
+            const states = await jobInstance.annotations.get(frame, showAllInterpolationTracks, filters);
 
             dispatch({
                 type: AnnotationActionTypes.REMOVE_JOB_ANNOTATIONS_SUCCESS,
                 payload: {
                     history,
+                    states,
                 },
             });
         } catch (error) {
@@ -630,18 +637,17 @@ export function getPredictionsAsync(): ThunkAction {
                 return;
             }
             annotations = annotations.map(
-                (data: any): any =>
-                    new cvat.classes.ObjectState({
-                        shapeType: data.type,
-                        label: job.task.labels.filter((label: any): boolean => label.id === data.label)[0],
-                        points: data.points,
-                        objectType: ObjectType.SHAPE,
-                        frame,
-                        occluded: false,
-                        source: 'auto',
-                        attributes: {},
-                        zOrder: curZOrder,
-                    }),
+                (data: any): any => new cvat.classes.ObjectState({
+                    shapeType: data.type,
+                    label: job.task.labels.filter((label: any): boolean => label.id === data.label)[0],
+                    points: data.points,
+                    objectType: ObjectType.SHAPE,
+                    frame,
+                    occluded: false,
+                    source: 'auto',
+                    attributes: {},
+                    zOrder: curZOrder,
+                }),
             );
 
             dispatch({

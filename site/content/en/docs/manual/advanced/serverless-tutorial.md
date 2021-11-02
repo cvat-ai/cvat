@@ -145,13 +145,17 @@ finish the process.
 ![Create a video annotation task](/images/create_video_task.png)
 
 Open the task and use [AI tools][cvat-ai-tools-user-guide] to start tracking
-an object. Draw a bounding box around an object.
+an object. Draw a bounding box around an object, and sequentially switch
+through the frame and correct the restrictive box if necessary.
 
-![Start tracking an object](/images/start_tracking.png)
+![Start tracking an object](/images/trackers_tab.jpg)
 
-Finally you will get bounding boxes for 10 frames by default.
+Finally you will get bounding boxes.
 
 ![SiamMask results](/images/siammask_results.gif)
+
+`SiamMask` model is more optimized to work on Nvidia GPUs.
+For more information about deploying the model for the GPU, [read on](#objects-segmentation-using-mask-rcnn).
 
 ### Object detection using YOLO-v3
 
