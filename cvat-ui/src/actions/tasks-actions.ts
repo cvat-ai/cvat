@@ -38,36 +38,34 @@ export enum TasksActionTypes {
     SWITCH_MOVE_TASK_MODAL_VISIBLE = 'SWITCH_MOVE_TASK_MODAL_VISIBLE',
 }
 
-function getTasks(): AnyAction {
+function getTasks(query: TasksQuery): AnyAction {
     const action = {
         type: TasksActionTypes.GET_TASKS,
-        payload: {},
+        payload: {
+            query,
+        },
     };
 
     return action;
 }
 
-export function getTasksSuccess(array: any[], previews: string[], count: number, query: TasksQuery): AnyAction {
+export function getTasksSuccess(array: any[], previews: string[], count: number): AnyAction {
     const action = {
         type: TasksActionTypes.GET_TASKS_SUCCESS,
         payload: {
             previews,
             array,
             count,
-            query,
         },
     };
 
     return action;
 }
 
-function getTasksFailed(error: any, query: TasksQuery): AnyAction {
+function getTasksFailed(error: any): AnyAction {
     const action = {
         type: TasksActionTypes.GET_TASKS_FAILED,
-        payload: {
-            error,
-            query,
-        },
+        payload: { error },
     };
 
     return action;
@@ -75,8 +73,6 @@ function getTasksFailed(error: any, query: TasksQuery): AnyAction {
 
 export function getTasksAsync(query: TasksQuery): ThunkAction<Promise<void>, {}, {}, AnyAction> {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
-        dispatch(getTasks());
-
         // We need remove all keys with null values from query
         const filteredQuery = { ...query };
         for (const key in filteredQuery) {
@@ -85,11 +81,13 @@ export function getTasksAsync(query: TasksQuery): ThunkAction<Promise<void>, {},
             }
         }
 
+        dispatch(getTasks(filteredQuery));
+
         let result = null;
         try {
             result = await cvat.tasks.get(filteredQuery);
         } catch (error) {
-            dispatch(getTasksFailed(error, query));
+            dispatch(getTasksFailed(error));
             return;
         }
 
@@ -98,7 +96,7 @@ export function getTasksAsync(query: TasksQuery): ThunkAction<Promise<void>, {},
 
         dispatch(getInferenceStatusAsync());
 
-        dispatch(getTasksSuccess(array, await Promise.all(promises), result.count, query));
+        dispatch(getTasksSuccess(array, await Promise.all(promises), result.count));
     };
 }
 

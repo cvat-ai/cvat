@@ -172,9 +172,9 @@ export class AutoborderHandlerImpl implements AutoborderHandler {
                             } else {
                                 // sign defines bypass direction
                                 const landmarks = this.auxiliaryClicks;
-                                const sign = Math.sign(landmarks[2] - landmarks[0])
-                                    * Math.sign(landmarks[1] - landmarks[0])
-                                    * Math.sign(landmarks[2] - landmarks[1]);
+                                const sign = Math.sign(landmarks[2] - landmarks[0]) *
+                                    Math.sign(landmarks[1] - landmarks[0]) *
+                                    Math.sign(landmarks[2] - landmarks[1]);
 
                                 // go via a polygon and get vertices
                                 // the first vertex has been already drawn
@@ -198,10 +198,10 @@ export class AutoborderHandlerImpl implements AutoborderHandler {
 
                                 // remove the latest cursor position from drawing array
                                 for (const wayPoint of way) {
-                                    const [_x, _y] = wayPoint
+                                    const [pX, pY] = wayPoint
                                         .split(',')
                                         .map((coordinate: string): number => +coordinate);
-                                    this.addPointToCurrentShape(_x, _y);
+                                    this.addPointToCurrentShape(pX, pY);
                                 }
 
                                 this.resetAuxiliaryShape();

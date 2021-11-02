@@ -101,12 +101,13 @@ export function getOrganizationsAsync(): ThunkAction {
                 if (curSlug) {
                     currentOrganization =
                         organizations.find((organization: any) => organization.slug === curSlug) || null;
-                    if (!currentOrganization) {
+                    if (currentOrganization) {
+                        await core.organizations.activate(currentOrganization);
+                    } else {
                         // not valid anymore (for example when organization
                         // does not exist anymore, or the user has been kicked from it)
                         localStorage.removeItem('currentOrganization');
                     }
-                    await core.organizations.activate(currentOrganization);
                 }
 
                 dispatch(organizationActions.activateOrganizationSuccess(currentOrganization));

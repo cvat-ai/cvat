@@ -74,7 +74,6 @@ export default (state: TasksState = defaultState, action: AnyAction): TasksState
                 fetching: false,
                 count: action.payload.count,
                 current: combinedWithPreviews,
-                gettingQuery: { ...action.payload.query },
             };
         }
         case TasksActionTypes.GET_TASKS_FAILED:

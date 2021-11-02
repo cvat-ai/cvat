@@ -253,8 +253,8 @@
             for (const attribute of redoLabel.attributes) {
                 for (const oldAttribute of undoLabel.attributes) {
                     if (
-                        attribute.name === oldAttribute.name
-                        && validateAttributeValue(undoAttributes[oldAttribute.id], attribute)
+                        attribute.name === oldAttribute.name &&
+                        validateAttributeValue(undoAttributes[oldAttribute.id], attribute)
                     ) {
                         this.attributes[attribute.id] = undoAttributes[oldAttribute.id];
                     }
@@ -919,13 +919,13 @@
                 if (!labelAttributes[attrID].mutable) {
                     redoAttributes[attrID] = attributes[attrID];
                 } else if (attributes[attrID] !== current.attributes[attrID]) {
-                    mutableAttributesUpdated = mutableAttributesUpdated
+                    mutableAttributesUpdated = mutableAttributesUpdated ||
                         // not keyframe yet
-                        || !(frame in this.shapes)
+                        !(frame in this.shapes) ||
                         // keyframe, but without this attrID
-                        || !(attrID in this.shapes[frame].attributes)
+                        !(attrID in this.shapes[frame].attributes) ||
                         // keyframe with attrID, but with another value
-                        || this.shapes[frame].attributes[attrID] !== attributes[attrID];
+                        this.shapes[frame].attributes[attrID] !== attributes[attrID];
                 }
             }
             let redoShape;
@@ -1015,9 +1015,9 @@
             const undoSource = this.source;
             const redoSource = Source.MANUAL;
             const undoShape = wasKeyframe ? this.shapes[frame] : undefined;
-            const redoShape = wasKeyframe
-                ? { ...this.shapes[frame], points }
-                : {
+            const redoShape = wasKeyframe ?
+                { ...this.shapes[frame], points } :
+                {
                     frame,
                     points,
                     zOrder: current.zOrder,
@@ -1044,9 +1044,9 @@
             const undoSource = this.source;
             const redoSource = Source.MANUAL;
             const undoShape = wasKeyframe ? this.shapes[frame] : undefined;
-            const redoShape = wasKeyframe
-                ? { ...this.shapes[frame], outside }
-                : {
+            const redoShape = wasKeyframe ?
+                { ...this.shapes[frame], outside } :
+                {
                     frame,
                     outside,
                     zOrder: current.zOrder,
@@ -1073,9 +1073,9 @@
             const undoSource = this.source;
             const redoSource = Source.MANUAL;
             const undoShape = wasKeyframe ? this.shapes[frame] : undefined;
-            const redoShape = wasKeyframe
-                ? { ...this.shapes[frame], occluded }
-                : {
+            const redoShape = wasKeyframe ?
+                { ...this.shapes[frame], occluded } :
+                {
                     frame,
                     occluded,
                     zOrder: current.zOrder,
@@ -1102,9 +1102,9 @@
             const undoSource = this.source;
             const redoSource = Source.MANUAL;
             const undoShape = wasKeyframe ? this.shapes[frame] : undefined;
-            const redoShape = wasKeyframe
-                ? { ...this.shapes[frame], zOrder }
-                : {
+            const redoShape = wasKeyframe ?
+                { ...this.shapes[frame], zOrder } :
+                {
                     frame,
                     zOrder,
                     occluded: current.occluded,
@@ -1136,8 +1136,8 @@
             const undoSource = this.source;
             const redoSource = Source.MANUAL;
             const undoShape = wasKeyframe ? this.shapes[frame] : undefined;
-            const redoShape = keyframe
-                ? {
+            const redoShape = keyframe ?
+                {
                     frame,
                     zOrder: current.zOrder,
                     points: current.points,
@@ -1145,8 +1145,8 @@
                     occluded: current.occluded,
                     attributes: {},
                     source: current.source,
-                }
-                : undefined;
+                } :
+                undefined;
 
             this.source = Source.MANUAL;
             if (redoShape) {
@@ -1264,17 +1264,13 @@
             }
 
             throw new DataError(
-                'No one left position or right position was found. '
-                    + `Interpolation impossible. Client ID: ${this.clientID}`,
+                'No one left position or right position was found. ' +
+                    `Interpolation impossible. Client ID: ${this.clientID}`,
             );
         }
     }
 
     class Tag extends Annotation {
-        constructor(data, clientID, color, injection) {
-            super(data, clientID, color, injection);
-        }
-
         // Method is used to export data to the server
         toJSON() {
             return {
@@ -1373,11 +1369,7 @@
         }
     }
 
-    class PolyShape extends Shape {
-        constructor(data, clientID, color, injection) {
-            super(data, clientID, color, injection);
-        }
-    }
+    class PolyShape extends Shape {}
 
     class PolygonShape extends PolyShape {
         constructor(data, clientID, color, injection) {
@@ -1431,12 +1423,12 @@
 
                 if ((xCross - x1) * (x2 - xCross) >= 0 && (yCross - y1) * (y2 - yCross) >= 0) {
                     // Cross point is on segment between p1(x1,y1) and p2(x2,y2)
-                    distances.push(Math.sqrt(Math.pow(x - xCross, 2) + Math.pow(y - yCross, 2)));
+                    distances.push(Math.sqrt((x - xCross) ** 2 + (y - yCross) ** 2));
                 } else {
                     distances.push(
                         Math.min(
-                            Math.sqrt(Math.pow(x1 - x, 2) + Math.pow(y1 - y, 2)),
-                            Math.sqrt(Math.pow(x2 - x, 2) + Math.pow(y2 - y, 2)),
+                            Math.sqrt((x1 - x) ** 2 + (y1 - y) ** 2),
+                            Math.sqrt((x2 - x) ** 2 + (y2 - y) ** 2),
                         ),
                     );
                 }
@@ -1473,8 +1465,8 @@
                     // Find the length of a perpendicular
                     // https://en.wikipedia.org/wiki/Distance_from_a_point_to_a_line
                     distances.push(
-                        Math.abs((y2 - y1) * x - (x2 - x1) * y + x2 * y1 - y2 * x1)
-                            / Math.sqrt(Math.pow(y2 - y1, 2) + Math.pow(x2 - x1, 2)),
+                        Math.abs((y2 - y1) * x - (x2 - x1) * y + x2 * y1 - y2 * x1) /
+                            Math.sqrt((y2 - y1) ** 2 + (x2 - x1) ** 2),
                     );
                 } else {
                     // The link below works for lines (which have infinite length)
@@ -1483,8 +1475,8 @@
                     // Instead we use just distance to the nearest point
                     distances.push(
                         Math.min(
-                            Math.sqrt(Math.pow(x1 - x, 2) + Math.pow(y1 - y, 2)),
-                            Math.sqrt(Math.pow(x2 - x, 2) + Math.pow(y2 - y, 2)),
+                            Math.sqrt((x1 - x) ** 2 + (y1 - y) ** 2),
+                            Math.sqrt((x2 - x) ** 2 + (y2 - y) ** 2),
                         ),
                     );
                 }
@@ -1507,7 +1499,7 @@
                 const x1 = points[i];
                 const y1 = points[i + 1];
 
-                distances.push(Math.sqrt(Math.pow(x1 - x, 2) + Math.pow(y1 - y, 2)));
+                distances.push(Math.sqrt((x1 - x) ** 2 + (y1 - y) ** 2));
             }
 
             return Math.min.apply(null, distances);
@@ -1558,10 +1550,10 @@
                 lowerHull.pop();
 
                 if (
-                    upperHull.length === 1
-                    && lowerHull.length === 1
-                    && upperHull[0].x === lowerHull[0].x
-                    && upperHull[0].y === lowerHull[0].y
+                    upperHull.length === 1 &&
+                    lowerHull.length === 1 &&
+                    upperHull[0].x === lowerHull[0].x &&
+                    upperHull[0].y === lowerHull[0].y
                 ) return upperHull;
                 return upperHull.concat(lowerHull);
             }
@@ -1579,11 +1571,11 @@
             return makeHullPresorted(newPoints);
         }
 
-        static contain(points, x, y) {
+        static contain(shapePoints, x, y) {
             function isLeft(P0, P1, P2) {
                 return (P1.x - P0.x) * (P2.y - P0.y) - (P2.x - P0.x) * (P1.y - P0.y);
             }
-            points = CuboidShape.makeHull(points);
+            const points = CuboidShape.makeHull(shapePoints);
             let wn = 0;
             for (let i = 0; i < points.length; i += 1) {
                 const p1 = points[`${i}`];
@@ -1620,13 +1612,13 @@
                 const p2 = points[i + 1] || points[0];
 
                 // perpendicular from point to straight length
-                const distance = Math.abs((p2.y - p1.y) * x - (p2.x - p1.x) * y + p2.x * p1.y - p2.y * p1.x)
-                    / Math.sqrt(Math.pow(p2.y - p1.y, 2) + Math.pow(p2.x - p1.x, 2));
+                const distance = Math.abs((p2.y - p1.y) * x - (p2.x - p1.x) * y + p2.x * p1.y - p2.y * p1.x) /
+                    Math.sqrt((p2.y - p1.y) ** 2 + (p2.x - p1.x) ** 2);
 
                 // check if perpendicular belongs to the straight segment
-                const a = Math.pow(p1.x - x, 2) + Math.pow(p1.y - y, 2);
-                const b = Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2);
-                const c = Math.pow(p2.x - x, 2) + Math.pow(p2.y - y, 2);
+                const a = (p1.x - x) ** 2 + (p1.y - y) ** 2;
+                const b = (p2.x - p1.x) ** 2 + (p2.y - p1.y) ** 2;
+                const c = (p2.x - x) ** 2 + (p2.y - y) ** 2;
                 if (distance < minDistance && a + b - c >= 0 && c + b - a >= 0) {
                     minDistance = distance;
                 }
@@ -1658,10 +1650,6 @@
     }
 
     class PolyTrack extends Track {
-        constructor(data, clientID, color, injection) {
-            super(data, clientID, color, injection);
-        }
-
         interpolatePosition(leftPosition, rightPosition, offset) {
             if (offset === 0) {
                 return {

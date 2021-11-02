@@ -37,8 +37,12 @@
                         return result;
                     },
 
-                    async clear(reload = false, startframe = undefined, endframe = undefined, delTrackKeyframesOnly = true) {
-                        const result = await PluginRegistry.apiWrapper.call(this, prototype.annotations.clear, reload, startframe, endframe, delTrackKeyframesOnly);
+                    async clear(
+                        reload = false, startframe = undefined, endframe = undefined, delTrackKeyframesOnly = true,
+                    ) {
+                        const result = await PluginRegistry.apiWrapper.call(
+                            this, prototype.annotations.clear, reload, startframe, endframe, delTrackKeyframesOnly,
+                        );
                         return result;
                     },
 
@@ -1721,17 +1725,17 @@
             for (const [field, isUpdated] of Object.entries(this.__updatedFields)) {
                 if (isUpdated) {
                     switch (field) {
-                    case 'status':
-                        jobData.status = this.status;
-                        break;
-                    case 'assignee':
-                        jobData.assignee_id = this.assignee ? this.assignee.id : null;
-                        break;
-                    case 'reviewer':
-                        jobData.reviewer_id = this.reviewer ? this.reviewer.id : null;
-                        break;
-                    default:
-                        break;
+                        case 'status':
+                            jobData.status = this.status;
+                            break;
+                        case 'assignee':
+                            jobData.assignee_id = this.assignee ? this.assignee.id : null;
+                            break;
+                        case 'reviewer':
+                            jobData.reviewer_id = this.reviewer ? this.reviewer.id : null;
+                            break;
+                        default:
+                            break;
                     }
                 }
             }
@@ -1897,7 +1901,9 @@
         return result;
     };
 
-    Job.prototype.annotations.clear.implementation = async function (reload, startframe, endframe, delTrackKeyframesOnly) {
+    Job.prototype.annotations.clear.implementation = async function (
+        reload, startframe, endframe, delTrackKeyframesOnly,
+    ) {
         const result = await clearAnnotations(this, reload, startframe, endframe, delTrackKeyframesOnly);
         return result;
     };
@@ -1996,26 +2002,26 @@
             for (const [field, isUpdated] of Object.entries(this.__updatedFields)) {
                 if (isUpdated) {
                     switch (field) {
-                    case 'assignee':
-                        taskData.assignee_id = this.assignee ? this.assignee.id : null;
-                        break;
-                    case 'name':
-                        taskData.name = this.name;
-                        break;
-                    case 'bug_tracker':
-                        taskData.bug_tracker = this.bugTracker;
-                        break;
-                    case 'subset':
-                        taskData.subset = this.subset;
-                        break;
-                    case 'project_id':
-                        taskData.project_id = this.projectId;
-                        break;
-                    case 'labels':
-                        taskData.labels = [...this._internalData.labels.map((el) => el.toJSON())];
-                        break;
-                    default:
-                        break;
+                        case 'assignee':
+                            taskData.assignee_id = this.assignee ? this.assignee.id : null;
+                            break;
+                        case 'name':
+                            taskData.name = this.name;
+                            break;
+                        case 'bug_tracker':
+                            taskData.bug_tracker = this.bugTracker;
+                            break;
+                        case 'subset':
+                            taskData.subset = this.subset;
+                            break;
+                        case 'project_id':
+                            taskData.project_id = this.projectId;
+                            break;
+                        case 'labels':
+                            taskData.labels = [...this._internalData.labels.map((el) => el.toJSON())];
+                            break;
+                        default:
+                            break;
                     }
                 }
             }
