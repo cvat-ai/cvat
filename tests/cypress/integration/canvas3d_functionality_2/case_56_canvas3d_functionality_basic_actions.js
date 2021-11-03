@@ -184,6 +184,7 @@ context('Canvas 3D functionality. Basic actions.', () => {
             cy.get('.cvat-player-first-button').click(); // Return to first frame
         });
 
+        // FIXME: this test was temporarily excluded
         it.skip('Testing perspective visual regressions.', () => {
             testPerspectiveChangeOnKeyPress('u', 'before_press_altU', 'after_press_altU');
             testPerspectiveChangeOnKeyPress('o', 'before_press_altO', 'after_press_altO');
