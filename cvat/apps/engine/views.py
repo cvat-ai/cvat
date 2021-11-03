@@ -67,7 +67,7 @@ from cvat.apps.engine.backup import import_task
 from . import models, task
 from .log import clogger, slogger
 from cvat.apps.iam.permissions import (CloudStoragePermission, CommentPermission,
-    IssuePermission, JobPermission, ProjectPermission, ServerPermission,
+    IssuePermission, JobPermission, ProjectPermission,
     TaskPermission, UserPermission)
 
 class ServerViewSet(viewsets.ViewSet):

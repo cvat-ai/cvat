@@ -716,6 +716,8 @@
                 task: undefined,
             };
 
+            // FIXME: workaround of an absent field
+            initialData.reviewer = null;
             const updatedFields = new FieldUpdateTrigger({
                 assignee: false,
                 reviewer: false,
