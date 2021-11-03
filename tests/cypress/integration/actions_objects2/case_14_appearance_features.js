@@ -169,9 +169,17 @@ context('Appearance features', () => {
         });
 
         it('"Selected opacity" slider now defines opacity level of shapes being drawn.', () => {
-            function testDrawShapeCheckOpacity({ shape, drawingMethod, shapeType, fillOpacityBefore, fillOpacityAfter, opacityBefore, opacityAfter }) {
+            function testDrawShapeCheckOpacity({
+                shape,
+                drawingMethod,
+                shapeType,
+                fillOpacityBefore,
+                fillOpacityAfter,
+                opacityBefore,
+                opacityAfter,
+            }) {
                 cy.interactControlButton(`draw-${shape}`);
-                cy.get(`.cvat-draw-${shape}-popover-visible`).within(() => {
+                cy.get(`.cvat-draw-${shape}-popover`).within(() => {
                     if (drawingMethod) {
                         cy.contains('.ant-radio-wrapper', drawingMethod).click();
                     }

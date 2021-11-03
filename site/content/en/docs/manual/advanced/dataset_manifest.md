@@ -123,7 +123,7 @@ A maifest file contains some intuitive information and some specific like:
 ```json
 {"version":"1.0"}
 {"type":"images"}
-{"name":"image1","extension":".jpg","width":720,"height":405,"checksum":"548918ec4b56132a5cff1d4acabe9947"}
-{"name":"image2","extension":".jpg","width":183,"height":275,"checksum":"4b4eefd03cc6a45c1c068b98477fb639"}
-{"name":"image3","extension":".jpg","width":301,"height":167,"checksum":"0e454a6f4a13d56c82890c98be063663"}
+{"name":"image1","extension":".jpg","width":720,"height":405,"meta":{"related_images":[]},"checksum":"548918ec4b56132a5cff1d4acabe9947"}
+{"name":"image2","extension":".jpg","width":183,"height":275,"meta":{"related_images":[]},"checksum":"4b4eefd03cc6a45c1c068b98477fb639"}
+{"name":"image3","extension":".jpg","width":301,"height":167,"meta":{"related_images":[]},"checksum":"0e454a6f4a13d56c82890c98be063663"}
 ```

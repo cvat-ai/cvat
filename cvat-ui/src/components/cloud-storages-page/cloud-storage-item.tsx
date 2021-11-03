@@ -5,7 +5,7 @@
 import React, { useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useHistory } from 'react-router';
-import { CloudSyncOutlined, MoreOutlined, QuestionCircleOutlined } from '@ant-design/icons';
+import { MoreOutlined, QuestionCircleOutlined } from '@ant-design/icons';
 import Card from 'antd/lib/card';
 import Meta from 'antd/lib/card/Meta';
 import Paragraph from 'antd/lib/typography/Paragraph';
@@ -20,17 +20,17 @@ import { CloudStorage, CombinedState } from 'reducers/interfaces';
 import { deleteCloudStorageAsync } from 'actions/cloud-storage-actions';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import Status from './cloud-storage-status';
+import Preview from './cloud-storage-preview';
 
 interface Props {
-    cloudStorageInstance: CloudStorage;
+    cloudStorage: CloudStorage;
 }
 
 export default function CloudStorageItemComponent(props: Props): JSX.Element {
     const history = useHistory();
     const dispatch = useDispatch();
 
-    // cloudStorageInstance: {storage, preview, status}
-    const { cloudStorageInstance } = props;
+    const { cloudStorage } = props;
     const {
         id,
         displayName,
@@ -39,10 +39,9 @@ export default function CloudStorageItemComponent(props: Props): JSX.Element {
         createdDate,
         updatedDate,
         description,
-    } = cloudStorageInstance.storage;
-    const { preview, status } = cloudStorageInstance;
+    } = cloudStorage;
     const deletes = useSelector((state: CombinedState) => state.cloudStorages.activities.deletes);
-    const deleted = cloudStorageInstance.storage.id in deletes ? deletes[cloudStorageInstance.storage.id] : false;
+    const deleted = cloudStorage.id in deletes ? deletes[cloudStorage.id] : false;
 
     const style: React.CSSProperties = {};
 
@@ -61,7 +60,7 @@ export default function CloudStorageItemComponent(props: Props): JSX.Element {
             content: `You are going to remove the cloudstorage "${displayName}". Continue?`,
             className: 'cvat-delete-cloud-storage-modal',
             onOk: () => {
-                dispatch(deleteCloudStorageAsync(cloudStorageInstance.storage));
+                dispatch(deleteCloudStorageAsync(cloudStorage));
             },
             okButtonProps: {
                 type: 'primary',
@@ -69,24 +68,13 @@ export default function CloudStorageItemComponent(props: Props): JSX.Element {
             },
             okText: 'Delete',
         });
-    }, [cloudStorageInstance.storage.id]);
+    }, [cloudStorage.id]);
 
     return (
         <Card
             cover={(
                 <>
-                    {preview ? (
-                        <img
-                            className='cvat-cloud-storage-item-preview'
-                            src={preview}
-                            alt='Preview image'
-                            aria-hidden
-                        />
-                    ) : (
-                        <div className='cvat-cloud-storage-item-empty-preview' aria-hidden>
-                            <CloudSyncOutlined />
-                        </div>
-                    )}
+                    <Preview cloudStorage={cloudStorage} />
                     {description ? (
                         <CVATTooltip overlay={description}>
                             <QuestionCircleOutlined className='cvat-cloud-storage-description-icon' />
@@ -121,7 +109,7 @@ export default function CloudStorageItemComponent(props: Props): JSX.Element {
                             <Text type='secondary'>Last updated </Text>
                             <Text type='secondary'>{moment(updatedDate).fromNow()}</Text>
                         </Paragraph>
-                        <Status status={status} />
+                        <Status cloudStorage={cloudStorage} />
                         <Dropdown
                             overlay={(
                                 <Menu className='cvat-project-actions-menu'>

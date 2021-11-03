@@ -76,6 +76,9 @@ If you select tab `Connected file share` you can choose files for annotation fro
 If you select ` Remote source` , you'll see a field where you can enter a list of URLs (one URL per line).
 If you upload a video or dataset with images and select `Use cache` option, you can attach a `manifest.jsonl` file.
 You can find how to prepare it [here](/docs/manual/advanced/dataset_manifest/).
+If you select the `Cloud Storage` tab, you can select a cloud storage (for this type the cloud storage name),
+after that choose the manifest file and select the required files.
+For more information on how to attach cloud storage, see [attach cloud storage](/docs/manual/basics/attach-cloud-storage/)
 
 ![](/images/image127.jpg)
 

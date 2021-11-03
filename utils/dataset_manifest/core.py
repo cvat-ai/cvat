@@ -6,19 +6,49 @@ import av
 import json
 import os
 from abc import ABC, abstractmethod, abstractproperty
-from collections import OrderedDict
 from contextlib import closing
+from tempfile import NamedTemporaryFile
+
 from PIL import Image
 from .utils import md5_hash, rotate_image
 
 class VideoStreamReader:
-    def __init__(self, source_path):
-        self.source_path = source_path
-        self._key_frames = OrderedDict()
-        self.frames = 0
+    def __init__(self, source_path, chunk_size, force):
+        self._source_path = source_path
+        self._frames_number = None
+        self._force = force
+        self._upper_bound = 3 * chunk_size + 1
 
         with closing(av.open(self.source_path, mode='r')) as container:
-            self.width, self.height = self._get_frame_size(container)
+            video_stream = VideoStreamReader._get_video_stream(container)
+            isBreaked = False
+            for packet in container.demux(video_stream):
+                if isBreaked:
+                    break
+                for frame in packet.decode():
+                    # check type of first frame
+                    if not frame.pict_type.name == 'I':
+                        raise Exception('First frame is not key frame')
+
+                    # get video resolution
+                    if video_stream.metadata.get('rotate'):
+                        frame = av.VideoFrame().from_ndarray(
+                            rotate_image(
+                                frame.to_ndarray(format='bgr24'),
+                                360 - int(container.streams.video[0].metadata.get('rotate')),
+                            ),
+                            format ='bgr24',
+                        )
+                    self.height, self.width = (frame.height, frame.width)
+                    # not all videos contain information about numbers of frames
+                    if video_stream.frames:
+                        self._frames_number = video_stream.frames
+                    isBreaked = True
+                    break
+
+    @property
+    def source_path(self):
+        return self._source_path
 
     @staticmethod
     def _get_video_stream(container):
@@ -26,179 +56,204 @@ class VideoStreamReader:
         video_stream.thread_type = 'AUTO'
         return video_stream
 
-    @staticmethod
-    def _get_frame_size(container):
-        video_stream = VideoStreamReader._get_video_stream(container)
-        for packet in container.demux(video_stream):
-            for frame in packet.decode():
-                if video_stream.metadata.get('rotate'):
-                    frame = av.VideoFrame().from_ndarray(
-                        rotate_image(
-                            frame.to_ndarray(format='bgr24'),
-                            360 - int(container.streams.video[0].metadata.get('rotate')),
-                        ),
-                        format ='bgr24',
-                    )
-                return frame.width, frame.height
-
-    def check_type_first_frame(self):
-        with closing(av.open(self.source_path, mode='r')) as container:
-            video_stream = self._get_video_stream(container)
-
-            for packet in container.demux(video_stream):
-                for frame in packet.decode():
-                    if not frame.pict_type.name == 'I':
-                        raise Exception('First frame is not key frame')
-                    return
-
-    def check_video_timestamps_sequences(self):
-        with closing(av.open(self.source_path, mode='r')) as container:
-            video_stream = self._get_video_stream(container)
-
-            frame_pts = -1
-            frame_dts = -1
-            for packet in container.demux(video_stream):
-                for frame in packet.decode():
-
-                    if None not in {frame.pts, frame_pts} and frame.pts <= frame_pts:
-                        raise Exception('Invalid pts sequences')
-
-                    if None not in {frame.dts, frame_dts} and frame.dts <= frame_dts:
-                        raise Exception('Invalid dts sequences')
-
-                    frame_pts, frame_dts = frame.pts, frame.dts
-
-    def rough_estimate_frames_ratio(self, upper_bound):
-        analyzed_frames_number, key_frames_number = 0, 0
-        _processing_end = False
-
-        with closing(av.open(self.source_path, mode='r')) as container:
-            video_stream = self._get_video_stream(container)
-            for packet in container.demux(video_stream):
-                for frame in packet.decode():
-                    if frame.key_frame:
-                        key_frames_number += 1
-                    analyzed_frames_number += 1
-                    if upper_bound == analyzed_frames_number:
-                        _processing_end = True
-                        break
-                if _processing_end:
-                    break
-        # In our case no videos with non-key first frame, so 1 key frame is guaranteed
-        return analyzed_frames_number // key_frames_number
-
-    def validate_frames_ratio(self, chunk_size):
-        upper_bound = 3 * chunk_size
-        ratio = self.rough_estimate_frames_ratio(upper_bound + 1)
-        assert ratio < upper_bound, 'Too few keyframes'
-
-    def get_size(self):
-        return self.frames
+    def __len__(self):
+        return self._frames_number
 
     @property
-    def frame_sizes(self):
+    def resolution(self):
         return (self.width, self.height)
 
     def validate_key_frame(self, container, video_stream, key_frame):
         for packet in container.demux(video_stream):
             for frame in packet.decode():
-                if md5_hash(frame) != key_frame[1]['md5'] or frame.pts != key_frame[1]['pts']:
-                    self._key_frames.pop(key_frame[0])
-                return
+                if md5_hash(frame) != key_frame['md5'] or frame.pts != key_frame['pts']:
+                    return False
+                return True
 
-    def validate_seek_key_frames(self):
+    def __iter__(self):
         with closing(av.open(self.source_path, mode='r')) as container:
             video_stream = self._get_video_stream(container)
-
-            key_frames_copy = self._key_frames.copy()
-
-            for key_frame in key_frames_copy.items():
-                container.seek(offset=key_frame[1]['pts'], stream=video_stream)
-                self.validate_key_frame(container, video_stream, key_frame)
-
-    def save_key_frames(self):
-        with closing(av.open(self.source_path, mode='r')) as container:
-            video_stream = self._get_video_stream(container)
-            frame_number = 0
-
+            frame_pts, frame_dts = -1, -1
+            index, key_frame_number = 0, 0
             for packet in container.demux(video_stream):
                 for frame in packet.decode():
+                    if None not in {frame.pts, frame_pts} and frame.pts <= frame_pts:
+                        raise Exception('Invalid pts sequences')
+                    if None not in {frame.dts, frame_dts} and frame.dts <= frame_dts:
+                        raise Exception('Invalid dts sequences')
+                    frame_pts, frame_dts = frame.pts, frame.dts
+
                     if frame.key_frame:
-                        self._key_frames[frame_number] = {
+                        key_frame_number += 1
+                        ratio = (index + 1) // key_frame_number
+
+                        if ratio >= self._upper_bound and not self._force:
+                            raise AssertionError('Too few keyframes')
+
+                        key_frame = {
+                            'index': index,
                             'pts': frame.pts,
-                            'md5': md5_hash(frame),
+                            'md5': md5_hash(frame)
                         }
-                    frame_number += 1
-            self.frames = frame_number
 
-    @property
-    def key_frames(self):
-        return self._key_frames
+                        with closing(av.open(self.source_path, mode='r')) as checked_container:
+                            checked_container.seek(offset=key_frame['pts'], stream=video_stream)
+                            isValid = self.validate_key_frame(checked_container, video_stream, key_frame)
+                            if isValid:
+                                yield (index, key_frame['pts'], key_frame['md5'])
+                    else:
+                        yield index
+                    index += 1
+            if not self._frames_number:
+                self._frames_number = index
 
-    def __len__(self):
-        return len(self._key_frames)
+class KeyFramesVideoStreamReader(VideoStreamReader):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
-    #TODO: need to change it in future
     def __iter__(self):
-        for idx, key_frame in self._key_frames.items():
-            yield (idx, key_frame['pts'], key_frame['md5'])
+        with closing(av.open(self.source_path, mode='r')) as container:
+            video_stream = self._get_video_stream(container)
+            frame_pts, frame_dts = -1, -1
+            index, key_frame_number = 0, 0
+            for packet in container.demux(video_stream):
+                for frame in packet.decode():
+                    if None not in {frame.pts, frame_pts} and frame.pts <= frame_pts:
+                        raise Exception('Invalid pts sequences')
+                    if None not in {frame.dts, frame_dts} and frame.dts <= frame_dts:
+                        raise Exception('Invalid dts sequences')
+                    frame_pts, frame_dts = frame.pts, frame.dts
 
+                    if frame.key_frame:
+                        key_frame_number += 1
+                        ratio = (index + 1) // key_frame_number
+                        if ratio >= self._upper_bound and not self._force:
+                            raise AssertionError('Too few keyframes')
+                        key_frame = {
+                            'index': index,
+                            'pts': frame.pts,
+                            'md5': md5_hash(frame)
+                        }
+
+                        with closing(av.open(self.source_path, mode='r')) as checked_container:
+                            checked_container.seek(offset=key_frame['pts'], stream=video_stream)
+                            isValid = self.validate_key_frame(checked_container, video_stream, key_frame)
+                            if isValid:
+                                yield (index, key_frame['pts'], key_frame['md5'])
+                    index += 1
 
 class DatasetImagesReader:
-    def __init__(self, sources, meta=None, is_sorted=True, use_image_hash=False, *args, **kwargs):
+    def __init__(self,
+                sources,
+                meta=None,
+                is_sorted=True,
+                use_image_hash=False,
+                start = 0,
+                step = 1,
+                stop = None,
+                *args,
+                **kwargs):
         self._sources = sources if is_sorted else sorted(sources)
         self._meta = meta
-        self._content = []
         self._data_dir = kwargs.get('data_dir', None)
         self._use_image_hash = use_image_hash
-
-    def __iter__(self):
-        for image in self._sources:
-            img = Image.open(image, mode='r')
-            img_name = os.path.relpath(image, self._data_dir) if self._data_dir \
-                else os.path.basename(image)
-            name, extension = os.path.splitext(img_name)
-            image_properties = {
-                'name': name,
-                'extension': extension,
-                'width': img.width,
-                'height': img.height,
-            }
-            if self._meta and img_name in self._meta:
-                image_properties['meta'] = self._meta[img_name]
-            if self._use_image_hash:
-                image_properties['checksum'] = md5_hash(img)
-            yield image_properties
-
-    def create(self):
-        for item in self:
-            self._content.append(item)
+        self._start = start
+        self._stop = stop if stop else len(sources)
+        self._step = step
 
     @property
-    def content(self):
-        return self._content
+    def start(self):
+        return self._start
+
+    @start.setter
+    def start(self, value):
+        self._start = int(value)
+
+    @property
+    def stop(self):
+        return self._stop
+
+    @stop.setter
+    def stop(self, value):
+        self._stop = int(value)
+
+    @property
+    def step(self):
+        return self._step
+
+    @step.setter
+    def step(self, value):
+        self._step = int(value)
+
+    def __iter__(self):
+        sources = (i for i in self._sources)
+        for idx in range(self._stop):
+            if idx in self.range_:
+                image = next(sources)
+                img = Image.open(image, mode='r')
+                img_name = os.path.relpath(image, self._data_dir) if self._data_dir \
+                    else os.path.basename(image)
+                name, extension = os.path.splitext(img_name)
+                image_properties = {
+                    'name': name.replace('\\', '/'),
+                    'extension': extension,
+                    'width': img.width,
+                    'height': img.height,
+                }
+                if self._meta and img_name in self._meta:
+                    image_properties['meta'] = self._meta[img_name]
+                if self._use_image_hash:
+                    image_properties['checksum'] = md5_hash(img)
+                yield image_properties
+            else:
+                yield dict()
+
+    @property
+    def range_(self):
+        return range(self._start, self._stop, self._step)
+
+    def __len__(self):
+        return len(self.range_)
+
+class Dataset3DImagesReader(DatasetImagesReader):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+    def __iter__(self):
+        sources = (i for i in self._sources)
+        for idx in range(self._stop):
+            if idx in self.range_:
+                image = next(sources)
+                img_name = os.path.relpath(image, self._data_dir) if self._data_dir \
+                    else os.path.basename(image)
+                name, extension = os.path.splitext(img_name)
+                image_properties = {
+                    'name': name,
+                    'extension': extension,
+                }
+                if self._meta and img_name in self._meta:
+                    image_properties['meta'] = self._meta[img_name]
+                yield image_properties
+            else:
+                yield dict()
 
 class _Manifest:
     FILE_NAME = 'manifest.jsonl'
     VERSION = '1.1'
 
-    def __init__(self, path, is_created=False):
+    def __init__(self, path, upload_dir=None):
         assert path, 'A path to manifest file not found'
         self._path = os.path.join(path, self.FILE_NAME) if os.path.isdir(path) else path
-        self._is_created = is_created
+        self._upload_dir = upload_dir
 
     @property
     def path(self):
         return self._path
 
     @property
-    def is_created(self):
-        return self._is_created
-
-    @is_created.setter
-    def is_created(self, value):
-        assert isinstance(value, bool)
-        self._is_created = value
+    def name(self):
+        return os.path.basename(self._path) if not self._upload_dir \
+            else os.path.relpath(self._path, self._upload_dir)
 
 # Needed for faster iteration over the manifest file, will be generated to work inside CVAT
 # and will not be generated when manually creating a manifest
@@ -261,14 +316,33 @@ class _Index:
     def __len__(self):
         return len(self._index)
 
+def _set_index(func):
+    def wrapper(self, *args, **kwargs):
+        func(self, *args,  **kwargs)
+        if self._create_index:
+            self.set_index()
+    return wrapper
+
 class _ManifestManager(ABC):
     BASE_INFORMATION = {
         'version' : 1,
         'type': 2,
     }
-    def __init__(self, path, *args, **kwargs):
-        self._manifest = _Manifest(path)
+
+    def _json_item_is_valid(self, **state):
+        for item in self._requared_item_attributes:
+            if state.get(item, None) is None:
+                raise Exception(f"Invalid '{self.manifest.name} file structure': '{item}' is required, but not found")
+
+    def __init__(self, path, create_index, upload_dir=None, *args, **kwargs):
+        self._manifest = _Manifest(path, upload_dir)
         self._index = _Index(os.path.dirname(self._manifest.path))
+        self._reader = None
+        self._create_index = create_index
+
+    @property
+    def reader(self):
+        return self._reader
 
     def _parse_line(self, line):
         """ Getting a random line from the manifest file """
@@ -284,7 +358,9 @@ class _ManifestManager(ABC):
                 offset = self._index[line]
                 manifest_file.seek(offset)
                 properties = manifest_file.readline()
-                return json.loads(properties)
+                parsed_properties = json.loads(properties)
+                self._json_item_is_valid(**parsed_properties)
+                return parsed_properties
 
     def init_index(self):
         if os.path.exists(self._index.path):
@@ -301,8 +377,13 @@ class _ManifestManager(ABC):
         self.reset_index()
         self.init_index()
 
+    def remove(self):
+        self.reset_index()
+        if os.path.exists(self.manifest.path):
+            os.remove(self.manifest.path)
+
     @abstractmethod
-    def create(self, content, **kwargs):
+    def create(self, content=None, _tqdm=None):
         pass
 
     @abstractmethod
@@ -315,10 +396,11 @@ class _ManifestManager(ABC):
             image_number = 0
             line = manifest_file.readline()
             while line:
-                if not line.strip():
-                    continue
-                yield (image_number, json.loads(line))
-                image_number += 1
+                if line.strip():
+                    parsed_properties = json.loads(line)
+                    self._json_item_is_valid(**parsed_properties)
+                    yield (image_number, parsed_properties)
+                    image_number += 1
                 line = manifest_file.readline()
 
     @property
@@ -347,53 +429,66 @@ class _ManifestManager(ABC):
         pass
 
 class VideoManifestManager(_ManifestManager):
-    def __init__(self, manifest_path):
-        super().__init__(manifest_path)
+    _requared_item_attributes = {'number', 'pts'}
+
+    def __init__(self, manifest_path, create_index=True):
+        super().__init__(manifest_path, create_index)
         setattr(self._manifest, 'TYPE', 'video')
         self.BASE_INFORMATION['properties'] = 3
 
-    def create(self, content, **kwargs):
-        """ Creating and saving a manifest file """
-        with open(self._manifest.path, 'w') as manifest_file:
-            base_info = {
-                'version': self._manifest.VERSION,
-                'type': self._manifest.TYPE,
-                'properties': {
-                    'name': os.path.basename(content.source_path),
-                    'resolution': content.frame_sizes,
-                    'length': content.get_size(),
-                },
-            }
-            for key, value in base_info.items():
-                json_item = json.dumps({key: value}, separators=(',', ':'))
-                manifest_file.write(f'{json_item}\n')
+    def link(self, media_file, upload_dir=None, chunk_size=36, force=False, only_key_frames=False, **kwargs):
+        ReaderClass = VideoStreamReader if not only_key_frames else KeyFramesVideoStreamReader
+        self._reader = ReaderClass(
+            os.path.join(upload_dir, media_file) if upload_dir else media_file,
+            chunk_size,
+            force)
 
-            for item in content:
+    def _write_base_information(self, file):
+        base_info = {
+            'version': self._manifest.VERSION,
+            'type': self._manifest.TYPE,
+            'properties': {
+                'name': os.path.basename(self._reader.source_path),
+                'resolution': self._reader.resolution,
+                'length': len(self._reader),
+            },
+        }
+        for key, value in base_info.items():
+            json_item = json.dumps({key: value}, separators=(',', ':'))
+            file.write(f'{json_item}\n')
+
+    def _write_core_part(self, file, _tqdm):
+        iterable_obj = self._reader if _tqdm is None else \
+            _tqdm(self._reader, desc="Manifest creating", total=len(self._reader))
+        for item in iterable_obj:
+            if isinstance(item, tuple):
                 json_item = json.dumps({
                     'number': item[0],
                     'pts': item[1],
                     'checksum': item[2]
                 }, separators=(',', ':'))
-                manifest_file.write(f"{json_item}\n")
-        self._manifest.is_created = True
+                file.write(f"{json_item}\n")
+
+    # pylint: disable=arguments-differ
+    @_set_index
+    def create(self, _tqdm=None):
+        """ Creating and saving a manifest file """
+        if not len(self._reader):
+            with NamedTemporaryFile(mode='w', delete=False)as tmp_file:
+                self._write_core_part(tmp_file, _tqdm)
+            temp = tmp_file.name
+            with open(self._manifest.path, 'w') as manifest_file:
+                self._write_base_information(manifest_file)
+                with open(temp, 'r') as tmp_file:
+                    manifest_file.write(tmp_file.read())
+            os.remove(temp)
+        else:
+            with open(self._manifest.path, 'w') as manifest_file:
+                self._write_base_information(manifest_file)
+                self._write_core_part(manifest_file, _tqdm)
 
     def partial_update(self, number, properties):
         pass
-
-    @staticmethod
-    def prepare_meta(media_file, upload_dir=None, chunk_size=36, force=False):
-        source_path = os.path.join(upload_dir, media_file) if upload_dir else media_file
-        meta_info = VideoStreamReader(source_path=source_path)
-        meta_info.check_type_first_frame()
-        try:
-            meta_info.validate_frames_ratio(chunk_size)
-        except AssertionError:
-            if not force:
-                raise
-        meta_info.check_video_timestamps_sequences()
-        meta_info.save_key_frames()
-        meta_info.validate_seek_key_frames()
-        return meta_info
 
     @property
     def video_name(self):
@@ -423,7 +518,7 @@ class ManifestValidator:
 
 class VideoManifestValidator(VideoManifestManager):
     def __init__(self, source_path, manifest_path):
-        self.source_path = source_path
+        self._source_path = source_path
         super().__init__(manifest_path)
 
     @staticmethod
@@ -439,7 +534,7 @@ class VideoManifestValidator(VideoManifestManager):
                 return
 
     def validate_seek_key_frames(self):
-        with closing(av.open(self.source_path, mode='r')) as container:
+        with closing(av.open(self._source_path, mode='r')) as container:
             video_stream = self._get_video_stream(container)
             last_key_frame = None
 
@@ -452,7 +547,7 @@ class VideoManifestValidator(VideoManifestManager):
                 last_key_frame = key_frame
 
     def validate_frame_numbers(self):
-        with closing(av.open(self.source_path, mode='r')) as container:
+        with closing(av.open(self._source_path, mode='r')) as container:
             video_stream = self._get_video_stream(container)
             # not all videos contain information about numbers of frames
             frames = video_stream.frames
@@ -461,36 +556,45 @@ class VideoManifestValidator(VideoManifestManager):
                 return
 
 class ImageManifestManager(_ManifestManager):
-    def __init__(self, manifest_path):
-        super().__init__(manifest_path)
+    _requared_item_attributes = {'name', 'extension'}
+
+    def __init__(self, manifest_path, upload_dir=None, create_index=True):
+        super().__init__(manifest_path, create_index, upload_dir)
         setattr(self._manifest, 'TYPE', 'images')
 
-    def create(self, content, **kwargs):
-        """ Creating and saving a manifest file"""
-        with open(self._manifest.path, 'w') as manifest_file:
-            base_info = {
-                'version': self._manifest.VERSION,
-                'type': self._manifest.TYPE,
-            }
-            for key, value in base_info.items():
-                json_item = json.dumps({key: value}, separators=(',', ':'))
-                manifest_file.write(f'{json_item}\n')
+    def link(self, **kwargs):
+        ReaderClass = DatasetImagesReader if not kwargs.get('DIM_3D', None) else Dataset3DImagesReader
+        self._reader = ReaderClass(**kwargs)
 
-            for item in content:
-                json_item = json.dumps({
-                    key: value for key, value in item.items()
-                }, separators=(',', ':'))
-                manifest_file.write(f"{json_item}\n")
-        self._manifest.is_created = True
+    def _write_base_information(self, file):
+        base_info = {
+            'version': self._manifest.VERSION,
+            'type': self._manifest.TYPE,
+        }
+        for key, value in base_info.items():
+            json_line = json.dumps({key: value}, separators=(',', ':'))
+            file.write(f'{json_line}\n')
+
+    def _write_core_part(self, file, obj, _tqdm):
+        iterable_obj = obj if _tqdm is None else \
+            _tqdm(obj, desc="Manifest creating",
+                  total=None if not hasattr(obj, '__len__') else len(obj))
+        for image_properties in iterable_obj:
+            json_line = json.dumps({
+                key: value for key, value in image_properties.items()
+            }, separators=(',', ':'))
+            file.write(f"{json_line}\n")
+
+    @_set_index
+    def create(self, content=None, _tqdm=None):
+        """ Creating and saving a manifest file for the specialized dataset"""
+        with open(self._manifest.path, 'w') as manifest_file:
+            self._write_base_information(manifest_file)
+            obj = content if content else self._reader
+            self._write_core_part(manifest_file, obj, _tqdm)
 
     def partial_update(self, number, properties):
         pass
-
-    @staticmethod
-    def prepare_meta(sources, **kwargs):
-        meta_info = DatasetImagesReader(sources=sources, **kwargs)
-        meta_info.create()
-        return meta_info
 
     @property
     def data(self):
