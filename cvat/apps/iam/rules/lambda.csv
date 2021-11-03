@@ -1,9 +1,6 @@
-Scope,Resource,Context,Ownership,Limit,Method,URL,Group,Membership,[No Role],Worker,User,Business,Admin,Worker,Supervisor,Maintainer,Owner,Comment
-LIST,Lambda function,N/A,N/A,,GET,/lambda/functions,None,N/A,x,x,x,x,x,,,,,
-VIEW,Lambda function,N/A,N/A,,GET,/lambda/functions/{func_id},None,N/A,x,x,x,x,x,,,,,
-CALL_ONLINE,Lambda function,N/A,N/A,,POST,/lambda/functions/{func_id},Worker,N/A,,x,x,x,x,,,,,Need to check that the user has access to the job
-CALL_OFFLINE,Lambda function,N/A,N/A,,POST,/lambda/requests,Business,N/A,,,,x,x,,,,,"Need to check that the user can annotate the job, task, project."
-CALL_OFFLINE,Lambda function,N/A,N/A,,GET,"/lambda/requests/{id}, /lambda/requests",Business,N/A,,,,x,x,,,,,"Need to check that the user can annotate the job, task, project."
-Call online for a job,"(scope = call online, resource = lambda function) && (scope = View data, resource = Job, Context, Ownership)",,,,,,,,,,,,,,,,,
-Call offline for a job,"(scope = call offline, resource = lambda function) && (scope = View data, resource = Job, Context, Ownership) && (scope = Update annotations, resource = Job, Context, Ownership)",,,,,,,,,,,,,,,,,
-Call offline for a task,"(scope = call offline, resource = lambda function) && (scope = View data, resource = Task, Context, Ownership) && (scope = Update annotations, resource = Task, Context, Ownership)",,,,,,,,,,,,,,,,,
+Scope,Resource,Context,Ownership,Limit,Method,URL,Privilege,Membership
+list,N/A,N/A,N/A,,GET,/lambda/functions,None,N/A
+view,LambdaFunction,N/A,N/A,,GET,/lambda/functions/{func_id},None,N/A
+call:online,"LambdaFunction, Job",N/A,N/A,,POST,/lambda/functions/{func_id},Worker,N/A
+call:offline,"LambdaFunction, Task",N/A,N/A,,POST,/lambda/requests,Business,N/A
+call:offline,"LambdaFunction, Task",N/A,N/A,,GET,"/lambda/requests/{id}, /lambda/requests",Business,N/A

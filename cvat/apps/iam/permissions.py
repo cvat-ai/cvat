@@ -11,7 +11,7 @@ from django.db.models import Q
 from rest_framework.permissions import BasePermission
 
 from cvat.apps.organizations.models import Membership, Organization
-from cvat.apps.engine.models import Project
+from cvat.apps.engine.models import Project, Task
 
 class OpenPolicyAgentPermission:
     def __init__(self, request, view, obj):
@@ -310,6 +310,11 @@ class LambdaPermission(OpenPolicyAgentPermission):
             self = cls(request, view, obj)
             permissions.append(self)
 
+            task_id = request.data.get('task')
+            if task_id:
+                perm = TaskPermission.create_view_data(request, task_id)
+                permissions.append(perm)
+
         return permissions
 
     def __init__(self, request, view, obj):
@@ -521,6 +526,12 @@ class TaskPermission(OpenPolicyAgentPermission):
     def create_list(cls, request):
         view = namedtuple('View', ['action'])(action='list')
         return cls('list', request, view)
+
+    @classmethod
+    def create_view_data(cls, request, task_id):
+        obj = Task.objects.get(id=task_id)
+        view = namedtuple('View', ['action'])(action='data')
+        return cls('view:data', request, view, obj)
 
     def __init__(self, scope, request, view, obj=None):
         super().__init__(request, view, obj)
