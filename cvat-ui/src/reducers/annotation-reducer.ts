@@ -13,9 +13,9 @@ import {
     AnnotationState,
     ContextMenuType,
     DimensionType,
+    JobStage,
     ObjectType,
     ShapeType,
-    TaskStatus,
     Workspace,
 } from './interfaces';
 
@@ -157,7 +157,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 maxZ,
             } = action.payload;
 
-            const isReview = job.status === TaskStatus.REVIEW;
+            const isReview = job.stage === JobStage.REVIEW;
             let workspaceSelected = Workspace.STANDARD;
             let activeShapeType = ShapeType.RECTANGLE;
 

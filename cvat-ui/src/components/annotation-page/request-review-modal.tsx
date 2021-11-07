@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -12,7 +12,7 @@ import Modal from 'antd/lib/modal';
 import { Row, Col } from 'antd/lib/grid';
 
 import UserSelector, { User } from 'components/task-page/user-selector';
-import { CombinedState, TaskStatus } from 'reducers/interfaces';
+import { CombinedState, JobStage } from 'reducers/interfaces';
 import { switchRequestReviewDialog } from 'actions/annotation-actions';
 import { updateJobAsync } from 'actions/tasks-actions';
 
@@ -21,11 +21,11 @@ export default function RequestReviewModal(): JSX.Element | null {
     const history = useHistory();
     const isVisible = useSelector((state: CombinedState): boolean => state.annotation.requestReviewDialogVisible);
     const job = useSelector((state: CombinedState): any => state.annotation.job.instance);
-    const [reviewer, setReviewer] = useState<User | null>(job.reviewer ? job.reviewer : null);
+    const [assignee, setAssignee] = useState<User | null>(job.assignee ? job.assignee : null);
     const close = (): AnyAction => dispatch(switchRequestReviewDialog(false));
     const submitAnnotations = (): void => {
-        job.reviewer = reviewer;
-        job.status = TaskStatus.REVIEW;
+        job.assignee = assignee;
+        job.stage = JobStage.REVIEW;
         dispatch(updateJobAsync(job));
         history.push(`/tasks/${job.task.id}`);
     };
@@ -45,7 +45,7 @@ export default function RequestReviewModal(): JSX.Element | null {
         >
             <Row justify='start'>
                 <Col>
-                    <Title level={4}>Assign a user who is responsible for review</Title>
+                    <Title level={4}>Assign a user who will be responsible for review</Title>
                 </Col>
             </Row>
             <Row align='middle' justify='start'>
@@ -53,7 +53,7 @@ export default function RequestReviewModal(): JSX.Element | null {
                     <Text type='secondary'>Reviewer: </Text>
                 </Col>
                 <Col offset={1}>
-                    <UserSelector value={reviewer} onSelect={setReviewer} />
+                    <UserSelector value={assignee} onSelect={setAssignee} />
                 </Col>
             </Row>
             <Row justify='start'>

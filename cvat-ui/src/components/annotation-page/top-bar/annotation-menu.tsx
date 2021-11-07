@@ -56,7 +56,7 @@ export default function AnnotationMenuComponent(props: Props): JSX.Element {
         saveAnnotations,
     } = props;
 
-    const jobStatus = jobInstance.status;
+    const jobStage = jobInstance.stage;
     const taskID = jobInstance.task.id;
 
     function onClickMenuWrapper(params: MenuInfo): void {
@@ -146,8 +146,8 @@ export default function AnnotationMenuComponent(props: Props): JSX.Element {
             checkUnsavedChanges(params);
         } else if (params.key === Actions.FINISH_JOB) {
             Modal.confirm({
-                title: 'The job status is going to be switched',
-                content: 'Status will be changed to "completed". Would you like to continue?',
+                title: 'The job stage is going to be switched',
+                content: 'Stage will be changed to "acceptance". Would you like to continue?',
                 okText: 'Continue',
                 cancelText: 'Cancel',
                 className: 'cvat-modal-content-finish-job',
@@ -157,8 +157,8 @@ export default function AnnotationMenuComponent(props: Props): JSX.Element {
             });
         } else if (params.key === Actions.RENEW_JOB) {
             Modal.confirm({
-                title: 'The job status is going to be switched',
-                content: 'Status will be changed to "annotations". Would you like to continue?',
+                title: 'The job stage is going to be switched',
+                content: 'Stage will be changed to "in progress". Would you like to continue?',
                 okText: 'Continue',
                 cancelText: 'Cancel',
                 className: 'cvat-modal-content-renew-job',
@@ -205,12 +205,12 @@ export default function AnnotationMenuComponent(props: Props): JSX.Element {
                     Open the task
                 </a>
             </Menu.Item>
-            {jobStatus === 'annotation' && is2d && <Menu.Item key={Actions.REQUEST_REVIEW}>Request a review</Menu.Item>}
-            {jobStatus === 'annotation' && <Menu.Item key={Actions.FINISH_JOB}>Finish the job</Menu.Item>}
-            {jobStatus === 'validation' && isReviewer && (
+            {jobStage === 'annotation' && is2d && <Menu.Item key={Actions.REQUEST_REVIEW}>Request a review</Menu.Item>}
+            {jobStage === 'annotation' && <Menu.Item key={Actions.FINISH_JOB}>Finish the job</Menu.Item>}
+            {jobStage === 'validation' && isReviewer && (
                 <Menu.Item key={Actions.SUBMIT_REVIEW}>Submit the review</Menu.Item>
             )}
-            {jobStatus === 'completed' && <Menu.Item key={Actions.RENEW_JOB}>Renew the job</Menu.Item>}
+            {jobStage === 'acceptance' && <Menu.Item key={Actions.RENEW_JOB}>Renew the job</Menu.Item>}
         </Menu>
     );
 }

@@ -117,10 +117,10 @@
     }
 }
 
-.cvat-job-item-status {
+.cvat-job-item-stage {
     .cvat-job-annotation-color,
     .cvat-job-validation-color,
-    .cvat-job-completed-color {
+    .cvat-job-acceptance-color {
         span {
             margin-left: $grid-unit-size;
         }
@@ -141,7 +141,7 @@
     }
 }
 
-.cvat-job-completed-color {
+.cvat-job-acceptance-color {
     color: $completed-progress-color;
 }
 

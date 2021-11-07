@@ -267,6 +267,12 @@ export enum TaskStatus {
     COMPLETED = 'completed',
 }
 
+export enum JobStage {
+    ANNOTATION = 'annotation',
+    REVIEW = 'validation',
+    ACCEPTANCE = 'acceptance',
+}
+
 export enum RQStatus {
     unknown = 'unknown',
     queued = 'queued',

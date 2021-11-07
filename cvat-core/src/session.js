@@ -10,7 +10,7 @@
         getFrame, getRanges, getPreview, clear: clearFrames, getContextImage,
     } = require('./frames');
     const { ArgumentError, DataError } = require('./exceptions');
-    const { TaskStatus } = require('./enums');
+    const { JobStage, JobState } = require('./enums');
     const { Label } = require('./labels');
     const User = require('./user');
     const Issue = require('./issue');
@@ -707,19 +707,17 @@
             const data = {
                 id: undefined,
                 assignee: null,
-                reviewer: null,
-                status: undefined,
+                stage: undefined,
+                state: undefined,
                 start_frame: undefined,
                 stop_frame: undefined,
                 task: undefined,
             };
 
-            // FIXME: workaround of an absent field
-            initialData.reviewer = null;
             const updatedFields = new FieldUpdateTrigger({
                 assignee: false,
-                reviewer: false,
-                status: false,
+                stage: false,
+                state: false,
             });
 
             for (const property in data) {
@@ -735,7 +733,6 @@
             }
 
             if (data.assignee) data.assignee = new User(data.assignee);
-            if (data.reviewer) data.reviewer = new User(data.reviewer);
 
             Object.defineProperties(
                 this,
@@ -769,37 +766,19 @@
                         },
                     },
                     /**
-                     * Instance of a user who is responsible for review
-                     * @name reviewer
-                     * @type {module:API.cvat.classes.User}
+                     * @name stage
+                     * @type {module:API.cvat.enums.JobStage}
                      * @memberof module:API.cvat.classes.Job
                      * @instance
                      * @throws {module:API.cvat.exceptions.ArgumentError}
                      */
-                    reviewer: {
-                        get: () => data.reviewer,
-                        set: (reviewer) => {
-                            if (reviewer !== null && !(reviewer instanceof User)) {
-                                throw new ArgumentError('Value must be a user instance');
-                            }
-                            updatedFields.reviewer = true;
-                            data.reviewer = reviewer;
-                        },
-                    },
-                    /**
-                     * @name status
-                     * @type {module:API.cvat.enums.TaskStatus}
-                     * @memberof module:API.cvat.classes.Job
-                     * @instance
-                     * @throws {module:API.cvat.exceptions.ArgumentError}
-                     */
-                    status: {
-                        get: () => data.status,
-                        set: (status) => {
-                            const type = TaskStatus;
+                    stage: {
+                        get: () => data.stage,
+                        set: (stage) => {
+                            const type = JobStage;
                             let valueInEnum = false;
                             for (const value in type) {
-                                if (type[value] === status) {
+                                if (type[value] === stage) {
                                     valueInEnum = true;
                                     break;
                                 }
@@ -807,12 +786,41 @@
 
                             if (!valueInEnum) {
                                 throw new ArgumentError(
-                                    'Value must be a value from the enumeration cvat.enums.TaskStatus',
+                                    'Value must be a value from the enumeration cvat.enums.JobStage',
                                 );
                             }
 
-                            updatedFields.status = true;
-                            data.status = status;
+                            updatedFields.stage = true;
+                            data.stage = stage;
+                        },
+                    },
+                    /**
+                     * @name state
+                     * @type {module:API.cvat.enums.JobState}
+                     * @memberof module:API.cvat.classes.Job
+                     * @instance
+                     * @throws {module:API.cvat.exceptions.ArgumentError}
+                     */
+                    state: {
+                        get: () => data.state,
+                        set: (state) => {
+                            const type = JobState;
+                            let valueInEnum = false;
+                            for (const value in type) {
+                                if (type[value] === state) {
+                                    valueInEnum = true;
+                                    break;
+                                }
+                            }
+
+                            if (!valueInEnum) {
+                                throw new ArgumentError(
+                                    'Value must be a value from the enumeration cvat.enums.JobState',
+                                );
+                            }
+
+                            updatedFields.state = true;
+                            data.state = state;
                         },
                     },
                     /**
@@ -898,7 +906,7 @@
         }
 
         /**
-         * Method updates job data like status or assignee
+         * Method updates job data like state, stage or assignee
          * @method save
          * @memberof module:API.cvat.classes.Job
          * @readonly
@@ -1029,8 +1037,8 @@
                                 url: job.url,
                                 id: job.id,
                                 assignee: job.assignee,
-                                reviewer: job.reviewer,
-                                status: job.status,
+                                state: job.state,
+                                stage: job.stage,
                                 start_frame: segment.start_frame,
                                 stop_frame: segment.stop_frame,
                                 task: this,
@@ -1701,14 +1709,14 @@
             for (const [field, isUpdated] of Object.entries(this.__updatedFields)) {
                 if (isUpdated) {
                     switch (field) {
-                        case 'status':
-                            jobData.status = this.status;
+                        case 'state':
+                            jobData.state = this.state;
+                            break;
+                        case 'stage':
+                            jobData.stage = this.stage;
                             break;
                         case 'assignee':
                             jobData.assignee_id = this.assignee ? this.assignee.id : null;
-                            break;
-                        case 'reviewer':
-                            jobData.reviewer_id = this.reviewer ? this.reviewer.id : null;
                             break;
                         default:
                             break;

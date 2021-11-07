@@ -154,16 +154,16 @@ function JobListComponent(props: Props & RouteComponentProps): JSX.Element {
             className: 'cvat-text-color cvat-job-item-frames',
         },
         {
-            title: 'Status',
-            dataIndex: 'status',
-            key: 'status',
-            className: 'cvat-job-item-status',
+            title: 'Stage',
+            dataIndex: 'stage',
+            key: 'stage',
+            className: 'cvat-job-item-stage',
             render: (jobInstance: any): JSX.Element => {
-                const { status } = jobInstance;
+                const { stage } = jobInstance;
                 let progressColor = null;
-                if (status === 'completed') {
-                    progressColor = 'cvat-job-completed-color';
-                } else if (status === 'validation') {
+                if (stage === 'acceptance') {
+                    progressColor = 'cvat-job-acceptance-color';
+                } else if (stage === 'validation') {
                     progressColor = 'cvat-job-validation-color';
                 } else {
                     progressColor = 'cvat-job-annotation-color';
@@ -171,20 +171,42 @@ function JobListComponent(props: Props & RouteComponentProps): JSX.Element {
 
                 return (
                     <Text strong className={progressColor}>
-                        {status}
+                        {stage}
                         <CVATTooltip title={<ReviewSummaryComponent jobInstance={jobInstance} />}>
                             <QuestionCircleOutlined />
                         </CVATTooltip>
                     </Text>
                 );
             },
-            sorter: sorter('status.status'),
+            sorter: sorter('stage.stage'),
             filters: [
                 { text: 'annotation', value: 'annotation' },
                 { text: 'validation', value: 'validation' },
-                { text: 'completed', value: 'completed' },
+                { text: 'acceptance', value: 'acceptance' },
             ],
-            onFilter: (value: string | number | boolean, record: any) => record.status.status === value,
+            onFilter: (value: string | number | boolean, record: any) => record.stage.stage === value,
+        },
+        {
+            title: 'State',
+            dataIndex: 'state',
+            key: 'state',
+            className: 'cvat-job-item-state',
+            render: (jobInstance: any): JSX.Element => {
+                const { state } = jobInstance;
+                return (
+                    <Text type='secondary'>
+                        {state}
+                    </Text>
+                );
+            },
+            sorter: sorter('state.state'),
+            filters: [
+                { text: 'new', value: 'new' },
+                { text: 'in progress', value: 'in progress' },
+                { text: 'completed', value: 'completed' },
+                { text: 'rejected', value: 'rejected' },
+            ],
+            onFilter: (value: string | number | boolean, record: any) => record.state.state === value,
         },
         {
             title: 'Started on',
@@ -208,7 +230,6 @@ function JobListComponent(props: Props & RouteComponentProps): JSX.Element {
                     className='cvat-job-assignee-selector'
                     value={jobInstance.assignee}
                     onSelect={(value: User | null): void => {
-                        // eslint-disable-next-line
                         jobInstance.assignee = value;
                         onJobUpdate(jobInstance);
                     }}
@@ -216,35 +237,15 @@ function JobListComponent(props: Props & RouteComponentProps): JSX.Element {
             ),
             sorter: sorter('assignee.assignee.username'),
             filters: collectUsers('assignee'),
-            onFilter: (value: string | number | boolean, record: any) =>
-                (record.assignee.assignee?.username || false) === value,
-        },
-        {
-            title: 'Reviewer',
-            dataIndex: 'reviewer',
-            key: 'reviewer',
-            className: 'cvat-job-item-reviewer',
-            render: (jobInstance: any): JSX.Element => (
-                <UserSelector
-                    className='cvat-job-reviewer-selector'
-                    value={jobInstance.reviewer}
-                    onSelect={(value: User | null): void => {
-                        // eslint-disable-next-line
-                        jobInstance.reviewer = value;
-                        onJobUpdate(jobInstance);
-                    }}
-                />
-            ),
-            sorter: sorter('reviewer.reviewer.username'),
-            filters: collectUsers('reviewer'),
-            onFilter: (value: string | number | boolean, record: any) =>
-                (record.reviewer.reviewer?.username || false) === value,
+            onFilter: (value: string | number | boolean, record: any) => (
+                record.assignee.assignee?.username || false
+            ) === value,
         },
     ];
 
     let completed = 0;
     const data = jobs.reduce((acc: any[], job: any) => {
-        if (job.status === 'completed') {
+        if (job.stage === 'acceptance') {
             completed++;
         }
 
@@ -255,11 +256,11 @@ function JobListComponent(props: Props & RouteComponentProps): JSX.Element {
             key: job.id,
             job: job.id,
             frames: `${job.startFrame}-${job.stopFrame}`,
-            status: job,
+            state: job,
+            stage: job,
             started: `${created.format('MMMM Do YYYY HH:MM')}`,
             duration: `${moment.duration(now.diff(created)).humanize()}`,
             assignee: job,
-            reviewer: job,
         });
 
         return acc;
@@ -290,10 +291,6 @@ function JobListComponent(props: Props & RouteComponentProps): JSX.Element {
 
                                     if (job.assignee) {
                                         serialized += `\t assigned to "${job.assignee.username}"`;
-                                    }
-
-                                    if (job.reviewer) {
-                                        serialized += `\t reviewed by "${job.reviewer.username}"`;
                                     }
 
                                     serialized += '\n';

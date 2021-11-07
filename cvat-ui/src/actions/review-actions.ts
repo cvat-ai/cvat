@@ -143,7 +143,7 @@ export const reopenIssueAsync = (id: number): ThunkAction => async (dispatch, ge
     }
 };
 
-export const submitReviewAsync = (assignee: any | null, onFinish: CallableFunction):
+export const submitReviewAsync = (newAssignee: any | null, newJobState: string, onFinish: CallableFunction):
 ThunkAction => async (dispatch, getState) => {
     const state = getState();
     const {
@@ -155,8 +155,8 @@ ThunkAction => async (dispatch, getState) => {
     try {
         dispatch(reviewActions.submitReview(jobInstance.id));
 
-        // TODO: change also status/stage somehow
-        jobInstance.assignee = assignee;
+        jobInstance.assignee = newAssignee;
+        jobInstance.state = newJobState;
         await jobInstance.save();
 
         const [task] = await cvat.tasks.get({ id: jobInstance.task.id });

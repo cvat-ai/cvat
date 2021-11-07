@@ -24,6 +24,7 @@ import {
     Task,
     Workspace,
 } from 'reducers/interfaces';
+import { updateJobAsync } from './tasks-actions';
 
 interface AnnotationsParameters {
     filters: string[];
@@ -1116,6 +1117,11 @@ export function saveAnnotationsAsync(sessionInstance: any, afterSave?: () => voi
             const states = await sessionInstance.annotations.get(frame, showAllInterpolationTracks, filters);
             if (typeof afterSave === 'function') {
                 afterSave();
+            }
+
+            if (sessionInstance instanceof cvat.classes.Job && sessionInstance.state === cvat.enums.JobState.NEW) {
+                sessionInstance.state = cvat.enums.JobState.IN_PROGRESS;
+                updateJobAsync(sessionInstance);
             }
 
             dispatch({

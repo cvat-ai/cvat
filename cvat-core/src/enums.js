@@ -34,6 +34,40 @@
     });
 
     /**
+     * Job stages
+     * @enum {string}
+     * @name JobStage
+     * @memberof module:API.cvat.enums
+     * @property {string} ANNOTATION 'annotation'
+     * @property {string} VALIDATION 'validation'
+     * @property {string} ACCEPTANCE 'acceptance'
+     * @readonly
+     */
+    const JobStage = Object.freeze({
+        ANNOTATION: 'annotation',
+        VALIDATION: 'validation',
+        ACCEPTANCE: 'acceptance',
+    });
+
+    /**
+     * Job states
+     * @enum {string}
+     * @name JobState
+     * @memberof module:API.cvat.enums
+     * @property {string} NEW 'new'
+     * @property {string} IN_PROGRESS 'in progress'
+     * @property {string} COMPLETED 'completed'
+     * @property {string} REJECTED 'rejected'
+     * @readonly
+     */
+    const JobState = Object.freeze({
+        NEW: 'new',
+        IN_PROGRESS: 'in progress',
+        COMPLETED: 'completed',
+        REJECTED: 'rejected',
+    });
+
+    /**
      * Task dimension
      * @enum
      * @name DimensionType
@@ -368,6 +402,8 @@
     module.exports = {
         ShareFileType,
         TaskStatus,
+        JobStage,
+        JobState,
         TaskMode,
         AttributeType,
         ObjectType,

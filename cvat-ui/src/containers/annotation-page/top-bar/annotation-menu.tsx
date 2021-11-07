@@ -8,7 +8,7 @@ import { connect } from 'react-redux';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { MenuInfo } from 'rc-menu/lib/interface';
 
-import { CombinedState, TaskStatus } from 'reducers/interfaces';
+import { CombinedState, JobStage } from 'reducers/interfaces';
 import AnnotationMenuComponent, { Actions } from 'components/annotation-page/top-bar/annotation-menu';
 import { updateJobAsync } from 'actions/tasks-actions';
 import {
@@ -133,11 +133,11 @@ function AnnotationMenuContainer(props: Props): JSX.Element {
         } else if (action === Actions.SUBMIT_REVIEW) {
             switchSubmitReviewDialog(true);
         } else if (action === Actions.RENEW_JOB) {
-            jobInstance.status = TaskStatus.ANNOTATION;
+            jobInstance.stage = JobStage.ANNOTATION;
             updateJob(jobInstance);
             history.push(`/tasks/${jobInstance.task.id}`);
         } else if (action === Actions.FINISH_JOB) {
-            jobInstance.status = TaskStatus.COMPLETED;
+            jobInstance.stage = JobStage.ACCEPTANCE;
             updateJob(jobInstance);
             history.push(`/tasks/${jobInstance.task.id}`);
         } else if (action === Actions.OPEN_TASK) {
