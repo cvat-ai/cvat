@@ -143,7 +143,8 @@ export const reopenIssueAsync = (id: number): ThunkAction => async (dispatch, ge
     }
 };
 
-export const submitReviewAsync = (assignee: any | null): ThunkAction => async (dispatch, getState) => {
+export const submitReviewAsync = (assignee: any | null, onFinish: CallableFunction):
+ThunkAction => async (dispatch, getState) => {
     const state = getState();
     const {
         annotation: {
@@ -161,6 +162,7 @@ export const submitReviewAsync = (assignee: any | null): ThunkAction => async (d
         const [task] = await cvat.tasks.get({ id: jobInstance.task.id });
         dispatch(updateTaskSuccess(task, jobInstance.task.id));
         dispatch(reviewActions.submitReviewSuccess());
+        onFinish();
     } catch (error) {
         dispatch(reviewActions.submitReviewFailed(error, jobInstance.id));
     }

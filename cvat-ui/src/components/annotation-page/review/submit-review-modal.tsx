@@ -27,7 +27,7 @@ export default function SubmitReviewModal(): JSX.Element | null {
 
     const close = (): AnyAction => dispatch(switchSubmitReviewDialog(false));
     const submitReview = (): void => {
-        dispatch(submitReviewAsync(assignee));
+        dispatch(submitReviewAsync(assignee, () => window.location.reload()));
     };
 
     if (!isVisible) {
