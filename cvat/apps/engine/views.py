@@ -56,7 +56,7 @@ from cvat.apps.engine.models import CloudStorage as CloudStorageModel
 from cvat.apps.engine.serializers import (
     AboutSerializer, AnnotationFileSerializer, BasicUserSerializer,
     DataMetaSerializer, DataSerializer, ExceptionSerializer,
-    FileInfoSerializer, JobSerializer, LabeledDataSerializer,
+    FileInfoSerializer, JobReadSerializer, JobWriteSerializer, LabeledDataSerializer,
     LogEventSerializer, ProjectSerializer, ProjectSearchSerializer, ProjectWithoutTaskSerializer,
     RqStatusSerializer, TaskSerializer, UserSerializer, PluginsSerializer, IssueSerializer,
     CombinedIssueSerializer, CommentSerializer, CloudStorageSerializer, BaseCloudStorageSerializer,
@@ -68,7 +68,7 @@ from cvat.apps.engine.backup import import_task
 from . import models, task
 from .log import clogger, slogger
 from cvat.apps.iam.permissions import (CloudStoragePermission, CommentPermission,
-    IssuePermission, JobPermission, ProjectPermission, ServerPermission,
+    IssuePermission, JobPermission, ProjectPermission,
     TaskPermission, UserPermission)
 
 class ServerViewSet(viewsets.ViewSet):
@@ -271,6 +271,8 @@ class ProjectViewSet(viewsets.ModelViewSet):
     def tasks(self, request, pk):
         self.get_object() # force to call check_object_permissions
         queryset = Task.objects.filter(project_id=pk).order_by('-id')
+        perm = TaskPermission.create_list(request)
+        queryset = perm.filter(queryset)
 
         page = self.paginate_queryset(queryset)
         if page is not None:
@@ -523,9 +525,23 @@ class TaskViewSet(viewsets.ModelViewSet):
             raise serializers.ValidationError(
                 "Unexpected action specified for the request")
 
+    def perform_update(self, serializer):
+        instance = serializer.instance
+        project_id = instance.project_id
+        updated_instance = serializer.save()
+        if project_id != updated_instance.project_id:
+            if project_id is not None:
+                Project.objects.get(id=project_id).save()
+            if updated_instance.project_id is not None:
+                Project.objects.get(id=updated_instance.project_id).save()
+
+
     def perform_create(self, serializer):
-        serializer.save(owner=self.request.user,
+        instance = serializer.save(owner=self.request.user,
             organization=self.request.iam_context['organization'])
+        if instance.project:
+            db_project = instance.project
+            db_project.save()
 
     def perform_destroy(self, instance):
         task_dirname = instance.get_task_dirname()
@@ -534,14 +550,19 @@ class TaskViewSet(viewsets.ModelViewSet):
         if instance.data and not instance.data.tasks.all():
             shutil.rmtree(instance.data.get_data_dirname(), ignore_errors=True)
             instance.data.delete()
+        if instance.project:
+            db_project = instance.project
+            db_project.save()
 
     @swagger_auto_schema(method='get', operation_summary='Returns a list of jobs for a specific task',
-        responses={'200': JobSerializer(many=True)})
-    @action(detail=True, methods=['GET'], serializer_class=JobSerializer)
+        responses={'200': JobReadSerializer(many=True)})
+    @action(detail=True, methods=['GET'], serializer_class=JobReadSerializer)
     def jobs(self, request, pk):
         self.get_object() # force to call check_object_permissions
         queryset = Job.objects.filter(segment__task_id=pk)
-        serializer = JobSerializer(queryset, many=True,
+        perm = JobPermission.create_list(request)
+        queryset = perm.filter(queryset)
+        serializer = JobReadSerializer(queryset, many=True,
             context={"request": request})
 
         return Response(serializer.data)
@@ -852,7 +873,17 @@ class TaskViewSet(viewsets.ModelViewSet):
 class JobViewSet(viewsets.GenericViewSet,
     mixins.RetrieveModelMixin, mixins.UpdateModelMixin):
     queryset = Job.objects.all().order_by('id')
-    serializer_class = JobSerializer
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        perm = JobPermission.create_list(self.request)
+        return perm.filter(queryset)
+
+    def get_serializer_class(self):
+        if self.request.method in SAFE_METHODS:
+            return JobReadSerializer
+        else:
+            return JobWriteSerializer
 
     @swagger_auto_schema(method='get', operation_summary='Method returns annotations for a specific job')
     @swagger_auto_schema(method='put', operation_summary='Method performs an update of all annotations in a specific job')

@@ -15,9 +15,7 @@ import cvat.apps.dataset_manager as dm
 from cvat.apps.engine.frame_provider import FrameProvider
 from cvat.apps.engine.models import Task as TaskModel
 from cvat.apps.engine.serializers import LabeledDataSerializer
-from rest_framework.permissions import IsAuthenticated
 from cvat.apps.engine.models import ShapeType, SourceType
-from cvat.apps.iam.permissions import LambdaPermission
 
 class LambdaType(Enum):
     DETECTOR = "detector"
@@ -559,9 +557,6 @@ class FunctionViewSet(viewsets.ViewSet):
         try:
             task_id = request.data['task']
             db_task = TaskModel.objects.get(pk=task_id)
-            # Check that the user has enough permissions to read
-            # data from the task.
-            self.check_object_permissions(self.request, db_task)
         except (KeyError, ObjectDoesNotExist) as err:
             raise ValidationError(
                 '`{}` lambda function was run '.format(func_id) +
@@ -589,12 +584,7 @@ class RequestViewSet(viewsets.ViewSet):
             cleanup = request.data.get('cleanup', False)
             mapping = request.data.get('mapping')
             max_distance = request.data.get('max_distance')
-
-            db_task = TaskModel.objects.get(pk=task)
-            # Check that the user has enough permissions to modify
-            # the task.
-            self.check_object_permissions(self.request, db_task)
-        except (KeyError, ObjectDoesNotExist) as err:
+        except KeyError as err:
             raise ValidationError(
                 '`{}` lambda function was run '.format(request.data.get('function', 'undefined')) +
                 'with wrong arguments ({})'.format(str(err)),

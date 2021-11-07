@@ -42,6 +42,8 @@ DELETE_ANNOTATIONS := "delete:annotations"
 VIEW_DATA := "view:data"
 UPLOAD_DATA := "upload:data"
 IMPORT_ANNOTATIONS := "import:annotations"
+UPDATE_STATE := "update:state"
+UPDATE_STAGE := "update:stage"
 
 
 get_priority(privilege) = priority {

@@ -2,7 +2,7 @@ package lambda
 import data.utils
 
 # input: {
-#     "scope": <"LIST"|"VIEW"|"CALL_ONLINE"|"CALL_OFFLINE"> or null,
+#     "scope": <"list"|"view"|"call:online"|"call:offline"> or null,
 #     "auth": {
 #         "user": {
 #             "id": <num>,
@@ -14,12 +14,11 @@ import data.utils
 #                 "id": <num>
 #             },
 #             "user": {
-#                 "role": <"maintainer"|"supervisor"|"worker"> or null
+#                 "role": <"owner"|"maintainer"|"supervisor"|"worker"> or null
 #             }
 #         } or null,
 #     }
 # }
-
 
 default allow = false
 allow {
@@ -39,7 +38,6 @@ allow {
     utils.has_perm(utils.WORKER)
 }
 
-# Business can call a lambda function for own jobs, tasks, and projects
 allow {
     input.scope == utils.CALL_OFFLINE
     utils.has_perm(utils.BUSINESS)

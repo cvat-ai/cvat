@@ -46,6 +46,31 @@ class StatusChoice(str, Enum):
     def __str__(self):
         return self.value
 
+class StageChoice(str, Enum):
+    ANNOTATION = 'annotation'
+    VALIDATION = 'validation'
+    ACCEPTANCE = 'acceptance'
+
+    @classmethod
+    def choices(cls):
+        return tuple((x.value, x.name) for x in cls)
+
+    def __str__(self):
+        return self.value
+
+class StateChoice(str, Enum):
+    NEW = 'new'
+    IN_PROGRESS = 'in progress'
+    COMPLETED = 'completed'
+    REJECTED = 'rejected'
+
+    @classmethod
+    def choices(cls):
+        return tuple((x.value, x.name) for x in cls)
+
+    def __str__(self):
+        return self.value
+
 class DataChoice(str, Enum):
     VIDEO = 'video'
     IMAGESET = 'imageset'
@@ -190,7 +215,7 @@ class Project(models.Model):
                                  on_delete=models.SET_NULL, related_name="+")
     bug_tracker = models.CharField(max_length=2000, blank=True, default="")
     created_date = models.DateTimeField(auto_now_add=True)
-    updated_date = models.DateTimeField(auto_now_add=True)
+    updated_date = models.DateTimeField(auto_now=True)
     status = models.CharField(max_length=32, choices=StatusChoice.choices(),
                               default=StatusChoice.ANNOTATION)
     organization = models.ForeignKey(Organization, null=True, default=None,
@@ -333,9 +358,16 @@ class Segment(models.Model):
 class Job(models.Model):
     segment = models.ForeignKey(Segment, on_delete=models.CASCADE)
     assignee = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL)
-    reviewer = models.ForeignKey(User, null=True, blank=True, related_name='review_job_set', on_delete=models.SET_NULL)
+    # TODO: it has to be deleted in Job, Task, Project and replaced by (stage, state)
+    # The stage field cannot be changed by an assignee, but state field can be. For
+    # now status is read only and it will be updated by (stage, state). Thus we don't
+    # need to update Task and Project (all should work as previously).
     status = models.CharField(max_length=32, choices=StatusChoice.choices(),
         default=StatusChoice.ANNOTATION)
+    stage = models.CharField(max_length=32, choices=StageChoice.choices(),
+        default=StageChoice.ANNOTATION)
+    state = models.CharField(max_length=32, choices=StateChoice.choices(),
+        default=StateChoice.NEW)
 
     class Meta:
         default_permissions = ()

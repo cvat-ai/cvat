@@ -14,11 +14,11 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='job',
             name='status',
-            field=models.CharField(default=cvat.apps.engine.models.StatusChoice('annotation'), max_length=32),
+            field=models.CharField(default='annotation', max_length=32),
         ),
         migrations.AlterField(
             model_name='task',
             name='status',
-            field=models.CharField(default=cvat.apps.engine.models.StatusChoice('annotation'), max_length=32),
+            field=models.CharField(default='annotation', max_length=32),
         ),
     ]
