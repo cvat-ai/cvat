@@ -424,18 +424,6 @@ class SourceType(str, Enum):
     def __str__(self):
         return self.value
 
-class ReviewStatus(str, Enum):
-    ACCEPTED = 'accepted'
-    REJECTED = 'rejected'
-    REVIEW_FURTHER = 'review_further'
-
-    @classmethod
-    def choices(self):
-        return tuple((x.value, x.name) for x in self)
-
-    def __str__(self):
-        return self.value
-
 class Annotation(models.Model):
     id = models.BigAutoField(primary_key=True)
     job = models.ForeignKey(Job, on_delete=models.CASCADE)
@@ -521,18 +509,10 @@ class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     rating = models.FloatField(default=0.0)
 
-class Review(models.Model):
-    job = models.ForeignKey(Job, on_delete=models.CASCADE)
-    reviewer = models.ForeignKey(User, null=True, blank=True, related_name='reviews', on_delete=models.SET_NULL)
-    assignee = models.ForeignKey(User, null=True, blank=True, related_name='reviewed', on_delete=models.SET_NULL)
-    estimated_quality = models.FloatField()
-    status = models.CharField(max_length=16, choices=ReviewStatus.choices())
-
 class Issue(models.Model):
     frame = models.PositiveIntegerField()
     position = FloatArrayField()
     job = models.ForeignKey(Job, on_delete=models.CASCADE)
-    review = models.ForeignKey(Review, null=True, blank=True, on_delete=models.SET_NULL)
     owner = models.ForeignKey(User, null=True, blank=True, related_name='issues', on_delete=models.SET_NULL)
     resolver = models.ForeignKey(User, null=True, blank=True, related_name='resolved_issues', on_delete=models.SET_NULL)
     created_date = models.DateTimeField(auto_now_add=True)

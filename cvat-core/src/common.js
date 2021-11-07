@@ -97,13 +97,6 @@
         );
     }
 
-    function negativeIDGenerator() {
-        const value = negativeIDGenerator.start;
-        negativeIDGenerator.start -= 1;
-        return value;
-    }
-    negativeIDGenerator.start = -1;
-
     class FieldUpdateTrigger {
         constructor(initialFields) {
             const data = { ...initialFields };
@@ -142,7 +135,6 @@
         isString,
         checkFilter,
         checkObjectType,
-        negativeIDGenerator,
         checkExclusiveFields,
         camelToSnake,
         FieldUpdateTrigger,

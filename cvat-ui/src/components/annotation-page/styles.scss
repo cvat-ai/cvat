@@ -460,9 +460,11 @@ button.cvat-predictor-button {
 }
 
 .cvat-submit-review-dialog {
-    > .ant-modal-content > .ant-modal-body {
-        > div:nth-child(2) > div:nth-child(2) {
-            .ant-col {
+    .ant-modal-body {
+        > div.ant-row:nth-child(2) {
+            > .ant-col {
+                width: 100%;
+
                 > div:nth-child(2) {
                     margin-top: $grid-unit-size * 2;
                     margin-bottom: $grid-unit-size * 2;

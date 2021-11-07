@@ -20,10 +20,8 @@ export default function LabelsListComponent(): JSX.Element {
     const frame = useSelector((state: CombinedState): number => state.annotation.player.frame.number);
     const frameIssues = useSelector((state: CombinedState): any[] => state.review.frameIssues);
     const issues = useSelector((state: CombinedState): any[] => state.review.issues);
-    const activeReview = useSelector((state: CombinedState): any => state.review.activeReview);
     const issuesHidden = useSelector((state: CombinedState): any => state.review.issuesHidden);
-    const combinedIssues = activeReview ? issues.concat(activeReview.issues) : issues;
-    const frames = combinedIssues.map((issue: any): number => issue.frame).sort((a: number, b: number) => +a - +b);
+    const frames = issues.map((issue: any): number => issue.frame).sort((a: number, b: number) => +a - +b);
     const nearestLeft = frames.filter((_frame: number): boolean => _frame < frame).reverse()[0];
     const dinamicLeftProps: any = Number.isInteger(nearestLeft) ?
         {

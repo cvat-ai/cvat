@@ -48,22 +48,6 @@
     });
 
     /**
-     * Review statuses
-     * @enum {string}
-     * @name ReviewStatus
-     * @memberof module:API.cvat.enums
-     * @property {string} ACCEPTED 'accepted'
-     * @property {string} REJECTED 'rejected'
-     * @property {string} REVIEW_FURTHER 'review_further'
-     * @readonly
-     */
-    const ReviewStatus = Object.freeze({
-        ACCEPTED: 'accepted',
-        REJECTED: 'rejected',
-        REVIEW_FURTHER: 'review_further',
-    });
-
-    /**
      * List of RQ statuses
      * @enum {string}
      * @name RQStatus
@@ -384,7 +368,6 @@
     module.exports = {
         ShareFileType,
         TaskStatus,
-        ReviewStatus,
         TaskMode,
         AttributeType,
         ObjectType,

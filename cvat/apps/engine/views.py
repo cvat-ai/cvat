@@ -48,8 +48,8 @@ from cvat.apps.engine.frame_provider import FrameProvider
 from cvat.apps.engine.media_extractors import ImageListReader
 from cvat.apps.engine.mime_types import mimetypes
 from cvat.apps.engine.models import (
-    Job, StatusChoice, Task, Project, Review, Issue,
-    Comment, StorageMethodChoice, ReviewStatus, StorageChoice, Image,
+    Job, StatusChoice, Task, Project, Issue,
+    Comment, StorageMethodChoice, StorageChoice, Image,
     CredentialsTypeChoice, CloudProviderChoice
 )
 from cvat.apps.engine.models import CloudStorage as CloudStorageModel
@@ -58,9 +58,10 @@ from cvat.apps.engine.serializers import (
     DataMetaSerializer, DataSerializer, ExceptionSerializer,
     FileInfoSerializer, JobSerializer, LabeledDataSerializer,
     LogEventSerializer, ProjectSerializer, ProjectSearchSerializer, ProjectWithoutTaskSerializer,
-    RqStatusSerializer, TaskSerializer, UserSerializer, PluginsSerializer, ReviewSerializer,
-    CombinedReviewSerializer, IssueSerializer, CombinedIssueSerializer, CommentSerializer,
-    CloudStorageSerializer, BaseCloudStorageSerializer, TaskFileSerializer,)
+    RqStatusSerializer, TaskSerializer, UserSerializer, PluginsSerializer, IssueSerializer,
+    CombinedIssueSerializer, CommentSerializer, CloudStorageSerializer, BaseCloudStorageSerializer,
+    TaskFileSerializer,
+)
 from utils.dataset_manifest import ImageManifestManager
 from cvat.apps.engine.utils import av_scan_paths
 from cvat.apps.engine.backup import import_task
@@ -901,15 +902,23 @@ class JobViewSet(viewsets.GenericViewSet,
                     return Response(data=str(e), status=status.HTTP_400_BAD_REQUEST)
                 return Response(data)
 
-    @swagger_auto_schema(method='get', operation_summary='Method returns list of reviews for the job',
-        responses={'200': ReviewSerializer(many=True)}
+    @swagger_auto_schema(method='post', operation_summary='Method adds an issue to a job',
+        responses={'201': IssueSerializer()}
     )
-    @action(detail=True, methods=['GET'], serializer_class=ReviewSerializer)
-    def reviews(self, request, pk):
-        db_job = self.get_object()
-        queryset = db_job.review_set
-        serializer = ReviewSerializer(queryset, context={'request': request}, many=True)
-        return Response(serializer.data)
+    @action(detail=True, methods=['POST'], url_path='issues/create')
+    def create_issue(self, request, pk):
+        db_job = self.get_object()  # also checks object permission
+        data = request.data
+        data['job'] = db_job.id
+        data['owner_id'] = request.user.id
+        comment_set = data['comment_set']
+        for comment in comment_set:
+            comment['author_id'] = request.user.id
+
+        serializer = CombinedIssueSerializer(data=data, context={'request': request}, partial=True)
+        if serializer.is_valid(raise_exception=True):
+            serializer.save()
+        return Response(serializer.data, status.HTTP_201_CREATED)
 
     @swagger_auto_schema(method='get', operation_summary='Method returns list of issues for the job',
         responses={'200': CombinedIssueSerializer(many=True)}
@@ -921,72 +930,15 @@ class JobViewSet(viewsets.GenericViewSet,
         serializer = CombinedIssueSerializer(queryset, context={'request': request}, many=True)
         return Response(serializer.data)
 
-@method_decorator(name='create', decorator=swagger_auto_schema(operation_summary='Submit a review for a job'))
-@method_decorator(name='destroy', decorator=swagger_auto_schema(operation_summary='Method removes a review from a job'))
-class ReviewViewSet(viewsets.GenericViewSet, mixins.DestroyModelMixin, mixins.CreateModelMixin):
-    queryset = Review.objects.all().order_by('id')
-
-    def get_serializer_class(self):
-        if self.request.method == 'POST':
-            return CombinedReviewSerializer
-        else:
-            return ReviewSerializer
-
-    def get_permissions(self):
-        return super().get_permissions()
-
-    def create(self, request, *args, **kwargs):
-        job_id = request.data['job']
-        db_job = get_object_or_404(Job, pk=job_id)
-        self.check_object_permissions(self.request, db_job)
-
-        if request.data['status'] == ReviewStatus.REVIEW_FURTHER:
-            if 'reviewer_id' not in request.data:
-                return Response('Must provide a new reviewer', status=status.HTTP_400_BAD_REQUEST)
-            reviewer_id = request.data['reviewer_id']
-            reviewer = get_object_or_404(User, pk=reviewer_id)
-
-        request.data.update({
-            'reviewer_id': request.user.id,
-        })
-        if db_job.assignee:
-            request.data.update({
-                'assignee_id': db_job.assignee.id,
-            })
-
-        issue_set = request.data['issue_set']
-        for issue in issue_set:
-            issue['job'] = db_job.id
-            issue['owner_id'] = request.user.id
-            comment_set = issue['comment_set']
-            for comment in comment_set:
-                comment['author_id'] = request.user.id
-
-        serializer = self.get_serializer(data=request.data, partial=True)
-        serializer.is_valid(raise_exception=True)
-        self.perform_create(serializer)
-        headers = self.get_success_headers(serializer.data)
-
-        if serializer.data['status'] == ReviewStatus.ACCEPTED:
-            db_job.status = StatusChoice.COMPLETED
-            db_job.save()
-        elif serializer.data['status'] == ReviewStatus.REJECTED:
-            db_job.status = StatusChoice.ANNOTATION
-            db_job.save()
-        else:
-            db_job.reviewer = reviewer
-            db_job.save()
-
-        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
-
 @method_decorator(name='destroy', decorator=swagger_auto_schema(operation_summary='Method removes an issue from a job'))
-@method_decorator(name='partial_update', decorator=swagger_auto_schema(operation_summary='Method updates an issue. It is used to resolve/reopen an issue'))
-class IssueViewSet(viewsets.GenericViewSet,  mixins.DestroyModelMixin, mixins.UpdateModelMixin):
+@method_decorator(name='partial_update', decorator=swagger_auto_schema(operation_summary='Method updates an issue (for example when resolve/reopen)'))
+class IssueViewSet(viewsets.GenericViewSet, mixins.DestroyModelMixin, mixins.UpdateModelMixin):
     queryset = Issue.objects.all().order_by('id')
     http_method_names = ['get', 'patch', 'delete', 'options']
 
     def get_serializer_class(self):
         return IssueSerializer
+
 
     def partial_update(self, request, *args, **kwargs):
         db_issue = self.get_object()

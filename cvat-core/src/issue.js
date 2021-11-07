@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -8,7 +8,6 @@ const PluginRegistry = require('./plugins');
 const Comment = require('./comment');
 const User = require('./user');
 const { ArgumentError } = require('./exceptions');
-const { negativeIDGenerator } = require('./common');
 const serverProxy = require('./server-proxy');
 
 /**
@@ -43,9 +42,6 @@ class Issue {
             data.comment_set = data.comment_set.map((comment) => new Comment(comment));
         }
 
-        if (typeof data.id === 'undefined') {
-            data.id = negativeIDGenerator();
-        }
         if (typeof data.created_date === 'undefined') {
             data.created_date = new Date().toISOString();
         }
@@ -184,8 +180,7 @@ class Issue {
 
     /**
      * @typedef {Object} CommentData
-     * @property {number} [author] an ID of a user who has created the comment
-     * @property {string} message a comment message
+s     * @property {string} message a comment message
      * @global
      */
     /**
@@ -249,7 +244,7 @@ class Issue {
             comment_set: comments.map((comment) => comment.serialize()),
         };
 
-        if (this.id > 0) {
+        if (typeof this.id === 'number') {
             data.id = this.id;
         }
         if (this.createdDate) {
@@ -259,44 +254,29 @@ class Issue {
             data.resolved_date = this.resolvedDate;
         }
         if (this.owner) {
-            data.owner = this.owner.toJSON();
+            data.owner = this.owner.serialize();
         }
         if (this.resolver) {
-            data.resolver = this.resolver.toJSON();
+            data.resolver = this.resolver.serialize();
         }
 
         return data;
-    }
-
-    toJSON() {
-        const data = this.serialize();
-        const { owner, resolver, ...updated } = data;
-        return {
-            ...updated,
-            comment_set: this.comments.map((comment) => comment.toJSON()),
-            owner_id: owner ? owner.id : undefined,
-            resolver_id: resolver ? resolver.id : undefined,
-        };
     }
 }
 
 Issue.prototype.comment.implementation = async function (data) {
     if (typeof data !== 'object' || data === null) {
-        throw new ArgumentError(`The argument "data" must be a not null object. Got ${data}`);
+        throw new ArgumentError(`The argument "data" must be an object. Got "${data}"`);
     }
     if (typeof data.message !== 'string' || data.message.length < 1) {
-        throw new ArgumentError(`Comment message must be a not empty string. Got ${data.message}`);
-    }
-    if (!(data.author instanceof User)) {
-        throw new ArgumentError(`Author of the comment must a User instance. Got ${data.author}`);
+        throw new ArgumentError(`Comment message must be a not empty string. Got "${data.message}"`);
     }
 
     const comment = new Comment(data);
-    const { id } = this;
-    if (id >= 0) {
-        const jsonified = comment.toJSON();
-        jsonified.issue = id;
-        const response = await serverProxy.comments.create(jsonified);
+    if (typeof this.id === 'number') {
+        const serialized = comment.serialize();
+        serialized.issue = this.id;
+        const response = await serverProxy.comments.create(serialized);
         const savedComment = new Comment(response);
         this.__internal.comment_set.push(savedComment);
     } else {
@@ -306,12 +286,11 @@ Issue.prototype.comment.implementation = async function (data) {
 
 Issue.prototype.resolve.implementation = async function (user) {
     if (!(user instanceof User)) {
-        throw new ArgumentError(`The argument "user" must be an instance of a User class. Got ${typeof user}`);
+        throw new ArgumentError(`The argument "user" must be an instance of a User class. Got "${typeof user}"`);
     }
 
-    const { id } = this;
-    if (id >= 0) {
-        const response = await serverProxy.issues.update(id, { resolver_id: user.id });
+    if (typeof this.id === 'number') {
+        const response = await serverProxy.issues.update(this.id, { resolver_id: user.id });
         this.__internal.resolved_date = response.resolved_date;
         this.__internal.resolver = new User(response.resolver);
     } else {
@@ -321,9 +300,8 @@ Issue.prototype.resolve.implementation = async function (user) {
 };
 
 Issue.prototype.reopen.implementation = async function () {
-    const { id } = this;
-    if (id >= 0) {
-        const response = await serverProxy.issues.update(id, { resolver_id: null });
+    if (typeof this.id === 'number') {
+        const response = await serverProxy.issues.update(this.id, { resolver_id: null });
         this.__internal.resolved_date = response.resolved_date;
         this.__internal.resolver = response.resolver;
     } else {

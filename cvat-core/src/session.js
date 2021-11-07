@@ -3,7 +3,6 @@
 // SPDX-License-Identifier: MIT
 
 (() => {
-    const store = require('store');
     const PluginRegistry = require('./plugins');
     const loggerStorage = require('./logger-storage');
     const serverProxy = require('./server-proxy');
@@ -15,8 +14,7 @@
     const { Label } = require('./labels');
     const User = require('./user');
     const Issue = require('./issue');
-    const Review = require('./review');
-    const { FieldUpdateTrigger } = require('./common');
+    const { FieldUpdateTrigger, checkObjectType } = require('./common');
 
     function buildDuplicatedAPI(prototype) {
         Object.defineProperties(prototype, {
@@ -916,7 +914,7 @@
          * Method returns a list of issues for a job
          * @method issues
          * @memberof module:API.cvat.classes.Job
-         * @type {module:API.cvat.classes.Issue[]}
+         * @returns {module:API.cvat.classes.Issue[]}
          * @readonly
          * @instance
          * @async
@@ -929,44 +927,20 @@
         }
 
         /**
-         * Method returns a list of reviews for a job
-         * @method reviews
-         * @type {module:API.cvat.classes.Review[]}
+         * Method adds a new issue to a job
+         * @method openIssue
          * @memberof module:API.cvat.classes.Job
+         * @returns {module:API.cvat.classes.Issue}
+         * @param {module:API.cvat.classes.Issue} issue
          * @readonly
          * @instance
          * @async
+         * @throws {module:API.cvat.exceptions.ArgumentError}
          * @throws {module:API.cvat.exceptions.ServerError}
          * @throws {module:API.cvat.exceptions.PluginError}
          */
-        async reviews() {
-            const result = await PluginRegistry.apiWrapper.call(this, Job.prototype.reviews);
-            return result;
-        }
-
-        /**
-         * /**
-         * @typedef {Object} ReviewSummary
-         * @property {number} reviews Number of done reviews
-         * @property {number} average_estimated_quality
-         * @property {number} issues_unsolved
-         * @property {number} issues_resolved
-         * @property {string[]} assignees
-         * @property {string[]} reviewers
-         */
-        /**
-         * Method returns brief summary of within all reviews
-         * @method reviewsSummary
-         * @type {ReviewSummary}
-         * @memberof module:API.cvat.classes.Job
-         * @readonly
-         * @instance
-         * @async
-         * @throws {module:API.cvat.exceptions.ServerError}
-         * @throws {module:API.cvat.exceptions.PluginError}
-         */
-        async reviewsSummary() {
-            const result = await PluginRegistry.apiWrapper.call(this, Job.prototype.reviewsSummary);
+        async openIssue(issue) {
+            const result = await PluginRegistry.apiWrapper.call(this, Job.prototype.openIssue, issue);
             return result;
         }
     }
@@ -1751,39 +1725,14 @@
     };
 
     Job.prototype.issues.implementation = async function () {
-        const result = await serverProxy.jobs.issues(this.id);
+        const result = await serverProxy.issues.get(this.id);
         return result.map((issue) => new Issue(issue));
     };
 
-    Job.prototype.reviews.implementation = async function () {
-        const result = await serverProxy.jobs.reviews.get(this.id);
-        const reviews = result.map((review) => new Review(review));
-
-        // try to get not finished review from the local storage
-        const data = store.get(`job-${this.id}-review`);
-        if (data) {
-            reviews.push(new Review(JSON.parse(data)));
-        }
-
-        return reviews;
-    };
-
-    Job.prototype.reviewsSummary.implementation = async function () {
-        const reviews = await serverProxy.jobs.reviews.get(this.id);
-        const issues = await serverProxy.jobs.issues(this.id);
-
-        const qualities = reviews.map((review) => review.estimated_quality);
-        const reviewers = reviews.filter((review) => review.reviewer).map((review) => review.reviewer.username);
-        const assignees = reviews.filter((review) => review.assignee).map((review) => review.assignee.username);
-
-        return {
-            reviews: reviews.length,
-            average_estimated_quality: qualities.reduce((acc, quality) => acc + quality, 0) / (qualities.length || 1),
-            issues_unsolved: issues.filter((issue) => !issue.resolved_date).length,
-            issues_resolved: issues.filter((issue) => issue.resolved_date).length,
-            assignees: Array.from(new Set(assignees.filter((assignee) => assignee !== null))),
-            reviewers: Array.from(new Set(reviewers.filter((reviewer) => reviewer !== null))),
-        };
+    Job.prototype.openIssue.implementation = async function (issue) {
+        checkObjectType('issue', issue, null, Issue);
+        const result = await serverProxy.issues.create(this.id, issue.serialize());
+        return new Issue(result);
     };
 
     Job.prototype.frames.get.implementation = async function (frame, isPlaying, step) {

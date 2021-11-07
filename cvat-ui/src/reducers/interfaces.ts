@@ -383,7 +383,6 @@ export interface NotificationsState {
             fetching: null | ErrorState;
         };
         review: {
-            initialization: null | ErrorState;
             finishingIssue: null | ErrorState;
             resolvingIssue: null | ErrorState;
             reopeningIssue: null | ErrorState;
@@ -679,15 +678,13 @@ export enum ReviewStatus {
 }
 
 export interface ReviewState {
-    reviews: any[];
     issues: any[];
     frameIssues: any[];
     latestComments: string[];
-    activeReview: any | null;
     newIssuePosition: number[] | null;
     issuesHidden: boolean;
     fetching: {
-        reviewId: number | null;
+        jobId: number | null;
         issueId: number | null;
     };
 }

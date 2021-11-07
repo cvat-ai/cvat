@@ -1,10 +1,9 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
 const User = require('./user');
 const { ArgumentError } = require('./exceptions');
-const { negativeIDGenerator } = require('./common');
 
 /**
  * Class representing a single comment
@@ -29,10 +28,6 @@ class Comment {
         }
 
         if (data.author && !(data.author instanceof User)) data.author = new User(data.author);
-
-        if (typeof id === 'undefined') {
-            data.id = negativeIDGenerator();
-        }
         if (typeof data.created_date === 'undefined') {
             data.created_date = new Date().toISOString();
         }
@@ -124,7 +119,7 @@ class Comment {
             message: this.message,
         };
 
-        if (this.id > 0) {
+        if (typeof this.id === 'number') {
             data.id = this.id;
         }
         if (this.createdDate) {
@@ -134,19 +129,10 @@ class Comment {
             data.updated_date = this.updatedDate;
         }
         if (this.author) {
-            data.author = this.author.serialize();
+            data.author_id = this.author.serialize();
         }
 
         return data;
-    }
-
-    toJSON() {
-        const data = this.serialize();
-        const { author, ...updated } = data;
-        return {
-            ...updated,
-            author_id: author ? author.id : undefined,
-        };
     }
 }
 

@@ -723,39 +723,6 @@
                 return response.data;
             }
 
-            async function getJobReviews(jobID) {
-                const { backendAPI } = config;
-
-                let response = null;
-                try {
-                    response = await Axios.get(`${backendAPI}/jobs/${jobID}/reviews`, {
-                        proxy: config.proxy,
-                    });
-                } catch (errorData) {
-                    throw generateError(errorData);
-                }
-
-                return response.data;
-            }
-
-            async function createReview(data) {
-                const { backendAPI } = config;
-
-                let response = null;
-                try {
-                    response = await Axios.post(`${backendAPI}/reviews`, JSON.stringify(data), {
-                        proxy: config.proxy,
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                    });
-                } catch (errorData) {
-                    throw generateError(errorData);
-                }
-
-                return response.data;
-            }
-
             async function getJobIssues(jobID) {
                 const { backendAPI } = config;
 
@@ -777,6 +744,24 @@
                 let response = null;
                 try {
                     response = await Axios.post(`${backendAPI}/comments`, JSON.stringify(data), {
+                        proxy: config.proxy,
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                    });
+                } catch (errorData) {
+                    throw generateError(errorData);
+                }
+
+                return response.data;
+            }
+
+            async function createIssue(jobId, data) {
+                const { backendAPI } = config;
+
+                let response = null;
+                try {
+                    response = await Axios.post(`${backendAPI}/jobs/${jobId}/issues/create`, JSON.stringify(data), {
                         proxy: config.proxy,
                         headers: {
                             'Content-Type': 'application/json',
@@ -1587,11 +1572,6 @@
                         value: Object.freeze({
                             get: getJob,
                             save: saveJob,
-                            issues: getJobIssues,
-                            reviews: {
-                                get: getJobReviews,
-                                create: createReview,
-                            },
                         }),
                         writable: false,
                     },
@@ -1645,7 +1625,9 @@
 
                     issues: {
                         value: Object.freeze({
+                            create: createIssue,
                             update: updateIssue,
+                            get: getJobIssues,
                         }),
                         writable: false,
                     },

@@ -15,7 +15,6 @@ function build() {
     const Statistics = require('./statistics');
     const Comment = require('./comment');
     const Issue = require('./issue');
-    const Review = require('./review');
     const { Job, Task } = require('./session');
     const { Project } = require('./project');
     const implementProject = require('./project-implementation');
@@ -847,7 +846,6 @@ function build() {
             MLModel,
             Comment,
             Issue,
-            Review,
             FrameData,
             CloudStorage,
             Organization,

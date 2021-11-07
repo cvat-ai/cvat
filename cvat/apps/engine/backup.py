@@ -18,7 +18,7 @@ from cvat.apps.engine import models
 from cvat.apps.engine.log import slogger
 from cvat.apps.engine.serializers import (AttributeSerializer, DataSerializer,
     LabeledDataSerializer, SegmentSerializer, SimpleJobSerializer, TaskSerializer,
-    ReviewSerializer, IssueSerializer, CommentSerializer)
+    IssueSerializer, CommentSerializer)
 from cvat.apps.engine.utils import av_scan_paths
 from cvat.apps.engine.models import StorageChoice, StorageMethodChoice, DataChoice
 from cvat.apps.engine.task import _create_thread

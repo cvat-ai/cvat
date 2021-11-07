@@ -735,19 +735,6 @@ class AnnotationFileSerializer(serializers.Serializer):
 class TaskFileSerializer(serializers.Serializer):
     task_file = serializers.FileField()
 
-class ReviewSerializer(serializers.ModelSerializer):
-    assignee = BasicUserSerializer(allow_null=True, required=False)
-    assignee_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)
-    reviewer = BasicUserSerializer(allow_null=True, required=False)
-    reviewer_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)
-
-    class Meta:
-        model = models.Review
-        fields = '__all__'
-        read_only_fields = ('id', 'assignee', 'reviewer', )
-        write_once_fields = ('job', 'reviewer_id', 'assignee_id', 'estimated_quality', 'status', )
-        ordering = ['-id']
-
 class IssueSerializer(serializers.ModelSerializer):
     owner = BasicUserSerializer(allow_null=True, required=False)
     owner_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)
@@ -779,22 +766,14 @@ class CommentSerializer(serializers.ModelSerializer):
 class CombinedIssueSerializer(IssueSerializer):
     comment_set = CommentSerializer(many=True)
 
-class CombinedReviewSerializer(ReviewSerializer):
-    issue_set = CombinedIssueSerializer(many=True)
-
     def create(self, validated_data):
-        issues_validated_data = validated_data.pop('issue_set')
-        db_review = models.Review.objects.create(**validated_data)
-        for issue in issues_validated_data:
-            issue['review'] = db_review
+        comments_validated_data = validated_data.pop('comment_set')
+        db_issue = models.Issue.objects.create(**validated_data)
+        for comment in comments_validated_data:
+            comment['issue'] = db_issue
+            models.Comment.objects.create(**comment)
 
-            comments_validated_data = issue.pop('comment_set')
-            db_issue = models.Issue.objects.create(**issue)
-            for comment in comments_validated_data:
-                comment['issue'] = db_issue
-                models.Comment.objects.create(**comment)
-
-        return db_review
+        return db_issue
 
 class ManifestSerializer(serializers.ModelSerializer):
     class Meta:

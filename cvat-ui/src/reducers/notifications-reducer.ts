@@ -107,7 +107,6 @@ const defaultState: NotificationsState = {
         review: {
             commentingIssue: null,
             finishingIssue: null,
-            initialization: null,
             reopeningIssue: null,
             resolvingIssue: null,
             submittingReview: null,
@@ -1062,21 +1061,6 @@ export default function (state = defaultState, action: AnyAction): Notifications
                 },
             };
         }
-        case ReviewActionTypes.INITIALIZE_REVIEW_FAILED: {
-            return {
-                ...state,
-                errors: {
-                    ...state.errors,
-                    review: {
-                        ...state.errors.review,
-                        initialization: {
-                            message: 'Could not initialize review session',
-                            reason: action.payload.error.toString(),
-                        },
-                    },
-                },
-            };
-        }
         case ReviewActionTypes.FINISH_ISSUE_FAILED: {
             return {
                 ...state,
@@ -1145,7 +1129,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                     review: {
                         ...state.errors.review,
                         submittingReview: {
-                            message: 'Could not submit review session to the server',
+                            message: `Could not submit review for the job ${action.payload.jobId}`,
                             reason: action.payload.error.toString(),
                         },
                     },

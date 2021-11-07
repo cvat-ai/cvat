@@ -1018,7 +1018,6 @@ export function getJobAsync(tid: number, jid: number, initialFrame: number, init
             }
             const states = await job.annotations.get(frameNumber, showAllInterpolationTracks, filters);
             const issues = await job.issues();
-            const reviews = await job.reviews();
             const [minZ, maxZ] = computeZRange(states);
             const colors = [...cvat.enums.colors];
 
@@ -1031,7 +1030,6 @@ export function getJobAsync(tid: number, jid: number, initialFrame: number, init
                     openTime,
                     job,
                     issues,
-                    reviews,
                     states,
                     frameNumber,
                     frameFilename: frameData.filename,

@@ -28,9 +28,12 @@ function ReviewSummaryComponent({ jobInstance }: { jobInstance: any }): JSX.Elem
     useEffect(() => {
         setError(null);
         jobInstance
-            .reviewsSummary()
-            .then((_summary: Record<string, any>) => {
-                setSummary(_summary);
+            .issues(jobInstance.id)
+            .then((issues: any[]) => {
+                setSummary({
+                    issues_unsolved: issues.filter((issue) => !issue.resolved_date).length,
+                    issues_resolved: issues.filter((issue) => issue.resolved_date).length,
+                });
             })
             .catch((_error: any) => {
                 // eslint-disable-next-line
@@ -59,18 +62,6 @@ function ReviewSummaryComponent({ jobInstance }: { jobInstance: any }): JSX.Elem
     return (
         <table className='cvat-review-summary-description'>
             <tbody>
-                <tr>
-                    <td>
-                        <Text strong>Reviews</Text>
-                    </td>
-                    <td>{summary.reviews}</td>
-                </tr>
-                <tr>
-                    <td>
-                        <Text strong>Average quality</Text>
-                    </td>
-                    <td>{Number.parseFloat(summary.average_estimated_quality).toFixed(2)}</td>
-                </tr>
                 <tr>
                     <td>
                         <Text strong>Unsolved issues</Text>
