@@ -42,8 +42,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Iterating over manifest (<https://github.com/openvinotoolkit/cvat/pull/3792>)
 - Manifest removing (<https://github.com/openvinotoolkit/cvat/pull/3791>)
 - Fixed task creating with large files via webpage (<https://github.com/openvinotoolkit/cvat/pull/3692>)
+- Fixed project updated date (<https://github.com/openvinotoolkit/cvat/pull/3814>)
 - Fixed dextr deployment (<https://github.com/openvinotoolkit/cvat/pull/3820>)
 - Migration of `dataset_repo` application (<https://github.com/openvinotoolkit/cvat/pull/3827>)
+- Helm settings for external psql database were unused by backend (<https://github.com/openvinotoolkit/cvat/pull/3779>)
+- Updated WSL setup for development (<https://github.com/openvinotoolkit/cvat/pull/3828>)
 
 ### Security
 
