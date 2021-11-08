@@ -1,3 +1,6 @@
+# Copyright (C) 2021 Intel Corporation
+#
+# SPDX-License-Identifier: MIT
 from tempfile import TemporaryDirectory
 
 from datumaro.components.dataset import Dataset
