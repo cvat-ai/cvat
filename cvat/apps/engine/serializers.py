@@ -833,9 +833,6 @@ class CloudStorageSerializer(serializers.ModelSerializer):
         if attrs.get('provider_type') == models.CloudProviderChoice.AZURE_CONTAINER:
             if not attrs.get('account_name', ''):
                 raise serializers.ValidationError('Account name for Azure container was not specified')
-        if attrs.get('provider_type') == models.CloudProviderChoice.GOOGLE_CLOUD_STORAGE:
-            if not attrs.get('key_file_path', ''):
-                raise serializers.ValidationError('Key file path for Google cloud storage was not specified')
         return attrs
 
     def create(self, validated_data):

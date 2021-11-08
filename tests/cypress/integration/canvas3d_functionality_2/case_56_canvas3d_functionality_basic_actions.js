@@ -6,7 +6,8 @@
 
 import { taskName } from '../../support/const_canvas3d';
 
-// Firefox does not yet support WebGL in headless mode: https://bugzilla.mozilla.org/show_bug.cgi?id=1375585 (disabled in the cypress_cron_type.json)
+// Firefox does not yet support WebGL in headless mode:
+// https://bugzilla.mozilla.org/show_bug.cgi?id=1375585 (disabled in the cypress_cron_type.json)
 context('Canvas 3D functionality. Basic actions.', () => {
     const caseId = '56';
     const screenshotsPath =
@@ -183,7 +184,8 @@ context('Canvas 3D functionality. Basic actions.', () => {
             cy.get('.cvat-player-first-button').click(); // Return to first frame
         });
 
-        it('Testing perspective visual regressions.', () => {
+        // FIXME: this test was temporarily excluded
+        it.skip('Testing perspective visual regressions.', () => {
             testPerspectiveChangeOnKeyPress('u', 'before_press_altU', 'after_press_altU');
             testPerspectiveChangeOnKeyPress('o', 'before_press_altO', 'after_press_altO');
             testPerspectiveChangeOnKeyPress('i', 'before_press_altI', 'after_press_altI');
