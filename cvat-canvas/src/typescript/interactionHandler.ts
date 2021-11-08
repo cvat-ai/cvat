@@ -22,19 +22,33 @@ export interface InteractionHandler {
 
 export class InteractionHandlerImpl implements InteractionHandler {
     private onInteraction: (shapes: InteractionResult[] | null, shapesUpdated?: boolean, isDone?: boolean) => void;
+
     private configuration: Configuration;
+
     private geometry: Geometry;
+
     private canvas: SVG.Container;
+
     private interactionData: InteractionData;
+
     private cursorPosition: { x: number; y: number };
+
     private shapesWereUpdated: boolean;
+
     private interactionShapes: SVG.Shape[];
+
     private currentInteractionShape: SVG.Shape | null;
+
     private crosshair: Crosshair;
+
     private threshold: SVG.Rect | null;
+
     private thresholdRectSize: number;
+
     private intermediateShape: PropType<InteractionData, 'intermediateShape'>;
+
     private drawnIntermediateShape: SVG.Shape;
+
     private thresholdWasModified: boolean;
 
     private prepareResult(): InteractionResult[] {
@@ -310,6 +324,7 @@ export class InteractionHandlerImpl implements InteractionHandler {
     }
 
     private selectize(value: boolean, shape: SVG.Element, erroredShape = false): void {
+        // eslint-disable-next-line @typescript-eslint/no-this-alias
         const self = this;
 
         if (value) {
@@ -348,12 +363,12 @@ export class InteractionHandlerImpl implements InteractionHandler {
     private visualComponentsChanged(interactionData: InteractionData): boolean {
         const allowedKeys = ['enabled', 'crosshair', 'enableThreshold', 'onChangeToolsBlockerState'];
         if (Object.keys(interactionData).every((key: string): boolean => allowedKeys.includes(key))) {
-            if (this.interactionData.enableThreshold !== undefined && interactionData.enableThreshold !== undefined
-                && this.interactionData.enableThreshold !== interactionData.enableThreshold) {
+            if (this.interactionData.enableThreshold !== undefined && interactionData.enableThreshold !== undefined &&
+                this.interactionData.enableThreshold !== interactionData.enableThreshold) {
                 return true;
             }
-            if (this.interactionData.crosshair !== undefined && interactionData.crosshair !== undefined
-                && this.interactionData.crosshair !== interactionData.crosshair) {
+            if (this.interactionData.crosshair !== undefined && interactionData.crosshair !== undefined &&
+                this.interactionData.crosshair !== interactionData.crosshair) {
                 return true;
             }
         }
@@ -450,7 +465,7 @@ export class InteractionHandlerImpl implements InteractionHandler {
         });
 
         window.addEventListener('keydown', (e: KeyboardEvent): void => {
-            if (this.interactionData.enabled && e.keyCode === 17) {
+            if (!e.repeat && this.interactionData.enabled && e.keyCode === 17) {
                 if (this.interactionData.onChangeToolsBlockerState && !this.thresholdWasModified) {
                     this.interactionData.onChangeToolsBlockerState('keydown');
                 }
@@ -466,9 +481,9 @@ export class InteractionHandlerImpl implements InteractionHandler {
             this.crosshair.scale(this.geometry.scale);
         }
 
-        const shapesToBeScaled = this.currentInteractionShape
-            ? [...this.interactionShapes, this.currentInteractionShape]
-            : [...this.interactionShapes];
+        const shapesToBeScaled = this.currentInteractionShape ?
+            [...this.interactionShapes, this.currentInteractionShape] :
+            [...this.interactionShapes];
         for (const shape of shapesToBeScaled) {
             if (shape.type === 'circle') {
                 if (shape.hasClass('cvat_canvas_removable_interaction_point')) {

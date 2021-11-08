@@ -63,6 +63,7 @@ spec:
           - name: CVAT_REDIS_HOST
             value: "{{ .Values.redis.external.host }}"
           {{- end }}
+          {{- if .Values.postgresql.enabled }}
           - name: CVAT_POSTGRES_HOST
             valueFrom:
               secretKeyRef:
@@ -83,6 +84,16 @@ spec:
               secretKeyRef:
                 name: "{{ .Release.Name }}-{{ .Values.postgresql.secret.name }}"
                 key: postgresql-password
+          {{- else }}
+          - name: CVAT_POSTGRES_HOST
+            value: "{{ .Values.postgresql.external.host }}"
+          - name: CVAT_POSTGRES_USER
+            value: "{{ .Values.postgresql.external.user }}"
+          - name: CVAT_POSTGRES_DBNAME
+            value: "{{ .Values.postgresql.external.dbname }}"
+          - name: CVAT_POSTGRES_PASSWORD
+            value: "{{ .Values.postgresql.external.password }}"
+          {{- end }}
           {{- with .Values.cvat.backend.additionalEnv }}
           {{- toYaml . | nindent 10 }}
           {{- end }}
