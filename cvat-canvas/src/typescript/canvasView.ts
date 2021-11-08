@@ -51,6 +51,7 @@ import {
 
 export interface CanvasView {
     html(): HTMLDivElement;
+    destroy(): void;
 }
 
 export class CanvasViewImpl implements CanvasView, Listener {
@@ -1367,6 +1368,18 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
     public html(): HTMLDivElement {
         return this.canvas;
+    }
+
+    public destroy(): void {
+        this.canvas.dispatchEvent(
+            new CustomEvent('canvas.destroy', {
+                bubbles: false,
+                cancelable: true,
+            }),
+        );
+        // We can't call namespaced svgjs event
+        // see - https://svgjs.dev/docs/2.7/events/
+        this.adoptedContent.fire('destroy');
     }
 
     private redrawBitmap(): void {

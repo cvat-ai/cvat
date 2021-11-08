@@ -166,6 +166,8 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 activeShapeType = ShapeType.CUBOID;
             }
 
+            state.canvas.instance.destroy();
+
             return {
                 ...state,
                 job: {
