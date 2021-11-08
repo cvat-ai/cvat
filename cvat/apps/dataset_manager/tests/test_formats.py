@@ -383,16 +383,6 @@ class TaskExportTest(_DbTestBase):
 
                 def check(file_path):
                     def load_dataset(src):
-                        if importer_name == 'datumaro_project':
-                            project = datumaro.components.project. \
-                                Project.load(src)
-
-                            # NOTE: can't import cvat.utils.cli
-                            # for whatever reason, so remove the dependency
-                            #
-                            project.config.remove('sources')
-
-                            return project.make_dataset()
                         return datumaro.components.dataset. \
                             Dataset.import_from(src, importer_name, env=dm_env)
 
