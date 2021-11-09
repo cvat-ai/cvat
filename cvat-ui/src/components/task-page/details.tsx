@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2021 Intel Corporation
+// Copyright (C) 2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -11,16 +11,21 @@ import notification from 'antd/lib/notification';
 import Text from 'antd/lib/typography/Text';
 import Title from 'antd/lib/typography/Title';
 import moment from 'moment';
-
-import Descriptions from 'antd/lib/descriptions';
+import Paragraph from 'antd/lib/typography/Paragraph';
+import Select from 'antd/lib/select';
+import Checkbox from 'antd/lib/checkbox';
 import getCore from 'cvat-core-wrapper';
-import { getReposData, syncRepos } from 'utils/git-utils';
+import { getReposData, syncRepos, changeRepo } from 'utils/git-utils';
 import { ActiveInference } from 'reducers/interfaces';
 import AutomaticAnnotationProgress from 'components/tasks-page/automatic-annotation-progress';
+import Descriptions from 'antd/lib/descriptions';
+import { Space } from 'antd';
 import UserSelector, { User } from './user-selector';
 import BugTrackerEditor from './bug-tracker-editor';
 import LabelsEditorComponent from '../labels-editor/labels-editor';
 import ProjectSubsetField from '../create-task-page/project-subset-field';
+
+const { Option } = Select;
 
 const core = getCore();
 
@@ -32,6 +37,8 @@ interface Props {
     projectSubsets: string[];
     cancelAutoAnnotation(): void;
     onTaskUpdate: (taskInstance: any) => void;
+    dumpers: any[];
+    user: any;
 }
 
 interface State {
@@ -40,6 +47,7 @@ interface State {
     repository: string;
     repositoryStatus: string;
     format: string;
+    lfs: boolean;
 }
 
 export default class DetailsComponent extends React.PureComponent<Props, State> {
@@ -63,6 +71,8 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
             repository: '',
             format: '',
             repositoryStatus: '',
+            lfs: '',
+            updatingRepository: false,
         };
     }
 
@@ -103,6 +113,7 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
                     this.setState({
                         repository: data.url,
                         format: data.format,
+                        lfs: !!data.lfs,
                     });
                 }
             })
@@ -129,6 +140,54 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
     public componentWillUnmount(): void {
         this.mounted = false;
     }
+
+    private onChangeRepoValue = (value: string): void => {
+        const { taskInstance } = this.props;
+        const { repository } = this.state;
+        const old = repository;
+        this.setState({ repository: value, updatingRepository: true });
+        changeRepo(taskInstance.id, 'url', value)
+            .catch((error) => {
+                this.setState({ repository: old });
+                notification.error({
+                    message: 'Could not update repository',
+                    description: error,
+                });
+            })
+            .finally(() => this.setState({ updatingRepository: false }));
+    };
+
+    private onChangeLFSValue = (value): void => {
+        const { taskInstance } = this.props;
+        const { lfs } = this.state;
+        const old = lfs;
+        this.setState({ lfs: value.target.checked, updatingRepository: true });
+        changeRepo(taskInstance.id, 'lfs', value.target.checked)
+            .catch((error) => {
+                this.setState({ lfs: old });
+                notification.error({
+                    message: 'Could not update LFS',
+                    description: error,
+                });
+            })
+            .finally(() => this.setState({ updatingRepository: false }));
+    };
+
+    private onChangeFormatValue = (value: string): void => {
+        const { taskInstance } = this.props;
+        const { format } = this.state;
+        const old = format;
+        this.setState({ format: value, updatingRepository: true });
+        changeRepo(taskInstance.id, 'format', value)
+            .catch((error) => {
+                this.setState({ format: old });
+                notification.error({
+                    message: 'Could not update format',
+                    description: error,
+                });
+            })
+            .finally(() => this.setState({ updatingRepository: false }));
+    };
 
     private renderTaskName(): JSX.Element {
         const { name } = this.state;
@@ -205,9 +264,10 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
     }
 
     private renderDatasetRepository(): JSX.Element | boolean {
-        const { taskInstance } = this.props;
-        const { repository, repositoryStatus, format } = this.state;
-
+        const { taskInstance, dumpers } = this.props;
+        const {
+            repository, repositoryStatus, format, lfs, updatingRepository,
+        } = this.state;
         return (
             !!repository && (
                 <Row>
@@ -215,71 +275,78 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
                         <Text strong className='cvat-text-color'>
                             Dataset Repository
                         </Text>
-                        <br />
-                        <a href={repository} rel='noopener noreferrer' target='_blank'>
-                            {repository}
-                        </a>
-                        <br />
-                        <p>
-                            Using format
-                            {' '}
-                            <Text strong>
-                                {format}
+                        <Paragraph>
+                            <Text editable={{ onChange: this.onChangeRepoValue }} disabled={updatingRepository}>
+                                {repository}
                             </Text>
-                        </p>
-                        {repositoryStatus === 'sync' && (
-                            <Tag color='blue'>
-                                <CheckCircleOutlined />
-                                Synchronized
-                            </Tag>
-                        )}
-                        {repositoryStatus === 'merged' && (
-                            <Tag color='green'>
-                                <CheckCircleOutlined />
-                                Merged
-                            </Tag>
-                        )}
-                        {repositoryStatus === 'syncing' && (
-                            <Tag color='purple'>
-                                <LoadingOutlined />
-                                Syncing
-                            </Tag>
-                        )}
-                        {repositoryStatus === '!sync' && (
-                            <Tag
-                                color='red'
-                                onClick={(): void => {
-                                    this.setState({
-                                        repositoryStatus: 'syncing',
-                                    });
-
-                                    syncRepos(taskInstance.id)
-                                        .then((): void => {
-                                            if (this.mounted) {
-                                                this.setState({
-                                                    repositoryStatus: 'sync',
-                                                });
-                                            }
-                                        })
-                                        .catch((error): void => {
-                                            if (this.mounted) {
-                                                Modal.error({
-                                                    width: 800,
-                                                    title: 'Could not synchronize the repository',
-                                                    content: error.toString(),
-                                                });
-
-                                                this.setState({
-                                                    repositoryStatus: '!sync',
-                                                });
-                                            }
+                            {repositoryStatus === 'sync' && (
+                                <Tag color='blue'>
+                                    <CheckCircleOutlined />
+                                    Synchronized
+                                </Tag>
+                            )}
+                            {repositoryStatus === 'merged' && (
+                                <Tag color='green'>
+                                    <CheckCircleOutlined />
+                                    Merged
+                                </Tag>
+                            )}
+                            {repositoryStatus === 'syncing' && (
+                                <Tag color='purple'>
+                                    <LoadingOutlined />
+                                    Syncing
+                                </Tag>
+                            )}
+                            {repositoryStatus === '!sync' && (
+                                <Tag
+                                    color='red'
+                                    onClick={(): void => {
+                                        this.setState({
+                                            repositoryStatus: 'syncing',
                                         });
-                                }}
-                            >
-                                <WarningOutlined />
-                                Synchronize
-                            </Tag>
-                        )}
+
+                                        syncRepos(taskInstance.id)
+                                            .then((): void => {
+                                                if (this.mounted) {
+                                                    this.setState({
+                                                        repositoryStatus: 'sync',
+                                                    });
+                                                }
+                                            })
+                                            .catch((error): void => {
+                                                if (this.mounted) {
+                                                    Modal.error({
+                                                        width: 800,
+                                                        title: 'Could not synchronize the repository',
+                                                        content: error.toString(),
+                                                    });
+
+                                                    this.setState({
+                                                        repositoryStatus: '!sync',
+                                                    });
+                                                }
+                                            });
+                                    }}
+                                >
+                                    <WarningOutlined />
+                                    Synchronize
+                                </Tag>
+                            )}
+                        </Paragraph>
+                        <Text strong className='cvat-text-color'>Using format: </Text>
+                        <Space>
+                            <Select disabled={updatingRepository} onChange={this.onChangeFormatValue} className='cvat-repository-format-select' value={format}>
+                                {
+                                    dumpers.map((dumper: any) => (
+                                        <Option key={dumper.name} value={dumper.name}>{dumper.name}</Option>
+                                    ))
+                                }
+                            </Select>
+                            <Checkbox disabled={updatingRepository} onChange={this.onChangeLFSValue} checked={lfs}>
+                                Large file support
+                            </Checkbox>
+                            {updatingRepository && <LoadingOutlined style={{ fontSize: 14 }} spin />}
+                        </Space>
                     </Col>
                 </Row>
             )
