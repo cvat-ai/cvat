@@ -24,7 +24,8 @@ def main():
     args = get_args()
 
     manifest_directory = os.path.abspath(args.output_dir)
-    os.makedirs(manifest_directory, exist_ok=True)
+    if not os.path.exists(manifest_directory):
+        os.makedirs(manifest_directory)
     source = os.path.abspath(os.path.expanduser(args.source))
 
     sources = []
