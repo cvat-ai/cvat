@@ -1197,5 +1197,23 @@
       }
     ],
     "tracks": []
+  },
+  "Cityscapes 1.0": {
+    "version": 0,
+    "tags": [],
+    "shapes": [
+      {
+        "type": "polygon",
+        "occluded": false,
+        "z_order": 0,
+        "points": [11.9, 21.5, 35.2, 21.9, 33.6, 31.9, 12.4, 30.47],
+        "frame": 0,
+        "label_id": null,
+        "group": 0,
+        "source": "manual",
+        "attributes": []
+      }
+    ],
+    "tracks": []
   }
 }

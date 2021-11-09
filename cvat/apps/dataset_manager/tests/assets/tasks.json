@@ -54,7 +54,7 @@
       }
     ]
   },
-  "icdar_localization_and_recognition": {
+  "ICDAR Localization 1.0": {
     "name": "icdar localization/recogntion task",
     "overlap": 0,
     "segment_size": 100,
@@ -74,7 +74,27 @@
       }
     ]
   },
-  "icdar_segmentation": {
+  "ICDAR Recognition 1.0": {
+    "name": "icdar localization/recogntion task",
+    "overlap": 0,
+    "segment_size": 100,
+    "owner_id": 1,
+    "assignee_id": 2,
+    "labels": [
+      {
+        "name": "icdar",
+        "attributes": [
+          {
+            "name": "text",
+            "mutable": false,
+            "input_type": "text",
+            "values": ["word_1", "word_2", "word_3"]
+          }
+        ]
+      }
+    ]
+  },
+  "ICDAR Segmentation 1.0": {
     "name": "icdar segmentation task",
     "overlap": 0,
     "segment_size": 100,
@@ -112,7 +132,7 @@
       }
     ]
   },
-  "market1501": {
+  "Market-1501 1.0": {
     "name": "market1501 task",
     "overlap": 0,
     "segment_size": 100,
@@ -141,6 +161,38 @@
             "values": ["1", "6", "1"]
           }
         ]
+      }
+    ]
+  },
+  "Cityscapes 1.0": {
+    "name": "cityscapes task",
+    "overlap": 0,
+    "segment_size": 100,
+    "owner_id": 1,
+    "assignee_id": 2,
+    "labels": [
+      {
+        "name": "car",
+        "color": "#2080c0",
+        "attributes": [
+          {
+            "name": "is_crowd",
+            "mutable": false,
+            "input_type": "checkbox",
+            "default_value": "false",
+            "values": ["false", "true"]
+          }
+        ]
+      },
+      {
+        "name": "person",
+        "color": "#c06060",
+        "attributes": []
+      },
+      {
+        "name": "background",
+        "color": "#000000",
+        "attributes": []
       }
     ]
   },
