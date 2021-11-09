@@ -25,7 +25,7 @@ The uploaded annotations file should be a zip file with the following structure:
     └── annotations/
         ├── landmarks.txt # list with landmark points for each image
         ├── pairs.txt # list of matched and mismatched pairs of person
-        └── people.txt # list of persons name
+        └── people.txt # optional file with a list of persons name
 ```
 
 Full information about the content of annotation files is available
