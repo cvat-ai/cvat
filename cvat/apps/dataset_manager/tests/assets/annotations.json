@@ -474,6 +474,35 @@
       }
     ]
   },
+  "Open Images V6 1.0": {
+    "version": 0,
+    "tags": [],
+    "shapes": [
+      {
+        "type": "rectangle",
+        "occluded": false,
+        "z_order": 0,
+        "points": [1.0, 2.0, 3.0, 4.0],
+        "frame": 0,
+        "label_id": null,
+        "group": 0,
+        "source": "manual",
+        "attributes": []
+      },
+      {
+        "type": "polygon",
+        "occluded": false,
+        "z_order": 0,
+        "points": [1.0, 1.0, 1.0, 20.0, 20.0, 1.0, 20.0, 1.0, 1.0, 1.0],
+        "frame": 0,
+        "label_id": null,
+        "group": 0,
+        "source": "manual",
+        "attributes": []
+      }
+    ],
+    "tracks": []
+  },
   "PASCAL VOC 1.1": {
     "version": 0,
     "tags": [

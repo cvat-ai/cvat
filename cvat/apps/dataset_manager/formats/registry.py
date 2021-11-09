@@ -121,4 +121,5 @@ import cvat.apps.dataset_manager.formats.market1501
 import cvat.apps.dataset_manager.formats.icdar
 import cvat.apps.dataset_manager.formats.velodynepoint
 import cvat.apps.dataset_manager.formats.pointcloud
+import cvat.apps.dataset_manager.formats.openimages
 

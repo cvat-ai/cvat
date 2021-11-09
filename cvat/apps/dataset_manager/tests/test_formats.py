@@ -295,8 +295,8 @@ class TaskExportTest(_DbTestBase):
             'ICDAR Localization 1.0',
             'ICDAR Segmentation 1.0',
             'Kitti Raw Format 1.0',
-            'Sly Point Cloud Format 1.0'
-
+            'Sly Point Cloud Format 1.0',
+            'Open Images V6 1.0'
         })
 
     def test_import_formats_query(self):
@@ -323,6 +323,7 @@ class TaskExportTest(_DbTestBase):
             'ICDAR Segmentation 1.0',
             'Kitti Raw Format 1.0',
             'Sly Point Cloud Format 1.0',
+            'Open Images V6 1.0',
             'Datumaro 1.0',
             'Datumaro 3D 1.0'
         })
