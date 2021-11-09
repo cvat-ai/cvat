@@ -916,11 +916,11 @@ class TaskDumpUploadTest(_DbTestBase):
                         task = self._create_task(tasks["main"], images)
                     task_id = task["id"]
                     if dump_format_name in [
-                        "MOT 1.1", "MOTS PNG 1.0", \
-                        "PASCAL VOC 1.1", "Segmentation mask 1.1", \
-                        "TFRecord 1.0", "YOLO 1.1", "ImageNet 1.0", \
-                        "WiderFace 1.0", "VGGFace2 1.0", "Cityscapes 1.0", \
-                        "Datumaro 1.0" \
+                        "MOT 1.1", "MOTS PNG 1.0",
+                        "PASCAL VOC 1.1", "Segmentation mask 1.1",
+                        "TFRecord 1.0", "YOLO 1.1", "ImageNet 1.0",
+                        "WiderFace 1.0", "VGGFace2 1.0", "Cityscapes 1.0",
+                        "Datumaro 1.0", "Open Images V6 1.0"
                     ]:
                         self._create_annotations(task, dump_format_name, "default")
                     else:
@@ -1009,6 +1009,7 @@ class TaskDumpUploadTest(_DbTestBase):
                         "MOTS PNG 1.0", # changed points values
                         "Segmentation mask 1.1", # changed points values
                         "ICDAR Segmentation 1.0", # changed points values
+                        "Open Images V6 1.0", # changed points values
                         'Kitti Raw Format 1.0',
                         'Sly Point Cloud Format 1.0',
                         'Cityscapes 1.0', # changed points value
@@ -1032,7 +1033,8 @@ class TaskDumpUploadTest(_DbTestBase):
                         "MOT 1.1", "MOTS PNG 1.0", \
                         "PASCAL VOC 1.1", "Segmentation mask 1.1", \
                         "TFRecord 1.0", "YOLO 1.1", "ImageNet 1.0", \
-                        "WiderFace 1.0", "VGGFace2 1.0", "Datumaro 1.0", \
+                        "WiderFace 1.0", "VGGFace2 1.0", "Open Images V6 1.0", \
+                        "Datumaro 1.0", \
                     ]:
                         self._create_annotations(task, dump_format_name, "default")
                     else:
