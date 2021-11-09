@@ -1198,6 +1198,32 @@
     ],
     "tracks": []
   },
+  "LFW 1.0": {
+    "version": 0,
+    "tags": [
+      {
+        "frame": 0,
+        "label_id": null,
+        "group": 0,
+        "source": "manual",
+        "attributes": []
+      }
+    ],
+    "shapes": [
+      {
+        "type": "points",
+        "occluded": false,
+        "z_order": 0,
+        "points": [18.0, 8.0, 26.5, 17.7, 26.5, 23.7, 16.9, 23.2, 30.3, 28.0],
+        "frame": 0,
+        "label_id": null,
+        "group": 0,
+        "source": "manual",
+        "attributes": []
+      }
+    ],
+    "tracks": []
+  },
   "Cityscapes 1.0": {
     "version": 0,
     "tags": [],

@@ -296,6 +296,7 @@ class TaskExportTest(_DbTestBase):
             'ICDAR Segmentation 1.0',
             'Kitti Raw Format 1.0',
             'Sly Point Cloud Format 1.0',
+            'LFW 1.0',
             'Cityscapes 1.0',
             'Open Images V6 1.0'
         })
@@ -324,10 +325,11 @@ class TaskExportTest(_DbTestBase):
             'ICDAR Segmentation 1.0',
             'Kitti Raw Format 1.0',
             'Sly Point Cloud Format 1.0',
+            'LFW 1.0',
             'Cityscapes 1.0',
             'Open Images V6 1.0',
             'Datumaro 1.0',
-            'Datumaro 3D 1.0'
+            'Datumaro 3D 1.0',
         })
 
     def test_exports(self):
@@ -374,6 +376,7 @@ class TaskExportTest(_DbTestBase):
             ('ICDAR Recognition 1.0', 'icdar_word_recognition'),
             ('ICDAR Localization 1.0', 'icdar_text_localization'),
             ('ICDAR Segmentation 1.0', 'icdar_text_segmentation'),
+            ('LFW 1.0', 'lfw'),
             # ('Cityscapes 1.0', 'cityscapes'), does not support, empty annotations
         ]:
             with self.subTest(format=format_name):

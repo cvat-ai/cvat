@@ -4818,6 +4818,10 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                 annotations["shapes"] = rectangle_shapes_wo_attrs \
                                       + polygon_shapes_wo_attrs
 
+            elif annotation_format == "LFW 1.0":
+                annotations["shapes"] = points_wo_attrs \
+                                      + tags_wo_attrs
+
             elif annotation_format == "Market-1501 1.0":
                 tags_with_attrs = [{
                     "frame": 1,

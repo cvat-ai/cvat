@@ -1030,11 +1030,11 @@ class TaskDumpUploadTest(_DbTestBase):
 
                     # create annotations
                     if dump_format_name in [
-                        "MOT 1.1", "MOTS PNG 1.0", \
-                        "PASCAL VOC 1.1", "Segmentation mask 1.1", \
-                        "TFRecord 1.0", "YOLO 1.1", "ImageNet 1.0", \
-                        "WiderFace 1.0", "VGGFace2 1.0", "Open Images V6 1.0", \
-                        "Datumaro 1.0", \
+                        "MOT 1.1", "MOTS PNG 1.0",
+                        "PASCAL VOC 1.1", "Segmentation mask 1.1",
+                        "TFRecord 1.0", "YOLO 1.1", "ImageNet 1.0",
+                        "WiderFace 1.0", "VGGFace2 1.0", "LFW 1.0",
+                        "Open Images V6 1.0", "Datumaro 1.0"
                     ]:
                         self._create_annotations(task, dump_format_name, "default")
                     else:
