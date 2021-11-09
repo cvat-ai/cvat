@@ -1198,6 +1198,24 @@
     ],
     "tracks": []
   },
+  "KITTI 1.0": {
+    "version": 0,
+    "tags": [],
+    "shapes": [
+      {
+        "type": "polygon",
+        "occluded": false,
+        "z_order": 0,
+        "points": [10.0, 20.0, 10.0, 25.0, 20.0, 10.0, 20.0, 25.0, 10.0, 20.0],
+        "frame": 0,
+        "label_id": null,
+        "group": 0,
+        "source": "manual",
+        "attributes": []
+      }
+    ],
+    "tracks": []
+  },
   "LFW 1.0": {
     "version": 0,
     "tags": [
