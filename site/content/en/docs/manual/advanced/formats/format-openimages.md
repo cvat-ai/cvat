@@ -1,5 +1,5 @@
 ---
-linkTitle: 'Open Images'
+linkTitle: 'Open Images V6'
 weight: 15
 ---
 

@@ -4811,7 +4811,7 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                 annotations["shapes"] = points_wo_attrs \
                                       + rectangle_shapes_wo_attrs
 
-            elif annotation_format == "Open Images 1.0":
+            elif annotation_format == "Open Images V6 1.0":
                 annotations["tags"] = tags_wo_attrs
                 annotations["shapes"] = rectangle_shapes_wo_attrs \
                                       + polygon_shapes_wo_attrs
