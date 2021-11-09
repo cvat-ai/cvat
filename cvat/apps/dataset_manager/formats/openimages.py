@@ -36,7 +36,7 @@ def find_item_ids(path):
                 for row in desc:
                     yield row.split(',')[0]
 
-@exporter(name='Open Images', ext='ZIP', version='1.0')
+@exporter(name='Open Images V6', ext='ZIP', version='1.0')
 def _export(dst_file, task_data, save_images=False):
     dataset = Dataset.from_extractors(GetCVATDataExtractor(
         task_data, include_images=save_images), env=dm_env)
@@ -48,7 +48,7 @@ def _export(dst_file, task_data, save_images=False):
 
         make_zip_archive(temp_dir, dst_file)
 
-@importer(name='Open Images', ext='ZIP', version='1.0')
+@importer(name='Open Images V6', ext='ZIP', version='1.0')
 def _import(src_file, task_data):
     with TemporaryDirectory() as tmp_dir:
         Archive(src_file.name).extractall(tmp_dir)
