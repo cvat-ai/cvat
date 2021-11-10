@@ -11,7 +11,7 @@ from io import BytesIO
 
 import datumaro
 from datumaro.components.dataset import Dataset, DatasetItem
-from datumaro.components.extractor import Mask
+from datumaro.components.annotation import Mask
 from django.contrib.auth.models import Group, User
 from PIL import Image
 
@@ -27,7 +27,7 @@ from cvat.apps.dataset_manager.util import make_zip_archive
 from cvat.apps.engine.models import Task
 
 
-def generate_image_file(filename, size=(100, 50)):
+def generate_image_file(filename, size=(100, 100)):
     f = BytesIO()
     image = Image.new('RGB', size=size)
     image.save(f, 'jpeg')
@@ -278,6 +278,7 @@ class TaskExportTest(_DbTestBase):
             'CVAT for images 1.1',
             'CVAT for video 1.1',
             'Datumaro 1.0',
+            'Datumaro 3D 1.0',
             'LabelMe 3.0',
             'MOT 1.1',
             'MOTS PNG 1.0',
@@ -294,8 +295,11 @@ class TaskExportTest(_DbTestBase):
             'ICDAR Localization 1.0',
             'ICDAR Segmentation 1.0',
             'Kitti Raw Format 1.0',
-            'Sly Point Cloud Format 1.0'
-
+            'Sly Point Cloud Format 1.0',
+            'KITTI 1.0',
+            'LFW 1.0',
+            'Cityscapes 1.0',
+            'Open Images V6 1.0'
         })
 
     def test_import_formats_query(self):
@@ -321,7 +325,13 @@ class TaskExportTest(_DbTestBase):
             'ICDAR Localization 1.0',
             'ICDAR Segmentation 1.0',
             'Kitti Raw Format 1.0',
-            'Sly Point Cloud Format 1.0'
+            'Sly Point Cloud Format 1.0',
+            'KITTI 1.0',
+            'LFW 1.0',
+            'Cityscapes 1.0',
+            'Open Images V6 1.0',
+            'Datumaro 1.0',
+            'Datumaro 3D 1.0',
         })
 
     def test_exports(self):
@@ -352,7 +362,7 @@ class TaskExportTest(_DbTestBase):
             ('COCO 1.0', 'coco'),
             ('CVAT for images 1.1', 'cvat'),
             # ('CVAT for video 1.1', 'cvat'), # does not support
-            ('Datumaro 1.0', 'datumaro_project'),
+            ('Datumaro 1.0', 'datumaro'),
             ('LabelMe 3.0', 'label_me'),
             # ('MOT 1.1', 'mot_seq'), # does not support
             # ('MOTS PNG 1.0', 'mots_png'), # does not support
@@ -368,6 +378,9 @@ class TaskExportTest(_DbTestBase):
             ('ICDAR Recognition 1.0', 'icdar_word_recognition'),
             ('ICDAR Localization 1.0', 'icdar_text_localization'),
             ('ICDAR Segmentation 1.0', 'icdar_text_segmentation'),
+            # ('KITTI 1.0', 'kitti') format does not support empty annotations
+            ('LFW 1.0', 'lfw'),
+            # ('Cityscapes 1.0', 'cityscapes'), does not support, empty annotations
         ]:
             with self.subTest(format=format_name):
                 if not dm.formats.registry.EXPORT_FORMATS[format_name].ENABLED:
@@ -378,16 +391,6 @@ class TaskExportTest(_DbTestBase):
 
                 def check(file_path):
                     def load_dataset(src):
-                        if importer_name == 'datumaro_project':
-                            project = datumaro.components.project. \
-                                Project.load(src)
-
-                            # NOTE: can't import cvat.utils.cli
-                            # for whatever reason, so remove the dependency
-                            #
-                            project.config.remove('sources')
-
-                            return project.make_dataset()
                         return datumaro.components.dataset. \
                             Dataset.import_from(src, importer_name, env=dm_env)
 
@@ -698,6 +701,10 @@ class TaskAnnotationsImportTest(_DbTestBase):
                         }
                     ]
                 },
+                {
+                    "name": "background",
+                    "attributes": [],
+                },
                 {"name": "person"}
             ]
 
@@ -781,17 +788,6 @@ class TaskAnnotationsImportTest(_DbTestBase):
                 "type": "rectangle",
                 "occluded": False,
             }]
-        elif annotation_format == "VGGFace2 1.0":
-            shapes = [{
-                "frame": 1,
-                "label_id": task["labels"][1]["id"],
-                "group": None,
-                "source": "manual",
-                "attributes": [],
-                "points": [2.0, 2.1, 40, 50.7],
-                "type": "rectangle",
-                "occluded": False
-            }]
         else:
             rectangle_shape_wo_attrs = {
                 "frame": 1,
@@ -799,7 +795,7 @@ class TaskAnnotationsImportTest(_DbTestBase):
                 "group": 0,
                 "source": "manual",
                 "attributes": [],
-                "points": [2.0, 2.1, 40, 50.7],
+                "points": [2.0, 2.1, 40, 10.7],
                 "type": "rectangle",
                 "occluded": False,
             }
@@ -819,7 +815,7 @@ class TaskAnnotationsImportTest(_DbTestBase):
                         "value": task["labels"][0]["attributes"][1]["default_value"]
                     }
                 ],
-                "points": [1.0, 2.1, 10.6, 53.22],
+                "points": [1.0, 2.1, 10.6, 13.22],
                 "type": "rectangle",
                 "occluded": False,
             }
@@ -834,7 +830,7 @@ class TaskAnnotationsImportTest(_DbTestBase):
                     {
                         "frame": 0,
                         "attributes": [],
-                        "points": [1.0, 2.1, 10.6, 53.22, 100, 300.222],
+                        "points": [1.0, 2.1, 10.6, 53.22, 30, 20.222],
                         "type": "polygon",
                         "occluded": False,
                         "outside": False
@@ -867,7 +863,7 @@ class TaskAnnotationsImportTest(_DbTestBase):
             }
 
             if annotation_format == "VGGFace2 1.0":
-                shapes = rectangle_shape_wo_attrs
+                shapes = [rectangle_shape_wo_attrs]
             elif annotation_format == "CVAT 1.1":
                 shapes = [rectangle_shape_wo_attrs,
                     rectangle_shape_with_attrs]
@@ -875,10 +871,10 @@ class TaskAnnotationsImportTest(_DbTestBase):
             elif annotation_format == "MOTS PNG 1.0":
                 tracks = [track_wo_attrs]
             else:
-                shapes = [rectangle_shape_wo_attrs,
+                shapes = [rectangle_shape_wo_attrs, \
                     rectangle_shape_with_attrs]
-                tags = tag_wo_attrs
-                tracks = track_wo_attrs
+                tags = [tag_wo_attrs]
+                tracks = [track_wo_attrs]
 
         annotations = {
             "version": 0,

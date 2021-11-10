@@ -189,7 +189,7 @@ class Project(models.Model):
                                  on_delete=models.SET_NULL, related_name="+")
     bug_tracker = models.CharField(max_length=2000, blank=True, default="")
     created_date = models.DateTimeField(auto_now_add=True)
-    updated_date = models.DateTimeField(auto_now_add=True)
+    updated_date = models.DateTimeField(auto_now=True)
     status = models.CharField(max_length=32, choices=StatusChoice.choices(),
                               default=StatusChoice.ANNOTATION)
     training_project = models.ForeignKey(TrainingProject, null=True, blank=True, on_delete=models.SET_NULL)

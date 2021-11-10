@@ -111,9 +111,9 @@ export class DrawHandlerImpl implements DrawHandler {
         const findInersection = (p1: Point, p2: Point, p3: Point, p4: Point): number[] => {
             const intersectionPoint = intersection(p1, p2, p3, p4);
             if (
-                intersectionPoint
-                && isBetween(p1.x, p2.x, intersectionPoint.x)
-                && isBetween(p1.y, p2.y, intersectionPoint.y)
+                intersectionPoint &&
+                isBetween(p1.x, p2.x, intersectionPoint.x) &&
+                isBetween(p1.y, p2.y, intersectionPoint.y)
             ) {
                 return [intersectionPoint.x, intersectionPoint.y];
             }
@@ -149,8 +149,8 @@ export class DrawHandlerImpl implements DrawHandler {
 
             if (resultPoints.length === 4) {
                 if (
-                    (p1.x === p2.x || Math.sign(resultPoints[0] - resultPoints[2]) !== Math.sign(p1.x - p2.x))
-                    && (p1.y === p2.y || Math.sign(resultPoints[1] - resultPoints[3]) !== Math.sign(p1.y - p2.y))
+                    (p1.x === p2.x || Math.sign(resultPoints[0] - resultPoints[2]) !== Math.sign(p1.x - p2.x)) &&
+                    (p1.y === p2.y || Math.sign(resultPoints[1] - resultPoints[3]) !== Math.sign(p1.y - p2.y))
                 ) {
                     [resultPoints[0], resultPoints[2]] = [resultPoints[2], resultPoints[0]];
                     [resultPoints[1], resultPoints[3]] = [resultPoints[3], resultPoints[1]];
@@ -173,9 +173,9 @@ export class DrawHandlerImpl implements DrawHandler {
                 if (isLastPoint && (isPolyline || (isPolygon && shapePoints.length === 4))) {
                     break;
                 }
-                const nextPoint = isLastPoint
-                    ? { x: shapePoints[0], y: shapePoints[1] }
-                    : { x: shapePoints[i + 2], y: shapePoints[i + 3] };
+                const nextPoint = isLastPoint ?
+                    { x: shapePoints[0], y: shapePoints[1] } :
+                    { x: shapePoints[i + 2], y: shapePoints[i + 3] };
                 const intersectionPoints = findIntersectionsWithFrameBorders(curPoint, nextPoint, direction);
                 if (intersectionPoints.length !== 0) {
                     resultPoints.push(...intersectionPoints);
@@ -312,9 +312,9 @@ export class DrawHandlerImpl implements DrawHandler {
         // We check if it is activated with remember function
         if (this.drawInstance.remember('_paintHandler')) {
             if (
-                ['polygon', 'polyline', 'points'].includes(this.drawData.shapeType)
-                || (this.drawData.shapeType === 'cuboid'
-                    && this.drawData.cuboidDrawingMethod === CuboidDrawingMethod.CORNER_POINTS)
+                ['polygon', 'polyline', 'points'].includes(this.drawData.shapeType) ||
+                (this.drawData.shapeType === 'cuboid' &&
+                    this.drawData.cuboidDrawingMethod === CuboidDrawingMethod.CORNER_POINTS)
             ) {
                 // Check for unsaved drawn shapes
                 this.drawInstance.draw('done');
@@ -489,22 +489,22 @@ export class DrawHandlerImpl implements DrawHandler {
         this.drawInstance.on('drawdone', (e: CustomEvent): void => {
             const targetPoints = pointsToNumberArray((e.target as SVGElement).getAttribute('points'));
             const { shapeType, redraw: clientID } = this.drawData;
-            const { points, box } = shapeType === 'cuboid'
-                ? this.getFinalCuboidCoordinates(targetPoints)
-                : this.getFinalPolyshapeCoordinates(targetPoints);
+            const { points, box } = shapeType === 'cuboid' ?
+                this.getFinalCuboidCoordinates(targetPoints) :
+                this.getFinalPolyshapeCoordinates(targetPoints);
             this.release();
 
             if (this.canceled) return;
             if (
-                shapeType === 'polygon'
-                && (box.xbr - box.xtl) * (box.ybr - box.ytl) >= consts.AREA_THRESHOLD
-                && points.length >= 3 * 2
+                shapeType === 'polygon' &&
+                (box.xbr - box.xtl) * (box.ybr - box.ytl) >= consts.AREA_THRESHOLD &&
+                points.length >= 3 * 2
             ) {
                 this.onDrawDone({ clientID, shapeType, points }, Date.now() - this.startTimestamp);
             } else if (
-                shapeType === 'polyline'
-                && (box.xbr - box.xtl >= consts.SIZE_THRESHOLD || box.ybr - box.ytl >= consts.SIZE_THRESHOLD)
-                && points.length >= 2 * 2
+                shapeType === 'polyline' &&
+                (box.xbr - box.xtl >= consts.SIZE_THRESHOLD || box.ybr - box.ytl >= consts.SIZE_THRESHOLD) &&
+                points.length >= 2 * 2
             ) {
                 this.onDrawDone({ clientID, shapeType, points }, Date.now() - this.startTimestamp);
             } else if (shapeType === 'points' && (e.target as any).getAttribute('points') !== '0,0') {
@@ -611,9 +611,9 @@ export class DrawHandlerImpl implements DrawHandler {
                 .split(/[,\s]/g)
                 .map((coord: string): number => +coord);
 
-            const { points } = this.drawData.initialState.shapeType === 'cuboid'
-                ? this.getFinalCuboidCoordinates(targetPoints)
-                : this.getFinalPolyshapeCoordinates(targetPoints);
+            const { points } = this.drawData.initialState.shapeType === 'cuboid' ?
+                this.getFinalCuboidCoordinates(targetPoints) :
+                this.getFinalPolyshapeCoordinates(targetPoints);
 
             if (!e.detail.originalEvent.ctrlKey) {
                 this.release();
@@ -886,12 +886,12 @@ export class DrawHandlerImpl implements DrawHandler {
     public configurate(configuration: Configuration): void {
         this.configuration = configuration;
 
-        const isFillableRect = this.drawData
-            && this.drawData.shapeType === 'rectangle'
-            && (this.drawData.rectDrawingMethod === RectDrawingMethod.CLASSIC || this.drawData.initialState);
-        const isFillableCuboid = this.drawData
-            && this.drawData.shapeType === 'cuboid'
-            && (this.drawData.cuboidDrawingMethod === CuboidDrawingMethod.CLASSIC || this.drawData.initialState);
+        const isFillableRect = this.drawData &&
+            this.drawData.shapeType === 'rectangle' &&
+            (this.drawData.rectDrawingMethod === RectDrawingMethod.CLASSIC || this.drawData.initialState);
+        const isFillableCuboid = this.drawData &&
+            this.drawData.shapeType === 'cuboid' &&
+            (this.drawData.cuboidDrawingMethod === CuboidDrawingMethod.CLASSIC || this.drawData.initialState);
         const isFilalblePolygon = this.drawData && this.drawData.shapeType === 'polygon';
 
         if (this.drawInstance && (isFillableRect || isFillableCuboid || isFilalblePolygon)) {

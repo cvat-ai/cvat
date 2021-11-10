@@ -244,7 +244,7 @@
         "type": "polygon",
         "occluded": false,
         "z_order": 0,
-        "points":  [35.0, 22.5, 53.32, 30.63, 22.34, 29.45, 47.43, 38.21],
+        "points": [35.0, 22.5, 53.32, 30.63, 22.34, 29.45, 47.43, 38.21],
         "frame": 0,
         "label_id": null,
         "group": 0,
@@ -474,6 +474,35 @@
       }
     ]
   },
+  "Open Images V6 1.0": {
+    "version": 0,
+    "tags": [],
+    "shapes": [
+      {
+        "type": "rectangle",
+        "occluded": false,
+        "z_order": 0,
+        "points": [1.0, 2.0, 3.0, 4.0],
+        "frame": 0,
+        "label_id": null,
+        "group": 0,
+        "source": "manual",
+        "attributes": []
+      },
+      {
+        "type": "polygon",
+        "occluded": false,
+        "z_order": 0,
+        "points": [1.0, 1.0, 1.0, 20.0, 20.0, 1.0, 20.0, 1.0, 1.0, 1.0],
+        "frame": 0,
+        "label_id": null,
+        "group": 0,
+        "source": "manual",
+        "attributes": []
+      }
+    ],
+    "tracks": []
+  },
   "PASCAL VOC 1.1": {
     "version": 0,
     "tags": [
@@ -661,7 +690,7 @@
         "points": [27.15, 26.7, 53.25, 24.8],
         "frame": 0,
         "label_id": null,
-        "group": 2,
+        "group": 1,
         "source": "manual",
         "attributes": []
       },
@@ -673,34 +702,6 @@
         "frame": 1,
         "label_id": null,
         "group": 0,
-        "source": "manual",
-        "attributes": []
-      },
-      {
-        "type": "cuboid",
-        "occluded": false,
-        "z_order": 2,
-        "points": [
-          51.65,
-          37.3,
-          51.65,
-          46.8,
-          70.25,
-          37.2,
-          70.25,
-          46.8,
-          72.11,
-          36.34,
-          72.11,
-          45.74,
-          53.51,
-          36.34,
-          53.51,
-          45.74
-        ],
-        "frame": 0,
-        "label_id": null,
-        "group": 1,
         "source": "manual",
         "attributes": []
       }
@@ -920,7 +921,7 @@
       }
     ]
   },
-   "CVAT for images 1.1 tag": {
+  "CVAT for images 1.1 tag": {
     "version": 0,
     "tags": [
       {
@@ -982,7 +983,7 @@
     "shapes": [],
     "tracks": []
   },
-    "CVAT for images 1.1 different types": {
+  "CVAT for images 1.1 different types": {
     "version": 0,
     "tags": [],
     "shapes": [
@@ -1028,7 +1029,7 @@
       }
     ]
   },
- "CVAT for video 1.1 polygon": {
+  "CVAT for video 1.1 polygon": {
     "version": 0,
     "tags": [],
     "shapes": [],
@@ -1069,7 +1070,7 @@
         ],
         "attributes": []
       },
-       {
+      {
         "frame": 0,
         "label_id": null,
         "group": 1,
@@ -1189,6 +1190,68 @@
         "z_order": 0,
         "points": [3.55, 27.75, 11.33, 33.71],
         "frame": 1,
+        "label_id": null,
+        "group": 0,
+        "source": "manual",
+        "attributes": []
+      }
+    ],
+    "tracks": []
+  },
+  "KITTI 1.0": {
+    "version": 0,
+    "tags": [],
+    "shapes": [
+      {
+        "type": "polygon",
+        "occluded": false,
+        "z_order": 0,
+        "points": [10.0, 20.0, 10.0, 25.0, 20.0, 10.0, 20.0, 25.0, 10.0, 20.0],
+        "frame": 0,
+        "label_id": null,
+        "group": 0,
+        "source": "manual",
+        "attributes": []
+      }
+    ],
+    "tracks": []
+  },
+  "LFW 1.0": {
+    "version": 0,
+    "tags": [
+      {
+        "frame": 0,
+        "label_id": null,
+        "group": 0,
+        "source": "manual",
+        "attributes": []
+      }
+    ],
+    "shapes": [
+      {
+        "type": "points",
+        "occluded": false,
+        "z_order": 0,
+        "points": [18.0, 8.0, 26.5, 17.7, 26.5, 23.7, 16.9, 23.2, 30.3, 28.0],
+        "frame": 0,
+        "label_id": null,
+        "group": 0,
+        "source": "manual",
+        "attributes": []
+      }
+    ],
+    "tracks": []
+  },
+  "Cityscapes 1.0": {
+    "version": 0,
+    "tags": [],
+    "shapes": [
+      {
+        "type": "polygon",
+        "occluded": false,
+        "z_order": 0,
+        "points": [11.9, 21.5, 35.2, 21.9, 33.6, 31.9, 12.4, 30.47],
+        "frame": 0,
         "label_id": null,
         "group": 0,
         "source": "manual",

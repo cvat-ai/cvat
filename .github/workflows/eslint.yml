@@ -7,7 +7,7 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions/setup-node@v2
         with:
-            node-version: 12
+            node-version: '16.x'
 
       - name: Run checks
         run: |
@@ -21,10 +21,8 @@ jobs:
           done
 
           if [[ ! -z ${changed_files_eslint} ]]; then
-            for package_files in `find -maxdepth 2 -name "package.json" -type f`; do
-              cd $(dirname $package_files) && npm ci && cd ${{ github.workspace }}
-            done
-            npm install eslint-detailed-reporter --save-dev
+            npm ci
+            npm install eslint-detailed-reporter --save-dev --legacy-peer-deps
             mkdir -p eslint_report
 
             echo "ESLint version: "`npx eslint --version`

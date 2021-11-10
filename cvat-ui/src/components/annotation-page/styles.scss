@@ -486,7 +486,7 @@ button.cvat-predictor-button {
             }
 
             .group-or-rule {
-                border-radius: $grid-unit-size / 4;
+                border-radius: $grid-unit-size * 0.25;
             }
 
             .group {

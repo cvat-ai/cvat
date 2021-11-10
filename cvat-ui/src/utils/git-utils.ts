@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -22,6 +22,7 @@ interface GitPlugin {
         };
     };
     data: {
+        format: any;
         task: any;
         lfs: boolean;
         repos: string;
@@ -37,6 +38,7 @@ interface ReposData {
         value: 'sync' | '!sync' | 'merged';
         error: string | null;
     };
+    format: string
 }
 
 function waitForClone(cloneResponse: any): Promise<void> {
@@ -93,6 +95,7 @@ async function cloneRepository(this: any, plugin: GitPlugin, createdTask: any): 
                     data: JSON.stringify({
                         path: plugin.data.repos,
                         lfs: plugin.data.lfs,
+                        format: plugin.data.format,
                         tid: createdTask.id,
                     }),
                 })
@@ -127,6 +130,7 @@ export function registerGitPlugin(): void {
         data: {
             task: null,
             lfs: false,
+            format: '',
             repos: '',
         },
         callbacks: {
@@ -152,6 +156,7 @@ export async function getReposData(tid: number): Promise<ReposData | null> {
             value: response.status.value,
             error: response.status.error,
         },
+        format: response.format,
     };
 }
 
