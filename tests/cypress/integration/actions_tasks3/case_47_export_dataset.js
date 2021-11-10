@@ -12,7 +12,7 @@ context('Export task dataset.', () => {
     const rectangleShape2Points = {
         points: 'By 2 Points',
         type: 'Shape',
-        labelName: labelName,
+        labelName,
         firstX: 400,
         firstY: 100,
         secondX: 500,
@@ -41,7 +41,7 @@ context('Export task dataset.', () => {
                 as: 'exportDatasetRenameArchive',
                 type: 'dataset',
                 format: exportFormat,
-                archiveCustomeName: 'task_export_dataset_custome_name'
+                archiveCustomeName: 'task_export_dataset_custome_name',
             };
             cy.exportTask(exportDataset);
             cy.waitForDownload();

@@ -9,7 +9,7 @@ import { taskName, labelName } from '../../support/const_canvas3d';
 context('Canvas 3D functionality. Dump/upload annotation. "Velodyne Points" format.', () => {
     const caseId = '92';
     const cuboidCreationParams = {
-        labelName: labelName,
+        labelName,
     };
     const dumpTypeVC = 'Kitti Raw Format';
     let annotationVCArchiveName = '';
@@ -48,7 +48,7 @@ context('Canvas 3D functionality. Dump/upload annotation. "Velodyne Points" form
                 as: 'exportAnnotationsRenameArchive',
                 type: 'annotations',
                 format: dumpTypeVC,
-                archiveCustomeName: 'task_export_3d_annotation_custome_name_vc_format'
+                archiveCustomeName: 'task_export_3d_annotation_custome_name_vc_format',
             };
             cy.exportTask(exportAnnotationRenameArchive);
             cy.getDownloadFileName().then((file) => {
@@ -62,14 +62,14 @@ context('Canvas 3D functionality. Dump/upload annotation. "Velodyne Points" form
 
         it('Upload "Velodyne Points" format annotation to job.', () => {
             cy.interactMenu('Upload annotations');
-            cy.readFile('cypress/fixtures/' + annotationVCArchiveName, 'binary')
+            cy.readFile(`cypress/fixtures/${annotationVCArchiveName}`, 'binary')
                 .then(Cypress.Blob.binaryStringToBlob)
                 .then((fileContent) => {
                     cy.contains('.cvat-menu-load-submenu-item', dumpTypeVC.split(' ')[0])
                         .should('be.visible')
                         .within(() => {
                             cy.get('.cvat-menu-load-submenu-item-button').click().get('input[type=file]').attachFile({
-                                fileContent: fileContent,
+                                fileContent,
                                 fileName: annotationVCArchiveName,
                             });
                         });
@@ -89,7 +89,7 @@ context('Canvas 3D functionality. Dump/upload annotation. "Velodyne Points" form
                 .find('.cvat-menu-icon')
                 .trigger('mouseover');
             cy.contains('Upload annotations').trigger('mouseover');
-            cy.readFile('cypress/fixtures/' + annotationVCArchiveNameCustomeName, 'binary')
+            cy.readFile(`cypress/fixtures/${annotationVCArchiveNameCustomeName}`, 'binary')
                 .then(Cypress.Blob.binaryStringToBlob)
                 .then((fileContent) => {
                     cy.contains('.cvat-menu-load-submenu-item', dumpTypeVC.split(' ')[0])
@@ -97,10 +97,10 @@ context('Canvas 3D functionality. Dump/upload annotation. "Velodyne Points" form
                         .within(() => {
                             cy.get('.cvat-menu-load-submenu-item-button').click().get('input[type=file]').attachFile({
                                 fileName: annotationVCArchiveNameCustomeName,
-                                fileContent: fileContent,
+                                fileContent,
                             });
                         });
-            });
+                });
             confirmUpdate('.cvat-modal-content-load-task-annotation');
             cy.contains('Annotations have been loaded').should('be.visible');
             cy.get('[data-icon="close"]').click();

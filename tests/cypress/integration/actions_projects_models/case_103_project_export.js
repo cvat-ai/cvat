@@ -28,7 +28,7 @@ context('Export project dataset.', { browser: '!firefox' }, () => {
     const multiAttrParams = false;
     let projectID = '';
 
-    function getProjectID(projectName) {
+    function getProjectID() {
         cy.contains('.cvat-project-name', projectName)
             .parents('.cvat-project-details')
             .should('have.attr', 'cvat-project-id')
@@ -37,35 +37,35 @@ context('Export project dataset.', { browser: '!firefox' }, () => {
             });
     }
 
-    // before(() => {
-    //     cy.imageGenerator(imagesFolder, imageFileName, width, height, color, posX, posY, labelName, imagesCount);
-    //     cy.createZipArchive(directoryToArchive, archivePath);
-    //     cy.openProject(projectName);
-    //     getProjectID(projectName);
-    //     cy.createAnnotationTask(
-    //         taskName,
-    //         labelName,
-    //         attrName,
-    //         textDefaultValue,
-    //         archiveName,
-    //         multiAttrParams,
-    //         advancedConfigurationParams,
-    //         forProject,
-    //         attachToProject,
-    //         projectName,
-    //     );
-    // });
+    before(() => {
+        cy.imageGenerator(imagesFolder, imageFileName, width, height, color, posX, posY, labelName, imagesCount);
+        cy.createZipArchive(directoryToArchive, archivePath);
+        cy.openProject(projectName);
+        getProjectID(projectName);
+        cy.createAnnotationTask(
+            taskName,
+            labelName,
+            attrName,
+            textDefaultValue,
+            archiveName,
+            multiAttrParams,
+            advancedConfigurationParams,
+            forProject,
+            attachToProject,
+            projectName,
+        );
+    });
 
-    // after(() => {
-    //     cy.goToProjectsList();
-    //     cy.deleteProject(projectName, projectID);
-    // });
+    after(() => {
+        cy.goToProjectsList();
+        cy.deleteProject(projectName, projectID);
+    });
 
     describe(`Testing "Case ${caseID}"`, () => {
-        it.skip('Export project dataset. Annotation.', () => {
+        it('Export project dataset. Annotation.', () => {
             cy.goToProjectsList();
             const exportAnnotation = {
-                projectName: projectName,
+                projectName,
                 as: 'exportAnnotations',
                 type: 'annotations',
                 dumpType: 'CVAT for images',
@@ -77,7 +77,7 @@ context('Export project dataset.', { browser: '!firefox' }, () => {
         it('Export project dataset. Dataset.', () => {
             cy.goToProjectsList();
             const exportDataset = {
-                projectName: projectName,
+                projectName,
                 as: 'exportDataset',
                 type: 'dataset',
                 dumpType: 'CVAT for video',
@@ -89,7 +89,7 @@ context('Export project dataset.', { browser: '!firefox' }, () => {
         it('Export project dataset. Annotation. Rename a archive.', () => {
             cy.goToProjectsList();
             const exportAnnotationsRenameArchive = {
-                projectName: projectName,
+                projectName,
                 as: 'exportAnnotationsRenameArchive',
                 type: 'annotations',
                 dumpType: 'CVAT for images',

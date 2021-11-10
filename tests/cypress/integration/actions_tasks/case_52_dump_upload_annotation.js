@@ -11,7 +11,7 @@ context('Dump/Upload annotation.', { browser: '!firefox' }, () => {
     const createRectangleTrack2Points = {
         points: 'By 2 Points',
         type: 'Track',
-        labelName: labelName,
+        labelName,
         firstX: 250,
         firstY: 350,
         secondX: 350,

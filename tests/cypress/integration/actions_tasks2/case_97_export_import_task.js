@@ -23,12 +23,11 @@ context('Export, import an annotation task.', { browser: '!firefox' }, () => {
     const directoryToArchive = imagesFolder;
     const newLabelName = 'person';
     let taskId;
-    let taskBackupArchiveShortName = `task_${taskName.toLowerCase()}_backup`;
     let taskBackupArchiveFullName;
 
     const createPointsShape = {
         type: 'Shape',
-        labelName: labelName,
+        labelName,
         pointsMap: [
             { x: 200, y: 200 },
             { x: 250, y: 200 },

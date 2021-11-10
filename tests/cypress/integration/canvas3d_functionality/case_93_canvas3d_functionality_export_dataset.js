@@ -9,7 +9,7 @@ import { taskName, labelName } from '../../support/const_canvas3d';
 context('Canvas 3D functionality. Export as a dataset.', () => {
     const caseId = '93';
     const cuboidCreationParams = {
-        labelName: labelName,
+        labelName,
     };
 
     const dumpTypePC = 'Sly Point Cloud Format';
@@ -49,7 +49,7 @@ context('Canvas 3D functionality. Export as a dataset.', () => {
                 as: 'exportDatasetVCFormatRenameArchive',
                 type: 'dataset',
                 format: dumpTypeVC,
-                archiveCustomeName: 'task_export_3d_dataset_custome_name_vc_format'
+                archiveCustomeName: 'task_export_3d_dataset_custome_name_vc_format',
             };
             cy.exportTask(exportDatasetVCFormatRenameArchive);
             cy.waitForDownload();

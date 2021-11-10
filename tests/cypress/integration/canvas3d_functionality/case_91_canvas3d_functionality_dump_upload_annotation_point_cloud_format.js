@@ -9,7 +9,7 @@ import { taskName, labelName } from '../../support/const_canvas3d';
 context('Canvas 3D functionality. Dump/upload annotation. "Point Cloud" format', () => {
     const caseId = '91';
     const cuboidCreationParams = {
-        labelName: labelName,
+        labelName,
     };
     const dumpTypePC = 'Sly Point Cloud Format';
     let annotationPCArchiveName = '';
@@ -48,7 +48,7 @@ context('Canvas 3D functionality. Dump/upload annotation. "Point Cloud" format',
                 as: 'exportAnnotationsRenameArchive',
                 type: 'annotations',
                 format: dumpTypePC,
-                archiveCustomeName: 'task_export_3d_annotation_custome_name_pc_format'
+                archiveCustomeName: 'task_export_3d_annotation_custome_name_pc_format',
             };
             cy.exportTask(exportAnnotationRenameArchive);
             cy.getDownloadFileName().then((file) => {
@@ -62,14 +62,14 @@ context('Canvas 3D functionality. Dump/upload annotation. "Point Cloud" format',
 
         it('Upload "Point Cloud" format annotation to job.', () => {
             cy.interactMenu('Upload annotations');
-            cy.readFile('cypress/fixtures/' + annotationPCArchiveName, 'binary')
+            cy.readFile(`cypress/fixtures/${annotationPCArchiveName}`, 'binary')
                 .then(Cypress.Blob.binaryStringToBlob)
                 .then((fileContent) => {
                     cy.contains('.cvat-menu-load-submenu-item', dumpTypePC.split(' ')[0])
                         .should('be.visible')
                         .within(() => {
                             cy.get('.cvat-menu-load-submenu-item-button').click().get('input[type=file]').attachFile({
-                                fileContent: fileContent,
+                                fileContent,
                                 fileName: annotationPCArchiveName,
                             });
                         });
@@ -90,7 +90,7 @@ context('Canvas 3D functionality. Dump/upload annotation. "Point Cloud" format',
                 .find('.cvat-menu-icon')
                 .trigger('mouseover');
             cy.contains('Upload annotations').trigger('mouseover');
-            cy.readFile('cypress/fixtures/' + annotationPCArchiveCustomeName, 'binary')
+            cy.readFile(`cypress/fixtures/${annotationPCArchiveCustomeName}`, 'binary')
                 .then(Cypress.Blob.binaryStringToBlob)
                 .then((fileContent) => {
                     cy.contains('.cvat-menu-load-submenu-item', dumpTypePC.split(' ')[0])
@@ -98,7 +98,7 @@ context('Canvas 3D functionality. Dump/upload annotation. "Point Cloud" format',
                         .within(() => {
                             cy.get('.cvat-menu-load-submenu-item-button').click().get('input[type=file]').attachFile({
                                 fileName: annotationPCArchiveCustomeName,
-                                fileContent: fileContent,
+                                fileContent,
                             });
                         });
                 });

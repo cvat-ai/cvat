@@ -21,7 +21,7 @@ context('Export project dataset with 3D task.', { browser: '!firefox' }, () => {
     };
     let projectID = '';
 
-    function getProjectID(projectName) {
+    function getProjectID() {
         cy.contains('.cvat-project-name', projectName)
             .parents('.cvat-project-details')
             .should('have.attr', 'cvat-project-id')
@@ -56,7 +56,7 @@ context('Export project dataset with 3D task.', { browser: '!firefox' }, () => {
         it('Export project with 3D task. Annotation.', () => {
             cy.goToProjectsList();
             const exportAnnotation3d = {
-                projectName: projectName,
+                projectName,
                 as: 'exportAnnotations3d',
                 type: 'annotations',
                 dumpType: 'Kitti Raw Format',
@@ -68,7 +68,7 @@ context('Export project dataset with 3D task.', { browser: '!firefox' }, () => {
         it('Export project with 3D task. Dataset.', () => {
             cy.goToProjectsList();
             const exportDataset3d = {
-                projectName: projectName,
+                projectName,
                 as: 'exportDataset3d',
                 type: 'dataset',
                 dumpType: 'Sly Point Cloud Format',
@@ -80,7 +80,7 @@ context('Export project dataset with 3D task.', { browser: '!firefox' }, () => {
         it('Export project with 3D task. Annotation. Rename a archive.', () => {
             cy.goToProjectsList();
             const exportAnnotations3dRenameArchive = {
-                projectName: projectName,
+                projectName,
                 as: 'exportAnnotations3dRenameArchive',
                 type: 'annotations',
                 dumpType: 'Kitti Raw Format',
