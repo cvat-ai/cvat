@@ -83,10 +83,16 @@ Cypress.Commands.add('exportProject', ({ projectName, type, dumpType, archiveCus
     cy.get('.cvat-notification-notice-export-project-start').should('be.visible');
 });
 
-Cypress.Commands.add('waitForDownload', () => {
+Cypress.Commands.add('getDownloadFileName', () => {
     cy.intercept('GET', '**=download').as('download');
     cy.wait('@download').then((download) => {
         const filename = download.response.headers['content-disposition'].split('filename="b\'')[1].split('\'')[0];
+        return filename;
+    });
+});
+
+Cypress.Commands.add('waitForDownload', () => {
+    cy.getDownloadFileName().then((filename) => {
         cy.verifyDownload(filename);
     });
 });

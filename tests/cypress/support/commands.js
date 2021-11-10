@@ -733,7 +733,6 @@ Cypress.Commands.add('closeModalUnsupportedPlatform', () => {
 
 Cypress.Commands.add('exportTask', ({ as, type, format, archiveCustomeName }) => {
     cy.interactMenu('Export task dataset');
-    cy.intercept('GET', `/api/v1/tasks/**/${type}**`).as(as);
     cy.get('.cvat-modal-export-task').should('be.visible').find('.cvat-modal-export-select').click();
     cy.contains('.cvat-modal-export-option-item', format).should('be.visible').click();
     cy.get('.cvat-modal-export-task').find('.cvat-modal-export-select').should('contain.text', format);
@@ -746,7 +745,4 @@ Cypress.Commands.add('exportTask', ({ as, type, format, archiveCustomeName }) =>
     cy.contains('button', 'OK').click();
     cy.get('.cvat-notification-notice-export-task-start').should('be.visible');
     cy.closeNotification('.cvat-notification-notice-export-task-start');
-    cy.wait(`@${as}`, { timeout: 5000 }).its('response.statusCode').should('equal', 202);
-    cy.wait(`@${as}`).its('response.statusCode').should('equal', 201);
-    cy.wait(2000); // Waiting for a full file download
 });

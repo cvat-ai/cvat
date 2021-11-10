@@ -80,12 +80,9 @@ context('Dump/Upload annotation.', { browser: '!firefox' }, () => {
                 archiveCustomeName: 'task_export_annotation_custome_name',
             };
             cy.exportTask(exportAnnotationRenameArchive);
-            const regex = new RegExp(`^${exportAnnotationRenameArchive.archiveCustomeName}.zip$`);
-            cy.task('listFiles', 'cypress/fixtures').each((fileName) => {
-                if (fileName.match(regex)) {
-                    cy.readFile(`cypress/fixtures/${fileName}`).should('exist');
-                    annotationArchiveNameCustomeName = fileName;
-                }
+            cy.getDownloadFileName().then((file) => {
+                annotationArchiveNameCustomeName = file;
+                cy.verifyDownload(annotationArchiveNameCustomeName);
             });
         });
 
@@ -96,19 +93,14 @@ context('Dump/Upload annotation.', { browser: '!firefox' }, () => {
                 format: exportFormat,
             };
             cy.exportTask(exportAnnotation);
+            cy.getDownloadFileName().then((file) => {
+                annotationArchiveName = file;
+                cy.verifyDownload(annotationArchiveName);
+            });
             cy.removeAnnotations();
             cy.saveJob('PUT');
             cy.get('#cvat_canvas_shape_1').should('not.exist');
             cy.get('#cvat-objects-sidebar-state-item-1').should('not.exist');
-            const regex = new RegExp(
-                `^task_${taskName.toLowerCase()}-.*-${exportAnnotation.format.toLowerCase()}.*.zip$`,
-            );
-            cy.task('listFiles', 'cypress/fixtures').each((fileName) => {
-                if (fileName.match(regex)) {
-                    cy.readFile(`cypress/fixtures/${fileName}`).should('exist');
-                    annotationArchiveName = fileName;
-                }
-            });
         });
 
         it('Upload annotation to job.', () => {

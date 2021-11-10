@@ -37,12 +37,9 @@ context('Canvas 3D functionality. Dump/upload annotation. "Point Cloud" format',
                 format: dumpTypePC,
             };
             cy.exportTask(exportAnnotation);
-            const regex = new RegExp(`^task_${taskName.toLowerCase()}-.*-${exportAnnotation.format.toLowerCase()}.*.zip$`);
-            cy.task('listFiles', 'cypress/fixtures').each((fileName) => {
-                if (fileName.match(regex)) {
-                    cy.readFile(`cypress/fixtures/${fileName}`).should('exist');
-                    annotationPCArchiveName = fileName;
-                }
+            cy.getDownloadFileName().then((file) => {
+                annotationPCArchiveName = file;
+                cy.verifyDownload(annotationPCArchiveName);
             });
         });
 
@@ -54,12 +51,9 @@ context('Canvas 3D functionality. Dump/upload annotation. "Point Cloud" format',
                 archiveCustomeName: 'task_export_3d_annotation_custome_name_pc_format'
             };
             cy.exportTask(exportAnnotationRenameArchive);
-            const regex = new RegExp(`^${exportAnnotationRenameArchive.archiveCustomeName}.zip$`);
-            cy.task('listFiles', 'cypress/fixtures').each((fileName) => {
-                if (fileName.match(regex)) {
-                    cy.readFile(`cypress/fixtures/${fileName}`).should('exist');
-                    annotationPCArchiveCustomeName = fileName;
-                }
+            cy.getDownloadFileName().then((file) => {
+                annotationPCArchiveCustomeName = file;
+                cy.verifyDownload(annotationPCArchiveCustomeName);
             });
             cy.removeAnnotations();
             cy.saveJob('PUT');
