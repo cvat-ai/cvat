@@ -68,8 +68,8 @@ Cypress.Commands.add('deletingRegisteredUsers', (accountToDelete) => {
             headers: {
                 Authorization: `Token ${authKey}`,
             },
-        }).then(() => {
-            const responceResult = response.body.results;
+        }).then((responseSec) => {
+            const responceResult = responseSec.body.results;
             for (const user of responceResult) {
                 const userId = user.id;
                 const userName = user.username;
