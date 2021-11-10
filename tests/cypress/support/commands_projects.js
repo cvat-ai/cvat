@@ -28,9 +28,9 @@ Cypress.Commands.add(
         cy.get('.cvat-create-project-content').within(() => {
             cy.contains('Submit').click();
         });
-        if (expectedResult == 'success') {
+        if (expectedResult === 'success') {
             cy.get('.cvat-notification-create-project-success').should('exist').find('[data-icon="close"]').click();
-        } else if (expectedResult == 'fail') {
+        } else if (expectedResult === 'fail') {
             cy.get('.cvat-notification-create-project-success').should('not.exist');
         }
         cy.goToProjectsList();
@@ -67,7 +67,9 @@ Cypress.Commands.add('deleteProject', (projectName, projectID, expectedResult = 
     }
 });
 
-Cypress.Commands.add('exportProject', ({ projectName, type, dumpType, archiveCustomeName }) => {
+Cypress.Commands.add('exportProject', ({
+    projectName, type, dumpType, archiveCustomeName,
+}) => {
     cy.projectActions(projectName);
     cy.get('.cvat-project-actions-menu').contains('Export project dataset').click();
     cy.get('.cvat-modal-export-project').should('be.visible').find('.cvat-modal-export-select').click();

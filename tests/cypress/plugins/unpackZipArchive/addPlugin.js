@@ -2,17 +2,17 @@
 //
 // SPDX-License-Identifier: MIT
 
-// eslint-disable-next-line no-undef
+// eslint-disable-next-line no-use-before-define
 exports.unpackZipArchive = unpackZipArchive;
 
-const extract = require('extract-zip')
-const path = require("path");
+const path = require('path');
+const extract = require('extract-zip');
 
 async function unpackZipArchive(args) {
-    const arhivePath = args.arhivePath;
+    const { arhivePath } = args;
     const absolutePath = path.dirname(path.resolve(arhivePath));
     try {
-        await extract(arhivePath, {dir: absolutePath});
+        await extract(arhivePath, { dir: absolutePath });
         return null;
     } catch (err) {
         // handle any errors

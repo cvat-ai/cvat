@@ -4,12 +4,15 @@
 
 /// <reference types="cypress" />
 
+// eslint-disable-next-line import/no-extraneous-dependencies
 require('cypress-file-upload');
 require('../plugins/imageGenerator/imageGeneratorCommand');
 require('../plugins/createZipArchive/createZipArchiveCommand');
+// eslint-disable-next-line import/no-extraneous-dependencies
 require('cypress-localstorage-commands');
 require('../plugins/compareImages/compareImagesCommand');
 require('../plugins/unpackZipArchive/unpackZipArchiveCommand');
+// eslint-disable-next-line import/no-extraneous-dependencies
 require('cy-verify-downloads').addCustomCommand();
 
 let selectedValueGlobal = '';
@@ -21,6 +24,7 @@ Cypress.Commands.add('login', (username = Cypress.env('user'), password = Cypres
     cy.url().should('match', /\/tasks$/);
     cy.document().then((doc) => {
         const loadSettingFailNotice = Array.from(doc.querySelectorAll('.cvat-notification-notice-load-settings-fail'));
+        // eslint-disable-next-line no-unused-expressions
         loadSettingFailNotice.length > 0 ? cy.closeNotification('.cvat-notification-notice-load-settings-fail') : null;
     });
 });
@@ -58,17 +62,17 @@ Cypress.Commands.add('deletingRegisteredUsers', (accountToDelete) => {
             password: Cypress.env('password'),
         },
     }).then((response) => {
-        const authKey = response['body']['key'];
+        const authKey = response.body.key;
         cy.request({
             url: '/api/v1/users?page_size=all',
             headers: {
                 Authorization: `Token ${authKey}`,
             },
-        }).then((response) => {
-            const responceResult = response['body']['results'];
+        }).then(() => {
+            const responceResult = response.body.results;
             for (const user of responceResult) {
-                const userId = user['id'];
-                const userName = user['username'];
+                const userId = user.id;
+                const userName = user.username;
                 for (const account of accountToDelete) {
                     if (userName === account) {
                         cy.request({
@@ -92,10 +96,10 @@ Cypress.Commands.add('changeUserActiveStatus', (authKey, accountsToChangeActiveS
             Authorization: `Token ${authKey}`,
         },
     }).then((response) => {
-        const responceResult = response['body']['results'];
+        const responceResult = response.body.results;
         responceResult.forEach((user) => {
-            const userId = user['id'];
-            const userName = user['username'];
+            const userId = user.id;
+            const userName = user.username;
             if (userName.includes(accountsToChangeActiveStatus)) {
                 cy.request({
                     method: 'PATCH',
@@ -119,12 +123,12 @@ Cypress.Commands.add('checkUserStatuses', (authKey, userName, staffStatus, super
             Authorization: `Token ${authKey}`,
         },
     }).then((response) => {
-        const responceResult = response['body']['results'];
+        const responceResult = response.body.results;
         responceResult.forEach((user) => {
-            if (user['username'].includes(userName)) {
-                expect(staffStatus).to.be.equal(user['is_staff']);
-                expect(superuserStatus).to.be.equal(user['is_superuser']);
-                expect(activeStatus).to.be.equal(user['is_active']);
+            if (user.username.includes(userName)) {
+                expect(staffStatus).to.be.equal(user.is_staff);
+                expect(superuserStatus).to.be.equal(user.is_superuser);
+                expect(activeStatus).to.be.equal(user.is_active);
             }
         });
     });
@@ -213,9 +217,7 @@ Cypress.Commands.add('getJobNum', (jobID) => {
         .find('td')
         .eq(0)
         .invoke('text')
-        .then(($tdText) => {
-            return Number($tdText.match(/\d+/g)) + jobID;
-        });
+        .then(($tdText) => Number($tdText.match(/\d+/g)) + jobID);
 });
 
 Cypress.Commands.add('openJob', (jobID = 0, removeAnnotations = true, expectedFail = false) => {
@@ -223,9 +225,11 @@ Cypress.Commands.add('openJob', (jobID = 0, removeAnnotations = true, expectedFa
         cy.get('.cvat-task-jobs-table-row').contains('a', `Job #${$job}`).click();
     });
     cy.url().should('include', '/jobs');
-    expectedFail
-        ? cy.get('.cvat-canvas-container').should('not.exist')
-        : cy.get('.cvat-canvas-container').should('exist');
+    if (expectedFail) {
+        cy.get('.cvat-canvas-container').should('not.exist');
+    } else {
+        cy.get('.cvat-canvas-container').should('exist');
+    }
     if (removeAnnotations) {
         cy.document().then((doc) => {
             const objects = Array.from(doc.querySelectorAll('.cvat_canvas_shape'));
@@ -286,7 +290,7 @@ Cypress.Commands.add('checkPopoverHidden', (objectType) => {
 });
 
 Cypress.Commands.add('checkObjectParameters', (objectParameters, objectType) => {
-    let listCanvasShapeId = [];
+    const listCanvasShapeId = [];
     cy.document().then((doc) => {
         const listCanvasShape = Array.from(doc.querySelectorAll('.cvat_canvas_shape'));
         for (let i = 0; i < listCanvasShape.length; i++) {
@@ -320,13 +324,11 @@ Cypress.Commands.add('createPoint', (createPointParams) => {
     });
     if (createPointParams.finishWithButton) {
         cy.contains('span', 'Done').click();
-    } else {
-        if (!createPointParams.numberOfPoints) {
-            const keyCodeN = 78;
-            cy.get('.cvat-canvas-container')
-                .trigger('keydown', { keyCode: keyCodeN })
-                .trigger('keyup', { keyCode: keyCodeN });
-        }
+    } else if (!createPointParams.numberOfPoints) {
+        const keyCodeN = 78;
+        cy.get('.cvat-canvas-container')
+            .trigger('keydown', { keyCode: keyCodeN })
+            .trigger('keyup', { keyCode: keyCodeN });
     }
     cy.checkPopoverHidden('draw-points');
     cy.checkObjectParameters(createPointParams, 'POINTS');
@@ -369,13 +371,11 @@ Cypress.Commands.add('createPolygon', (createPolygonParams) => {
     });
     if (createPolygonParams.finishWithButton) {
         cy.contains('span', 'Done').click();
-    } else {
-        if (!createPolygonParams.numberOfPoints) {
-            const keyCodeN = 78;
-            cy.get('.cvat-canvas-container')
-                .trigger('keydown', { keyCode: keyCodeN })
-                .trigger('keyup', { keyCode: keyCodeN });
-        }
+    } else if (!createPolygonParams.numberOfPoints) {
+        const keyCodeN = 78;
+        cy.get('.cvat-canvas-container')
+            .trigger('keydown', { keyCode: keyCodeN })
+            .trigger('keyup', { keyCode: keyCodeN });
     }
     cy.checkPopoverHidden('draw-polygon');
     cy.checkObjectParameters(createPolygonParams, 'POLYGON');
@@ -446,7 +446,7 @@ Cypress.Commands.add('createCuboid', (createCuboidParams) => {
 });
 
 Cypress.Commands.add('updateAttributes', (multiAttrParams) => {
-    let cvatAttributeInputsWrapperId = [];
+    const cvatAttributeInputsWrapperId = [];
     cy.get('.cvat-new-attribute-button').click();
     cy.document().then((doc) => {
         const cvatAttributeInputsWrapperList = Array.from(doc.querySelectorAll('.cvat-attribute-inputs-wrapper'));
@@ -515,13 +515,11 @@ Cypress.Commands.add('createPolyline', (createPolylineParams) => {
     });
     if (createPolylineParams.finishWithButton) {
         cy.contains('span', 'Done').click();
-    } else {
-        if (!createPolylineParams.numberOfPoints) {
-            const keyCodeN = 78;
-            cy.get('.cvat-canvas-container')
-                .trigger('keydown', { keyCode: keyCodeN })
-                .trigger('keyup', { keyCode: keyCodeN });
-        }
+    } else if (!createPolylineParams.numberOfPoints) {
+        const keyCodeN = 78;
+        cy.get('.cvat-canvas-container')
+            .trigger('keydown', { keyCode: keyCodeN })
+            .trigger('keyup', { keyCode: keyCodeN });
     }
     cy.checkPopoverHidden('draw-polyline');
     cy.checkObjectParameters(createPolylineParams, 'POLYLINE');
@@ -593,7 +591,7 @@ Cypress.Commands.add('changeColorViaBadge', (labelColor) => {
 });
 
 Cypress.Commands.add('collectLabelsName', () => {
-    let listCvatConstructorViewerItemText = [];
+    const listCvatConstructorViewerItemText = [];
     cy.get('.cvat-constructor-viewer').should('exist');
     cy.document().then((doc) => {
         const labels = Array.from(doc.querySelectorAll('.cvat-constructor-viewer-item'));
@@ -663,9 +661,7 @@ Cypress.Commands.add('goToRegisterPage', () => {
 Cypress.Commands.add('getScaleValue', () => {
     cy.get('#cvat_canvas_background')
         .should('have.attr', 'style')
-        .then(($styles) => {
-            return Number($styles.match(/scale\((\d\.\d+)\)/m)[1]);
-        });
+        .then(($styles) => Number($styles.match(/scale\((\d\.\d+)\)/m)[1]));
 });
 
 Cypress.Commands.add('goCheckFrameNumber', (frameNum) => {
@@ -715,9 +711,7 @@ Cypress.Commands.add('getObjectIdNumberByLabelName', (labelName) => {
                 cy.get(stateItemLabelSelectorList[i])
                     .parents('.cvat-objects-sidebar-state-item')
                     .should('have.attr', 'id')
-                    .then((id) => {
-                        return Number(id.match(/\d+$/));
-                    });
+                    .then((id) => Number(id.match(/\d+$/)));
             }
         }
     });
@@ -731,7 +725,9 @@ Cypress.Commands.add('closeModalUnsupportedPlatform', () => {
     }
 });
 
-Cypress.Commands.add('exportTask', ({ as, type, format, archiveCustomeName }) => {
+Cypress.Commands.add('exportTask', ({
+    type, format, archiveCustomeName,
+}) => {
     cy.interactMenu('Export task dataset');
     cy.get('.cvat-modal-export-task').should('be.visible').find('.cvat-modal-export-select').click();
     cy.contains('.cvat-modal-export-option-item', format).should('be.visible').click();
