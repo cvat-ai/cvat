@@ -17,6 +17,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   and Azure Blob Container (<https://github.com/openvinotoolkit/cvat/pull/3778>)
 - The feature to remove annotations in a specified range of frames (<https://github.com/openvinotoolkit/cvat/pull/3617>)
 - Add additional environment variables for Nuclio configuration (<https://github.com/openvinotoolkit/cvat/pull/3894>)
+- Add KITTI segmentation and detection format (<https://github.com/openvinotoolkit/cvat/pull/3757>)
+- Add LFW format (<https://github.com/openvinotoolkit/cvat/pull/3770>)
+- Add Cityscapes format (<https://github.com/openvinotoolkit/cvat/pull/3758>)
+- Add Open Images V6 format (<https://github.com/openvinotoolkit/cvat/pull/3679>)
 
 ### Changed
 
@@ -42,8 +46,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Incorrect work when copy job list with "Copy" button (<https://github.com/openvinotoolkit/cvat/pull/3749>)
 - Iterating over manifest (<https://github.com/openvinotoolkit/cvat/pull/3792>)
 - Manifest removing (<https://github.com/openvinotoolkit/cvat/pull/3791>)
+- Fixed project updated date (<https://github.com/openvinotoolkit/cvat/pull/3814>)
 - Fixed dextr deployment (<https://github.com/openvinotoolkit/cvat/pull/3820>)
 - Migration of `dataset_repo` application (<https://github.com/openvinotoolkit/cvat/pull/3827>)
+- Helm settings for external psql database were unused by backend (<https://github.com/openvinotoolkit/cvat/pull/3779>)
+- Updated WSL setup for development (<https://github.com/openvinotoolkit/cvat/pull/3828>)
+- Helm chart config (<https://github.com/openvinotoolkit/cvat/pull/3784>)
 
 ### Security
 

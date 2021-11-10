@@ -25,7 +25,7 @@ context('Import annotations for frames with dots in name.', { browser: '!firefox
     const createRectangleShape2Points = {
         points: 'By 2 Points',
         type: 'Shape',
-        labelName: labelName,
+        labelName,
         firstX: 250,
         firstY: 350,
         secondX: 350,
@@ -70,9 +70,14 @@ context('Import annotations for frames with dots in name.', { browser: '!firefox
             cy.get('.cvat-modal-export-task').find('.cvat-modal-export-select').click();
             cy.get('.ant-select-dropdown')
                 .not('.ant-select-dropdown-hidden')
-                .trigger('wheel', {deltaY: 700})
-                .contains('.cvat-modal-export-option-item', dumpType)
-                .click();
+                .within(() => {
+                    cy.get('.rc-virtual-list-holder')
+                        .trigger('wheel', { deltaY: 1000 })
+                        .trigger('wheel', { deltaY: 1000 })
+                        .contains('.cvat-modal-export-option-item', dumpType)
+                        .should('be.visible')
+                        .click();
+                });
             cy.get('.cvat-modal-export-select').should('contain.text', dumpType);
             cy.get('.cvat-modal-export-task').contains('button', 'OK').click();
             cy.wait('@dumpAnnotations', { timeout: 5000 }).its('response.statusCode').should('equal', 202);
@@ -92,6 +97,7 @@ context('Import annotations for frames with dots in name.', { browser: '!firefox
         it('Upload annotation with YOLO format to job.', () => {
             cy.interactMenu('Upload annotations');
             cy.contains('.cvat-menu-load-submenu-item', dumpType.split(' ')[0])
+                .scrollIntoView()
                 .should('be.visible')
                 .within(() => {
                     cy.get('.cvat-menu-load-submenu-item-button')
