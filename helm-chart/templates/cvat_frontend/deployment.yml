@@ -51,8 +51,12 @@ spec:
       volumes:
         {{- toYaml . | nindent 8 }}
         {{- end }}
-        {{- with .Values.cvat.frontend.affinity }}
+      {{- with .Values.cvat.frontend.affinity }}
       affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.cvat.frontend.tolerations }}
+      tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       {{- with .Values.imagePullSecrets }}
