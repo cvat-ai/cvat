@@ -7,6 +7,7 @@
 const { imageGenerator } = require('../plugins/imageGenerator/addPlugin');
 const { createZipArchive } = require('../plugins/createZipArchive/addPlugin');
 const { compareImages } = require('../plugins/compareImages/addPlugin');
+const { unpackZipArchive } = require('../plugins/unpackZipArchive/addPlugin');
 const fs = require('fs');
 
 module.exports = (on, config) => {
@@ -14,6 +15,7 @@ module.exports = (on, config) => {
     on('task', { imageGenerator });
     on('task', { createZipArchive });
     on('task', { compareImages });
+    on('task', { unpackZipArchive });
     on('task', {
         log(message) {
             console.log(message);

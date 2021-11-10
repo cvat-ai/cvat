@@ -84,6 +84,7 @@ Cypress.Commands.add('exportProject', ({ projectName, as, type, dumpType, archiv
     cy.get('.cvat-notification-notice-export-project-start').should('be.visible');
     cy.wait(`@${as}`, { timeout: 5000 }).its('response.statusCode').should('equal', 202);
     cy.wait(`@${as}`).its('response.statusCode').should('equal', 201);
+    cy.wait(2000) // Wait to fully file download
 });
 
 Cypress.Commands.add('deleteProjectViaActions', (projectName) => {

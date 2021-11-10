@@ -39,38 +39,39 @@ context('Export project dataset.', { browser: '!firefox' }, () => {
 
     function testCheckFile(file) {
         cy.task('listFiles', 'cypress/fixtures').each((fileName) => {
+            cy.task('log', `################## ${fileName}`)
             if (fileName.match(file)) {
-               cy.readFile(`cypress/fixtures/${fileName}`).should('exist');
+                cy.readFile(`cypress/fixtures/${fileName}`).should('exist');
             }
         });
     }
 
-    before(() => {
-        cy.imageGenerator(imagesFolder, imageFileName, width, height, color, posX, posY, labelName, imagesCount);
-        cy.createZipArchive(directoryToArchive, archivePath);
-        cy.openProject(projectName);
-        getProjectID(projectName);
-        cy.createAnnotationTask(
-            taskName,
-            labelName,
-            attrName,
-            textDefaultValue,
-            archiveName,
-            multiAttrParams,
-            advancedConfigurationParams,
-            forProject,
-            attachToProject,
-            projectName,
-        );
-    });
+    // before(() => {
+    //     cy.imageGenerator(imagesFolder, imageFileName, width, height, color, posX, posY, labelName, imagesCount);
+    //     cy.createZipArchive(directoryToArchive, archivePath);
+    //     cy.openProject(projectName);
+    //     getProjectID(projectName);
+    //     cy.createAnnotationTask(
+    //         taskName,
+    //         labelName,
+    //         attrName,
+    //         textDefaultValue,
+    //         archiveName,
+    //         multiAttrParams,
+    //         advancedConfigurationParams,
+    //         forProject,
+    //         attachToProject,
+    //         projectName,
+    //     );
+    // });
 
-    after(() => {
-        cy.goToProjectsList();
-        cy.deleteProject(projectName, projectID);
-    });
+    // after(() => {
+    //     cy.goToProjectsList();
+    //     cy.deleteProject(projectName, projectID);
+    // });
 
     describe(`Testing "Case ${caseID}"`, () => {
-        it('Export project dataset. Annotation.', () => {
+        it.skip('Export project dataset. Annotation.', () => {
             cy.goToProjectsList();
             const exportAnnotation = {
                 projectName: projectName,
@@ -83,7 +84,7 @@ context('Export project dataset.', { browser: '!firefox' }, () => {
             testCheckFile(regex);
         });
 
-        it('Export project dataset. Dataset.', () => {
+        it.skip('Export project dataset. Dataset.', () => {
             cy.goToProjectsList();
             const exportDataset = {
                 projectName: projectName,
@@ -108,6 +109,7 @@ context('Export project dataset.', { browser: '!firefox' }, () => {
             cy.exportProject(exportAnnotationsRenameArchive);
             const regex = new RegExp(`^${exportAnnotationsRenameArchive.archiveCustomeName}.zip$`);
             testCheckFile(regex);
+            cy.unpackZipArchive(`cypress/fixtures/${exportAnnotationsRenameArchive.archiveCustomeName}.zip`);
         });
     });
 });

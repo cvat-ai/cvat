@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "archiver": "^5.3.0",
+    "extract-zip": "^2.0.1",
     "jimp": "^0.16.1"
   }
 }
