@@ -6,6 +6,7 @@
 import sys
 import rq
 import os.path as osp
+from attr import attrib, attrs
 from collections import namedtuple
 from pathlib import Path
 from typing import (Any, Callable, DefaultDict, Dict, List, Literal, Mapping,
@@ -568,6 +569,68 @@ class TaskData(InstanceLabelData):
         return None
 
 class ProjectData(InstanceLabelData):
+    @attrs
+    class LabeledShape:
+        type: str = attrib()
+        frame: int = attrib()
+        label: str = attrib()
+        points: List[float] = attrib()
+        occluded: bool = attrib()
+        attributes: List[InstanceLabelData.Attribute] = attrib()
+        source: str = attrib()
+        source: str = attrib(default='manual')
+        group: int = attrib(default=0)
+        z_order: int = attrib(default=0)
+        task_id: int = attrib(default=None)
+        subset: str = attrib(default=None)
+
+    @attrs
+    class TrackedShape:
+        type: str = attrib()
+        frame: int = attrib()
+        points: List[float] = attrib()
+        occluded: bool = attrib()
+        outside: bool = attrib()
+        keyframe: bool = attrib()
+        attributes: List[InstanceLabelData.Attribute] = attrib()
+        source: str = attrib(default='manual')
+        group: int = attrib(default=0)
+        z_order: int = attrib(default=0)
+        label: str = attrib(default=None)
+        track_id: int = attrib(default=0)
+
+    @attrs
+    class Track:
+        label: str = attrib()
+        shapes: List['ProjectData.TrackedShape'] = attrib()
+        source: str = attrib(default='manual')
+        group: int = attrib(default=0)
+        task_id: int = attrib(default=None)
+        subset: str = attrib(default=None)
+
+    @attrs
+    class Tag:
+        frame: int = attrib()
+        label: str = attrib()
+        attributes: List[InstanceLabelData.Attribute] = attrib()
+        source: str = attrib(default='manual')
+        group: int = attrib(default=0)
+        task_id: int = attrib(default=None)
+        subset: str = attrib(default=None)
+
+    @attrs
+    class Frame:
+        idx: int = attrib()
+        id: int = attrib()
+        frame: int = attrib()
+        name: str = attrib()
+        width: int = attrib()
+        height: int = attrib()
+        labeled_shapes: List[Union['ProjectData.LabeledShape', 'ProjectData.TrackedShape']] = attrib()
+        tags: List['ProjectData.Tag'] = attrib()
+        task_id: int = attrib(default=None)
+        subset: str = attrib(default=None)
+
     def __init__(self, annotation_irs: Mapping[str, AnnotationIR], db_project: Project, host: str = '', task_annotations: Mapping[int, Any] = None, project_annotation=None):
         self._annotation_irs = annotation_irs
         self._db_project = db_project
@@ -1343,6 +1406,8 @@ def import_dm_annotations(dm_dataset: Dataset, instance_data: Union[TaskData, Pr
 
     root_hint = find_dataset_root(dm_dataset, instance_data)
 
+    tracks = {}
+
     for item in dm_dataset:
         frame_number = instance_data.abs_frame_id(
             match_dm_item(item, instance_data, root_hint=root_hint))
@@ -1374,19 +1439,50 @@ def import_dm_annotations(dm_dataset: Dataset, instance_data: Union[TaskData, Pr
                         except Exception as e:
                             ann.points = ann.points
                         ann.z_order = 0
-                    instance_data.add_shape(instance_data.LabeledShape(
-                        type=shapes[ann.type],
-                        frame=frame_number,
-                        points=ann.points,
-                        label=label_cat.items[ann.label].name,
-                        occluded=ann.attributes.pop('occluded', None) == True,
-                        z_order=ann.z_order,
-                        group=group_map.get(ann.group, 0),
-                        source=str(ann.attributes.pop('source')).lower() \
-                            if str(ann.attributes.get('source', None)).lower() in {'auto', 'manual'} else 'manual',
-                        attributes=[instance_data.Attribute(name=n, value=str(v))
-                            for n, v in ann.attributes.items()],
-                    ))
+
+                    track_id = ann.attributes.pop('track_id', None)
+                    if track_id is None or dm_dataset.format != 'cvat' :
+                        instance_data.add_shape(instance_data.LabeledShape(
+                            type=shapes[ann.type],
+                            frame=frame_number,
+                            points=ann.points,
+                            label=label_cat.items[ann.label].name,
+                            occluded=ann.attributes.pop('occluded', None) == True,
+                            z_order=ann.z_order,
+                            group=group_map.get(ann.group, 0),
+                            source=str(ann.attributes.pop('source')).lower() \
+                                if str(ann.attributes.get('source', None)).lower() in {'auto', 'manual'} else 'manual',
+                            attributes=[instance_data.Attribute(name=n, value=str(v))
+                                for n, v in ann.attributes.items()],
+                        ))
+                        continue
+
+                    if ann.attributes.get('keyframe', None) == True or ann.attributes.get('outside', None) == True:
+                        track = instance_data.TrackedShape(
+                            type=shapes[ann.type],
+                            frame=frame_number,
+                            occluded=ann.attributes.pop('occluded', None) == True,
+                            outside=ann.attributes.pop('outside', None) == True,
+                            keyframe=ann.attributes.get('keyframe', None) == True,
+                            points=ann.points,
+                            z_order=ann.z_order,
+                            source=str(ann.attributes.pop('source')).lower() \
+                                if str(ann.attributes.get('source', None)).lower() in {'auto', 'manual'} else 'manual',
+                            attributes=[instance_data.Attribute(name=n, value=str(v))
+                                for n, v in ann.attributes.items()],
+                        )
+
+                        if track_id not in tracks:
+                            tracks[track_id] = instance_data.Track(
+                                label=label_cat.items[ann.label].name,
+                                group=group_map.get(ann.group, 0),
+                                source=str(ann.attributes.pop('source')).lower() \
+                                    if str(ann.attributes.get('source', None)).lower() in {'auto', 'manual'} else 'manual',
+                                shapes=[],
+                            )
+
+                        tracks[track_id].shapes.append(track)
+
                 elif ann.type == datum_annotation.AnnotationType.label:
                     instance_data.add_tag(instance_data.Tag(
                         frame=frame_number,
@@ -1399,6 +1495,10 @@ def import_dm_annotations(dm_dataset: Dataset, instance_data: Union[TaskData, Pr
             except Exception as e:
                 raise CvatImportError("Image {}: can't import annotation "
                     "#{} ({}): {}".format(item.id, idx, ann.type.name, e)) from e
+
+    for track in tracks.values():
+        instance_data.add_track(track)
+
 
 def import_labels_to_project(project_annotation, dataset: Dataset):
     labels = []

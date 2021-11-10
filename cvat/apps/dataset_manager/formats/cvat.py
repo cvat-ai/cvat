@@ -29,7 +29,7 @@ from .registry import exporter, importer, dm_env
 class CvatPath:
     IMAGES_DIR = 'images'
 
-    IMAGE_EXT = '.jpg'
+    MEDIA_EXTS = ('.jpg', '.jpeg', '.png')
 
     BUILTIN_ATTRS = {'occluded', 'outside', 'keyframe', 'track_id'}
 
@@ -89,18 +89,20 @@ class CvatExtractor(Extractor):
         items = OrderedDict()
 
         if subsets == [DEFAULT_SUBSET_NAME] and not osp.isdir(osp.join(image_dir, DEFAULT_SUBSET_NAME)):
-            for file in sorted(glob(osp.join(image_dir, '*.PNG')), key=osp.basename):
-                name = osp.splitext(osp.basename(file))[0]
-                items[(None, name)] = DatasetItem(id=name, annotations=[],
-                    image=Image(path=file), subset=DEFAULT_SUBSET_NAME,
-                )
+            for file in sorted(glob(osp.join(image_dir, '*.*')), key=osp.basename):
+                name, ext = osp.splitext(osp.basename(file))
+                if ext.lower() in CvatPath.MEDIA_EXTS:
+                    items[(None, name)] = DatasetItem(id=name, annotations=[],
+                        image=Image(path=file), subset=DEFAULT_SUBSET_NAME,
+                    )
         else:
             for subset in subsets:
-                for file in sorted(glob(osp.join(image_dir, subset, '*.PNG')), key=osp.basename):
-                    name = osp.splitext(osp.basename(file))[0]
-                    items[(subset, name)] = DatasetItem(id=name, annotations=[],
-                        image=Image(path=file), subset=subset,
-                    )
+                for file in sorted(glob(osp.join(image_dir, subset, '*.*')), key=osp.basename):
+                    name, ext = osp.splitext(osp.basename(file))
+                    if ext.lower() in CvatPath.MEDIA_EXTS:
+                        items[(subset, name)] = DatasetItem(id=name, annotations=[],
+                            image=Image(path=file), subset=subset,
+                        )
         return items
 
     @classmethod
@@ -164,7 +166,7 @@ class CvatExtractor(Extractor):
                     attr_type = attribute_types.get(el.attrib['name'])
                     if el.text in ['true', 'false']:
                         attr_value = attr_value == 'true'
-                    elif  attr_type is not None and attr_type != 'text':
+                    elif attr_type is not None and attr_type != 'text':
                         try:
                             attr_value = float(attr_value)
                         except ValueError:
@@ -398,7 +400,9 @@ class CvatExtractor(Extractor):
             image_size = (item_desc.get('height'), item_desc.get('width'))
             if all(image_size):
                 image = Image(path=image, size=tuple(map(int, image_size)))
-            di = image_items.get((subset, osp.splitext(name)[0]))
+            di = image_items.get((subset, osp.splitext(name)[0]), DatasetItem(
+                id=name, annotations=[],
+            ))
             di.subset = subset or DEFAULT_SUBSET_NAME
             di.annotations = item_desc.get('annotations')
             di.attributes = {'frame': int(frame_id)}
@@ -1029,9 +1033,14 @@ def _import(src_file, instance_data, load_data_callback=None):
         with TemporaryDirectory() as tmp_dir:
             zipfile.ZipFile(src_file).extractall(tmp_dir)
 
-            dataset = Dataset.import_from(tmp_dir, 'cvat', env=dm_env)
-            if load_data_callback is not None:
-                load_data_callback(dataset, instance_data)
-            import_dm_annotations(dataset, instance_data)
+            if isinstance(instance_data, ProjectData):
+                dataset = Dataset.import_from(tmp_dir, 'cvat', env=dm_env)
+                if load_data_callback is not None:
+                    load_data_callback(dataset, instance_data)
+                import_dm_annotations(dataset, instance_data)
+            else:
+                anno_paths = glob(osp.join(tmp_dir, '**', '*.xml'), recursive=True)
+                for p in anno_paths:
+                    load_anno(p, instance_data)
     else:
         load_anno(src_file, instance_data)

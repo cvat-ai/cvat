@@ -720,6 +720,7 @@ class AnnotationFileSerializer(serializers.Serializer):
 class DatasetFileSerializer(serializers.Serializer):
     dataset_file = serializers.FileField()
 
+    @staticmethod
     def validate_dataset_file(value):
         if os.path.splitext(value.name)[1] != '.zip':
             raise serializers.ValidationError('Dataset file should be zip archive')
