@@ -67,9 +67,8 @@ Cypress.Commands.add('deleteProject', (projectName, projectID, expectedResult = 
     }
 });
 
-Cypress.Commands.add('exportProject', ({ projectName, as, type, dumpType, archiveCustomeName }) => {
+Cypress.Commands.add('exportProject', ({ projectName, type, dumpType, archiveCustomeName }) => {
     cy.projectActions(projectName);
-    cy.intercept('GET', `/api/v1/projects/**/${type}**`).as(as);
     cy.get('.cvat-project-actions-menu').contains('Export project dataset').click();
     cy.get('.cvat-modal-export-project').should('be.visible').find('.cvat-modal-export-select').click();
     cy.contains('.cvat-modal-export-option-item', dumpType).should('be.visible').click();
@@ -82,9 +81,14 @@ Cypress.Commands.add('exportProject', ({ projectName, as, type, dumpType, archiv
     }
     cy.get('.cvat-modal-export-project').contains('button', 'OK').click();
     cy.get('.cvat-notification-notice-export-project-start').should('be.visible');
-    cy.wait(`@${as}`, { timeout: 5000 }).its('response.statusCode').should('equal', 202);
-    cy.wait(`@${as}`).its('response.statusCode').should('equal', 201);
-    cy.wait(2000) // Wait to fully file download
+});
+
+Cypress.Commands.add('waitForDownload', () => {
+    cy.intercept('GET', '**=download').as('download');
+    cy.wait('@download').then((download) => {
+        const filename = download.response.headers['content-disposition'].split('filename="b\'')[1].split('\'')[0];
+        cy.verifyDownload(filename);
+    });
 });
 
 Cypress.Commands.add('deleteProjectViaActions', (projectName) => {

@@ -10,6 +10,7 @@ require('../plugins/createZipArchive/createZipArchiveCommand');
 require('cypress-localstorage-commands');
 require('../plugins/compareImages/compareImagesCommand');
 require('../plugins/unpackZipArchive/unpackZipArchiveCommand');
+require('cy-verify-downloads').addCustomCommand();
 
 let selectedValueGlobal = '';
 

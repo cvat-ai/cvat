@@ -30,14 +30,6 @@ context('Export project dataset with 3D task.', { browser: '!firefox' }, () => {
             });
     }
 
-    function testCheckFile(file) {
-        cy.task('listFiles', 'cypress/fixtures').each((fileName) => {
-            if (fileName.match(file)) {
-               cy.readFile(`cypress/fixtures/${fileName}`).should('exist');
-            }
-        });
-    }
-
     before(() => {
         cy.openProject(projectName);
         getProjectID(projectName);
@@ -70,8 +62,7 @@ context('Export project dataset with 3D task.', { browser: '!firefox' }, () => {
                 dumpType: 'Kitti Raw Format',
             };
             cy.exportProject(exportAnnotation3d);
-            const regex = new RegExp(`^project_${projectName.toLowerCase()}-.*-${exportAnnotation3d.dumpType.toLowerCase()}.*.zip$`);
-            testCheckFile(regex);
+            cy.waitForDownload();
         });
 
         it('Export project with 3D task. Dataset.', () => {
@@ -83,8 +74,7 @@ context('Export project dataset with 3D task.', { browser: '!firefox' }, () => {
                 dumpType: 'Sly Point Cloud Format',
             };
             cy.exportProject(exportDataset3d);
-            const regex = new RegExp(`^project_${projectName.toLowerCase()}-.*-${exportDataset3d.dumpType.toLowerCase()}.*.zip$`);
-            testCheckFile(regex);
+            cy.waitForDownload();
         });
 
         it('Export project with 3D task. Annotation. Rename a archive.', () => {
@@ -97,8 +87,7 @@ context('Export project dataset with 3D task.', { browser: '!firefox' }, () => {
                 archiveCustomeName: 'export_project_3d_annotation',
             };
             cy.exportProject(exportAnnotations3dRenameArchive);
-            const regex = new RegExp(`^${exportAnnotations3dRenameArchive.archiveCustomeName}.zip$`);
-            testCheckFile(regex);
+            cy.waitForDownload();
         });
     });
 });

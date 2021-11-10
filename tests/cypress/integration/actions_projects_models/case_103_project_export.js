@@ -37,15 +37,6 @@ context('Export project dataset.', { browser: '!firefox' }, () => {
             });
     }
 
-    function testCheckFile(file) {
-        cy.task('listFiles', 'cypress/fixtures').each((fileName) => {
-            cy.task('log', `################## ${fileName}`)
-            if (fileName.match(file)) {
-                cy.readFile(`cypress/fixtures/${fileName}`).should('exist');
-            }
-        });
-    }
-
     // before(() => {
     //     cy.imageGenerator(imagesFolder, imageFileName, width, height, color, posX, posY, labelName, imagesCount);
     //     cy.createZipArchive(directoryToArchive, archivePath);
@@ -80,11 +71,10 @@ context('Export project dataset.', { browser: '!firefox' }, () => {
                 dumpType: 'CVAT for images',
             };
             cy.exportProject(exportAnnotation);
-            const regex = new RegExp(`^project_${projectName.toLowerCase()}-.*-${exportAnnotation.dumpType.toLowerCase()}.*.zip$`);
-            testCheckFile(regex);
+            cy.waitForDownload();
         });
 
-        it.skip('Export project dataset. Dataset.', () => {
+        it('Export project dataset. Dataset.', () => {
             cy.goToProjectsList();
             const exportDataset = {
                 projectName: projectName,
@@ -93,8 +83,7 @@ context('Export project dataset.', { browser: '!firefox' }, () => {
                 dumpType: 'CVAT for video',
             };
             cy.exportProject(exportDataset);
-            const regex = new RegExp(`^project_${projectName.toLowerCase()}-.*-${exportDataset.dumpType.toLowerCase()}.*.zip$`);
-            testCheckFile(regex);
+            cy.waitForDownload();
         });
 
         it('Export project dataset. Annotation. Rename a archive.', () => {
@@ -107,8 +96,7 @@ context('Export project dataset.', { browser: '!firefox' }, () => {
                 archiveCustomeName: 'export_project_annotation',
             };
             cy.exportProject(exportAnnotationsRenameArchive);
-            const regex = new RegExp(`^${exportAnnotationsRenameArchive.archiveCustomeName}.zip$`);
-            testCheckFile(regex);
+            cy.waitForDownload();
             cy.unpackZipArchive(`cypress/fixtures/${exportAnnotationsRenameArchive.archiveCustomeName}.zip`);
         });
     });

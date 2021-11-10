@@ -13,8 +13,8 @@ async function unpackZipArchive(args) {
     const absolutePath = path.dirname(path.resolve(arhivePath));
     try {
         await extract(arhivePath, {dir: absolutePath});
+        return null;
     } catch (err) {
         // handle any errors
     }
-    return null;
 }

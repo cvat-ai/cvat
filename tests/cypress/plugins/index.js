@@ -8,6 +8,7 @@ const { imageGenerator } = require('../plugins/imageGenerator/addPlugin');
 const { createZipArchive } = require('../plugins/createZipArchive/addPlugin');
 const { compareImages } = require('../plugins/compareImages/addPlugin');
 const { unpackZipArchive } = require('../plugins/unpackZipArchive/addPlugin');
+const { isFileExist } = require('cy-verify-downloads');
 const fs = require('fs');
 
 module.exports = (on, config) => {
@@ -27,6 +28,7 @@ module.exports = (on, config) => {
             return fs.readdirSync(folderName);
         },
     });
+    on('task', {isFileExist});
     // Try to resolve "Cypress failed to make a connection to the Chrome DevTools Protocol"
     // https://github.com/cypress-io/cypress/issues/7450
     on('before:browser:launch', (browser, launchOptions) => {
