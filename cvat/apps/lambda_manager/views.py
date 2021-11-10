@@ -384,7 +384,7 @@ class LambdaJob:
             for anno in annotations:
                 label_id = labels.get(anno["label"])
                 if label_id is None:
-                    continue # Invalid tag provided
+                    continue # Invalid label provided
                 if anno["type"].lower() == "tag":
                     results.append_tag({
                         "frame": frame,
