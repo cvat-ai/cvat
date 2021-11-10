@@ -140,7 +140,8 @@ connection with your use of FFmpeg.
 - [DataIsKey](https://dataiskey.eu/annotation-tool/) uses CVAT as their prime data labeling tool
   to offer annotation services for projects of any size.
 - [Human Protocol](https://hmt.ai) uses CVAT as a way of adding annotation service to the human protocol.
-- [Cogito Tech LLC](https://bit.ly/30bO6vS), a Human-in-the-Loop Workforce Solutions Provider, used CVAT in annotation of about 5,000 images for a brand operating in the fashion segment.
+- [Cogito Tech LLC](https://bit.ly/30bO6vS), a Human-in-the-Loop Workforce Solutions Provider, used CVAT
+  in annotation of about 5,000 images for a brand operating in the fashion segment.
 
 ## Questions
 
