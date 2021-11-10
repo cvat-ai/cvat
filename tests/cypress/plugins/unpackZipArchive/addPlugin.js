@@ -8,6 +8,7 @@ exports.unpackZipArchive = unpackZipArchive;
 const path = require('path');
 const extract = require('extract-zip');
 
+// eslint-disable-next-line consistent-return
 async function unpackZipArchive(args) {
     const { arhivePath } = args;
     const absolutePath = path.dirname(path.resolve(arhivePath));
