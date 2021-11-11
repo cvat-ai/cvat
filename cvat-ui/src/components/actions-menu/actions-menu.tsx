@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import './styles.scss';
-import React from 'react';
+import React, { useCallback } from 'react';
 import Menu from 'antd/lib/menu';
 import Modal from 'antd/lib/modal';
 import { LoadingOutlined } from '@ant-design/icons';
@@ -50,29 +50,32 @@ function ActionsMenuComponent(props: Props): JSX.Element {
         exportIsActive,
     } = props;
 
-    function onClickMenuWrapper(params: MenuInfo): void {
-        if (!params) {
-            return;
-        }
+    const onClickMenuWrapper = useCallback(
+        (params: MenuInfo) => {
+            if (!params) {
+                return;
+            }
 
-        if (params.key === Actions.DELETE_TASK) {
-            Modal.confirm({
-                title: `The task ${taskID} will be deleted`,
-                content: 'All related data (images, annotations) will be lost. Continue?',
-                className: 'cvat-modal-confirm-delete-task',
-                onOk: () => {
-                    onClickMenu(params);
-                },
-                okButtonProps: {
-                    type: 'primary',
-                    danger: true,
-                },
-                okText: 'Delete',
-            });
-        } else {
-            onClickMenu(params);
-        }
-    }
+            if (params.key === Actions.DELETE_TASK) {
+                Modal.confirm({
+                    title: `The task ${taskID} will be deleted`,
+                    content: 'All related data (images, annotations) will be lost. Continue?',
+                    className: 'cvat-modal-confirm-delete-task',
+                    onOk: () => {
+                        onClickMenu(params);
+                    },
+                    okButtonProps: {
+                        type: 'primary',
+                        danger: true,
+                    },
+                    okText: 'Delete',
+                });
+            } else {
+                onClickMenu(params);
+            }
+        },
+        [],
+    );
 
     return (
         <Menu selectable={false} className='cvat-actions-menu' onClick={onClickMenuWrapper}>
