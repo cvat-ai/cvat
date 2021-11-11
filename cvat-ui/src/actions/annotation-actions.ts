@@ -122,6 +122,7 @@ export enum AnnotationActionTypes {
     CONFIRM_CANVAS_READY = 'CONFIRM_CANVAS_READY',
     DRAG_CANVAS = 'DRAG_CANVAS',
     ZOOM_CANVAS = 'ZOOM_CANVAS',
+    DESTROY_CANVAS = 'DESTROY_CANVAS',
     SELECT_ISSUE_POSITION = 'SELECT_ISSUE_POSITION',
     MERGE_OBJECTS = 'MERGE_OBJECTS',
     GROUP_OBJECTS = 'GROUP_OBJECTS',
@@ -1023,6 +1024,8 @@ export function getJobAsync(tid: number, jid: number, initialFrame: number, init
             const colors = [...cvat.enums.colors];
 
             loadJobEvent.close(await jobInfoGenerator(job));
+
+            dispatch({ type: AnnotationActionTypes.DESTROY_CANVAS });
 
             const openTime = Date.now();
             dispatch({

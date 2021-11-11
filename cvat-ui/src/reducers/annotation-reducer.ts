@@ -166,8 +166,6 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 activeShapeType = ShapeType.CUBOID;
             }
 
-            state.canvas.instance.destroy();
-
             return {
                 ...state,
                 job: {
@@ -465,6 +463,12 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     ...state.canvas,
                     activeControl,
                 },
+            };
+        }
+        case AnnotationActionTypes.DESTROY_CANVAS: {
+            state.canvas.instance.destroy();
+            return {
+                ...state,
             };
         }
         case AnnotationActionTypes.REMEMBER_CREATED_OBJECT: {
