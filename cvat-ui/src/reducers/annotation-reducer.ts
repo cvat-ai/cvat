@@ -465,12 +465,6 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
             };
         }
-        case AnnotationActionTypes.DESTROY_CANVAS: {
-            state.canvas.instance.destroy();
-            return {
-                ...state,
-            };
-        }
         case AnnotationActionTypes.REMEMBER_CREATED_OBJECT: {
             const { payload } = action;
 

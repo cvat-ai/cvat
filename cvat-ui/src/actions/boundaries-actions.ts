@@ -7,7 +7,7 @@ import {
 } from 'utils/redux';
 import getCore from 'cvat-core-wrapper';
 import { LogType } from 'cvat-logger';
-import { AnnotationActionTypes, computeZRange } from './annotation-actions';
+import { computeZRange } from './annotation-actions';
 
 const cvat = getCore();
 
@@ -43,7 +43,8 @@ export function resetAfterErrorAsync(): ThunkAction {
             const state = getState();
             const job = state.annotation.job.instance;
 
-            dispatch(createAction(AnnotationActionTypes.DESTROY_CANVAS));
+            state.annotation.canvas.instance.destroy();
+
             if (job) {
                 const currentFrame = state.annotation.player.frame.number;
                 const { showAllInterpolationTracks } = state.settings.workspace;
