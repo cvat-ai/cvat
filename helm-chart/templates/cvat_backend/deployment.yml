@@ -141,8 +141,12 @@ spec:
           {{- with .Values.cvat.backend.additionalVolumeMounts }}
           {{- toYaml . | nindent 10 }}
           {{- end }}
-      {{- with .Values.cvat.frontend.affinity }}
+      {{- with .Values.cvat.backend.affinity }}
       affinity:
+      {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.cvat.backend.tolerations }}
+      tolerations:
       {{- toYaml . | nindent 8 }}
       {{- end }}
       volumes:

@@ -7,7 +7,6 @@ from hashlib import blake2s
 
 from datumaro.util.os_util import make_file_name
 
-
 def get_color_from_index(index):
     def get_bit(number, index):
         return (number >> index) & 1
