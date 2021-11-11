@@ -658,7 +658,7 @@ class ProjectExporter(_ExporterBase, _ProjectBackupBase):
             self._write_manifest(output_file)
 
 class ProjectImporter(_ImporterBase, _ProjectBackupBase):
-    TASKNAME_RE = 'task_\d+/'
+    TASKNAME_RE = 'task_(\d+)/'
 
     def __init__(self, filename, user_id):
         super().__init__(logger=slogger.glob)
@@ -700,12 +700,12 @@ class ProjectImporter(_ImporterBase, _ProjectBackupBase):
 
     def _import_tasks(self):
         def get_tasks(zip_object):
-            task_list = set()
+            tasks = {}
             for fname in zip_object.namelist():
                 m = re.match(self.TASKNAME_RE, fname)
                 if m:
-                    task_list.add(m.group(0))
-            return task_list
+                    tasks[int(m.group(1))] = m.group(0)
+            return [v for _, v in sorted(tasks.items())]
 
         with ZipFile(self._filename, 'r') as zf:
             task_dirs = get_tasks(zf)
