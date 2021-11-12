@@ -31,7 +31,6 @@ class BasicUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ('url', 'id', 'username', 'first_name', 'last_name')
-        ordering = ['-id']
 
 class UserSerializer(serializers.ModelSerializer):
     groups = serializers.SlugRelatedField(many=True,
@@ -44,7 +43,6 @@ class UserSerializer(serializers.ModelSerializer):
             'date_joined')
         read_only_fields = ('last_login', 'date_joined')
         write_only_fields = ('password', )
-        ordering = ['-id']
 
 class AttributeSerializer(serializers.ModelSerializer):
     class Meta:
@@ -136,7 +134,7 @@ class LabelSerializer(serializers.ModelSerializer):
 class JobCommitSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.JobCommit
-        fields = ('id', 'version', 'author', 'message', 'timestamp')
+        fields = ('id', 'version', 'owner', 'message', 'timestamp')
 
 class JobReadSerializer(serializers.ModelSerializer):
     task_id = serializers.ReadOnlyField(source="segment.task.id")
@@ -384,7 +382,6 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
             'data_original_chunk_type', 'size', 'image_quality', 'data',
             'organization')
         write_once_fields = ('overlap', 'segment_size', 'project_id')
-        ordering = ['-id']
 
     # pylint: disable=no-self-use
     def create(self, validated_data):
@@ -524,7 +521,6 @@ class ProjectSearchSerializer(serializers.ModelSerializer):
         model = models.Project
         fields = ('id', 'name')
         read_only_fields = ('name',)
-        ordering = ['-id']
 
 
 class TrainingProjectSerializer(serializers.ModelSerializer):
@@ -552,7 +548,6 @@ class ProjectWithoutTaskSerializer(serializers.ModelSerializer):
             'dimension', 'organization')
         read_only_fields = ('created_date', 'updated_date', 'status', 'owner',
             'assignee', 'task_subsets', 'dimension', 'organization')
-        ordering = ['-id']
 
     def to_representation(self, instance):
         response = super().to_representation(instance)
@@ -757,45 +752,68 @@ class AnnotationFileSerializer(serializers.Serializer):
 class TaskFileSerializer(serializers.Serializer):
     task_file = serializers.FileField()
 
-class IssueSerializer(serializers.ModelSerializer):
+
+class CommentReadSerializer(serializers.ModelSerializer):
     owner = BasicUserSerializer(allow_null=True, required=False)
-    owner_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)
-    resolver = BasicUserSerializer(allow_null=True, required=False)
-    resolver_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)
-
-    position = serializers.ListField(
-        child=serializers.FloatField(),
-        allow_empty=False,
-    )
-
-    class Meta:
-        model = models.Issue
-        fields = '__all__'
-        read_only_fields = ('created_date', 'id', 'owner', 'resolver', )
-        write_once_fields = ('frame', 'position', 'job', 'owner_id', 'review', )
-        ordering = ['-id']
-
-class CommentSerializer(serializers.ModelSerializer):
-    author = BasicUserSerializer(allow_null=True, required=False)
-    author_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)
 
     class Meta:
         model = models.Comment
-        fields = '__all__'
-        read_only_fields = ('created_date', 'updated_date', 'id', 'author', )
-        write_once_fields = ('issue', 'author_id', )
+        fields = ('id', 'issue', 'owner', 'message', 'created_date',
+            'updated_date')
+        read_only_fields = fields
 
-class CombinedIssueSerializer(IssueSerializer):
-    comment_set = CommentSerializer(many=True)
+class CommentWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
+
+    def to_representation(self, instance):
+        serializer = CommentReadSerializer(instance, context=self.context)
+        return serializer.data
+
+    class Meta:
+        model = models.Comment
+        fields = ('id', 'issue', 'owner', 'message', 'created_date',
+            'updated_date')
+        read_only_fields = ('id', 'created_date', 'updated_date', 'owner')
+        write_once_fields = ('issue', )
+
+
+class IssueReadSerializer(serializers.ModelSerializer):
+    owner = BasicUserSerializer(allow_null=True, required=False)
+    assignee = BasicUserSerializer(allow_null=True, required=False)
+    position = serializers.ListField(
+        child=serializers.FloatField(), allow_empty=False
+    )
+    comments = CommentReadSerializer(many=True)
+
+    class Meta:
+        model = models.Issue
+        fields = ('id', 'frame', 'position', 'job', 'owner', 'assignee',
+            'created_date', 'updated_date', 'comments', 'resolved')
+        read_only_fields = fields
+
+
+class IssueWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
+    position = serializers.ListField(
+        child=serializers.FloatField(), allow_empty=False,
+    )
+    message = serializers.CharField(style={'base_template': 'textarea.html'})
+
+    def to_representation(self, instance):
+        serializer = IssueReadSerializer(instance, context=self.context)
+        return serializer.data
 
     def create(self, validated_data):
-        comments_validated_data = validated_data.pop('comment_set')
-        db_issue = models.Issue.objects.create(**validated_data)
-        for comment in comments_validated_data:
-            comment['issue'] = db_issue
-            models.Comment.objects.create(**comment)
-
+        message = validated_data.pop('message')
+        db_issue = super().create(validated_data)
+        models.Comment.objects.create(issue=db_issue,
+            message=message, owner=db_issue.owner)
         return db_issue
+
+    class Meta:
+        model = models.Issue
+        fields = ('id', 'frame', 'position', 'job', 'owner', 'assignee',
+            'created_date', 'updated_date', 'message', 'resolved')
+        read_only_fields = ('id', 'owner', 'created_date', 'updated_date')
+        write_once_fields = ('frame', 'position', 'job', 'message', 'owner')
 
 class ManifestSerializer(serializers.ModelSerializer):
     class Meta:

@@ -58,17 +58,17 @@ from cvat.apps.engine.serializers import (
     DataMetaSerializer, DataSerializer, ExceptionSerializer,
     FileInfoSerializer, JobReadSerializer, JobWriteSerializer, LabeledDataSerializer,
     LogEventSerializer, ProjectSerializer, ProjectSearchSerializer, ProjectWithoutTaskSerializer,
-    RqStatusSerializer, TaskSerializer, UserSerializer, PluginsSerializer, IssueSerializer,
-    CombinedIssueSerializer, CommentSerializer, CloudStorageSerializer, BaseCloudStorageSerializer,
-    TaskFileSerializer,
-)
+    RqStatusSerializer, TaskSerializer, UserSerializer, PluginsSerializer, IssueReadSerializer,
+    IssueWriteSerializer, CommentReadSerializer, CommentWriteSerializer, CloudStorageSerializer,
+    BaseCloudStorageSerializer, TaskFileSerializer)
+
 from utils.dataset_manifest import ImageManifestManager
 from cvat.apps.engine.utils import av_scan_paths
 from cvat.apps.engine.backup import import_task
 from . import models, task
 from .log import clogger, slogger
-from cvat.apps.iam.permissions import (CloudStoragePermission, CommentPermission,
-    IssuePermission, JobPermission, ProjectPermission,
+from cvat.apps.iam.permissions import (CloudStoragePermission,
+    CommentPermission, IssuePermission, JobPermission, ProjectPermission,
     TaskPermission, UserPermission)
 
 class ServerViewSet(viewsets.ViewSet):
@@ -265,14 +265,14 @@ class ProjectViewSet(viewsets.ModelViewSet):
         serializer.save(owner=self.request.user,
             organization=self.request.iam_context['organization'])
 
-    @swagger_auto_schema(method='get', operation_summary='Returns information of the tasks of the project with the selected id',
+    @swagger_auto_schema(
+        method='get',
+        operation_summary='Returns information of the tasks of the project with the selected id',
         responses={'200': TaskSerializer(many=True)})
     @action(detail=True, methods=['GET'], serializer_class=TaskSerializer)
     def tasks(self, request, pk):
         self.get_object() # force to call check_object_permissions
         queryset = Task.objects.filter(project_id=pk).order_by('-id')
-        perm = TaskPermission.create_list(request)
-        queryset = perm.filter(queryset)
 
         page = self.paginate_queryset(queryset)
         if page is not None:
@@ -554,14 +554,14 @@ class TaskViewSet(viewsets.ModelViewSet):
             db_project = instance.project
             db_project.save()
 
-    @swagger_auto_schema(method='get', operation_summary='Returns a list of jobs for a specific task',
+    @swagger_auto_schema(
+        method='get',
+        operation_summary='Returns a list of jobs for a specific task',
         responses={'200': JobReadSerializer(many=True)})
     @action(detail=True, methods=['GET'], serializer_class=JobReadSerializer)
     def jobs(self, request, pk):
         self.get_object() # force to call check_object_permissions
         queryset = Job.objects.filter(segment__task_id=pk)
-        perm = JobPermission.create_list(request)
-        queryset = perm.filter(queryset)
         serializer = JobReadSerializer(queryset, many=True,
             context={"request": request})
 
@@ -870,7 +870,7 @@ class TaskViewSet(viewsets.ModelViewSet):
 @method_decorator(name='update', decorator=swagger_auto_schema(operation_summary='Method updates a job by id'))
 @method_decorator(name='partial_update', decorator=swagger_auto_schema(
     operation_summary='Methods does a partial update of chosen fields in a job'))
-class JobViewSet(viewsets.GenericViewSet,
+class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     mixins.RetrieveModelMixin, mixins.UpdateModelMixin):
     queryset = Job.objects.all().order_by('id')
 
@@ -933,85 +933,67 @@ class JobViewSet(viewsets.GenericViewSet,
                     return Response(data=str(e), status=status.HTTP_400_BAD_REQUEST)
                 return Response(data)
 
-    @swagger_auto_schema(method='post', operation_summary='Method adds an issue to a job',
-        responses={'201': IssueSerializer()}
-    )
-    @action(detail=True, methods=['POST'], url_path='issues/create')
-    def create_issue(self, request, pk):
-        db_job = self.get_object()  # also checks object permission
-        data = request.data
-        data['job'] = db_job.id
-        data['owner_id'] = request.user.id
-        comment_set = data['comment_set']
-        for comment in comment_set:
-            comment['author_id'] = request.user.id
-
-        serializer = CombinedIssueSerializer(data=data, context={'request': request}, partial=True)
-        if serializer.is_valid(raise_exception=True):
-            serializer.save()
-        return Response(serializer.data, status.HTTP_201_CREATED)
-
-    @swagger_auto_schema(method='get', operation_summary='Method returns list of issues for the job',
-        responses={'200': CombinedIssueSerializer(many=True)}
-    )
-    @action(detail=True, methods=['GET'], serializer_class=CombinedIssueSerializer)
+    @swagger_auto_schema(
+        method='get',
+        operation_summary='Method returns list of issues for the job',
+        responses={'200': IssueReadSerializer(many=True)})
+    @action(detail=True, methods=['GET'], serializer_class=IssueReadSerializer)
     def issues(self, request, pk):
         db_job = self.get_object()
-        queryset = db_job.issue_set
-        serializer = CombinedIssueSerializer(queryset, context={'request': request}, many=True)
+        queryset = db_job.issues
+        serializer = IssueReadSerializer(queryset,
+            context={'request': request}, many=True)
+
         return Response(serializer.data)
 
-@method_decorator(name='destroy', decorator=swagger_auto_schema(operation_summary='Method removes an issue from a job'))
-@method_decorator(name='partial_update', decorator=swagger_auto_schema(operation_summary='Method updates an issue (for example when resolve/reopen)'))
-class IssueViewSet(viewsets.GenericViewSet, mixins.DestroyModelMixin, mixins.UpdateModelMixin):
-    queryset = Issue.objects.all().order_by('id')
-    http_method_names = ['get', 'patch', 'delete', 'options']
-
-    def get_serializer_class(self):
-        return IssueSerializer
-
-
-    def partial_update(self, request, *args, **kwargs):
-        db_issue = self.get_object()
-        if 'resolver_id' in request.data and request.data['resolver_id'] and db_issue.resolver is None:
-            # resolve
-            db_issue.resolver = request.user
-            db_issue.resolved_date = datetime.now()
-            db_issue.save(update_fields=['resolver', 'resolved_date'])
-        elif 'resolver_id' in request.data and not request.data['resolver_id'] and db_issue.resolver is not None:
-            # reopen
-            db_issue.resolver = None
-            db_issue.resolved_date = None
-            db_issue.save(update_fields=['resolver', 'resolved_date'])
-        serializer = self.get_serializer(db_issue)
-        return Response(serializer.data)
-
-    @swagger_auto_schema(method='get', operation_summary='The action returns all comments of a specific issue',
-        responses={'200': CommentSerializer(many=True)}
-    )
-    @action(detail=True, methods=['GET'], serializer_class=CommentSerializer)
-    def comments(self, request, pk):
-        db_issue = self.get_object()
-        queryset = db_issue.comment_set
-        serializer = CommentSerializer(queryset, context={'request': request}, many=True)
-        return Response(serializer.data)
-
-@method_decorator(name='partial_update', decorator=swagger_auto_schema(operation_summary='Method updates comment in an issue'))
-@method_decorator(name='destroy', decorator=swagger_auto_schema(operation_summary='Method removes a comment from an issue'))
-class CommentViewSet(viewsets.GenericViewSet,
-    mixins.DestroyModelMixin, mixins.UpdateModelMixin, mixins.CreateModelMixin):
-    queryset = Comment.objects.all().order_by('id')
-    serializer_class = CommentSerializer
+class IssueViewSet(viewsets.ModelViewSet):
+    queryset = Issue.objects.all().order_by('-id')
     http_method_names = ['get', 'post', 'patch', 'delete', 'options']
 
-    def create(self, request, *args, **kwargs):
-        request.data.update({
-            'author_id': request.user.id,
-        })
-        issue_id = request.data['issue']
-        db_issue = get_object_or_404(Issue, pk=issue_id)
-        self.check_object_permissions(self.request, db_issue.job)
-        return super().create(request, args, kwargs)
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        perm = IssuePermission.create_list(self.request)
+        return perm.filter(queryset)
+
+    def get_serializer_class(self):
+        if self.request.method in SAFE_METHODS:
+            return IssueReadSerializer
+        else:
+            return IssueWriteSerializer
+
+    def perform_create(self, serializer):
+        serializer.save(owner=self.request.user)
+
+    @swagger_auto_schema(
+        method='get',
+        operation_summary='The action returns all comments of a specific issue',
+        responses={'200': CommentReadSerializer(many=True)})
+    @action(detail=True, methods=['GET'], serializer_class=CommentReadSerializer)
+    def comments(self, request, pk):
+        db_issue = self.get_object()
+        queryset = db_issue.comments
+        serializer = CommentReadSerializer(queryset,
+            context={'request': request}, many=True)
+
+        return Response(serializer.data)
+
+class CommentViewSet(viewsets.ModelViewSet):
+    queryset = Comment.objects.all().order_by('-id')
+    http_method_names = ['get', 'post', 'patch', 'delete', 'options']
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        perm = CommentPermission.create_list(self.request)
+        return perm.filter(queryset)
+
+    def get_serializer_class(self):
+        if self.request.method in SAFE_METHODS:
+            return CommentReadSerializer
+        else:
+            return CommentWriteSerializer
+
+    def perform_create(self, serializer):
+        serializer.save(owner=self.request.user)
 
 class UserFilter(filters.FilterSet):
     class Meta:

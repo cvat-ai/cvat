@@ -18,7 +18,7 @@ from cvat.apps.engine import models
 from cvat.apps.engine.log import slogger
 from cvat.apps.engine.serializers import (AttributeSerializer, DataSerializer,
     LabeledDataSerializer, SegmentSerializer, SimpleJobSerializer, TaskSerializer,
-    IssueSerializer, CommentSerializer)
+    IssueReadSerializer, CommentReadSerializer)
 from cvat.apps.engine.utils import av_scan_paths
 from cvat.apps.engine.models import StorageChoice, StorageMethodChoice, DataChoice
 from cvat.apps.engine.task import _create_thread
@@ -154,20 +154,12 @@ class _TaskBackupBase():
 
         return annotations
 
-    def _prepare_review_meta(self, review):
-        allowed_fields = {
-            'estimated_quality',
-            'status',
-            'issues',
-        }
-        return self._prepare_meta(allowed_fields, review)
-
     def _prepare_issue_meta(self, issue):
         allowed_fields = {
             'frame',
             'position',
             'created_date',
-            'resolved_date',
+            'updated_date',
             'comments',
         }
         return self._prepare_meta(allowed_fields, issue)
@@ -287,30 +279,20 @@ class TaskExporter(_TaskBackupBase):
             return task
 
         def serialize_comment(db_comment):
-            comment_serializer = CommentSerializer(db_comment)
-            comment_serializer.fields.pop('author')
+            comment_serializer = CommentReadSerializer(db_comment)
+            comment_serializer.fields.pop('owner')
 
             return self._prepare_comment_meta(comment_serializer.data)
 
         def serialize_issue(db_issue):
-            issue_serializer = IssueSerializer(db_issue)
+            issue_serializer = IssueReadSerializer(db_issue)
             issue_serializer.fields.pop('owner')
-            issue_serializer.fields.pop('resolver')
+            issue_serializer.fields.pop('assignee')
 
             issue = issue_serializer.data
             issue['comments'] = (serialize_comment(c) for c in db_issue.comment_set.order_by('id'))
 
             return self._prepare_issue_meta(issue)
-
-        def serialize_review(db_review):
-            review_serializer = ReviewSerializer(db_review)
-            review_serializer.fields.pop('reviewer')
-            review_serializer.fields.pop('assignee')
-
-            review = review_serializer.data
-            review['issues'] = (serialize_issue(i) for i in db_review.issue_set.order_by('id'))
-
-            return self._prepare_review_meta(review)
 
         def serialize_segment(db_segment):
             db_job = db_segment.job_set.first()
@@ -323,9 +305,6 @@ class TaskExporter(_TaskBackupBase):
             segment_serailizer.fields.pop('jobs')
             segment = segment_serailizer.data
             segment.update(job_data)
-
-            db_reviews = db_job.review_set.order_by('id')
-            segment['reviews'] = (serialize_review(r) for r in db_reviews)
 
             return segment
 

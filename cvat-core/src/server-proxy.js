@@ -704,7 +704,7 @@
                 }
 
                 // to be able to get the task after it was created, pass frozen params
-                const createdTask = await getTasks({ id: response.id, ...params });
+                const createdTask = await getTasks({ id: response.data.id, ...params });
                 return createdTask[0];
             }
 

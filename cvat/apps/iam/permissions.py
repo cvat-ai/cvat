@@ -765,7 +765,12 @@ class CommentPermission(OpenPolicyAgentPermission):
     def create(cls, request, view, obj):
         return []
 
-    def __init__(self, request, view, obj):
+    @classmethod
+    def create_list(cls, request):
+        view = namedtuple('View', ['action'])(action='list')
+        return cls(request, view)
+
+    def __init__(self, request, view, obj=None):
         super().__init__(request, view, obj)
 
     def get_scope(self, request, view, obj):
@@ -781,9 +786,9 @@ class IssuePermission(OpenPolicyAgentPermission):
     @classmethod
     def create_list(cls, request):
         view = namedtuple('View', ['action'])(action='list')
-        return cls('list', request, view)
+        return cls(request, view)
 
-    def __init__(self, scope, request, view, obj=None):
+    def __init__(self, request, view, obj=None):
         super().__init__(request, view, obj)
 
     def get_scope(self, request, view, obj):

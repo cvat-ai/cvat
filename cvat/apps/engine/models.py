@@ -471,7 +471,7 @@ class Annotation(models.Model):
 
 class Commit(models.Model):
     id = models.BigAutoField(primary_key=True)
-    author = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL)
+    owner = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL)
     version = models.PositiveIntegerField(default=0)
     timestamp = models.DateTimeField(auto_now=True)
     message = models.CharField(max_length=4096, default="")
@@ -544,15 +544,18 @@ class Profile(models.Model):
 class Issue(models.Model):
     frame = models.PositiveIntegerField()
     position = FloatArrayField()
-    job = models.ForeignKey(Job, on_delete=models.CASCADE)
-    owner = models.ForeignKey(User, null=True, blank=True, related_name='issues', on_delete=models.SET_NULL)
-    resolver = models.ForeignKey(User, null=True, blank=True, related_name='resolved_issues', on_delete=models.SET_NULL)
+    job = models.ForeignKey(Job, related_name='issues', on_delete=models.CASCADE)
+    owner = models.ForeignKey(User, null=True, blank=True, related_name='+',
+        on_delete=models.SET_NULL)
+    assignee = models.ForeignKey(User, null=True, blank=True, related_name='+',
+        on_delete=models.SET_NULL)
     created_date = models.DateTimeField(auto_now_add=True)
-    resolved_date = models.DateTimeField(null=True, blank=True)
+    updated_date = models.DateTimeField(null=True, blank=True)
+    resolved = models.BooleanField(default=False)
 
 class Comment(models.Model):
-    issue = models.ForeignKey(Issue, on_delete=models.CASCADE)
-    author = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL)
+    issue = models.ForeignKey(Issue, related_name='comments', on_delete=models.CASCADE)
+    owner = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL)
     message = models.TextField(default='')
     created_date = models.DateTimeField(auto_now_add=True)
     updated_date = models.DateTimeField(auto_now=True)
