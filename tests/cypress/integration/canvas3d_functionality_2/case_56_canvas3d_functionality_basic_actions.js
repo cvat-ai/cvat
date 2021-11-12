@@ -184,8 +184,7 @@ context('Canvas 3D functionality. Basic actions.', () => {
             cy.get('.cvat-player-first-button').click(); // Return to first frame
         });
 
-        // FIXME: this test was temporarily excluded
-        it.skip('Testing perspective visual regressions.', () => {
+        it('Testing perspective hotkeys visual regressions.', () => {
             testPerspectiveChangeOnKeyPress('u', 'before_press_altU', 'after_press_altU');
             testPerspectiveChangeOnKeyPress('o', 'before_press_altO', 'after_press_altO');
             testPerspectiveChangeOnKeyPress('i', 'before_press_altI', 'after_press_altI');
@@ -196,6 +195,10 @@ context('Canvas 3D functionality. Basic actions.', () => {
             testPerspectiveChangeOnArrowKeyPress('{downarrow}', 'before_press_downarrow', 'after_press_downarrow');
             testPerspectiveChangeOnArrowKeyPress('{leftarrow}', 'before_press_leftarrow', 'after_press_leftarrow');
             testPerspectiveChangeOnArrowKeyPress('{rightarrow}', 'before_press_rightarrow', 'after_press_rightarrow');
+        });
+
+        // Temporarily disabling the test
+        it.skip('Testing perspective wheel visual regressions.', () => {
             testPerspectiveChangeOnWheel('perspective_before_wheel', 'perspective_after_wheel');
         });
 
