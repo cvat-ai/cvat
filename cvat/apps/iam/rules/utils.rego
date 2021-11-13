@@ -44,6 +44,7 @@ UPLOAD_DATA := "upload:data"
 IMPORT_ANNOTATIONS := "import:annotations"
 UPDATE_STATE := "update:state"
 UPDATE_STAGE := "update:stage"
+CREATE_IN_JOB := "create@job"
 
 
 get_priority(privilege) = priority {
