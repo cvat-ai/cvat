@@ -12,7 +12,7 @@ from rest_framework.permissions import BasePermission
 from cvat.apps.engine import serializers
 
 from cvat.apps.organizations.models import Membership, Organization
-from cvat.apps.engine.models import Project, Task, Job
+from cvat.apps.engine.models import Project, Task, Job, Issue
 
 class OpenPolicyAgentPermission:
     def __init__(self, request, view, obj):
@@ -763,7 +763,12 @@ class JobPermission(OpenPolicyAgentPermission):
 class CommentPermission(OpenPolicyAgentPermission):
     @classmethod
     def create(cls, request, view, obj):
-        return []
+        permissions = []
+        if view.basename == 'comment':
+            self = cls(request, view, obj)
+            permissions.append(self)
+
+        return permissions
 
     @classmethod
     def create_list(cls, request):
@@ -772,11 +777,68 @@ class CommentPermission(OpenPolicyAgentPermission):
 
     def __init__(self, request, view, obj=None):
         super().__init__(request, view, obj)
+        self.url = settings.IAM_OPA_DATA_URL + '/comments/allow'
+        self.payload['input']['scope'] = self.scope
+        self.payload['input']['resource'] = self.resource
 
-    def get_scope(self, request, view, obj):
-        return super().get_scope(request, view, obj)
+    @property
+    def scope(self):
+        return {
+            'list': 'list',
+            'create': 'create@issue',
+            'destroy': 'delete',
+            'partial_update': 'update',
+            'retrieve': 'view'
+        }.get(self.view.action, None)
 
-    url = settings.IAM_OPA_DATA_URL + '/comments/allow'
+    @property
+    def resource(self):
+        data = None
+        def get_common_data(db_issue):
+            if db_issue.job.segment.task.project:
+                organization = db_issue.job.segment.task.project.organization
+            else:
+                organization = db_issue.job.segment.task.organization
+
+            data = {
+                "project": {
+                    "owner": { "id": getattr(db_issue.job.segment.task.project.owner, 'id', None) },
+                    "assignee": { "id": getattr(db_issue.job.segment.task.project.assignee, 'id', None) }
+                } if db_issue.job.segment.task.project else None,
+                "task": {
+                    "owner": { "id": getattr(db_issue.job.segment.task.owner, 'id', None) },
+                    "assignee": { "id": getattr(db_issue.job.segment.task.assignee, 'id', None) }
+                },
+                "job": {
+                    "assignee": { "id": getattr(db_issue.job.assignee, 'id', None) }
+                },
+                "issue": {
+                    "owner": { "id": getattr(db_issue.owner, 'id', None) },
+                    "assignee": { "id": getattr(db_issue.assignee, 'id', None) }
+                },
+                'organization': {
+                    "id": getattr(organization, 'id', None)
+                }
+            }
+
+            return data
+
+        if self.obj:
+            db_issue = self.obj.issue
+            data = get_common_data(db_issue)
+            data.update({
+                "id": self.obj.id,
+                "owner": { "id": getattr(self.obj.owner, 'id', None) }
+            })
+        elif self.view.action == 'create':
+            issue_id = self.request.data.get('issue')
+            db_issue = Issue.objects.get(id=issue_id)
+            data = get_common_data(db_issue)
+            data.update({
+                "owner": { "id": self.request.user.id }
+            })
+
+        return data
 
 class IssuePermission(OpenPolicyAgentPermission):
     @classmethod

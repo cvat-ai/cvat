@@ -45,6 +45,7 @@ IMPORT_ANNOTATIONS := "import:annotations"
 UPDATE_STATE := "update:state"
 UPDATE_STAGE := "update:stage"
 CREATE_IN_JOB := "create@job"
+CREATE_IN_ISSUE := "create@issue"
 
 
 get_priority(privilege) = priority {

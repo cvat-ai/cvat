@@ -30,10 +30,10 @@ import data.organizations
 #         "task": {
 #             "owner": { "id": <num> },
 #             "assignee": { "id": <num> }
-#         } or null,
+#         },
 #         "job": {
 #             "assignee": { "id": <num> }
-#         } or null,
+#         },
 #         "organization": { "id": <num> } or null
 #     }
 # }

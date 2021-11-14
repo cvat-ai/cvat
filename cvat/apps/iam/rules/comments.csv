@@ -1,17 +1,19 @@
-Scope,Resource,Context,Ownership,Limit,Method,URL,Group,Membership,[No Role],Worker,User,Business,Admin,Worker,Supervisor,Maintainer,Owner,Comment
-Create,Comment,Sandbox,None,,POST,/comments,Admin,N/A,,,,,x,,,,,
-Create,Comment,Sandbox,"Project owner, Task owner, Project assignee, Task assignee, Job assignee, Issue owner",,POST,/comments,Worker,N/A,,x,x,x,x,,,,,
-Create,Comment,Organization,None,,POST,/comments,User,Maintainer,,,x,x,x,,,x,x,
-Create,Comment,Organization,"Project owner, Task owner, Project assignee, Task assignee, Job assignee, Issue owner",,POST,/comments,Worker,Worker,,x,x,x,x,x,x,x,x,
-Update message,Comment,Sandbox,None,,PATCH,/comments/{id},Admin,N/A,,,,,x,,,,,
-Update message,Comment,Sandbox,"Project owner, Task owner, Project assignee, Task assignee, Job assignee, Owner, Issue owner",,PATCH,/comments/{id},Worker,N/A,,x,x,x,x,,,,,
-Update message,Comment,Organization,None,,PATCH,/comments/{id},User,Maintainer,,,x,x,x,,,x,x,
-Update message,Comment,Organization,"Project owner, Task owner, Project assignee, Task assignee, Job assignee, Owner, Issue owner",,PATCH,/comments/{id},Worker,Worker,,x,x,x,x,x,x,x,x,
-Delete,Comment,Sandbox,None,,DELETE,/comments/{id},Admin,N/A,,,,,x,,,,,
-Delete,Comment,Sandbox,"Project owner, Task owner, Project assignee, Task assignee, Job assignee, Owner, Issue owner",,DELETE,/comments/{id},Worker,N/A,,x,x,x,x,,,,,
-Delete,Comment,Organization,None,,DELETE,/comments/{id},User,Maintainer,,,x,x,x,,,x,x,
-Delete,Comment,Organization,"Project owner, Task owner, Project assignee, Task assignee, Job assignee, Owner, Issue owner",,DELETE,/comments/{id},Worker,Worker,,x,x,x,x,x,x,x,x,
-List,Comment,Sandbox,None,,GET,/issues/{id}/comments,Admin,N/A,,,,,x,,,,,
-List,Comment,Sandbox,"Project owner, Task owner, Project assignee, Task assignee, Job assignee, Owner, Issue owner",,GET,/issues/{id}/comments,None,N/A,x,x,x,x,x,,,,,
-List,Comment,Organization,None,,GET,/issues/{id}/comments,User,Maintainer,,,x,x,x,,,x,x,
-List,Comment,Organization,"Project owner, Task owner, Project assignee, Task assignee, Job assignee, Owner, Issue owner",,GET,/issues/{id}/comments,None,Worker,x,x,x,x,x,x,x,x,x,
+Scope,Resource,Context,Ownership,Limit,Method,URL,Privilege,Membership
+list,Comment,Sandbox,N/A,,GET,"/issues/{id}/comments, /comments",None,N/A
+list,Comment,Organization,N/A,,GET,"/issues/{id}/comments, /comments",None,Worker
+create@issue,"Comment, Issue",Sandbox,N/A,,POST,/comments,Admin,N/A
+create@issue,"Comment, Issue",Sandbox,"Project:owner, Project:assignee, Task:owner, Task:assignee, Job:assignee, Issue:owner, Issue:assignee",,POST,/comments,Worker,N/A
+create@issue,"Comment, Issue",Organization,N/A,,POST,/comments,User,Maintainer
+create@issue,"Comment, Issue",Organization,"Project:owner, Project:assignee, Task:owner, Task:assignee, Job:assignee, Issue:owner, Issue:assignee",,POST,/comments,Worker,Worker
+view,Comment,Sandbox,N/A,,GET,/comments/{id},Admin,N/A
+view,Comment,Sandbox,"Project:owner, Project:assignee, Task:owner, Task:assignee, Job:assignee, Issue:owner, Issue:assignee, Owner",,GET,/comments/{id},None,N/A
+view,Comment,Organization,None,,GET,/comments/{id},User,Maintainer
+view,Comment,Organization,"Project:owner, Project:assignee, Task:owner, Task:assignee, Job:assignee, Issue:owner, Issue:assignee, Owner",,GET,/comments/{id},None,Worker
+update,Comment,Sandbox,N/A,,PATCH,/comments/{id},Admin,N/A
+update,Comment,Sandbox,"Project:owner, Project:assignee, Task:owner, Task:assignee, Job:assignee, Issue:owner, Issue:assignee, Owner",,PATCH,/comments/{id},Worker,N/A
+update,Comment,Organization,N/A,,PATCH,/comments/{id},User,Maintainer
+update,Comment,Organization,"Project:owner, Project:assignee, Task:owner, Task:assignee, Job:assignee, Issue:owner, Issue:assignee, Owner",,PATCH,/comments/{id},Worker,Worker
+delete,Comment,Sandbox,None,,DELETE,/comments/{id},Admin,N/A
+delete,Comment,Sandbox,"Project:owner, Project:assignee, Task:owner, Task:assignee, Job:assignee, Issue:owner, Issue:assignee, Owner",,DELETE,/comments/{id},Worker,N/A
+delete,Comment,Organization,None,,DELETE,/comments/{id},User,Maintainer
+delete,Comment,Organization,"Project:owner, Project:assignee, Task:owner, Task:assignee, Job:assignee, Issue:owner, Issue:assignee, Owner",,DELETE,/comments/{id},Worker,Worker
