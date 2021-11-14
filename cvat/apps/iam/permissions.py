@@ -804,14 +804,11 @@ class IssuePermission(OpenPolicyAgentPermission):
         self.payload['input']['scope'] = self.scope
         self.payload['input']['resource'] = self.resource
 
-    def get_scope(self, request, view, obj):
-        return super().get_scope(request, view, obj)
-
     @property
     def scope(self):
         return {
             'list': 'list',
-            'create': 'create',
+            'create': 'create@job',
             'destroy': 'delete',
             'partial_update': 'update',
             'retrieve': 'view'
@@ -856,7 +853,7 @@ class IssuePermission(OpenPolicyAgentPermission):
             })
         elif self.view.action == 'create':
             job_id = self.request.data.get('job')
-            db_job = Job.objects.get(job_id)
+            db_job = Job.objects.get(id=job_id)
             data = get_common_data(db_job)
             data.update({
                 "owner": { "id": self.request.user.id },
