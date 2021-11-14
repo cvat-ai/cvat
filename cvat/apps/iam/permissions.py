@@ -9,9 +9,10 @@ import requests
 from django.conf import settings
 from django.db.models import Q
 from rest_framework.permissions import BasePermission
+from cvat.apps.engine import serializers
 
 from cvat.apps.organizations.models import Membership, Organization
-from cvat.apps.engine.models import Project, Task
+from cvat.apps.engine.models import Project, Task, Job
 
 class OpenPolicyAgentPermission:
     def __init__(self, request, view, obj):
@@ -712,7 +713,6 @@ class JobPermission(OpenPolicyAgentPermission):
 
     @classmethod
     def get_scopes(cls, request, view, obj):
-        # TODO: continue HERE!!!!!!!!!!!!
         scope = {
             ('list', 'GET'): 'list', # TODO: need to add the method
             ('retrieve', 'GET'): 'view',
@@ -781,7 +781,17 @@ class CommentPermission(OpenPolicyAgentPermission):
 class IssuePermission(OpenPolicyAgentPermission):
     @classmethod
     def create(cls, request, view, obj):
-        return []
+        permissions = []
+        if view.basename == 'issue':
+            self = cls(request, view, obj)
+            permissions.append(self)
+
+            assignee = request.data.get('assignee')
+            if assignee:
+                perm = UserPermission.create_view(assignee, request)
+                permissions.append(perm)
+
+        return permissions
 
     @classmethod
     def create_list(cls, request):
@@ -790,12 +800,70 @@ class IssuePermission(OpenPolicyAgentPermission):
 
     def __init__(self, request, view, obj=None):
         super().__init__(request, view, obj)
+        self.url = settings.IAM_OPA_DATA_URL + '/issues/allow'
+        self.payload['input']['scope'] = self.scope
+        self.payload['input']['resource'] = self.resource
 
     def get_scope(self, request, view, obj):
         return super().get_scope(request, view, obj)
 
-    url = settings.IAM_OPA_DATA_URL + '/issues/allow'
+    @property
+    def scope(self):
+        return {
+            'list': 'list',
+            'create': 'create',
+            'destroy': 'delete',
+            'partial_update': 'update',
+            'retrieve': 'view'
+        }.get(self.view.action, None)
 
+    @property
+    def resource(self):
+        data = None
+        def get_common_data(db_job):
+            if db_job.segment.task.project:
+                organization = db_job.segment.task.project.organization
+            else:
+                organization = db_job.segment.task.organization
+
+            data = {
+                "project": {
+                    "owner": { "id": getattr(db_job.segment.task.project.owner, 'id', None) },
+                    "assignee": { "id": getattr(db_job.segment.task.project.assignee, 'id', None) }
+                } if db_job.segment.task.project else None,
+                "task": {
+                    "owner": { "id": getattr(db_job.segment.task.owner, 'id', None) },
+                    "assignee": { "id": getattr(db_job.segment.task.assignee, 'id', None) }
+                },
+                "job": {
+                    "assignee": { "id": getattr(db_job.assignee, 'id', None) }
+                },
+                'organization': {
+                    "id": getattr(organization, 'id', None)
+                }
+            }
+
+            return data
+
+
+        if self.obj:
+            db_job = self.obj.job
+            data = get_common_data(db_job)
+            data.update({
+                "id": self.obj.id,
+                "owner": { "id": getattr(self.obj.owner, 'id', None) },
+                "assignee": { "id": getattr(self.obj.assignee, 'id', None) }
+            })
+        elif self.view.action == 'create':
+            job_id = self.request.data.get('job')
+            db_job = Job.objects.get(job_id)
+            data = get_common_data(db_job)
+            data.update({
+                "owner": { "id": self.request.user.id },
+                "assignee": { "id": self.request.data.get('assignee') },
+            })
+
+        return data
 
 class PolicyEnforcer(BasePermission):
     # pylint: disable=no-self-use
