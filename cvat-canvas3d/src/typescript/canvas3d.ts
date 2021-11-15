@@ -107,7 +107,7 @@ class Canvas3dImpl implements Canvas3d {
     }
 
     public destroy(): void {
-        this.view.destroy();
+        this.model.destroy();
     }
 }
 
