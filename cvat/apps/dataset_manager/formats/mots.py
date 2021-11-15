@@ -71,7 +71,6 @@ def _import(src_file, task_data):
                 shape = task_data.TrackedShape(
                     type='polygon',
                     points=ann.points,
-                    rotation=0,
                     occluded=ann.attributes.get('occluded') == True,
                     outside=False,
                     keyframe=True,

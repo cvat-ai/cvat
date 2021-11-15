@@ -1279,7 +1279,6 @@ def import_dm_annotations(dm_dataset, task_data):
                         occluded=ann.attributes.get('occluded') == True,
                         z_order=ann.z_order,
                         group=group_map.get(ann.group, 0),
-                        rotation=0,
                         source='manual',
                         attributes=[task_data.Attribute(name=n, value=str(v))
                             for n, v in ann.attributes.items()],

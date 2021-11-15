@@ -48,7 +48,6 @@ def _import(src_file, task_data):
                         type='rectangle',
                         label=label_cat.items[ann.label].name,
                         points=ann.points,
-                        rotation=0,
                         occluded=ann.attributes.get('occluded') == True,
                         z_order=ann.z_order,
                         group=0,
@@ -61,7 +60,6 @@ def _import(src_file, task_data):
                 shape = task_data.TrackedShape(
                     type='rectangle',
                     points=ann.points,
-                    rotation=0,
                     occluded=ann.attributes.get('occluded') == True,
                     outside=False,
                     keyframe=True,
