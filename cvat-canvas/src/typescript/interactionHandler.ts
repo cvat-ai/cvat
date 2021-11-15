@@ -375,7 +375,8 @@ export class InteractionHandlerImpl implements InteractionHandler {
         return false;
     }
 
-    private onKeyUp = (e:KeyboardEvent):void => {
+    private onKeyUp = (e: KeyboardEvent): void => {
+        console.log('keyup');
         if (this.interactionData.enabled && e.keyCode === 17) {
             if (this.interactionData.onChangeToolsBlockerState && !this.thresholdWasModified) {
                 this.interactionData.onChangeToolsBlockerState('keyup');
@@ -387,7 +388,7 @@ export class InteractionHandlerImpl implements InteractionHandler {
         }
     };
 
-    private onKeyDown = (e:KeyboardEvent):void => {
+    private onKeyDown = (e: KeyboardEvent): void => {
         if (!e.repeat && this.interactionData.enabled && e.keyCode === 17) {
             if (this.interactionData.onChangeToolsBlockerState && !this.thresholdWasModified) {
                 this.interactionData.onChangeToolsBlockerState('keydown');

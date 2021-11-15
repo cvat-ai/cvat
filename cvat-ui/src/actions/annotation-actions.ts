@@ -1024,8 +1024,6 @@ export function getJobAsync(tid: number, jid: number, initialFrame: number, init
 
             loadJobEvent.close(await jobInfoGenerator(job));
 
-            state.annotation.canvas.instance.destroy();
-
             const openTime = Date.now();
             dispatch({
                 type: AnnotationActionTypes.GET_JOB_SUCCESS,

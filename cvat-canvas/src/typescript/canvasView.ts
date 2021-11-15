@@ -51,7 +51,6 @@ import {
 
 export interface CanvasView {
     html(): HTMLDivElement;
-    destroy(): void;
 }
 
 export class CanvasViewImpl implements CanvasView, Listener {
@@ -1359,6 +1358,16 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 },
             });
             this.canvas.dispatchEvent(event);
+        } else if (reason === UpdateReasons.DESTROY) {
+            this.canvas.dispatchEvent(
+                new CustomEvent('canvas.destroy', {
+                    bubbles: false,
+                    cancelable: true,
+                }),
+            );
+            // We can't call namespaced svgjs event
+            // see - https://svgjs.dev/docs/2.7/events/
+            this.adoptedContent.fire('destroy');
         }
 
         if (model.imageBitmap && [UpdateReasons.IMAGE_CHANGED, UpdateReasons.OBJECTS_UPDATED].includes(reason)) {
@@ -1368,18 +1377,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
     public html(): HTMLDivElement {
         return this.canvas;
-    }
-
-    public destroy(): void {
-        this.canvas.dispatchEvent(
-            new CustomEvent('canvas.destroy', {
-                bubbles: false,
-                cancelable: true,
-            }),
-        );
-        // We can't call namespaced svgjs event
-        // see - https://svgjs.dev/docs/2.7/events/
-        this.adoptedContent.fire('destroy');
     }
 
     private redrawBitmap(): void {

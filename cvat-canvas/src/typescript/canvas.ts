@@ -166,7 +166,7 @@ class CanvasImpl implements Canvas {
     }
 
     public destroy(): void {
-        this.view.destroy();
+        this.model.destroy();
     }
 }
 

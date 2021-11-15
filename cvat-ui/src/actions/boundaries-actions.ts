@@ -43,8 +43,6 @@ export function resetAfterErrorAsync(): ThunkAction {
             const state = getState();
             const job = state.annotation.job.instance;
 
-            state.annotation.canvas.instance.destroy();
-
             if (job) {
                 const currentFrame = state.annotation.player.frame.number;
                 const { showAllInterpolationTracks } = state.settings.workspace;

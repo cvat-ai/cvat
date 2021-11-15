@@ -19,7 +19,6 @@ export interface Canvas3dView {
     html(): ViewsDOM;
     render(): void;
     keyControls(keys: KeyboardEvent): void;
-    destroy(): void;
 }
 
 export enum CameraAction {
@@ -1876,12 +1875,5 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             side: this.views.side.renderer.domElement,
             front: this.views.front.renderer.domElement,
         };
-    }
-
-    public destroy(): void {
-        this.dispatchEvent(new CustomEvent('canvas.destroy', {
-            bubbles: false,
-            cancelable: true,
-        }));
     }
 }
