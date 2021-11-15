@@ -1920,9 +1920,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     let rotation = Math.round(shape.transform().rotation || 0);
 
                     // be sure, that rotation in range [0; 360]
-                    while (rotation < 0) {
-                        rotation += 360;
-                    }
+                    while (rotation < 0) rotation += 360;
                     rotation %= 360;
 
                     let points = pointsToNumberArray(

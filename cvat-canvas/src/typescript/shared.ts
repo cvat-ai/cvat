@@ -97,8 +97,14 @@ export function displayShapeSize(shapesContainer: SVG.Container, textContainer: 
             .addClass('cvat_canvas_text'),
         update(shape: SVG.Shape): void {
             let text = `${Math.round(shape.width())}x${Math.round(shape.height())}px`;
-            if (shape.type === 'rectangle') {
-                text = `${text} ${shape.transform().rotation}\u00B0`;
+            if (shape.type === 'rect') {
+                let rotation = shape.transform().rotation || 0;
+                // be sure, that rotation in range [0; 360]
+                while (rotation < 0) rotation += 360;
+                rotation %= 360;
+                if (rotation) {
+                    text = `${text} ${rotation.toFixed(1)}\u00B0`;
+                }
             }
             const [x, y, cx, cy]: number[] = translateToSVG(
                 (textContainer.node as any) as SVGSVGElement,
