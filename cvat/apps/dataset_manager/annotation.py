@@ -439,8 +439,8 @@ class TrackManager(ObjectManager):
                 copied["points"] = points
             return copied
 
-        def find_angle_diff(right_angle, left_abgle):
-            angle_diff = right_angle - left_abgle
+        def find_angle_diff(right_angle, left_angle):
+            angle_diff = right_angle - left_angle
             angle_diff = ((angle_diff + 180) % 360) - 180
             if abs(angle_diff) >= 180:
                 # if the main arc is bigger than 180, go another arc
