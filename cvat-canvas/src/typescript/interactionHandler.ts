@@ -376,7 +376,6 @@ export class InteractionHandlerImpl implements InteractionHandler {
     }
 
     private onKeyUp = (e: KeyboardEvent): void => {
-        console.log('keyup');
         if (this.interactionData.enabled && e.keyCode === 17) {
             if (this.interactionData.onChangeToolsBlockerState && !this.thresholdWasModified) {
                 this.interactionData.onChangeToolsBlockerState('keyup');

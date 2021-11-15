@@ -24,7 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - TDB
 
 ### Fixed
-- TDB
+- Fixed Interaction handler keyboard handlers (<https://github.com/openvinotoolkit/cvat/pull/3881>)
 
 ### Security
 - TDB
@@ -63,7 +63,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Helm settings for external psql database were unused by backend (<https://github.com/openvinotoolkit/cvat/pull/3779>)
 - Updated WSL setup for development (<https://github.com/openvinotoolkit/cvat/pull/3828>)
 - Helm chart config (<https://github.com/openvinotoolkit/cvat/pull/3784>)
-- Fixed Interaction handler keyboard handlers (<https://github.com/openvinotoolkit/cvat/pull/3881>)
 
 ### Security
 
