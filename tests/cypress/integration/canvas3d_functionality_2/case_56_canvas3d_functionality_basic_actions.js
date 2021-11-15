@@ -6,7 +6,8 @@
 
 import { taskName } from '../../support/const_canvas3d';
 
-// Firefox does not yet support WebGL in headless mode: https://bugzilla.mozilla.org/show_bug.cgi?id=1375585 (disabled in the cypress_cron_type.json)
+// Firefox does not yet support WebGL in headless mode:
+// https://bugzilla.mozilla.org/show_bug.cgi?id=1375585 (disabled in the cypress_cron_type.json)
 context('Canvas 3D functionality. Basic actions.', () => {
     const caseId = '56';
     const screenshotsPath =
@@ -183,7 +184,7 @@ context('Canvas 3D functionality. Basic actions.', () => {
             cy.get('.cvat-player-first-button').click(); // Return to first frame
         });
 
-        it('Testing perspective visual regressions.', () => {
+        it('Testing perspective hotkeys visual regressions.', () => {
             testPerspectiveChangeOnKeyPress('u', 'before_press_altU', 'after_press_altU');
             testPerspectiveChangeOnKeyPress('o', 'before_press_altO', 'after_press_altO');
             testPerspectiveChangeOnKeyPress('i', 'before_press_altI', 'after_press_altI');
@@ -194,6 +195,10 @@ context('Canvas 3D functionality. Basic actions.', () => {
             testPerspectiveChangeOnArrowKeyPress('{downarrow}', 'before_press_downarrow', 'after_press_downarrow');
             testPerspectiveChangeOnArrowKeyPress('{leftarrow}', 'before_press_leftarrow', 'after_press_leftarrow');
             testPerspectiveChangeOnArrowKeyPress('{rightarrow}', 'before_press_rightarrow', 'after_press_rightarrow');
+        });
+
+        // Temporarily disabling the test
+        it.skip('Testing perspective wheel visual regressions.', () => {
             testPerspectiveChangeOnWheel('perspective_before_wheel', 'perspective_after_wheel');
         });
 

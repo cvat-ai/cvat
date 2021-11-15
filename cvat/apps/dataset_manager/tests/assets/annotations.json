@@ -474,6 +474,35 @@
       }
     ]
   },
+  "Open Images V6 1.0": {
+    "version": 0,
+    "tags": [],
+    "shapes": [
+      {
+        "type": "rectangle",
+        "occluded": false,
+        "z_order": 0,
+        "points": [1.0, 2.0, 3.0, 4.0],
+        "frame": 0,
+        "label_id": null,
+        "group": 0,
+        "source": "manual",
+        "attributes": []
+      },
+      {
+        "type": "polygon",
+        "occluded": false,
+        "z_order": 0,
+        "points": [1.0, 1.0, 1.0, 20.0, 20.0, 1.0, 20.0, 1.0, 1.0, 1.0],
+        "frame": 0,
+        "label_id": null,
+        "group": 0,
+        "source": "manual",
+        "attributes": []
+      }
+    ],
+    "tracks": []
+  },
   "PASCAL VOC 1.1": {
     "version": 0,
     "tags": [
@@ -1161,6 +1190,68 @@
         "z_order": 0,
         "points": [3.55, 27.75, 11.33, 33.71],
         "frame": 1,
+        "label_id": null,
+        "group": 0,
+        "source": "manual",
+        "attributes": []
+      }
+    ],
+    "tracks": []
+  },
+  "KITTI 1.0": {
+    "version": 0,
+    "tags": [],
+    "shapes": [
+      {
+        "type": "polygon",
+        "occluded": false,
+        "z_order": 0,
+        "points": [10.0, 20.0, 10.0, 25.0, 20.0, 10.0, 20.0, 25.0, 10.0, 20.0],
+        "frame": 0,
+        "label_id": null,
+        "group": 0,
+        "source": "manual",
+        "attributes": []
+      }
+    ],
+    "tracks": []
+  },
+  "LFW 1.0": {
+    "version": 0,
+    "tags": [
+      {
+        "frame": 0,
+        "label_id": null,
+        "group": 0,
+        "source": "manual",
+        "attributes": []
+      }
+    ],
+    "shapes": [
+      {
+        "type": "points",
+        "occluded": false,
+        "z_order": 0,
+        "points": [18.0, 8.0, 26.5, 17.7, 26.5, 23.7, 16.9, 23.2, 30.3, 28.0],
+        "frame": 0,
+        "label_id": null,
+        "group": 0,
+        "source": "manual",
+        "attributes": []
+      }
+    ],
+    "tracks": []
+  },
+  "Cityscapes 1.0": {
+    "version": 0,
+    "tags": [],
+    "shapes": [
+      {
+        "type": "polygon",
+        "occluded": false,
+        "z_order": 0,
+        "points": [11.9, 21.5, 35.2, 21.9, 33.6, 31.9, 12.4, 30.47],
+        "frame": 0,
         "label_id": null,
         "group": 0,
         "source": "manual",
