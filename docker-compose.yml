@@ -93,7 +93,7 @@ services:
 
   cvat_opa:
     container_name: cvat_opa
-    image: openpolicyagent/opa:0.32.1-rootless
+    image: openpolicyagent/opa:0.34.2-rootless
     restart: always
     networks:
       cvat:
