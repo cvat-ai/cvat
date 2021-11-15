@@ -17,7 +17,7 @@ rjsmin==1.1.0
 requests==2.26.0
 rq==1.5.1
 rq-scheduler==0.10.0
-sqlparse==0.3.1
+sqlparse==0.4.2
 django-sendfile==0.3.11
 dj-pagination==2.5.0
 python-logstash-async==2.2.0
@@ -53,5 +53,5 @@ google-cloud-storage==1.42.0
 # --no-binary=pycocotools: workaround for binary incompatibility on numpy 1.20
 # of pycocotools and tensorflow 2.4.1
 # when pycocotools is installed by wheel in python 3.8+
-datumaro==0.1.10.1 --no-binary=datumaro --no-binary=pycocotools
+datumaro==0.2.0 --no-binary=datumaro --no-binary=pycocotools
 urllib3>=1.26.5 # not directly required, pinned by Snyk to avoid a vulnerability

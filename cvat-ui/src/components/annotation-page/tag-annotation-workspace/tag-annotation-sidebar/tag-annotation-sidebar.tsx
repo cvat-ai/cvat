@@ -26,6 +26,7 @@ import { CombinedState, ObjectType } from 'reducers/interfaces';
 import { adjustContextImagePosition } from 'components/annotation-page/standard-workspace/context-image/context-image';
 import LabelSelector from 'components/label-selector/label-selector';
 import getCore from 'cvat-core-wrapper';
+import isAbleToChangeFrame from 'utils/is-able-to-change-frame';
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 import ShortcutsSelect from './shortcuts-select';
 
@@ -168,7 +169,7 @@ function TagAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.Elemen
     const onChangeFrame = (): void => {
         const frame = Math.min(jobInstance.stopFrame, frameNumber + 1);
 
-        if (canvasInstance.isAbleToChangeFrame()) {
+        if (isAbleToChangeFrame()) {
             changeFrame(frame);
         }
     };

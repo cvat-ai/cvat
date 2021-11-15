@@ -47,17 +47,22 @@ context('Dump/Upload annotation.', { browser: '!firefox' }, () => {
         cy.contains('.cvat-menu-load-submenu-item', exportFormat.split(' ')[0])
             .should('be.visible')
             .within(() => {
-                cy.get('.cvat-menu-load-submenu-item-button')
-                    .click()
-                    .get('input[type=file]')
-                    .attachFile(annotationArchiveNameCustomeName);
+                cy.get('.cvat-menu-load-submenu-item-button').click();
             });
+        // when a user clicks, menu is closing and it triggers rerender
+        // we use mouseout here to emulate user behaviour
+        cy.get('.cvat-actions-menu').trigger('mouseout').should('be.hidden');
+        cy.contains('.cvat-menu-load-submenu-item', exportFormat.split(' ')[0]).within(() => {
+            cy.get('input[type=file]').attachFile(annotationArchiveNameCustomeName);
+        });
     }
 
     function confirmUpdate(modalWindowClassName) {
-        cy.get(modalWindowClassName).within(() => {
-            cy.contains('button', 'Update').click();
-        });
+        cy.get(modalWindowClassName)
+            .should('be.visible')
+            .within(() => {
+                cy.contains('button', 'Update').click();
+            });
     }
 
     before(() => {
@@ -72,7 +77,7 @@ context('Dump/Upload annotation.', { browser: '!firefox' }, () => {
                 as: 'exportAnnotationsRenameArchive',
                 type: 'annotations',
                 format: exportFormat,
-                archiveCustomeName: 'task_export_annotation_custome_name'
+                archiveCustomeName: 'task_export_annotation_custome_name',
             };
             cy.exportTask(exportAnnotationRenameArchive);
             const regex = new RegExp(`^${exportAnnotationRenameArchive.archiveCustomeName}.zip$`);
@@ -95,7 +100,9 @@ context('Dump/Upload annotation.', { browser: '!firefox' }, () => {
             cy.saveJob('PUT');
             cy.get('#cvat_canvas_shape_1').should('not.exist');
             cy.get('#cvat-objects-sidebar-state-item-1').should('not.exist');
-            const regex = new RegExp(`^task_${taskName.toLowerCase()}-.*-${exportAnnotation.format.toLowerCase()}.*.zip$`);
+            const regex = new RegExp(
+                `^task_${taskName.toLowerCase()}-.*-${exportAnnotation.format.toLowerCase()}.*.zip$`,
+            );
             cy.task('listFiles', 'cypress/fixtures').each((fileName) => {
                 if (fileName.match(regex)) {
                     cy.readFile(`cypress/fixtures/${fileName}`).should('exist');
@@ -109,16 +116,16 @@ context('Dump/Upload annotation.', { browser: '!firefox' }, () => {
             cy.contains('.cvat-menu-load-submenu-item', exportFormat.split(' ')[0])
                 .should('be.visible')
                 .within(() => {
-                    cy.get('.cvat-menu-load-submenu-item-button')
-                        .click()
-                        .get('input[type=file]')
-                        .attachFile(annotationArchiveName);
+                    cy.get('.cvat-menu-load-submenu-item-button').click();
                 });
-            cy.intercept('PUT', '/api/v1/jobs/**/annotations**').as('uploadAnnotationsPut');
-            cy.intercept('GET', '/api/v1/jobs/**/annotations**').as('uploadAnnotationsGet');
+            // when a user clicks, menu is closing and it triggers rerender
+            // we use mouseout here to emulate user behaviour
+            cy.get('.cvat-annotation-menu').trigger('mouseout').should('be.hidden');
+            cy.contains('.cvat-menu-load-submenu-item', exportFormat.split(' ')[0]).within(() => {
+                cy.get('input[type=file]').attachFile(annotationArchiveName);
+            });
             confirmUpdate('.cvat-modal-content-load-job-annotation');
-            cy.wait('@uploadAnnotationsPut', { timeout: 5000 }).its('response.statusCode').should('equal', 202);
-            cy.wait('@uploadAnnotationsPut').its('response.statusCode').should('equal', 201);
+            cy.intercept('GET', '/api/v1/jobs/**/annotations**').as('uploadAnnotationsGet');
             cy.wait('@uploadAnnotationsGet').its('response.statusCode').should('equal', 200);
             cy.get('#cvat_canvas_shape_1').should('exist');
             cy.get('#cvat-objects-sidebar-state-item-1').should('exist');

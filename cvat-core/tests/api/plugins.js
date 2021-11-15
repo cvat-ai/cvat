@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -68,7 +68,6 @@ const plugin = {
         },
     },
 };
-
 
 async function test() {
     await window.cvat.plugins.register(plugin);

@@ -16,8 +16,7 @@ import {
     copyShape as copyShapeAction,
     propagateObject as propagateObjectAction,
 } from 'actions/annotation-actions';
-import { Canvas } from 'cvat-canvas-wrapper';
-import { Canvas3d } from 'cvat-canvas3d-wrapper';
+import isAbleToChangeFrame from 'utils/is-able-to-change-frame';
 import {
     CombinedState, StatesOrdering, ObjectType, ColorBy,
 } from 'reducers/interfaces';
@@ -42,7 +41,6 @@ interface StateToProps {
     maxZLayer: number;
     keyMap: KeyMap;
     normalizedKeyMap: Record<string, string>;
-    canvasInstance: Canvas | Canvas3d;
 }
 
 interface DispatchToProps {
@@ -70,7 +68,6 @@ function mapStateToProps(state: CombinedState): StateToProps {
             player: {
                 frame: { number: frameNumber },
             },
-            canvas: { instance: canvasInstance },
             colors,
         },
         settings: {
@@ -108,7 +105,6 @@ function mapStateToProps(state: CombinedState): StateToProps {
         maxZLayer,
         keyMap,
         normalizedKeyMap,
-        canvasInstance,
     };
 }
 
@@ -257,7 +253,6 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             minZLayer,
             keyMap,
             normalizedKeyMap,
-            canvasInstance,
             colors,
             colorBy,
             readonly,
@@ -437,7 +432,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                 const state = activatedStated();
                 if (state && state.objectType === ObjectType.TRACK) {
                     const frame = typeof state.keyframes.next === 'number' ? state.keyframes.next : null;
-                    if (frame !== null && canvasInstance.isAbleToChangeFrame()) {
+                    if (frame !== null && isAbleToChangeFrame()) {
                         changeFrame(frame);
                     }
                 }
@@ -447,7 +442,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                 const state = activatedStated();
                 if (state && state.objectType === ObjectType.TRACK) {
                     const frame = typeof state.keyframes.prev === 'number' ? state.keyframes.prev : null;
-                    if (frame !== null && canvasInstance.isAbleToChangeFrame()) {
+                    if (frame !== null && isAbleToChangeFrame()) {
                         changeFrame(frame);
                     }
                 }

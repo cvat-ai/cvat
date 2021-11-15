@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2020 Intel Corporation
+// Copyright (C) 2019-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -96,11 +96,11 @@ export class GroupHandlerImpl implements GroupHandler {
                 const bbox = shape.bbox();
                 const clientID = shape.attr('clientID');
                 if (
-                    bbox.x > box.xtl
-                    && bbox.y > box.ytl
-                    && bbox.x + bbox.width < box.xbr
-                    && bbox.y + bbox.height < box.ybr
-                    && !(clientID in this.highlightedShapes)
+                    bbox.x > box.xtl &&
+                    bbox.y > box.ytl &&
+                    bbox.x + bbox.width < box.xbr &&
+                    bbox.y + bbox.height < box.ybr &&
+                    !(clientID in this.highlightedShapes)
                 ) {
                     const objectState = this.getStates().filter(
                         (state: any): boolean => state.clientID === clientID,

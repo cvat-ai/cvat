@@ -564,14 +564,28 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
             raise serializers.ValidationError(
                 "Unexpected action specified for the request")
 
+    def perform_update(self, serializer):
+        instance = serializer.instance
+        project_id = instance.project_id
+        updated_instance = serializer.save()
+        if project_id != updated_instance.project_id:
+            if project_id is not None:
+                Project.objects.get(id=project_id).save()
+            if updated_instance.project_id is not None:
+                Project.objects.get(id=updated_instance.project_id).save()
+
+
     def perform_create(self, serializer):
         owner = self.request.data.get('owner', None)
         if owner:
             self._validate_task_limit(owner)
-            serializer.save()
+            instance = serializer.save()
         else:
             self._validate_task_limit(self.request.user)
-            serializer.save(owner=self.request.user)
+            instance = serializer.save(owner=self.request.user)
+        if instance.project:
+            db_project = instance.project
+            db_project.save()
 
     def perform_destroy(self, instance):
         task_dirname = instance.get_task_dirname()
@@ -580,6 +594,9 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
         if instance.data and not instance.data.tasks.all():
             shutil.rmtree(instance.data.get_data_dirname(), ignore_errors=True)
             instance.data.delete()
+        if instance.project:
+            db_project = instance.project
+            db_project.save()
 
     @swagger_auto_schema(method='get', operation_summary='Returns a list of jobs for a specific task',
         responses={'200': JobSerializer(many=True)})
@@ -1349,7 +1366,7 @@ class CloudStorageViewSet(auth.CloudStorageGetQuerySetMixin, viewsets.ModelViewS
             if not os.path.exists(full_manifest_path) or \
                     datetime.utcfromtimestamp(os.path.getmtime(full_manifest_path)).replace(tzinfo=pytz.UTC) < storage.get_file_last_modified(manifest_path):
                 storage.download_file(manifest_path, full_manifest_path)
-            manifest = ImageManifestManager(full_manifest_path)
+            manifest = ImageManifestManager(full_manifest_path, db_storage.get_storage_dirname())
             # need to update index
             manifest.set_index()
             manifest_files = manifest.data
@@ -1406,7 +1423,10 @@ class CloudStorageViewSet(auth.CloudStorageGetQuerySetMixin, viewsets.ModelViewS
                     if not os.path.exists(full_manifest_path) or \
                             datetime.utcfromtimestamp(os.path.getmtime(full_manifest_path)).replace(tzinfo=pytz.UTC) < storage.get_file_last_modified(manifest_model.filename):
                         storage.download_file(manifest_model.filename, full_manifest_path)
-                    manifest = ImageManifestManager(os.path.join(db_storage.get_storage_dirname(), manifest_model.filename))
+                    manifest = ImageManifestManager(
+                        os.path.join(db_storage.get_storage_dirname(), manifest_model.filename),
+                        db_storage.get_storage_dirname()
+                    )
                     # need to update index
                     manifest.set_index()
                     if not len(manifest):

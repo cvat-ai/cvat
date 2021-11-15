@@ -2512,11 +2512,11 @@ def generate_manifest_file(data_type, manifest_path, sources):
     }
 
     if data_type == 'video':
-        manifest = VideoManifestManager(manifest_path)
+        manifest = VideoManifestManager(manifest_path, create_index=False)
     else:
-        manifest = ImageManifestManager(manifest_path)
-    prepared_meta = manifest.prepare_meta(**kwargs[data_type])
-    manifest.create(prepared_meta)
+        manifest = ImageManifestManager(manifest_path, create_index=False)
+    manifest.link(**kwargs[data_type])
+    manifest.create()
 
 class TaskDataAPITestCase(APITestCase):
     _image_sizes = {}
@@ -4488,7 +4488,8 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
         def _get_initial_annotation(annotation_format):
             if annotation_format not in ["Market-1501 1.0", "ICDAR Recognition 1.0",
                                          "ICDAR Localization 1.0", "ICDAR Segmentation 1.0",
-                                         'Kitti Raw Format 1.0', 'Sly Point Cloud Format 1.0']:
+                                         'Kitti Raw Format 1.0', 'Sly Point Cloud Format 1.0',
+                                         'Datumaro 3D 1.0']:
                 rectangle_tracks_with_attrs = [{
                     "frame": 0,
                     "label_id": task["labels"][0]["id"],
@@ -4832,7 +4833,8 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                     ],
                 }]
                 annotations["tags"] = tags_with_attrs
-            elif annotation_format in ['Kitti Raw Format 1.0','Sly Point Cloud Format 1.0']:
+            elif annotation_format in ['Kitti Raw Format 1.0',
+                    'Sly Point Cloud Format 1.0', 'Datumaro 3D 1.0']:
                 velodyne_wo_attrs = [{
                     "frame": 0,
                     "label_id": task["labels"][0]["id"],

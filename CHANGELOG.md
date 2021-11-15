@@ -5,31 +5,45 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## \[1.7.0] - Unreleased
+## \[1.7.0] - 2021-11-15
 
 ### Added
 
-- TDB
+- cvat-ui: support cloud storages (<https://github.com/openvinotoolkit/cvat/pull/3372>)
+- interactor: add HRNet interactive segmentation serverless function (<https://github.com/openvinotoolkit/cvat/pull/3740>)
+- Added GPU implementation for SiamMask, reworked tracking approach (<https://github.com/openvinotoolkit/cvat/pull/3571>)
+- Progress bar for manifest creating (<https://github.com/openvinotoolkit/cvat/pull/3712>)
+- Add a tutorial on attaching cloud storage AWS-S3 (<https://github.com/openvinotoolkit/cvat/pull/3745>)
+  and Azure Blob Container (<https://github.com/openvinotoolkit/cvat/pull/3778>)
+- The feature to remove annotations in a specified range of frames (<https://github.com/openvinotoolkit/cvat/pull/3617>)
 
 ### Changed
 
-- TDB
-
-### Deprecated
-
-- TDB
-
-### Removed
-
-- TDB
+- UI tracking has been reworked (<https://github.com/openvinotoolkit/cvat/pull/3571>)
+- Manifest generation: Reduce creating time (<https://github.com/openvinotoolkit/cvat/pull/3712>)
+- Migration from NPM 6 to NPM 7 (<https://github.com/openvinotoolkit/cvat/pull/3773>)
+- Update Datumaro dependency to 0.2.0 (<https://github.com/openvinotoolkit/cvat/pull/3813>)
 
 ### Fixed
 
-- TDB
+- Fixed JSON transform issues in network requests (<https://github.com/openvinotoolkit/cvat/pull/3706>)
+- Display a more user-friendly exception message (<https://github.com/openvinotoolkit/cvat/pull/3721>)
+- Exception `DataCloneError: The object could not be cloned` (<https://github.com/openvinotoolkit/cvat/pull/3733>)
+- Fixed extension comparison in task frames CLI (<https://github.com/openvinotoolkit/cvat/pull/3674>)
+- Incorrect work when copy job list with "Copy" button (<https://github.com/openvinotoolkit/cvat/pull/3749>)
+- Iterating over manifest (<https://github.com/openvinotoolkit/cvat/pull/3792>)
+- Manifest removing (<https://github.com/openvinotoolkit/cvat/pull/3791>)
+- Fixed project updated date (<https://github.com/openvinotoolkit/cvat/pull/3814>)
+- Fixed dextr deployment (<https://github.com/openvinotoolkit/cvat/pull/3820>)
+- Migration of `dataset_repo` application (<https://github.com/openvinotoolkit/cvat/pull/3827>)
+- Helm settings for external psql database were unused by backend (<https://github.com/openvinotoolkit/cvat/pull/3779>)
+- Updated WSL setup for development (<https://github.com/openvinotoolkit/cvat/pull/3828>)
+- Helm chart config (<https://github.com/openvinotoolkit/cvat/pull/3784>)
 
 ### Security
 
-- TDB
+- Fix security issues on the documentation website unsafe use of target blank
+  and potential clickjacking on legacy browsers (<https://github.com/openvinotoolkit/cvat/pull/3789>)
 
 ## \[1.6.0] - 2021-09-17
 

@@ -292,27 +292,28 @@ export class EditHandlerImpl implements EditHandler {
     }
 
     private setupPoints(enabled: boolean): void {
-        const self = this;
-        const stopEdit = self.stopEdit.bind(self);
+        const stopEdit = this.stopEdit.bind(this);
+        const getGeometry = (): Geometry => this.geometry;
+        const fill = this.editedShape.attr('fill') || 'inherit';
 
         if (enabled) {
             (this.editedShape as any).selectize(true, {
                 deepSelect: true,
-                pointSize: (2 * consts.BASE_POINT_SIZE) / self.geometry.scale,
+                pointSize: (2 * consts.BASE_POINT_SIZE) / getGeometry().scale,
                 rotationPoint: false,
                 pointType(cx: number, cy: number): SVG.Circle {
                     const circle: SVG.Circle = this.nested
                         .circle(this.options.pointSize)
                         .stroke('black')
-                        .fill(self.editedShape.attr('fill') || 'inherit')
+                        .fill(fill)
                         .center(cx, cy)
                         .attr({
-                            'stroke-width': consts.POINTS_STROKE_WIDTH / self.geometry.scale,
+                            'stroke-width': consts.POINTS_STROKE_WIDTH / getGeometry().scale,
                         });
 
                     circle.node.addEventListener('mouseenter', (): void => {
                         circle.attr({
-                            'stroke-width': consts.POINTS_SELECTED_STROKE_WIDTH / self.geometry.scale,
+                            'stroke-width': consts.POINTS_SELECTED_STROKE_WIDTH / getGeometry().scale,
                         });
 
                         circle.node.addEventListener('click', stopEdit);
@@ -321,7 +322,7 @@ export class EditHandlerImpl implements EditHandler {
 
                     circle.node.addEventListener('mouseleave', (): void => {
                         circle.attr({
-                            'stroke-width': consts.POINTS_STROKE_WIDTH / self.geometry.scale,
+                            'stroke-width': consts.POINTS_STROKE_WIDTH / getGeometry().scale,
                         });
 
                         circle.node.removeEventListener('click', stopEdit);

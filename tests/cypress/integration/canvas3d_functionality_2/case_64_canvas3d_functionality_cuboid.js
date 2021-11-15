@@ -17,24 +17,22 @@ context('Canvas 3D functionality. Add cuboid.', () => {
     before(() => {
         cy.openTaskJob(taskName);
         // Prepare screenshots to compare
-        cy.get('.cvat-canvas3d-perspective').screenshot('canvas3d_perspective_before_all');
+        cy.customScreenshot('.cvat-canvas3d-perspective', 'canvas3d_perspective_before_all');
         ['topview', 'sideview', 'frontview'].forEach((view) => {
-            cy.get(`.cvat-canvas3d-${view}`).find('.cvat-canvas3d-fullsize').screenshot(`canvas3d_${view}_before_all`);
+            cy.customScreenshot(`.cvat-canvas3d-${view}`, `canvas3d_${view}_before_all`);
         });
     });
 
     describe(`Testing case "${caseId}"`, () => {
         it('Add cuboid.', () => {
             cy.create3DCuboid(cuboidCreationParams);
-            cy.get('.cvat-canvas3d-perspective').screenshot('canvas3d_perspective_after_add_cuboid'); // The cuboid displayed
+            cy.customScreenshot('.cvat-canvas3d-perspective', 'canvas3d_perspective_after_add_cuboid'); // The cuboid displayed
             cy.compareImagesAndCheckResult(
                 `${screenshotsPath}/canvas3d_perspective_before_all.png`,
                 `${screenshotsPath}/canvas3d_perspective_after_add_cuboid.png`,
             );
             ['topview', 'sideview', 'frontview'].forEach((view) => {
-                cy.get(`.cvat-canvas3d-${view}`)
-                    .find('.cvat-canvas3d-fullsize')
-                    .screenshot(`canvas3d_${view}_add_cuboid`);
+                cy.customScreenshot(`.cvat-canvas3d-${view}`, `canvas3d_${view}_add_cuboid`);
             });
             [
                 ['canvas3d_topview_before_all.png', 'canvas3d_topview_add_cuboid.png'],
@@ -50,24 +48,20 @@ context('Canvas 3D functionality. Add cuboid.', () => {
 
         it('Cuboid interaction by mouse.', () => {
             cy.get('.cvat-canvas3d-perspective').trigger('mousemove', 300, 200).click(300, 200); // Deactivate the cuboid
-            cy.get('.cvat-canvas3d-perspective').screenshot('canvas3d_perspective_deactivate_cuboid');
+            cy.customScreenshot('.cvat-canvas3d-perspective', 'canvas3d_perspective_deactivate_cuboid');
             ['topview', 'sideview', 'frontview'].forEach((view) => {
-                cy.get(`.cvat-canvas3d-${view}`)
-                    .find('.cvat-canvas3d-fullsize')
-                    .screenshot(`canvas3d_${view}_deactivate_cuboid`);
+                cy.customScreenshot(`.cvat-canvas3d-${view}`, `canvas3d_${view}_deactivate_cuboid`);
             });
             cy.get('.cvat-canvas3d-perspective').trigger('mousemove', 300, 200); // Interacting with the canvas before interacting with the cuboid.
             cy.get('.cvat-canvas3d-perspective').trigger('mousemove'); // Move cursor to cuboid
             cy.wait(1000); // Waiting for the reaction of the cuboid to interact with the mouse cursor
-            cy.get('.cvat-canvas3d-perspective').screenshot('canvas3d_perspective_after_cursor_movements_to_cuboid');
+            cy.customScreenshot('.cvat-canvas3d-perspective', 'canvas3d_perspective_after_cursor_movements_to_cuboid');
             cy.compareImagesAndCheckResult(
                 `${screenshotsPath}/canvas3d_perspective_deactivate_cuboid.png`,
                 `${screenshotsPath}/canvas3d_perspective_after_cursor_movements_to_cuboid.png`,
             );
             ['topview', 'sideview', 'frontview'].forEach((view) => {
-                cy.get(`.cvat-canvas3d-${view}`)
-                    .find('.cvat-canvas3d-fullsize')
-                    .screenshot(`canvas3d_${view}_move_cursor_to_cuboid`);
+                cy.customScreenshot(`.cvat-canvas3d-${view}`, `canvas3d_${view}_move_cursor_to_cuboid`);
             });
             [
                 ['canvas3d_topview_deactivate_cuboid.png', 'canvas3d_topview_move_cursor_to_cuboid.png'],

@@ -35,12 +35,6 @@
     padding-top: 2rem !important;
 }
 
-/* Icon color for temporary page */
-
-#temporary-page i {
-    color: lightgrey;
-}
-
 /* About page */
 
 .logo-2 {
@@ -132,4 +126,18 @@
 
 #td-cover-block-0 {
     background-image: url("../images/background-about-page.jpg");
+}
+
+/* Display version menu on mobile version of the site */
+
+#dropdown_ver {
+    right: 5px !important;
+    left: auto;
+}
+
+@media (min-width: 991.98px) {
+    #dropdown_ver {
+        right: 245px !important;
+        left: auto;
+    }
 }

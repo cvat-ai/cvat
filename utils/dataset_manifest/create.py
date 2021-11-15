@@ -6,6 +6,7 @@ import os
 import sys
 import re
 from glob import glob
+from tqdm import tqdm
 
 from utils import detect_related_images, is_image, is_video
 
@@ -23,7 +24,8 @@ def main():
     args = get_args()
 
     manifest_directory = os.path.abspath(args.output_dir)
-    os.makedirs(manifest_directory, exist_ok=True)
+    if not os.path.exists(manifest_directory):
+        os.makedirs(manifest_directory)
     source = os.path.abspath(os.path.expanduser(args.source))
 
     sources = []
@@ -61,17 +63,18 @@ def main():
         try:
             assert len(sources), 'A images was not found'
             manifest = ImageManifestManager(manifest_path=manifest_directory)
-            meta_info = manifest.prepare_meta(sources=sources, meta=meta, is_sorted=False,
-                use_image_hash=True, data_dir=data_dir)
-            manifest.create(meta_info)
+            manifest.link(sources=sources, meta=meta, is_sorted=False,
+                    use_image_hash=True, data_dir=data_dir)
+            manifest.create(_tqdm=tqdm)
         except Exception as ex:
             sys.exit(str(ex))
     else: # video
         try:
             assert is_video(source), 'You can specify a video path or a directory/pattern with images'
             manifest = VideoManifestManager(manifest_path=manifest_directory)
+            manifest.link(media_file=source, force=args.force)
             try:
-                meta_info = manifest.prepare_meta(media_file=source, force=args.force)
+                manifest.create(_tqdm=tqdm)
             except AssertionError as ex:
                 if str(ex) == 'Too few keyframes':
                     msg = 'NOTE: prepared manifest file contains too few key frames for smooth decoding.\n' \
@@ -80,7 +83,6 @@ def main():
                     sys.exit(2)
                 else:
                     raise
-            manifest.create(meta_info)
         except Exception as ex:
             sys.exit(str(ex))
 

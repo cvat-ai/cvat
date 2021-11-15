@@ -1,7 +1,7 @@
 ---
 title: 'Vocabulary'
 linkTitle: 'Vocabulary'
-weight: 14
+weight: 19
 description: 'List of terms pertaining to annotation in CVAT.'
 ---
 **Label** is a type of an annotated object (e.g. person, car, vehicle, etc.)
@@ -42,3 +42,10 @@ Tracks are created in `Track mode`
 Can be used to reduce the annotation file and to facilitate editing polygons.
 
 ![](/images/approximation_accuracy.gif)
+
+---
+
+**Trackable** object will be tracked automatically if the previous frame was
+a latest keyframe for the object. More details in the section [trackers](/docs/manual/advanced/ai-tools/#trackers).
+
+![](/images/tracker_indication.jpg)

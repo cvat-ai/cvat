@@ -14,8 +14,8 @@ description: 'Installing a development environment for different operating syste
   ```
 
   ```sh
-  # Node and npm (you can use default versions of these packages from apt (8.*, 3.*), but we would recommend to use newer versions)
-  curl -sL https://deb.nodesource.com/setup_12.x | sudo -E bash -
+  # Install Node.js 16
+  curl -sL https://deb.nodesource.com/setup_16.x | sudo -E bash -
   sudo apt-get install -y nodejs
   ```
 
@@ -62,9 +62,7 @@ description: 'Installing a development environment for different operating syste
 - Install npm packages for UI and start UI debug server (run the following command from CVAT root directory):
 
   ```sh
-  npm ci && \
-  cd cvat-core && npm ci && \
-  cd ../cvat-ui && npm ci && npm start
+  npm ci && npm run start:cvat-ui
   ```
 
   > Note for Mac users
@@ -78,7 +76,7 @@ description: 'Installing a development environment for different operating syste
 - Open new terminal (Ctrl + Shift + T), run Visual Studio Code from the virtual environment
 
   ```sh
-  cd .. && source .env/bin/activate && code
+  source .env/bin/activate && code
   ```
 
 - Install following VS Code extensions:
@@ -112,3 +110,6 @@ You develop CVAT under WSL (Windows subsystem for Linux) following next steps.
   ```
 
 - Run all commands from this installation guide in WSL Ubuntu shell.
+- You might have to manually start the redis server in wsl before you can start the configuration inside
+  Visual Studio Code. You can do this with `sudo service redis-server start`. Alternatively you can also
+  use a redis docker image instead of using the redis-server locally.

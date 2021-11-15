@@ -238,7 +238,9 @@ AUTHENTICATION_BACKENDS = [
 # https://github.com/pennersr/django-allauth
 ACCOUNT_EMAIL_VERIFICATION = 'none'
 # set UI url to redirect after a successful e-mail confirmation
-ACCOUNT_EMAIL_CONFIRMATION_ANONYMOUS_REDIRECT_URL = '/auth/login'
+#changed from '/auth/login' to '/auth/email-confirmation' for email confirmation message
+ACCOUNT_EMAIL_CONFIRMATION_ANONYMOUS_REDIRECT_URL = '/auth/email-confirmation'
+
 OLD_PASSWORD_FIELD_ENABLED = True
 
 # Django-RQ
