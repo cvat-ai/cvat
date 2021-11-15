@@ -4,9 +4,11 @@
 # SPDX-License-Identifier: MIT
 
 import os.path as osp
+import math
 import sys
 from collections import namedtuple
 from pathlib import Path
+from itertools import chain
 from typing import (Any, Callable, DefaultDict, Dict, List, Literal, Mapping,
     NamedTuple, OrderedDict, Tuple, Union)
 
@@ -124,11 +126,11 @@ class InstanceLabelData:
 class TaskData(InstanceLabelData):
     Shape = namedtuple("Shape", 'id, label_id')  # 3d
     LabeledShape = namedtuple(
-        'LabeledShape', 'type, frame, label, points, rotation, occluded, attributes, source, group, z_order')
-    LabeledShape.__new__.__defaults__ = (0, 0)
+        'LabeledShape', 'type, frame, label, points, occluded, attributes, source, rotation, group, z_order')
+    LabeledShape.__new__.__defaults__ = (0, 0, 0)
     TrackedShape = namedtuple(
-        'TrackedShape', 'type, frame, points, rotation, occluded, outside, keyframe, attributes, source, group, z_order, label, track_id')
-    TrackedShape.__new__.__defaults__ = ('manual', 0, 0, None, 0)
+        'TrackedShape', 'type, frame, points, occluded, outside, keyframe, attributes, rotation, source, group, z_order, label, track_id')
+    TrackedShape.__new__.__defaults__ = (0, 'manual', 0, 0, None, 0)
     Track = namedtuple('Track', 'label, group, source, shapes')
     Tag = namedtuple('Tag', 'frame, label, attributes, source, group')
     Tag.__new__.__defaults__ = (0, )
@@ -510,12 +512,12 @@ class TaskData(InstanceLabelData):
         return None
 
 class ProjectData(InstanceLabelData):
-    LabeledShape = NamedTuple('LabledShape', [('type', str), ('frame', int), ('label', str), ('points', List[float]), ('rotation', float), ('occluded', bool), ('attributes', List[InstanceLabelData.Attribute]), ('source', str), ('group', int), ('z_order', int), ('task_id', int)])
-    LabeledShape.__new__.__defaults__ = (0,0)
+    LabeledShape = NamedTuple('LabledShape', [('type', str), ('frame', int), ('label', str), ('points', List[float]), ('occluded', bool), ('attributes', List[InstanceLabelData.Attribute]), ('source', str), ('group', int), ('rotation', float), ('z_order', int), ('task_id', int)])
+    LabeledShape.__new__.__defaults__ = (0, 0, 0)
     TrackedShape = NamedTuple('TrackedShape',
-        [('type', str), ('frame', int), ('points', List[float]), ('rotation', float), ('occluded', bool), ('outside', bool), ('keyframe', bool), ('attributes', List[InstanceLabelData.Attribute]), ('source', str), ('group', int), ('z_order', int), ('label', str), ('track_id', int)],
+        [('type', str), ('frame', int), ('points', List[float]), ('occluded', bool), ('outside', bool), ('keyframe', bool), ('attributes', List[InstanceLabelData.Attribute]), ('rotation', float), ('source', str), ('group', int), ('z_order', int), ('label', str), ('track_id', int)],
     )
-    TrackedShape.__new__.__defaults__ = ('manual', 0, 0, None, 0)
+    TrackedShape.__new__.__defaults__ = (0, 'manual', 0, 0, None, 0)
     Track = NamedTuple('Track', [('label', str), ('group', int), ('source', str), ('shapes', List[TrackedShape]), ('task_id', int)])
     Tag = NamedTuple('Tag', [('frame', int), ('label', str), ('attributes', List[InstanceLabelData.Attribute]), ('source', str), ('group', int), ('task_id', int)])
     Tag.__new__.__defaults__ = (0, )
@@ -1129,6 +1131,8 @@ def convert_cvat_anno_to_dm(cvat_frame_anno, label_attrs, map_label, format_name
         anno_label = map_label(shape_obj.label)
         anno_attr = convert_attrs(shape_obj.label, shape_obj.attributes)
         anno_attr['occluded'] = shape_obj.occluded
+        if shape_obj.type == ShapeType.RECTANGLE:
+            anno_attr['rotation'] = shape_obj.rotation
 
         if hasattr(shape_obj, 'track_id'):
             anno_attr['track_id'] = shape_obj.track_id
@@ -1149,9 +1153,23 @@ def convert_cvat_anno_to_dm(cvat_frame_anno, label_attrs, map_label, format_name
                 z_order=shape_obj.z_order)
         elif shape_obj.type == ShapeType.RECTANGLE:
             x0, y0, x1, y1 = anno_points
-            anno = datum_annotation.Bbox(x0, y0, x1 - x0, y1 - y0,
-                label=anno_label, attributes=anno_attr, group=anno_group,
-                z_order=shape_obj.z_order)
+            if shape_obj.rotation and format_name == 'Segmentation mask':
+                [cx, cy] = [(x0 + (x1 - x0) / 2), (y0 + (y1 - y0) / 2)]
+                angle = math.radians(shape_obj.rotation)
+                def rotate_point(p):
+                    [x, y] = p
+                    rx = cx + math.cos(angle) * (x - cx) - math.sin(angle) * (y - cy)
+                    ry = cy + math.sin(angle) * (x - cx) + math.cos(angle) * (y - cy)
+                    return rx, ry
+
+                poly_points = list(chain.from_iterable(map(rotate_point, [(x0, y0), (x1, y0), (x1, y1), (x0, y1)])))
+                anno = datum_annotation.Polygon(poly_points,
+                    label=anno_label, attributes=anno_attr, group=anno_group,
+                    z_order=shape_obj.z_order)
+            else:
+                anno = datum_annotation.Bbox(x0, y0, x1 - x0, y1 - y0,
+                    label=anno_label, attributes=anno_attr, group=anno_group,
+                    z_order=shape_obj.z_order)
         elif shape_obj.type == ShapeType.CUBOID:
             if dimension == DimensionType.DIM_3D:
                 if format_name == "sly_pointcloud":

@@ -14,11 +14,12 @@ from cvat.apps.dataset_manager.util import make_zip_archive
 from .registry import dm_env, exporter, importer
 from .utils import make_colormap
 
+FORMAT_NAME = 'Segmentation mask'
 
-@exporter(name='Segmentation mask', ext='ZIP', version='1.1')
+@exporter(name=FORMAT_NAME, ext='ZIP', version='1.1')
 def _export(dst_file, instance_data, save_images=False):
     dataset = Dataset.from_extractors(GetCVATDataExtractor(
-        instance_data, include_images=save_images), env=dm_env)
+        instance_data, include_images=save_images, format_type=FORMAT_NAME), env=dm_env)
     dataset.transform('polygons_to_masks')
     dataset.transform('boxes_to_masks')
     dataset.transform('merge_instance_segments')
@@ -28,7 +29,7 @@ def _export(dst_file, instance_data, save_images=False):
 
         make_zip_archive(temp_dir, dst_file)
 
-@importer(name='Segmentation mask', ext='ZIP', version='1.1')
+@importer(name=FORMAT_NAME, ext='ZIP', version='1.1')
 def _import(src_file, instance_data):
     with TemporaryDirectory() as tmp_dir:
         Archive(src_file.name).extractall(tmp_dir)
