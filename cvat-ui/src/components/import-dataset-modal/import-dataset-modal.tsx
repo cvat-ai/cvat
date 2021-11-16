@@ -112,7 +112,7 @@ function ImportDatasetModal(): JSX.Element {
                                                 value={importer.name}
                                                 key={importer.name}
                                                 disabled={disabled}
-                                                className='cvat-modal-import-option-item'
+                                                className='cvat-modal-import-dataset-option-item'
                                             >
                                                 <DownloadOutlined />
                                                 <Text disabled={disabled}>{importer.name}</Text>
