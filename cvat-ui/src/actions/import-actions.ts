@@ -2,7 +2,6 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { getCVATStore } from 'cvat-store';
 import { createAction, ActionUnion, ThunkAction } from 'utils/redux';
 import { CombinedState } from 'reducers/interfaces';
 import { getProjectsAsync } from './projects-actions';
@@ -19,11 +18,11 @@ export enum ImportActionTypes {
 export const importActions = {
     openImportModal: (instance: any) => createAction(ImportActionTypes.OPEN_IMPORT_MODAL, { instance }),
     closeImportModal: () => createAction(ImportActionTypes.CLOSE_IMPORT_MODAL),
-    importDataset: (instance: any, format: string) => (
-        createAction(ImportActionTypes.IMPORT_DATASET, { instance, format })
+    importDataset: (format: string) => (
+        createAction(ImportActionTypes.IMPORT_DATASET, { format })
     ),
-    importDatasetSuccess: (instance: any, format: string) => (
-        createAction(ImportActionTypes.IMPORT_DATASET_SUCCESS, { instance, format })
+    importDatasetSuccess: () => (
+        createAction(ImportActionTypes.IMPORT_DATASET_SUCCESS)
     ),
     importDatasetFailed: (instance: any, error: any) => (
         createAction(ImportActionTypes.IMPORT_DATASET_FAILED, {
@@ -36,23 +35,25 @@ export const importActions = {
     ),
 };
 
-export const importDatasetAsync = (instance: any, format: string, file: File): ThunkAction => async (dispatch, getState) => {
-    try {
-        const state: CombinedState = getState();
-        if (state.import.projects[instance.id]) {
-            throw Error('Only one importing of dataset allowed at the same time');
+export const importDatasetAsync = (instance: any, format: string, file: File): ThunkAction => (
+    async (dispatch, getState) => {
+        try {
+            const state: CombinedState = getState();
+            if (state.import.format !== null) {
+                throw Error('Only one importing of dataset allowed at the same time');
+            }
+            dispatch(importActions.importDataset(format));
+            await instance.annotations.importDataset(format, file, (response: any) => (
+                dispatch(importActions.importDatasetUpdateStatus(response.progress * 100, response.message))
+            ));
+        } catch (error) {
+            dispatch(importActions.importDatasetFailed(instance, error));
+            return;
         }
-        dispatch(importActions.importDataset(instance, format));
-        await instance.annotations.importDataset(format, file, (response: any) => (
-            dispatch(importActions.importDatasetUpdateStatus(response.progress * 100, response.message))
-        ));
-    } catch (error) {
-        dispatch(importActions.importDatasetFailed(instance, error));
-        return;
-    }
 
-    dispatch(importActions.importDatasetSuccess(instance, format));
-    dispatch(getProjectsAsync({ id: instance.id }));
-};
+        dispatch(importActions.importDatasetSuccess());
+        dispatch(getProjectsAsync({ id: instance.id }));
+    }
+);
 
 export type ImportActions = ActionUnion<typeof importActions>;

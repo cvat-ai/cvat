@@ -507,36 +507,31 @@
                 formData.append('dataset_file', file);
 
                 return new Promise((resolve, reject) => {
-                    async function request() {
+                    async function requestStatus() {
                         try {
                             const response = await Axios.get(`${url}?action=import_status`, {
                                 proxy: config.proxy,
                             });
                             if (response.status === 202) {
                                 if (callback) callback(response.data);
-                                setTimeout(request, 3000);
+                                setTimeout(requestStatus, 3000);
                             } else if (response.status === 201) {
                                 resolve();
                             } else {
                                 reject(generateError(response));
                             }
                         } catch (error) {
-                            if (error.response.status === 404) {
-                                try {
-                                    await Axios.post(`${url}?format=${format}`, formData, {
-                                        proxy: config.proxy,
-                                    });
-                                    setTimeout(request, 2000);
-                                } catch (_error) {
-                                    reject(generateError(error));
-                                }
-                            } else {
-                                reject(generateError(error));
-                            }
+                            reject(generateError(error));
                         }
                     }
 
-                    setTimeout(request);
+                    Axios.post(`${url}?format=${format}`, formData, {
+                        proxy: config.proxy,
+                    }).then(() => {
+                        setTimeout(requestStatus, 2000);
+                    }).catch((error) => {
+                        reject(generateError(error));
+                    });
                 });
             }
 

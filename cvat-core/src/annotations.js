@@ -284,17 +284,17 @@
         return result;
     }
 
-    async function importDataset(instance, format, file, updateStatusCallback) {
-        if (!(format instanceof String || typeof format === 'string')) {
+    function importDataset(instance, format, file, updateStatusCallback = () => {}) {
+        if (!(typeof format === 'string')) {
             throw new ArgumentError('Format must be a string');
         }
         if (!(instance instanceof Project)) {
             throw new ArgumentError('Instance should be a Project instance');
         }
-        if (!(typeof updateStatusCallback === 'function' || updateStatusCallback === null)) {
-            throw new ArgumentError('Callback should be a function or null');
+        if (!(typeof updateStatusCallback === 'function')) {
+            throw new ArgumentError('Callback should be a function');
         }
-        if (!(file instanceof File && file.name.split('.').reverse()[0])) {
+        if (!(['application/zip', 'application/x-zip-compressed'].includes(file.type))) {
             throw new ArgumentError('File should be file instance with ZIP extension');
         }
         return serverProxy.projects.importDataset(instance.id, format, file, updateStatusCallback);

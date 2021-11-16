@@ -3,15 +3,14 @@
 // SPDX-License-Identifier: MIT
 
 import { ImportActions, ImportActionTypes } from 'actions/import-actions';
-import deepCopy from 'utils/deep-copy';
 
 import { ImportState } from './interfaces';
 
 const defaultState: ImportState = {
-    projects: {},
     progress: 0.0,
     status: '',
     instance: null,
+    format: null,
     modalVisible: false,
 };
 
@@ -31,14 +30,11 @@ export default (state: ImportState = defaultState, action: ImportActions): Impor
             };
         }
         case ImportActionTypes.IMPORT_DATASET: {
-            const { instance, format } = action.payload;
-            const activities = deepCopy(state.projects);
-
-            activities[instance.id] = format;
+            const { format } = action.payload;
 
             return {
                 ...state,
-                projects: activities,
+                format,
             };
         }
         case ImportActionTypes.IMPORT_DATASET_UPDATE_STATUS: {
@@ -51,14 +47,9 @@ export default (state: ImportState = defaultState, action: ImportActions): Impor
         }
         case ImportActionTypes.IMPORT_DATASET_FAILED:
         case ImportActionTypes.IMPORT_DATASET_SUCCESS: {
-            const { instance } = action.payload;
-            const activities = deepCopy(state.projects);
-
-            delete activities[instance.id];
-
             return {
                 ...state,
-                projects: activities,
+                format: null,
             };
         }
         default:

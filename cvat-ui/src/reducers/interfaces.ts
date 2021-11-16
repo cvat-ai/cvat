@@ -116,9 +116,7 @@ export interface ExportState {
 }
 
 export interface ImportState {
-    projects: {
-        [pid: number]: string;
-    };
+    format: string | null;
     progress: number;
     status: string;
     instance: any;

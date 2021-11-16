@@ -12,18 +12,19 @@ import Progress from 'antd/lib/progress';
 import { CombinedState } from 'reducers/interfaces';
 
 function ImportDatasetStatusModal(): JSX.Element {
-    const projects = useSelector((state: CombinedState) => state.import.projects);
+    const project = useSelector((state: CombinedState) => state.import.instance);
+    const format = useSelector((state: CombinedState) => state.import.format);
     const progress = useSelector((state: CombinedState) => state.import.progress);
     const status = useSelector((state: CombinedState) => state.import.status);
-    const id = Object.keys(projects).length && Object.keys(projects)[0];
 
     return (
         <Modal
-            title={`Importing a dataset for the project #${id}`}
-            visible={!!id}
+            title={`Importing a dataset for the project #${project?.id}`}
+            visible={format !== null}
             closable={false}
             footer={null}
             className='cvat-modal-import-dataset-status'
+            destroyOnClose
         >
             <Progress type='circle' percent={progress} />
             <Alert message={status} type='info' />

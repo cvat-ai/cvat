@@ -32,7 +32,7 @@ function ImportDatasetModal(): JSX.Element {
     const [file, setFile] = useState<File | null>(null);
     const modalVisible = useSelector((state: CombinedState) => state.import.modalVisible);
     const instance = useSelector((state: CombinedState) => state.import.instance);
-    const projects = useSelector((state: CombinedState) => state.import.projects);
+    const format = useSelector((state: CombinedState) => state.import.format);
     const importers = useSelector((state: CombinedState) => state.formats.annotationFormats.loaders);
     const dispatch = useDispatch();
 
@@ -105,7 +105,7 @@ function ImportDatasetModal(): JSX.Element {
                                 )
                                 .map(
                                     (importer: any): JSX.Element => {
-                                        const pending = !!projects[instance.id];
+                                        const pending = format !== null;
                                         const disabled = !importer.enabled || pending;
                                         return (
                                             <Select.Option
@@ -150,4 +150,4 @@ function ImportDatasetModal(): JSX.Element {
     );
 }
 
-export default ImportDatasetModal;
+export default React.memo(ImportDatasetModal);
