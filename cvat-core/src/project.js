@@ -51,13 +51,6 @@
                 }
             }
 
-            if (!data.task_subsets) {
-                const subsetsSet = new Set();
-                for (const task of data.tasks) {
-                    if (task.subset) subsetsSet.add(task.subset);
-                }
-                data.task_subsets = Array.from(subsetsSet);
-            }
             if (typeof initialData.training_project === 'object') {
                 data.training_project = { ...initialData.training_project };
             }
