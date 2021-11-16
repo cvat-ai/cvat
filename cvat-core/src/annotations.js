@@ -289,7 +289,7 @@
             throw new ArgumentError('Format must be a string');
         }
         if (!(instance instanceof Project)) {
-            throw new ArgumentError('Instance should ne a Project isntance');
+            throw new ArgumentError('Instance should be a Project instance');
         }
         if (!(typeof updateStatusCallback === 'function' || updateStatusCallback === null)) {
             throw new ArgumentError('Callback should ne a function or null');
