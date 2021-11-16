@@ -55,7 +55,7 @@ function ImportDatasetModal(): JSX.Element {
             Notification.info({
                 message: 'Dataset export started',
                 description: `Dataset import was started for project #${instance?.id}. `,
-                className: 'cvat-notification-notice-import-project-start',
+                className: 'cvat-notification-notice-import-dataset-start',
             });
         },
         [instance?.id, file],
