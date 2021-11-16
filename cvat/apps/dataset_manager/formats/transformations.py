@@ -16,7 +16,7 @@ class RotatedBoxesToPolygons(ItemTransform):
         return rx, ry
 
     def transform_item(self, item):
-        annotations = item.annotations
+        annotations = item.annotations[:]
         anns = [p for p in annotations if p.type == datum_annotation.AnnotationType.bbox and p.attributes['rotation']]
         for ann in anns:
             rotation = math.radians(ann.attributes['rotation'])
