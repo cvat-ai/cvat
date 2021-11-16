@@ -216,8 +216,11 @@ button on the `Cloud storages` page and fill out the following form:
 
     </br>
 - `Manifest` - the path to the manifest file on your cloud storage.
-  You can add multiple file manifests using the `Add manifest` button.
-  For more information click on [`?`](/docs/manual/advanced/dataset_manifest/).
+  You can add multiple manifest files using the `Add manifest` button.
+  You can find on how to prepare dataset manifest [`here`](/docs/manual/advanced/dataset_manifest/).
+  If you have data on the cloud storage and don't want to download content locally, you can mount your
+  cloud storage as a share point according to [`that guide`](/docs/administration/advanced/mounting_cloud_storages/)
+  and prepare manifest for the data.
 
 To publish the cloud storage, click `submit`, after which it will be available on
 the [Cloud storages page](/docs/manual/basics/cloud-storages/).
