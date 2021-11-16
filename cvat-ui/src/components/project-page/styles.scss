@@ -59,3 +59,16 @@
     display: flex;
     align-items: center;
 }
+
+.cvat-project-tasks-pagination {
+    display: flex;
+    justify-content: center;
+}
+
+.cvat-project-tasks-title-search {
+    display: flex;
+
+    > * {
+        margin-right: $grid-unit-size * 2;
+    }
+}
