@@ -36,6 +36,7 @@ interface Canvas3d {
     fitCanvas(): void;
     fit(): void;
     group(groupData: GroupData): void;
+    destroy(): void;
 }
 
 class Canvas3dImpl implements Canvas3d {
@@ -103,6 +104,10 @@ class Canvas3dImpl implements Canvas3d {
 
     public fitCanvas(): void {
         this.model.fit();
+    }
+
+    public destroy(): void {
+        this.model.destroy();
     }
 }
 
