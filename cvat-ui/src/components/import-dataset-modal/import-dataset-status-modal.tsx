@@ -23,7 +23,7 @@ function ImportDatasetStatusModal(): JSX.Element {
             visible={!!id}
             closable={false}
             footer={null}
-            className='cvat-modal-import-project-status'
+            className='cvat-modal-import-dataset-status'
         >
             <Progress type='circle' percent={progress} />
             <Alert message={status} type='info' />
