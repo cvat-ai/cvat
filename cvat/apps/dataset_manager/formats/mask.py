@@ -14,13 +14,9 @@ from pyunpack import Archive
 from cvat.apps.dataset_manager.bindings import (GetCVATDataExtractor,
     import_dm_annotations)
 from cvat.apps.dataset_manager.util import make_zip_archive
-from cvat.apps.engine.models import ShapeType
-
 
 from .registry import dm_env, exporter, importer
 from .utils import make_colormap
-
-FORMAT_NAME = 'Segmentation mask'
 
 class RotatedBoxesToPolygons(ItemTransform):
     def _rotate_point(self, p, angle, cx, cy):
@@ -47,10 +43,10 @@ class RotatedBoxesToPolygons(ItemTransform):
 
         return item.wrap(annotations=annotations)
 
-@exporter(name=FORMAT_NAME, ext='ZIP', version='1.1')
+@exporter(name='Segmentation mask', ext='ZIP', version='1.1')
 def _export(dst_file, instance_data, save_images=False):
     dataset = Dataset.from_extractors(GetCVATDataExtractor(
-        instance_data, include_images=save_images, format_type=FORMAT_NAME), env=dm_env)
+        instance_data, include_images=save_images), env=dm_env)
     dataset.transform(RotatedBoxesToPolygons)
     dataset.transform('polygons_to_masks')
     dataset.transform('boxes_to_masks')
@@ -61,7 +57,7 @@ def _export(dst_file, instance_data, save_images=False):
 
         make_zip_archive(temp_dir, dst_file)
 
-@importer(name=FORMAT_NAME, ext='ZIP', version='1.1')
+@importer(name='Segmentation mask', ext='ZIP', version='1.1')
 def _import(src_file, instance_data):
     with TemporaryDirectory() as tmp_dir:
         Archive(src_file.name).extractall(tmp_dir)
