@@ -81,7 +81,7 @@ function ImportDatasetModal(): JSX.Element {
                 visible={modalVisible}
                 onCancel={closeModal}
                 onOk={() => form.submit()}
-                className='cvat-modal-import-project'
+                className='cvat-modal-import-dataset'
             >
                 <Form
                     name='Import dataset'
