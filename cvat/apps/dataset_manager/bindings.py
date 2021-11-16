@@ -4,11 +4,9 @@
 # SPDX-License-Identifier: MIT
 
 import os.path as osp
-import math
 import sys
 from collections import namedtuple
 from pathlib import Path
-from itertools import chain
 from typing import (Any, Callable, DefaultDict, Dict, List, Literal, Mapping,
     NamedTuple, OrderedDict, Tuple, Union)
 
@@ -1153,23 +1151,9 @@ def convert_cvat_anno_to_dm(cvat_frame_anno, label_attrs, map_label, format_name
                 z_order=shape_obj.z_order)
         elif shape_obj.type == ShapeType.RECTANGLE:
             x0, y0, x1, y1 = anno_points
-            if shape_obj.rotation and format_name == 'Segmentation mask':
-                [cx, cy] = [(x0 + (x1 - x0) / 2), (y0 + (y1 - y0) / 2)]
-                angle = math.radians(shape_obj.rotation)
-                def rotate_point(p):
-                    [x, y] = p
-                    rx = cx + math.cos(angle) * (x - cx) - math.sin(angle) * (y - cy)
-                    ry = cy + math.sin(angle) * (x - cx) + math.cos(angle) * (y - cy)
-                    return rx, ry
-
-                poly_points = list(chain.from_iterable(map(rotate_point, [(x0, y0), (x1, y0), (x1, y1), (x0, y1)])))
-                anno = datum_annotation.Polygon(poly_points,
-                    label=anno_label, attributes=anno_attr, group=anno_group,
-                    z_order=shape_obj.z_order)
-            else:
-                anno = datum_annotation.Bbox(x0, y0, x1 - x0, y1 - y0,
-                    label=anno_label, attributes=anno_attr, group=anno_group,
-                    z_order=shape_obj.z_order)
+            anno = datum_annotation.Bbox(x0, y0, x1 - x0, y1 - y0,
+                label=anno_label, attributes=anno_attr, group=anno_group,
+                z_order=shape_obj.z_order)
         elif shape_obj.type == ShapeType.CUBOID:
             if dimension == DimensionType.DIM_3D:
                 if format_name == "sly_pointcloud":
