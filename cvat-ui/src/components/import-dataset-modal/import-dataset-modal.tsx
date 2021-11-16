@@ -55,7 +55,7 @@ function ImportDatasetModal(): JSX.Element {
             Notification.info({
                 message: 'Dataset export started',
                 description: `Dataset import was started for project #${instance?.id}. `,
-                className: 'cvat-notification-notice-import-project-start',
+                className: 'cvat-notification-notice-import-dataset-start',
             });
         },
         [instance?.id, file],
@@ -81,7 +81,7 @@ function ImportDatasetModal(): JSX.Element {
                 visible={modalVisible}
                 onCancel={closeModal}
                 onOk={() => form.submit()}
-                className='cvat-modal-import-project'
+                className='cvat-modal-import-dataset'
             >
                 <Form
                     name='Import dataset'
@@ -112,7 +112,7 @@ function ImportDatasetModal(): JSX.Element {
                                                 value={importer.name}
                                                 key={importer.name}
                                                 disabled={disabled}
-                                                className='cvat-modal-import-option-item'
+                                                className='cvat-modal-import-dataset-option-item'
                                             >
                                                 <DownloadOutlined />
                                                 <Text disabled={disabled}>{importer.name}</Text>

@@ -289,10 +289,10 @@
             throw new ArgumentError('Format must be a string');
         }
         if (!(instance instanceof Project)) {
-            throw new ArgumentError('Instance should ne a Project isntance');
+            throw new ArgumentError('Instance should be a Project instance');
         }
         if (!(typeof updateStatusCallback === 'function' || updateStatusCallback === null)) {
-            throw new ArgumentError('Callback should ne a function or null');
+            throw new ArgumentError('Callback should be a function or null');
         }
         if (!(file instanceof File && file.name.split('.').reverse()[0])) {
             throw new ArgumentError('File should be file instance with ZIP extension');

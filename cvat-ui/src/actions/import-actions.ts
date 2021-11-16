@@ -36,10 +36,9 @@ export const importActions = {
     ),
 };
 
-export const importDatasetAsync = (instance: any, format: string, file: File): ThunkAction => async (dispatch) => {
+export const importDatasetAsync = (instance: any, format: string, file: File): ThunkAction => async (dispatch, getState) => {
     try {
-        const store = getCVATStore();
-        const state: CombinedState = store.getState();
+        const state: CombinedState = getState();
         if (state.import.projects[instance.id]) {
             throw Error('Only one importing of dataset allowed at the same time');
         }
