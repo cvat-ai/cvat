@@ -119,6 +119,8 @@ def get_cloud_storage_instance(cloud_provider, resource, credentials, specific_a
         instance = GoogleCloudStorage(
             bucket_name=resource,
             service_account_json=credentials.key_file_path,
+            api_key=credentials.api_key,
+            anonymous_access = credentials.credentials_type == CredentialsTypeChoice.ANONYMOUS_ACCESS,
             prefix=specific_attributes.get('prefix'),
             location=specific_attributes.get('location'),
             project=specific_attributes.get('project')
@@ -356,18 +358,21 @@ def _define_gcs_status(func):
 
 class GoogleCloudStorage(_CloudStorage):
 
-    def __init__(self, bucket_name, prefix=None, service_account_json=None, project=None, location=None):
+    def __init__(self, bucket_name, prefix=None, service_account_json=None, api_key=None, anonymous_access=False, project=None, location=None):
         super().__init__()
         if service_account_json:
             self._storage_client = storage.Client.from_service_account_json(service_account_json)
+        elif api_key:
+            pass
+        elif anonymous_access:
+            self._storage_client = storage.Client.create_anonymous_client()
         else:
+            # If no credentials were provided when constructing the client, the
+            # client library will look for credentials in the environment.
             self._storage_client = storage.Client()
 
-        bucket = self._storage_client.lookup_bucket(bucket_name)
-        if bucket is None:
-            bucket = self._storage_client.bucket(bucket_name, user_project=project)
-
-        self._bucket = bucket
+        # check: case with private access to public data
+        self._bucket = self._storage_client.bucket(bucket_name, user_project=project)
         self._bucket_location = location
         self._prefix = prefix
 
@@ -437,7 +442,7 @@ class GoogleCloudStorage(_CloudStorage):
         return blob.updated
 
 class Credentials:
-    __slots__ = ('key', 'secret_key', 'session_token', 'account_name', 'key_file_path', 'credentials_type')
+    __slots__ = ('key', 'secret_key', 'session_token', 'account_name', 'key_file_path', 'api_key', 'credentials_type')
 
     def __init__(self, **credentials):
         self.key = credentials.get('key', '')
@@ -445,6 +450,7 @@ class Credentials:
         self.session_token = credentials.get('session_token', '')
         self.account_name = credentials.get('account_name', '')
         self.key_file_path = credentials.get('key_file_path', '')
+        self.api_key = credentials.get('api_key', '')
         self.credentials_type = credentials.get('credentials_type', None)
 
     def convert_to_db(self):
@@ -453,6 +459,7 @@ class Credentials:
                 " ".join([self.key, self.secret_key]),
             CredentialsTypeChoice.ACCOUNT_NAME_TOKEN_PAIR : " ".join([self.account_name, self.session_token]),
             CredentialsTypeChoice.KEY_FILE_PATH: self.key_file_path,
+            CredentialsTypeChoice.API_KEY: self.api_key,
             CredentialsTypeChoice.ANONYMOUS_ACCESS: "" if not self.account_name else self.account_name,
         }
         return converted_credentials[self.credentials_type]
@@ -464,40 +471,39 @@ class Credentials:
         elif self.credentials_type == CredentialsTypeChoice.ACCOUNT_NAME_TOKEN_PAIR:
             self.account_name, self.session_token = credentials.get('value').split()
         elif self.credentials_type == CredentialsTypeChoice.ANONYMOUS_ACCESS:
-            self.session_token, self.key, self.secret_key = ('', '', '')
+            # self.session_token, self.key, self.secret_key = ('', '', '')
             # account_name will be in [some_value, '']
             self.account_name = credentials.get('value')
         elif self.credentials_type == CredentialsTypeChoice.KEY_FILE_PATH:
             self.key_file_path = credentials.get('value')
+        elif self.credentials_type == CredentialsTypeChoice.API_KEY:
+            self.api_key = credentials.get('value')
         else:
             raise NotImplementedError('Found {} not supported credentials type'.format(self.credentials_type))
+
+    def reset(self, exclusion):
+        for i in set(self.__slots__) - exclusion - {'credentials_type'}:
+            self.__setattr__(i, '')
 
     def mapping_with_new_values(self, credentials):
         self.credentials_type = credentials.get('credentials_type', self.credentials_type)
         if self.credentials_type == CredentialsTypeChoice.ANONYMOUS_ACCESS:
-            self.key = ''
-            self.secret_key = ''
-            self.session_token = ''
-            self.key_file_path = ''
+            self.reset(exclusion={'account_name'})
             self.account_name = credentials.get('account_name', self.account_name)
         elif self.credentials_type == CredentialsTypeChoice.KEY_SECRET_KEY_PAIR:
+            self.reset(exclusion={'key', 'secret_key'})
             self.key = credentials.get('key', self.key)
             self.secret_key = credentials.get('secret_key', self.secret_key)
-            self.session_token = ''
-            self.account_name = ''
-            self.key_file_path = ''
         elif self.credentials_type == CredentialsTypeChoice.ACCOUNT_NAME_TOKEN_PAIR:
+            self.reset(exclusion={'session_token', 'account_name'})
             self.session_token = credentials.get('session_token', self.session_token)
             self.account_name = credentials.get('account_name', self.account_name)
-            self.key = ''
-            self.secret_key = ''
-            self.key_file_path = ''
         elif self.credentials_type == CredentialsTypeChoice.KEY_FILE_PATH:
-            self.key = ''
-            self.secret_key = ''
-            self.session_token = ''
-            self.account_name = ''
+            self.reset(exclusion={'key_file_path'})
             self.key_file_path = credentials.get('key_file_path', self.key_file_path)
+        elif self.credentials_type == CredentialsTypeChoice.API_KEY:
+            self.reset(exclusion={'api_key'})
+            self.api_key = credentials.get('api_key', self.api_key)
         else:
             raise NotImplementedError('Mapping credentials: unsupported credentials type')
 

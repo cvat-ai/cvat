@@ -13,6 +13,7 @@ export enum CredentialsType {
     ACCOUNT_NAME_TOKEN_PAIR = 'ACCOUNT_NAME_TOKEN_PAIR',
     ANONYMOUS_ACCESS = 'ANONYMOUS_ACCESS',
     KEY_FILE_PATH = 'KEY_FILE_PATH',
+    API_KEY = 'API_KEY',
 }
 
 export enum StorageStatuses {

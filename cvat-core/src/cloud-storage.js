@@ -27,6 +27,8 @@
                 secret_key: undefined,
                 session_token: undefined,
                 key_file_path: undefined,
+                key_file: undefined,
+                api_key: undefined,
                 specific_attributes: undefined,
                 owner: undefined,
                 created_date: undefined,
@@ -192,6 +194,46 @@
                             if (typeof value === 'string') {
                                 if (value.trim().length) {
                                     data.key_file_path = value;
+                                } else {
+                                    throw new ArgumentError('Value must not be empty');
+                                }
+                            } else {
+                                throw new ArgumentError(`Value must be a string. ${typeof value} was found`);
+                            }
+                        },
+                    },
+                    /**
+                     * Key file
+                     * @name keyFile
+                     * @type {File}
+                     * @memberof module:API.cvat.classes.CloudStorage
+                     * @instance
+                     * @throws {module:API.cvat.exceptions.ArgumentError}
+                     */
+                    keyFile: {
+                        get: () => data.key_file,
+                        set: (file) => {
+                            if (typeof value === 'File') {
+                                data.key_file = file;
+                            } else {
+                                throw new ArgumentError(`Should be a file. ${typeof file} was found`);
+                            }
+                        },
+                    },
+                    /**
+                     * API key
+                     * @name apiKey
+                     * @type {string}
+                     * @memberof module:API.cvat.classes.CloudStorage
+                     * @instance
+                     * @throws {module:API.cvat.exceptions.ArgumentError}
+                     */
+                    apiKey: {
+                        get: () => data.api_key,
+                        set: (value) => {
+                            if (typeof value === 'string') {
+                                if (value.trim().length) {
+                                    data.api_key = value;
                                 } else {
                                     throw new ArgumentError('Value must not be empty');
                                 }
@@ -454,6 +496,14 @@
 
             if (cloudStorageInstance.keyFilePath) {
                 data.key_file_path = cloudStorageInstance.keyFilePath;
+            }
+
+            if (cloudStorageInstance.keyFile) {
+                data.key_file = cloudStorageInstance.keyFile;
+            }
+
+            if (cloudStorageInstance.apiKey) {
+                data.api_key = cloudStorageInstance.apiKey;
             }
 
             if (cloudStorageInstance.specificAttributes) {
