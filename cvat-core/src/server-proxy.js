@@ -513,7 +513,7 @@
                                 proxy: config.proxy,
                             });
                             if (response.status === 202) {
-                                if (callback) callback(response.data);
+                                if (callback) callback(response.data.progress, response.data.message);
                                 setTimeout(requestStatus, 3000);
                             } else if (response.status === 201) {
                                 resolve();
