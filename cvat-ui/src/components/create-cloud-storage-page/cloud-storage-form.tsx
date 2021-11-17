@@ -14,13 +14,13 @@ import Select from 'antd/lib/select';
 import Input from 'antd/lib/input';
 import TextArea from 'antd/lib/input/TextArea';
 import notification from 'antd/lib/notification';
-import { Upload } from 'antd';
 import Tooltip from 'antd/lib/tooltip';
 
 import { CombinedState, CloudStorage } from 'reducers/interfaces';
 import { createCloudStorageAsync, updateCloudStorageAsync } from 'actions/cloud-storage-actions';
 import { ProviderType, CredentialsType } from 'utils/enums';
 import { UploadOutlined } from '@ant-design/icons';
+import Upload, { RcFile } from 'antd/lib/upload';
 import { AzureProvider, S3Provider, GoogleCloudProvider } from '../../icons';
 import S3Region from './s3-region';
 import GCSLocation from './gcs-locatiion';
@@ -46,9 +46,11 @@ interface CloudStorageForm {
     secret_key?: string;
     SAS_token?: string;
     key_file_path?: string;
+    key_file?: File;
     description?: string;
     region?: string;
     prefix?: string;
+    project_id?: string;
     manifests: string[];
 }
 
@@ -92,6 +94,8 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
     const [keyFilePathIsDisabled, setKeyFilePathIsDisabled] = useState(false);
     const [keyFileIsDisabled, setKeyFileIsDisabled] = useState(false);
 
+    const [uploadedKeyFile, setUploadedKeyFile] = useState<File | null>(null);
+
     function initializeFields(): void {
         setManifestNames(cloudStorage.manifests);
         const fieldsValue: CloudStorageForm = {
@@ -119,15 +123,20 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
             fieldsValue.api_key = fakeCredentialsData.apiKey;
         }
 
-        if (cloudStorage.providerType === ProviderType.AWS_S3_BUCKET && cloudStorage.specificAttributes) {
+        if (cloudStorage.specificAttributes) {
             const parsedOptions = new URLSearchParams(cloudStorage.specificAttributes);
-            const region = parsedOptions.get('region');
+            const location = parsedOptions.get('region') || parsedOptions.get('location');
             const prefix = parsedOptions.get('prefix');
-            if (region) {
-                setSelectedRegion(region);
+            const projectId = parsedOptions.get('project_id');
+            if (location) {
+                setSelectedRegion(location);
             }
             if (prefix) {
                 fieldsValue.prefix = prefix;
+            }
+
+            if (projectId) {
+                fieldsValue.project_id = projectId;
             }
         }
 
@@ -206,24 +215,30 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
         cloudStorageData = { ...formValues };
         // specific attributes
         const specificAttributes = new URLSearchParams();
-        if (formValues.region !== undefined) {
-            delete cloudStorageData.region;
-            specificAttributes.append('region', selectedRegion as string);
+
+        if (selectedRegion) {
+            if (cloudStorageData.provider_type === ProviderType.AWS_S3_BUCKET) {
+                delete cloudStorageData.region;
+                specificAttributes.append('region', selectedRegion as string);
+            } else if (cloudStorageData.provider_type === ProviderType.GOOGLE_CLOUD_STORAGE) {
+                delete cloudStorageData.location;
+                specificAttributes.append('location', selectedRegion as string);
+            }
         }
-        if (formValues.location !== undefined) {
-            delete cloudStorageData.location;
-            specificAttributes.append('location', selectedRegion as string);
-        }
-        if (formValues.prefix !== undefined) {
+        if (formValues.prefix) {
             delete cloudStorageData.prefix;
             specificAttributes.append('prefix', formValues.prefix);
         }
-        if (formValues.project_id !== undefined) {
+        if (formValues.project_id) {
             delete cloudStorageData.project_id;
             specificAttributes.append('project_id', formValues.project_id);
         }
 
         cloudStorageData.specific_attributes = specificAttributes.toString();
+
+        if (uploadedKeyFile) {
+            cloudStorageData.key_file = uploadedKeyFile;
+        }
 
         if (cloudStorageData.credentials_type === CredentialsType.ACCOUNT_NAME_TOKEN_PAIR) {
             delete cloudStorageData.SAS_token;
@@ -271,6 +286,7 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
             session_token: undefined,
             account_name: undefined,
             key_file_path: undefined,
+            // key_file: undefined;
             api_key: undefined,
 
         });
@@ -318,7 +334,6 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
         const internalCommonProps = {
             ...commonProps,
             labelCol: { span: 8, offset: 2 },
-            wrapperCol: { offset: 1 },
         };
 
         if (providerType === ProviderType.AWS_S3_BUCKET && credentialsType === CredentialsType.KEY_SECRET_KEY_PAIR) {
@@ -418,70 +433,57 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
         // key file path - not for cvat.org
         if (providerType === ProviderType.GOOGLE_CLOUD_STORAGE && credentialsType === CredentialsType.KEY_FILE_PATH) {
             return (
-                <>
-                    <Row>
-                        <Col>
-                            <Form.Item
-                                name='key_file_path'
-                                {...internalCommonProps}
-                                label={(
-                                    <Tooltip title='You can specify path to key file or upload key file.
-                                            If you leave those fields blank, the environment variable will be used.'
-                                    >
-                                        Key file
-                                    </Tooltip>
-
-                                )}
-                            >
-                                <Input.Password
-                                    visibilityToggle={keyFilePathVisibility}
-                                    onChange={(e) => {
-                                        setKeyFilePathVisibility(true);
-                                        const isDisabled = !!(e.target.value);
-                                        setKeyFileIsDisabled(isDisabled);
-                                    }}
-                                    onFocus={() => onFocusCredentialsItem('keyFilePath', 'key_file_path')}
-                                    onBlur={() => onBlurCredentialsItem('keyFilePath', 'key_file_path', setKeyFilePathVisibility)}
-                                    disabled={keyFilePathIsDisabled}
-                                />
-                            </Form.Item>
-                        </Col>
-                        <Col>
-                            <Form.Item
-                                name='key_file'
-                                {...internalCommonProps}
-                                // dependencies={['key_file_path']}
-                                // rules={[
-                                //     ({ getFieldValue }) => ({
-                                //         validator(_, value) {
-                                //             if (!getFieldValue('key_file_path')) {
-                                //                 return Promise.resolve();
-                                //             }
-                                //             return Promise.reject(new Error('Plese, specify only path or file'));
-                                //         },
-                                //     }),
-                                // ]}
-                            >
-                                <Upload
-                                    accept='.json, application/json'
-                                    multiple={false}
-                                    maxCount={1}
-                                    beforeUpload={(file: File): boolean => {
-                                        console.log(file);
-                                        setKeyFilePathIsDisabled(true);
-                                        return false;
-                                    }}
-                                    onRemove={() => {
-                                        setKeyFilePathIsDisabled(false);
-                                    }}
-
+                <Row>
+                    <Col span={23}>
+                        <Form.Item
+                            name='key_file_path'
+                            label={(
+                                <Tooltip title='You can specify path to key file or upload key file.
+                                        If you leave those fields blank, the environment variable will be used.'
                                 >
-                                    <Button icon={<UploadOutlined />} disabled={keyFileIsDisabled} />
-                                </Upload>
-                            </Form.Item>
-                        </Col>
-                    </Row>
-                </>
+                                    Key file
+                                </Tooltip>
+
+                            )}
+                            {...internalCommonProps}
+                        >
+                            <Input.Password
+                                visibilityToggle={keyFilePathVisibility}
+                                onChange={(e) => {
+                                    setKeyFilePathVisibility(true);
+                                    const isDisabled = !!(e.target.value);
+                                    setKeyFileIsDisabled(isDisabled);
+                                }}
+                                onFocus={() => onFocusCredentialsItem('keyFilePath', 'key_file_path')}
+                                onBlur={() => onBlurCredentialsItem('keyFilePath', 'key_file_path', setKeyFilePathVisibility)}
+                                disabled={keyFilePathIsDisabled}
+                            />
+                        </Form.Item>
+                    </Col>
+                    <Col span={1} style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                        <Upload
+                            accept='.json, application/json'
+                            multiple={false}
+                            maxCount={1}
+                            showUploadList={false}
+                            beforeUpload={(file: RcFile): boolean => {
+                                if (form.getFieldValue('key_file_path')) {
+                                    form.setFieldsValue({
+                                        key_file_path: undefined,
+                                    });
+                                }
+                                setKeyFilePathIsDisabled(true);
+                                setUploadedKeyFile(file);
+                                return false;
+                            }}
+                            onRemove={() => {
+                                setKeyFilePathIsDisabled(false);
+                            }}
+                        >
+                            <Button icon={<UploadOutlined />} disabled={keyFileIsDisabled} />
+                        </Upload>
+                    </Col>
+                </Row>
             );
         }
 

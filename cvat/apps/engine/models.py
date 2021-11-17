@@ -624,3 +624,6 @@ class CloudStorage(models.Model):
 
     def get_specific_attributes(self):
         return parse_specific_attributes(self.specific_attributes)
+
+    def get_key_file_path(self):
+        return os.path.join(self.get_storage_dirname(), 'key.json')

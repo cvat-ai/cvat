@@ -1181,12 +1181,19 @@
             async function createCloudStorage(storageDetail) {
                 const { backendAPI } = config;
 
+                const storageDetailData = new FormData();
+                for (const [key, value] of Object.entries(storageDetail)) {
+                    if (Array.isArray(value)) {
+                        value.forEach((element, idx) => {
+                            storageDetailData.append(`${key}[${idx}]`, element);
+                        });
+                    } else {
+                        storageDetailData.set(key, value);
+                    }
+                }
                 try {
-                    const response = await Axios.post(`${backendAPI}/cloudstorages`, JSON.stringify(storageDetail), {
+                    const response = await Axios.post(`${backendAPI}/cloudstorages`, storageDetailData, {
                         proxy: config.proxy,
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
                     });
                     return response.data;
                 } catch (errorData) {

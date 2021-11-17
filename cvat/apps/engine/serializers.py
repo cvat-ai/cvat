@@ -6,6 +6,8 @@ import os
 import re
 import shutil
 
+from tempfile import NamedTemporaryFile
+
 from rest_framework import serializers, exceptions
 from django.contrib.auth.models import User, Group
 
@@ -844,12 +846,20 @@ class CloudStorageSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         provider_type = validated_data.get('provider_type')
         should_be_created = validated_data.pop('should_be_created', None)
+
+        key_file = validated_data.pop('key_file', None)
+        # we need to save it to temporary file to check the granted permissions
+        temporary_file = ''
+        if key_file:
+            with NamedTemporaryFile(mode='wb', prefix='cvat', delete=False) as temp_key:
+                temp_key.write(key_file.read())
+                temporary_file = temp_key.name
         credentials = Credentials(
             account_name=validated_data.pop('account_name', ''),
             key=validated_data.pop('key', ''),
             secret_key=validated_data.pop('secret_key', ''),
             session_token=validated_data.pop('session_token', ''),
-            key_file_path=validated_data.pop('key_file_path', ''),
+            key_file_path=validated_data.pop('key_file_path', '') or temporary_file,
             api_key=validated_data.pop('api_key', ''),
             credentials_type = validated_data.get('credentials_type')
         )
@@ -897,6 +907,15 @@ class CloudStorageSerializer(serializers.ModelSerializer):
                 shutil.rmtree(cloud_storage_path)
 
             os.makedirs(db_storage.get_storage_logs_dirname(), exist_ok=True)
+            if temporary_file:
+                # so, gcs key file is valid and we need to set correct path to the file
+                real_path_to_key_file = db_storage.get_key_file_path()
+                shutil.copyfile(temporary_file, real_path_to_key_file)
+                os.remove(temporary_file)
+
+                credentials.key_file_path = real_path_to_key_file
+                db_storage.credentials = credentials.convert_to_db()
+                db_storage.save()
             return db_storage
         elif storage_status == Status.FORBIDDEN:
             field = 'credentials'
@@ -904,6 +923,8 @@ class CloudStorageSerializer(serializers.ModelSerializer):
         else:
             field = 'recource'
             message = 'The resource {} not found. It may have been deleted.'.format(storage.name)
+        if temporary_file:
+            os.remove(temporary_file)
         slogger.glob.error(message)
         raise serializers.ValidationError({field: message})
 
