@@ -132,6 +132,23 @@ export function displayShapeSize(shapesContainer: SVG.Container, textContainer: 
     return shapeSize;
 }
 
+export function rotate2DPoints(cx: number, cy: number, angle: number, points: number[]): number[] {
+    const rad = (Math.PI / 180) * angle;
+    const cos = Math.cos(rad);
+    const sin = Math.sin(rad);
+    const result = [];
+    for (let i = 0; i < points.length; i += 2) {
+        const x = points[i];
+        const y = points[i + 1];
+        result.push(
+            (x - cx) * cos - (y - cy) * sin + cx,
+            (y - cy) * cos + (x - cx) * sin + cy,
+        );
+    }
+
+    return result;
+}
+
 export function pointsToNumberArray(points: string | Point[]): number[] {
     if (Array.isArray(points)) {
         return points.reduce((acc: number[], point: Point): number[] => {

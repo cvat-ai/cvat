@@ -31,6 +31,7 @@ import {
     vectorLength,
     ShapeSizeElement,
     DrawnState,
+    rotate2DPoints,
 } from './shared';
 import {
     CanvasModel,
@@ -115,21 +116,28 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
     private translatePointsFromRotatedShape(shape: SVG.Shape, points: number[]): number[] {
         const { rotation } = shape.transform();
-        // we need to reset rotation from transformation to get coordinates "as is"
-        // because we store rotation separately
+        // currently shape is rotated and shifted somehow additionally (css transform property)
+        // let's remove rotation to get correct transformation matrix (element -> screen)
+        // correct means that we do not consider points to be rotated
+        // because rotation property is stored separately and already saved
         shape.rotate(0);
         const result = [];
 
         try {
-            // get each point and apply matrix transformation to it
-            // it moves coordinates from element's coordinate system (which is transformed by rotation)
-            // to canvas coordinate system
+            // get each point and apply a couple of matrix transformation to it
             const point = this.content.createSVGPoint();
-            const ctm = ((shape.node as any) as SVGRectElement | SVGPolygonElement | SVGPolylineElement).getCTM();
+            // matrix to convert from ELEMENT file system to CLIENT coordinate system
+            const ctm = ((shape.node as any) as SVGRectElement | SVGPolygonElement | SVGPolylineElement).getScreenCTM();
+            // matrix to convert from CLIENT coordinate system to CANVAS coordinate system
+            const ctm1 = this.content.getScreenCTM().inverse();
+            // NOTE: I tried to use element.getCTM(), but this way does not work on firefox
+
             for (let i = 0; i < points.length; i += 2) {
                 point.x = points[i];
                 point.y = points[i + 1];
-                const transformedPoint = point.matrixTransform(ctm);
+                let transformedPoint = point.matrixTransform(ctm);
+                transformedPoint = transformedPoint.matrixTransform(ctm1);
+
                 result.push(transformedPoint.x, transformedPoint.y);
             }
         } finally {
@@ -1454,6 +1462,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         const states = this.controller.objects;
 
         const ctx = this.bitmap.getContext('2d');
+        ctx.imageSmoothingEnabled = false;
         if (ctx) {
             ctx.fillStyle = 'black';
             ctx.fillRect(0, 0, width, height);
@@ -1461,31 +1470,34 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 if (state.hidden || state.outside) continue;
                 ctx.fillStyle = 'white';
                 if (['rectangle', 'polygon', 'cuboid'].includes(state.shapeType)) {
-                    let points = [];
+                    let points = [...state.points];
                     if (state.shapeType === 'rectangle') {
-                        points = [
-                            state.points[0], // xtl
-                            state.points[1], // ytl
-                            state.points[2], // xbr
-                            state.points[1], // ytl
-                            state.points[2], // xbr
-                            state.points[3], // ybr
-                            state.points[0], // xtl
-                            state.points[3], // ybr
-                        ];
+                        points = rotate2DPoints(
+                            points[0] + (points[2] - points[0]) / 2,
+                            points[1] + (points[3] - points[1]) / 2,
+                            state.rotation,
+                            [
+                                points[0], // xtl
+                                points[1], // ytl
+                                points[2], // xbr
+                                points[1], // ytl
+                                points[2], // xbr
+                                points[3], // ybr
+                                points[0], // xtl
+                                points[3], // ybr
+                            ],
+                        );
                     } else if (state.shapeType === 'cuboid') {
                         points = [
-                            state.points[0],
-                            state.points[1],
-                            state.points[4],
-                            state.points[5],
-                            state.points[8],
-                            state.points[9],
-                            state.points[12],
-                            state.points[13],
+                            points[0],
+                            points[1],
+                            points[4],
+                            points[5],
+                            points[8],
+                            points[9],
+                            points[12],
+                            points[13],
                         ];
-                    } else {
-                        points = [...state.points];
                     }
                     ctx.beginPath();
                     ctx.moveTo(points[0], points[1]);
@@ -1883,14 +1895,14 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     const dx2 = (p1.x - p2.x) ** 2;
                     const dy2 = (p1.y - p2.y) ** 2;
                     if (Math.sqrt(dx2 + dy2) >= delta) {
+                        // these points does not take into account possible transformations, applied on the element
+                        // so, if any (like rotation) we need to map them to canvas coordinate space
                         let points = pointsToNumberArray(
                             shape.attr('points') || `${shape.attr('x')},${shape.attr('y')} ` +
                                 `${shape.attr('x') + shape.attr('width')},${shape.attr('y') + shape.attr('height')}`,
                         );
 
-                        // these points !== translated points from a rotated shape, nevertheless it looks the same
-                        // additional transformations are applied to the shape currently
-                        // transformation will be reset and right points will be set in updateObjects
+                        // let's keep current points, but they could be rewritten in updateObjects
                         this.drawnStates[clientID].points = this.translateFromCanvas(points);
 
                         const { rotation } = shape.transform();
@@ -1971,22 +1983,21 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     while (rotation < 0) rotation += 360;
                     rotation %= 360;
 
+                    // these points does not take into account possible transformations, applied on the element
+                    // so, if any (like rotation) we need to map them to canvas coordinate space
                     let points = pointsToNumberArray(
                         shape.attr('points') || `${shape.attr('x')},${shape.attr('y')} ` +
-                        `${shape.attr('x') + shape.attr('width')},` +
-                        `${shape.attr('y') + shape.attr('height')}`,
+                            `${shape.attr('x') + shape.attr('width')},${shape.attr('y') + shape.attr('height')}`,
                     );
 
-                    // these points !== translated points from a rotated shape, nevertheless it looks the same
-                    // additional transformations are applied to the shape currently
-                    // transformation will be reset and right points will be set in updateObjects
+                    // let's keep current points, but they could be rewritten in updateObjects
                     this.drawnStates[clientID].points = this.translateFromCanvas(points);
                     this.drawnStates[clientID].rotation = rotation;
                     if (rotation) {
                         points = this.translatePointsFromRotatedShape(shape, points);
                     }
 
-                    points = this.translateFromCanvas(points);
+                    // points = this.translateFromCanvas(points);
                     this.canvas.dispatchEvent(
                         new CustomEvent('canvas.resizeshape', {
                             bubbles: false,
@@ -1996,7 +2007,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                             },
                         }),
                     );
-                    this.onEditDone(state, points, rotation);
+                    this.onEditDone(state, this.translateFromCanvas(points), rotation);
                 }
             });
 
