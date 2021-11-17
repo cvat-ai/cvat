@@ -811,7 +811,6 @@ class CloudStorageSerializer(serializers.ModelSerializer):
     secret_key = serializers.CharField(max_length=40, allow_blank=True, required=False)
     key_file_path = serializers.CharField(max_length=64, allow_blank=True, required=False)
     key_file = serializers.FileField(required=False)
-    api_key = serializers.CharField(max_length=100, allow_blank=True, required=False)
     account_name = serializers.CharField(max_length=24, allow_blank=True, required=False)
     manifests = ManifestSerializer(many=True, default=[])
 
@@ -820,7 +819,7 @@ class CloudStorageSerializer(serializers.ModelSerializer):
         fields = (
             'provider_type', 'resource', 'display_name', 'owner', 'credentials_type',
             'created_date', 'updated_date', 'session_token', 'account_name', 'key',
-            'secret_key', 'key_file_path', 'key_file', 'api_key', 'specific_attributes',
+            'secret_key', 'key_file_path', 'key_file', 'specific_attributes',
             'description', 'id', 'manifests',
         )
         read_only_fields = ('created_date', 'updated_date', 'owner')
@@ -860,7 +859,6 @@ class CloudStorageSerializer(serializers.ModelSerializer):
             secret_key=validated_data.pop('secret_key', ''),
             session_token=validated_data.pop('session_token', ''),
             key_file_path=validated_data.pop('key_file_path', '') or temporary_file,
-            api_key=validated_data.pop('api_key', ''),
             credentials_type = validated_data.get('credentials_type')
         )
         details = {
@@ -937,7 +935,7 @@ class CloudStorageSerializer(serializers.ModelSerializer):
         })
         tmp = {k:v for k,v in validated_data.items() if k in {
             'key','secret_key', 'account_name', 'session_token', 'key_file_path',
-            'api_key', 'credentials_type'
+            'credentials_type'
         }}
         credentials.mapping_with_new_values(tmp)
         instance.credentials = credentials.convert_to_db()

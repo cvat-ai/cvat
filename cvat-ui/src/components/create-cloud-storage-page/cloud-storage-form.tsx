@@ -30,8 +30,8 @@ export interface Props {
     cloudStorage?: CloudStorage;
 }
 
-type CredentialsFormNames = 'key' | 'secret_key' | 'account_name' | 'session_token' | 'key_file_path' | 'api_key';
-type CredentialsCamelCaseNames = 'key' | 'secretKey' | 'accountName' | 'sessionToken' | 'keyFilePath' | 'apiKey';
+type CredentialsFormNames = 'key' | 'secret_key' | 'account_name' | 'session_token' | 'key_file_path';
+type CredentialsCamelCaseNames = 'key' | 'secretKey' | 'accountName' | 'sessionToken' | 'keyFilePath';
 
 interface CloudStorageForm {
     credentials_type: CredentialsType;
@@ -41,8 +41,6 @@ interface CloudStorageForm {
     account_name?: string;
     session_token?: string;
     key?: string;
-    // TODO: may be use one field key
-    api_key?: string;
     secret_key?: string;
     SAS_token?: string;
     key_file_path?: string;
@@ -77,9 +75,6 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
         key: 'X'.repeat(20),
         secretKey: 'X'.repeat(40),
         keyFilePath: 'X'.repeat(10),
-        // TODO: check limits
-        apiKey: 'X'.repeat(20),
-
     };
 
     const [keyVisibility, setKeyVisibility] = useState(false);
@@ -87,7 +82,6 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
     const [sessionTokenVisibility, setSessionTokenVisibility] = useState(false);
     const [accountNameVisibility, setAccountNameVisibility] = useState(false);
     const [keyFilePathVisibility, setKeyFilePathVisibility] = useState(false);
-    const [apiKeyVisibility, setApiKeyVisibility] = useState(false);
 
     const [manifestNames, setManifestNames] = useState<string[]>([]);
 
@@ -118,9 +112,6 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
             fieldsValue.secret_key = fakeCredentialsData.secretKey;
         } else if (cloudStorage.credentialsType === CredentialsType.KEY_FILE_PATH) {
             fieldsValue.key_file_path = fakeCredentialsData.keyFilePath;
-        } else if (cloudStorage.providerType === ProviderType.GOOGLE_CLOUD_STORAGE &&
-                cloudStorage.credentialsType === CredentialsType.ANONYMOUS_ACCESS) {
-            fieldsValue.api_key = fakeCredentialsData.apiKey;
         }
 
         if (cloudStorage.specificAttributes) {
@@ -197,7 +188,6 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
     }, [updatedCloudStorageId]);
 
     useEffect(() => {
-        // TODO: fix for anonymous access for google cloud storage with api key
         if (cloudStorage && cloudStorage.credentialsType !== CredentialsType.ANONYMOUS_ACCESS) {
             notification.info({
                 message: `For security reasons, your credentials are hidden and represented by fake values
@@ -270,9 +260,6 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
             if (cloudStorageData.key_file_path === fakeCredentialsData.keyFilePath) {
                 delete cloudStorageData.key_file_path;
             }
-            if (cloudStorageData.api_key === fakeCredentialsData.apiKey) {
-                delete cloudStorageData.api_key;
-            }
             dispatch(updateCloudStorageAsync(cloudStorageData));
         } else {
             dispatch(createCloudStorageAsync(cloudStorageData));
@@ -286,9 +273,6 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
             session_token: undefined,
             account_name: undefined,
             key_file_path: undefined,
-            // key_file: undefined;
-            api_key: undefined,
-
         });
     };
 
@@ -487,27 +471,6 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
             );
         }
 
-        if (providerType === ProviderType.GOOGLE_CLOUD_STORAGE &&
-                credentialsType === CredentialsType.API_KEY) {
-            return (
-                <>
-                    <Form.Item
-                        label='API key'
-                        name='api_key'
-                        rules={[{ required: true, message: 'Please, specify your api key' }]}
-                        {...internalCommonProps}
-                    >
-                        <Input.Password
-                            visibilityToggle={apiKeyVisibility}
-                            onChange={() => setApiKeyVisibility(true)}
-                            onFocus={() => onFocusCredentialsItem('apiKey', 'api_key')}
-                            onBlur={() => onBlurCredentialsItem('apiKey', 'api_key', setApiKeyVisibility)}
-                        />
-                    </Form.Item>
-                </>
-            );
-        }
-
         return <></>;
     };
 
@@ -617,7 +580,6 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
                         <Select.Option value={CredentialsType.KEY_FILE_PATH}>
                             Key file
                         </Select.Option>
-                        <Select.Option value={CredentialsType.API_KEY}>API key</Select.Option>
                         <Select.Option value={CredentialsType.ANONYMOUS_ACCESS}>Anonymous access</Select.Option>
                     </Select>
                 </Form.Item>

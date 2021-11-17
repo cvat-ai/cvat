@@ -119,7 +119,6 @@ def get_cloud_storage_instance(cloud_provider, resource, credentials, specific_a
         instance = GoogleCloudStorage(
             bucket_name=resource,
             service_account_json=credentials.key_file_path,
-            api_key=credentials.api_key,
             anonymous_access = credentials.credentials_type == CredentialsTypeChoice.ANONYMOUS_ACCESS,
             prefix=specific_attributes.get('prefix'),
             location=specific_attributes.get('location'),
@@ -358,12 +357,10 @@ def _define_gcs_status(func):
 
 class GoogleCloudStorage(_CloudStorage):
 
-    def __init__(self, bucket_name, prefix=None, service_account_json=None, api_key=None, anonymous_access=False, project=None, location=None):
+    def __init__(self, bucket_name, prefix=None, service_account_json=None, anonymous_access=False, project=None, location=None):
         super().__init__()
         if service_account_json:
             self._storage_client = storage.Client.from_service_account_json(service_account_json)
-        elif api_key:
-            pass
         elif anonymous_access:
             self._storage_client = storage.Client.create_anonymous_client()
         else:
@@ -442,7 +439,7 @@ class GoogleCloudStorage(_CloudStorage):
         return blob.updated
 
 class Credentials:
-    __slots__ = ('key', 'secret_key', 'session_token', 'account_name', 'key_file_path', 'api_key', 'credentials_type')
+    __slots__ = ('key', 'secret_key', 'session_token', 'account_name', 'key_file_path', 'credentials_type')
 
     def __init__(self, **credentials):
         self.key = credentials.get('key', '')
@@ -450,7 +447,6 @@ class Credentials:
         self.session_token = credentials.get('session_token', '')
         self.account_name = credentials.get('account_name', '')
         self.key_file_path = credentials.get('key_file_path', '')
-        self.api_key = credentials.get('api_key', '')
         self.credentials_type = credentials.get('credentials_type', None)
 
     def convert_to_db(self):
@@ -459,7 +455,6 @@ class Credentials:
                 " ".join([self.key, self.secret_key]),
             CredentialsTypeChoice.ACCOUNT_NAME_TOKEN_PAIR : " ".join([self.account_name, self.session_token]),
             CredentialsTypeChoice.KEY_FILE_PATH: self.key_file_path,
-            CredentialsTypeChoice.API_KEY: self.api_key,
             CredentialsTypeChoice.ANONYMOUS_ACCESS: "" if not self.account_name else self.account_name,
         }
         return converted_credentials[self.credentials_type]
@@ -476,8 +471,6 @@ class Credentials:
             self.account_name = credentials.get('value')
         elif self.credentials_type == CredentialsTypeChoice.KEY_FILE_PATH:
             self.key_file_path = credentials.get('value')
-        elif self.credentials_type == CredentialsTypeChoice.API_KEY:
-            self.api_key = credentials.get('value')
         else:
             raise NotImplementedError('Found {} not supported credentials type'.format(self.credentials_type))
 
@@ -501,9 +494,6 @@ class Credentials:
         elif self.credentials_type == CredentialsTypeChoice.KEY_FILE_PATH:
             self.reset(exclusion={'key_file_path'})
             self.key_file_path = credentials.get('key_file_path', self.key_file_path)
-        elif self.credentials_type == CredentialsTypeChoice.API_KEY:
-            self.reset(exclusion={'api_key'})
-            self.api_key = credentials.get('api_key', self.api_key)
         else:
             raise NotImplementedError('Mapping credentials: unsupported credentials type')
 

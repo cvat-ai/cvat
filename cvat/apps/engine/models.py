@@ -561,7 +561,6 @@ class CredentialsTypeChoice(str, Enum):
     KEY_SECRET_KEY_PAIR = 'KEY_SECRET_KEY_PAIR' # nosec
     ACCOUNT_NAME_TOKEN_PAIR = 'ACCOUNT_NAME_TOKEN_PAIR' # nosec
     KEY_FILE_PATH = 'KEY_FILE_PATH'
-    API_KEY = 'API_KEY'
     ANONYMOUS_ACCESS = 'ANONYMOUS_ACCESS'
 
     @classmethod
