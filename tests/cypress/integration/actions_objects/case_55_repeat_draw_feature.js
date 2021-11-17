@@ -73,7 +73,8 @@ context('Repeat draw feature.', () => {
     }
 
     function repeatDrawningFinish() {
-        cy.get('.cvat-canvas-container').trigger('keydown', { keyCode: keyCodeN, code: 'KeyN' }).trigger('keyup');
+        cy.get('.cvat-canvas-container').trigger('keydown', { keyCode: keyCodeN, code: 'KeyN' })
+            .trigger('keyup', { keyCode: keyCodeN, code: 'KeyN' });
     }
 
     before(() => {

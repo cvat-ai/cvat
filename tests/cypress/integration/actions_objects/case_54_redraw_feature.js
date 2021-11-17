@@ -87,7 +87,8 @@ context('Redraw feature.', () => {
             createPolygonShape.pointsMap.forEach((element) => {
                 cy.get('.cvat-canvas-container').click(element.x, element.y - 50);
             });
-            cy.get('.cvat-canvas-container').trigger('keydown', { keyCode: keyCodeN, code: 'KeyN' }).trigger('keyup');
+            cy.get('.cvat-canvas-container').trigger('keydown', { keyCode: keyCodeN, code: 'KeyN' })
+                .trigger('keyup', { keyCode: keyCodeN, code: 'KeyN' });
             cy.get('.cvat_canvas_shape').then(($shape) => {
                 expect($shape.length).to.be.equal(2);
             });
@@ -104,7 +105,8 @@ context('Redraw feature.', () => {
             createPolylinesShape.pointsMap.forEach((element) => {
                 cy.get('.cvat-canvas-container').click(element.x, element.y - 50);
             });
-            cy.get('.cvat-canvas-container').trigger('keydown', { keyCode: keyCodeN, code: 'KeyN' }).trigger('keyup');
+            cy.get('.cvat-canvas-container').trigger('keydown', { keyCode: keyCodeN, code: 'KeyN' })
+                .trigger('keyup', { keyCode: keyCodeN, code: 'KeyN' });
             cy.get('.cvat_canvas_shape').then(($shape) => {
                 expect($shape.length).to.be.equal(3);
             });
@@ -120,7 +122,8 @@ context('Redraw feature.', () => {
             createPointsShape.pointsMap.forEach((element) => {
                 cy.get('.cvat-canvas-container').click(element.x, element.y - 50);
             });
-            cy.get('.cvat-canvas-container').trigger('keydown', { keyCode: keyCodeN, code: 'KeyN' }).trigger('keyup');
+            cy.get('.cvat-canvas-container').trigger('keydown', { keyCode: keyCodeN, code: 'KeyN' })
+                .trigger('keyup', { keyCode: keyCodeN, code: 'KeyN' });
             cy.get('.cvat_canvas_shape').then(($shape) => {
                 expect($shape.length).to.be.equal(4);
             });

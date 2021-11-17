@@ -195,9 +195,9 @@ context('Object make a copy.', () => {
             cy.get('body').type('{ctrl}', { release: false }); // Hold
             cy.get('body')
                 .trigger('keydown', { keyCode: keyCodeC, code: 'KeyC', ctrlKey: true })
-                .trigger('keyup')
+                .trigger('keyup', { keyCode: keyCodeC, code: 'KeyC', ctrlKey: true })
                 .trigger('keydown', { keyCode: keyCodeV, code: 'KeyV', ctrlKey: true })
-                .trigger('keyup');
+                .trigger('keyup', { keyCode: keyCodeC, code: 'KeyC', ctrlKey: true });
             cy.get('.cvat-canvas-container').click(400, 300);
             cy.get('.cvat-canvas-container').click(500, 300);
             cy.get('body').type('{ctrl}'); // Unhold

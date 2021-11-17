@@ -47,7 +47,9 @@ context('The points of the previous polygon mustn\'t appear while polygon\'s int
             cy.get('#cvat_canvas_shape_1')
                 .trigger('mousemove', { force: true })
                 .trigger('keydown', { keyCode: keyCodeN, code: 'KeyN', shiftKey: true })
-                .trigger('keyup', { force: true }, { keyCode: keyCodeN, code: 'KeyN', shiftKey: true });
+                .trigger('keyup', {
+                    force: true, keyCode: keyCodeN, code: 'KeyN', shiftKey: true
+                });
             cy.createPolygon(reDrawPolygonTrack);
         });
         it('Activate auto bordering mode', () => {

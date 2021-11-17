@@ -81,7 +81,8 @@ context('Autoborder feature.', () => {
             cy.get('body').type('{Ctrl}'); // Autoborder activation
             testAutoborderPointsCount(8); // 8 points at the rectangles
             cy.get('.cvat-canvas-container').click(400, 350).click(450, 250).click(500, 350).click(500, 450);
-            cy.get('.cvat-canvas-container').trigger('keydown', { keyCode: keyCodeN, code: 'KeyN' }).trigger('keyup');
+            cy.get('.cvat-canvas-container').trigger('keydown', { keyCode: keyCodeN, code: 'KeyN' })
+                .trigger('keyup', { keyCode: keyCodeN, code: 'KeyN' });
             cy.get('.cvat_canvas_autoborder_point').should('not.exist');
 
             // Collect the polygon points coordinates
@@ -99,7 +100,8 @@ context('Autoborder feature.', () => {
                 .click(550, 500)
                 .click(600, 450)
                 .click(600, 350);
-            cy.get('.cvat-canvas-container').trigger('keydown', { keyCode: keyCodeN, code: 'KeyN' }).trigger('keyup');
+            cy.get('.cvat-canvas-container').trigger('keydown', { keyCode: keyCodeN, code: 'KeyN' })
+                .trigger('keyup', { keyCode: keyCodeN, code: 'KeyN' });
             cy.get('.cvat_canvas_autoborder_point').should('not.exist');
 
             // Collect the polygon points coordinates
