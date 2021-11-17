@@ -929,6 +929,12 @@ export class CanvasViewImpl implements CanvasView, Listener {
         }
     };
 
+    private onMouseUp = (event: MouseEvent): void => {
+        if (event.button === 0 || event.button === 1) {
+            this.controller.disableDrag();
+        }
+    };
+
     public constructor(model: CanvasModel & Master, controller: CanvasController) {
         this.controller = controller;
         this.geometry = controller.geometry;
@@ -1100,14 +1106,9 @@ export class CanvasViewImpl implements CanvasView, Listener {
             }
         });
 
-        window.document.addEventListener('mouseup', (event): void => {
-            if (event.button === 0 || event.button === 1) {
-                this.controller.disableDrag();
-            }
-        });
-
-        window.addEventListener('keydown', this.onShiftKeyDown);
-        window.addEventListener('keyup', this.onShiftKeyUp);
+        window.document.addEventListener('mouseup', this.onMouseUp);
+        window.document.addEventListener('keydown', this.onShiftKeyDown);
+        window.document.addEventListener('keyup', this.onShiftKeyUp);
 
         this.content.addEventListener('wheel', (event): void => {
             if (event.ctrlKey) return;
@@ -1423,8 +1424,9 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 }),
             );
 
-            window.removeEventListener('keydown', this.onShiftKeyDown);
-            window.removeEventListener('keyup', this.onShiftKeyUp);
+            window.document.removeEventListener('keydown', this.onShiftKeyDown);
+            window.document.removeEventListener('keyup', this.onShiftKeyUp);
+            window.document.removeEventListener('mouseup', this.onMouseUp);
             this.interactionHandler.destroy();
         }
 

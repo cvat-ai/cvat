@@ -460,8 +460,8 @@ export class InteractionHandlerImpl implements InteractionHandler {
             }
         });
 
-        window.addEventListener('keyup', this.onKeyUp);
-        window.addEventListener('keydown', this.onKeyDown);
+        window.document.addEventListener('keyup', this.onKeyUp);
+        window.document.addEventListener('keydown', this.onKeyDown);
     }
 
     public transform(geometry: Geometry): void {
@@ -544,7 +544,7 @@ export class InteractionHandlerImpl implements InteractionHandler {
     }
 
     public destroy(): void {
-        window.removeEventListener('keyup', this.onKeyUp);
-        window.removeEventListener('keydown', this.onKeyDown);
+        window.document.removeEventListener('keyup', this.onKeyUp);
+        window.document.removeEventListener('keydown', this.onKeyDown);
     }
 }
