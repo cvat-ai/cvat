@@ -85,6 +85,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
     private interactionHandler: InteractionHandler;
     private activeElement: ActiveElement;
     private configuration: Configuration;
+    private snapToAngleResize: number;
     private serviceFlags: {
         drawHidden: Record<number, boolean>;
     };
@@ -774,12 +775,11 @@ export class CanvasViewImpl implements CanvasView, Listener {
             if (e.button !== 0) return;
             e.preventDefault();
 
-            const pointID = Array.prototype.indexOf.call(
-                ((e.target as HTMLElement).parentElement as HTMLElement).children,
-                e.target,
-            );
-
             if (this.activeElement.clientID !== null) {
+                const pointID = Array.prototype.indexOf.call(
+                    ((e.target as HTMLElement).parentElement as HTMLElement).children,
+                    e.target,
+                );
                 const [state] = this.controller.objects.filter(
                     (_state: any): boolean => _state.clientID === this.activeElement.clientID,
                 );
@@ -918,6 +918,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         };
         this.configuration = model.configuration;
         this.mode = Mode.IDLE;
+        this.snapToAngleResize = consts.SNAP_TO_ANGLE_RESIZE_DEFAULT;
         this.serviceFlags = {
             drawHidden: {},
         };
@@ -1080,6 +1081,33 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 this.controller.disableDrag();
             }
         });
+
+        const onShiftKeyDown = (e: KeyboardEvent): void => {
+            if (!e.repeat && e.key.toLowerCase() === 'shift') {
+                this.snapToAngleResize = consts.SNAP_TO_ANGLE_RESIZE_SHIFT;
+                if (this.activeElement) {
+                    const shape = this.svgShapes[this.activeElement.clientID];
+                    if (shape && shape.hasClass('cvat_canvas_shape_activated')) {
+                        (shape as any).resize({ snapToAngle: this.snapToAngleResize });
+                    }
+                }
+            }
+        };
+
+        const onShiftKeyUp = (e: KeyboardEvent): void => {
+            if (e.key.toLowerCase() === 'shift' && this.activeElement) {
+                this.snapToAngleResize = consts.SNAP_TO_ANGLE_RESIZE_DEFAULT;
+                if (this.activeElement) {
+                    const shape = this.svgShapes[this.activeElement.clientID];
+                    if (shape && shape.hasClass('cvat_canvas_shape_activated')) {
+                        (shape as any).resize({ snapToAngle: this.snapToAngleResize });
+                    }
+                }
+            }
+        };
+
+        window.addEventListener('keydown', onShiftKeyDown);
+        window.addEventListener('keyup', onShiftKeyUp);
 
         this.content.addEventListener('wheel', (event): void => {
             if (event.ctrlKey) return;
@@ -1898,7 +1926,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         (shape as any)
             .resize({
                 snapToGrid: 0.1,
-                snapToAngle: 0.1,
+                snapToAngle: this.snapToAngleResize,
             })
             .on('resizestart', (): void => {
                 this.mode = Mode.RESIZE;
@@ -1927,7 +1955,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 this.mode = Mode.IDLE;
 
                 if (resized) {
-                    let rotation = Math.round(shape.transform().rotation || 0);
+                    let rotation = shape.transform().rotation || 0;
 
                     // be sure, that rotation in range [0; 360]
                     while (rotation < 0) rotation += 360;
