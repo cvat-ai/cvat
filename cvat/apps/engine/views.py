@@ -1338,6 +1338,7 @@ class CloudStorageViewSet(auth.CloudStorageGetQuerySetMixin, viewsets.ModelViewS
     )
     @action(detail=True, methods=['GET'], url_path='content')
     def content(self, request, pk):
+        storage = None
         try:
             db_storage = CloudStorageModel.objects.get(pk=pk)
             credentials = Credentials()
@@ -1382,7 +1383,7 @@ class CloudStorageViewSet(auth.CloudStorageGetQuerySetMixin, viewsets.ModelViewS
             return Response(data=msg, status=status.HTTP_404_NOT_FOUND)
         except Exception as ex:
             # check that cloud storage was not deleted
-            storage_status = storage.get_status()
+            storage_status = storage.get_status() if storage else None
             if storage_status == Status.FORBIDDEN:
                 msg = 'The resource {} is no longer available. Access forbidden.'.format(storage.name)
             elif storage_status == Status.NOT_FOUND:
@@ -1401,6 +1402,7 @@ class CloudStorageViewSet(auth.CloudStorageGetQuerySetMixin, viewsets.ModelViewS
     )
     @action(detail=True, methods=['GET'], url_path='preview')
     def preview(self, request, pk):
+        storage = None
         try:
             db_storage = CloudStorageModel.objects.get(pk=pk)
             if not os.path.exists(db_storage.get_preview_path()):
@@ -1459,7 +1461,7 @@ class CloudStorageViewSet(auth.CloudStorageGetQuerySetMixin, viewsets.ModelViewS
             return HttpResponseNotFound(message)
         except Exception as ex:
             # check that cloud storage was not deleted
-            storage_status = storage.get_status()
+            storage_status = storage.get_status() if storage else None
             if storage_status == Status.FORBIDDEN:
                 msg = 'The resource {} is no longer available. Access forbidden.'.format(storage.name)
             elif storage_status == Status.NOT_FOUND:
