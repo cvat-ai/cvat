@@ -194,9 +194,9 @@ context('Object make a copy.', () => {
                 .should('have.class', 'cvat_canvas_shape_activated');
             cy.get('body').type('{ctrl}', { release: false }); // Hold
             cy.get('body')
-                .trigger('keydown', { keyCode: keyCodeC, ctrlKey: true })
+                .trigger('keydown', { keyCode: keyCodeC, code: 'KeyC', ctrlKey: true })
                 .trigger('keyup')
-                .trigger('keydown', { keyCode: keyCodeV, ctrlKey: true })
+                .trigger('keydown', { keyCode: keyCodeV, code: 'KeyV', ctrlKey: true })
                 .trigger('keyup');
             cy.get('.cvat-canvas-container').click(400, 300);
             cy.get('.cvat-canvas-container').click(500, 300);
