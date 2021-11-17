@@ -903,6 +903,13 @@ export class CanvasViewImpl implements CanvasView, Listener {
         if (handler && handler.nested) {
             handler.nested.fill(shape.attr('fill'));
         }
+
+        const [rotationPoint] = window.document.getElementsByClassName('svg_select_points_rot');
+        if (rotationPoint && !rotationPoint.children.length) {
+            const title = document.createElementNS('http://www.w3.org/2000/svg', 'title');
+            title.textContent = 'Hold Shift to snap angle';
+            rotationPoint.appendChild(title);
+        }
     }
 
     private onShiftKeyDown = (e: KeyboardEvent): void => {
@@ -918,7 +925,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
     };
 
     private onShiftKeyUp = (e: KeyboardEvent): void => {
-        if (e.code.toLowerCase() === 'shift' && this.activeElement) {
+        if (e.code.toLowerCase().includes('shift') && this.activeElement) {
             this.snapToAngleResize = consts.SNAP_TO_ANGLE_RESIZE_DEFAULT;
             if (this.activeElement) {
                 const shape = this.svgShapes[this.activeElement.clientID];
