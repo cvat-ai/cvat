@@ -905,6 +905,30 @@ export class CanvasViewImpl implements CanvasView, Listener {
         }
     }
 
+    private onShiftKeyDown = (e: KeyboardEvent): void => {
+        if (!e.repeat && e.key.toLowerCase() === 'shift') {
+            this.snapToAngleResize = consts.SNAP_TO_ANGLE_RESIZE_SHIFT;
+            if (this.activeElement) {
+                const shape = this.svgShapes[this.activeElement.clientID];
+                if (shape && shape.hasClass('cvat_canvas_shape_activated')) {
+                    (shape as any).resize({ snapToAngle: this.snapToAngleResize });
+                }
+            }
+        }
+    };
+
+    private onShiftKeyUp = (e: KeyboardEvent): void => {
+        if (e.key.toLowerCase() === 'shift' && this.activeElement) {
+            this.snapToAngleResize = consts.SNAP_TO_ANGLE_RESIZE_DEFAULT;
+            if (this.activeElement) {
+                const shape = this.svgShapes[this.activeElement.clientID];
+                if (shape && shape.hasClass('cvat_canvas_shape_activated')) {
+                    (shape as any).resize({ snapToAngle: this.snapToAngleResize });
+                }
+            }
+        }
+    };
+
     public constructor(model: CanvasModel & Master, controller: CanvasController) {
         this.controller = controller;
         this.geometry = controller.geometry;
@@ -1082,32 +1106,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
             }
         });
 
-        const onShiftKeyDown = (e: KeyboardEvent): void => {
-            if (!e.repeat && e.key.toLowerCase() === 'shift') {
-                this.snapToAngleResize = consts.SNAP_TO_ANGLE_RESIZE_SHIFT;
-                if (this.activeElement) {
-                    const shape = this.svgShapes[this.activeElement.clientID];
-                    if (shape && shape.hasClass('cvat_canvas_shape_activated')) {
-                        (shape as any).resize({ snapToAngle: this.snapToAngleResize });
-                    }
-                }
-            }
-        };
-
-        const onShiftKeyUp = (e: KeyboardEvent): void => {
-            if (e.key.toLowerCase() === 'shift' && this.activeElement) {
-                this.snapToAngleResize = consts.SNAP_TO_ANGLE_RESIZE_DEFAULT;
-                if (this.activeElement) {
-                    const shape = this.svgShapes[this.activeElement.clientID];
-                    if (shape && shape.hasClass('cvat_canvas_shape_activated')) {
-                        (shape as any).resize({ snapToAngle: this.snapToAngleResize });
-                    }
-                }
-            }
-        };
-
-        window.addEventListener('keydown', onShiftKeyDown);
-        window.addEventListener('keyup', onShiftKeyUp);
+        window.addEventListener('keydown', this.onShiftKeyDown);
+        window.addEventListener('keyup', this.onShiftKeyUp);
 
         this.content.addEventListener('wheel', (event): void => {
             if (event.ctrlKey) return;
@@ -1422,9 +1422,10 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     cancelable: true,
                 }),
             );
-            // We can't call namespaced svgjs event
-            // see - https://svgjs.dev/docs/2.7/events/
-            this.adoptedContent.fire('destroy');
+
+            window.removeEventListener('keydown', this.onShiftKeyDown);
+            window.removeEventListener('keyup', this.onShiftKeyUp);
+            this.interactionHandler.destroy();
         }
 
         if (model.imageBitmap && [UpdateReasons.IMAGE_CHANGED, UpdateReasons.OBJECTS_UPDATED].includes(reason)) {
