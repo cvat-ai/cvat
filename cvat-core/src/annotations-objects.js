@@ -1063,6 +1063,7 @@
                 {
                     frame,
                     outside,
+                    rotation: current.rotation,
                     zOrder: current.zOrder,
                     points: current.points,
                     occluded: current.occluded,
@@ -1092,6 +1093,7 @@
                 {
                     frame,
                     occluded,
+                    rotation: current.rotation,
                     zOrder: current.zOrder,
                     points: current.points,
                     outside: current.outside,
@@ -1121,6 +1123,7 @@
                 {
                     frame,
                     zOrder,
+                    rotation: current.rotation,
                     occluded: current.occluded,
                     points: current.points,
                     outside: current.outside,
@@ -1153,6 +1156,7 @@
             const redoShape = keyframe ?
                 {
                     frame,
+                    rotation: current.rotation,
                     zOrder: current.zOrder,
                     points: current.points,
                     outside: current.outside,
