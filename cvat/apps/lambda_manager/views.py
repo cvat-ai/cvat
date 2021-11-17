@@ -1,3 +1,7 @@
+# Copyright (C) 2021 Intel Corporation
+#
+# SPDX-License-Identifier: MIT
+
 import base64
 import json
 from functools import wraps
@@ -381,27 +385,31 @@ class LambdaJob:
                 break
 
             for anno in annotations:
-                label_id = labels.get(anno["label"])
-                if label_id is None:
+                label = labels.get(anno["label"])
+                if label is None:
                     continue # Invalid label provided
                 if anno["type"].lower() == "tag":
                     results.append_tag({
                         "frame": frame,
-                        "label_id": label_id,
+                        "label_id": label['id'],
                         "source": "auto",
                         "attributes": [],
                         "group": None,
                     })
                 else:
+                    if anno.get('attributes'):
+                        attrs = [{'spec_id': label['attributes'][attr['name']], 'value': attr['value']} for attr in anno.get('attributes') if attr['name'] in label['attributes']]
+                    else:
+                        attrs = []
                     results.append_shape({
                         "frame": frame,
-                        "label_id": label_id,
+                        "label_id": label['id'],
                         "type": anno["type"],
                         "occluded": False,
                         "points": anno["points"],
                         "z_order": 0,
                         "group": None,
-                        "attributes": anno.get('attributes', []),
+                        "attributes": attrs,
                         "source": "auto"
                     })
 
@@ -512,7 +520,11 @@ class LambdaJob:
         if cleanup:
             dm.task.delete_task_data(db_task.id)
         db_labels = (db_task.project.label_set if db_task.project_id else db_task.label_set).prefetch_related("attributespec_set").all()
-        labels = {db_label.name:db_label.id for db_label in db_labels}
+        labels = {}
+        for label in db_labels:
+            labels[label.name] = {'id':label.id, 'attributes': {}}
+            for attr in label.attributespec_set.values():
+                labels[label.name]['attributes'][attr['name']] = attr['id']
 
         if function.kind == LambdaType.DETECTOR:
             LambdaJob._call_detector(function, db_task, labels, quality,
