@@ -146,6 +146,7 @@ export enum UpdateReasons {
     ZOOM_CANVAS = 'zoom_canvas',
     CONFIG_UPDATED = 'config_updated',
     DATA_FAILED = 'data_failed',
+    DESTROY = 'destroy',
 }
 
 export enum Mode {
@@ -210,6 +211,7 @@ export interface CanvasModel {
     isAbleToChangeFrame(): boolean;
     configure(configuration: Configuration): void;
     cancel(): void;
+    destroy(): void;
 }
 
 export class CanvasModelImpl extends MasterImpl implements CanvasModel {
@@ -683,6 +685,10 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
 
     public cancel(): void {
         this.notify(UpdateReasons.CANCEL);
+    }
+
+    public destroy(): void {
+        this.notify(UpdateReasons.DESTROY);
     }
 
     public get configuration(): Configuration {
