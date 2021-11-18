@@ -11,7 +11,6 @@ jest.mock('../../src/server-proxy', () => {
 // Initialize api
 window.cvat = require('../../src/api');
 
-const { Task } = require('../../src/session');
 const { Project } = require('../../src/project');
 
 describe('Feature: get projects', () => {
@@ -33,8 +32,8 @@ describe('Feature: get projects', () => {
         expect(result).toHaveLength(1);
         expect(result[0]).toBeInstanceOf(Project);
         expect(result[0].id).toBe(2);
-        expect(result[0].tasks_ids).toHaveLength(1);
-        expect(result[0].tasks_ids[0]).toBeInstanceOf(Task);
+        expect(result[0].tasks).toHaveLength(1);
+        expect(typeof result[0].tasks[0]).toBe('number');
     });
 
     test('get a project by an unknown id', async () => {
