@@ -237,14 +237,6 @@
 
             checkExclusiveFields(filter, ['id', 'search'], ['page']);
 
-            if (typeof filter.withoutTasks === 'undefined') {
-                if (typeof filter.id === 'undefined') {
-                    filter.withoutTasks = true;
-                } else {
-                    filter.withoutTasks = false;
-                }
-            }
-
             const searchParams = new URLSearchParams();
             for (const field of ['name', 'assignee', 'owner', 'search', 'status', 'id', 'page']) {
                 if (Object.prototype.hasOwnProperty.call(filter, field)) {
