@@ -38,7 +38,7 @@ const defaultState: AnnotationState = {
             pointID: null,
             clientID: null,
         },
-        instance: new Canvas(),
+        instance: null,
         ready: false,
         activeControl: ActiveControl.CURSOR,
     },
@@ -166,7 +166,9 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 activeShapeType = ShapeType.CUBOID;
             }
 
-            state.canvas.instance.destroy();
+            if (state.canvas.instance) {
+                state.canvas.instance.destroy();
+            }
 
             return {
                 ...state,
@@ -705,7 +707,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 canvas: { activeControl, instance },
             } = state;
 
-            if (activeControl !== ActiveControl.CURSOR || instance.mode() !== CanvasMode.IDLE) {
+            if (activeControl !== ActiveControl.CURSOR || (instance as Canvas | Canvas3d).mode() !== CanvasMode.IDLE) {
                 return state;
             }
 
@@ -929,7 +931,6 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     ...state.annotations,
                     history,
                     states,
-                    selectedStatesID: [],
                     activatedStateID: null,
                     collapsed: {},
                 },
@@ -1223,6 +1224,9 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
         }
         case AnnotationActionTypes.CLOSE_JOB:
         case AuthActionTypes.LOGOUT_SUCCESS: {
+            if (state.canvas.instance) {
+                state.canvas.instance.destroy();
+            }
             return { ...defaultState };
         }
         default: {

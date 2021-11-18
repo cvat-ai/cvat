@@ -11,7 +11,7 @@ context('Redraw feature.', () => {
     const createRectangleShape2Points = {
         points: 'By 2 Points',
         type: 'Shape',
-        labelName: labelName,
+        labelName,
         firstX: 150,
         firstY: 350,
         secondX: 250,
@@ -20,7 +20,7 @@ context('Redraw feature.', () => {
     const createCuboidShape2Points = {
         points: 'From rectangle',
         type: 'Shape',
-        labelName: labelName,
+        labelName,
         firstX: 300,
         firstY: 350,
         secondX: 400,
@@ -29,7 +29,7 @@ context('Redraw feature.', () => {
     const createPolygonShape = {
         reDraw: false,
         type: 'Shape',
-        labelName: labelName,
+        labelName,
         pointsMap: [
             { x: 450, y: 350 },
             { x: 550, y: 350 },
@@ -40,7 +40,7 @@ context('Redraw feature.', () => {
     };
     const createPolylinesShape = {
         type: 'Shape',
-        labelName: labelName,
+        labelName,
         pointsMap: [
             { x: 600, y: 350 },
             { x: 700, y: 350 },
@@ -51,7 +51,7 @@ context('Redraw feature.', () => {
     };
     const createPointsShape = {
         type: 'Shape',
-        labelName: labelName,
+        labelName,
         pointsMap: [{ x: 750, y: 400 }],
         complete: true,
         numberOfPoints: null,
@@ -67,7 +67,7 @@ context('Redraw feature.', () => {
             cy.createRectangle(createRectangleShape2Points);
             cy.get('.cvat-canvas-container').trigger('mousemove', 200, 400);
             cy.get('#cvat_canvas_shape_1').should('have.class', 'cvat_canvas_shape_activated');
-            cy.get('body').trigger('keydown', { keyCode: keyCodeN, shiftKey: true }); // Start redraw the rectangle
+            cy.get('body').trigger('keydown', { keyCode: keyCodeN, code: 'KeyN', shiftKey: true }); // Start redraw the rectangle
             cy.get('.cvat-canvas-container')
                 .click(createRectangleShape2Points.firstX, createRectangleShape2Points.firstY - 50)
                 .click(createRectangleShape2Points.secondX, createRectangleShape2Points.secondY - 50);
@@ -83,11 +83,12 @@ context('Redraw feature.', () => {
             cy.createPolygon(createPolygonShape);
             cy.get('.cvat-canvas-container').trigger('mousemove', 520, 400);
             cy.get('#cvat_canvas_shape_2').should('have.class', 'cvat_canvas_shape_activated');
-            cy.get('body').trigger('keydown', { keyCode: keyCodeN, shiftKey: true }); // Start redraw the polygon
+            cy.get('body').trigger('keydown', { keyCode: keyCodeN, code: 'KeyN', shiftKey: true }); // Start redraw the polygon
             createPolygonShape.pointsMap.forEach((element) => {
                 cy.get('.cvat-canvas-container').click(element.x, element.y - 50);
             });
-            cy.get('.cvat-canvas-container').trigger('keydown', { keyCode: keyCodeN }).trigger('keyup');
+            cy.get('.cvat-canvas-container').trigger('keydown', { keyCode: keyCodeN, code: 'KeyN' })
+                .trigger('keyup', { keyCode: keyCodeN, code: 'KeyN' });
             cy.get('.cvat_canvas_shape').then(($shape) => {
                 expect($shape.length).to.be.equal(2);
             });
@@ -100,11 +101,12 @@ context('Redraw feature.', () => {
             cy.createPolyline(createPolylinesShape);
             cy.get('.cvat-canvas-container').trigger('mousemove', 700, 400);
             cy.get('#cvat_canvas_shape_3').should('have.class', 'cvat_canvas_shape_activated');
-            cy.get('body').trigger('keydown', { keyCode: keyCodeN, shiftKey: true }); // Start redraw the polyline
+            cy.get('body').trigger('keydown', { keyCode: keyCodeN, code: 'KeyN', shiftKey: true }); // Start redraw the polyline
             createPolylinesShape.pointsMap.forEach((element) => {
                 cy.get('.cvat-canvas-container').click(element.x, element.y - 50);
             });
-            cy.get('.cvat-canvas-container').trigger('keydown', { keyCode: keyCodeN }).trigger('keyup');
+            cy.get('.cvat-canvas-container').trigger('keydown', { keyCode: keyCodeN, code: 'KeyN' })
+                .trigger('keyup', { keyCode: keyCodeN, code: 'KeyN' });
             cy.get('.cvat_canvas_shape').then(($shape) => {
                 expect($shape.length).to.be.equal(3);
             });
@@ -116,11 +118,12 @@ context('Redraw feature.', () => {
         it('Draw and redraw a point.', () => {
             cy.createPoint(createPointsShape);
             cy.get('.cvat-canvas-container').trigger('mousemove', 750, 400);
-            cy.get('body').trigger('keydown', { keyCode: keyCodeN, shiftKey: true }); // Start redraw the point
+            cy.get('body').trigger('keydown', { keyCode: keyCodeN, code: 'KeyN', shiftKey: true }); // Start redraw the point
             createPointsShape.pointsMap.forEach((element) => {
                 cy.get('.cvat-canvas-container').click(element.x, element.y - 50);
             });
-            cy.get('.cvat-canvas-container').trigger('keydown', { keyCode: keyCodeN }).trigger('keyup');
+            cy.get('.cvat-canvas-container').trigger('keydown', { keyCode: keyCodeN, code: 'KeyN' })
+                .trigger('keyup', { keyCode: keyCodeN, code: 'KeyN' });
             cy.get('.cvat_canvas_shape').then(($shape) => {
                 expect($shape.length).to.be.equal(4);
             });
@@ -133,18 +136,18 @@ context('Redraw feature.', () => {
             cy.createCuboid(createCuboidShape2Points);
             cy.get('.cvat-canvas-container').trigger('mousemove', 350, 400);
             cy.get('#cvat_canvas_shape_5').should('have.class', 'cvat_canvas_shape_activated');
-            cy.get('body').trigger('keydown', { keyCode: keyCodeN, shiftKey: true }); // Start redraw the cuboid
+            cy.get('body').trigger('keydown', { keyCode: keyCodeN, code: 'KeyN', shiftKey: true }); // Start redraw the cuboid
             cy.get('.cvat-canvas-container')
                 .click(createCuboidShape2Points.firstX, createCuboidShape2Points.firstY - 50)
                 .click(createCuboidShape2Points.secondX, createCuboidShape2Points.secondY - 50);
             // Check issue 3219. Press "N" during the redrawing of the cuboid
             cy.get('.cvat-canvas-container').trigger('mousemove', 350, 300);
             cy.get('#cvat_canvas_shape_5').should('have.class', 'cvat_canvas_shape_activated');
-            cy.get('body').trigger('keydown', { keyCode: keyCodeN, shiftKey: true }); // Start redraw the cuboid
+            cy.get('body').trigger('keydown', { keyCode: keyCodeN, code: 'KeyN', shiftKey: true }); // Start redraw the cuboid
             cy.get('.cvat-canvas-container')
                 .click(createCuboidShape2Points.firstX, createCuboidShape2Points.firstY - 100)
                 .trigger('mousemove', createCuboidShape2Points.secondX, createCuboidShape2Points.secondY - 100);
-            cy.get('body').trigger('keydown', { keyCode: keyCodeN });
+            cy.get('body').trigger('keydown', { keyCode: keyCodeN, code: 'KeyN' });
             cy.get('.cvat_canvas_shape_drawing').should('not.exist');
             cy.get('.cvat_canvas_shape').then(($shape) => {
                 expect($shape.length).to.be.equal(5);

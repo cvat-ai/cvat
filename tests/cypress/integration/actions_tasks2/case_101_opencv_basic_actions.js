@@ -11,7 +11,7 @@ context('OpenCV. Intelligent scissors. Histogram Equalization.', () => {
     const caseId = '101';
     const newLabel = `Case ${caseId}`;
     const createOpencvShape = {
-        labelName: labelName,
+        labelName,
         pointsMap: [
             { x: 200, y: 200 },
             { x: 250, y: 200 },
@@ -74,9 +74,9 @@ context('OpenCV. Intelligent scissors. Histogram Equalization.', () => {
                 cy.get('.cvat-approx-poly-threshold-wrapper')
                     .find('[role="slider"]')
                     .type(generateString(4, 'rightarrow'));
-                cy.get('.cvat_canvas_interact_intermediate_shape').then((intermediateShape) => {
+                cy.get('.cvat_canvas_interact_intermediate_shape').then((_intermediateShape) => {
                     // Get count of points againe
-                    const intermediateShapeNumberPointsAfterChange = intermediateShape.attr('points').split(' ').length;
+                    const intermediateShapeNumberPointsAfterChange = _intermediateShape.attr('points').split(' ').length;
                     // expected 7 to be below 10
                     expect(intermediateShapeNumberPointsBeforeChange).to.be.lt(
                         intermediateShapeNumberPointsAfterChange,
@@ -152,12 +152,12 @@ context('OpenCV. Intelligent scissors. Histogram Equalization.', () => {
                 .trigger('mousemove')
                 .trigger('mouseover')
                 .should('have.class', 'cvat_canvas_shape_activated');
-            cy.get('body').trigger('keydown', { keyCode: keyCodeN, shiftKey: true }).trigger('keyup');
+            cy.get('body').trigger('keydown', { keyCode: keyCodeN, code: 'KeyN', shiftKey: true }).trigger('keyup');
             cy.get('.cvat-tools-control').should('have.attr', 'tabindex');
             createOpencvShape.pointsMap.forEach((el) => {
                 cy.get('.cvat-canvas-container').click(el.x + 150, el.y + 50);
             });
-            cy.get('body').trigger('keydown', { keyCode: keyCodeN }).trigger('keyup');
+            cy.get('body').trigger('keydown', { keyCode: keyCodeN, code: 'KeyN' }).trigger('keyup');
         });
     });
 });

@@ -15,6 +15,7 @@ from cvat.apps.dataset_manager.bindings import (GetCVATDataExtractor,
     find_dataset_root, import_dm_annotations, match_dm_item)
 from cvat.apps.dataset_manager.util import make_zip_archive
 
+from .transformations import RotatedBoxesToPolygons
 from .registry import dm_env, exporter, importer
 
 
@@ -40,6 +41,7 @@ def find_item_ids(path):
 def _export(dst_file, task_data, save_images=False):
     dataset = Dataset.from_extractors(GetCVATDataExtractor(
         task_data, include_images=save_images), env=dm_env)
+    dataset.transform(RotatedBoxesToPolygons)
     dataset.transform('polygons_to_masks')
     dataset.transform('merge_instance_segments')
 

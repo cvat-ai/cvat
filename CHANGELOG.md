@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add LFW format (<https://github.com/openvinotoolkit/cvat/pull/3770>)
 - Add Cityscapes format (<https://github.com/openvinotoolkit/cvat/pull/3758>)
 - Add Open Images V6 format (<https://github.com/openvinotoolkit/cvat/pull/3679>)
+- Rotated bounding boxes (<https://github.com/openvinotoolkit/cvat/pull/3832>)
 
 ### Changed
 - TDB

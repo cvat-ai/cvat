@@ -215,6 +215,11 @@ def dump_as_cvat_annotation(dumper, annotations):
                     ("xbr", "{:.2f}".format(shape.points[2])),
                     ("ybr", "{:.2f}".format(shape.points[3]))
                 ]))
+
+                if shape.rotation:
+                    dump_data.update(OrderedDict([
+                        ("rotation", "{:.2f}".format(shape.rotation))
+                    ]))
             elif shape.type == "cuboid":
                 dump_data.update(OrderedDict([
                     ("xtl1", "{:.2f}".format(shape.points[0])),
@@ -338,6 +343,11 @@ def dump_as_cvat_interpolation(dumper, annotations):
                     ("xbr", "{:.2f}".format(shape.points[2])),
                     ("ybr", "{:.2f}".format(shape.points[3])),
                 ]))
+
+                if shape.rotation:
+                    dump_data.update(OrderedDict([
+                        ("rotation", "{:.2f}".format(shape.rotation))
+                    ]))
             elif shape.type == "cuboid":
                 dump_data.update(OrderedDict([
                     ("xtl1", "{:.2f}".format(shape.points[0])),
@@ -417,6 +427,7 @@ def dump_as_cvat_interpolation(dumper, annotations):
             'shapes': [annotations.TrackedShape(
                 type=shape.type,
                 points=shape.points,
+                rotation=shape.rotation,
                 occluded=shape.occluded,
                 outside=False,
                 keyframe=True,
@@ -428,6 +439,7 @@ def dump_as_cvat_interpolation(dumper, annotations):
             [annotations.TrackedShape(
                 type=shape.type,
                 points=shape.points,
+                rotation=shape.rotation,
                 occluded=shape.occluded,
                 outside=True,
                 keyframe=True,
@@ -511,6 +523,7 @@ def load(file_object, annotations):
                 shape['type'] = 'rectangle' if el.tag == 'box' else el.tag
                 shape['occluded'] = el.attrib['occluded'] == '1'
                 shape['z_order'] = int(el.attrib.get('z_order', 0))
+                shape['rotation'] = float(el.attrib.get('rotation', 0))
 
                 if el.tag == 'box':
                     shape['points'].append(el.attrib['xtl'])
