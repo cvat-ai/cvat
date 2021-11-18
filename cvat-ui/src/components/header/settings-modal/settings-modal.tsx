@@ -11,12 +11,13 @@ import Modal from 'antd/lib/modal/Modal';
 import Button from 'antd/lib/button';
 import notification from 'antd/lib/notification';
 import Tooltip from 'antd/lib/tooltip';
-import { PlayCircleOutlined, LaptopOutlined } from '@ant-design/icons';
+import { PlayCircleOutlined, LaptopOutlined, TeamOutlined } from '@ant-design/icons';
 
 import { setSettings } from 'actions/settings-actions';
 import WorkspaceSettingsContainer from 'containers/header/settings-modal/workspace-settings';
 import PlayerSettingsContainer from 'containers/header/settings-modal/player-settings';
 import { CombinedState } from 'reducers/interfaces';
+import OrganizationSettingsComponent from './organization-settings';
 
 interface SettingsModalProps {
     visible: boolean;
@@ -112,10 +113,21 @@ const SettingsModal = (props: SettingsModalProps): JSX.Element => {
                     >
                         <WorkspaceSettingsContainer />
                     </Tabs.TabPane>
+                    <Tabs.TabPane
+                        tab={(
+                            <span>
+                                <TeamOutlined />
+                                <Text>Organization</Text>
+                            </span>
+                        )}
+                        key='organization'
+                    >
+                        <OrganizationSettingsComponent />
+                    </Tabs.TabPane>
                 </Tabs>
             </div>
         </Modal>
     );
 };
 
-export default SettingsModal;
+export default React.memo(SettingsModal);

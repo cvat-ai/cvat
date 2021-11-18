@@ -17,10 +17,7 @@ import Icon, {
     QuestionCircleOutlined,
     CaretDownOutlined,
     ControlOutlined,
-    TeamOutlined,
-    PlusOutlined,
     UserOutlined,
-    ExpandAltOutlined,
 } from '@ant-design/icons';
 import Layout from 'antd/lib/layout';
 import Button from 'antd/lib/button';
@@ -73,7 +70,6 @@ interface StateToProps {
     isModelsPluginActive: boolean;
     isGitPluginActive: boolean;
     organizationsFetching: boolean;
-    organizationsList: any[];
     currentOrganization: any | null;
 }
 
@@ -96,7 +92,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         about: { server, packageVersion },
         shortcuts: { normalizedKeyMap },
         settings: { showDialog: settingsDialogShown },
-        organizations: { fetching: organizationsFetching, list: organizationsList, current: currentOrganization },
+        organizations: { fetching: organizationsFetching, current: currentOrganization },
     } = state;
 
     return {
@@ -127,7 +123,6 @@ function mapStateToProps(state: CombinedState): StateToProps {
         isAnalyticsPluginActive: list.ANALYTICS,
         isModelsPluginActive: list.MODELS,
         isGitPluginActive: list.GIT_INTEGRATION,
-        organizationsList,
         organizationsFetching,
         currentOrganization,
     };
@@ -158,7 +153,6 @@ function HeaderContainer(props: Props): JSX.Element {
         isAnalyticsPluginActive,
         isModelsPluginActive,
         organizationsFetching,
-        organizationsList,
         currentOrganization,
     } = props;
 
@@ -270,81 +264,7 @@ function HeaderContainer(props: Props): JSX.Element {
         </Menu>
     );
 
-    enum OrganizationMenuKeys {
-        CREATE = 'create',
-        OPEN = 'open',
-        LIST = 'list',
-    }
-
     const notInOrganizationTitle = 'Personal workspace';
-    const organizationMenu = (
-        <Menu className='cvat-header-menu'>
-            <Menu.Item
-                key={OrganizationMenuKeys.CREATE}
-                onClick={() => {
-                    history.push('/organizations/create');
-                }}
-            >
-                <PlusOutlined />
-                <Text strong>Create</Text>
-            </Menu.Item>
-            {currentOrganization ? (
-                <Menu.Item
-                    key={OrganizationMenuKeys.OPEN}
-                    onClick={(): void => {
-                        history.push('/organization');
-                    }}
-                >
-                    <ExpandAltOutlined />
-                    Open
-                </Menu.Item>
-            ) : null}
-            {organizationsList.length ? (
-                <Menu.ItemGroup title='Your organizations' key={OrganizationMenuKeys.LIST}>
-                    <Menu.Item
-                        key='$notInOrganization'
-                        onClick={() => {
-                            localStorage.removeItem('currentOrganization');
-                            if (/\d+$/.test(window.location.pathname)) {
-                                // some data are opened
-                                window.location.pathname = '/';
-                            } else {
-                                window.location.reload();
-                            }
-                        }}
-                    >
-                        <Text strong={!currentOrganization}>{notInOrganizationTitle}</Text>
-                    </Menu.Item>
-                    {organizationsList.map(
-                        (organization: any): JSX.Element => (
-                            <Menu.Item
-                                key={organization.slug}
-                                onClick={() => {
-                                    if (!currentOrganization || currentOrganization.slug !== organization.slug) {
-                                        localStorage.setItem('currentOrganization', organization.slug);
-                                        if (/\d+$/.test(window.location.pathname)) {
-                                            // some data are opened
-                                            window.location.pathname = '/';
-                                        } else {
-                                            window.location.reload();
-                                        }
-                                    }
-                                }}
-                            >
-                                <CVATTooltip overlay={organization.name}>
-                                    <Text
-                                        strong={currentOrganization && organization.slug === currentOrganization.slug}
-                                    >
-                                        {organization.slug}
-                                    </Text>
-                                </CVATTooltip>
-                            </Menu.Item>
-                        ),
-                    )}
-                </Menu.ItemGroup>
-            ) : null}
-        </Menu>
-    );
 
     return (
         <Layout.Header className='cvat-header'>
@@ -426,6 +346,8 @@ function HeaderContainer(props: Props): JSX.Element {
                         href={GITHUB_URL}
                         onClick={(event: React.MouseEvent): void => {
                             event.preventDefault();
+                            // false alarm
+                            // eslint-disable-next-line security/detect-non-literal-fs-filename
                             window.open(GITHUB_URL, '_blank');
                         }}
                     />
@@ -439,29 +361,30 @@ function HeaderContainer(props: Props): JSX.Element {
                         href={GUIDE_URL}
                         onClick={(event: React.MouseEvent): void => {
                             event.preventDefault();
+                            // false alarm
+                            // eslint-disable-next-line security/detect-non-literal-fs-filename
                             window.open(GUIDE_URL, '_blank');
                         }}
                     />
                 </CVATTooltip>
-                <Dropdown
-                    disabled={organizationsFetching}
-                    overlay={organizationMenu}
-                    className='cvat-header-menu-organization-dropdown'
-                >
-                    <span>
-                        <TeamOutlined className='cvat-header-dropdown-icon' />
+                <CVATTooltip overlay={currentOrganization ? 'Click to open organization details' : 'Select an organization in settings'}>
+                    <Button
+                        type='link'
+                        disabled={organizationsFetching}
+                        className='cvat-header-button cvat-header-organization-button'
+                        onClick={(): void => {
+                            if (currentOrganization) {
+                                history.push('/organization');
+                            }
+                        }}
+                    >
                         {currentOrganization ? (
                             <Text strong>{currentOrganization.slug}</Text>
                         ) : (
                             <Text type='secondary'>{notInOrganizationTitle}</Text>
                         )}
-                        {organizationsFetching ? (
-                            <LoadingOutlined className='cvat-header-dropdown-icon' />
-                        ) : (
-                            <CaretDownOutlined className='cvat-header-dropdown-icon' />
-                        )}
-                    </span>
-                </Dropdown>
+                    </Button>
+                </CVATTooltip>
                 <Dropdown overlay={userMenu} className='cvat-header-menu-user-dropdown'>
                     <span>
                         <UserOutlined className='cvat-header-dropdown-icon' />

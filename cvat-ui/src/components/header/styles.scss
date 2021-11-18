@@ -48,17 +48,10 @@
     margin-right: $grid-unit-size;
 }
 
-.cvat-header-menu-user-dropdown,
-.cvat-header-menu-organization-dropdown {
+.cvat-header-menu-user-dropdown {
     display: flex;
     align-items: center;
     border-left: 1px solid $border-color-1;
-
-    &.cvat-header-menu-organization-dropdown {
-        > span:nth-child(2) {
-            width: $grid-unit-size * 12;
-        }
-    }
 
     .anticon.cvat-header-dropdown-icon {
         &.anticon-caret-down {
@@ -77,6 +70,13 @@
         text-overflow: ellipsis;
         line-height: $grid-unit-size * 5;
     }
+}
+
+.cvat-header-organization-button {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    max-width: $grid-unit-size * 20;
 }
 
 .cvat-header-menu {
