@@ -34,8 +34,6 @@ describe('Feature: get projects', () => {
         expect(result[0].id).toBe(2);
         // eslint-disable-next-line no-underscore-dangle
         expect(result[0]._internalData.task_ids).toHaveLength(1);
-        // eslint-disable-next-line no-underscore-dangle
-        expect(typeof result[0]._internalData.task_ids[0]).toBe('number');
     });
 
     test('get a project by an unknown id', async () => {
