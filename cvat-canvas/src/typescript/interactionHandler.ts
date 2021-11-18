@@ -375,6 +375,27 @@ export class InteractionHandlerImpl implements InteractionHandler {
         return false;
     }
 
+    private onKeyUp = (e: KeyboardEvent): void => {
+        if (this.interactionData.enabled && e.keyCode === 17) {
+            if (this.interactionData.onChangeToolsBlockerState && !this.thresholdWasModified) {
+                this.interactionData.onChangeToolsBlockerState('keyup');
+            }
+            if (this.shouldRaiseEvent(false)) {
+                // 17 is ctrl
+                this.onInteraction(this.prepareResult(), true, false);
+            }
+        }
+    };
+
+    private onKeyDown = (e: KeyboardEvent): void => {
+        if (!e.repeat && this.interactionData.enabled && e.keyCode === 17) {
+            if (this.interactionData.onChangeToolsBlockerState && !this.thresholdWasModified) {
+                this.interactionData.onChangeToolsBlockerState('keydown');
+            }
+            this.thresholdWasModified = false;
+        }
+    };
+
     public constructor(
         onInteraction: (
             shapes: InteractionResult[] | null,
@@ -452,25 +473,12 @@ export class InteractionHandlerImpl implements InteractionHandler {
             }
         });
 
-        window.addEventListener('keyup', (e: KeyboardEvent): void => {
-            if (this.interactionData.enabled && e.keyCode === 17) {
-                if (this.interactionData.onChangeToolsBlockerState && !this.thresholdWasModified) {
-                    this.interactionData.onChangeToolsBlockerState('keyup');
-                }
-                if (this.shouldRaiseEvent(false)) {
-                    // 17 is ctrl
-                    this.onInteraction(this.prepareResult(), true, false);
-                }
-            }
-        });
+        window.addEventListener('keyup', this.onKeyUp);
+        window.addEventListener('keydown', this.onKeyDown);
 
-        window.addEventListener('keydown', (e: KeyboardEvent): void => {
-            if (!e.repeat && this.interactionData.enabled && e.keyCode === 17) {
-                if (this.interactionData.onChangeToolsBlockerState && !this.thresholdWasModified) {
-                    this.interactionData.onChangeToolsBlockerState('keydown');
-                }
-                this.thresholdWasModified = false;
-            }
+        this.canvas.on('destroy.canvas', ():void => {
+            window.removeEventListener('keyup', this.onKeyUp);
+            window.removeEventListener('keydown', this.onKeyDown);
         });
     }
 
