@@ -933,11 +933,21 @@ class CloudStorageSerializer(serializers.ModelSerializer):
             'type': instance.credentials_type,
             'value': instance.credentials,
         })
-        tmp = {k:v for k,v in validated_data.items() if k in {
+        credentials_dict = {k:v for k,v in validated_data.items() if k in {
             'key','secret_key', 'account_name', 'session_token', 'key_file_path',
             'credentials_type'
         }}
-        credentials.mapping_with_new_values(tmp)
+
+        key_file = validated_data.pop('key_file', None)
+        temporary_file = ''
+        if key_file:
+            with NamedTemporaryFile(mode='wb', prefix='cvat', delete=False) as temp_key:
+                temp_key.write(key_file.read())
+                temporary_file = temp_key.name
+            # pair (key_file, key_file_path) isn't supported by server, so only one value may be specified
+            credentials_dict['key_file_path'] = temporary_file
+
+        credentials.mapping_with_new_values(credentials_dict)
         instance.credentials = credentials.convert_to_db()
         instance.credentials_type = validated_data.get('credentials_type', instance.credentials_type)
         instance.resource = validated_data.get('resource', instance.resource)
@@ -976,6 +986,13 @@ class CloudStorageSerializer(serializers.ModelSerializer):
                         })
                 manifest_instances = [models.Manifest(filename=f, cloud_storage=instance) for f in delta_to_create]
                 models.Manifest.objects.bulk_create(manifest_instances)
+            if temporary_file:
+                # so, gcs key file is valid and we need to set correct path to the file
+                real_path_to_key_file = instance.get_key_file_path()
+                shutil.copyfile(temporary_file, real_path_to_key_file)
+                os.remove(temporary_file)
+
+                instance.credentials = real_path_to_key_file
             instance.save()
             return instance
         elif storage_status == Status.FORBIDDEN:
@@ -984,6 +1001,8 @@ class CloudStorageSerializer(serializers.ModelSerializer):
         else:
             field = 'recource'
             message = 'The resource {} not found. It may have been deleted.'.format(storage.name)
+        if temporary_file:
+            os.remove(temporary_file)
         slogger.glob.error(message)
         raise serializers.ValidationError({field: message})
 

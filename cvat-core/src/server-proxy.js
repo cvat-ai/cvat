@@ -1201,15 +1201,22 @@
                 }
             }
 
-            async function updateCloudStorage(id, cloudStorageData) {
+            async function updateCloudStorage(id, storageDetail) {
                 const { backendAPI } = config;
 
+                const storageDetailData = new FormData();
+                for (const [key, value] of Object.entries(storageDetail)) {
+                    if (Array.isArray(value)) {
+                        value.forEach((element, idx) => {
+                            storageDetailData.append(`${key}[${idx}]`, element);
+                        });
+                    } else {
+                        storageDetailData.set(key, value);
+                    }
+                }
                 try {
-                    await Axios.patch(`${backendAPI}/cloudstorages/${id}`, JSON.stringify(cloudStorageData), {
+                    await Axios.patch(`${backendAPI}/cloudstorages/${id}`, storageDetailData, {
                         proxy: config.proxy,
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
                     });
                 } catch (errorData) {
                     throw generateError(errorData);

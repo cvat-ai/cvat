@@ -368,7 +368,6 @@ class GoogleCloudStorage(_CloudStorage):
             # client library will look for credentials in the environment.
             self._storage_client = storage.Client()
 
-        # check: case with private access to public data
         self._bucket = self._storage_client.bucket(bucket_name, user_project=project)
         self._bucket_location = location
         self._prefix = prefix
