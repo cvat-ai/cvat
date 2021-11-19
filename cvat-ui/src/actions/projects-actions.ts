@@ -6,7 +6,7 @@ import { Dispatch, ActionCreator } from 'redux';
 
 import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
 import { ProjectsQuery, TasksQuery, CombinedState } from 'reducers/interfaces';
-import { getTasksAsync, updateTaskSuccess } from 'actions/tasks-actions';
+import { getTasksAsync } from 'actions/tasks-actions';
 import { getCVATStore } from 'cvat-store';
 import getCore from 'cvat-core-wrapper';
 
@@ -131,17 +131,12 @@ export function createProjectAsync(data: any): ThunkAction {
 }
 
 export function updateProjectAsync(projectInstance: any): ThunkAction {
-    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+    return async (dispatch, getState): Promise<void> => {
         try {
+            const state = getState();
             dispatch(projectActions.updateProject());
             await projectInstance.save();
-            const [project] = await cvat.projects.get({ id: projectInstance.id });
-            // TODO: Check case when a project is not available anymore after update
-            // (assignee changes assignee and project is not public)
-            dispatch(projectActions.updateProjectSuccess(project));
-            project.tasks.forEach((task: any) => {
-                dispatch(updateTaskSuccess(task, task.id));
-            });
+            dispatch(getProjectsAsync({ id: projectInstance.id }, state.projects.tasksGettingQuery));
         } catch (error) {
             let project = null;
             try {
