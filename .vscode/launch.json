@@ -193,7 +193,7 @@
             "type": "node",
             "request": "launch",
             "name": "jest debug",
-            "program": "${workspaceFolder}/cvat-core/node_modules/.bin/jest",
+            "program": "${workspaceFolder}/node_modules/.bin/jest",
             "args": [
               "--config",
               "${workspaceFolder}/cvat-core/jest.config.js"

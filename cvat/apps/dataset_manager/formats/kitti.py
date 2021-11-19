@@ -13,6 +13,7 @@ from cvat.apps.dataset_manager.bindings import (GetCVATDataExtractor,
     ProjectData, import_dm_annotations)
 from cvat.apps.dataset_manager.util import make_zip_archive
 
+from .transformations import RotatedBoxesToPolygons
 from .registry import dm_env, exporter, importer
 from .utils import make_colormap
 
@@ -23,6 +24,7 @@ def _export(dst_file, instance_data, save_images=False):
         include_images=save_images), env=dm_env)
 
     with TemporaryDirectory() as tmp_dir:
+        dataset.transform(RotatedBoxesToPolygons)
         dataset.transform('polygons_to_masks')
         dataset.transform('merge_instance_segments')
         dataset.export(tmp_dir, format='kitti',
