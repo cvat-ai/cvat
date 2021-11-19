@@ -451,7 +451,7 @@
     CloudStorage.prototype.save.implementation = async function () {
         function prepareOptionalFields(cloudStorageInstance) {
             const data = {};
-            if (cloudStorageInstance.description) {
+            if (cloudStorageInstance.description !== undefined) {
                 data.description = cloudStorageInstance.description;
             }
 
@@ -479,7 +479,7 @@
                 data.key_file = cloudStorageInstance.keyFile;
             }
 
-            if (cloudStorageInstance.specificAttributes) {
+            if (cloudStorageInstance.specificAttributes !== undefined) {
                 data.specific_attributes = cloudStorageInstance.specificAttributes;
             }
             return data;
