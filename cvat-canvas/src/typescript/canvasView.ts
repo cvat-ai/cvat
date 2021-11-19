@@ -31,6 +31,7 @@ import {
     vectorLength,
     ShapeSizeElement,
     DrawnState,
+    rotate2DPoints,
 } from './shared';
 import {
     CanvasModel,
@@ -85,6 +86,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
     private interactionHandler: InteractionHandler;
     private activeElement: ActiveElement;
     private configuration: Configuration;
+    private snapToAngleResize: number;
     private serviceFlags: {
         drawHidden: Record<number, boolean>;
     };
@@ -110,6 +112,39 @@ export class CanvasViewImpl implements CanvasView, Listener {
     private translateFromCanvas(points: number[]): number[] {
         const { offset } = this.controller.geometry;
         return points.map((coord: number): number => coord - offset);
+    }
+
+    private translatePointsFromRotatedShape(shape: SVG.Shape, points: number[]): number[] {
+        const { rotation } = shape.transform();
+        // currently shape is rotated and shifted somehow additionally (css transform property)
+        // let's remove rotation to get correct transformation matrix (element -> screen)
+        // correct means that we do not consider points to be rotated
+        // because rotation property is stored separately and already saved
+        shape.rotate(0);
+        const result = [];
+
+        try {
+            // get each point and apply a couple of matrix transformation to it
+            const point = this.content.createSVGPoint();
+            // matrix to convert from ELEMENT file system to CLIENT coordinate system
+            const ctm = ((shape.node as any) as SVGRectElement | SVGPolygonElement | SVGPolylineElement).getScreenCTM();
+            // matrix to convert from CLIENT coordinate system to CANVAS coordinate system
+            const ctm1 = this.content.getScreenCTM().inverse();
+            // NOTE: I tried to use element.getCTM(), but this way does not work on firefox
+
+            for (let i = 0; i < points.length; i += 2) {
+                point.x = points[i];
+                point.y = points[i + 1];
+                let transformedPoint = point.matrixTransform(ctm);
+                transformedPoint = transformedPoint.matrixTransform(ctm1);
+
+                result.push(transformedPoint.x, transformedPoint.y);
+            }
+        } finally {
+            shape.rotate(rotation);
+        }
+
+        return result;
     }
 
     private stringifyToCanvas(points: number[]): string {
@@ -199,7 +234,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         }
     }
 
-    private onDrawDone(data: object | null, duration: number, continueDraw?: boolean): void {
+    private onDrawDone(data: any | null, duration: number, continueDraw?: boolean): void {
         const hiddenBecauseOfDraw = Object.keys(this.serviceFlags.drawHidden).map((_clientID): number => +_clientID);
         if (hiddenBecauseOfDraw.length) {
             for (const hidden of hiddenBecauseOfDraw) {
@@ -256,7 +291,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         }
     }
 
-    private onEditDone(state: any, points: number[]): void {
+    private onEditDone(state: any, points: number[], rotation?: number): void {
         if (state && points) {
             const event: CustomEvent = new CustomEvent('canvas.edited', {
                 bubbles: false,
@@ -264,6 +299,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 detail: {
                     state,
                     points,
+                    rotation: typeof rotation === 'number' ? rotation : state.rotation,
                 },
             });
 
@@ -388,7 +424,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
     }
 
     private onFindObject(e: MouseEvent): void {
-        if (e.which === 1 || e.which === 0) {
+        if (e.button === 0) {
             const { offset } = this.controller.geometry;
             const [x, y] = translateToSVG(this.content, [e.clientX, e.clientY]);
             const event: CustomEvent = new CustomEvent('canvas.find', {
@@ -483,7 +519,10 @@ export class CanvasViewImpl implements CanvasView, Listener {
         this.gridPath.setAttribute('stroke-width', `${consts.BASE_GRID_WIDTH / this.geometry.scale}px`);
 
         // Transform all shape points
-        for (const element of window.document.getElementsByClassName('svg_select_points')) {
+        for (const element of [
+            ...window.document.getElementsByClassName('svg_select_points'),
+            ...window.document.getElementsByClassName('svg_select_points_rot'),
+        ]) {
             element.setAttribute('stroke-width', `${consts.POINTS_STROKE_WIDTH / this.geometry.scale}`);
             element.setAttribute('r', `${consts.BASE_POINT_SIZE / this.geometry.scale}`);
         }
@@ -744,12 +783,11 @@ export class CanvasViewImpl implements CanvasView, Listener {
             if (e.button !== 0) return;
             e.preventDefault();
 
-            const pointID = Array.prototype.indexOf.call(
-                ((e.target as HTMLElement).parentElement as HTMLElement).children,
-                e.target,
-            );
-
             if (this.activeElement.clientID !== null) {
+                const pointID = Array.prototype.indexOf.call(
+                    ((e.target as HTMLElement).parentElement as HTMLElement).children,
+                    e.target,
+                );
                 const [state] = this.controller.objects.filter(
                     (_state: any): boolean => _state.clientID === this.activeElement.clientID,
                 );
@@ -821,13 +859,12 @@ export class CanvasViewImpl implements CanvasView, Listener {
             e.preventDefault();
         };
 
-        const getGeometry = (): Geometry => this.geometry;
-
         if (value) {
+            const getGeometry = (): Geometry => this.geometry;
             (shape as any).selectize(value, {
                 deepSelect: true,
                 pointSize: (2 * consts.BASE_POINT_SIZE) / this.geometry.scale,
-                rotationPoint: false,
+                rotationPoint: shape.type === 'rect',
                 pointType(cx: number, cy: number): SVG.Circle {
                     const circle: SVG.Circle = this.nested
                         .circle(this.options.pointSize)
@@ -874,7 +911,44 @@ export class CanvasViewImpl implements CanvasView, Listener {
         if (handler && handler.nested) {
             handler.nested.fill(shape.attr('fill'));
         }
+
+        const [rotationPoint] = window.document.getElementsByClassName('svg_select_points_rot');
+        if (rotationPoint && !rotationPoint.children.length) {
+            const title = document.createElementNS('http://www.w3.org/2000/svg', 'title');
+            title.textContent = 'Hold Shift to snap angle';
+            rotationPoint.appendChild(title);
+        }
     }
+
+    private onShiftKeyDown = (e: KeyboardEvent): void => {
+        if (!e.repeat && e.code.toLowerCase().includes('shift')) {
+            this.snapToAngleResize = consts.SNAP_TO_ANGLE_RESIZE_SHIFT;
+            if (this.activeElement) {
+                const shape = this.svgShapes[this.activeElement.clientID];
+                if (shape && shape.hasClass('cvat_canvas_shape_activated')) {
+                    (shape as any).resize({ snapToAngle: this.snapToAngleResize });
+                }
+            }
+        }
+    };
+
+    private onShiftKeyUp = (e: KeyboardEvent): void => {
+        if (e.code.toLowerCase().includes('shift') && this.activeElement) {
+            this.snapToAngleResize = consts.SNAP_TO_ANGLE_RESIZE_DEFAULT;
+            if (this.activeElement) {
+                const shape = this.svgShapes[this.activeElement.clientID];
+                if (shape && shape.hasClass('cvat_canvas_shape_activated')) {
+                    (shape as any).resize({ snapToAngle: this.snapToAngleResize });
+                }
+            }
+        }
+    };
+
+    private onMouseUp = (event: MouseEvent): void => {
+        if (event.button === 0 || event.button === 1) {
+            this.controller.disableDrag();
+        }
+    };
 
     public constructor(model: CanvasModel & Master, controller: CanvasController) {
         this.controller = controller;
@@ -889,6 +963,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         };
         this.configuration = model.configuration;
         this.mode = Mode.IDLE;
+        this.snapToAngleResize = consts.SNAP_TO_ANGLE_RESIZE_DEFAULT;
         this.serviceFlags = {
             drawHidden: {},
         };
@@ -1046,11 +1121,9 @@ export class CanvasViewImpl implements CanvasView, Listener {
             }
         });
 
-        window.document.addEventListener('mouseup', (event): void => {
-            if (event.which === 1 || event.which === 2) {
-                this.controller.disableDrag();
-            }
-        });
+        window.document.addEventListener('mouseup', this.onMouseUp);
+        window.document.addEventListener('keydown', this.onShiftKeyDown);
+        window.document.addEventListener('keyup', this.onShiftKeyUp);
 
         this.content.addEventListener('wheel', (event): void => {
             if (event.ctrlKey) return;
@@ -1365,9 +1438,11 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     cancelable: true,
                 }),
             );
-            // We can't call namespaced svgjs event
-            // see - https://svgjs.dev/docs/2.7/events/
-            this.adoptedContent.fire('destroy');
+
+            window.document.removeEventListener('keydown', this.onShiftKeyDown);
+            window.document.removeEventListener('keyup', this.onShiftKeyUp);
+            window.document.removeEventListener('mouseup', this.onMouseUp);
+            this.interactionHandler.destroy();
         }
 
         if (model.imageBitmap && [UpdateReasons.IMAGE_CHANGED, UpdateReasons.OBJECTS_UPDATED].includes(reason)) {
@@ -1387,6 +1462,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         const states = this.controller.objects;
 
         const ctx = this.bitmap.getContext('2d');
+        ctx.imageSmoothingEnabled = false;
         if (ctx) {
             ctx.fillStyle = 'black';
             ctx.fillRect(0, 0, width, height);
@@ -1394,31 +1470,34 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 if (state.hidden || state.outside) continue;
                 ctx.fillStyle = 'white';
                 if (['rectangle', 'polygon', 'cuboid'].includes(state.shapeType)) {
-                    let points = [];
+                    let points = [...state.points];
                     if (state.shapeType === 'rectangle') {
-                        points = [
-                            state.points[0], // xtl
-                            state.points[1], // ytl
-                            state.points[2], // xbr
-                            state.points[1], // ytl
-                            state.points[2], // xbr
-                            state.points[3], // ybr
-                            state.points[0], // xtl
-                            state.points[3], // ybr
-                        ];
+                        points = rotate2DPoints(
+                            points[0] + (points[2] - points[0]) / 2,
+                            points[1] + (points[3] - points[1]) / 2,
+                            state.rotation,
+                            [
+                                points[0], // xtl
+                                points[1], // ytl
+                                points[2], // xbr
+                                points[1], // ytl
+                                points[2], // xbr
+                                points[3], // ybr
+                                points[0], // xtl
+                                points[3], // ybr
+                            ],
+                        );
                     } else if (state.shapeType === 'cuboid') {
                         points = [
-                            state.points[0],
-                            state.points[1],
-                            state.points[4],
-                            state.points[5],
-                            state.points[8],
-                            state.points[9],
-                            state.points[12],
-                            state.points[13],
+                            points[0],
+                            points[1],
+                            points[4],
+                            points[5],
+                            points[8],
+                            points[9],
+                            points[12],
+                            points[13],
                         ];
-                    } else {
-                        points = [...state.points];
                     }
                     ctx.beginPath();
                     ctx.moveTo(points[0], points[1]);
@@ -1464,6 +1543,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             lock: state.lock,
             shapeType: state.shapeType,
             points: [...state.points],
+            rotation: state.rotation,
             attributes: { ...state.attributes },
             descriptions: [...state.descriptions],
             zOrder: state.zOrder,
@@ -1523,6 +1603,11 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 this.activate(activeElement);
             }
 
+            if (drawnState.rotation) {
+                // need to rotate it back before changing points
+                shape.untransform();
+            }
+
             if (
                 state.points.length !== drawnState.points.length ||
                 state.points.some((p: number, id: number): boolean => p !== drawnState.points[id])
@@ -1550,6 +1635,11 @@ export class CanvasViewImpl implements CanvasView, Listener {
                         this.setupPoints(shape as SVG.PolyLine, state);
                     }
                 }
+            }
+
+            if (state.rotation) {
+                // now, when points changed, need to rotate it to new angle
+                shape.rotate(state.rotation);
             }
 
             const stateDescriptions = state.descriptions;
@@ -1802,17 +1892,25 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     const p1 = e.detail.handler.startPoints.point;
                     const p2 = e.detail.p;
                     const delta = 1;
-                    const { offset } = this.controller.geometry;
                     const dx2 = (p1.x - p2.x) ** 2;
                     const dy2 = (p1.y - p2.y) ** 2;
                     if (Math.sqrt(dx2 + dy2) >= delta) {
-                        const points = pointsToNumberArray(
+                        // these points does not take into account possible transformations, applied on the element
+                        // so, if any (like rotation) we need to map them to canvas coordinate space
+                        let points = pointsToNumberArray(
                             shape.attr('points') || `${shape.attr('x')},${shape.attr('y')} ` +
-                            `${shape.attr('x') + shape.attr('width')},` +
-                            `${shape.attr('y') + shape.attr('height')}`,
-                        ).map((x: number): number => x - offset);
+                                `${shape.attr('x') + shape.attr('width')},${shape.attr('y') + shape.attr('height')}`,
+                        );
 
-                        this.drawnStates[state.clientID].points = points;
+                        // let's keep current points, but they could be rewritten in updateObjects
+                        this.drawnStates[clientID].points = this.translateFromCanvas(points);
+
+                        const { rotation } = shape.transform();
+                        if (rotation) {
+                            points = this.translatePointsFromRotatedShape(shape, points);
+                        }
+
+                        points = this.translateFromCanvas(points);
                         this.canvas.dispatchEvent(
                             new CustomEvent('canvas.dragshape', {
                                 bubbles: false,
@@ -1850,6 +1948,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         (shape as any)
             .resize({
                 snapToGrid: 0.1,
+                snapToAngle: this.snapToAngleResize,
             })
             .on('resizestart', (): void => {
                 this.mode = Mode.RESIZE;
@@ -1869,6 +1968,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             .on('resizedone', (): void => {
                 if (shapeSizeElement) {
                     shapeSizeElement.rm();
+                    shapeSizeElement = null;
                 }
 
                 showDirection();
@@ -1877,15 +1977,27 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 this.mode = Mode.IDLE;
 
                 if (resized) {
-                    const { offset } = this.controller.geometry;
+                    let rotation = shape.transform().rotation || 0;
 
-                    const points = pointsToNumberArray(
+                    // be sure, that rotation in range [0; 360]
+                    while (rotation < 0) rotation += 360;
+                    rotation %= 360;
+
+                    // these points does not take into account possible transformations, applied on the element
+                    // so, if any (like rotation) we need to map them to canvas coordinate space
+                    let points = pointsToNumberArray(
                         shape.attr('points') || `${shape.attr('x')},${shape.attr('y')} ` +
-                        `${shape.attr('x') + shape.attr('width')},` +
-                        `${shape.attr('y') + shape.attr('height')}`,
-                    ).map((x: number): number => x - offset);
+                            `${shape.attr('x') + shape.attr('width')},${shape.attr('y') + shape.attr('height')}`,
+                    );
 
-                    this.drawnStates[state.clientID].points = points;
+                    // let's keep current points, but they could be rewritten in updateObjects
+                    this.drawnStates[clientID].points = this.translateFromCanvas(points);
+                    this.drawnStates[clientID].rotation = rotation;
+                    if (rotation) {
+                        points = this.translatePointsFromRotatedShape(shape, points);
+                    }
+
+                    // points = this.translateFromCanvas(points);
                     this.canvas.dispatchEvent(
                         new CustomEvent('canvas.resizeshape', {
                             bubbles: false,
@@ -1895,7 +2007,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                             },
                         }),
                     );
-                    this.onEditDone(state, points);
+                    this.onEditDone(state, this.translateFromCanvas(points), rotation);
                 }
             });
 
@@ -1938,6 +2050,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
     // Update text position after corresponding box has been moved, resized, etc.
     private updateTextPosition(text: SVG.Text, shape: SVG.Shape): void {
         if (text.node.style.display === 'none') return; // wrong transformation matrix
+        const { rotation } = shape.transform();
         let box = (shape.node as any).getBBox();
 
         // Translate the whole box to the client coordinate system
@@ -1965,13 +2078,19 @@ export class CanvasViewImpl implements CanvasView, Listener {
         }
 
         // Translate back to text SVG
-        const [x, y]: number[] = translateToSVG(this.text, [
+        const [x, y, cx, cy]: number[] = translateToSVG(this.text, [
             clientX + consts.TEXT_MARGIN,
             clientY + consts.TEXT_MARGIN,
+            x1 + (x2 - x1) / 2,
+            y1 + (y2 - y1) / 2,
         ]);
 
         // Finally draw a text
         text.move(x, y);
+        if (rotation) {
+            text.rotate(rotation, cx, cy);
+        }
+
         for (const tspan of (text.lines() as any).members) {
             tspan.attr('x', text.attr('x'));
         }
@@ -2032,6 +2151,10 @@ export class CanvasViewImpl implements CanvasView, Listener {
             })
             .move(xtl, ytl)
             .addClass('cvat_canvas_shape');
+
+        if (state.rotation) {
+            rect.rotate(state.rotation);
+        }
 
         if (state.occluded) {
             rect.addClass('cvat_canvas_shape_occluded');

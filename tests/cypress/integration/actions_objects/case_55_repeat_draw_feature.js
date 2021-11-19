@@ -11,7 +11,7 @@ context('Repeat draw feature.', () => {
     const createRectangleShape2Points = {
         points: 'By 2 Points',
         type: 'Shape',
-        labelName: labelName,
+        labelName,
         firstX: 150,
         firstY: 350,
         secondX: 250,
@@ -20,7 +20,7 @@ context('Repeat draw feature.', () => {
     const createCuboidShape2Points = {
         points: 'From rectangle',
         type: 'Shape',
-        labelName: labelName,
+        labelName,
         firstX: 300,
         firstY: 350,
         secondX: 400,
@@ -29,7 +29,7 @@ context('Repeat draw feature.', () => {
     const createPolygonShape = {
         redraw: false,
         type: 'Shape',
-        labelName: labelName,
+        labelName,
         pointsMap: [
             { x: 450, y: 350 },
             { x: 550, y: 350 },
@@ -40,7 +40,7 @@ context('Repeat draw feature.', () => {
     };
     const createPolylinesShape = {
         type: 'Shape',
-        labelName: labelName,
+        labelName,
         pointsMap: [
             { x: 600, y: 350 },
             { x: 700, y: 350 },
@@ -51,7 +51,7 @@ context('Repeat draw feature.', () => {
     };
     const createPointsShape = {
         type: 'Shape',
-        labelName: labelName,
+        labelName,
         pointsMap: [{ x: 750, y: 400 }],
         complete: true,
         numberOfPoints: null,
@@ -69,11 +69,12 @@ context('Repeat draw feature.', () => {
     }
 
     function repeatDrawningStart() {
-        cy.get('body').trigger('keydown', { keyCode: keyCodeN });
+        cy.get('body').trigger('keydown', { keyCode: keyCodeN, code: 'KeyN' });
     }
 
     function repeatDrawningFinish() {
-        cy.get('.cvat-canvas-container').trigger('keydown', { keyCode: keyCodeN }).trigger('keyup');
+        cy.get('.cvat-canvas-container').trigger('keydown', { keyCode: keyCodeN, code: 'KeyN' })
+            .trigger('keyup', { keyCode: keyCodeN, code: 'KeyN' });
     }
 
     before(() => {
