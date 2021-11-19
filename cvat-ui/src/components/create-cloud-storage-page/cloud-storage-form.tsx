@@ -54,6 +54,7 @@ interface CloudStorageForm {
 
 export default function CreateCloudStorageForm(props: Props): JSX.Element {
     const { cloudStorage } = props;
+    const cloudStorageId = (cloudStorage) ? cloudStorage.id : null;
     const dispatch = useDispatch();
     const history = useHistory();
     const [form] = Form.useForm();
@@ -188,7 +189,7 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
     }, [updatedCloudStorageId]);
 
     useEffect(() => {
-        if (cloudStorage && cloudStorage.credentialsType !== CredentialsType.ANONYMOUS_ACCESS) {
+        if (cloudStorageId && cloudStorage.credentialsType !== CredentialsType.ANONYMOUS_ACCESS) {
             notification.info({
                 message: `For security reasons, your credentials are hidden and represented by fake values
                     that will not be taken into account when updating the cloud storage.
@@ -197,7 +198,7 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
                 duration: 15,
             });
         }
-    }, [cloudStorage]);
+    }, [cloudStorageId]);
 
     const onSubmit = async (): Promise<void> => {
         let cloudStorageData: Record<string, any> = {};
