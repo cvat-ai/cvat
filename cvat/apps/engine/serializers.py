@@ -853,6 +853,8 @@ class CloudStorageSerializer(serializers.ModelSerializer):
             with NamedTemporaryFile(mode='wb', prefix='cvat', delete=False) as temp_key:
                 temp_key.write(key_file.read())
                 temporary_file = temp_key.name
+            key_file.close()
+            del key_file
         credentials = Credentials(
             account_name=validated_data.pop('account_name', ''),
             key=validated_data.pop('key', ''),
@@ -946,6 +948,8 @@ class CloudStorageSerializer(serializers.ModelSerializer):
                 temporary_file = temp_key.name
             # pair (key_file, key_file_path) isn't supported by server, so only one value may be specified
             credentials_dict['key_file_path'] = temporary_file
+            key_file.close()
+            del key_file
 
         credentials.mapping_with_new_values(credentials_dict)
         instance.credentials = credentials.convert_to_db()
