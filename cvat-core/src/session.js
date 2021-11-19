@@ -1017,6 +1017,7 @@
                 copy_data: undefined,
                 dimension: undefined,
                 cloud_storage_id: undefined,
+                sorting_method: undefined,
             };
 
             const updatedFields = new FieldUpdateTrigger({
@@ -1549,6 +1550,16 @@
                     cloudStorageId: {
                         get: () => data.cloud_storage_id,
                     },
+                    sortingMethod: {
+                        /**
+                         * @name enabled
+                         * @type {string}
+                         * @memberof module:API.cvat.enums.SortingMethod
+                         * @instance
+                         * @readonly
+                         */
+                        get: () => data.sorting_method,
+                    },
                     _internalData: {
                         get: () => data,
                     },
@@ -2061,6 +2072,7 @@
             image_quality: this.imageQuality,
             use_zip_chunks: this.useZipChunks,
             use_cache: this.useCache,
+            sorting_method: this.sortingMethod,
         };
 
         if (typeof this.startFrame !== 'undefined') {
@@ -2080,6 +2092,9 @@
         }
         if (typeof this.cloudStorageId !== 'undefined') {
             taskDataSpec.cloud_storage_id = this.cloudStorageId;
+        }
+        if (typeof this.sortingMethod !== 'undefined') {
+            taskDataSpec.sorting_method = this.sortingMethod;
         }
 
         const task = await serverProxy.tasks.createTask(taskSpec, taskDataSpec, onUpdate);

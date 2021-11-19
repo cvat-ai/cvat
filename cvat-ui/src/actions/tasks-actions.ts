@@ -383,6 +383,9 @@ export function createTaskAsync(data: any): ThunkAction<Promise<void>, {}, {}, A
         if (data.advanced.copyData) {
             description.copy_data = data.advanced.copyData;
         }
+        if (data.advanced.sortingMethod) {
+            description.sorting_method = data.advanced.sortingMethod;
+        }
         if (data.subset) {
             description.subset = data.subset;
         }

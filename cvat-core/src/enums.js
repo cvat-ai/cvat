@@ -363,6 +363,24 @@
         ANONYMOUS_ACCESS: 'ANONYMOUS_ACCESS',
     });
 
+    /**
+     * Sorting methods
+     * @enum {string}
+     * @name SortingMethods
+     * @memberof module:API.cvat.enums
+     * @property {string} DEFAULT 'DEFAULT'
+     * @property {string} CUSTOM 'CUSTOM'
+     * @property {string} RANDOM 'RANDOM'
+     * @property {string} REVERSED 'REVERSED'
+     * @readonly
+     */
+    const SortingMethods = Object.freeze({
+        DEFAULT: 'DEFAULT',
+        CUSTOM: 'CUSTOM',
+        RANDOM: 'RANDOM',
+        REVERSED: 'REVERSED',
+    });
+
     module.exports = {
         ShareFileType,
         TaskStatus,
@@ -380,5 +398,6 @@
         DimensionType,
         CloudStorageProviderType,
         CloudStorageCredentialsType,
+        SortingMethods,
     };
 })();

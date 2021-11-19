@@ -274,12 +274,13 @@ class DataSerializer(serializers.ModelSerializer):
     use_cache = serializers.BooleanField(default=False)
     copy_data = serializers.BooleanField(default=False)
     cloud_storage_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)
+    sorting_method = serializers.CharField(required=False, default=models.SortingMethods.DEFAULT)
 
     class Meta:
         model = models.Data
         fields = ('chunk_size', 'size', 'image_quality', 'start_frame', 'stop_frame', 'frame_filter',
             'compressed_chunk_type', 'original_chunk_type', 'client_files', 'server_files', 'remote_files', 'use_zip_chunks',
-            'cloud_storage_id', 'use_cache', 'copy_data', 'storage_method', 'storage')
+            'cloud_storage_id', 'use_cache', 'copy_data', 'storage_method', 'storage', 'sorting_method')
 
     # pylint: disable=no-self-use
     def validate_frame_filter(self, value):
@@ -306,9 +307,9 @@ class DataSerializer(serializers.ModelSerializer):
         client_files = validated_data.pop('client_files')
         server_files = validated_data.pop('server_files')
         remote_files = validated_data.pop('remote_files')
-        validated_data.pop('use_zip_chunks')
-        validated_data.pop('use_cache')
-        validated_data.pop('copy_data')
+        for extra_key in { 'use_zip_chunks', 'use_cache', 'copy_data', 'sorting_method' }:
+            validated_data.pop(extra_key)
+
         db_data = models.Data.objects.create(**validated_data)
 
         data_path = db_data.get_data_dirname()

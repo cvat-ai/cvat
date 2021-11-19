@@ -80,6 +80,19 @@ class StorageChoice(str, Enum):
     def __str__(self):
         return self.value
 
+class SortingMethods(str, Enum):
+    DEFAULT = 'DEFAULT'
+    CUSTOM = 'CUSTOM'
+    RANDOM = 'RANDOM'
+    REVERSED = 'REVERSED'
+
+    @classmethod
+    def choices(cls):
+        return tuple((x.value, x.name) for x in cls)
+
+    def __str__(self):
+        return self.value
+
 class Data(models.Model):
     chunk_size = models.PositiveIntegerField(null=True)
     size = models.PositiveIntegerField(default=0)

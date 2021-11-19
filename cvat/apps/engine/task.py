@@ -222,15 +222,13 @@ def _create_thread(tid, data, isImport=False):
     upload_dir = db_data.get_upload_dirname()
 
     if data['remote_files']:
-        if db_data.storage != models.StorageChoice.CLOUD_STORAGE:
-            data['remote_files'] = _download_data(data['remote_files'], upload_dir)
+        data['remote_files'] = _download_data(data['remote_files'], upload_dir)
 
     manifest_file = []
     media = _count_files(data, manifest_file)
     media, task_mode = _validate_data(media, manifest_file)
-    if manifest_file:
-        assert settings.USE_CACHE and db_data.storage_method == models.StorageMethodChoice.CACHE, \
-            "File with meta information can be uploaded if 'Use cache' option is also selected"
+    if manifest_file and settings.USE_CACHE and db_data.storage_method == models.StorageMethodChoice.CACHE:
+        raise Exception("File with meta information can be uploaded if 'Use cache' option is also selected")
 
     if data['server_files']:
         if db_data.storage == models.StorageChoice.LOCAL:
