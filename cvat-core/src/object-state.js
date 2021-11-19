@@ -28,6 +28,7 @@ const { Source } = require('./enums');
                 descriptions: [],
 
                 points: null,
+                rotation: null,
                 outside: null,
                 occluded: null,
                 keyframe: null,
@@ -200,6 +201,28 @@ const { Source } = require('./enums');
                                         `but got ${
                                             typeof points === 'object' ? points.constructor.name : typeof points
                                         }`,
+                                );
+                            }
+                        },
+                    },
+                    rotation: {
+                        /**
+                         * @name rotation
+                         * @type {number} angle measured by degrees
+                         * @memberof module:API.cvat.classes.ObjectState
+                         * @throws {module:API.cvat.exceptions.ArgumentError}
+                         * @instance
+                         */
+                        get: () => data.rotation,
+                        set: (rotation) => {
+                            if (typeof rotation === 'number') {
+                                data.updateFlags.points = true;
+                                data.rotation = rotation;
+                            } else {
+                                throw new ArgumentError(
+                                    `Rotation is expected to be a number, but got ${
+                                        typeof rotation === 'object' ? rotation.constructor.name : typeof points
+                                    }`,
                                 );
                             }
                         },
@@ -409,6 +432,9 @@ const { Source } = require('./enums');
             }
             if (typeof serialized.color === 'string') {
                 this.color = serialized.color;
+            }
+            if (typeof serialized.rotation === 'number') {
+                this.rotation = serialized.rotation;
             }
             if (Array.isArray(serialized.points)) {
                 this.points = serialized.points;

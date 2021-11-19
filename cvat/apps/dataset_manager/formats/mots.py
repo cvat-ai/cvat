@@ -13,6 +13,7 @@ from cvat.apps.dataset_manager.bindings import (GetCVATDataExtractor,
     find_dataset_root, match_dm_item)
 from cvat.apps.dataset_manager.util import make_zip_archive
 
+from .transformations import RotatedBoxesToPolygons
 from .registry import dm_env, exporter, importer
 
 
@@ -26,6 +27,7 @@ def _export(dst_file, instance_data, save_images=False):
     dataset = Dataset.from_extractors(GetCVATDataExtractor(
         instance_data, include_images=save_images), env=dm_env)
     dataset.transform(KeepTracks) # can only export tracks
+    dataset.transform(RotatedBoxesToPolygons)
     dataset.transform('polygons_to_masks')
     dataset.transform('boxes_to_masks')
     dataset.transform('merge_instance_segments')

@@ -137,6 +137,10 @@ polyline.cvat_canvas_shape_splitting {
     stroke-dasharray: 5;
 }
 
+.svg_select_points_rot {
+    fill: white;
+}
+
 .cvat_canvas_shape .svg_select_points,
 .cvat_canvas_shape .cvat_canvas_cuboid_projections {
     stroke-dasharray: none;
@@ -166,8 +170,9 @@ polyline.cvat_canvas_shape_splitting {
 
 .cvat_canvas_removable_interaction_point {
     cursor:
-        url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHZpZXdCb3g9IjAgMCAxMCAxMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEgMUw5IDlNMSA5TDkgMSIgc3Ryb2tlPSJibGFjayIvPgo8L3N2Zz4K')
-        10 10,
+        url(
+            'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHZpZXdCb3g9IjAgMCAxMCAxMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEgMUw5IDlNMSA5TDkgMSIgc3Ryb2tlPSJibGFjayIvPgo8L3N2Zz4K'
+        ) 10 10,
         auto;
 }
 

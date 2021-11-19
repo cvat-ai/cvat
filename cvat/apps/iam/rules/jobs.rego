@@ -106,28 +106,36 @@ filter = [] { # Django Q object to filter list of entries
 } else = qobject {
     utils.is_admin
     utils.is_organization
-    qobject := [ {"task__organization": input.auth.organization.id},
-        {"task__project__organization": input.auth.organization.id}, "|" ]
+    qobject := [
+        {"segment__task__organization": input.auth.organization.id},
+        {"segment__task__project__organization": input.auth.organization.id}, "|" ]
 } else = qobject {
     utils.is_sandbox
     user := input.auth.user
-    qobject := [ {"assignee_id": user.id},
-        {"segment__task__owner_id": user.id}, "|", {"segment__task__assignee_id": user.id}, "|",
-        {"segment__task__project__owner_id": user.id}, "|", {"segment__task__project__assignee_id": user.id}, "|"]
+    qobject := [
+        {"assignee_id": user.id},
+        {"segment__task__owner_id": user.id}, "|",
+        {"segment__task__assignee_id": user.id}, "|",
+        {"segment__task__project__owner_id": user.id}, "|",
+        {"segment__task__project__assignee_id": user.id}, "|"]
 } else = qobject {
     utils.is_organization
     utils.has_perm(utils.USER)
     organizations.has_perm(organizations.MAINTAINER)
-    qobject := [ {"task__organization": input.auth.organization.id},
-        {"task__project__organization": input.auth.organization.id}, "|" ]
+    qobject := [
+        {"segment__task__organization": input.auth.organization.id},
+        {"segment__task__project__organization": input.auth.organization.id}, "|"]
 } else = qobject {
     organizations.has_perm(organizations.WORKER)
     user := input.auth.user
-    qobject := [ {"assignee_id": user.id},
-        {"task__owner_id": user.id}, "|", {"task__assignee_id": user.id}, "|",
-        {"task__project__owner_id": user.id}, "|", {"task__project__assignee_id": user.id}, "|",
-        {"task__organization": input.auth.organization.id},
-        {"task__project__organization": input.auth.organization.id}, "|", "&"]
+    qobject := [
+        {"assignee_id": user.id},
+        {"segment__task__owner_id": user.id}, "|",
+        {"segment__task__assignee_id": user.id}, "|",
+        {"segment__task__project__owner_id": user.id}, "|",
+        {"segment__task__project__assignee_id": user.id}, "|",
+        {"segment__task__organization": input.auth.organization.id},
+        {"segment__task__project__organization": input.auth.organization.id}, "|", "&"]
 }
 
 allow {
