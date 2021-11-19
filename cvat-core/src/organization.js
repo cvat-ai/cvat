@@ -22,6 +22,10 @@ class Organization {
      * <br> It can contains keys:
      * <br> <li style="margin-left: 10px;"> name
      * <br> <li style="margin-left: 10px;"> description
+     * <br> <li style="margin-left: 10px;"> owner
+     * <br> <li style="margin-left: 10px;"> created_date
+     * <br> <li style="margin-left: 10px;"> updated_date
+     * <br> <li style="margin-left: 10px;"> contact
      */
     constructor(initialData) {
         const data = {
@@ -31,10 +35,8 @@ class Organization {
             description: undefined,
             created_date: undefined,
             updated_date: undefined,
-            company: undefined,
-            email: undefined,
             owner: undefined,
-            location: undefined,
+            contact: undefined,
         };
 
         for (const prop of Object.keys(data)) {
@@ -58,16 +60,13 @@ class Organization {
             checkObjectType('id', data.id, 'number');
         }
 
-        if (typeof data.company !== 'undefined') {
-            checkObjectType('company', data.company, 'string');
-        }
-
-        if (typeof data.email !== 'undefined') {
-            checkObjectType('email', data.email, 'string');
-        }
-
-        if (typeof data.location !== 'undefined') {
-            checkObjectType('location', data.location, 'string');
+        if (typeof data.contact !== 'undefined') {
+            checkObjectType('contact', data.contact, 'object');
+            for (const prop in data.contact) {
+                if (typeof data.contact[prop] !== 'string') {
+                    throw ArgumentError(`Contact fields must be strings, tried to set ${typeof data.contact[prop]}`);
+                }
+            }
         }
 
         if (typeof data.owner !== 'undefined') {
@@ -101,31 +100,18 @@ class Organization {
                     data.description = description;
                 },
             },
-            company: {
-                get: () => data.company,
-                set: (company) => {
-                    if (typeof company !== 'string') {
-                        throw ArgumentError(`Company property must be a string, tried to set ${typeof company}`);
+            contact: {
+                get: () => ({ ...data.contact }),
+                set: (contact) => {
+                    if (typeof contact !== 'object') {
+                        throw ArgumentError(`Contact property must be an object, tried to set ${typeof contact}`);
                     }
-                    data.company = company;
-                },
-            },
-            email: {
-                get: () => data.email,
-                set: (email) => {
-                    if (typeof email !== 'string') {
-                        throw ArgumentError(`Email property must be a string, tried to set ${typeof email}`);
+                    for (const prop in contact) {
+                        if (typeof contact[prop] !== 'string') {
+                            throw ArgumentError(`Contact fields must be strings, tried to set ${typeof contact[prop]}`);
+                        }
                     }
-                    data.email = email;
-                },
-            },
-            location: {
-                get: () => data.location,
-                set: (location) => {
-                    if (typeof location !== 'string') {
-                        throw ArgumentError(`Location property must be a string, tried to set ${typeof location}`);
-                    }
-                    data.location = location;
+                    data.contact = { ...contact };
                 },
             },
             owner: {
@@ -287,6 +273,7 @@ Organization.prototype.save.implementation = async function () {
         const organizationData = {
             name: this.name || this.slug,
             description: this.description,
+            contact: this.contact,
         };
 
         const result = await serverProxy.organizations.update(this.id, organizationData);
@@ -297,6 +284,7 @@ Organization.prototype.save.implementation = async function () {
         slug: this.slug,
         name: this.name || this.slug,
         description: this.description,
+        contact: this.contact,
     };
 
     const result = await serverProxy.organizations.create(organizationData);

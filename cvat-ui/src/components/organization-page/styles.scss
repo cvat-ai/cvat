@@ -46,6 +46,10 @@
                 font-size: 12px;
 
                 span.anticon {
+                    margin-right: $grid-unit-size;
+                }
+
+                span.anticon[aria-label=edit] {
                     margin-left: $grid-unit-size;
                 }
             }

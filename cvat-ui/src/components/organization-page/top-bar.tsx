@@ -15,7 +15,9 @@ import Form from 'antd/lib/form';
 import Select from 'antd/lib/select';
 import { useForm } from 'antd/lib/form/Form';
 import { Store } from 'antd/lib/form/interface';
-import { CloseOutlined, EditTwoTone, PlusCircleOutlined } from '@ant-design/icons';
+import {
+    CloseOutlined, EditTwoTone, EnvironmentOutlined, MailOutlined, PhoneOutlined, PlusCircleOutlined,
+} from '@ant-design/icons';
 
 import {
     inviteOrganizationMembersAsync,
@@ -33,7 +35,7 @@ export interface Props {
 function OrganizationTopBar(props: Props): JSX.Element {
     const { organizationInstance, userInstance, fetchMembers } = props;
     const {
-        owner, createdDate, description, updatedDate, slug, name,
+        owner, createdDate, description, updatedDate, slug, name, contact,
     } = organizationInstance;
     const { id: userID } = userInstance;
     const [form] = useForm();
@@ -63,6 +65,54 @@ function OrganizationTopBar(props: Props): JSX.Element {
                         >
                             {name}
                         </Text>
+                        <div>
+                            <PhoneOutlined />
+                            <Text
+                                type='secondary'
+                                editable={{
+                                    onChange: (value: string) => {
+                                        organizationInstance.contact = {
+                                            ...organizationInstance.contact, phoneNumber: value,
+                                        };
+                                    },
+                                    onEnd: () => dispatch(updateOrganizationAsync(organizationInstance)),
+                                }}
+                            >
+                                {contact.phoneNumber || 'Phone number is not specified'}
+                            </Text>
+                        </div>
+                        <div>
+                            <MailOutlined />
+                            <Text
+                                type='secondary'
+                                editable={{
+                                    onChange: (value: string) => {
+                                        organizationInstance.contact = {
+                                            ...organizationInstance.contact, email: value,
+                                        };
+                                    },
+                                    onEnd: () => dispatch(updateOrganizationAsync(organizationInstance)),
+                                }}
+                            >
+                                {contact.email || 'Email is not specified'}
+                            </Text>
+                        </div>
+                        <div>
+                            <EnvironmentOutlined />
+                            <Text
+                                type='secondary'
+                                editable={{
+                                    onChange: (value: string) => {
+                                        organizationInstance.contact = {
+                                            ...organizationInstance.contact, location: value,
+                                        };
+                                    },
+                                    onEnd: () => dispatch(updateOrganizationAsync(organizationInstance)),
+                                }}
+                            >
+                                {contact.location || 'Location is not specified'}
+                            </Text>
+                        </div>
                         {description && !editingDescription ? (
                             <span style={{ display: 'grid' }}>
                                 {description.split('\n').map((val: string, idx: number) => (
