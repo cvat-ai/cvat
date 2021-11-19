@@ -28,7 +28,7 @@ from cvat.apps.dataset_manager.formats.utils import get_label_color
 from .annotation import AnnotationIR, AnnotationManager, TrackManager
 
 
-CVAT_INTERNAL_ATTRIBUTES = {'occluded', 'outside', 'keyframe', 'track_id'}
+CVAT_INTERNAL_ATTRIBUTES = {'occluded', 'outside', 'keyframe', 'track_id', 'rotation'}
 
 class InstanceLabelData:
     Attribute = NamedTuple('Attribute', [('name', str), ('value', Any)])
