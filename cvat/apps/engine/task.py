@@ -123,14 +123,17 @@ def _count_files(data, manifest_file=None):
             raise ValueError("Bad file path: " + path)
         server_files.append(path)
 
-    server_files.sort(reverse=True)
+    sorted_server_files = sorted(server_files, reverse=True)
     # The idea of the code is trivial. After sort we will have files in the
     # following order: 'a/b/c/d/2.txt', 'a/b/c/d/1.txt', 'a/b/c/d', 'a/b/c'
     # Let's keep all items which aren't substrings of the previous item. In
     # the example above only 2.txt and 1.txt files will be in the final list.
     # Also need to correctly handle 'a/b/c0', 'a/b/c' case.
-    data['server_files'] = [v[1] for v in zip([""] + server_files, server_files)
+    without_extra_dirs = [v[1] for v in zip([""] + sorted_server_files, sorted_server_files)
         if not os.path.dirname(v[0]).startswith(v[1])]
+
+    # we need to keep the original sequence of files
+    data['server_files'] = [f for f in server_files if f in without_extra_dirs]
 
     def count_files(file_mapping, counter):
         for rel_path, full_path in file_mapping.items():
@@ -141,7 +144,7 @@ def _count_files(data, manifest_file=None):
                 manifest_file.append(rel_path)
             else:
                 slogger.glob.warn("Skip '{}' file (its mime type doesn't "
-                    "correspond to a video or an image file)".format(full_path))
+                    "correspond to supported MIME file type)".format(full_path))
 
     counter = { media_type: [] for media_type in MEDIA_TYPES.keys() }
 
@@ -212,6 +215,21 @@ def _download_data(urls, upload_dir):
 
 def _get_manifest_frame_indexer(start_frame=0, frame_step=1):
     return lambda frame_id: start_frame + frame_id * frame_step
+
+
+def sort(images, sorting_method=models.SortingMethods.DEFAULT):
+    if sorting_method == models.SortingMethods.DEFAULT:
+        return sorted(images)
+    elif sorting_method == models.SortingMethods.CUSTOM:
+        return images
+    elif sorting_method == models.SortingMethods.RANDOM:
+        from random import shuffle
+        shuffle(images)
+        return images
+    elif sorting_method == models.SortingMethods.REVERSED:
+        return sorted(images, reverse=True)
+    else:
+        raise NotImplementedError()
 
 @transaction.atomic
 def _create_thread(tid, data, isImport=False):
@@ -291,6 +309,8 @@ def _create_thread(tid, data, isImport=False):
             if extractor is not None:
                 raise Exception('Combined data types are not supported')
             source_paths=[os.path.join(upload_dir, f) for f in media_files]
+            if manifest_file and data['sorting_method'] == models.SortingMethods.RANDOM:
+                raise Exception("It isn't supported to upload manifest file and use random sorting")
             if media_type in {'archive', 'zip'} and db_data.storage == models.StorageChoice.SHARE:
                 source_paths.append(db_data.get_upload_dirname())
                 upload_dir = db_data.get_upload_dirname()
@@ -301,8 +321,10 @@ def _create_thread(tid, data, isImport=False):
                 data['stop_frame'] = None
                 db_data.frame_filter = ''
 
+            sorted_source_paths = sort(source_paths, data['sorting_method'])
+            del source_paths
             extractor = MEDIA_TYPES[media_type]['extractor'](
-                source_path=source_paths,
+                source_path=sorted_source_paths,
                 step=db_data.get_frame_step(),
                 start=db_data.start_frame,
                 stop=data['stop_frame'],

@@ -49,7 +49,7 @@ def files_to_ignore(directory):
 
 class IMediaReader(ABC):
     def __init__(self, source_path, step, start, stop, dimension):
-        self._source_path = sorted(source_path)
+        self._source_path = source_path
         self._step = step
         self._start = start
         self._stop = stop
@@ -181,7 +181,7 @@ class DirectoryReader(ImageListReader):
 class ArchiveReader(DirectoryReader):
     def __init__(self, source_path, step=1, start=0, stop=None, dimension=DimensionType.DIM_2D):
         self._archive_source = source_path[0]
-        extract_dir = source_path[1] if len(source_path) > 1 else os.path.dirname(source_path[0])
+        extract_dir = next(filter(lambda x: x.endswith('/'), source_path)) if len(source_path) > 1 else os.path.dirname(source_path[0])
         Archive(self._archive_source).extractall(extract_dir)
         if extract_dir == os.path.dirname(source_path[0]):
             os.remove(self._archive_source)
@@ -228,7 +228,7 @@ class PdfReader(ImageListReader):
 class ZipReader(ImageListReader):
     def __init__(self, source_path, step=1, start=0, stop=None, dimension=DimensionType.DIM_2D):
         self._zip_source = zipfile.ZipFile(source_path[0], mode='r')
-        self.extract_dir = source_path[1] if len(source_path) > 1 else None
+        self.extract_dir = next(filter(lambda x: x.endswith('/'), source_path)) if len(source_path) > 1 else None
         file_list = [f for f in self._zip_source.namelist() if files_to_ignore(f) and get_mime(f) == 'image']
         super().__init__(file_list, step=step, start=start, stop=stop, dimension=dimension)
 
