@@ -11,6 +11,7 @@ import {
     switchResetZoom,
     switchRotateAll,
     changeCanvasBackgroundColor,
+    switchSmoothImage,
 } from 'actions/settings-actions';
 import { CombinedState, FrameSpeed } from 'reducers/interfaces';
 
@@ -19,6 +20,7 @@ interface StateToProps {
     frameSpeed: FrameSpeed;
     resetZoom: boolean;
     rotateAll: boolean;
+    smoothImage: boolean;
     canvasBackgroundColor: string;
 }
 
@@ -28,6 +30,7 @@ interface DispatchToProps {
     onSwitchResetZoom(enabled: boolean): void;
     onSwitchRotateAll(rotateAll: boolean): void;
     onChangeCanvasBackgroundColor(color: string): void;
+    onSwitchSmoothImage(enabled: boolean): void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -54,6 +57,9 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         },
         onChangeCanvasBackgroundColor(color: string): void {
             dispatch(changeCanvasBackgroundColor(color));
+        },
+        onSwitchSmoothImage(enabled: boolean): void {
+            dispatch(switchSmoothImage(enabled));
         },
     };
 }
