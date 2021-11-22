@@ -351,6 +351,7 @@ export function createTaskAsync(data: any): ThunkAction<Promise<void>, {}, {}, A
             image_quality: 70,
             use_zip_chunks: data.advanced.useZipChunks,
             use_cache: data.advanced.useCache,
+            sorting_method: data.advanced.sortingMethod,
         };
 
         if (data.projectId) {
@@ -382,9 +383,6 @@ export function createTaskAsync(data: any): ThunkAction<Promise<void>, {}, {}, A
         }
         if (data.advanced.copyData) {
             description.copy_data = data.advanced.copyData;
-        }
-        if (data.advanced.sortingMethod) {
-            description.sorting_method = data.advanced.sortingMethod;
         }
         if (data.subset) {
             description.subset = data.subset;

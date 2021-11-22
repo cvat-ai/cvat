@@ -2093,9 +2093,6 @@
         if (typeof this.cloudStorageId !== 'undefined') {
             taskDataSpec.cloud_storage_id = this.cloudStorageId;
         }
-        if (typeof this.sortingMethod !== 'undefined') {
-            taskDataSpec.sorting_method = this.sortingMethod;
-        }
 
         const task = await serverProxy.tasks.createTask(taskSpec, taskDataSpec, onUpdate);
         return new Task(task);

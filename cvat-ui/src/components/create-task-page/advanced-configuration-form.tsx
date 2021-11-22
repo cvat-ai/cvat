@@ -17,7 +17,7 @@ import patterns from 'utils/validation-patterns';
 
 const { Option } = Select;
 
-enum SortingMethods {
+export enum SortingMethods {
     DEFAULT = 'DEFAULT',
     CUSTOM = 'CUSTOM',
     RANDOM = 'RANDOM',
@@ -199,7 +199,6 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
                         message: 'The field is required.',
                     },
                 ]}
-                initialValue={SortingMethods.DEFAULT}
             >
                 <Radio.Group>
                     <Radio value={SortingMethods.DEFAULT} key={SortingMethods.DEFAULT}>Lexicographic</Radio>

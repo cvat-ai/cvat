@@ -245,7 +245,7 @@ def _create_thread(tid, data, isImport=False):
     manifest_file = []
     media = _count_files(data, manifest_file)
     media, task_mode = _validate_data(media, manifest_file)
-    if manifest_file and settings.USE_CACHE and db_data.storage_method == models.StorageMethodChoice.CACHE:
+    if manifest_file and (not settings.USE_CACHE or db_data.storage_method != models.StorageMethodChoice.CACHE):
         raise Exception("File with meta information can be uploaded if 'Use cache' option is also selected")
 
     if data['server_files']:
