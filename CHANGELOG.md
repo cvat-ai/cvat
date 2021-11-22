@@ -26,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - Fixed Interaction handler keyboard handlers (<https://github.com/openvinotoolkit/cvat/pull/3881>)
+- Points of invisible shapes are visible in autobordering (<https://github.com/openvinotoolkit/cvat/pull/3931>)
 
 ### Security
 - TDB
