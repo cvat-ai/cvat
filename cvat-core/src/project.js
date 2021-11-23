@@ -8,6 +8,7 @@
     const { Task } = require('./session');
     const { Label } = require('./labels');
     const User = require('./user');
+    const { FieldUpdateTrigger } = require('./common');
 
     /**
      * Class representing a project
@@ -36,6 +37,14 @@
                 task_ids: undefined,
                 dimension: undefined,
             };
+
+            const updatedFields = new FieldUpdateTrigger({
+                name: false,
+                assignee: false,
+                bugTracker: false,
+                labels: false,
+                trainingProject: false,
+            });
 
             for (const property in data) {
                 if (Object.prototype.hasOwnProperty.call(data, property) && property in initialData) {
@@ -97,6 +106,7 @@
                                 throw new ArgumentError('Value must not be empty');
                             }
                             data.name = value;
+                            updatedFields.name = true;
                         },
                     },
 
@@ -125,6 +135,7 @@
                                 throw new ArgumentError('Value must be a user instance');
                             }
                             data.assignee = assignee;
+                            updatedFields.assignee = true;
                         },
                     },
                     /**
@@ -149,6 +160,7 @@
                         get: () => data.bug_tracker,
                         set: (tracker) => {
                             data.bug_tracker = tracker;
+                            updatedFields.bugTracker = true;
                         },
                     },
                     /**
@@ -210,6 +222,7 @@
                             });
 
                             data.labels = [...deletedLabels, ...labels];
+                            updatedFields.labels = true;
                         },
                     },
                     /**
@@ -257,10 +270,14 @@
                             } else {
                                 data.training_project = updatedProject;
                             }
+                            updatedFields.trainingProject = true;
                         },
                     },
                     _internalData: {
                         get: () => data,
+                    },
+                    _updatedFields: {
+                        get: () => updatedFields,
                     },
                 }),
             );

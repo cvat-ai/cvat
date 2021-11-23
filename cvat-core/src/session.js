@@ -853,7 +853,7 @@
                     task: {
                         get: () => data.task,
                     },
-                    __updatedFields: {
+                    _updatedFields: {
                         get: () => updatedFields,
                     },
                 }),
@@ -1537,7 +1537,7 @@
                     _internalData: {
                         get: () => data,
                     },
-                    __updatedFields: {
+                    _updatedFields: {
                         get: () => updatedFields,
                     },
                 }),
@@ -1707,7 +1707,7 @@
         if (this.id) {
             const jobData = {};
 
-            for (const [field, isUpdated] of Object.entries(this.__updatedFields)) {
+            for (const [field, isUpdated] of Object.entries(this._updatedFields)) {
                 if (isUpdated) {
                     switch (field) {
                         case 'state':
@@ -1727,7 +1727,7 @@
 
             await serverProxy.jobs.save(this.id, jobData);
 
-            this.__updatedFields.reset();
+            this._updatedFields.reset();
 
             return this;
         }
@@ -1963,7 +1963,7 @@
             // If the task has been already created, we update it
             const taskData = {};
 
-            for (const [field, isUpdated] of Object.entries(this.__updatedFields)) {
+            for (const [field, isUpdated] of Object.entries(this._updatedFields)) {
                 if (isUpdated) {
                     switch (field) {
                         case 'assignee':
@@ -1991,9 +1991,7 @@
             }
 
             await serverProxy.tasks.save(this.id, taskData);
-
-            this.__updatedFields.reset();
-
+            this._updatedFields.reset();
             return this;
         }
 

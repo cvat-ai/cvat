@@ -11,36 +11,49 @@
 
     function implementProject(projectClass) {
         projectClass.prototype.save.implementation = async function () {
-            const trainingProjectCopy = this.trainingProject;
             if (typeof this.id !== 'undefined') {
-                // project has been already created, need to update some data
-                const projectData = {
-                    name: this.name,
-                    assignee_id: this.assignee ? this.assignee.id : null,
-                    bug_tracker: this.bugTracker,
-                    labels: [...this._internalData.labels.map((el) => el.toJSON())],
-                };
-
-                if (trainingProjectCopy) {
-                    projectData.training_project = trainingProjectCopy;
+                const projectData = {};
+                for (const [field, isUpdated] of Object.entries(this._updatedFields)) {
+                    if (isUpdated) {
+                        switch (field) {
+                            case 'name':
+                                projectData.name = this.name;
+                                break;
+                            case 'assignee':
+                                projectData.assignee_id = this.assignee ? this.assignee.id : null;
+                                break;
+                            case 'bugTracker':
+                                projectData.bug_tracker = this.bugTracker;
+                                break;
+                            case 'labels':
+                                projectData.labels = this.labels.map((el) => el.toJSON());
+                                break;
+                            case 'trainingProject':
+                                projectData.training_project = this.trainingProject;
+                                break;
+                            default:
+                                break;
+                        }
+                    }
                 }
 
                 await serverProxy.projects.save(this.id, projectData);
+                this._updatedFields.reset();
                 return this;
             }
 
             // initial creating
             const projectSpec = {
                 name: this.name,
-                labels: [...this.labels.map((el) => el.toJSON())],
+                labels: this.labels.map((el) => el.toJSON()),
             };
 
             if (this.bugTracker) {
                 projectSpec.bug_tracker = this.bugTracker;
             }
 
-            if (trainingProjectCopy) {
-                projectSpec.training_project = trainingProjectCopy;
+            if (this.trainingProject) {
+                projectSpec.training_project = this.trainingProject;
             }
 
             const project = await serverProxy.projects.create(projectSpec);

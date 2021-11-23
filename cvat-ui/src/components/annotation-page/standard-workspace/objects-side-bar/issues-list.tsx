@@ -81,6 +81,7 @@ export default function LabelsListComponent(): JSX.Element {
                 {frameIssues.map(
                     (frameIssue: any): JSX.Element => (
                         <div
+                            key={frameIssue.id}
                             id={`cvat-objects-sidebar-issue-item-${frameIssue.id}`}
                             className='cvat-objects-sidebar-issue-item'
                             onMouseEnter={() => {
