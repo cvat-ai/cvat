@@ -369,6 +369,7 @@
      * @name SortingMethods
      * @memberof module:API.cvat.enums
      * @property {string} DEFAULT 'DEFAULT'
+     * @property {string} NATIVE 'NATIVE'
      * @property {string} CUSTOM 'CUSTOM'
      * @property {string} RANDOM 'RANDOM'
      * @property {string} REVERSED 'REVERSED'
@@ -376,6 +377,7 @@
      */
     const SortingMethods = Object.freeze({
         DEFAULT: 'DEFAULT',
+        NATIVE: 'NATIVE',
         CUSTOM: 'CUSTOM',
         RANDOM: 'RANDOM',
         REVERSED: 'REVERSED',

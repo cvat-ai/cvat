@@ -19,6 +19,7 @@ const { Option } = Select;
 
 export enum SortingMethods {
     DEFAULT = 'DEFAULT',
+    NATIVE = 'NATIVE',
     CUSTOM = 'CUSTOM',
     RANDOM = 'RANDOM',
     REVERSED = 'REVERSED',
@@ -202,6 +203,7 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
             >
                 <Radio.Group>
                     <Radio value={SortingMethods.DEFAULT} key={SortingMethods.DEFAULT}>Lexicographic</Radio>
+                    <Radio value={SortingMethods.NATIVE} key={SortingMethods.NATIVE}>Native</Radio>
                     <Radio value={SortingMethods.CUSTOM} key={SortingMethods.CUSTOM}>Custom</Radio>
                     <Radio value={SortingMethods.RANDOM} key={SortingMethods.RANDOM}>Random</Radio>
                     <Radio value={SortingMethods.REVERSED} key={SortingMethods.REVERSED}>Reversed</Radio>

@@ -82,6 +82,7 @@ class StorageChoice(str, Enum):
 
 class SortingMethods(str, Enum):
     DEFAULT = 'DEFAULT'
+    NATIVE = 'NATIVE'
     CUSTOM = 'CUSTOM'
     RANDOM = 'RANDOM'
     REVERSED = 'REVERSED'
@@ -89,10 +90,6 @@ class SortingMethods(str, Enum):
     @classmethod
     def choices(cls):
         return tuple((x.value, x.name) for x in cls)
-
-    @classmethod
-    def list(cls):
-        return list(map(lambda x: x.value, cls))
 
     def __str__(self):
         return self.value

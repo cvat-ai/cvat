@@ -220,6 +220,9 @@ def _get_manifest_frame_indexer(start_frame=0, frame_step=1):
 def sort(images, sorting_method=models.SortingMethods.DEFAULT):
     if sorting_method == models.SortingMethods.DEFAULT:
         return sorted(images)
+    elif sorting_method == models.SortingMethods.NATIVE:
+        from natsort import os_sorted
+        return os_sorted(images)
     elif sorting_method == models.SortingMethods.CUSTOM:
         return images
     elif sorting_method == models.SortingMethods.RANDOM:

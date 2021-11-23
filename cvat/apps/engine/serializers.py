@@ -274,7 +274,7 @@ class DataSerializer(serializers.ModelSerializer):
     use_cache = serializers.BooleanField(default=False)
     copy_data = serializers.BooleanField(default=False)
     cloud_storage_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)
-    sorting_method = serializers.ChoiceField(models.SortingMethods.list(), default=models.SortingMethods.DEFAULT)
+    sorting_method = serializers.ChoiceField(models.SortingMethods.choices(), default=models.SortingMethods.DEFAULT)
 
     class Meta:
         model = models.Data
