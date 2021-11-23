@@ -558,9 +558,6 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
             wrapperCol: { offset: 1 },
         };
 
-        // FIXME maxlength https://cloud.google.com/storage/docs/naming-buckets#requirements
-        // FIXME move specific_attributes into advanced section
-        // FIXME loocation https://cloud.google.com/storage/docs/locations
         return (
             <>
                 <Form.Item
@@ -569,7 +566,8 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
                     rules={[{ required: true, message: 'Please, specify a bucket name' }]}
                     {...internalCommonProps}
                 >
-                    <Input disabled={!!cloudStorage} maxLength={63} />
+                    {/* maxlength https://cloud.google.com/storage/docs/naming-buckets#requirements */}
+                    <Input disabled={!!cloudStorage} maxLength={222} />
                 </Form.Item>
                 <Form.Item
                     label='Authorization type'
