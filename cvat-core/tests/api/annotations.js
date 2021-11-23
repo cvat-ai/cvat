@@ -60,6 +60,37 @@ describe('Feature: get annotations', () => {
     // TODO: Test filter (hasn't been implemented yet)
 });
 
+describe('Feature: get interpolated annotations', () => {
+    test('get interpolated box', async () => {
+        const task = (await window.cvat.tasks.get({ id: 101 }))[0];
+        let annotations = await task.annotations.get(5);
+        expect(Array.isArray(annotations)).toBeTruthy();
+        expect(annotations).toHaveLength(1);
+
+        const [xtl, ytl, xbr, ybr] = annotations[0].points;
+        const { rotation } = annotations[0];
+
+        expect(rotation).toBe(50);
+        expect(Math.round(xtl)).toBe(332);
+        expect(Math.round(ytl)).toBe(519);
+        expect(Math.round(xbr)).toBe(651);
+        expect(Math.round(ybr)).toBe(703);
+
+        annotations = await task.annotations.get(15);
+        expect(Array.isArray(annotations)).toBeTruthy();
+        expect(annotations).toHaveLength(2); // there is also a polygon on these frames (up to frame 22)
+        expect(annotations[1].rotation).toBe(40);
+        expect(annotations[1].shapeType).toBe('rectangle');
+
+        annotations = await task.annotations.get(30);
+        annotations[0].rotation = 20;
+        await annotations[0].save();
+        annotations = await task.annotations.get(25);
+        expect(annotations[0].rotation).toBe(0);
+        expect(annotations[0].shapeType).toBe('rectangle');
+    });
+});
+
 describe('Feature: put annotations', () => {
     test('put a shape to a task', async () => {
         const task = (await window.cvat.tasks.get({ id: 101 }))[0];

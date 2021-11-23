@@ -33,7 +33,7 @@ description: 'Overview of available functions on the controls sidebar of the ann
 |-- |-- |-- |
 |![](/images/image189.jpg)|`AI Tools`|[AI Tools](/docs/manual/advanced/ai-tools/)|
 |![](/images/image201.jpg)|`OpenCV`|[OpenCV](/docs/manual/advanced/opencv-tools/)|
-|![](/images/image167.jpg)|`Rectangle`|[Shape mode](/docs/manual/basics/shape-mode-basics/); [Track mode](/docs/manual/basics/track-mode-basics/);<br/> [Drawing by 4 points](/docs/manual/advanced/annotation-with-rectangle-by-4-points/)|
+|![](/images/image167.jpg)|`Rectangle`|[Shape mode](/docs/manual/basics/shape-mode-basics/); [Track mode](/docs/manual/basics/track-mode-basics/);<br/> [Drawing by 4 points](/docs/manual/advanced/annotation-with-rectangles/)|
 |![](/images/image168.jpg)|`Polygon`|[Annotation with polygons](/docs/manual/advanced/annotation-with-polygons/); [Track mode with polygons](/docs/manual/advanced/annotation-with-polygons/track-mode-with-polygons/)|
 |![](/images/image169.jpg)|`Polyline`|[Annotation with polylines](/docs/manual/advanced/annotation-with-polylines/)|
 |![](/images/image170.jpg)|`Points`|[Annotation with points](/docs/manual/advanced/annotation-with-points/)|

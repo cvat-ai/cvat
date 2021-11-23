@@ -24,8 +24,9 @@ Cypress.Commands.add('login', (username = Cypress.env('user'), password = Cypres
     cy.url().should('match', /\/tasks$/);
     cy.document().then((doc) => {
         const loadSettingFailNotice = Array.from(doc.querySelectorAll('.cvat-notification-notice-load-settings-fail'));
-        // eslint-disable-next-line no-unused-expressions
-        loadSettingFailNotice.length > 0 ? cy.closeNotification('.cvat-notification-notice-load-settings-fail') : null;
+        if (loadSettingFailNotice.length > 0) {
+            cy.closeNotification('.cvat-notification-notice-load-settings-fail');
+        }
     });
 });
 
@@ -68,8 +69,8 @@ Cypress.Commands.add('deletingRegisteredUsers', (accountToDelete) => {
             headers: {
                 Authorization: `Token ${authKey}`,
             },
-        }).then((responseSec) => {
-            const responceResult = responseSec.body.results;
+        }).then((_response) => {
+            const responceResult = _response.body.results;
             for (const user of responceResult) {
                 const userId = user.id;
                 const userName = user.username;
@@ -217,7 +218,7 @@ Cypress.Commands.add('getJobNum', (jobID) => {
         .find('td')
         .eq(0)
         .invoke('text')
-        .then(($tdText) => Number($tdText.match(/\d+/g)) + jobID);
+        .then(($tdText) => (Number($tdText.match(/\d+/g)) + jobID));
 });
 
 Cypress.Commands.add('openJob', (jobID = 0, removeAnnotations = true, expectedFail = false) => {
@@ -343,13 +344,13 @@ Cypress.Commands.add('changeAppearance', (colorBy) => {
 Cypress.Commands.add('shapeGrouping', (firstX, firstY, lastX, lastY) => {
     const keyCodeG = 71;
     cy.get('.cvat-canvas-container')
-        .trigger('keydown', { keyCode: keyCodeG })
-        .trigger('keyup', { keyCode: keyCodeG })
+        .trigger('keydown', { keyCode: keyCodeG, code: 'KeyG' })
+        .trigger('keyup', { keyCode: keyCodeG, code: 'KeyG' })
         .trigger('mousedown', firstX, firstY, { which: 1 })
         .trigger('mousemove', lastX, lastY)
         .trigger('mouseup', lastX, lastY)
-        .trigger('keydown', { keyCode: keyCodeG })
-        .trigger('keyup', { keyCode: keyCodeG });
+        .trigger('keydown', { keyCode: keyCodeG, code: 'KeyG' })
+        .trigger('keyup', { keyCode: keyCodeG, code: 'KeyG' });
 });
 
 Cypress.Commands.add('createPolygon', (createPolygonParams) => {
@@ -711,7 +712,7 @@ Cypress.Commands.add('getObjectIdNumberByLabelName', (labelName) => {
                 cy.get(stateItemLabelSelectorList[i])
                     .parents('.cvat-objects-sidebar-state-item')
                     .should('have.attr', 'id')
-                    .then((id) => Number(id.match(/\d+$/)));
+                    .then((id) => (Number(id.match(/\d+$/))));
             }
         }
     });
