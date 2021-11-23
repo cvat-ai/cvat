@@ -18,8 +18,8 @@ export enum ImportActionTypes {
 export const importActions = {
     openImportModal: (instance: any) => createAction(ImportActionTypes.OPEN_IMPORT_MODAL, { instance }),
     closeImportModal: () => createAction(ImportActionTypes.CLOSE_IMPORT_MODAL),
-    importDataset: (format: string) => (
-        createAction(ImportActionTypes.IMPORT_DATASET, { format })
+    importDataset: (projectId: number) => (
+        createAction(ImportActionTypes.IMPORT_DATASET, { id: projectId })
     ),
     importDatasetSuccess: () => (
         createAction(ImportActionTypes.IMPORT_DATASET_SUCCESS)
@@ -39,10 +39,10 @@ export const importDatasetAsync = (instance: any, format: string, file: File): T
     async (dispatch, getState) => {
         try {
             const state: CombinedState = getState();
-            if (state.import.format !== null) {
+            if (state.import.importingId !== null) {
                 throw Error('Only one importing of dataset allowed at the same time');
             }
-            dispatch(importActions.importDataset(format));
+            dispatch(importActions.importDataset(instance.id));
             await instance.annotations.importDataset(format, file, (progress: number, message: string) => (
                 dispatch(importActions.importDatasetUpdateStatus(progress * 100, message))
             ));

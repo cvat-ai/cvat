@@ -10,7 +10,7 @@ const defaultState: ImportState = {
     progress: 0.0,
     status: '',
     instance: null,
-    format: null,
+    importingId: null,
     modalVisible: false,
 };
 
@@ -30,11 +30,12 @@ export default (state: ImportState = defaultState, action: ImportActions): Impor
             };
         }
         case ImportActionTypes.IMPORT_DATASET: {
-            const { format } = action.payload;
+            const { id } = action.payload;
 
             return {
                 ...state,
-                format,
+                importingId: id,
+                status: 'The file is being uploaded to the server',
             };
         }
         case ImportActionTypes.IMPORT_DATASET_UPDATE_STATUS: {
@@ -49,7 +50,7 @@ export default (state: ImportState = defaultState, action: ImportActions): Impor
         case ImportActionTypes.IMPORT_DATASET_SUCCESS: {
             return {
                 ...state,
-                format: null,
+                importingId: null,
             };
         }
         default:

@@ -1731,11 +1731,12 @@ def _import_project_dataset(request, rq_id, rq_func, pk, format_name):
             rq_job = queue.enqueue_call(
                 func=rq_func,
                 args=(pk, filename, format_name),
-                job_id=rq_id
+                job_id=rq_id,
+                meta={
+                    'tmp_file': filename,
+                    'tmp_file_descriptor': fd,
+                },
             )
-            rq_job.meta['tmp_file'] = filename
-            rq_job.meta['tmp_file_descriptor'] = fd
-            rq_job.save_meta()
     else:
         return Response(status=status.HTTP_409_CONFLICT, data='Import job already exists')
 

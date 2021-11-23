@@ -116,7 +116,7 @@ export interface ExportState {
 }
 
 export interface ImportState {
-    format: string | null;
+    importingId: number | null;
     progress: number;
     status: string;
     instance: any;

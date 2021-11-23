@@ -12,15 +12,14 @@ import Progress from 'antd/lib/progress';
 import { CombinedState } from 'reducers/interfaces';
 
 function ImportDatasetStatusModal(): JSX.Element {
-    const project = useSelector((state: CombinedState) => state.import.instance);
-    const format = useSelector((state: CombinedState) => state.import.format);
+    const currentImportId = useSelector((state: CombinedState) => state.import.importingId);
     const progress = useSelector((state: CombinedState) => state.import.progress);
     const status = useSelector((state: CombinedState) => state.import.status);
 
     return (
         <Modal
-            title={`Importing a dataset for the project #${project?.id}`}
-            visible={format !== null}
+            title={`Importing a dataset for the project #${currentImportId}`}
+            visible={currentImportId !== null}
             closable={false}
             footer={null}
             className='cvat-modal-import-dataset-status'
@@ -32,4 +31,4 @@ function ImportDatasetStatusModal(): JSX.Element {
     );
 }
 
-export default ImportDatasetStatusModal;
+export default React.memo(ImportDatasetStatusModal);

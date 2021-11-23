@@ -32,15 +32,15 @@ function ImportDatasetModal(): JSX.Element {
     const [file, setFile] = useState<File | null>(null);
     const modalVisible = useSelector((state: CombinedState) => state.import.modalVisible);
     const instance = useSelector((state: CombinedState) => state.import.instance);
-    const format = useSelector((state: CombinedState) => state.import.format);
+    const currentImportId = useSelector((state: CombinedState) => state.import.importingId);
     const importers = useSelector((state: CombinedState) => state.formats.annotationFormats.loaders);
     const dispatch = useDispatch();
 
-    const closeModal = (): void => {
+    const closeModal = useCallback((): void => {
         form.resetFields();
         setFile(null);
         dispatch(importActions.closeImportModal());
-    };
+    }, [form]);
 
     const handleImport = useCallback(
         (values: FormValues): void => {
@@ -105,7 +105,7 @@ function ImportDatasetModal(): JSX.Element {
                                 )
                                 .map(
                                     (importer: any): JSX.Element => {
-                                        const pending = format !== null;
+                                        const pending = currentImportId !== null;
                                         const disabled = !importer.enabled || pending;
                                         return (
                                             <Select.Option
