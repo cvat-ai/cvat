@@ -670,6 +670,7 @@ class ShapeSerializer(serializers.Serializer):
     type = serializers.ChoiceField(choices=models.ShapeType.choices())
     occluded = serializers.BooleanField()
     z_order = serializers.IntegerField(default=0)
+    rotation = serializers.FloatField(default=0, min_value=0, max_value=360)
     points = serializers.ListField(
         child=serializers.FloatField(),
         allow_empty=False,

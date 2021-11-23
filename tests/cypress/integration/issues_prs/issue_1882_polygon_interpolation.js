@@ -6,12 +6,12 @@
 
 import { taskName, labelName } from '../../support/const';
 
-context("The points of the previous polygon mustn't appear while polygon's interpolation.", () => {
+context('The points of the previous polygon mustn\'t appear while polygon\'s interpolation.', () => {
     const issueId = '1882';
     const createPolygonTrack = {
         reDraw: false,
         type: 'Track',
-        labelName: labelName,
+        labelName,
         pointsMap: [
             { x: 309, y: 431 },
             { x: 360, y: 500 },
@@ -23,7 +23,7 @@ context("The points of the previous polygon mustn't appear while polygon's inter
     const reDrawPolygonTrack = {
         reDraw: true,
         type: 'Track',
-        labelName: labelName,
+        labelName,
         pointsMap: [
             { x: 359, y: 431 },
             { x: 410, y: 500 },
@@ -46,8 +46,10 @@ context("The points of the previous polygon mustn't appear while polygon's inter
             const keyCodeN = 78;
             cy.get('#cvat_canvas_shape_1')
                 .trigger('mousemove', { force: true })
-                .trigger('keydown', { keyCode: keyCodeN, shiftKey: true })
-                .trigger('keyup', { force: true }, { keyCode: keyCodeN, shiftKey: true });
+                .trigger('keydown', { keyCode: keyCodeN, code: 'KeyN', shiftKey: true })
+                .trigger('keyup', {
+                    force: true, keyCode: keyCodeN, code: 'KeyN', shiftKey: true
+                });
             cy.createPolygon(reDrawPolygonTrack);
         });
         it('Activate auto bordering mode', () => {

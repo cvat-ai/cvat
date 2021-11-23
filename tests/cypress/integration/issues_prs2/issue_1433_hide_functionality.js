@@ -11,7 +11,7 @@ context('Check hide functionality (H)', () => {
     const createRectangleShape2Points = {
         points: 'By 2 Points',
         type: 'Shape',
-        labelName: labelName,
+        labelName,
         firstX: 250,
         firstY: 350,
         secondX: 350,
@@ -29,7 +29,7 @@ context('Check hide functionality (H)', () => {
             cy.get('#cvat_canvas_shape_1')
                 .trigger('mousemove')
                 .trigger('mouseover')
-                .trigger('keydown', { keyCode: keyCodeH })
+                .trigger('keydown', { keyCode: keyCodeH, code: 'KeyH' })
                 .should('be.hidden');
         });
     });

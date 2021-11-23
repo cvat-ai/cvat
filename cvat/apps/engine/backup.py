@@ -106,6 +106,7 @@ class _TaskBackupBase():
             'outside',
             'z_order',
             'points',
+            'rotation',
             'frame',
             'group',
             'source',
