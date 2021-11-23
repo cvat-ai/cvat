@@ -222,6 +222,15 @@ function HeaderContainer(props: Props): JSX.Element {
         });
     }
 
+    const resetOrganization = (): void => {
+        localStorage.removeItem('currentOrganization');
+        if (/\d+$/.test(window.location.pathname)) {
+            window.location.pathname = '/';
+        } else {
+            window.location.reload();
+        }
+    };
+
     const setNewOrganization = (organization: any): void => {
         if (!currentOrganization || currentOrganization.slug !== organization.slug) {
             localStorage.setItem('currentOrganization', organization.slug);
@@ -274,6 +283,11 @@ function HeaderContainer(props: Props): JSX.Element {
                                         className='cvat-modal-organization-selector'
                                         value={currentOrganization?.slug}
                                         onChange={(value: string) => {
+                                            if (value === '$personal') {
+                                                resetOrganization();
+                                                return;
+                                            }
+
                                             const [organization] = organizationsList
                                                 .filter((_organization): boolean => _organization.slug === value);
                                             if (organization) {
@@ -281,6 +295,7 @@ function HeaderContainer(props: Props): JSX.Element {
                                             }
                                         }}
                                     >
+                                        <Select.Option value='$personal'>Personal workspace</Select.Option>
                                         {organizationsList.map((organization: any): JSX.Element => {
                                             const { slug } = organization;
                                             return <Select.Option key={slug} value={slug}>{slug}</Select.Option>;
@@ -299,14 +314,7 @@ function HeaderContainer(props: Props): JSX.Element {
                             <Menu.Item
                                 className={!currentOrganization ? 'cvat-header-menu-active-organization-item' : ''}
                                 key='$personal'
-                                onClick={() => {
-                                    localStorage.removeItem('currentOrganization');
-                                    if (/\d+$/.test(window.location.pathname)) {
-                                        window.location.pathname = '/';
-                                    } else {
-                                        window.location.reload();
-                                    }
-                                }}
+                                onClick={resetOrganization}
                             >
                                 Personal workspace
                             </Menu.Item>
