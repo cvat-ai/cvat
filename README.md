@@ -144,8 +144,6 @@ connection with your use of FFmpeg.
   in annotation of about 5,000 images for a brand operating in the fashion segment.
 - [FiftyOne](https://fiftyone.ai) is an open-source dataset curation and model analysis tool for visualizing, exploring, and improving computer vision datasets and models that is [tightly integrated](https://voxel51.com/docs/fiftyone/integrations/cvat.html) with CVAT for annotation and label refinement.
 
-<a href="https://fiftyone.ai"><img src="https://user-images.githubusercontent.com/21222883/143083891-a75d9fba-2829-43b1-ac07-bd46860964b2.png" height="500" width="700" ></a>
-
 ## Questions
 
 CVAT usage related questions or unclear concepts can be posted in our
