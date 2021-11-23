@@ -36,6 +36,7 @@ import CVATTooltip from 'components/common/cvat-tooltip';
 import { switchSettingsDialog as switchSettingsDialogAction } from 'actions/settings-actions';
 import { logoutAsync, authActions } from 'actions/auth-actions';
 import { CombinedState } from 'reducers/interfaces';
+import { Select } from 'antd';
 import SettingsModal from './settings-modal/settings-modal';
 
 const core = getCore();
@@ -221,6 +222,18 @@ function HeaderContainer(props: Props): JSX.Element {
         });
     }
 
+    const setNewOrganization = (organization: any): void => {
+        if (!currentOrganization || currentOrganization.slug !== organization.slug) {
+            localStorage.setItem('currentOrganization', organization.slug);
+            if (/\d+$/.test(window.location.pathname)) {
+                // a resource is opened (task/job/etc.)
+                window.location.pathname = '/';
+            } else {
+                window.location.reload();
+            }
+        }
+    };
+
     const userMenu = (
         <Menu className='cvat-header-menu'>
             {user.isStaff && (
@@ -246,45 +259,69 @@ function HeaderContainer(props: Props): JSX.Element {
                     <Menu.Item onClick={() => history.push('/organization')}>Open</Menu.Item>
                 ) : null}
                 <Menu.Item onClick={() => history.push('/organizations/create')}>Create</Menu.Item>
-                <Menu.Divider />
                 { organizationsList.length > 5 ? (
-                    <Menu.ItemGroup />
+                    <Menu.Item
+                        key='switch_organization'
+                        onClick={() => {
+                            Modal.confirm({
+                                title: 'Select an organization',
+                                okButtonProps: {
+                                    style: { display: 'none' },
+                                },
+                                content: (
+                                    <Select
+                                        showSearch
+                                        className='cvat-modal-organization-selector'
+                                        value={currentOrganization?.slug}
+                                        onChange={(value: string) => {
+                                            const [organization] = organizationsList
+                                                .filter((_organization): boolean => _organization.slug === value);
+                                            if (organization) {
+                                                setNewOrganization(organization);
+                                            }
+                                        }}
+                                    >
+                                        {organizationsList.map((organization: any): JSX.Element => {
+                                            const { slug } = organization;
+                                            return <Select.Option key={slug} value={slug}>{slug}</Select.Option>;
+                                        })}
+                                    </Select>
+                                ),
+                            });
+                        }}
+                    >
+                        Switch organization
+                    </Menu.Item>
                 ) : (
-                    <Menu.ItemGroup>
-                        <Menu.Item
-                            className={!currentOrganization ? 'cvat-header-menu-active-organization-item' : ''}
-                            key='$personal'
-                            onClick={() => {
-                                localStorage.removeItem('currentOrganization');
-                                if (/\d+$/.test(window.location.pathname)) {
-                                    window.location.pathname = '/';
-                                } else {
-                                    window.location.reload();
-                                }
-                            }}
-                        >
-                            Personal workspace
-                        </Menu.Item>
-                        {organizationsList.map((organization: any): JSX.Element => (
+                    <>
+                        <Menu.Divider />
+                        <Menu.ItemGroup>
                             <Menu.Item
-                                className={currentOrganization?.slug === organization.slug ? 'cvat-header-menu-active-organization-item' : ''}
-                                key={organization.slug}
+                                className={!currentOrganization ? 'cvat-header-menu-active-organization-item' : ''}
+                                key='$personal'
                                 onClick={() => {
-                                    if (!currentOrganization || currentOrganization.slug !== organization.slug) {
-                                        localStorage.setItem('currentOrganization', organization.slug);
-                                        if (/\d+$/.test(window.location.pathname)) {
-                                            // a resource is opened (task/job/etc.)
-                                            window.location.pathname = '/';
-                                        } else {
-                                            window.location.reload();
-                                        }
+                                    localStorage.removeItem('currentOrganization');
+                                    if (/\d+$/.test(window.location.pathname)) {
+                                        window.location.pathname = '/';
+                                    } else {
+                                        window.location.reload();
                                     }
                                 }}
                             >
-                                {organization.slug}
+                                Personal workspace
                             </Menu.Item>
-                        ))}
-                    </Menu.ItemGroup>
+                            {organizationsList.map((organization: any): JSX.Element => (
+                                <Menu.Item
+                                    className={currentOrganization?.slug === organization.slug ?
+                                        'cvat-header-menu-active-organization-item' : ''}
+                                    key={organization.slug}
+                                    onClick={() => setNewOrganization(organization)}
+                                >
+                                    {organization.slug}
+                                </Menu.Item>
+                            ))}
+                        </Menu.ItemGroup>
+                    </>
                 )}
             </Menu.SubMenu>
             <Menu.Item
@@ -310,7 +347,12 @@ function HeaderContainer(props: Props): JSX.Element {
                 </Menu.Item>
             )}
 
-            <Menu.Item key='logout' icon={logoutFetching ? <LoadingOutlined /> : <LogoutOutlined />} onClick={onLogout} disabled={logoutFetching}>
+            <Menu.Item
+                key='logout'
+                icon={logoutFetching ? <LoadingOutlined /> : <LogoutOutlined />}
+                onClick={onLogout}
+                disabled={logoutFetching}
+            >
                 Logout
             </Menu.Item>
         </Menu>
