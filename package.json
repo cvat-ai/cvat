@@ -11,8 +11,7 @@
     "cvat-core",
     "cvat-canvas",
     "cvat-canvas3d",
-    "cvat-ui",
-    "tests"
+    "cvat-ui"
   ],
   "dependencies": {},
   "devDependencies": {
