@@ -136,7 +136,9 @@ export function updateProjectAsync(projectInstance: any): ThunkAction {
             const state = getState();
             dispatch(projectActions.updateProject());
             await projectInstance.save();
-            dispatch(getProjectsAsync({ id: projectInstance.id }, state.projects.tasksGettingQuery));
+            const [project] = await cvat.projects.get({ id: projectInstance.id });
+            dispatch(projectActions.updateProjectSuccess(project));
+            dispatch(getProjectTasksAsync(state.projects.tasksGettingQuery));
         } catch (error) {
             let project = null;
             try {
