@@ -18,6 +18,7 @@ import Icon, {
     CaretDownOutlined,
     ControlOutlined,
     UserOutlined,
+    TeamOutlined,
 } from '@ant-design/icons';
 import Layout from 'antd/lib/layout';
 import Button from 'antd/lib/button';
@@ -70,6 +71,7 @@ interface StateToProps {
     isModelsPluginActive: boolean;
     isGitPluginActive: boolean;
     organizationsFetching: boolean;
+    organizationsList: any[];
     currentOrganization: any | null;
 }
 
@@ -92,7 +94,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         about: { server, packageVersion },
         shortcuts: { normalizedKeyMap },
         settings: { showDialog: settingsDialogShown },
-        organizations: { fetching: organizationsFetching, current: currentOrganization },
+        organizations: { fetching: organizationsFetching, current: currentOrganization, list: organizationsList },
     } = state;
 
     return {
@@ -125,6 +127,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         isGitPluginActive: list.GIT_INTEGRATION,
         organizationsFetching,
         currentOrganization,
+        organizationsList,
     };
 }
 
@@ -154,6 +157,7 @@ function HeaderContainer(props: Props): JSX.Element {
         isModelsPluginActive,
         organizationsFetching,
         currentOrganization,
+        organizationsList,
     } = props;
 
     const {
@@ -218,9 +222,10 @@ function HeaderContainer(props: Props): JSX.Element {
     }
 
     const userMenu = (
-        <Menu className='cvat-header-menu' mode='vertical'>
+        <Menu className='cvat-header-menu'>
             {user.isStaff && (
                 <Menu.Item
+                    icon={<ControlOutlined />}
                     key='admin_page'
                     onClick={(): void => {
                         // false positive
@@ -228,43 +233,88 @@ function HeaderContainer(props: Props): JSX.Element {
                         window.open(`${tool.server.host}/admin`, '_blank');
                     }}
                 >
-                    <ControlOutlined />
                     Admin page
                 </Menu.Item>
             )}
-
+            <Menu.SubMenu
+                disabled={organizationsFetching}
+                key='organization'
+                title='Organization'
+                icon={organizationsFetching ? <LoadingOutlined /> : <TeamOutlined />}
+            >
+                {currentOrganization ? (
+                    <Menu.Item onClick={() => history.push('/organization')}>Open</Menu.Item>
+                ) : null}
+                <Menu.Item onClick={() => history.push('/organizations/create')}>Create</Menu.Item>
+                <Menu.Divider />
+                { organizationsList.length > 5 ? (
+                    <Menu.ItemGroup />
+                ) : (
+                    <Menu.ItemGroup>
+                        <Menu.Item
+                            className={!currentOrganization ? 'cvat-header-menu-active-organization-item' : ''}
+                            key='$personal'
+                            onClick={() => {
+                                localStorage.removeItem('currentOrganization');
+                                if (/\d+$/.test(window.location.pathname)) {
+                                    window.location.pathname = '/';
+                                } else {
+                                    window.location.reload();
+                                }
+                            }}
+                        >
+                            Personal workspace
+                        </Menu.Item>
+                        {organizationsList.map((organization: any): JSX.Element => (
+                            <Menu.Item
+                                className={currentOrganization?.slug === organization.slug ? 'cvat-header-menu-active-organization-item' : ''}
+                                key={organization.slug}
+                                onClick={() => {
+                                    if (!currentOrganization || currentOrganization.slug !== organization.slug) {
+                                        localStorage.setItem('currentOrganization', organization.slug);
+                                        if (/\d+$/.test(window.location.pathname)) {
+                                            // a resource is opened (task/job/etc.)
+                                            window.location.pathname = '/';
+                                        } else {
+                                            window.location.reload();
+                                        }
+                                    }
+                                }}
+                            >
+                                {organization.slug}
+                            </Menu.Item>
+                        ))}
+                    </Menu.ItemGroup>
+                )}
+            </Menu.SubMenu>
             <Menu.Item
+                icon={<SettingOutlined />}
                 key='settings'
                 title={`Press ${switchSettingsShortcut} to switch`}
                 onClick={() => switchSettingsDialog(true)}
             >
-                <SettingOutlined />
                 Settings
             </Menu.Item>
-            <Menu.Item key='about' onClick={() => showAboutModal()}>
-                <InfoCircleOutlined />
+            <Menu.Item icon={<InfoCircleOutlined />} key='about' onClick={() => showAboutModal()}>
                 About
             </Menu.Item>
             {renderChangePasswordItem && (
                 <Menu.Item
                     key='change_password'
+                    icon={changePasswordFetching ? <LoadingOutlined /> : <EditOutlined />}
                     className='cvat-header-menu-change-password'
                     onClick={(): void => switchChangePasswordDialog(true)}
                     disabled={changePasswordFetching}
                 >
-                    {changePasswordFetching ? <LoadingOutlined /> : <EditOutlined />}
                     Change password
                 </Menu.Item>
             )}
 
-            <Menu.Item key='logout' onClick={onLogout} disabled={logoutFetching}>
-                {logoutFetching ? <LoadingOutlined /> : <LogoutOutlined />}
+            <Menu.Item key='logout' icon={logoutFetching ? <LoadingOutlined /> : <LogoutOutlined />} onClick={onLogout} disabled={logoutFetching}>
                 Logout
             </Menu.Item>
         </Menu>
     );
-
-    const notInOrganizationTitle = 'Personal workspace';
 
     return (
         <Layout.Header className='cvat-header'>
@@ -367,30 +417,21 @@ function HeaderContainer(props: Props): JSX.Element {
                         }}
                     />
                 </CVATTooltip>
-                <CVATTooltip overlay={currentOrganization ? 'Click to open organization details' : 'Select an organization in settings'}>
-                    <Button
-                        type='link'
-                        disabled={organizationsFetching}
-                        className='cvat-header-button cvat-header-organization-button'
-                        onClick={(): void => {
-                            if (currentOrganization) {
-                                history.push('/organization');
-                            }
-                        }}
-                    >
-                        {currentOrganization ? (
-                            <Text strong>{currentOrganization.slug}</Text>
-                        ) : (
-                            <Text type='secondary'>{notInOrganizationTitle}</Text>
-                        )}
-                    </Button>
-                </CVATTooltip>
-                <Dropdown overlay={userMenu} className='cvat-header-menu-user-dropdown'>
+                <Dropdown placement='bottomRight' overlay={userMenu} className='cvat-header-menu-user-dropdown'>
                     <span>
                         <UserOutlined className='cvat-header-dropdown-icon' />
-                        <Text strong>
-                            {user.username.length > 14 ? `${user.username.slice(0, 10)} ...` : user.username}
-                        </Text>
+                        <Row>
+                            <Col span={24}>
+                                <Text strong>
+                                    {user.username.length > 14 ? `${user.username.slice(0, 10)} ...` : user.username}
+                                </Text>
+                            </Col>
+                            { currentOrganization ? (
+                                <Col span={24}>
+                                    <Text>{currentOrganization.slug}</Text>
+                                </Col>
+                            ) : null }
+                        </Row>
                         <CaretDownOutlined className='cvat-header-dropdown-icon' />
                     </span>
                 </Dropdown>

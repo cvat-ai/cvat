@@ -62,30 +62,26 @@
         padding: $grid-unit-size;
     }
 
-    > span:nth-child(2) {
-        max-width: $grid-unit-size * 12;
+    > div:nth-child(2) {
+        > div:nth-child(2) { /* org slug */
+            font-size: 10px;
+        }
+
+        max-width: $grid-unit-size * 15;
         height: $grid-unit-size * 5;
         overflow: hidden;
         white-space: nowrap;
         text-overflow: ellipsis;
-        line-height: $grid-unit-size * 5;
+        align-items: center;
     }
 }
 
-.cvat-header-organization-button {
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-    max-width: $grid-unit-size * 20;
-}
-
-.cvat-header-menu {
-    .ant-dropdown-menu-item {
-        .ant-dropdown-menu-title-content {
-            span[role='img'] {
-                font-size: 16px;
-                margin-right: $grid-unit-size;
-            }
-        }
+.cvat-header-menu-active-organization-item {
+    ::after {
+        font-size: 20px;
+        content: ' \2713';
+        vertical-align: bottom;
     }
+
+    font-weight: bold;
 }
