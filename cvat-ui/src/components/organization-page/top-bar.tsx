@@ -65,57 +65,9 @@ function OrganizationTopBar(props: Props): JSX.Element {
                         >
                             {name}
                         </Text>
-                        <div>
-                            <PhoneOutlined />
-                            <Text
-                                type='secondary'
-                                editable={{
-                                    onChange: (value: string) => {
-                                        organizationInstance.contact = {
-                                            ...organizationInstance.contact, phoneNumber: value,
-                                        };
-                                    },
-                                    onEnd: () => dispatch(updateOrganizationAsync(organizationInstance)),
-                                }}
-                            >
-                                {contact.phoneNumber || 'Phone number is not specified'}
-                            </Text>
-                        </div>
-                        <div>
-                            <MailOutlined />
-                            <Text
-                                type='secondary'
-                                editable={{
-                                    onChange: (value: string) => {
-                                        organizationInstance.contact = {
-                                            ...organizationInstance.contact, email: value,
-                                        };
-                                    },
-                                    onEnd: () => dispatch(updateOrganizationAsync(organizationInstance)),
-                                }}
-                            >
-                                {contact.email || 'Email is not specified'}
-                            </Text>
-                        </div>
-                        <div>
-                            <EnvironmentOutlined />
-                            <Text
-                                type='secondary'
-                                editable={{
-                                    onChange: (value: string) => {
-                                        organizationInstance.contact = {
-                                            ...organizationInstance.contact, location: value,
-                                        };
-                                    },
-                                    onEnd: () => dispatch(updateOrganizationAsync(organizationInstance)),
-                                }}
-                            >
-                                {contact.location || 'Location is not specified'}
-                            </Text>
-                        </div>
-                        {description && !editingDescription ? (
+                        {!editingDescription ? (
                             <span style={{ display: 'grid' }}>
-                                {description.split('\n').map((val: string, idx: number) => (
+                                {(description || 'Add description').split('\n').map((val: string, idx: number) => (
                                     <Text key={idx} type='secondary'>
                                         {val}
                                         {idx === 0 ? <EditTwoTone onClick={() => setEditingDescription(true)} /> : null}
@@ -146,6 +98,54 @@ function OrganizationTopBar(props: Props): JSX.Element {
                                 </Button>
                             </div>
                         )}
+                        <div>
+                            <PhoneOutlined />
+                            <Text
+                                type='secondary'
+                                editable={{
+                                    onChange: (value: string) => {
+                                        organizationInstance.contact = {
+                                            ...organizationInstance.contact, phoneNumber: value,
+                                        };
+                                    },
+                                    onEnd: () => dispatch(updateOrganizationAsync(organizationInstance)),
+                                }}
+                            >
+                                {contact.phoneNumber || 'Add phone number'}
+                            </Text>
+                        </div>
+                        <div>
+                            <MailOutlined />
+                            <Text
+                                type='secondary'
+                                editable={{
+                                    onChange: (value: string) => {
+                                        organizationInstance.contact = {
+                                            ...organizationInstance.contact, email: value,
+                                        };
+                                    },
+                                    onEnd: () => dispatch(updateOrganizationAsync(organizationInstance)),
+                                }}
+                            >
+                                {contact.email || 'Add email'}
+                            </Text>
+                        </div>
+                        <div>
+                            <EnvironmentOutlined />
+                            <Text
+                                type='secondary'
+                                editable={{
+                                    onChange: (value: string) => {
+                                        organizationInstance.contact = {
+                                            ...organizationInstance.contact, location: value,
+                                        };
+                                    },
+                                    onEnd: () => dispatch(updateOrganizationAsync(organizationInstance)),
+                                }}
+                            >
+                                {contact.location || 'Add location'}
+                            </Text>
+                        </div>
                         <Text type='secondary'>{`Created ${moment(createdDate).format('MMMM Do YYYY')}`}</Text>
                         <Text type='secondary'>{`Updated ${moment(updatedDate).fromNow()}`}</Text>
                     </div>
