@@ -10,6 +10,7 @@ import pytz
 import shutil
 import traceback
 import uuid
+import base64
 from datetime import datetime
 from distutils.util import strtobool
 from tempfile import mkstemp, NamedTemporaryFile
@@ -28,6 +29,7 @@ from django.utils.decorators import method_decorator
 from django_filters import rest_framework as filters
 from django_filters.rest_framework import DjangoFilterBackend
 from django.core.exceptions import SuspiciousFileOperation
+from django.core.cache import cache
 from drf_yasg import openapi
 from drf_yasg.inspectors import CoreAPICompatInspector, NotHandled, FieldInspector
 from drf_yasg.utils import swagger_auto_schema
@@ -399,6 +401,225 @@ class DjangoFilterInspector(CoreAPICompatInspector):
 
         return NotHandled
 
+class TusFile:
+    _tus_cache_timeout = 3600
+    def __init__(self, file_id, upload_dir):
+        self.file_id = file_id
+        self.upload_dir = upload_dir
+        self.filename = cache.get("tus-uploads/{}/filename".format(file_id))
+        self.file_size = int(cache.get("tus-uploads/{}/file_size".format(file_id)))
+        self.metadata = cache.get("tus-uploads/{}/metadata".format(file_id))
+        self.offset = cache.get("tus-uploads/{}/offset".format(file_id))
+
+    def init_file(self):
+        file_path = os.path.join(self.upload_dir, self.file_id)
+        with open(file_path, 'wb') as file:
+            file.seek(self.file_size - 1)
+            file.write(b'\0')
+
+    def write_chunk(self, chunk):
+        file_path = os.path.join(self.upload_dir, self.file_id)
+        with open(file_path, 'r+b') as file:
+            file.seek(chunk.offset)
+            file.write(chunk.content)
+        self.offset = cache.incr("tus-uploads/{}/offset".format(self.file_id), chunk.size)
+
+    def is_complete(self):
+        return self.offset == self.file_size
+
+    def rename(self):
+        file_id_path = os.path.join(self.get_upload_dir(), self.file_id)
+        file_path = os.path.join(self.get_upload_dir(), self.filename)
+        file_exists = os.path.lexists(os.path.join(self.get_upload_dir(), self.filename))
+        if file_exists:
+            raise FileExistsError
+        os.rename(file_id_path, file_path)
+
+    def clean(self):
+        cache.delete_many([
+            "tus-uploads/{}/file_size".format(self.file_id),
+            "tus-uploads/{}/filename".format(self.file_id),
+            "tus-uploads/{}/offset".format(self.file_id),
+            "tus-uploads/{}/metadata".format(self.file_id),
+        ])
+
+    @staticmethod
+    def get_tusfile(file_id):
+        resource_exists = cache.get("tus-uploads/{}/filename".format(file_id), None) is None
+        if resource_exists:
+            return TusFile(file_id)
+        return None
+
+    @staticmethod
+    def create_file(metadata, file_size, upload_dir):
+        file_id = str(uuid.uuid4())
+        cache.add("tus-uploads/{}/filename".format(file_id), "{}".format(metadata.get("filename")), TusFile._tus_cache_timeout)
+        cache.add("tus-uploads/{}/file_size".format(file_id), file_size, TusFile._tus_cache_timeout)
+        cache.add("tus-uploads/{}/offset".format(file_id), 0, TusFile._tus_cache_timeout)
+        cache.add("tus-uploads/{}/metadata".format(file_id), metadata, TusFile._tus_cache_timeout)
+
+        tus_file = TusFile(file_id, upload_dir)
+        tus_file.init_file()
+        return tus_file
+
+
+class UploadMixin(object):
+    _tus_api_version = '1.0.0'
+    _tus_api_version_supported = ['1.0.0']
+    _tus_api_extensions = ['creation', 'termination', 'file-check']
+    _tus_max_file_size = '1073741824' # 10gb
+    _base_tus_headers = {
+        'Tus-Resumable': _tus_api_version,
+        'Tus-Version': ",".join(_tus_api_version_supported),
+        'Tus-Extension': ",".join(_tus_api_extensions),
+        'Tus-Max-Size': _tus_max_file_size,
+        'Access-Control-Allow-Origin': "*",
+        'Access-Control-Allow-Methods': "PATCH,HEAD,GET,POST,OPTIONS",
+        'Access-Control-Expose-Headers': "Tus-Resumable,upload-length,upload-metadata,Location,Upload-Offset",
+        'Access-Control-Allow-Headers': "Tus-Resumable,upload-length,upload-metadata,Location,Upload-Offset,content-type",
+        'Cache-Control': 'no-store'
+    }
+    _file_id_regex = r'(?P<file_id>\b[0-9a-f]{8}\b-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-\b[0-9a-f]{12}\b)'
+
+    def _tus_response(self, extra_headers=None, *args, **kwargs):
+        response = HttpResponse(*args, **kwargs)
+        for key, value in self._base_tus_headers.items():
+            response.__setitem__(key, value)
+        if extra_headers:
+            for key, value in extra_headers.items():
+                response.__setitem__(key, value)
+        return response
+
+    def _get_metadata(self, request):
+        metadata = {}
+        if request.META.get("HTTP_UPLOAD_METADATA"):
+            for kv in request.META.get("HTTP_UPLOAD_METADATA").split(","):
+                splited_metadata = kv.split(" ")
+                if len(splited_metadata) == 2:
+                    key, value = splited_metadata
+                    value = base64.b64decode(value)
+                    if isinstance(value, bytes):
+                        value = value.decode()
+                    metadata[key] = value
+                else:
+                    metadata[splited_metadata[0]] = ""
+        return metadata
+
+    def _get_tus_chunk(self, request):
+        chunk = {}
+        chunk.META = request.META
+        chunk.offset = int(request.META.get("HTTP_UPLOAD_OFFSET", 0))
+        chunk.chunk_size = int(request.META.get("CONTENT_LENGTH", 102400))
+        chunk.content = request.body
+        return chunk
+
+    @action(detail=True, methods=['POST'], url_path='data/test')
+    def tus_test(self, request, pk):
+        return self._tus_response(status=status.HTTP_200_OK, extra_headers={'hello':'world'})
+
+    @action(detail=True, methods=['OPTIONS','POST'], url_path='data/tus/')
+    def init_tus_upload(self, request, pk):
+        if request.method == 'OPTIONS':
+            return self._tus_response(status=status.HTTP_204)
+        else:
+            if not self.can_upload():
+                return Response(data='Adding more data is not allowed',
+                    status=status.HTTP_400_BAD_REQUEST)
+            metadata = self._get_metadata(request)
+            filename = metadata.get('filename', '')
+            self.validate_filename(filename)
+
+            message_id = request.META.get("HTTP_MESSAGE_ID")
+            if message_id:
+                metadata["message_id"] = base64.b64decode(message_id)
+
+            file_exists = os.path.lexists(os.path.join(self.get_upload_dir(), filename))
+            if file_exists:
+                return self._tus_response(status=status.HTTP_409_CONFLICT, reason="File with same name already exists")
+
+            file_size = int(request.META.get("HTTP_UPLOAD_LENGTH", "0"))  # TODO: check min max upload size
+
+            tus_file = TusFile.create_file(metadata, file_size, self.get_upload_dir())
+
+            return self._tus_response(
+                status=status.HTTP_201_CREATED,
+                extra_headers={'Location': '{}{}'.format(request.build_absolute_uri(), tus_file.file_id)})
+
+    @action(detail=True, methods=['HEAD', 'PATCH'], url_path=r'data/tus/'+_file_id_regex)
+    def append_tus_chunk(self, request, pk, file_id):
+        if request.method == 'HEAD':
+            tus_file = TusFile.get_tusfile(str(file_id))
+            if tus_file:
+                return self._tus_response(status=status.HTTP_200_OK, extra_headers={
+                               'Upload-Offset': tus_file.offset,
+                               'Upload-Length': tus_file.file_size})
+            return self._tus_response(status=status.HTTP_404_NOT_FOUND)
+        else:
+            tus_file = TusFile.get_tusfile(str(file_id))
+            chunk = self._get_tus_chunk(request)
+
+            if chunk.offset != tus_file.offset:
+                return self._tus_response(status=status.HTTP_409_CONFLICT)
+
+            if chunk.offset > tus_file.file_size:
+                return self._tus_response(status=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE)
+
+            tus_file.write_chunk(chunk)
+
+            if tus_file.is_complete():
+                tus_file.rename()
+                tus_file.clean()
+
+            return self._tus_response(status=status.HTTP_204_NO_CONTENT,
+                                    extra_headers={'Upload-Offset': tus_file.offset})
+
+    def validate_filename(self, filename):
+        upload_dir = self.get_upload_dir()
+        file_path = os.path.join(upload_dir, filename)
+        if os.path.commonprefix((os.path.realpath(file_path), upload_dir)) != upload_dir:
+            raise SuspiciousFileOperation(
+                'Detected path traversal attempt in {}'.format(filename)
+            )
+
+    # non tus code
+    def can_upload(self):
+        db_model = self.get_object() # call check_object_permissions as well
+        model_data = db_model.data
+        # return model_data is None
+        return True
+
+    def get_upload_dir(self):
+        db_model = self.get_object()
+        return db_model.data.get_upload_dirname()
+
+    def get_request_client_files(self, request):
+        db_model = self.get_object()
+        serializer = DataSerializer(db_model, data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = {k: v for k, v in serializer.validated_data.items()}
+        return data.get('client_files', None);
+
+    @action(detail=True, methods=['POST'], url_path='data/append')
+    def append(self, request, pk):
+        if not self.can_upload():
+            return Response(data='Adding more data is not allowed',
+                status=status.HTTP_400_BAD_REQUEST)
+        client_files = self.get_request_client_files(request)
+        if client_files:
+            upload_dir = self.get_upload_dir()
+            for client_file in client_files:
+                with open(os.path.join(upload_dir, client_file['file'].name), 'ab+') as destination:
+                    destination.write(client_file['file'].read())
+        return Response(status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=['POST'], url_path='data/finish')
+    def finish(self, request, pk):
+        return self.upload_finished(request)
+
+    # needs override
+    def upload_finished(self, request):
+        return Response(status=status.HTTP_200_OK)
+
 @method_decorator(name='list', decorator=swagger_auto_schema(
     operation_summary='Returns a paginated list of tasks according to query parameters (10 tasks per page)',
     manual_parameters=[
@@ -415,7 +636,7 @@ class DjangoFilterInspector(CoreAPICompatInspector):
 @method_decorator(name='update', decorator=swagger_auto_schema(operation_summary='Method updates a task by id'))
 @method_decorator(name='destroy', decorator=swagger_auto_schema(operation_summary='Method deletes a specific task, all attached jobs, annotations, and data'))
 @method_decorator(name='partial_update', decorator=swagger_auto_schema(operation_summary='Methods does a partial update of chosen fields in a task'))
-class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
+class TaskViewSet(UploadMixin, auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
     queryset = Task.objects.all().prefetch_related(
             "label_set__attributespec_set",
             "segment_set__job_set",
@@ -608,6 +829,40 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
 
         return Response(serializer.data)
 
+    def upload_finished(self, request):
+        db_task = self.get_object() # call check_object_permissions as well
+        task_data = db_task.data
+        serializer = DataSerializer(task_data, data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = {k: v for k, v in serializer.validated_data.items()}
+        uploaded_files = task_data.get_uploaded_files()
+        uploaded_files.extend(data.get('client_files'))
+        serializer.validated_data.update({'client_files': uploaded_files})
+
+        db_data = serializer.save()
+        db_task.data = db_data
+        db_task.save()
+        data = {k: v for k, v in serializer.data.items()}
+
+        data['use_zip_chunks'] = serializer.validated_data['use_zip_chunks']
+        data['use_cache'] = serializer.validated_data['use_cache']
+        data['copy_data'] = serializer.validated_data['copy_data']
+        if data['use_cache']:
+            db_task.data.storage_method = StorageMethodChoice.CACHE
+            db_task.data.save(update_fields=['storage_method'])
+        if data['server_files'] and not data.get('copy_data'):
+            db_task.data.storage = StorageChoice.SHARE
+            db_task.data.save(update_fields=['storage'])
+        if db_data.cloud_storage:
+            db_task.data.storage = StorageChoice.CLOUD_STORAGE
+            db_task.data.save(update_fields=['storage'])
+            # if the value of stop_frame is 0, then inside the function we cannot know
+            # the value specified by the user or it's default value from the database
+        if 'stop_frame' not in serializer.validated_data:
+            data['stop_frame'] = None
+        task.create(db_task.id, data)
+        return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
+
     @swagger_auto_schema(method='post', operation_summary='Method permanently attaches images or video to a task',
         request_body=DataSerializer,
     )
@@ -636,71 +891,12 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
             elif task_data.size != 0:
                 return Response(data='Adding more data is not supported',
                     status=status.HTTP_400_BAD_REQUEST)
-
             serializer = DataSerializer(task_data, data=request.data)
             serializer.is_valid(raise_exception=True)
             data = {k: v for k, v in serializer.validated_data.items()}
-
-            action = request.query_params.get('action', None)
-            if action == 'init-chunk-upload':
-                size = int(request.query_params.get('size'))
-                file_name = request.query_params.get('file_name')
-                try:
-                    upload_id = task_data.init_chunk_upload(size, file_name)
-                    return Response(data=upload_id, status=status.HTTP_200_OK)
-                except SuspiciousFileOperation:
-                    return Response(data='Detected path traversal attempt',
-                        status=status.HTTP_400_BAD_REQUEST)
-            elif action == 'finish-chunk-upload':
-                upload_id = request.query_params.get('upload_id', None)
-                file_name = request.query_params.get('file_name', None)
-                client_chunks = data.get('chunks_tags')
-                try:
-                    task_data.finish_chunk_upload(upload_id, file_name, client_chunks)
-                    return Response(status=status.HTTP_200_OK)
-                except SuspiciousFileOperation:
-                    return Response(data='Detected path traversal attempt',
-                        status=status.HTTP_400_BAD_REQUEST)
-                except ValidationError as e:
-                    return Response(data=e.get_full_details(), status=e.status_code)
-            elif action == 'append':
-                upload_id = request.query_params.get('upload_id', None)
-                client_files = data.get('client_files')
-                if upload_id:
-                    chunk_number = data.get('chunk_number')
-                    chunk_tag = task_data.append_chunk(upload_id, chunk_number, client_files)
-                    return Response(data=chunk_tag, status=status.HTTP_202_ACCEPTED)
-                else:
-                    task_data.append(client_files)
-                    return Response(status=status.HTTP_202_ACCEPTED)
-            elif action == 'submit' or not action:
-                uploaded_files = task_data.get_uploaded_files()
-                uploaded_files.extend(data.get('client_files'))
-                serializer.validated_data.update({'client_files': uploaded_files})
-
-            db_data = serializer.save()
-            db_task.data = db_data
-            db_task.save()
-            data = {k: v for k, v in serializer.data.items()}
-
-            data['use_zip_chunks'] = serializer.validated_data['use_zip_chunks']
-            data['use_cache'] = serializer.validated_data['use_cache']
-            data['copy_data'] = serializer.validated_data['copy_data']
-            if data['use_cache']:
-                db_task.data.storage_method = StorageMethodChoice.CACHE
-                db_task.data.save(update_fields=['storage_method'])
-            if data['server_files'] and not data.get('copy_data'):
-                db_task.data.storage = StorageChoice.SHARE
-                db_task.data.save(update_fields=['storage'])
-            if db_data.cloud_storage:
-                db_task.data.storage = StorageChoice.CLOUD_STORAGE
-                db_task.data.save(update_fields=['storage'])
-            # if the value of stop_frame is 0, then inside the function we cannot know
-            # the value specified by the user or it's default value from the database
-            if 'stop_frame' not in serializer.validated_data:
-                data['stop_frame'] = None
-            task.create(db_task.id, data)
-            return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
+            if data.get('client_files', None) is None:
+                return self.upload_finished(request)
+            return Response(status=status.HTTP_202_ACCEPTED)
         else:
             data_type = request.query_params.get('type', None)
             data_id = request.query_params.get('number', None)
@@ -1043,6 +1239,7 @@ class JobViewSet(viewsets.GenericViewSet,
         queryset = db_job.issue_set
         serializer = CombinedIssueSerializer(queryset, context={'request': request}, many=True)
         return Response(serializer.data)
+
 
 @method_decorator(name='create', decorator=swagger_auto_schema(operation_summary='Submit a review for a job'))
 @method_decorator(name='destroy', decorator=swagger_auto_schema(operation_summary='Method removes a review from a job'))

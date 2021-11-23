@@ -8,6 +8,7 @@
     const store = require('store');
     const config = require('./config');
     const DownloadWorker = require('./download.worker');
+    const tus = require('tus-js-client');
 
     function waitFor(frequencyHz, predicate) {
         return new Promise((resolve, reject) => {
@@ -637,54 +638,36 @@
                 onUpdate('The data are being uploaded to the server 0%');
 
                 async function chunkUpload(taskId, file) {
-                    const initChunkUpload = await Axios.post(`${backendAPI}/tasks/${response.data.id}/data`,
-                        taskData, {
-                            proxy: config.proxy,
-                            params: {
-                                action: 'init-chunk-upload',
-                                size: file.size,
-                                file_name: file.name,
-                            },
-                        });
-                    const uploadId = initChunkUpload.data;
-                    const totalChunks = Math.ceil(file.size / chunkSize);
-                    let currentChunkNumber = 1;
-                    const tags = [];
-                    while (currentChunkNumber <= totalChunks) {
-                        const prevChunkNumber = currentChunkNumber - 1;
-                        const chunkOffset = prevChunkNumber * chunkSize;
-                        const fileChunk = file.slice(chunkOffset, Math.min(chunkOffset + chunkSize, file.size));
-                        taskData.set('client_files[0]', fileChunk, file.name);
-                        taskData.set('chunk_number', currentChunkNumber);
-                        onUpdate(`The data are being uploaded to the server
-                                    ${Math.round((totalSentSize / totalSize) * 100)}%`);
-                        const tagResponse = await Axios.post(`${backendAPI}/tasks/${response.data.id}/data`,
-                            taskData, {
-                                proxy: config.proxy,
-                                params: {
-                                    action: 'append',
-                                    upload_id: uploadId,
-                                },
-                            });
-                        const tag = tagResponse.data;
-                        tags.push({ chunk_number: currentChunkNumber, tag });
-                        taskData.delete('client_files[0]');
-                        const sentSize = Math.min(chunkOffset + chunkSize, file.size) - chunkOffset;
-                        totalSentSize += sentSize;
-                        currentChunkNumber++;
-                    }
-                    tags.forEach((element, idx) => {
-                        taskData.set(`chunks_tags[${idx}]`, JSON.stringify(element));
+                    const upload = new tus.Upload(file, {
+                        endpoint: `http://localhost:3000${backendAPI}/tasks/${taskId}/data/tus/`,
+                        metadata: {
+                            filename: file.name,
+                            filetype: file.type,
+                        },
+                        headers: {
+                            Authorization: 'Token 7b45d52c8114d5819fb051856062f2c610647fb1',
+                        },
+                        onError(error) {
+                            console.log(`Failed because: ${error}`);
+                        },
+                        onBeforeRequest(req) {
+                            const xhr = req.getUnderlyingObject();
+                            xhr.withCredentials = true;
+                        },
+                        onProgress(bytesUploaded, bytesTotal) {
+                            const percentage = ((bytesUploaded / bytesTotal) * 100).toFixed(2);
+                            console.log(bytesUploaded, bytesTotal, `${percentage}%`);
+                        },
+                        onSuccess() {
+                            console.log('Download %s from %s');
+                            Axios.post(`${backendAPI}/tasks/${taskId}/data/finish`,
+                                taskData, {
+                                    proxy: config.proxy,
+                                });
+                        },
                     });
-                    await Axios.post(`${backendAPI}/tasks/${taskId}/data`,
-                        taskData, {
-                            proxy: config.proxy,
-                            params: {
-                                action: 'finish-chunk-upload',
-                                upload_id: uploadId,
-                                file_name: file.name,
-                            },
-                        });
+                    upload.start();
+                    console.log(upload);
                 }
 
                 async function bulkUpload(taskId, files) {
@@ -719,14 +702,18 @@
 
                 try {
                     for (const file of chunkFiles) {
+                        await Axios.post(`${backendAPI}/tasks/${response.data.id}/data`,
+                            taskData, {
+                                proxy: config.proxy,
+                            });
                         await chunkUpload(response.data.id, file);
                     }
                     if (bulkFiles.length > 0) {
                         await bulkUpload(response.data.id, bulkFiles);
                     }
-                    Axios.post(`${backendAPI}/tasks/${response.data.id}/data?action=submit`, taskData, {
-                        proxy: config.proxy,
-                    });
+                    // Axios.post(`${backendAPI}/tasks/${response.data.id}/data?action=submit`, taskData, {
+                    //     proxy: config.proxy,
+                    // });
                 } catch (errorData) {
                     try {
                         await deleteTask(response.data.id);

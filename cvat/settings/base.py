@@ -482,3 +482,13 @@ CACHES = {
 
 USE_CACHE = True
 
+CORS_ALLOW_HEADERS = [
+    'authorization',
+    'content-type',
+    'referer',
+    'upload-offset',
+    'upload-length',
+    'tus-version',
+    'tus-resumable',
+    'user-agent'
+]
