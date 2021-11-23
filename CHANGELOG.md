@@ -5,7 +5,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## \[1.7.0] - Unreleased
+## \[2.0.0] - Unreleased
+### Added
+
+- Add additional environment variables for Nuclio configuration (<https://github.com/openvinotoolkit/cvat/pull/3894>)
+- Add KITTI segmentation and detection format (<https://github.com/openvinotoolkit/cvat/pull/3757>)
+- Add LFW format (<https://github.com/openvinotoolkit/cvat/pull/3770>)
+- Add Cityscapes format (<https://github.com/openvinotoolkit/cvat/pull/3758>)
+- Add Open Images V6 format (<https://github.com/openvinotoolkit/cvat/pull/3679>)
+- Rotated bounding boxes (<https://github.com/openvinotoolkit/cvat/pull/3832>)
+
+### Changed
+- TDB
+
+### Deprecated
+- TDB
+
+### Removed
+- TDB
+
+### Fixed
+- Fixed Interaction handler keyboard handlers (<https://github.com/openvinotoolkit/cvat/pull/3881>)
+
+### Security
+- TDB
+
+## \[1.7.0] - 2021-11-15
 
 ### Added
 
@@ -16,10 +41,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add a tutorial on attaching cloud storage AWS-S3 (<https://github.com/openvinotoolkit/cvat/pull/3745>)
   and Azure Blob Container (<https://github.com/openvinotoolkit/cvat/pull/3778>)
 - The feature to remove annotations in a specified range of frames (<https://github.com/openvinotoolkit/cvat/pull/3617>)
-- Add KITTI segmentation and detection format (<https://github.com/openvinotoolkit/cvat/pull/3757>)
-- Add LFW format (<https://github.com/openvinotoolkit/cvat/pull/3770>)
-- Add Cityscapes format (<https://github.com/openvinotoolkit/cvat/pull/3758>)
-- Add Open Images V6 format (<https://github.com/openvinotoolkit/cvat/pull/3679>)
 
 ### Changed
 
@@ -27,14 +48,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Manifest generation: Reduce creating time (<https://github.com/openvinotoolkit/cvat/pull/3712>)
 - Migration from NPM 6 to NPM 7 (<https://github.com/openvinotoolkit/cvat/pull/3773>)
 - Update Datumaro dependency to 0.2.0 (<https://github.com/openvinotoolkit/cvat/pull/3813>)
-
-### Deprecated
-
-- TDB
-
-### Removed
-
-- TDB
 
 ### Fixed
 

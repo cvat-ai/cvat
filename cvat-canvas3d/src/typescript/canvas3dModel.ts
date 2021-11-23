@@ -126,6 +126,7 @@ export interface Canvas3dModel {
     configureShapes(shapeProperties: any): void;
     fit(): void;
     group(groupData: GroupData): void;
+    destroy(): void;
 }
 
 export class Canvas3dModelImpl extends MasterImpl implements Canvas3dModel {
@@ -234,8 +235,8 @@ export class Canvas3dModelImpl extends MasterImpl implements Canvas3dModel {
     }
 
     public isAbleToChangeFrame(): boolean {
-        const isUnable = [Mode.DRAG, Mode.EDIT, Mode.RESIZE, Mode.INTERACT, Mode.BUSY].includes(this.data.mode)
-            || (this.data.mode === Mode.DRAW && typeof this.data.drawData.redraw === 'number');
+        const isUnable = [Mode.DRAG, Mode.EDIT, Mode.RESIZE, Mode.INTERACT, Mode.BUSY].includes(this.data.mode) ||
+            (this.data.mode === Mode.DRAW && typeof this.data.drawData.redraw === 'number');
         return !isUnable;
     }
 
@@ -340,4 +341,6 @@ export class Canvas3dModelImpl extends MasterImpl implements Canvas3dModel {
     public get groupData(): GroupData {
         return { ...this.data.groupData };
     }
+
+    public destroy(): void {}
 }

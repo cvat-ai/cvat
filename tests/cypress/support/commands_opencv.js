@@ -35,15 +35,15 @@ Cypress.Commands.add('opencvCreateShape', (opencvShapeParams) => {
     } else {
         const keyCodeN = 78;
         cy.get('.cvat-canvas-container')
-            .trigger('keydown', { keyCode: keyCodeN })
-            .trigger('keyup', { keyCode: keyCodeN });
+            .trigger('keydown', { keyCode: keyCodeN, code: 'KeyN' })
+            .trigger('keyup', { keyCode: keyCodeN, code: 'KeyN' });
     }
     cy.checkPopoverHidden('opencv-control');
     cy.opencvCheckObjectParameters('POLYGON');
 });
 
 Cypress.Commands.add('opencvCheckObjectParameters', (objectType) => {
-    let listCanvasShapeId = [];
+    const listCanvasShapeId = [];
     cy.document().then((doc) => {
         const listCanvasShape = Array.from(doc.querySelectorAll('.cvat_canvas_shape'));
         for (let i = 0; i < listCanvasShape.length; i++) {
