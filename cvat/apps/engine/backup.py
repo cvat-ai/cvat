@@ -7,22 +7,34 @@ import os
 from enum import Enum
 import re
 import shutil
+import tempfile
+import uuid
 from zipfile import ZipFile
+from datetime import datetime
+from tempfile import mkstemp
 
+import django_rq
 from django.conf import settings
 from django.db import transaction
+from django.utils import timezone
+from rest_framework import serializers, status
 from rest_framework.parsers import JSONParser
 from rest_framework.renderers import JSONRenderer
+from rest_framework.response import Response
+from sendfile import sendfile
 
 import cvat.apps.dataset_manager as dm
 from cvat.apps.engine import models
 from cvat.apps.engine.log import slogger
 from cvat.apps.engine.serializers import (AttributeSerializer, DataSerializer,
     LabeledDataSerializer, SegmentSerializer, SimpleJobSerializer, TaskSerializer,
-    ReviewSerializer, IssueSerializer, CommentSerializer, ProjectSerializer)
+    ReviewSerializer, IssueSerializer, CommentSerializer, ProjectSerializer,
+    ProjectFileSerializer, TaskFileSerializer)
 from cvat.apps.engine.utils import av_scan_paths
-from cvat.apps.engine.models import StorageChoice, StorageMethodChoice, DataChoice
+from cvat.apps.engine.models import StorageChoice, StorageMethodChoice, DataChoice, Task, Project
 from cvat.apps.engine.task import _create_thread
+from cvat.apps.dataset_manager.views import TASK_CACHE_TTL, PROJECT_CACHE_TTL, get_export_cache_dir, clear_export_cache, log_exception
+from cvat.apps.dataset_manager.bindings import CvatImportError
 
 
 class Version(Enum):
@@ -595,7 +607,7 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
         return self._db_task
 
 @transaction.atomic
-def import_task(filename, user):
+def _import_task(filename, user):
     av_scan_paths(filename)
     task_importer = TaskImporter(filename, user)
     db_task = task_importer.import_task()
@@ -609,7 +621,6 @@ class _ProjectBackupBase(_BackupBase):
     def _prepare_project_meta(self, project):
         allowed_fields = {
             'bug_tracker',
-            # TODO
             'deimension',
             'labels',
             'name',
@@ -723,8 +734,185 @@ class ProjectImporter(_ImporterBase, _ProjectBackupBase):
         return self._db_project
 
 @transaction.atomic
-def import_project(filename, user):
+def _import_project(filename, user):
     av_scan_paths(filename)
     project_importer = ProjectImporter(filename, user)
     db_project = project_importer.import_project()
     return db_project.id
+
+
+def _create_backup(db_instance, Exporter, output_path, logger, cache_ttl):
+    try:
+        cache_dir = get_export_cache_dir(db_instance)
+        output_path = os.path.join(cache_dir, output_path)
+
+        instance_time = timezone.localtime(db_instance.updated_date).timestamp()
+        if not (os.path.exists(output_path) and \
+                instance_time <= os.path.getmtime(output_path)):
+            os.makedirs(cache_dir, exist_ok=True)
+            with tempfile.TemporaryDirectory(dir=cache_dir) as temp_dir:
+                temp_file = os.path.join(temp_dir, 'dump')
+                exporter = Exporter(db_instance.id)
+                exporter.export_to(temp_file)
+                os.replace(temp_file, output_path)
+
+            archive_ctime = os.path.getctime(output_path)
+            scheduler = django_rq.get_scheduler()
+            cleaning_job = scheduler.enqueue_in(time_delta=cache_ttl,
+                func=clear_export_cache,
+                file_path=output_path,
+                file_ctime=archive_ctime,
+                logger=logger)
+            logger.info(
+                "The {} '{}' is backuped at '{}' "
+                "and available for downloading for the next {}. "
+                "Export cache cleaning job is enqueued, id '{}'".format(
+                    "project" if isinstance(db_instance, Project) else 'task',
+                    db_instance.name, output_path, cache_ttl,
+                    cleaning_job.id))
+
+        return output_path
+    except Exception:
+        log_exception(logger)
+        raise
+
+def export(db_instance, request):
+    action = request.query_params.get('action', None)
+    if action not in (None, 'download'):
+        raise serializers.ValidationError(
+            "Unexpected action specified for the request")
+
+    if isinstance(db_instance, Task):
+        filename_prefix = 'task'
+        logger = slogger.task[db_instance.pk]
+        Exporter = TaskExporter
+        cache_ttl = TASK_CACHE_TTL
+    elif isinstance(db_instance, Project):
+        filename_prefix = 'project'
+        logger = slogger.project[db_instance.pk]
+        Exporter = ProjectExporter
+        cache_ttl = PROJECT_CACHE_TTL
+    else:
+        raise Exception(
+            "Unexpected type of db_isntance: {}".format(type(db_instance)))
+
+    queue = django_rq.get_queue("default")
+    rq_id = "/api/v1/{}s/{}/backup".format(filename_prefix, db_instance.pk)
+    rq_job = queue.fetch_job(rq_id)
+    if rq_job:
+        last_project_update_time = timezone.localtime(db_instance.updated_date)
+        request_time = rq_job.meta.get('request_time', None)
+        if request_time is None or request_time < last_project_update_time:
+            rq_job.cancel()
+            rq_job.delete()
+        else:
+            if rq_job.is_finished:
+                file_path = rq_job.return_value
+                if action == "download" and os.path.exists(file_path):
+                    rq_job.delete()
+
+                    timestamp = datetime.strftime(last_project_update_time,
+                        "%Y_%m_%d_%H_%M_%S")
+                    filename = "{}_{}_backup_{}{}".format(
+                        filename_prefix, db_instance.name, timestamp,
+                        os.path.splitext(file_path)[1])
+                    return sendfile(request, file_path, attachment=True,
+                        attachment_filename=filename.lower())
+                else:
+                    if os.path.exists(file_path):
+                        return Response(status=status.HTTP_201_CREATED)
+            elif rq_job.is_failed:
+                exc_info = str(rq_job.exc_info)
+                rq_job.delete()
+                return Response(exc_info,
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            else:
+                return Response(status=status.HTTP_202_ACCEPTED)
+
+    ttl = dm.views.PROJECT_CACHE_TTL.total_seconds()
+    queue.enqueue_call(
+        func=_create_backup,
+        args=(db_instance, Exporter, '{}_backup.zip'.format(filename_prefix), logger, cache_ttl),
+        job_id=rq_id,
+        meta={ 'request_time': timezone.localtime() },
+        result_ttl=ttl, failure_ttl=ttl)
+    return Response(status=status.HTTP_202_ACCEPTED)
+
+def _import(importer, request, rq_id, Serializer, file_field_name):
+    queue = django_rq.get_queue("default")
+    rq_job = queue.fetch_job(rq_id)
+
+    if not rq_job:
+        serializer = Serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        payload_file = serializer.validated_data[file_field_name]
+        fd, filename = mkstemp(prefix='cvat_')
+        with open(filename, 'wb+') as f:
+            for chunk in payload_file.chunks():
+                f.write(chunk)
+        rq_job = queue.enqueue_call(
+            func=importer,
+            args=(filename, request.user.id),
+            job_id=rq_id,
+            meta={
+                'tmp_file': filename,
+                'tmp_file_descriptor': fd,
+            },
+        )
+    else:
+        if rq_job.is_finished:
+            project_id = rq_job.return_value
+            os.close(rq_job.meta['tmp_file_descriptor'])
+            os.remove(rq_job.meta['tmp_file'])
+            rq_job.delete()
+            return Response({'id': project_id}, status=status.HTTP_201_CREATED)
+        elif rq_job.is_failed:
+            os.close(rq_job.meta['tmp_file_descriptor'])
+            os.remove(rq_job.meta['tmp_file'])
+            exc_info = str(rq_job.exc_info)
+            rq_job.delete()
+
+            # RQ adds a prefix with exception class name
+            import_error_prefix = '{}.{}'.format(
+                CvatImportError.__module__, CvatImportError.__name__)
+            if exc_info.startswith(import_error_prefix):
+                exc_info = exc_info.replace(import_error_prefix + ': ', '')
+                return Response(data=exc_info,
+                    status=status.HTTP_400_BAD_REQUEST)
+            else:
+                return Response(data=exc_info,
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    return Response({'rq_id': rq_id}, status=status.HTTP_202_ACCEPTED)
+
+def import_project(request):
+    if 'rq_id' in request.data:
+        rq_id = request.data['rq_id']
+    else:
+        rq_id = "{}@/api/v1/projects/{}/import".format(request.user, uuid.uuid4())
+    Serializer = ProjectFileSerializer
+    file_field_name = 'project_file'
+
+    return _import(
+        importer=_import_project,
+        request=request,
+        rq_id=rq_id,
+        Serializer=Serializer,
+        file_field_name=file_field_name,
+    )
+
+def import_task(request):
+    if 'rq_id' in request.data:
+        rq_id = request.data['rq_id']
+    else:
+        rq_id = "{}@/api/v1/tasks/{}/import".format(request.user, uuid.uuid4())
+    Serializer = TaskFileSerializer
+    file_field_name = 'task_file'
+
+    return _import(
+        importer=_import_task,
+        request=request,
+        rq_id=rq_id,
+        Serializer=Serializer,
+        file_field_name=file_field_name,
+    )

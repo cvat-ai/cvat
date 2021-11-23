@@ -9,7 +9,6 @@ import os.path as osp
 import pytz
 import shutil
 import traceback
-import uuid
 from datetime import datetime
 from distutils.util import strtobool
 from tempfile import mkstemp, NamedTemporaryFile
@@ -59,12 +58,12 @@ from cvat.apps.engine.serializers import (
     CombinedReviewSerializer, CommentSerializer, DataMetaSerializer,
     DataSerializer, ExceptionSerializer, FileInfoSerializer, IssueSerializer,
     JobSerializer, LabeledDataSerializer, LogEventSerializer, PluginsSerializer,
-    ProjectFileSerializer, ProjectSearchSerializer, ProjectSerializer,
+    ProjectSearchSerializer, ProjectSerializer,
     ProjectWithoutTaskSerializer, ReviewSerializer, RqStatusSerializer,
-    TaskFileSerializer, TaskSerializer, UserSerializer, )
+    TaskSerializer, UserSerializer, )
 from utils.dataset_manifest import ImageManifestManager
 from cvat.apps.engine.utils import av_scan_paths
-from cvat.apps.engine.backup import import_project, import_task
+from cvat.apps.engine import backup
 from . import models, task
 from .log import clogger, slogger
 
@@ -270,20 +269,20 @@ class ProjectViewSet(auth.ProjectGetQuerySetMixin, viewsets.ModelViewSet):
 
         return [perm() for perm in permissions]
 
-    def perform_create(self, serializer):
-        def validate_project_limit(owner):
-            admin_perm = auth.AdminRolePermission()
-            is_admin = admin_perm.has_permission(self.request, self)
-            if not is_admin and settings.RESTRICTIONS['project_limit'] is not None and \
-                Project.objects.filter(owner=owner).count() >= settings.RESTRICTIONS['project_limit']:
-                raise serializers.ValidationError('The user has the maximum number of projects')
+    def _validate_project_limit(self, owner):
+        admin_perm = auth.AdminRolePermission()
+        is_admin = admin_perm.has_permission(self.request, self)
+        if not is_admin and settings.RESTRICTIONS['project_limit'] is not None and \
+            Project.objects.filter(owner=owner).count() >= settings.RESTRICTIONS['project_limit']:
+            raise serializers.ValidationError('The user has the maximum number of projects')
 
+    def perform_create(self, serializer):
         owner = self.request.data.get('owner', None)
         if owner:
-            validate_project_limit(owner)
+            self._validate_project_limit(owner)
             serializer.save()
         else:
-            validate_project_limit(self.request.user)
+            self._validate_project_limit(self.request.user)
             serializer.save(owner=self.request.user)
 
     @swagger_auto_schema(method='get', operation_summary='Returns information of the tasks of the project with the selected id',
@@ -378,107 +377,12 @@ class ProjectViewSet(auth.ProjectGetQuerySetMixin, viewsets.ModelViewSet):
     @action(methods=['GET'], detail=True, url_path='backup')
     def export(self, request, pk=None):
         db_project = self.get_object() # force to call check_object_permissions
-
-        action = self.request.query_params.get('action', None)
-        if action not in (None, 'download'):
-            raise serializers.ValidationError(
-                "Unexpected action specified for the request")
-
-        queue = django_rq.get_queue("default")
-        rq_id = "/api/v1/projects/{}/backup".format(pk)
-
-        rq_job = queue.fetch_job(rq_id)
-        if rq_job:
-            last_project_update_time = timezone.localtime(db_project.updated_date)
-            request_time = rq_job.meta.get('request_time', None)
-            if request_time is None or request_time < last_project_update_time:
-                rq_job.cancel()
-                rq_job.delete()
-            else:
-                if rq_job.is_finished:
-                    file_path = rq_job.return_value
-                    if action == "download" and osp.exists(file_path):
-                        rq_job.delete()
-
-                        timestamp = datetime.strftime(last_project_update_time,
-                            "%Y_%m_%d_%H_%M_%S")
-                        filename = "project_{}_backup_{}{}".format(
-                            db_project.name, timestamp,
-                            osp.splitext(file_path)[1])
-                        return sendfile(request, file_path, attachment=True,
-                            attachment_filename=filename.lower())
-                    else:
-                        if osp.exists(file_path):
-                            return Response(status=status.HTTP_201_CREATED)
-                elif rq_job.is_failed:
-                    exc_info = str(rq_job.exc_info)
-                    rq_job.delete()
-                    return Response(exc_info,
-                        status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-                else:
-                    return Response(status=status.HTTP_202_ACCEPTED)
-
-        ttl = dm.views.PROJECT_CACHE_TTL.total_seconds()
-        queue.enqueue_call(
-            func=dm.views.backup,
-            args=(None, pk,'project_backup.zip'),
-            job_id=rq_id,
-            meta={ 'request_time': timezone.localtime() },
-            result_ttl=ttl, failure_ttl=ttl)
-        return Response(status=status.HTTP_202_ACCEPTED)
+        return backup.export(db_project, request)
 
     @action(detail=False, methods=['POST'])
     def backup(self, request, pk=None):
-        if 'rq_id' in request.data:
-            rq_id = request.data['rq_id']
-        else:
-            rq_id = "{}@/api/v1/projects/{}/import".format(request.user, uuid.uuid4())
-
-        queue = django_rq.get_queue("default")
-        rq_job = queue.fetch_job(rq_id)
-
-        if not rq_job:
-            serializer = ProjectFileSerializer(data=request.data)
-            serializer.is_valid(raise_exception=True)
-            project_file = serializer.validated_data['project_file']
-            fd, filename = mkstemp(prefix='cvat_')
-            with open(filename, 'wb+') as f:
-                for chunk in project_file.chunks():
-                    f.write(chunk)
-            rq_job = queue.enqueue_call(
-                func=import_project,
-                args=(filename, request.user.id),
-                job_id=rq_id,
-                meta={
-                    'tmp_file': filename,
-                    'tmp_file_descriptor': fd,
-                },
-            )
-        else:
-            if rq_job.is_finished:
-                project_id = rq_job.return_value
-                os.close(rq_job.meta['tmp_file_descriptor'])
-                os.remove(rq_job.meta['tmp_file'])
-                rq_job.delete()
-                return Response({'id': project_id}, status=status.HTTP_201_CREATED)
-            elif rq_job.is_failed:
-                os.close(rq_job.meta['tmp_file_descriptor'])
-                os.remove(rq_job.meta['tmp_file'])
-                exc_info = str(rq_job.exc_info)
-                rq_job.delete()
-
-                # RQ adds a prefix with exception class name
-                import_error_prefix = '{}.{}'.format(
-                    CvatImportError.__module__, CvatImportError.__name__)
-                if exc_info.startswith(import_error_prefix):
-                    exc_info = exc_info.replace(import_error_prefix + ': ', '')
-                    return Response(data=exc_info,
-                        status=status.HTTP_400_BAD_REQUEST)
-                else:
-                    return Response(data=exc_info,
-                        status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-        return Response({'rq_id': rq_id}, status=status.HTTP_202_ACCEPTED)
+        self._validate_project_limit(owner=self.request.user)
+        return backup.import_project(request)
 
 class TaskFilter(filters.FilterSet):
     project = filters.CharFilter(field_name="project__name", lookup_expr="icontains")
@@ -559,106 +463,12 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
     @action(detail=False, methods=['POST'])
     def backup(self, request, pk=None):
         self._validate_task_limit(owner=self.request.user)
-        if 'rq_id' in request.data:
-            rq_id = request.data['rq_id']
-        else:
-            rq_id = "{}@/api/v1/tasks/{}/import".format(request.user, uuid.uuid4())
-
-        queue = django_rq.get_queue("default")
-        rq_job = queue.fetch_job(rq_id)
-
-        if not rq_job:
-            serializer = TaskFileSerializer(data=request.data)
-            serializer.is_valid(raise_exception=True)
-            task_file = serializer.validated_data['task_file']
-            fd, filename = mkstemp(prefix='cvat_')
-            with open(filename, 'wb+') as f:
-                for chunk in task_file.chunks():
-                    f.write(chunk)
-            rq_job = queue.enqueue_call(
-                func=import_task,
-                args=(filename, request.user.id),
-                job_id=rq_id,
-                meta={
-                    'tmp_file': filename,
-                    'tmp_file_descriptor': fd,
-                },
-            )
-        else:
-            if rq_job.is_finished:
-                task_id = rq_job.return_value
-                os.close(rq_job.meta['tmp_file_descriptor'])
-                os.remove(rq_job.meta['tmp_file'])
-                rq_job.delete()
-                return Response({'id': task_id}, status=status.HTTP_201_CREATED)
-            elif rq_job.is_failed:
-                os.close(rq_job.meta['tmp_file_descriptor'])
-                os.remove(rq_job.meta['tmp_file'])
-                exc_info = str(rq_job.exc_info)
-                rq_job.delete()
-
-                # RQ adds a prefix with exception class name
-                import_error_prefix = '{}.{}'.format(
-                    CvatImportError.__module__, CvatImportError.__name__)
-                if exc_info.startswith(import_error_prefix):
-                    exc_info = exc_info.replace(import_error_prefix + ': ', '')
-                    return Response(data=exc_info,
-                        status=status.HTTP_400_BAD_REQUEST)
-                else:
-                    return Response(data=exc_info,
-                        status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-        return Response({'rq_id': rq_id}, status=status.HTTP_202_ACCEPTED)
+        return backup.import_task(request)
 
     @action(methods=['GET'], detail=True, url_path='backup')
     def export(self, request, pk=None):
         db_task = self.get_object() # force to call check_object_permissions
-        action = self.request.query_params.get('action', None)
-        if action not in (None, 'download'):
-            raise serializers.ValidationError(
-                "Unexpected action specified for the request")
-        queue = django_rq.get_queue("default")
-        rq_id = "/api/v1/tasks/{}/export".format(pk)
-
-        rq_job = queue.fetch_job(rq_id)
-        if rq_job:
-            last_task_update_time = timezone.localtime(db_task.updated_date)
-            request_time = rq_job.meta.get('request_time', None)
-            if request_time is None or request_time < last_task_update_time:
-                rq_job.cancel()
-                rq_job.delete()
-            else:
-                if rq_job.is_finished:
-                    file_path = rq_job.return_value
-                    if action == "download" and osp.exists(file_path):
-                        rq_job.delete()
-
-                        timestamp = datetime.strftime(last_task_update_time,
-                            "%Y_%m_%d_%H_%M_%S")
-                        filename = "task_{}_backup_{}{}".format(
-                            db_task.name, timestamp,
-                            osp.splitext(file_path)[1])
-                        return sendfile(request, file_path, attachment=True,
-                            attachment_filename=filename.lower())
-                    else:
-                        if osp.exists(file_path):
-                            return Response(status=status.HTTP_201_CREATED)
-                elif rq_job.is_failed:
-                    exc_info = str(rq_job.exc_info)
-                    rq_job.delete()
-                    return Response(exc_info,
-                        status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-                else:
-                    return Response(status=status.HTTP_202_ACCEPTED)
-
-        ttl = dm.views.TASK_CACHE_TTL.total_seconds()
-        queue.enqueue_call(
-            func=dm.views.backup,
-            args=(pk, None, 'task_dump.zip'),
-            job_id=rq_id,
-            meta={ 'request_time': timezone.localtime() },
-            result_ttl=ttl, failure_ttl=ttl)
-        return Response(status=status.HTTP_202_ACCEPTED)
+        return backup.export(db_task, request)
 
     def perform_create(self, serializer):
         owner = self.request.data.get('owner', None)
