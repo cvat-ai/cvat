@@ -142,6 +142,10 @@ connection with your use of FFmpeg.
 - [Human Protocol](https://hmt.ai) uses CVAT as a way of adding annotation service to the human protocol.
 - [Cogito Tech LLC](https://bit.ly/3klT0h6), a Human-in-the-Loop Workforce Solutions Provider, used CVAT
   in annotation of about 5,000 images for a brand operating in the fashion segment.
+- [FiftyOne](https://fiftyone.ai) is an open-source dataset curation and model analysis
+tool for visualizing, exploring, and improving computer vision datasets and models that is
+[tightly integrated](https://voxel51.com/docs/fiftyone/integrations/cvat.html) with CVAT
+for annotation and label refinement.
 
 ## Questions
 
