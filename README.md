@@ -132,6 +132,17 @@ additional licenses. Intel is not responsible for obtaining any
 such licenses, nor liable for any licensing fees due in
 connection with your use of FFmpeg.
 
+## Partners
+
+- [Onepanel](https://github.com/onepanelio/core) is an open source
+  vision AI platform that fully integrates CVAT with scalable data processing
+  and parallelized training pipelines.
+- [DataIsKey](https://dataiskey.eu/annotation-tool/) uses CVAT as their prime data labeling tool
+  to offer annotation services for projects of any size.
+- [Human Protocol](https://hmt.ai) uses CVAT as a way of adding annotation service to the human protocol.
+- [Cogito Tech LLC](https://bit.ly/3klT0h6), a Human-in-the-Loop Workforce Solutions Provider, used CVAT
+  in annotation of about 5,000 images for a brand operating in the fashion segment.
+
 ## Questions
 
 CVAT usage related questions or unclear concepts can be posted in our
@@ -156,14 +167,6 @@ Other ways to ask questions and get our support:
 - [Intel Software: Computer Vision Annotation Tool: A Universal Approach to Data Annotation](https://software.intel.com/en-us/articles/computer-vision-annotation-tool-a-universal-approach-to-data-annotation)
 - [VentureBeat: Intel open-sources CVAT, a toolkit for data labeling](https://venturebeat.com/2019/03/05/intel-open-sources-cvat-a-toolkit-for-data-labeling/)
 
-## Projects using CVAT
-
-- [Onepanel](https://github.com/onepanelio/core) is an open source
-  vision AI platform that fully integrates CVAT with scalable data processing
-  and parallelized training pipelines.
-- [DataIsKey](https://dataiskey.eu/annotation-tool/) uses CVAT as their prime data labeling tool
-  to offer annotation services for projects of any size.
-- [Human Protocol](https://hmt.ai) uses CVAT as a way of adding annotation service to the human protocol.
   <!-- prettier-ignore-start -->
   <!-- Badges -->
 

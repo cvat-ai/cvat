@@ -27,7 +27,7 @@ context('Check if the UI not to crash after remove a tag', () => {
                 .should('contain', '1')
                 .and('contain', 'TAG')
                 .trigger('mouseover')
-                .trigger('keydown', { keyCode: keyCodeDel });
+                .trigger('keydown', { keyCode: keyCodeDel, code: 'Delete' });
         });
         it('Page with the error is missing', () => {
             cy.contains('Oops, something went wrong').should('not.exist');
