@@ -100,20 +100,10 @@ export default function LabelsListComponent(): JSX.Element {
                                 }
                             }}
                         >
-                            {frameIssue.resolver ? (
-                                <Alert
-                                    description={<span>{`By ${frameIssue.resolver.username}`}</span>}
-                                    message='Resolved'
-                                    type='success'
-                                    showIcon
-                                />
+                            {frameIssue.resolved ? (
+                                <Alert message='Resolved' type='success' showIcon />
                             ) : (
-                                <Alert
-                                    description={<span>{`By ${frameIssue.owner.username}`}</span>}
-                                    message='Opened'
-                                    type='warning'
-                                    showIcon
-                                />
+                                <Alert message='Opened' type='warning' showIcon />
                             )}
                         </div>
                     ),

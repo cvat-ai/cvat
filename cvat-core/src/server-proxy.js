@@ -756,12 +756,12 @@
                 return response.data;
             }
 
-            async function createIssue(jobId, data) {
+            async function createIssue(data) {
                 const { backendAPI } = config;
 
                 let response = null;
                 try {
-                    response = await Axios.post(`${backendAPI}/jobs/${jobId}/issues/create`, JSON.stringify(data), {
+                    response = await Axios.post(`${backendAPI}/issues`, JSON.stringify(data), {
                         proxy: config.proxy,
                         headers: {
                             'Content-Type': 'application/json',

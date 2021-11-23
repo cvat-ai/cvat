@@ -942,6 +942,7 @@
          * @memberof module:API.cvat.classes.Job
          * @returns {module:API.cvat.classes.Issue}
          * @param {module:API.cvat.classes.Issue} issue
+         * @param {string} message
          * @readonly
          * @instance
          * @async
@@ -949,8 +950,8 @@
          * @throws {module:API.cvat.exceptions.ServerError}
          * @throws {module:API.cvat.exceptions.PluginError}
          */
-        async openIssue(issue) {
-            const result = await PluginRegistry.apiWrapper.call(this, Job.prototype.openIssue, issue);
+        async openIssue(issue, message) {
+            const result = await PluginRegistry.apiWrapper.call(this, Job.prototype.openIssue, issue, message);
             return result;
         }
     }
@@ -1739,9 +1740,13 @@
         return result.map((issue) => new Issue(issue));
     };
 
-    Job.prototype.openIssue.implementation = async function (issue) {
+    Job.prototype.openIssue.implementation = async function (issue, message) {
         checkObjectType('issue', issue, null, Issue);
-        const result = await serverProxy.issues.create(this.id, issue.serialize());
+        checkObjectType('message', message, 'string');
+        const result = await serverProxy.issues.create({
+            ...issue.serialize(),
+            message,
+        });
         return new Issue(result);
     };
 

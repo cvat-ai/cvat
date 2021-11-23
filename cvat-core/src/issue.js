@@ -19,14 +19,13 @@ class Issue {
     constructor(initialData) {
         const data = {
             id: undefined,
+            job: undefined,
             position: undefined,
-            comment_set: [],
+            comments: [],
             frame: undefined,
             created_date: undefined,
-            resolved_date: undefined,
             owner: undefined,
-            resolver: undefined,
-            removed: false,
+            resolved: undefined,
         };
 
         for (const property in data) {
@@ -36,10 +35,9 @@ class Issue {
         }
 
         if (data.owner && !(data.owner instanceof User)) data.owner = new User(data.owner);
-        if (data.resolver && !(data.resolver instanceof User)) data.resolver = new User(data.resolver);
 
-        if (data.comment_set) {
-            data.comment_set = data.comment_set.map((comment) => new Comment(comment));
+        if (data.comments) {
+            data.comments = data.comments.map((comment) => new Comment(comment));
         }
 
         if (typeof data.created_date === 'undefined') {
@@ -78,6 +76,18 @@ class Issue {
                     },
                 },
                 /**
+                 * ID of a job, the issue is linked with
+                 * @name job
+                 * @type {number}
+                 * @memberof module:API.cvat.classes.Issue
+                 * @instance
+                 * @readonly
+                 * @throws {module:API.cvat.exceptions.ArgumentError}
+                 */
+                job: {
+                    get: () => data.job,
+                },
+                /**
                  * List of comments attached to the issue
                  * @name comments
                  * @type {module:API.cvat.classes.Comment[]}
@@ -87,7 +97,7 @@ class Issue {
                  * @throws {module:API.cvat.exceptions.ArgumentError}
                  */
                 comments: {
-                    get: () => data.comment_set.filter((comment) => !comment.removed),
+                    get: () => [...data.comments],
                 },
                 /**
                  * @name frame
@@ -110,16 +120,6 @@ class Issue {
                     get: () => data.created_date,
                 },
                 /**
-                 * @name resolvedDate
-                 * @type {string}
-                 * @memberof module:API.cvat.classes.Issue
-                 * @readonly
-                 * @instance
-                 */
-                resolvedDate: {
-                    get: () => data.resolved_date,
-                },
-                /**
                  * An instance of a user who has raised the issue
                  * @name owner
                  * @type {module:API.cvat.classes.User}
@@ -131,30 +131,15 @@ class Issue {
                     get: () => data.owner,
                 },
                 /**
-                 * An instance of a user who has resolved the issue
-                 * @name resolver
+                 * The flag defines issue status
+                 * @name resolved
                  * @type {module:API.cvat.classes.User}
                  * @memberof module:API.cvat.classes.Issue
                  * @readonly
                  * @instance
                  */
-                resolver: {
-                    get: () => data.resolver,
-                },
-                /**
-                 * @name removed
-                 * @type {boolean}
-                 * @memberof module:API.cvat.classes.Comment
-                 * @instance
-                 */
-                removed: {
-                    get: () => data.removed,
-                    set: (value) => {
-                        if (typeof value !== 'boolean') {
-                            throw new ArgumentError('Value must be a boolean value');
-                        }
-                        data.removed = value;
-                    },
+                resolved: {
+                    get: () => data.resolved,
                 },
                 __internal: {
                     get: () => data,
@@ -180,7 +165,7 @@ class Issue {
 
     /**
      * @typedef {Object} CommentData
-s     * @property {string} message a comment message
+     * @property {string} message a comment message
      * @global
      */
     /**
@@ -241,23 +226,23 @@ s     * @property {string} message a comment message
         const data = {
             position: this.position,
             frame: this.frame,
-            comment_set: comments.map((comment) => comment.serialize()),
+            comments: comments.map((comment) => comment.serialize()),
         };
 
         if (typeof this.id === 'number') {
             data.id = this.id;
         }
-        if (this.createdDate) {
+        if (typeof this.job === 'number') {
+            data.job = this.job;
+        }
+        if (typeof this.createdDate === 'string') {
             data.created_date = this.createdDate;
         }
-        if (this.resolvedDate) {
-            data.resolved_date = this.resolvedDate;
+        if (typeof this.resolved === 'boolean') {
+            data.resolved = this.resolved;
         }
-        if (this.owner) {
-            data.owner = this.owner.serialize();
-        }
-        if (this.resolver) {
-            data.resolver = this.resolver.serialize();
+        if (this.owner instanceof User) {
+            data.owner = this.owner.serialize().id;
         }
 
         return data;
@@ -278,9 +263,9 @@ Issue.prototype.comment.implementation = async function (data) {
         serialized.issue = this.id;
         const response = await serverProxy.comments.create(serialized);
         const savedComment = new Comment(response);
-        this.__internal.comment_set.push(savedComment);
+        this.__internal.comments.push(savedComment);
     } else {
-        this.__internal.comment_set.push(comment);
+        this.__internal.comments.push(comment);
     }
 };
 
@@ -290,23 +275,19 @@ Issue.prototype.resolve.implementation = async function (user) {
     }
 
     if (typeof this.id === 'number') {
-        const response = await serverProxy.issues.update(this.id, { resolver_id: user.id });
-        this.__internal.resolved_date = response.resolved_date;
-        this.__internal.resolver = new User(response.resolver);
+        const response = await serverProxy.issues.update(this.id, { resolved: true });
+        this.__internal.resolved = response.resolved;
     } else {
-        this.__internal.resolved_date = new Date().toISOString();
-        this.__internal.resolver = user;
+        this.__internal.resolved = true;
     }
 };
 
 Issue.prototype.reopen.implementation = async function () {
     if (typeof this.id === 'number') {
-        const response = await serverProxy.issues.update(this.id, { resolver_id: null });
-        this.__internal.resolved_date = response.resolved_date;
-        this.__internal.resolver = response.resolver;
+        const response = await serverProxy.issues.update(this.id, { resolved: false });
+        this.__internal.resolved = response.resolved;
     } else {
-        this.__internal.resolved_date = null;
-        this.__internal.resolver = null;
+        this.__internal.resolved = false;
     }
 };
 

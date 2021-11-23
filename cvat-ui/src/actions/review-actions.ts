@@ -74,14 +74,12 @@ export const finishIssueAsync = (message: string): ThunkAction => async (dispatc
 
     try {
         const issue = new cvat.classes.Issue({
+            job: jobInstance.id,
             frame: frameNumber,
             position: newIssuePosition,
-            comment_set: [
-                { message },
-            ],
         });
 
-        const savedIssue = await jobInstance.openIssue(issue);
+        const savedIssue = await jobInstance.openIssue(issue, message);
         dispatch(reviewActions.finishIssueSuccess(frameNumber, savedIssue));
     } catch (error) {
         dispatch(reviewActions.finishIssueFailed(error));
@@ -100,7 +98,7 @@ export const commentIssueAsync = (id: number, message: string): ThunkAction => a
         const [issue] = frameIssues.filter((_issue: any): boolean => _issue.id === id);
         await issue.comment({
             message,
-            author: user,
+            owner: user,
         });
 
         dispatch(reviewActions.commentIssueSuccess());

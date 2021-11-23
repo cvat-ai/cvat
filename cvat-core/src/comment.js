@@ -17,8 +17,7 @@ class Comment {
             message: undefined,
             created_date: undefined,
             updated_date: undefined,
-            removed: false,
-            author: undefined,
+            owner: undefined,
         };
 
         for (const property in data) {
@@ -27,7 +26,7 @@ class Comment {
             }
         }
 
-        if (data.author && !(data.author instanceof User)) data.author = new User(data.author);
+        if (data.owner && !(data.owner instanceof User)) data.owner = new User(data.owner);
         if (typeof data.created_date === 'undefined') {
             data.created_date = new Date().toISOString();
         }
@@ -83,29 +82,14 @@ class Comment {
                 },
                 /**
                  * Instance of a user who has created the comment
-                 * @name author
+                 * @name owner
                  * @type {module:API.cvat.classes.User}
                  * @memberof module:API.cvat.classes.Comment
                  * @readonly
                  * @instance
                  */
-                author: {
-                    get: () => data.author,
-                },
-                /**
-                 * @name removed
-                 * @type {boolean}
-                 * @memberof module:API.cvat.classes.Comment
-                 * @instance
-                 */
-                removed: {
-                    get: () => data.removed,
-                    set: (value) => {
-                        if (typeof value !== 'boolean') {
-                            throw new ArgumentError('Value must be a boolean value');
-                        }
-                        data.removed = value;
-                    },
+                owner: {
+                    get: () => data.owner,
                 },
                 __internal: {
                     get: () => data,
@@ -128,8 +112,8 @@ class Comment {
         if (this.updatedDate) {
             data.updated_date = this.updatedDate;
         }
-        if (this.author) {
-            data.author_id = this.author.serialize();
+        if (this.owner) {
+            data.owner_id = this.owner.serialize().id;
         }
 
         return data;
