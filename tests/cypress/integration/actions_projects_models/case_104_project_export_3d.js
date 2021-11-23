@@ -32,7 +32,7 @@ context('Export project dataset with 3D task.', { browser: '!firefox' }, () => {
 
     before(() => {
         cy.openProject(projectName);
-        getProjectID(projectName);
+        getProjectID();
         cy.createAnnotationTask(
             task.name3d,
             task.label3d,

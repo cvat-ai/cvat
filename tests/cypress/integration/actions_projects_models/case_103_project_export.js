@@ -59,7 +59,7 @@ context('Export project dataset.', { browser: '!firefox' }, () => {
         cy.imageGenerator(imagesFolder, imageFileName, width, height, color, posX, posY, labelName, imagesCount);
         cy.createZipArchive(directoryToArchive, archivePath);
         cy.openProject(projectName);
-        getProjectID(projectName);
+        getProjectID();
         cy.createAnnotationTask(
             task.nameSecond,
             task.labelSecond,

@@ -4,15 +4,12 @@
 
 /// <reference types="cypress" />
 
-// eslint-disable-next-line import/no-extraneous-dependencies
 require('cypress-file-upload');
 require('../plugins/imageGenerator/imageGeneratorCommand');
 require('../plugins/createZipArchive/createZipArchiveCommand');
-// eslint-disable-next-line import/no-extraneous-dependencies
 require('cypress-localstorage-commands');
 require('../plugins/compareImages/compareImagesCommand');
 require('../plugins/unpackZipArchive/unpackZipArchiveCommand');
-// eslint-disable-next-line import/no-extraneous-dependencies
 require('cy-verify-downloads').addCustomCommand();
 
 let selectedValueGlobal = '';
@@ -328,8 +325,8 @@ Cypress.Commands.add('createPoint', (createPointParams) => {
     } else if (!createPointParams.numberOfPoints) {
         const keyCodeN = 78;
         cy.get('.cvat-canvas-container')
-            .trigger('keydown', { keyCode: keyCodeN })
-            .trigger('keyup', { keyCode: keyCodeN });
+            .trigger('keydown', { keyCode: keyCodeN, code: 'KeyN' })
+            .trigger('keyup', { keyCode: keyCodeN, code: 'KeyN' });
     }
     cy.checkPopoverHidden('draw-points');
     cy.checkObjectParameters(createPointParams, 'POINTS');
@@ -375,8 +372,8 @@ Cypress.Commands.add('createPolygon', (createPolygonParams) => {
     } else if (!createPolygonParams.numberOfPoints) {
         const keyCodeN = 78;
         cy.get('.cvat-canvas-container')
-            .trigger('keydown', { keyCode: keyCodeN })
-            .trigger('keyup', { keyCode: keyCodeN });
+            .trigger('keydown', { keyCode: keyCodeN, code: 'KeyN' })
+            .trigger('keyup', { keyCode: keyCodeN, code: 'KeyN' });
     }
     cy.checkPopoverHidden('draw-polygon');
     cy.checkObjectParameters(createPolygonParams, 'POLYGON');
@@ -519,8 +516,8 @@ Cypress.Commands.add('createPolyline', (createPolylineParams) => {
     } else if (!createPolylineParams.numberOfPoints) {
         const keyCodeN = 78;
         cy.get('.cvat-canvas-container')
-            .trigger('keydown', { keyCode: keyCodeN })
-            .trigger('keyup', { keyCode: keyCodeN });
+            .trigger('keydown', { keyCode: keyCodeN, code: 'KeyN' })
+            .trigger('keyup', { keyCode: keyCodeN, code: 'KeyN' });
     }
     cy.checkPopoverHidden('draw-polyline');
     cy.checkObjectParameters(createPolylineParams, 'POLYLINE');
@@ -662,7 +659,7 @@ Cypress.Commands.add('goToRegisterPage', () => {
 Cypress.Commands.add('getScaleValue', () => {
     cy.get('#cvat_canvas_background')
         .should('have.attr', 'style')
-        .then(($styles) => Number($styles.match(/scale\((\d\.\d+)\)/m)[1]));
+        .then(($styles) => (Number($styles.match(/scale\((\d\.\d+)\)/m)[1])));
 });
 
 Cypress.Commands.add('goCheckFrameNumber', (frameNum) => {
