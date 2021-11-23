@@ -38,13 +38,7 @@
                 dimension: undefined,
             };
 
-            const updatedFields = new FieldUpdateTrigger({
-                name: false,
-                assignee: false,
-                bugTracker: false,
-                labels: false,
-                trainingProject: false,
-            });
+            const updateTrigger = new FieldUpdateTrigger();
 
             for (const property in data) {
                 if (Object.prototype.hasOwnProperty.call(data, property) && property in initialData) {
@@ -106,7 +100,7 @@
                                 throw new ArgumentError('Value must not be empty');
                             }
                             data.name = value;
-                            updatedFields.name = true;
+                            updateTrigger.update('name');
                         },
                     },
 
@@ -135,7 +129,7 @@
                                 throw new ArgumentError('Value must be a user instance');
                             }
                             data.assignee = assignee;
-                            updatedFields.assignee = true;
+                            updateTrigger.update('assignee');
                         },
                     },
                     /**
@@ -160,7 +154,7 @@
                         get: () => data.bug_tracker,
                         set: (tracker) => {
                             data.bug_tracker = tracker;
-                            updatedFields.bugTracker = true;
+                            updateTrigger.update('bugTracker');
                         },
                     },
                     /**
@@ -222,7 +216,7 @@
                             });
 
                             data.labels = [...deletedLabels, ...labels];
-                            updatedFields.labels = true;
+                            updateTrigger.update('labels');
                         },
                     },
                     /**
@@ -270,14 +264,14 @@
                             } else {
                                 data.training_project = updatedProject;
                             }
-                            updatedFields.trainingProject = true;
+                            updateTrigger.update('trainingProject');
                         },
                     },
                     _internalData: {
                         get: () => data,
                     },
-                    _updatedFields: {
-                        get: () => updatedFields,
+                    _updateTrigger: {
+                        get: () => updateTrigger,
                     },
                 }),
             );

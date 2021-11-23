@@ -28,6 +28,7 @@ export default function SubmitReviewModal(): JSX.Element | null {
     const job = useSelector((state: CombinedState): any => state.annotation.job.instance);
     const [assignee, setAssignee] = useState<User | null>(job.assignee ? job.assignee : null);
     const [jobState, setJobState] = useState<string>(core.enums.JobState.COMPLETED);
+    const [jobStage, setJobStage] = useState<string>(core.enums.JobStage.ACCEPTANCE);
     const [reviewStatus, setReviewStatus] = useState<string>(ReviewStatus.ACCEPTED);
     const submittingJobReview = useSelector((state: CombinedState): number | null => state.review.fetching.jobId);
 
@@ -35,7 +36,7 @@ export default function SubmitReviewModal(): JSX.Element | null {
     const submitReview = (): void => {
         dispatch(
             submitReviewAsync(
-                assignee, jobState, () => history.push(`/tasks/${job.task.id}`),
+                assignee, jobState, jobStage, () => history.push(`/tasks/${job.task.id}`),
             ),
         );
     };
@@ -43,10 +44,13 @@ export default function SubmitReviewModal(): JSX.Element | null {
     useEffect(() => {
         if (reviewStatus === ReviewStatus.ACCEPTED) {
             setJobState(core.enums.JobState.COMPLETED);
+            setJobStage(core.enums.JobStage.ACCEPTANCE);
         } else if (reviewStatus === ReviewStatus.REJECTED) {
             setJobState(core.enums.JobState.REJECTED);
+            setJobStage(core.enums.JobStage.ANNOTATION);
         } else if (reviewStatus === ReviewStatus.REVIEW_FURTHER) {
             setJobState(core.enums.JobState.IN_PROGRESS);
+            setJobStage(core.enums.JobStage.VALIDATION);
         }
     }, [reviewStatus]);
 

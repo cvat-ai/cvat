@@ -714,11 +714,7 @@
                 task: undefined,
             };
 
-            const updatedFields = new FieldUpdateTrigger({
-                assignee: false,
-                stage: false,
-                state: false,
-            });
+            const updateTrigger = new FieldUpdateTrigger();
 
             for (const property in data) {
                 if (Object.prototype.hasOwnProperty.call(data, property)) {
@@ -761,7 +757,7 @@
                             if (assignee !== null && !(assignee instanceof User)) {
                                 throw new ArgumentError('Value must be a user instance');
                             }
-                            updatedFields.assignee = true;
+                            updateTrigger.update('assignee');
                             data.assignee = assignee;
                         },
                     },
@@ -790,7 +786,7 @@
                                 );
                             }
 
-                            updatedFields.stage = true;
+                            updateTrigger.update('stage');
                             data.stage = stage;
                         },
                     },
@@ -819,7 +815,7 @@
                                 );
                             }
 
-                            updatedFields.state = true;
+                            updateTrigger.update('state');
                             data.state = state;
                         },
                     },
@@ -853,8 +849,8 @@
                     task: {
                         get: () => data.task,
                     },
-                    _updatedFields: {
-                        get: () => updatedFields,
+                    _updateTrigger: {
+                        get: () => updateTrigger,
                     },
                 }),
             );
@@ -1004,14 +1000,7 @@
                 cloud_storage_id: undefined,
             };
 
-            const updatedFields = new FieldUpdateTrigger({
-                name: false,
-                assignee: false,
-                bug_tracker: false,
-                subset: false,
-                labels: false,
-                project_id: false,
-            });
+            const updateTrigger = new FieldUpdateTrigger();
 
             for (const property in data) {
                 if (Object.prototype.hasOwnProperty.call(data, property) && property in initialData) {
@@ -1083,7 +1072,7 @@
                             if (!value.trim().length) {
                                 throw new ArgumentError('Value must not be empty');
                             }
-                            updatedFields.name = true;
+                            updateTrigger.update('name');
                             data.name = value;
                         },
                     },
@@ -1100,7 +1089,7 @@
                                 throw new ArgumentError('Value must be a positive integer');
                             }
 
-                            updatedFields.project_id = true;
+                            updateTrigger.update('projectId');
                             data.project_id = projectId;
                         },
                     },
@@ -1159,7 +1148,7 @@
                             if (assignee !== null && !(assignee instanceof User)) {
                                 throw new ArgumentError('Value must be a user instance');
                             }
-                            updatedFields.assignee = true;
+                            updateTrigger.update('assignee');
                             data.assignee = assignee;
                         },
                     },
@@ -1199,7 +1188,7 @@
                                 );
                             }
 
-                            updatedFields.bug_tracker = true;
+                            updateTrigger.update('bugTracker');
                             data.bug_tracker = tracker;
                         },
                     },
@@ -1219,7 +1208,7 @@
                                 );
                             }
 
-                            updatedFields.subset = true;
+                            updateTrigger.update('subset');
                             data.subset = subset;
                         },
                     },
@@ -1348,7 +1337,7 @@
                                 _label.deleted = true;
                             });
 
-                            updatedFields.labels = true;
+                            updateTrigger.update('labels');
                             data.labels = [...deletedLabels, ...labels];
                         },
                     },
@@ -1537,8 +1526,8 @@
                     _internalData: {
                         get: () => data,
                     },
-                    _updatedFields: {
-                        get: () => updatedFields,
+                    _updateTrigger: {
+                        get: () => updateTrigger,
                     },
                 }),
             );
@@ -1705,30 +1694,13 @@
 
     Job.prototype.save.implementation = async function () {
         if (this.id) {
-            const jobData = {};
-
-            for (const [field, isUpdated] of Object.entries(this._updatedFields)) {
-                if (isUpdated) {
-                    switch (field) {
-                        case 'state':
-                            jobData.state = this.state;
-                            break;
-                        case 'stage':
-                            jobData.stage = this.stage;
-                            break;
-                        case 'assignee':
-                            jobData.assignee_id = this.assignee ? this.assignee.id : null;
-                            break;
-                        default:
-                            break;
-                    }
-                }
+            const jobData = this._updateTrigger.getUpdated(this, { assignee: 'assignee_id' });
+            if (jobData.assignee_id) {
+                jobData.assignee_id = jobData.assignee_id.id;
             }
 
             await serverProxy.jobs.save(this.id, jobData);
-
-            this._updatedFields.reset();
-
+            this._updateTrigger.reset();
             return this;
         }
 
@@ -1961,37 +1933,20 @@
         // TODO: Add ability to change an owner and an assignee
         if (typeof this.id !== 'undefined') {
             // If the task has been already created, we update it
-            const taskData = {};
-
-            for (const [field, isUpdated] of Object.entries(this._updatedFields)) {
-                if (isUpdated) {
-                    switch (field) {
-                        case 'assignee':
-                            taskData.assignee_id = this.assignee ? this.assignee.id : null;
-                            break;
-                        case 'name':
-                            taskData.name = this.name;
-                            break;
-                        case 'bug_tracker':
-                            taskData.bug_tracker = this.bugTracker;
-                            break;
-                        case 'subset':
-                            taskData.subset = this.subset;
-                            break;
-                        case 'project_id':
-                            taskData.project_id = this.projectId;
-                            break;
-                        case 'labels':
-                            taskData.labels = [...this._internalData.labels.map((el) => el.toJSON())];
-                            break;
-                        default:
-                            break;
-                    }
-                }
+            const taskData = this._updateTrigger.getUpdated(this, {
+                bugTracker: 'bug_tracker',
+                projectId: 'project_id',
+                assignee: 'assignee_id',
+            });
+            if (taskData.assignee_id) {
+                taskData.assignee_id = taskData.assignee_id.id;
+            }
+            if (taskData.labels) {
+                taskData.labels = taskData.labels.map((el) => el.toJSON());
             }
 
             await serverProxy.tasks.save(this.id, taskData);
-            this._updatedFields.reset();
+            this._updateTrigger.reset();
             return this;
         }
 

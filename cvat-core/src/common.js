@@ -98,29 +98,29 @@
     }
 
     class FieldUpdateTrigger {
-        constructor(initialFields) {
-            const data = { ...initialFields };
+        constructor() {
+            let updatedFlags = {};
 
             Object.defineProperties(
                 this,
                 Object.freeze({
-                    ...Object.assign(
-                        {},
-                        ...Array.from(Object.keys(data), (key) => ({
-                            [key]: {
-                                get: () => data[key],
-                                set: (value) => {
-                                    data[key] = value;
-                                },
-                                enumerable: true,
-                            },
-                        })),
-                    ),
                     reset: {
                         value: () => {
-                            Object.keys(data).forEach((key) => {
-                                data[key] = false;
-                            });
+                            updatedFlags = {};
+                        },
+                    },
+                    update: {
+                        value: (name) => {
+                            updatedFlags[name] = true;
+                        },
+                    },
+                    getUpdated: {
+                        value: (data, propMap = {}) => {
+                            const result = {};
+                            for (const updatedField of Object.keys(updatedFlags)) {
+                                result[propMap[updatedField] || updatedField] = data[updatedField];
+                            }
+                            return result;
                         },
                     },
                 }),

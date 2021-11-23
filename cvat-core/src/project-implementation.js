@@ -12,33 +12,20 @@
     function implementProject(projectClass) {
         projectClass.prototype.save.implementation = async function () {
             if (typeof this.id !== 'undefined') {
-                const projectData = {};
-                for (const [field, isUpdated] of Object.entries(this._updatedFields)) {
-                    if (isUpdated) {
-                        switch (field) {
-                            case 'name':
-                                projectData.name = this.name;
-                                break;
-                            case 'assignee':
-                                projectData.assignee_id = this.assignee ? this.assignee.id : null;
-                                break;
-                            case 'bugTracker':
-                                projectData.bug_tracker = this.bugTracker;
-                                break;
-                            case 'labels':
-                                projectData.labels = this.labels.map((el) => el.toJSON());
-                                break;
-                            case 'trainingProject':
-                                projectData.training_project = this.trainingProject;
-                                break;
-                            default:
-                                break;
-                        }
-                    }
+                const projectData = this._updateTrigger.getUpdated(this, {
+                    bugTracker: 'bug_tracker',
+                    trainingProject: 'training_project',
+                    assignee: 'assignee_id',
+                });
+                if (projectData.assignee_id) {
+                    projectData.assignee_id = projectData.assignee_id.id;
+                }
+                if (projectData.labels) {
+                    projectData.labels = projectData.labels.map((el) => el.toJSON());
                 }
 
                 await serverProxy.projects.save(this.id, projectData);
-                this._updatedFields.reset();
+                this._updateTrigger.reset();
                 return this;
             }
 
