@@ -415,11 +415,10 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
             );
         }
 
-        // key file path - not for cvat.org
         if (providerType === ProviderType.GOOGLE_CLOUD_STORAGE && credentialsType === CredentialsType.KEY_FILE_PATH) {
             return (
                 <Row>
-                    <Col span={23}>
+                    <Col span={22}>
                         <Form.Item
                             name='key_file_path'
                             label={(
@@ -445,7 +444,7 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
                             />
                         </Form.Item>
                     </Col>
-                    <Col span={1} style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                    <Col span={2} className='cvat-cloud-storage-form-item-key-file'>
                         <Upload
                             accept='.json, application/json'
                             multiple={false}
