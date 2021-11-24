@@ -675,6 +675,7 @@ export interface ReviewState {
     activeReview: any | null;
     newIssuePosition: number[] | null;
     issuesHidden: boolean;
+    issuesResolvedHidden: boolean;
     fetching: {
         reviewId: number | null;
         issueId: number | null;

@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -29,10 +29,11 @@ export default function IssueAggregatorComponent(): JSX.Element | null {
     const dispatch = useDispatch();
     const [expandedIssue, setExpandedIssue] = useState<number | null>(null);
     const frameIssues = useSelector((state: CombinedState): any[] => state.review.frameIssues);
-    const canvasInstance = useSelector((state: CombinedState): Canvas => state.annotation.canvas.instance);
+    const canvasInstance = useSelector((state: CombinedState): Canvas => state.annotation.canvas.instance as Canvas);
     const canvasIsReady = useSelector((state: CombinedState): boolean => state.annotation.canvas.ready);
     const newIssuePosition = useSelector((state: CombinedState): number[] | null => state.review.newIssuePosition);
     const issuesHidden = useSelector((state: CombinedState): any => state.review.issuesHidden);
+    const issuesResolvedHidden = useSelector((state: CombinedState): any => state.review.issuesResolvedHidden);
     const issueFetching = useSelector((state: CombinedState): number | null => state.review.fetching.issueId);
     const issueLabels: JSX.Element[] = [];
     const issueDialogs: JSX.Element[] = [];
@@ -81,6 +82,7 @@ export default function IssueAggregatorComponent(): JSX.Element | null {
     const { geometry } = canvasInstance;
     for (const issue of frameIssues) {
         if (issuesHidden) break;
+        if (issuesResolvedHidden && issue.resolvedDate !== null) continue;
         const issueResolved = !!issue.resolver;
         const offset = 15;
         const translated = issue.position.map((coord: number): number => coord + geometry.offset);

@@ -16,6 +16,7 @@ const defaultState: ReviewState = {
     activeReview: null, // not saved on the server
     newIssuePosition: null,
     issuesHidden: false,
+    issuesResolvedHidden: false,
     fetching: {
         reviewId: null,
         issueId: null,
@@ -173,6 +174,13 @@ export default function (state: ReviewState = defaultState, action: any): Review
             return {
                 ...state,
                 issuesHidden: hidden,
+            };
+        }
+        case ReviewActionTypes.SWITCH_ISSUES_HIDDEN_RESOLVED_FLAG: {
+            const { hidden } = action.payload;
+            return {
+                ...state,
+                issuesResolvedHidden: hidden,
             };
         }
         case AnnotationActionTypes.CLOSE_JOB:
