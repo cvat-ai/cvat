@@ -54,7 +54,7 @@ interface CloudStorageForm {
 
 export default function CreateCloudStorageForm(props: Props): JSX.Element {
     const { cloudStorage } = props;
-    const cloudStorageId = (cloudStorage) ? cloudStorage.id : null;
+    const cloudStorageId = cloudStorage ? cloudStorage.id : null;
     const dispatch = useDispatch();
     const history = useHistory();
     const [form] = Form.useForm();
