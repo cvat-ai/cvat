@@ -149,8 +149,7 @@ class JobReadSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
 class JobWriteSerializer(JobReadSerializer):
-    assignee = serializers.IntegerField(write_only=True, allow_null=True, required=False)
-
+    assignee = serializers.IntegerField(allow_null=True, required=False)
     def to_representation(self, instance):
         serializer = JobReadSerializer(instance, context=self.context)
         return serializer.data
@@ -169,6 +168,10 @@ class JobWriteSerializer(JobReadSerializer):
             validated_data['status'] = status
             if not state:
                 validated_data['state'] = models.StateChoice.NEW
+
+        assignee = validated_data.get('assignee')
+        if assignee is not None:
+            validated_data['assignee'] = User.objects.get(id=assignee)
 
         return super().update(instance, validated_data)
 
