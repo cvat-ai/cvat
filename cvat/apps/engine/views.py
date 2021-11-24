@@ -258,8 +258,10 @@ class ProjectViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        perm = ProjectPermission('list', self.request, self)
-        return perm.filter(queryset)
+        if self.action == 'list':
+            perm = ProjectPermission('list', self.request, self)
+            queryset = perm.filter(queryset)
+        return queryset
 
     def perform_create(self, serializer):
         serializer.save(owner=self.request.user,
@@ -409,8 +411,11 @@ class TaskViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        perm = TaskPermission('list', self.request, self)
-        return perm.filter(queryset)
+        if self.action == 'list':
+            perm = TaskPermission('list', self.request, self)
+            queryset = perm.filter(queryset)
+
+        return queryset
 
     def create(self, request):
         action = self.request.query_params.get('action', None)
@@ -876,8 +881,11 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        perm = JobPermission.create_list(self.request)
-        return perm.filter(queryset)
+        if self.action == 'list':
+            perm = JobPermission.create_list(self.request)
+            queryset = perm.filter(queryset)
+
+        return queryset
 
     def get_serializer_class(self):
         if self.request.method in SAFE_METHODS:
@@ -952,8 +960,11 @@ class IssueViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        perm = IssuePermission.create_list(self.request)
-        return perm.filter(queryset)
+        if self.action == 'list':
+            perm = IssuePermission.create_list(self.request)
+            queryset = perm.filter(queryset)
+
+        return queryset
 
     def get_serializer_class(self):
         if self.request.method in SAFE_METHODS:
@@ -983,8 +994,11 @@ class CommentViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        perm = CommentPermission.create_list(self.request)
-        return perm.filter(queryset)
+        if self.action == 'list':
+            perm = CommentPermission.create_list(self.request)
+            queryset = perm.filter(queryset)
+
+        return queryset
 
     def get_serializer_class(self):
         if self.request.method in SAFE_METHODS:
@@ -1021,8 +1035,11 @@ class UserViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        perm = UserPermission(self.request, self)
-        return perm.filter(queryset)
+        if self.action == 'list':
+            perm = UserPermission(self.request, self)
+            queryset = perm.filter(queryset)
+
+        return queryset
 
     def get_serializer_class(self):
         user = self.request.user
@@ -1116,9 +1133,12 @@ class CloudStorageViewSet(viewsets.ModelViewSet):
             return BaseCloudStorageSerializer
 
     def get_queryset(self):
+        queryset = super().get_queryset()
+        if self.action == 'list':
+            perm = CloudStoragePermission(self.request, self)
+            queryset = perm.filter(queryset)
+
         provider_type = self.request.query_params.get('provider_type', None)
-        perm = CloudStoragePermission(self.request, self)
-        queryset = perm.filter(super().get_queryset())
         if provider_type:
             if provider_type in CloudProviderChoice.list():
                 return queryset.filter(provider_type=provider_type)
