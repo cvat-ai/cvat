@@ -423,7 +423,7 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
                             name='key_file_path'
                             label={(
                                 <Tooltip title='You can specify path to key file or upload key file.
-                                        If you leave those fields blank, the environment variable will be used.'
+                                        If you leave these fields blank, the environment variable will be used.'
                                 >
                                     Key file
                                 </Tooltip>
