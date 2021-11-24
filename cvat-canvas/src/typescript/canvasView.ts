@@ -1169,15 +1169,16 @@ export class CanvasViewImpl implements CanvasView, Listener {
         if (reason === UpdateReasons.CONFIG_UPDATED) {
             const { activeElement } = this;
             this.deactivate();
+            const { configuration } = model;
 
-            if (model.configuration.displayAllText && !this.configuration.displayAllText) {
+            if (configuration.displayAllText && !this.configuration.displayAllText) {
                 for (const i in this.drawnStates) {
                     if (!(i in this.svgTexts)) {
                         this.svgTexts[i] = this.addText(this.drawnStates[i]);
                         this.updateTextPosition(this.svgTexts[i], this.svgShapes[i]);
                     }
                 }
-            } else if (model.configuration.displayAllText === false && this.configuration.displayAllText) {
+            } else if (configuration.displayAllText === false && this.configuration.displayAllText) {
                 for (const i in this.drawnStates) {
                     if (i in this.svgTexts && Number.parseInt(i, 10) !== activeElement.clientID) {
                         this.svgTexts[i].remove();
@@ -1186,7 +1187,15 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 }
             }
 
-            this.configuration = model.configuration;
+            if ('smoothImage' in configuration) {
+                if (configuration.smoothImage) {
+                    this.background.classList.remove('cvat_canvas_pixelized');
+                } else {
+                    this.background.classList.add('cvat_canvas_pixelized');
+                }
+            }
+
+            this.configuration = configuration;
             this.activate(activeElement);
             this.editHandler.configurate(this.configuration);
             this.drawHandler.configurate(this.configuration);

@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add Cityscapes format (<https://github.com/openvinotoolkit/cvat/pull/3758>)
 - Add Open Images V6 format (<https://github.com/openvinotoolkit/cvat/pull/3679>)
 - Rotated bounding boxes (<https://github.com/openvinotoolkit/cvat/pull/3832>)
+- Player option: Smooth image when zoom-in, enabled by default (<https://github.com/openvinotoolkit/cvat/pull/3933>)
 
 ### Changed
 - TDB
