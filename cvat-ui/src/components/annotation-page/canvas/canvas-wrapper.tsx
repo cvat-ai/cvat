@@ -27,7 +27,7 @@ const MAX_DISTANCE_TO_OPEN_SHAPE = 50;
 
 interface Props {
     sidebarCollapsed: boolean;
-    canvasInstance: Canvas | Canvas3d;
+    canvasInstance: Canvas | Canvas3d | null;
     jobInstance: any;
     activatedStateID: number | null;
     activatedAttributeID: number | null;
@@ -57,6 +57,7 @@ interface Props {
     contrastLevel: number;
     saturationLevel: number;
     resetZoom: boolean;
+    smoothImage: boolean;
     aamZoomMargin: number;
     showObjectsTextAlways: boolean;
     showAllInterpolationTracks: boolean;
@@ -105,6 +106,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             workspace,
             showProjections,
             selectedOpacity,
+            smoothImage,
         } = this.props;
         const { canvasInstance } = this.props as { canvasInstance: Canvas };
 
@@ -114,6 +116,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         wrapper.appendChild(canvasInstance.html());
 
         canvasInstance.configure({
+            smoothImage,
             autoborders: automaticBordering,
             undefinedAttrValue: consts.UNDEFINED_ATTRIBUTE_VALUE,
             displayAllText: showObjectsTextAlways,
@@ -144,6 +147,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             activatedStateID,
             curZLayer,
             resetZoom,
+            smoothImage,
             grid,
             gridSize,
             gridOpacity,
@@ -167,7 +171,8 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             prevProps.automaticBordering !== automaticBordering ||
             prevProps.showProjections !== showProjections ||
             prevProps.intelligentPolygonCrop !== intelligentPolygonCrop ||
-            prevProps.selectedOpacity !== selectedOpacity
+            prevProps.selectedOpacity !== selectedOpacity ||
+            prevProps.smoothImage !== smoothImage
         ) {
             canvasInstance.configure({
                 undefinedAttrValue: consts.UNDEFINED_ATTRIBUTE_VALUE,
@@ -176,6 +181,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
                 showProjections,
                 intelligentPolygonCrop,
                 creationOpacity: selectedOpacity,
+                smoothImage,
             });
         }
 
@@ -418,7 +424,9 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
 
     private fitCanvas = (): void => {
         const { canvasInstance } = this.props;
-        canvasInstance.fitCanvas();
+        if (canvasInstance) {
+            canvasInstance.fitCanvas();
+        }
     };
 
     private onCanvasMouseDown = (e: MouseEvent): void => {
@@ -677,7 +685,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             curZLayer, annotations, frameData, canvasInstance,
         } = this.props;
 
-        if (frameData !== null) {
+        if (frameData !== null && canvasInstance) {
             canvasInstance.setup(
                 frameData,
                 annotations.filter((e) => e.objectType !== ObjectType.TAG),
