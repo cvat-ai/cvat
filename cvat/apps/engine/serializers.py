@@ -15,6 +15,8 @@ from cvat.apps.engine.cloud_provider import get_cloud_storage_instance, Credenti
 from cvat.apps.engine.log import slogger
 from cvat.apps.engine.utils import parse_specific_attributes
 
+from cvat.apps.engine.utils import SortingMethods
+
 class BasicUserSerializer(serializers.ModelSerializer):
     def validate(self, data):
         if hasattr(self, 'initial_data'):
@@ -274,7 +276,7 @@ class DataSerializer(serializers.ModelSerializer):
     use_cache = serializers.BooleanField(default=False)
     copy_data = serializers.BooleanField(default=False)
     cloud_storage_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)
-    sorting_method = serializers.ChoiceField(models.SortingMethods.choices(), default=models.SortingMethods.DEFAULT)
+    sorting_method = serializers.ChoiceField(SortingMethods.choices(), default=SortingMethods.DEFAULT)
 
     class Meta:
         model = models.Data

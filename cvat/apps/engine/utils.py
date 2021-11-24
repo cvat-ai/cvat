@@ -12,6 +12,7 @@ import traceback
 import subprocess
 import os
 from av import VideoFrame
+from enum import Enum
 from PIL import Image
 
 from django.core.exceptions import ValidationError
@@ -106,3 +107,34 @@ def parse_specific_attributes(specific_attributes):
         item.split('=')[0].strip(): item.split('=')[1].strip()
             for item in specific_attributes.split('&')
     } if specific_attributes else dict()
+
+class SortingMethods(str, Enum):
+    DEFAULT = 'DEFAULT'
+    NATIVE = 'NATIVE'
+    CUSTOM = 'CUSTOM'
+    RANDOM = 'RANDOM'
+    REVERSED = 'REVERSED'
+
+    @classmethod
+    def choices(cls):
+        return tuple((x.value, x.name) for x in cls)
+
+    def __str__(self):
+        return self.value
+
+def sort(images, sorting_method=SortingMethods.DEFAULT, func=None):
+    if sorting_method == SortingMethods.DEFAULT:
+        return sorted(images, key=func)
+    elif sorting_method == SortingMethods.NATIVE:
+        from natsort import os_sorted
+        return os_sorted(images, key=func)
+    elif sorting_method == SortingMethods.CUSTOM:
+        return images
+    elif sorting_method == SortingMethods.RANDOM:
+        from random import shuffle
+        shuffle(images)
+        return images
+    elif sorting_method == SortingMethods.REVERSED:
+        return sorted(images, key=func, reverse=True)
+    else:
+        raise NotImplementedError()

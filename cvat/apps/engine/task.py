@@ -23,7 +23,7 @@ from cvat.apps.engine import models
 from cvat.apps.engine.log import slogger
 from cvat.apps.engine.media_extractors import (MEDIA_TYPES, Mpeg4ChunkWriter, Mpeg4CompressedChunkWriter,
     ValidateDimension, ZipChunkWriter, ZipCompressedChunkWriter, get_mime)
-from cvat.apps.engine.utils import av_scan_paths
+from cvat.apps.engine.utils import av_scan_paths, SortingMethods
 from utils.dataset_manifest import ImageManifestManager, VideoManifestManager
 from utils.dataset_manifest.core import VideoManifestValidator
 from utils.dataset_manifest.utils import detect_related_images
@@ -217,23 +217,6 @@ def _get_manifest_frame_indexer(start_frame=0, frame_step=1):
     return lambda frame_id: start_frame + frame_id * frame_step
 
 
-def sort(images, sorting_method=models.SortingMethods.DEFAULT):
-    if sorting_method == models.SortingMethods.DEFAULT:
-        return sorted(images)
-    elif sorting_method == models.SortingMethods.NATIVE:
-        from natsort import os_sorted
-        return os_sorted(images)
-    elif sorting_method == models.SortingMethods.CUSTOM:
-        return images
-    elif sorting_method == models.SortingMethods.RANDOM:
-        from random import shuffle
-        shuffle(images)
-        return images
-    elif sorting_method == models.SortingMethods.REVERSED:
-        return sorted(images, reverse=True)
-    else:
-        raise NotImplementedError()
-
 @transaction.atomic
 def _create_thread(tid, data, isImport=False):
     slogger.glob.info("create task #{}".format(tid))
@@ -312,7 +295,7 @@ def _create_thread(tid, data, isImport=False):
             if extractor is not None:
                 raise Exception('Combined data types are not supported')
             source_paths=[os.path.join(upload_dir, f) for f in media_files]
-            if manifest_file and data['sorting_method'] == models.SortingMethods.RANDOM:
+            if manifest_file and data['sorting_method'] == SortingMethods.RANDOM:
                 raise Exception("It isn't supported to upload manifest file and use random sorting")
             if media_type in {'archive', 'zip'} and db_data.storage == models.StorageChoice.SHARE:
                 source_paths.append(db_data.get_upload_dirname())
@@ -324,15 +307,15 @@ def _create_thread(tid, data, isImport=False):
                 data['stop_frame'] = None
                 db_data.frame_filter = ''
 
-            sorted_source_paths = sort(source_paths, data['sorting_method'])
-            del source_paths
-            extractor = MEDIA_TYPES[media_type]['extractor'](
-                source_path=sorted_source_paths,
-                step=db_data.get_frame_step(),
-                start=db_data.start_frame,
-                stop=data['stop_frame'],
-            )
-
+            details = {
+                'source_path': source_paths,
+                'step': db_data.get_frame_step(),
+                'start': db_data.start_frame,
+                'stop': data['stop_frame'],
+            }
+            if media_type != 'video':
+                details['sorting_method'] = data['sorting_method']
+            extractor = MEDIA_TYPES[media_type]['extractor'](**details)
 
     validate_dimension = ValidateDimension()
     if isinstance(extractor, MEDIA_TYPES['zip']['extractor']):
@@ -497,8 +480,12 @@ def _create_thread(tid, data, isImport=False):
                     chunk_paths = [(extractor.get_path(i), i) for i in chunk_frames]
                     img_sizes = []
 
-                    for _, frame_id in chunk_paths:
+                    for chunk_path, frame_id in chunk_paths:
                         properties = manifest[manifest_index(frame_id)]
+
+                        # check mapping
+                        if not chunk_path.endswith(f"{properties['name']}{properties['extension']}"):
+                            raise Exception('Incorrect file mapping to manifest content')
                         if db_task.dimension == models.DimensionType.DIM_2D:
                             resolution = (properties['width'], properties['height'])
                         else:
