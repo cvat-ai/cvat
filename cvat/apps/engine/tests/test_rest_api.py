@@ -30,7 +30,7 @@ from rest_framework.test import APIClient, APITestCase
 
 from datumaro.util.test_utils import TestDir
 from cvat.apps.engine.models import (AttributeSpec, AttributeType, Data, Job, Project,
-    Segment, StatusChoice, Task, Label, StorageMethodChoice, StorageChoice)
+    Segment, StageChoice, StatusChoice, Task, Label, StorageMethodChoice, StorageChoice)
 from cvat.apps.engine.media_extractors import ValidateDimension
 from cvat.apps.engine.models import DimensionType
 from utils.dataset_manifest import ImageManifestManager, VideoManifestManager
@@ -344,14 +344,14 @@ class JobUpdateAPITestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_api_v1_jobs_id_owner(self):
-        data = {"status": StatusChoice.ANNOTATION, "assignee": self.annotator.id}
+        data = {"status": StatusChoice.ANNOTATION, "assignee": self.owner.id}
         response = self._run_api_v1_jobs_id(self.job.id, self.owner, data)
         self._check_request(response, data)
         response = self._run_api_v1_jobs_id(self.job.id + 10, self.owner, data)
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_api_v1_jobs_id_annotator(self):
-        data = {"status": StatusChoice.ANNOTATION, "assignee": self.user.id}
+        data = {"status": StatusChoice.ANNOTATION, "assignee": self.annotator.id}
         response = self._run_api_v1_jobs_id(self.job.id, self.annotator, data)
         self._check_request(response, data)
         response = self._run_api_v1_jobs_id(self.job.id + 10, self.annotator, data)
@@ -386,7 +386,7 @@ class JobPartialUpdateAPITestCase(JobUpdateAPITestCase):
         return response
 
     def test_api_v1_jobs_id_annotator_partial(self):
-        data = {"status": StatusChoice.VALIDATION}
+        data = {"status": StageChoice.ANNOTATION}
         response = self._run_api_v1_jobs_id(self.job.id, self.owner, data)
         self._check_request(response, data)
 
@@ -394,227 +394,6 @@ class JobPartialUpdateAPITestCase(JobUpdateAPITestCase):
         data = {"assignee_id": self.user.id}
         response = self._run_api_v1_jobs_id(self.job.id, self.owner, data)
         self._check_request(response, data)
-
-class JobReview(APITestCase):
-    def setUp(self):
-        self.client = APIClient()
-
-    @classmethod
-    def setUpTestData(cls):
-        create_db_users(cls)
-        cls.task = create_dummy_db_tasks(cls)[0]
-        cls.job = Job.objects.filter(segment__task_id=cls.task.id).first()
-        cls.reviewer = cls.annotator
-        cls.job.reviewer = cls.reviewer
-        cls.job.assignee = cls.assignee
-        cls.job.save()
-        cls.reject_review_data = {
-            "job": cls.job.id,
-            "issue_set": [
-                {
-                "position": [
-                    50, 50, 100, 100
-                ],
-                "comment_set": [
-                    {
-                    "message": "This is wrong!"
-                    }, {
-                    "message": "This is wrong 2!"
-                    }
-                ],
-                "frame": 0
-                }
-            ],
-            "estimated_quality": 3,
-            "status": "rejected"
-        }
-
-        cls.accept_review_data = {
-            "job": cls.job.id,
-            "issue_set": [],
-            "estimated_quality": 5,
-            "status": "accepted"
-        }
-
-        cls.review_further_data = {
-            "job": cls.job.id,
-            "issue_set": [],
-            "estimated_quality": 4,
-            "status": "review_further",
-            "reviewer_id": cls.reviewer.id
-        }
-
-        cls.create_comment_data = [{
-            "message": "This is testing message"
-        }, {
-            "message": "This is testing message 2"
-        }, {
-            "message": "This is testing message 3"
-        }]
-
-    def _post_request(self, path, user, data):
-        with ForceLogin(user, self.client):
-            response = self.client.post(path, data=data, format='json')
-
-        return response
-
-    def _patch_request(self, path, user, data):
-        with ForceLogin(user, self.client):
-            response = self.client.patch(path, data=data, format='json')
-
-        return response
-
-    def _get_request(self, path, user):
-        with ForceLogin(user, self.client):
-            response = self.client.get(path)
-
-        return response
-
-    def _delete_request(self, path, user):
-        with ForceLogin(user, self.client):
-            response = self.client.delete(path)
-
-        return response
-
-    def _fetch_job_from_db(self):
-        self.job = Job.objects.prefetch_related(
-            'review_set',
-            'review_set__issue_set',
-            'review_set__issue_set__comment_set').filter(segment__task_id=self.task.id).first()
-
-    def _set_annotation_status(self):
-        self._patch_request('/api/v1/jobs/{}'.format(self.job.id), self.admin, {'status': 'annotation'})
-
-    def _set_validation_status(self):
-        self._patch_request('/api/v1/jobs/{}'.format(self.job.id), self.admin, {'status': 'validation'})
-
-    def test_api_v1_job_annotation_review(self):
-        self._set_annotation_status()
-        response = self._post_request('/api/v1/reviews', self.reviewer, self.accept_review_data)
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-        response = self._post_request('/api/v1/reviews', self.assignee, self.accept_review_data)
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-
-    def test_api_v1_job_validation_review_create(self):
-        self._set_validation_status()
-        response = self._post_request('/api/v1/reviews', self.reviewer, self.accept_review_data)
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self._fetch_job_from_db()
-        self.assertEqual(self.job.status, 'completed')
-        response = self._post_request('/api/v1/reviews', self.assignee, self.accept_review_data)
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-        self.job.review_set.first().delete()
-
-    def test_api_v1_job_reject_review(self):
-        self._set_validation_status()
-        response = self._post_request('/api/v1/reviews', self.reviewer, self.reject_review_data)
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self._fetch_job_from_db()
-        self.assertEqual(self.job.status, 'annotation')
-        self.job.review_set.first().delete()
-
-    def test_api_v1_job_review_further(self):
-        self._set_validation_status()
-        response = self._post_request('/api/v1/reviews', self.reviewer, self.review_further_data)
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self._fetch_job_from_db()
-        self.assertEqual(self.job.status, 'validation')
-        self.job.review_set.first().delete()
-
-    def test_api_v1_create_review_comment(self):
-        self._set_validation_status()
-        response = self._post_request('/api/v1/reviews', self.reviewer, self.reject_review_data)
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        issue_id = response.data['issue_set'][0]['id']
-        comments = self.create_comment_data[:]
-        for comment in comments:
-            comment.update({
-                'issue': issue_id
-            })
-            response = self._post_request('/api/v1/comments', self.assignee, comment)
-            self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        response = self._get_request('/api/v1/issues/{}/comments'.format(issue_id), self.reviewer)
-        self.assertIsInstance(response.data, cls = list)
-        self.assertEqual(len(response.data), 5)
-        self.job.review_set.all().delete()
-        self.job.issue_set.all().delete()
-
-    def test_api_v1_edit_review_comment(self):
-        self._set_validation_status()
-        response = self._post_request('/api/v1/reviews', self.reviewer, self.reject_review_data)
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        issue_id = response.data['issue_set'][0]['id']
-        comments = self.create_comment_data[:]
-        for comment in comments:
-            comment.update({
-                'issue': issue_id
-            })
-            response = self._post_request('/api/v1/comments', self.assignee, comment)
-            self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        response = self._get_request('/api/v1/issues/{}/comments'.format(issue_id), self.reviewer)
-        last_comment = max(response.data, key=lambda comment: comment['id'])
-        last_comment.update({
-            'message': 'fixed message 3'
-        })
-        last_comment.update({
-            'author_id': last_comment['author']['id'],
-            'author': None
-        })
-        response = self._patch_request('/api/v1/comments/{}'.format(last_comment['id']), self.reviewer, last_comment)
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-        response = self._patch_request('/api/v1/comments/{}'.format(last_comment['id']), self.assignee, last_comment)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data['message'], last_comment['message'])
-        response = self._get_request('/api/v1/issues/{}/comments'.format(issue_id), self.reviewer)
-        updated_last_comment = max(response.data, key=lambda comment: comment['id'])
-        self.assertEqual(updated_last_comment['message'], last_comment['message'])
-        self.job.review_set.all().delete()
-        self.job.issue_set.all().delete()
-
-    def test_api_v1_remove_comment(self):
-        self._set_validation_status()
-        response = self._post_request('/api/v1/reviews', self.reviewer, self.reject_review_data)
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        issue_id = response.data['issue_set'][0]['id']
-        comments = self.create_comment_data[:]
-        for comment in comments:
-            comment.update({
-                'issue': issue_id
-            })
-            response = self._post_request('/api/v1/comments', self.assignee, comment)
-            self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        response = self._get_request('/api/v1/issues/{}/comments'.format(issue_id), self.reviewer)
-        last_comment = max(response.data, key=lambda comment: comment['id'])
-        response = self._delete_request('/api/v1/comments/{}'.format(last_comment['id']), self.reviewer)
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-        response = self._delete_request('/api/v1/comments/{}'.format(last_comment['id']), self.assignee)
-        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
-        self._fetch_job_from_db()
-        ids = list(map(lambda comment: comment.id, self.job.issue_set.first().comment_set.all()))
-        self.assertNotIn(last_comment['id'], ids)
-        self.job.review_set.all().delete()
-        self.job.issue_set.all().delete()
-
-    def test_api_v1_resolve_reopen_issue(self):
-        self._set_validation_status()
-        response = self._post_request('/api/v1/reviews', self.reviewer, self.reject_review_data)
-        response = self._get_request('/api/v1/jobs/{}/issues'.format(self.job.id), self.assignee)
-        issue_id = response.data[0]['id']
-
-        response = self._patch_request('/api/v1/issues/{}'.format(issue_id), self.assignee, {'resolver_id': self.assignee.id})
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        response = self._get_request('/api/v1/jobs/{}/issues'.format(self.job.id), self.assignee)
-        self.assertEqual(response.data[0]['resolver']['id'], self.assignee.id)
-
-        response = self._patch_request('/api/v1/issues/{}'.format(issue_id), self.reviewer, {'resolver_id': None})
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        response = self._get_request('/api/v1/jobs/{}/issues'.format(self.job.id), self.assignee)
-        self.assertEqual(response.data[0]['resolver'], None)
-
-        response = self._patch_request('/api/v1/issues/{}'.format(issue_id), self.reviewer, {'resolver_id': self.reviewer.id})
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        response = self._get_request('/api/v1/jobs/{}/issues'.format(self.job.id), self.reviewer)
-        self.assertEqual(response.data[0]['resolver']['id'], self.reviewer.id)
 
 class ServerAboutAPITestCase(APITestCase):
     def setUp(self):
@@ -1058,12 +837,13 @@ class ProjectDeleteAPITestCase(APITestCase):
     def _check_api_v1_projects_id(self, user):
         for db_project in self.projects:
             response = self._run_api_v1_projects_id(db_project.id, user)
-            if user and user.has_perm("engine.project.delete", db_project):
-                self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
-            elif user:
-                self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-            else:
+            if user is None:
                 self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+            elif user == db_project.owner or user.is_superuser:
+                self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+            else:
+                self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
 
     def test_api_v1_projects_id_admin(self):
         self._check_api_v1_projects_id(self.admin)
@@ -1106,10 +886,8 @@ class ProjectCreateAPITestCase(APITestCase):
 
     def _check_api_v1_projects(self, user, data):
         response = self._run_api_v1_projects(user, data)
-        if user and user.has_perm("engine.project.create"):
+        if user:
             self._check_response(response, user, data)
-        elif user:
-            self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         else:
             self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
@@ -1150,8 +928,8 @@ class ProjectCreateAPITestCase(APITestCase):
         self._check_api_v1_projects(self.user, data)
 
         data = {
-            "owner_id": self.owner.id,
-            "assignee_id": self.assignee.id,
+            "owner_id": self.user.id,
+            "assignee_id": self.user.id,
             "name": "My import project with data"
         }
         self._check_api_v1_projects(self.user, data)
@@ -1160,8 +938,8 @@ class ProjectCreateAPITestCase(APITestCase):
     def test_api_v1_projects_somebody(self):
         data = {
             "name": "My Project #1",
-            "owner_id": self.owner.id,
-            "assignee_id": self.assignee.id
+            "owner_id": self.somebody.id,
+            "assignee_id": self.somebody.id
         }
         self._check_api_v1_projects(self.somebody, data)
 
