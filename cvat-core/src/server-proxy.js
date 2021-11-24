@@ -45,6 +45,20 @@
         return new ServerError(message, 0);
     }
 
+    function prepareData(details) {
+        const data = new FormData();
+        for (const [key, value] of Object.entries(details)) {
+            if (Array.isArray(value)) {
+                value.forEach((element, idx) => {
+                    data.append(`${key}[${idx}]`, element);
+                });
+            } else {
+                data.set(key, value);
+            }
+        }
+        return data;
+    }
+
     class WorkerWrappedAxios {
         constructor() {
             const worker = new DownloadWorker();
@@ -1181,16 +1195,7 @@
             async function createCloudStorage(storageDetail) {
                 const { backendAPI } = config;
 
-                const storageDetailData = new FormData();
-                for (const [key, value] of Object.entries(storageDetail)) {
-                    if (Array.isArray(value)) {
-                        value.forEach((element, idx) => {
-                            storageDetailData.append(`${key}[${idx}]`, element);
-                        });
-                    } else {
-                        storageDetailData.set(key, value);
-                    }
-                }
+                const storageDetailData = prepareData(storageDetail);
                 try {
                     const response = await Axios.post(`${backendAPI}/cloudstorages`, storageDetailData, {
                         proxy: config.proxy,
@@ -1204,16 +1209,7 @@
             async function updateCloudStorage(id, storageDetail) {
                 const { backendAPI } = config;
 
-                const storageDetailData = new FormData();
-                for (const [key, value] of Object.entries(storageDetail)) {
-                    if (Array.isArray(value)) {
-                        value.forEach((element, idx) => {
-                            storageDetailData.append(`${key}[${idx}]`, element);
-                        });
-                    } else {
-                        storageDetailData.set(key, value);
-                    }
-                }
+                const storageDetailData = prepareData(storageDetail);
                 try {
                     await Axios.patch(`${backendAPI}/cloudstorages/${id}`, storageDetailData, {
                         proxy: config.proxy,

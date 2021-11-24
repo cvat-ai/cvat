@@ -9,6 +9,14 @@
     const { ArgumentError } = require('./exceptions');
     const { CloudStorageCredentialsType, CloudStorageProviderType } = require('./enums');
 
+    function validateNotEmptyString(value) {
+        if (typeof value !== 'string') {
+            throw new ArgumentError(`Value must be a string. ${typeof value} was found`);
+        } else if (!value.trim().length) {
+            throw new ArgumentError('Value mustn\'t be empty string');
+        }
+    }
+
     /**
      * Class representing a cloud storage
      * @memberof module:API.cvat.classes
@@ -66,11 +74,7 @@
                     displayName: {
                         get: () => data.display_name,
                         set: (value) => {
-                            if (typeof value !== 'string') {
-                                throw new ArgumentError(`Value must be string. ${typeof value} was found`);
-                            } else if (!value.trim().length) {
-                                throw new ArgumentError('Value must not be empty string');
-                            }
+                            validateNotEmptyString(value);
                             data.display_name = value;
                         },
                     },
@@ -102,15 +106,8 @@
                     accountName: {
                         get: () => data.account_name,
                         set: (value) => {
-                            if (typeof value === 'string') {
-                                if (value.trim().length) {
-                                    data.account_name = value;
-                                } else {
-                                    throw new ArgumentError('Value must not be empty');
-                                }
-                            } else {
-                                throw new ArgumentError(`Value must be a string. ${typeof value} was found`);
-                            }
+                            validateNotEmptyString(value);
+                            data.account_name = value;
                         },
                     },
                     /**
@@ -124,15 +121,8 @@
                     accessKey: {
                         get: () => data.key,
                         set: (value) => {
-                            if (typeof value === 'string') {
-                                if (value.trim().length) {
-                                    data.key = value;
-                                } else {
-                                    throw new ArgumentError('Value must not be empty');
-                                }
-                            } else {
-                                throw new ArgumentError(`Value must be a string. ${typeof value} was found`);
-                            }
+                            validateNotEmptyString(value);
+                            data.key = value;
                         },
                     },
                     /**
@@ -146,15 +136,8 @@
                     secretKey: {
                         get: () => data.secret_key,
                         set: (value) => {
-                            if (typeof value === 'string') {
-                                if (value.trim().length) {
-                                    data.secret_key = value;
-                                } else {
-                                    throw new ArgumentError('Value must not be empty');
-                                }
-                            } else {
-                                throw new ArgumentError(`Value must be a string. ${typeof value} was found`);
-                            }
+                            validateNotEmptyString(value);
+                            data.secret_key = value;
                         },
                     },
                     /**
@@ -168,15 +151,8 @@
                     token: {
                         get: () => data.session_token,
                         set: (value) => {
-                            if (typeof value === 'string') {
-                                if (value.trim().length) {
-                                    data.session_token = value;
-                                } else {
-                                    throw new ArgumentError('Value must not be empty');
-                                }
-                            } else {
-                                throw new ArgumentError(`Value must be a string. ${typeof value} was found`);
-                            }
+                            validateNotEmptyString(value);
+                            data.session_token = value;
                         },
                     },
                     /**
@@ -190,15 +166,8 @@
                     keyFilePath: {
                         get: () => data.key_file_path,
                         set: (value) => {
-                            if (typeof value === 'string') {
-                                if (value.trim().length) {
-                                    data.key_file_path = value;
-                                } else {
-                                    throw new ArgumentError('Value must not be empty');
-                                }
-                            } else {
-                                throw new ArgumentError(`Value must be a string. ${typeof value} was found`);
-                            }
+                            validateNotEmptyString(value);
+                            data.key_file_path = value;
                         },
                     },
                     /**
@@ -212,7 +181,7 @@
                     keyFile: {
                         get: () => data.key_file,
                         set: (file) => {
-                            if (typeof value === 'File') {
+                            if (file instanceof File) {
                                 data.key_file = file;
                             } else {
                                 throw new ArgumentError(`Should be a file. ${typeof file} was found`);
@@ -230,11 +199,7 @@
                     resourceName: {
                         get: () => data.resource,
                         set: (value) => {
-                            if (typeof value !== 'string') {
-                                throw new ArgumentError(`Value must be string. ${typeof value} was found`);
-                            } else if (!value.trim().length) {
-                                throw new ArgumentError('Value must not be empty');
-                            }
+                            validateNotEmptyString(value);
                             data.resource = value;
                         },
                     },
@@ -248,11 +213,8 @@
                     manifestPath: {
                         get: () => data.manifest_path,
                         set: (value) => {
-                            if (typeof value === 'string') {
-                                data.manifest_path = value;
-                            } else {
-                                throw new ArgumentError('Value must be a string');
-                            }
+                            validateNotEmptyString(value);
+                            data.manifest_path = value;
                         },
                     },
                     /**

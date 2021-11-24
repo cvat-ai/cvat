@@ -24,19 +24,15 @@ interface Props {
     href: string;
 }
 
-function prepareDefaultRegions(values: string[][]): Map<string, string> {
-    const temp = new Map<string, string>();
-    for (const [key, value] of values) {
-        temp.set(key, value);
-    }
-    return temp;
+interface Locations {
+    [index: string]: string;
 }
 
 export default function Location(props: Props): JSX.Element {
     const {
         selectedRegion, onSelectRegion, internalCommonProps, name, values, href, label,
     } = props;
-    const [regions, setRegions] = useState<Map<string, string>>(() => prepareDefaultRegions(values));
+    const [locations, setLocations] = useState<Locations>(() => Object.fromEntries(values));
     const [newRegionKey, setNewRegionKey] = useState<string>('');
     const [newRegionName, setNewRegionName] = useState<string>('');
 
@@ -46,14 +42,16 @@ export default function Location(props: Props): JSX.Element {
                 message: 'Incorrect region',
                 className: 'cvat-incorrect-add-region-notification',
             });
-        } else if (regions.has(newRegionKey)) {
+        } else if (locations[newRegionKey]) {
             notification.warning({
                 message: 'This region already exists',
                 className: 'cvat-incorrect-add-region-notification',
             });
         } else {
-            const regionsCopy = regions;
-            setRegions(regionsCopy.set(newRegionKey, newRegionName));
+            setLocations({
+                ...locations,
+                [newRegionKey]: newRegionName,
+            });
             setNewRegionKey('');
             setNewRegionName('');
         }
@@ -81,7 +79,7 @@ export default function Location(props: Props): JSX.Element {
         >
             <Select
                 placeholder={name}
-                defaultValue={selectedRegion ? regions.get(selectedRegion) : undefined}
+                defaultValue={selectedRegion ? locations[selectedRegion] : undefined}
                 dropdownRender={(menu) => (
                     <div>
                         {menu}
@@ -111,7 +109,7 @@ export default function Location(props: Props): JSX.Element {
                 onSelect={(_, instance) => onSelectRegion(instance.key)}
             >
                 {
-                    Array.from(regions.entries()).map(
+                    Array.from(Object.entries(locations)).map(
                         ([key, value]): JSX.Element => (
                             <Option key={key} value={value}>
                                 {value}

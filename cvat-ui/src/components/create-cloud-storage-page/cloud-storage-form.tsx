@@ -245,7 +245,7 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
 
         if (cloudStorage) {
             cloudStorageData.id = cloudStorage.id;
-            // TODO: combine that
+
             if (cloudStorageData.account_name === fakeCredentialsData.accountName) {
                 delete cloudStorageData.account_name;
             }
