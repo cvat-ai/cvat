@@ -45,11 +45,10 @@ export default function ProjectPageComponent(): JSX.Element {
 
     const [project] = projects.filter((_project) => _project.id === id);
     const projectSubsets: Array<string> = [];
-    if (tasks.length) {
-        for (const task of tasks) {
-            if (!projectSubsets.includes(task.instance.subset)) projectSubsets.push(task.instance.subset);
-        }
+    for (const task of tasks) {
+        if (!projectSubsets.includes(task.instance.subset)) projectSubsets.push(task.instance.subset);
     }
+
     const deleteActivity = project && id in deletes ? deletes[id] : null;
 
     const onPageChange = useCallback(
@@ -59,7 +58,7 @@ export default function ProjectPageComponent(): JSX.Element {
                 page: p,
             }));
         },
-        [dispatch, getProjectTasksAsync],
+        [],
     );
 
     useEffect(() => {
