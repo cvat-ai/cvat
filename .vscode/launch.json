@@ -169,7 +169,7 @@
                 "--settings",
                 "cvat.settings.testing",
                 "cvat/apps",
-                "utils/cli"
+                // "utils/cli"
             ],
             "django": true,
             "cwd": "${workspaceFolder}",

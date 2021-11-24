@@ -23,7 +23,7 @@ from cvat.apps.engine import models
 from cvat.apps.engine.log import slogger
 from cvat.apps.engine.media_extractors import (MEDIA_TYPES, Mpeg4ChunkWriter, Mpeg4CompressedChunkWriter,
     ValidateDimension, ZipChunkWriter, ZipCompressedChunkWriter, get_mime)
-from cvat.apps.engine.utils import av_scan_paths, SortingMethods
+from cvat.apps.engine.utils import av_scan_paths, sort, SortingMethods
 from utils.dataset_manifest import ImageManifestManager, VideoManifestManager
 from utils.dataset_manifest.core import VideoManifestValidator
 from utils.dataset_manifest.utils import detect_related_images
@@ -254,19 +254,22 @@ def _create_thread(tid, data, isImport=False):
                 'specific_attributes': db_cloud_storage.get_specific_attributes()
             }
             cloud_storage_instance = get_cloud_storage_instance(cloud_provider=db_cloud_storage.provider_type, **details)
-            first_sorted_media_image = sorted(media['image'])[0]
+            sorted_media = sort(media['image'], data['sorting_method'])
+            first_sorted_media_image = sorted_media[0]
             cloud_storage_instance.download_file(first_sorted_media_image, os.path.join(upload_dir, first_sorted_media_image))
 
             # prepare task manifest file from cloud storage manifest file
+            # NOTE we should create manifest before defining chunk_size
+            # FIXME in the future when will be implemented archive support
             manifest = ImageManifestManager(db_data.get_manifest_path())
             cloud_storage_manifest = ImageManifestManager(
                 os.path.join(db_data.cloud_storage.get_storage_dirname(), manifest_file[0]),
                 db_data.cloud_storage.get_storage_dirname()
             )
             cloud_storage_manifest.set_index()
-            media_files = sorted(media['image'])
-            content = cloud_storage_manifest.get_subset(media_files)
-            manifest.create(content)
+            sequence, content = cloud_storage_manifest.get_subset(sorted_media)
+            sorted_content = (i[1] for i in sorted(zip(sequence, content)))
+            manifest.create(sorted_content)
 
     av_scan_paths(upload_dir)
 

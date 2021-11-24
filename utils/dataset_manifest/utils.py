@@ -1,6 +1,7 @@
 # Copyright (C) 2021 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
+from enum import Enum
 import os
 import re
 import hashlib
@@ -187,3 +188,34 @@ def detect_related_images(image_paths, root_path):
     elif data_are_3d:
         return _detect_related_images_3D(image_paths, root_path)
     return {}
+
+class SortingMethods(str, Enum):
+    DEFAULT = 'DEFAULT'
+    NATIVE = 'NATIVE'
+    CUSTOM = 'CUSTOM'
+    RANDOM = 'RANDOM'
+    REVERSED = 'REVERSED'
+
+    @classmethod
+    def choices(cls):
+        return tuple((x.value, x.name) for x in cls)
+
+    def __str__(self):
+        return self.value
+
+def sort(images, sorting_method=SortingMethods.DEFAULT, func=None):
+    if sorting_method == SortingMethods.DEFAULT:
+        return sorted(images, key=func)
+    elif sorting_method == SortingMethods.NATIVE:
+        from natsort import os_sorted
+        return os_sorted(images, key=func)
+    elif sorting_method == SortingMethods.CUSTOM:
+        return images
+    elif sorting_method == SortingMethods.RANDOM:
+        from random import shuffle
+        shuffle(images)
+        return images
+    elif sorting_method == SortingMethods.REVERSED:
+        return sorted(images, key=func, reverse=True)
+    else:
+        raise NotImplementedError()

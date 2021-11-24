@@ -30,10 +30,11 @@ from rest_framework.test import APIClient, APITestCase
 
 from datumaro.util.test_utils import TestDir
 from cvat.apps.engine.models import (AttributeSpec, AttributeType, Data, Job, Project,
-    Segment, StatusChoice, Task, Label, StorageMethodChoice, StorageChoice)
+    Segment, StatusChoice, Task, Label, StorageMethodChoice, StorageChoice, DimensionType)
 from cvat.apps.engine.media_extractors import ValidateDimension
-from cvat.apps.engine.models import DimensionType
 from utils.dataset_manifest import ImageManifestManager, VideoManifestManager
+
+from cvat.apps.engine.utils import sort, SortingMethods
 
 def create_db_users(cls):
     (group_admin, _) = Group.objects.get_or_create(name="admin")
@@ -2502,7 +2503,7 @@ def generate_manifest_file(data_type, manifest_path, sources):
     kwargs = {
         'images': {
             'sources': sources,
-            'is_sorted': False,
+            'sorting_method': SortingMethods.DEFAULT,
         },
         'video': {
             'media_file': sources[0],
@@ -2553,6 +2554,13 @@ class TaskDataAPITestCase(APITestCase):
         cls._image_sizes[filename] = img_size
 
         filename = "test_3.jpg"
+        path = os.path.join(settings.SHARE_ROOT, filename)
+        img_size, data = generate_image_file(filename)
+        with open(path, "wb") as image:
+            image.write(data.read())
+        cls._image_sizes[filename] = img_size
+
+        filename = "test_10.jpg"
         path = os.path.join(settings.SHARE_ROOT, filename)
         img_size, data = generate_image_file(filename)
         with open(path, "wb") as image:
@@ -2656,6 +2664,9 @@ class TaskDataAPITestCase(APITestCase):
         os.remove(path)
 
         path = os.path.join(settings.SHARE_ROOT, "test_3.jpg")
+        os.remove(path)
+
+        path = os.path.join(settings.SHARE_ROOT, "test_10.jpg")
         os.remove(path)
 
         path = os.path.join(settings.SHARE_ROOT, "data", "test_3.jpg")
@@ -2818,9 +2829,9 @@ class TaskDataAPITestCase(APITestCase):
                 client_files = [img for key, img in data.items() if key.startswith("client_files")]
 
                 if server_files:
-                    source_files = [os.path.join(settings.SHARE_ROOT, f) for f in sorted(server_files)]
+                    source_files = [os.path.join(settings.SHARE_ROOT, f) for f in sort(server_files, data.get('sorting_method', SortingMethods.DEFAULT))]
                 else:
-                    source_files = [f for f in sorted(client_files, key=lambda e: e.name)]
+                    source_files = [f for f in sort(client_files, data.get('sorting_method', SortingMethods.DEFAULT), func=lambda e: e.name)]
 
                 source_images = []
                 for f in source_files:
@@ -3054,7 +3065,7 @@ class TaskDataAPITestCase(APITestCase):
                                              image_sizes, StorageMethodChoice.CACHE, StorageChoice.LOCAL)
 
         task_spec = {
-            "name": "cached images task without copying #16",
+            "name": "cached images task with default sorting data and without copying #16",
             "overlap": 0,
             "segment_size": 0,
             "labels": [
@@ -3066,14 +3077,14 @@ class TaskDataAPITestCase(APITestCase):
         task_data = {
             "server_files[0]": "test_1.jpg",
             "server_files[1]": "test_2.jpg",
-            "server_files[2]": "test_3.jpg",
+            "server_files[2]": "test_10.jpg",
             "image_quality": 70,
             "use_cache": True,
         }
         image_sizes = [
             self._image_sizes[task_data["server_files[0]"]],
-            self._image_sizes[task_data["server_files[1]"]],
             self._image_sizes[task_data["server_files[2]"]],
+            self._image_sizes[task_data["server_files[1]"]],
         ]
 
         self._test_api_v1_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET,
@@ -3306,6 +3317,53 @@ class TaskDataAPITestCase(APITestCase):
         task_data.update([('copy_data', True)])
         self._test_api_v1_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
             image_sizes, StorageMethodChoice.CACHE, StorageChoice.LOCAL)
+
+        # test custom data sequence
+        task_spec.update([('name', 'task custom data sequence #28')])
+        task_data = {
+            "server_files[0]": "test_1.jpg",
+            "server_files[1]": "test_3.jpg",
+            "server_files[2]": "test_2.jpg",
+            "image_quality": 70,
+            "use_cache": True,
+            "sorting_method": SortingMethods.CUSTOM
+        }
+        image_sizes = [
+            self._image_sizes[task_data["server_files[0]"]],
+            self._image_sizes[task_data["server_files[1]"]],
+            self._image_sizes[task_data["server_files[2]"]],
+        ]
+
+        self._test_api_v1_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
+            image_sizes, StorageMethodChoice.CACHE, StorageChoice.SHARE)
+
+        # test reversed data sequence
+        task_spec.update([('name', 'task reversed data sequence #29')])
+        task_data.update([('sorting_method', SortingMethods.REVERSED)])
+        item = image_sizes.pop(0)
+        image_sizes.append(item)
+
+        self._test_api_v1_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
+            image_sizes, StorageMethodChoice.CACHE, StorageChoice.SHARE)
+
+        # test native data sequence
+        task_spec.update([('name', 'task native data sequence #30')])
+        task_data = {
+            "server_files[0]": "test_1.jpg",
+            "server_files[1]": "test_2.jpg",
+            "server_files[2]": "test_10.jpg",
+            "image_quality": 70,
+            "use_cache": True,
+            "sorting_method": SortingMethods.NATIVE
+        }
+        image_sizes = [
+            self._image_sizes[task_data["server_files[0]"]],
+            self._image_sizes[task_data["server_files[1]"]],
+            self._image_sizes[task_data["server_files[2]"]],
+        ]
+
+        self._test_api_v1_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
+            image_sizes, StorageMethodChoice.CACHE, StorageChoice.SHARE)
 
     def test_api_v1_tasks_id_data_admin(self):
         self._test_api_v1_tasks_id_data(self.admin)
