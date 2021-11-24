@@ -13,7 +13,7 @@ To go into review mode, you need to select `Request a review` in the menu and as
 
 After that, the job status will be changed to `validation`
 and the reviewer will be able to open the task in review mode.
-Review mode is a UI mode, there is a special "issue" tool which you can use to identify objects
+Review mode is a UI mode, there is a special `issue` tool which you can use to identify objects
 or areas in the frame and describe the problem.
 
 - To do this, first click `open an issue` icon on the controls sidebar:
@@ -29,7 +29,7 @@ or areas in the frame and describe the problem.
 
   ![](/images/image196_detrac.jpg)
 
-- Once all the problems are marked, save the annotation, open the menu and select "submit the review".
+- Once all the problems are marked, save the annotation, open the menu and select `submit the review`.
   After that you'll see a form containing the verification statistics,
   here you can give an assessment of the job and choose further actions:
 
@@ -38,3 +38,9 @@ or areas in the frame and describe the problem.
   - Reject - changes the status of the job to `annotation`.
 
   ![](/images/image197.jpg)
+
+{{% alert title="Note" %}}
+If few issues were created in one place you can access them by hovering over issue and scrolling the mouse wheel.
+
+![](/images/issues_scroll.gif)
+{{% /alert %}}
