@@ -673,7 +673,7 @@ class TaskViewSet(UploadMixin, auth.TaskGetQuerySetMixin, viewsets.ModelViewSet)
             serializer = DataSerializer(task_data, data=request.data)
             serializer.is_valid(raise_exception=True)
             data = {k: v for k, v in serializer.validated_data.items()}
-            if data.get('client_files', None) is None:
+            if data.get('client_files', None) is not None:
                 return self.upload_finished(request)
             return Response(status=status.HTTP_202_ACCEPTED)
         else:
