@@ -449,7 +449,6 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
                             accept='.json, application/json'
                             multiple={false}
                             maxCount={1}
-                            showUploadList={false}
                             beforeUpload={(file: RcFile): boolean => {
                                 if (form.getFieldValue('key_file_path')) {
                                     form.setFieldsValue({
