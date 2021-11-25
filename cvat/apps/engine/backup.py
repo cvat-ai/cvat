@@ -418,41 +418,6 @@ class TaskImporter(_TaskBackupBase):
         return segment_size, overlap
 
     def _import_task(self):
-
-        def _create_comment(comment, db_issue):
-            comment['issue'] = db_issue.id
-            comment_serializer = CommentSerializer(data=comment)
-            comment_serializer.is_valid(raise_exception=True)
-            db_comment = comment_serializer.save()
-            return db_comment
-
-        def _create_issue(issue, db_review, db_job):
-            issue['review'] = db_review.id
-            issue['job'] = db_job.id
-            comments = issue.pop('comments')
-
-            issue_serializer = IssueSerializer(data=issue)
-            issue_serializer.is_valid( raise_exception=True)
-            db_issue = issue_serializer.save()
-
-            for comment in comments:
-                _create_comment(comment, db_issue)
-
-            return db_issue
-
-        def _create_review(review, db_job):
-            review['job'] = db_job.id
-            issues = review.pop('issues')
-
-            review_serializer = ReviewSerializer(data=review)
-            review_serializer.is_valid(raise_exception=True)
-            db_review = review_serializer.save()
-
-            for issue in issues:
-                _create_issue(issue, db_review, db_job)
-
-            return db_review
-
         data = self._manifest.pop('data')
         labels = self._manifest.pop('labels')
         jobs = self._manifest.pop('jobs')
@@ -507,9 +472,6 @@ class TaskImporter(_TaskBackupBase):
         for db_job, job in zip(self._get_db_jobs(), jobs):
             db_job.status = job['status']
             db_job.save()
-
-            for review in job['reviews']:
-                _create_review(review, db_job)
 
     def _import_annotations(self):
         db_jobs = self._get_db_jobs()

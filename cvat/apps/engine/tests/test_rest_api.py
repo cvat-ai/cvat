@@ -1247,12 +1247,13 @@ class TaskGetAPITestCase(APITestCase):
     def _check_api_v1_tasks_id(self, user):
         for db_task in self.tasks:
             response = self._run_api_v1_tasks_id(db_task.id, user)
-            if user and user.has_perm("engine.task.access", db_task):
-                self._check_response(response, db_task)
-            elif user:
-                self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-            else:
+            if user is None:
                 self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+            elif user == db_task.owner or user.is_superuser:
+                self._check_response(response, db_task)
+            else:
+                self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
 
     def test_api_v1_tasks_id_admin(self):
         self._check_api_v1_tasks_id(self.admin)
@@ -1284,12 +1285,13 @@ class TaskDeleteAPITestCase(APITestCase):
     def _check_api_v1_tasks_id(self, user):
         for db_task in self.tasks:
             response = self._run_api_v1_tasks_id(db_task.id, user)
-            if user and user.has_perm("engine.task.delete", db_task):
-                self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
-            elif user:
-                self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-            else:
+            if user is None:
                 self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+            elif user == db_task.owner or user.is_superuser:
+                self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+            else:
+                self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
 
     def test_api_v1_tasks_id_admin(self):
         self._check_api_v1_tasks_id(self.admin)
@@ -2048,7 +2050,7 @@ class TaskImportExportAPITestCase(APITestCase):
             {
                 "name": "my task #1",
                 "owner_id": self.owner.id,
-                "assignee_id": self.assignee.id,
+                "assignee_id": self.owner.id,
                 "overlap": 0,
                 "segment_size": 100,
                 "labels": [{
@@ -2068,7 +2070,7 @@ class TaskImportExportAPITestCase(APITestCase):
             {
                 "name": "my task #2",
                 "owner_id": self.owner.id,
-                "assignee_id": self.assignee.id,
+                "assignee_id": self.owner.id,
                 "overlap": 1,
                 "segment_size": 3,
                 "labels": [{
