@@ -624,21 +624,21 @@ class UserGetAPITestCase(UserAPITestCase):
         self._check_response(self.user, response, True)
 
         response = self._run_api_v1_users_id(self.user, self.owner.id)
-        self._check_response(self.owner, response, False)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_api_v1_users_id_annotator(self):
         response = self._run_api_v1_users_id(self.annotator, self.annotator.id)
         self._check_response(self.annotator, response, True)
 
         response = self._run_api_v1_users_id(self.annotator, self.user.id)
-        self._check_response(self.user, response, False)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_api_v1_users_id_somebody(self):
         response = self._run_api_v1_users_id(self.somebody, self.somebody.id)
         self._check_response(self.somebody, response, True)
 
         response = self._run_api_v1_users_id(self.somebody, self.user.id)
-        self._check_response(self.user, response, False)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_api_v1_users_id_no_auth(self):
         response = self._run_api_v1_users_id(None, self.user.id)
