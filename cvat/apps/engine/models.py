@@ -160,68 +160,6 @@ class Data(models.Model):
         os.makedirs(self.get_original_cache_dirname())
         os.makedirs(self.get_upload_dirname())
 
-    def init_chunk_upload(self, size, file_name):
-        upload_id = uuid.uuid4().hex
-        upload_dir = self.get_upload_dirname()
-        chunk_dir = os.path.join(upload_dir, upload_id)
-        file_path = os.path.join(chunk_dir, file_name)
-        if os.path.commonprefix((os.path.realpath(file_path), chunk_dir)) != chunk_dir:
-            raise SuspiciousFileOperation(
-                'Detected path traversal attempt in {}'.format(file_name)
-            )
-        os.makedirs(chunk_dir)
-        with open(file_path, "wb") as destination:
-            destination.seek((size) - 1)
-            destination.write(b'\0')
-        with open(os.path.join(chunk_dir, 'meta.json'),"w") as meta:
-            json.dump({"chunks_tags_sent":[]}, meta)
-        return upload_id
-
-    def finish_chunk_upload(self, upload_id, file_name, client_chunks):
-        if not upload_id or not file_name:
-            raise ValidationError(detail='No upload_id or file_name was specified')
-        upload_dir = self.get_upload_dirname()
-        chunk_dir = os.path.join(upload_dir, upload_id)
-        file_path = os.path.join(chunk_dir, file_name)
-        if os.path.commonprefix((os.path.realpath(file_path), chunk_dir)) != chunk_dir:
-            raise SuspiciousFileOperation(
-                'Detected path traversal attempt in {}'.format(file_name)
-            )
-        with open(os.path.join(chunk_dir, 'meta.json'), "r+") as meta_json:
-            meta = json.load(meta_json)
-            uploaded_chunks = meta['chunks_tags_sent']
-            if len(uploaded_chunks) != len(client_chunks):
-                raise ValidationError(detail='Invalid chunks tags')
-
-            uploaded_chunks.sort(key=lambda k: k['chunk_number'])
-            client_chunks.sort(key=lambda k: k['chunk_number'])
-            if any(x!=y for x, y in zip(uploaded_chunks, client_chunks)):
-                raise ValidationError(detail='Invalid chunks tags')
-
-            shutil.move(file_path, os.path.join(upload_dir, file_name))
-            shutil.rmtree(chunk_dir)
-
-    def append(self, client_files):
-        upload_dir = self.get_upload_dirname()
-        for client_file in client_files:
-            with open(os.path.join(upload_dir, client_file['file'].name), 'ab+') as destination:
-                destination.write(client_file['file'].read())
-
-    def append_chunk(self, upload_id, chunk_number, client_files):
-        upload_dir = self.get_upload_dirname()
-        chunk_dir = os.path.join(upload_dir, upload_id)
-        chunk_tag = uuid.uuid4().hex
-        file = client_files[0]['file']
-        with open(os.path.join(chunk_dir, file.name), 'rb+') as destination:
-            destination.seek((chunk_number-1)*1024*1024*100)
-            destination.write(file.read())
-        with open(os.path.join(chunk_dir, 'meta.json'), "r+") as meta_json:
-            meta = json.load(meta_json)
-            meta['chunks_tags_sent'].append({'chunk_number': chunk_number, 'tag': chunk_tag})
-            meta_json.seek(0)
-            json.dump(meta, meta_json)
-        return chunk_tag
-
     def get_uploaded_files(self):
         upload_dir = self.get_upload_dirname()
         uploaded_files = [os.path.join(upload_dir, file) for file in os.listdir(upload_dir) if os.path.isfile(os.path.join(upload_dir, file))]

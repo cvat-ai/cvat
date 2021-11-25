@@ -483,12 +483,20 @@ CACHES = {
 USE_CACHE = True
 
 CORS_ALLOW_HEADERS = [
+    # default headers
+    'accept',
+    'accept-encoding',
     'authorization',
     'content-type',
-    'referer',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+
+    # tus upload protocol headers
     'upload-offset',
     'upload-length',
     'tus-version',
     'tus-resumable',
-    'user-agent'
 ]
