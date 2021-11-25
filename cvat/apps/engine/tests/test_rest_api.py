@@ -34,7 +34,7 @@ from cvat.apps.engine.models import (AttributeSpec, AttributeType, Data, Job, Pr
 from cvat.apps.engine.media_extractors import ValidateDimension
 from utils.dataset_manifest import ImageManifestManager, VideoManifestManager
 
-from cvat.apps.engine.utils import sort, SortingMethods
+from cvat.apps.engine.utils import sort, SortingMethod
 
 def create_db_users(cls):
     (group_admin, _) = Group.objects.get_or_create(name="admin")
@@ -2503,7 +2503,7 @@ def generate_manifest_file(data_type, manifest_path, sources):
     kwargs = {
         'images': {
             'sources': sources,
-            'sorting_method': SortingMethods.DEFAULT,
+            'sorting_method': SortingMethod.LEXICOGRAPHICAL,
         },
         'video': {
             'media_file': sources[0],
@@ -2829,9 +2829,9 @@ class TaskDataAPITestCase(APITestCase):
                 client_files = [img for key, img in data.items() if key.startswith("client_files")]
 
                 if server_files:
-                    source_files = [os.path.join(settings.SHARE_ROOT, f) for f in sort(server_files, data.get('sorting_method', SortingMethods.DEFAULT))]
+                    source_files = [os.path.join(settings.SHARE_ROOT, f) for f in sort(server_files, data.get('sorting_method', SortingMethod.LEXICOGRAPHICAL))]
                 else:
-                    source_files = [f for f in sort(client_files, data.get('sorting_method', SortingMethods.DEFAULT), func=lambda e: e.name)]
+                    source_files = [f for f in sort(client_files, data.get('sorting_method', SortingMethod.LEXICOGRAPHICAL), func=lambda e: e.name)]
 
                 source_images = []
                 for f in source_files:
@@ -3318,7 +3318,7 @@ class TaskDataAPITestCase(APITestCase):
         self._test_api_v1_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
             image_sizes, StorageMethodChoice.CACHE, StorageChoice.LOCAL)
 
-        # test custom data sequence
+        # test keep file order
         task_spec.update([('name', 'task custom data sequence #28')])
         task_data = {
             "server_files[0]": "test_1.jpg",
@@ -3326,7 +3326,7 @@ class TaskDataAPITestCase(APITestCase):
             "server_files[2]": "test_2.jpg",
             "image_quality": 70,
             "use_cache": True,
-            "sorting_method": SortingMethods.CUSTOM
+            "sorting_method": SortingMethod.KEEP_FILE_ORDER
         }
         image_sizes = [
             self._image_sizes[task_data["server_files[0]"]],
@@ -3337,23 +3337,15 @@ class TaskDataAPITestCase(APITestCase):
         self._test_api_v1_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
             image_sizes, StorageMethodChoice.CACHE, StorageChoice.SHARE)
 
-        # test reversed data sequence
-        task_spec.update([('name', 'task reversed data sequence #29')])
-        task_data.update([('sorting_method', SortingMethods.REVERSED)])
-        image_sizes.append(image_sizes.pop(0))
-
-        self._test_api_v1_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
-            image_sizes, StorageMethodChoice.CACHE, StorageChoice.SHARE)
-
-        # test native data sequence
-        task_spec.update([('name', 'task native data sequence #30')])
+        # test a natural data sequence
+        task_spec.update([('name', 'task native data sequence #29')])
         task_data = {
             "server_files[0]": "test_10.jpg",
             "server_files[1]": "test_2.jpg",
             "server_files[2]": "test_1.jpg",
             "image_quality": 70,
             "use_cache": True,
-            "sorting_method": SortingMethods.NATIVE
+            "sorting_method": SortingMethod.NATURAL
         }
         image_sizes = [
             self._image_sizes[task_data["server_files[2]"]],

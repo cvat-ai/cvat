@@ -10,7 +10,7 @@ from contextlib import closing
 from tempfile import NamedTemporaryFile
 
 from PIL import Image
-from .utils import md5_hash, rotate_image, sort, SortingMethods
+from .utils import md5_hash, rotate_image, sort, SortingMethod
 
 class VideoStreamReader:
     def __init__(self, source_path, chunk_size, force):
@@ -146,7 +146,7 @@ class DatasetImagesReader:
     def __init__(self,
                 sources,
                 meta=None,
-                sorting_method=SortingMethods.CUSTOM,
+                sorting_method=SortingMethod.KEEP_FILE_ORDER,
                 use_image_hash=False,
                 start = 0,
                 step = 1,

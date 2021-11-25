@@ -17,7 +17,7 @@ import numpy as np
 from pyunpack import Archive
 from PIL import Image, ImageFile
 import open3d as o3d
-from cvat.apps.engine.utils import rotate_image, sort, SortingMethods
+from cvat.apps.engine.utils import rotate_image, sort, SortingMethod
 from cvat.apps.engine.models import DimensionType
 
 # fixes: "OSError:broken data stream" when executing line 72 while loading images downloaded from the web
@@ -96,7 +96,7 @@ class ImageListReader(IMediaReader):
                 start=0,
                 stop=None,
                 dimension=DimensionType.DIM_2D,
-                sorting_method=SortingMethods.DEFAULT):
+                sorting_method=SortingMethod.LEXICOGRAPHICAL):
         if not source_path:
             raise Exception('No image found')
 
@@ -179,7 +179,7 @@ class DirectoryReader(ImageListReader):
                 start=0,
                 stop=None,
                 dimension=DimensionType.DIM_2D,
-                sorting_method=SortingMethods.DEFAULT):
+                sorting_method=SortingMethod.LEXICOGRAPHICAL):
         image_paths = []
         for source in source_path:
             for root, _, files in os.walk(source):
@@ -202,7 +202,7 @@ class ArchiveReader(DirectoryReader):
                 start=0,
                 stop=None,
                 dimension=DimensionType.DIM_2D,
-                sorting_method=SortingMethods.DEFAULT):
+                sorting_method=SortingMethod.LEXICOGRAPHICAL):
         self._archive_source = next(filter(os.path.isfile, source_path)) if len(source_path) > 1 else source_path[0]
         extract_dir = next(filter(os.path.isdir, source_path)) if len(source_path) > 1 else os.path.dirname(source_path[0])
         Archive(self._archive_source).extractall(extract_dir)
@@ -224,7 +224,7 @@ class PdfReader(ImageListReader):
                 start=0,
                 stop=None,
                 dimension=DimensionType.DIM_2D,
-                sorting_method=SortingMethods.DEFAULT):
+                sorting_method=SortingMethod.LEXICOGRAPHICAL):
         if not source_path:
             raise Exception('No PDF found')
 
@@ -263,7 +263,7 @@ class ZipReader(ImageListReader):
                 start=0,
                 stop=None,
                 dimension=DimensionType.DIM_2D,
-                sorting_method=SortingMethods.DEFAULT):
+                sorting_method=SortingMethod.LEXICOGRAPHICAL):
         source = next(filter(os.path.isfile, source_path)) if len(source_path) > 1 else source_path[0]
         self._zip_source = zipfile.ZipFile(source, mode='r')
         self.extract_dir = next(filter(os.path.isdir, source_path)) if len(source_path) > 1 else None

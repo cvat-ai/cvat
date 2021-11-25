@@ -17,12 +17,11 @@ import patterns from 'utils/validation-patterns';
 
 const { Option } = Select;
 
-export enum SortingMethods {
-    DEFAULT = 'DEFAULT',
-    NATIVE = 'NATIVE',
-    CUSTOM = 'CUSTOM',
-    RANDOM = 'RANDOM',
-    REVERSED = 'REVERSED',
+export enum SortingMethod {
+    LEXICOGRAPHICAL = 'lexicographical',
+    NATURAL = 'natural',
+    KEEP_FILE_ORDER = 'keep_file_order',
+    RANDOM = 'random',
 }
 
 export interface AdvancedConfiguration {
@@ -40,7 +39,7 @@ export interface AdvancedConfiguration {
     dataChunkSize?: number;
     useCache: boolean;
     copyData?: boolean;
-    sortingMethod: SortingMethods;
+    sortingMethod: SortingMethod;
 }
 
 const initialValues: AdvancedConfiguration = {
@@ -49,7 +48,7 @@ const initialValues: AdvancedConfiguration = {
     useZipChunks: true,
     useCache: true,
     copyData: false,
-    sortingMethod: SortingMethods.DEFAULT,
+    sortingMethod: SortingMethod.LEXICOGRAPHICAL,
 };
 
 interface Props {
@@ -202,11 +201,14 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
                 ]}
             >
                 <Radio.Group>
-                    <Radio value={SortingMethods.DEFAULT} key={SortingMethods.DEFAULT}>Lexicographic</Radio>
-                    <Radio value={SortingMethods.NATIVE} key={SortingMethods.NATIVE}>Native</Radio>
-                    <Radio value={SortingMethods.CUSTOM} key={SortingMethods.CUSTOM}>Custom</Radio>
-                    <Radio value={SortingMethods.RANDOM} key={SortingMethods.RANDOM}>Random</Radio>
-                    <Radio value={SortingMethods.REVERSED} key={SortingMethods.REVERSED}>Reversed</Radio>
+                    <Radio value={SortingMethod.LEXICOGRAPHICAL} key={SortingMethod.LEXICOGRAPHICAL}>
+                        Lexicographical
+                    </Radio>
+                    <Radio value={SortingMethod.NATURAL} key={SortingMethod.NATURAL}>Natural</Radio>
+                    <Radio value={SortingMethod.KEEP_FILE_ORDER} key={SortingMethod.KEEP_FILE_ORDER}>
+                        Keep file order
+                    </Radio>
+                    <Radio value={SortingMethod.RANDOM} key={SortingMethod.RANDOM}>Random</Radio>
                 </Radio.Group>
             </Form.Item>
         );

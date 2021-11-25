@@ -366,21 +366,19 @@
     /**
      * Sorting methods
      * @enum {string}
-     * @name SortingMethods
+     * @name SortingMethod
      * @memberof module:API.cvat.enums
-     * @property {string} DEFAULT 'DEFAULT'
-     * @property {string} NATIVE 'NATIVE'
-     * @property {string} CUSTOM 'CUSTOM'
-     * @property {string} RANDOM 'RANDOM'
-     * @property {string} REVERSED 'REVERSED'
+     * @property {string} LEXICOGRAPHICAL 'lexicographical'
+     * @property {string} NATURAL 'natural'
+     * @property {string} KEEP_FILE_ORDER 'keep_file_order'
+     * @property {string} RANDOM 'random'
      * @readonly
      */
-    const SortingMethods = Object.freeze({
-        DEFAULT: 'DEFAULT',
-        NATIVE: 'NATIVE',
-        CUSTOM: 'CUSTOM',
-        RANDOM: 'RANDOM',
-        REVERSED: 'REVERSED',
+    const SortingMethod = Object.freeze({
+        LEXICOGRAPHICAL: 'lexicographical',
+        NATURAL: 'natural',
+        KEEP_FILE_ORDER: 'keep_file_order',
+        RANDOM: 'random',
     });
 
     module.exports = {
@@ -400,6 +398,6 @@
         DimensionType,
         CloudStorageProviderType,
         CloudStorageCredentialsType,
-        SortingMethods,
+        SortingMethod,
     };
 })();

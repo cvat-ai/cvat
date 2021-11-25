@@ -211,7 +211,7 @@ task_create_parser.add_argument(
 task_create_parser.add_argument(
     '--sorting-method',
     default='DEFAULT',
-    choices=['DEFAULT', 'NATIVE', 'CUSTOM', 'RANDOM', 'REVERSED'],
+    choices=['lexicographical', 'natural', 'keep_file_order', 'random'],
     help='''data soring method (default: %(default)s)'''
 )
 

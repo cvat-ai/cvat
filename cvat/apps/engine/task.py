@@ -23,7 +23,7 @@ from cvat.apps.engine import models
 from cvat.apps.engine.log import slogger
 from cvat.apps.engine.media_extractors import (MEDIA_TYPES, Mpeg4ChunkWriter, Mpeg4CompressedChunkWriter,
     ValidateDimension, ZipChunkWriter, ZipCompressedChunkWriter, get_mime)
-from cvat.apps.engine.utils import av_scan_paths, sort, SortingMethods
+from cvat.apps.engine.utils import av_scan_paths, sort, SortingMethod
 from utils.dataset_manifest import ImageManifestManager, VideoManifestManager
 from utils.dataset_manifest.core import VideoManifestValidator
 from utils.dataset_manifest.utils import detect_related_images
@@ -298,7 +298,7 @@ def _create_thread(tid, data, isImport=False):
             if extractor is not None:
                 raise Exception('Combined data types are not supported')
             source_paths=[os.path.join(upload_dir, f) for f in media_files]
-            if manifest_file and data['sorting_method'] == SortingMethods.RANDOM:
+            if manifest_file and data['sorting_method'] == SortingMethod.RANDOM:
                 raise Exception("It isn't supported to upload manifest file and use random sorting")
             if media_type in {'archive', 'zip'} and db_data.storage == models.StorageChoice.SHARE:
                 source_paths.append(db_data.get_upload_dirname())

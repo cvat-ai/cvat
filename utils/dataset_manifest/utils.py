@@ -192,12 +192,11 @@ def detect_related_images(image_paths, root_path):
         return _detect_related_images_3D(image_paths, root_path)
     return {}
 
-class SortingMethods(str, Enum):
-    DEFAULT = 'DEFAULT'
-    NATIVE = 'NATIVE'
-    CUSTOM = 'CUSTOM'
-    RANDOM = 'RANDOM'
-    REVERSED = 'REVERSED'
+class SortingMethod(str, Enum):
+    LEXICOGRAPHICAL = 'lexicographical'
+    NATURAL = 'natural'
+    KEEP_FILE_ORDER = 'keep_file_order'
+    RANDOM = 'random'
 
     @classmethod
     def choices(cls):
@@ -206,17 +205,15 @@ class SortingMethods(str, Enum):
     def __str__(self):
         return self.value
 
-def sort(images, sorting_method=SortingMethods.DEFAULT, func=None):
-    if sorting_method == SortingMethods.DEFAULT:
+def sort(images, sorting_method=SortingMethod.LEXICOGRAPHICAL, func=None):
+    if sorting_method == SortingMethod.LEXICOGRAPHICAL:
         return sorted(images, key=func)
-    elif sorting_method == SortingMethods.NATIVE:
+    elif sorting_method == SortingMethod.NATURAL:
         return os_sorted(images, key=func)
-    elif sorting_method == SortingMethods.CUSTOM:
+    elif sorting_method == SortingMethod.KEEP_FILE_ORDER:
         return images
-    elif sorting_method == SortingMethods.RANDOM:
+    elif sorting_method == SortingMethod.RANDOM:
         shuffle(images)
         return images
-    elif sorting_method == SortingMethods.REVERSED:
-        return sorted(images, key=func, reverse=True)
     else:
         raise NotImplementedError()
