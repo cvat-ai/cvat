@@ -5142,7 +5142,7 @@ class ServerShareDifferentTypesAPITestCase(APITestCase):
             img_path = os.path.join(settings.SHARE_ROOT, img)
             if not osp.exists(osp.dirname(img_path)):
                 os.makedirs(osp.dirname(img_path))
-            image.save(img_path, img_path.split(".")[1:][0])
+            image.save(img_path)
 
     def _get_request(self, path):
         with ForceLogin(self.user, self.client):
