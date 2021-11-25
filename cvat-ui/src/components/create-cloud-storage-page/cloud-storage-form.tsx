@@ -198,7 +198,7 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
                 duration: 15,
             });
         }
-    }, [cloudStorageId]);
+    }, []);
 
     const onSubmit = async (): Promise<void> => {
         let cloudStorageData: Record<string, any> = {};
