@@ -712,10 +712,12 @@
                     if (bulkFiles.length > 0) {
                         await bulkUpload(response.data.id, bulkFiles);
                     }
-                    await Axios.post(`${backendAPI}/tasks/${response.data.id}/data/finish`,
-                        taskData, {
-                            proxy: config.proxy,
-                        });
+                    if (chunkFiles.length > 0 || bulkFiles.length > 0) {
+                        await Axios.post(`${backendAPI}/tasks/${response.data.id}/data/finish`,
+                            taskData, {
+                                proxy: config.proxy,
+                            });
+                    }
                 } catch (errorData) {
                     try {
                         await deleteTask(response.data.id);
