@@ -3340,8 +3340,7 @@ class TaskDataAPITestCase(APITestCase):
         # test reversed data sequence
         task_spec.update([('name', 'task reversed data sequence #29')])
         task_data.update([('sorting_method', SortingMethods.REVERSED)])
-        item = image_sizes.pop(0)
-        image_sizes.append(item)
+        image_sizes.append(image_sizes.pop(0))
 
         self._test_api_v1_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
             image_sizes, StorageMethodChoice.CACHE, StorageChoice.SHARE)
@@ -3349,17 +3348,17 @@ class TaskDataAPITestCase(APITestCase):
         # test native data sequence
         task_spec.update([('name', 'task native data sequence #30')])
         task_data = {
-            "server_files[0]": "test_1.jpg",
+            "server_files[0]": "test_10.jpg",
             "server_files[1]": "test_2.jpg",
-            "server_files[2]": "test_10.jpg",
+            "server_files[2]": "test_1.jpg",
             "image_quality": 70,
             "use_cache": True,
             "sorting_method": SortingMethods.NATIVE
         }
         image_sizes = [
-            self._image_sizes[task_data["server_files[0]"]],
-            self._image_sizes[task_data["server_files[1]"]],
             self._image_sizes[task_data["server_files[2]"]],
+            self._image_sizes[task_data["server_files[1]"]],
+            self._image_sizes[task_data["server_files[0]"]],
         ]
 
         self._test_api_v1_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
