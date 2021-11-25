@@ -19,7 +19,7 @@ In tab `Player` you can:
 - `Rotate all images` checkbox — switch the rotation of all frames or an individual frame.
 - `Smooth image` checkbox — smooth image when zoom-in it.
 
-  |        *smoothed*         |        *pixelized*         |
+  |        _smoothed_         |        _pixelized_         |
   |---------------------------|----------------------------|
   | ![](/images/smoothed.jpg) | ![](/images/pixelized.jpg) |
 
