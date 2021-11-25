@@ -756,15 +756,14 @@ class ProjectListAPITestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertListEqual(
             sorted([project.name for project in self.projects
-                if 'my empty project' != project.name]),
+                if self.user in [project.owner, project.assignee]]),
             sorted([res["name"] for res in response.data["results"]]))
 
     def test_api_v1_projects_somebody(self):
         response = self._run_api_v1_projects(self.somebody)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertListEqual(
-            sorted([project.name for project in self.projects]),
-            sorted([res["name"] for res in response.data["results"]]))
+        self.assertListEqual([],
+            [res["name"] for res in response.data["results"]])
 
     def test_api_v1_projects_no_auth(self):
         response = self._run_api_v1_projects(None)
@@ -800,12 +799,12 @@ class ProjectGetAPITestCase(APITestCase):
     def _check_api_v1_projects_id(self, user):
         for db_project in self.projects:
             response = self._run_api_v1_projects_id(db_project.id, user)
-            if user and user.has_perm("engine.project.access", db_project):
-                self._check_response(response, db_project)
-            elif user:
-                self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-            else:
+            if user is None:
                 self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+            elif user == db_project.owner or user == db_project.assignee or user.is_superuser:
+                self._check_response(response, db_project)
+            else:
+                self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_api_v1_projects_id_admin(self):
         self._check_api_v1_projects_id(self.admin)
@@ -1151,22 +1150,17 @@ class ProjectListOfTasksAPITestCase(APITestCase):
             sorted([res["name"] for res in response.data["results"]]))
 
     def test_api_v1_projects_id_tasks_user(self):
-        project = self.projects[1]
+        project = self.projects[1] # the user is owner of the project
         response = self._run_api_v1_projects_id_tasks(self.user, project.id)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertListEqual(
-            sorted([task.name for task in project.tasks.all()
-                if  task.owner in [None, self.user] or
-                    task.assignee in [None, self.user]]),
+            sorted([task.name for task in project.tasks.all()]),
             sorted([res["name"] for res in response.data["results"]]))
 
     def test_api_v1_projects_id_tasks_somebody(self):
         project = self.projects[1]
         response = self._run_api_v1_projects_id_tasks(self.somebody, project.id)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertListEqual(
-            sorted([task.name for task in project.tasks.all()]),
-            sorted([res["name"] for res in response.data["results"]]))
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_api_v1_projects_id_tasks_no_auth(self):
         project = self.projects[1]
