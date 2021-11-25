@@ -1776,12 +1776,10 @@ class TaskCreateAPITestCase(APITestCase):
 
     def _check_api_v1_tasks(self, user, data):
         response = self._run_api_v1_tasks(user, data)
-        if user and user.has_perm("engine.task.create"):
-            self._check_response(response, user, data)
-        elif user:
-            self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-        else:
+        if user is None:
             self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        else:
+            self._check_response(response, user, data)
 
     def test_api_v1_tasks_admin(self):
         data = {
@@ -1801,7 +1799,7 @@ class TaskCreateAPITestCase(APITestCase):
     def test_api_v1_tasks_user(self):
         data = {
             "name": "new name for the task",
-            "owner_id": self.assignee.id,
+            "owner_id": self.user.id,
             "labels": [{
                 "name": "car",
                 "attributes": [{
@@ -2618,8 +2616,8 @@ class TaskDataAPITestCase(APITestCase):
     def _test_api_v1_tasks_id_data(self, user):
         task_spec = {
             "name": "my task #1",
-            "owner_id": self.owner.id,
-            "assignee_id": self.assignee.id,
+            "owner_id": user.id,
+            "assignee_id": user.id,
             "overlap": 0,
             "segment_size": 100,
             "labels": [
@@ -3852,16 +3850,11 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                 print(e)
                 raise
 
-    def _run_api_v1_tasks_id_annotations(self, owner, assignee, annotator):
+    def _run_api_v1_tasks_id_annotations(self, owner, assignee):
         task, _ = self._create_task(owner, assignee)
-        if annotator:
-            HTTP_200_OK = status.HTTP_200_OK
-            HTTP_204_NO_CONTENT = status.HTTP_204_NO_CONTENT
-            HTTP_400_BAD_REQUEST = status.HTTP_400_BAD_REQUEST
-        else:
-            HTTP_200_OK = status.HTTP_401_UNAUTHORIZED
-            HTTP_204_NO_CONTENT = status.HTTP_401_UNAUTHORIZED
-            HTTP_400_BAD_REQUEST = status.HTTP_401_UNAUTHORIZED
+        HTTP_200_OK = status.HTTP_200_OK
+        HTTP_204_NO_CONTENT = status.HTTP_204_NO_CONTENT
+        HTTP_400_BAD_REQUEST = status.HTTP_400_BAD_REQUEST
 
         data = {
             "version": 0,
@@ -3869,7 +3862,7 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
             "shapes": [],
             "tracks": []
         }
-        response = self._put_api_v1_tasks_id_annotations(task["id"], annotator, data)
+        response = self._put_api_v1_tasks_id_annotations(task["id"], owner, data)
         data["version"] += 1
         self.assertEqual(response.status_code, HTTP_200_OK)
 
@@ -3971,21 +3964,21 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                 },
             ]
         }
-        response = self._put_api_v1_tasks_id_annotations(task["id"], annotator, data)
+        response = self._put_api_v1_tasks_id_annotations(task["id"], owner, data)
         data["version"] += 1
 
         self.assertEqual(response.status_code, HTTP_200_OK)
         self._check_response(response, data)
 
         default_attr_values = self._get_default_attr_values(task)
-        response = self._get_api_v1_tasks_id_annotations(task["id"], annotator)
+        response = self._get_api_v1_tasks_id_annotations(task["id"], owner)
         # server should add default attribute values if puted data doesn't contain it
         data["tags"][0]["attributes"] = default_attr_values[data["tags"][0]["label_id"]]["all"]
         data["tracks"][0]["shapes"][1]["attributes"] = default_attr_values[data["tracks"][0]["label_id"]]["mutable"]
         self.assertEqual(response.status_code, HTTP_200_OK)
         self._check_response(response, data)
 
-        response = self._delete_api_v1_tasks_id_annotations(task["id"], annotator)
+        response = self._delete_api_v1_tasks_id_annotations(task["id"], owner)
         data["version"] += 1
         self.assertEqual(response.status_code, HTTP_204_NO_CONTENT)
 
@@ -3995,7 +3988,7 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
             "shapes": [],
             "tracks": []
         }
-        response = self._get_api_v1_tasks_id_annotations(task["id"], annotator)
+        response = self._get_api_v1_tasks_id_annotations(task["id"], owner)
         self.assertEqual(response.status_code, HTTP_200_OK)
         self._check_response(response, data)
 
@@ -4096,13 +4089,13 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                 },
             ]
         }
-        response = self._patch_api_v1_tasks_id_annotations(task["id"], annotator,
+        response = self._patch_api_v1_tasks_id_annotations(task["id"], owner,
             "create", data)
         data["version"] += 1
         self.assertEqual(response.status_code, HTTP_200_OK)
         self._check_response(response, data)
 
-        response = self._get_api_v1_tasks_id_annotations(task["id"], annotator)
+        response = self._get_api_v1_tasks_id_annotations(task["id"], owner)
         # server should add default attribute values if puted data doesn't contain it
         data["tags"][0]["attributes"] = default_attr_values[data["tags"][0]["label_id"]]["all"]
         data["tracks"][0]["shapes"][1]["attributes"] = default_attr_values[data["tracks"][0]["label_id"]]["mutable"]
@@ -4119,17 +4112,17 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
             data["tracks"][0]["shapes"][0]["outside"] = False
             data["tracks"][0]["shapes"][0]["occluded"] = False
 
-        response = self._patch_api_v1_tasks_id_annotations(task["id"], annotator,
+        response = self._patch_api_v1_tasks_id_annotations(task["id"], owner,
             "update", data)
         data["version"] = data.get("version", 0) + 1
         self.assertEqual(response.status_code, HTTP_200_OK)
         self._check_response(response, data)
 
-        response = self._get_api_v1_tasks_id_annotations(task["id"], annotator)
+        response = self._get_api_v1_tasks_id_annotations(task["id"], owner)
         self.assertEqual(response.status_code, HTTP_200_OK)
         self._check_response(response, data)
 
-        response = self._patch_api_v1_tasks_id_annotations(task["id"], annotator,
+        response = self._patch_api_v1_tasks_id_annotations(task["id"], owner,
             "delete", data)
         data["version"] += 1
         self.assertEqual(response.status_code, HTTP_200_OK)
@@ -4141,7 +4134,7 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
             "shapes": [],
             "tracks": []
         }
-        response = self._get_api_v1_tasks_id_annotations(task["id"], annotator)
+        response = self._get_api_v1_tasks_id_annotations(task["id"], owner)
         self.assertEqual(response.status_code, HTTP_200_OK)
         self._check_response(response, data)
 
@@ -4241,12 +4234,12 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                 },
             ]
         }
-        response = self._patch_api_v1_tasks_id_annotations(task["id"], annotator,
+        response = self._patch_api_v1_tasks_id_annotations(task["id"], owner,
             "create", data)
         self.assertEqual(response.status_code, HTTP_400_BAD_REQUEST)
 
-    def _run_api_v1_tasks_id_annotations_dump_load(self, owner, assignee, annotator):
-        if annotator:
+    def _run_api_v1_tasks_id_annotations_dump_load(self, owner):
+        if owner:
             HTTP_200_OK = status.HTTP_200_OK
             HTTP_204_NO_CONTENT = status.HTTP_204_NO_CONTENT
             HTTP_202_ACCEPTED = status.HTTP_202_ACCEPTED
@@ -4762,9 +4755,9 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
 
             return annotations
 
-        response = self._get_formats(annotator)
+        response = self._get_formats(owner)
         self.assertEqual(response.status_code, HTTP_200_OK)
-        if annotator is not None:
+        if owner is not None:
             data = response.data
         else:
             data = self._get_formats(owner).data
@@ -4793,45 +4786,42 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
             with self.subTest(export_format=export_format,
                     import_format=import_format):
                 # 1. create task
-                task, jobs = self._create_task(owner, assignee, import_format)
+                task, jobs = self._create_task(owner, owner, import_format)
 
                 # 2. add annotation
                 data = _get_initial_annotation(export_format)
-                response = self._put_api_v1_tasks_id_annotations(task["id"], annotator, data)
+                response = self._put_api_v1_tasks_id_annotations(task["id"], owner, data)
                 data["version"] += 1
 
                 self.assertEqual(response.status_code, HTTP_200_OK)
                 self._check_response(response, data)
 
                 # 3. download annotation
-                response = self._dump_api_v1_tasks_id_annotations(task["id"], annotator,
+                response = self._dump_api_v1_tasks_id_annotations(task["id"], owner,
                     "?format={}".format(export_format))
-                if annotator and not export_formats[export_format]['enabled']:
+                if not export_formats[export_format]['enabled']:
                     self.assertEqual(response.status_code,
                         status.HTTP_405_METHOD_NOT_ALLOWED)
                     continue
                 else:
                     self.assertEqual(response.status_code, HTTP_202_ACCEPTED)
 
-                response = self._dump_api_v1_tasks_id_annotations(task["id"], annotator,
+                response = self._dump_api_v1_tasks_id_annotations(task["id"], owner,
                     "?format={}".format(export_format))
                 self.assertEqual(response.status_code, HTTP_201_CREATED)
 
-                response = self._dump_api_v1_tasks_id_annotations(task["id"], annotator,
+                response = self._dump_api_v1_tasks_id_annotations(task["id"], owner,
                     "?format={}&action=download".format(export_format))
                 self.assertEqual(response.status_code, HTTP_200_OK)
 
                 # 4. check downloaded data
-                if annotator is not None:
-                    self.assertTrue(response.streaming)
-                    content = io.BytesIO(b"".join(response.streaming_content))
-                    self._check_dump_content(content, task, jobs, data, export_format)
-                    content.seek(0)
-                else:
-                    content = io.BytesIO()
+                self.assertTrue(response.streaming)
+                content = io.BytesIO(b"".join(response.streaming_content))
+                self._check_dump_content(content, task, jobs, data, export_format)
+                content.seek(0)
 
                 # 5. remove annotation form the task
-                response = self._delete_api_v1_tasks_id_annotations(task["id"], annotator)
+                response = self._delete_api_v1_tasks_id_annotations(task["id"], owner)
                 data["version"] += 1
                 self.assertEqual(response.status_code, HTTP_204_NO_CONTENT)
 
@@ -4843,12 +4833,12 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                     "annotation_file": content,
                 }
                 response = self._upload_api_v1_tasks_id_annotations(
-                    task["id"], annotator, uploaded_data,
+                    task["id"], owner, uploaded_data,
                     "format={}".format(import_format))
                 self.assertEqual(response.status_code, HTTP_202_ACCEPTED)
 
                 response = self._upload_api_v1_tasks_id_annotations(
-                    task["id"], annotator, {},
+                    task["id"], owner, {},
                     "format={}".format(import_format))
                 self.assertEqual(response.status_code, HTTP_201_CREATED)
 
@@ -4856,11 +4846,9 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                 if export_format in {"Segmentation mask 1.1", "MOTS PNG 1.0",
                         "CamVid 1.0", "ICDAR Segmentation 1.0"}:
                     continue # can't really predict the result to check
-                response = self._get_api_v1_tasks_id_annotations(task["id"], annotator)
+                response = self._get_api_v1_tasks_id_annotations(task["id"], owner)
                 self.assertEqual(response.status_code, HTTP_200_OK)
 
-                if annotator is None:
-                    continue
                 data["version"] += 2 # upload is delete + put
                 self._check_response(response, data)
 
@@ -4985,26 +4973,19 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_api_v1_tasks_id_annotations_admin(self):
-        self._run_api_v1_tasks_id_annotations(self.admin, self.assignee,
-            self.assignee)
+        self._run_api_v1_tasks_id_annotations(self.admin, self.assignee)
 
     def test_api_v1_tasks_id_annotations_user(self):
-        self._run_api_v1_tasks_id_annotations(self.user, self.assignee,
-            self.assignee)
-
-    def test_api_v1_tasks_id_annotations_no_auth(self):
-        self._run_api_v1_tasks_id_annotations(self.user, self.assignee, None)
+        self._run_api_v1_tasks_id_annotations(self.user, self.user)
 
     def test_api_v1_tasks_id_annotations_dump_load_admin(self):
-        self._run_api_v1_tasks_id_annotations_dump_load(self.admin, self.assignee,
-            self.assignee)
+        self._run_api_v1_tasks_id_annotations_dump_load(self.admin)
 
     def test_api_v1_tasks_id_annotations_dump_load_user(self):
-        self._run_api_v1_tasks_id_annotations_dump_load(self.user, self.assignee,
-            self.assignee)
+        self._run_api_v1_tasks_id_annotations_dump_load(self.user)
 
     def test_api_v1_tasks_id_annotations_dump_load_no_auth(self):
-        self._run_api_v1_tasks_id_annotations_dump_load(self.user, self.assignee, None)
+        self._run_api_v1_tasks_id_annotations_dump_load(self.user)
 
     def test_api_v1_tasks_id_annotations_upload_coco_user(self):
         self._run_coco_annotation_upload_test(self.user)
