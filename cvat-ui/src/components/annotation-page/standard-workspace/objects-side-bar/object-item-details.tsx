@@ -41,8 +41,6 @@ function ItemAttributesComponent(props: Props): JSX.Element {
         collapsed, attributes, values, readonly, changeAttribute, collapse,
     } = props;
 
-    const sorted = [...attributes].sort((a: any, b: any): number => a.inputType.localeCompare(b.inputType));
-
     return (
         <Row>
             <Collapse
@@ -51,7 +49,7 @@ function ItemAttributesComponent(props: Props): JSX.Element {
                 onChange={collapse}
             >
                 <Collapse.Panel header={<span style={{ fontSize: '11px' }}>Details</span>} key='details'>
-                    {sorted.map(
+                    {attributes.map(
                         (attribute: any): JSX.Element => (
                             <Row
                                 key={attribute.id}

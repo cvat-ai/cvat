@@ -496,7 +496,7 @@ export interface AnnotationState {
             pointID: number | null;
             clientID: number | null;
         };
-        instance: Canvas | Canvas3d;
+        instance: Canvas | Canvas3d | null;
         ready: boolean;
         activeControl: ActiveControl;
     };
@@ -617,6 +617,7 @@ export interface PlayerSettingsState {
     frameSpeed: FrameSpeed;
     resetZoom: boolean;
     rotateAll: boolean;
+    smoothImage: boolean;
     grid: boolean;
     gridSize: number;
     gridColor: GridColor;
