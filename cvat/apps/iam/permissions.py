@@ -602,6 +602,7 @@ class TaskPermission(OpenPolicyAgentPermission):
             ('retrieve', 'GET'): 'view',
             ('status', 'GET'): 'view',
             ('partial_update', 'PATCH'): 'update',
+            ('update', 'PUT'): 'update',
             ('destroy', 'DELETE'): 'delete',
             ('annotations', 'GET'): 'view:annotations',
             ('annotations', 'PATCH'): 'update:annotations',

@@ -1195,15 +1195,14 @@ class TaskListAPITestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertListEqual(
             sorted([task.name for task in self.tasks
-                if (task.owner == self.user or task.assignee == None)]),
+                if self.user in [task.owner, task.assignee]]),
             sorted([res["name"] for res in response.data["results"]]))
 
     def test_api_v1_tasks_somebody(self):
         response = self._run_api_v1_tasks(self.somebody)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertListEqual(
-            sorted([task.name for task in self.tasks]),
-            sorted([res["name"] for res in response.data["results"]]))
+        self.assertListEqual([],
+            [res["name"] for res in response.data["results"]])
 
     def test_api_v1_tasks_no_auth(self):
         response = self._run_api_v1_tasks(None)
@@ -1366,12 +1365,12 @@ class TaskUpdateAPITestCase(APITestCase):
     def _check_api_v1_tasks_id(self, user, data):
         for db_task in self.tasks:
             response = self._run_api_v1_tasks_id(db_task.id, user, data)
-            if user and user.has_perm("engine.task.change", db_task):
-                self._check_response(response, db_task, data)
-            elif user:
-                self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-            else:
+            if user is None:
                 self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+            elif user == db_task.owner or user == db_task.assignee or user.is_superuser:
+                self._check_response(response, db_task, data)
+            else:
+                self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_api_v1_tasks_id_admin(self):
         data = {
@@ -1392,7 +1391,7 @@ class TaskUpdateAPITestCase(APITestCase):
     def test_api_v1_tasks_id_user(self):
         data = {
             "name": "new name for the task",
-            "owner_id": self.assignee.id,
+            "owner_id": self.user.id,
             "labels": [{
                 "name": "car",
                 "attributes": [{
@@ -1463,8 +1462,8 @@ class TaskPartialUpdateAPITestCase(TaskUpdateAPITestCase):
         self._check_api_v1_tasks_id(self.user, data)
 
         data = {
-            "owner_id": self.somebody.id,
-            "assignee_id": self.annotator.id
+            "owner_id": self.user.id,
+            "assignee_id": self.user.id
         }
         self._check_api_v1_tasks_id(self.user, data)
 
@@ -2114,14 +2113,14 @@ class TaskImportExportAPITestCase(APITestCase):
 
     def _run_api_v1_tasks_id_export_import(self, user):
         if user:
-            if user is self.user or user is self.annotator:
-                HTTP_200_OK = status.HTTP_403_FORBIDDEN
-                HTTP_202_ACCEPTED = status.HTTP_403_FORBIDDEN
-                HTTP_201_CREATED = status.HTTP_403_FORBIDDEN
-            else:
+            if user == self.owner or user.is_superuser:
                 HTTP_200_OK = status.HTTP_200_OK
                 HTTP_202_ACCEPTED = status.HTTP_202_ACCEPTED
                 HTTP_201_CREATED = status.HTTP_201_CREATED
+            else:
+                HTTP_200_OK = status.HTTP_403_FORBIDDEN
+                HTTP_202_ACCEPTED = status.HTTP_403_FORBIDDEN
+                HTTP_201_CREATED = status.HTTP_403_FORBIDDEN
         else:
             HTTP_200_OK = status.HTTP_401_UNAUTHORIZED
             HTTP_202_ACCEPTED = status.HTTP_401_UNAUTHORIZED
