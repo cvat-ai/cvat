@@ -1,13 +1,16 @@
 # Copyright (C) 2021 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
-from enum import Enum
+
 import os
 import re
 import hashlib
 import mimetypes
 import cv2 as cv
 from av import VideoFrame
+from enum import Enum
+from natsort import os_sorted
+from random import shuffle
 
 def rotate_image(image, angle):
     height, width = image.shape[:2]
@@ -207,12 +210,10 @@ def sort(images, sorting_method=SortingMethods.DEFAULT, func=None):
     if sorting_method == SortingMethods.DEFAULT:
         return sorted(images, key=func)
     elif sorting_method == SortingMethods.NATIVE:
-        from natsort import os_sorted
         return os_sorted(images, key=func)
     elif sorting_method == SortingMethods.CUSTOM:
         return images
     elif sorting_method == SortingMethods.RANDOM:
-        from random import shuffle
         shuffle(images)
         return images
     elif sorting_method == SortingMethods.REVERSED:

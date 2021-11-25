@@ -13,7 +13,9 @@ import subprocess
 import os
 from av import VideoFrame
 from enum import Enum
+from natsort import os_sorted
 from PIL import Image
+from random import shuffle
 
 from django.core.exceptions import ValidationError
 
@@ -126,12 +128,10 @@ def sort(images, sorting_method=SortingMethods.DEFAULT, func=None):
     if sorting_method == SortingMethods.DEFAULT:
         return sorted(images, key=func)
     elif sorting_method == SortingMethods.NATIVE:
-        from natsort import os_sorted
         return os_sorted(images, key=func)
     elif sorting_method == SortingMethods.CUSTOM:
         return images
     elif sorting_method == SortingMethods.RANDOM:
-        from random import shuffle
         shuffle(images)
         return images
     elif sorting_method == SortingMethods.REVERSED:
