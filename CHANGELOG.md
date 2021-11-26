@@ -14,6 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add Cityscapes format (<https://github.com/openvinotoolkit/cvat/pull/3758>)
 - Add Open Images V6 format (<https://github.com/openvinotoolkit/cvat/pull/3679>)
 - Rotated bounding boxes (<https://github.com/openvinotoolkit/cvat/pull/3832>)
+- Player option: Smooth image when zoom-in, enabled by default (<https://github.com/openvinotoolkit/cvat/pull/3933>)
+- Add project tasks paginations (<https://github.com/openvinotoolkit/cvat/pull/3910>)
 
 ### Changed
 - TDB
@@ -26,6 +28,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - Fixed Interaction handler keyboard handlers (<https://github.com/openvinotoolkit/cvat/pull/3881>)
+- Points of invisible shapes are visible in autobordering (<https://github.com/openvinotoolkit/cvat/pull/3931>)
+- Order of the label attributes in the object item details(<https://github.com/openvinotoolkit/cvat/pull/3945>)
 
 ### Security
 - TDB

@@ -1422,7 +1422,7 @@ class ProjectExportAPITestCase(APITestCase):
                 format="json")
         return response
 
-    def _run_api_v1_tasks_id(self, tid, user):
+    def _run_api_v1_tasks_id_delete(self, tid, user):
         with ForceLogin(user, self.client):
             response = self.client.delete('/api/v1/tasks/{}'.format(tid), format="json")
         return response
@@ -1457,7 +1457,7 @@ class ProjectExportAPITestCase(APITestCase):
             tasks = root.findall('meta/project/tasks/task/name')
             self.assertEqual(len(tasks), 4)
 
-        response = self._run_api_v1_tasks_id(tasks_id[0], self.admin)
+        response = self._run_api_v1_tasks_id_delete(tasks_id[0], self.admin)
         tasks_id = [task.id for task in project.tasks.all()]
 
         self.assertEqual(len(tasks_id), 3)
