@@ -465,7 +465,6 @@ class Credentials:
         elif self.credentials_type == CredentialsTypeChoice.ACCOUNT_NAME_TOKEN_PAIR:
             self.account_name, self.session_token = credentials.get('value').split()
         elif self.credentials_type == CredentialsTypeChoice.ANONYMOUS_ACCESS:
-            # self.session_token, self.key, self.secret_key = ('', '', '')
             # account_name will be in [some_value, '']
             self.account_name = credentials.get('value')
         elif self.credentials_type == CredentialsTypeChoice.KEY_FILE_PATH:
