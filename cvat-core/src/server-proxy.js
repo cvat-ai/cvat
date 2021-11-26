@@ -554,7 +554,7 @@
             }
 
             async function createTask(taskSpec, taskDataSpec, onUpdate) {
-                const { backendAPI } = config;
+                const { backendAPI, origin } = config;
 
                 async function wait(id) {
                     return new Promise((resolve, reject) => {
@@ -640,7 +640,7 @@
                 async function chunkUpload(taskId, file) {
                     return new Promise((resolve, reject) => {
                         const upload = new tus.Upload(file, {
-                            endpoint: `${window.location.origin}/${backendAPI}/tasks/${taskId}/data/tus/`,
+                            endpoint: `${origin}/${backendAPI}/tasks/${taskId}/data/tus/`,
                             metadata: {
                                 filename: file.name,
                                 filetype: file.type,

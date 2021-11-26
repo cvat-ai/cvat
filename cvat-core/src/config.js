@@ -5,4 +5,5 @@
 module.exports = {
     backendAPI: '/api/v1',
     proxy: false,
+    origin: '',
 };
