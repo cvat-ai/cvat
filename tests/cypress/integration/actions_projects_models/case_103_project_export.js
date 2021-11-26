@@ -8,27 +8,35 @@ import { projectName, labelName } from '../../support/const_project';
 
 context('Export project dataset.', { browser: '!firefox' }, () => {
     const caseID = 103;
-    const taskName = `Task case ${caseID}`;
-    const attrName = `Attr for ${labelName}`;
-    const textDefaultValue = 'Some value for type Text';
+    const task = {
+        name: `Case ${caseID}`,
+        label: 'Tree',
+        attrName: 'Kind',
+        attrValue: 'Oak',
+        nameSecond: `Case ${caseID} second`,
+        labelSecond: 'Car',
+        attrNameSecons: 'Color',
+        attrValueSecond: 'Red',
+        multiAttrParams: false,
+        advancedConfigurationParams: false,
+        forProject: true,
+        attachToProject: false,
+    };
     const imagesCount = 1;
-    const imageFileName = `image_${taskName.replace(/\s+/g, '_').toLowerCase()}`;
+    const imageFileName = `image_${task.name.replace(' ', '_').toLowerCase()}`;
     const width = 800;
     const height = 800;
     const posX = 10;
     const posY = 10;
-    const color = 'white';
+    const color = 'gray';
     const archiveName = `${imageFileName}.zip`;
     const archivePath = `cypress/fixtures/${archiveName}`;
     const imagesFolder = `cypress/fixtures/${imageFileName}`;
     const directoryToArchive = imagesFolder;
-    const advancedConfigurationParams = false;
-    const forProject = true;
-    const attachToProject = false;
-    const multiAttrParams = false;
+
     let projectID = '';
 
-    function getProjectID(projectName) {
+    function getProjectID() {
         cy.contains('.cvat-project-name', projectName)
             .parents('.cvat-project-details')
             .should('have.attr', 'cvat-project-id')
@@ -37,11 +45,13 @@ context('Export project dataset.', { browser: '!firefox' }, () => {
             });
     }
 
-    function testCheckFile(file) {
-        cy.task('listFiles', 'cypress/fixtures').each((fileName) => {
-            if (fileName.match(file)) {
-               cy.readFile(`cypress/fixtures/${fileName}`).should('exist');
-            }
+    function checkCounTasksInXML(projectParams, expectedCount) {
+        cy.exportProject(projectParams);
+        cy.waitForDownload();
+        cy.unpackZipArchive(`cypress/fixtures/${projectParams.archiveCustomeName}.zip`);
+        cy.readFile('cypress/fixtures/annotations.xml').should('exist').then((xml) => {
+            const tasks = Cypress.$(Cypress.$.parseXML(xml)).find('task').find('name');
+            expect(tasks.length).to.be.eq(expectedCount);
         });
     }
 
@@ -49,17 +59,30 @@ context('Export project dataset.', { browser: '!firefox' }, () => {
         cy.imageGenerator(imagesFolder, imageFileName, width, height, color, posX, posY, labelName, imagesCount);
         cy.createZipArchive(directoryToArchive, archivePath);
         cy.openProject(projectName);
-        getProjectID(projectName);
+        getProjectID();
         cy.createAnnotationTask(
-            taskName,
-            labelName,
-            attrName,
-            textDefaultValue,
+            task.nameSecond,
+            task.labelSecond,
+            task.attrNameSecond,
+            task.attrValueSecond,
             archiveName,
-            multiAttrParams,
-            advancedConfigurationParams,
-            forProject,
-            attachToProject,
+            task.multiAttrParams,
+            task.advancedConfigurationParams,
+            task.forProject,
+            task.attachToProject,
+            projectName,
+        );
+        cy.openProject(projectName);
+        cy.createAnnotationTask(
+            task.name,
+            task.label,
+            task.attrName,
+            task.attrValue,
+            archiveName,
+            task.multiAttrParams,
+            task.advancedConfigurationParams,
+            task.forProject,
+            task.attachToProject,
             projectName,
         );
     });
@@ -73,41 +96,42 @@ context('Export project dataset.', { browser: '!firefox' }, () => {
         it('Export project dataset. Annotation.', () => {
             cy.goToProjectsList();
             const exportAnnotation = {
-                projectName: projectName,
+                projectName,
                 as: 'exportAnnotations',
                 type: 'annotations',
                 dumpType: 'CVAT for images',
             };
             cy.exportProject(exportAnnotation);
-            const regex = new RegExp(`^project_${projectName.toLowerCase()}-.*-${exportAnnotation.dumpType.toLowerCase()}.*.zip$`);
-            testCheckFile(regex);
+            cy.waitForDownload();
         });
 
         it('Export project dataset. Dataset.', () => {
             cy.goToProjectsList();
             const exportDataset = {
-                projectName: projectName,
+                projectName,
                 as: 'exportDataset',
                 type: 'dataset',
                 dumpType: 'CVAT for video',
             };
             cy.exportProject(exportDataset);
-            const regex = new RegExp(`^project_${projectName.toLowerCase()}-.*-${exportDataset.dumpType.toLowerCase()}.*.zip$`);
-            testCheckFile(regex);
+            cy.waitForDownload();
         });
 
         it('Export project dataset. Annotation. Rename a archive.', () => {
             cy.goToProjectsList();
             const exportAnnotationsRenameArchive = {
-                projectName: projectName,
+                projectName,
                 as: 'exportAnnotationsRenameArchive',
                 type: 'annotations',
                 dumpType: 'CVAT for images',
                 archiveCustomeName: 'export_project_annotation',
             };
-            cy.exportProject(exportAnnotationsRenameArchive);
-            const regex = new RegExp(`^${exportAnnotationsRenameArchive.archiveCustomeName}.zip$`);
-            testCheckFile(regex);
+            // Check issue 3810
+            checkCounTasksInXML(exportAnnotationsRenameArchive, 2);
+            cy.openProject(projectName);
+            cy.deleteTask(task.nameSecond);
+            cy.goToProjectsList();
+            checkCounTasksInXML(exportAnnotationsRenameArchive, 1);
         });
     });
 });

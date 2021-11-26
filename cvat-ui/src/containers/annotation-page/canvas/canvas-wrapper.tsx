@@ -80,6 +80,7 @@ interface StateToProps {
     contrastLevel: number;
     saturationLevel: number;
     resetZoom: boolean;
+    smoothImage: boolean;
     aamZoomMargin: number;
     showObjectsTextAlways: boolean;
     showAllInterpolationTracks: boolean;
@@ -155,6 +156,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 contrastLevel,
                 saturationLevel,
                 resetZoom,
+                smoothImage,
             },
             workspace: {
                 aamZoomMargin,
@@ -205,6 +207,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         contrastLevel: contrastLevel / 100,
         saturationLevel: saturationLevel / 100,
         resetZoom,
+        smoothImage,
         aamZoomMargin,
         showObjectsTextAlways,
         showAllInterpolationTracks,

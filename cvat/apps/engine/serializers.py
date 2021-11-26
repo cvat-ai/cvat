@@ -499,7 +499,7 @@ class TrainingProjectSerializer(serializers.ModelSerializer):
         write_once_fields = ('host', 'username', 'password', 'project_class')
 
 
-class ProjectWithoutTaskSerializer(serializers.ModelSerializer):
+class ProjectSerializer(serializers.ModelSerializer):
     labels = LabelSerializer(many=True, source='label_set', partial=True, default=[])
     owner = BasicUserSerializer(required=False)
     owner_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)
@@ -513,7 +513,7 @@ class ProjectWithoutTaskSerializer(serializers.ModelSerializer):
         model = models.Project
         fields = ('url', 'id', 'name', 'labels', 'tasks', 'owner', 'assignee', 'owner_id', 'assignee_id',
                   'bug_tracker', 'task_subsets', 'created_date', 'updated_date', 'status', 'training_project', 'dimension')
-        read_only_fields = ('created_date', 'updated_date', 'status', 'owner', 'asignee', 'task_subsets', 'dimension')
+        read_only_fields = ('created_date', 'updated_date', 'tasks', 'status', 'owner', 'asignee', 'task_subsets', 'dimension')
         ordering = ['-id']
 
 
@@ -524,12 +524,6 @@ class ProjectWithoutTaskSerializer(serializers.ModelSerializer):
         response['task_subsets'] = list(task_subsets)
         response['dimension'] = instance.tasks.first().dimension if instance.tasks.count() else None
         return response
-
-class ProjectSerializer(ProjectWithoutTaskSerializer):
-    tasks = TaskSerializer(many=True, read_only=True)
-
-    class Meta(ProjectWithoutTaskSerializer.Meta):
-        fields = ProjectWithoutTaskSerializer.Meta.fields + ('tasks',)
 
     # pylint: disable=no-self-use
     def create(self, validated_data):
@@ -582,11 +576,6 @@ class ProjectSerializer(ProjectWithoutTaskSerializer):
             if len(label_names) != len(set(label_names)):
                 raise serializers.ValidationError('All label names must be unique for the project')
         return value
-
-    def to_representation(self, instance):
-        response = serializers.ModelSerializer.to_representation(self, instance)  # ignoring subsets here
-        response['dimension'] = instance.tasks.first().dimension if instance.tasks.count() else None
-        return response
 
 class ExceptionSerializer(serializers.Serializer):
     system = serializers.CharField(max_length=255)
