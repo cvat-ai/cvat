@@ -1349,6 +1349,7 @@ class ProjectUpdateLabelsAPITestCase(UpdateLabelsAPITestCase):
             }]
         }
         self._check_api_v1_project(data)
+
 class ProjectListOfTasksAPITestCase(APITestCase):
     def setUp(self):
         self.client = APIClient()
@@ -1394,6 +1395,94 @@ class ProjectListOfTasksAPITestCase(APITestCase):
         project = self.projects[1]
         response = self._run_api_v1_projects_id_tasks(None, project.id)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+class ProjectExportAPITestCase(APITestCase):
+    def setUp(self):
+        self.client = APIClient()
+
+    @classmethod
+    def setUpTestData(cls):
+        create_db_users(cls)
+        project_data = {
+            "name": "Project for check tasks in a xml",
+            "owner": cls.admin,
+            "labels": [{
+                "name": "car"
+            }]
+        }
+
+        db_project = create_db_project(project_data)
+        create_dummy_db_tasks(cls, db_project)
+        cls.projects = db_project
+
+    def _run_api_v1_project_id_export(self, pid, user, annotation_format=""):
+        with ForceLogin(user, self.client):
+            response = self.client.get(
+                '/api/v1/projects/{}/annotations?format={}'.format(pid, annotation_format),
+                format="json")
+        return response
+
+    def _run_api_v1_tasks_id(self, tid, user):
+        with ForceLogin(user, self.client):
+            response = self.client.delete('/api/v1/tasks/{}'.format(tid), format="json")
+        return response
+
+    def test_api_v1_projects_remove_task_export(self):
+        project = self.projects
+        pid = project.id
+        user = self.admin
+        tasks_id = [task.id for task in project.tasks.all()]
+
+        self.assertEqual(len(tasks_id), 4)
+
+        annotation_format = "CVAT for images 1.1"
+        response = self._run_api_v1_project_id_export(pid, user, annotation_format)
+        self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
+
+        response = self._run_api_v1_project_id_export(pid, user, annotation_format)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        annotation_format = "CVAT for images 1.1&action=download"
+        response = self._run_api_v1_project_id_export(pid, user, annotation_format)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        content = io.BytesIO(b"".join(response.streaming_content))
+        content.seek(0)
+
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            zipfile.ZipFile(content).extractall(tmp_dir)
+            xml = osp.join(tmp_dir, 'annotations.xml')
+            self.assertTrue(xml)
+            root = ET.parse(xml).getroot()
+            tasks = root.findall('meta/project/tasks/task/name')
+            self.assertEqual(len(tasks), 4)
+
+        response = self._run_api_v1_tasks_id(tasks_id[0], self.admin)
+        tasks_id = [task.id for task in project.tasks.all()]
+
+        self.assertEqual(len(tasks_id), 3)
+
+        annotation_format = "CVAT for images 1.1"
+        response = self._run_api_v1_project_id_export(pid, user, annotation_format)
+        self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
+
+        response = self._run_api_v1_project_id_export(pid, user, annotation_format)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        annotation_format = "CVAT for images 1.1&action=download"
+        response = self._run_api_v1_project_id_export(pid, user, annotation_format)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        content = io.BytesIO(b"".join(response.streaming_content))
+        content.seek(0)
+
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            zipfile.ZipFile(content).extractall(tmp_dir)
+            xml = osp.join(tmp_dir, 'annotations.xml')
+            self.assertTrue(xml)
+            root = ET.parse(xml).getroot()
+            tasks = root.findall('meta/project/tasks/task/name')
+            self.assertEqual(len(tasks), 3)
 
 
 class TaskListAPITestCase(APITestCase):
