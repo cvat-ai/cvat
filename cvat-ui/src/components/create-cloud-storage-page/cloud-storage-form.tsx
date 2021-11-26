@@ -428,9 +428,8 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
                         </Tooltip>
 
                     )}
-                    // className='cvat-cloud-storage-form-item-key-file'
                 >
-                    <Space align='start'>
+                    <Space align='start' className='cvat-cloud-storage-form-item-key-file'>
                         <Form.Item
                             name='key_file_path'
                             noStyle
