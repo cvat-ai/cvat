@@ -35,10 +35,12 @@
             }
         }
 
-        .cvat-cloud-storage-form-item-key-file {
-            display: flex;
-            justify-content: flex-end;
-        }
+        // .cvat-cloud-storage-form-item-key-file {
+        //     > .ant-row > .ant-col > .ant-form-item-control-input > .ant-form-item-control-input-content {
+        //         display: flex;
+        //         justify-content: flex-end;
+        //     }
+        // }
 
         > div:not(first-child) {
             margin-top: $grid-unit-size;

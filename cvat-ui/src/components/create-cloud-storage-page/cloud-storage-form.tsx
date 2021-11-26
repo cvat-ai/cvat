@@ -19,8 +19,9 @@ import Tooltip from 'antd/lib/tooltip';
 import { CombinedState, CloudStorage } from 'reducers/interfaces';
 import { createCloudStorageAsync, updateCloudStorageAsync } from 'actions/cloud-storage-actions';
 import { ProviderType, CredentialsType } from 'utils/enums';
-import { UploadOutlined } from '@ant-design/icons';
+import { DeleteOutlined, UploadOutlined } from '@ant-design/icons';
 import Upload, { RcFile } from 'antd/lib/upload';
+import { Space } from 'antd';
 import { AzureProvider, S3Provider, GoogleCloudProvider } from '../../icons';
 import S3Region from './s3-region';
 import GCSLocation from './gcs-locatiion';
@@ -417,19 +418,22 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
 
         if (providerType === ProviderType.GOOGLE_CLOUD_STORAGE && credentialsType === CredentialsType.KEY_FILE_PATH) {
             return (
-                <Row>
-                    <Col span={22}>
+                <Form.Item
+                    {...internalCommonProps}
+                    label={(
+                        <Tooltip title='You can specify path to key file or upload key file.
+                                If you leave these fields blank, the environment variable will be used.'
+                        >
+                            Key file
+                        </Tooltip>
+
+                    )}
+                    // className='cvat-cloud-storage-form-item-key-file'
+                >
+                    <Space align='start'>
                         <Form.Item
                             name='key_file_path'
-                            label={(
-                                <Tooltip title='You can specify path to key file or upload key file.
-                                        If you leave these fields blank, the environment variable will be used.'
-                                >
-                                    Key file
-                                </Tooltip>
-
-                            )}
-                            {...internalCommonProps}
+                            noStyle
                         >
                             <Input.Password
                                 visibilityToggle={keyFilePathVisibility}
@@ -443,30 +447,39 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
                                 disabled={keyFilePathIsDisabled}
                             />
                         </Form.Item>
-                    </Col>
-                    <Col span={2} className='cvat-cloud-storage-form-item-key-file'>
-                        <Upload
-                            accept='.json, application/json'
-                            multiple={false}
-                            maxCount={1}
-                            beforeUpload={(file: RcFile): boolean => {
-                                if (form.getFieldValue('key_file_path')) {
-                                    form.setFieldsValue({
-                                        key_file_path: undefined,
-                                    });
-                                }
-                                setKeyFilePathIsDisabled(true);
-                                setUploadedKeyFile(file);
-                                return false;
-                            }}
-                            onRemove={() => {
-                                setKeyFilePathIsDisabled(false);
-                            }}
-                        >
-                            <Button icon={<UploadOutlined />} disabled={keyFileIsDisabled} />
-                        </Upload>
-                    </Col>
-                </Row>
+
+                        <Tooltip title='Attach a file'>
+                            <Upload
+                                accept='.json, application/json'
+                                multiple={false}
+                                maxCount={1}
+                                showUploadList={false}
+                                beforeUpload={(file: RcFile): boolean => {
+                                    if (form.getFieldValue('key_file_path')) {
+                                        form.setFieldsValue({
+                                            key_file_path: undefined,
+                                        });
+                                    }
+                                    setKeyFilePathIsDisabled(true);
+                                    setUploadedKeyFile(file);
+                                    return false;
+                                }}
+                            >
+                                <Button icon={<UploadOutlined />} disabled={keyFileIsDisabled} />
+                            </Upload>
+                        </Tooltip>
+                        <Tooltip title='Delete an uploaded file'>
+                            <Button
+                                icon={<DeleteOutlined />}
+                                disabled={keyFileIsDisabled}
+                                onClick={() => {
+                                    setKeyFilePathIsDisabled(false);
+                                    setUploadedKeyFile(null);
+                                }}
+                            />
+                        </Tooltip>
+                    </Space>
+                </Form.Item>
             );
         }
 
