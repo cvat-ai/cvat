@@ -53,6 +53,7 @@ interface Canvas {
     cancel(): void;
     configure(configuration: Configuration): void;
     isAbleToChangeFrame(): boolean;
+    destroy(): void;
 
     readonly geometry: Geometry;
 }
@@ -162,6 +163,10 @@ class CanvasImpl implements Canvas {
 
     public get geometry(): Geometry {
         return this.model.geometry;
+    }
+
+    public destroy(): void {
+        this.model.destroy();
     }
 }
 

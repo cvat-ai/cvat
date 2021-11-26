@@ -22,6 +22,7 @@ export enum SettingsActionTypes {
     CHANGE_FRAME_STEP = 'CHANGE_FRAME_STEP',
     CHANGE_FRAME_SPEED = 'CHANGE_FRAME_SPEED',
     SWITCH_RESET_ZOOM = 'SWITCH_RESET_ZOOM',
+    SWITCH_SMOOTH_IMAGE = 'SWITCH_SMOOTH_IMAGE',
     CHANGE_BRIGHTNESS_LEVEL = 'CHANGE_BRIGHTNESS_LEVEL',
     CHANGE_CONTRAST_LEVEL = 'CHANGE_CONTRAST_LEVEL',
     CHANGE_SATURATION_LEVEL = 'CHANGE_SATURATION_LEVEL',
@@ -162,6 +163,15 @@ export function switchResetZoom(resetZoom: boolean): AnyAction {
         type: SettingsActionTypes.SWITCH_RESET_ZOOM,
         payload: {
             resetZoom,
+        },
+    };
+}
+
+export function switchSmoothImage(enabled: boolean): AnyAction {
+    return {
+        type: SettingsActionTypes.SWITCH_SMOOTH_IMAGE,
+        payload: {
+            smoothImage: enabled,
         },
     };
 }
