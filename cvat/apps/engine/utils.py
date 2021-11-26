@@ -113,7 +113,7 @@ def parse_specific_attributes(specific_attributes):
 class SortingMethod(str, Enum):
     LEXICOGRAPHICAL = 'lexicographical'
     NATURAL = 'natural'
-    KEEP_FILE_ORDER = 'keep_file_order'
+    PREDEFINED = 'predefined'
     RANDOM = 'random'
 
     @classmethod
@@ -128,7 +128,7 @@ def sort(images, sorting_method=SortingMethod.LEXICOGRAPHICAL, func=None):
         return sorted(images, key=func)
     elif sorting_method == SortingMethod.NATURAL:
         return os_sorted(images, key=func)
-    elif sorting_method == SortingMethod.KEEP_FILE_ORDER:
+    elif sorting_method == SortingMethod.PREDEFINED:
         return images
     elif sorting_method == SortingMethod.RANDOM:
         shuffle(images)

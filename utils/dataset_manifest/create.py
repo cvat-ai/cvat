@@ -17,7 +17,7 @@ def get_args():
              'if by default the video does not meet the requirements and a manifest file is not prepared')
     parser.add_argument('--output-dir',type=str, help='Directory where the manifest file will be saved',
         default=os.getcwd())
-    parser.add_argument('--sorting', choices=['lexicographical', 'natural', 'keep_file_order', 'random'],
+    parser.add_argument('--sorting', choices=['lexicographical', 'natural', 'predefined', 'random'],
                         type=str, default='lexicographical')
     parser.add_argument('source', type=str, help='Source paths')
     return parser.parse_args()

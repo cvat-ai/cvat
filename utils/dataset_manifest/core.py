@@ -146,7 +146,7 @@ class DatasetImagesReader:
     def __init__(self,
                 sources,
                 meta=None,
-                sorting_method=SortingMethod.KEEP_FILE_ORDER,
+                sorting_method=SortingMethod.PREDEFINED,
                 use_image_hash=False,
                 start = 0,
                 step = 1,

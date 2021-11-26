@@ -20,7 +20,7 @@ const { Option } = Select;
 export enum SortingMethod {
     LEXICOGRAPHICAL = 'lexicographical',
     NATURAL = 'natural',
-    KEEP_FILE_ORDER = 'keep_file_order',
+    PREDEFINED = 'predefined',
     RANDOM = 'random',
 }
 
@@ -205,8 +205,8 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
                         Lexicographical
                     </Radio>
                     <Radio value={SortingMethod.NATURAL} key={SortingMethod.NATURAL}>Natural</Radio>
-                    <Radio value={SortingMethod.KEEP_FILE_ORDER} key={SortingMethod.KEEP_FILE_ORDER}>
-                        Keep file order
+                    <Radio value={SortingMethod.PREDEFINED} key={SortingMethod.PREDEFINED}>
+                        Predefined
                     </Radio>
                     <Radio value={SortingMethod.RANDOM} key={SortingMethod.RANDOM}>Random</Radio>
                 </Radio.Group>

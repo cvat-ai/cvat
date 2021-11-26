@@ -3318,7 +3318,7 @@ class TaskDataAPITestCase(APITestCase):
         self._test_api_v1_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
             image_sizes, StorageMethodChoice.CACHE, StorageChoice.LOCAL)
 
-        # test keep file order
+        # test predefined sorting
         task_spec.update([('name', 'task custom data sequence #28')])
         task_data = {
             "server_files[0]": "test_1.jpg",
@@ -3326,7 +3326,7 @@ class TaskDataAPITestCase(APITestCase):
             "server_files[2]": "test_2.jpg",
             "image_quality": 70,
             "use_cache": True,
-            "sorting_method": SortingMethod.KEEP_FILE_ORDER
+            "sorting_method": SortingMethod.PREDEFINED
         }
         image_sizes = [
             self._image_sizes[task_data["server_files[0]"]],
