@@ -52,6 +52,7 @@ export enum CuboidDrawingMethod {
 }
 
 export interface Configuration {
+    smoothImage?: boolean;
     autoborders?: boolean;
     displayAllText?: boolean;
     undefinedAttrValue?: string;
@@ -652,23 +653,21 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         if (typeof configuration.autoborders === 'boolean') {
             this.data.configuration.autoborders = configuration.autoborders;
         }
-
+        if (typeof configuration.smoothImage === 'boolean') {
+            this.data.configuration.smoothImage = configuration.smoothImage;
+        }
         if (typeof configuration.undefinedAttrValue === 'string') {
             this.data.configuration.undefinedAttrValue = configuration.undefinedAttrValue;
         }
-
         if (typeof configuration.forceDisableEditing === 'boolean') {
             this.data.configuration.forceDisableEditing = configuration.forceDisableEditing;
         }
-
         if (typeof configuration.intelligentPolygonCrop === 'boolean') {
             this.data.configuration.intelligentPolygonCrop = configuration.intelligentPolygonCrop;
         }
-
         if (typeof configuration.forceFrameUpdate === 'boolean') {
             this.data.configuration.forceFrameUpdate = configuration.forceFrameUpdate;
         }
-
         if (typeof configuration.creationOpacity === 'number') {
             this.data.configuration.creationOpacity = configuration.creationOpacity;
         }

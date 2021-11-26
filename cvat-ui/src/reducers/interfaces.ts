@@ -617,6 +617,7 @@ export interface PlayerSettingsState {
     frameSpeed: FrameSpeed;
     resetZoom: boolean;
     rotateAll: boolean;
+    smoothImage: boolean;
     grid: boolean;
     gridSize: number;
     gridColor: GridColor;
