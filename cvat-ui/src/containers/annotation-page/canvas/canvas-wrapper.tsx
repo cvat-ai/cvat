@@ -173,7 +173,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
 
     const issues = frameIssues.filter((issue) => (
         !issuesHidden && [Workspace.REVIEW_WORKSPACE, Workspace.STANDARD].includes(workspace) &&
-        (issue.resolvedDate !== null && issuesResolvedHidden)
+        !(!!issue.resolvedDate && issuesResolvedHidden)
     ));
 
     return {
