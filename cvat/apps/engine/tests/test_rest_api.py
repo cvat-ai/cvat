@@ -1427,62 +1427,51 @@ class ProjectExportAPITestCase(APITestCase):
             response = self.client.delete('/api/v1/tasks/{}'.format(tid), format="json")
         return response
 
+    def _get_tasks_count(self, project):
+        tasks_id = [task.id for task in project.tasks.all()]
+        return tasks_id
+
+    def _check_tasks_count(self, project, expected_result):
+        tasks_id = self._get_tasks_count(project)
+        self.assertEqual(len(tasks_id), expected_result)
+
+    def _check_xml(self, pid, user, expected_result):
+        annotation_format = "CVAT for images 1.1"
+        response = self._run_api_v1_project_id_export(pid, user, annotation_format)
+        self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
+
+        response = self._run_api_v1_project_id_export(pid, user, annotation_format)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        annotation_format = "CVAT for images 1.1&action=download"
+        response = self._run_api_v1_project_id_export(pid, user, annotation_format)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        content = io.BytesIO(b"".join(response.streaming_content))
+        content.seek(0)
+
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            zipfile.ZipFile(content).extractall(tmp_dir)
+            xml = osp.join(tmp_dir, 'annotations.xml')
+            self.assertTrue(xml)
+            root = ET.parse(xml).getroot()
+            tasks = root.findall('meta/project/tasks/task/name')
+            self.assertEqual(len(tasks), expected_result)
+
+
     def test_api_v1_projects_remove_task_export(self):
         project = self.projects
         pid = project.id
         user = self.admin
-        tasks_id = [task.id for task in project.tasks.all()]
 
-        self.assertEqual(len(tasks_id), 4)
+        self._check_tasks_count(project, 4)
+        self._check_xml(pid, user, 4)
 
-        annotation_format = "CVAT for images 1.1"
-        response = self._run_api_v1_project_id_export(pid, user, annotation_format)
-        self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
+        response = self._run_api_v1_tasks_id_delete(self._get_tasks_count(project)[0], self.admin)
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
 
-        response = self._run_api_v1_project_id_export(pid, user, annotation_format)
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-
-        annotation_format = "CVAT for images 1.1&action=download"
-        response = self._run_api_v1_project_id_export(pid, user, annotation_format)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-
-        content = io.BytesIO(b"".join(response.streaming_content))
-        content.seek(0)
-
-        with tempfile.TemporaryDirectory() as tmp_dir:
-            zipfile.ZipFile(content).extractall(tmp_dir)
-            xml = osp.join(tmp_dir, 'annotations.xml')
-            self.assertTrue(xml)
-            root = ET.parse(xml).getroot()
-            tasks = root.findall('meta/project/tasks/task/name')
-            self.assertEqual(len(tasks), 4)
-
-        response = self._run_api_v1_tasks_id_delete(tasks_id[0], self.admin)
-        tasks_id = [task.id for task in project.tasks.all()]
-
-        self.assertEqual(len(tasks_id), 3)
-
-        annotation_format = "CVAT for images 1.1"
-        response = self._run_api_v1_project_id_export(pid, user, annotation_format)
-        self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
-
-        response = self._run_api_v1_project_id_export(pid, user, annotation_format)
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-
-        annotation_format = "CVAT for images 1.1&action=download"
-        response = self._run_api_v1_project_id_export(pid, user, annotation_format)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-
-        content = io.BytesIO(b"".join(response.streaming_content))
-        content.seek(0)
-
-        with tempfile.TemporaryDirectory() as tmp_dir:
-            zipfile.ZipFile(content).extractall(tmp_dir)
-            xml = osp.join(tmp_dir, 'annotations.xml')
-            self.assertTrue(xml)
-            root = ET.parse(xml).getroot()
-            tasks = root.findall('meta/project/tasks/task/name')
-            self.assertEqual(len(tasks), 3)
+        self._check_tasks_count(project, 3)
+        self._check_xml(pid, user, 3)
 
 
 class TaskListAPITestCase(APITestCase):
