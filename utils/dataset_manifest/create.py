@@ -18,7 +18,7 @@ def get_args():
     parser.add_argument('--output-dir',type=str, help='Directory where the manifest file will be saved',
         default=os.getcwd())
     parser.add_argument('--sorting', choices=['lexicographical', 'natural', 'keep_file_order', 'random'],
-                        type=str, default='DEFAULT')
+                        type=str, default='lexicographical')
     parser.add_argument('source', type=str, help='Source paths')
     return parser.parse_args()
 
