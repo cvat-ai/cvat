@@ -1,7 +1,7 @@
 // Copyright (C) 2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
-import { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 
 // eslint-disable-next-line import/prefer-default-export
 export function usePrevious<T>(value: T): T | undefined {
@@ -10,6 +10,17 @@ export function usePrevious<T>(value: T): T | undefined {
         ref.current = value;
     });
     return ref.current;
+}
+
+export function useDidUpdateEffect(effect: React.EffectCallback, deps?: React.DependencyList): void {
+    const didMountRef = useRef(false);
+    useEffect(() => {
+        if (didMountRef.current) {
+            effect();
+        } else {
+            didMountRef.current = true;
+        }
+    }, deps);
 }
 
 export interface ICardHeightHOC {

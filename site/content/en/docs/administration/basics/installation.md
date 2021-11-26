@@ -21,6 +21,8 @@ the instructions below for other systems.
 Probably you need to modify the instructions below in case you are behind a proxy
 server. Proxy is an advanced topic and it is not covered by the guide.
 
+For access from China, read [sources for users from China](#sources-for-users-from-china) section.
+
 ## Ubuntu 18.04 (x86_64/amd64)
 
 - Open a terminal window. If you don't know how to open a terminal window on
@@ -427,3 +429,72 @@ docker-compose -f docker-compose.yml -f docker-compose.https.yml up -d
 ```
 
 Then, the CVAT instance will be available at your domain on ports 443 (HTTPS) and 80 (HTTP, redirects to 443).
+
+## Sources for users from China
+
+If you stay in China, for installation you need to override the following sources.
+
+- For use `apt update` using:
+
+  [Ubuntu mirroring help](https://mirrors.tuna.tsinghua.edu.cn/help/ubuntu/)
+
+  Pre-compiled packages:
+  ```
+  deb https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ focal main restricted universe multiverse
+  deb https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ focal-updates main restricted universe multiverse
+  deb https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ focal-backports main restricted universe multiverse
+  deb https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ focal-security main restricted universe multiverse
+  ```
+  Or source packages:
+  ```
+  deb-src https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ focal main restricted universe multiverse
+  deb-src https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ focal-updates main restricted universe multiverse
+  deb-src https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ focal-backports main restricted universe multiverse
+  deb-src https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ focal-security main restricted universe multiverse
+  ```
+
+- [Docker mirror station](https://www.daocloud.io/mirror)
+
+  Add registry mirrors into `daemon.json` file:
+  ```
+  {
+      "registry-mirrors": [
+          "http://f1361db2.m.daocloud.io",
+          "https://docker.mirrors.ustc.edu.cn",
+          "https://hub-mirror.c.163.com",
+          "https://https://mirror.ccs.tencentyun.com",
+          "https://mirror.ccs.tencentyun.com",
+      ]
+  }
+  ```
+
+- For using `pip`:
+
+  [PyPI mirroring help](https://mirrors.tuna.tsinghua.edu.cn/help/pypi/)
+  ```
+  pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
+  ```
+
+- For using `npm`:
+
+  [npm mirroring help](https://npmmirror.com/)
+  ```
+  npm config set registry https://registry.npm.taobao.org/
+  ```
+
+- Instead of `git` using [`gitee`](https://gitee.com/):
+
+  [CVAT repository on gitee.com](https://gitee.com/monkeycc/cvat)
+
+- For replace acceleration source `docker.com` run:
+  ```
+  curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+  sudo add-apt-repository \
+    "deb [arch=amd64] https://download.docker.com/linux/ubuntu \
+    $(lsb_release -cs) \
+  ```
+
+- For replace acceleration source `google.com` run: 
+  ```  
+  curl https://dl-ssl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
+  ```

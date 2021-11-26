@@ -35,6 +35,14 @@
             }
         }
 
+        .cvat-cloud-storage-form-item-key-file {
+            width: 100%;
+
+            :nth-child(1) {
+                flex-grow: 1;
+            }
+        }
+
         > div:not(first-child) {
             margin-top: $grid-unit-size;
         }

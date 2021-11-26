@@ -9,7 +9,7 @@ import { taskName, labelName } from '../../support/const_canvas3d';
 context('Canvas 3D functionality. Export as a dataset.', () => {
     const caseId = '93';
     const cuboidCreationParams = {
-        labelName: labelName,
+        labelName,
     };
 
     const dumpTypePC = 'Sly Point Cloud Format';
@@ -31,12 +31,7 @@ context('Canvas 3D functionality. Export as a dataset.', () => {
                 format: dumpTypePC,
             };
             cy.exportTask(exportDatasetPCFormat);
-            const regex = new RegExp(`^task_${taskName.toLowerCase()}-.*-${exportDatasetPCFormat.format.toLowerCase()}.*.zip$`);
-            cy.task('listFiles', 'cypress/fixtures').each((fileName) => {
-                if (fileName.match(regex)) {
-                    cy.fixture(fileName).should('exist');
-                }
-            });
+            cy.waitForDownload();
         });
 
         it('Export as a dataset with "Velodyne Points" format.', () => {
@@ -46,12 +41,7 @@ context('Canvas 3D functionality. Export as a dataset.', () => {
                 format: dumpTypeVC,
             };
             cy.exportTask(exportDatasetVCFormat);
-            const regex = new RegExp(`^task_${taskName.toLowerCase()}-.*-${exportDatasetVCFormat.format.toLowerCase()}.*.zip$`);
-            cy.task('listFiles', 'cypress/fixtures').each((fileName) => {
-                if (fileName.match(regex)) {
-                    cy.fixture(fileName).should('exist');
-                }
-            });
+            cy.waitForDownload();
         });
 
         it('Export as a dataset with renaming the archive.', () => {
@@ -59,15 +49,10 @@ context('Canvas 3D functionality. Export as a dataset.', () => {
                 as: 'exportDatasetVCFormatRenameArchive',
                 type: 'dataset',
                 format: dumpTypeVC,
-                archiveCustomeName: 'task_export_3d_dataset_custome_name_vc_format'
+                archiveCustomeName: 'task_export_3d_dataset_custome_name_vc_format',
             };
             cy.exportTask(exportDatasetVCFormatRenameArchive);
-            const regex = new RegExp(`^${exportDatasetVCFormatRenameArchive.archiveCustomeName}.zip$`);
-            cy.task('listFiles', 'cypress/fixtures').each((fileName) => {
-                if (fileName.match(regex)) {
-                    cy.fixture(fileName).should('exist');
-                }
-            });
+            cy.waitForDownload();
             cy.removeAnnotations();
             cy.saveJob('PUT');
         });
