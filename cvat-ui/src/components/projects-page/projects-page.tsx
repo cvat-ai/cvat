@@ -22,15 +22,21 @@ export default function ProjectsPageComponent(): JSX.Element {
     const projectFetching = useSelector((state: CombinedState) => state.projects.fetching);
     const projectsCount = useSelector((state: CombinedState) => state.projects.current.length);
     const gettingQuery = useSelector((state: CombinedState) => state.projects.gettingQuery);
+    const isImporting = useSelector((state: CombinedState) => state.projects.importing);
 
     const anySearchQuery = !!Array.from(new URLSearchParams(search).keys()).filter((value) => value !== 'page').length;
 
-    useEffect(() => {
+    const getSearchParams = (): Partial<ProjectsQuery> => {
         const searchParams: Partial<ProjectsQuery> = {};
         for (const [param, value] of new URLSearchParams(search)) {
             searchParams[param] = ['page', 'id'].includes(param) ? Number.parseInt(value, 10) : value;
         }
-        dispatch(getProjectsAsync(searchParams));
+
+        return searchParams;
+    };
+
+    useEffect(() => {
+        dispatch(getProjectsAsync(getSearchParams()));
     }, []);
 
     useEffect(() => {
@@ -45,6 +51,12 @@ export default function ProjectsPageComponent(): JSX.Element {
             search: `?${searchParams.toString()}`,
         });
     }, [gettingQuery]);
+
+    useEffect(() => {
+        if (isImporting === false) {
+            dispatch(getProjectsAsync(getSearchParams()));
+        }
+    }, [isImporting]);
 
     if (projectFetching) {
         return <Spin size='large' className='cvat-spinner' />;
