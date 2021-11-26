@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add Open Images V6 format (<https://github.com/openvinotoolkit/cvat/pull/3679>)
 - Rotated bounding boxes (<https://github.com/openvinotoolkit/cvat/pull/3832>)
 - Player option: Smooth image when zoom-in, enabled by default (<https://github.com/openvinotoolkit/cvat/pull/3933>)
+- Google Cloud Storage support in UI (<https://github.com/openvinotoolkit/cvat/pull/3919>)
 - Add project tasks paginations (<https://github.com/openvinotoolkit/cvat/pull/3910>)
 
 ### Changed
