@@ -110,6 +110,7 @@ const defaultState: NotificationsState = {
             reopeningIssue: null,
             resolvingIssue: null,
             submittingReview: null,
+            deletingIssue: null,
         },
         predictor: {
             prediction: null,
@@ -1130,6 +1131,21 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         ...state.errors.review,
                         submittingReview: {
                             message: 'Could not submit review session to the server',
+                            reason: action.payload.error.toString(),
+                        },
+                    },
+                },
+            };
+        }
+        case ReviewActionTypes.REMOVE_ISSUE_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    review: {
+                        ...state.errors.review,
+                        deletingIssue: {
+                            message: 'Could not remove issue from the server',
                             reason: action.payload.error.toString(),
                         },
                     },

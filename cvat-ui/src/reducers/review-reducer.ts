@@ -17,6 +17,7 @@ const defaultState: ReviewState = {
     newIssuePosition: null,
     issuesHidden: false,
     issuesResolvedHidden: false,
+    removeIssueDialogShown: false,
     fetching: {
         reviewId: null,
         issueId: null,
@@ -181,6 +182,16 @@ export default function (state: ReviewState = defaultState, action: any): Review
             return {
                 ...state,
                 issuesResolvedHidden: hidden,
+            };
+        }
+        case ReviewActionTypes.REMOVE_ISSUE_SUCCESS: {
+            const { issueId, frame } = action.payload;
+            const issues = state.issues.filter((issue: any) => issue.id !== issueId);
+            const frameIssues = computeFrameIssues(issues, state.activeReview, frame);
+            return {
+                ...state,
+                issues,
+                frameIssues,
             };
         }
         case AnnotationActionTypes.CLOSE_JOB:
