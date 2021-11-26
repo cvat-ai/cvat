@@ -5,12 +5,14 @@
     "cypress:run:chrome:canvas3d": "cypress run --headed --browser chrome --env coverage=false --config-file cypress_canvas3d.json"
   },
   "dependencies": {
-    "archiver": "^5.3.0",
-    "jimp": "^0.16.1",
     "@cypress/code-coverage": "^3.9.10",
+    "archiver": "^5.3.0",
+    "cy-verify-downloads": "^0.0.5",
     "cypress": "^8.3.1",
     "cypress-file-upload": "^5.0.8",
     "cypress-localstorage-commands": "^1.5.0",
-    "cypress-plugin-tab": "^1.0.5"
+    "cypress-plugin-tab": "^1.0.5",
+    "extract-zip": "^2.0.1",
+    "jimp": "^0.16.1"
   }
 }
