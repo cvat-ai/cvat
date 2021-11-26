@@ -9,6 +9,8 @@ require('../plugins/imageGenerator/imageGeneratorCommand');
 require('../plugins/createZipArchive/createZipArchiveCommand');
 require('cypress-localstorage-commands');
 require('../plugins/compareImages/compareImagesCommand');
+require('../plugins/unpackZipArchive/unpackZipArchiveCommand');
+require('cy-verify-downloads').addCustomCommand();
 
 let selectedValueGlobal = '';
 
@@ -226,7 +228,6 @@ Cypress.Commands.add('openJob', (jobID = 0, removeAnnotations = true, expectedFa
     } else {
         cy.get('.cvat-canvas-container').should('exist');
     }
-
     if (removeAnnotations) {
         cy.document().then((doc) => {
             const objects = Array.from(doc.querySelectorAll('.cvat_canvas_shape'));
@@ -723,10 +724,9 @@ Cypress.Commands.add('closeModalUnsupportedPlatform', () => {
 });
 
 Cypress.Commands.add('exportTask', ({
-    as, type, format, archiveCustomeName,
+    type, format, archiveCustomeName,
 }) => {
     cy.interactMenu('Export task dataset');
-    cy.intercept('GET', `/api/v1/tasks/**/${type}**`).as(as);
     cy.get('.cvat-modal-export-task').should('be.visible').find('.cvat-modal-export-select').click();
     cy.contains('.cvat-modal-export-option-item', format).should('be.visible').click();
     cy.get('.cvat-modal-export-task').find('.cvat-modal-export-select').should('contain.text', format);
@@ -739,7 +739,4 @@ Cypress.Commands.add('exportTask', ({
     cy.contains('button', 'OK').click();
     cy.get('.cvat-notification-notice-export-task-start').should('be.visible');
     cy.closeNotification('.cvat-notification-notice-export-task-start');
-    cy.wait(`@${as}`, { timeout: 5000 }).its('response.statusCode').should('equal', 202);
-    cy.wait(`@${as}`).its('response.statusCode').should('equal', 201);
-    cy.wait(2000); // Waiting for a full file download
 });
