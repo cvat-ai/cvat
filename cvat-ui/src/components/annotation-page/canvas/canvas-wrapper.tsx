@@ -27,7 +27,7 @@ const MAX_DISTANCE_TO_OPEN_SHAPE = 50;
 
 interface Props {
     sidebarCollapsed: boolean;
-    canvasInstance: Canvas | Canvas3d;
+    canvasInstance: Canvas | Canvas3d | null;
     jobInstance: any;
     activatedStateID: number | null;
     activatedAttributeID: number | null;
@@ -418,7 +418,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
 
     private fitCanvas = (): void => {
         const { canvasInstance } = this.props;
-        canvasInstance.fitCanvas();
+        if (canvasInstance !== null) canvasInstance.fitCanvas();
     };
 
     private onCanvasMouseDown = (e: MouseEvent): void => {
@@ -677,7 +677,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             curZLayer, annotations, frameData, canvasInstance,
         } = this.props;
 
-        if (frameData !== null) {
+        if (frameData !== null && canvasInstance !== null) {
             canvasInstance.setup(
                 frameData,
                 annotations.filter((e) => e.objectType !== ObjectType.TAG),

@@ -29,7 +29,7 @@ export default function IssueAggregatorComponent(): JSX.Element | null {
     const dispatch = useDispatch();
     const [expandedIssue, setExpandedIssue] = useState<number | null>(null);
     const frameIssues = useSelector((state: CombinedState): any[] => state.review.frameIssues);
-    const canvasInstance = useSelector((state: CombinedState): Canvas => state.annotation.canvas.instance as Canvas);
+    const canvasInstance = useSelector((state: CombinedState) => state.annotation.canvas.instance);
     const canvasIsReady = useSelector((state: CombinedState): boolean => state.annotation.canvas.ready);
     const newIssuePosition = useSelector((state: CombinedState): number[] | null => state.review.newIssuePosition);
     const issuesHidden = useSelector((state: CombinedState): any => state.review.issuesHidden);
@@ -37,6 +37,8 @@ export default function IssueAggregatorComponent(): JSX.Element | null {
     const issueFetching = useSelector((state: CombinedState): number | null => state.review.fetching.issueId);
     const issueLabels: JSX.Element[] = [];
     const issueDialogs: JSX.Element[] = [];
+
+    if (!(canvasInstance instanceof Canvas)) return null;
 
     useEffect(() => {
         scaleHandler(canvasInstance);

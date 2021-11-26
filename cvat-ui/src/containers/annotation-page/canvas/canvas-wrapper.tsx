@@ -53,7 +53,7 @@ import { Canvas3d } from 'cvat-canvas3d-wrapper';
 
 interface StateToProps {
     sidebarCollapsed: boolean;
-    canvasInstance: Canvas | Canvas3d;
+    canvasInstance: Canvas | Canvas3d | null;
     jobInstance: any;
     activatedStateID: number | null;
     activatedAttributeID: number | null;

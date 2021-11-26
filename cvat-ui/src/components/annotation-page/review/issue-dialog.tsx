@@ -66,7 +66,7 @@ export default function IssueDialog(props: Props): JSX.Element {
 
     const onDeleteIssue = useCallback((): void => {
         Modal.confirm({
-            title: `The issue #${id} will be deleted.`,
+            title: `The issue${id >= 0 ? ` #${id}` : ''} will be deleted.`,
             className: 'cvat-modal-confirm-remove-issue',
             onOk: () => {
                 collapse();
