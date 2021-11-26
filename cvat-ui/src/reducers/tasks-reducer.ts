@@ -30,6 +30,7 @@ const defaultState: TasksState = {
         name: null,
         status: null,
         mode: null,
+        projectId: null,
     },
     activities: {
         loads: {},
@@ -74,7 +75,10 @@ export default (state: TasksState = defaultState, action: AnyAction): TasksState
                 fetching: false,
                 count: action.payload.count,
                 current: combinedWithPreviews,
-                gettingQuery: { ...action.payload.query },
+                gettingQuery: {
+                    ...state.gettingQuery,
+                    ...action.payload.query,
+                },
             };
         }
         case TasksActionTypes.GET_TASKS_FAILED:

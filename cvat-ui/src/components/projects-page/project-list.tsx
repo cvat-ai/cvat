@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React from 'react';
+import React, { useCallback } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { Row, Col } from 'antd/lib/grid';
 import Pagination from 'antd/lib/pagination';
@@ -18,14 +18,14 @@ export default function ProjectListComponent(): JSX.Element {
     const projects = useSelector((state: CombinedState) => state.projects.current);
     const gettingQuery = useSelector((state: CombinedState) => state.projects.gettingQuery);
 
-    function changePage(p: number): void {
+    const changePage = useCallback((p: number) => {
         dispatch(
             getProjectsAsync({
                 ...gettingQuery,
                 page: p,
             }),
         );
-    }
+    }, [dispatch, getProjectsAsync, gettingQuery]);
 
     const dimensions = {
         md: 22,

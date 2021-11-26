@@ -57,7 +57,7 @@ from cvat.apps.engine.serializers import (
     AboutSerializer, AnnotationFileSerializer, BasicUserSerializer,
     DataMetaSerializer, DataSerializer, ExceptionSerializer,
     FileInfoSerializer, JobSerializer, LabeledDataSerializer,
-    LogEventSerializer, ProjectSerializer, ProjectSearchSerializer, ProjectWithoutTaskSerializer,
+    LogEventSerializer, ProjectSerializer, ProjectSearchSerializer,
     RqStatusSerializer, TaskSerializer, UserSerializer, PluginsSerializer, ReviewSerializer,
     CombinedReviewSerializer, IssueSerializer, CombinedIssueSerializer, CommentSerializer,
     CloudStorageSerializer, BaseCloudStorageSerializer, TaskFileSerializer,)
@@ -228,9 +228,7 @@ class ProjectFilter(filters.FilterSet):
         openapi.Parameter('status', openapi.IN_QUERY, description="Find all projects with a specific status",
             type=openapi.TYPE_STRING, enum=[str(i) for i in StatusChoice]),
         openapi.Parameter('names_only', openapi.IN_QUERY, description="Returns only names and id's of projects.",
-            type=openapi.TYPE_BOOLEAN),
-        openapi.Parameter('without_tasks', openapi.IN_QUERY, description="Returns only projects entities without related tasks",
-            type=openapi.TYPE_BOOLEAN)],))
+            type=openapi.TYPE_BOOLEAN)]))
 @method_decorator(name='create', decorator=swagger_auto_schema(operation_summary='Method creates a new project'))
 @method_decorator(name='retrieve', decorator=swagger_auto_schema(operation_summary='Method returns details of a specific project'))
 @method_decorator(name='destroy', decorator=swagger_auto_schema(operation_summary='Method deletes a specific project'))
@@ -247,8 +245,6 @@ class ProjectViewSet(auth.ProjectGetQuerySetMixin, viewsets.ModelViewSet):
             return TaskSerializer
         if self.request.query_params and self.request.query_params.get("names_only") == "true":
             return ProjectSearchSerializer
-        if self.request.query_params and self.request.query_params.get("without_tasks") == "true":
-            return ProjectWithoutTaskSerializer
         else:
             return ProjectSerializer
 
@@ -424,7 +420,7 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
     serializer_class = TaskSerializer
     search_fields = ("name", "owner__username", "mode", "status")
     filterset_class = TaskFilter
-    ordering_fields = ("id", "name", "owner", "status", "assignee")
+    ordering_fields = ("id", "name", "owner", "status", "assignee", "subset")
 
     def get_permissions(self):
         http_method = self.request.method
