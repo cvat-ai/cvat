@@ -44,6 +44,7 @@ export interface ProjectsState {
     count: number;
     current: Project[];
     gettingQuery: ProjectsQuery;
+    tasksGettingQuery: TasksQuery;
     activities: {
         creates: {
             id: null | number;
@@ -64,6 +65,7 @@ export interface TasksQuery {
     name: string | null;
     status: string | null;
     mode: string | null;
+    projectId: number | null;
     [key: string]: string | number | null;
 }
 

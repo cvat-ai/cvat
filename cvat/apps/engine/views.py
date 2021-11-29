@@ -57,7 +57,7 @@ from cvat.apps.engine.serializers import (
     AboutSerializer, AnnotationFileSerializer, BasicUserSerializer,
     DataMetaSerializer, DataSerializer, ExceptionSerializer,
     FileInfoSerializer, JobReadSerializer, JobWriteSerializer, LabeledDataSerializer,
-    LogEventSerializer, ProjectSerializer, ProjectSearchSerializer, ProjectWithoutTaskSerializer,
+    LogEventSerializer, ProjectSerializer, ProjectSearchSerializer,
     RqStatusSerializer, TaskSerializer, UserSerializer, PluginsSerializer, IssueReadSerializer,
     IssueWriteSerializer, CommentReadSerializer, CommentWriteSerializer, CloudStorageSerializer,
     BaseCloudStorageSerializer, TaskFileSerializer)
@@ -232,9 +232,7 @@ class ProjectFilter(filters.FilterSet):
         openapi.Parameter('status', openapi.IN_QUERY, description="Find all projects with a specific status",
             type=openapi.TYPE_STRING, enum=[str(i) for i in StatusChoice]),
         openapi.Parameter('names_only', openapi.IN_QUERY, description="Returns only names and id's of projects.",
-            type=openapi.TYPE_BOOLEAN),
-        openapi.Parameter('without_tasks', openapi.IN_QUERY, description="Returns only projects entities without related tasks",
-            type=openapi.TYPE_BOOLEAN)],))
+            type=openapi.TYPE_BOOLEAN)]))
 @method_decorator(name='create', decorator=swagger_auto_schema(operation_summary='Method creates a new project'))
 @method_decorator(name='retrieve', decorator=swagger_auto_schema(operation_summary='Method returns details of a specific project'))
 @method_decorator(name='destroy', decorator=swagger_auto_schema(operation_summary='Method deletes a specific project'))
@@ -251,8 +249,6 @@ class ProjectViewSet(viewsets.ModelViewSet):
             return TaskSerializer
         if self.request.query_params and self.request.query_params.get("names_only") == "true":
             return ProjectSearchSerializer
-        if self.request.query_params and self.request.query_params.get("without_tasks") == "true":
-            return ProjectWithoutTaskSerializer
         else:
             return ProjectSerializer
 
@@ -407,7 +403,7 @@ class TaskViewSet(viewsets.ModelViewSet):
     serializer_class = TaskSerializer
     search_fields = ("name", "owner__username", "mode", "status")
     filterset_class = TaskFilter
-    ordering_fields = ("id", "name", "owner", "status", "assignee")
+    ordering_fields = ("id", "name", "owner", "status", "assignee", "subset")
 
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -1197,6 +1193,7 @@ class CloudStorageViewSet(viewsets.ModelViewSet):
     )
     @action(detail=True, methods=['GET'], url_path='content')
     def content(self, request, pk):
+        storage = None
         try:
             db_storage = self.get_object()
             credentials = Credentials()
@@ -1241,7 +1238,7 @@ class CloudStorageViewSet(viewsets.ModelViewSet):
             return Response(data=msg, status=status.HTTP_404_NOT_FOUND)
         except Exception as ex:
             # check that cloud storage was not deleted
-            storage_status = storage.get_status()
+            storage_status = storage.get_status() if storage else None
             if storage_status == Status.FORBIDDEN:
                 msg = 'The resource {} is no longer available. Access forbidden.'.format(storage.name)
             elif storage_status == Status.NOT_FOUND:
@@ -1260,6 +1257,7 @@ class CloudStorageViewSet(viewsets.ModelViewSet):
     )
     @action(detail=True, methods=['GET'], url_path='preview')
     def preview(self, request, pk):
+        storage = None
         try:
             db_storage = self.get_object()
             if not os.path.exists(db_storage.get_preview_path()):
@@ -1320,7 +1318,7 @@ class CloudStorageViewSet(viewsets.ModelViewSet):
             raise
         except Exception as ex:
             # check that cloud storage was not deleted
-            storage_status = storage.get_status()
+            storage_status = storage.get_status() if storage else None
             if storage_status == Status.FORBIDDEN:
                 msg = 'The resource {} is no longer available. Access forbidden.'.format(storage.name)
             elif storage_status == Status.NOT_FOUND:

@@ -71,7 +71,7 @@ function getTasksFailed(error: any): AnyAction {
     return action;
 }
 
-export function getTasksAsync(query: TasksQuery): ThunkAction<Promise<void>, {}, {}, AnyAction> {
+export function getTasksAsync(query: Partial<TasksQuery>): ThunkAction<Promise<void>, {}, {}, AnyAction> {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         // We need remove all keys with null values from query
         const filteredQuery = { ...query };
@@ -246,7 +246,7 @@ export function exportTaskAsync(taskInstance: any): ThunkAction<Promise<void>, {
             downloadAnchor.click();
             dispatch(exportTaskSuccess(taskInstance.id));
         } catch (error) {
-            dispatch(exportTaskFailed(taskInstance.id, error));
+            dispatch(exportTaskFailed(taskInstance.id, error as Error));
         }
     };
 }

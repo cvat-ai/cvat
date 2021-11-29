@@ -192,6 +192,7 @@ const config = require('./config');
                 owner: isString,
                 assignee: isString,
                 search: isString,
+                ordering: isString,
                 status: isEnum.bind(TaskStatus),
                 mode: isEnum.bind(TaskMode),
                 dimension: isEnum.bind(DimensionType),
@@ -199,12 +200,14 @@ const config = require('./config');
 
             checkExclusiveFields(filter, ['id', 'search', 'projectId'], ['page']);
 
-            const searchParams = {};
+            const searchParams = new URLSearchParams();
+
             for (const field of [
                 'name',
                 'owner',
                 'assignee',
                 'search',
+                'ordering',
                 'status',
                 'mode',
                 'id',
@@ -213,7 +216,7 @@ const config = require('./config');
                 'dimension',
             ]) {
                 if (Object.prototype.hasOwnProperty.call(filter, field)) {
-                    searchParams[field] = filter[field];
+                    searchParams.set(camelToSnake(field), filter[field]);
                 }
             }
 
@@ -234,35 +237,20 @@ const config = require('./config');
                 owner: isString,
                 search: isString,
                 status: isEnum.bind(TaskStatus),
-                withoutTasks: isBoolean,
             });
 
-            checkExclusiveFields(filter, ['id', 'search'], ['page', 'withoutTasks']);
+            checkExclusiveFields(filter, ['id', 'search'], ['page']);
 
-            if (typeof filter.withoutTasks === 'undefined') {
-                if (typeof filter.id === 'undefined') {
-                    filter.withoutTasks = true;
-                } else {
-                    filter.withoutTasks = false;
-                }
-            }
-
-            const searchParams = {};
-            for (const field of ['name', 'assignee', 'owner', 'search', 'status', 'id', 'page', 'withoutTasks']) {
+            const searchParams = new URLSearchParams();
+            for (const field of ['name', 'assignee', 'owner', 'search', 'status', 'id', 'page']) {
                 if (Object.prototype.hasOwnProperty.call(filter, field)) {
                     searchParams[camelToSnake(field)] = filter[field];
                 }
             }
 
-            const projectsData = await serverProxy.projects.get(searchParams);
-            // prettier-ignore
+            const projectsData = await serverProxy.projects.get(searchParams.toString());
             const projects = projectsData.map((project) => {
-                if (filter.withoutTasks) {
-                    project.task_ids = project.tasks;
-                    project.tasks = [];
-                } else {
-                    project.task_ids = project.tasks.map((task) => task.id);
-                }
+                project.task_ids = project.tasks;
                 return project;
             }).map((project) => new Project(project));
 
