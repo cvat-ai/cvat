@@ -552,7 +552,7 @@ class ProjectSerializer(serializers.ModelSerializer):
             'created_date', 'updated_date', 'status', 'training_project',
             'dimension', 'organization')
         read_only_fields = ('created_date', 'updated_date', 'status', 'owner',
-            'assignee', 'task_subsets', 'dimension', 'organization')
+            'assignee', 'task_subsets', 'dimension', 'organization', 'tasks')
 
     def to_representation(self, instance):
         response = super().to_representation(instance)

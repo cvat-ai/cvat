@@ -439,7 +439,7 @@ class ProjectPermission(OpenPolicyAgentPermission):
             'retrieve': 'view',
             'tasks': 'view',
             'annotations': 'export:annotations',
-            'dataset': 'export:dataset'
+            'dataset_export': 'export:dataset'
         }.get(view.action)
 
         scopes = []
