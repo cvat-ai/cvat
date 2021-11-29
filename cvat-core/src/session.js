@@ -1694,9 +1694,9 @@
 
     Job.prototype.save.implementation = async function () {
         if (this.id) {
-            const jobData = this._updateTrigger.getUpdated(this, { assignee: 'assignee_id' });
-            if (jobData.assignee_id) {
-                jobData.assignee_id = jobData.assignee_id.id;
+            const jobData = this._updateTrigger.getUpdated(this);
+            if (jobData.assignee) {
+                jobData.assignee = jobData.assignee.id;
             }
 
             await serverProxy.jobs.save(this.id, jobData);
