@@ -47,7 +47,9 @@ function getTasks(): AnyAction {
     return action;
 }
 
-export function getTasksSuccess(array: any[], previews: string[], count: number, query: TasksQuery): AnyAction {
+export function getTasksSuccess(
+    array: any[], previews: string[], count: number, query: Partial<TasksQuery>,
+): AnyAction {
     const action = {
         type: TasksActionTypes.GET_TASKS_SUCCESS,
         payload: {
@@ -61,7 +63,7 @@ export function getTasksSuccess(array: any[], previews: string[], count: number,
     return action;
 }
 
-function getTasksFailed(error: any, query: TasksQuery): AnyAction {
+function getTasksFailed(error: any, query: Partial<TasksQuery>): AnyAction {
     const action = {
         type: TasksActionTypes.GET_TASKS_FAILED,
         payload: {
@@ -73,7 +75,7 @@ function getTasksFailed(error: any, query: TasksQuery): AnyAction {
     return action;
 }
 
-export function getTasksAsync(query: TasksQuery): ThunkAction<Promise<void>, {}, {}, AnyAction> {
+export function getTasksAsync(query: Partial<TasksQuery>): ThunkAction<Promise<void>, {}, {}, AnyAction> {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         dispatch(getTasks());
 
@@ -248,7 +250,7 @@ export function exportTaskAsync(taskInstance: any): ThunkAction<Promise<void>, {
             downloadAnchor.click();
             dispatch(exportTaskSuccess(taskInstance.id));
         } catch (error) {
-            dispatch(exportTaskFailed(taskInstance.id, error));
+            dispatch(exportTaskFailed(taskInstance.id, error as Error));
         }
     };
 }

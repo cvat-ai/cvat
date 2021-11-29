@@ -11,7 +11,7 @@ interface Props {
     internalCommonProps: any;
 }
 
-export default function S3Region(props: Props): JSX.Element {
+export default function GCSLocation(props: Props): JSX.Element {
     const {
         selectedRegion,
         onSelectRegion,
@@ -22,10 +22,10 @@ export default function S3Region(props: Props): JSX.Element {
             selectedRegion={selectedRegion}
             onSelectRegion={onSelectRegion}
             internalCommonProps={internalCommonProps}
-            values={consts.DEFAULT_AWS_S3_REGIONS}
-            name='region'
-            label='Region'
-            href='https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-regions-availability-zones.html#concepts-available-regions'
+            values={consts.DEFAULT_GOOGLE_CLOUD_STORAGE_LOCATIONS}
+            name='location'
+            label='Location'
+            href='https://cloud.google.com/storage/docs/locations#available-locations'
         />
     );
 }

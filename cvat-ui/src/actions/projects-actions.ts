@@ -5,8 +5,9 @@
 import { Dispatch, ActionCreator } from 'redux';
 
 import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
-import { ProjectsQuery } from 'reducers/interfaces';
-import { getTasksSuccess, updateTaskSuccess } from 'actions/tasks-actions';
+import { ProjectsQuery, TasksQuery, CombinedState } from 'reducers/interfaces';
+import { getTasksAsync } from 'actions/tasks-actions';
+import { getCVATStore } from 'cvat-store';
 import getCore from 'cvat-core-wrapper';
 
 const cvat = getCore();
@@ -34,8 +35,8 @@ const projectActions = {
         createAction(ProjectsActionTypes.GET_PROJECTS_SUCCESS, { array, previews, count })
     ),
     getProjectsFailed: (error: any) => createAction(ProjectsActionTypes.GET_PROJECTS_FAILED, { error }),
-    updateProjectsGettingQuery: (query: Partial<ProjectsQuery>) => (
-        createAction(ProjectsActionTypes.UPDATE_PROJECTS_GETTING_QUERY, { query })
+    updateProjectsGettingQuery: (query: Partial<ProjectsQuery>, tasksQuery: Partial<TasksQuery> = {}) => (
+        createAction(ProjectsActionTypes.UPDATE_PROJECTS_GETTING_QUERY, { query, tasksQuery })
     ),
     createProject: () => createAction(ProjectsActionTypes.CREATE_PROJECT),
     createProjectSuccess: (projectId: number) => (
@@ -58,10 +59,27 @@ const projectActions = {
 
 export type ProjectActions = ActionUnion<typeof projectActions>;
 
-export function getProjectsAsync(query: Partial<ProjectsQuery>): ThunkAction {
-    return async (dispatch: ActionCreator<Dispatch>, getState): Promise<void> => {
+export function getProjectTasksAsync(tasksQuery: Partial<TasksQuery> = {}): ThunkAction<void> {
+    return (dispatch: ActionCreator<Dispatch>): void => {
+        const store = getCVATStore();
+        const state: CombinedState = store.getState();
+        dispatch(projectActions.updateProjectsGettingQuery({}, tasksQuery));
+        const query: Partial<TasksQuery> = {
+            ...state.projects.tasksGettingQuery,
+            page: 1,
+            ...tasksQuery,
+        };
+
+        dispatch(getTasksAsync(query));
+    };
+}
+
+export function getProjectsAsync(
+    query: Partial<ProjectsQuery>, tasksQuery: Partial<TasksQuery> = {},
+): ThunkAction {
+    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         dispatch(projectActions.getProjects());
-        dispatch(projectActions.updateProjectsGettingQuery(query));
+        dispatch(projectActions.updateProjectsGettingQuery(query, tasksQuery));
 
         // Clear query object from null fields
         const filteredQuery: Partial<ProjectsQuery> = {
@@ -85,38 +103,15 @@ export function getProjectsAsync(query: Partial<ProjectsQuery>): ThunkAction {
 
         const array = Array.from(result);
 
+        const previewPromises = array.map((project): string => (project as any).preview().catch(() => ''));
+        dispatch(projectActions.getProjectsSuccess(array, await Promise.all(previewPromises), result.count));
+
         // Appropriate tasks fetching proccess needs with retrieving only a single project
-        if (Object.keys(filteredQuery).includes('id')) {
-            const tasks: any[] = [];
-            const [project] = array;
-            const taskPreviewPromises: Promise<string>[] = (project as any).tasks.map((task: any): string => {
-                tasks.push(task);
-                return (task as any).frames.preview().catch(() => '');
-            });
-
-            const taskPreviews = await Promise.all(taskPreviewPromises);
-
-            const state = getState();
-
-            dispatch(projectActions.getProjectsSuccess(array, taskPreviews, result.count));
-
-            if (!state.tasks.fetching) {
-                dispatch(
-                    getTasksSuccess(tasks, taskPreviews, tasks.length, {
-                        page: 1,
-                        assignee: null,
-                        id: null,
-                        mode: null,
-                        name: null,
-                        owner: null,
-                        search: null,
-                        status: null,
-                    }),
-                );
-            }
-        } else {
-            const previewPromises = array.map((project): string => (project as any).preview().catch(() => ''));
-            dispatch(projectActions.getProjectsSuccess(array, await Promise.all(previewPromises), result.count));
+        if (Object.keys(filteredQuery).includes('id') && typeof filteredQuery.id === 'number') {
+            dispatch(getProjectTasksAsync({
+                ...tasksQuery,
+                projectId: filteredQuery.id,
+            }));
         }
     };
 }
@@ -136,17 +131,14 @@ export function createProjectAsync(data: any): ThunkAction {
 }
 
 export function updateProjectAsync(projectInstance: any): ThunkAction {
-    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+    return async (dispatch, getState): Promise<void> => {
         try {
+            const state = getState();
             dispatch(projectActions.updateProject());
             await projectInstance.save();
             const [project] = await cvat.projects.get({ id: projectInstance.id });
-            // TODO: Check case when a project is not available anymore after update
-            // (assignee changes assignee and project is not public)
             dispatch(projectActions.updateProjectSuccess(project));
-            project.tasks.forEach((task: any) => {
-                dispatch(updateTaskSuccess(task, task.id));
-            });
+            dispatch(getProjectTasksAsync(state.projects.tasksGettingQuery));
         } catch (error) {
             let project = null;
             try {

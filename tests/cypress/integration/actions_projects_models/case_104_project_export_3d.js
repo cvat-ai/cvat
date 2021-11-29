@@ -21,7 +21,7 @@ context('Export project dataset with 3D task.', { browser: '!firefox' }, () => {
     };
     let projectID = '';
 
-    function getProjectID(projectName) {
+    function getProjectID() {
         cy.contains('.cvat-project-name', projectName)
             .parents('.cvat-project-details')
             .should('have.attr', 'cvat-project-id')
@@ -30,17 +30,9 @@ context('Export project dataset with 3D task.', { browser: '!firefox' }, () => {
             });
     }
 
-    function testCheckFile(file) {
-        cy.task('listFiles', 'cypress/fixtures').each((fileName) => {
-            if (fileName.match(file)) {
-               cy.readFile(`cypress/fixtures/${fileName}`).should('exist');
-            }
-        });
-    }
-
     before(() => {
         cy.openProject(projectName);
-        getProjectID(projectName);
+        getProjectID();
         cy.createAnnotationTask(
             task.name3d,
             task.label3d,
@@ -64,41 +56,38 @@ context('Export project dataset with 3D task.', { browser: '!firefox' }, () => {
         it('Export project with 3D task. Annotation.', () => {
             cy.goToProjectsList();
             const exportAnnotation3d = {
-                projectName: projectName,
+                projectName,
                 as: 'exportAnnotations3d',
                 type: 'annotations',
                 dumpType: 'Kitti Raw Format',
             };
             cy.exportProject(exportAnnotation3d);
-            const regex = new RegExp(`^project_${projectName.toLowerCase()}-.*-${exportAnnotation3d.dumpType.toLowerCase()}.*.zip$`);
-            testCheckFile(regex);
+            cy.waitForDownload();
         });
 
         it('Export project with 3D task. Dataset.', () => {
             cy.goToProjectsList();
             const exportDataset3d = {
-                projectName: projectName,
+                projectName,
                 as: 'exportDataset3d',
                 type: 'dataset',
                 dumpType: 'Sly Point Cloud Format',
             };
             cy.exportProject(exportDataset3d);
-            const regex = new RegExp(`^project_${projectName.toLowerCase()}-.*-${exportDataset3d.dumpType.toLowerCase()}.*.zip$`);
-            testCheckFile(regex);
+            cy.waitForDownload();
         });
 
         it('Export project with 3D task. Annotation. Rename a archive.', () => {
             cy.goToProjectsList();
             const exportAnnotations3dRenameArchive = {
-                projectName: projectName,
+                projectName,
                 as: 'exportAnnotations3dRenameArchive',
                 type: 'annotations',
                 dumpType: 'Kitti Raw Format',
                 archiveCustomeName: 'export_project_3d_annotation',
             };
             cy.exportProject(exportAnnotations3dRenameArchive);
-            const regex = new RegExp(`^${exportAnnotations3dRenameArchive.archiveCustomeName}.zip$`);
-            testCheckFile(regex);
+            cy.waitForDownload();
         });
     });
 });

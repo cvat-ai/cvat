@@ -97,8 +97,8 @@ class ServerProxy {
             const object = projectsDummyData.results.filter((project) => project.id === id)[0];
             for (const prop in projectData) {
                 if (
-                    Object.prototype.hasOwnProperty.call(projectData, prop)
-                    && Object.prototype.hasOwnProperty.call(object, prop)
+                    Object.prototype.hasOwnProperty.call(projectData, prop) &&
+                    Object.prototype.hasOwnProperty.call(object, prop)
                 ) {
                     if (prop === 'labels') {
                         object[prop] = projectData[prop].filter((label) => !label.deleted);
@@ -160,8 +160,8 @@ class ServerProxy {
             const object = tasksDummyData.results.filter((task) => task.id === id)[0];
             for (const prop in taskData) {
                 if (
-                    Object.prototype.hasOwnProperty.call(taskData, prop)
-                    && Object.prototype.hasOwnProperty.call(object, prop)
+                    Object.prototype.hasOwnProperty.call(taskData, prop) &&
+                    Object.prototype.hasOwnProperty.call(object, prop)
                 ) {
                     if (prop === 'labels') {
                         object[prop] = taskData[prop].filter((label) => !label.deleted);
@@ -249,8 +249,8 @@ class ServerProxy {
 
             for (const prop in jobData) {
                 if (
-                    Object.prototype.hasOwnProperty.call(jobData, prop)
-                    && Object.prototype.hasOwnProperty.call(object, prop)
+                    Object.prototype.hasOwnProperty.call(jobData, prop) &&
+                    Object.prototype.hasOwnProperty.call(object, prop)
                 ) {
                     object[prop] = jobData[prop];
                 }
@@ -339,8 +339,8 @@ class ServerProxy {
             if (cloudStorage) {
                 for (const prop in cloudStorageData) {
                     if (
-                        Object.prototype.hasOwnProperty.call(cloudStorageData, prop)
-                            && Object.prototype.hasOwnProperty.call(cloudStorage, prop)
+                        Object.prototype.hasOwnProperty.call(cloudStorageData, prop) &&
+                            Object.prototype.hasOwnProperty.call(cloudStorage, prop)
                     ) {
                         cloudStorage[prop] = cloudStorageData[prop];
                     }
@@ -374,7 +374,6 @@ class ServerProxy {
                 cloudStorages.splice(cloudStorageId);
             }
         }
-
 
         Object.defineProperties(
             this,
