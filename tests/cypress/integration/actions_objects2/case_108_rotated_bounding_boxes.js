@@ -27,7 +27,7 @@ context('Rotated bounding boxes.', () => {
         secondY: createRectangleShape2Points.secondY - 150,
     };
 
-    let transformMatrixShape;
+    const transformMatrixShape = [];
 
     function testShapeRorate(shape, x, y, expectedRorate, shift) {
         cy.get(shape)
@@ -63,7 +63,10 @@ context('Rotated bounding boxes.', () => {
             testShapeRorate('#cvat_canvas_shape_1', 350, 150, '11.4°');
             testShapeRorate('#cvat_canvas_shape_2', 350, 150, '26.6°');
             cy.get('#cvat_canvas_shape_2').then((shape2) => {
-                transformMatrixShape = shape2.attr('transform');
+                const shapeAttrs = shape2.attr('transform').split('(')[1].split(')')[0].split(',');
+                for (const i of shapeAttrs) {
+                    transformMatrixShape.push(Number(i).toFixed(3));
+                }
             });
         });
 
@@ -71,7 +74,14 @@ context('Rotated bounding boxes.', () => {
             // Check track roration on all frames
             for (let frame = 1; frame < 10; frame++) {
                 cy.goToNextFrame(frame);
-                cy.get('#cvat_canvas_shape_2').should('have.attr', 'transform', transformMatrixShape);
+                cy.get('#cvat_canvas_shape_2').should('have.attr', 'transform').then(($transform) => {
+                    const transform = $transform.split('(')[1].split(')')[0].split(',');
+                    const transformMatrix = [];
+                    for (const i of transform) {
+                        transformMatrix.push(Number(i).toFixed(3));
+                    }
+                    expect(transformMatrix).to.deep.eq(transformMatrixShape);
+                });
             }
             // Merge tracks
             cy.get('.cvat-merge-control').click();
@@ -80,9 +90,24 @@ context('Rotated bounding boxes.', () => {
 
             testShapeRorate('#cvat_canvas_shape_2', 350, 250, '91.9°');
 
+            // Comparison of the values of the shape attribute of the current frame with the previous frame
             for (let frame = 8; frame >= 1; frame--) {
-                cy.goToPreviousFrame(frame);
-                cy.get('#cvat_canvas_shape_2').should('have.attr', 'transform').and('not.equal', transformMatrixShape);
+                cy.get('#cvat_canvas_shape_2').should('have.attr', 'transform').then(($transform) => {
+                    const transform = $transform.split('(')[1].split(')')[0].split(',');
+                    const transformMatrix = [];
+                    for (const i of transform) {
+                        transformMatrix.push(Number(i).toFixed(3));
+                    }
+                    cy.goToPreviousFrame(frame);
+                    cy.get('#cvat_canvas_shape_2').should('have.attr', 'transform').then(($transform2) => {
+                        const transform2 = $transform2.split('(')[1].split(')')[0].split(',');
+                        const transformMatrix2 = [];
+                        for (const i of transform2) {
+                            transformMatrix2.push(Number(i).toFixed(3));
+                        }
+                        expect(transformMatrix).not.deep.eq(transformMatrix2);
+                    });
+                });
             }
             cy.goCheckFrameNumber(2);
 
@@ -90,14 +115,15 @@ context('Rotated bounding boxes.', () => {
             cy.get('.cvat-split-track-control').click();
             // A single click does not reproduce the split a track scenario in cypress test.
             cy.get('#cvat_canvas_shape_2').click().click();
-            cy.get('#cvat_canvas_shape_3').should('have.attr', 'transform').then((shapeTranform) => {
-                cy.get('#cvat_canvas_shape_4').should('have.attr', 'transform', shapeTranform);
+            cy.get('#cvat_canvas_shape_3').should('have.attr', 'transform').then((shapeTransform) => {
+                cy.get('#cvat_canvas_shape_4').should('have.attr', 'transform', shapeTransform);
             });
         });
 
         it('Check rotation with hold Shift button.', () => {
             cy.goCheckFrameNumber(0);
             testShapeRorate('#cvat_canvas_shape_1', 350, 150, '13.0°', true);
+            testShapeRorate('#cvat_canvas_shape_1', 350, 180, '14.2°', true);
         });
     });
 });
