@@ -3,7 +3,6 @@
     "name": "main task",
     "overlap": 0,
     "segment_size": 100,
-    "owner_id": 1,
     "labels": [
       {
         "name": "car",
@@ -32,7 +31,6 @@
     "name": "assignee to user task",
     "overlap": 0,
     "segment_size": 100,
-    "owner_id": 1,
     "assignee_id": 2,
     "labels": [
       {

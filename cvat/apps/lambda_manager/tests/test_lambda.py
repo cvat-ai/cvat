@@ -140,7 +140,7 @@ class LambdaTestCase(APITestCase):
     @classmethod
     def _create_db_users(cls):
         (group_admin, _) = Group.objects.get_or_create(name="admin")
-        (group_user, _) = Group.objects.get_or_create(name="user")
+        (group_user, _) = Group.objects.get_or_create(name="business")
 
         user_admin = User.objects.create_superuser(username="admin", email="",
             password="admin")
@@ -382,9 +382,9 @@ class LambdaTestCase(APITestCase):
         response = self._post_request(f'{LAMBDA_REQUESTS_PATH}', self.admin, data)
         id_request = response.data["id"]
         response = self._delete_request(f'{LAMBDA_REQUESTS_PATH}/{id_request}', self.user)
-        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         response = self._get_request(f'{LAMBDA_REQUESTS_PATH}/{id_request}', self.user)
-        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
 
 
     @skip("Fail: add mock")

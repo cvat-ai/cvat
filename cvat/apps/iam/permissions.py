@@ -4,6 +4,7 @@
 
 from collections import namedtuple
 import operator
+from rest_framework.exceptions import ValidationError
 
 import requests
 from django.conf import settings
@@ -418,7 +419,10 @@ class ProjectPermission(OpenPolicyAgentPermission):
 
     @classmethod
     def create_view(cls, request, project_id):
-        obj = Project.objects.get(id=project_id)
+        try:
+            obj = Project.objects.get(id=project_id)
+        except Project.DoesNotExist as ex:
+            raise ValidationError(str(ex))
         view = namedtuple('View', ['action'])(action='retrieve')
         return cls('view', request, view, obj)
 
@@ -530,7 +534,10 @@ class TaskPermission(OpenPolicyAgentPermission):
 
     @classmethod
     def create_view_data(cls, request, task_id):
-        obj = Task.objects.get(id=task_id)
+        try:
+            obj = Task.objects.get(id=task_id)
+        except Task.DoesNotExist as ex:
+            raise ValidationError(str(ex))
         view = namedtuple('View', ['action'])(action='data')
         return cls('view:data', request, view, obj)
 
@@ -566,8 +573,8 @@ class TaskPermission(OpenPolicyAgentPermission):
             if project_id:
                 try:
                     project = Project.objects.get(id=project_id)
-                except Project.DoesNotExist:
-                    pass # it will be handled in view
+                except Project.DoesNotExist as ex:
+                    raise ValidationError(str(ex))
 
             data = {
                 "id": None,
@@ -833,7 +840,10 @@ class CommentPermission(OpenPolicyAgentPermission):
             })
         elif self.view.action == 'create':
             issue_id = self.request.data.get('issue')
-            db_issue = Issue.objects.get(id=issue_id)
+            try:
+                db_issue = Issue.objects.get(id=issue_id)
+            except Issue.DoesNotExist as ex:
+                raise ValidationError(str(ex))
             data = get_common_data(db_issue)
             data.update({
                 "owner": { "id": self.request.user.id }
@@ -916,7 +926,10 @@ class IssuePermission(OpenPolicyAgentPermission):
             })
         elif self.view.action == 'create':
             job_id = self.request.data.get('job')
-            db_job = Job.objects.get(id=job_id)
+            try:
+                db_job = Job.objects.get(id=job_id)
+            except Job.DoesNotExist as ex:
+                raise ValidationError(str(ex))
             data = get_common_data(db_job)
             data.update({
                 "owner": { "id": self.request.user.id },
