@@ -585,15 +585,19 @@ class Manifest(models.Model):
 
 class CloudStorage(models.Model):
     # restrictions:
-    # AWS bucket name, Azure container name - 63
+    # AWS bucket name, Azure container name - 63, Google bucket name - 63 without dots and 222 with dots
+    # https://cloud.google.com/storage/docs/naming-buckets#requirements
     # AWS access key id - 20
     # AWS secret access key - 40
     # AWS temporary session tocken - None
     # The size of the security token that AWS STS API operations return is not fixed.
     # We strongly recommend that you make no assumptions about the maximum size.
     # The typical token size is less than 4096 bytes, but that can vary.
+    # specific attributes:
+    # location - max 23
+    # project ID: 6 - 30 (https://cloud.google.com/resource-manager/docs/creating-managing-projects#before_you_begin)
     provider_type = models.CharField(max_length=20, choices=CloudProviderChoice.choices())
-    resource = models.CharField(max_length=63)
+    resource = models.CharField(max_length=222)
     display_name = models.CharField(max_length=63)
     owner = models.ForeignKey(User, null=True, blank=True,
         on_delete=models.SET_NULL, related_name="cloud_storages")
@@ -601,7 +605,7 @@ class CloudStorage(models.Model):
     updated_date = models.DateTimeField(auto_now=True)
     credentials = models.CharField(max_length=500)
     credentials_type = models.CharField(max_length=29, choices=CredentialsTypeChoice.choices())#auth_type
-    specific_attributes = models.CharField(max_length=50, blank=True)
+    specific_attributes = models.CharField(max_length=128, blank=True)
     description = models.TextField(blank=True)
 
     class Meta:
@@ -625,3 +629,6 @@ class CloudStorage(models.Model):
 
     def get_specific_attributes(self):
         return parse_specific_attributes(self.specific_attributes)
+
+    def get_key_file_path(self):
+        return os.path.join(self.get_storage_dirname(), 'key.json')

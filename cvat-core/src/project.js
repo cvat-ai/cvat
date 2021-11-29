@@ -5,7 +5,6 @@
 (() => {
     const PluginRegistry = require('./plugins');
     const { ArgumentError } = require('./exceptions');
-    const { Task } = require('./session');
     const { Label } = require('./labels');
     const User = require('./user');
 
@@ -44,7 +43,6 @@
             }
 
             data.labels = [];
-            data.tasks = [];
 
             if (Array.isArray(initialData.labels)) {
                 for (const label of initialData.labels) {
@@ -53,19 +51,6 @@
                 }
             }
 
-            if (Array.isArray(initialData.tasks)) {
-                for (const task of initialData.tasks) {
-                    const taskInstance = new Task(task);
-                    data.tasks.push(taskInstance);
-                }
-            }
-            if (!data.task_subsets) {
-                const subsetsSet = new Set();
-                for (const task of data.tasks) {
-                    if (task.subset) subsetsSet.add(task.subset);
-                }
-                data.task_subsets = Array.from(subsetsSet);
-            }
             if (typeof initialData.training_project === 'object') {
                 data.training_project = { ...initialData.training_project };
             }
@@ -211,17 +196,6 @@
 
                             data.labels = [...deletedLabels, ...labels];
                         },
-                    },
-                    /**
-                     * Tasks related with the project
-                     * @name tasks
-                     * @type {module:API.cvat.classes.Task[]}
-                     * @memberof module:API.cvat.classes.Project
-                     * @readonly
-                     * @instance
-                     */
-                    tasks: {
-                        get: () => [...data.tasks],
                     },
                     /**
                      * Subsets array for related tasks
