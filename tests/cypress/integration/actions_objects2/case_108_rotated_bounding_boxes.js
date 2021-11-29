@@ -29,7 +29,7 @@ context('Rotated bounding boxes.', () => {
 
     const transformMatrixShape = [];
 
-    function testShapeRorate(shape, x, y, expectedRorate, shift) {
+    function testShapeRotate(shape, x, y, expectedRorate, shift) {
         cy.get(shape)
             .trigger('mousemove')
             .trigger('mouseover')
@@ -60,8 +60,8 @@ context('Rotated bounding boxes.', () => {
 
     describe(`Testing case "${caseId}"`, () => {
         it('Check that bounding boxes can be rotated.', () => {
-            testShapeRorate('#cvat_canvas_shape_1', 350, 150, '11.4°');
-            testShapeRorate('#cvat_canvas_shape_2', 350, 150, '26.6°');
+            testShapeRotate('#cvat_canvas_shape_1', 350, 150, '11.4°');
+            testShapeRotate('#cvat_canvas_shape_2', 350, 150, '26.6°');
             cy.get('#cvat_canvas_shape_2').then((shape2) => {
                 const shapeAttrs = shape2.attr('transform').split('(')[1].split(')')[0].split(',');
                 for (const i of shapeAttrs) {
@@ -88,7 +88,7 @@ context('Rotated bounding boxes.', () => {
             cy.get('#cvat_canvas_shape_2').click();
             cy.get('body').type('m');
 
-            testShapeRorate('#cvat_canvas_shape_2', 350, 250, '91.9°');
+            testShapeRotate('#cvat_canvas_shape_2', 350, 250, '91.9°');
 
             // Comparison of the values of the shape attribute of the current frame with the previous frame
             for (let frame = 8; frame >= 1; frame--) {
@@ -122,8 +122,8 @@ context('Rotated bounding boxes.', () => {
 
         it('Check rotation with hold Shift button.', () => {
             cy.goCheckFrameNumber(0);
-            testShapeRorate('#cvat_canvas_shape_1', 350, 150, '13.0°', true);
-            testShapeRorate('#cvat_canvas_shape_1', 350, 180, '14.2°', true);
+            testShapeRotate('#cvat_canvas_shape_1', 350, 150, '13.0°', true);
+            testShapeRotate('#cvat_canvas_shape_1', 350, 180, '14.2°', true);
         });
     });
 });
