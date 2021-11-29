@@ -60,6 +60,8 @@ interface Props {
     smoothImage: boolean;
     aamZoomMargin: number;
     showObjectsTextAlways: boolean;
+    textFontSize: number;
+    textPosition: 'auto' | 'center';
     showAllInterpolationTracks: boolean;
     workspace: Workspace;
     automaticBordering: boolean;
@@ -107,6 +109,8 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             showProjections,
             selectedOpacity,
             smoothImage,
+            textFontSize,
+            textPosition,
         } = this.props;
         const { canvasInstance } = this.props as { canvasInstance: Canvas };
 
@@ -124,6 +128,8 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             intelligentPolygonCrop,
             showProjections,
             creationOpacity: selectedOpacity,
+            textFontSize,
+            textPosition,
         });
 
         this.initialSetup();
@@ -158,6 +164,8 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             workspace,
             frameFetching,
             showObjectsTextAlways,
+            textFontSize,
+            textPosition,
             showAllInterpolationTracks,
             automaticBordering,
             intelligentPolygonCrop,
@@ -172,7 +180,9 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             prevProps.showProjections !== showProjections ||
             prevProps.intelligentPolygonCrop !== intelligentPolygonCrop ||
             prevProps.selectedOpacity !== selectedOpacity ||
-            prevProps.smoothImage !== smoothImage
+            prevProps.smoothImage !== smoothImage ||
+            prevProps.textFontSize !== textFontSize ||
+            prevProps.textPosition !== textPosition
         ) {
             canvasInstance.configure({
                 undefinedAttrValue: consts.UNDEFINED_ATTRIBUTE_VALUE,
@@ -182,6 +192,8 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
                 intelligentPolygonCrop,
                 creationOpacity: selectedOpacity,
                 smoothImage,
+                textFontSize,
+                textPosition,
             });
         }
 

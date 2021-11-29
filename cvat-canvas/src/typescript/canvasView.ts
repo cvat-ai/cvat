@@ -1175,7 +1175,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 for (const i in this.drawnStates) {
                     if (!(i in this.svgTexts)) {
                         this.svgTexts[i] = this.addText(this.drawnStates[i]);
-                        this.updateTextPosition(this.svgTexts[i], this.svgShapes[i]);
                     }
                 }
             } else if (configuration.displayAllText === false && this.configuration.displayAllText) {
@@ -1187,15 +1186,25 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 }
             }
 
-            if ('smoothImage' in configuration) {
-                if (configuration.smoothImage) {
-                    this.background.classList.remove('cvat_canvas_pixelized');
-                } else {
-                    this.background.classList.add('cvat_canvas_pixelized');
-                }
+            const updateTextPosition = configuration.displayAllText !== this.configuration.displayAllText ||
+                configuration.textFontSize !== this.configuration.textFontSize ||
+                configuration.textPosition !== this.configuration.textPosition;
+
+            if (configuration.smoothImage === true) {
+                this.background.classList.remove('cvat_canvas_pixelized');
+            } else if (configuration.smoothImage === false) {
+                this.background.classList.add('cvat_canvas_pixelized');
             }
 
             this.configuration = configuration;
+            if (updateTextPosition) {
+                for (const i in this.drawnStates) {
+                    if (i in this.svgTexts) {
+                        this.updateTextPosition(this.svgTexts[i], this.svgShapes[i]);
+                    }
+                }
+            }
+
             this.activate(activeElement);
             this.editHandler.configurate(this.configuration);
             this.drawHandler.configurate(this.configuration);
@@ -2059,6 +2068,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
     // Update text position after corresponding box has been moved, resized, etc.
     private updateTextPosition(text: SVG.Text, shape: SVG.Shape): void {
         if (text.node.style.display === 'none') return; // wrong transformation matrix
+        const textFontSize = this.configuration.textFontSize || 12;
+        const textPosition = this.configuration.textPosition || 'auto';
         const { rotation } = shape.transform();
         let box = (shape.node as any).getBBox();
 
@@ -2079,7 +2090,11 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
         // Find the best place for a text
         let [clientX, clientY]: number[] = [box.x + box.width, box.y];
-        if (
+        if (textPosition === 'center') {
+            const textBBox = ((text.node as any) as SVGTextElement).getBBox();
+            clientX = box.x + box.width / 2 - textBBox.width / 2;
+            clientY = box.y + box.height / 2 - textBBox.height / 2;
+        } else if (
             clientX + ((text.node as any) as SVGTextElement)
                 .getBBox().width + consts.TEXT_MARGIN > this.canvas.offsetWidth
         ) {
@@ -2095,7 +2110,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
         ]);
 
         // Finally draw a text
-        text.move(x, y);
+        text.move(x, y).style({ 'font-size': textFontSize });
+
         if (rotation) {
             text.rotate(rotation, cx, cy);
         }
@@ -2107,6 +2123,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
     private addText(state: any): SVG.Text {
         const { undefinedAttrValue } = this.configuration;
+        const textFontSize = this.configuration.textFontSize || 12;
         const {
             label, clientID, attributes, source, descriptions,
         } = state;
@@ -2117,7 +2134,9 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
         return this.adoptedText
             .text((block): void => {
-                block.tspan(`${label.name} ${clientID} (${source})`).style('text-transform', 'uppercase');
+                block.tspan(`${label.name} ${clientID} (${source})`).style({
+                    'text-transform': 'uppercase',
+                });
                 for (const desc of descriptions) {
                     block
                         .tspan(`${desc}`)
@@ -2140,6 +2159,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 }
             })
             .move(0, 0)
+            .style({ 'font-size': textFontSize })
             .addClass('cvat_canvas_text');
     }
 
