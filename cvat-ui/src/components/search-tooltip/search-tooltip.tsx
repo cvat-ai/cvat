@@ -67,6 +67,8 @@ export default function SearchTooltip(props: Props): JSX.Element {
                                 <q>AWS_S3_BUCKET</q>
                                 or
                                 <q>AZURE_CONTAINER</q>
+                                or
+                                <q>GOOGLE_CLOUD_STORAGE</q>
                             </Text>
                         </Paragraph>
                     ) : null}
@@ -77,6 +79,8 @@ export default function SearchTooltip(props: Props): JSX.Element {
                                 <q>KEY_SECRET_KEY_PAIR</q>
                                 or
                                 <q>ACCOUNT_NAME_TOKEN_PAIR</q>
+                                or
+                                <q>KEY_FILE_PATH</q>
                                 or
                                 <q>ANONYMOUS_ACCESS</q>
                             </Text>

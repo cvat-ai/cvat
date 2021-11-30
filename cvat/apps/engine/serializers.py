@@ -6,6 +6,8 @@ import os
 import re
 import shutil
 
+from tempfile import NamedTemporaryFile
+
 from rest_framework import serializers, exceptions
 from django.contrib.auth.models import User, Group
 
@@ -798,6 +800,7 @@ class CloudStorageSerializer(serializers.ModelSerializer):
     key = serializers.CharField(max_length=20, allow_blank=True, required=False)
     secret_key = serializers.CharField(max_length=40, allow_blank=True, required=False)
     key_file_path = serializers.CharField(max_length=64, allow_blank=True, required=False)
+    key_file = serializers.FileField(required=False)
     account_name = serializers.CharField(max_length=24, allow_blank=True, required=False)
     manifests = ManifestSerializer(many=True, default=[])
 
@@ -806,7 +809,8 @@ class CloudStorageSerializer(serializers.ModelSerializer):
         fields = (
             'provider_type', 'resource', 'display_name', 'owner', 'credentials_type',
             'created_date', 'updated_date', 'session_token', 'account_name', 'key',
-            'secret_key', 'key_file_path', 'specific_attributes', 'description', 'id', 'manifests',
+            'secret_key', 'key_file_path', 'key_file', 'specific_attributes',
+            'description', 'id', 'manifests',
         )
         read_only_fields = ('created_date', 'updated_date', 'owner')
 
@@ -820,20 +824,33 @@ class CloudStorageSerializer(serializers.ModelSerializer):
         return value
 
     def validate(self, attrs):
-        if attrs.get('provider_type') == models.CloudProviderChoice.AZURE_CONTAINER:
+        provider_type = attrs.get('provider_type')
+        if provider_type == models.CloudProviderChoice.AZURE_CONTAINER:
             if not attrs.get('account_name', ''):
                 raise serializers.ValidationError('Account name for Azure container was not specified')
+        if attrs.get('key_file', '') and attrs.get('key_file_path', ''):
+            raise serializers.ValidationError('Should be specified key file or key file path')
         return attrs
 
     def create(self, validated_data):
         provider_type = validated_data.get('provider_type')
         should_be_created = validated_data.pop('should_be_created', None)
+
+        key_file = validated_data.pop('key_file', None)
+        # we need to save it to temporary file to check the granted permissions
+        temporary_file = ''
+        if key_file:
+            with NamedTemporaryFile(mode='wb', prefix='cvat', delete=False) as temp_key:
+                temp_key.write(key_file.read())
+                temporary_file = temp_key.name
+            key_file.close()
+            del key_file
         credentials = Credentials(
             account_name=validated_data.pop('account_name', ''),
             key=validated_data.pop('key', ''),
             secret_key=validated_data.pop('secret_key', ''),
             session_token=validated_data.pop('session_token', ''),
-            key_file_path=validated_data.pop('key_file_path', ''),
+            key_file_path=validated_data.pop('key_file_path', '') or temporary_file,
             credentials_type = validated_data.get('credentials_type')
         )
         details = {
@@ -880,6 +897,15 @@ class CloudStorageSerializer(serializers.ModelSerializer):
                 shutil.rmtree(cloud_storage_path)
 
             os.makedirs(db_storage.get_storage_logs_dirname(), exist_ok=True)
+            if temporary_file:
+                # so, gcs key file is valid and we need to set correct path to the file
+                real_path_to_key_file = db_storage.get_key_file_path()
+                shutil.copyfile(temporary_file, real_path_to_key_file)
+                os.remove(temporary_file)
+
+                credentials.key_file_path = real_path_to_key_file
+                db_storage.credentials = credentials.convert_to_db()
+                db_storage.save()
             return db_storage
         elif storage_status == Status.FORBIDDEN:
             field = 'credentials'
@@ -887,6 +913,8 @@ class CloudStorageSerializer(serializers.ModelSerializer):
         else:
             field = 'recource'
             message = 'The resource {} not found. It may have been deleted.'.format(storage.name)
+        if temporary_file:
+            os.remove(temporary_file)
         slogger.glob.error(message)
         raise serializers.ValidationError({field: message})
 
@@ -897,8 +925,23 @@ class CloudStorageSerializer(serializers.ModelSerializer):
             'type': instance.credentials_type,
             'value': instance.credentials,
         })
-        tmp = {k:v for k,v in validated_data.items() if k in {'key', 'secret_key', 'account_name', 'session_token', 'key_file_path', 'credentials_type'}}
-        credentials.mapping_with_new_values(tmp)
+        credentials_dict = {k:v for k,v in validated_data.items() if k in {
+            'key','secret_key', 'account_name', 'session_token', 'key_file_path',
+            'credentials_type'
+        }}
+
+        key_file = validated_data.pop('key_file', None)
+        temporary_file = ''
+        if key_file:
+            with NamedTemporaryFile(mode='wb', prefix='cvat', delete=False) as temp_key:
+                temp_key.write(key_file.read())
+                temporary_file = temp_key.name
+            # pair (key_file, key_file_path) isn't supported by server, so only one value may be specified
+            credentials_dict['key_file_path'] = temporary_file
+            key_file.close()
+            del key_file
+
+        credentials.mapping_with_new_values(credentials_dict)
         instance.credentials = credentials.convert_to_db()
         instance.credentials_type = validated_data.get('credentials_type', instance.credentials_type)
         instance.resource = validated_data.get('resource', instance.resource)
@@ -937,6 +980,13 @@ class CloudStorageSerializer(serializers.ModelSerializer):
                         })
                 manifest_instances = [models.Manifest(filename=f, cloud_storage=instance) for f in delta_to_create]
                 models.Manifest.objects.bulk_create(manifest_instances)
+            if temporary_file:
+                # so, gcs key file is valid and we need to set correct path to the file
+                real_path_to_key_file = instance.get_key_file_path()
+                shutil.copyfile(temporary_file, real_path_to_key_file)
+                os.remove(temporary_file)
+
+                instance.credentials = real_path_to_key_file
             instance.save()
             return instance
         elif storage_status == Status.FORBIDDEN:
@@ -945,6 +995,8 @@ class CloudStorageSerializer(serializers.ModelSerializer):
         else:
             field = 'recource'
             message = 'The resource {} not found. It may have been deleted.'.format(storage.name)
+        if temporary_file:
+            os.remove(temporary_file)
         slogger.glob.error(message)
         raise serializers.ValidationError({field: message})
 
