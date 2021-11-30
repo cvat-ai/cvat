@@ -42,7 +42,7 @@ context('When clicking on the Logout button, get the user session closed.', () =
         it('Logout and login to task via GUI', () => {
             // logout from task
             cy.get('.cvat-right-header').within(() => {
-                cy.get('.cvat-header-menu-dropdown')
+                cy.get('.cvat-header-menu-user-dropdown')
                     .should('have.text', Cypress.env('user'))
                     .trigger('mouseover', { which: 1 });
             });

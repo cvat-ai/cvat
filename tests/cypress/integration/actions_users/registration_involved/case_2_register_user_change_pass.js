@@ -17,7 +17,7 @@ context('Register user, change password, login with new password', () => {
 
     function changePassword(userName, password, newPassword) {
         cy.get('.cvat-right-header')
-            .find('.cvat-header-menu-dropdown')
+            .find('.cvat-header-menu-user-dropdown')
             .should('have.text', userName)
             .trigger('mouseover');
         cy.get('.cvat-header-menu-change-password').click();
