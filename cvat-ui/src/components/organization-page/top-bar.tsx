@@ -47,7 +47,7 @@ function OrganizationTopBar(props: Props): JSX.Element {
     return (
         <>
             <Row justify='space-between'>
-                <Col span={12}>
+                <Col span={24}>
                     <div className='cvat-organization-top-bar-descriptions'>
                         <Text>
                             <Text className='cvat-title'>{`Organization: ${slug} `}</Text>
@@ -98,6 +98,10 @@ function OrganizationTopBar(props: Props): JSX.Element {
                                 </Button>
                             </div>
                         )}
+                    </div>
+                </Col>
+                <Col span={12}>
+                    <div className='cvat-organization-top-bar-contacts'>
                         <div>
                             <PhoneOutlined />
                             { !contact.phoneNumber ? <Text type='secondary'>Add phone number</Text> : null }

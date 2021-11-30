@@ -25,11 +25,6 @@
         }
 
         .cvat-organization-top-bar-descriptions {
-            button {
-                margin-top: $grid-unit-size;
-                float: right;
-            }
-
             > span {
                 display: block;
             }
@@ -42,6 +37,30 @@
             }
 
             > span:not(.cvat-title),
+            div {
+                font-size: 12px;
+
+                span.anticon {
+                    margin-right: $grid-unit-size;
+                }
+
+                span.anticon[aria-label=edit] {
+                    margin-left: $grid-unit-size;
+                }
+            }
+        }
+
+        .cvat-organization-top-bar-contacts {
+            button {
+                margin-top: $grid-unit-size;
+                float: right;
+            }
+
+            > span {
+                display: block;
+            }
+
+            > span,
             div {
                 font-size: 12px;
 
