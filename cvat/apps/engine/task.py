@@ -293,22 +293,24 @@ def _create_thread(tid, data, isImport=False):
             if extractor is not None:
                 raise Exception('Combined data types are not supported')
             source_paths=[os.path.join(upload_dir, f) for f in media_files]
-            if media_type in {'archive', 'zip'} and db_data.storage == models.StorageChoice.SHARE:
-                source_paths.append(db_data.get_upload_dirname())
-                upload_dir = db_data.get_upload_dirname()
-                db_data.storage = models.StorageChoice.LOCAL
             if isImport and media_type == 'image' and db_data.storage == models.StorageChoice.SHARE:
                 manifest_index = _get_manifest_frame_indexer(db_data.start_frame, db_data.get_frame_step())
                 db_data.start_frame = 0
                 data['stop_frame'] = None
                 db_data.frame_filter = ''
 
-            extractor = MEDIA_TYPES[media_type]['extractor'](
-                source_path=source_paths,
-                step=db_data.get_frame_step(),
-                start=db_data.start_frame,
-                stop=data['stop_frame'],
-            )
+            details = {
+                'source_path': source_paths,
+                'step': db_data.get_frame_step(),
+                'start': db_data.start_frame,
+                'stop': data['stop_frame'],
+            }
+            if media_type in {'archive', 'zip', 'pdf'} and db_data.storage == models.StorageChoice.SHARE:
+                details['extract_dir'] = db_data.get_upload_dirname()
+                upload_dir = db_data.get_upload_dirname()
+                db_data.storage = models.StorageChoice.LOCAL
+
+            extractor = MEDIA_TYPES[media_type]['extractor'](**details)
 
 
     validate_dimension = ValidateDimension()
