@@ -76,7 +76,7 @@ class ServerProxy {
         }
 
         async function getProjects(filter = '') {
-            const queries = QueryStringToJSON(filter, ['without_tasks']);
+            const queries = QueryStringToJSON(filter);
             const result = projectsDummyData.results.filter((x) => {
                 for (const key in queries) {
                     if (Object.prototype.hasOwnProperty.call(queries, key)) {

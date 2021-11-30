@@ -244,7 +244,7 @@ const config = require('./config');
             const searchParams = new URLSearchParams();
             for (const field of ['name', 'assignee', 'owner', 'search', 'status', 'id', 'page']) {
                 if (Object.prototype.hasOwnProperty.call(filter, field)) {
-                    searchParams[camelToSnake(field)] = filter[field];
+                    searchParams.set(camelToSnake(field), filter[field]);
                 }
             }
 
