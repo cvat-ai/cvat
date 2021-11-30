@@ -402,10 +402,10 @@ class ServerProxy {
 
                 tasks: {
                     value: Object.freeze({
-                        getTasks,
-                        saveTask,
-                        createTask,
-                        deleteTask,
+                        get: getTasks,
+                        save: saveTask,
+                        create: createTask,
+                        delete: deleteTask,
                     }),
                     writable: false,
                 },
