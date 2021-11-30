@@ -100,6 +100,7 @@ function OrganizationTopBar(props: Props): JSX.Element {
                         )}
                         <div>
                             <PhoneOutlined />
+                            { !contact.phoneNumber ? <Text type='secondary'>Add phone number</Text> : null }
                             <Text
                                 type='secondary'
                                 editable={{
@@ -111,11 +112,12 @@ function OrganizationTopBar(props: Props): JSX.Element {
                                     onEnd: () => dispatch(updateOrganizationAsync(organizationInstance)),
                                 }}
                             >
-                                {contact.phoneNumber || 'Add phone number'}
+                                {contact.phoneNumber}
                             </Text>
                         </div>
                         <div>
                             <MailOutlined />
+                            { !contact.email ? <Text type='secondary'>Add email</Text> : null }
                             <Text
                                 type='secondary'
                                 editable={{
@@ -127,11 +129,12 @@ function OrganizationTopBar(props: Props): JSX.Element {
                                     onEnd: () => dispatch(updateOrganizationAsync(organizationInstance)),
                                 }}
                             >
-                                {contact.email || 'Add email'}
+                                {contact.email}
                             </Text>
                         </div>
                         <div>
                             <EnvironmentOutlined />
+                            { !contact.location ? <Text type='secondary'>Add location</Text> : null }
                             <Text
                                 type='secondary'
                                 editable={{
@@ -143,7 +146,7 @@ function OrganizationTopBar(props: Props): JSX.Element {
                                     onEnd: () => dispatch(updateOrganizationAsync(organizationInstance)),
                                 }}
                             >
-                                {contact.location || 'Add location'}
+                                {contact.location}
                             </Text>
                         </div>
                         <Text type='secondary'>{`Created ${moment(createdDate).format('MMMM Do YYYY')}`}</Text>
