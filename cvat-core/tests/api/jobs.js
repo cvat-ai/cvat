@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -94,13 +94,15 @@ describe('Feature: save job', () => {
             jobID: 1,
         });
 
-        result[0].status = 'validation';
+        result[0].stage = 'validation';
+        result[0].state = 'new';
         await result[0].save();
 
         result = await window.cvat.jobs.get({
             jobID: 1,
         });
-        expect(result[0].status).toBe('validation');
+        expect(result[0].stage).toBe('validation');
+        expect(result[0].state).toBe('new');
     });
 
     test('save invalid status of a job', async () => {
@@ -110,7 +112,10 @@ describe('Feature: save job', () => {
 
         await result[0].save();
         expect(() => {
-            result[0].status = 'invalid';
+            result[0].state = 'invalid';
+        }).toThrow(window.cvat.exceptions.ArgumentError);
+        expect(() => {
+            result[0].stage = 'invalid';
         }).toThrow(window.cvat.exceptions.ArgumentError);
     });
 });
