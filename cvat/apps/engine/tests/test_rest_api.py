@@ -1413,7 +1413,7 @@ class ProjectExportAPITestCase(APITestCase):
 
         db_project = create_db_project(project_data)
         create_dummy_db_tasks(cls, db_project)
-        cls.projects = db_project
+        cls.project = db_project
 
     def _run_api_v1_project_id_export(self, pid, user, annotation_format=""):
         with ForceLogin(user, self.client):
@@ -1427,12 +1427,8 @@ class ProjectExportAPITestCase(APITestCase):
             response = self.client.delete('/api/v1/tasks/{}'.format(tid), format="json")
         return response
 
-    def _get_tasks_count(self, project):
-        tasks_id = [task.id for task in project.tasks.all()]
-        return tasks_id
-
     def _check_tasks_count(self, project, expected_result):
-        tasks_id = self._get_tasks_count(project)
+        tasks_id = [task.id for task in project.tasks.all()]
         self.assertEqual(len(tasks_id), expected_result)
 
     def _check_xml(self, pid, user, expected_result):
@@ -1458,16 +1454,16 @@ class ProjectExportAPITestCase(APITestCase):
             tasks = root.findall('meta/project/tasks/task/name')
             self.assertEqual(len(tasks), expected_result)
 
-
     def test_api_v1_projects_remove_task_export(self):
-        project = self.projects
+        project = self.project
         pid = project.id
         user = self.admin
 
         self._check_tasks_count(project, 4)
         self._check_xml(pid, user, 4)
 
-        response = self._run_api_v1_tasks_id_delete(self._get_tasks_count(project)[0], self.admin)
+        tasks_id = [task.id for task in project.tasks.all()]
+        response = self._run_api_v1_tasks_id_delete(tasks_id[0], self.admin)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
 
         self._check_tasks_count(project, 3)
