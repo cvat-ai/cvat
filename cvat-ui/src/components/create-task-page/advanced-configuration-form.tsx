@@ -199,6 +199,7 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
                         message: 'The field is required.',
                     },
                 ]}
+                help='Specify how to sort images. It is not relevant for videos.'
             >
                 <Radio.Group>
                     <Radio value={SortingMethod.LEXICOGRAPHICAL} key={SortingMethod.LEXICOGRAPHICAL}>
