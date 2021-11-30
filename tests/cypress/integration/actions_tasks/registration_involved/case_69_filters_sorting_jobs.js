@@ -50,7 +50,6 @@ context('Filters, sorting jobs.', () => {
                 cy.get('.cvat-job-item-status').invoke('text').should('equal', status);
                 [
                     ['.cvat-job-assignee-selector', assignee],
-                    ['.cvat-job-reviewer-selector', reviewer],
                 ].forEach(([el, val]) => {
                     cy.get(el).find('[type="search"]').invoke('val').should('equal', val);
                 });
@@ -103,19 +102,6 @@ context('Filters, sorting jobs.', () => {
         cy.openTask(taskName);
         cy.assignJobToUser(0, secondUserName);
         cy.assignJobToUser(1, secondUserName);
-        cy.reviewJobToUser(1, Cypress.env('user'));
-
-        // The first job is transferred to the validation status
-        cy.openJob();
-        cy.interactMenu('Request a review');
-        cy.get('.cvat-request-review-dialog')
-            .should('exist')
-            .within(() => {
-                cy.get('.cvat-user-search-field')
-                    .find('[type="search"]')
-                    .type(`${Cypress.env('user')}{Enter}`);
-                cy.contains('[type="button"]', 'Submit').click();
-            });
 
         // The first job is transferred to the complete status
         cy.openJob(1);
@@ -160,7 +146,8 @@ context('Filters, sorting jobs.', () => {
             testSetJobFilter({ column: '.cvat-job-item-status', reset: true }); // Reset filter by status
         });
 
-        it('Filtering jobs by reviewer and sort by ascending status.', () => {
+        // FIXME: no reviewer anymore
+        it.skip('Filtering jobs by reviewer and sort by ascending status.', () => {
             testSetJobFilter({ column: '.cvat-job-item-reviewer', menuItem: Cypress.env('user') });
             checkContentsRow(0, 'validation', secondUserName, Cypress.env('user'));
             checkContentsRow(1, 'completed', secondUserName, Cypress.env('user'));
@@ -169,7 +156,8 @@ context('Filters, sorting jobs.', () => {
             checkContentsRow(1, 'validation', secondUserName, Cypress.env('user'));
         });
 
-        it('Filtering jobs by reviewer and sort by ascending status, assignee.', () => {
+        // FIXME: no reviewer anymore
+        it.skip('Filtering jobs by reviewer and sort by ascending status, assignee.', () => {
             cy.contains('.cvat-job-item-status', 'Status').click();
             cy.contains('.cvat-job-item-assignee', 'Assignee').click();
             checkContentsRow(0, 'validation', secondUserName, Cypress.env('user'));

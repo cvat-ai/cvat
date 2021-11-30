@@ -515,11 +515,11 @@
                     const baseURL = `${backendAPI}/${instanceType}/${id}/${saveImages ? 'dataset' : 'annotations'}`;
                     const params = {
                         ...enableOrganization(),
-                        format: encodeURIComponent(format),
+                        format,
                     };
+
                     if (name) {
-                        const filename = name.replace(/\//g, '_');
-                        params.filename = encodeURIComponent(filename);
+                        params.filename = name.replace(/\//g, '_');
                     }
 
                     return new Promise((resolve, reject) => {
