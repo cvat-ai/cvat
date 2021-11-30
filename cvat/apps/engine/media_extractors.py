@@ -203,8 +203,8 @@ class ArchiveReader(DirectoryReader):
                 stop=None,
                 dimension=DimensionType.DIM_2D,
                 sorting_method=SortingMethod.LEXICOGRAPHICAL):
-        self._archive_source = next(filter(os.path.isfile, source_path)) if len(source_path) > 1 else source_path[0]
-        extract_dir = next(filter(os.path.isdir, source_path)) if len(source_path) > 1 else os.path.dirname(source_path[0])
+        self._archive_source = source_path[0]
+        extract_dir = source_path[1] if len(source_path) > 1 else os.path.dirname(source_path[0])
         Archive(self._archive_source).extractall(extract_dir)
         if extract_dir == os.path.dirname(source_path[0]):
             os.remove(self._archive_source)
@@ -264,9 +264,8 @@ class ZipReader(ImageListReader):
                 stop=None,
                 dimension=DimensionType.DIM_2D,
                 sorting_method=SortingMethod.LEXICOGRAPHICAL):
-        source = next(filter(os.path.isfile, source_path)) if len(source_path) > 1 else source_path[0]
-        self._zip_source = zipfile.ZipFile(source, mode='r')
-        self.extract_dir = next(filter(os.path.isdir, source_path)) if len(source_path) > 1 else None
+        self._zip_source = zipfile.ZipFile(source_path[0], mode='r')
+        self.extract_dir = source_path[1] if len(source_path) > 1 else None
         file_list = [f for f in self._zip_source.namelist() if files_to_ignore(f) and get_mime(f) == 'image']
         super().__init__(file_list,
                         step=step,
