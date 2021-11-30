@@ -391,26 +391,13 @@
                 return response.data.results;
             }
 
-            async function getProjects(filter = {}) {
+            async function getProjects(filter = '') {
                 const { backendAPI, proxy } = config;
 
                 let response = null;
                 try {
-                    if ('id' in filter) {
-                        response = await Axios.get(`${backendAPI}/projects/${filter.id}`, {
-                            proxy: config.proxy,
-                        });
-                        const results = [response.data];
-                        results.count = 1;
-                        return results;
-                    }
-
-                    response = await Axios.get(`${backendAPI}/projects`, {
+                    response = await Axios.get(`${backendAPI}/projects?page_size=12&${filter}`, {
                         proxy,
-                        params: {
-                            ...filter,
-                            page_size: 12,
-                        },
                     });
                 } catch (errorData) {
                     throw generateError(errorData);
