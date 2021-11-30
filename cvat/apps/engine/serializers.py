@@ -403,7 +403,7 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
             except models.Project.DoesNotExist:
                 raise serializers.ValidationError(f'The specified project #{project_id} does not exist.')
 
-            if getattr(project.organization, 'id', None) != validated_data['organization']:
+            if project.organization != validated_data['organization']:
                 raise serializers.ValidationError(f'The task and its project should be in the same organization.')
 
         labels = validated_data.pop('label_set', [])
