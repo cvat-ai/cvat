@@ -76,8 +76,9 @@ class CvatExtractor(Extractor):
         for ev, el in context:
             if ev == 'start':
                 if el.tag == 'subsets':
-                    subsets = el.text.split('\n')
-                    return subsets
+                    if el.text is not None:
+                        subsets = el.text.split('\n')
+                        return subsets
             if ev == 'end':
                 if el.tag == 'meta':
                     return [DEFAULT_SUBSET_NAME]
