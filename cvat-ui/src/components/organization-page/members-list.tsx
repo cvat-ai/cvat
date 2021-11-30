@@ -16,6 +16,7 @@ export interface Props {
     userInstance: any;
     fetching: boolean;
     pageSize: number;
+    pageNumber: number;
     members: any[];
     setPageNumber: (pageNumber: number) => void;
     setPageSize: (pageSize: number) => void;
@@ -24,7 +25,7 @@ export interface Props {
 
 function MembersList(props: Props): JSX.Element {
     const {
-        organizationInstance, fetching, members, pageSize, fetchMembers, setPageNumber, setPageSize,
+        organizationInstance, fetching, members, pageSize, pageNumber, fetchMembers, setPageNumber, setPageSize,
     } = props;
     const { owner } = organizationInstance;
     const dispatch = useDispatch();
@@ -64,12 +65,14 @@ function MembersList(props: Props): JSX.Element {
             <div className='cvat-organization-members-pagination-block'>
                 <Pagination
                     total={members.length ? (members as any).count : 0}
-                    onShowSizeChange={(_: number, newShowSize: number) => {
+                    onShowSizeChange={(current: number, newShowSize: number) => {
+                        setPageNumber(current);
                         setPageSize(newShowSize);
                     }}
                     onChange={(current: number) => {
                         setPageNumber(current);
                     }}
+                    current={pageNumber}
                     pageSize={pageSize}
                     showSizeChanger
                     showQuickJumper

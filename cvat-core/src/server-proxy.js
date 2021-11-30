@@ -1442,7 +1442,7 @@
                             ...filters,
                             org: orgSlug,
                             page,
-                            pageSize,
+                            page_size: pageSize,
                         },
                     });
                 } catch (errorData) {

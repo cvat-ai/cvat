@@ -59,19 +59,19 @@
     > div:nth-child(2) {
         overflow: auto;
         height: auto;
-        max-height: 75%;
+        max-height: 60%;
         margin-top: $grid-unit-size;
     }
 
     @media screen and (min-height: 900px) {
         > div:nth-child(2) {
-            max-height: 80%;
+            max-height: 65%;
         }
     }
 
     @media screen and (min-height: 1080px) {
         > div:nth-child(2) {
-            max-height: 85%;
+            max-height: 70%;
         }
     }
 }

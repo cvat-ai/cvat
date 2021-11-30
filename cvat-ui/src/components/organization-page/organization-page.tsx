@@ -21,7 +21,7 @@ function fetchMembers(
 ): void {
     setFetching(true);
     organizationInstance
-        .members(page + 1, pageSize)
+        .members(page, pageSize)
         .then((_members: any[]) => {
             setMembers(_members);
         })
@@ -38,7 +38,7 @@ function OrganizationPage(): JSX.Element | null {
     const user = useSelector((state: CombinedState) => state.auth.user);
     const [membersFetching, setMembersFetching] = useState<boolean>(true);
     const [members, setMembers] = useState<any[]>([]);
-    const [pageNumber, setPageNumber] = useState<number>(0);
+    const [pageNumber, setPageNumber] = useState<number>(1);
     const [pageSize, setPageSize] = useState<number>(10);
 
     useEffect(() => {
@@ -70,6 +70,7 @@ function OrganizationPage(): JSX.Element | null {
                         organizationInstance={organization}
                         userInstance={user}
                         pageSize={pageSize}
+                        pageNumber={pageNumber}
                         setPageNumber={setPageNumber}
                         setPageSize={setPageSize}
                         fetchMembers={() => fetchMembers(

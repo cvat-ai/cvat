@@ -316,6 +316,7 @@ Organization.prototype.members.implementation = async function (orgSlug, page, p
         }),
     );
 
+    result.results.count = result.count;
     return result.results;
 };
 
