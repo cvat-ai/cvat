@@ -27,12 +27,11 @@ export enum ReviewActionTypes {
     COMMENT_ISSUE_FAILED = 'COMMENT_ISSUE_FAILED',
     REMOVE_ISSUE_SUCCESS = 'REMOVE_ISSUE_SUCCESS',
     REMOVE_ISSUE_FAILED = 'REMOVE_ISSUE_FAILED',
-    SWITCH_REMOVE_ISSUE_DIALOG = 'SWITCH_REMOVE_ISSUE_DIALOG',
     SUBMIT_REVIEW = 'SUBMIT_REVIEW',
     SUBMIT_REVIEW_SUCCESS = 'SUBMIT_REVIEW_SUCCESS',
     SUBMIT_REVIEW_FAILED = 'SUBMIT_REVIEW_FAILED',
     SWITCH_ISSUES_HIDDEN_FLAG = 'SWITCH_ISSUES_HIDDEN_FLAG',
-    SWITCH_ISSUES_HIDDEN_RESOLVED_FLAG = 'SWITCH_ISSUES_HIDDEN_RESOLVED_FLAG',
+    SWITCH_RESOLVED_ISSUES_HIDDEN_FLAG = 'SWITCH_RESOLVED_ISSUES_HIDDEN_FLAG',
 }
 
 export const reviewActions = {
@@ -67,7 +66,7 @@ export const reviewActions = {
     removeIssueFailed: (error: any) => createAction(ReviewActionTypes.REMOVE_ISSUE_FAILED, { error }),
     switchIssuesHiddenFlag: (hidden: boolean) => createAction(ReviewActionTypes.SWITCH_ISSUES_HIDDEN_FLAG, { hidden }),
     switchIssuesHiddenResolvedFlag: (hidden: boolean) => (
-        createAction(ReviewActionTypes.SWITCH_ISSUES_HIDDEN_RESOLVED_FLAG, { hidden })
+        createAction(ReviewActionTypes.SWITCH_RESOLVED_ISSUES_HIDDEN_FLAG, { hidden })
     ),
 };
 

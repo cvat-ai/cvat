@@ -680,7 +680,6 @@ export interface ReviewState {
     newIssuePosition: number[] | null;
     issuesHidden: boolean;
     issuesResolvedHidden: boolean;
-    removeIssueDialogShown: boolean;
     fetching: {
         reviewId: number | null;
         issueId: number | null;

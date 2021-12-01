@@ -251,7 +251,6 @@ class Issue {
      * @async
      * @throws {module:API.cvat.exceptions.ServerError}
      * @throws {module:API.cvat.exceptions.PluginError}
-     * @throws {module:API.cvat.exceptions.ArgumentError}
      */
     async delete() {
         await PluginRegistry.apiWrapper.call(this, Issue.prototype.delete);

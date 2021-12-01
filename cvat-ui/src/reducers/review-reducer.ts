@@ -17,7 +17,6 @@ const defaultState: ReviewState = {
     newIssuePosition: null,
     issuesHidden: false,
     issuesResolvedHidden: false,
-    removeIssueDialogShown: false,
     fetching: {
         reviewId: null,
         issueId: null,
@@ -177,7 +176,7 @@ export default function (state: ReviewState = defaultState, action: any): Review
                 issuesHidden: hidden,
             };
         }
-        case ReviewActionTypes.SWITCH_ISSUES_HIDDEN_RESOLVED_FLAG: {
+        case ReviewActionTypes.SWITCH_RESOLVED_ISSUES_HIDDEN_FLAG: {
             const { hidden } = action.payload;
             return {
                 ...state,
