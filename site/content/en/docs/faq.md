@@ -51,7 +51,8 @@ To change the hostname, simply set the `CVAT_HOST` environemnt variable
 ```
 export CVAT_HOST=<YOUR_HOSTNAME_OR_IP>
 ```
-NOTE, if you're using `docker-compose` with `sudo` to run CVAT, then please add the `-E` (or `--preserve-env`) flag to preserve the user environment variable which set above to take effect in your docker containers:
+NOTE, if you're using `docker-compose` with `sudo` to run CVAT, then please add the `-E` (or `--preserve-env`)
+flag to preserve the user environment variable which set above to take effect in your docker containers:
 
 ```
 sudo -E docker-compose up -d
