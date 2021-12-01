@@ -32,6 +32,14 @@ import data.organizations
 
 default allow = false
 
+is_project_staff {
+    utils.is_resource_owner
+}
+
+is_project_staff {
+    utils.is_resource_assignee
+}
+
 allow {
     utils.is_admin
 }
@@ -89,20 +97,23 @@ filter = [] { # Django Q object to filter list of entries
 allow {
     input.scope == utils.VIEW
     utils.is_sandbox
-    utils.is_resource_owner
-}
-
-allow {
-    input.scope == utils.VIEW
-    utils.is_sandbox
-    utils.is_resource_assignee
+    is_project_staff
 }
 
 allow {
     input.scope == utils.VIEW
     input.auth.organization.id == input.resource.organization.id
-    organizations.is_member
+    utils.has_perm(utils.USER)
+    organizations.has_perm(organizations.MAINTAINER)
 }
+
+allow {
+    input.scope == utils.VIEW
+    input.auth.organization.id == input.resource.organization.id
+    organizations.has_perm(organizations.WORKER)
+    is_project_staff
+}
+
 
 allow {
     input.scope == utils.DELETE
@@ -203,32 +214,19 @@ allow {
 allow {
     { utils.EXPORT_ANNOTATIONS, utils.EXPORT_DATASET }[input.scope]
     utils.is_sandbox
-    utils.is_resource_owner
-}
-
-allow {
-    { utils.EXPORT_ANNOTATIONS, utils.EXPORT_DATASET }[input.scope]
-    utils.is_sandbox
-    utils.is_resource_assignee
+    is_project_staff
 }
 
 allow {
     { utils.EXPORT_ANNOTATIONS, utils.EXPORT_DATASET }[input.scope]
     input.auth.organization.id == input.resource.organization.id
-    utils.is_resource_owner
     organizations.is_member
+    is_project_staff
 }
 
 allow {
     { utils.EXPORT_ANNOTATIONS, utils.EXPORT_DATASET }[input.scope]
     input.auth.organization.id == input.resource.organization.id
-    utils.is_resource_assignee
-    organizations.is_member
-}
-
-allow {
-    { utils.EXPORT_ANNOTATIONS, utils.EXPORT_DATASET }[input.scope]
-    input.auth.organization.id == input.resource.organization.id
-    utils.has_perm(utils.WORKER)
-    organizations.has_perm(organizations.SUPERVISOR)
+    utils.has_perm(utils.USER)
+    organizations.has_perm(organizations.MAINTAINER)
 }
