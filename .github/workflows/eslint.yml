@@ -22,6 +22,7 @@ jobs:
 
           if [[ ! -z ${changed_files_eslint} ]]; then
             npm ci
+            cd tests && npm ci && cd ..
             npm install eslint-detailed-reporter --save-dev --legacy-peer-deps
             mkdir -p eslint_report
 

@@ -237,7 +237,8 @@ export class AutoborderHandlerImpl implements AutoborderHandler {
 
         const currentClientID = this.currentShape.node.dataset.originClientId;
         const shapes = Array.from(this.frameContent.getElementsByClassName('cvat_canvas_shape')).filter(
-            (shape: HTMLElement): boolean => +shape.getAttribute('clientID') !== this.currentID,
+            (shape: HTMLElement): boolean => +shape.getAttribute('clientID') !== this.currentID &&
+                !shape.classList.contains('cvat_canvas_hidden'),
         );
         const transformedShapes = shapes
             .map((shape: HTMLElement): TransformedShape | null => {

@@ -12,7 +12,7 @@ context('Export task dataset.', () => {
     const rectangleShape2Points = {
         points: 'By 2 Points',
         type: 'Shape',
-        labelName: labelName,
+        labelName,
         firstX: 400,
         firstY: 100,
         secondX: 500,
@@ -33,12 +33,7 @@ context('Export task dataset.', () => {
                 format: exportFormat,
             };
             cy.exportTask(exportDataset);
-            const regex = new RegExp(`^task_${taskName.toLowerCase()}-.*-${exportDataset.format.toLowerCase()}.*.zip$`);
-            cy.task('listFiles', 'cypress/fixtures').each((fileName) => {
-                if (fileName.match(regex)) {
-                    cy.readFile(`cypress/fixtures/${fileName}`).should('exist');
-                }
-            });
+            cy.waitForDownload();
         });
 
         it('Export a task as dataset with renaming the archive.', () => {
@@ -46,15 +41,10 @@ context('Export task dataset.', () => {
                 as: 'exportDatasetRenameArchive',
                 type: 'dataset',
                 format: exportFormat,
-                archiveCustomeName: 'task_export_dataset_custome_name'
+                archiveCustomeName: 'task_export_dataset_custome_name',
             };
             cy.exportTask(exportDataset);
-            const regex = new RegExp(`^${exportDataset.archiveCustomeName}.zip$`);
-            cy.task('listFiles', 'cypress/fixtures').each((fileName) => {
-                if (fileName.match(regex)) {
-                    cy.readFile(`cypress/fixtures/${fileName}`).should('exist');
-                }
-            });
+            cy.waitForDownload();
         });
     });
 });
