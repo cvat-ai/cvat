@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
+import polylabel from 'polylabel';
 import * as SVG from 'svg.js';
 
 import 'svg.draggable.js';
@@ -19,7 +20,6 @@ import { RegionSelector, RegionSelectorImpl } from './regionSelector';
 import { ZoomHandler, ZoomHandlerImpl } from './zoomHandler';
 import { InteractionHandler, InteractionHandlerImpl } from './interactionHandler';
 import { AutoborderHandler, AutoborderHandlerImpl } from './autoborderHandler';
-import centroid from './centroid';
 import consts from './consts';
 import {
     translateToSVG,
@@ -2097,10 +2097,10 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     `${shape.attr('x') + shape.attr('width')},${shape.attr('y') + shape.attr('height')}`,
             ));
 
-            const center = centroid(points);
+            const result = polylabel([points.map((point) => [point.x, point.y])]);
             [clientX, clientY] = translateFromSVG(this.content, [
-                center.x,
-                center.y,
+                result[0],
+                result[1],
             ]);
             const textBBox = ((text.node as any) as SVGTextElement).getBBox();
             clientX -= textBBox.width / 2;
