@@ -1553,8 +1553,8 @@
                     sortingMethod: {
                         /**
                          * @name sortingMethod
-                         * @type {string}
-                         * @memberof module:API.cvat.enums.SortingMethod
+                         * @type {module:API.cvat.enums.SortingMethod}
+                         * @memberof module:API.cvat.classes.Task
                          * @instance
                          * @readonly
                          */
