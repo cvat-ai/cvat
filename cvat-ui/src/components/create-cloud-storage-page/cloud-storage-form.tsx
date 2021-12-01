@@ -440,7 +440,7 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
                             multiple={false}
                             maxCount={1}
                             fileList={
-                                uploadedKeyFile ? [{ uid: '1', name: 'key.json' }] : []
+                                uploadedKeyFile ? [{ uid: '1', name: uploadedKeyFile.name }] : []
                             }
                             beforeUpload={(file: RcFile): boolean => {
                                 setUploadedKeyFile(file);
