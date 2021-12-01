@@ -58,7 +58,8 @@ flag to preserve the user environment variable which set above to take effect in
 sudo -E docker-compose up -d
 ```
 
-If you want to change the default web application port, change the `ports` part of `traefik` service configuration in `docker-compose.yml`
+If you want to change the default web application port, change the `ports` part of `traefik` service configuration
+in `docker-compose.yml`
 
 ```
 services:
