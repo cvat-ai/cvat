@@ -1552,7 +1552,7 @@
                     },
                     sortingMethod: {
                         /**
-                         * @name enabled
+                         * @name sortingMethod
                          * @type {string}
                          * @memberof module:API.cvat.enums.SortingMethod
                          * @instance
