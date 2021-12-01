@@ -382,7 +382,7 @@ class Job(models.Model):
     def get_labels(self):
         task = self.segment.task
         project = task.project
-        return task.label_set or project.label_set
+        return project.label_set if project else task.label_set
 
     class Meta:
         default_permissions = ()
