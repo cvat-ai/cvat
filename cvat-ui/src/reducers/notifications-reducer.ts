@@ -1241,9 +1241,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         ...state.errors.cloudStorages,
                         deleting: {
                             message:
-                                'Could not delete ' +
-                                `<a href="/cloudstorages/${cloudStorageID}" target="_blank">
-                                cloud storage ${cloudStorageID}</a>`,
+                                `Could not delete cloud storage ${cloudStorageID}`,
                             reason: action.payload.error.toString(),
                             className: 'cvat-notification-notice-delete-cloud-storage-failed',
                         },
