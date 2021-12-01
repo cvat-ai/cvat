@@ -140,17 +140,23 @@ class JobCommitSerializer(serializers.ModelSerializer):
 
 class JobReadSerializer(serializers.ModelSerializer):
     task_id = serializers.ReadOnlyField(source="segment.task.id")
+    project_id = serializers.ReadOnlyField(source="get_project_id", allow_null=True)
     start_frame = serializers.ReadOnlyField(source="segment.start_frame")
     stop_frame = serializers.ReadOnlyField(source="segment.stop_frame")
-    assignee = BasicUserSerializer(allow_null=True, required=False)
+    assignee = BasicUserSerializer(allow_null=True)
+    dimension = serializers.CharField(max_length=2, source='segment.task.dimension')
+    labels = LabelSerializer(many=True, source='get_labels')
+    bug_tracker = serializers.CharField(max_length=2000, source='get_bug_tracker',
+        allow_null=True)
 
     class Meta:
         model = models.Job
-        fields = ('url', 'id', 'assignee', 'status', 'stage', 'state',
-            'start_frame', 'stop_frame', 'task_id')
+        fields = ('url', 'id', 'task_id', 'project_id', 'assignee',
+            'dimension', 'labels', 'bug_tracker', 'status', 'stage', 'state',
+            'start_frame', 'stop_frame')
         read_only_fields = fields
 
-class JobWriteSerializer(JobReadSerializer):
+class JobWriteSerializer(serializers.ModelSerializer):
     assignee = serializers.IntegerField(allow_null=True, required=False)
     def to_representation(self, instance):
         serializer = JobReadSerializer(instance, context=self.context)
@@ -177,8 +183,9 @@ class JobWriteSerializer(JobReadSerializer):
 
         return super().update(instance, validated_data)
 
-    class Meta(JobReadSerializer.Meta):
-        read_only_fields = ('status', 'start_frame', 'stop_frame', 'task_id')
+    class Meta:
+        model = models.Job
+        fields = ('assignee', 'stage', 'state')
 
 class SimpleJobSerializer(serializers.ModelSerializer):
     assignee = BasicUserSerializer(allow_null=True)

@@ -330,49 +330,49 @@ class JobUpdateAPITestCase(APITestCase):
     def _check_request(self, response, data):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["id"], self.job.id)
-        self.assertEqual(response.data["status"], data.get('status', self.job.status))
+        self.assertEqual(response.data["stage"], data.get('stage', self.job.status))
         assignee = self.job.assignee.id if self.job.assignee else None
         self.assertEqual(response.data["assignee"]["id"], data.get('assignee', assignee))
         self.assertEqual(response.data["start_frame"], self.job.segment.start_frame)
         self.assertEqual(response.data["stop_frame"], self.job.segment.stop_frame)
 
     def test_api_v1_jobs_id_admin(self):
-        data = {"status": StatusChoice.ANNOTATION, "assignee": self.owner.id }
+        data = {"stage": StageChoice.ANNOTATION, "assignee": self.owner.id }
         response = self._run_api_v1_jobs_id(self.job.id, self.admin, data)
         self._check_request(response, data)
         response = self._run_api_v1_jobs_id(self.job.id + 10, self.admin, data)
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_api_v1_jobs_id_owner(self):
-        data = {"status": StatusChoice.ANNOTATION, "assignee": self.owner.id}
+        data = {"stage": StageChoice.ANNOTATION, "assignee": self.owner.id}
         response = self._run_api_v1_jobs_id(self.job.id, self.owner, data)
         self._check_request(response, data)
         response = self._run_api_v1_jobs_id(self.job.id + 10, self.owner, data)
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_api_v1_jobs_id_annotator(self):
-        data = {"status": StatusChoice.ANNOTATION, "assignee": self.annotator.id}
+        data = {"stage": StageChoice.ANNOTATION, "assignee": self.annotator.id}
         response = self._run_api_v1_jobs_id(self.job.id, self.annotator, data)
         self._check_request(response, data)
         response = self._run_api_v1_jobs_id(self.job.id + 10, self.annotator, data)
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_api_v1_jobs_id_somebody(self):
-        data = {"status": StatusChoice.ANNOTATION, "assignee": self.admin.id}
+        data = {"stage": StageChoice.ANNOTATION, "assignee": self.admin.id}
         response = self._run_api_v1_jobs_id(self.job.id, self.somebody, data)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         response = self._run_api_v1_jobs_id(self.job.id + 10, self.somebody, data)
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_api_v1_jobs_id_user(self):
-        data = {"status": StatusChoice.ANNOTATION, "assignee": self.user.id}
+        data = {"stage": StageChoice.ANNOTATION, "assignee": self.user.id}
         response = self._run_api_v1_jobs_id(self.job.id, self.user, data)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         response = self._run_api_v1_jobs_id(self.job.id + 10, self.user, data)
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_api_v1_jobs_id_no_auth(self):
-        data = {"status": StatusChoice.ANNOTATION, "assignee": self.user.id}
+        data = {"stage": StageChoice.ANNOTATION, "assignee": self.user.id}
         response = self._run_api_v1_jobs_id(self.job.id, None, data)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
         response = self._run_api_v1_jobs_id(self.job.id + 10, None, data)
@@ -386,7 +386,7 @@ class JobPartialUpdateAPITestCase(JobUpdateAPITestCase):
         return response
 
     def test_api_v1_jobs_id_annotator_partial(self):
-        data = {"status": StageChoice.ANNOTATION}
+        data = {"stage": StageChoice.ANNOTATION}
         response = self._run_api_v1_jobs_id(self.job.id, self.owner, data)
         self._check_request(response, data)
 

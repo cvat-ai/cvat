@@ -370,6 +370,20 @@ class Job(models.Model):
     state = models.CharField(max_length=32, choices=StateChoice.choices(),
         default=StateChoice.NEW)
 
+    def get_project_id(self):
+        project = self.segment.task.project
+        return project.id if project else None
+
+    def get_bug_tracker(self):
+        task = self.segment.task
+        project = task.project
+        return task.bug_tracker or getattr(project, 'bug_tracker', None)
+
+    def get_labels(self):
+        task = self.segment.task
+        project = task.project
+        return task.label_set or project.label_set
+
     class Meta:
         default_permissions = ()
 
