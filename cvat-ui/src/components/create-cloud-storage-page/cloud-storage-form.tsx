@@ -88,6 +88,7 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
     const [manifestNames, setManifestNames] = useState<string[]>([]);
 
     const [uploadedKeyFile, setUploadedKeyFile] = useState<File | null>(null);
+    const [isFakeKeyFileAttached, setIsFakeKeyFileAttached] = useState(!!cloudStorage);
 
     function initializeFields(): void {
         setManifestNames(cloudStorage.manifests);
@@ -226,7 +227,7 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
 
         cloudStorageData.specific_attributes = specificAttributes.toString();
 
-        if (uploadedKeyFile && uploadedKeyFile.name !== fakeCredentialsData.keyFile.name) {
+        if (uploadedKeyFile && !isFakeKeyFileAttached) {
             cloudStorageData.key_file = uploadedKeyFile;
         }
 
@@ -443,6 +444,7 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
                                 uploadedKeyFile ? [{ uid: '1', name: uploadedKeyFile.name }] : []
                             }
                             beforeUpload={(file: RcFile): boolean => {
+                                setIsFakeKeyFileAttached(false);
                                 setUploadedKeyFile(file);
                                 return false;
                             }}
