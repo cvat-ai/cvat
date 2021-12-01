@@ -19,6 +19,7 @@ import { RegionSelector, RegionSelectorImpl } from './regionSelector';
 import { ZoomHandler, ZoomHandlerImpl } from './zoomHandler';
 import { InteractionHandler, InteractionHandlerImpl } from './interactionHandler';
 import { AutoborderHandler, AutoborderHandlerImpl } from './autoborderHandler';
+import centroid from './centroid';
 import consts from './consts';
 import {
     translateToSVG,
@@ -2091,9 +2092,19 @@ export class CanvasViewImpl implements CanvasView, Listener {
         // Find the best place for a text
         let [clientX, clientY]: number[] = [box.x + box.width, box.y];
         if (textPosition === 'center') {
+            const points = parsePoints(pointsToNumberArray(
+                shape.attr('points') || `${shape.attr('x')},${shape.attr('y')} ` +
+                    `${shape.attr('x') + shape.attr('width')},${shape.attr('y') + shape.attr('height')}`,
+            ));
+
+            const center = centroid(points);
+            [clientX, clientY] = translateFromSVG(this.content, [
+                center.x,
+                center.y,
+            ]);
             const textBBox = ((text.node as any) as SVGTextElement).getBBox();
-            clientX = box.x + box.width / 2 - textBBox.width / 2;
-            clientY = box.y + box.height / 2 - textBBox.height / 2;
+            clientX -= textBBox.width / 2;
+            clientY -= textBBox.height / 2;
         } else if (
             clientX + ((text.node as any) as SVGTextElement)
                 .getBBox().width + consts.TEXT_MARGIN > this.canvas.offsetWidth
