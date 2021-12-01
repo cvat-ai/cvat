@@ -1529,7 +1529,7 @@ def load_dataset_data(project_annotation, dataset: Dataset, project_data):
     for subset_id, subset in enumerate(dataset.subsets().values()):
         job = rq.get_current_job()
         job.meta['status'] = 'Task from dataset is being created...'
-        job.meta['progress'] = subset_id / len(dataset.subsets().keys())
+        job.meta['progress'] = (subset_id + job.meta.get('task_progress', 0.)) / len(dataset.subsets().keys())
         job.save_meta()
 
         task_fields = {

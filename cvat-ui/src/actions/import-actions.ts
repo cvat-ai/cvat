@@ -43,7 +43,7 @@ export const importDatasetAsync = (instance: any, format: string, file: File): T
                 throw Error('Only one importing of dataset allowed at the same time');
             }
             dispatch(importActions.importDataset(instance.id));
-            await instance.annotations.importDataset(format, file, (progress: number, message: string) => (
+            await instance.annotations.importDataset(format, file, (message: string, progress: number) => (
                 dispatch(importActions.importDatasetUpdateStatus(progress * 100, message))
             ));
         } catch (error) {

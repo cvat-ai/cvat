@@ -220,6 +220,7 @@ class RqStatusSerializer(serializers.Serializer):
     state = serializers.ChoiceField(choices=[
         "Queued", "Started", "Finished", "Failed"])
     message = serializers.CharField(allow_blank=True, default="")
+    progress = serializers.FloatField(max_value=100, default=0)
 
 class WriteOnceMixin:
 

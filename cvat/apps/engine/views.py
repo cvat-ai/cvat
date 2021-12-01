@@ -434,7 +434,6 @@ class ProjectViewSet(auth.ProjectGetQuerySetMixin, viewsets.ModelViewSet):
             response['message'] = job.meta.get('status', '')
             response['progress'] = job.meta.get('progress', 0.)
 
-
         return response
 
 class TaskFilter(filters.FilterSet):
@@ -905,6 +904,7 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
             response = { "state": "Started" }
             if 'status' in job.meta:
                 response['message'] = job.meta['status']
+            response['progress'] = job.meta.get('task_progress', 0.)
 
         return response
 

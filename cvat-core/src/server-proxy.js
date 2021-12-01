@@ -513,7 +513,7 @@
                 };
             }
 
-            async function importDataset(id, format, file, callback) {
+            async function importDataset(id, format, file, onUpdate) {
                 const { backendAPI } = config;
                 const url = `${backendAPI}/projects/${id}/dataset`;
 
@@ -527,7 +527,9 @@
                                 proxy: config.proxy,
                             });
                             if (response.status === 202) {
-                                if (callback) callback(response.data.progress, response.data.message);
+                                if (onUpdate && response.data.message !== '') {
+                                    onUpdate(response.data.message, response.data.progress || 0);
+                                }
                                 setTimeout(requestStatus, 3000);
                             } else if (response.status === 201) {
                                 resolve();
@@ -612,7 +614,7 @@
                                 const response = await Axios.get(`${backendAPI}/tasks/${id}/status`);
                                 if (['Queued', 'Started'].includes(response.data.state)) {
                                     if (response.data.message !== '') {
-                                        onUpdate(response.data.message);
+                                        onUpdate(response.data.message, response.data.progress || 0);
                                     }
                                     setTimeout(checkStatus, 1000);
                                 } else if (response.data.state === 'Finished') {
@@ -656,7 +658,7 @@
 
                 let response = null;
 
-                onUpdate('The task is being created on the server..');
+                onUpdate('The task is being created on the server..', null);
                 try {
                     response = await Axios.post(`${backendAPI}/tasks`, JSON.stringify(taskSpec), {
                         proxy: config.proxy,
@@ -668,7 +670,7 @@
                     throw generateError(errorData);
                 }
 
-                onUpdate('The data are being uploaded to the server..');
+                onUpdate('The data are being uploaded to the server..', null);
                 try {
                     await Axios.post(`${backendAPI}/tasks/${response.data.id}/data`, taskData, {
                         proxy: config.proxy,
