@@ -52,7 +52,7 @@ context('Rotated bounding boxes.', () => {
             cy.get(shape).invoke('css', 'transform').then(($transform) => {
                 cy.goToPreviousFrame(frame);
                 cy.get(shape).invoke('css', 'transform').then(($transform2) => {
-                    expect($transform).not.deep.eq($transform2);
+                    expect($transform).not.eq($transform2);
                 });
             });
         }
