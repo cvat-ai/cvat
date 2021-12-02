@@ -389,7 +389,7 @@ function HeaderContainer(props: Props): JSX.Element {
                     href='/tasks?page=1'
                     onClick={(event: React.MouseEvent): void => {
                         event.preventDefault();
-                        history.push('/tasks?page=1');
+                        history.push('/tasks');
                     }}
                 >
                     Tasks
@@ -401,7 +401,7 @@ function HeaderContainer(props: Props): JSX.Element {
                     href='/cloudstorages?page=1'
                     onClick={(event: React.MouseEvent): void => {
                         event.preventDefault();
-                        history.push('/cloudstorages?page=1');
+                        history.push('/cloudstorages');
                     }}
                 >
                     Cloud Storages

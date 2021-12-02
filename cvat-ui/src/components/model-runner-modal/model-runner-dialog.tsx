@@ -29,8 +29,8 @@ function mapStateToProps(state: CombinedState): StateToProps {
     const { detectors, reid } = models;
 
     return {
-        visible: models.visibleRunWindows,
-        task: models.activeRunTask,
+        visible: models.modelRunnerIsVisible,
+        task: models.modelRunnerTask,
         reid,
         detectors,
     };
@@ -63,16 +63,18 @@ function ModelRunnerDialog(props: StateToProps & DispatchToProps): JSX.Element {
             maskClosable
             title='Automatic annotation'
         >
-            <DetectorRunner
-                withCleanup
-                models={models}
-                labels={task.labels}
-                dimension={task.dimension}
-                runInference={(...args) => {
-                    closeDialog();
-                    runInference(task.id, ...args);
-                }}
-            />
+            { task ? (
+                <DetectorRunner
+                    withCleanup
+                    models={models}
+                    labels={task.labels}
+                    dimension={task.dimension}
+                    runInference={(...args) => {
+                        closeDialog();
+                        runInference(task.id, ...args);
+                    }}
+                />
+            ) : null }
         </Modal>
     );
 }

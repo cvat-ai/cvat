@@ -717,6 +717,7 @@
                 dimension: undefined,
                 data_compressed_chunk_type: undefined,
                 data_chunk_size: undefined,
+                bug_tracker: null,
                 mode: undefined,
             };
 
@@ -736,7 +737,15 @@
 
             if (data.assignee) data.assignee = new User(data.assignee);
             if (Array.isArray(initialData.labels)) {
-                data.labels = initialData.labels.map((labelData) => new Label(labelData));
+                data.labels = initialData.labels.map((labelData) => {
+                    // can be already wrapped to the class
+                    // when create this job from Task constructor
+                    if (labelData instanceof Label) {
+                        return labelData;
+                    }
+
+                    return new Label(labelData);
+                });
             } else {
                 throw new Error('Job labels must be an array');
             }
@@ -929,6 +938,16 @@
                     mode: {
                         get: () => data.mode,
                     },
+                    /**
+                     * @name bugTracker
+                     * @type {string|null}
+                     * @memberof module:API.cvat.classes.Job
+                     * @instance
+                     * @readonly
+                     */
+                    bugTracker: {
+                        get: () => data.bug_tracker,
+                    },
                     _updateTrigger: {
                         get: () => updateTrigger,
                     },
@@ -954,6 +973,7 @@
                 export: Object.getPrototypeOf(this).annotations.export.bind(this),
                 statistics: Object.getPrototypeOf(this).annotations.statistics.bind(this),
                 hasUnsavedChanges: Object.getPrototypeOf(this).annotations.hasUnsavedChanges.bind(this),
+                exportDataset: Object.getPrototypeOf(this).annotations.exportDataset.bind(this),
             };
 
             this.actions = {
@@ -1069,7 +1089,7 @@
             const data = {
                 id: undefined,
                 name: undefined,
-                project_id: undefined,
+                project_id: null,
                 status: undefined,
                 size: undefined,
                 mode: undefined,
@@ -1114,6 +1134,13 @@
                 remote_files: [],
             });
 
+            if (Array.isArray(initialData.labels)) {
+                for (const label of initialData.labels) {
+                    const classInstance = new Label(label);
+                    data.labels.push(classInstance);
+                }
+            }
+
             if (Array.isArray(initialData.segments)) {
                 for (const segment of initialData.segments) {
                     if (Array.isArray(segment.jobs)) {
@@ -1126,18 +1153,21 @@
                                 stage: job.stage,
                                 start_frame: segment.start_frame,
                                 stop_frame: segment.stop_frame,
-                                task: this,
+                                // following fields also returned when doing API request /jobs/<id>
+                                // here we know them from task and append to constructor
+                                task_id: data.id,
+                                project_id: data.project_id,
+                                labels: data.labels,
+                                bug_tracker: data.bug_tracker,
+                                mode: data.mode,
+                                dimension: data.dimension,
+                                data_compressed_chunk_type: data.data_compressed_chunk_type,
+                                data_chunk_size: data.data_chunk_size,
                             });
+
                             data.jobs.push(jobInstance);
                         }
                     }
-                }
-            }
-
-            if (Array.isArray(initialData.labels)) {
-                for (const label of initialData.labels) {
-                    const classInstance = new Label(label);
-                    data.labels.push(classInstance);
                 }
             }
 
@@ -2000,7 +2030,7 @@
     };
 
     Job.prototype.logger.log.implementation = async function (logType, payload, wait) {
-        const result = await this.task.logger.log(logType, { ...payload, job_id: this.id }, wait);
+        const result = await loggerStorage.log(logType, { ...payload, task_id: this.taskId, job_id: this.id }, wait);
         return result;
     };
 

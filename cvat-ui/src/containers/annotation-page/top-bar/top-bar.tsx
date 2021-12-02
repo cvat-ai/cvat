@@ -214,8 +214,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
         const self = this;
         this.unblock = history.block((location: any) => {
             const { forceExit } = self.props;
-            const { task, id: jobID } = jobInstance;
-            const { id: taskID } = task;
+            const { id: jobID, taskId: taskID } = jobInstance;
 
             if (
                 jobInstance.annotations.hasUnsavedChanges() &&

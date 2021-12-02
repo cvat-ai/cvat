@@ -301,8 +301,8 @@ export interface ModelsState {
     inferences: {
         [index: number]: ActiveInference;
     };
-    visibleRunWindows: boolean;
-    activeRunTask: any;
+    modelRunnerIsVisible: boolean;
+    modelRunnerTask: any;
 }
 
 export interface ErrorState {
