@@ -2071,7 +2071,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
     // Update text position after corresponding box has been moved, resized, etc.
     private updateTextPosition(text: SVG.Text, shape: SVG.Shape): void {
         if (text.node.style.display === 'none') return; // wrong transformation matrix
-        const textFontSize = this.configuration.textFontSize || 12;
+        const textFontSize = this.configuration.textFontSize || consts.DEFAULT_SHAPE_TEXT_SIZE;
         const textPosition = this.configuration.textPosition || 'auto';
 
         text.untransform();
