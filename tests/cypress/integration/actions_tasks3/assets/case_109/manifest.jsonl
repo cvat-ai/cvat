@@ -1,0 +1,5 @@
+{"version":"1.0"}
+{"type":"images"}
+{"name":"preview_AWS_S3_BUCKET","extension":".png","width":800,"height":800,"checksum":"2e9e4b62fcddbfc18ff1ba57c43c60fb"}
+{"name":"preview_AZURE_CONTAINER","extension":".png","width":800,"height":800,"checksum":"53cc9b9e3899418493edd73cff1d6dfb"}
+{"name":"preview_GOOGLE_CLOUD_STORAGE","extension":".png","width":800,"height":800,"checksum":"7f3854409ddc880321b11875ba242271"}
