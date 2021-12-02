@@ -83,8 +83,10 @@ context('Rotated bounding boxes.', () => {
                 const shapeTranformMatrix = doc.getElementById('cvat_canvas_shape_2').getCTM();
                 for (let frame = 1; frame < 10; frame++) {
                     cy.goToNextFrame(frame);
-                    const nextShapeTranformMatrix = doc.getElementById('cvat_canvas_shape_2').getCTM();
-                    expect(nextShapeTranformMatrix).to.deep.eq(shapeTranformMatrix);
+                    cy.document().then((docNext) => {
+                        const nextShapeTranformMatrix = docNext.getElementById('cvat_canvas_shape_2').getCTM();
+                        expect(nextShapeTranformMatrix).to.deep.eq(shapeTranformMatrix);
+                    });
                 }
             });
 
