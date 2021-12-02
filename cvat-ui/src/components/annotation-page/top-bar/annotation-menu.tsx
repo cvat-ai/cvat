@@ -3,16 +3,19 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
+import { withRouter, RouteComponentProps } from 'react-router';
 
 import Menu from 'antd/lib/menu';
 import Modal from 'antd/lib/modal';
 import Text from 'antd/lib/typography/Text';
-import {
-    InputNumber, Tooltip, Checkbox, Collapse,
-} from 'antd';
+import InputNumber from 'antd/lib/input-number';
+import Checkbox from 'antd/lib/checkbox';
+import Collapse from 'antd/lib/collapse';
+
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { MenuInfo } from 'rc-menu/lib/interface';
 
+import CVATTooltip from 'components/common/cvat-tooltip';
 import LoadSubmenu from 'components/actions-menu/load-submenu';
 import { DimensionType } from '../../../reducers/interfaces';
 
@@ -42,13 +45,14 @@ export enum Actions {
     RENEW_JOB = 'renew_job',
 }
 
-export default function AnnotationMenuComponent(props: Props): JSX.Element {
+function AnnotationMenuComponent(props: Props & RouteComponentProps): JSX.Element {
     const {
         loaders,
         loadActivity,
         isReviewer,
         jobInstance,
         stopFrame,
+        history,
         onClickMenu,
         onUploadAnnotations,
         removeAnnotations,
@@ -57,7 +61,7 @@ export default function AnnotationMenuComponent(props: Props): JSX.Element {
     } = props;
 
     const jobStage = jobInstance.stage;
-    const taskID = jobInstance.task.id;
+    const taskID = jobInstance.taskId;
 
     function onClickMenuWrapper(params: MenuInfo): void {
         function checkUnsavedChanges(_params: MenuInfo): void {
@@ -117,7 +121,7 @@ export default function AnnotationMenuComponent(props: Props): JSX.Element {
                                     max={stopFrame}
                                     onChange={(value) => { removeUpTo = value; }}
                                 />
-                                <Tooltip title='Applicable only for annotations in range'>
+                                <CVATTooltip title='Applicable only for annotations in range'>
                                     <br />
                                     <br />
                                     <Checkbox
@@ -127,7 +131,7 @@ export default function AnnotationMenuComponent(props: Props): JSX.Element {
                                     >
                                         Delete only keyframes for tracks
                                     </Checkbox>
-                                </Tooltip>
+                                </CVATTooltip>
                             </Panel>
                         </Collapse>
                     </div>
@@ -171,7 +175,7 @@ export default function AnnotationMenuComponent(props: Props): JSX.Element {
         }
     }
 
-    const is2d = jobInstance.task.dimension === DimensionType.DIM_2D;
+    const is2d = jobInstance.dimension === DimensionType.DIM_2D;
 
     return (
         <Menu onClick={(params: MenuInfo) => onClickMenuWrapper(params)} className='cvat-annotation-menu' selectable={false}>
@@ -196,12 +200,19 @@ export default function AnnotationMenuComponent(props: Props): JSX.Element {
                     }
                 },
                 menuKey: Actions.LOAD_JOB_ANNO,
-                taskDimension: jobInstance.task.dimension,
+                taskDimension: jobInstance.dimension,
             })}
             <Menu.Item key={Actions.EXPORT_TASK_DATASET}>Export task dataset</Menu.Item>
             <Menu.Item key={Actions.REMOVE_ANNO}>Remove annotations</Menu.Item>
             <Menu.Item key={Actions.OPEN_TASK}>
-                <a href={`/tasks/${taskID}`} onClick={(e: React.MouseEvent) => e.preventDefault()}>
+                <a
+                    href={`/tasks/${taskID}`}
+                    onClick={(e: React.MouseEvent) => {
+                        e.preventDefault();
+                        history.push(`/tasks/${taskID}`);
+                        return false;
+                    }}
+                >
                     Open the task
                 </a>
             </Menu.Item>
@@ -214,3 +225,5 @@ export default function AnnotationMenuComponent(props: Props): JSX.Element {
         </Menu>
     );
 }
+
+export default withRouter(AnnotationMenuComponent);

@@ -36,7 +36,7 @@ export default function SubmitReviewModal(): JSX.Element | null {
     const submitReview = (): void => {
         dispatch(
             submitReviewAsync(
-                assignee, jobState, jobStage, () => history.push(`/tasks/${job.task.id}`),
+                assignee, jobState, jobStage, () => history.push(`/tasks/${job.taskId}`),
             ),
         );
     };

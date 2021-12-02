@@ -161,7 +161,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             let workspaceSelected = Workspace.STANDARD;
             let activeShapeType = ShapeType.RECTANGLE;
 
-            if (job.task.dimension === DimensionType.DIM_3D) {
+            if (job.dimension === DimensionType.DIM_3D) {
                 workspaceSelected = Workspace.STANDARD3D;
                 activeShapeType = ShapeType.CUBOID;
             }
@@ -177,8 +177,8 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     openTime,
                     fetching: false,
                     instance: job,
-                    labels: job.task.labels,
-                    attributes: job.task.labels.reduce((acc: Record<number, any[]>, label: any): Record<
+                    labels: job.labels,
+                    attributes: job.labels.reduce((acc: Record<number, any[]>, label: any): Record<
                     number,
                     any[]
                     > => {
@@ -209,13 +209,13 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
                 drawing: {
                     ...state.drawing,
-                    activeLabelID: job.task.labels.length ? job.task.labels[0].id : null,
-                    activeObjectType: job.task.mode === 'interpolation' ? ObjectType.TRACK : ObjectType.SHAPE,
+                    activeLabelID: job.labels.length ? job.labels[0].id : null,
+                    activeObjectType: job.mode === 'interpolation' ? ObjectType.TRACK : ObjectType.SHAPE,
                     activeShapeType,
                 },
                 canvas: {
                     ...state.canvas,
-                    instance: job.task.dimension === DimensionType.DIM_2D ? new Canvas() : new Canvas3d(),
+                    instance: job.dimension === DimensionType.DIM_2D ? new Canvas() : new Canvas3d(),
                 },
                 colors,
                 workspace: isReview ? Workspace.REVIEW_WORKSPACE : workspaceSelected,
