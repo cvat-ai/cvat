@@ -34,7 +34,8 @@ Here you can do the following:
    You can also change the color for different labels. By clicking `Copy` you can copy the labels to the clipboard.
 1. Assigned to — is used to assign a project to a person.
    Start typing an assignee's name and/or choose the right person out of the dropdown list.
-1. `Tasks` — is a list of all tasks for a particular project.
+1. `Tasks` — is a list of all tasks for a particular project, with the ability to search for tasks in the project.
+   [Read more about search](/docs/manual/advanced/search/).
 
 It is possible to choose a subset for tasks in the project. You can use the available options
 (`Train`, `Test`, `Validation`) or set your own.
