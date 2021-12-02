@@ -84,7 +84,7 @@ context('Cloud storage.', () => {
                 .get('.cvat-cloud-storage-region-creator')
                 .should('be.visible')
                 .within(() => {
-                    cy.contains('button', 'Add region').click()
+                    cy.contains('button', 'Add region').click();
                 });
             cy.get('.cvat-incorrect-add-region-notification').should('exist');
             cy.closeNotification('.cvat-incorrect-add-region-notification');
