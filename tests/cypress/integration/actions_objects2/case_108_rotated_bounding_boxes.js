@@ -27,8 +27,6 @@ context('Rotated bounding boxes.', () => {
         secondY: createRectangleShape2Points.secondY - 150,
     };
 
-    const transformMatrixShape = [];
-
     function testShapeRotate(shape, x, y, expectedRotate, pressShift) {
         cy.get(shape)
             .trigger('mousemove')
@@ -51,20 +49,10 @@ context('Rotated bounding boxes.', () => {
 
     function testCompareRotate(shape, toFrame) {
         for (let frame = 8; frame >= toFrame; frame--) {
-            cy.get(shape).should('have.attr', 'transform').then(($transform) => {
-                const transform = $transform.split('(')[1].split(')')[0].split(',');
-                const transformMatrix = [];
-                for (const i of transform) {
-                    transformMatrix.push(Number(i).toFixed(3));
-                }
+            cy.get(shape).invoke('css', 'transform').then(($transform) => {
                 cy.goToPreviousFrame(frame);
-                cy.get(shape).should('have.attr', 'transform').then(($transform2) => {
-                    const transform2 = $transform2.split('(')[1].split(')')[0].split(',');
-                    const transformMatrix2 = [];
-                    for (const i of transform2) {
-                        transformMatrix2.push(Number(i).toFixed(3));
-                    }
-                    expect(transformMatrix).not.deep.eq(transformMatrix2);
+                cy.get(shape).invoke('css', 'transform').then(($transform2) => {
+                    expect($transform).not.deep.eq($transform2);
                 });
             });
         }
@@ -85,27 +73,18 @@ context('Rotated bounding boxes.', () => {
         it('Check that bounding boxes can be rotated.', () => {
             testShapeRotate('#cvat_canvas_shape_1', 350, 150, '11.4°');
             testShapeRotate('#cvat_canvas_shape_2', 350, 150, '26.6°');
-            cy.get('#cvat_canvas_shape_2').then((shape2) => {
-                const shapeAttrs = shape2.attr('transform').split('(')[1].split(')')[0].split(',');
-                for (const i of shapeAttrs) {
-                    transformMatrixShape.push(Number(i).toFixed(3));
-                }
-            });
         });
 
         it('Check interpolation, merging/splitting rotated shapes.', () => {
             // Check track roration on all frames
-            for (let frame = 1; frame < 10; frame++) {
-                cy.goToNextFrame(frame);
-                cy.get('#cvat_canvas_shape_2').should('have.attr', 'transform').then(($transform) => {
-                    const transform = $transform.split('(')[1].split(')')[0].split(',');
-                    const transformMatrix = [];
-                    for (const i of transform) {
-                        transformMatrix.push(Number(i).toFixed(3));
-                    }
-                    expect(transformMatrix).to.deep.eq(transformMatrixShape);
-                });
-            }
+            cy.get('#cvat_canvas_shape_2').invoke('css', 'transform').then((shape2) => {
+                for (let frame = 1; frame < 10; frame++) {
+                    cy.goToNextFrame(frame);
+                    cy.get('#cvat_canvas_shape_2').invoke('css', 'transform').then((shape2Next) => {
+                        expect(shape2).to.be.eq(shape2Next);
+                    });
+                }
+            });
 
             testShapeRotate('#cvat_canvas_shape_2', 350, 250, '91.9°');
 
