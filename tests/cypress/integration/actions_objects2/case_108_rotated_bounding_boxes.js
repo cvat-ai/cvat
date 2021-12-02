@@ -49,7 +49,6 @@ context('Rotated bounding boxes.', () => {
 
     function testCompareRotate(shape, toFrame) {
         for (let frame = 8; frame >= toFrame; frame--) {
-            cy.log(frame);
             cy.document().then((doc) => {
                 const shapeTranformMatrix = doc.getElementById(shape).getCTM();
                 cy.goToPreviousFrame(frame);
