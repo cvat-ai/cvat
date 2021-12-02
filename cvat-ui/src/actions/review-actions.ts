@@ -23,10 +23,13 @@ export enum ReviewActionTypes {
     COMMENT_ISSUE = 'COMMENT_ISSUE',
     COMMENT_ISSUE_SUCCESS = 'COMMENT_ISSUE_SUCCESS',
     COMMENT_ISSUE_FAILED = 'COMMENT_ISSUE_FAILED',
+    REMOVE_ISSUE_SUCCESS = 'REMOVE_ISSUE_SUCCESS',
+    REMOVE_ISSUE_FAILED = 'REMOVE_ISSUE_FAILED',
     SUBMIT_REVIEW = 'SUBMIT_REVIEW',
     SUBMIT_REVIEW_SUCCESS = 'SUBMIT_REVIEW_SUCCESS',
     SUBMIT_REVIEW_FAILED = 'SUBMIT_REVIEW_FAILED',
     SWITCH_ISSUES_HIDDEN_FLAG = 'SWITCH_ISSUES_HIDDEN_FLAG',
+    SWITCH_RESOLVED_ISSUES_HIDDEN_FLAG = 'SWITCH_RESOLVED_ISSUES_HIDDEN_FLAG',
 }
 
 export const reviewActions = {
@@ -53,7 +56,14 @@ export const reviewActions = {
     submitReviewFailed: (error: any, jobId: number) => (
         createAction(ReviewActionTypes.SUBMIT_REVIEW_FAILED, { error, jobId })
     ),
+    removeIssueSuccess: (issueId: number, frame: number) => (
+        createAction(ReviewActionTypes.REMOVE_ISSUE_SUCCESS, { issueId, frame })
+    ),
+    removeIssueFailed: (error: any) => createAction(ReviewActionTypes.REMOVE_ISSUE_FAILED, { error }),
     switchIssuesHiddenFlag: (hidden: boolean) => createAction(ReviewActionTypes.SWITCH_ISSUES_HIDDEN_FLAG, { hidden }),
+    switchIssuesHiddenResolvedFlag: (hidden: boolean) => (
+        createAction(ReviewActionTypes.SWITCH_RESOLVED_ISSUES_HIDDEN_FLAG, { hidden })
+    ),
 };
 
 export type ReviewActions = ActionUnion<typeof reviewActions>;
@@ -166,5 +176,25 @@ ThunkAction => async (dispatch, getState) => {
         onFinish();
     } catch (error) {
         dispatch(reviewActions.submitReviewFailed(error, jobInstance.id));
+    }
+};
+
+export const deleteIssueAsync = (id: number): ThunkAction => async (dispatch, getState) => {
+    const state = getState();
+    const {
+        review: { frameIssues },
+        annotation: {
+            player: {
+                frame: { number: frameNumber },
+            },
+        },
+    } = state;
+
+    try {
+        const [issue] = frameIssues.filter((_issue: any): boolean => _issue.id === id);
+        await issue.delete();
+        dispatch(reviewActions.removeIssueSuccess(id, frameNumber));
+    } catch (error) {
+        dispatch(reviewActions.removeIssueFailed(error));
     }
 };

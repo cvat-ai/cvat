@@ -793,6 +793,16 @@
                 return response.data;
             }
 
+            async function deleteIssue(issueID) {
+                const { backendAPI } = config;
+
+                try {
+                    await Axios.delete(`${backendAPI}/issues/${issueID}`);
+                } catch (errorData) {
+                    throw generateError(errorData);
+                }
+            }
+
             async function saveJob(id, jobData) {
                 const { backendAPI } = config;
 
@@ -1625,6 +1635,7 @@
                             create: createIssue,
                             update: updateIssue,
                             get: getJobIssues,
+                            delete: deleteIssue,
                         }),
                         writable: false,
                     },

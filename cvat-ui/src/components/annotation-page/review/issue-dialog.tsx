@@ -2,8 +2,15 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, {
+    useState,
+    useEffect,
+    useRef,
+    useCallback,
+} from 'react';
 import ReactDOM from 'react-dom';
+import { useDispatch } from 'react-redux';
+import Modal from 'antd/lib/modal';
 import { Row, Col } from 'antd/lib/grid';
 import { CloseOutlined } from '@ant-design/icons';
 import Comment from 'antd/lib/comment';
@@ -13,6 +20,7 @@ import Button from 'antd/lib/button';
 import Input from 'antd/lib/input';
 import moment from 'moment';
 import CVATTooltip from 'components/common/cvat-tooltip';
+import { deleteIssueAsync } from 'actions/review-actions';
 
 interface Props {
     id: number;
@@ -32,6 +40,7 @@ interface Props {
 export default function IssueDialog(props: Props): JSX.Element {
     const ref = useRef<HTMLDivElement>(null);
     const [currentText, setCurrentText] = useState<string>('');
+    const dispatch = useDispatch();
     const {
         comments,
         id,
@@ -54,6 +63,22 @@ export default function IssueDialog(props: Props): JSX.Element {
             setTimeout(blur);
         }
     }, [resolved]);
+
+    const onDeleteIssue = useCallback((): void => {
+        Modal.confirm({
+            title: `The issue${id >= 0 ? ` #${id}` : ''} will be deleted.`,
+            className: 'cvat-modal-confirm-remove-issue',
+            onOk: () => {
+                collapse();
+                dispatch(deleteIssueAsync(id));
+            },
+            okButtonProps: {
+                type: 'primary',
+                danger: true,
+            },
+            okText: 'Delete',
+        });
+    }, []);
 
     const lines = comments.map(
         (_comment: any): JSX.Element => {
@@ -118,7 +143,12 @@ export default function IssueDialog(props: Props): JSX.Element {
                     />
                 </Col>
             </Row>
-            <Row className='cvat-issue-dialog-footer' justify='end'>
+            <Row className='cvat-issue-dialog-footer' justify='space-between'>
+                <Col>
+                    <Button type='link' danger onClick={onDeleteIssue}>
+                        Remove
+                    </Button>
+                </Col>
                 <Col>
                     {currentText.length ? (
                         <Button

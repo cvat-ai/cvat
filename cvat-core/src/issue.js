@@ -221,6 +221,21 @@ class Issue {
         return result;
     }
 
+    /**
+     * The method deletes the issue
+     * Deletes local or server-saved issues
+     * @method delete
+     * @memberof module:API.cvat.classes.Issue
+     * @readonly
+     * @instance
+     * @async
+     * @throws {module:API.cvat.exceptions.ServerError}
+     * @throws {module:API.cvat.exceptions.PluginError}
+     */
+    async delete() {
+        await PluginRegistry.apiWrapper.call(this, Issue.prototype.delete);
+    }
+
     serialize() {
         const { comments } = this;
         const data = {
@@ -288,6 +303,13 @@ Issue.prototype.reopen.implementation = async function () {
         this.__internal.resolved = response.resolved;
     } else {
         this.__internal.resolved = false;
+    }
+};
+
+Issue.prototype.delete.implementation = async function () {
+    const { id } = this;
+    if (id >= 0) {
+        await serverProxy.issues.delete(id);
     }
 };
 

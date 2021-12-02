@@ -6,6 +6,7 @@ import React from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import {
     LeftOutlined, RightOutlined, EyeInvisibleFilled, EyeOutlined,
+    CheckCircleFilled, CheckCircleOutlined,
 } from '@ant-design/icons';
 import Alert from 'antd/lib/alert';
 import { Row, Col } from 'antd/lib/grid';
@@ -21,6 +22,7 @@ export default function LabelsListComponent(): JSX.Element {
     const frameIssues = useSelector((state: CombinedState): any[] => state.review.frameIssues);
     const issues = useSelector((state: CombinedState): any[] => state.review.issues);
     const issuesHidden = useSelector((state: CombinedState): any => state.review.issuesHidden);
+    const issuesResolvedHidden = useSelector((state: CombinedState): any => state.review.issuesResolvedHidden);
     const frames = issues.map((issue: any): number => issue.frame).sort((a: number, b: number) => +a - +b);
     const nearestLeft = frames.filter((_frame: number): boolean => _frame < frame).reverse()[0];
     const dinamicLeftProps: any = Number.isInteger(nearestLeft) ?
@@ -60,8 +62,8 @@ export default function LabelsListComponent(): JSX.Element {
                             <RightOutlined className='cvat-issues-sidebar-next-frame' {...dinamicRightProps} />
                         </CVATTooltip>
                     </Col>
-                    <Col offset={3}>
-                        <CVATTooltip title='Show/hide all the issues'>
+                    <Col offset={2}>
+                        <CVATTooltip title='Show/hide all issues'>
                             {issuesHidden ? (
                                 <EyeInvisibleFilled
                                     className='cvat-issues-sidebar-hidden-issues'
@@ -72,6 +74,22 @@ export default function LabelsListComponent(): JSX.Element {
                                     className='cvat-issues-sidebar-shown-issues'
                                     onClick={() => dispatch(reviewActions.switchIssuesHiddenFlag(true))}
                                 />
+                            )}
+                        </CVATTooltip>
+                    </Col>
+                    <Col offset={2}>
+                        <CVATTooltip title='Show/hide resolved issues'>
+                            { issuesResolvedHidden ? (
+                                <CheckCircleFilled
+                                    className='cvat-issues-sidebar-hidden-resolved-status'
+                                    onClick={() => dispatch(reviewActions.switchIssuesHiddenResolvedFlag(false))}
+                                />
+                            ) : (
+                                <CheckCircleOutlined
+                                    className='cvat-issues-sidebar-hidden-resolved-status'
+                                    onClick={() => dispatch(reviewActions.switchIssuesHiddenResolvedFlag(true))}
+                                />
+
                             )}
                         </CVATTooltip>
                     </Col>

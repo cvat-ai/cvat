@@ -14,6 +14,7 @@ const defaultState: ReviewState = {
     frameIssues: [], // saved on the server and not saved on the server
     newIssuePosition: null,
     issuesHidden: false,
+    issuesResolvedHidden: false,
     fetching: {
         jobId: null,
         issueId: null,
@@ -154,6 +155,23 @@ export default function (state: ReviewState = defaultState, action: any): Review
             return {
                 ...state,
                 issuesHidden: hidden,
+            };
+        }
+        case ReviewActionTypes.SWITCH_RESOLVED_ISSUES_HIDDEN_FLAG: {
+            const { hidden } = action.payload;
+            return {
+                ...state,
+                issuesResolvedHidden: hidden,
+            };
+        }
+        case ReviewActionTypes.REMOVE_ISSUE_SUCCESS: {
+            const { issueId, frame } = action.payload;
+            const issues = state.issues.filter((issue: any) => issue.id !== issueId);
+            const frameIssues = issues.filter((issue: any): boolean => issue.frame === frame);
+            return {
+                ...state,
+                issues,
+                frameIssues,
             };
         }
         case AnnotationActionTypes.CLOSE_JOB:
