@@ -42,7 +42,7 @@ export default function StatisticsModalComponent(props: Props): JSX.Element {
         jobInstance,
     } = props;
 
-    const is2D = jobInstance.task.dimension === DimensionType.DIM_2D;
+    const is2D = jobInstance.dimension === DimensionType.DIM_2D;
 
     const baseProps = {
         cancelButtonProps: { style: { display: 'none' } },

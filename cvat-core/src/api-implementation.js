@@ -30,7 +30,7 @@ const config = require('./config');
     const User = require('./user');
     const { AnnotationFormats } = require('./annotation-formats');
     const { ArgumentError } = require('./exceptions');
-    const { Task } = require('./session');
+    const { Task, Job } = require('./session');
     const { Project } = require('./project');
     const { CloudStorage } = require('./cloud-storage');
     const Organization = require('./organization');
@@ -164,23 +164,13 @@ const config = require('./config');
                 throw new ArgumentError('Job filter must not be empty');
             }
 
-            let tasks = [];
             if ('taskID' in filter) {
-                tasks = await serverProxy.tasks.get({ id: filter.taskID });
-            } else {
-                const job = await serverProxy.jobs.get(filter.jobID);
-                if (typeof job.task_id !== 'undefined') {
-                    tasks = await serverProxy.tasks.get({ id: job.task_id });
-                }
+                const [task] = await serverProxy.tasks.get({ id: filter.taskID });
+                return new Task(task).jobs;
             }
 
-            // If task was found by its id, then create task instance and get Job instance from it
-            if (tasks.length) {
-                const task = new Task(tasks[0]);
-                return filter.jobID ? task.jobs.filter((job) => job.id === filter.jobID) : task.jobs;
-            }
-
-            return tasks;
+            const job = await serverProxy.jobs.get(filter.jobID);
+            return [new Job(job)];
         };
 
         cvat.tasks.get.implementation = async (filter) => {

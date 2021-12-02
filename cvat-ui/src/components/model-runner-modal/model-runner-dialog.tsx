@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -38,8 +38,8 @@ function mapStateToProps(state: CombinedState): StateToProps {
 
 function mapDispatchToProps(dispatch: ThunkDispatch): DispatchToProps {
     return {
-        runInference(task: any, model: Model, body: object) {
-            dispatch(startInferenceAsync(task, model, body));
+        runInference(taskID: number, model: Model, body: object) {
+            dispatch(startInferenceAsync(taskID, model, body));
         },
         closeDialog() {
             dispatch(modelsActions.closeRunModelDialog());
@@ -66,10 +66,11 @@ function ModelRunnerDialog(props: StateToProps & DispatchToProps): JSX.Element {
             <DetectorRunner
                 withCleanup
                 models={models}
-                task={task}
+                labels={task.labels}
+                dimension={task.dimension}
                 runInference={(...args) => {
                     closeDialog();
-                    runInference(...args);
+                    runInference(task.id, ...args);
                 }}
             />
         </Modal>

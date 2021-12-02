@@ -506,7 +506,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
                     if (stillPlaying) {
                         if (isAbleToChangeFrame()) {
                             onChangeFrame(frameNumber + 1 + framesSkipped, stillPlaying, framesSkipped + 1);
-                        } else if (jobInstance.task.dimension === DimensionType.DIM_2D) {
+                        } else if (jobInstance.dimension === DimensionType.DIM_2D) {
                             onSwitchPlay(false);
                         } else {
                             setTimeout(() => this.play(), frameDelay);

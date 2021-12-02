@@ -27,7 +27,7 @@ export default function RequestReviewModal(): JSX.Element | null {
         job.assignee = assignee;
         job.stage = JobStage.REVIEW;
         dispatch(updateJobAsync(job));
-        history.push(`/tasks/${job.task.id}`);
+        history.push(`/tasks/${job.taskId}`);
     };
 
     if (!isVisible) {

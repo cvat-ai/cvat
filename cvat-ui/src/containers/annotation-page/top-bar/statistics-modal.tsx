@@ -66,7 +66,7 @@ class StatisticsModalContainer extends React.PureComponent<Props> {
                 data={data}
                 visible={visible}
                 jobStatus={jobStatus}
-                bugTracker={jobInstance.task.bugTracker}
+                bugTracker={jobInstance.bugTracker}
                 startFrame={jobInstance.startFrame}
                 stopFrame={jobInstance.stopFrame}
                 assignee={jobInstance.assignee ? jobInstance.assignee.username : 'Nobody'}

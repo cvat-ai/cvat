@@ -146,14 +146,17 @@ class JobReadSerializer(serializers.ModelSerializer):
     assignee = BasicUserSerializer(allow_null=True)
     dimension = serializers.CharField(max_length=2, source='segment.task.dimension')
     labels = LabelSerializer(many=True, source='get_labels')
+    data_chunk_size = serializers.ReadOnlyField(source='segment.task.data.chunk_size')
+    data_compressed_chunk_type = serializers.ReadOnlyField(source='segment.task.data.compressed_chunk_type')
+    mode = serializers.ReadOnlyField(source='segment.task.mode')
     bug_tracker = serializers.CharField(max_length=2000, source='get_bug_tracker',
         allow_null=True)
 
     class Meta:
         model = models.Job
         fields = ('url', 'id', 'task_id', 'project_id', 'assignee',
-            'dimension', 'labels', 'bug_tracker', 'status', 'stage', 'state',
-            'start_frame', 'stop_frame')
+            'dimension', 'labels', 'bug_tracker', 'status', 'stage', 'state', 'mode',
+            'start_frame', 'stop_frame', 'data_chunk_size', 'data_compressed_chunk_type')
         read_only_fields = fields
 
 class JobWriteSerializer(serializers.ModelSerializer):

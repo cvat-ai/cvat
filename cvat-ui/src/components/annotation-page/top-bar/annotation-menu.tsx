@@ -57,7 +57,7 @@ export default function AnnotationMenuComponent(props: Props): JSX.Element {
     } = props;
 
     const jobStage = jobInstance.stage;
-    const taskID = jobInstance.task.id;
+    const taskID = jobInstance.taskId;
 
     function onClickMenuWrapper(params: MenuInfo): void {
         function checkUnsavedChanges(_params: MenuInfo): void {
@@ -171,7 +171,7 @@ export default function AnnotationMenuComponent(props: Props): JSX.Element {
         }
     }
 
-    const is2d = jobInstance.task.dimension === DimensionType.DIM_2D;
+    const is2d = jobInstance.dimension === DimensionType.DIM_2D;
 
     return (
         <Menu onClick={(params: MenuInfo) => onClickMenuWrapper(params)} className='cvat-annotation-menu' selectable={false}>
@@ -196,7 +196,7 @@ export default function AnnotationMenuComponent(props: Props): JSX.Element {
                     }
                 },
                 menuKey: Actions.LOAD_JOB_ANNO,
-                taskDimension: jobInstance.task.dimension,
+                taskDimension: jobInstance.dimension,
             })}
             <Menu.Item key={Actions.EXPORT_TASK_DATASET}>Export task dataset</Menu.Item>
             <Menu.Item key={Actions.REMOVE_ANNO}>Remove annotations</Menu.Item>

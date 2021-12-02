@@ -344,7 +344,7 @@ export function uploadJobAnnotationsAsync(job: any, loader: any, file: File): Th
             const state: CombinedState = getStore().getState();
             const { filters, showAllInterpolationTracks } = receiveAnnotationsParameters();
 
-            if (state.tasks.activities.loads[job.task.id]) {
+            if (state.tasks.activities.loads[job.taskId]) {
                 throw Error('Annotations is being uploaded for the task');
             }
             if (state.annotation.activities.loads[job.id]) {
@@ -640,7 +640,7 @@ export function getPredictionsAsync(): ThunkAction {
             annotations = annotations.map(
                 (data: any): any => new cvat.classes.ObjectState({
                     shapeType: data.type,
-                    label: job.task.labels.filter((label: any): boolean => label.id === data.label)[0],
+                    label: job.labels.filter((label: any): boolean => label.id === data.label)[0],
                     points: data.points,
                     objectType: ObjectType.SHAPE,
                     frame,
@@ -951,7 +951,7 @@ export function closeJob(): ThunkAction {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         const { jobInstance } = receiveAnnotationsParameters();
         if (jobInstance) {
-            await jobInstance.task.close();
+            await jobInstance.close();
         }
 
         dispatch({
@@ -961,9 +961,9 @@ export function closeJob(): ThunkAction {
 }
 
 export function getJobAsync(tid: number, jid: number, initialFrame: number, initialFilters: object[]): ThunkAction {
-    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+    return async (dispatch: ActionCreator<Dispatch>, getState): Promise<void> => {
         try {
-            const state: CombinedState = getStore().getState();
+            const state = getState();
             const filters = initialFilters;
             const {
                 settings: {
@@ -987,20 +987,18 @@ export function getJobAsync(tid: number, jid: number, initialFrame: number, init
                 true,
             );
 
-            // Check state if the task is already there
-            let task = state.tasks.current
+            // Check if the task was already downloaded to the state
+            let job: any | null = null;
+            const [task] = state.tasks.current
                 .filter((_task: Task) => _task.instance.id === tid)
-                .map((_task: Task) => _task.instance)[0];
-
-            // If there aren't the task, get it from the server
-            if (!task) {
-                [task] = await cvat.tasks.get({ id: tid });
-            }
-
-            // Finally get the job from the task
-            const job = task.jobs.filter((_job: any) => _job.id === jid)[0];
-            if (!job) {
-                throw new Error(`Task ${tid} doesn't contain the job ${jid}`);
+                .map((_task: Task) => _task.instance);
+            if (task) {
+                [job] = task.jobs.filter((_job: any) => _job.id === jid);
+                if (!job) {
+                    throw new Error(`Task ${tid} doesn't contain the job ${jid}`);
+                }
+            } else {
+                [job] = await cvat.jobs.get({ jobID: jid });
             }
 
             const frameNumber = Math.max(Math.min(job.stopFrame, initialFrame), job.startFrame);
@@ -1043,14 +1041,14 @@ export function getJobAsync(tid: number, jid: number, initialFrame: number, init
                 },
             });
 
-            if (job.task.dimension === DimensionType.DIM_3D) {
+            if (job.dimension === DimensionType.DIM_3D) {
                 const workspace = Workspace.STANDARD3D;
                 dispatch(changeWorkspace(workspace));
             }
 
             const updatePredictorStatus = async (): Promise<void> => {
                 // get current job
-                const currentState: CombinedState = getStore().getState();
+                const currentState: CombinedState = getState();
                 const { openTime: currentOpenTime, instance: currentJob } = currentState.annotation.job;
                 if (currentJob === null || currentJob.id !== job.id || currentOpenTime !== openTime) {
                     // the job was closed, changed or reopened
@@ -1073,7 +1071,7 @@ export function getJobAsync(tid: number, jid: number, initialFrame: number, init
                 }
             };
 
-            if (state.plugins.list.PREDICT && job.task.projectId !== null) {
+            if (state.plugins.list.PREDICT && job.projectId !== null) {
                 updatePredictorStatus();
             }
 
@@ -1649,7 +1647,7 @@ export function getContextImageAsync(): ThunkAction {
                 payload: {},
             });
 
-            const contextImageData = await job.frames.contextImage(job.task.id, frameNumber);
+            const contextImageData = await job.frames.contextImage(job.taskId, frameNumber);
             dispatch({
                 type: AnnotationActionTypes.GET_CONTEXT_IMAGE_SUCCESS,
                 payload: { contextImageData },

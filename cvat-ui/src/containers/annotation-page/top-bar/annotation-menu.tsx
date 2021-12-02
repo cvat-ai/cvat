@@ -31,8 +31,8 @@ interface StateToProps {
 
 interface DispatchToProps {
     loadAnnotations(job: any, loader: any, file: File): void;
-    showExportModal(task: any): void;
-    removeAnnotations(startnumber:number, endnumber:number, delTrackKeyframesOnly:boolean): void;
+    showExportModal(jobInstance: any): void;
+    removeAnnotations(startnumber: number, endnumber: number, delTrackKeyframesOnly: boolean): void;
     switchRequestReviewDialog(visible: boolean): void;
     switchSubmitReviewDialog(visible: boolean): void;
     setForceExitAnnotationFlag(forceExit: boolean): void;
@@ -56,7 +56,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         auth: { user },
     } = state;
 
-    const taskID = jobInstance.task.id;
+    const taskID = jobInstance.taskId;
     const jobID = jobInstance.id;
 
     return {
@@ -73,8 +73,8 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         loadAnnotations(job: any, loader: any, file: File): void {
             dispatch(uploadJobAnnotationsAsync(job, loader, file));
         },
-        showExportModal(task: any): void {
-            dispatch(exportActions.openExportModal(task));
+        showExportModal(jobInstance: any): void {
+            dispatch(exportActions.openExportModal(jobInstance));
         },
         removeAnnotations(startnumber: number, endnumber: number, delTrackKeyframesOnly:boolean) {
             dispatch(removeAnnotationsAsyncAction(startnumber, endnumber, delTrackKeyframesOnly));
@@ -127,7 +127,7 @@ function AnnotationMenuContainer(props: Props): JSX.Element {
     const onClickMenu = (params: MenuInfo): void => {
         const [action] = params.keyPath;
         if (action === Actions.EXPORT_TASK_DATASET) {
-            showExportModal(jobInstance.task);
+            showExportModal(jobInstance);
         } else if (action === Actions.REQUEST_REVIEW) {
             switchRequestReviewDialog(true);
         } else if (action === Actions.SUBMIT_REVIEW) {
@@ -135,13 +135,13 @@ function AnnotationMenuContainer(props: Props): JSX.Element {
         } else if (action === Actions.RENEW_JOB) {
             jobInstance.stage = JobStage.ANNOTATION;
             updateJob(jobInstance);
-            history.push(`/tasks/${jobInstance.task.id}`);
+            history.push(`/tasks/${jobInstance.taskId}`);
         } else if (action === Actions.FINISH_JOB) {
             jobInstance.stage = JobStage.ACCEPTANCE;
             updateJob(jobInstance);
-            history.push(`/tasks/${jobInstance.task.id}`);
+            history.push(`/tasks/${jobInstance.taskId}`);
         } else if (action === Actions.OPEN_TASK) {
-            history.push(`/tasks/${jobInstance.task.id}`);
+            history.push(`/tasks/${jobInstance.taskId}`);
         }
     };
 
@@ -149,7 +149,7 @@ function AnnotationMenuContainer(props: Props): JSX.Element {
 
     return (
         <AnnotationMenuComponent
-            taskMode={jobInstance.task.mode}
+            taskMode={jobInstance.mode}
             loaders={loaders}
             dumpers={dumpers}
             loadActivity={loadActivity}

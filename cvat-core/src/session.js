@@ -711,7 +711,13 @@
                 state: undefined,
                 start_frame: undefined,
                 stop_frame: undefined,
-                task: undefined,
+                project_id: null,
+                task_id: undefined,
+                labels: undefined,
+                dimension: undefined,
+                data_compressed_chunk_type: undefined,
+                data_chunk_size: undefined,
+                mode: undefined,
             };
 
             const updateTrigger = new FieldUpdateTrigger();
@@ -729,6 +735,11 @@
             }
 
             if (data.assignee) data.assignee = new User(data.assignee);
+            if (Array.isArray(initialData.labels)) {
+                data.labels = initialData.labels.map((labelData) => new Label(labelData));
+            } else {
+                throw new Error('Job labels must be an array');
+            }
 
             Object.defineProperties(
                 this,
@@ -840,14 +851,83 @@
                         get: () => data.stop_frame,
                     },
                     /**
-                     * @name task
-                     * @type {module:API.cvat.classes.Task}
+                     * @name projectId
+                     * @type {integer|null}
                      * @memberof module:API.cvat.classes.Job
                      * @readonly
                      * @instance
                      */
-                    task: {
-                        get: () => data.task,
+                    projectId: {
+                        get: () => data.project_id,
+                    },
+                    /**
+                     * @name taskId
+                     * @type {integer}
+                     * @memberof module:API.cvat.classes.Job
+                     * @readonly
+                     * @instance
+                     */
+                    taskId: {
+                        get: () => data.task_id,
+                    },
+                    /**
+                     * @name labels
+                     * @type {module:API.cvat.classes.Label[]}
+                     * @memberof module:API.cvat.classes.Job
+                     * @readonly
+                     * @instance
+                     */
+                    labels: {
+                        get: () => data.labels.filter((_label) => !_label.deleted),
+                    },
+                    /**
+                     * @name dimension
+                     * @type {module:API.cvat.enums.DimensionType}
+                     * @memberof module:API.cvat.classes.Task
+                     * @readonly
+                     * @instance
+                    */
+                    dimension: {
+                        get: () => data.dimension,
+                    },
+                    /**
+                     * @name dataChunkSize
+                     * @type {integer}
+                     * @memberof module:API.cvat.classes.Job
+                     * @readonly
+                     * @instance
+                     */
+                    dataChunkSize: {
+                        get: () => data.data_chunk_size,
+                        set: (chunkSize) => {
+                            if (typeof chunkSize !== 'number' || chunkSize < 1) {
+                                throw new ArgumentError(
+                                    `Chunk size value must be a positive number. But value ${chunkSize} has been got.`,
+                                );
+                            }
+
+                            data.data_chunk_size = chunkSize;
+                        },
+                    },
+                    /**
+                     * @name dataChunkSize
+                     * @type {string}
+                     * @memberof module:API.cvat.classes.Job
+                     * @readonly
+                     * @instance
+                     */
+                    dataChunkType: {
+                        get: () => data.data_compressed_chunk_type,
+                    },
+                    /**
+                     * @name mode
+                     * @type {string}
+                     * @memberof module:API.cvat.classes.Job
+                     * @readonly
+                     * @instance
+                     */
+                    mode: {
+                        get: () => data.mode,
                     },
                     _updateTrigger: {
                         get: () => updateTrigger,
@@ -948,6 +1028,21 @@
          */
         async openIssue(issue, message) {
             const result = await PluginRegistry.apiWrapper.call(this, Job.prototype.openIssue, issue, message);
+            return result;
+        }
+
+        /**
+         * Method removes all job related data from the client (annotations, history, etc.)
+         * @method close
+         * @returns {module:API.cvat.classes.Job}
+         * @memberof module:API.cvat.classes.Job
+         * @readonly
+         * @async
+         * @instance
+         * @throws {module:API.cvat.exceptions.PluginError}
+         */
+        async close() {
+            const result = await PluginRegistry.apiWrapper.call(this, Job.prototype.close);
             return result;
         }
     }
@@ -1504,14 +1599,14 @@
                     dataChunkType: {
                         get: () => data.data_compressed_chunk_type,
                     },
+                    /**
+                     * @name dimension
+                     * @type {module:API.cvat.enums.DimensionType}
+                     * @memberof module:API.cvat.classes.Task
+                     * @readonly
+                     * @instance
+                    */
                     dimension: {
-                        /**
-                         * @name enabled
-                         * @type {string}
-                         * @memberof module:API.cvat.enums.DimensionType
-                         * @readonly
-                         * @instance
-                         */
                         get: () => data.dimension,
                     },
                     /**
@@ -1732,27 +1827,27 @@
         }
 
         const frameData = await getFrame(
-            this.task.id,
-            this.task.dataChunkSize,
-            this.task.dataChunkType,
-            this.task.mode,
+            this.taskId,
+            this.dataChunkSize,
+            this.dataChunkType,
+            this.mode,
             frame,
             this.startFrame,
             this.stopFrame,
             isPlaying,
             step,
-            this.task.dimension,
+            this.dimension,
         );
         return frameData;
     };
 
     Job.prototype.frames.ranges.implementation = async function () {
-        const rangesData = await getRanges(this.task.id);
+        const rangesData = await getRanges(this.taskId);
         return rangesData;
     };
 
     Job.prototype.frames.preview.implementation = async function () {
-        const frameData = await getPreview(this.task.id);
+        const frameData = await getPreview(this.taskId);
         return frameData;
     };
 
@@ -1875,7 +1970,7 @@
     };
 
     Job.prototype.annotations.exportDataset.implementation = async function (format, saveImages, customName) {
-        const result = await exportDataset(this.task, format, customName, saveImages);
+        const result = await exportDataset(this, format, customName, saveImages);
         return result;
     };
 
@@ -1910,13 +2005,47 @@
     };
 
     Job.prototype.predictor.status.implementation = async function () {
-        const result = await this.task.predictor.status();
-        return result;
+        if (!Number.isInteger(this.projectId)) {
+            throw new DataError('The job must belong to a project to use the feature');
+        }
+
+        const result = await serverProxy.predictor.status(this.projectId);
+        return {
+            message: result.message,
+            progress: result.progress,
+            projectScore: result.score,
+            timeRemaining: result.time_remaining,
+            mediaAmount: result.media_amount,
+            annotationAmount: result.annotation_amount,
+        };
     };
 
     Job.prototype.predictor.predict.implementation = async function (frame) {
-        const result = await this.task.predictor.predict(frame);
+        if (!Number.isInteger(frame) || frame < 0) {
+            throw new ArgumentError(`Frame must be a positive integer. Got: "${frame}"`);
+        }
+
+        if (frame < this.startFrame || frame > this.stopFrame) {
+            throw new ArgumentError(`The frame with number ${frame} is out of the job`);
+        }
+
+        if (!Number.isInteger(this.projectId)) {
+            throw new DataError('The job must belong to a project to use the feature');
+        }
+
+        const result = await serverProxy.predictor.predict(this.taskId, frame);
         return result;
+    };
+
+    Job.prototype.frames.contextImage.implementation = async function (taskId, frameId) {
+        const result = await getContextImage(taskId, frameId);
+        return result;
+    };
+
+    Job.prototype.close.implementation = function closeTask() {
+        clearFrames(this.taskId);
+        closeSession(this);
+        return this;
     };
 
     Task.prototype.close.implementation = function closeTask() {
@@ -2233,11 +2362,6 @@
         }
 
         const result = await serverProxy.predictor.predict(this.id, frame);
-        return result;
-    };
-
-    Job.prototype.frames.contextImage.implementation = async function (taskId, frameId) {
-        const result = await getContextImage(taskId, frameId);
         return result;
     };
 })();

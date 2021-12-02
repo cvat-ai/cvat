@@ -66,15 +66,15 @@ export default function AnnotationPageComponent(props: Props): JSX.Element {
     }, [job, fetching]);
 
     useEffect(() => {
-        if (prevFetching && !fetching && !prevJob && job && !job.task.labels.length) {
+        if (prevFetching && !fetching && !prevJob && job && !job.labels.length) {
             notification.warning({
                 message: 'No labels',
                 description: (
                     <span>
-                        {`${job.task.projectId ? 'Project' : 'Task'} ${
-                            job.task.projectId || job.task.id
+                        {`${job.projectId ? 'Project' : 'Task'} ${
+                            job.projectId || job.taskId
                         } does not contain any label. `}
-                        <a href={`/${job.task.projectId ? 'projects' : 'tasks'}/${job.task.projectId || job.task.id}/`}>
+                        <a href={`/${job.projectId ? 'projects' : 'tasks'}/${job.projectId || job.id}/`}>
                             Add
                         </a>
                         {' the first one for editing annotation.'}
