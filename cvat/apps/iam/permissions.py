@@ -731,7 +731,7 @@ class JobPermission(OpenPolicyAgentPermission):
             ('annotations', 'PATCH'): 'update:annotations',
             ('annotations', 'DELETE'): 'delete:annotations',
             ('annotations', 'PUT'): 'update:annotations', # do we need the method?
-            ('data', 'GET'): 'view:data', # TODO: need to add the method
+            ('data', 'GET'): 'view:data',
             ('issues', 'GET'): 'view',
         }.get((view.action, request.method))
 

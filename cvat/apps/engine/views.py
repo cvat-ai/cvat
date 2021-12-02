@@ -353,6 +353,82 @@ class ProjectViewSet(viewsets.ModelViewSet):
         else:
             return Response("Format is not specified",status=status.HTTP_400_BAD_REQUEST)
 
+
+class DataChunkGetter:
+    def __init__(self, data_type, data_num, data_quality, task_dim):
+        possible_data_type_values = ('chunk', 'frame', 'preview', 'context_image')
+        possible_quality_values = ('compressed', 'original')
+
+        if not data_type or data_type not in possible_data_type_values:
+            raise ValidationError('Data type not specified or has wrong value')
+        elif data_type == 'chunk' or data_type == 'frame':
+            if not data_num:
+                raise ValidationError('Number is not specified')
+            elif data_quality not in possible_quality_values:
+                raise ValidationError('Wrong quality value')
+
+        self.type = data_type
+        self.number = int(data_num) if data_num else None
+        self.quality = data_quality = FrameProvider.Quality.COMPRESSED \
+            if data_quality == 'compressed' else FrameProvider.Quality.ORIGINAL
+
+        self.dimension = task_dim
+
+
+    def __call__(self, request, start, stop, db_data):
+        if not db_data:
+            raise NotFound(detail='Cannot find requested data')
+
+        frame_provider = FrameProvider(db_data, self.dimension)
+
+        if self.type == 'chunk':
+            start_chunk = frame_provider.get_chunk_number(start)
+            stop_chunk = frame_provider.get_chunk_number(stop)
+            if not (start_chunk <= self.number <= stop_chunk):
+                raise ValidationError('The chunk number should be in ' +
+                    f'[{start_chunk}, {stop_chunk}] range')
+
+            # TODO: av.FFmpegError processing
+            if settings.USE_CACHE and db_data.storage_method == StorageMethodChoice.CACHE:
+                buff, mime_type = frame_provider.get_chunk(self.number, self.quality)
+                return HttpResponse(buff.getvalue(), content_type=mime_type)
+
+            # Follow symbol links if the chunk is a link on a real image otherwise
+            # mimetype detection inside sendfile will work incorrectly.
+            path = os.path.realpath(frame_provider.get_chunk(self.number, self.quality))
+            return sendfile(request, path)
+
+        elif self.type == 'frame':
+            if not (start <= self.number <= stop):
+                raise ValidationError('The frame number should be in ' +
+                    f'[{start}, {stop}] range')
+
+            buf, mime = frame_provider.get_frame(self.number, self.quality)
+            return HttpResponse(buf.getvalue(), content_type=mime)
+
+        elif self.type == 'preview':
+            return sendfile(request, frame_provider.get_preview())
+
+        elif self.type == 'context_image':
+            if not (start <= self.number <= stop):
+                raise ValidationError('The frame number should be in ' +
+                    f'[{start}, {stop}] range')
+
+            image = Image.objects.get(data_id=db_data.id, frame=self.number)
+            for i in image.related_files.all():
+                path = os.path.realpath(str(i.path))
+                image = cv2.imread(path)
+                success, result = cv2.imencode('.JPEG', image)
+                if not success:
+                    raise Exception('Failed to encode image to ".jpeg" format')
+                return HttpResponse(io.BytesIO(result.tobytes()), content_type='image/jpeg')
+            return Response(data='No context image related to the frame',
+                status=status.HTTP_404_NOT_FOUND)
+        else:
+            return Response(data='unknown data type {}.'.format(self.type),
+                status=status.HTTP_400_BAD_REQUEST)
+
+
 class TaskFilter(filters.FilterSet):
     project = filters.CharFilter(field_name="project__name", lookup_expr="icontains")
     name = filters.CharFilter(field_name="name", lookup_expr="icontains")
@@ -616,78 +692,14 @@ class TaskViewSet(viewsets.ModelViewSet):
             return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
         else:
             data_type = request.query_params.get('type', None)
-            data_id = request.query_params.get('number', None)
+            data_num = request.query_params.get('number', None)
             data_quality = request.query_params.get('quality', 'compressed')
 
-            possible_data_type_values = ('chunk', 'frame', 'preview', 'context_image')
-            possible_quality_values = ('compressed', 'original')
+            data_getter = DataChunkGetter(data_type, data_num, data_quality,
+                db_task.dimension)
 
-            try:
-                if not data_type or data_type not in possible_data_type_values:
-                    raise ValidationError(detail='Data type not specified or has wrong value')
-                elif data_type == 'chunk' or data_type == 'frame':
-                    if not data_id:
-                        raise ValidationError(detail='Number is not specified')
-                    elif data_quality not in possible_quality_values:
-                        raise ValidationError(detail='Wrong quality value')
-
-                db_data = db_task.data
-                if not db_data:
-                    raise NotFound(detail='Cannot find requested data for the task')
-
-                frame_provider = FrameProvider(db_task.data, db_task.dimension)
-
-                if data_type == 'chunk':
-                    data_id = int(data_id)
-
-                    data_quality = FrameProvider.Quality.COMPRESSED \
-                        if data_quality == 'compressed' else FrameProvider.Quality.ORIGINAL
-
-                    #TODO: av.FFmpegError processing
-                    if settings.USE_CACHE and db_data.storage_method == StorageMethodChoice.CACHE:
-                        buff, mime_type = frame_provider.get_chunk(data_id, data_quality)
-                        return HttpResponse(buff.getvalue(), content_type=mime_type)
-
-                    # Follow symbol links if the chunk is a link on a real image otherwise
-                    # mimetype detection inside sendfile will work incorrectly.
-                    path = os.path.realpath(frame_provider.get_chunk(data_id, data_quality))
-                    return sendfile(request, path)
-
-                elif data_type == 'frame':
-                    data_id = int(data_id)
-                    data_quality = FrameProvider.Quality.COMPRESSED \
-                        if data_quality == 'compressed' else FrameProvider.Quality.ORIGINAL
-                    buf, mime = frame_provider.get_frame(data_id, data_quality)
-
-                    return HttpResponse(buf.getvalue(), content_type=mime)
-
-                elif data_type == 'preview':
-                    return sendfile(request, frame_provider.get_preview())
-
-                elif data_type == 'context_image':
-                    data_id = int(data_id)
-                    image = Image.objects.get(data_id=db_data.id, frame=data_id)
-                    for i in image.related_files.all():
-                        path = os.path.realpath(str(i.path))
-                        image = cv2.imread(path)
-                        success, result = cv2.imencode('.JPEG', image)
-                        if not success:
-                            raise Exception('Failed to encode image to ".jpeg" format')
-                        return HttpResponse(io.BytesIO(result.tobytes()), content_type='image/jpeg')
-                    return Response(data='No context image related to the frame',
-                                    status=status.HTTP_404_NOT_FOUND)
-                else:
-                    return Response(data='unknown data type {}.'.format(data_type), status=status.HTTP_400_BAD_REQUEST)
-            except APIException as e:
-                return Response(data=e.get_full_details(), status=e.status_code)
-            except FileNotFoundError as ex:
-                msg = f"{ex.strerror} {ex.filename}"
-                slogger.task[pk].error(msg, exc_info=True)
-                return Response(data=msg, status=status.HTTP_404_NOT_FOUND)
-            except Exception as e:
-                msg = 'cannot get requested data type: {}, number: {}, quality: {}'.format(data_type, data_id, data_quality)
-                slogger.task[pk].error(msg, exc_info=True)
-                return Response(data=msg + '\n' + str(e), status=status.HTTP_400_BAD_REQUEST)
+            return data_getter(request, db_task.data.start_frame,
+                db_task.data.stop_frame, db_task.data)
 
     @swagger_auto_schema(method='get', operation_summary='Method allows to download task annotations',
         manual_parameters=[
@@ -949,6 +961,31 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             context={'request': request}, many=True)
 
         return Response(serializer.data)
+
+    @swagger_auto_schema(method='get', operation_summary='Method returns data for a specific job',
+        manual_parameters=[
+            openapi.Parameter('type', in_=openapi.IN_QUERY, required=True, type=openapi.TYPE_STRING,
+                enum=['chunk', 'frame', 'preview', 'context_image'],
+                description="Specifies the type of the requested data"),
+            openapi.Parameter('quality', in_=openapi.IN_QUERY, required=True, type=openapi.TYPE_STRING,
+                enum=['compressed', 'original'],
+                description="Specifies the quality level of the requested data, doesn't matter for 'preview' type"),
+            openapi.Parameter('number', in_=openapi.IN_QUERY, required=True, type=openapi.TYPE_NUMBER,
+                description="A unique number value identifying chunk or frame, doesn't matter for 'preview' type"),
+            ]
+    )
+    @action(detail=True)
+    def data(self, request, pk):
+        db_job = self.get_object() # call check_object_permissions as well
+        data_type = request.query_params.get('type', None)
+        data_num = request.query_params.get('number', None)
+        data_quality = request.query_params.get('quality', 'compressed')
+
+        data_getter = DataChunkGetter(data_type, data_num, data_quality,
+            db_job.segment.task.dimension)
+
+        return data_getter(request, db_job.segment.start_frame,
+            db_job.segment.stop_frame, db_job.segment.task.data)
 
 class IssueViewSet(viewsets.ModelViewSet):
     queryset = Issue.objects.all().order_by('-id')
