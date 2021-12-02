@@ -684,11 +684,13 @@ export class CanvasViewImpl implements CanvasView, Listener {
             for (const state of deleted) {
                 if (state.clientID in this.svgTexts) {
                     this.svgTexts[state.clientID].remove();
+                    delete this.svgTexts[state.clientID];
                 }
 
                 this.svgShapes[state.clientID].off('click.canvas');
                 this.svgShapes[state.clientID].remove();
                 delete this.drawnStates[state.clientID];
+                delete this.svgShapes[state.clientID];
             }
 
             this.addObjects(created);
@@ -2071,60 +2073,71 @@ export class CanvasViewImpl implements CanvasView, Listener {
         if (text.node.style.display === 'none') return; // wrong transformation matrix
         const textFontSize = this.configuration.textFontSize || 12;
         const textPosition = this.configuration.textPosition || 'auto';
+
+        text.untransform();
+        text.style({ 'font-size': textFontSize });
         const { rotation } = shape.transform();
-        let box = (shape.node as any).getBBox();
-
-        // Translate the whole box to the client coordinate system
-        const [x1, y1, x2, y2]: number[] = translateFromSVG(this.content, [
-            box.x,
-            box.y,
-            box.x + box.width,
-            box.y + box.height,
-        ]);
-
-        box = {
-            x: Math.min(x1, x2),
-            y: Math.min(y1, y2),
-            width: Math.max(x1, x2) - Math.min(x1, x2),
-            height: Math.max(y1, y2) - Math.min(y1, y2),
-        };
 
         // Find the best place for a text
-        let [clientX, clientY]: number[] = [box.x + box.width, box.y];
+        let [clientX, clientY, clientCX, clientCY]: number[] = [0, 0, 0, 0];
         if (textPosition === 'center') {
-            const points = parsePoints(pointsToNumberArray(
-                shape.attr('points') || `${shape.attr('x')},${shape.attr('y')} ` +
-                    `${shape.attr('x') + shape.attr('width')},${shape.attr('y') + shape.attr('height')}`,
-            ));
+            let cx = 0;
+            let cy = 0;
+            if (shape.type === 'rect') {
+                cx = +shape.attr('x') + +shape.attr('width') / 2;
+                cy = +shape.attr('y') + +shape.attr('height') / 2;
+            } else {
+                const points = parsePoints(pointsToNumberArray(shape.attr('points')));
+                [cx, cy] = polylabel([points.map((point) => [point.x, point.y])]);
+            }
 
-            const result = polylabel([points.map((point) => [point.x, point.y])]);
-            [clientX, clientY] = translateFromSVG(this.content, [
-                result[0],
-                result[1],
+            [clientX, clientY] = translateFromSVG(this.content, [cx, cy]);
+            clientCX = clientX;
+            clientCY = clientY;
+        } else {
+            let box = (shape.node as any).getBBox();
+
+            // Translate the whole box to the client coordinate system
+            const [x1, y1, x2, y2]: number[] = translateFromSVG(this.content, [
+                box.x,
+                box.y,
+                box.x + box.width,
+                box.y + box.height,
             ]);
-            const textBBox = ((text.node as any) as SVGTextElement).getBBox();
-            clientX -= textBBox.width / 2;
-            clientY -= textBBox.height / 2;
-        } else if (
-            clientX + ((text.node as any) as SVGTextElement)
-                .getBBox().width + consts.TEXT_MARGIN > this.canvas.offsetWidth
-        ) {
-            [clientX, clientY] = [box.x, box.y];
+
+            clientCX = x1 + (x2 - x1) / 2;
+            clientCY = y1 + (y2 - y1) / 2;
+
+            box = {
+                x: Math.min(x1, x2),
+                y: Math.min(y1, y2),
+                width: Math.max(x1, x2) - Math.min(x1, x2),
+                height: Math.max(y1, y2) - Math.min(y1, y2),
+            };
+
+            [clientX, clientY] = [box.x + box.width, box.y];
+            if (
+                clientX + ((text.node as any) as SVGTextElement)
+                    .getBBox().width + consts.TEXT_MARGIN > this.canvas.offsetWidth
+            ) {
+                [clientX, clientY] = [box.x, box.y];
+            }
         }
 
         // Translate back to text SVG
-        const [x, y, cx, cy]: number[] = translateToSVG(this.text, [
+        const [x, y, rotX, rotY]: number[] = translateToSVG(this.text, [
             clientX + consts.TEXT_MARGIN,
             clientY + consts.TEXT_MARGIN,
-            x1 + (x2 - x1) / 2,
-            y1 + (y2 - y1) / 2,
+            clientCX,
+            clientCY,
         ]);
 
+        const textBBox = ((text.node as any) as SVGTextElement).getBBox();
         // Finally draw a text
-        text.move(x, y).style({ 'font-size': textFontSize });
+        text.move(x - textBBox.width / 2, y - textBBox.height / 2);
 
         if (rotation) {
-            text.rotate(rotation, cx, cy);
+            text.rotate(rotation, rotX, rotY);
         }
 
         for (const tspan of (text.lines() as any).members) {
