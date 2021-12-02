@@ -43,6 +43,7 @@ const defaultState: SettingsState = {
         frameSpeed: FrameSpeed.Usual,
         resetZoom: false,
         rotateAll: false,
+        smoothImage: true,
         grid: false,
         gridSize: 100,
         gridColor: GridColor.White,
@@ -180,6 +181,15 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
                 player: {
                     ...state.player,
                     resetZoom: action.payload.resetZoom,
+                },
+            };
+        }
+        case SettingsActionTypes.SWITCH_SMOOTH_IMAGE: {
+            return {
+                ...state,
+                player: {
+                    ...state.player,
+                    smoothImage: action.payload.smoothImage,
                 },
             };
         }

@@ -61,24 +61,41 @@ describe('Feature: get cloud storages', () => {
     });
 
     test('get cloud storages by filters', async () => {
-        const filters = new Map([
-            ['providerType', 'AWS_S3_BUCKET'],
-            ['resourceName', 'bucket'],
-            ['displayName', 'Demonstration bucket'],
-            ['credentialsType', 'KEY_SECRET_KEY_PAIR'],
-            ['description', 'It is first bucket'],
-        ]);
+        const filters = [
+            new Map([
+                ['providerType', 'AWS_S3_BUCKET'],
+                ['resourceName', 'bucket'],
+                ['displayName', 'Demonstration bucket'],
+                ['credentialsType', 'KEY_SECRET_KEY_PAIR'],
+                ['description', 'It is first bucket'],
+            ]),
+            new Map([
+                ['providerType', 'AZURE_CONTAINER'],
+                ['resourceName', 'container'],
+                ['displayName', 'Demonstration container'],
+                ['credentialsType', 'ACCOUNT_NAME_TOKEN_PAIR'],
+            ]),
+            new Map([
+                ['providerType', 'GOOGLE_CLOUD_STORAGE'],
+                ['resourceName', 'gcsbucket'],
+                ['displayName', 'Demo GCS'],
+                ['credentialsType', 'KEY_FILE_PATH'],
+            ]),
+        ];
 
-        const result = await window.cvat.cloudStorages.get(Object.fromEntries(filters));
+        const ids = [1, 2, 3];
 
-        const [cloudStorage] = result;
-        expect(Array.isArray(result)).toBeTruthy();
-        expect(result).toHaveLength(1);
-        expect(cloudStorage).toBeInstanceOf(CloudStorage);
-        expect(cloudStorage.id).toBe(1);
-        filters.forEach((value, key) => {
-            expect(cloudStorage[key]).toBe(value);
-        });
+        await Promise.all(filters.map(async (_, idx) => {
+            const result = await window.cvat.cloudStorages.get(Object.fromEntries(filters[idx]));
+            const [cloudStorage] = result;
+            expect(Array.isArray(result)).toBeTruthy();
+            expect(result).toHaveLength(1);
+            expect(cloudStorage).toBeInstanceOf(CloudStorage);
+            expect(cloudStorage.id).toBe(ids[idx]);
+            filters[idx].forEach((value, key) => {
+                expect(cloudStorage[key]).toBe(value);
+            });
+        }));
     });
 
     test('get cloud storage by invalid filters', async () => {

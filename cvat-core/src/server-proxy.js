@@ -45,6 +45,20 @@
         return new ServerError(message, 0);
     }
 
+    function prepareData(details) {
+        const data = new FormData();
+        for (const [key, value] of Object.entries(details)) {
+            if (Array.isArray(value)) {
+                value.forEach((element, idx) => {
+                    data.append(`${key}[${idx}]`, element);
+                });
+            } else {
+                data.set(key, value);
+            }
+        }
+        return data;
+    }
+
     class WorkerWrappedAxios {
         constructor() {
             const worker = new DownloadWorker();
@@ -796,6 +810,16 @@
                 return response.data;
             }
 
+            async function deleteIssue(issueID) {
+                const { backendAPI } = config;
+
+                try {
+                    await Axios.delete(`${backendAPI}/issues/${issueID}`);
+                } catch (errorData) {
+                    throw generateError(errorData);
+                }
+            }
+
             async function saveJob(id, jobData) {
                 const { backendAPI } = config;
 
@@ -1234,12 +1258,10 @@
             async function createCloudStorage(storageDetail) {
                 const { backendAPI } = config;
 
+                const storageDetailData = prepareData(storageDetail);
                 try {
-                    const response = await Axios.post(`${backendAPI}/cloudstorages`, JSON.stringify(storageDetail), {
+                    const response = await Axios.post(`${backendAPI}/cloudstorages`, storageDetailData, {
                         proxy: config.proxy,
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
                     });
                     return response.data;
                 } catch (errorData) {
@@ -1247,15 +1269,13 @@
                 }
             }
 
-            async function updateCloudStorage(id, cloudStorageData) {
+            async function updateCloudStorage(id, storageDetail) {
                 const { backendAPI } = config;
 
+                const storageDetailData = prepareData(storageDetail);
                 try {
-                    await Axios.patch(`${backendAPI}/cloudstorages/${id}`, JSON.stringify(cloudStorageData), {
+                    await Axios.patch(`${backendAPI}/cloudstorages/${id}`, storageDetailData, {
                         proxy: config.proxy,
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
                     });
                 } catch (errorData) {
                     throw generateError(errorData);
@@ -1458,6 +1478,7 @@
                     issues: {
                         value: Object.freeze({
                             update: updateIssue,
+                            delete: deleteIssue,
                         }),
                         writable: false,
                     },

@@ -53,14 +53,30 @@ from cvat.apps.engine.models import (
 )
 from cvat.apps.engine.models import CloudStorage as CloudStorageModel
 from cvat.apps.engine.serializers import (
-    AboutSerializer, AnnotationFileSerializer, BaseCloudStorageSerializer,
-    BasicUserSerializer, CloudStorageSerializer, CombinedIssueSerializer,
-    CombinedReviewSerializer, CommentSerializer, DataMetaSerializer,
-    DataSerializer, ExceptionSerializer, FileInfoSerializer, IssueSerializer,
-    JobSerializer, LabeledDataSerializer, LogEventSerializer, PluginsSerializer,
-    ProjectSearchSerializer, ProjectSerializer,
-    ProjectWithoutTaskSerializer, ReviewSerializer, RqStatusSerializer,
-    TaskSerializer, UserSerializer, )
+    AboutSerializer,
+    AnnotationFileSerializer,
+    BaseCloudStorageSerializer,
+    BasicUserSerializer,
+    CloudStorageSerializer,
+    CombinedIssueSerializer,
+    CombinedReviewSerializer,
+    CommentSerializer,
+    DataMetaSerializer,
+    DataSerializer,
+    ExceptionSerializer,
+    FileInfoSerializer,
+    IssueSerializer,
+    JobSerializer,
+    LabeledDataSerializer,
+    LogEventSerializer,
+    PluginsSerializer,
+    ProjectSearchSerializer,
+    ProjectSerializer,
+    ReviewSerializer,
+    RqStatusSerializer,
+    TaskSerializer,
+    UserSerializer,
+    )
 from utils.dataset_manifest import ImageManifestManager
 from cvat.apps.engine.utils import av_scan_paths
 from cvat.apps.engine import backup
@@ -228,9 +244,7 @@ class ProjectFilter(filters.FilterSet):
         openapi.Parameter('status', openapi.IN_QUERY, description="Find all projects with a specific status",
             type=openapi.TYPE_STRING, enum=[str(i) for i in StatusChoice]),
         openapi.Parameter('names_only', openapi.IN_QUERY, description="Returns only names and id's of projects.",
-            type=openapi.TYPE_BOOLEAN),
-        openapi.Parameter('without_tasks', openapi.IN_QUERY, description="Returns only projects entities without related tasks",
-            type=openapi.TYPE_BOOLEAN)],))
+            type=openapi.TYPE_BOOLEAN)]))
 @method_decorator(name='create', decorator=swagger_auto_schema(operation_summary='Method creates a new project'))
 @method_decorator(name='retrieve', decorator=swagger_auto_schema(operation_summary='Method returns details of a specific project'))
 @method_decorator(name='destroy', decorator=swagger_auto_schema(operation_summary='Method deletes a specific project'))
@@ -247,8 +261,6 @@ class ProjectViewSet(auth.ProjectGetQuerySetMixin, viewsets.ModelViewSet):
             return TaskSerializer
         if self.request.query_params and self.request.query_params.get("names_only") == "true":
             return ProjectSearchSerializer
-        if self.request.query_params and self.request.query_params.get("without_tasks") == "true":
-            return ProjectWithoutTaskSerializer
         else:
             return ProjectSerializer
 
@@ -434,7 +446,7 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
     serializer_class = TaskSerializer
     search_fields = ("name", "owner__username", "mode", "status")
     filterset_class = TaskFilter
-    ordering_fields = ("id", "name", "owner", "status", "assignee")
+    ordering_fields = ("id", "name", "owner", "status", "assignee", "subset")
 
     def get_permissions(self):
         http_method = self.request.method
@@ -1244,6 +1256,7 @@ class CloudStorageViewSet(auth.CloudStorageGetQuerySetMixin, viewsets.ModelViewS
     )
     @action(detail=True, methods=['GET'], url_path='content')
     def content(self, request, pk):
+        storage = None
         try:
             db_storage = CloudStorageModel.objects.get(pk=pk)
             credentials = Credentials()
@@ -1288,7 +1301,7 @@ class CloudStorageViewSet(auth.CloudStorageGetQuerySetMixin, viewsets.ModelViewS
             return Response(data=msg, status=status.HTTP_404_NOT_FOUND)
         except Exception as ex:
             # check that cloud storage was not deleted
-            storage_status = storage.get_status()
+            storage_status = storage.get_status() if storage else None
             if storage_status == Status.FORBIDDEN:
                 msg = 'The resource {} is no longer available. Access forbidden.'.format(storage.name)
             elif storage_status == Status.NOT_FOUND:
@@ -1307,6 +1320,7 @@ class CloudStorageViewSet(auth.CloudStorageGetQuerySetMixin, viewsets.ModelViewS
     )
     @action(detail=True, methods=['GET'], url_path='preview')
     def preview(self, request, pk):
+        storage = None
         try:
             db_storage = CloudStorageModel.objects.get(pk=pk)
             if not os.path.exists(db_storage.get_preview_path()):
@@ -1365,7 +1379,7 @@ class CloudStorageViewSet(auth.CloudStorageGetQuerySetMixin, viewsets.ModelViewS
             return HttpResponseNotFound(message)
         except Exception as ex:
             # check that cloud storage was not deleted
-            storage_status = storage.get_status()
+            storage_status = storage.get_status() if storage else None
             if storage_status == Status.FORBIDDEN:
                 msg = 'The resource {} is no longer available. Access forbidden.'.format(storage.name)
             elif storage_status == Status.NOT_FOUND:
