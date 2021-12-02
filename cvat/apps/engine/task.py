@@ -297,6 +297,26 @@ def _create_thread(tid, data, isImport=False):
         if media_files:
             if extractor is not None:
                 raise Exception('Combined data types are not supported')
+            if isImport and media_type == 'image' and db_data.storage == models.StorageChoice.SHARE:
+                manifest_index = _get_manifest_frame_indexer(db_data.start_frame, db_data.get_frame_step())
+                db_data.start_frame = 0
+                data['stop_frame'] = None
+                db_data.frame_filter = ''
+            if isImport and media_type != 'video':
+                # we should sort media_files according to the manifest content sequence
+                manifest = ImageManifestManager(db_data.get_manifest_path())
+                manifest.set_index()
+                sorted_media_files = []
+                for idx in range(db_data.start_frame, len(media_files)):
+                    properties = manifest[manifest_index(idx)]
+                    image_name = properties.get('name', None)
+                    image_extension = properties.get('extension', None)
+
+                    full_image_path = f"{image_name}{image_extension}" if image_name and image_extension else None
+                    if full_image_path and full_image_path in media_files:
+                        sorted_media_files.append(full_image_path)
+                media_files = sorted_media_files
+                data['sorting_method'] = SortingMethod.PREDEFINED
             source_paths=[os.path.join(upload_dir, f) for f in media_files]
             if manifest_file and data['sorting_method'] == SortingMethod.RANDOM:
                 raise Exception("It isn't supported to upload manifest file and use random sorting")
@@ -304,11 +324,6 @@ def _create_thread(tid, data, isImport=False):
                 source_paths.append(db_data.get_upload_dirname())
                 upload_dir = db_data.get_upload_dirname()
                 db_data.storage = models.StorageChoice.LOCAL
-            if isImport and media_type == 'image' and db_data.storage == models.StorageChoice.SHARE:
-                manifest_index = _get_manifest_frame_indexer(db_data.start_frame, db_data.get_frame_step())
-                db_data.start_frame = 0
-                data['stop_frame'] = None
-                db_data.frame_filter = ''
 
             details = {
                 'source_path': source_paths,
