@@ -67,6 +67,7 @@ interface State {
     activeLabelID: number;
     approxPolyAccuracy: number;
     activeImageModifiers: ImageModifier[];
+    trackerControl: any;
 }
 
 interface ImageModifier {
@@ -138,6 +139,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
             approxPolyAccuracy: defaultApproxPolyAccuracy,
             activeLabelID: labels.length ? labels[0].id : null,
             activeImageModifiers: [],
+            trackerControl: null,
         };
     }
 
@@ -279,10 +281,32 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
     };
 
     private runImageModifier = async ():Promise<void> => {
-        const { activeImageModifiers } = this.state;
+        const { activeImageModifiers, trackerControl } = this.state;
         const {
             frameData, states, curZOrder, canvasInstance, frame,
         } = this.props;
+
+        if (trackerControl) {
+            console.log('tracking active');
+            const canvas: HTMLCanvasElement | undefined = window.document.getElementById('cvat_canvas_background') as
+            | HTMLCanvasElement
+            | undefined;
+            if (!canvas) {
+                throw new Error('Element #cvat_canvas_background was not found');
+            }
+            const { width, height } = canvas;
+            const context = canvas.getContext('2d');
+            if (!context) {
+                throw new Error('Canvas context is empty');
+            }
+            const imageData = context.getImageData(0, 0, width, height);
+            const {
+                x, y, widthR, heightR,
+            } = trackerControl.update(imageData);
+            console.log(x, y, widthR, heightR);
+            context.strokeStyle = '#FFFF00';
+            context.strokeRect(x, y, widthR, heightR);
+        }
         try {
             if (activeImageModifiers.length !== 0 && activeImageModifiers[0].modifier.currentProcessedImage !== frame) {
                 this.enableCanvasForceUpdate();
@@ -298,8 +322,9 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
                     throw new Error('Canvas context is empty');
                 }
                 const imageData = context.getImageData(0, 0, width, height);
-                const newImageData = activeImageModifiers.reduce((oldImageData, activeImageModifier) =>
-                    activeImageModifier.modifier.processImage(oldImageData, frame), imageData);
+                const newImageData = activeImageModifiers
+                    .reduce((oldImageData, activeImageModifier) => activeImageModifier
+                        .modifier.processImage(oldImageData, frame), imageData);
                 const imageBitmap = await createImageBitmap(newImageData);
                 frameData.imageData = imageBitmap;
                 canvasInstance.setup(frameData, states, curZOrder);
@@ -346,7 +371,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
         return points;
     }
 
-    private imageModifier(alias: string): ImageProcessing|null {
+    private imageModifier(alias: string): ImageProcessing | null {
         const { activeImageModifiers } = this.state;
         return activeImageModifiers.find((imageModifier) => imageModifier.alias === alias)?.modifier || null;
     }
@@ -362,7 +387,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
         }
     }
 
-    private enableImageModifier(modifier: ImageProcessing, alias: string): void{
+    private enableImageModifier(modifier: ImageProcessing, alias: string): void {
         this.setState((prev: State) => ({
             ...prev,
             activeImageModifiers: [...prev.activeImageModifiers, { modifier, alias }],
@@ -371,13 +396,13 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
         });
     }
 
-    private enableCanvasForceUpdate():void{
+    private enableCanvasForceUpdate():void {
         const { canvasInstance } = this.props;
         canvasInstance.configure({ forceFrameUpdate: true });
         this.canvasForceUpdateWasEnabled = true;
     }
 
-    private disableCanvasForceUpdate():void{
+    private disableCanvasForceUpdate():void {
         if (this.canvasForceUpdateWasEnabled) {
             const { canvasInstance } = this.props;
             canvasInstance.configure({ forceFrameUpdate: false });
@@ -450,6 +475,56 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
                             <AreaChartOutlined />
                         </Button>
                     </CVATTooltip>
+                </Col>
+                <Col>
+                    <Button
+                        className={this.imageModifier('histogram') ? 'cvat-opencv-image-tool-active' : ''}
+                        onClick={() => {
+                            const control = openCVWrapper.tracking.trackerMIL();
+                            this.enableCanvasForceUpdate();
+                            const canvas: HTMLCanvasElement | undefined = window.document.getElementById('cvat_canvas_background') as
+                                | HTMLCanvasElement
+                                | undefined;
+                            if (!canvas) {
+                                throw new Error('Element #cvat_canvas_background was not found');
+                            }
+                            const { width, height } = canvas;
+                            const context = canvas.getContext('2d');
+                            if (!context) {
+                                throw new Error('Canvas context is empty');
+                            }
+                            const imageData = context.getImageData(0, 0, width, height);
+                            context.strokeStyle = '#FFFF00';
+                            control.init(imageData, 590, 190, 155, 120);
+                            context.strokeRect(590, 190, 155, 120);
+                            this.setState({
+                                trackerControl: control,
+                            });
+                        }}
+                    >
+                        <AreaChartOutlined />
+                    </Button>
+
+                </Col>
+                <Col>
+                    <Button
+                        className={this.imageModifier('histogram') ? 'cvat-opencv-image-tool-active' : ''}
+                        onClick={() => {
+                            const canvas: HTMLCanvasElement | undefined = window.document.getElementById('cvat_canvas_background') as
+                                | HTMLCanvasElement
+                                | undefined;
+                            if (!canvas) {
+                                throw new Error('Element #cvat_canvas_background was not found');
+                            }
+                            const context = canvas.getContext('2d');
+                            if (!context) {
+                                throw new Error('Canvas context is empty');
+                            }
+                            context.strokeRect(590, 190, 155, 120);
+                        }}
+                    >
+                        <AreaChartOutlined />
+                    </Button>
                 </Col>
             </Row>
         );

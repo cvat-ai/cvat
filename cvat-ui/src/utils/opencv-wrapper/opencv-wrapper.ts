@@ -5,7 +5,7 @@
 import getCore from 'cvat-core-wrapper';
 import waitFor from '../wait-for';
 import HistogramEqualizationImplementation, { HistogramEqualization } from './histogram-equalization';
-
+import TrackerMImplementation, { TrackerMIL } from './tracker-mil';
 import IntelligentScissorsImplementation, { IntelligentScissors } from './intelligent-scissors';
 
 const core = getCore();
@@ -21,6 +21,10 @@ export interface Contours {
 
 export interface ImgProc {
     hist: () => HistogramEqualization;
+}
+
+export interface Tracking {
+    trackerMIL: () => TrackerMIL;
 }
 
 export class OpenCVWrapper {
@@ -75,8 +79,7 @@ export class OpenCVWrapper {
         const global = window as any;
         await waitFor(
             100,
-            () =>
-                typeof global.cv !== 'undefined' && typeof global.cv.segmentation_IntelligentScissorsMB !== 'undefined',
+            () => typeof global.cv !== 'undefined' && typeof global.cv.segmentation_IntelligentScissorsMB !== 'undefined',
         );
 
         this.cv = global.cv;
@@ -126,8 +129,9 @@ export class OpenCVWrapper {
         }
 
         return {
-            intelligentScissorsFactory: (onChangeToolsBlockerState:(event:string)=>void) =>
-                new IntelligentScissorsImplementation(this.cv, onChangeToolsBlockerState),
+            intelligentScissorsFactory:
+            (onChangeToolsBlockerState:
+            (event:string)=>void) => new IntelligentScissorsImplementation(this.cv, onChangeToolsBlockerState),
         };
     }
 
@@ -137,6 +141,15 @@ export class OpenCVWrapper {
         }
         return {
             hist: () => new HistogramEqualizationImplementation(this.cv),
+        };
+    }
+
+    public get tracking(): Tracking {
+        if (!this.initialized) {
+            throw new Error('Need to initialize OpenCV first');
+        }
+        return {
+            trackerMIL: () => new TrackerMImplementation(this.cv),
         };
     }
 }
