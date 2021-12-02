@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -241,6 +241,21 @@ class Issue {
         return result;
     }
 
+    /**
+     * The method deletes the issue
+     * Deletes local or server-saved issues
+     * @method delete
+     * @memberof module:API.cvat.classes.Issue
+     * @readonly
+     * @instance
+     * @async
+     * @throws {module:API.cvat.exceptions.ServerError}
+     * @throws {module:API.cvat.exceptions.PluginError}
+     */
+    async delete() {
+        await PluginRegistry.apiWrapper.call(this, Issue.prototype.delete);
+    }
+
     serialize() {
         const { comments } = this;
         const data = {
@@ -329,6 +344,13 @@ Issue.prototype.reopen.implementation = async function () {
     } else {
         this.__internal.resolved_date = null;
         this.__internal.resolver = null;
+    }
+};
+
+Issue.prototype.delete.implementation = async function () {
+    const { id } = this;
+    if (id >= 0) {
+        await serverProxy.issues.delete(id);
     }
 };
 
