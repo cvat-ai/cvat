@@ -391,6 +391,7 @@ export interface NotificationsState {
             reopeningIssue: null | ErrorState;
             commentingIssue: null | ErrorState;
             submittingReview: null | ErrorState;
+            deletingIssue: null | ErrorState;
         };
         predictor: {
             prediction: null | ErrorState;
@@ -680,6 +681,7 @@ export interface ReviewState {
     activeReview: any | null;
     newIssuePosition: number[] | null;
     issuesHidden: boolean;
+    issuesResolvedHidden: boolean;
     fetching: {
         reviewId: number | null;
         issueId: number | null;

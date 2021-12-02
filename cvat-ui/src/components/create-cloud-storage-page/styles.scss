@@ -41,6 +41,10 @@
             :nth-child(1) {
                 flex-grow: 1;
             }
+
+            :nth-child(2) {
+                max-width: 37 * $grid-unit-size;
+            }
         }
 
         > div:not(first-child) {
