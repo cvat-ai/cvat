@@ -1770,6 +1770,7 @@ class ProjectBackupAPITestCase(APITestCase):
                             "updated_date",
                             "training_project",
                             "project_id",
+                            "tasks",
                         ),
                     )
 
