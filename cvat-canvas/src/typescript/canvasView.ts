@@ -2084,14 +2084,17 @@ export class CanvasViewImpl implements CanvasView, Listener {
             let cx = 0;
             let cy = 0;
             if (shape.type === 'rect') {
+                // for rectangle finding a center is simple
                 cx = +shape.attr('x') + +shape.attr('width') / 2;
                 cy = +shape.attr('y') + +shape.attr('height') / 2;
             } else {
+                // for polyshapes we use special algorithm
                 const points = parsePoints(pointsToNumberArray(shape.attr('points')));
                 [cx, cy] = polylabel([points.map((point) => [point.x, point.y])]);
             }
 
             [clientX, clientY] = translateFromSVG(this.content, [cx, cy]);
+            // center is exactly clientX, clientY
             clientCX = clientX;
             clientCY = clientY;
         } else {
@@ -2115,16 +2118,18 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 height: Math.max(y1, y2) - Math.min(y1, y2),
             };
 
+            // first try to put to the top right corner
             [clientX, clientY] = [box.x + box.width, box.y];
             if (
                 clientX + ((text.node as any) as SVGTextElement)
                     .getBBox().width + consts.TEXT_MARGIN > this.canvas.offsetWidth
             ) {
+                // if out of visible area, try to put text to top left corner
                 [clientX, clientY] = [box.x, box.y];
             }
         }
 
-        // Translate back to text SVG
+        // Translate found coordinates to text SVG
         const [x, y, rotX, rotY]: number[] = translateToSVG(this.text, [
             clientX + consts.TEXT_MARGIN,
             clientY + consts.TEXT_MARGIN,
@@ -2134,7 +2139,11 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
         const textBBox = ((text.node as any) as SVGTextElement).getBBox();
         // Finally draw a text
-        text.move(x - textBBox.width / 2, y - textBBox.height / 2);
+        if (textPosition === 'center') {
+            text.move(x - textBBox.width / 2, y - textBBox.height / 2);
+        } else {
+            text.move(x, y);
+        }
 
         if (rotation) {
             text.rotate(rotation, rotX, rotY);
