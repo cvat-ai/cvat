@@ -30,11 +30,10 @@ from rest_framework.test import APIClient, APITestCase
 
 from datumaro.util.test_utils import TestDir
 from cvat.apps.engine.models import (AttributeSpec, AttributeType, Data, Job, Project,
-    Segment, StatusChoice, Task, Label, StorageMethodChoice, StorageChoice, DimensionType)
-from cvat.apps.engine.media_extractors import ValidateDimension
+    Segment, StatusChoice, Task, Label, StorageMethodChoice, StorageChoice, DimensionType,
+    SortingMethod)
+from cvat.apps.engine.media_extractors import ValidateDimension, sort
 from utils.dataset_manifest import ImageManifestManager, VideoManifestManager
-
-from cvat.apps.engine.utils import sort, SortingMethod
 
 def create_db_users(cls):
     (group_admin, _) = Group.objects.get_or_create(name="admin")
@@ -2096,17 +2095,29 @@ class TaskImportExportAPITestCase(APITestCase):
             with open(path, "wb") as image:
                 image.write(data.read())
 
-        cls.media_data.append(
-            {
-                **{"image_quality": 75,
-                   "copy_data": True,
-                   "start_frame": 2,
-                   "stop_frame": 9,
-                   "frame_filter": "step=2",
-                },
-                **{"server_files[{}]".format(i): imagename_pattern.format(i) for i in range(image_count)},
-            }
-        )
+        data = {
+            "image_quality": 75,
+            "copy_data": True,
+            "start_frame": 2,
+            "stop_frame": 9,
+            "frame_filter": "step=2",
+            **{"server_files[{}]".format(i): imagename_pattern.format(i) for i in range(image_count)},
+        }
+        use_cache_data = {
+            **data,
+            'use_cache': True,
+        }
+        cls.media_data.append(data)
+
+        data['sorting_method'] = SortingMethod.NATURAL
+        cls.media_data.append(data)
+        cls.media_data.append(use_cache_data)
+
+        use_cache_data['sorting_method'] = SortingMethod.NATURAL
+        cls.media_data.append(use_cache_data)
+
+        use_cache_data['sorting_method'] = SortingMethod.RANDOM
+        cls.media_data.append(use_cache_data)
 
         filename = "test_video_1.mp4"
         path = os.path.join(settings.SHARE_ROOT, filename)
@@ -2194,13 +2205,47 @@ class TaskImportExportAPITestCase(APITestCase):
             }
         )
 
+        data = {
+            "client_files[0]": generate_image_file("test_1.jpg")[1],
+            "client_files[1]": generate_image_file("test_2.jpg")[1],
+            "client_files[2]": generate_image_file("test_10.jpg")[1],
+            "client_files[3]": generate_image_file("test_3.jpg")[1],
+            "image_quality": 75,
+        }
+        use_cache_data = {
+            **data,
+            'use_cache': True,
+        }
         cls.media_data.extend([
             # image list local
+            # sorted data
+            # natural: test_1.jpg, test_2.jpg, test_3.jpg, test_10.jpg
             {
-                "client_files[0]": generate_image_file("test_1.jpg")[1],
-                "client_files[1]": generate_image_file("test_2.jpg")[1],
-                "client_files[2]": generate_image_file("test_3.jpg")[1],
-                "image_quality": 75,
+                **use_cache_data,
+                'sorting_method': SortingMethod.NATURAL,
+            },
+            {
+                **data,
+                'sorting_method': SortingMethod.NATURAL,
+            },
+            # random
+            {
+                **use_cache_data,
+                'sorting_method': SortingMethod.RANDOM,
+            },
+            # predefined: test_1.jpg, test_2.jpg, test_10.jpg, test_2.jpg
+            {
+                **use_cache_data,
+                'sorting_method': SortingMethod.PREDEFINED,
+            },
+            # lexicographical: test_1.jpg, test_10.jpg, test_2.jpg, test_3.jpg
+            {
+                **use_cache_data,
+                'sorting_method': SortingMethod.LEXICOGRAPHICAL,
+            },
+            {
+                **data,
+                'sorting_method': SortingMethod.LEXICOGRAPHICAL,
             },
             # video local
             {

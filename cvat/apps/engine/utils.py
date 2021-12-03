@@ -12,10 +12,7 @@ import traceback
 import subprocess
 import os
 from av import VideoFrame
-from enum import Enum
-from natsort import os_sorted
 from PIL import Image
-from random import shuffle
 
 from django.core.exceptions import ValidationError
 
@@ -109,29 +106,3 @@ def parse_specific_attributes(specific_attributes):
         item.split('=')[0].strip(): item.split('=')[1].strip()
             for item in specific_attributes.split('&')
     } if specific_attributes else dict()
-
-class SortingMethod(str, Enum):
-    LEXICOGRAPHICAL = 'lexicographical'
-    NATURAL = 'natural'
-    PREDEFINED = 'predefined'
-    RANDOM = 'random'
-
-    @classmethod
-    def choices(cls):
-        return tuple((x.value, x.name) for x in cls)
-
-    def __str__(self):
-        return self.value
-
-def sort(images, sorting_method=SortingMethod.LEXICOGRAPHICAL, func=None):
-    if sorting_method == SortingMethod.LEXICOGRAPHICAL:
-        return sorted(images, key=func)
-    elif sorting_method == SortingMethod.NATURAL:
-        return os_sorted(images, key=func)
-    elif sorting_method == SortingMethod.PREDEFINED:
-        return images
-    elif sorting_method == SortingMethod.RANDOM:
-        shuffle(images)
-        return images
-    else:
-        raise NotImplementedError()

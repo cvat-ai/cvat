@@ -22,8 +22,8 @@ from django.db import transaction
 from cvat.apps.engine import models
 from cvat.apps.engine.log import slogger
 from cvat.apps.engine.media_extractors import (MEDIA_TYPES, Mpeg4ChunkWriter, Mpeg4CompressedChunkWriter,
-    ValidateDimension, ZipChunkWriter, ZipCompressedChunkWriter, get_mime)
-from cvat.apps.engine.utils import av_scan_paths, sort, SortingMethod
+    ValidateDimension, ZipChunkWriter, ZipCompressedChunkWriter, get_mime, sort)
+from cvat.apps.engine.utils import av_scan_paths
 from utils.dataset_manifest import ImageManifestManager, VideoManifestManager
 from utils.dataset_manifest.core import VideoManifestValidator
 from utils.dataset_manifest.utils import detect_related_images
@@ -302,12 +302,12 @@ def _create_thread(tid, data, isImport=False):
                 db_data.start_frame = 0
                 data['stop_frame'] = None
                 db_data.frame_filter = ''
-            if isImport and media_type != 'video':
+            if isImport and media_type != 'video' and db_data.storage_method == models.StorageMethodChoice.CACHE:
                 # we should sort media_files according to the manifest content sequence
                 manifest = ImageManifestManager(db_data.get_manifest_path())
                 manifest.set_index()
                 sorted_media_files = []
-                for idx in range(db_data.start_frame, len(media_files)):
+                for idx in range(len(media_files)):
                     properties = manifest[manifest_index(idx)]
                     image_name = properties.get('name', None)
                     image_extension = properties.get('extension', None)
@@ -315,11 +315,16 @@ def _create_thread(tid, data, isImport=False):
                     full_image_path = f"{image_name}{image_extension}" if image_name and image_extension else None
                     if full_image_path and full_image_path in media_files:
                         sorted_media_files.append(full_image_path)
-                media_files = sorted_media_files
-                data['sorting_method'] = SortingMethod.PREDEFINED
+                media_files = sorted_media_files.copy()
+                del sorted_media_files
+                data['sorting_method'] = models.SortingMethod.PREDEFINED
             source_paths=[os.path.join(upload_dir, f) for f in media_files]
-            if manifest_file and data['sorting_method'] == SortingMethod.RANDOM:
+            if manifest_file and not isImport and data['sorting_method'] in {models.SortingMethod.RANDOM, models.SortingMethod.PREDEFINED}:
                 raise Exception("It isn't supported to upload manifest file and use random sorting")
+            if isImport and db_data.storage_method == models.StorageMethodChoice.FILE_SYSTEM and \
+                    data['sorting_method'] in {models.SortingMethod.RANDOM, models.SortingMethod.PREDEFINED}:
+                raise Exception("It isn't supported to import the task that was created without cache but with random/predefined sorting")
+
             if media_type in {'archive', 'zip'} and db_data.storage == models.StorageChoice.SHARE:
                 source_paths.append(db_data.get_upload_dirname())
                 upload_dir = db_data.get_upload_dirname()

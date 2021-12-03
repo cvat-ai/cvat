@@ -14,11 +14,13 @@ from contextlib import closing
 
 import av
 import numpy as np
+from natsort import os_sorted
 from pyunpack import Archive
 from PIL import Image, ImageFile
+from random import shuffle
 import open3d as o3d
-from cvat.apps.engine.utils import rotate_image, sort, SortingMethod
-from cvat.apps.engine.models import DimensionType
+from cvat.apps.engine.utils import rotate_image
+from cvat.apps.engine.models import DimensionType, SortingMethod
 
 # fixes: "OSError:broken data stream" when executing line 72 while loading images downloaded from the web
 # see: https://stackoverflow.com/questions/42462431/oserror-broken-data-stream-when-reading-image-file
@@ -46,6 +48,19 @@ def files_to_ignore(directory):
     if not any(ignore_file in directory for ignore_file in ignore_files):
         return True
     return False
+
+def sort(images, sorting_method=SortingMethod.LEXICOGRAPHICAL, func=None):
+    if sorting_method == SortingMethod.LEXICOGRAPHICAL:
+        return sorted(images, key=func)
+    elif sorting_method == SortingMethod.NATURAL:
+        return os_sorted(images, key=func)
+    elif sorting_method == SortingMethod.PREDEFINED:
+        return images
+    elif sorting_method == SortingMethod.RANDOM:
+        shuffle(images)
+        return images
+    else:
+        raise NotImplementedError()
 
 class IMediaReader(ABC):
     def __init__(self, source_path, step, start, stop, dimension):
