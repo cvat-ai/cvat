@@ -28,6 +28,10 @@ class CLI():
         url = self.api.tasks_id_data(task_id)
         data = {}
         files = None
+        '''
+        for i, f in enumerate(resources):
+            print(i, f)
+        '''
         if resource_type == ResourceType.LOCAL:
             files = {'client_files[{}]'.format(i): open(f, 'rb') for i, f in enumerate(resources)}
         elif resource_type == ResourceType.REMOTE:
@@ -67,6 +71,30 @@ class CLI():
                     log.info('{id},{name},{status}'.format(**r))
             if not response_json['next']:
                 log.info(json.dumps(json_data_list, indent=4))
+                return json_data_list
+            page += 1
+            url = self.api.tasks_page(page)
+            response = self.session.get(url)
+            response.raise_for_status()
+        return json_data_list
+    def old_tasks_list(self, use_json_output, **kwargs):
+        """ List all tasks in either basic or JSON format. """
+        url = self.api.tasks
+        response = self.session.get(url)
+        response.raise_for_status()
+        output = []
+        page = 1
+        json_data_list = []
+        while True:
+            response_json = response.json()
+            output += response_json['results']
+            for r in response_json['results']:
+                if use_json_output:
+                    json_data_list.append(r)
+                else:
+                    log.info('{id},{name},{status}'.format(**r))
+            if not response_json['next']:
+                #log.info(json.dumps(json_data_list, indent=4))
                 return output
             page += 1
             url = self.api.tasks_page(page)
@@ -98,7 +126,10 @@ class CLI():
         response_json = response.json()
         log.info('Created task ID: {id} NAME: {name}'.format(**response_json))
         task_id = response_json['id']
-        self.tasks_data(task_id, resource_type, resources, **kwargs)
+        r = []
+        for f in resources[0].split(','):
+            r.append(f.lstrip(" ").replace("'", "").replace("[", "").replace("]", ""))
+        self.tasks_data(task_id, resource_type, r, **kwargs)
 
         if annotation_path != '':
             url = self.api.tasks_id_status(task_id)
@@ -107,6 +138,7 @@ class CLI():
 
             log.info('Awaiting data compression before uploading annotations...')
             while response_json['state'] != 'Finished':
+                print(url)
                 sleep(completion_verification_period)
                 response = self.session.get(url)
                 response_json = response.json()
@@ -115,7 +147,7 @@ class CLI():
                                                             response_json['state'],
                                                             response_json['message'])
                 log.info(logger_string)
-
+            
             self.tasks_upload(task_id, annotation_format, annotation_path, **kwargs)
         if dataset_repository_url:
             response = self.session.post(

@@ -42,5 +42,30 @@ def main():
             log.critical(e)
 
 
+def run(agrs):
+    actions = {
+        'create': CLI.tasks_create,
+        'delete': CLI.tasks_delete,
+        'ls': CLI.tasks_list,
+        'frames': CLI.tasks_frame,
+        'dump': CLI.tasks_dump,
+        'upload': CLI.tasks_upload,
+        'export': CLI.tasks_export,
+        'import': CLI.tasks_import,
+    }
+    args = parser.parse_args(agrs)
+    print(args)
+    config_log(args.loglevel)
+    with requests.Session() as session:
+        api = CVAT_API_V1('%s:%s' % (args.server_host, args.server_port), args.https)
+        cli = CLI(session, api, args.auth)
+        try:
+            actions[args.action](cli, **args.__dict__)
+        except (requests.exceptions.HTTPError,
+                requests.exceptions.ConnectionError,
+                requests.exceptions.RequestException) as e:
+            log.critical(e)
+
+
 if __name__ == '__main__':
     main()
