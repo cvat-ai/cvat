@@ -349,6 +349,9 @@ const tasksDummyData = {
             updated_date: '2019-09-05T14:04:07.569344Z',
             overlap: 0,
             segment_size: 0,
+            dimension: '2d',
+            data_compressed_chunk_type: 'imageset',
+            data_chunk_size: 1,
             status: 'annotation',
             labels: [
                 {
@@ -395,6 +398,9 @@ const tasksDummyData = {
             updated_date: '2019-07-16T15:51:29.142871+03:00',
             overlap: 0,
             segment_size: 0,
+            dimension: '2d',
+            data_compressed_chunk_type: 'imageset',
+            data_chunk_size: 1,
             status: 'annotation',
             labels: [
                 {
@@ -446,6 +452,9 @@ const tasksDummyData = {
             updated_date: '2019-07-12T16:43:58.904892+03:00',
             overlap: 5,
             segment_size: 500,
+            dimension: '2d',
+            data_compressed_chunk_type: 'imageset',
+            data_chunk_size: 1,
             status: 'annotation',
             labels: [
                 {
@@ -791,7 +800,9 @@ const tasksDummyData = {
             updated_date: '2019-05-16T13:08:00.621797+03:00',
             overlap: 5,
             segment_size: 5000,
-            flipped: false,
+            dimension: '2d',
+            data_compressed_chunk_type: 'imageset',
+            data_chunk_size: 1,
             status: 'annotation',
             labels: [
                 {
@@ -1009,7 +1020,9 @@ const tasksDummyData = {
             updated_date: '2019-05-15T16:58:27.992785+03:00',
             overlap: 5,
             segment_size: 0,
-            flipped: false,
+            dimension: '2d',
+            data_compressed_chunk_type: 'imageset',
+            data_chunk_size: 1,
             status: 'annotation',
             labels: [
                 {
@@ -1212,7 +1225,9 @@ const tasksDummyData = {
             updated_date: '2019-05-15T11:20:55.770587+03:00',
             overlap: 0,
             segment_size: 0,
-            flipped: false,
+            dimension: '2d',
+            data_compressed_chunk_type: 'imageset',
+            data_chunk_size: 1,
             status: 'annotation',
             labels: [
                 {

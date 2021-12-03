@@ -25,8 +25,8 @@ describe('Feature: get a list of jobs', () => {
             expect(el).toBeInstanceOf(Job);
         }
 
-        expect(result[0].task.id).toBe(3);
-        expect(result[0].task).toBe(result[1].task);
+        expect(result[0].taskId).toBe(3);
+        expect(result[0].taskId).toBe(result[1].taskId);
     });
 
     test('get jobs by an unknown task id', async () => {

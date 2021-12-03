@@ -166,11 +166,19 @@ const config = require('./config');
 
             if ('taskID' in filter) {
                 const [task] = await serverProxy.tasks.get({ id: filter.taskID });
-                return new Task(task).jobs;
+                if (task) {
+                    return new Task(task).jobs;
+                }
+
+                return [];
             }
 
             const job = await serverProxy.jobs.get(filter.jobID);
-            return [new Job(job)];
+            if (job) {
+                return [new Job(job)];
+            }
+
+            return [];
         };
 
         cvat.tasks.get.implementation = async (filter) => {

@@ -218,6 +218,12 @@ class ServerProxy {
                             copy.start_frame = segment.start_frame;
                             copy.stop_frame = segment.stop_frame;
                             copy.task_id = task.id;
+                            copy.dimension = task.dimension;
+                            copy.data_compressed_chunk_type = task.data_compressed_chunk_type;
+                            copy.data_chunk_size = task.data_chunk_size;
+                            copy.bug_tracker = task.bug_tracker;
+                            copy.mode = task.mode;
+                            copy.labels = task.labels;
 
                             acc.push(copy);
                         }
