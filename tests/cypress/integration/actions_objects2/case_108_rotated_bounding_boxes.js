@@ -49,10 +49,12 @@ context('Rotated bounding boxes.', () => {
 
     function testCompareRotate(shape, toFrame) {
         for (let frame = 8; frame >= toFrame; frame--) {
-            cy.get(shape).invoke('css', 'transform').then(($transform) => {
+            cy.document().then((doc) => {
+                const shapeTranformMatrix = doc.getElementById(shape).getCTM();
                 cy.goToPreviousFrame(frame);
-                cy.get(shape).invoke('css', 'transform').then(($transform2) => {
-                    expect($transform).not.eq($transform2);
+                cy.document().then((doc2) => {
+                    const shapeTranformMatrix2 = doc2.getElementById(shape).getCTM();
+                    expect(shapeTranformMatrix).not.deep.eq(shapeTranformMatrix2);
                 });
             });
         }
@@ -77,11 +79,13 @@ context('Rotated bounding boxes.', () => {
 
         it('Check interpolation, merging/splitting rotated shapes.', () => {
             // Check track roration on all frames
-            cy.get('#cvat_canvas_shape_2').invoke('css', 'transform').then((shape2) => {
+            cy.document().then((doc) => {
+                const shapeTranformMatrix = doc.getElementById('cvat_canvas_shape_2').getCTM();
                 for (let frame = 1; frame < 10; frame++) {
                     cy.goToNextFrame(frame);
-                    cy.get('#cvat_canvas_shape_2').invoke('css', 'transform').then((shape2Next) => {
-                        expect(shape2).to.be.eq(shape2Next);
+                    cy.document().then((docNext) => {
+                        const nextShapeTranformMatrix = docNext.getElementById('cvat_canvas_shape_2').getCTM();
+                        expect(nextShapeTranformMatrix).to.deep.eq(shapeTranformMatrix);
                     });
                 }
             });
@@ -89,7 +93,7 @@ context('Rotated bounding boxes.', () => {
             testShapeRotate('#cvat_canvas_shape_2', 350, 250, '91.9°');
 
             // Comparison of the values of the shape attribute of the current frame with the previous frame
-            testCompareRotate('#cvat_canvas_shape_2', 0);
+            testCompareRotate('cvat_canvas_shape_2', 0);
 
             // Merge shapes
             cy.goCheckFrameNumber(0);
@@ -112,7 +116,7 @@ context('Rotated bounding boxes.', () => {
             testShapeRotate('#cvat_canvas_shape_4', 350, 250, '18.5°');
 
             // Comparison of the values of the shape attribute of the current frame with the previous frame
-            testCompareRotate('#cvat_canvas_shape_4', 2);
+            testCompareRotate('cvat_canvas_shape_4', 2);
 
             cy.goCheckFrameNumber(3);
             // Split tracks
