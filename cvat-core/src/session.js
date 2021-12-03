@@ -178,11 +178,10 @@
                         const result = await PluginRegistry.apiWrapper.call(this, prototype.frames.preview);
                         return result;
                     },
-                    async contextImage(taskId, frameId) {
+                    async contextImage(frameId) {
                         const result = await PluginRegistry.apiWrapper.call(
                             this,
                             prototype.frames.contextImage,
-                            taskId,
                             frameId,
                         );
                         return result;
@@ -1858,6 +1857,7 @@
 
         const frameData = await getFrame(
             this.taskId,
+            this.id,
             this.dataChunkSize,
             this.dataChunkType,
             this.mode,
@@ -2067,8 +2067,8 @@
         return result;
     };
 
-    Job.prototype.frames.contextImage.implementation = async function (taskId, frameId) {
-        const result = await getContextImage(taskId, frameId);
+    Job.prototype.frames.contextImage.implementation = async function (frameId) {
+        const result = await getContextImage(this.taskId, this.id, frameId);
         return result;
     };
 
@@ -2189,6 +2189,7 @@
 
         const result = await getFrame(
             this.id,
+            null,
             this.dataChunkSize,
             this.dataChunkType,
             this.mode,

@@ -871,12 +871,12 @@
                 return response.data;
             }
 
-            async function getImageContext(tid, frame) {
+            async function getImageContext(jid, frame) {
                 const { backendAPI } = config;
 
                 let response = null;
                 try {
-                    response = await Axios.get(`${backendAPI}/tasks/${tid}/data`, {
+                    response = await Axios.get(`${backendAPI}/jobs/${jid}/data`, {
                         params: {
                             quality: 'original',
                             type: 'context_image',
@@ -892,12 +892,14 @@
                 return response.data;
             }
 
-            async function getData(tid, chunk) {
+            async function getData(tid, jid, chunk) {
                 const { backendAPI } = config;
+
+                const url = jid === null ? `tasks/${tid}/data` : `jobs/${jid}/data`;
 
                 let response = null;
                 try {
-                    response = await workerAxios.get(`${backendAPI}/tasks/${tid}/data`, {
+                    response = await workerAxios.get(`${backendAPI}/${url}`, {
                         params: {
                             ...enableOrganization(),
                             quality: 'compressed',

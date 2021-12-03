@@ -1647,7 +1647,7 @@ export function getContextImageAsync(): ThunkAction {
                 payload: {},
             });
 
-            const contextImageData = await job.frames.contextImage(job.taskId, frameNumber);
+            const contextImageData = await job.frames.contextImage(frameNumber);
             dispatch({
                 type: AnnotationActionTypes.GET_CONTEXT_IMAGE_SUCCESS,
                 payload: { contextImageData },
