@@ -11,12 +11,11 @@ jest.mock('../../src/server-proxy', () => {
 // Initialize api
 window.cvat = require('../../src/api');
 
-const { Task } = require('../../src/session');
 const { Project } = require('../../src/project');
 
 describe('Feature: get projects', () => {
     test('get all projects', async () => {
-        const result = await window.cvat.projects.get({ withoutTasks: false });
+        const result = await window.cvat.projects.get();
         expect(Array.isArray(result)).toBeTruthy();
         expect(result).toHaveLength(2);
         for (const el of result) {
@@ -33,8 +32,8 @@ describe('Feature: get projects', () => {
         expect(result).toHaveLength(1);
         expect(result[0]).toBeInstanceOf(Project);
         expect(result[0].id).toBe(2);
-        expect(result[0].tasks).toHaveLength(1);
-        expect(result[0].tasks[0]).toBeInstanceOf(Task);
+        // eslint-disable-next-line no-underscore-dangle
+        expect(result[0]._internalData.task_ids).toHaveLength(1);
     });
 
     test('get a project by an unknown id', async () => {

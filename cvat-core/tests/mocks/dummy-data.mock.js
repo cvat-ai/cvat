@@ -2551,10 +2551,31 @@ const frameMetaDummyData = {
 };
 
 const cloudStoragesDummyData = {
-    count: 2,
+    count: 3,
     next: null,
     previous: null,
     results: [
+        {
+            id: 3,
+            owner: {
+                url: 'http://localhost:7000/api/v1/users/1',
+                id: 1,
+                username: 'maya',
+                first_name: '',
+                last_name: ''
+            },
+            manifests: [
+                'manifest.jsonl'
+            ],
+            provider_type: 'GOOGLE_CLOUD_STORAGE',
+            resource: 'gcsbucket',
+            display_name: 'Demo GCS',
+            created_date: '2021-09-01T09:29:47.094244Z',
+            updated_date: '2021-09-01T09:29:47.103264Z',
+            credentials_type: 'KEY_FILE_PATH',
+            specific_attributes: '',
+            description: 'It is first google cloud storage'
+        },
         {
             id: 2,
             owner: {

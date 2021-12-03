@@ -17,6 +17,11 @@ In tab `Player` you can:
 - `Reset zoom` Show every image in full size or zoomed out like previous
   (it is enabled by default for interpolation mode and disabled for annotation mode).
 - `Rotate all images` checkbox — switch the rotation of all frames or an individual frame.
+- `Smooth image` checkbox — smooth image when zoom-in it.
+
+  |        _smoothed_         |        _pixelized_         |
+  |---------------------------|----------------------------|
+  | ![](/images/smoothed.jpg) | ![](/images/pixelized.jpg) |
 
 ---
 
