@@ -177,7 +177,7 @@ class JobWriteSerializer(serializers.ModelSerializer):
                 status = models.StatusChoice.VALIDATION
 
             validated_data['status'] = status
-            if not state:
+            if stage != instance.stage and not state:
                 validated_data['state'] = models.StateChoice.NEW
 
         assignee = validated_data.get('assignee')
