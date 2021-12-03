@@ -34,7 +34,6 @@
                 key: undefined,
                 secret_key: undefined,
                 session_token: undefined,
-                key_file_path: undefined,
                 key_file: undefined,
                 specific_attributes: undefined,
                 owner: undefined,
@@ -153,21 +152,6 @@
                         set: (value) => {
                             validateNotEmptyString(value);
                             data.session_token = value;
-                        },
-                    },
-                    /**
-                     * Key file path
-                     * @name keyFilePath
-                     * @type {string}
-                     * @memberof module:API.cvat.classes.CloudStorage
-                     * @instance
-                     * @throws {module:API.cvat.exceptions.ArgumentError}
-                     */
-                    keyFilePath: {
-                        get: () => data.key_file_path,
-                        set: (value) => {
-                            validateNotEmptyString(value);
-                            data.key_file_path = value;
                         },
                     },
                     /**
@@ -431,10 +415,6 @@
 
             if (cloudStorageInstance.token) {
                 data.session_token = cloudStorageInstance.token;
-            }
-
-            if (cloudStorageInstance.keyFilePath) {
-                data.key_file_path = cloudStorageInstance.keyFilePath;
             }
 
             if (cloudStorageInstance.keyFile) {
