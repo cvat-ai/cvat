@@ -111,6 +111,7 @@ const defaultState: NotificationsState = {
             reopeningIssue: null,
             resolvingIssue: null,
             submittingReview: null,
+            deletingIssue: null,
         },
         predictor: {
             prediction: null,
@@ -1164,6 +1165,21 @@ export default function (state = defaultState, action: AnyAction): Notifications
                 },
             };
         }
+        case ReviewActionTypes.REMOVE_ISSUE_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    review: {
+                        ...state.errors.review,
+                        deletingIssue: {
+                            message: 'Could not remove issue from the server',
+                            reason: action.payload.error.toString(),
+                        },
+                    },
+                },
+            };
+        }
         case NotificationsActionType.RESET_ERRORS: {
             return {
                 ...state,
@@ -1269,9 +1285,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         ...state.errors.cloudStorages,
                         deleting: {
                             message:
-                                'Could not delete ' +
-                                `<a href="/cloudstorages/${cloudStorageID}" target="_blank">
-                                cloud storage ${cloudStorageID}</a>`,
+                                `Could not delete cloud storage ${cloudStorageID}`,
                             reason: action.payload.error.toString(),
                             className: 'cvat-notification-notice-delete-cloud-storage-failed',
                         },

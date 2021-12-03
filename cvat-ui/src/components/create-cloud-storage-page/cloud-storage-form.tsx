@@ -19,7 +19,7 @@ import Tooltip from 'antd/lib/tooltip';
 import { CombinedState, CloudStorage } from 'reducers/interfaces';
 import { createCloudStorageAsync, updateCloudStorageAsync } from 'actions/cloud-storage-actions';
 import { ProviderType, CredentialsType } from 'utils/enums';
-import { DeleteOutlined, UploadOutlined } from '@ant-design/icons';
+import { QuestionCircleOutlined, UploadOutlined } from '@ant-design/icons';
 import Upload, { RcFile } from 'antd/lib/upload';
 import { Space } from 'antd';
 import { AzureProvider, S3Provider, GoogleCloudProvider } from '../../icons';
@@ -31,8 +31,8 @@ export interface Props {
     cloudStorage?: CloudStorage;
 }
 
-type CredentialsFormNames = 'key' | 'secret_key' | 'account_name' | 'session_token' | 'key_file_path';
-type CredentialsCamelCaseNames = 'key' | 'secretKey' | 'accountName' | 'sessionToken' | 'keyFilePath';
+type CredentialsFormNames = 'key' | 'secret_key' | 'account_name' | 'session_token';
+type CredentialsCamelCaseNames = 'key' | 'secretKey' | 'accountName' | 'sessionToken';
 
 interface CloudStorageForm {
     credentials_type: CredentialsType;
@@ -44,7 +44,6 @@ interface CloudStorageForm {
     key?: string;
     secret_key?: string;
     SAS_token?: string;
-    key_file_path?: string;
     key_file?: File;
     description?: string;
     region?: string;
@@ -52,6 +51,8 @@ interface CloudStorageForm {
     project_id?: string;
     manifests: string[];
 }
+
+const { Dragger } = Upload;
 
 export default function CreateCloudStorageForm(props: Props): JSX.Element {
     const { cloudStorage } = props;
@@ -76,21 +77,18 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
         sessionToken: 'X'.repeat(300),
         key: 'X'.repeat(20),
         secretKey: 'X'.repeat(40),
-        keyFilePath: 'X'.repeat(10),
+        keyFile: new File([], 'fakeKey.json'),
     };
 
     const [keyVisibility, setKeyVisibility] = useState(false);
     const [secretKeyVisibility, setSecretKeyVisibility] = useState(false);
     const [sessionTokenVisibility, setSessionTokenVisibility] = useState(false);
     const [accountNameVisibility, setAccountNameVisibility] = useState(false);
-    const [keyFilePathVisibility, setKeyFilePathVisibility] = useState(false);
 
     const [manifestNames, setManifestNames] = useState<string[]>([]);
 
-    const [keyFilePathIsDisabled, setKeyFilePathIsDisabled] = useState(false);
-    const [keyFileIsDisabled, setKeyFileIsDisabled] = useState(false);
-
     const [uploadedKeyFile, setUploadedKeyFile] = useState<File | null>(null);
+    const [isFakeKeyFileAttached, setIsFakeKeyFileAttached] = useState(!!cloudStorage);
 
     function initializeFields(): void {
         setManifestNames(cloudStorage.manifests);
@@ -113,7 +111,7 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
             fieldsValue.key = fakeCredentialsData.key;
             fieldsValue.secret_key = fakeCredentialsData.secretKey;
         } else if (cloudStorage.credentialsType === CredentialsType.KEY_FILE_PATH) {
-            fieldsValue.key_file_path = fakeCredentialsData.keyFilePath;
+            setUploadedKeyFile(fakeCredentialsData.keyFile);
         }
 
         if (cloudStorage.specificAttributes) {
@@ -142,6 +140,7 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
         } else {
             setManifestNames([]);
             setSelectedRegion(undefined);
+            setUploadedKeyFile(null);
             form.resetFields();
         }
     }
@@ -228,7 +227,7 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
 
         cloudStorageData.specific_attributes = specificAttributes.toString();
 
-        if (uploadedKeyFile) {
+        if (uploadedKeyFile && !isFakeKeyFileAttached) {
             cloudStorageData.key_file = uploadedKeyFile;
         }
 
@@ -259,9 +258,6 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
             if (cloudStorageData.session_token === fakeCredentialsData.sessionToken) {
                 delete cloudStorageData.session_token;
             }
-            if (cloudStorageData.key_file_path === fakeCredentialsData.keyFilePath) {
-                delete cloudStorageData.key_file_path;
-            }
             dispatch(updateCloudStorageAsync(cloudStorageData));
         } else {
             dispatch(createCloudStorageAsync(cloudStorageData));
@@ -274,8 +270,8 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
             secret_key: undefined,
             session_token: undefined,
             account_name: undefined,
-            key_file_path: undefined,
         });
+        setUploadedKeyFile(null);
     };
 
     const onFocusCredentialsItem = (credential: CredentialsCamelCaseNames, key: CredentialsFormNames): void => {
@@ -419,64 +415,46 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
         if (providerType === ProviderType.GOOGLE_CLOUD_STORAGE && credentialsType === CredentialsType.KEY_FILE_PATH) {
             return (
                 <Form.Item
+                    name='key_file'
                     {...internalCommonProps}
                     label={(
-                        <Tooltip title='You can specify path to key file or upload key file.
-                                If you leave these fields blank, the environment variable will be used.'
+                        <Tooltip title='You can upload a key file.
+                                If you leave this field blank, the environment variable
+                                GOOGLE_APPLICATION_CREDENTIALS will be used.'
                         >
                             Key file
+                            <Button
+                                href='https://cloud.google.com/docs/authentication/getting-started#setting_the_environment_variable'
+                                target='_blank'
+                                type='link'
+                                className='cvat-cloud-storage-help-button'
+                            >
+                                <QuestionCircleOutlined />
+                            </Button>
                         </Tooltip>
 
                     )}
                 >
                     <Space align='start' className='cvat-cloud-storage-form-item-key-file'>
-                        <Form.Item
-                            name='key_file_path'
-                            noStyle
+                        <Dragger
+                            accept='.json, application/json'
+                            multiple={false}
+                            maxCount={1}
+                            fileList={
+                                uploadedKeyFile ? [{ uid: '1', name: uploadedKeyFile.name }] : []
+                            }
+                            beforeUpload={(file: RcFile): boolean => {
+                                setIsFakeKeyFileAttached(false);
+                                setUploadedKeyFile(file);
+                                return false;
+                            }}
+                            onRemove={() => setUploadedKeyFile(null)}
                         >
-                            <Input.Password
-                                visibilityToggle={keyFilePathVisibility}
-                                onChange={(e) => {
-                                    setKeyFilePathVisibility(true);
-                                    const isDisabled = !!(e.target.value);
-                                    setKeyFileIsDisabled(isDisabled);
-                                }}
-                                onFocus={() => onFocusCredentialsItem('keyFilePath', 'key_file_path')}
-                                onBlur={() => onBlurCredentialsItem('keyFilePath', 'key_file_path', setKeyFilePathVisibility)}
-                                disabled={keyFilePathIsDisabled}
-                            />
-                        </Form.Item>
-
-                        <Tooltip title='Attach a file'>
-                            <Upload
-                                accept='.json, application/json'
-                                multiple={false}
-                                maxCount={1}
-                                showUploadList={false}
-                                beforeUpload={(file: RcFile): boolean => {
-                                    if (form.getFieldValue('key_file_path')) {
-                                        form.setFieldsValue({
-                                            key_file_path: undefined,
-                                        });
-                                    }
-                                    setKeyFilePathIsDisabled(true);
-                                    setUploadedKeyFile(file);
-                                    return false;
-                                }}
-                            >
-                                <Button icon={<UploadOutlined />} disabled={keyFileIsDisabled} />
-                            </Upload>
-                        </Tooltip>
-                        <Tooltip title='Delete an uploaded file'>
-                            <Button
-                                icon={<DeleteOutlined />}
-                                disabled={keyFileIsDisabled}
-                                onClick={() => {
-                                    setKeyFilePathIsDisabled(false);
-                                    setUploadedKeyFile(null);
-                                }}
-                            />
-                        </Tooltip>
+                            <Space>
+                                Attach a file
+                                <UploadOutlined />
+                            </Space>
+                        </Dragger>
                     </Space>
                 </Form.Item>
             );
