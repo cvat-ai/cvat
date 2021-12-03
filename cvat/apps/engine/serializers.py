@@ -799,7 +799,6 @@ class CloudStorageSerializer(serializers.ModelSerializer):
     session_token = serializers.CharField(max_length=440, allow_blank=True, required=False)
     key = serializers.CharField(max_length=20, allow_blank=True, required=False)
     secret_key = serializers.CharField(max_length=40, allow_blank=True, required=False)
-    key_file_path = serializers.CharField(max_length=64, allow_blank=True, required=False)
     key_file = serializers.FileField(required=False)
     account_name = serializers.CharField(max_length=24, allow_blank=True, required=False)
     manifests = ManifestSerializer(many=True, default=[])
@@ -809,8 +808,7 @@ class CloudStorageSerializer(serializers.ModelSerializer):
         fields = (
             'provider_type', 'resource', 'display_name', 'owner', 'credentials_type',
             'created_date', 'updated_date', 'session_token', 'account_name', 'key',
-            'secret_key', 'key_file_path', 'key_file', 'specific_attributes',
-            'description', 'id', 'manifests',
+            'secret_key', 'key_file', 'specific_attributes', 'description', 'id', 'manifests',
         )
         read_only_fields = ('created_date', 'updated_date', 'owner')
 
@@ -828,8 +826,6 @@ class CloudStorageSerializer(serializers.ModelSerializer):
         if provider_type == models.CloudProviderChoice.AZURE_CONTAINER:
             if not attrs.get('account_name', ''):
                 raise serializers.ValidationError('Account name for Azure container was not specified')
-        if attrs.get('key_file', '') and attrs.get('key_file_path', ''):
-            raise serializers.ValidationError('Should be specified key file or key file path')
         return attrs
 
     def create(self, validated_data):
@@ -850,7 +846,7 @@ class CloudStorageSerializer(serializers.ModelSerializer):
             key=validated_data.pop('key', ''),
             secret_key=validated_data.pop('secret_key', ''),
             session_token=validated_data.pop('session_token', ''),
-            key_file_path=validated_data.pop('key_file_path', '') or temporary_file,
+            key_file_path=temporary_file,
             credentials_type = validated_data.get('credentials_type')
         )
         details = {
@@ -936,7 +932,6 @@ class CloudStorageSerializer(serializers.ModelSerializer):
             with NamedTemporaryFile(mode='wb', prefix='cvat', delete=False) as temp_key:
                 temp_key.write(key_file.read())
                 temporary_file = temp_key.name
-            # pair (key_file, key_file_path) isn't supported by server, so only one value may be specified
             credentials_dict['key_file_path'] = temporary_file
             key_file.close()
             del key_file
