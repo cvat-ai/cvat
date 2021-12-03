@@ -500,3 +500,6 @@ CORS_ALLOW_HEADERS = [
     'tus-version',
     'tus-resumable',
 ]
+
+TUS_MAX_FILE_SIZE = 26843545600 # 25gb
+TUS_DEFAULT_CHUNK_SIZE = 104857600  # 100 mb

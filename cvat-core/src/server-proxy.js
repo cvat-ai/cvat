@@ -683,9 +683,9 @@
                         return fileGroups;
                     }, [{ files: [], size: 0 }]);
                     const totalBulks = fileBulks.length;
-                    let currentChunkNumber = 1;
-                    while (currentChunkNumber <= totalBulks) {
-                        for (const [idx, element] of fileBulks[currentChunkNumber - 1].files.entries()) {
+                    let currentChunkNumber = 0;
+                    while (currentChunkNumber < totalBulks) {
+                        for (const [idx, element] of fileBulks[currentChunkNumber].files.entries()) {
                             taskData.append(`client_files[${idx}]`, element);
                         }
                         onUpdate(`The data are being uploaded to the server
@@ -693,10 +693,10 @@
                         await Axios.post(`${backendAPI}/tasks/${taskId}/data/append`, taskData, {
                             proxy: config.proxy,
                         });
-                        for (let i = 0; i < fileBulks[currentChunkNumber - 1].files.length; i++) {
+                        for (let i = 0; i < fileBulks[currentChunkNumber].files.length; i++) {
                             taskData.delete(`client_files[${i}]`);
                         }
-                        totalSentSize += fileBulks[currentChunkNumber - 1].size;
+                        totalSentSize += fileBulks[currentChunkNumber].size;
                         currentChunkNumber++;
                     }
                 }

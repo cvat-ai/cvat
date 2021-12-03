@@ -6,7 +6,7 @@ import os
 import base64
 import uuid
 
-from django.http import HttpResponse
+from django.conf import settings
 from django.core.cache import cache
 from rest_framework import status
 from rest_framework.decorators import action
@@ -19,6 +19,7 @@ class TusFile:
     def __init__(self, file_id, upload_dir):
         self.file_id = file_id
         self.upload_dir = upload_dir
+        self.file_path = os.path.join(self.upload_dir, self.file_id)
         self.filename = cache.get("tus-uploads/{}/filename".format(file_id))
         self.file_size = int(cache.get("tus-uploads/{}/file_size".format(file_id)))
         self.metadata = cache.get("tus-uploads/{}/metadata".format(file_id))
@@ -31,8 +32,7 @@ class TusFile:
             file.write(b'\0')
 
     def write_chunk(self, chunk):
-        file_path = os.path.join(self.upload_dir, self.file_id)
-        with open(file_path, 'r+b') as file:
+        with open(self.file_path, 'r+b') as file:
             file.seek(chunk.offset)
             file.write(chunk.content)
         self.offset = cache.incr("tus-uploads/{}/offset".format(self.file_id), chunk.size)
@@ -45,7 +45,7 @@ class TusFile:
         file_path = os.path.join(self.upload_dir, self.filename)
         file_exists = os.path.lexists(os.path.join(self.upload_dir, self.filename))
         if file_exists:
-            raise FileExistsError
+            raise FileExistsError("File {} is already uploaded".format(self.filename))
         os.rename(file_id_path, file_path)
 
     def clean(self):
@@ -79,14 +79,16 @@ class TusChunk:
     def __init__(self, request):
         self.META = request.META
         self.offset = int(request.META.get("HTTP_UPLOAD_OFFSET", 0))
-        self.size = int(request.META.get("CONTENT_LENGTH", 102400))
+        self.size = int(request.META.get("CONTENT_LENGTH", settings.TUS_DEFAULT_CHUNK_SIZE))
         self.content = request.body
 
+# This upload mixin is implemented using tus
+# tus is open protocol for file uploads (see more https://tus.io/)
 class UploadMixin(object):
     _tus_api_version = '1.0.0'
     _tus_api_version_supported = ['1.0.0']
     _tus_api_extensions = []
-    _tus_max_file_size = '26843545600' # 25gb
+    _tus_max_file_size = str(settings.TUS_MAX_FILE_SIZE)
     _base_tus_headers = {
         'Tus-Resumable': _tus_api_version,
         'Tus-Version': ",".join(_tus_api_version_supported),
@@ -100,8 +102,8 @@ class UploadMixin(object):
     }
     _file_id_regex = r'(?P<file_id>\b[0-9a-f]{8}\b-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-\b[0-9a-f]{12}\b)'
 
-    def _tus_response(self, extra_headers=None, *args, **kwargs):
-        response = HttpResponse(*args, **kwargs)
+    def _tus_response(self, status, data=None, extra_headers=None):
+        response = Response(data, status)
         for key, value in self._base_tus_headers.items():
             response.__setitem__(key, value)
         if extra_headers:
@@ -130,12 +132,12 @@ class UploadMixin(object):
             return self._tus_response(status=status.HTTP_204)
         else:
             if not self.can_upload():
-                return self._tus_response(reason='Adding more data is not allowed',
+                return self._tus_response(data='Adding more data is not allowed',
                     status=status.HTTP_400_BAD_REQUEST)
             metadata = self._get_metadata(request)
             filename = metadata.get('filename', '')
             if not self.validate_filename(filename):
-                return self._tus_response(status=status.HTTP_400_BAD_REQUEST, reason="File name {} is not allowed".format(filename))
+                return self._tus_response(status=status.HTTP_400_BAD_REQUEST, data="File name {} is not allowed".format(filename))
 
 
             message_id = request.META.get("HTTP_MESSAGE_ID")
@@ -144,12 +146,12 @@ class UploadMixin(object):
 
             file_exists = os.path.lexists(os.path.join(self.get_upload_dir(), filename))
             if file_exists:
-                return self._tus_response(status=status.HTTP_409_CONFLICT, reason="File with same name already exists")
+                return self._tus_response(status=status.HTTP_409_CONFLICT, data="File with same name already exists")
 
             file_size = int(request.META.get("HTTP_UPLOAD_LENGTH", "0"))
             if file_size > int(self._tus_max_file_size):
                 return self._tus_response(status=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-                        reason="File size exceeds max limit of {} bytes".format(self._tus_max_file_size))
+                        data="File size exceeds max limit of {} bytes".format(self._tus_max_file_size))
 
             tus_file = TusFile.create_file(metadata, file_size, self.get_upload_dir())
 
@@ -225,4 +227,4 @@ class UploadMixin(object):
 
     # override this to do stuff after upload
     def upload_finished(self, request):
-        return Response(status=status.HTTP_200_OK)
+        raise NotImplementedError('You need to implement upload_finished in UploadMixin')

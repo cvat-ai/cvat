@@ -613,7 +613,7 @@ class TaskViewSet(UploadMixin, auth.TaskGetQuerySetMixin, viewsets.ModelViewSet)
         task_data = db_task.data
         serializer = DataSerializer(task_data, data=request.data)
         serializer.is_valid(raise_exception=True)
-        data = {k: v for k, v in serializer.validated_data.items()}
+        data = dict(serializer.validated_data.items())
         uploaded_files = task_data.get_uploaded_files()
         uploaded_files.extend(data.get('client_files'))
         serializer.validated_data.update({'client_files': uploaded_files})
@@ -672,7 +672,7 @@ class TaskViewSet(UploadMixin, auth.TaskGetQuerySetMixin, viewsets.ModelViewSet)
                     status=status.HTTP_400_BAD_REQUEST)
             serializer = DataSerializer(task_data, data=request.data)
             serializer.is_valid(raise_exception=True)
-            data = {k: v for k, v in serializer.validated_data.items()}
+            data = dict(serializer.validated_data.items())
             if data.get('client_files', None) is not None:
                 return self.upload_finished(request)
             return Response(status=status.HTTP_202_ACCEPTED)
