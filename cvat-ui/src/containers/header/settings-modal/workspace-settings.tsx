@@ -14,6 +14,8 @@ import {
     switchAutomaticBordering,
     switchIntelligentPolygonCrop,
     changeDefaultApproxPolyAccuracy,
+    switchTextFontSize,
+    switchTextPosition,
 } from 'actions/settings-actions';
 
 import { CombinedState } from 'reducers/interfaces';
@@ -29,6 +31,8 @@ interface StateToProps {
     defaultApproxPolyAccuracy: number;
     automaticBordering: boolean;
     intelligentPolygonCrop: boolean;
+    textFontSize: number;
+    textPosition: 'auto' | 'center';
 }
 
 interface DispatchToProps {
@@ -40,6 +44,8 @@ interface DispatchToProps {
     onSwitchAutomaticBordering(enabled: boolean): void;
     onSwitchIntelligentPolygonCrop(enabled: boolean): void;
     onChangeDefaultApproxPolyAccuracy(approxPolyAccuracy: number): void;
+    onChangeTextFontSize(fontSize: number): void;
+    onChangeTextPosition(position: 'auto' | 'center'): void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -53,6 +59,8 @@ function mapStateToProps(state: CombinedState): StateToProps {
         automaticBordering,
         intelligentPolygonCrop,
         defaultApproxPolyAccuracy,
+        textFontSize,
+        textPosition,
     } = workspace;
 
     return {
@@ -64,6 +72,8 @@ function mapStateToProps(state: CombinedState): StateToProps {
         automaticBordering,
         intelligentPolygonCrop,
         defaultApproxPolyAccuracy,
+        textFontSize,
+        textPosition,
     };
 }
 
@@ -92,6 +102,12 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         },
         onChangeDefaultApproxPolyAccuracy(threshold: number): void {
             dispatch(changeDefaultApproxPolyAccuracy(threshold));
+        },
+        onChangeTextFontSize(fontSize: number): void {
+            dispatch(switchTextFontSize(fontSize));
+        },
+        onChangeTextPosition(position: 'auto' | 'center'): void {
+            dispatch(switchTextPosition(position));
         },
     };
 }

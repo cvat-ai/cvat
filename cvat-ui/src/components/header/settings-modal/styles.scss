@@ -29,11 +29,12 @@
 .cvat-workspace-settings-show-text-always,
 .cvat-workspace-settings-show-interpolated,
 .cvat-workspace-settings-approx-poly-threshold,
-.cvat-workspace-settings-aam-zoom-margin {
-    margin-bottom: 25px;
+.cvat-workspace-settings-aam-zoom-margin,
+.cvat-workspace-settings-text-settings {
+    margin-bottom: $grid-unit-size * 3;
 
     > div:first-child {
-        margin-bottom: 10px;
+        margin-bottom: $grid-unit-size;
     }
 }
 
@@ -48,7 +49,7 @@
 .cvat-player-settings-canvas-background,
 .cvat-workspace-settings-aam-zoom-margin,
 .cvat-workspace-settings-auto-save-interval {
-    margin-bottom: 25px;
+    margin-bottom: $grid-unit-size * 3;
 }
 
 .cvat-player-settings-step,
