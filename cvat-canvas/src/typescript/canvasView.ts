@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
+import polylabel from 'polylabel';
 import * as SVG from 'svg.js';
 
 import 'svg.draggable.js';
@@ -683,11 +684,13 @@ export class CanvasViewImpl implements CanvasView, Listener {
             for (const state of deleted) {
                 if (state.clientID in this.svgTexts) {
                     this.svgTexts[state.clientID].remove();
+                    delete this.svgTexts[state.clientID];
                 }
 
                 this.svgShapes[state.clientID].off('click.canvas');
                 this.svgShapes[state.clientID].remove();
                 delete this.drawnStates[state.clientID];
+                delete this.svgShapes[state.clientID];
             }
 
             this.addObjects(created);
@@ -1175,7 +1178,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 for (const i in this.drawnStates) {
                     if (!(i in this.svgTexts)) {
                         this.svgTexts[i] = this.addText(this.drawnStates[i]);
-                        this.updateTextPosition(this.svgTexts[i], this.svgShapes[i]);
                     }
                 }
             } else if (configuration.displayAllText === false && this.configuration.displayAllText) {
@@ -1187,15 +1189,25 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 }
             }
 
-            if ('smoothImage' in configuration) {
-                if (configuration.smoothImage) {
-                    this.background.classList.remove('cvat_canvas_pixelized');
-                } else {
-                    this.background.classList.add('cvat_canvas_pixelized');
-                }
+            const updateTextPosition = configuration.displayAllText !== this.configuration.displayAllText ||
+                configuration.textFontSize !== this.configuration.textFontSize ||
+                configuration.textPosition !== this.configuration.textPosition;
+
+            if (configuration.smoothImage === true) {
+                this.background.classList.remove('cvat_canvas_pixelized');
+            } else if (configuration.smoothImage === false) {
+                this.background.classList.add('cvat_canvas_pixelized');
             }
 
             this.configuration = configuration;
+            if (updateTextPosition) {
+                for (const i in this.drawnStates) {
+                    if (i in this.svgTexts) {
+                        this.updateTextPosition(this.svgTexts[i], this.svgShapes[i]);
+                    }
+                }
+            }
+
             this.activate(activeElement);
             this.editHandler.configurate(this.configuration);
             this.drawHandler.configurate(this.configuration);
@@ -2059,45 +2071,82 @@ export class CanvasViewImpl implements CanvasView, Listener {
     // Update text position after corresponding box has been moved, resized, etc.
     private updateTextPosition(text: SVG.Text, shape: SVG.Shape): void {
         if (text.node.style.display === 'none') return; // wrong transformation matrix
+        const textFontSize = this.configuration.textFontSize || consts.DEFAULT_SHAPE_TEXT_SIZE;
+        const textPosition = this.configuration.textPosition || 'auto';
+
+        text.untransform();
+        text.style({ 'font-size': textFontSize });
         const { rotation } = shape.transform();
-        let box = (shape.node as any).getBBox();
-
-        // Translate the whole box to the client coordinate system
-        const [x1, y1, x2, y2]: number[] = translateFromSVG(this.content, [
-            box.x,
-            box.y,
-            box.x + box.width,
-            box.y + box.height,
-        ]);
-
-        box = {
-            x: Math.min(x1, x2),
-            y: Math.min(y1, y2),
-            width: Math.max(x1, x2) - Math.min(x1, x2),
-            height: Math.max(y1, y2) - Math.min(y1, y2),
-        };
 
         // Find the best place for a text
-        let [clientX, clientY]: number[] = [box.x + box.width, box.y];
-        if (
-            clientX + ((text.node as any) as SVGTextElement)
-                .getBBox().width + consts.TEXT_MARGIN > this.canvas.offsetWidth
-        ) {
-            [clientX, clientY] = [box.x, box.y];
+        let [clientX, clientY, clientCX, clientCY]: number[] = [0, 0, 0, 0];
+        if (textPosition === 'center') {
+            let cx = 0;
+            let cy = 0;
+            if (shape.type === 'rect') {
+                // for rectangle finding a center is simple
+                cx = +shape.attr('x') + +shape.attr('width') / 2;
+                cy = +shape.attr('y') + +shape.attr('height') / 2;
+            } else {
+                // for polyshapes we use special algorithm
+                const points = parsePoints(pointsToNumberArray(shape.attr('points')));
+                [cx, cy] = polylabel([points.map((point) => [point.x, point.y])]);
+            }
+
+            [clientX, clientY] = translateFromSVG(this.content, [cx, cy]);
+            // center is exactly clientX, clientY
+            clientCX = clientX;
+            clientCY = clientY;
+        } else {
+            let box = (shape.node as any).getBBox();
+
+            // Translate the whole box to the client coordinate system
+            const [x1, y1, x2, y2]: number[] = translateFromSVG(this.content, [
+                box.x,
+                box.y,
+                box.x + box.width,
+                box.y + box.height,
+            ]);
+
+            clientCX = x1 + (x2 - x1) / 2;
+            clientCY = y1 + (y2 - y1) / 2;
+
+            box = {
+                x: Math.min(x1, x2),
+                y: Math.min(y1, y2),
+                width: Math.max(x1, x2) - Math.min(x1, x2),
+                height: Math.max(y1, y2) - Math.min(y1, y2),
+            };
+
+            // first try to put to the top right corner
+            [clientX, clientY] = [box.x + box.width, box.y];
+            if (
+                clientX + ((text.node as any) as SVGTextElement)
+                    .getBBox().width + consts.TEXT_MARGIN > this.canvas.offsetWidth
+            ) {
+                // if out of visible area, try to put text to top left corner
+                [clientX, clientY] = [box.x, box.y];
+            }
         }
 
-        // Translate back to text SVG
-        const [x, y, cx, cy]: number[] = translateToSVG(this.text, [
+        // Translate found coordinates to text SVG
+        const [x, y, rotX, rotY]: number[] = translateToSVG(this.text, [
             clientX + consts.TEXT_MARGIN,
             clientY + consts.TEXT_MARGIN,
-            x1 + (x2 - x1) / 2,
-            y1 + (y2 - y1) / 2,
+            clientCX,
+            clientCY,
         ]);
 
+        const textBBox = ((text.node as any) as SVGTextElement).getBBox();
         // Finally draw a text
-        text.move(x, y);
+        if (textPosition === 'center') {
+            text.move(x - textBBox.width / 2, y - textBBox.height / 2);
+        } else {
+            text.move(x, y);
+        }
+
         if (rotation) {
-            text.rotate(rotation, cx, cy);
+            text.rotate(rotation, rotX, rotY);
         }
 
         for (const tspan of (text.lines() as any).members) {
@@ -2107,6 +2156,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
     private addText(state: any): SVG.Text {
         const { undefinedAttrValue } = this.configuration;
+        const textFontSize = this.configuration.textFontSize || 12;
         const {
             label, clientID, attributes, source, descriptions,
         } = state;
@@ -2117,7 +2167,9 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
         return this.adoptedText
             .text((block): void => {
-                block.tspan(`${label.name} ${clientID} (${source})`).style('text-transform', 'uppercase');
+                block.tspan(`${label.name} ${clientID} (${source})`).style({
+                    'text-transform': 'uppercase',
+                });
                 for (const desc of descriptions) {
                     block
                         .tspan(`${desc}`)
@@ -2140,6 +2192,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 }
             })
             .move(0, 0)
+            .style({ 'font-size': textFontSize })
             .addClass('cvat_canvas_text');
     }
 
