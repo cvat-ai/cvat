@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Google Cloud Storage support in UI (<https://github.com/openvinotoolkit/cvat/pull/3919>)
 - Add project tasks paginations (<https://github.com/openvinotoolkit/cvat/pull/3910>)
 - Add remove issue button (<https://github.com/openvinotoolkit/cvat/pull/3952>)
+- Options to change font size & position of text labels on the canvas (<https://github.com/openvinotoolkit/cvat/pull/3972>)
 
 ### Changed
 - TDB

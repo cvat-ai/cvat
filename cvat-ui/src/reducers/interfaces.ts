@@ -658,6 +658,8 @@ export interface WorkspaceSettingsState {
     intelligentPolygonCrop: boolean;
     defaultApproxPolyAccuracy: number;
     toolsBlockerState: ToolsBlockerState;
+    textFontSize: number;
+    textPosition: 'auto' | 'center';
 }
 
 export interface ShapesSettingsState {
