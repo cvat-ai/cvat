@@ -126,8 +126,24 @@ class UploadMixin(object):
                     metadata[splited_metadata[0]] = ""
         return metadata
 
-    @action(detail=True, methods=['OPTIONS','POST'], url_path='data/tus/')
-    def init_tus_upload(self, request, pk):
+    def upload_data(self, request):
+        tus_request = request.headers.get('Upload-Length', None) is not None or request.method == 'OPTIONS'
+        bulk_file_upload = request.headers.get('Upload-Multiple', None) is not None
+        start_upload = request.headers.get('Upload-Start', None) is not None
+        finish_upload = request.headers.get('Upload-Finish', None) is not None
+        one_request_upload = start_upload and finish_upload
+        if one_request_upload or finish_upload:
+            return self.upload_finished(request)
+        elif start_upload:
+            return Response(status=status.HTTP_202_ACCEPTED)
+        elif tus_request:
+            return self.init_tus_upload(request)
+        elif bulk_file_upload:
+            return self.append(request)
+        else: # backward compatibility case - no upload headers were found
+            return self.upload_finished(request)
+
+    def init_tus_upload(self, request):
         if request.method == 'OPTIONS':
             return self._tus_response(status=status.HTTP_204)
         else:
@@ -159,7 +175,7 @@ class UploadMixin(object):
                 status=status.HTTP_201_CREATED,
                 extra_headers={'Location': '{}{}'.format(request.build_absolute_uri(), tus_file.file_id)})
 
-    @action(detail=True, methods=['HEAD', 'PATCH'], url_path=r'data/tus/'+_file_id_regex)
+    @action(detail=True, methods=['HEAD', 'PATCH'], url_path=r'data/'+_file_id_regex)
     def append_tus_chunk(self, request, pk, file_id):
         if request.method == 'HEAD':
             tus_file = TusFile.get_tusfile(str(file_id), self.get_upload_dir())
@@ -208,8 +224,7 @@ class UploadMixin(object):
         data = {k: v for k, v in serializer.validated_data.items()}
         return data.get('client_files', None);
 
-    @action(detail=True, methods=['POST'], url_path='data/append')
-    def append(self, request, pk):
+    def append(self, request):
         if not self.can_upload():
             return Response(data='Adding more data is not allowed',
                 status=status.HTTP_400_BAD_REQUEST)
@@ -220,10 +235,6 @@ class UploadMixin(object):
                 with open(os.path.join(upload_dir, client_file['file'].name), 'ab+') as destination:
                     destination.write(client_file['file'].read())
         return Response(status=status.HTTP_200_OK)
-
-    @action(detail=True, methods=['POST'], url_path='data/finish')
-    def finish(self, request, pk):
-        return self.upload_finished(request)
 
     # override this to do stuff after upload
     def upload_finished(self, request):

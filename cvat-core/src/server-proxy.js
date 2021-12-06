@@ -654,7 +654,7 @@
                 async function chunkUpload(taskId, file) {
                     return new Promise((resolve, reject) => {
                         const upload = new tus.Upload(file, {
-                            endpoint: `${origin}/${backendAPI}/tasks/${taskId}/data/tus/`,
+                            endpoint: `${origin}/${backendAPI}/tasks/${taskId}/data/`,
                             metadata: {
                                 filename: file.name,
                                 filetype: file.type,
@@ -704,8 +704,9 @@
                         }
                         onUpdate(`The data are being uploaded to the server
                                     ${((totalSentSize / totalSize) * 100).toFixed(2)}%`);
-                        await Axios.post(`${backendAPI}/tasks/${taskId}/data/append`, taskData, {
+                        await Axios.post(`${backendAPI}/tasks/${taskId}/data`, taskData, {
                             proxy: config.proxy,
+                            headers: { 'Upload-Multiple': true },
                         });
                         for (let i = 0; i < fileBulks[currentChunkNumber].files.length; i++) {
                             taskData.delete(`client_files[${i}]`);
@@ -719,6 +720,7 @@
                     await Axios.post(`${backendAPI}/tasks/${response.data.id}/data`,
                         taskData, {
                             proxy: config.proxy,
+                            headers: { 'Upload-Start': true },
                         });
                     for (const file of chunkFiles) {
                         await chunkUpload(response.data.id, file);
@@ -726,12 +728,11 @@
                     if (bulkFiles.length > 0) {
                         await bulkUpload(response.data.id, bulkFiles);
                     }
-                    if (chunkFiles.length > 0 || bulkFiles.length > 0) {
-                        await Axios.post(`${backendAPI}/tasks/${response.data.id}/data/finish`,
-                            taskData, {
-                                proxy: config.proxy,
-                            });
-                    }
+                    await Axios.post(`${backendAPI}/tasks/${response.data.id}/data`,
+                        taskData, {
+                            proxy: config.proxy,
+                            headers: { 'Upload-Finish': true },
+                        });
                 } catch (errorData) {
                     try {
                         await deleteTask(response.data.id);

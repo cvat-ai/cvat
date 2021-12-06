@@ -653,10 +653,10 @@ class TaskViewSet(UploadMixin, auth.TaskGetQuerySetMixin, viewsets.ModelViewSet)
                 description="A unique number value identifying chunk or frame, doesn't matter for 'preview' type"),
             ]
     )
-    @action(detail=True, methods=['POST', 'GET'])
+    @action(detail=True, methods=['OPTIONS', 'POST', 'GET'], url_path=r'data/?$')
     def data(self, request, pk):
         db_task = self.get_object() # call check_object_permissions as well
-        if request.method == 'POST':
+        if request.method == 'POST' or request.method == 'OPTIONS':
             task_data = db_task.data
             if not task_data:
                 task_data = Data.objects.create()
@@ -666,12 +666,7 @@ class TaskViewSet(UploadMixin, auth.TaskGetQuerySetMixin, viewsets.ModelViewSet)
             elif task_data.size != 0:
                 return Response(data='Adding more data is not supported',
                     status=status.HTTP_400_BAD_REQUEST)
-            serializer = DataSerializer(task_data, data=request.data)
-            serializer.is_valid(raise_exception=True)
-            data = dict(serializer.validated_data.items())
-            if data.get('client_files', None) is not None:
-                return self.upload_finished(request)
-            return Response(status=status.HTTP_202_ACCEPTED)
+            return self.upload_data(request)
         else:
             data_type = request.query_params.get('type', None)
             data_id = request.query_params.get('number', None)
