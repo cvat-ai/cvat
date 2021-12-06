@@ -12,6 +12,69 @@ const {
 
 context('Dummy Cloud storages.', { browser: '!firefox' }, () => {
     const caseId = '109';
+    const imageFolder = '../integration/actions_tasks3/assets/case_109';
+
+    function testCreateDummyStorage(dummyCS) {
+        cy.intercept('GET', 'api/v1/cloudstorages?page_size=12&page=1', dummyCS).as('createCS');
+        cy.contains('.cvat-header-button', 'Cloud Storages').should('be.visible').click();
+        cy.wait('@createCS').its('response.statusCode').should('eq', 200);
+        cy.get('.cvat-cloud-storage-item-empty-preview').should('have.length', 1);
+    }
+
+    function testCheckAndCloseNotification() {
+        // Check and close notifications
+        cy.get('.cvat-notification-notice-fetch-cloud-storage-status-failed').should('have.length', 1);
+        cy.closeNotification('.cvat-notification-notice-fetch-cloud-storage-status-failed');
+        cy.get('.cvat-notification-notice-fetch-cloud-storage-preview-failed').should('have.length', 1);
+        cy.closeNotification('.cvat-notification-notice-fetch-cloud-storage-preview-failed');
+    }
+
+    function testCSValues({
+        status, id, description, provider,
+    }) {
+        cy.get('.cvat-cloud-storage-item').should('have.length', 1);
+        cy.get('.cvat-cloud-storage-item')
+            .should('contain', `Status: ${status}`);
+        if (description) {
+            cy.get('.cvat-cloud-storage-item')
+                .should('contain', `#${id}: ${description}`);
+        }
+        if (provider) {
+            cy.get('.cvat-cloud-storage-item')
+                .should('contain', `Provider: ${provider}`);
+        }
+        if (status !== 'Error') {
+            cy.get('.cvat-cloud-storage-item-preview').should('exist');
+        }
+    }
+
+    function testCSSetStatusPreview(id, status, image) {
+        cy.intercept('GET', `api/v1/cloudstorages/${id}/status`, status).as('csStatus');
+        cy.intercept(
+            'GET',
+            `api/v1/cloudstorages/${id}/preview`,
+            { fixture: `${imageFolder}/${image}` },
+        ).as('csPreview');
+
+        cy.contains('.cvat-header-button', 'Models').should('be.visible').click();
+        cy.contains('.cvat-header-button', 'Cloud Storages').should('be.visible').click();
+
+        cy.wait('@csStatus').its('response.statusCode').should('eq', 200);
+        cy.wait('@csPreview').its('response.statusCode').should('eq', 200);
+    }
+
+    function testGoToCSUpdatePage() {
+        cy.get('.cvat-cloud-storage-item-menu-button').trigger('mousemove').trigger('mouseover');
+        cy.get('.ant-dropdown')
+            .not('.ant-dropdown-hidden')
+            .within(() => {
+                cy.contains('[role="menuitem"]', 'Update').click();
+            });
+
+        cy.get('.cvat-notification-update-info-cloud-storage').should('exist');
+
+        cy.get('.cvat-cloud-storage-form').should('be.visible');
+    }
 
     beforeEach(() => {
         cy.visit('auth/login');
@@ -24,51 +87,16 @@ context('Dummy Cloud storages.', { browser: '!firefox' }, () => {
 
     describe(`Testing case "${caseId}"`, () => {
         it('Create dummy Google cloud storage and check fields.', () => {
-            cy.intercept('GET', 'api/v1/cloudstorages?page_size=12&page=1', cloudStoragesDummyDataGoogleStorage).as('createCS');
-            cy.contains('.cvat-header-button', 'Cloud Storages').should('be.visible').click();
-            cy.wait('@createCS').its('response.statusCode').should('eq', 200);
-
-            cy.get('.cvat-cloud-storage-item-empty-preview').should('have.length', 1);
-
-            // Check and close notifications
-            cy.get('.cvat-notification-notice-fetch-cloud-storage-status-failed').should('have.length', 1);
-            cy.closeNotification('.cvat-notification-notice-fetch-cloud-storage-status-failed');
-            cy.get('.cvat-notification-notice-fetch-cloud-storage-preview-failed').should('have.length', 1);
-            cy.closeNotification('.cvat-notification-notice-fetch-cloud-storage-preview-failed');
-
-            cy.get('.cvat-cloud-storage-item')
-                .should('have.length', 1)
-                .and('contain', 'Status: Error')
-                .and('contain', '#3: Demo GCS')
-                .and('contain', 'Provider: GOOGLE_CLOUD_STORAGE');
-
-            cy.intercept('GET', 'api/v1/cloudstorages/3/status', 'NOT_FOUND').as('gcsStatus');
-            cy.intercept(
-                'GET',
-                'api/v1/cloudstorages/3/preview',
-                { fixture: '../integration/actions_tasks3/assets/case_109/preview_GOOGLE_CLOUD_STORAGE.png' },
-            ).as('gcsPreview');
-
-            cy.contains('.cvat-header-button', 'Models').should('be.visible').click();
-            cy.contains('.cvat-header-button', 'Cloud Storages').should('be.visible').click();
-
-            cy.wait('@gcsStatus').its('response.statusCode').should('eq', 200);
-            cy.wait('@gcsPreview').its('response.statusCode').should('eq', 200);
-
-            cy.get('.cvat-cloud-storage-item')
-                .and('contain', 'Status: NOT_FOUND');
-            cy.get('.cvat-cloud-storage-item-preview').should('exist');
-
-            cy.get('.cvat-cloud-storage-item-menu-button').trigger('mousemove').trigger('mouseover');
-            cy.get('.ant-dropdown')
-                .not('.ant-dropdown-hidden')
-                .within(() => {
-                    cy.contains('[role="menuitem"]', 'Update').click();
-                });
-
-            cy.get('.cvat-notification-update-info-cloud-storage').should('exist');
-
-            cy.get('.cvat-cloud-storage-form').should('be.visible');
+            testCreateDummyStorage(cloudStoragesDummyDataGoogleStorage);
+            testCheckAndCloseNotification();
+            testCSValues({
+                status: 'Error', id: 3, description: 'Demo GCS', provider: 'GOOGLE_CLOUD_STORAGE',
+            });
+            testCSSetStatusPreview(3, 'NOT_FOUND', 'preview_GOOGLE_CLOUD_STORAGE.png');
+            testCSValues({
+                status: 'NOT_FOUND',
+            });
+            testGoToCSUpdatePage();
 
             cy.get('#display_name')
                 .should('be.visible')
@@ -97,51 +125,16 @@ context('Dummy Cloud storages.', { browser: '!firefox' }, () => {
         });
 
         it('Create dummy Azure Blob Container and check fields.', () => {
-            cy.intercept('GET', 'api/v1/cloudstorages?page_size=12&page=1', cloudStoragesDummyDataAzureContainer).as('createCS');
-            cy.contains('.cvat-header-button', 'Cloud Storages').should('be.visible').click();
-            cy.wait('@createCS').its('response.statusCode').should('eq', 200);
-
-            cy.get('.cvat-cloud-storage-item-empty-preview').should('have.length', 1);
-
-            // Check and close notifications
-            cy.get('.cvat-notification-notice-fetch-cloud-storage-status-failed').should('have.length', 1);
-            cy.closeNotification('.cvat-notification-notice-fetch-cloud-storage-status-failed');
-            cy.get('.cvat-notification-notice-fetch-cloud-storage-preview-failed').should('have.length', 1);
-            cy.closeNotification('.cvat-notification-notice-fetch-cloud-storage-preview-failed');
-
-            cy.get('.cvat-cloud-storage-item')
-                .should('have.length', 1)
-                .and('contain', 'Status: Error')
-                .and('contain', '#2: Demonstration container')
-                .and('contain', 'Provider: AZURE_CONTAINER');
-
-            cy.intercept('GET', 'api/v1/cloudstorages/2/status', 'AVAILABLE').as('acStatus');
-            cy.intercept(
-                'GET',
-                'api/v1/cloudstorages/2/preview',
-                { fixture: '../integration/actions_tasks3/assets/case_109/preview_AZURE_CONTAINER.png' },
-            ).as('acPreview');
-
-            cy.contains('.cvat-header-button', 'Models').should('be.visible').click();
-            cy.contains('.cvat-header-button', 'Cloud Storages').should('be.visible').click();
-
-            cy.wait('@acStatus').its('response.statusCode').should('eq', 200);
-            cy.wait('@acPreview').its('response.statusCode').should('eq', 200);
-
-            cy.get('.cvat-cloud-storage-item')
-                .and('contain', 'Status: AVAILABLE');
-            cy.get('.cvat-cloud-storage-item-preview').should('exist');
-
-            cy.get('.cvat-cloud-storage-item-menu-button').trigger('mousemove').trigger('mouseover');
-            cy.get('.ant-dropdown')
-                .not('.ant-dropdown-hidden')
-                .within(() => {
-                    cy.contains('[role="menuitem"]', 'Update').click();
-                });
-
-            cy.get('.cvat-notification-update-info-cloud-storage').should('exist');
-
-            cy.get('.cvat-cloud-storage-form').should('be.visible');
+            testCreateDummyStorage(cloudStoragesDummyDataAzureContainer);
+            testCheckAndCloseNotification();
+            testCSValues({
+                status: 'Error', id: 2, description: 'Demonstration container', provider: 'AZURE_CONTAINER',
+            });
+            testCSSetStatusPreview(2, 'AVAILABLE', 'preview_AZURE_CONTAINER.png');
+            testCSValues({
+                status: 'AVAILABLE',
+            });
+            testGoToCSUpdatePage();
 
             cy.get('#display_name')
                 .should('be.visible')
@@ -169,51 +162,16 @@ context('Dummy Cloud storages.', { browser: '!firefox' }, () => {
         });
 
         it('Create dummy AWS S3 and check fields.', () => {
-            cy.intercept('GET', 'api/v1/cloudstorages?page_size=12&page=1', cloudStoragesDummyDataAzureBucket).as('createCS');
-            cy.contains('.cvat-header-button', 'Cloud Storages').should('be.visible').click();
-            cy.wait('@createCS').its('response.statusCode').should('eq', 200);
-
-            cy.get('.cvat-cloud-storage-item-empty-preview').should('have.length', 1);
-
-            // Check and close notifications
-            cy.get('.cvat-notification-notice-fetch-cloud-storage-status-failed').should('have.length', 1);
-            cy.closeNotification('.cvat-notification-notice-fetch-cloud-storage-status-failed');
-            cy.get('.cvat-notification-notice-fetch-cloud-storage-preview-failed').should('have.length', 1);
-            cy.closeNotification('.cvat-notification-notice-fetch-cloud-storage-preview-failed');
-
-            cy.get('.cvat-cloud-storage-item')
-                .should('have.length', 1)
-                .and('contain', 'Status: Error')
-                .and('contain', '#1: Demonstration bucket')
-                .and('contain', 'Provider: AWS_S3_BUCKET');
-
-            cy.intercept('GET', 'api/v1/cloudstorages/1/status', 'FORBIDDEN').as('awsStatus');
-            cy.intercept(
-                'GET',
-                'api/v1/cloudstorages/1/preview',
-                { fixture: '../integration/actions_tasks3/assets/case_109/preview_AWS_S3_BUCKET.png' },
-            ).as('awsPreview');
-
-            cy.contains('.cvat-header-button', 'Models').should('be.visible').click();
-            cy.contains('.cvat-header-button', 'Cloud Storages').should('be.visible').click();
-
-            cy.wait('@awsStatus').its('response.statusCode').should('eq', 200);
-            cy.wait('@awsPreview').its('response.statusCode').should('eq', 200);
-
-            cy.get('.cvat-cloud-storage-item')
-                .and('contain', 'Status: FORBIDDEN');
-            cy.get('.cvat-cloud-storage-item-preview').should('exist');
-
-            cy.get('.cvat-cloud-storage-item-menu-button').trigger('mousemove').trigger('mouseover');
-            cy.get('.ant-dropdown')
-                .not('.ant-dropdown-hidden')
-                .within(() => {
-                    cy.contains('[role="menuitem"]', 'Update').click();
-                });
-
-            cy.get('.cvat-notification-update-info-cloud-storage').should('exist');
-
-            cy.get('.cvat-cloud-storage-form').should('be.visible');
+            testCreateDummyStorage(cloudStoragesDummyDataAzureBucket);
+            testCheckAndCloseNotification();
+            testCSValues({
+                status: 'Error', id: 1, description: 'Demonstration bucket', provider: 'AWS_S3_BUCKET',
+            });
+            testCSSetStatusPreview(1, 'FORBIDDEN', 'preview_AWS_S3_BUCKET.png');
+            testCSValues({
+                status: 'FORBIDDEN',
+            });
+            testGoToCSUpdatePage();
 
             cy.get('#display_name')
                 .should('be.visible')
