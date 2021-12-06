@@ -1828,7 +1828,7 @@
             return new Job(data);
         }
 
-        throw new ArgumentError('Can not save job without and id');
+        throw new ArgumentError('Could not save job without id');
     };
 
     Job.prototype.issues.implementation = async function () {
@@ -2104,9 +2104,9 @@
                 taskData.labels = taskData.labels.map((el) => el.toJSON());
             }
 
-            await serverProxy.tasks.save(this.id, taskData);
+            const data = await serverProxy.tasks.save(this.id, taskData);
             this._updateTrigger.reset();
-            return this;
+            return new Task(data);
         }
 
         const taskSpec = {

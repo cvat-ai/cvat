@@ -482,8 +482,9 @@
             async function saveTask(id, taskData) {
                 const { backendAPI } = config;
 
+                let response = null;
                 try {
-                    await Axios.patch(`${backendAPI}/tasks/${id}`, JSON.stringify(taskData), {
+                    response = await Axios.patch(`${backendAPI}/tasks/${id}`, JSON.stringify(taskData), {
                         proxy: config.proxy,
                         headers: {
                             'Content-Type': 'application/json',
@@ -492,6 +493,8 @@
                 } catch (errorData) {
                     throw generateError(errorData);
                 }
+
+                return response.data;
             }
 
             async function deleteTask(id) {

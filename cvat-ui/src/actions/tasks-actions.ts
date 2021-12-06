@@ -477,17 +477,11 @@ function updateTaskFailed(error: any, task: any): AnyAction {
 }
 
 export function updateTaskAsync(taskInstance: any): ThunkAction<Promise<void>, CombinedState, {}, AnyAction> {
-    return async (dispatch: ActionCreator<Dispatch>, getState: () => CombinedState): Promise<void> => {
+    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         try {
             dispatch(updateTask());
-            const currentUser = getState().auth.user;
-            await taskInstance.save();
-            const nextUser = getState().auth.user;
-            const userFetching = getState().auth.fetching;
-            if (!userFetching && nextUser && currentUser.username === nextUser.username) {
-                const [task] = await cvat.tasks.get({ id: taskInstance.id });
-                dispatch(updateTaskSuccess(task, taskInstance.id));
-            }
+            const task = await taskInstance.save();
+            dispatch(updateTaskSuccess(task, taskInstance.id));
         } catch (error) {
             // try abort all changes
             let task = null;
