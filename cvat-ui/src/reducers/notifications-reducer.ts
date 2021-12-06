@@ -927,7 +927,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
 
             const {
                 id: jobID,
-                task: { id: taskID },
+                taskId: taskID,
             } = job;
 
             return {
