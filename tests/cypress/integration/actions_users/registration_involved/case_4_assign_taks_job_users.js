@@ -88,10 +88,9 @@ context('Multiple users. Assign task, job. Deactivating users.', () => {
                 false,
                 false,
                 null,
-                'fail',
+                'success',
             );
-            cy.closeNotification('.cvat-notification-notice-create-task-failed');
-            cy.contains('.cvat-item-task-name', `${taskName}`).should('not.exist');
+            cy.contains('.cvat-item-task-name', `${taskName}`).should('exist');
             cy.logout(secondUserName);
         });
 
