@@ -57,7 +57,7 @@ export interface ProjectsState {
             [projectId: number]: boolean;
         }
     };
-    importing: boolean;
+    restoring: boolean;
 }
 
 export interface TasksQuery {
@@ -326,8 +326,8 @@ export interface NotificationsState {
             updating: null | ErrorState;
             deleting: null | ErrorState;
             creating: null | ErrorState;
-            importing: null | ErrorState;
-            exporting: null | ErrorState;
+            restoring: null | ErrorState;
+            backuping: null | ErrorState;
         };
         tasks: {
             fetching: null | ErrorState;
@@ -425,7 +425,7 @@ export interface NotificationsState {
             resetPasswordDone: string;
         };
         projects: {
-            importingDone: string;
+            restoringDone: string;
         }
     };
 }

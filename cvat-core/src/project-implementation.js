@@ -67,13 +67,13 @@
             return result;
         };
 
-        projectClass.prototype.export.implementation = async function () {
-            const result = await serverProxy.projects.exportProject(this.id);
+        projectClass.prototype.backup.implementation = async function () {
+            const result = await serverProxy.projects.backupProject(this.id);
             return result;
         };
 
-        projectClass.import.implementation = async function (file) {
-            const result = await serverProxy.projects.importProject(file);
+        projectClass.restore.implementation = async function (file) {
+            const result = await serverProxy.projects.restoreProject(file);
             return result.id;
         };
 

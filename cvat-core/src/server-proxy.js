@@ -566,7 +566,7 @@
                 });
             }
 
-            async function exportProject(id) {
+            async function backupProject(id) {
                 const { backendAPI } = config;
                 const url = `${backendAPI}/projects/${id}/backup`;
 
@@ -590,25 +590,25 @@
                 });
             }
 
-            async function importProject(file) {
+            async function restoreProject(file) {
                 const { backendAPI } = config;
 
-                let taskData = new FormData();
-                taskData.append('project_file', file);
+                let data = new FormData();
+                data.append('project_file', file);
 
                 return new Promise((resolve, reject) => {
                     async function request() {
                         try {
-                            const response = await Axios.post(`${backendAPI}/projects/backup`, taskData, {
+                            const response = await Axios.post(`${backendAPI}/projects/backup`, data, {
                                 proxy: config.proxy,
                             });
                             if (response.status === 202) {
-                                taskData = new FormData();
-                                taskData.append('rq_id', response.data.rq_id);
+                                data = new FormData();
+                                data.append('rq_id', response.data.rq_id);
                                 setTimeout(request, 3000);
                             } else {
-                                const importedProject = await getProjects(`?id=${response.data.id}`);
-                                resolve(importedProject[0]);
+                                const restoredProject = await getProjects(`?id=${response.data.id}`);
+                                resolve(restoredProject[0]);
                             }
                         } catch (errorData) {
                             reject(generateError(errorData));
@@ -1396,8 +1396,8 @@
                             create: createProject,
                             delete: deleteProject,
                             exportDataset: exportDataset('projects'),
-                            exportProject,
-                            importProject,
+                            backupProject,
+                            restoreProject,
                         }),
                         writable: false,
                     },

@@ -22,7 +22,7 @@ export default function ProjectsPageComponent(): JSX.Element {
     const projectFetching = useSelector((state: CombinedState) => state.projects.fetching);
     const projectsCount = useSelector((state: CombinedState) => state.projects.current.length);
     const gettingQuery = useSelector((state: CombinedState) => state.projects.gettingQuery);
-    const isImporting = useSelector((state: CombinedState) => state.projects.importing);
+    const isImporting = useSelector((state: CombinedState) => state.projects.restoring);
 
     const anySearchQuery = !!Array.from(new URLSearchParams(search).keys()).filter((value) => value !== 'page').length;
 
@@ -34,10 +34,6 @@ export default function ProjectsPageComponent(): JSX.Element {
 
         return searchParams;
     };
-
-    useEffect(() => {
-        dispatch(getProjectsAsync(getSearchParams()));
-    }, []);
 
     useEffect(() => {
         const searchParams = new URLSearchParams();

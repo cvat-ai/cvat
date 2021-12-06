@@ -41,8 +41,8 @@ const defaultState: NotificationsState = {
             updating: null,
             deleting: null,
             creating: null,
-            importing: null,
-            exporting: null,
+            restoring: null,
+            backuping: null,
         },
         tasks: {
             fetching: null,
@@ -140,7 +140,7 @@ const defaultState: NotificationsState = {
             resetPasswordDone: '',
         },
         projects: {
-            importingDone: '',
+            restoringDone: '',
         },
     },
 };
@@ -558,37 +558,37 @@ export default function (state = defaultState, action: AnyAction): Notifications
                 },
             };
         }
-        case ProjectsActionTypes.EXPORT_PROJECT_FAILED: {
+        case ProjectsActionTypes.BACKUP_PROJECT_FAILED: {
             return {
                 ...state,
                 errors: {
                     ...state.errors,
                     projects: {
                         ...state.errors.projects,
-                        exporting: {
-                            message: 'Could not export the project',
+                        backuping: {
+                            message: 'Could not backup the project',
                             reason: action.payload.error.toString(),
                         },
                     },
                 },
             };
         }
-        case ProjectsActionTypes.IMPORT_PROJECT_FAILED: {
+        case ProjectsActionTypes.RESTORE_PROJECT_FAILED: {
             return {
                 ...state,
                 errors: {
                     ...state.errors,
                     projects: {
                         ...state.errors.projects,
-                        importing: {
-                            message: 'Could not import the project',
+                        restoring: {
+                            message: 'Could not restore the project',
                             reason: action.payload.error.toString(),
                         },
                     },
                 },
             };
         }
-        case ProjectsActionTypes.IMPORT_PROJECT_SUCCESS: {
+        case ProjectsActionTypes.RESTORE_PROJECT_SUCCESS: {
             const { projectID } = action.payload;
             return {
                 ...state,
@@ -596,8 +596,8 @@ export default function (state = defaultState, action: AnyAction): Notifications
                     ...state.messages,
                     projects: {
                         ...state.messages.projects,
-                        importingDone:
-                            `Project has been imported succesfully <a href="/projects/${projectID}">Open project</a>`,
+                        restoringDone:
+                            `Project has been created succesfully <a href="/projects/${projectID}">Open project</a>`,
                     },
                 },
             };

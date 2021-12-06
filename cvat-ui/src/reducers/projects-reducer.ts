@@ -44,7 +44,7 @@ const defaultState: ProjectsState = {
         },
         backups: {},
     },
-    importing: false,
+    restoring: false,
 };
 
 export default (state: ProjectsState = defaultState, action: AnyAction): ProjectsState => {
@@ -209,7 +209,7 @@ export default (state: ProjectsState = defaultState, action: AnyAction): Project
                 },
             };
         }
-        case ProjectsActionTypes.EXPORT_PROJECT: {
+        case ProjectsActionTypes.BACKUP_PROJECT: {
             const { projectId } = action.payload;
             const { backups } = state.activities;
 
@@ -224,8 +224,8 @@ export default (state: ProjectsState = defaultState, action: AnyAction): Project
                 },
             };
         }
-        case ProjectsActionTypes.EXPORT_PROJECT_FAILED:
-        case ProjectsActionTypes.EXPORT_PROJECT_SUCCESS: {
+        case ProjectsActionTypes.BACKUP_PROJECT_FAILED:
+        case ProjectsActionTypes.BACKUP_PROJECT_SUCCESS: {
             const { projectID } = action.payload;
             const { backups } = state.activities;
 
@@ -239,17 +239,17 @@ export default (state: ProjectsState = defaultState, action: AnyAction): Project
                 },
             };
         }
-        case ProjectsActionTypes.IMPORT_PROJECT: {
+        case ProjectsActionTypes.RESTORE_PROJECT: {
             return {
                 ...state,
-                importing: true,
+                restoring: true,
             };
         }
-        case ProjectsActionTypes.IMPORT_PROJECT_FAILED:
-        case ProjectsActionTypes.IMPORT_PROJECT_SUCCESS: {
+        case ProjectsActionTypes.RESTORE_PROJECT_FAILED:
+        case ProjectsActionTypes.RESTORE_PROJECT_SUCCESS: {
             return {
                 ...state,
-                importing: false,
+                restoring: false,
             };
         }
 

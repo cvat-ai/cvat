@@ -535,6 +535,8 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
             data_dirname = os.path.join(self._subdir, self.DATA_DIRNAME) if self._subdir else self.DATA_DIRNAME
             uploaded_files = []
             for f in zip_object.namelist():
+                if f.endswith(os.path.sep):
+                    continue
                 if f.startswith(data_dirname + os.path.sep):
                     target_file = os.path.join(data_path, os.path.relpath(f, data_dirname))
                     self._prepare_dirs(target_file)

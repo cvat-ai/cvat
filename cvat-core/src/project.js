@@ -304,14 +304,14 @@
          * @throws {module:API.cvat.exceptions.ServerError}
          * @throws {module:API.cvat.exceptions.PluginError}
          */
-        async export() {
-            const result = await PluginRegistry.apiWrapper.call(this, Project.prototype.export);
+        async backup() {
+            const result = await PluginRegistry.apiWrapper.call(this, Project.prototype.backup);
             return result;
         }
 
         /**
-         * Method imports a project from a backup
-         * @method import
+         * Method restore a project from a backup
+         * @method restore
          * @memberof module:API.cvat.classes.Project
          * @readonly
          * @instance
@@ -319,8 +319,8 @@
          * @throws {module:API.cvat.exceptions.ServerError}
          * @throws {module:API.cvat.exceptions.PluginError}
          */
-        static async import(file) {
-            const result = await PluginRegistry.apiWrapper.call(this, Project.import, file);
+        static async restore(file) {
+            const result = await PluginRegistry.apiWrapper.call(this, Project.restore, file);
             return result;
         }
     }

@@ -13,13 +13,13 @@ import Upload from 'antd/lib/upload';
 
 import SearchField from 'components/search-field/search-field';
 import { CombinedState, ProjectsQuery } from 'reducers/interfaces';
-import { getProjectsAsync, importProjectAsync } from 'actions/projects-actions';
+import { getProjectsAsync, restoreProjectAsync } from 'actions/projects-actions';
 
 export default function TopBarComponent(): JSX.Element {
     const history = useHistory();
     const dispatch = useDispatch();
     const query = useSelector((state: CombinedState) => state.projects.gettingQuery);
-    const isImporting = useSelector((state: CombinedState) => state.projects.importing);
+    const isImporting = useSelector((state: CombinedState) => state.projects.restoring);
 
     return (
         <Row className='cvat-projects-page-top-bar' justify='center' align='middle'>
@@ -41,7 +41,7 @@ export default function TopBarComponent(): JSX.Element {
                                     multiple={false}
                                     showUploadList={false}
                                     beforeUpload={(file: File): boolean => {
-                                        dispatch(importProjectAsync(file));
+                                        dispatch(restoreProjectAsync(file));
                                         return false;
                                     }}
                                 >

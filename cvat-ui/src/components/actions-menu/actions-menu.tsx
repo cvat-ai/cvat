@@ -74,7 +74,7 @@ function ActionsMenuComponent(props: Props): JSX.Element {
                 onClickMenu(params);
             }
         },
-        [],
+        [taskID],
     );
 
     return (

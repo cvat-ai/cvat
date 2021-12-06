@@ -9,7 +9,7 @@ import Menu from 'antd/lib/menu';
 import { LoadingOutlined } from '@ant-design/icons';
 
 import { CombinedState } from 'reducers/interfaces';
-import { deleteProjectAsync, exportProjectAsync } from 'actions/projects-actions';
+import { deleteProjectAsync, backupProjectAsync } from 'actions/projects-actions';
 import { exportActions } from 'actions/export-actions';
 
 interface Props {
@@ -49,7 +49,7 @@ export default function ProjectActionsMenuComponent(props: Props): JSX.Element {
             </Menu.Item>
             <Menu.Item
                 disabled={exportIsActive}
-                onClick={() => dispatch(exportProjectAsync(projectInstance))}
+                onClick={() => dispatch(backupProjectAsync(projectInstance))}
             >
                 {exportIsActive && <LoadingOutlined id='cvat-export-project-loading' />}
                 Backup Project

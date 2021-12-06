@@ -26,12 +26,12 @@ export enum ProjectsActionTypes {
     DELETE_PROJECT = 'DELETE_PROJECT',
     DELETE_PROJECT_SUCCESS = 'DELETE_PROJECT_SUCCESS',
     DELETE_PROJECT_FAILED = 'DELETE_PROJECT_FAILED',
-    EXPORT_PROJECT = 'EXPORT_PROJECT',
-    EXPORT_PROJECT_SUCCESS = 'EXPORT_PROJECT_SUCCESS',
-    EXPORT_PROJECT_FAILED = 'EXPORT_PROJECT_FAILED',
-    IMPORT_PROJECT = 'IMPORT_PROJECT',
-    IMPORT_PROJECT_SUCCESS = 'IMPORT_PROJECT_SUCCESS',
-    IMPORT_PROJECT_FAILED = 'IMPORT_PROJECT_FAILED',
+    BACKUP_PROJECT = 'BACKUP_PROJECT',
+    BACKUP_PROJECT_SUCCESS = 'BACKUP_PROJECT_SUCCESS',
+    BACKUP_PROJECT_FAILED = 'BACKUP_PROJECT_FAILED',
+    RESTORE_PROJECT = 'IMPORT_PROJECT',
+    RESTORE_PROJECT_SUCCESS = 'IMPORT_PROJECT_SUCCESS',
+    RESTORE_PROJECT_FAILED = 'IMPORT_PROJECT_FAILED',
 }
 
 // prettier-ignore
@@ -61,19 +61,19 @@ const projectActions = {
     deleteProjectFailed: (projectId: number, error: any) => (
         createAction(ProjectsActionTypes.DELETE_PROJECT_FAILED, { projectId, error })
     ),
-    exportProject: (projectId: number) => createAction(ProjectsActionTypes.EXPORT_PROJECT, { projectId }),
-    exportProjectSuccess: (projectID: number) => (
-        createAction(ProjectsActionTypes.EXPORT_PROJECT_SUCCESS, { projectID })
+    backupProject: (projectId: number) => createAction(ProjectsActionTypes.BACKUP_PROJECT, { projectId }),
+    backupProjectSuccess: (projectID: number) => (
+        createAction(ProjectsActionTypes.BACKUP_PROJECT_SUCCESS, { projectID })
     ),
-    exportProjectFailed: (projectID: number, error: any) => (
-        createAction(ProjectsActionTypes.EXPORT_PROJECT_FAILED, { projectId: projectID, error })
+    backupProjectFailed: (projectID: number, error: any) => (
+        createAction(ProjectsActionTypes.BACKUP_PROJECT_FAILED, { projectId: projectID, error })
     ),
-    importProject: () => createAction(ProjectsActionTypes.IMPORT_PROJECT),
-    importProjectSuccess: (projectID: number) => (
-        createAction(ProjectsActionTypes.IMPORT_PROJECT_SUCCESS, { projectID })
+    restoreProject: () => createAction(ProjectsActionTypes.RESTORE_PROJECT),
+    restoreProjectSuccess: (projectID: number) => (
+        createAction(ProjectsActionTypes.RESTORE_PROJECT_SUCCESS, { projectID })
     ),
-    importProjectFailed: (error: any) => (
-        createAction(ProjectsActionTypes.IMPORT_PROJECT_FAILED, { error })
+    restoreProjectFailed: (error: any) => (
+        createAction(ProjectsActionTypes.RESTORE_PROJECT_FAILED, { error })
     ),
 };
 
@@ -184,30 +184,30 @@ export function deleteProjectAsync(projectInstance: any): ThunkAction {
     };
 }
 
-export function importProjectAsync(file: File): ThunkAction {
+export function restoreProjectAsync(file: File): ThunkAction {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
-        dispatch(projectActions.importProject());
+        dispatch(projectActions.restoreProject());
         try {
-            const projectInstance = await cvat.classes.Project.import(file);
-            dispatch(projectActions.importProjectSuccess(projectInstance));
+            const projectInstance = await cvat.classes.Project.restore(file);
+            dispatch(projectActions.restoreProjectSuccess(projectInstance));
         } catch (error) {
-            dispatch(projectActions.importProjectFailed(error));
+            dispatch(projectActions.restoreProjectFailed(error));
         }
     };
 }
 
-export function exportProjectAsync(projectInstance: any): ThunkAction {
+export function backupProjectAsync(projectInstance: any): ThunkAction {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
-        dispatch(projectActions.exportProject(projectInstance.id));
+        dispatch(projectActions.backupProject(projectInstance.id));
 
         try {
-            const url = await projectInstance.export();
+            const url = await projectInstance.backup();
             const downloadAnchor = window.document.getElementById('downloadAnchor') as HTMLAnchorElement;
             downloadAnchor.href = url;
             downloadAnchor.click();
-            dispatch(projectActions.exportProjectSuccess(projectInstance.id));
+            dispatch(projectActions.backupProjectSuccess(projectInstance.id));
         } catch (error) {
-            dispatch(projectActions.exportProjectFailed(projectInstance.id, error));
+            dispatch(projectActions.backupProjectFailed(projectInstance.id, error));
         }
     };
 }
