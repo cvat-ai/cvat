@@ -791,8 +791,7 @@ class TaskViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['GET'], serializer_class=RqStatusSerializer)
     def status(self, request, pk):
         self.get_object() # force to call check_object_permissions
-        response = self._get_rq_response(queue="default",
-            job_id="/api/{}/tasks/{}".format(request.version, pk))
+        response = self._get_rq_response(queue="default", job_id=f"/api/v1/tasks/{pk}")
         serializer = RqStatusSerializer(data=response)
 
         if serializer.is_valid(raise_exception=True):
