@@ -2101,6 +2101,7 @@
                 taskData.assignee_id = taskData.assignee_id.id;
             }
             if (taskData.labels) {
+                taskData.labels = this._internalData.labels;
                 taskData.labels = taskData.labels.map((el) => el.toJSON());
             }
 

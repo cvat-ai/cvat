@@ -89,20 +89,17 @@ describe('Feature: get a list of jobs', () => {
 });
 
 describe('Feature: save job', () => {
-    test('save status of a job', async () => {
-        let result = await window.cvat.jobs.get({
+    test('save stage and state of a job', async () => {
+        const result = await window.cvat.jobs.get({
             jobID: 1,
         });
 
         result[0].stage = 'validation';
         result[0].state = 'new';
-        await result[0].save();
+        const newJob = await result[0].save();
 
-        result = await window.cvat.jobs.get({
-            jobID: 1,
-        });
-        expect(result[0].stage).toBe('validation');
-        expect(result[0].state).toBe('new');
+        expect(newJob.stage).toBe('validation');
+        expect(newJob.state).toBe('new');
     });
 
     test('save invalid status of a job', async () => {
@@ -110,7 +107,6 @@ describe('Feature: save job', () => {
             jobID: 1,
         });
 
-        await result[0].save();
         expect(() => {
             result[0].state = 'invalid';
         }).toThrow(window.cvat.exceptions.ArgumentError);

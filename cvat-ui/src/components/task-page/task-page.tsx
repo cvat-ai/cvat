@@ -86,7 +86,6 @@ class TaskPageComponent extends React.PureComponent<Props> {
                 </Row>
                 <ModelRunnerModal />
                 <MoveTaskModal />
-                {updating && <Spin size='large' className='cvat-spinner' />}
             </>
         );
     }

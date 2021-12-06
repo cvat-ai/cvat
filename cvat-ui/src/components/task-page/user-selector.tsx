@@ -89,7 +89,6 @@ export default function UserSelector(props: Props): JSX.Element {
     };
 
     const handleSelect = (_value: SelectValue): void => {
-        setSearchPhrase(users.filter((user) => user.id === +_value)[0].username);
         const user = _value ? users.filter((_user) => _user.id === +_value)[0] : null;
         if ((user?.id || null) !== (value?.id || null)) {
             onSelect(user);

@@ -100,6 +100,7 @@ context('Filters, sorting jobs.', () => {
             false,
             advancedConfigurationParams,
         );
+
         cy.openTask(taskName);
         cy.assignJobToUser(0, secondUserName);
         cy.assignJobToUser(1, secondUserName);
@@ -108,6 +109,7 @@ context('Filters, sorting jobs.', () => {
         cy.openJob(1);
         cy.interactMenu('Submit annotations');
         cy.contains('[type="button"]', 'Continue').click();
+        cy.get('.cvat-spinner').should('not.exist');
     });
 
     after(() => {

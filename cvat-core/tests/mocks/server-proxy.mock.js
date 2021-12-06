@@ -170,6 +170,9 @@ class ServerProxy {
                     }
                 }
             }
+
+            const [updatedTask] = await getTasks({ id });
+            return updatedTask;
         }
 
         async function createTask(taskData) {
@@ -261,6 +264,8 @@ class ServerProxy {
                     object[prop] = jobData[prop];
                 }
             }
+
+            return getJob(id);
         }
 
         async function getUsers() {
