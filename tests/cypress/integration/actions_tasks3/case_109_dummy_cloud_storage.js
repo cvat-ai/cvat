@@ -100,10 +100,10 @@ context('Dummy Cloud storages.', { browser: '!firefox' }, () => {
 
             cy.get('#display_name')
                 .should('be.visible')
-                .and('have.value', cloudStoragesDummyDataGoogleStorage.results[0].display_name);
+                .and('have.value', 'Demo GCS');
             cy.get('#description')
                 .should('be.visible')
-                .and('have.value', cloudStoragesDummyDataGoogleStorage.results[0].description);
+                .and('have.value', 'It is first google cloud storage');
             cy.get('.cvat-cloud-storage-select-provider')
                 .should('be.visible')
                 .and('have.text', 'Google Cloud Storage');
@@ -119,9 +119,7 @@ context('Dummy Cloud storages.', { browser: '!firefox' }, () => {
                 .and('have.value', '');
             cy.get('#location').should('exist');
             cy.get('[placeholder="manifest.jsonl"]')
-                .should('have.attr', 'value', cloudStoragesDummyDataGoogleStorage.results[0].manifests[0]);
-
-            cy.contains('button', 'Cancel').click();
+                .should('have.attr', 'value', 'manifest.jsonl');
         });
 
         it('Create dummy Azure Blob Container and check fields.', () => {
@@ -157,8 +155,6 @@ context('Dummy Cloud storages.', { browser: '!firefox' }, () => {
                 .and('not.have.value', '');
             cy.get('[placeholder="manifest.jsonl"]')
                 .should('have.attr', 'value', 'manifest.jsonl');
-
-            cy.contains('button', 'Cancel').click();
         });
 
         it('Create dummy AWS S3 and check fields.', () => {
@@ -195,8 +191,6 @@ context('Dummy Cloud storages.', { browser: '!firefox' }, () => {
             cy.get('#region').should('exist');
             cy.get('[placeholder="manifest.jsonl"]')
                 .should('have.attr', 'value', 'manifest.jsonl');
-
-            cy.contains('button', 'Cancel').click();
         });
     });
 });
