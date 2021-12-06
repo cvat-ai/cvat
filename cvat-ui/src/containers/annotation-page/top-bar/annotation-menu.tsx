@@ -14,12 +14,14 @@ import { updateJobAsync } from 'actions/tasks-actions';
 import {
     uploadJobAnnotationsAsync,
     saveAnnotationsAsync,
-    switchRequestReviewDialog as switchRequestReviewDialogAction,
     switchSubmitReviewDialog as switchSubmitReviewDialogAction,
     setForceExitAnnotationFlag as setForceExitAnnotationFlagAction,
     removeAnnotationsAsync as removeAnnotationsAsyncAction,
 } from 'actions/annotation-actions';
 import { exportActions } from 'actions/export-actions';
+import getCore from 'cvat-core-wrapper';
+
+const core = getCore();
 
 interface StateToProps {
     annotationFormats: any;
@@ -33,7 +35,6 @@ interface DispatchToProps {
     loadAnnotations(job: any, loader: any, file: File): void;
     showExportModal(jobInstance: any): void;
     removeAnnotations(startnumber: number, endnumber: number, delTrackKeyframesOnly: boolean): void;
-    switchRequestReviewDialog(visible: boolean): void;
     switchSubmitReviewDialog(visible: boolean): void;
     setForceExitAnnotationFlag(forceExit: boolean): void;
     saveAnnotations(jobInstance: any, afterSave?: () => void): void;
@@ -79,9 +80,6 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         removeAnnotations(startnumber: number, endnumber: number, delTrackKeyframesOnly:boolean) {
             dispatch(removeAnnotationsAsyncAction(startnumber, endnumber, delTrackKeyframesOnly));
         },
-        switchRequestReviewDialog(visible: boolean): void {
-            dispatch(switchRequestReviewDialogAction(visible));
-        },
         switchSubmitReviewDialog(visible: boolean): void {
             dispatch(switchSubmitReviewDialogAction(visible));
         },
@@ -110,7 +108,6 @@ function AnnotationMenuContainer(props: Props): JSX.Element {
         loadAnnotations,
         showExportModal,
         removeAnnotations,
-        switchRequestReviewDialog,
         switchSubmitReviewDialog,
         setForceExitAnnotationFlag,
         saveAnnotations,
@@ -128,8 +125,10 @@ function AnnotationMenuContainer(props: Props): JSX.Element {
         const [action] = params.keyPath;
         if (action === Actions.EXPORT_TASK_DATASET) {
             showExportModal(jobInstance);
-        } else if (action === Actions.REQUEST_REVIEW) {
-            switchRequestReviewDialog(true);
+        } else if (action === Actions.SUBMIT_ANNOTATIONS) {
+            jobInstance.state = core.enums.JobState.COMPLETED;
+            updateJob(jobInstance);
+            history.push(`/tasks/${jobInstance.taskId}`);
         } else if (action === Actions.SUBMIT_REVIEW) {
             switchSubmitReviewDialog(true);
         } else if (action === Actions.RENEW_JOB) {

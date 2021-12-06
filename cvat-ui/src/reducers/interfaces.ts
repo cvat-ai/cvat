@@ -341,6 +341,9 @@ export interface NotificationsState {
             importing: null | ErrorState;
             moving: null | ErrorState;
         };
+        jobs: {
+            updating: null | ErrorState;
+        };
         formats: {
             fetching: null | ErrorState;
         };
@@ -591,7 +594,6 @@ export interface AnnotationState {
     };
     colors: any[];
     filtersPanelVisible: boolean;
-    requestReviewDialogVisible: boolean;
     submitReviewDialogVisible: boolean;
     sidebarCollapsed: boolean;
     appearanceCollapsed: boolean;

@@ -28,6 +28,9 @@ export enum TasksActionTypes {
     UPDATE_TASK = 'UPDATE_TASK',
     UPDATE_TASK_SUCCESS = 'UPDATE_TASK_SUCCESS',
     UPDATE_TASK_FAILED = 'UPDATE_TASK_FAILED',
+    UPDATE_JOB = 'UPDATE_JOB',
+    UPDATE_JOB_SUCCESS = 'UPDATE_JOB_SUCCESS',
+    UPDATE_JOB_FAILED = 'UPDATE_JOB_FAILED',
     HIDE_EMPTY_TASKS = 'HIDE_EMPTY_TASKS',
     EXPORT_TASK = 'EXPORT_TASK',
     EXPORT_TASK_SUCCESS = 'EXPORT_TASK_SUCCESS',
@@ -437,6 +440,33 @@ export function updateTaskSuccess(task: any, taskID: number): AnyAction {
     return action;
 }
 
+function updateJob(): AnyAction {
+    const action = {
+        type: TasksActionTypes.UPDATE_JOB,
+        payload: { },
+    };
+
+    return action;
+}
+
+function updateJobSuccess(jobInstance: any): AnyAction {
+    const action = {
+        type: TasksActionTypes.UPDATE_JOB_SUCCESS,
+        payload: { jobInstance },
+    };
+
+    return action;
+}
+
+function updateJobFailed(jobID: number, error: any): AnyAction {
+    const action = {
+        type: TasksActionTypes.UPDATE_JOB_FAILED,
+        payload: { jobID, error },
+    };
+
+    return action;
+}
+
 function updateTaskFailed(error: any, task: any): AnyAction {
     const action = {
         type: TasksActionTypes.UPDATE_TASK_FAILED,
@@ -478,21 +508,11 @@ export function updateTaskAsync(taskInstance: any): ThunkAction<Promise<void>, C
 export function updateJobAsync(jobInstance: any): ThunkAction<Promise<void>, {}, {}, AnyAction> {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         try {
-            dispatch(updateTask());
-            await jobInstance.save();
-            const [task] = await cvat.tasks.get({ id: jobInstance.task.id });
-            dispatch(updateTaskSuccess(task, jobInstance.task.id));
+            dispatch(updateJob());
+            const newJob = await jobInstance.save();
+            dispatch(updateJobSuccess(newJob));
         } catch (error) {
-            // try abort all changes
-            let task = null;
-            try {
-                [task] = await cvat.tasks.get({ id: jobInstance.task.id });
-            } catch (fetchError) {
-                dispatch(updateTaskFailed(error, jobInstance.task));
-                return;
-            }
-
-            dispatch(updateTaskFailed(error, task));
+            dispatch(updateJobFailed(jobInstance.id, error));
         }
     };
 }

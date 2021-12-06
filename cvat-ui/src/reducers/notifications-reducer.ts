@@ -55,6 +55,9 @@ const defaultState: NotificationsState = {
             importing: null,
             moving: null,
         },
+        jobs: {
+            updating: null,
+        },
         formats: {
             fetching: null,
         },
@@ -491,6 +494,23 @@ export default function (state = defaultState, action: AnyAction): Notifications
                     tasks: {
                         ...state.messages.tasks,
                         importingDone: `Task has been imported succesfully <a href="/tasks/${taskID}">Open task</a>`,
+                    },
+                },
+            };
+        }
+        case TasksActionTypes.UPDATE_JOB_FAILED: {
+            const jobID = action.payload.jobInstance.id;
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    jobs: {
+                        ...state.errors.jobs,
+                        updating: {
+                            message: `Could not update job with ID #${jobID}`,
+                            reason: action.payload.error.toString(),
+                            className: 'cvat-notification-notice-update-job-failed',
+                        },
                     },
                 },
             };

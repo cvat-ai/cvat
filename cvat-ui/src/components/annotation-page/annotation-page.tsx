@@ -10,7 +10,6 @@ import Spin from 'antd/lib/spin';
 import notification from 'antd/lib/notification';
 
 import AttributeAnnotationWorkspace from 'components/annotation-page/attribute-annotation-workspace/attribute-annotation-workspace';
-import SubmitAnnotationsModal from 'components/annotation-page/request-review-modal';
 import ReviewAnnotationsWorkspace from 'components/annotation-page/review-workspace/review-workspace';
 import SubmitReviewModal from 'components/annotation-page/review/submit-review-modal';
 import StandardWorkspaceComponent from 'components/annotation-page/standard-workspace/standard-workspace';
@@ -133,7 +132,6 @@ export default function AnnotationPageComponent(props: Props): JSX.Element {
             )}
             <FiltersModalComponent />
             <StatisticsModalComponent />
-            <SubmitAnnotationsModal />
             <SubmitReviewModal />
         </Layout>
     );

@@ -184,7 +184,6 @@ export enum AnnotationActionTypes {
     SAVE_LOGS_FAILED = 'SAVE_LOGS_FAILED',
     INTERACT_WITH_CANVAS = 'INTERACT_WITH_CANVAS',
     GET_DATA_FAILED = 'GET_DATA_FAILED',
-    SWITCH_REQUEST_REVIEW_DIALOG = 'SWITCH_REQUEST_REVIEW_DIALOG',
     SWITCH_SUBMIT_REVIEW_DIALOG = 'SWITCH_SUBMIT_REVIEW_DIALOG',
     SET_FORCE_EXIT_ANNOTATION_PAGE_FLAG = 'SET_FORCE_EXIT_ANNOTATION_PAGE_FLAG',
     UPDATE_PREDICTOR_STATE = 'UPDATE_PREDICTOR_STATE',
@@ -1588,15 +1587,6 @@ export function redrawShapeAsync(): ThunkAction {
                 });
             }
         }
-    };
-}
-
-export function switchRequestReviewDialog(visible: boolean): AnyAction {
-    return {
-        type: AnnotationActionTypes.SWITCH_REQUEST_REVIEW_DIALOG,
-        payload: {
-            visible,
-        },
     };
 }
 

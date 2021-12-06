@@ -111,7 +111,6 @@ const defaultState: AnnotationState = {
     sidebarCollapsed: false,
     appearanceCollapsed: false,
     filtersPanelVisible: false,
-    requestReviewDialogVisible: false,
     submitReviewDialogVisible: false,
     predictor: {
         enabled: false,
@@ -1071,13 +1070,6 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                         ActiveControl.OPENCV_TOOLS :
                         ActiveControl.AI_TOOLS,
                 },
-            };
-        }
-        case AnnotationActionTypes.SWITCH_REQUEST_REVIEW_DIALOG: {
-            const { visible } = action.payload;
-            return {
-                ...state,
-                requestReviewDialogVisible: visible,
             };
         }
         case AnnotationActionTypes.SWITCH_SUBMIT_REVIEW_DIALOG: {

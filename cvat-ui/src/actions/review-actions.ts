@@ -4,7 +4,6 @@
 
 import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
 import getCore from 'cvat-core-wrapper';
-import { updateTaskSuccess } from './tasks-actions';
 
 const cvat = getCore();
 
@@ -148,34 +147,6 @@ export const reopenIssueAsync = (id: number): ThunkAction => async (dispatch, ge
         dispatch(reviewActions.reopenIssueSuccess());
     } catch (error) {
         dispatch(reviewActions.reopenIssueFailed(error));
-    }
-};
-
-export const submitReviewAsync = (
-    newAssignee: any | null, newJobState: string, newJobStage: string, onFinish: CallableFunction,
-):
-ThunkAction => async (dispatch, getState) => {
-    const state = getState();
-    const {
-        annotation: {
-            job: { instance: jobInstance },
-        },
-    } = state;
-
-    try {
-        dispatch(reviewActions.submitReview(jobInstance.id));
-
-        jobInstance.assignee = newAssignee;
-        jobInstance.state = newJobState;
-        jobInstance.stage = newJobStage;
-        await jobInstance.save();
-
-        const [task] = await cvat.tasks.get({ id: jobInstance.task.id });
-        dispatch(updateTaskSuccess(task, jobInstance.task.id));
-        dispatch(reviewActions.submitReviewSuccess());
-        onFinish();
-    } catch (error) {
-        dispatch(reviewActions.submitReviewFailed(error, jobInstance.id));
     }
 };
 

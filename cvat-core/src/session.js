@@ -1823,9 +1823,9 @@
                 jobData.assignee = jobData.assignee.id;
             }
 
-            await serverProxy.jobs.save(this.id, jobData);
+            const data = await serverProxy.jobs.save(this.id, jobData);
             this._updateTrigger.reset();
-            return this;
+            return new Job(data);
         }
 
         throw new ArgumentError('Can not save job without and id');

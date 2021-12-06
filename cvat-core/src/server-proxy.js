@@ -806,8 +806,9 @@
             async function saveJob(id, jobData) {
                 const { backendAPI } = config;
 
+                let response = null;
                 try {
-                    await Axios.patch(`${backendAPI}/jobs/${id}`, JSON.stringify(jobData), {
+                    response = await Axios.patch(`${backendAPI}/jobs/${id}`, JSON.stringify(jobData), {
                         proxy: config.proxy,
                         headers: {
                             'Content-Type': 'application/json',
@@ -816,6 +817,8 @@
                 } catch (errorData) {
                     throw generateError(errorData);
                 }
+
+                return response.data;
             }
 
             async function getUsers(filter = { page_size: 'all' }) {

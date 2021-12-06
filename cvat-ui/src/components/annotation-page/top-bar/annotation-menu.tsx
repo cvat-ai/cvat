@@ -39,7 +39,7 @@ export enum Actions {
     EXPORT_TASK_DATASET = 'export_task_dataset',
     REMOVE_ANNO = 'remove_anno',
     OPEN_TASK = 'open_task',
-    REQUEST_REVIEW = 'request_review',
+    SUBMIT_ANNOTATIONS = 'submit_annotations',
     SUBMIT_REVIEW = 'submit_review',
     FINISH_JOB = 'finish_job',
     RENEW_JOB = 'renew_job',
@@ -146,8 +146,17 @@ function AnnotationMenuComponent(props: Props & RouteComponentProps): JSX.Elemen
                 },
                 okText: 'Delete',
             });
-        } else if (params.key === Actions.REQUEST_REVIEW) {
-            checkUnsavedChanges(params);
+        } else if (params.key === Actions.SUBMIT_ANNOTATIONS) {
+            Modal.confirm({
+                title: 'The job state is going to be switched',
+                content: 'State will be switched to COMPLETED. Continue?',
+                okText: 'Continue',
+                cancelText: 'Cancel',
+                className: 'cvat-modal-content-submit-annotations',
+                onOk: () => {
+                    checkUnsavedChanges(params);
+                },
+            });
         } else if (params.key === Actions.FINISH_JOB) {
             Modal.confirm({
                 title: 'The job stage is going to be switched',
@@ -216,7 +225,7 @@ function AnnotationMenuComponent(props: Props & RouteComponentProps): JSX.Elemen
                     Open the task
                 </a>
             </Menu.Item>
-            {jobStage === 'annotation' && is2d && <Menu.Item key={Actions.REQUEST_REVIEW}>Request a review</Menu.Item>}
+            {jobStage === 'annotation' && is2d && <Menu.Item key={Actions.SUBMIT_ANNOTATIONS}>Submit annotations</Menu.Item>}
             {jobStage === 'annotation' && <Menu.Item key={Actions.FINISH_JOB}>Finish the job</Menu.Item>}
             {jobStage === 'validation' && isReviewer && (
                 <Menu.Item key={Actions.SUBMIT_REVIEW}>Submit the review</Menu.Item>

@@ -447,18 +447,6 @@ button.cvat-predictor-button {
     }
 }
 
-.cvat-request-review-dialog {
-    > .ant-modal-content > .ant-modal-body {
-        > div:nth-child(2) {
-            margin-top: $grid-unit-size * 2;
-        }
-
-        > div:nth-child(3) {
-            margin-top: $grid-unit-size * 2;
-        }
-    }
-}
-
 .cvat-submit-review-dialog {
     .ant-modal-body {
         > div.ant-row:nth-child(2) {
