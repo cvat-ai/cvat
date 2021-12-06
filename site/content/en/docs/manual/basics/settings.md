@@ -38,8 +38,8 @@ In tab `Workspace` you can:
   ![](/images/image152_detrac.jpg)
 
 - `Position of a text` - text positioning mode selection:
-  - `Auto` in which the object details will be automatically placed where there is free space.
-  - `Center` in which the text will be in the center of the object.
+  - `Auto` - the object details will be automatically placed where there is free space.
+  - `Center` - the object details will be in the center of the object.
 
 - `Font size of a text` - specifies the text size of the object details.
 
