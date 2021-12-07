@@ -240,7 +240,8 @@ class ProjectViewSet(auth.ProjectGetQuerySetMixin, viewsets.ModelViewSet):
     search_fields = ("name", "owner__username", "assignee__username", "status")
     filterset_class = ProjectFilter
     ordering_fields = ("id", "name", "owner", "status", "assignee")
-    http_method_names = ['get', 'post', 'head', 'patch', 'delete']
+    ordering = ("-id",)
+    http_method_names = ('get', 'post', 'head', 'patch', 'delete')
 
     def get_serializer_class(self):
         if self.request.path.endswith('tasks'):
