@@ -107,6 +107,9 @@ context('Filters, sorting jobs.', () => {
 
         // The first job is transferred to the complete status
         cy.openJob(1);
+        cy.interactMenu('Start the job');
+        cy.contains('[type="button"]', 'Continue').click();
+        cy.get('.cvat-spinner').should('not.exist');
         cy.interactMenu('Submit annotations');
         cy.contains('[type="button"]', 'Continue').click();
         cy.get('.cvat-spinner').should('not.exist');
