@@ -28,7 +28,6 @@ interface StateToProps {
     jobInstance: any;
     stopFrame: number;
     loadActivity: string | null;
-    user: any;
 }
 
 interface DispatchToProps {
@@ -54,7 +53,6 @@ function mapStateToProps(state: CombinedState): StateToProps {
         tasks: {
             activities: { loads },
         },
-        auth: { user },
     } = state;
 
     const taskID = jobInstance.taskId;
@@ -65,7 +63,6 @@ function mapStateToProps(state: CombinedState): StateToProps {
         jobInstance,
         stopFrame,
         annotationFormats,
-        user,
     };
 }
 
@@ -101,7 +98,6 @@ function AnnotationMenuContainer(props: Props): JSX.Element {
     const {
         jobInstance,
         stopFrame,
-        user,
         annotationFormats: { loaders, dumpers },
         history,
         loadActivity,
@@ -129,22 +125,26 @@ function AnnotationMenuContainer(props: Props): JSX.Element {
             jobInstance.state = core.enums.JobState.COMPLETED;
             updateJob(jobInstance);
             history.push(`/tasks/${jobInstance.taskId}`);
+        } else if (action === Actions.START_JOB) {
+            jobInstance.state = core.enums.JobState.IN_PROGRESS;
+            updateJob(jobInstance);
+            window.location.reload();
         } else if (action === Actions.SUBMIT_REVIEW) {
             switchSubmitReviewDialog(true);
         } else if (action === Actions.RENEW_JOB) {
+            jobInstance.state = core.enums.JobState.NEW;
             jobInstance.stage = JobStage.ANNOTATION;
             updateJob(jobInstance);
-            history.push(`/tasks/${jobInstance.taskId}`);
+            window.location.reload();
         } else if (action === Actions.FINISH_JOB) {
             jobInstance.stage = JobStage.ACCEPTANCE;
+            jobInstance.state = core.enums.JobState.COMPLETED;
             updateJob(jobInstance);
             history.push(`/tasks/${jobInstance.taskId}`);
         } else if (action === Actions.OPEN_TASK) {
             history.push(`/tasks/${jobInstance.taskId}`);
         }
     };
-
-    const isReviewer = jobInstance.reviewer?.id === user.id || user.isSuperuser;
 
     return (
         <AnnotationMenuComponent
@@ -158,7 +158,6 @@ function AnnotationMenuContainer(props: Props): JSX.Element {
             setForceExitAnnotationFlag={setForceExitAnnotationFlag}
             saveAnnotations={saveAnnotations}
             jobInstance={jobInstance}
-            isReviewer={isReviewer}
             stopFrame={stopFrame}
         />
     );

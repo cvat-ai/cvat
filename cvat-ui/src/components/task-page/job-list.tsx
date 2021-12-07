@@ -10,10 +10,12 @@ import { LoadingOutlined, QuestionCircleOutlined, CopyOutlined } from '@ant-desi
 import { ColumnFilterItem } from 'antd/lib/table/interface';
 import Table from 'antd/lib/table';
 import Button from 'antd/lib/button';
+import Select from 'antd/lib/select';
 import Text from 'antd/lib/typography/Text';
 import moment from 'moment';
 import copy from 'copy-to-clipboard';
 
+import { JobStage } from 'reducers/interfaces';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import UserSelector, { User } from './user-selector';
 
@@ -170,12 +172,22 @@ function JobListComponent(props: Props & RouteComponentProps): JSX.Element {
                 }
 
                 return (
-                    <Text strong className={progressColor}>
-                        {stage}
+                    <div className={progressColor}>
+                        <Select
+                            value={stage}
+                            onChange={(newValue: string) => {
+                                jobInstance.stage = newValue;
+                                onJobUpdate(jobInstance);
+                            }}
+                        >
+                            <Select.Option value={JobStage.ANNOTATION}>{JobStage.ANNOTATION}</Select.Option>
+                            <Select.Option value={JobStage.REVIEW}>{JobStage.REVIEW}</Select.Option>
+                            <Select.Option value={JobStage.ACCEPTANCE}>{JobStage.ACCEPTANCE}</Select.Option>
+                        </Select>
                         <CVATTooltip title={<ReviewSummaryComponent jobInstance={jobInstance} />}>
                             <QuestionCircleOutlined />
                         </CVATTooltip>
-                    </Text>
+                    </div>
                 );
             },
             sorter: sorter('stage.stage'),

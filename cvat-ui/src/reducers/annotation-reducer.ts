@@ -8,6 +8,7 @@ import { AuthActionTypes } from 'actions/auth-actions';
 import { BoundariesActionTypes } from 'actions/boundaries-actions';
 import { Canvas, CanvasMode } from 'cvat-canvas-wrapper';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
+
 import {
     ActiveControl,
     AnnotationState,
@@ -177,13 +178,11 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     fetching: false,
                     instance: job,
                     labels: job.labels,
-                    attributes: job.labels.reduce((acc: Record<number, any[]>, label: any): Record<
-                    number,
-                    any[]
-                    > => {
-                        acc[label.id] = label.attributes;
-                        return acc;
-                    }, {}),
+                    attributes: job.labels
+                        .reduce((acc: Record<number, any[]>, label: any): Record<number, any[]> => {
+                            acc[label.id] = label.attributes;
+                            return acc;
+                        }, {}),
                 },
                 annotations: {
                     ...state.annotations,

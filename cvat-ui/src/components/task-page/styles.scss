@@ -121,8 +121,8 @@
     .cvat-job-annotation-color,
     .cvat-job-validation-color,
     .cvat-job-acceptance-color {
-        span {
-            margin-left: $grid-unit-size;
+        .ant-select {
+            margin-right: $grid-unit-size;
         }
     }
 }
@@ -142,13 +142,22 @@
 }
 
 .cvat-job-acceptance-color {
-    color: $completed-progress-color;
+    .ant-select-selector {
+        color: $completed-progress-color;
+        font-weight: bold;
+    }
 }
 
 .cvat-job-validation-color {
-    color: $inprogress-progress-color;
+    .ant-select-selector {
+        color: $inprogress-progress-color;
+        font-weight: bold;
+    }
 }
 
 .cvat-job-annotation-color {
-    color: $pending-progress-color;
+    .ant-select-selector {
+        color: $pending-progress-color;
+        font-weight: bold;
+    }
 }

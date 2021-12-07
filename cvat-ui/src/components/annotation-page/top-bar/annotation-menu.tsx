@@ -17,14 +17,16 @@ import { MenuInfo } from 'rc-menu/lib/interface';
 
 import CVATTooltip from 'components/common/cvat-tooltip';
 import LoadSubmenu from 'components/actions-menu/load-submenu';
-import { DimensionType } from '../../../reducers/interfaces';
+import getCore from 'cvat-core-wrapper';
+import { JobStage } from 'reducers/interfaces';
+
+const core = getCore();
 
 interface Props {
     taskMode: string;
     loaders: any[];
     dumpers: any[];
     loadActivity: string | null;
-    isReviewer: boolean;
     jobInstance: any;
     onClickMenu(params: MenuInfo): void;
     onUploadAnnotations(format: string, file: File): void;
@@ -39,6 +41,7 @@ export enum Actions {
     EXPORT_TASK_DATASET = 'export_task_dataset',
     REMOVE_ANNO = 'remove_anno',
     OPEN_TASK = 'open_task',
+    START_JOB = 'start_job',
     SUBMIT_ANNOTATIONS = 'submit_annotations',
     SUBMIT_REVIEW = 'submit_review',
     FINISH_JOB = 'finish_job',
@@ -49,7 +52,6 @@ function AnnotationMenuComponent(props: Props & RouteComponentProps): JSX.Elemen
     const {
         loaders,
         loadActivity,
-        isReviewer,
         jobInstance,
         stopFrame,
         history,
@@ -61,6 +63,7 @@ function AnnotationMenuComponent(props: Props & RouteComponentProps): JSX.Elemen
     } = props;
 
     const jobStage = jobInstance.stage;
+    const jobState = jobInstance.state;
     const taskID = jobInstance.taskId;
 
     function onClickMenuWrapper(params: MenuInfo): void {
@@ -148,11 +151,22 @@ function AnnotationMenuComponent(props: Props & RouteComponentProps): JSX.Elemen
             });
         } else if (params.key === Actions.SUBMIT_ANNOTATIONS) {
             Modal.confirm({
-                title: 'The job state is going to be switched',
-                content: 'State will be switched to COMPLETED. Continue?',
+                title: 'Do you want to submit annotations?',
+                content: 'Job state will be switched to "completed". Continue?',
                 okText: 'Continue',
                 cancelText: 'Cancel',
                 className: 'cvat-modal-content-submit-annotations',
+                onOk: () => {
+                    checkUnsavedChanges(params);
+                },
+            });
+        } else if (params.key === Actions.START_JOB) {
+            Modal.confirm({
+                title: `Do you want to start ${jobInstance.stage} of this job?`,
+                content: 'State will be switched to "in progress". Continue?',
+                okText: 'Continue',
+                cancelText: 'Cancel',
+                className: 'cvat-modal-content-start-job-modal',
                 onOk: () => {
                     checkUnsavedChanges(params);
                 },
@@ -170,8 +184,8 @@ function AnnotationMenuComponent(props: Props & RouteComponentProps): JSX.Elemen
             });
         } else if (params.key === Actions.RENEW_JOB) {
             Modal.confirm({
-                title: 'The job stage is going to be switched',
-                content: 'Stage will be changed to "in progress". Would you like to continue?',
+                title: 'Do you want to renew the job?',
+                content: 'Stage will be set to "in progress", state will be set to "annotation". Would you like to continue?',
                 okText: 'Continue',
                 cancelText: 'Cancel',
                 className: 'cvat-modal-content-renew-job',
@@ -183,8 +197,6 @@ function AnnotationMenuComponent(props: Props & RouteComponentProps): JSX.Elemen
             onClickMenu(params);
         }
     }
-
-    const is2d = jobInstance.dimension === DimensionType.DIM_2D;
 
     return (
         <Menu onClick={(params: MenuInfo) => onClickMenuWrapper(params)} className='cvat-annotation-menu' selectable={false}>
@@ -225,12 +237,17 @@ function AnnotationMenuComponent(props: Props & RouteComponentProps): JSX.Elemen
                     Open the task
                 </a>
             </Menu.Item>
-            {jobStage === 'annotation' && is2d && <Menu.Item key={Actions.SUBMIT_ANNOTATIONS}>Submit annotations</Menu.Item>}
-            {jobStage === 'annotation' && <Menu.Item key={Actions.FINISH_JOB}>Finish the job</Menu.Item>}
-            {jobStage === 'validation' && isReviewer && (
+            {jobState === core.enums.JobState.NEW && [JobStage.ANNOTATION, JobStage.REVIEW].includes(jobStage) ?
+                <Menu.Item key={Actions.START_JOB}>Start the job</Menu.Item> : null}
+            {jobStage === JobStage.ANNOTATION && jobState === core.enums.JobState.IN_PROGRESS ?
+                <Menu.Item key={Actions.SUBMIT_ANNOTATIONS}>Submit annotations</Menu.Item> : null}
+            {[JobStage.ANNOTATION, JobStage.REVIEW].includes(jobStage) ?
+                <Menu.Item key={Actions.FINISH_JOB}>Finish the job</Menu.Item> : null}
+            {jobStage === JobStage.ACCEPTANCE ?
+                <Menu.Item key={Actions.RENEW_JOB}>Renew the job</Menu.Item> : null}
+            {jobStage === JobStage.REVIEW && jobState !== core.enums.JobState.NEW ? (
                 <Menu.Item key={Actions.SUBMIT_REVIEW}>Submit the review</Menu.Item>
-            )}
-            {jobStage === 'acceptance' && <Menu.Item key={Actions.RENEW_JOB}>Renew the job</Menu.Item>}
+            ) : null}
         </Menu>
     );
 }
