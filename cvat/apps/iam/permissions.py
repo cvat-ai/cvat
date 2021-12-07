@@ -624,7 +624,8 @@ class TaskPermission(OpenPolicyAgentPermission):
 
         scopes = []
         if scope == 'create':
-            if any(k in request.data for k in ('project_id', 'project')):
+            project_id = request.data.get('project_id') or request.data.get('project')
+            if project_id:
                 scope = scope + '@project'
 
             scopes.append(scope)
