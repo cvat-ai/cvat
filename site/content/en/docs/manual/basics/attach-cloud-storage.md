@@ -286,7 +286,7 @@ button on the `Cloud storages` page and fill out the following form:
 
       - [`Anonymous access`](#anonymous-access) - for anonymous access, you need to enable public access to bucket.
 
-    - `Prefix`
+    - `Prefix` - used to filter data from the bucket.
 
     - [`Project ID`](https://console.cloud.google.com/cloud-resource-manager) - note that the project name does
       not match the project ID.
