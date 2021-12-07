@@ -74,8 +74,10 @@ function getTasksFailed(error: any): AnyAction {
     return action;
 }
 
-export function getTasksAsync(query: Partial<TasksQuery>): ThunkAction<Promise<void>, {}, {}, AnyAction> {
+export function getTasksAsync(query: TasksQuery): ThunkAction<Promise<void>, {}, {}, AnyAction> {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+        dispatch(getTasks(query));
+
         // We need remove all keys with null values from query
         const filteredQuery = { ...query };
         for (const key in filteredQuery) {
@@ -83,8 +85,6 @@ export function getTasksAsync(query: Partial<TasksQuery>): ThunkAction<Promise<v
                 delete filteredQuery[key];
             }
         }
-
-        dispatch(getTasks(filteredQuery));
 
         let result = null;
         try {

@@ -198,8 +198,7 @@ const config = require('./config');
 
             checkExclusiveFields(filter, ['id', 'search', 'projectId'], ['page']);
 
-            const searchParams = new URLSearchParams();
-
+            const searchParams = {};
             for (const field of [
                 'name',
                 'owner',
@@ -214,7 +213,7 @@ const config = require('./config');
                 'dimension',
             ]) {
                 if (Object.prototype.hasOwnProperty.call(filter, field)) {
-                    searchParams.set(camelToSnake(field), filter[field]);
+                    searchParams[camelToSnake(field)] = filter[field];
                 }
             }
 
