@@ -83,6 +83,8 @@ interface StateToProps {
     smoothImage: boolean;
     aamZoomMargin: number;
     showObjectsTextAlways: boolean;
+    textFontSize: number;
+    textPosition: 'auto' | 'center';
     showAllInterpolationTracks: boolean;
     workspace: Workspace;
     minZLayer: number;
@@ -164,6 +166,8 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 showAllInterpolationTracks,
                 automaticBordering,
                 intelligentPolygonCrop,
+                textFontSize,
+                textPosition,
             },
             shapes: {
                 opacity, colorBy, selectedOpacity, outlined, outlineColor, showBitmap, showProjections,
@@ -210,6 +214,8 @@ function mapStateToProps(state: CombinedState): StateToProps {
         smoothImage,
         aamZoomMargin,
         showObjectsTextAlways,
+        textFontSize,
+        textPosition,
         showAllInterpolationTracks,
         curZLayer,
         minZLayer,
