@@ -79,7 +79,6 @@ class LabelSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Label
         fields = ('id', 'name', 'color', 'attributes', 'deleted')
-        ordering = ['-id']
 
     def validate(self, attrs):
         if attrs.get('deleted') == True and attrs.get('id') is None:
