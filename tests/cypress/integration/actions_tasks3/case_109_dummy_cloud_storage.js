@@ -5,16 +5,16 @@
 /// <reference types="cypress" />
 
 const {
-    cloudStoragesDummyDataGoogleStorage,
-    cloudStoragesDummyDataAzureContainer,
-    cloudStoragesDummyDataAWSBucket,
+    dummyGoogleStorage,
+    dummyAzureContainer,
+    dummyAWSBucket,
 } = require('../../support/dummy-data');
 
-context('Dummy Cloud storages.', { browser: '!firefox' }, () => {
+context('Dummy cloud storages.', { browser: '!firefox' }, () => {
     const caseId = '109';
     const imageFolder = '../integration/actions_tasks3/assets/case_109';
 
-    function testCreateDummyStorage(dummyCS) {
+    function testCreateDummyStorageItem(dummyCS) {
         cy.intercept('GET', 'api/v1/cloudstorages?page_size=12&page=1', dummyCS).as('createCS');
         cy.contains('.cvat-header-button', 'Cloud Storages').should('be.visible').click();
         cy.wait('@createCS').its('response.statusCode').should('eq', 200);
@@ -30,22 +30,22 @@ context('Dummy Cloud storages.', { browser: '!firefox' }, () => {
     }
 
     function testCSValues({
-        status, id, description, provider,
+        status, id, displayName, provider,
     }) {
-        cy.get('.cvat-cloud-storage-item').should('have.length', 1);
-        cy.get('.cvat-cloud-storage-item')
-            .should('contain', `Status: ${status}`);
-        if (description) {
-            cy.get('.cvat-cloud-storage-item')
-                .should('contain', `#${id}: ${description}`);
-        }
-        if (provider) {
-            cy.get('.cvat-cloud-storage-item')
-                .should('contain', `Provider: ${provider}`);
-        }
-        if (status !== 'Error') {
-            cy.get('.cvat-cloud-storage-item-preview').should('exist');
-        }
+        cy.get('.cvat-cloud-storage-item').then((csItem) => {
+            cy.get(csItem)
+                .should('have.length', 1)
+                .should('contain', `Status: ${status}`);
+            if (displayName) {
+                cy.get(csItem).should('contain', `#${id}: ${displayName}`);
+            }
+            if (provider) {
+                cy.get(csItem).should('contain', `Provider: ${provider}`);
+            }
+            if (status !== 'Error') {
+                cy.get(csItem).should('exist');
+            }
+        });
     }
 
     function testCSSetStatusPreview(id, status, image) {
@@ -86,11 +86,11 @@ context('Dummy Cloud storages.', { browser: '!firefox' }, () => {
     });
 
     describe(`Testing case "${caseId}"`, () => {
-        it('Create dummy Google cloud storage and check fields.', () => {
-            testCreateDummyStorage(cloudStoragesDummyDataGoogleStorage);
+        it('Create dummy Google Cloud Storage and check fields.', () => {
+            testCreateDummyStorageItem(dummyGoogleStorage);
             testCheckAndCloseNotification();
             testCSValues({
-                status: 'Error', id: 3, description: 'Demo GCS', provider: 'GOOGLE_CLOUD_STORAGE',
+                status: 'Error', id: 3, displayName: 'Demo GCS', provider: 'GOOGLE_CLOUD_STORAGE',
             });
             testCSSetStatusPreview(3, 'NOT_FOUND', 'preview_GOOGLE_CLOUD_STORAGE.png');
             testCSValues({
@@ -104,13 +104,16 @@ context('Dummy Cloud storages.', { browser: '!firefox' }, () => {
             cy.get('#description')
                 .should('be.visible')
                 .and('have.value', 'It is first google cloud storage');
+            cy.get('#provider_type').should('be.disabled');
             cy.get('.cvat-cloud-storage-select-provider')
                 .should('be.visible')
                 .and('have.text', 'Google Cloud Storage');
+            cy.get('#resource')
+                .should('be.disabled')
+                .and('have.attr', 'value', 'gcsbucket');
             cy.get('[title="Key file"]').should('be.visible');
             cy.get('#key_file').should('be.visible');
             cy.get('[title="fakeKey.json"]').should('be.visible');
-            cy.get('#key_file').should('be.visible');
             cy.get('#prefix')
                 .should('be.visible')
                 .and('have.value', '');
@@ -123,10 +126,10 @@ context('Dummy Cloud storages.', { browser: '!firefox' }, () => {
         });
 
         it('Create dummy Azure Blob Container and check fields.', () => {
-            testCreateDummyStorage(cloudStoragesDummyDataAzureContainer);
+            testCreateDummyStorageItem(dummyAzureContainer);
             testCheckAndCloseNotification();
             testCSValues({
-                status: 'Error', id: 2, description: 'Demonstration container', provider: 'AZURE_CONTAINER',
+                status: 'Error', id: 2, displayName: 'Demonstration container', provider: 'AZURE_CONTAINER',
             });
             testCSSetStatusPreview(2, 'AVAILABLE', 'preview_AZURE_CONTAINER.png');
             testCSValues({
@@ -140,10 +143,12 @@ context('Dummy Cloud storages.', { browser: '!firefox' }, () => {
             cy.get('#description')
                 .should('be.visible')
                 .and('have.value', 'It is first container');
+            cy.get('#provider_type').should('be.disabled');
             cy.get('.cvat-cloud-storage-select-provider')
                 .should('be.visible')
                 .and('have.text', 'Azure Blob Container');
             cy.get('#resource')
+                .should('be.disabled')
                 .should('be.visible')
                 .and('have.attr', 'value', 'container');
             cy.get('[title="Account name and SAS token"]').should('be.visible');
@@ -158,10 +163,10 @@ context('Dummy Cloud storages.', { browser: '!firefox' }, () => {
         });
 
         it('Create dummy AWS S3 and check fields.', () => {
-            testCreateDummyStorage(cloudStoragesDummyDataAWSBucket);
+            testCreateDummyStorageItem(dummyAWSBucket);
             testCheckAndCloseNotification();
             testCSValues({
-                status: 'Error', id: 1, description: 'Demonstration bucket', provider: 'AWS_S3_BUCKET',
+                status: 'Error', id: 1, displayName: 'Demonstration bucket', provider: 'AWS_S3_BUCKET',
             });
             testCSSetStatusPreview(1, 'FORBIDDEN', 'preview_AWS_S3_BUCKET.png');
             testCSValues({
@@ -175,10 +180,12 @@ context('Dummy Cloud storages.', { browser: '!firefox' }, () => {
             cy.get('#description')
                 .should('be.visible')
                 .and('have.value', 'It is first bucket');
+            cy.get('#provider_type').should('be.disabled');
             cy.get('.cvat-cloud-storage-select-provider')
                 .should('be.visible')
                 .and('have.text', 'AWS S3');
             cy.get('#resource')
+                .should('be.disabled')
                 .should('be.visible')
                 .and('have.attr', 'value', 'bucket');
             cy.get('[title="Key id and secret access key pair"]').should('be.visible');

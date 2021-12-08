@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-const cloudStoragesDummyDataGoogleStorage = {
+const dummyGoogleStorage = {
     count: 1,
     next: null,
     previous: null,
@@ -31,7 +31,7 @@ const cloudStoragesDummyDataGoogleStorage = {
     ],
 };
 
-const cloudStoragesDummyDataAzureContainer = {
+const dummyAzureContainer = {
     count: 1,
     next: null,
     previous: null,
@@ -60,7 +60,7 @@ const cloudStoragesDummyDataAzureContainer = {
     ],
 };
 
-const cloudStoragesDummyDataAWSBucket = {
+const dummyAWSBucket = {
     count: 1,
     next: null,
     previous: null,
@@ -90,7 +90,7 @@ const cloudStoragesDummyDataAWSBucket = {
 };
 
 module.exports = {
-    cloudStoragesDummyDataGoogleStorage,
-    cloudStoragesDummyDataAzureContainer,
-    cloudStoragesDummyDataAWSBucket,
+    dummyGoogleStorage,
+    dummyAzureContainer,
+    dummyAWSBucket,
 };
