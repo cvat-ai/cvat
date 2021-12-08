@@ -164,7 +164,7 @@ Prepare the dataset as in the point [prepare dataset](#prepare-dataset).
   to the files in the container. Click `select a file` and select manifest file, in order to upload file to the root
   of the container leave blank `upload to folder` field.
 
-Now you can attach new cloud storage into CVAT.
+Now you can [attach new cloud storage into CVAT](#attach-new-cloud-storage).
 
 ## Using Google Cloud Storage
 
@@ -225,6 +225,8 @@ and press `SAVE`.
 
 ![](/images/google_cloud_storage_tutorial4.jpg)
 
+Now you can attach new cloud storage into CVAT.
+
 ## Attach new cloud storage
 
 After you upload the dataset and manifest file to AWS-S3, Azure Blob Container or Google Cloud Storage
@@ -283,7 +285,9 @@ button on the `Cloud storages` page and fill out the following form:
     - `Authorization type`:
 
       - [`Key file`](#create-a-service-account-and-key-file) - you can drag a key file to the area `attach a file`
-        or click on the area to select the key file through the explorer.
+        or click on the area to select the key file through the explorer. If the environment with the CVAT instance
+        deployed is specify `GOOGLE_APPLICATION_CREDENTIALS` environment variable, then it will be used if you do not
+        attach the key file ([more about `GOOGLE_APPLICATION_CREDENTIALS`](https://cloud.google.com/docs/authentication/getting-started#setting_the_environment_variable)).
 
       - [`Anonymous access`](#anonymous-access) - for anonymous access, you need to enable public access to bucket.
 
