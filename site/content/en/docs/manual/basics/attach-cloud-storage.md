@@ -215,7 +215,7 @@ The key file will be downloaded automatically.
 
 ![](/images/google_cloud_storage_tutorial3.jpg)
 
-[Learn more about creating keys](https://cloud.google.com/docs/authentication/getting-started#setting_the_environment_variable).
+[Learn more about creating keys](https://cloud.google.com/docs/authentication/getting-started).
 
 #### Anonymous access
 
@@ -240,7 +240,7 @@ button on the `Cloud storages` page and fill out the following form:
   of an item on cloud storages page.
 - `Provider` - choose provider of the cloud storage:
 
-  - [AWS-S3](#using-aws-s3):
+  - [**AWS-S3**](#using-aws-s3):
 
     - [`Bucket`](https://docs.aws.amazon.com/AmazonS3/latest/userguide/UsingBucket) - cloud storage bucket name.
 
@@ -259,7 +259,7 @@ button on the `Cloud storages` page and fill out the following form:
 
     </br>
 
-  - [Azure Blob Container](https://docs.microsoft.com/en-us/azure/storage/blobs/):
+  - [**Azure Blob Container**](https://docs.microsoft.com/en-us/azure/storage/blobs/):
 
     - `Container name` - name of the cloud storage container.
 
@@ -277,7 +277,7 @@ button on the `Cloud storages` page and fill out the following form:
 
     </br>
 
-  - [Google Cloud](https://cloud.google.com/docs):
+  - [**Google Cloud**](https://cloud.google.com/docs):
 
     - [`Bucket name`](https://cloud.google.com/storage/docs/creating-buckets) - cloud storage bucket name,
       you can find the created bucket on the [storage browser page](https://console.cloud.google.com/storage/browser).
