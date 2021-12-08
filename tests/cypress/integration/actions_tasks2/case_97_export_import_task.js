@@ -24,6 +24,7 @@ context('Export, import an annotation task.', { browser: '!firefox' }, () => {
     const newLabelName = 'person';
     let taskId;
     let taskBackupArchiveFullName;
+    let ctmBeforeExport;
 
     const createRectangleShape2Points = {
         points: 'By 2 Points',
@@ -34,25 +35,6 @@ context('Export, import an annotation task.', { browser: '!firefox' }, () => {
         secondX: 350,
         secondY: 450,
     };
-
-    function testShapeRotate(onlyCheckTransform = false) {
-        if (!onlyCheckTransform) {
-            cy.get('#cvat_canvas_shape_1')
-                .should('be.visible')
-                .trigger('mousemove')
-                .trigger('mouseover')
-                .should('have.class', 'cvat_canvas_shape_activated');
-            cy.get('.svg_select_points_rot')
-                .should('be.visible')
-                .and('have.length', 1)
-                .trigger('mousemove')
-                .trigger('mouseover');
-            cy.get('.svg_select_points_rot').trigger('mousedown', { button: 0 });
-            cy.get('.cvat-canvas-container').trigger('mousemove', 350, 150);
-            cy.get('.cvat-canvas-container').trigger('mouseup');
-        }
-        cy.get('#cvat_canvas_shape_1').should('have.attr', 'transform');
-    }
 
     before(() => {
         cy.visit('auth/login');
@@ -67,7 +49,22 @@ context('Export, import an annotation task.', { browser: '!firefox' }, () => {
         cy.addNewLabel(newLabelName);
         cy.openJob();
         cy.createRectangle(createRectangleShape2Points);
-        testShapeRotate();
+        cy.get('#cvat_canvas_shape_1')
+            .trigger('mousemove')
+            .trigger('mouseover')
+            .should('have.class', 'cvat_canvas_shape_activated');
+        cy.get('.svg_select_points_rot')
+            .should('be.visible')
+            .and('have.length', 1)
+            .trigger('mousemove')
+            .trigger('mouseover');
+        cy.get('.svg_select_points_rot').trigger('mousedown', { button: 0 });
+        cy.get('.cvat-canvas-container').trigger('mousemove', 350, 150);
+        cy.get('.cvat-canvas-container').trigger('mouseup');
+        cy.get('#cvat_canvas_shape_1').should('have.attr', 'transform');
+        cy.document().then((doc) => {
+            ctmBeforeExport = doc.getElementById('cvat_canvas_shape_1').getCTM();
+        });
         cy.saveJob();
         cy.goToTaskList();
     });
@@ -112,7 +109,13 @@ context('Export, import an annotation task.', { browser: '!firefox' }, () => {
             cy.get('#cvat-objects-sidebar-state-item-1').should('exist');
 
             // Check fix 3932 "Rotation property is not dumped when backup a task"
-            testShapeRotate(true);
+            cy.get('#cvat_canvas_shape_1')
+                .should('be.visible')
+                .and('have.attr', 'transform');
+            cy.document().then((doc) => {
+                const ctmAfterImport = doc.getElementById('cvat_canvas_shape_1').getCTM();
+                expect(ctmAfterImport).to.deep.eq(ctmBeforeExport);
+            });
         });
     });
 });
