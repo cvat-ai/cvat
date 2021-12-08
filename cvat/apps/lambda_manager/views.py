@@ -399,19 +399,19 @@ class LambdaJob:
                 label = labels.get(anno["label"])
                 if label is None:
                     continue # Invalid label provided
+                if anno.get('attributes'):
+                    attrs = [{'spec_id': label['attributes'][attr['name']], 'value': attr['value']} for attr in anno.get('attributes') if attr['name'] in label['attributes']]
+                else:
+                    attrs = []
                 if anno["type"].lower() == "tag":
                     results.append_tag({
                         "frame": frame,
                         "label_id": label['id'],
                         "source": "auto",
-                        "attributes": [],
+                        "attributes": attrs,
                         "group": None,
                     })
                 else:
-                    if anno.get('attributes'):
-                        attrs = [{'spec_id': label['attributes'][attr['name']], 'value': attr['value']} for attr in anno.get('attributes') if attr['name'] in label['attributes']]
-                    else:
-                        attrs = []
                     results.append_shape({
                         "frame": frame,
                         "label_id": label['id'],
