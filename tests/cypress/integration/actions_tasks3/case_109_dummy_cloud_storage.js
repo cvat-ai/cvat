@@ -7,7 +7,7 @@
 const {
     cloudStoragesDummyDataGoogleStorage,
     cloudStoragesDummyDataAzureContainer,
-    cloudStoragesDummyDataAzureBucket,
+    cloudStoragesDummyDataAWSBucket,
 } = require('../../support/dummy-data');
 
 context('Dummy Cloud storages.', { browser: '!firefox' }, () => {
@@ -158,7 +158,7 @@ context('Dummy Cloud storages.', { browser: '!firefox' }, () => {
         });
 
         it('Create dummy AWS S3 and check fields.', () => {
-            testCreateDummyStorage(cloudStoragesDummyDataAzureBucket);
+            testCreateDummyStorage(cloudStoragesDummyDataAWSBucket);
             testCheckAndCloseNotification();
             testCSValues({
                 status: 'Error', id: 1, description: 'Demonstration bucket', provider: 'AWS_S3_BUCKET',

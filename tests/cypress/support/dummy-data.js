@@ -60,7 +60,7 @@ const cloudStoragesDummyDataAzureContainer = {
     ],
 };
 
-const cloudStoragesDummyDataAzureBucket = {
+const cloudStoragesDummyDataAWSBucket = {
     count: 1,
     next: null,
     previous: null,
@@ -92,5 +92,5 @@ const cloudStoragesDummyDataAzureBucket = {
 module.exports = {
     cloudStoragesDummyDataGoogleStorage,
     cloudStoragesDummyDataAzureContainer,
-    cloudStoragesDummyDataAzureBucket,
+    cloudStoragesDummyDataAWSBucket,
 };
