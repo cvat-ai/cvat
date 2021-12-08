@@ -50,6 +50,8 @@ export default (state: ImportState = defaultState, action: ImportActions): Impor
         case ImportActionTypes.IMPORT_DATASET_SUCCESS: {
             return {
                 ...state,
+                progress: defaultState.progress,
+                status: defaultState.status,
                 importingId: null,
             };
         }

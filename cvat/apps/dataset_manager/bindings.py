@@ -1398,6 +1398,8 @@ def import_dm_annotations(dm_dataset: Dataset, instance_data: Union[TaskData, Pr
 
     if isinstance(instance_data, ProjectData):
         for sub_dataset, task_data in instance_data.split_dataset(dm_dataset):
+            # FIXME: temporary workaround for cvat format, will be removed after migration importer to datumaro
+            sub_dataset._format = dm_dataset.format
             import_dm_annotations(sub_dataset, task_data)
         return
 
