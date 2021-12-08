@@ -105,6 +105,8 @@ class LambdaFunction:
                 "`{}` lambda function has non-unique labels".format(self.id),
                 code=status.HTTP_404_NOT_FOUND)
         self.labels = labels
+        # mapping of labels and corresponding supported attributes
+        self.attributes = {item['name']: item.get('attributes', []) for item in spec}
         # state of the function
         self.state = data['status']['state']
         # description of the function
@@ -144,6 +146,10 @@ class LambdaFunction:
         if self.kind is LambdaType.TRACKER:
             response.update({
                 'state': self.state
+            })
+        if self.kind is LambdaType.DETECTOR:
+            response.update({
+                'attributes': self.attributes
             })
 
         return response
@@ -216,6 +222,11 @@ class LambdaFunction:
                 for item in response:
                     item["label"] = mapping.get(item["label"])
                 response = [item for item in response if item["label"]]
+            # TODO: Need to add attributes mapping similar to labels.
+            # Currently attribute is impicitely discarded if it is not decalred as supported in function config.
+            if self.attributes:
+                for item in response:
+                    item['attributes'] = [attr for attr in item.get("attributes", []) if attr['name'] in self.attributes[item['label']]]
 
         return response
 
