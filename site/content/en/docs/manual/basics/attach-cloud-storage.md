@@ -166,12 +166,12 @@ Prepare the dataset as in the point [prepare dataset](#prepare-dataset).
 
 Now you can attach new cloud storage into CVAT.
 
-## Using Google cloud storage
+## Using Google Cloud Storage
 
 ### Create Google account
 
 First, create a Google account, go to [account login page](https://accounts.google.com/) and click `Create account`.
-After [registering in 3 steps](https://console.cloud.google.com/freetrial) enter the required data
+After, go to the [Google Cloud page](https://cloud.google.com), click `Get started`, enter the required data
 and accept the terms of service (you'll need credit card information to register).
 
 ### Create a bucket
@@ -181,8 +181,8 @@ To create a bucket, go to the [cloud storage page](https://console.cloud.google.
 and press `Create bucket`. Next, enter the name of the bucket, add labels if necessary, select the type of location
 for example region and the location nearest to you, select storage class, when selecting access control
 you can enable `Enforce public access prevention on this bucket` (if you plan to have anonymous access to your bucket,
-it should be disabled) you can select `Uniform` or `Fine-grained` access control, if you need protection of your object data
-select protect object data type. When all the information is entered click `Create` to create the bucket.
+it should be disabled) you can select `Uniform` or `Fine-grained` access control, if you need protection of your
+object data select protect object data type. When all the information is entered click `Create` to create the bucket.
 
 ![](/images/google_cloud_storage_tutorial1.jpg)
 
@@ -220,14 +220,14 @@ The key file will be downloaded automatically.
 #### Anonymous access
 
 To configure anonymous access, open your bucket and go to the permissions tab click `ADD` to add new principals.
-In `new principals` field specify `allUsers`, select role for example `Cloud Storage`/`Storage Object Viewer`
+In `new principals` field specify `allUsers`, select role for example `Cloud Storage Legacy`/`Storage Legacy Bucket Reader`
 and press `SAVE`.
 
 ![](/images/google_cloud_storage_tutorial4.jpg)
 
 ## Attach new cloud storage
 
-After you upload the dataset and manifest file to AWS-S3, Azure Blob Container or Google cloud storage
+After you upload the dataset and manifest file to AWS-S3, Azure Blob Container or Google Cloud Storage
 you will be able to attach a cloud storage. To do this, press the `Attach new cloud storage`
 button on the `Cloud storages` page and fill out the following form:
 
@@ -277,7 +277,8 @@ button on the `Cloud storages` page and fill out the following form:
 
   - [Google Cloud](https://cloud.google.com/docs):
 
-    - [`Bucket name`](https://console.cloud.google.com/storage/browser/) - cloud storage bucket name.
+    - [`Bucket name`](https://cloud.google.com/storage/docs/creating-buckets) - cloud storage bucket name,
+      you can find the created bucket on the [storage browser page](https://console.cloud.google.com/storage/browser).
 
     - `Authorization type`:
 
@@ -288,8 +289,9 @@ button on the `Cloud storages` page and fill out the following form:
 
     - `Prefix` - used to filter data from the bucket.
 
-    - [`Project ID`](https://console.cloud.google.com/cloud-resource-manager) - note that the project name does
-      not match the project ID.
+    - [`Project ID`](https://cloud.google.com/resource-manager/docs/creating-managing-projects) - you can find
+      the created project on the [cloud resource manager page](https://console.cloud.google.com/cloud-resource-manager),
+      note that the project name does not match the project ID.
 
     - `Location` - here you can choose a region from the list or add a new one. To get more information click
       on [`?`](https://cloud.google.com/storage/docs/locations#available-locations).
