@@ -234,11 +234,14 @@ class ProjectFilter(filters.FilterSet):
 @method_decorator(name='destroy', decorator=swagger_auto_schema(operation_summary='Method deletes a specific project'))
 @method_decorator(name='partial_update', decorator=swagger_auto_schema(operation_summary='Methods does a partial update of chosen fields in a project'))
 class ProjectViewSet(auth.ProjectGetQuerySetMixin, viewsets.ModelViewSet):
-    queryset = models.Project.objects.all().order_by('-id')
+    queryset = models.Project.objects.prefetch_related(Prefetch('label_set',
+        queryset=models.Label.objects.order_by('id')
+    ))
     search_fields = ("name", "owner__username", "assignee__username", "status")
     filterset_class = ProjectFilter
     ordering_fields = ("id", "name", "owner", "status", "assignee")
-    http_method_names = ['get', 'post', 'head', 'patch', 'delete']
+    ordering = ("-id",)
+    http_method_names = ('get', 'post', 'head', 'patch', 'delete')
 
     def get_serializer_class(self):
         if self.request.path.endswith('tasks'):
@@ -413,7 +416,8 @@ class DjangoFilterInspector(CoreAPICompatInspector):
 @method_decorator(name='destroy', decorator=swagger_auto_schema(operation_summary='Method deletes a specific task, all attached jobs, annotations, and data'))
 @method_decorator(name='partial_update', decorator=swagger_auto_schema(operation_summary='Methods does a partial update of chosen fields in a task'))
 class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
-    queryset = Task.objects.all().prefetch_related(
+    queryset = Task.objects.prefetch_related(
+            Prefetch('label_set', queryset=models.Label.objects.order_by('id')),
             "label_set__attributespec_set",
             "segment_set__job_set",
         ).order_by('-id')
