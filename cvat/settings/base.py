@@ -21,6 +21,7 @@ import shutil
 import subprocess
 import mimetypes
 from distutils.util import strtobool
+from corsheaders.defaults import default_headers
 
 mimetypes.add_type("application/wasm", ".wasm", True)
 
@@ -482,18 +483,7 @@ CACHES = {
 
 USE_CACHE = True
 
-CORS_ALLOW_HEADERS = [
-    # default headers
-    'accept',
-    'accept-encoding',
-    'authorization',
-    'content-type',
-    'dnt',
-    'origin',
-    'user-agent',
-    'x-csrftoken',
-    'x-requested-with',
-
+CORS_ALLOW_HEADERS = list(default_headers) + [
     # tus upload protocol headers
     'upload-offset',
     'upload-length',
