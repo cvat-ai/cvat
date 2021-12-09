@@ -41,9 +41,6 @@ export enum Actions {
     EXPORT_TASK_DATASET = 'export_task_dataset',
     REMOVE_ANNO = 'remove_anno',
     OPEN_TASK = 'open_task',
-    START_JOB = 'start_job',
-    SUBMIT_ANNOTATIONS = 'submit_annotations',
-    SUBMIT_REVIEW = 'submit_review',
     FINISH_JOB = 'finish_job',
     RENEW_JOB = 'renew_job',
 }
@@ -65,6 +62,7 @@ function AnnotationMenuComponent(props: Props & RouteComponentProps): JSX.Elemen
     const jobStage = jobInstance.stage;
     const jobState = jobInstance.state;
     const taskID = jobInstance.taskId;
+    const { JobState } = core.enums;
 
     function onClickMenuWrapper(params: MenuInfo): void {
         function checkUnsavedChanges(_params: MenuInfo): void {
@@ -149,24 +147,13 @@ function AnnotationMenuComponent(props: Props & RouteComponentProps): JSX.Elemen
                 },
                 okText: 'Delete',
             });
-        } else if (params.key === Actions.SUBMIT_ANNOTATIONS) {
+        } else if (params.key.startsWith('state:')) {
             Modal.confirm({
-                title: 'Do you want to submit annotations?',
-                content: 'Job state will be switched to "completed". Continue?',
+                title: 'Do you want to change current job state?',
+                content: `Job state will be switched to "${params.key.split(':')[1]}". Continue?`,
                 okText: 'Continue',
                 cancelText: 'Cancel',
-                className: 'cvat-modal-content-submit-annotations',
-                onOk: () => {
-                    checkUnsavedChanges(params);
-                },
-            });
-        } else if (params.key === Actions.START_JOB) {
-            Modal.confirm({
-                title: `Do you want to start ${jobInstance.stage} of this job?`,
-                content: 'State will be switched to "in progress". Continue?',
-                okText: 'Continue',
-                cancelText: 'Cancel',
-                className: 'cvat-modal-content-start-job-modal',
+                className: 'cvat-modal-content-change-job-state',
                 onOk: () => {
                     checkUnsavedChanges(params);
                 },
@@ -237,17 +224,28 @@ function AnnotationMenuComponent(props: Props & RouteComponentProps): JSX.Elemen
                     Open the task
                 </a>
             </Menu.Item>
-            {jobState === core.enums.JobState.NEW && [JobStage.ANNOTATION, JobStage.REVIEW].includes(jobStage) ?
-                <Menu.Item key={Actions.START_JOB}>Start the job</Menu.Item> : null}
-            {jobStage === JobStage.ANNOTATION && jobState === core.enums.JobState.IN_PROGRESS ?
-                <Menu.Item key={Actions.SUBMIT_ANNOTATIONS}>Submit annotations</Menu.Item> : null}
+            {jobStage !== JobStage.ACCEPTANCE ? (
+                <Menu.SubMenu popupClassName='cvat-annotation-menu-job-status-submenu' title='Change job state'>
+                    <Menu.Item key={`state:${JobState.NEW}`}>
+                        <Text type='secondary' strong={jobState === JobState.NEW}>{JobState.NEW}</Text>
+                    </Menu.Item>
+                    <Menu.Item key={`state:${JobState.IN_PROGRESS}`}>
+                        <Text strong={jobState === JobState.IN_PROGRESS}>{JobState.IN_PROGRESS}</Text>
+                    </Menu.Item>
+                    { jobStage === JobStage.REVIEW ? (
+                        <Menu.Item key={`state:${JobState.REJECTED}`}>
+                            <Text type='danger' strong={jobState === JobState.REJECTED}>{JobState.REJECTED}</Text>
+                        </Menu.Item>
+                    ) : null }
+                    <Menu.Item key={`state:${JobState.COMPLETED}`}>
+                        <Text type='success' strong={jobState === JobState.COMPLETED}>{JobState.COMPLETED}</Text>
+                    </Menu.Item>
+                </Menu.SubMenu>
+            ) : null }
             {[JobStage.ANNOTATION, JobStage.REVIEW].includes(jobStage) ?
                 <Menu.Item key={Actions.FINISH_JOB}>Finish the job</Menu.Item> : null}
             {jobStage === JobStage.ACCEPTANCE ?
                 <Menu.Item key={Actions.RENEW_JOB}>Renew the job</Menu.Item> : null}
-            {jobStage === JobStage.REVIEW && jobState !== core.enums.JobState.NEW ? (
-                <Menu.Item key={Actions.SUBMIT_REVIEW}>Submit the review</Menu.Item>
-            ) : null}
         </Menu>
     );
 }

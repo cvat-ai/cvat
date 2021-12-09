@@ -594,7 +594,6 @@ export interface AnnotationState {
     };
     colors: any[];
     filtersPanelVisible: boolean;
-    submitReviewDialogVisible: boolean;
     sidebarCollapsed: boolean;
     appearanceCollapsed: boolean;
     workspace: Workspace;

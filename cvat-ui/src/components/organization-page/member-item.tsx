@@ -11,7 +11,6 @@ import { CloseOutlined } from '@ant-design/icons';
 import Modal from 'antd/lib/modal';
 
 export interface Props {
-    ownerID: number;
     membershipInstance: any;
     onRemoveMembership(): void;
     onUpdateMembershipRole(role: string): void;
@@ -19,7 +18,7 @@ export interface Props {
 
 function MemberItem(props: Props): JSX.Element {
     const {
-        membershipInstance, ownerID, onRemoveMembership, onUpdateMembershipRole,
+        membershipInstance, onRemoveMembership, onUpdateMembershipRole,
     } = props;
     const {
         user, joined_date: joinedDate, role, invitation,
@@ -48,20 +47,26 @@ function MemberItem(props: Props): JSX.Element {
                         onUpdateMembershipRole(_role);
                     }}
                     value={role}
-                    disabled={user.id === ownerID}
+                    disabled={role === 'owner'}
                 >
-                    {role === 'owner' ? <Select.Option value='owner'>Owner</Select.Option> : null}
-                    <Select.Option value='worker'>Worker</Select.Option>
-                    <Select.Option value='supervisor'>Supervisor</Select.Option>
-                    <Select.Option value='maintainer'>Maintainer</Select.Option>
+                    {role === 'owner' ? (
+                        <Select.Option value='owner'>Owner</Select.Option>
+                    ) : (
+                        <>
+                            <Select.Option value='worker'>Worker</Select.Option>
+                            <Select.Option value='supervisor'>Supervisor</Select.Option>
+                            <Select.Option value='maintainer'>Maintainer</Select.Option>
+                        </>
+                    )}
                 </Select>
             </Col>
             <Col span={1} className='cvat-organization-member-item-remove'>
-                {ownerID !== membershipInstance.user.id ? (
+                {role !== 'owner' ? (
                     <CloseOutlined
                         onClick={() => {
                             Modal.confirm({
-                                content: `Do you want to remove "${username}" from this organization. Continue?`,
+                                title: `You are removing "${username}" from this organization`,
+                                content: 'The person will not have access to the organization data anymore. Continue?',
                                 okText: 'Yes, remove',
                                 okButtonProps: {
                                     danger: true,

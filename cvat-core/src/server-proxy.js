@@ -8,9 +8,15 @@
     const store = require('store');
     const config = require('./config');
     const DownloadWorker = require('./download.worker');
+    const Axios = require('axios');
 
     function enableOrganization() {
         return config.organizationID !== null ? { org: config.organizationID } : {};
+    }
+
+    function removeToken() {
+        Axios.defaults.headers.common.Authorization = '';
+        store.remove('token');
     }
 
     function waitFor(frequencyHz, predicate) {
@@ -126,7 +132,6 @@
 
     class ServerProxy {
         constructor() {
-            const Axios = require('axios');
             Axios.defaults.withCredentials = true;
             Axios.defaults.xsrfHeaderName = 'X-CSRFTOKEN';
             Axios.defaults.xsrfCookieName = 'csrftoken';
@@ -254,7 +259,7 @@
                     .join('&')
                     .replace(/%20/g, '+');
 
-                Axios.defaults.headers.common.Authorization = '';
+                removeToken();
                 let authenticationResponse = null;
                 try {
                     authenticationResponse = await Axios.post(`${config.backendAPI}/auth/login`, authenticationData, {
@@ -281,12 +286,10 @@
                     await Axios.post(`${config.backendAPI}/auth/logout`, {
                         proxy: config.proxy,
                     });
+                    removeToken();
                 } catch (errorData) {
                     throw generateError(errorData);
                 }
-
-                store.remove('token');
-                Axios.defaults.headers.common.Authorization = '';
             }
 
             async function changePassword(oldPassword, newPassword1, newPassword2) {
@@ -347,6 +350,7 @@
                     await module.exports.users.self();
                 } catch (serverError) {
                     if (serverError.code === 401) {
+                        removeToken();
                         return false;
                     }
 

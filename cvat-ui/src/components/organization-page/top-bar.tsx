@@ -159,7 +159,7 @@ function OrganizationTopBar(props: Props): JSX.Element {
                 </Col>
                 <Col span={12} className='cvat-organization-top-bar-buttons-block'>
                     <Space align='end'>
-                        {userID !== owner.id ? (
+                        {!(owner && userID === owner.id) ? (
                             <Button
                                 type='primary'
                                 danger
@@ -185,7 +185,7 @@ function OrganizationTopBar(props: Props): JSX.Element {
                                 Leave organization
                             </Button>
                         ) : null}
-                        {userID === owner.id ? (
+                        {owner && userID === owner.id ? (
                             <Button
                                 type='primary'
                                 danger

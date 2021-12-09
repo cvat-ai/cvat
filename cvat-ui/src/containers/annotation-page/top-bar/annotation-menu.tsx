@@ -14,7 +14,6 @@ import { updateJobAsync } from 'actions/tasks-actions';
 import {
     uploadJobAnnotationsAsync,
     saveAnnotationsAsync,
-    switchSubmitReviewDialog as switchSubmitReviewDialogAction,
     setForceExitAnnotationFlag as setForceExitAnnotationFlagAction,
     removeAnnotationsAsync as removeAnnotationsAsyncAction,
 } from 'actions/annotation-actions';
@@ -34,7 +33,6 @@ interface DispatchToProps {
     loadAnnotations(job: any, loader: any, file: File): void;
     showExportModal(jobInstance: any): void;
     removeAnnotations(startnumber: number, endnumber: number, delTrackKeyframesOnly: boolean): void;
-    switchSubmitReviewDialog(visible: boolean): void;
     setForceExitAnnotationFlag(forceExit: boolean): void;
     saveAnnotations(jobInstance: any, afterSave?: () => void): void;
     updateJob(jobInstance: any): void;
@@ -77,9 +75,6 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         removeAnnotations(startnumber: number, endnumber: number, delTrackKeyframesOnly:boolean) {
             dispatch(removeAnnotationsAsyncAction(startnumber, endnumber, delTrackKeyframesOnly));
         },
-        switchSubmitReviewDialog(visible: boolean): void {
-            dispatch(switchSubmitReviewDialogAction(visible));
-        },
         setForceExitAnnotationFlag(forceExit: boolean): void {
             dispatch(setForceExitAnnotationFlagAction(forceExit));
         },
@@ -104,7 +99,6 @@ function AnnotationMenuContainer(props: Props): JSX.Element {
         loadAnnotations,
         showExportModal,
         removeAnnotations,
-        switchSubmitReviewDialog,
         setForceExitAnnotationFlag,
         saveAnnotations,
         updateJob,
@@ -121,16 +115,6 @@ function AnnotationMenuContainer(props: Props): JSX.Element {
         const [action] = params.keyPath;
         if (action === Actions.EXPORT_TASK_DATASET) {
             showExportModal(jobInstance);
-        } else if (action === Actions.SUBMIT_ANNOTATIONS) {
-            jobInstance.state = core.enums.JobState.COMPLETED;
-            updateJob(jobInstance);
-            history.push(`/tasks/${jobInstance.taskId}`);
-        } else if (action === Actions.START_JOB) {
-            jobInstance.state = core.enums.JobState.IN_PROGRESS;
-            updateJob(jobInstance);
-            window.location.reload();
-        } else if (action === Actions.SUBMIT_REVIEW) {
-            switchSubmitReviewDialog(true);
         } else if (action === Actions.RENEW_JOB) {
             jobInstance.state = core.enums.JobState.NEW;
             jobInstance.stage = JobStage.ANNOTATION;
@@ -143,6 +127,10 @@ function AnnotationMenuContainer(props: Props): JSX.Element {
             history.push(`/tasks/${jobInstance.taskId}`);
         } else if (action === Actions.OPEN_TASK) {
             history.push(`/tasks/${jobInstance.taskId}`);
+        } else if (action.startsWith('state:')) {
+            [, jobInstance.state] = action.split(':');
+            updateJob(jobInstance);
+            window.location.reload();
         }
     };
 

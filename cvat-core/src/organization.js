@@ -69,7 +69,7 @@ class Organization {
             }
         }
 
-        if (typeof data.owner !== 'undefined') {
+        if (typeof data.owner !== 'undefined' && data.owner !== null) {
             checkObjectType('owner', data.owner, null, User);
         }
 

@@ -27,7 +27,6 @@ function MembersList(props: Props): JSX.Element {
     const {
         organizationInstance, fetching, members, pageSize, pageNumber, fetchMembers, setPageNumber, setPageSize,
     } = props;
-    const { owner } = organizationInstance;
     const dispatch = useDispatch();
     const inviting = useSelector((state: CombinedState) => state.organizations.inviting);
     const updatingMember = useSelector((state: CombinedState) => state.organizations.updatingMember);
@@ -42,7 +41,6 @@ function MembersList(props: Props): JSX.Element {
                     (member: any): JSX.Element => (
                         <MemberItem
                             key={member.user.id}
-                            ownerID={owner.id}
                             membershipInstance={member}
                             onRemoveMembership={() => {
                                 dispatch(
