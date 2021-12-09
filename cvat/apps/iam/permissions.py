@@ -111,7 +111,7 @@ class OrganizationPermission(OpenPolicyAgentPermission):
             return {
                 'id': self.obj.id,
                 'owner': {
-                    'id': self.obj.owner.id
+                    'id': getattr(self.obj.owner, 'id', None)
                 },
                 'user': {
                     'role': membership.role if membership else None
@@ -164,8 +164,8 @@ class InvitationPermission(OpenPolicyAgentPermission):
         data = None
         if self.obj:
             data = {
-                'owner': { 'id': self.obj.owner.id },
-                'invitee': { 'id': self.obj.membership.user.id },
+                'owner': { 'id': getattr(self.obj.owner, 'id', None) },
+                'invitee': { 'id': getattr(self.obj.membership.user, 'id', None) },
                 'role': self.obj.membership.role,
                 'organization': {
                     'id': self.obj.membership.organization.id
@@ -384,7 +384,7 @@ class CloudStoragePermission(OpenPolicyAgentPermission):
         elif self.obj:
             data = {
                 'id': self.obj.id,
-                'owner': { 'id': self.obj.owner.id },
+                'owner': { 'id': getattr(self.obj.owner, 'id', None) },
                 'organization': {
                     'id': self.obj.organization.id
                 } if self.obj.organization else None
