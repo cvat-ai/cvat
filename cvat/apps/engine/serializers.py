@@ -329,7 +329,7 @@ class DataSerializer(serializers.ModelSerializer):
 
         for extra_key in { 'use_zip_chunks', 'use_cache', 'copy_data' }:
             validated_data.pop(extra_key)
-         
+
         files = {'client_files': client_files, 'server_files': server_files, 'remote_files': remote_files}
         return files
 
