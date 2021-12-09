@@ -9,7 +9,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('organizations', '0001_initial'),
-        ('engine', '0045_auto_20211123_0824'),
+        ('engine', '0046_data_sorting_method'),
     ]
 
     operations = [

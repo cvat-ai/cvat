@@ -7,6 +7,7 @@ import { Row, Col } from 'antd/lib/grid';
 import { PercentageOutlined } from '@ant-design/icons';
 import Input from 'antd/lib/input';
 import Select from 'antd/lib/select';
+import Radio from 'antd/lib/radio';
 import Checkbox from 'antd/lib/checkbox';
 import Form, { FormInstance, RuleObject, RuleRender } from 'antd/lib/form';
 import Text from 'antd/lib/typography/Text';
@@ -15,6 +16,13 @@ import CVATTooltip from 'components/common/cvat-tooltip';
 import patterns from 'utils/validation-patterns';
 
 const { Option } = Select;
+
+export enum SortingMethod {
+    LEXICOGRAPHICAL = 'lexicographical',
+    NATURAL = 'natural',
+    PREDEFINED = 'predefined',
+    RANDOM = 'random',
+}
 
 export interface AdvancedConfiguration {
     bugTracker?: string;
@@ -31,6 +39,7 @@ export interface AdvancedConfiguration {
     dataChunkSize?: number;
     useCache: boolean;
     copyData?: boolean;
+    sortingMethod: SortingMethod;
 }
 
 const initialValues: AdvancedConfiguration = {
@@ -39,6 +48,7 @@ const initialValues: AdvancedConfiguration = {
     useZipChunks: true,
     useCache: true,
     copyData: false,
+    sortingMethod: SortingMethod.LEXICOGRAPHICAL,
 };
 
 interface Props {
@@ -174,6 +184,33 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
                 <Checkbox>
                     <Text className='cvat-text-color'>Copy data into CVAT</Text>
                 </Checkbox>
+            </Form.Item>
+        );
+    }
+
+    private renderSortingMethodRadio(): JSX.Element {
+        return (
+            <Form.Item
+                label='Sorting method'
+                name='sortingMethod'
+                rules={[
+                    {
+                        required: true,
+                        message: 'The field is required.',
+                    },
+                ]}
+                help='Specify how to sort images. It is not relevant for videos.'
+            >
+                <Radio.Group>
+                    <Radio value={SortingMethod.LEXICOGRAPHICAL} key={SortingMethod.LEXICOGRAPHICAL}>
+                        Lexicographical
+                    </Radio>
+                    <Radio value={SortingMethod.NATURAL} key={SortingMethod.NATURAL}>Natural</Radio>
+                    <Radio value={SortingMethod.PREDEFINED} key={SortingMethod.PREDEFINED}>
+                        Predefined
+                    </Radio>
+                    <Radio value={SortingMethod.RANDOM} key={SortingMethod.RANDOM}>Random</Radio>
+                </Radio.Group>
             </Form.Item>
         );
     }
@@ -390,6 +427,9 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
         const { installedGit, activeFileManagerTab } = this.props;
         return (
             <Form initialValues={initialValues} ref={this.formRef} layout='vertical'>
+                <Row>
+                    <Col>{this.renderSortingMethodRadio()}</Col>
+                </Row>
                 {activeFileManagerTab === 'share' ? (
                     <Row>
                         <Col>{this.renderCopyDataChechbox()}</Col>

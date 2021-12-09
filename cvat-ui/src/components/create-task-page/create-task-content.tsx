@@ -20,7 +20,7 @@ import { Files } from 'components/file-manager/file-manager';
 import BasicConfigurationForm, { BaseConfiguration } from './basic-configuration-form';
 import ProjectSearchField from './project-search-field';
 import ProjectSubsetField from './project-subset-field';
-import AdvancedConfigurationForm, { AdvancedConfiguration } from './advanced-configuration-form';
+import AdvancedConfigurationForm, { AdvancedConfiguration, SortingMethod } from './advanced-configuration-form';
 
 export interface CreateTaskData {
     projectId: number | null;
@@ -54,6 +54,7 @@ const defaultState = {
         lfs: false,
         useZipChunks: true,
         useCache: true,
+        sortingMethod: SortingMethod.LEXICOGRAPHICAL,
     },
     labels: [],
     files: {
