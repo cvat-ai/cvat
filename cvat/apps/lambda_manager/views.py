@@ -353,6 +353,9 @@ class LambdaJob:
             def append_shape(self, shape):
                 self.data["shapes"].append(shape)
 
+            def append_tag(self, tag):
+                self.data["tags"].append(tag)
+
             def submit(self):
                 if not self.is_empty():
                     serializer = LabeledDataSerializer(data=self.data)
@@ -380,7 +383,17 @@ class LambdaJob:
 
             for anno in annotations:
                 label_id = labels.get(anno["label"])
-                if label_id is not None:
+                if label_id is None:
+                    continue # Invalid label provided
+                if anno["type"].lower() == "tag":
+                    results.append_tag({
+                        "frame": frame,
+                        "label_id": label_id,
+                        "source": "auto",
+                        "attributes": [],
+                        "group": None,
+                    })
+                else:
                     results.append_shape({
                         "frame": frame,
                         "label_id": label_id,

@@ -55,6 +55,8 @@ export interface Configuration {
     smoothImage?: boolean;
     autoborders?: boolean;
     displayAllText?: boolean;
+    textFontSize?: number;
+    textPosition?: 'auto' | 'center';
     undefinedAttrValue?: string;
     showProjections?: boolean;
     forceDisableEditing?: boolean;
@@ -645,6 +647,14 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
     public configure(configuration: Configuration): void {
         if (typeof configuration.displayAllText === 'boolean') {
             this.data.configuration.displayAllText = configuration.displayAllText;
+        }
+
+        if (typeof configuration.textFontSize === 'number') {
+            this.data.configuration.textFontSize = configuration.textFontSize;
+        }
+
+        if (['auto', 'center'].includes(configuration.textPosition)) {
+            this.data.configuration.textPosition = configuration.textPosition;
         }
 
         if (typeof configuration.showProjections === 'boolean') {

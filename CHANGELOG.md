@@ -17,6 +17,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Player option: Smooth image when zoom-in, enabled by default (<https://github.com/openvinotoolkit/cvat/pull/3933>)
 - Google Cloud Storage support in UI (<https://github.com/openvinotoolkit/cvat/pull/3919>)
 - Add project tasks paginations (<https://github.com/openvinotoolkit/cvat/pull/3910>)
+- Add remove issue button (<https://github.com/openvinotoolkit/cvat/pull/3952>)
+- Options to change font size & position of text labels on the canvas (<https://github.com/openvinotoolkit/cvat/pull/3972>)
+- Add "tag" return type for automatic annotation in Nuclio (<https://github.com/openvinotoolkit/cvat/pull/3896>)
 
 ### Changed
 - TDB
@@ -33,6 +36,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Order of the label attributes in the object item details(<https://github.com/openvinotoolkit/cvat/pull/3945>)
 - Order of labels in tasks and projects (<https://github.com/openvinotoolkit/cvat/pull/3987>)
 - Fixed task creating with large files via webpage (<https://github.com/openvinotoolkit/cvat/pull/3692>)
+
 
 ### Security
 - TDB

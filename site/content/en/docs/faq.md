@@ -49,18 +49,26 @@ You should free up disk space or change the threshold, to do so check: [Elastics
 To change the hostname, simply set the `CVAT_HOST` environemnt variable
 
 ```
-export CVAT_HOST=<YOUR_HOSTNAME>
+export CVAT_HOST=<YOUR_HOSTNAME_OR_IP>
+```
+NOTE, if you're using `docker-compose` with `sudo` to run CVAT, then please add the `-E` (or `--preserve-env`)
+flag to preserve the user environment variable which set above to take effect in your docker containers:
+
+```
+sudo -E docker-compose up -d
 ```
 
-If you want to change the port, change the `entryPoints.web.address` part of `traefik` image command in `docker-compose.yml`
+If you want to change the default web application port, change the `ports` part of `traefik` service configuration
+in `docker-compose.yml`
 
 ```
 services:
   traefik:
-    command:
-      - "--providers.docker.exposedByDefault=false"
-      - "--providers.docker.network=test"
-      - "--entryPoints.web.address=:<YOUR_PORT>"
+    ...
+    ...
+    ports:
+      - <YOUR_WEB_PORTAL_PORT>:8080
+      - 8090:8090
 ```
 
 Note that changing the port does not make sense if you are using HTTPS - port 443 is conventionally
