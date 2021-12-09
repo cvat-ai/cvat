@@ -36,7 +36,7 @@ class OpenPolicyAgentPermission:
                     'organization': {
                         'id': organization.id,
                         'owner': {
-                            'id': organization.owner.id,
+                            'id': getattr(organization.owner, 'id', None),
                         },
                         'user': {
                             'role': getattr(membership, 'role', None)
