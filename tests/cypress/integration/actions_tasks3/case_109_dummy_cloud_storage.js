@@ -14,10 +14,10 @@ context('Dummy cloud storages.', { browser: '!firefox' }, () => {
     const caseId = '109';
     const imageFolder = '../integration/actions_tasks3/assets/case_109';
 
-    function testCreateDummyStorageItem(dummyCS) {
-        cy.intercept('GET', 'api/v1/cloudstorages?page_size=12&page=1', dummyCS).as('createCS');
+    function testListDummyCloudStorages(dummyCS) {
+        cy.intercept('GET', 'api/v1/cloudstorages?page_size=12&page=1', dummyCS).as('listCS');
         cy.contains('.cvat-header-button', 'Cloud Storages').should('be.visible').click();
-        cy.wait('@createCS').its('response.statusCode').should('eq', 200);
+        cy.wait('@listCS').its('response.statusCode').should('eq', 200);
         cy.get('.cvat-cloud-storage-item-empty-preview').should('have.length', 1);
     }
 
@@ -30,12 +30,20 @@ context('Dummy cloud storages.', { browser: '!firefox' }, () => {
     }
 
     function testCSValues({
-        status, id, displayName, provider,
+        status, id, displayName, provider, description,
     }) {
         cy.get('.cvat-cloud-storage-item').then((csItem) => {
             cy.get(csItem)
                 .should('have.length', 1)
                 .should('contain', `Status: ${status}`);
+            if (description) {
+                cy.get('.cvat-cloud-storage-description-icon')
+                    .should('have.length', 1)
+                    .trigger('mouseover');
+                cy.get('[role="tooltip"]')
+                    .should('be.visible')
+                    .and('have.text', description);
+            }
             if (displayName) {
                 cy.get(csItem).should('contain', `#${id}: ${displayName}`);
             }
@@ -87,10 +95,14 @@ context('Dummy cloud storages.', { browser: '!firefox' }, () => {
 
     describe(`Testing case "${caseId}"`, () => {
         it('Create dummy Google Cloud Storage and check fields.', () => {
-            testCreateDummyStorageItem(dummyGoogleStorage);
+            testListDummyCloudStorages(dummyGoogleStorage);
             testCheckAndCloseNotification();
             testCSValues({
-                status: 'Error', id: 3, displayName: 'Demo GCS', provider: 'GOOGLE_CLOUD_STORAGE',
+                status: 'Error',
+                id: 3,
+                displayName: 'Demo GCS',
+                provider: 'GOOGLE_CLOUD_STORAGE',
+                description: 'It is first google cloud storage',
             });
             testCSSetStatusPreview(3, 'NOT_FOUND', 'preview_GOOGLE_CLOUD_STORAGE.png');
             testCSValues({
@@ -126,10 +138,14 @@ context('Dummy cloud storages.', { browser: '!firefox' }, () => {
         });
 
         it('Create dummy Azure Blob Container and check fields.', () => {
-            testCreateDummyStorageItem(dummyAzureContainer);
+            testListDummyCloudStorages(dummyAzureContainer);
             testCheckAndCloseNotification();
             testCSValues({
-                status: 'Error', id: 2, displayName: 'Demonstration container', provider: 'AZURE_CONTAINER',
+                status: 'Error',
+                id: 2,
+                displayName: 'Demonstration container',
+                provider: 'AZURE_CONTAINER',
+                description: 'It is first container',
             });
             testCSSetStatusPreview(2, 'AVAILABLE', 'preview_AZURE_CONTAINER.png');
             testCSValues({
@@ -163,10 +179,14 @@ context('Dummy cloud storages.', { browser: '!firefox' }, () => {
         });
 
         it('Create dummy AWS S3 and check fields.', () => {
-            testCreateDummyStorageItem(dummyAWSBucket);
+            testListDummyCloudStorages(dummyAWSBucket);
             testCheckAndCloseNotification();
             testCSValues({
-                status: 'Error', id: 1, displayName: 'Demonstration bucket', provider: 'AWS_S3_BUCKET',
+                status: 'Error',
+                id: 1,
+                displayName: 'Demonstration bucket',
+                provider: 'AWS_S3_BUCKET',
+                description: 'It is first bucket',
             });
             testCSSetStatusPreview(1, 'FORBIDDEN', 'preview_AWS_S3_BUCKET.png');
             testCSValues({
