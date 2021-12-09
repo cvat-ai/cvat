@@ -355,9 +355,10 @@ class TaskExporter(_TaskBackupBase):
             self._write_annotations(output_file)
 
 class TaskImporter(_TaskBackupBase):
-    def __init__(self, filename, user_id):
+    def __init__(self, filename, user_id, org_id):
         self._filename = filename
         self._user_id = user_id
+        self._org_id = org_id
         self._manifest, self._annotations = self._read_meta()
         self._version = self._read_version()
         self._labels_mapping = {}
@@ -427,7 +428,8 @@ class TaskImporter(_TaskBackupBase):
         self._manifest['segment_size'], self._manifest['overlap'] = self._calculate_segment_size(jobs)
         self._manifest["owner_id"] = self._user_id
 
-        self._db_task = models.Task.objects.create(**self._manifest)
+        self._db_task = models.Task.objects.create(**self._manifest,
+            organization_id=self._org_id)
         task_path = self._db_task.get_task_dirname()
         if os.path.isdir(task_path):
             shutil.rmtree(task_path)
@@ -485,8 +487,8 @@ class TaskImporter(_TaskBackupBase):
         return self._db_task
 
 @transaction.atomic
-def import_task(filename, user):
+def import_task(filename, user_id, org_id):
     av_scan_paths(filename)
-    task_importer = TaskImporter(filename, user)
+    task_importer = TaskImporter(filename, user_id, org_id)
     db_task = task_importer.import_task()
     return db_task.id

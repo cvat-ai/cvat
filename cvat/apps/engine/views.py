@@ -516,9 +516,10 @@ class TaskViewSet(viewsets.ModelViewSet):
                 with open(filename, 'wb+') as f:
                     for chunk in task_file.chunks():
                         f.write(chunk)
+                org_id = getattr(request.iam_context['organization'], 'id', None)
                 rq_job = queue.enqueue_call(
                     func=import_task,
-                    args=(filename, request.user.id),
+                    args=(filename, request.user.id, org_id),
                     job_id=rq_id,
                     meta={
                         'tmp_file': filename,
