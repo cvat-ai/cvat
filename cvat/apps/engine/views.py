@@ -671,6 +671,7 @@ class TaskViewSet(UploadMixin, auth.TaskGetQuerySetMixin, viewsets.ModelViewSet)
                 return Response(data='Adding more data is not supported',
                     status=status.HTTP_400_BAD_REQUEST)
             return self.upload_data(request)
+
         else:
             data_type = request.query_params.get('type', None)
             data_id = request.query_params.get('number', None)

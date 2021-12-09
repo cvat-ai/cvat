@@ -10,7 +10,7 @@ from contextlib import closing
 from tempfile import NamedTemporaryFile
 
 from PIL import Image
-from .utils import md5_hash, rotate_image
+from .utils import md5_hash, rotate_image, sort, SortingMethod
 
 class VideoStreamReader:
     def __init__(self, source_path, chunk_size, force):
@@ -146,14 +146,14 @@ class DatasetImagesReader:
     def __init__(self,
                 sources,
                 meta=None,
-                is_sorted=True,
+                sorting_method=SortingMethod.PREDEFINED,
                 use_image_hash=False,
                 start = 0,
                 step = 1,
                 stop = None,
                 *args,
                 **kwargs):
-        self._sources = sources if is_sorted else sorted(sources)
+        self._sources = sort(sources, sorting_method)
         self._meta = meta
         self._data_dir = kwargs.get('data_dir', None)
         self._use_image_hash = use_image_hash
@@ -601,11 +601,18 @@ class ImageManifestManager(_ManifestManager):
         return (f"{image['name']}{image['extension']}" for _, image in self)
 
     def get_subset(self, subset_names):
-        return ({
-            'name': f"{image['name']}",
-            'extension': f"{image['extension']}",
-            'width': image['width'],
-            'height': image['height'],
-            'meta': image['meta'],
-            'checksum': f"{image['checksum']}"
-        } for _, image in self if f"{image['name']}{image['extension']}" in subset_names)
+        index_list = []
+        subset = []
+        for _, image in self:
+            image_name = f"{image['name']}{image['extension']}"
+            if image_name in subset_names:
+                index_list.append(subset_names.index(image_name))
+                subset.append({
+                    'name': f"{image['name']}",
+                    'extension': f"{image['extension']}",
+                    'width': image['width'],
+                    'height': image['height'],
+                    'meta': image['meta'],
+                    'checksum': f"{image['checksum']}"
+                })
+        return index_list, subset

@@ -281,7 +281,7 @@ class DataSerializer(serializers.ModelSerializer):
         model = models.Data
         fields = ('chunk_size', 'size', 'image_quality', 'start_frame', 'stop_frame', 'frame_filter',
             'compressed_chunk_type', 'original_chunk_type', 'client_files', 'server_files', 'remote_files', 'use_zip_chunks',
-            'cloud_storage_id', 'use_cache', 'copy_data', 'storage_method', 'storage')
+            'cloud_storage_id', 'use_cache', 'copy_data', 'storage_method', 'storage', 'sorting_method')
 
     # pylint: disable=no-self-use
     def validate_frame_filter(self, value):
@@ -326,11 +326,13 @@ class DataSerializer(serializers.ModelSerializer):
         client_files = validated_data.pop('client_files')
         server_files = validated_data.pop('server_files')
         remote_files = validated_data.pop('remote_files')
-        validated_data.pop('use_zip_chunks')
-        validated_data.pop('use_cache')
-        validated_data.pop('copy_data')
+
+        for extra_key in { 'use_zip_chunks', 'use_cache', 'copy_data' }:
+            validated_data.pop(extra_key)
+         
         files = {'client_files': client_files, 'server_files': server_files, 'remote_files': remote_files}
         return files
+
 
     # pylint: disable=no-self-use
     def _create_files(self, instance, files):
