@@ -90,7 +90,7 @@ def generate_color(color, used_colors):
 
 def get_label_color(label_name, label_colors):
     predefined = parse_default_colors()
-    label_colors = tuple(hex2rgb(c) for c in label_colors.values())
+    label_colors = tuple(hex2rgb(c) for c in label_colors.values() if c)
     used_colors = set(itertools.chain(predefined.values(), label_colors))
     normalized_name = normalize_label(label_name)
 
