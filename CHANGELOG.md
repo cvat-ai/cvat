@@ -35,6 +35,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Points of invisible shapes are visible in autobordering (<https://github.com/openvinotoolkit/cvat/pull/3931>)
 - Order of the label attributes in the object item details(<https://github.com/openvinotoolkit/cvat/pull/3945>)
 - Order of labels in tasks and projects (<https://github.com/openvinotoolkit/cvat/pull/3987>)
+- Fixed possible color collisions in the generated colormap (<https://github.com/openvinotoolkit/cvat/pull/4007>)
 
 ### Security
 - TDB
