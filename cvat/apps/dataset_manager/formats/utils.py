@@ -4,6 +4,7 @@
 
 import os.path as osp
 from hashlib import blake2s
+import itertools
 
 from datumaro.util.os_util import make_file_name
 
@@ -62,18 +63,43 @@ def make_colormap(instance_data):
     return {label['name']: [hex2rgb(label['color']), [], []] for label in labels}
 
 
-def get_label_color(label_name, label_names):
+
+def generate_color(color, used_colors):
+    def tint_shade_color():
+        new_color = [0, 0, 0]
+        for added_color in (255, 0):
+            for factor in range(1, 10):
+                for c in range(0, 3):
+                    new_color[c] = int(color[c] + (added_color - color[c])*factor/10)
+                yield tuple(new_color)
+
+    def get_unused_color():
+        for r in range (255, 0, -1):
+            for g in range (255, 0, -1):
+                for b in range (255, 0, -1):
+                    new_color = (r, g, b)
+                    if new_color not in used_colors:
+                        return new_color
+
+    #try to tint and shade color firstly
+    for new_color in tint_shade_color():
+        if new_color not in used_colors:
+            return new_color
+
+    return get_unused_color()
+
+def get_label_color(label_name, label_colors):
     predefined = parse_default_colors()
-    normalized_names = [normalize_label(l_name) for l_name in label_names]
+    label_colors = tuple(hex2rgb(c) for c in label_colors.values())
+    used_colors = set(itertools.chain(predefined.values(), label_colors))
     normalized_name = normalize_label(label_name)
 
     color = predefined.get(normalized_name, None)
-    name_hash = int.from_bytes(blake2s(normalized_name.encode(), digest_size=4).digest(), byteorder="big")
-    offset = name_hash + normalized_names.count(normalized_name)
-
     if color is None:
-        color = get_color_from_index(DEFAULT_COLORMAP_CAPACITY + offset)
-    elif normalized_names.count(normalized_name):
-        color = get_color_from_index(DEFAULT_COLORMAP_CAPACITY + offset - 1)
+        name_hash = int.from_bytes(blake2s(normalized_name.encode(), digest_size=3).digest(), byteorder="big")
+        color = get_color_from_index(name_hash)
+
+    if color in label_colors:
+        color = generate_color(color, used_colors)
 
     return rgb2hex(color)
