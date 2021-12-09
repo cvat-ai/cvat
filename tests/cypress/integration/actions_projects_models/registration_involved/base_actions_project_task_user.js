@@ -120,12 +120,6 @@ context('Base actions on the project', () => {
             cy.goToRegisterPage();
             cy.userRegistration(firstName, lastName, userName, emailAddr, password);
             cy.goToProjectsList();
-            // tries to create project
-            const failProjectName = 'failProject';
-            cy.createProjects(failProjectName, labelName, attrName, textDefaultValue, null, 'fail');
-            cy.closeNotification('.cvat-notification-notice-create-project-failed');
-            cy.goToProjectsList();
-            cy.contains('.cvat-projects-project-item-title', failProjectName).should('not.exist');
             cy.logout(userName);
         });
         it('Login first user. Assign project to second user. Logout.', () => {
