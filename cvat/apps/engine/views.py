@@ -637,9 +637,8 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
             db_task.data = db_data
             db_task.save()
             data = {k:v for k, v in serializer.data.items()}
-            data['use_zip_chunks'] = serializer.validated_data['use_zip_chunks']
-            data['use_cache'] = serializer.validated_data['use_cache']
-            data['copy_data'] = serializer.validated_data['copy_data']
+            for extra_key in { 'use_zip_chunks', 'use_cache', 'copy_data' }:
+                data[extra_key] = serializer.validated_data[extra_key]
             if data['use_cache']:
                 db_task.data.storage_method = StorageMethodChoice.CACHE
                 db_task.data.save(update_fields=['storage_method'])

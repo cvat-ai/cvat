@@ -208,6 +208,13 @@ task_create_parser.add_argument(
     action='store_false',
     help='''set the option to use the cache (default: %(default)s)'''
 )
+task_create_parser.add_argument(
+    '--sorting-method',
+    default='lexicographical',
+    choices=['lexicographical', 'natural', 'predefined', 'random'],
+    help='''data soring method (default: %(default)s)'''
+)
+
 #######################################################################
 # Delete
 #######################################################################

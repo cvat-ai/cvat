@@ -81,6 +81,19 @@ class StorageChoice(str, Enum):
     def __str__(self):
         return self.value
 
+class SortingMethod(str, Enum):
+    LEXICOGRAPHICAL = 'lexicographical'
+    NATURAL = 'natural'
+    PREDEFINED = 'predefined'
+    RANDOM = 'random'
+
+    @classmethod
+    def choices(cls):
+        return tuple((x.value, x.name) for x in cls)
+
+    def __str__(self):
+        return self.value
+
 class Data(models.Model):
     chunk_size = models.PositiveIntegerField(null=True)
     size = models.PositiveIntegerField(default=0)
@@ -95,6 +108,7 @@ class Data(models.Model):
     storage_method = models.CharField(max_length=15, choices=StorageMethodChoice.choices(), default=StorageMethodChoice.FILE_SYSTEM)
     storage = models.CharField(max_length=15, choices=StorageChoice.choices(), default=StorageChoice.LOCAL)
     cloud_storage = models.ForeignKey('CloudStorage', on_delete=models.SET_NULL, null=True, related_name='data')
+    sorting_method = models.CharField(max_length=15, choices=SortingMethod.choices(), default=SortingMethod.LEXICOGRAPHICAL)
 
     class Meta:
         default_permissions = ()
