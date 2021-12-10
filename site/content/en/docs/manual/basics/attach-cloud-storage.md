@@ -285,8 +285,10 @@ button on the `Cloud storages` page and fill out the following form:
     - `Authorization type`:
 
       - [`Key file`](#create-a-service-account-and-key-file) - you can drag a key file to the area `attach a file`
-        or click on the area to select the key file through the explorer. If the environment variable `GOOGLE_APPLICATION_CREDENTIALS` is specified for an environment with a deployed CVAT instance, then it will be used if you do not
-        attach the key file ([more about `GOOGLE_APPLICATION_CREDENTIALS`](https://cloud.google.com/docs/authentication/getting-started#setting_the_environment_variable)).
+        or click on the area to select the key file through the explorer. If the environment variable
+        `GOOGLE_APPLICATION_CREDENTIALS` is specified for an environment with a deployed CVAT instance, then it will
+        be used if you do not attach the key file
+        ([more about `GOOGLE_APPLICATION_CREDENTIALS`](https://cloud.google.com/docs/authentication/getting-started#setting_the_environment_variable)).
 
       - [`Anonymous access`](#anonymous-access) - for anonymous access, you need to enable public access to bucket.
 
