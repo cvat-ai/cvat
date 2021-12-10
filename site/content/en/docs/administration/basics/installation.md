@@ -76,7 +76,7 @@ For access from China, read [sources for users from China](#sources-for-users-fr
   git clone https://github.com/opencv/cvat
   cd cvat
   ```
-- If you want to access CVAT over a network or through a different system, export `CVAT_HOST` environment variable
+- To access CVAT over a network or through a different system, export `CVAT_HOST` environment variable
   
   ```bash
   export CVAT_HOST=your-ip-address
