@@ -697,6 +697,8 @@ function build() {
              * @property {string} proxy Axios proxy settings.
              * For more details please read <a href="https://github.com/axios/axios"> here </a>
              * @memberof module:API.cvat.config
+             * @property {string} origin ui URL origin
+             * @memberof module:API.cvat.config
              * @memberof module:API.cvat.config
              */
             get backendAPI() {
@@ -710,6 +712,12 @@ function build() {
             },
             set proxy(value) {
                 config.proxy = value;
+            },
+            get origin() {
+                return config.origin;
+            },
+            set origin(value) {
+                config.origin = value;
             },
         },
         /**
