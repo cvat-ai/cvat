@@ -66,12 +66,9 @@ def make_colormap(instance_data):
 
 def generate_color(color, used_colors):
     def tint_shade_color():
-        new_color = [0, 0, 0]
         for added_color in (255, 0):
             for factor in range(1, 10):
-                for c in range(0, 3):
-                    new_color[c] = int(color[c] + (added_color - color[c])*factor/10)
-                yield tuple(new_color)
+                yield tuple(map(lambda c: int(c + (added_color - c) * factor / 10), color))
 
     def get_unused_color():
         for r in range (255, 0, -1):
