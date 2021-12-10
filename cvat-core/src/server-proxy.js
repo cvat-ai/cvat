@@ -8,6 +8,7 @@
     const store = require('store');
     const config = require('./config');
     const DownloadWorker = require('./download.worker');
+    const tus = require('tus-js-client');
 
     function waitFor(frequencyHz, predicate) {
         return new Promise((resolve, reject) => {
@@ -567,7 +568,7 @@
             }
 
             async function createTask(taskSpec, taskDataSpec, onUpdate) {
-                const { backendAPI } = config;
+                const { backendAPI, origin } = config;
 
                 async function wait(id) {
                     return new Promise((resolve, reject) => {
@@ -607,6 +608,22 @@
                     });
                 }
 
+                const chunkSize = 1024 * 1024 * 100; // 100 mb
+                const clientFiles = taskDataSpec.client_files;
+                const chunkFiles = [];
+                const bulkFiles = [];
+                let totalSize = 0;
+                let totalSentSize = 0;
+                for (const file of clientFiles) {
+                    if (file.size > chunkSize) {
+                        chunkFiles.push(file);
+                    } else {
+                        bulkFiles.push(file);
+                    }
+                    totalSize += file.size;
+                }
+                delete taskDataSpec.client_files;
+
                 const taskData = new FormData();
                 for (const [key, value] of Object.entries(taskDataSpec)) {
                     if (Array.isArray(value)) {
@@ -632,18 +649,96 @@
                     throw generateError(errorData);
                 }
 
-                onUpdate('The data are being uploaded to the server..');
-                try {
-                    await Axios.post(`${backendAPI}/tasks/${response.data.id}/data`, taskData, {
-                        proxy: config.proxy,
+                onUpdate('The data are being uploaded to the server 0%');
+
+                async function chunkUpload(taskId, file) {
+                    return new Promise((resolve, reject) => {
+                        const upload = new tus.Upload(file, {
+                            endpoint: `${origin}/${backendAPI}/tasks/${taskId}/data/`,
+                            metadata: {
+                                filename: file.name,
+                                filetype: file.type,
+                            },
+                            headers: {
+                                Authorization: `Token ${store.get('token')}`,
+                            },
+                            chunkSize,
+                            retryDelays: null,
+                            onError(error) {
+                                reject(error);
+                            },
+                            onBeforeRequest(req) {
+                                const xhr = req.getUnderlyingObject();
+                                xhr.withCredentials = true;
+                            },
+                            onProgress(bytesUploaded) {
+                                const currentUploadedSize = totalSentSize + bytesUploaded;
+                                const percentage = ((currentUploadedSize / totalSize) * 100).toFixed(2);
+                                onUpdate(`The data are being uploaded to the server ${percentage}%`);
+                            },
+                            onSuccess() {
+                                totalSentSize += file.size;
+                                resolve();
+                            },
+                        });
+                        upload.start();
                     });
+                }
+
+                async function bulkUpload(taskId, files) {
+                    const fileBulks = files.reduce((fileGroups, file) => {
+                        const lastBulk = fileGroups[fileGroups.length - 1];
+                        if (chunkSize - lastBulk.size >= file.size) {
+                            lastBulk.files.push(file);
+                            lastBulk.size += file.size;
+                        } else {
+                            fileGroups.push({ files: [file], size: file.size });
+                        }
+                        return fileGroups;
+                    }, [{ files: [], size: 0 }]);
+                    const totalBulks = fileBulks.length;
+                    let currentChunkNumber = 0;
+                    while (currentChunkNumber < totalBulks) {
+                        for (const [idx, element] of fileBulks[currentChunkNumber].files.entries()) {
+                            taskData.append(`client_files[${idx}]`, element);
+                        }
+                        onUpdate(`The data are being uploaded to the server
+                                    ${((totalSentSize / totalSize) * 100).toFixed(2)}%`);
+                        await Axios.post(`${backendAPI}/tasks/${taskId}/data`, taskData, {
+                            proxy: config.proxy,
+                            headers: { 'Upload-Multiple': true },
+                        });
+                        for (let i = 0; i < fileBulks[currentChunkNumber].files.length; i++) {
+                            taskData.delete(`client_files[${i}]`);
+                        }
+                        totalSentSize += fileBulks[currentChunkNumber].size;
+                        currentChunkNumber++;
+                    }
+                }
+
+                try {
+                    await Axios.post(`${backendAPI}/tasks/${response.data.id}/data`,
+                        taskData, {
+                            proxy: config.proxy,
+                            headers: { 'Upload-Start': true },
+                        });
+                    for (const file of chunkFiles) {
+                        await chunkUpload(response.data.id, file);
+                    }
+                    if (bulkFiles.length > 0) {
+                        await bulkUpload(response.data.id, bulkFiles);
+                    }
+                    await Axios.post(`${backendAPI}/tasks/${response.data.id}/data`,
+                        taskData, {
+                            proxy: config.proxy,
+                            headers: { 'Upload-Finish': true },
+                        });
                 } catch (errorData) {
                     try {
                         await deleteTask(response.data.id);
                     } catch (_) {
                         // ignore
                     }
-
                     throw generateError(errorData);
                 }
 

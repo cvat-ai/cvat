@@ -4,6 +4,7 @@
 
 import os
 import re
+import shutil
 from enum import Enum
 
 from django.conf import settings
@@ -12,7 +13,6 @@ from django.core.files.storage import FileSystemStorage
 from django.db import models
 from django.db.models.fields import FloatField
 from django.utils.translation import gettext_lazy as _
-
 from cvat.apps.engine.utils import parse_specific_attributes
 
 class SafeCharField(models.CharField):
@@ -159,8 +159,23 @@ class Data(models.Model):
 
     def get_manifest_path(self):
         return os.path.join(self.get_upload_dirname(), 'manifest.jsonl')
+
     def get_index_path(self):
         return os.path.join(self.get_upload_dirname(), 'index.json')
+
+    def make_dirs(self):
+        data_path = self.get_data_dirname()
+        if os.path.isdir(data_path):
+            shutil.rmtree(data_path)
+        os.makedirs(self.get_compressed_cache_dirname())
+        os.makedirs(self.get_original_cache_dirname())
+        os.makedirs(self.get_upload_dirname())
+
+    def get_uploaded_files(self):
+        upload_dir = self.get_upload_dirname()
+        uploaded_files = [os.path.join(upload_dir, file) for file in os.listdir(upload_dir) if os.path.isfile(os.path.join(upload_dir, file))]
+        represented_files = [{'file':f} for f in uploaded_files]
+        return represented_files
 
 class Video(models.Model):
     data = models.OneToOneField(Data, on_delete=models.CASCADE, related_name="video", null=True)

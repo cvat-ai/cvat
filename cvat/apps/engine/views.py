@@ -48,7 +48,7 @@ from cvat.apps.engine.frame_provider import FrameProvider
 from cvat.apps.engine.media_extractors import ImageListReader
 from cvat.apps.engine.mime_types import mimetypes
 from cvat.apps.engine.models import (
-    Job, StatusChoice, Task, Project, Review, Issue,
+    Job, StatusChoice, Task, Data, Project, Review, Issue,
     Comment, StorageMethodChoice, ReviewStatus, StorageChoice, Image,
     CredentialsTypeChoice, CloudProviderChoice
 )
@@ -64,6 +64,7 @@ from cvat.apps.engine.serializers import (
 from utils.dataset_manifest import ImageManifestManager
 from cvat.apps.engine.utils import av_scan_paths
 from cvat.apps.engine.backup import import_task
+from cvat.apps.engine.mixins import UploadMixin
 from . import models, task
 from .log import clogger, slogger
 
@@ -102,7 +103,6 @@ class ServerViewSet(viewsets.ViewSet):
     def exception(request):
         """
         Saves an exception from a client on the server
-
         Sends logs to the ELK if it is connected
         """
         serializer = ExceptionSerializer(data=request.data)
@@ -129,7 +129,6 @@ class ServerViewSet(viewsets.ViewSet):
     def logs(request):
         """
         Saves logs from a client on the server
-
         Sends logs to the ELK if it is connected
         """
         serializer = LogEventSerializer(many=True, data=request.data)
@@ -415,7 +414,7 @@ class DjangoFilterInspector(CoreAPICompatInspector):
 @method_decorator(name='update', decorator=swagger_auto_schema(operation_summary='Method updates a task by id'))
 @method_decorator(name='destroy', decorator=swagger_auto_schema(operation_summary='Method deletes a specific task, all attached jobs, annotations, and data'))
 @method_decorator(name='partial_update', decorator=swagger_auto_schema(operation_summary='Methods does a partial update of chosen fields in a task'))
-class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
+class TaskViewSet(UploadMixin, auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
     queryset = Task.objects.prefetch_related(
             Prefetch('label_set', queryset=models.Label.objects.order_by('id')),
             "label_set__attributespec_set",
@@ -609,6 +608,40 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
 
         return Response(serializer.data)
 
+    def upload_finished(self, request):
+        db_task = self.get_object() # call check_object_permissions as well
+        task_data = db_task.data
+        serializer = DataSerializer(task_data, data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = dict(serializer.validated_data.items())
+        uploaded_files = task_data.get_uploaded_files()
+        uploaded_files.extend(data.get('client_files'))
+        serializer.validated_data.update({'client_files': uploaded_files})
+
+        db_data = serializer.save()
+        db_task.data = db_data
+        db_task.save()
+        data = {k: v for k, v in serializer.data.items()}
+
+        data['use_zip_chunks'] = serializer.validated_data['use_zip_chunks']
+        data['use_cache'] = serializer.validated_data['use_cache']
+        data['copy_data'] = serializer.validated_data['copy_data']
+        if data['use_cache']:
+            db_task.data.storage_method = StorageMethodChoice.CACHE
+            db_task.data.save(update_fields=['storage_method'])
+        if data['server_files'] and not data.get('copy_data'):
+            db_task.data.storage = StorageChoice.SHARE
+            db_task.data.save(update_fields=['storage'])
+        if db_data.cloud_storage:
+            db_task.data.storage = StorageChoice.CLOUD_STORAGE
+            db_task.data.save(update_fields=['storage'])
+            # if the value of stop_frame is 0, then inside the function we cannot know
+            # the value specified by the user or it's default value from the database
+        if 'stop_frame' not in serializer.validated_data:
+            data['stop_frame'] = None
+        task.create(db_task.id, data)
+        return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
+
     @swagger_auto_schema(method='post', operation_summary='Method permanently attaches images or video to a task',
         request_body=DataSerializer,
     )
@@ -624,36 +657,21 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
                 description="A unique number value identifying chunk or frame, doesn't matter for 'preview' type"),
             ]
     )
-    @action(detail=True, methods=['POST', 'GET'])
+    @action(detail=True, methods=['OPTIONS', 'POST', 'GET'], url_path=r'data/?$')
     def data(self, request, pk):
         db_task = self.get_object() # call check_object_permissions as well
-        if request.method == 'POST':
-            if db_task.data:
+        if request.method == 'POST' or request.method == 'OPTIONS':
+            task_data = db_task.data
+            if not task_data:
+                task_data = Data.objects.create()
+                task_data.make_dirs()
+                db_task.data = task_data
+                db_task.save()
+            elif task_data.size != 0:
                 return Response(data='Adding more data is not supported',
                     status=status.HTTP_400_BAD_REQUEST)
-            serializer = DataSerializer(data=request.data)
-            serializer.is_valid(raise_exception=True)
-            db_data = serializer.save()
-            db_task.data = db_data
-            db_task.save()
-            data = {k:v for k, v in serializer.data.items()}
-            for extra_key in { 'use_zip_chunks', 'use_cache', 'copy_data' }:
-                data[extra_key] = serializer.validated_data[extra_key]
-            if data['use_cache']:
-                db_task.data.storage_method = StorageMethodChoice.CACHE
-                db_task.data.save(update_fields=['storage_method'])
-            if data['server_files'] and not data.get('copy_data'):
-                db_task.data.storage = StorageChoice.SHARE
-                db_task.data.save(update_fields=['storage'])
-            if db_data.cloud_storage:
-                db_task.data.storage = StorageChoice.CLOUD_STORAGE
-                db_task.data.save(update_fields=['storage'])
-            # if the value of stop_frame is 0, then inside the function we cannot know
-            # the value specified by the user or it's default value from the database
-            if 'stop_frame' not in serializer.validated_data:
-                data['stop_frame'] = None
-            task.create(db_task.id, data)
-            return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
+            return self.upload_data(request)
+
         else:
             data_type = request.query_params.get('type', None)
             data_id = request.query_params.get('number', None)
@@ -996,6 +1014,7 @@ class JobViewSet(viewsets.GenericViewSet,
         queryset = db_job.issue_set
         serializer = CombinedIssueSerializer(queryset, context={'request': request}, many=True)
         return Response(serializer.data)
+
 
 @method_decorator(name='create', decorator=swagger_auto_schema(operation_summary='Submit a review for a job'))
 @method_decorator(name='destroy', decorator=swagger_auto_schema(operation_summary='Method removes a review from a job'))

@@ -303,38 +303,55 @@ class DataSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError('Stop frame must be more or equal start frame')
         return data
 
-    # pylint: disable=no-self-use
     def create(self, validated_data):
-        client_files = validated_data.pop('client_files')
-        server_files = validated_data.pop('server_files')
-        remote_files = validated_data.pop('remote_files')
-        for extra_key in { 'use_zip_chunks', 'use_cache', 'copy_data' }:
-            validated_data.pop(extra_key)
-
+        files = self._pop_data(validated_data)
         db_data = models.Data.objects.create(**validated_data)
+        db_data.make_dirs()
 
-        data_path = db_data.get_data_dirname()
-        if os.path.isdir(data_path):
-            shutil.rmtree(data_path)
-
-        os.makedirs(db_data.get_compressed_cache_dirname())
-        os.makedirs(db_data.get_original_cache_dirname())
-        os.makedirs(db_data.get_upload_dirname())
-
-        for f in client_files:
-            client_file = models.ClientFile(data=db_data, **f)
-            client_file.save()
-
-        for f in server_files:
-            server_file = models.ServerFile(data=db_data, **f)
-            server_file.save()
-
-        for f in remote_files:
-            remote_file = models.RemoteFile(data=db_data, **f)
-            remote_file.save()
+        self._create_files(db_data, files)
 
         db_data.save()
         return db_data
+
+    def update(self, instance, validated_data):
+        files = self._pop_data(validated_data)
+        for key, value in validated_data.items():
+            setattr(instance, key, value)
+        self._create_files(instance, files)
+        instance.save()
+        return instance
+
+    # pylint: disable=no-self-use
+    def _pop_data(self, validated_data):
+        client_files = validated_data.pop('client_files')
+        server_files = validated_data.pop('server_files')
+        remote_files = validated_data.pop('remote_files')
+
+        for extra_key in { 'use_zip_chunks', 'use_cache', 'copy_data' }:
+            validated_data.pop(extra_key)
+
+        files = {'client_files': client_files, 'server_files': server_files, 'remote_files': remote_files}
+        return files
+
+
+    # pylint: disable=no-self-use
+    def _create_files(self, instance, files):
+        if 'client_files' in files:
+            client_objects = []
+            for f in files['client_files']:
+                client_file = models.ClientFile(data=instance, **f)
+                client_objects.append(client_file)
+            models.ClientFile.objects.bulk_create(client_objects)
+
+        if 'server_files' in files:
+            for f in files['server_files']:
+                server_file = models.ServerFile(data=instance, **f)
+                server_file.save()
+
+        if 'remote_files' in files:
+            for f in files['remote_files']:
+                remote_file = models.RemoteFile(data=instance, **f)
+                remote_file.save()
 
 class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
     labels = LabelSerializer(many=True, source='label_set', partial=True, required=False)
