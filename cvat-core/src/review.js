@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -250,6 +250,10 @@ class Review {
         return result;
     }
 
+    async deleteIssue(issueId) {
+        await PluginRegistry.apiWrapper.call(this, Review.prototype.deleteIssue, issueId);
+    }
+
     /**
      * Method submits local review to the server
      * @method submit
@@ -392,6 +396,10 @@ Review.prototype.submit.implementation = async function () {
         if (response.reviewer) this.__internal.reviewer = new User(response.reviewer);
         if (response.assignee) this.__internal.assignee = new User(response.assignee);
     }
+};
+
+Review.prototype.deleteIssue.implementation = function (issueId) {
+    this.__internal.issue_set = this.__internal.issue_set.filter((issue) => issue.id !== issueId);
 };
 
 module.exports = Review;

@@ -30,9 +30,9 @@ from rest_framework.test import APIClient, APITestCase
 
 from datumaro.util.test_utils import TestDir
 from cvat.apps.engine.models import (AttributeSpec, AttributeType, Data, Job, Project,
-    Segment, StatusChoice, Task, Label, StorageMethodChoice, StorageChoice)
-from cvat.apps.engine.media_extractors import ValidateDimension
-from cvat.apps.engine.models import DimensionType
+    Segment, StatusChoice, Task, Label, StorageMethodChoice, StorageChoice, DimensionType,
+    SortingMethod)
+from cvat.apps.engine.media_extractors import ValidateDimension, sort
 from utils.dataset_manifest import ImageManifestManager, VideoManifestManager
 
 def create_db_users(cls):
@@ -1349,6 +1349,7 @@ class ProjectUpdateLabelsAPITestCase(UpdateLabelsAPITestCase):
             }]
         }
         self._check_api_v1_project(data)
+
 class ProjectListOfTasksAPITestCase(APITestCase):
     def setUp(self):
         self.client = APIClient()
@@ -1394,6 +1395,79 @@ class ProjectListOfTasksAPITestCase(APITestCase):
         project = self.projects[1]
         response = self._run_api_v1_projects_id_tasks(None, project.id)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+class ProjectExportAPITestCase(APITestCase):
+    def setUp(self):
+        self.client = APIClient()
+
+    @classmethod
+    def setUpTestData(cls):
+        create_db_users(cls)
+        project_data = {
+            "name": "Project for check tasks in a xml",
+            "owner": cls.admin,
+            "labels": [{
+                "name": "car"
+            }]
+        }
+
+        db_project = create_db_project(project_data)
+        create_dummy_db_tasks(cls, db_project)
+        cls.project = db_project
+
+    def _run_api_v1_project_id_export(self, pid, user, annotation_format=""):
+        with ForceLogin(user, self.client):
+            response = self.client.get(
+                '/api/v1/projects/{}/annotations?format={}'.format(pid, annotation_format),
+                format="json")
+        return response
+
+    def _run_api_v1_tasks_id_delete(self, tid, user):
+        with ForceLogin(user, self.client):
+            response = self.client.delete('/api/v1/tasks/{}'.format(tid), format="json")
+        return response
+
+    def _check_tasks_count(self, project, expected_result):
+        tasks_id = [task.id for task in project.tasks.all()]
+        self.assertEqual(len(tasks_id), expected_result)
+
+    def _check_xml(self, pid, user, expected_result):
+        annotation_format = "CVAT for images 1.1"
+        response = self._run_api_v1_project_id_export(pid, user, annotation_format)
+        self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
+
+        response = self._run_api_v1_project_id_export(pid, user, annotation_format)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        annotation_format = "CVAT for images 1.1&action=download"
+        response = self._run_api_v1_project_id_export(pid, user, annotation_format)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        content = io.BytesIO(b"".join(response.streaming_content))
+        content.seek(0)
+
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            zipfile.ZipFile(content).extractall(tmp_dir)
+            xml = osp.join(tmp_dir, 'annotations.xml')
+            self.assertTrue(xml)
+            root = ET.parse(xml).getroot()
+            tasks = root.findall('meta/project/tasks/task/name')
+            self.assertEqual(len(tasks), expected_result)
+
+    def test_api_v1_projects_remove_task_export(self):
+        project = self.project
+        pid = project.id
+        user = self.admin
+
+        self._check_tasks_count(project, 4)
+        self._check_xml(pid, user, 4)
+
+        tasks_id = [task.id for task in project.tasks.all()]
+        response = self._run_api_v1_tasks_id_delete(tasks_id[0], self.admin)
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+
+        self._check_tasks_count(project, 3)
+        self._check_xml(pid, user, 3)
 
 
 class TaskListAPITestCase(APITestCase):
@@ -2095,17 +2169,29 @@ class TaskImportExportAPITestCase(APITestCase):
             with open(path, "wb") as image:
                 image.write(data.read())
 
-        cls.media_data.append(
-            {
-                **{"image_quality": 75,
-                   "copy_data": True,
-                   "start_frame": 2,
-                   "stop_frame": 9,
-                   "frame_filter": "step=2",
-                },
-                **{"server_files[{}]".format(i): imagename_pattern.format(i) for i in range(image_count)},
-            }
-        )
+        data = {
+            "image_quality": 75,
+            "copy_data": True,
+            "start_frame": 2,
+            "stop_frame": 9,
+            "frame_filter": "step=2",
+            **{"server_files[{}]".format(i): imagename_pattern.format(i) for i in range(image_count)},
+        }
+        use_cache_data = {
+            **data,
+            'use_cache': True,
+        }
+        cls.media_data.append(data)
+
+        data['sorting_method'] = SortingMethod.NATURAL
+        cls.media_data.append(data)
+        cls.media_data.append(use_cache_data)
+
+        use_cache_data['sorting_method'] = SortingMethod.NATURAL
+        cls.media_data.append(use_cache_data)
+
+        use_cache_data['sorting_method'] = SortingMethod.RANDOM
+        cls.media_data.append(use_cache_data)
 
         filename = "test_video_1.mp4"
         path = os.path.join(settings.SHARE_ROOT, filename)
@@ -2193,13 +2279,47 @@ class TaskImportExportAPITestCase(APITestCase):
             }
         )
 
+        data = {
+            "client_files[0]": generate_image_file("test_1.jpg")[1],
+            "client_files[1]": generate_image_file("test_2.jpg")[1],
+            "client_files[2]": generate_image_file("test_10.jpg")[1],
+            "client_files[3]": generate_image_file("test_3.jpg")[1],
+            "image_quality": 75,
+        }
+        use_cache_data = {
+            **data,
+            'use_cache': True,
+        }
         cls.media_data.extend([
             # image list local
+            # sorted data
+            # natural: test_1.jpg, test_2.jpg, test_3.jpg, test_10.jpg
             {
-                "client_files[0]": generate_image_file("test_1.jpg")[1],
-                "client_files[1]": generate_image_file("test_2.jpg")[1],
-                "client_files[2]": generate_image_file("test_3.jpg")[1],
-                "image_quality": 75,
+                **use_cache_data,
+                'sorting_method': SortingMethod.NATURAL,
+            },
+            {
+                **data,
+                'sorting_method': SortingMethod.NATURAL,
+            },
+            # random
+            {
+                **use_cache_data,
+                'sorting_method': SortingMethod.RANDOM,
+            },
+            # predefined: test_1.jpg, test_2.jpg, test_10.jpg, test_2.jpg
+            {
+                **use_cache_data,
+                'sorting_method': SortingMethod.PREDEFINED,
+            },
+            # lexicographical: test_1.jpg, test_10.jpg, test_2.jpg, test_3.jpg
+            {
+                **use_cache_data,
+                'sorting_method': SortingMethod.LEXICOGRAPHICAL,
+            },
+            {
+                **data,
+                'sorting_method': SortingMethod.LEXICOGRAPHICAL,
             },
             # video local
             {
@@ -2502,7 +2622,7 @@ def generate_manifest_file(data_type, manifest_path, sources):
     kwargs = {
         'images': {
             'sources': sources,
-            'is_sorted': False,
+            'sorting_method': SortingMethod.LEXICOGRAPHICAL,
         },
         'video': {
             'media_file': sources[0],
@@ -2553,6 +2673,13 @@ class TaskDataAPITestCase(APITestCase):
         cls._image_sizes[filename] = img_size
 
         filename = "test_3.jpg"
+        path = os.path.join(settings.SHARE_ROOT, filename)
+        img_size, data = generate_image_file(filename)
+        with open(path, "wb") as image:
+            image.write(data.read())
+        cls._image_sizes[filename] = img_size
+
+        filename = "test_10.jpg"
         path = os.path.join(settings.SHARE_ROOT, filename)
         img_size, data = generate_image_file(filename)
         with open(path, "wb") as image:
@@ -2656,6 +2783,9 @@ class TaskDataAPITestCase(APITestCase):
         os.remove(path)
 
         path = os.path.join(settings.SHARE_ROOT, "test_3.jpg")
+        os.remove(path)
+
+        path = os.path.join(settings.SHARE_ROOT, "test_10.jpg")
         os.remove(path)
 
         path = os.path.join(settings.SHARE_ROOT, "data", "test_3.jpg")
@@ -2818,9 +2948,9 @@ class TaskDataAPITestCase(APITestCase):
                 client_files = [img for key, img in data.items() if key.startswith("client_files")]
 
                 if server_files:
-                    source_files = [os.path.join(settings.SHARE_ROOT, f) for f in sorted(server_files)]
+                    source_files = [os.path.join(settings.SHARE_ROOT, f) for f in sort(server_files, data.get('sorting_method', SortingMethod.LEXICOGRAPHICAL))]
                 else:
-                    source_files = [f for f in sorted(client_files, key=lambda e: e.name)]
+                    source_files = [f for f in sort(client_files, data.get('sorting_method', SortingMethod.LEXICOGRAPHICAL), func=lambda e: e.name)]
 
                 source_images = []
                 for f in source_files:
@@ -3054,7 +3184,7 @@ class TaskDataAPITestCase(APITestCase):
                                              image_sizes, StorageMethodChoice.CACHE, StorageChoice.LOCAL)
 
         task_spec = {
-            "name": "cached images task without copying #16",
+            "name": "cached images task with default sorting data and without copying #16",
             "overlap": 0,
             "segment_size": 0,
             "labels": [
@@ -3066,14 +3196,14 @@ class TaskDataAPITestCase(APITestCase):
         task_data = {
             "server_files[0]": "test_1.jpg",
             "server_files[1]": "test_2.jpg",
-            "server_files[2]": "test_3.jpg",
+            "server_files[2]": "test_10.jpg",
             "image_quality": 70,
             "use_cache": True,
         }
         image_sizes = [
             self._image_sizes[task_data["server_files[0]"]],
-            self._image_sizes[task_data["server_files[1]"]],
             self._image_sizes[task_data["server_files[2]"]],
+            self._image_sizes[task_data["server_files[1]"]],
         ]
 
         self._test_api_v1_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET,
@@ -3306,6 +3436,44 @@ class TaskDataAPITestCase(APITestCase):
         task_data.update([('copy_data', True)])
         self._test_api_v1_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
             image_sizes, StorageMethodChoice.CACHE, StorageChoice.LOCAL)
+
+        # test predefined sorting
+        task_spec.update([('name', 'task custom data sequence #28')])
+        task_data = {
+            "server_files[0]": "test_1.jpg",
+            "server_files[1]": "test_3.jpg",
+            "server_files[2]": "test_2.jpg",
+            "image_quality": 70,
+            "use_cache": True,
+            "sorting_method": SortingMethod.PREDEFINED
+        }
+        image_sizes = [
+            self._image_sizes[task_data["server_files[0]"]],
+            self._image_sizes[task_data["server_files[1]"]],
+            self._image_sizes[task_data["server_files[2]"]],
+        ]
+
+        self._test_api_v1_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
+            image_sizes, StorageMethodChoice.CACHE, StorageChoice.SHARE)
+
+        # test a natural data sequence
+        task_spec.update([('name', 'task native data sequence #29')])
+        task_data = {
+            "server_files[0]": "test_10.jpg",
+            "server_files[1]": "test_2.jpg",
+            "server_files[2]": "test_1.jpg",
+            "image_quality": 70,
+            "use_cache": True,
+            "sorting_method": SortingMethod.NATURAL
+        }
+        image_sizes = [
+            self._image_sizes[task_data["server_files[2]"]],
+            self._image_sizes[task_data["server_files[1]"]],
+            self._image_sizes[task_data["server_files[0]"]],
+        ]
+
+        self._test_api_v1_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
+            image_sizes, StorageMethodChoice.CACHE, StorageChoice.SHARE)
 
     def test_api_v1_tasks_id_data_admin(self):
         self._test_api_v1_tasks_id_data(self.admin)
