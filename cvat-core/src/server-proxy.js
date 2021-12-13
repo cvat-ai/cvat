@@ -12,7 +12,7 @@
     const tus = require('tus-js-client');
 
     function enableOrganization() {
-        return config.organizationID !== null ? { org: config.organizationID } : {};
+        return { org: config.organizationID || '' };
     }
 
     function removeToken() {
@@ -727,9 +727,7 @@
                             onBeforeRequest(req) {
                                 const xhr = req.getUnderlyingObject();
                                 const { org } = params;
-                                if (org) {
-                                    req.setHeader('X-Organization', org);
-                                }
+                                req.setHeader('X-Organization', org);
                                 xhr.withCredentials = true;
                             },
                             onProgress(bytesUploaded) {
