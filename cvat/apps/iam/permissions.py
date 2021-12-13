@@ -619,6 +619,8 @@ class TaskPermission(OpenPolicyAgentPermission):
             ('data', 'GET'): 'view:data',
             ('data_info', 'GET'): 'view:data',
             ('data', 'POST'): 'upload:data',
+            ('append_tus_chunk', 'PATCH'): 'upload:data',
+            ('append_tus_chunk', 'HEAD'): 'upload:data',
             ('jobs', 'GET'): 'view',
         }.get((view.action, request.method))
 

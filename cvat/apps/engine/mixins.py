@@ -177,6 +177,7 @@ class UploadMixin(object):
 
     @action(detail=True, methods=['HEAD', 'PATCH'], url_path=r'data/'+_file_id_regex)
     def append_tus_chunk(self, request, pk, file_id):
+        self.get_object() # call check_object_permissions as well
         if request.method == 'HEAD':
             tus_file = TusFile.get_tusfile(str(file_id), self.get_upload_dir())
             if tus_file:
