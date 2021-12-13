@@ -152,10 +152,10 @@ context('Multiple users. Assign task, job. Deactivating users.', () => {
 
         it('First user login. Getting authKey.', () => {
             cy.visit('/');
-            cy.intercept('POST', '/api/v1/auth/login').as('login');
+            cy.intercept('POST', '/api/v1/auth/login**').as('login');
             cy.login();
             cy.wait('@login').then((response) => {
-                authKey = response['response']['body']['key'];
+                authKey = response.response.body.key;
             });
         });
 
