@@ -9,6 +9,7 @@
     const config = require('./config');
     const DownloadWorker = require('./download.worker');
     const Axios = require('axios');
+    const tus = require('tus-js-client');
 
     function enableOrganization() {
         return config.organizationID !== null ? { org: config.organizationID } : {};
@@ -18,8 +19,6 @@
         Axios.defaults.headers.common.Authorization = '';
         store.remove('token');
     }
-
-    const tus = require('tus-js-client');
 
     function waitFor(frequencyHz, predicate) {
         return new Promise((resolve, reject) => {
@@ -503,11 +502,12 @@
                 return response.data;
             }
 
-            async function deleteTask(id) {
+            async function deleteTask(id, organizationID = null) {
                 const { backendAPI } = config;
 
                 try {
                     await Axios.delete(`${backendAPI}/tasks/${id}`, {
+                        ...(organizationID ? { org: organizationID } : {}),
                         proxy: config.proxy,
                         headers: {
                             'Content-Type': 'application/json',
@@ -711,7 +711,6 @@
                 async function chunkUpload(taskId, file) {
                     return new Promise((resolve, reject) => {
                         const upload = new tus.Upload(file, {
-                            // FIXME: need to call with appropriate arguments (e.g. organization)
                             endpoint: `${origin}/${backendAPI}/tasks/${taskId}/data/`,
                             metadata: {
                                 filename: file.name,
@@ -727,6 +726,10 @@
                             },
                             onBeforeRequest(req) {
                                 const xhr = req.getUnderlyingObject();
+                                const { org } = params;
+                                if (org) {
+                                    req.setHeader('X-Organization', org);
+                                }
                                 xhr.withCredentials = true;
                             },
                             onProgress(bytesUploaded) {
@@ -763,6 +766,7 @@
                         onUpdate(`The data are being uploaded to the server
                                     ${((totalSentSize / totalSize) * 100).toFixed(2)}%`);
                         await Axios.post(`${backendAPI}/tasks/${taskId}/data`, taskData, {
+                            ...params,
                             proxy: config.proxy,
                             headers: { 'Upload-Multiple': true },
                         });
@@ -777,6 +781,7 @@
                 try {
                     await Axios.post(`${backendAPI}/tasks/${response.data.id}/data`,
                         taskData, {
+                            ...params,
                             proxy: config.proxy,
                             headers: { 'Upload-Start': true },
                         });
@@ -788,12 +793,13 @@
                     }
                     await Axios.post(`${backendAPI}/tasks/${response.data.id}/data`,
                         taskData, {
+                            ...params,
                             proxy: config.proxy,
                             headers: { 'Upload-Finish': true },
                         });
                 } catch (errorData) {
                     try {
-                        await deleteTask(response.data.id);
+                        await deleteTask(response.data.id, params.org || null);
                     } catch (_) {
                         // ignore
                     }
@@ -803,7 +809,7 @@
                 try {
                     await wait(response.data.id);
                 } catch (createException) {
-                    await deleteTask(response.data.id);
+                    await deleteTask(response.data.id, params.org || null);
                     throw createException;
                 }
 

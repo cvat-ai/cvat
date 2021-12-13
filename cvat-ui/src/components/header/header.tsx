@@ -19,6 +19,7 @@ import Icon, {
     ControlOutlined,
     UserOutlined,
     TeamOutlined,
+    PlusOutlined,
 } from '@ant-design/icons';
 import Layout from 'antd/lib/layout';
 import Button from 'antd/lib/button';
@@ -265,9 +266,11 @@ function HeaderContainer(props: Props): JSX.Element {
                 icon={organizationsFetching ? <LoadingOutlined /> : <TeamOutlined />}
             >
                 {currentOrganization ? (
-                    <Menu.Item key='open_organization' onClick={() => history.push('/organization')}>Open</Menu.Item>
+                    <Menu.Item icon={<SettingOutlined />} key='open_organization' onClick={() => history.push('/organization')}>
+                        Settings
+                    </Menu.Item>
                 ) : null}
-                <Menu.Item key='create_organization' onClick={() => history.push('/organizations/create')}>Create</Menu.Item>
+                <Menu.Item icon={<PlusOutlined />} key='create_organization' onClick={() => history.push('/organizations/create')}>Create</Menu.Item>
                 { organizationsList.length > 5 ? (
                     <Menu.Item
                         key='switch_organization'

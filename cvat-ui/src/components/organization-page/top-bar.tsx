@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useDispatch } from 'react-redux';
 import moment from 'moment';
 import { Row, Col } from 'antd/lib/grid';
@@ -39,11 +39,28 @@ function OrganizationTopBar(props: Props): JSX.Element {
     } = organizationInstance;
     const { id: userID } = userInstance;
     const [form] = useForm();
+    const descriptionEditingRef = useRef<HTMLDivElement>(null);
     const [visibleInviteModal, setVisibleInviteModal] = useState<boolean>(false);
     const [editingDescription, setEditingDescription] = useState<boolean>(false);
     const dispatch = useDispatch();
 
-    let descriptionChanged = false;
+    useEffect(() => {
+        const listener = (event: MouseEvent): void => {
+            const divElement = descriptionEditingRef.current;
+            if (editingDescription && divElement && !event.composedPath().includes(divElement)) {
+                setEditingDescription(false);
+            }
+        };
+
+        window.addEventListener('mousedown', listener);
+        return () => {
+            window.removeEventListener('mousedown', listener);
+        };
+    });
+
+    let organizationName = name;
+    let organizationDescription = description;
+    let organizationContacts = contact;
     return (
         <>
             <Row justify='space-between'>
@@ -55,9 +72,10 @@ function OrganizationTopBar(props: Props): JSX.Element {
                         <Text
                             editable={{
                                 onChange: (value: string) => {
-                                    organizationInstance.name = value;
+                                    organizationName = value;
                                 },
                                 onEnd: () => {
+                                    organizationInstance.name = organizationName;
                                     dispatch(updateOrganizationAsync(organizationInstance));
                                 },
                             }}
@@ -75,23 +93,22 @@ function OrganizationTopBar(props: Props): JSX.Element {
                                 ))}
                             </span>
                         ) : (
-                            <div>
+                            <div ref={descriptionEditingRef}>
                                 <Input.TextArea
                                     defaultValue={description}
                                     onChange={(event: React.ChangeEvent<HTMLTextAreaElement>) => {
-                                        organizationInstance.description = event.target.value;
-                                        descriptionChanged = true;
+                                        organizationDescription = event.target.value;
                                     }}
                                 />
                                 <Button
                                     size='small'
                                     type='primary'
                                     onClick={() => {
-                                        if (descriptionChanged) {
+                                        if (organizationDescription !== description) {
+                                            organizationInstance.description = organizationDescription;
                                             dispatch(updateOrganizationAsync(organizationInstance));
                                         }
                                         setEditingDescription(false);
-                                        descriptionChanged = false;
                                     }}
                                 >
                                     Submit
@@ -109,11 +126,14 @@ function OrganizationTopBar(props: Props): JSX.Element {
                                 type='secondary'
                                 editable={{
                                     onChange: (value: string) => {
-                                        organizationInstance.contact = {
+                                        organizationContacts = {
                                             ...organizationInstance.contact, phoneNumber: value,
                                         };
                                     },
-                                    onEnd: () => dispatch(updateOrganizationAsync(organizationInstance)),
+                                    onEnd: () => {
+                                        organizationInstance.contact = organizationContacts;
+                                        dispatch(updateOrganizationAsync(organizationInstance));
+                                    },
                                 }}
                             >
                                 {contact.phoneNumber}
@@ -126,11 +146,14 @@ function OrganizationTopBar(props: Props): JSX.Element {
                                 type='secondary'
                                 editable={{
                                     onChange: (value: string) => {
-                                        organizationInstance.contact = {
+                                        organizationContacts = {
                                             ...organizationInstance.contact, email: value,
                                         };
                                     },
-                                    onEnd: () => dispatch(updateOrganizationAsync(organizationInstance)),
+                                    onEnd: () => {
+                                        organizationInstance.contact = organizationContacts;
+                                        dispatch(updateOrganizationAsync(organizationInstance));
+                                    },
                                 }}
                             >
                                 {contact.email}
@@ -143,11 +166,14 @@ function OrganizationTopBar(props: Props): JSX.Element {
                                 type='secondary'
                                 editable={{
                                     onChange: (value: string) => {
-                                        organizationInstance.contact = {
+                                        organizationContacts = {
                                             ...organizationInstance.contact, location: value,
                                         };
                                     },
-                                    onEnd: () => dispatch(updateOrganizationAsync(organizationInstance)),
+                                    onEnd: () => {
+                                        organizationInstance.contact = organizationContacts;
+                                        dispatch(updateOrganizationAsync(organizationInstance));
+                                    },
                                 }}
                             >
                                 {contact.location}
