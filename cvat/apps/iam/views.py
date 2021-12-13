@@ -30,8 +30,15 @@ def get_context(request):
     try:
         org_slug = request.GET.get('org')
         org_id = request.GET.get('org_id')
-        if org_slug and org_id:
-            raise BadRequest('You cannot specify org and org_id query parameters at the same time.')
+        org_header = request.headers.get('X-Organization')
+
+        if org_id and (org_slug or org_header):
+            raise BadRequest('You cannot specify "org_id" query parameter with ' +
+                '"org" query parameter or "X-Organization" HTTP header at the same time.')
+        if org_slug and org_header and org_slug != org_header:
+            raise BadRequest('You cannot specify "org" query parameter and ' +
+                '"X-Organization" HTTP header with different values.')
+        org_slug = org_slug or org_header
 
         if org_slug:
             organization = Organization.objects.get(slug=org_slug)
