@@ -503,7 +503,8 @@ CORS_ALLOW_HEADERS = list(default_headers) + [
     # extended upload protocol headers
     'upload-start',
     'upload-finish',
-    'upload-multiple'
+    'upload-multiple',
+    'x-organization',
 ]
 
 TUS_MAX_FILE_SIZE = 26843545600 # 25gb
