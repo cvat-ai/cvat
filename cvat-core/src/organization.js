@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 const { checkObjectType, isEnum } = require('./common');
+const config = require('./config');
 const { MembershipRole } = require('./enums');
 const { ArgumentError, ServerError } = require('./exceptions');
 const PluginRegistry = require('./plugins');
@@ -323,6 +324,7 @@ Organization.prototype.members.implementation = async function (orgSlug, page, p
 Organization.prototype.remove.implementation = async function () {
     if (typeof this.id === 'number') {
         await serverProxy.organizations.delete(this.id);
+        config.organizationID = null;
     }
 };
 

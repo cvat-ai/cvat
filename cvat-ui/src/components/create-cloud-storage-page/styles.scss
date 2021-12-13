@@ -75,3 +75,9 @@
     padding-left: $grid-unit-size * 0.5;
     padding-right: 0;
 }
+
+.cvat-manifests-manager-form-item {
+    > .ant-form-item-control {
+        display: none;
+    }
+}

@@ -25,6 +25,12 @@
         }
 
         .cvat-organization-top-bar-descriptions {
+            > div {
+                > button {
+                    margin-top: $grid-unit-size;
+                }
+            }
+
             > span {
                 display: block;
             }
