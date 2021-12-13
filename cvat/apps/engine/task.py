@@ -307,7 +307,7 @@ def _create_thread(db_task, data, isBackupRestore=False, isDatasetImport=False):
                 db_data.start_frame = 0
                 data['stop_frame'] = None
                 db_data.frame_filter = ''
-            if isDatasetImport and media_type != 'video' and db_data.storage_method == models.StorageMethodChoice.CACHE:
+            if isBackupRestore and media_type != 'video' and db_data.storage_method == models.StorageMethodChoice.CACHE:
                 # we should sort media_files according to the manifest content sequence
                 manifest = ImageManifestManager(db_data.get_manifest_path())
                 manifest.set_index()
@@ -324,9 +324,9 @@ def _create_thread(db_task, data, isBackupRestore=False, isDatasetImport=False):
                 del sorted_media_files
                 data['sorting_method'] = models.SortingMethod.PREDEFINED
             source_paths=[os.path.join(upload_dir, f) for f in media_files]
-            if manifest_file and not isDatasetImport and data['sorting_method'] in {models.SortingMethod.RANDOM, models.SortingMethod.PREDEFINED}:
+            if manifest_file and not isBackupRestore and data['sorting_method'] in {models.SortingMethod.RANDOM, models.SortingMethod.PREDEFINED}:
                 raise Exception("It isn't supported to upload manifest file and use random sorting")
-            if isDatasetImport and db_data.storage_method == models.StorageMethodChoice.FILE_SYSTEM and \
+            if isBackupRestore and db_data.storage_method == models.StorageMethodChoice.FILE_SYSTEM and \
                     data['sorting_method'] in {models.SortingMethod.RANDOM, models.SortingMethod.PREDEFINED}:
                 raise Exception("It isn't supported to import the task that was created without cache but with random/predefined sorting")
 
