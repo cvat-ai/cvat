@@ -4,7 +4,6 @@
 
 /// <reference types="cypress" />
 
-import exp from 'constants';
 import { taskName, labelName } from '../../support/const';
 
 context('Always show object details feature. Text size/posotion.', () => {

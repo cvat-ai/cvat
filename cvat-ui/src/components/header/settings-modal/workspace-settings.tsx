@@ -146,9 +146,9 @@ function WorkspaceSettingsComponent(props: Props): JSX.Element {
                 </Col>
                 <Col span={12}>
                     <Select
+                        className='cvat-workspace-settings-text-position'
                         value={textPosition}
                         onChange={onChangeTextPosition}
-                        className='cvat-workspace-settings-text-position'
                     >
                         <Select.Option value='auto'>Auto</Select.Option>
                         <Select.Option value='center'>Center</Select.Option>
