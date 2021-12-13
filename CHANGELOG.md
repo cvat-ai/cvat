@@ -38,6 +38,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Order of labels in tasks and projects (<https://github.com/openvinotoolkit/cvat/pull/3987>)
 - Fixed task creating with large files via webpage (<https://github.com/openvinotoolkit/cvat/pull/3692>)
 - Added information to export CVAT_HOST when performing local installation for accessing over network (<https://github.com/openvinotoolkit/cvat/pull/4014>)
+- Original pdf file is deleted when using share(<https://github.com/openvinotoolkit/cvat/pull/3967>)
 
 ### Security
 - TDB
