@@ -62,8 +62,6 @@ def make_colormap(instance_data):
 
     return {label['name']: [hex2rgb(label['color']), [], []] for label in labels}
 
-
-
 def generate_color(color, used_colors):
     def tint_shade_color():
         for added_color in (255, 0):
@@ -71,12 +69,10 @@ def generate_color(color, used_colors):
                 yield tuple(map(lambda c: int(c + (added_color - c) * factor / 10), color))
 
     def get_unused_color():
-        for r in range (255, 0, -1):
-            for g in range (255, 0, -1):
-                for b in range (255, 0, -1):
-                    new_color = (r, g, b)
-                    if new_color not in used_colors:
-                        return new_color
+        sorted_colors = sorted(used_colors)
+        max_dist = max(zip(sorted_colors, sorted_colors[1:]), key=lambda c_pair: c_pair[1][0] - c_pair[0][0])
+
+        return ((max_dist[0][0] + max_dist[1][0]) // 2, max_dist[0][1], max_dist[0][2])
 
     #try to tint and shade color firstly
     for new_color in tint_shade_color():
@@ -87,7 +83,7 @@ def generate_color(color, used_colors):
 
 def get_label_color(label_name, label_colors):
     predefined = parse_default_colors()
-    label_colors = tuple(hex2rgb(c) for c in label_colors.values() if c)
+    label_colors = tuple(hex2rgb(c) for c in label_colors if c)
     used_colors = set(itertools.chain(predefined.values(), label_colors))
     normalized_name = normalize_label(label_name)
 

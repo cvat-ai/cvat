@@ -8,10 +8,10 @@ def alter_label_colors(apps, schema_editor):
 
     for task in Task.objects.all():
         labels = Label.objects.filter(task_id=task.id).order_by('id')
-        label_names = {}
+        label_names = list()
         for label in labels:
             label.color = get_label_color(label.name, label_names)
-            label_names[label.name] = label.color
+            label_names.append(label.color)
             label.save()
 
 class Migration(migrations.Migration):
