@@ -76,7 +76,12 @@ For access from China, read [sources for users from China](#sources-for-users-fr
   git clone https://github.com/opencv/cvat
   cd cvat
   ```
-
+- To access CVAT over a network or through a different system, export `CVAT_HOST` environment variable
+  
+  ```bash
+  export CVAT_HOST=your-ip-address
+  ```
+  
 - Run docker containers. It will take some time to download the latest CVAT
   release and other required images like postgres, redis, etc. from DockerHub and create containers.
 

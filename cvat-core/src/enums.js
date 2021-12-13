@@ -367,6 +367,24 @@
         KEY_FILE_PATH: 'KEY_FILE_PATH',
     });
 
+    /**
+     * Sorting methods
+     * @enum {string}
+     * @name SortingMethod
+     * @memberof module:API.cvat.enums
+     * @property {string} LEXICOGRAPHICAL 'lexicographical'
+     * @property {string} NATURAL 'natural'
+     * @property {string} PREDEFINED 'predefined'
+     * @property {string} RANDOM 'random'
+     * @readonly
+     */
+    const SortingMethod = Object.freeze({
+        LEXICOGRAPHICAL: 'lexicographical',
+        NATURAL: 'natural',
+        PREDEFINED: 'predefined',
+        RANDOM: 'random',
+    });
+
     module.exports = {
         ShareFileType,
         TaskStatus,
@@ -384,5 +402,6 @@
         DimensionType,
         CloudStorageProviderType,
         CloudStorageCredentialsType,
+        SortingMethod,
     };
 })();
