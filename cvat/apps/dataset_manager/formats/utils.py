@@ -22,7 +22,6 @@ def get_color_from_index(index):
 
     return tuple(color)
 
-DEFAULT_COLORMAP_CAPACITY = 2000
 DEFAULT_COLORMAP_PATH = osp.join(osp.dirname(__file__), 'predefined_colors.txt')
 def parse_default_colors(file_path=None):
     if file_path is None:
