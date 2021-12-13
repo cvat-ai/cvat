@@ -5,6 +5,7 @@
 import os.path as osp
 from hashlib import blake2s
 import itertools
+import operator
 
 from datumaro.util.os_util import make_file_name
 
@@ -69,10 +70,13 @@ def generate_color(color, used_colors):
                 yield tuple(map(lambda c: int(c + (added_color - c) * factor / 10), color))
 
     def get_unused_color():
-        sorted_colors = sorted(used_colors)
-        max_dist = max(zip(sorted_colors, sorted_colors[1:]), key=lambda c_pair: c_pair[1][0] - c_pair[0][0])
+        def get_avg_color(index):
+            sorted_colors = sorted(used_colors, key=operator.itemgetter(index))
+            max_dist_pair = max(zip(sorted_colors, sorted_colors[1:]),
+                key=lambda c_pair: c_pair[1][index] - c_pair[0][index])
+            return (max_dist_pair[0][index] + max_dist_pair[1][index]) // 2
 
-        return ((max_dist[0][0] + max_dist[1][0]) // 2, max_dist[0][1], max_dist[0][2])
+        return tuple(get_avg_color(i) for i in range(3))
 
     #try to tint and shade color firstly
     for new_color in tint_shade_color():
