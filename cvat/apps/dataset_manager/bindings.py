@@ -1511,14 +1511,14 @@ def import_dm_annotations(dm_dataset: Dataset, instance_data: Union[TaskData, Pr
 
 def import_labels_to_project(project_annotation, dataset: Dataset):
     labels = []
-    label_names = []
+    label_colors = []
     for label in dataset.categories()[datum_annotation.AnnotationType.label].items:
         db_label = Label(
             name=label.name,
-            color=get_label_color(label.name, label_names)
+            color=get_label_color(label.name, label_colors)
         )
         labels.append(db_label)
-        label_names.append(label.name)
+        label_colors.append(label.color)
     project_annotation.add_labels(labels)
 
 def load_dataset_data(project_annotation, dataset: Dataset, project_data):
