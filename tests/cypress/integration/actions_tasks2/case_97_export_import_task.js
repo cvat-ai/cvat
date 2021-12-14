@@ -83,7 +83,7 @@ context('Export, import an annotation task.', { browser: '!firefox' }, () => {
             cy.get('.ant-dropdown')
                 .not('.ant-dropdown-hidden')
                 .within(() => {
-                    cy.contains('[role="menuitem"]', new RegExp('^Backup task$')).click().trigger('mouseout');
+                    cy.contains('[role="menuitem"]', new RegExp('^Backup Task$')).click().trigger('mouseout');
                 });
             cy.getDownloadFileName().then((file) => {
                 taskBackupArchiveFullName = file;
