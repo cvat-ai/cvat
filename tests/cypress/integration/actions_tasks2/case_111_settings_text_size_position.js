@@ -108,8 +108,8 @@ context('Settings. Text size/position.', () => {
             testTextPosition('#cvat_canvas_shape_2', 'inside');
         });
 
-        it('Text font size.', { browser: '!firefox' }, () => {
-            cy.get('.cvat_canvas_text').should('have.attr', 'style', 'font-size: 14px;'); // Missing in Firefox
+        it('Text font size.', () => {
+            cy.get('.cvat_canvas_text').should('have.attr', 'style', 'font-size: 14px;');
             cy.openSettings();
 
             // Change the text size to 16
