@@ -111,7 +111,7 @@ context('Filters, sorting jobs.', () => {
         cy.get('.cvat-annotation-menu').within(() => {
             cy.contains('Change job state').click();
         });
-        cy.get('.cvat-annotation-menu-job-status-submenu').within(() => {
+        cy.get('.cvat-annotation-menu-job-state-submenu').within(() => {
             cy.contains('completed').click();
         });
 
