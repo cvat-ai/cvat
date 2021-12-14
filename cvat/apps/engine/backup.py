@@ -113,6 +113,7 @@ class _TaskBackupBase(_BackupBase):
             'chunk_type',
             'storage_method',
             'storage',
+            'sorting_method',
         }
 
         self._prepare_meta(allowed_fields, data)

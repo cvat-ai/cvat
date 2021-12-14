@@ -45,6 +45,8 @@ class CLI():
             data['copy_data'] = kwargs.get('copy_data')
         if 'use_cache' in kwargs:
             data['use_cache'] = kwargs.get('use_cache')
+        if 'sorting_method' in kwargs:
+            data['sorting_method'] = kwargs.get('sorting_method')
 
         response = self.session.post(url, data=data, files=files)
         response.raise_for_status()

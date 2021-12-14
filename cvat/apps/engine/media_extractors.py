@@ -14,11 +14,13 @@ from contextlib import closing
 
 import av
 import numpy as np
+from natsort import os_sorted
 from pyunpack import Archive
 from PIL import Image, ImageFile
+from random import shuffle
 import open3d as o3d
 from cvat.apps.engine.utils import rotate_image
-from cvat.apps.engine.models import DimensionType
+from cvat.apps.engine.models import DimensionType, SortingMethod
 
 # fixes: "OSError:broken data stream" when executing line 72 while loading images downloaded from the web
 # see: https://stackoverflow.com/questions/42462431/oserror-broken-data-stream-when-reading-image-file
@@ -47,9 +49,22 @@ def files_to_ignore(directory):
         return True
     return False
 
+def sort(images, sorting_method=SortingMethod.LEXICOGRAPHICAL, func=None):
+    if sorting_method == SortingMethod.LEXICOGRAPHICAL:
+        return sorted(images, key=func)
+    elif sorting_method == SortingMethod.NATURAL:
+        return os_sorted(images, key=func)
+    elif sorting_method == SortingMethod.PREDEFINED:
+        return images
+    elif sorting_method == SortingMethod.RANDOM:
+        shuffle(images)
+        return images
+    else:
+        raise NotImplementedError()
+
 class IMediaReader(ABC):
     def __init__(self, source_path, step, start, stop, dimension):
-        self._source_path = sorted(source_path)
+        self._source_path = source_path
         self._step = step
         self._start = start
         self._stop = stop
@@ -90,7 +105,13 @@ class IMediaReader(ABC):
         return range(self._start, self._stop, self._step)
 
 class ImageListReader(IMediaReader):
-    def __init__(self, source_path, step=1, start=0, stop=None, dimension=DimensionType.DIM_2D):
+    def __init__(self,
+                source_path,
+                step=1,
+                start=0,
+                stop=None,
+                dimension=DimensionType.DIM_2D,
+                sorting_method=SortingMethod.LEXICOGRAPHICAL):
         if not source_path:
             raise Exception('No image found')
 
@@ -102,12 +123,14 @@ class ImageListReader(IMediaReader):
         assert stop > start
 
         super().__init__(
-            source_path=source_path,
+            source_path=sort(source_path, sorting_method),
             step=step,
             start=start,
             stop=stop,
             dimension=dimension
         )
+
+        self._sorting_method = sorting_method
 
     def __iter__(self):
         for i in range(self._start, self._stop, self._step):
@@ -121,7 +144,8 @@ class ImageListReader(IMediaReader):
             step=self._step,
             start=self._start,
             stop=self._stop,
-            dimension=self._dimension
+            dimension=self._dimension,
+            sorting_method=self._sorting_method
         )
 
     def get_path(self, i):
@@ -154,7 +178,8 @@ class ImageListReader(IMediaReader):
             source_path=source_files,
             step=step,
             start=start,
-            stop=stop
+            stop=stop,
+            sorting_method=self._sorting_method,
         )
         self._dimension = dimension
 
@@ -163,7 +188,13 @@ class ImageListReader(IMediaReader):
         return [self.get_path(idx) for idx, _ in enumerate(self._source_path)]
 
 class DirectoryReader(ImageListReader):
-    def __init__(self, source_path, step=1, start=0, stop=None, dimension=DimensionType.DIM_2D):
+    def __init__(self,
+                source_path,
+                step=1,
+                start=0,
+                stop=None,
+                dimension=DimensionType.DIM_2D,
+                sorting_method=SortingMethod.LEXICOGRAPHICAL):
         image_paths = []
         for source in source_path:
             for root, _, files in os.walk(source):
@@ -176,10 +207,17 @@ class DirectoryReader(ImageListReader):
             start=start,
             stop=stop,
             dimension=dimension,
+            sorting_method=sorting_method,
         )
 
 class ArchiveReader(DirectoryReader):
-    def __init__(self, source_path, step=1, start=0, stop=None, dimension=DimensionType.DIM_2D):
+    def __init__(self,
+                source_path,
+                step=1,
+                start=0,
+                stop=None,
+                dimension=DimensionType.DIM_2D,
+                sorting_method=SortingMethod.LEXICOGRAPHICAL):
         self._archive_source = source_path[0]
         extract_dir = source_path[1] if len(source_path) > 1 else os.path.dirname(source_path[0])
         Archive(self._archive_source).extractall(extract_dir)
@@ -190,11 +228,18 @@ class ArchiveReader(DirectoryReader):
             step=step,
             start=start,
             stop=stop,
-            dimension=dimension
+            dimension=dimension,
+            sorting_method=sorting_method,
         )
 
 class PdfReader(ImageListReader):
-    def __init__(self, source_path, step=1, start=0, stop=None, dimension=DimensionType.DIM_2D):
+    def __init__(self,
+                source_path,
+                step=1,
+                start=0,
+                stop=None,
+                dimension=DimensionType.DIM_2D,
+                sorting_method=SortingMethod.LEXICOGRAPHICAL):
         if not source_path:
             raise Exception('No PDF found')
 
@@ -223,14 +268,26 @@ class PdfReader(ImageListReader):
             start=start,
             stop=stop,
             dimension=dimension,
+            sorting_method=sorting_method,
         )
 
 class ZipReader(ImageListReader):
-    def __init__(self, source_path, step=1, start=0, stop=None, dimension=DimensionType.DIM_2D):
+    def __init__(self,
+                source_path,
+                step=1,
+                start=0,
+                stop=None,
+                dimension=DimensionType.DIM_2D,
+                sorting_method=SortingMethod.LEXICOGRAPHICAL):
         self._zip_source = zipfile.ZipFile(source_path[0], mode='r')
         self.extract_dir = source_path[1] if len(source_path) > 1 else None
         file_list = [f for f in self._zip_source.namelist() if files_to_ignore(f) and get_mime(f) == 'image']
-        super().__init__(file_list, step=step, start=start, stop=stop, dimension=dimension)
+        super().__init__(file_list,
+                        step=step,
+                        start=start,
+                        stop=stop,
+                        dimension=dimension,
+                        sorting_method=sorting_method)
 
     def __del__(self):
         self._zip_source.close()
