@@ -10,6 +10,22 @@
     height: 100%;
     width: 100%;
 
+    .cvat-projects-page-top-bar {
+        > div:nth-child(1) {
+            > div:nth-child(1) {
+                width: 100%;
+
+                > div:nth-child(1) {
+                    display: flex;
+
+                    span {
+                        margin-right: $grid-unit-size;
+                    }
+                }
+            }
+        }
+    }
+
     > div:nth-child(1) {
         padding-bottom: $grid-unit-size;
 

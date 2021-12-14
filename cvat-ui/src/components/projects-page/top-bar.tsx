@@ -23,7 +23,7 @@ export default function TopBarComponent(): JSX.Element {
 
     return (
         <Row className='cvat-projects-page-top-bar' justify='center' align='middle'>
-            <Col md={22} lg={18} xl={16} xxl={14}>
+            <Col md={22} lg={18} xl={16} xxl={16}>
                 <Row justify='space-between' align='bottom'>
                     <Col>
                         <Text className='cvat-title'>Projects</Text>
