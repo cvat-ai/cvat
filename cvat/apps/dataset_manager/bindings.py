@@ -752,7 +752,7 @@ class ProjectData(InstanceLabelData):
                     ])) for db_label in self._label_mapping.values()
                 ]),
 
-                ("subsets", '\n'.join(self._subsets)),
+                ("subsets", '\n'.join([s if s else datum_extractor.DEFAULT_SUBSET_NAME for s in self._subsets])),
 
                 ("owner", OrderedDict([
                     ("username", self._db_project.owner.username),

@@ -89,19 +89,19 @@ class CvatExtractor(Extractor):
     def _parse_images(image_dir, subsets):
         items = OrderedDict()
 
-        def parse_image_dir(image_dir):
+        def parse_image_dir(image_dir, subset):
             for file in sorted(glob(image_dir), key=osp.basename):
                 name, ext = osp.splitext(osp.basename(file))
                 if ext.lower() in CvatPath.MEDIA_EXTS:
-                    items[(None, name)] = DatasetItem(id=name, annotations=[],
-                        image=Image(path=file), subset=DEFAULT_SUBSET_NAME,
+                    items[(subset, name)] = DatasetItem(id=name, annotations=[],
+                        image=Image(path=file), subset=subset or DEFAULT_SUBSET_NAME,
                     )
 
         if subsets == [DEFAULT_SUBSET_NAME] and not osp.isdir(osp.join(image_dir, DEFAULT_SUBSET_NAME)):
-            parse_image_dir(osp.join(image_dir, '*.*'))
+            parse_image_dir(osp.join(image_dir, '*.*'), None)
         else:
             for subset in subsets:
-                parse_image_dir(osp.join(image_dir, subset, '*.*'))
+                parse_image_dir(osp.join(image_dir, subset, '*.*'), subset)
         return items
 
     @classmethod
