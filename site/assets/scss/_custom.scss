@@ -17,6 +17,12 @@ pre[class*="language-"] {
     max-width: 80%;
 }
 
+@media (max-width: 991px) {
+    div.code-toolbar {
+        max-width: 100% !important;
+    }
+}
+
 .highlight > .code-toolbar {
     max-width: 100%;
 }
