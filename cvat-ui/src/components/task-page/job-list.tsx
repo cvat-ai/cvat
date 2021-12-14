@@ -162,17 +162,9 @@ function JobListComponent(props: Props & RouteComponentProps): JSX.Element {
             className: 'cvat-job-item-stage',
             render: (jobInstance: any): JSX.Element => {
                 const { stage } = jobInstance;
-                let progressColor = null;
-                if (stage === 'acceptance') {
-                    progressColor = 'cvat-job-acceptance-color';
-                } else if (stage === 'validation') {
-                    progressColor = 'cvat-job-validation-color';
-                } else {
-                    progressColor = 'cvat-job-annotation-color';
-                }
 
                 return (
-                    <div className={progressColor}>
+                    <div>
                         <Select
                             value={stage}
                             onChange={(newValue: string) => {

@@ -118,12 +118,8 @@
 }
 
 .cvat-job-item-stage {
-    .cvat-job-annotation-color,
-    .cvat-job-validation-color,
-    .cvat-job-acceptance-color {
-        .ant-select {
-            margin-right: $grid-unit-size;
-        }
+    .ant-select {
+        margin-right: $grid-unit-size;
     }
 }
 
@@ -138,26 +134,5 @@
         > td:nth-child(2) {
             padding-left: $grid-unit-size;
         }
-    }
-}
-
-.cvat-job-acceptance-color {
-    .ant-select-selector {
-        color: $completed-progress-color;
-        font-weight: bold;
-    }
-}
-
-.cvat-job-validation-color {
-    .ant-select-selector {
-        color: $inprogress-progress-color;
-        font-weight: bold;
-    }
-}
-
-.cvat-job-annotation-color {
-    .ant-select-selector {
-        color: $pending-progress-color;
-        font-weight: bold;
     }
 }

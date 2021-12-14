@@ -486,3 +486,12 @@ button.cvat-predictor-button {
         }
     }
 }
+
+.cvat-submenu-current-job-state-item {
+    &::after {
+        content: ' \2713';
+        float: right;
+    }
+
+    font-weight: bold;
+}
