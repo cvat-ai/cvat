@@ -2075,7 +2075,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         const textPosition = this.configuration.textPosition || 'auto';
 
         text.untransform();
-        text.style({ 'font-size': textFontSize });
+        text.style({ 'font-size': `${textFontSize}px` });
         const { rotation } = shape.transform();
 
         // Find the best place for a text
