@@ -5,6 +5,7 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
+    replaces = [('engine', '0045_data_sorting_method')]
 
     dependencies = [
         ('engine', '0045_auto_20211123_0824'),
