@@ -111,10 +111,10 @@ class LabelSerializer(serializers.ModelSerializer):
             db_label.delete()
             return
         if not validated_data.get('color', None):
-            label_names = [l.name for l in
+            label_colors = [l.color for l in
                 instance[tuple(instance.keys())[0]].label_set.exclude(id=db_label.id).order_by('id')
             ]
-            db_label.color = get_label_color(db_label.name, label_names)
+            db_label.color = get_label_color(db_label.name, label_colors)
         else:
             db_label.color = validated_data.get('color', db_label.color)
         db_label.save()
@@ -390,12 +390,12 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
 
         labels = validated_data.pop('label_set', [])
         db_task = models.Task.objects.create(**validated_data)
-        label_names = list()
+        label_colors = list()
         for label in labels:
             attributes = label.pop('attributespec_set')
             if not label.get('color', None):
-                label['color'] = get_label_color(label['name'], label_names)
-            label_names.append(label['name'])
+                label['color'] = get_label_color(label['name'], label_colors)
+            label_colors.append(label['color'])
             db_label = models.Label.objects.create(task=db_task, **label)
             for attr in attributes:
                 models.AttributeSpec.objects.create(label=db_label, **attr)
@@ -558,12 +558,12 @@ class ProjectSerializer(serializers.ModelSerializer):
                                                        training_project=tr_p)
         else:
             db_project = models.Project.objects.create(**validated_data)
-        label_names = list()
+        label_colors = list()
         for label in labels:
             attributes = label.pop('attributespec_set')
             if not label.get('color', None):
-                label['color'] = get_label_color(label['name'], label_names)
-            label_names.append(label['name'])
+                label['color'] = get_label_color(label['name'], label_colors)
+            label_colors.append(label['color'])
             db_label = models.Label.objects.create(project=db_project, **label)
             for attr in attributes:
                 models.AttributeSpec.objects.create(label=db_label, **attr)
