@@ -1518,7 +1518,7 @@ def import_labels_to_project(project_annotation, dataset: Dataset):
             color=get_label_color(label.name, label_colors)
         )
         labels.append(db_label)
-        label_colors.append(label.color)
+        label_colors.append(db_label.color)
     project_annotation.add_labels(labels)
 
 def load_dataset_data(project_annotation, dataset: Dataset, project_data):
