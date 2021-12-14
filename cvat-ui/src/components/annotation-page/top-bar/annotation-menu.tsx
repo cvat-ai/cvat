@@ -230,7 +230,7 @@ function AnnotationMenuComponent(props: Props & RouteComponentProps): JSX.Elemen
                 </a>
             </Menu.Item>
             {jobStage !== JobStage.ACCEPTANCE ? (
-                <Menu.SubMenu className='cvat-annotation-menu-job-state-submenu' key='job-state-submenu' title='Change job state'>
+                <Menu.SubMenu popupClassName='cvat-annotation-menu-job-state-submenu' key='job-state-submenu' title='Change job state'>
                     <Menu.Item key={`state:${JobState.NEW}`}>
                         <Text className={computeClassName(JobState.NEW)}>{JobState.NEW}</Text>
                     </Menu.Item>
