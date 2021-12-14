@@ -1,5 +1,8 @@
-#/usr/bin/env python
+# Copyright (C) 2021 Intel Corporation
+#
+# SPDX-License-Identifier: MIT
 
+#/usr/bin/env python
 
 import argparse
 import json
