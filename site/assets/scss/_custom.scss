@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-// Code blocks
+/* Code blocks */
 
 div.code-toolbar .toolbar {
     padding-right: 0.6em;
@@ -27,14 +27,14 @@ pre[class*="language-"] {
     max-width: 100%;
 }
 
-// Increased left padding on the sidebar of documentation
+/* Increased left padding on the sidebar of documentation */
 
 .td-sidebar-nav__section .ul-1 ul {
     padding-left: 0.6rem !important;
     padding-right: 0.1rem !important;
 }
 
-// Main documentation page
+/* Main documentation page */
 
 #docs section {
     padding-top: 2rem;
@@ -45,7 +45,7 @@ pre[class*="language-"] {
     margin-top: 1rem;
 }
 
-// Footer
+/* Footer */
 
 .footer-disclaimer {
     font-size: 0.83rem;
@@ -60,7 +60,7 @@ pre[class*="language-"] {
     padding-top: 2rem !important;
 }
 
-// About page
+/* About page */
 
 .logo-2 {
     opacity: 0.8;
@@ -70,7 +70,7 @@ pre[class*="language-"] {
     text-shadow: 0 0 3px rgb(27, 27, 27);
 }
 
-// Location block 
+/* Location block */
 
 .location {
     width: 70%;
@@ -80,7 +80,7 @@ pre[class*="language-"] {
     color: lightgray;
 }
 
-// World map block "the team"
+/* World map block "the team" */
 
 .team-container {
     margin: auto;
@@ -147,13 +147,13 @@ pre[class*="language-"] {
     border: 4px white solid;
 }
 
-// Cover block on about page
+/* Cover block on about page */
 
 #td-cover-block-0 {
     background-image: url("../images/background-about-page.jpg");
 }
 
-// Display version menu on mobile version of the site
+/* Display version menu on mobile version of the site */
 
 #dropdown_ver {
     right: 5px !important;
