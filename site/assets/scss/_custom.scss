@@ -2,14 +2,33 @@
 //
 // SPDX-License-Identifier: MIT
 
-/* Increased left padding on the sidebar of documentation */
+// Code blocks
+
+div.code-toolbar .toolbar {
+    padding-right: 0.6em;
+}
+
+pre[class*="language-"] {
+    background: #f3f3f3 !important;
+    border-radius: 0.3rem;
+}
+
+.code-toolbar {
+    max-width: 80%;
+}
+
+.highlight > .code-toolbar {
+    max-width: 100%;
+}
+
+// Increased left padding on the sidebar of documentation
 
 .td-sidebar-nav__section .ul-1 ul {
     padding-left: 0.6rem !important;
     padding-right: 0.1rem !important;
 }
 
-/* Main documentation page */
+// Main documentation page
 
 #docs section {
     padding-top: 2rem;
@@ -20,7 +39,7 @@
     margin-top: 1rem;
 }
 
-/* Footer */
+// Footer
 
 .footer-disclaimer {
     font-size: 0.83rem;
@@ -35,7 +54,7 @@
     padding-top: 2rem !important;
 }
 
-/* About page */
+// About page
 
 .logo-2 {
     opacity: 0.8;
@@ -45,7 +64,7 @@
     text-shadow: 0 0 3px rgb(27, 27, 27);
 }
 
-/* block location */
+// Location block 
 
 .location {
     width: 70%;
@@ -55,7 +74,7 @@
     color: lightgray;
 }
 
-/* World map block "the team" */
+// World map block "the team"
 
 .team-container {
     margin: auto;
@@ -122,13 +141,13 @@
     border: 4px white solid;
 }
 
-/* cover block on about page */
+// Cover block on about page
 
 #td-cover-block-0 {
     background-image: url("../images/background-about-page.jpg");
 }
 
-/* Display version menu on mobile version of the site */
+// Display version menu on mobile version of the site
 
 #dropdown_ver {
     right: 5px !important;
