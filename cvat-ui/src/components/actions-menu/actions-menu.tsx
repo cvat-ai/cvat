@@ -107,9 +107,12 @@ function ActionsMenuComponent(props: Props): JSX.Element {
             <Menu.Item disabled={inferenceIsActive} key={Actions.RUN_AUTO_ANNOTATION}>
                 Automatic annotation
             </Menu.Item>
-            <Menu.Item key={Actions.EXPORT_TASK} disabled={exportIsActive}>
-                {exportIsActive && <LoadingOutlined id='cvat-export-task-loading' />}
-                Backup task
+            <Menu.Item
+                key={Actions.EXPORT_TASK}
+                disabled={exportIsActive}
+                icon={exportIsActive && <LoadingOutlined id='cvat-export-task-loading' />}
+            >
+                Backup Task
             </Menu.Item>
             <Menu.Divider />
             <Menu.Item key={Actions.MOVE_TASK_TO_PROJECT}>Move to project</Menu.Item>

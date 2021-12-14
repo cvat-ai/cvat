@@ -303,6 +303,7 @@
          * @async
          * @throws {module:API.cvat.exceptions.ServerError}
          * @throws {module:API.cvat.exceptions.PluginError}
+         * @returns {string} URL to get result archive
          */
         async backup() {
             const result = await PluginRegistry.apiWrapper.call(this, Project.prototype.backup);
@@ -310,7 +311,7 @@
         }
 
         /**
-         * Method restore a project from a backup
+         * Method restores a project from a backup
          * @method restore
          * @memberof module:API.cvat.classes.Project
          * @readonly
@@ -318,6 +319,7 @@
          * @async
          * @throws {module:API.cvat.exceptions.ServerError}
          * @throws {module:API.cvat.exceptions.PluginError}
+         * @returns {number} ID of the imported project
          */
         static async restore(file) {
             const result = await PluginRegistry.apiWrapper.call(this, Project.restore, file);

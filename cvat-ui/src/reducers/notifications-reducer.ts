@@ -566,7 +566,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                     projects: {
                         ...state.errors.projects,
                         backuping: {
-                            message: 'Could not backup the project',
+                            message: `Could not backup the project #${action.payload.projectId}`,
                             reason: action.payload.error.toString(),
                         },
                     },
@@ -597,7 +597,8 @@ export default function (state = defaultState, action: AnyAction): Notifications
                     projects: {
                         ...state.messages.projects,
                         restoringDone:
-                            `Project has been created succesfully <a href="/projects/${projectID}">Open project</a>`,
+                            `Project has been created succesfully.
+                             Click <a href="/projects/${projectID}">here</a> to open`,
                     },
                 },
             };

@@ -229,8 +229,6 @@ export default (state: ProjectsState = defaultState, action: AnyAction): Project
             const { projectID } = action.payload;
             const { backups } = state.activities;
 
-            delete backups[projectID];
-
             return {
                 ...state,
                 activities: {

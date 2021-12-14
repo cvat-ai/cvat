@@ -303,10 +303,8 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
     def _write_manifest(self, zip_object, target_dir=None):
         def serialize_task():
             task_serializer = TaskSerializer(self._db_task)
-            task_serializer.fields.pop('url')
-            task_serializer.fields.pop('owner')
-            task_serializer.fields.pop('assignee')
-            task_serializer.fields.pop('segments')
+            for field in ('url', 'owner', 'assignee', 'segments'):
+                task_serializer.fields.pop(field)
 
             task = self._prepare_task_meta(task_serializer.data)
             task['labels'] = [self._prepare_label_meta(l) for l in task['labels']]
@@ -344,9 +342,8 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
         def serialize_segment(db_segment):
             db_job = db_segment.job_set.first()
             job_serializer = SimpleJobSerializer(db_job)
-            job_serializer.fields.pop('url')
-            job_serializer.fields.pop('assignee')
-            job_serializer.fields.pop('reviewer')
+            for field in ('url', 'assignee', 'reviewer'):
+                job_serializer.fields.pop(field)
             job_data = self._prepare_job_meta(job_serializer.data)
 
             segment_serailizer = SegmentSerializer(db_segment)
@@ -432,16 +429,48 @@ class _ImporterBase():
         if not os.path.exists(target_dir):
             os.makedirs(target_dir)
 
+    @staticmethod
+    def _create_labels(labels, db_task=None, db_project=None):
+        label_mapping = {}
+        if db_task:
+            label_relation = {
+                'task': db_task
+            }
+        else:
+            label_relation = {
+                'project': db_project
+            }
+
+
+        for label in labels:
+            label_name = label['name']
+            attributes = label.pop('attributes', [])
+            db_label = models.Label.objects.create(**label_relation, **label)
+            label_mapping[label_name] = {
+                'value': db_label.id,
+                'attributes': {},
+            }
+
+            for attribute in attributes:
+                attribute_name = attribute['name']
+                attribute_serializer = AttributeSerializer(data=attribute)
+                attribute_serializer.is_valid(raise_exception=True)
+                db_attribute = attribute_serializer.save(label=db_label)
+                label_mapping[label_name]['attributes'][attribute_name] = db_attribute.id
+
+        return label_mapping
+
 class TaskImporter(_ImporterBase, _TaskBackupBase):
-    def __init__(self, file, user_id, subdir=None):
+    def __init__(self, file, user_id, project_id=None, subdir=None, label_mapping=None):
         super().__init__(logger=slogger.glob)
         self._file = file
         self._subdir = subdir
         self._user_id = user_id
         self._manifest, self._annotations = self._read_meta()
         self._version = self._read_version(self._manifest)
-        self._labels_mapping = {}
+        self._labels_mapping = label_mapping
         self._db_task = None
+        self._project_id=project_id
 
     def _read_meta(self):
         def read(zip_object):
@@ -458,27 +487,6 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
             return read(self._file)
 
         raise ValueError('Unsuported type of file argument')
-
-    def _create_labels(self, db_task, labels):
-        label_mapping = {}
-
-        for label in labels:
-            label_name = label['name']
-            attributes = label.pop('attributes', [])
-            db_label = models.Label.objects.create(task=db_task, **label)
-            label_mapping[label_name] = {
-                'value': db_label.id,
-                'attributes': {},
-            }
-
-            for attribute in attributes:
-                attribute_name = attribute['name']
-                attribute_serializer = AttributeSerializer(data=attribute)
-                attribute_serializer.is_valid(raise_exception=True)
-                db_attribute = attribute_serializer.save(label=db_label)
-                label_mapping[label_name]['attributes'][attribute_name] = db_attribute.id
-
-        return label_mapping
 
     def _create_annotations(self, db_job, annotations):
         self._prepare_annotations(annotations, self._labels_mapping)
@@ -557,7 +565,8 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
 
         self._prepare_task_meta(self._manifest)
         self._manifest['segment_size'], self._manifest['overlap'] = self._calculate_segment_size(jobs)
-        self._manifest["owner_id"] = self._user_id
+        self._manifest['owner_id'] = self._user_id
+        self._manifest['project_id'] = self._project_id
 
         self._db_task = models.Task.objects.create(**self._manifest)
         task_path = self._db_task.get_task_dirname()
@@ -567,7 +576,8 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
         os.makedirs(self._db_task.get_task_logs_dirname())
         os.makedirs(self._db_task.get_task_artifacts_dirname())
 
-        self._labels_mapping = self._create_labels(self._db_task, labels)
+        if not self._labels_mapping:
+            self._labels_mapping = self._create_labels(db_task=self._db_task, labels=labels)
 
         self._prepare_data_meta(data)
         data_serializer = DataSerializer(data=data)
@@ -648,11 +658,8 @@ class ProjectExporter(_ExporterBase, _ProjectBackupBase):
     def _write_manifest(self, zip_object):
         def serialize_project():
             project_serializer = ProjectSerializer(self._db_project)
-            project_serializer.fields.pop('assignee')
-            project_serializer.fields.pop('owner')
-            project_serializer.fields.pop('tasks')
-            project_serializer.fields.pop('training_project')
-            project_serializer.fields.pop('url')
+            for field in ('assignee', 'owner', 'tasks', 'training_project', 'url'):
+                project_serializer.fields.pop(field)
 
             project = self._prepare_project_meta(project_serializer.data)
             project['labels'] = [self._prepare_label_meta(l) for l in project['labels']]
@@ -681,22 +688,13 @@ class ProjectImporter(_ImporterBase, _ProjectBackupBase):
         self._manifest = self._read_meta()
         self._version = self._read_version(self._manifest)
         self._db_project = None
+        self._labels_mapping = {}
 
     def _read_meta(self):
         with ZipFile(self._filename, 'r') as input_file:
             manifest = JSONParser().parse(io.BytesIO(input_file.read(self.MANIFEST_FILENAME)))
 
         return manifest
-
-    def _create_labels(self, db_project, labels):
-        for label in labels:
-            attributes = label.pop('attributes', [])
-            db_label = models.Label.objects.create(project=db_project, **label)
-
-            for attribute in attributes:
-                attribute_serializer = AttributeSerializer(data=attribute)
-                attribute_serializer.is_valid(raise_exception=True)
-                attribute_serializer.save(label=db_label)
 
     def _import_project(self):
         labels = self._manifest.pop('labels')
@@ -710,7 +708,7 @@ class ProjectImporter(_ImporterBase, _ProjectBackupBase):
             shutil.rmtree(project_path)
         os.makedirs(self._db_project.get_project_logs_dirname())
 
-        self._create_labels(self._db_project, labels)
+        self._labels_mapping = self._create_labels(db_project=self._db_project, labels=labels)
 
     def _import_tasks(self):
         def get_tasks(zip_object):
@@ -724,11 +722,12 @@ class ProjectImporter(_ImporterBase, _ProjectBackupBase):
         with ZipFile(self._filename, 'r') as zf:
             task_dirs = get_tasks(zf)
             for task_dir in task_dirs:
-                db_task = TaskImporter(file=zf, user_id=self._user_id, subdir=task_dir).import_task()
-                db_task.refresh_from_db()
-                serializer = TaskSerializer(db_task, data={'project_id': self._db_project.id}, partial=True)
-                serializer.is_valid(raise_exception=True)
-                serializer.save()
+                TaskImporter(
+                    file=zf,
+                    user_id=self._user_id,
+                    project_id=self._db_project.id,
+                    subdir=task_dir,
+                    label_mapping=self._labels_mapping).import_task()
 
     def import_project(self):
         self._import_project()

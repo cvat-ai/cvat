@@ -50,8 +50,8 @@ export default function ProjectActionsMenuComponent(props: Props): JSX.Element {
             <Menu.Item
                 disabled={exportIsActive}
                 onClick={() => dispatch(backupProjectAsync(projectInstance))}
+                icon={exportIsActive && <LoadingOutlined id='cvat-export-project-loading' />}
             >
-                {exportIsActive && <LoadingOutlined id='cvat-export-project-loading' />}
                 Backup Project
             </Menu.Item>
             <hr />
