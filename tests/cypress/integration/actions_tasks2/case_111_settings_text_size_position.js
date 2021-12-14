@@ -49,7 +49,7 @@ context('Settings. Text size/position.', () => {
             } else {
                 const points = $shape.attr('points').split(' ');
                 shapeWidth = +points[1].split(',')[0] - +points[0].split(',')[0];
-                shapeHeight = +points[2].split(',')[0] - +points[0].split(',')[0];
+                shapeHeight = +points[2].split(',')[1] - +points[0].split(',')[1];
             }
             if (shape === '#cvat_canvas_shape_1') {
                 getText = cy.get('.cvat_canvas_text').first();
