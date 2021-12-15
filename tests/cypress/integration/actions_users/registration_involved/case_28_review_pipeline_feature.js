@@ -29,7 +29,7 @@ context('Review pipeline feature', () => {
     const createRectangleShape2Points = {
         points: 'By 2 Points',
         type: 'Shape',
-        labelName: labelName,
+        labelName,
         firstX: 250,
         firstY: 350,
         secondX: 350,
@@ -39,7 +39,7 @@ context('Review pipeline feature', () => {
     const createRectangleShape2PointsSecond = {
         points: 'By 2 Points',
         type: 'Shape',
-        labelName: labelName,
+        labelName,
         firstX: 400,
         firstY: 350,
         secondX: 500,
@@ -48,7 +48,7 @@ context('Review pipeline feature', () => {
 
     const createPointsShape = {
         type: 'Shape',
-        labelName: labelName,
+        labelName,
         pointsMap: [{ x: 650, y: 350 }],
         complete: true,
         numberOfPoints: null,
@@ -56,7 +56,7 @@ context('Review pipeline feature', () => {
 
     const createPointsShapeSecond = {
         type: 'Shape',
-        labelName: labelName,
+        labelName,
         pointsMap: [{ x: 700, y: 350 }],
         complete: true,
         numberOfPoints: null,
@@ -64,7 +64,7 @@ context('Review pipeline feature', () => {
 
     const createPointsShapeThird = {
         type: 'Shape',
-        labelName: labelName,
+        labelName,
         pointsMap: [{ x: 750, y: 350 }],
         complete: true,
         numberOfPoints: null,
@@ -72,7 +72,7 @@ context('Review pipeline feature', () => {
 
     const createPointsShapeFourth = {
         type: 'Shape',
-        labelName: labelName,
+        labelName,
         pointsMap: [{ x: 700, y: 400 }],
         complete: true,
         numberOfPoints: null,
@@ -313,7 +313,7 @@ context('Review pipeline feature', () => {
             cy.checkJobStatus(0, 'annotation', secondUserName, thirdUserName);
         });
 
-        it("Reopen the job. Change something there. Save work. That saving wasn't successful. The third user logout.", () => {
+        it('Reopen the job. Change something there. Save work. That saving wasn\'t successful. The third user logout.', () => {
             cy.openJob(0, false);
             cy.createPoint(createPointsShapeSecond);
             cy.saveJob('PATCH', 403);
@@ -387,9 +387,11 @@ context('Review pipeline feature', () => {
             function resolveReopenIssue(reopen) {
                 cy.collectIssueLabel().then((issueLabelList) => {
                     for (let label = 0; label < issueLabelList.length; label++) {
-                        reopen
-                            ? cy.resolveReopenIssue(issueLabelList[label], 'Please fix', true)
-                            : cy.resolveReopenIssue(issueLabelList[label], 'Done');
+                        if (reopen) {
+                            cy.resolveReopenIssue(issueLabelList[label], 'Please fix', true);
+                        } else {
+                            cy.resolveReopenIssue(issueLabelList[label], 'Done');
+                        }
                     }
                 });
             }
@@ -442,7 +444,7 @@ context('Review pipeline feature', () => {
             cy.checkJobStatus(0, 'completed', secondUserName, Cypress.env('user'));
         });
 
-        it("The first user can change annotations. The second users can't change annotations. For the third user the task is not visible.", () => {
+        it('The first user can change annotations. The second users can\'t change annotations. For the third user the task is not visible.', () => {
             cy.openJob(0, false);
             cy.createPoint(createPointsShapeThird);
             cy.saveJob();
@@ -461,9 +463,34 @@ context('Review pipeline feature', () => {
             cy.logout(thirdUserName);
         });
 
-        it('The first user opens the job and presses "Renew the job".', () => {
+        it('The first user login. Remove the issue on third frame.', () => {
             cy.login();
             cy.openTaskJob(taskName, 0, false);
+            cy.goCheckFrameNumber(2);
+
+            // Start deleting the issue and press "Cancel"
+            cy.collectIssueLabel().then((issueLabelList) => {
+                cy.removeIssue(issueLabelList);
+                cy.get('.cvat-issue-dialog-header')
+                    .should('exist')
+                    .find('[data-icon="close"]')
+                    .click()
+                    .should('not.exist');
+                cy.get('.cvat_canvas_issue_region').should('have.length', 1);
+                cy.get('.cvat-hidden-issue-label').should('have.length', 1).and('be.visible');
+            });
+
+            // Remove the issue
+            cy.collectIssueLabel().then((issueLabelList) => {
+                cy.removeIssue(issueLabelList, true);
+                cy.get('.cvat-issue-dialog-header').should('not.exist');
+                cy.get('.cvat-hidden-issue-label').should('have.length', 0);
+                cy.get('.cvat_canvas_issue_region').should('have.length', 0);
+            });
+        });
+
+        it('The first user opens the job and presses "Renew the job".', () => {
+            cy.goCheckFrameNumber(0);
             cy.interactMenu('Renew the job');
             cy.get('.cvat-modal-content-renew-job').within(() => {
                 cy.contains('button', 'Continue').click();
@@ -488,7 +515,7 @@ context('Review pipeline feature', () => {
             cy.get('.cvat-job-completed-color').within(() => {
                 cy.get('[aria-label="question-circle"]').trigger('mouseover');
             });
-            let summary = [];
+            const summary = [];
             cy.get('.cvat-review-summary-description').within(() => {
                 cy.get('td').then(($td) => {
                     for (let i = 0; i < $td.length; i++) {
@@ -496,7 +523,7 @@ context('Review pipeline feature', () => {
                     }
                     expect(Number(summary[1])).to.be.equal(3); // Reviews 3
                     expect(Number(summary[5])).to.be.equal(0); // Unsolved issues 0
-                    expect(Number(summary[7])).to.be.equal(5); // Resolved issues 5
+                    expect(Number(summary[7])).to.be.equal(4); // Resolved issues 4
                 });
             });
         });
