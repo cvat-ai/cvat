@@ -32,7 +32,7 @@ export default function ProjectSubsetField(props: Props): JSX.Element {
 
     useEffect(() => {
         if (!projectSubsets?.length && projectId) {
-            core.projects.get({ id: projectId, withoutTasks: true }).then((response: ProjectPartialWithSubsets[]) => {
+            core.projects.get({ id: projectId }).then((response: ProjectPartialWithSubsets[]) => {
                 if (response.length) {
                     const [project] = response;
                     setInternalSubsets(

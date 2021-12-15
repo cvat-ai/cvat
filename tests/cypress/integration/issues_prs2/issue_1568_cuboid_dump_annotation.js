@@ -11,7 +11,7 @@ context('Dump annotation if cuboid created.', () => {
     const createCuboidShape2Points = {
         points: 'From rectangle',
         type: 'Shape',
-        labelName: labelName,
+        labelName,
         firstX: 250,
         firstY: 350,
         secondX: 350,
@@ -36,6 +36,7 @@ context('Dump annotation if cuboid created.', () => {
                 format: exportFormat,
             };
             cy.exportTask(exportAnnotation);
+            cy.waitForDownload();
         });
 
         it('Error notification is not exists.', () => {

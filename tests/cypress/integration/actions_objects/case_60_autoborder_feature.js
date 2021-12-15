@@ -28,6 +28,16 @@ context('Autoborder feature.', () => {
         secondY: 450,
     };
 
+    const createRectangleShape2PointsHidden = {
+        points: 'By 2 Points',
+        type: 'Shape',
+        labelName,
+        firstX: 200,
+        firstY: 350,
+        secondX: 300,
+        secondY: 450,
+    };
+
     const keyCodeN = 78;
     const rectangleSvgJsCircleId = [];
     const rectangleSvgJsCircleIdSecond = [];
@@ -66,6 +76,11 @@ context('Autoborder feature.', () => {
         cy.openTaskJob(taskName);
         cy.createRectangle(createRectangleShape2Points);
         cy.createRectangle(createRectangleShape2PointsSec);
+
+        // Check PR 3931 "Fixed issue: autoborder points are visible for invisible shapes"
+        cy.createRectangle(createRectangleShape2PointsHidden);
+        cy.get('#cvat-objects-sidebar-state-item-3').find('[data-icon="eye"]').click();
+        cy.get('#cvat_canvas_shape_3').should('be.hidden');
     });
 
     describe(`Testing case "${caseId}"`, () => {
@@ -86,7 +101,7 @@ context('Autoborder feature.', () => {
             cy.get('.cvat_canvas_autoborder_point').should('not.exist');
 
             // Collect the polygon points coordinates
-            testActivatingShape(450, 300, '#cvat_canvas_shape_3');
+            testActivatingShape(450, 300, '#cvat_canvas_shape_4');
             testCollectCxCircleCoord(polygonSvgJsCircleId);
         });
 
@@ -105,7 +120,7 @@ context('Autoborder feature.', () => {
             cy.get('.cvat_canvas_autoborder_point').should('not.exist');
 
             // Collect the polygon points coordinates
-            testActivatingShape(550, 350, '#cvat_canvas_shape_4');
+            testActivatingShape(550, 350, '#cvat_canvas_shape_5');
             testCollectCxCircleCoord(polylineSvgJsCircleId);
         });
 

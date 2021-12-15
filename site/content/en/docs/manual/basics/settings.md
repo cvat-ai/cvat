@@ -17,6 +17,11 @@ In tab `Player` you can:
 - `Reset zoom` Show every image in full size or zoomed out like previous
   (it is enabled by default for interpolation mode and disabled for annotation mode).
 - `Rotate all images` checkbox — switch the rotation of all frames or an individual frame.
+- `Smooth image` checkbox — smooth image when zoom-in it.
+
+  |        _smoothed_         |        _pixelized_         |
+  |---------------------------|----------------------------|
+  | ![](/images/smoothed.jpg) | ![](/images/pixelized.jpg) |
 
 ---
 
@@ -31,6 +36,12 @@ In tab `Workspace` you can:
 - `Always show object details` - show text for an object on the canvas not only when the object is activated:
 
   ![](/images/image152_detrac.jpg)
+
+- `Position of a text` - text positioning mode selection:
+  - `Auto` - the object details will be automatically placed where free space is.
+  - `Center` - the object details will be embedded to a corresponding object if possible.
+
+- `Font size of a text` - specifies the text size of the object details.
 
 - `Automatic bordering` - enable automatic bordering for polygons and polylines during drawing/editing.
   For more information To find out more, go to the section [annotation with polygons](/docs/manual/advanced/annotation-with-polygons/).

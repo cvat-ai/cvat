@@ -21,6 +21,7 @@ import shutil
 import subprocess
 import mimetypes
 from distutils.util import strtobool
+from corsheaders.defaults import default_headers
 
 mimetypes.add_type("application/wasm", ".wasm", True)
 
@@ -482,3 +483,18 @@ CACHES = {
 
 USE_CACHE = True
 
+CORS_ALLOW_HEADERS = list(default_headers) + [
+    # tus upload protocol headers
+    'upload-offset',
+    'upload-length',
+    'tus-version',
+    'tus-resumable',
+
+    # extended upload protocol headers
+    'upload-start',
+    'upload-finish',
+    'upload-multiple'
+]
+
+TUS_MAX_FILE_SIZE = 26843545600 # 25gb
+TUS_DEFAULT_CHUNK_SIZE = 104857600  # 100 mb

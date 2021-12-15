@@ -25,10 +25,13 @@ export enum ReviewActionTypes {
     COMMENT_ISSUE = 'COMMENT_ISSUE',
     COMMENT_ISSUE_SUCCESS = 'COMMENT_ISSUE_SUCCESS',
     COMMENT_ISSUE_FAILED = 'COMMENT_ISSUE_FAILED',
+    REMOVE_ISSUE_SUCCESS = 'REMOVE_ISSUE_SUCCESS',
+    REMOVE_ISSUE_FAILED = 'REMOVE_ISSUE_FAILED',
     SUBMIT_REVIEW = 'SUBMIT_REVIEW',
     SUBMIT_REVIEW_SUCCESS = 'SUBMIT_REVIEW_SUCCESS',
     SUBMIT_REVIEW_FAILED = 'SUBMIT_REVIEW_FAILED',
     SWITCH_ISSUES_HIDDEN_FLAG = 'SWITCH_ISSUES_HIDDEN_FLAG',
+    SWITCH_RESOLVED_ISSUES_HIDDEN_FLAG = 'SWITCH_RESOLVED_ISSUES_HIDDEN_FLAG',
 }
 
 export const reviewActions = {
@@ -57,7 +60,14 @@ export const reviewActions = {
     submitReview: (reviewId: number) => createAction(ReviewActionTypes.SUBMIT_REVIEW, { reviewId }),
     submitReviewSuccess: () => createAction(ReviewActionTypes.SUBMIT_REVIEW_SUCCESS),
     submitReviewFailed: (error: any) => createAction(ReviewActionTypes.SUBMIT_REVIEW_FAILED, { error }),
+    removeIssueSuccess: (issueId: number, frame: number) => (
+        createAction(ReviewActionTypes.REMOVE_ISSUE_SUCCESS, { issueId, frame })
+    ),
+    removeIssueFailed: (error: any) => createAction(ReviewActionTypes.REMOVE_ISSUE_FAILED, { error }),
     switchIssuesHiddenFlag: (hidden: boolean) => createAction(ReviewActionTypes.SWITCH_ISSUES_HIDDEN_FLAG, { hidden }),
+    switchIssuesHiddenResolvedFlag: (hidden: boolean) => (
+        createAction(ReviewActionTypes.SWITCH_RESOLVED_ISSUES_HIDDEN_FLAG, { hidden })
+    ),
 };
 
 export type ReviewActions = ActionUnion<typeof reviewActions>;
@@ -202,5 +212,29 @@ export const submitReviewAsync = (review: any): ThunkAction => async (dispatch, 
         dispatch(reviewActions.submitReviewSuccess());
     } catch (error) {
         dispatch(reviewActions.submitReviewFailed(error));
+    }
+};
+
+export const deleteIssueAsync = (id: number): ThunkAction => async (dispatch, getState) => {
+    const state = getState();
+    const {
+        review: { frameIssues, activeReview },
+        annotation: {
+            player: {
+                frame: { number: frameNumber },
+            },
+        },
+    } = state;
+
+    try {
+        const [issue] = frameIssues.filter((_issue: any): boolean => _issue.id === id);
+        await issue.delete();
+        if (activeReview !== null) {
+            await activeReview.deleteIssue(id);
+            await activeReview.toLocalStorage();
+        }
+        dispatch(reviewActions.removeIssueSuccess(id, frameNumber));
+    } catch (error) {
+        dispatch(reviewActions.removeIssueFailed(error));
     }
 };

@@ -1017,6 +1017,7 @@
                 copy_data: undefined,
                 dimension: undefined,
                 cloud_storage_id: undefined,
+                sorting_method: undefined,
             };
 
             const updatedFields = new FieldUpdateTrigger({
@@ -1549,6 +1550,16 @@
                     cloudStorageId: {
                         get: () => data.cloud_storage_id,
                     },
+                    sortingMethod: {
+                        /**
+                         * @name sortingMethod
+                         * @type {module:API.cvat.enums.SortingMethod}
+                         * @memberof module:API.cvat.classes.Task
+                         * @instance
+                         * @readonly
+                         */
+                        get: () => data.sorting_method,
+                    },
                     _internalData: {
                         get: () => data,
                     },
@@ -2061,6 +2072,7 @@
             image_quality: this.imageQuality,
             use_zip_chunks: this.useZipChunks,
             use_cache: this.useCache,
+            sorting_method: this.sortingMethod,
         };
 
         if (typeof this.startFrame !== 'undefined') {
