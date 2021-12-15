@@ -11,7 +11,14 @@
 
 ## How to run?
 
+Please look at documentation for [pytest](https://docs.pytest.org/en/6.2.x/).
+Generally you have to install requirements and run the following command from
+the root directory of the cloned CVAT repository:
 
+```console
+pip3 install --user -r tests/rest_api/requirements.txt
+pytest tests/rest_api/
+```
 
 ## How to upgrade testing asserts?
 
@@ -53,8 +60,8 @@ docker run --rm --volumes-from cvat ubuntu tar -cjv /home/django/data > assets/c
 To restore DB and data volume, please use commands below.
 
 ```console
-cat assets/cvat_db.sql | docker exec -i cvat_db psql -U root -d cvat
-cat assets/cvat_data.tar.bz2 | docker run --rm -i --volumes-from cvat ubuntu tar -xjv --strip 3 -C /home/django/data
+cat assets/cvat_db.sql | docker exec -i cvat_db psql -q -U root -d cvat
+cat assets/cvat_data.tar.bz2 | docker run --rm -i --volumes-from cvat ubuntu tar -xj --strip 3 -C /home/django/data
 ```
 
 To dump an object into JSON, please look at the sample code below. You also
