@@ -77,11 +77,11 @@ For access from China, read [sources for users from China](#sources-for-users-fr
   cd cvat
   ```
 - To access CVAT over a network or through a different system, export `CVAT_HOST` environment variable
-  
+
   ```bash
   export CVAT_HOST=your-ip-address
   ```
-  
+
 - Run docker containers. It will take some time to download the latest CVAT
   release and other required images like postgres, redis, etc. from DockerHub and create containers.
 
@@ -350,7 +350,7 @@ docker-compose down
 If you want to access your instance of CVAT outside of your localhost (on another domain),
 you should specify the `CVAT_HOST` environment variable, like this:
 
-```
+```bash
 export CVAT_HOST=<YOUR_DOMAIN>
 ```
 
@@ -422,14 +422,14 @@ enabling you to use HTTPS protocol to access your website.
 To enable this, first set the the `CVAT_HOST` (the domain of your website) and `ACME_EMAIL`
 (contact email for Let's Encrypt) environment variables:
 
-```
+```bash
 export CVAT_HOST=<YOUR_DOMAIN>
 export ACME_EMAIL=<YOUR_EMAIL>
 ```
 
 Then, use the `docker-compose.https.yml` file to override the base `docker-compose.yml` file:
 
-```
+```sh
 docker-compose -f docker-compose.yml -f docker-compose.https.yml up -d
 ```
 
@@ -444,14 +444,14 @@ If you stay in China, for installation you need to override the following source
   [Ubuntu mirroring help](https://mirrors.tuna.tsinghua.edu.cn/help/ubuntu/)
 
   Pre-compiled packages:
-  ```
+  ```bash
   deb https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ focal main restricted universe multiverse
   deb https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ focal-updates main restricted universe multiverse
   deb https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ focal-backports main restricted universe multiverse
   deb https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ focal-security main restricted universe multiverse
   ```
   Or source packages:
-  ```
+  ```bash
   deb-src https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ focal main restricted universe multiverse
   deb-src https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ focal-updates main restricted universe multiverse
   deb-src https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ focal-backports main restricted universe multiverse
@@ -461,7 +461,7 @@ If you stay in China, for installation you need to override the following source
 - [Docker mirror station](https://www.daocloud.io/mirror)
 
   Add registry mirrors into `daemon.json` file:
-  ```
+  ```bash
   {
       "registry-mirrors": [
           "http://f1361db2.m.daocloud.io",
@@ -476,14 +476,14 @@ If you stay in China, for installation you need to override the following source
 - For using `pip`:
 
   [PyPI mirroring help](https://mirrors.tuna.tsinghua.edu.cn/help/pypi/)
-  ```
+  ```bash
   pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
   ```
 
 - For using `npm`:
 
   [npm mirroring help](https://npmmirror.com/)
-  ```
+  ```bash
   npm config set registry https://registry.npm.taobao.org/
   ```
 
@@ -492,14 +492,14 @@ If you stay in China, for installation you need to override the following source
   [CVAT repository on gitee.com](https://gitee.com/monkeycc/cvat)
 
 - For replace acceleration source `docker.com` run:
-  ```
+  ```bash
   curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
   sudo add-apt-repository \
     "deb [arch=amd64] https://download.docker.com/linux/ubuntu \
     $(lsb_release -cs) \
   ```
 
-- For replace acceleration source `google.com` run: 
-  ```  
+- For replace acceleration source `google.com` run:
+  ```bash
   curl https://dl-ssl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
   ```
