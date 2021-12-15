@@ -145,13 +145,23 @@ function WorkspaceSettingsComponent(props: Props): JSX.Element {
                     <Text>Font size of a text</Text>
                 </Col>
                 <Col span={12}>
-                    <Select value={textPosition} onChange={onChangeTextPosition}>
+                    <Select
+                        className='cvat-workspace-settings-text-position'
+                        value={textPosition}
+                        onChange={onChangeTextPosition}
+                    >
                         <Select.Option value='auto'>Auto</Select.Option>
                         <Select.Option value='center'>Center</Select.Option>
                     </Select>
                 </Col>
                 <Col span={12}>
-                    <InputNumber onChange={onChangeTextFontSize} min={8} max={20} value={textFontSize} />
+                    <InputNumber
+                        className='cvat-workspace-settings-text-size'
+                        onChange={onChangeTextFontSize}
+                        min={8}
+                        max={20}
+                        value={textFontSize}
+                    />
                 </Col>
             </Row>
             <Row className='cvat-workspace-settings-autoborders'>
