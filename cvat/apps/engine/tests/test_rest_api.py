@@ -29,10 +29,10 @@ from rest_framework import status
 from rest_framework.test import APIClient, APITestCase
 
 from datumaro.util.test_utils import TestDir
-from cvat.apps.engine.models import (AttributeSpec, AttributeType, Data, Job, Project,
-    Segment, StageChoice, StatusChoice, Task, Label, StorageMethodChoice, StorageChoice)
+from cvat.apps.engine.models import (AttributeSpec, AttributeType, Data, Job,
+    Project, Segment, StageChoice, StatusChoice, Task, Label, StorageMethodChoice,
+    StorageChoice, DimensionType, SortingMethod)
 from cvat.apps.engine.media_extractors import ValidateDimension, sort
-from cvat.apps.engine.models import DimensionType, SortingMethod
 from utils.dataset_manifest import ImageManifestManager, VideoManifestManager
 
 def create_db_users(cls):

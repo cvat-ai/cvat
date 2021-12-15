@@ -236,7 +236,6 @@ class ProjectFilter(filters.FilterSet):
 @method_decorator(name='retrieve', decorator=swagger_auto_schema(operation_summary='Method returns details of a specific project'))
 @method_decorator(name='destroy', decorator=swagger_auto_schema(operation_summary='Method deletes a specific project'))
 @method_decorator(name='partial_update', decorator=swagger_auto_schema(operation_summary='Methods does a partial update of chosen fields in a project'))
-
 class ProjectViewSet(viewsets.ModelViewSet):
     queryset = models.Project.objects.prefetch_related(Prefetch('label_set',
         queryset=models.Label.objects.order_by('id')
@@ -373,7 +372,7 @@ class DataChunkGetter:
 
         self.type = data_type
         self.number = int(data_num) if data_num else None
-        self.quality = data_quality = FrameProvider.Quality.COMPRESSED \
+        self.quality = FrameProvider.Quality.COMPRESSED \
             if data_quality == 'compressed' else FrameProvider.Quality.ORIGINAL
 
         self.dimension = task_dim
