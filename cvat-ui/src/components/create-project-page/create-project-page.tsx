@@ -35,7 +35,7 @@ function CreateProjectPageComponent(props: StateToProps): JSX.Element {
         <CreateProjectContext.Provider value={defaultContext}>
             <Row justify='center' align='top' className='cvat-create-task-form-wrapper'>
                 <Col md={20} lg={16} xl={14} xxl={9}>
-                    <Text className='cvat-title'>Create a new projectsss</Text>
+                    <Text className='cvat-title'>Create a new project</Text>
                     <CreateProjectContent />
                 </Col>
             </Row>

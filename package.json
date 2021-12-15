@@ -13,7 +13,9 @@
     "cvat-canvas3d",
     "cvat-ui"
   ],
-  "dependencies": {},
+  "dependencies": {
+    "react-canvas-draw": "^1.2.1"
+  },
   "devDependencies": {
     "@babel/cli": "^7.13.16",
     "@babel/core": "^7.6.0",

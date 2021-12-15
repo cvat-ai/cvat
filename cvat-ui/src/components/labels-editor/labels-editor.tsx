@@ -20,8 +20,16 @@ import ConstructorCreator from './constructor-creator';
 import ConstructorUpdater from './constructor-updater';
 
 import { idGenerator, Label, Attribute } from './common';
+import SkeletonViewer from './skeleton-viewer';
+import SkeletonCreator from './skeleton-creator';
 
 enum ConstructorMode {
+    SHOW = 'SHOW',
+    CREATE = 'CREATE',
+    UPDATE = 'UPDATE',
+}
+
+enum SkeletonMode {
     SHOW = 'SHOW',
     CREATE = 'CREATE',
     UPDATE = 'UPDATE',
@@ -33,6 +41,7 @@ interface LabelsEditorProps {
 }
 
 interface LabelsEditorState {
+    skeletonMode: SkeletonMode;
     constructorMode: ConstructorMode;
     savedLabels: Label[];
     unsavedLabels: Label[];
@@ -47,6 +56,7 @@ export default class LabelsEditor extends React.PureComponent<LabelsEditorProps,
             savedLabels: [],
             unsavedLabels: [],
             constructorMode: ConstructorMode.SHOW,
+            skeletonMode: SkeletonMode.SHOW,
             labelForUpdate: null,
         };
     }
@@ -199,12 +209,12 @@ export default class LabelsEditor extends React.PureComponent<LabelsEditorProps,
     public render(): JSX.Element {
         const { labels } = this.props;
         const {
-            savedLabels, unsavedLabels, constructorMode, labelForUpdate,
+            savedLabels, unsavedLabels, constructorMode, labelForUpdate, skeletonMode,
         } = this.state;
 
         return (
             <Tabs
-                defaultActiveKey='2'
+                defaultActiveKey='1'
                 type='card'
                 tabBarStyle={{ marginBottom: '0px' }}
                 tabBarExtraContent={(
@@ -234,17 +244,6 @@ export default class LabelsEditor extends React.PureComponent<LabelsEditorProps,
                     </CVATTooltip>
                 )}
             >
-                <Tabs.TabPane
-                    tab={(
-                        <span>
-                            <EditOutlined />
-                            <Text>Raw</Text>
-                        </span>
-                    )}
-                    key='1'
-                >
-                    <RawViewer labels={[...savedLabels, ...unsavedLabels]} onSubmit={this.handleRawSubmit} />
-                </Tabs.TabPane>
 
                 <Tabs.TabPane
                     tab={(
@@ -253,7 +252,7 @@ export default class LabelsEditor extends React.PureComponent<LabelsEditorProps,
                             <Text>Constructor</Text>
                         </span>
                     )}
-                    key='2'
+                    key='1'
                 >
                     {constructorMode === ConstructorMode.SHOW && (
                         <ConstructorViewer
@@ -278,6 +277,52 @@ export default class LabelsEditor extends React.PureComponent<LabelsEditorProps,
                     {constructorMode === ConstructorMode.CREATE && (
                         <ConstructorCreator labelNames={labels.map((l) => l.name)} onCreate={this.handleCreate} />
                     )}
+                </Tabs.TabPane>
+
+                <Tabs.TabPane
+                    tab={(
+                        <span>
+                            <BuildOutlined />
+                            <Text>Skeleton</Text>
+                        </span>
+                    )}
+                    key='2'
+                >
+                    {skeletonMode === SkeletonMode.SHOW && (
+                        <SkeletonViewer
+                            labels={[...savedLabels, ...unsavedLabels]}
+                            onUpdate={(label: Label): void => {
+                                this.setState({
+                                    skeletonMode: SkeletonMode.UPDATE,
+                                    labelForUpdate: label,
+                                });
+                            }}
+                            onDelete={this.handleDelete}
+                            onCreate={(): void => {
+                                this.setState({
+                                    skeletonMode: SkeletonMode.CREATE,
+                                });
+                            }}
+                        />
+                    )}
+                    {/* {constructorMode === ConstructorMode.UPDATE && labelForUpdate !== null && (
+                        <ConstructorUpdater label={labelForUpdate} onUpdate={this.handleUpdate} />
+                    )} */}
+                    {skeletonMode === SkeletonMode.CREATE && (
+                        <SkeletonCreator labelNames={labels.map((l) => l.name)} onCreate={this.handleCreate} />
+                    )}
+                </Tabs.TabPane>
+
+                <Tabs.TabPane
+                    tab={(
+                        <span>
+                            <EditOutlined />
+                            <Text>Raw</Text>
+                        </span>
+                    )}
+                    key='3'
+                >
+                    <RawViewer labels={[...savedLabels, ...unsavedLabels]} onSubmit={this.handleRawSubmit} />
                 </Tabs.TabPane>
             </Tabs>
         );

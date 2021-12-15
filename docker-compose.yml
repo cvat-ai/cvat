@@ -53,7 +53,10 @@ services:
 
   cvat_ui:
     container_name: cvat_ui
-    image: openvino/cvat_ui
+    #image: openvino/cvat_ui
+    build:
+     context: .
+     dockerfile: Dockerfile.ui
     restart: always
     depends_on:
       - cvat

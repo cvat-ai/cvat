@@ -6,28 +6,29 @@ import React from 'react';
 import { PlusCircleOutlined } from '@ant-design/icons';
 import Button from 'antd/lib/button';
 
-import ConstructorViewerItem from './constructor-viewer-item';
 import { Label } from './common';
+import SkeletonViewerItem from './skeleton-viewer-item';
+// import Text from 'antd/lib/typography/Text';
 
-interface ConstructorViewerProps {
+interface SkeletonViewerProps {
     labels: Label[];
     onUpdate: (label: Label) => void;
     onDelete: (label: Label) => void;
     onCreate: () => void;
 }
 
-export default function ConstructorViewer(props: ConstructorViewerProps): JSX.Element {
+export default function SkeletonViewer(props: SkeletonViewerProps): JSX.Element {
     const { onCreate } = props;
-
     const list = [
+
         <Button key='create' type='ghost' onClick={onCreate} className='cvat-constructor-viewer-new-item'>
-            Add label
+            Create a new Skeleton
             <PlusCircleOutlined />
         </Button>,
     ];
     for (const label of props.labels) {
         list.push(
-            <ConstructorViewerItem
+            <SkeletonViewerItem
                 onUpdate={props.onUpdate}
                 onDelete={props.onDelete}
                 label={label}
@@ -36,6 +37,5 @@ export default function ConstructorViewer(props: ConstructorViewerProps): JSX.El
             />,
         );
     }
-
     return <div className='cvat-constructor-viewer'>{list}</div>;
 }
