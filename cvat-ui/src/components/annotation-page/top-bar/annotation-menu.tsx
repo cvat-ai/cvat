@@ -230,18 +230,16 @@ function AnnotationMenuComponent(props: Props & RouteComponentProps): JSX.Elemen
                 </a>
             </Menu.Item>
             {jobStage !== JobStage.ACCEPTANCE ? (
-                <Menu.SubMenu key='job-state-submenu' title='Change job state'>
+                <Menu.SubMenu popupClassName='cvat-annotation-menu-job-state-submenu' key='job-state-submenu' title='Change job state'>
                     <Menu.Item key={`state:${JobState.NEW}`}>
                         <Text className={computeClassName(JobState.NEW)}>{JobState.NEW}</Text>
                     </Menu.Item>
                     <Menu.Item key={`state:${JobState.IN_PROGRESS}`}>
                         <Text className={computeClassName(JobState.IN_PROGRESS)}>{JobState.IN_PROGRESS}</Text>
                     </Menu.Item>
-                    { jobStage === JobStage.REVIEW ? (
-                        <Menu.Item key={`state:${JobState.REJECTED}`}>
-                            <Text className={computeClassName(JobState.REJECTED)}>{JobState.REJECTED}</Text>
-                        </Menu.Item>
-                    ) : null }
+                    <Menu.Item key={`state:${JobState.REJECTED}`}>
+                        <Text className={computeClassName(JobState.REJECTED)}>{JobState.REJECTED}</Text>
+                    </Menu.Item>
                     <Menu.Item key={`state:${JobState.COMPLETED}`}>
                         <Text className={computeClassName(JobState.COMPLETED)}>{JobState.COMPLETED}</Text>
                     </Menu.Item>
