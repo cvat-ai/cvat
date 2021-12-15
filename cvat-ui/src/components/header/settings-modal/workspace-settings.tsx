@@ -9,13 +9,13 @@ import Checkbox, { CheckboxChangeEvent } from 'antd/lib/checkbox';
 import InputNumber from 'antd/lib/input-number';
 import Text from 'antd/lib/typography/Text';
 import Slider from 'antd/lib/slider';
+import Select from 'antd/lib/select';
 
 import {
     MAX_ACCURACY,
     marks,
 } from 'components/annotation-page/standard-workspace/controls-side-bar/approximation-accuracy';
 import { clamp } from 'utils/math';
-import { Select } from 'antd';
 
 interface Props {
     autoSave: boolean;
@@ -28,6 +28,7 @@ interface Props {
     defaultApproxPolyAccuracy: number;
     textFontSize: number;
     textPosition: 'center' | 'auto';
+    textContent: string;
     onSwitchAutoSave(enabled: boolean): void;
     onChangeAutoSaveInterval(interval: number): void;
     onChangeAAMZoomMargin(margin: number): void;
@@ -38,6 +39,7 @@ interface Props {
     onSwitchIntelligentPolygonCrop(enabled: boolean): void;
     onChangeTextFontSize(fontSize: number): void;
     onChangeTextPosition(position: 'auto' | 'center'): void;
+    onChangeTextContent(textContent: string[]): void;
 }
 
 function WorkspaceSettingsComponent(props: Props): JSX.Element {
@@ -52,6 +54,7 @@ function WorkspaceSettingsComponent(props: Props): JSX.Element {
         defaultApproxPolyAccuracy,
         textFontSize,
         textPosition,
+        textContent,
         onSwitchAutoSave,
         onChangeAutoSaveInterval,
         onChangeAAMZoomMargin,
@@ -62,6 +65,7 @@ function WorkspaceSettingsComponent(props: Props): JSX.Element {
         onChangeDefaultApproxPolyAccuracy,
         onChangeTextFontSize,
         onChangeTextPosition,
+        onChangeTextContent,
     } = props;
 
     const minAutoSaveInterval = 1;
@@ -135,6 +139,25 @@ function WorkspaceSettingsComponent(props: Props): JSX.Element {
                     <Text type='secondary'>
                         Show text for an object on the canvas not only when the object is activated
                     </Text>
+                </Col>
+            </Row>
+            <Row className='cvat-workspace-settings-text-settings'>
+                <Col span={24}>
+                    <Text>Content of a text</Text>
+                </Col>
+                <Col span={16}>
+                    <Select
+                        className='cvat-workspace-settings-text-content'
+                        mode='multiple'
+                        value={textContent.split(',').filter((entry: string) => !!entry)}
+                        onChange={onChangeTextContent}
+                    >
+                        <Select.Option value='id'>ID</Select.Option>
+                        <Select.Option value='label'>Label</Select.Option>
+                        <Select.Option value='attributes'>Attributes</Select.Option>
+                        <Select.Option value='source'>Source</Select.Option>
+                        <Select.Option value='descriptions'>Descriptions</Select.Option>
+                    </Select>
                 </Col>
             </Row>
             <Row className='cvat-workspace-settings-text-settings'>

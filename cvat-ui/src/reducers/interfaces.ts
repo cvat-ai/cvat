@@ -642,6 +642,7 @@ export interface WorkspaceSettingsState {
     toolsBlockerState: ToolsBlockerState;
     textFontSize: number;
     textPosition: 'auto' | 'center';
+    textContent: string;
 }
 
 export interface ShapesSettingsState {
