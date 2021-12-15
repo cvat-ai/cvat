@@ -48,13 +48,13 @@ You should free up disk space or change the threshold, to do so check: [Elastics
 
 To change the hostname, simply set the `CVAT_HOST` environemnt variable
 
-```
+```sh
 export CVAT_HOST=<YOUR_HOSTNAME_OR_IP>
 ```
 NOTE, if you're using `docker-compose` with `sudo` to run CVAT, then please add the `-E` (or `--preserve-env`)
 flag to preserve the user environment variable which set above to take effect in your docker containers:
 
-```
+```sh
 sudo -E docker-compose up -d
 ```
 
