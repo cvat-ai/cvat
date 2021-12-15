@@ -295,7 +295,7 @@ dashboard might be very useful to see if the problem is with Traefik configurati
 
 You can enable the Traefik dashboard by uncommenting the following lines from `docker-compose.yml`
 
-```
+```yml
 services:
   traefik:
     # Uncomment to get Traefik dashboard
@@ -309,7 +309,7 @@ services:
 ```
 
 and if you are using `docker-compose.https.yml`, also uncomment these lines
-```
+```yml
 services:
   traefik:
     command:
@@ -461,7 +461,7 @@ If you stay in China, for installation you need to override the following source
 - [Docker mirror station](https://www.daocloud.io/mirror)
 
   Add registry mirrors into `daemon.json` file:
-  ```bash
+  ```json
   {
       "registry-mirrors": [
           "http://f1361db2.m.daocloud.io",

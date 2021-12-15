@@ -61,7 +61,7 @@ sudo -E docker-compose up -d
 If you want to change the default web application port, change the `ports` part of `traefik` service configuration
 in `docker-compose.yml`
 
-```
+```yml
 services:
   traefik:
     ...
