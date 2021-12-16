@@ -20,7 +20,7 @@ jobs:
             PR_FILES=$(curl -s -X GET -G $URL | jq -r '.[] | select(.status != "removed") | .filename')
             for FILE in $PR_FILES; do
                 EXTENSION="${FILE##*.}"
-                if [[ $extension == 'css' || $extension == 'scss' ]]; then
+                if [[ $EXTENSION == 'css' || $EXTENSION == 'scss' ]]; then
                     CHANGED_FILES+=" $FILE"
                 fi
             done
