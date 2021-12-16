@@ -31,4 +31,5 @@ def test_everybody_can_see_self():
     for username in ['dummy1', 'worker1', 'user1', 'business1', 'admin1']:
         response = requests.get(config.get_api_url('users/self'), auth=(username, config.USER_PASS))
         assert response.status_code == HTTPStatus.OK
-        assert DeepDiff(users[username], response.json(), ignore_order=True) == {}
+        assert DeepDiff(users[username], response.json(), ignore_order=True,
+            exclude_paths="root['last_login']") == {}
