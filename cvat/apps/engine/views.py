@@ -865,7 +865,8 @@ class TaskViewSet(UploadMixin, auth.TaskGetQuerySetMixin, viewsets.ModelViewSet)
     @staticmethod
     @swagger_auto_schema(method='get', operation_summary='Method provides a meta information about media files which are related with the task',
         responses={'200': DataMetaSerializer()})
-    @action(detail=True, methods=['GET'], serializer_class=DataMetaSerializer,
+    @swagger_auto_schema(method='patch', operation_summary='Method performs an update of data meta fields (deleted frames)')
+    @action(detail=True, methods=['GET', 'PATCH'], serializer_class=DataMetaSerializer,
         url_path='data/meta')
     def data_info(request, pk):
         db_task = models.Task.objects.prefetch_related(
@@ -873,6 +874,12 @@ class TaskViewSet(UploadMixin, auth.TaskGetQuerySetMixin, viewsets.ModelViewSet)
                 Prefetch('images', queryset=models.Image.objects.prefetch_related('related_files').order_by('frame'))
             ))
         ).get(pk=pk)
+
+        if request.method == 'PATCH':
+            serializer = DataMetaSerializer(instance=db_task.data, data=request.data)
+            if serializer.is_valid(raise_exception=True):
+                serializer.save()
+                db_task.data.refresh_from_db()
 
         if hasattr(db_task.data, 'video'):
             media = [db_task.data.video]

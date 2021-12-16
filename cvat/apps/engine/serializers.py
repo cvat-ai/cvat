@@ -353,6 +353,7 @@ class DataSerializer(serializers.ModelSerializer):
                 remote_file = models.RemoteFile(data=instance, **f)
                 remote_file.save()
 
+
 class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
     labels = LabelSerializer(many=True, source='label_set', partial=True, required=False)
     segments = SegmentSerializer(many=True, source='segment_set', read_only=True)
@@ -631,8 +632,9 @@ class PluginsSerializer(serializers.Serializer):
     PREDICT = serializers.BooleanField()
 
 class DataMetaSerializer(serializers.ModelSerializer):
-    frames = FrameMetaSerializer(many=True, allow_null=True)
-    image_quality = serializers.IntegerField(min_value=0, max_value=100)
+    frames = FrameMetaSerializer(many=True, allow_null=True, required=False)
+    image_quality = serializers.IntegerField(min_value=0, max_value=100, required=False)
+    deleted_frames = serializers.ListField(child=serializers.IntegerField(min_value=0))
 
     class Meta:
         model = models.Data
@@ -644,6 +646,7 @@ class DataMetaSerializer(serializers.ModelSerializer):
             'stop_frame',
             'frame_filter',
             'frames',
+            'deleted_frames'
         )
         read_only_fields = (
             'chunk_size',

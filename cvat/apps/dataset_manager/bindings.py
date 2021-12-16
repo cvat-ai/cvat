@@ -169,14 +169,16 @@ class TaskData(InstanceLabelData):
                 "path": "frame_{:06d}".format(self.abs_frame_id(frame)),
                 "width": self._db_task.data.video.width,
                 "height": self._db_task.data.video.height,
-            } for frame in range(self._db_task.data.size)}
+            } for frame in range(self._db_task.data.size)
+            if frame not in self._db_task.data.deleted_frames}
         else:
             self._frame_info = {self.rel_frame_id(db_image.frame): {
                 "id": db_image.id,
                 "path": db_image.path,
                 "width": db_image.width,
                 "height": db_image.height,
-            } for db_image in self._db_task.data.images.all()}
+            } for db_image in self._db_task.data.images.all()
+            if db_image.frame not in self._db_task.data.deleted_frames}
 
         self._frame_mapping = {
             self._get_filename(info["path"]): frame_number
@@ -343,6 +345,7 @@ class TaskData(InstanceLabelData):
                 # After interpolation there can be a finishing frame
                 # outside of the task boundaries. Filter it out to avoid errors.
                 # https://github.com/openvinotoolkit/cvat/issues/2827
+                # Also we skipped deleted frames here
                 continue
             if 'track_id' in shape:
                 if shape['outside']:
@@ -359,6 +362,8 @@ class TaskData(InstanceLabelData):
                     get_frame(shape['frame']).labels.update({label.id: label})
 
         for tag in self._annotation_ir.tags:
+            if tag['frame'] not in self._frame_info:
+                continue
             get_frame(tag['frame']).tags.append(self._export_tag(tag))
 
         return iter(frames.values())
@@ -583,7 +588,8 @@ class ProjectData(InstanceLabelData):
                     "width": task.data.video.width,
                     "height": task.data.video.height,
                     "subset": defaulted_subset,
-                } for frame in range(task.data.size)})
+                } for frame in range(task.data.size)
+                if frame not in self._db_task.data.deleted_frames})
             else:
                 self._frame_info.update({(task.id, self.rel_frame_id(task.id, db_image.frame)): {
                     "path": mangle_image_name(db_image.path, defaulted_subset, original_names),
@@ -591,7 +597,8 @@ class ProjectData(InstanceLabelData):
                     "width": db_image.width,
                     "height": db_image.height,
                     "subset": defaulted_subset
-                } for db_image in task.data.images.all()})
+                } for db_image in task.data.images.all()
+                if db_image.frame not in self._db_task.data.deleted_frames})
 
         self._frame_mapping = {
             (self._db_tasks[frame_ident[0]].subset, self._get_filename(info["path"])): frame_ident
@@ -721,6 +728,8 @@ class ProjectData(InstanceLabelData):
                 get_frame(task.id, shape['frame']).labeled_shapes.append(exported_shape)
 
             for tag in self._annotation_irs[task.id].tags:
+                if (task.id, tag['frame']) not in self._frame_info:
+                    continue
                 get_frame(task.id, tag['frame']).tags.append(self._export_tag(tag, task.id))
 
         return iter(frames.values())
