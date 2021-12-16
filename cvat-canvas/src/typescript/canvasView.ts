@@ -1660,6 +1660,12 @@ export class CanvasViewImpl implements CanvasView, Listener {
                         width: xbr - xtl,
                         height: ybr - ytl,
                     });
+                } else if (state.shapeType === 'ellipse') {
+                    const [cx, cy] = translatedPoints;
+                    const [rx, ry] = [translatedPoints[2] - cx, cy - translatedPoints[3]];
+                    shape.attr({
+                        cx, cy, rx, ry,
+                    });
                 } else {
                     const stringified = this.stringifyToCanvas(translatedPoints);
                     if (state.shapeType !== 'cuboid') {
@@ -2098,6 +2104,10 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 // for rectangle finding a center is simple
                 cx = +shape.attr('x') + +shape.attr('width') / 2;
                 cy = +shape.attr('y') + +shape.attr('height') / 2;
+            } else if (shape.type === 'ellipse') {
+                // even simpler for ellipses
+                cx = +shape.attr('cx');
+                cy = +shape.attr('cy');
             } else {
                 // for polyshapes we use special algorithm
                 const points = parsePoints(pointsToNumberArray(shape.attr('points')));

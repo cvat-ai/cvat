@@ -77,6 +77,12 @@
             return true;
         }
 
+        if (shapeType === ObjectShape.ELLIPSE) {
+            const [cx, cy, rightX, topY] = points;
+            const [rx, ry] = [rightX - cx, cy - topY];
+            return rx * ry * Math.PI > MIN_SHAPE_AREA;
+        }
+
         let xmin = Number.MAX_SAFE_INTEGER;
         let xmax = Number.MIN_SAFE_INTEGER;
         let ymin = Number.MAX_SAFE_INTEGER;
@@ -91,7 +97,6 @@
 
         if (shapeType === ObjectShape.POLYLINE) {
             const length = Math.max(xmax - xmin, ymax - ymin);
-
             return length >= MIN_SHAPE_LENGTH;
         }
 
@@ -117,6 +122,18 @@
         }
 
         const fittedPoints = [];
+
+        if (shapeType === ObjectShape.ELLIPSE) {
+            const [rx, ry] = [points[2] - points[0], points[1] - points[3]]; // cx - rightX, cy - topY
+            const [cx, cy] = [Math.clamp(points[0], 0, maxX), Math.clamp(points[1], 0, maxY)];
+
+            // find top right and bottom left points (they are actually out of ellipse)
+            // but they must be on frame if we want ellipse to be on frame
+            const [rightX, topY] = [Math.clamp(cx + rx, 0, maxX), Math.clamp(cy - ry, 0, maxY)];
+            const [leftX, bottomY] = [Math.clamp(cx - rx, 0, maxX), Math.clamp(cy + ry, 0, maxY)];
+
+            return [cx, cy, cx + Math.min(rightX - cx, cx - leftX), cy - Math.min(cy - topY, bottomY - cy)];
+        }
 
         for (let i = 0; i < points.length - 1; i += 2) {
             const x = points[i];
