@@ -27,15 +27,15 @@ jobs:
           done
 
           if [[ ! -z $CHANGED_FILES ]]; then
-            curl -sL -o $HADOLINT "https://github.com/hadolint/hadolint/releases/download/v$HADOLINT_VER/hadolint-Linux-x86_64" && chmod 700 ${HADOLINT}
-            echo "HadoLint version: "`$HADOLINT --version`
+            curl -sL -o $HADOLINT "https://github.com/hadolint/hadolint/releases/download/v$HADOLINT_VER/hadolint-Linux-x86_64" && chmod 700 $HADOLINT
+            echo "HadoLint version: "$($HADOLINT --version)
             echo "The files will be checked: "$(echo $CHANGED_FILES)
             mkdir -p hadolint_report
 
             $HADOLINT --no-fail --format json $CHANGED_FILES > ./hadolint_report/hadolint_report.json
             GET_VERIFICATION_LEVEL=$(cat ./hadolint_report/hadolint_report.json | jq -r '.[] | .level')
-            for line in $GET_VERIFICATION_LEVEL; do
-              if [[ $line =~ $VERIFICATION_LEVEL ]]; then
+            for LINE in $GET_VERIFICATION_LEVEL; do
+              if [[ $LINE =~ $VERIFICATION_LEVEL ]]; then
                 pip install json2html
                 python ./tests/json_to_html.py ./hadolint_report/hadolint_report.json
                 exit 1

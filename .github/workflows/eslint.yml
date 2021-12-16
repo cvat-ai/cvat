@@ -33,8 +33,8 @@ jobs:
             npm install eslint-detailed-reporter --save-dev --legacy-peer-deps
             mkdir -p eslint_report
 
-            echo "ESLint version: "`npx eslint --version`
-            echo "The files will be checked: "`echo $CHANGED_FILES`
+            echo "ESLint version: "$(npx eslint --version)
+            echo "The files will be checked: "$(echo $CHANGED_FILES)
             npx eslint $CHANGED_FILES -f node_modules/eslint-detailed-reporter/lib/detailed.js -o ./eslint_report/eslint_checks.html
           else
             echo "No files with the \"js|ts|jsx|tsx\" extension found"
