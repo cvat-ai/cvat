@@ -217,14 +217,16 @@ class ArchiveReader(DirectoryReader):
                 start=0,
                 stop=None,
                 dimension=DimensionType.DIM_2D,
-                sorting_method=SortingMethod.LEXICOGRAPHICAL):
+                sorting_method=SortingMethod.LEXICOGRAPHICAL,
+                extract_dir=None):
+
         self._archive_source = source_path[0]
-        extract_dir = source_path[1] if len(source_path) > 1 else os.path.dirname(source_path[0])
-        Archive(self._archive_source).extractall(extract_dir)
-        if extract_dir == os.path.dirname(source_path[0]):
+        tmp_dir = extract_dir if extract_dir else os.path.dirname(source_path[0])
+        Archive(self._archive_source).extractall(tmp_dir)
+        if not extract_dir:
             os.remove(self._archive_source)
         super().__init__(
-            source_path=[extract_dir],
+            source_path=[tmp_dir],
             step=step,
             start=start,
             stop=stop,
@@ -239,7 +241,8 @@ class PdfReader(ImageListReader):
                 start=0,
                 stop=None,
                 dimension=DimensionType.DIM_2D,
-                sorting_method=SortingMethod.LEXICOGRAPHICAL):
+                sorting_method=SortingMethod.LEXICOGRAPHICAL,
+                extract_dir=None):
         if not source_path:
             raise Exception('No PDF found')
 
@@ -252,7 +255,7 @@ class PdfReader(ImageListReader):
                 yield '{}{:09d}.jpeg'.format(_basename, page_num)
 
         from pdf2image import convert_from_path
-        self._tmp_dir = os.path.dirname(source_path[0])
+        self._tmp_dir = extract_dir if extract_dir else os.path.dirname(source_path[0])
         os.makedirs(self._tmp_dir, exist_ok=True)
 
         # Avoid OOM: https://github.com/openvinotoolkit/cvat/issues/940
@@ -260,7 +263,8 @@ class PdfReader(ImageListReader):
             last_page=stop, paths_only=True,
             output_folder=self._tmp_dir, fmt="jpeg", output_file=_make_name())
 
-        os.remove(source_path[0])
+        if not extract_dir:
+            os.remove(source_path[0])
 
         super().__init__(
             source_path=paths,
@@ -278,9 +282,10 @@ class ZipReader(ImageListReader):
                 start=0,
                 stop=None,
                 dimension=DimensionType.DIM_2D,
-                sorting_method=SortingMethod.LEXICOGRAPHICAL):
+                sorting_method=SortingMethod.LEXICOGRAPHICAL,
+                extract_dir=None):
         self._zip_source = zipfile.ZipFile(source_path[0], mode='r')
-        self.extract_dir = source_path[1] if len(source_path) > 1 else None
+        self.extract_dir = extract_dir
         file_list = [f for f in self._zip_source.namelist() if files_to_ignore(f) and get_mime(f) == 'image']
         super().__init__(file_list,
                         step=step,

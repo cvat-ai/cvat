@@ -85,6 +85,7 @@ interface StateToProps {
     showObjectsTextAlways: boolean;
     textFontSize: number;
     textPosition: 'auto' | 'center';
+    textContent: string;
     showAllInterpolationTracks: boolean;
     workspace: Workspace;
     minZLayer: number;
@@ -168,6 +169,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 intelligentPolygonCrop,
                 textFontSize,
                 textPosition,
+                textContent,
             },
             shapes: {
                 opacity, colorBy, selectedOpacity, outlined, outlineColor, showBitmap, showProjections,
@@ -216,6 +218,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         showObjectsTextAlways,
         textFontSize,
         textPosition,
+        textContent,
         showAllInterpolationTracks,
         curZLayer,
         minZLayer,

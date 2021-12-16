@@ -16,6 +16,7 @@ import {
     changeDefaultApproxPolyAccuracy,
     switchTextFontSize,
     switchTextPosition,
+    switchTextContent,
 } from 'actions/settings-actions';
 
 import { CombinedState } from 'reducers/interfaces';
@@ -33,6 +34,7 @@ interface StateToProps {
     intelligentPolygonCrop: boolean;
     textFontSize: number;
     textPosition: 'auto' | 'center';
+    textContent: string;
 }
 
 interface DispatchToProps {
@@ -46,6 +48,7 @@ interface DispatchToProps {
     onChangeDefaultApproxPolyAccuracy(approxPolyAccuracy: number): void;
     onChangeTextFontSize(fontSize: number): void;
     onChangeTextPosition(position: 'auto' | 'center'): void;
+    onChangeTextContent(textContent: string[]): void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -61,6 +64,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         defaultApproxPolyAccuracy,
         textFontSize,
         textPosition,
+        textContent,
     } = workspace;
 
     return {
@@ -74,6 +78,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         defaultApproxPolyAccuracy,
         textFontSize,
         textPosition,
+        textContent,
     };
 }
 
@@ -108,6 +113,10 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         },
         onChangeTextPosition(position: 'auto' | 'center'): void {
             dispatch(switchTextPosition(position));
+        },
+        onChangeTextContent(textContent: string[]): void {
+            const serialized = textContent.join(',');
+            dispatch(switchTextContent(serialized));
         },
     };
 }

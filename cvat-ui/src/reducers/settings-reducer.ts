@@ -34,6 +34,7 @@ const defaultState: SettingsState = {
         defaultApproxPolyAccuracy: 9,
         textFontSize: 14,
         textPosition: 'auto',
+        textContent: 'id,source,label,attributes,descriptions',
         toolsBlockerState: {
             algorithmsLocked: false,
             buttonVisible: false,
@@ -210,6 +211,16 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
                 workspace: {
                     ...state.workspace,
                     textPosition: action.payload.position,
+                },
+            };
+        }
+        case SettingsActionTypes.SWITCH_TEXT_CONTENT: {
+            const { textContent } = action.payload;
+            return {
+                ...state,
+                workspace: {
+                    ...state.workspace,
+                    textContent,
                 },
             };
         }
