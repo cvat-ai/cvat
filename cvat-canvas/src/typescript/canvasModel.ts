@@ -654,7 +654,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
             this.data.configuration.displayAllText = configuration.displayAllText;
         }
 
-        if (typeof configuration.textFontSize === 'number' && configuration.textFontSize >= 8) {
+        if (typeof configuration.textFontSize === 'number' && configuration.textFontSize >= consts.MINIMUM_TEXT_FONT_SIZE) {
             this.data.configuration.textFontSize = configuration.textFontSize;
         }
 
