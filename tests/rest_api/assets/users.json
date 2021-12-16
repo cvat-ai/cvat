@@ -1,6 +1,6 @@
 {
   "count": 18,
-  "next": "http://localhost:8080/api/v1/users?page=2",
+  "next": null,
   "previous": null,
   "results": [
     {
@@ -14,7 +14,7 @@
       "is_active": true,
       "is_staff": true,
       "is_superuser": true,
-      "last_login": "2021-12-15T09:12:28.004967Z",
+      "last_login": "2021-12-16T16:02:49.802270Z",
       "last_name": "First",
       "url": "http://localhost:8080/api/v1/users/1",
       "username": "admin1"
@@ -162,6 +162,126 @@
       "last_name": "First",
       "url": "http://localhost:8080/api/v1/users/10",
       "username": "business1"
+    },
+    {
+      "date_joined": "2021-12-14T18:34:01Z",
+      "email": "business2@cvat.org",
+      "first_name": "Business",
+      "groups": [
+        "business"
+      ],
+      "id": 11,
+      "is_active": true,
+      "is_staff": false,
+      "is_superuser": false,
+      "last_login": null,
+      "last_name": "Second",
+      "url": "http://localhost:8080/api/v1/users/11",
+      "username": "business2"
+    },
+    {
+      "date_joined": "2021-12-14T18:34:34Z",
+      "email": "business3@cvat.org",
+      "first_name": "Business",
+      "groups": [
+        "business"
+      ],
+      "id": 12,
+      "is_active": true,
+      "is_staff": false,
+      "is_superuser": false,
+      "last_login": null,
+      "last_name": "Third",
+      "url": "http://localhost:8080/api/v1/users/12",
+      "username": "business3"
+    },
+    {
+      "date_joined": "2021-12-14T18:35:15Z",
+      "email": "business4@cvat.org",
+      "first_name": "Business",
+      "groups": [
+        "business"
+      ],
+      "id": 13,
+      "is_active": true,
+      "is_staff": false,
+      "is_superuser": false,
+      "last_login": null,
+      "last_name": "Fourth",
+      "url": "http://localhost:8080/api/v1/users/13",
+      "username": "business4"
+    },
+    {
+      "date_joined": "2021-12-14T18:36:00Z",
+      "email": "dummy1@cvat.org",
+      "first_name": "Dummy",
+      "groups": [],
+      "id": 14,
+      "is_active": true,
+      "is_staff": false,
+      "is_superuser": false,
+      "last_login": null,
+      "last_name": "First",
+      "url": "http://localhost:8080/api/v1/users/14",
+      "username": "dummy1"
+    },
+    {
+      "date_joined": "2021-12-14T18:36:31Z",
+      "email": "dummy2@cvat.org",
+      "first_name": "Dummy",
+      "groups": [],
+      "id": 15,
+      "is_active": true,
+      "is_staff": false,
+      "is_superuser": false,
+      "last_login": null,
+      "last_name": "Second",
+      "url": "http://localhost:8080/api/v1/users/15",
+      "username": "dummy2"
+    },
+    {
+      "date_joined": "2021-12-14T18:37:09Z",
+      "email": "dummy3@cvat.org",
+      "first_name": "Dummy",
+      "groups": [],
+      "id": 16,
+      "is_active": true,
+      "is_staff": false,
+      "is_superuser": false,
+      "last_login": null,
+      "last_name": "Third",
+      "url": "http://localhost:8080/api/v1/users/16",
+      "username": "dummy3"
+    },
+    {
+      "date_joined": "2021-12-14T18:37:41Z",
+      "email": "dummy4@cvat.org",
+      "first_name": "Dummy",
+      "groups": [],
+      "id": 17,
+      "is_active": true,
+      "is_staff": false,
+      "is_superuser": false,
+      "last_login": null,
+      "last_name": "Fourth",
+      "url": "http://localhost:8080/api/v1/users/17",
+      "username": "dummy4"
+    },
+    {
+      "date_joined": "2021-12-14T18:38:46Z",
+      "email": "admin2@cvat.org",
+      "first_name": "Admin",
+      "groups": [
+        "admin"
+      ],
+      "id": 18,
+      "is_active": true,
+      "is_staff": true,
+      "is_superuser": true,
+      "last_login": null,
+      "last_name": "Second",
+      "url": "http://localhost:8080/api/v1/users/18",
+      "username": "admin2"
     }
   ]
 }
