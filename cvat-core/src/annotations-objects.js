@@ -50,8 +50,8 @@
                 throw new DataError(`Cuboid must have 8 points, but got ${points.length / 2}`);
             }
         } else if (shapeType === ObjectShape.ELLIPSE) {
-            if (points.length / 2 !== 4) {
-                throw new DataError(`Ellipse must have 4 points, but got ${points.length / 2}`);
+            if (points.length / 2 !== 2) {
+                throw new DataError(`Ellipse must have 1 point, rx and ry but got ${points.toString()}`);
             }
         } else {
             throw new ArgumentError(`Unknown value of shapeType has been received ${shapeType}`);
@@ -1417,7 +1417,8 @@
         }
 
         static distance(points, x, y, angle) {
-            const [cx, cy, rx, ry] = points;
+            const [cx, cy, rightX, topY] = points;
+            const [rx, ry] = [rightX - cx, topY - cy];
             const [rotX, rotY] = rotatePoint(x, y, -angle, cx, cy);
             // https://math.stackexchange.com/questions/76457/check-if-a-point-is-within-an-ellipse
             const pointWithinEllipse = (_x, _y) => (

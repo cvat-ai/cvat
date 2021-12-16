@@ -33,6 +33,7 @@ import {
     ShapeSizeElement,
     DrawnState,
     rotate2DPoints,
+    readPointsFromShape,
 } from './shared';
 import {
     CanvasModel,
@@ -1728,6 +1729,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     this.svgShapes[state.clientID] = this.addPolyline(stringified, state);
                 } else if (state.shapeType === 'points') {
                     this.svgShapes[state.clientID] = this.addPoints(stringified, state);
+                } else if (state.shapeType === 'ellipse') {
+                    this.svgShapes[state.clientID] = this.addEllipse(stringified, state);
                 } else if (state.shapeType === 'cuboid') {
                     this.svgShapes[state.clientID] = this.addCuboid(stringified, state);
                 } else {
@@ -1933,10 +1936,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     if (Math.sqrt(dx2 + dy2) >= delta) {
                         // these points does not take into account possible transformations, applied on the element
                         // so, if any (like rotation) we need to map them to canvas coordinate space
-                        let points = pointsToNumberArray(
-                            shape.attr('points') || `${shape.attr('x')},${shape.attr('y')} ` +
-                                `${shape.attr('x') + shape.attr('width')},${shape.attr('y') + shape.attr('height')}`,
-                        );
+                        let points = readPointsFromShape(shape);
 
                         // let's keep current points, but they could be rewritten in updateObjects
                         this.drawnStates[clientID].points = this.translateFromCanvas(points);
@@ -2021,10 +2021,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
                     // these points does not take into account possible transformations, applied on the element
                     // so, if any (like rotation) we need to map them to canvas coordinate space
-                    let points = pointsToNumberArray(
-                        shape.attr('points') || `${shape.attr('x')},${shape.attr('y')} ` +
-                            `${shape.attr('x') + shape.attr('width')},${shape.attr('y') + shape.attr('height')}`,
-                    );
+                    let points = readPointsFromShape(shape);
 
                     // let's keep current points, but they could be rewritten in updateObjects
                     this.drawnStates[clientID].points = this.translateFromCanvas(points);
@@ -2357,6 +2354,39 @@ export class CanvasViewImpl implements CanvasView, Listener {
         group.clone = basicPolyline.clone.bind(basicPolyline);
 
         return group;
+    }
+
+    private addEllipse(points: string, state: any): SVG.Rect {
+        const [cx, cy, rightX, topY] = points.split(/[/,\s]/g).map((coord) => +coord);
+        const [rx, ry] = [rightX - cx, cy - topY];
+        const rect = this.adoptedContent
+            .ellipse(rx * 2, ry * 2)
+            .attr({
+                clientID: state.clientID,
+                'color-rendering': 'optimizeQuality',
+                id: `cvat_canvas_shape_${state.clientID}`,
+                fill: state.color,
+                'shape-rendering': 'geometricprecision',
+                stroke: state.color,
+                'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
+                'data-z-order': state.zOrder,
+            })
+            .center(cx, cy)
+            .addClass('cvat_canvas_shape');
+
+        if (state.rotation) {
+            rect.rotate(state.rotation);
+        }
+
+        if (state.occluded) {
+            rect.addClass('cvat_canvas_shape_occluded');
+        }
+
+        if (state.hidden || state.outside || this.isServiceHidden(state.clientID)) {
+            rect.addClass('cvat_canvas_hidden');
+        }
+
+        return rect;
     }
 
     private addPoints(points: string, state: any): SVG.PolyLine {
