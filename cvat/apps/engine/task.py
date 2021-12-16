@@ -325,17 +325,16 @@ def _create_thread(tid, data, isImport=False):
                     data['sorting_method'] in {models.SortingMethod.RANDOM, models.SortingMethod.PREDEFINED}:
                 raise Exception("It isn't supported to import the task that was created without cache but with random/predefined sorting")
 
-            if media_type in {'archive', 'zip'} and db_data.storage == models.StorageChoice.SHARE:
-                source_paths.append(db_data.get_upload_dirname())
-                upload_dir = db_data.get_upload_dirname()
-                db_data.storage = models.StorageChoice.LOCAL
-
             details = {
                 'source_path': source_paths,
                 'step': db_data.get_frame_step(),
                 'start': db_data.start_frame,
                 'stop': data['stop_frame'],
             }
+            if media_type in {'archive', 'zip', 'pdf'} and db_data.storage == models.StorageChoice.SHARE:
+                details['extract_dir'] = db_data.get_upload_dirname()
+                upload_dir = db_data.get_upload_dirname()
+                db_data.storage = models.StorageChoice.LOCAL
             if media_type != 'video':
                 details['sorting_method'] = data['sorting_method']
             extractor = MEDIA_TYPES[media_type]['extractor'](**details)
