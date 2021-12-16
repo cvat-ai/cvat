@@ -26,6 +26,7 @@ context('Review pipeline feature', () => {
         segmentSize: 10,
     };
 
+    // eslint-disable-next-line no-unused-vars
     const createRectangleShape2Points = {
         points: 'By 2 Points',
         type: 'Shape',
@@ -36,6 +37,7 @@ context('Review pipeline feature', () => {
         secondY: 450,
     };
 
+    // eslint-disable-next-line no-unused-vars
     const createRectangleShape2PointsSecond = {
         points: 'By 2 Points',
         type: 'Shape',
@@ -46,6 +48,7 @@ context('Review pipeline feature', () => {
         secondY: 450,
     };
 
+    // eslint-disable-next-line no-unused-vars
     const createPointsShape = {
         type: 'Shape',
         labelName,
@@ -54,6 +57,7 @@ context('Review pipeline feature', () => {
         numberOfPoints: null,
     };
 
+    // eslint-disable-next-line no-unused-vars
     const createPointsShapeSecond = {
         type: 'Shape',
         labelName,
@@ -62,6 +66,7 @@ context('Review pipeline feature', () => {
         numberOfPoints: null,
     };
 
+    // eslint-disable-next-line no-unused-vars
     const createPointsShapeThird = {
         type: 'Shape',
         labelName,
@@ -70,6 +75,7 @@ context('Review pipeline feature', () => {
         numberOfPoints: null,
     };
 
+    // eslint-disable-next-line no-unused-vars
     const createPointsShapeFourth = {
         type: 'Shape',
         labelName,
@@ -94,8 +100,10 @@ context('Review pipeline feature', () => {
         password: 'Fv5Df3#f55g',
     };
 
+    // eslint-disable-next-line no-unused-vars
     const customeIssueDescription = 'Custom issue';
 
+    // eslint-disable-next-line no-unused-vars
     const createIssueRectangle = {
         type: 'rectangle',
         description: 'rectangle issue',
@@ -105,6 +113,7 @@ context('Review pipeline feature', () => {
         secondY: 200,
     };
 
+    // eslint-disable-next-line no-unused-vars
     const createIssuePoint = {
         type: 'point',
         description: 'point issue',
