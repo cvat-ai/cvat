@@ -51,6 +51,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - interactor: add HRNet interactive segmentation serverless function (<https://github.com/openvinotoolkit/cvat/pull/3740>)
 - Added GPU implementation for SiamMask, reworked tracking approach (<https://github.com/openvinotoolkit/cvat/pull/3571>)
 - Progress bar for manifest creating (<https://github.com/openvinotoolkit/cvat/pull/3712>)
+- IAM: Open Policy Agent integration (<https://github.com/openvinotoolkit/cvat/pull/3788>)
 - Add a tutorial on attaching cloud storage AWS-S3 (<https://github.com/openvinotoolkit/cvat/pull/3745>)
   and Azure Blob Container (<https://github.com/openvinotoolkit/cvat/pull/3778>)
 - The feature to remove annotations in a specified range of frames (<https://github.com/openvinotoolkit/cvat/pull/3617>)
@@ -58,6 +59,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - UI tracking has been reworked (<https://github.com/openvinotoolkit/cvat/pull/3571>)
+- Updated Django till 3.2.7 (automatic AppConfig discovery)
 - Manifest generation: Reduce creating time (<https://github.com/openvinotoolkit/cvat/pull/3712>)
 - Migration from NPM 6 to NPM 7 (<https://github.com/openvinotoolkit/cvat/pull/3773>)
 - Update Datumaro dependency to 0.2.0 (<https://github.com/openvinotoolkit/cvat/pull/3813>)

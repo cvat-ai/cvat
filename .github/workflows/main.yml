@@ -16,6 +16,9 @@ jobs:
       runs-on: ubuntu-latest
       steps:
       - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+        with:
+          python-version: '3.8'
       - name: Getting SHA from the default branch
         id: get-sha
         run: |
@@ -63,6 +66,22 @@ jobs:
           cache-from: type=local,src=/tmp/cvat_cache_server
           tags: openvino/cvat_server:latest
           load: true
+      - name: Running OPA tests
+        run: |
+          curl -L -o opa https://openpolicyagent.org/downloads/v0.34.2/opa_linux_amd64_static
+          chmod +x ./opa
+          ./opa test cvat/apps/iam/rules
+      - name: Running REST API tests
+        env:
+          API_ABOUT_PAGE: "localhost:8080/api/v1/server/about"
+        run: |
+          docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f components/serverless/docker-compose.serverless.yml up -d
+          /bin/bash -c 'while [[ "$(curl -s -o /dev/null -w ''%{http_code}'' ${API_ABOUT_PAGE})" != "401" ]]; do sleep 5; done'
+          cat tests/rest_api/assets/cvat_db.sql | docker exec -i cvat_db psql -q -U root -d cvat
+          cat tests/rest_api/assets/cvat_data.tar.bz2 | docker run --rm -i --volumes-from cvat ubuntu tar -xj --strip 3 -C /home/django/data
+          pip3 install --user -r tests/rest_api/requirements.txt
+          pytest tests/rest_api/
+          docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f components/serverless/docker-compose.serverless.yml down -v
       - name: Running unit tests
         env:
           HOST_COVERAGE_DATA_DIR: ${{ github.workspace }}

@@ -34,10 +34,8 @@ context('Changing a default value for an attribute.', () => {
     describe(`Testing case "${caseId}", issue 2968`, () => {
         it('Add a label, add text (leave it’s value empty by default) & checkbox attributes.', () => {
             cy.intercept('PATCH', '/api/v1/tasks/**').as('patchTask');
-            cy.intercept('GET', '/api/v1/tasks**').as('getTask');
             cy.addNewLabel(additionalLabel, additionalAttrsLabel);
             cy.wait('@patchTask').its('response.statusCode').should('equal', 200);
-            cy.wait('@getTask').its('response.statusCode').should('equal', 200);
             cy.get('.cvat-constructor-viewer').should('exist').and('be.visible');
         });
 

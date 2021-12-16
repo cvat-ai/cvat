@@ -81,11 +81,7 @@ function ObjectsSideBar(props: StateToProps & DispatchToProps & OwnProps): JSX.E
         collapseSidebar();
     };
 
-    let is2D = true;
-    if (jobInstance) {
-        is2D = jobInstance.task.dimension === DimensionType.DIM_2D;
-    }
-
+    const is2D = jobInstance ? jobInstance.dimension === DimensionType.DIM_2D : true;
     return (
         <Layout.Sider
             className='cvat-objects-sidebar'

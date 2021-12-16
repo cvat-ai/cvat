@@ -276,7 +276,7 @@
         if (instance instanceof Task) {
             result = await serverProxy.tasks.exportDataset(instance.id, format, name, saveImages);
         } else if (instance instanceof Job) {
-            result = await serverProxy.tasks.exportDataset(instance.task.id, format, name, saveImages);
+            result = await serverProxy.tasks.exportDataset(instance.taskId, format, name, saveImages);
         } else {
             result = await serverProxy.projects.exportDataset(instance.id, format, name, saveImages);
         }

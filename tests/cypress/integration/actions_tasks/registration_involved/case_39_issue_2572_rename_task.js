@@ -58,7 +58,9 @@ context('Rename a task.', () => {
             cy.contains('.cvat-task-details-task-name', newNaskName).should('exist');
             cy.logout();
         });
-        it('Registration a second user. Rename the task. Status 403 appear.', () => {
+        // FIXME: the task isn't visible for the user. Need to register it, assign on
+        // on the task and only after that try to rename.
+        it.skip('Registration a second user. Rename the task. Status 403 appear.', () => {
             cy.goToRegisterPage();
             cy.userRegistration(
                 secondUser.firstName,

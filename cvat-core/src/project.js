@@ -7,6 +7,7 @@
     const { ArgumentError } = require('./exceptions');
     const { Label } = require('./labels');
     const User = require('./user');
+    const { FieldUpdateTrigger } = require('./common');
 
     /**
      * Class representing a project
@@ -35,6 +36,8 @@
                 task_ids: undefined,
                 dimension: undefined,
             };
+
+            const updateTrigger = new FieldUpdateTrigger();
 
             for (const property in data) {
                 if (Object.prototype.hasOwnProperty.call(data, property) && property in initialData) {
@@ -82,6 +85,7 @@
                                 throw new ArgumentError('Value must not be empty');
                             }
                             data.name = value;
+                            updateTrigger.update('name');
                         },
                     },
 
@@ -110,6 +114,7 @@
                                 throw new ArgumentError('Value must be a user instance');
                             }
                             data.assignee = assignee;
+                            updateTrigger.update('assignee');
                         },
                     },
                     /**
@@ -134,6 +139,7 @@
                         get: () => data.bug_tracker,
                         set: (tracker) => {
                             data.bug_tracker = tracker;
+                            updateTrigger.update('bugTracker');
                         },
                     },
                     /**
@@ -195,6 +201,7 @@
                             });
 
                             data.labels = [...deletedLabels, ...labels];
+                            updateTrigger.update('labels');
                         },
                     },
                     /**
@@ -231,10 +238,14 @@
                             } else {
                                 data.training_project = updatedProject;
                             }
+                            updateTrigger.update('trainingProject');
                         },
                     },
                     _internalData: {
                         get: () => data,
+                    },
+                    _updateTrigger: {
+                        get: () => updateTrigger,
                     },
                 }),
             );

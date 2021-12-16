@@ -1,0 +1,5 @@
+Scope,Resource,Context,Ownership,Limit,Method,URL,Privilege,Membership
+view,N/A,N/A,N/A,,GET,"/server/about, /server/annotation/formats, /server/plugins",None,N/A
+send:exception,N/A,N/A,N/A,,POST,/server/exception,None,N/A
+send:logs,N/A,N/A,N/A,,POST,/server/logs,None,N/A
+list:content,N/A,N/A,N/A,,GET,/server/share,Worker,N/A

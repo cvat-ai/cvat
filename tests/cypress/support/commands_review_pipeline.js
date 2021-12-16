@@ -22,10 +22,15 @@ Cypress.Commands.add('assignJobToUser', (jobID, user) => {
             .find('.cvat-job-assignee-selector')
             .click();
     });
+
+    cy.intercept('PATCH', '/api/v1/jobs/**').as('patchJobAssignee');
     cy.get('.ant-select-dropdown')
         .not('.ant-select-dropdown-hidden')
         .contains(new RegExp(`^${user}$`, 'g'))
         .click();
+
+    cy.wait('@patchJobAssignee').its('response.statusCode').should('equal', 200);
+    cy.get('.cvat-spinner').should('not.exist');
 });
 
 Cypress.Commands.add('reviewJobToUser', (jobID, user) => {

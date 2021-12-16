@@ -269,6 +269,12 @@ export enum TaskStatus {
     COMPLETED = 'completed',
 }
 
+export enum JobStage {
+    ANNOTATION = 'annotation',
+    REVIEW = 'validation',
+    ACCEPTANCE = 'acceptance',
+}
+
 export enum RQStatus {
     unknown = 'unknown',
     queued = 'queued',
@@ -295,8 +301,8 @@ export interface ModelsState {
     inferences: {
         [index: number]: ActiveInference;
     };
-    visibleRunWindows: boolean;
-    activeRunTask: any;
+    modelRunnerIsVisible: boolean;
+    modelRunnerTask: any;
 }
 
 export interface ErrorState {
@@ -334,6 +340,9 @@ export interface NotificationsState {
             exporting: null | ErrorState;
             importing: null | ErrorState;
             moving: null | ErrorState;
+        };
+        jobs: {
+            updating: null | ErrorState;
         };
         formats: {
             fetching: null | ErrorState;
@@ -385,7 +394,6 @@ export interface NotificationsState {
             fetching: null | ErrorState;
         };
         review: {
-            initialization: null | ErrorState;
             finishingIssue: null | ErrorState;
             resolvingIssue: null | ErrorState;
             reopeningIssue: null | ErrorState;
@@ -401,6 +409,17 @@ export interface NotificationsState {
             fetching: null | ErrorState;
             updating: null | ErrorState;
             deleting: null | ErrorState;
+        };
+        organizations: {
+            fetching: null | ErrorState;
+            creating: null | ErrorState;
+            updating: null | ErrorState;
+            activation: null | ErrorState;
+            deleting: null | ErrorState;
+            leaving: null | ErrorState;
+            inviting: null | ErrorState;
+            updatingMembership: null | ErrorState;
+            removingMembership: null | ErrorState;
         };
     };
     messages: {
@@ -575,8 +594,6 @@ export interface AnnotationState {
     };
     colors: any[];
     filtersPanelVisible: boolean;
-    requestReviewDialogVisible: boolean;
-    submitReviewDialogVisible: boolean;
     sidebarCollapsed: boolean;
     appearanceCollapsed: boolean;
     workspace: Workspace;
@@ -674,18 +691,28 @@ export enum ReviewStatus {
 }
 
 export interface ReviewState {
-    reviews: any[];
     issues: any[];
     frameIssues: any[];
     latestComments: string[];
-    activeReview: any | null;
     newIssuePosition: number[] | null;
     issuesHidden: boolean;
     issuesResolvedHidden: boolean;
     fetching: {
-        reviewId: number | null;
+        jobId: number | null;
         issueId: number | null;
     };
+}
+
+export interface OrganizationState {
+    list: any[];
+    current: any | null;
+    fetching: boolean;
+    creating: boolean;
+    updating: boolean;
+    inviting: boolean;
+    leaving: boolean;
+    removingMember: boolean;
+    updatingMember: boolean;
 }
 
 export interface CombinedState {
@@ -705,6 +732,7 @@ export interface CombinedState {
     review: ReviewState;
     export: ExportState;
     cloudStorages: CloudStoragesState;
+    organizations: OrganizationState;
 }
 
 export enum DimensionType {

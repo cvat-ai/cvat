@@ -18,7 +18,7 @@ from cvat.apps.engine import models
 from cvat.apps.engine.log import slogger
 from cvat.apps.engine.serializers import (AttributeSerializer, DataSerializer,
     LabeledDataSerializer, SegmentSerializer, SimpleJobSerializer, TaskSerializer,
-    ReviewSerializer, IssueSerializer, CommentSerializer)
+    IssueReadSerializer, CommentReadSerializer)
 from cvat.apps.engine.utils import av_scan_paths
 from cvat.apps.engine.models import StorageChoice, StorageMethodChoice, DataChoice
 from cvat.apps.engine.task import _create_thread
@@ -156,20 +156,12 @@ class _TaskBackupBase():
 
         return annotations
 
-    def _prepare_review_meta(self, review):
-        allowed_fields = {
-            'estimated_quality',
-            'status',
-            'issues',
-        }
-        return self._prepare_meta(allowed_fields, review)
-
     def _prepare_issue_meta(self, issue):
         allowed_fields = {
             'frame',
             'position',
             'created_date',
-            'resolved_date',
+            'updated_date',
             'comments',
         }
         return self._prepare_meta(allowed_fields, issue)
@@ -289,46 +281,32 @@ class TaskExporter(_TaskBackupBase):
             return task
 
         def serialize_comment(db_comment):
-            comment_serializer = CommentSerializer(db_comment)
-            comment_serializer.fields.pop('author')
+            comment_serializer = CommentReadSerializer(db_comment)
+            comment_serializer.fields.pop('owner')
 
             return self._prepare_comment_meta(comment_serializer.data)
 
         def serialize_issue(db_issue):
-            issue_serializer = IssueSerializer(db_issue)
+            issue_serializer = IssueReadSerializer(db_issue)
             issue_serializer.fields.pop('owner')
-            issue_serializer.fields.pop('resolver')
+            issue_serializer.fields.pop('assignee')
 
             issue = issue_serializer.data
             issue['comments'] = (serialize_comment(c) for c in db_issue.comment_set.order_by('id'))
 
             return self._prepare_issue_meta(issue)
 
-        def serialize_review(db_review):
-            review_serializer = ReviewSerializer(db_review)
-            review_serializer.fields.pop('reviewer')
-            review_serializer.fields.pop('assignee')
-
-            review = review_serializer.data
-            review['issues'] = (serialize_issue(i) for i in db_review.issue_set.order_by('id'))
-
-            return self._prepare_review_meta(review)
-
         def serialize_segment(db_segment):
             db_job = db_segment.job_set.first()
             job_serializer = SimpleJobSerializer(db_job)
             job_serializer.fields.pop('url')
             job_serializer.fields.pop('assignee')
-            job_serializer.fields.pop('reviewer')
             job_data = self._prepare_job_meta(job_serializer.data)
 
             segment_serailizer = SegmentSerializer(db_segment)
             segment_serailizer.fields.pop('jobs')
             segment = segment_serailizer.data
             segment.update(job_data)
-
-            db_reviews = db_job.review_set.order_by('id')
-            segment['reviews'] = (serialize_review(r) for r in db_reviews)
 
             return segment
 
@@ -377,9 +355,10 @@ class TaskExporter(_TaskBackupBase):
             self._write_annotations(output_file)
 
 class TaskImporter(_TaskBackupBase):
-    def __init__(self, filename, user_id):
+    def __init__(self, filename, user_id, org_id):
         self._filename = filename
         self._user_id = user_id
+        self._org_id = org_id
         self._manifest, self._annotations = self._read_meta()
         self._version = self._read_version()
         self._labels_mapping = {}
@@ -441,41 +420,6 @@ class TaskImporter(_TaskBackupBase):
         return segment_size, overlap
 
     def _import_task(self):
-
-        def _create_comment(comment, db_issue):
-            comment['issue'] = db_issue.id
-            comment_serializer = CommentSerializer(data=comment)
-            comment_serializer.is_valid(raise_exception=True)
-            db_comment = comment_serializer.save()
-            return db_comment
-
-        def _create_issue(issue, db_review, db_job):
-            issue['review'] = db_review.id
-            issue['job'] = db_job.id
-            comments = issue.pop('comments')
-
-            issue_serializer = IssueSerializer(data=issue)
-            issue_serializer.is_valid( raise_exception=True)
-            db_issue = issue_serializer.save()
-
-            for comment in comments:
-                _create_comment(comment, db_issue)
-
-            return db_issue
-
-        def _create_review(review, db_job):
-            review['job'] = db_job.id
-            issues = review.pop('issues')
-
-            review_serializer = ReviewSerializer(data=review)
-            review_serializer.is_valid(raise_exception=True)
-            db_review = review_serializer.save()
-
-            for issue in issues:
-                _create_issue(issue, db_review, db_job)
-
-            return db_review
-
         data = self._manifest.pop('data')
         labels = self._manifest.pop('labels')
         jobs = self._manifest.pop('jobs')
@@ -484,7 +428,8 @@ class TaskImporter(_TaskBackupBase):
         self._manifest['segment_size'], self._manifest['overlap'] = self._calculate_segment_size(jobs)
         self._manifest["owner_id"] = self._user_id
 
-        self._db_task = models.Task.objects.create(**self._manifest)
+        self._db_task = models.Task.objects.create(**self._manifest,
+            organization_id=self._org_id)
         task_path = self._db_task.get_task_dirname()
         if os.path.isdir(task_path):
             shutil.rmtree(task_path)
@@ -531,9 +476,6 @@ class TaskImporter(_TaskBackupBase):
             db_job.status = job['status']
             db_job.save()
 
-            for review in job['reviews']:
-                _create_review(review, db_job)
-
     def _import_annotations(self):
         db_jobs = self._get_db_jobs()
         for db_job, annotations in zip(db_jobs, self._annotations):
@@ -545,8 +487,8 @@ class TaskImporter(_TaskBackupBase):
         return self._db_task
 
 @transaction.atomic
-def import_task(filename, user):
+def import_task(filename, user_id, org_id):
     av_scan_paths(filename)
-    task_importer = TaskImporter(filename, user)
+    task_importer = TaskImporter(filename, user_id, org_id)
     db_task = task_importer.import_task()
     return db_task.id

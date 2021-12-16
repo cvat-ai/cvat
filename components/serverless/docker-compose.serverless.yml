@@ -21,7 +21,6 @@ services:
   cvat:
     environment:
       CVAT_SERVERLESS: 1
-      no_proxy: kibana,logstash,nuclio,${no_proxy}
 
 volumes:
   cvat_events:

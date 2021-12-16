@@ -1,0 +1,52 @@
+// Copyright (C) 2021 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
+
+@import '../../base.scss';
+
+.cvat-create-organization-page {
+    text-align: center;
+    padding-top: $grid-unit-size * 5;
+    overflow-y: auto;
+    height: 90%;
+    width: 100%;
+
+    > div:first-child {
+        > span {
+            font-size: 36px;
+        }
+    }
+}
+
+.cvat-create-organization-form {
+    text-align: initial;
+    margin-top: $grid-unit-size * 2;
+    width: 100%;
+    height: auto;
+    border: 1px solid $border-color-1;
+    border-radius: 3px;
+    padding: $grid-unit-size * 2;
+    background: $background-color-1;
+
+    > div:not(first-child) {
+        margin-top: $grid-unit-size;
+    }
+
+    .cvat-create-organization-form-buttons-block {
+        display: flex;
+        justify-content: flex-end;
+    }
+
+    .cvat-create-organization-form-contact-block {
+        display: flex;
+        align-items: flex-end;
+
+        > .ant-space-item:first-child {
+            width: 100%;
+        }
+    }
+
+    .cvat-create-organization-form-add-contact-block {
+        align-items: baseline;
+    }
+}

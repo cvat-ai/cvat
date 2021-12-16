@@ -79,7 +79,6 @@ services:
       DJANGO_LOG_VIEWER_HOST: kibana
       DJANGO_LOG_VIEWER_PORT: 5601
       CVAT_ANALYTICS: 1
-      no_proxy: kibana,logstash,nuclio,${no_proxy}
 
 volumes:
   cvat_events:
