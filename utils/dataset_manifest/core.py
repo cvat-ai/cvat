@@ -5,12 +5,14 @@
 import av
 import json
 import os
-from abc import ABC, abstractmethod, abstractproperty
+
+from abc import ABC, abstractmethod, abstractproperty, abstractstaticmethod
 from contextlib import closing
 from tempfile import NamedTemporaryFile
-
 from PIL import Image
-from .utils import md5_hash, rotate_image, sort, SortingMethod
+from json.decoder import JSONDecodeError
+
+from .utils import SortingMethod, md5_hash, rotate_image, sort
 
 class VideoStreamReader:
     def __init__(self, source_path, chunk_size, force):
@@ -509,13 +511,6 @@ class VideoManifestManager(_ManifestManager):
     def get_subset(self, subset_names):
         raise NotImplementedError()
 
-#TODO: add generic manifest structure file validation
-class ManifestValidator:
-    def validate_base_info(self):
-        with open(self._manifest.path, 'r') as manifest_file:
-            assert self._manifest.VERSION != json.loads(manifest_file.readline())['version']
-            assert self._manifest.TYPE != json.loads(manifest_file.readline())['type']
-
 class VideoManifestValidator(VideoManifestManager):
     def __init__(self, source_path, manifest_path):
         self._source_path = source_path
@@ -616,3 +611,105 @@ class ImageManifestManager(_ManifestManager):
                     'checksum': f"{image['checksum']}"
                 })
         return index_list, subset
+
+
+class _BaseManifestValidator(ABC):
+    def __init__(self, full_manifest_path):
+        self._manifest = _Manifest(full_manifest_path)
+
+    def __bool__(self):
+        try:
+            # we cannot use index in general because manifest may be e.g. in share point with ro mode
+            # TODO
+            is_valid = False
+            with open(self._manifest.path, 'r') as manifest:
+                for idx, line in enumerate(manifest):
+                    is_valid =  True
+                    line = json.loads(line.strip())
+                    self.validators[idx](line)
+                    if idx == len(self.validators) - 1:
+                        break
+            return is_valid
+        except (ValueError, KeyError, JSONDecodeError):
+            return False
+
+    @staticmethod
+    def _validate_version(_dict):
+        if not _dict['version'] == _Manifest.VERSION:
+            raise ValueError('Incorrect version field')
+
+    def _validate_type(self, _dict):
+        if not _dict['type'] == self.TYPE:
+            raise ValueError('Incorrect type field')
+
+    @abstractproperty
+    def validators(self):
+        pass
+
+    @abstractstaticmethod
+    def _validate_first_item(_dict):
+        pass
+
+class _VideoManifestStructureValidator(_BaseManifestValidator):
+    TYPE = 'video'
+
+    @property
+    def validators(self):
+        return (
+            self._validate_version,
+            self._validate_type,
+            self._validate_properties,
+            self._validate_first_item,
+        )
+
+    @staticmethod
+    def _validate_properties(_dict):
+        properties = _dict['properties']
+        if not isinstance(properties['name'], str):
+            raise ValueError('Incorrect name field')
+        if not isinstance(properties['resolution'], list):
+            raise ValueError('Incorrect resolution field')
+        if not isinstance(properties['length'], int) or properties['length'] == 0:
+            raise ValueError('Incorrect length field')
+
+    @staticmethod
+    def _validate_first_item(_dict):
+        if not isinstance(_dict['number'], int):
+            raise ValueError('Incorrect number field')
+        if not isinstance(_dict['pts'], int):
+            raise ValueError('Incorrect pts field')
+
+class _DatasetManifestStructureValidator(_BaseManifestValidator):
+    TYPE = 'images'
+
+    @property
+    def validators(self):
+        return (
+            self._validate_version,
+            self._validate_type,
+            self._validate_first_item,
+        )
+
+    @staticmethod
+    def _validate_first_item(_dict):
+        if not isinstance(_dict['name'], str):
+            raise ValueError('Incorrect name field')
+        if not isinstance(_dict['extension'], str):
+            raise ValueError('Incorrect extension field')
+        if not isinstance(_dict['width'], int):
+            raise ValueError('Incorrect width field')
+        if not isinstance(_dict['height'], int):
+            raise ValueError('Incorrect height field')
+        # TODO Is meta a required field?
+
+def is_manifest(full_manifest_path):
+    return _is_video_manifest(full_manifest_path) or \
+        _is_dataset_manifest(full_manifest_path)
+
+def _is_video_manifest(full_manifest_path):
+    validator = _VideoManifestStructureValidator(full_manifest_path)
+    return bool(validator)
+
+def _is_dataset_manifest(full_manifest_path):
+    validator = _DatasetManifestStructureValidator(full_manifest_path)
+    return bool(validator)

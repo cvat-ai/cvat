@@ -267,7 +267,7 @@ export class FileManager extends React.PureComponent<Props, State> {
                 <CloudStorageTab
                     formRef={this.cloudStorageTabFormRef}
                     cloudStorage={cloudStorage}
-                    selectedFiles={files.cloudStorage.filter((item) => !item.endsWith('manifest.jsonl'))}
+                    selectedFiles={files.cloudStorage.filter((item) => !item.endsWith('.jsonl'))}
                     onSelectCloudStorage={(_cloudStorage: CloudStorage | null) => {
                         this.setState({ cloudStorage: _cloudStorage });
                     }}
