@@ -37,11 +37,11 @@ In tab `Workspace` you can:
 
   ![](/images/image152_detrac.jpg)
 
-- `Content of a text` - content customization object details:
+- `Content of a text` - setup of the composition of the object details:
   - `ID` - object identifier.
   - `Attributes` - attributes of the object.
   - `Label` - object label.
-  - `Source`- the source for creating `MANUAL`, `AUTO` or `SEMI-AUTO` objects.
+  - `Source`- source of creating of objects `MANUAL`, `AUTO` or `SEMI-AUTO`.
   - `Descriptions` - description of attributes.
 
 - `Position of a text` - text positioning mode selection:
