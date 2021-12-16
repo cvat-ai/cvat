@@ -1545,6 +1545,12 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     ctx.fill();
                 }
 
+                if (state.shapeType === 'ellipse') {
+                    const [cx, cy, rightX, topY] = state.points;
+                    ctx.ellipse(cx, cy, rightX - cx, cy - topY, 0, 0, 2 * Math.PI);
+                    ctx.fill();
+                }
+
                 if (state.shapeType === 'cuboid') {
                     for (let i = 0; i < 5; i++) {
                         const points = [
