@@ -8,11 +8,13 @@
         PolygonShape,
         PolylineShape,
         PointsShape,
+        EllipseShape,
         CuboidShape,
         RectangleTrack,
         PolygonTrack,
         PolylineTrack,
         PointsTrack,
+        EllipseTrack,
         CuboidTrack,
         Track,
         Shape,
@@ -48,6 +50,9 @@
             case 'points':
                 shapeModel = new PointsShape(shapeData, clientID, color, injection);
                 break;
+            case 'ellipse':
+                shapeModel = new EllipseShape(shapeData, clientID, color, injection);
+                break;
             case 'cuboid':
                 shapeModel = new CuboidShape(shapeData, clientID, color, injection);
                 break;
@@ -76,6 +81,9 @@
                     break;
                 case 'points':
                     trackModel = new PointsTrack(trackData, clientID, color, injection);
+                    break;
+                case 'ellipse':
+                    trackModel = new EllipseTrack(trackData, clientID, color, injection);
                     break;
                 case 'cuboid':
                     trackModel = new CuboidTrack(trackData, clientID, color, injection);
@@ -612,6 +620,10 @@
                     track: 0,
                 },
                 points: {
+                    shape: 0,
+                    track: 0,
+                },
+                ellipse: {
                     shape: 0,
                     track: 0,
                 },
