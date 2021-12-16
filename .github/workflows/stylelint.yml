@@ -10,7 +10,6 @@ jobs:
             node-version: '16.x'
 
       - name: Run checks
-        env:
         run: |
           PER_PAGE=100
           PR_URL="https://api.github.com/repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}"
