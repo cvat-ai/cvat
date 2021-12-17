@@ -488,14 +488,11 @@ class TaskViewSet(UploadMixin, auth.TaskGetQuerySetMixin, viewsets.ModelViewSet)
 
     def perform_update(self, serializer):
         instance = serializer.instance
-        project_id = instance.project_id
         updated_instance = serializer.save()
-        if project_id != updated_instance.project_id:
-            if project_id is not None:
-                Project.objects.get(id=project_id).save()
-            if updated_instance.project_id is not None:
-                Project.objects.get(id=updated_instance.project_id).save()
-
+        if instance.project:
+            instance.project.save()
+        if updated_instance.project:
+            updated_instance.project.save()
 
     def perform_create(self, serializer):
         owner = self.request.data.get('owner', None)
