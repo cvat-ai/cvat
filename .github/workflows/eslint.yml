@@ -8,27 +8,31 @@ jobs:
       - uses: actions/setup-node@v2
         with:
             node-version: '16.x'
+      - id: files
+        uses: jitterbit/get-changed-files@v1
 
       - name: Run checks
+        env:
+          PR_FILES_AM: ${{ steps.files.outputs.added_modified }}
+          PR_FILES_RENAMED: ${{ steps.files.outputs.renamed }}
         run: |
-          URL="https://api.github.com/repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/files"
-          PR_FILES=$(curl -s -X GET -G $URL | jq -r '.[] | select(.status != "removed") | .filename')
-          for files in $PR_FILES; do
-            extension="${files##*.}"
-            if [[ $extension == 'js' || $extension == 'ts' || $extension == 'jsx' || $extension == 'tsx' ]]; then
-              changed_files_eslint+=" ${files}"
-            fi
+          PR_FILES="$PR_FILES_AM $PR_FILES_RENAMED"
+          for FILE in $PR_FILES; do
+              EXTENSION="${FILE##*.}"
+              if [[ $EXTENSION == 'js' || $EXTENSION == 'ts' || $EXTENSION == 'jsx' || $EXTENSION == 'tsx' ]]; then
+                  CHANGED_FILES+=" $FILE"
+              fi
           done
 
-          if [[ ! -z ${changed_files_eslint} ]]; then
+          if [[ ! -z $CHANGED_FILES ]]; then
             npm ci
             cd tests && npm ci && cd ..
             npm install eslint-detailed-reporter --save-dev --legacy-peer-deps
             mkdir -p eslint_report
 
-            echo "ESLint version: "`npx eslint --version`
-            echo "The files will be checked: "`echo ${changed_files_eslint}`
-            npx eslint ${changed_files_eslint} -f node_modules/eslint-detailed-reporter/lib/detailed.js -o ./eslint_report/eslint_checks.html
+            echo "ESLint version: "$(npx eslint --version)
+            echo "The files will be checked: "$(echo $CHANGED_FILES)
+            npx eslint $CHANGED_FILES -f node_modules/eslint-detailed-reporter/lib/detailed.js -o ./eslint_report/eslint_checks.html
           else
             echo "No files with the \"js|ts|jsx|tsx\" extension found"
           fi
