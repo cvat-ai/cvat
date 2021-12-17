@@ -13,7 +13,7 @@ pre[class*="language-"] {
     background: #f8f9fa !important;
 }
 
-.code-toolbar {
+.code-toolbar, details > pre, .td-content > details > .highlight {
     max-width: 80%;
 }
 
