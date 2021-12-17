@@ -17,11 +17,11 @@ class _Format:
     ENABLED = True
 
 class Exporter(_Format):
-    def __call__(self, dst_file, task_data, **options):
+    def __call__(self, dst_file, instance_data, **options):
         raise NotImplementedError()
 
 class Importer(_Format):
-    def __call__(self, src_file, task_data, **options):
+    def __call__(self, src_file, instance_data, load_data_callback=None, **options):
         raise NotImplementedError()
 
 def _wrap_format(f_or_cls, klass, name, version, ext, display_name, enabled, dimension=DimensionType.DIM_2D):

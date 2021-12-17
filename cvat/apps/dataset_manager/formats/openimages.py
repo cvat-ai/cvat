@@ -51,7 +51,7 @@ def _export(dst_file, task_data, save_images=False):
         make_zip_archive(temp_dir, dst_file)
 
 @importer(name='Open Images V6', ext='ZIP', version='1.0')
-def _import(src_file, task_data):
+def _import(src_file, instance_data, load_data_callback=None):
     with TemporaryDirectory() as tmp_dir:
         Archive(src_file.name).extractall(tmp_dir)
 
@@ -64,14 +64,14 @@ def _import(src_file, task_data):
             item_ids = list(find_item_ids(tmp_dir))
 
             root_hint = find_dataset_root(
-                [DatasetItem(id=item_id) for item_id in item_ids], task_data)
+                [DatasetItem(id=item_id) for item_id in item_ids], instance_data)
 
             for item_id in item_ids:
                 frame_info = None
                 try:
                     frame_id = match_dm_item(DatasetItem(id=item_id),
-                        task_data, root_hint)
-                    frame_info = task_data.frame_info[frame_id]
+                        instance_data, root_hint)
+                    frame_info = instance_data.frame_info[frame_id]
                 except Exception: # nosec
                     pass
                 if frame_info is not None:
@@ -80,6 +80,8 @@ def _import(src_file, task_data):
         dataset = Dataset.import_from(tmp_dir, 'open_images',
             image_meta=image_meta, env=dm_env)
         dataset.transform('masks_to_polygons')
-        import_dm_annotations(dataset, task_data)
+        if load_data_callback is not None:
+            load_data_callback(dataset, instance_data)
+        import_dm_annotations(dataset, instance_data)
 
 

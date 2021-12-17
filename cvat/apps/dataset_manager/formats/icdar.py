@@ -86,11 +86,13 @@ def _export_recognition(dst_file, instance_data, save_images=False):
         make_zip_archive(temp_dir, dst_file)
 
 @importer(name='ICDAR Recognition', ext='ZIP', version='1.0')
-def _import(src_file, instance_data):
+def _import(src_file, instance_data, load_data_callback=None):
     with TemporaryDirectory() as tmp_dir:
         zipfile.ZipFile(src_file).extractall(tmp_dir)
         dataset = Dataset.import_from(tmp_dir, 'icdar_word_recognition', env=dm_env)
         dataset.transform(CaptionToLabel, 'icdar')
+        if load_data_callback is not None:
+            load_data_callback(dataset, instance_data)
         import_dm_annotations(dataset, instance_data)
 
 
@@ -103,12 +105,14 @@ def _export_localization(dst_file, instance_data, save_images=False):
         make_zip_archive(temp_dir, dst_file)
 
 @importer(name='ICDAR Localization', ext='ZIP', version='1.0')
-def _import(src_file, instance_data):
+def _import(src_file, instance_data, load_data_callback=None):
     with TemporaryDirectory() as tmp_dir:
         zipfile.ZipFile(src_file).extractall(tmp_dir)
 
         dataset = Dataset.import_from(tmp_dir, 'icdar_text_localization', env=dm_env)
         dataset.transform(AddLabelToAnns, 'icdar')
+        if load_data_callback is not None:
+            load_data_callback(dataset, instance_data)
         import_dm_annotations(dataset, instance_data)
 
 
@@ -125,10 +129,12 @@ def _export_segmentation(dst_file, instance_data, save_images=False):
         make_zip_archive(temp_dir, dst_file)
 
 @importer(name='ICDAR Segmentation', ext='ZIP', version='1.0')
-def _import(src_file, instance_data):
+def _import(src_file, instance_data, load_data_callback=None):
     with TemporaryDirectory() as tmp_dir:
         zipfile.ZipFile(src_file).extractall(tmp_dir)
         dataset = Dataset.import_from(tmp_dir, 'icdar_text_segmentation', env=dm_env)
         dataset.transform(AddLabelToAnns, 'icdar')
         dataset.transform('masks_to_polygons')
+        if load_data_callback is not None:
+            load_data_callback(dataset, instance_data)
         import_dm_annotations(dataset, instance_data)
