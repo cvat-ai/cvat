@@ -13,7 +13,9 @@ jobs:
 
       - name: Run checks
         env:
-          PR_FILES: ${{ steps.files.outputs.added_modified }}
+          PR_FILES_AM: ${{ steps.files.outputs.added_modified }}
+          PR_FILES_RENAMED: ${{ steps.files.outputs.renamed }}
+          PR_FILES: "$PR_FILES_AM $PR_FILES_RENAMED"
         run: |
           for FILE in $PR_FILES; do
               EXTENSION="${FILE##*.}"

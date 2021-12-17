@@ -13,7 +13,9 @@ jobs:
           HADOLINT: "${{ github.workspace }}/hadolint"
           HADOLINT_VER: "2.1.0"
           VERIFICATION_LEVEL: "error"
-          PR_FILES: ${{ steps.files.outputs.added_modified }}
+          PR_FILES_AM: ${{ steps.files.outputs.added_modified }}
+          PR_FILES_RENAMED: ${{ steps.files.outputs.renamed }}
+          PR_FILES: "$PR_FILES_AM $PR_FILES_RENAMED"
         run: |
           for FILE in $PR_FILES; do
               if [[ $FILE =~ 'Dockerfile' ]]; then
