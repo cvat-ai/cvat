@@ -53,13 +53,16 @@ def rq_handler(job, exc_type, exc_value, traceback):
 
 ############################# Internal implementation for server API
 
-def _copy_data_from_share(server_files, upload_dir):
+def _copy_data_from_source(server_files, upload_dir, server_dir=None):
     job = rq.get_current_job()
-    job.meta['status'] = 'Data are being copied from share..'
+    job.meta['status'] = 'Data are being copied from source..'
     job.save_meta()
 
     for path in server_files:
-        source_path = os.path.join(settings.SHARE_ROOT, os.path.normpath(path))
+        if server_dir is None:
+            source_path = os.path.join(settings.SHARE_ROOT, os.path.normpath(path))
+        else:
+            source_path = os.path.join(server_dir, os.path.normpath(path))
         target_path = os.path.join(upload_dir, path)
         if os.path.isdir(source_path):
             copy_tree(source_path, target_path)
@@ -218,14 +221,16 @@ def _get_manifest_frame_indexer(start_frame=0, frame_step=1):
 
 
 @transaction.atomic
-def _create_thread(tid, data, isImport=False):
-    slogger.glob.info("create task #{}".format(tid))
+def _create_thread(db_task, data, isBackupRestore=False, isDatasetImport=False):
+    if isinstance(db_task, int):
+        db_task = models.Task.objects.select_for_update().get(pk=db_task)
 
-    db_task = models.Task.objects.select_for_update().get(pk=tid)
+    slogger.glob.info("create task #{}".format(db_task.id))
+
     db_data = db_task.data
     upload_dir = db_data.get_upload_dirname()
 
-    if data['remote_files']:
+    if data['remote_files'] and not isDatasetImport:
         data['remote_files'] = _download_data(data['remote_files'], upload_dir)
 
     manifest_file = []
@@ -236,7 +241,7 @@ def _create_thread(tid, data, isImport=False):
 
     if data['server_files']:
         if db_data.storage == models.StorageChoice.LOCAL:
-            _copy_data_from_share(data['server_files'], upload_dir)
+            _copy_data_from_source(data['server_files'], upload_dir, data.get('server_files_path'))
         elif db_data.storage == models.StorageChoice.SHARE:
             upload_dir = settings.SHARE_ROOT
         else: # cloud storage
@@ -297,12 +302,12 @@ def _create_thread(tid, data, isImport=False):
         if media_files:
             if extractor is not None:
                 raise Exception('Combined data types are not supported')
-            if isImport and media_type == 'image' and db_data.storage == models.StorageChoice.SHARE:
+            if (isDatasetImport or isBackupRestore) and media_type == 'image' and db_data.storage == models.StorageChoice.SHARE:
                 manifest_index = _get_manifest_frame_indexer(db_data.start_frame, db_data.get_frame_step())
                 db_data.start_frame = 0
                 data['stop_frame'] = None
                 db_data.frame_filter = ''
-            if isImport and media_type != 'video' and db_data.storage_method == models.StorageMethodChoice.CACHE:
+            if isBackupRestore and media_type != 'video' and db_data.storage_method == models.StorageMethodChoice.CACHE:
                 # we should sort media_files according to the manifest content sequence
                 manifest = ImageManifestManager(db_data.get_manifest_path())
                 manifest.set_index()
@@ -319,9 +324,9 @@ def _create_thread(tid, data, isImport=False):
                 del sorted_media_files
                 data['sorting_method'] = models.SortingMethod.PREDEFINED
             source_paths=[os.path.join(upload_dir, f) for f in media_files]
-            if manifest_file and not isImport and data['sorting_method'] in {models.SortingMethod.RANDOM, models.SortingMethod.PREDEFINED}:
+            if manifest_file and not isBackupRestore and data['sorting_method'] in {models.SortingMethod.RANDOM, models.SortingMethod.PREDEFINED}:
                 raise Exception("It isn't supported to upload manifest file and use random sorting")
-            if isImport and db_data.storage_method == models.StorageMethodChoice.FILE_SYSTEM and \
+            if isBackupRestore and db_data.storage_method == models.StorageMethodChoice.FILE_SYSTEM and \
                     data['sorting_method'] in {models.SortingMethod.RANDOM, models.SortingMethod.PREDEFINED}:
                 raise Exception("It isn't supported to import the task that was created without cache but with random/predefined sorting")
 
@@ -377,12 +382,11 @@ def _create_thread(tid, data, isImport=False):
         if not hasattr(update_progress, 'call_counter'):
             update_progress.call_counter = 0
 
-        status_template = 'Images are being compressed {}'
-        if progress:
-            current_progress = '{}%'.format(round(progress * 100))
-        else:
-            current_progress = '{}'.format(progress_animation[update_progress.call_counter])
-        job.meta['status'] = status_template.format(current_progress)
+        status_message = 'Images are being compressed'
+        if not progress:
+            status_message = '{} {}'.format(status_message, progress_animation[update_progress.call_counter])
+        job.meta['status'] = status_message
+        job.meta['task_progress'] = progress or 0.
         job.save_meta()
         update_progress.call_counter = (update_progress.call_counter + 1) % len(progress_animation)
 

@@ -3,26 +3,32 @@
 #
 # SPDX-License-Identifier: MIT
 
-import os.path as osp
 import sys
+import rq
+import os.path as osp
+from attr import attrib, attrs
 from collections import namedtuple
 from pathlib import Path
 from typing import (Any, Callable, DefaultDict, Dict, List, Literal, Mapping,
-    NamedTuple, OrderedDict, Tuple, Union)
+    NamedTuple, OrderedDict, Tuple, Union, Set)
 
 import datumaro.components.annotation as datum_annotation
 import datumaro.components.extractor as datum_extractor
+from datumaro.components.dataset import Dataset
 from datumaro.util import cast
 from datumaro.util.image import ByteImage, Image
 from django.utils import timezone
 
 from cvat.apps.engine.frame_provider import FrameProvider
-from cvat.apps.engine.models import AttributeType, DimensionType
+from cvat.apps.engine.models import AttributeType, DimensionType, AttributeSpec
 from cvat.apps.engine.models import Image as Img
 from cvat.apps.engine.models import Label, Project, ShapeType, Task
+from cvat.apps.dataset_manager.formats.utils import get_label_color
 
 from .annotation import AnnotationIR, AnnotationManager, TrackManager
 
+
+CVAT_INTERNAL_ATTRIBUTES = {'occluded', 'outside', 'keyframe', 'track_id', 'rotation'}
 
 class InstanceLabelData:
     Attribute = NamedTuple('Attribute', [('name', str), ('value', Any)])
@@ -32,6 +38,8 @@ class InstanceLabelData:
 
         db_labels = instance.label_set.all().prefetch_related('attributespec_set').order_by('pk')
 
+        # If this flag is set to true, create attribute within anntations import
+        self._soft_attribute_import = False
         self._label_mapping = OrderedDict[int, Label](
             ((db_label.id, db_label) for db_label in db_labels),
         )
@@ -86,7 +94,7 @@ class InstanceLabelData:
     def _get_immutable_attribute_id(self, label_id, attribute_name):
         return self._get_attribute_id(label_id, attribute_name, 'immutable')
 
-    def _import_attribute(self, label_id, attribute):
+    def _import_attribute(self, label_id, attribute, mutable=False):
         spec_id = self._get_attribute_id(label_id, attribute.name)
         value = attribute.value
 
@@ -107,6 +115,39 @@ class InstanceLabelData:
             except Exception as e:
                 raise Exception("Failed to convert attribute '%s'='%s': %s" %
                     (self._get_label_name(label_id), value, e))
+
+        elif self._soft_attribute_import:
+            if isinstance(value, (int, float)):
+                attr_type = AttributeType.NUMBER
+            elif isinstance(value, bool):
+                attr_type = AttributeType.CHECKBOX
+            else:
+                value = str(value)
+                if value.lower() in {'true', 'false'}:
+                    value = value.lower() == 'true'
+                    attr_type = AttributeType.CHECKBOX
+                else:
+                    attr_type = AttributeType.TEXT
+
+            attr_spec = AttributeSpec(
+                label_id=label_id,
+                name=attribute.name,
+                input_type=attr_type,
+                mutable=mutable,
+            )
+            attr_spec.save()
+            spec_id = attr_spec.id
+            if label_id not in self._label_mapping:
+                self._label_mapping[label_id] = Label.objects.get(id=label_id)
+            if label_id not in self._attribute_mapping:
+                self._attribute_mapping[label_id] = {'mutable': {}, 'immutable': {}, 'spec': {}}
+            self._attribute_mapping[label_id]['immutable'][spec_id] = attribute.name
+            self._attribute_mapping[label_id]['spec'][spec_id] = attr_spec
+            self._attribute_mapping_merged[label_id] = {
+                **self._attribute_mapping[label_id]['mutable'],
+                **self._attribute_mapping[label_id]['immutable'],
+            }
+
 
         return { 'spec_id': spec_id, 'value': value }
 
@@ -397,6 +438,14 @@ class TaskData(InstanceLabelData):
     def meta(self):
         return self._meta
 
+    @property
+    def soft_attribute_import(self):
+        return self._soft_attribute_import
+
+    @soft_attribute_import.setter
+    def soft_attribute_import(self, value: bool):
+        self._soft_attribute_import = value
+
     def _import_tag(self, tag):
         _tag = tag._asdict()
         label_id = self._get_label_id(_tag.pop('label'))
@@ -404,7 +453,10 @@ class TaskData(InstanceLabelData):
         _tag['label_id'] = label_id
         _tag['attributes'] = [self._import_attribute(label_id, attrib)
             for attrib in _tag['attributes']
-            if self._get_attribute_id(label_id, attrib.name)]
+            if self._get_attribute_id(label_id, attrib.name) or (
+                self.soft_attribute_import and attrib.name not in CVAT_INTERNAL_ATTRIBUTES
+            )
+        ]
         return _tag
 
     def _import_shape(self, shape):
@@ -414,7 +466,10 @@ class TaskData(InstanceLabelData):
         _shape['label_id'] = label_id
         _shape['attributes'] = [self._import_attribute(label_id, attrib)
             for attrib in _shape['attributes']
-            if self._get_attribute_id(label_id, attrib.name)]
+            if self._get_attribute_id(label_id, attrib.name) or (
+                self.soft_attribute_import and attrib.name not in CVAT_INTERNAL_ATTRIBUTES
+            )
+        ]
         _shape['points'] = list(map(float, _shape['points']))
         return _shape
 
@@ -430,10 +485,16 @@ class TaskData(InstanceLabelData):
             shape['frame'] = self.rel_frame_id(int(shape['frame']))
             _track['attributes'] = [self._import_attribute(label_id, attrib)
                 for attrib in shape['attributes']
-                if self._get_immutable_attribute_id(label_id, attrib.name)]
-            shape['attributes'] = [self._import_attribute(label_id, attrib)
+                if self._get_immutable_attribute_id(label_id, attrib.name) or (
+                    self.soft_attribute_import and attrib.name not in CVAT_INTERNAL_ATTRIBUTES
+                )
+            ]
+            shape['attributes'] = [self._import_attribute(label_id, attrib, mutable=True)
                 for attrib in shape['attributes']
-                if self._get_mutable_attribute_id(label_id, attrib.name)]
+                if self._get_mutable_attribute_id(label_id, attrib.name) or (
+                    self.soft_attribute_import and attrib.name not in CVAT_INTERNAL_ATTRIBUTES
+                )
+            ]
             shape['points'] = list(map(float, shape['points']))
 
         return _track
@@ -510,40 +571,86 @@ class TaskData(InstanceLabelData):
         return None
 
 class ProjectData(InstanceLabelData):
-    LabeledShape = NamedTuple('LabledShape', [('type', str), ('frame', int), ('label', str), ('points', List[float]), ('occluded', bool), ('attributes', List[InstanceLabelData.Attribute]), ('source', str), ('group', int), ('rotation', float), ('z_order', int), ('task_id', int)])
-    LabeledShape.__new__.__defaults__ = (0, 0, 0)
-    TrackedShape = NamedTuple('TrackedShape',
-        [('type', str), ('frame', int), ('points', List[float]), ('occluded', bool), ('outside', bool), ('keyframe', bool), ('attributes', List[InstanceLabelData.Attribute]), ('rotation', float), ('source', str), ('group', int), ('z_order', int), ('label', str), ('track_id', int)],
-    )
-    TrackedShape.__new__.__defaults__ = (0, 'manual', 0, 0, None, 0)
-    Track = NamedTuple('Track', [('label', str), ('group', int), ('source', str), ('shapes', List[TrackedShape]), ('task_id', int)])
-    Tag = NamedTuple('Tag', [('frame', int), ('label', str), ('attributes', List[InstanceLabelData.Attribute]), ('source', str), ('group', int), ('task_id', int)])
-    Tag.__new__.__defaults__ = (0, )
-    Frame = NamedTuple('Frame', [('task_id', int), ('subset', str), ('idx', int), ('id', int), ('frame', int), ('name', str), ('width', int), ('height', int), ('labeled_shapes', List[Union[LabeledShape, TrackedShape]]), ('tags', List[Tag])])
+    @attrs
+    class LabeledShape:
+        type: str = attrib()
+        frame: int = attrib()
+        label: str = attrib()
+        points: List[float] = attrib()
+        occluded: bool = attrib()
+        attributes: List[InstanceLabelData.Attribute] = attrib()
+        source: str = attrib(default='manual')
+        group: int = attrib(default=0)
+        rotation: int = attrib(default=0)
+        z_order: int = attrib(default=0)
+        task_id: int = attrib(default=None)
+        subset: str = attrib(default=None)
 
-    def __init__(self, annotation_irs: Mapping[str, AnnotationIR], db_project: Project, host: str, create_callback: Callable = None):
+    @attrs
+    class TrackedShape:
+        type: str = attrib()
+        frame: int = attrib()
+        points: List[float] = attrib()
+        occluded: bool = attrib()
+        outside: bool = attrib()
+        keyframe: bool = attrib()
+        attributes: List[InstanceLabelData.Attribute] = attrib()
+        rotation: int = attrib(default=0)
+        source: str = attrib(default='manual')
+        group: int = attrib(default=0)
+        z_order: int = attrib(default=0)
+        label: str = attrib(default=None)
+        track_id: int = attrib(default=0)
+
+    @attrs
+    class Track:
+        label: str = attrib()
+        shapes: List['ProjectData.TrackedShape'] = attrib()
+        source: str = attrib(default='manual')
+        group: int = attrib(default=0)
+        task_id: int = attrib(default=None)
+        subset: str = attrib(default=None)
+
+    @attrs
+    class Tag:
+        frame: int = attrib()
+        label: str = attrib()
+        attributes: List[InstanceLabelData.Attribute] = attrib()
+        source: str = attrib(default='manual')
+        group: int = attrib(default=0)
+        task_id: int = attrib(default=None)
+        subset: str = attrib(default=None)
+
+    @attrs
+    class Frame:
+        idx: int = attrib()
+        id: int = attrib()
+        frame: int = attrib()
+        name: str = attrib()
+        width: int = attrib()
+        height: int = attrib()
+        labeled_shapes: List[Union['ProjectData.LabeledShape', 'ProjectData.TrackedShape']] = attrib()
+        tags: List['ProjectData.Tag'] = attrib()
+        task_id: int = attrib(default=None)
+        subset: str = attrib(default=None)
+
+    def __init__(self, annotation_irs: Mapping[str, AnnotationIR], db_project: Project, host: str = '', task_annotations: Mapping[int, Any] = None, project_annotation=None):
         self._annotation_irs = annotation_irs
         self._db_project = db_project
-        self._db_tasks: OrderedDict[int, Task] = OrderedDict(
-            ((db_task.id, db_task) for db_task in db_project.tasks.order_by("subset","id").all())
-        )
-        self._subsets = set()
+        self._task_annotations = task_annotations
         self._host = host
-        self._create_callback = create_callback
-        self._MAX_ANNO_SIZE = 30000
+        self._soft_attribute_import = False
+        self._project_annotation = project_annotation
+        self._tasks_data: Dict[int, TaskData] = {}
         self._frame_info: Dict[Tuple[int, int], Literal["path", "width", "height", "subset"]] = dict()
-        self._frame_mapping: Dict[Tuple[str, str], Tuple[str, str]] = dict()
-        self._frame_steps: Dict[int, int] = {task.id: task.data.get_frame_step() for task in self._db_tasks.values()}
-
-        for task in self._db_tasks.values():
-            self._subsets.add(task.subset)
-        self._subsets: List[str] = list(self._subsets)
+        # (subset, path): (task id, frame number)
+        self._frame_mapping: Dict[Tuple[str, str], Tuple[int, int]] = dict()
+        self._frame_steps: Dict[int, int] = {}
+        self.new_tasks: Set[int] = set()
 
         InstanceLabelData.__init__(self, db_project)
+        self.init()
 
-        self._init_task_frame_offsets()
-        self._init_frame_info()
-        self._init_meta()
 
     def abs_frame_id(self, task_id: int, relative_id: int) -> int:
         task = self._db_tasks[task_id]
@@ -558,6 +665,24 @@ class ProjectData(InstanceLabelData):
         if m or d not in range(0, task.data.size):
             raise ValueError(f"Unknown frame {absolute_id}")
         return d
+
+    def init(self):
+        self._init_tasks()
+        self._init_task_frame_offsets()
+        self._init_frame_info()
+        self._init_meta()
+
+    def _init_tasks(self):
+        self._db_tasks: OrderedDict[int, Task] = OrderedDict(
+            ((db_task.id, db_task) for db_task in self._db_project.tasks.order_by("subset","id").all())
+        )
+
+        subsets = set()
+        for task in self._db_tasks.values():
+            subsets.add(task.subset)
+        self._subsets: List[str] = list(subsets)
+
+        self._frame_steps: Dict[int, int] = {task.id: task.data.get_frame_step() for task in self._db_tasks.values()}
 
     def _init_task_frame_offsets(self):
         self._task_frame_offsets: Dict[int, int] = dict()
@@ -626,6 +751,8 @@ class ProjectData(InstanceLabelData):
                             for db_attr in db_label.attributespec_set.all()])
                     ])) for db_label in self._label_mapping.values()
                 ]),
+
+                ("subsets", '\n'.join([s if s else datum_extractor.DEFAULT_SUBSET_NAME for s in self._subsets])),
 
                 ("owner", OrderedDict([
                     ("username", self._db_project.owner.username),
@@ -790,14 +917,71 @@ class ProjectData(InstanceLabelData):
         return list(self._db_tasks.values())
 
     @property
+    def soft_attribute_import(self):
+        return self._soft_attribute_import
+
+    @soft_attribute_import.setter
+    def soft_attribute_import(self, value: bool):
+        self._soft_attribute_import =  value
+        for task_data in self._tasks_data.values():
+            task_data.soft_attribute_import = value
+
+    @property
     def task_data(self):
         for task_id, task in self._db_tasks.items():
-            yield TaskData(self._annotation_irs[task_id], task, self._host)
+            if task_id in self._tasks_data:
+                yield self._tasks_data[task_id]
+            else:
+                task_data = TaskData(
+                    annotation_ir=self._annotation_irs[task_id],
+                    db_task=task,
+                    host=self._host,
+                    create_callback=self._task_annotations[task_id].create \
+                        if self._task_annotations is not None else None,
+                )
+                task_data._MAX_ANNO_SIZE //= len(self._db_tasks)
+                task_data.soft_attribute_import = self.soft_attribute_import
+                self._tasks_data[task_id] = task_data
+                yield task_data
 
     @staticmethod
     def _get_filename(path):
         return osp.splitext(path)[0]
 
+    def match_frame(self, path: str, subset: str=datum_extractor.DEFAULT_SUBSET_NAME, root_hint: str=None, path_has_ext: bool=True):
+        if path_has_ext:
+            path = self._get_filename(path)
+        match_task, match_frame = self._frame_mapping.get((subset, path), (None, None))
+        if not match_frame and root_hint and not path.startswith(root_hint):
+            path = osp.join(root_hint, path)
+            match_task, match_frame = self._frame_mapping.get((subset, path), (None, None))
+        return match_task, match_frame
+
+    def match_frame_fuzzy(self, path):
+        path = Path(self._get_filename(path)).parts
+        for (_subset, _path), (_tid, frame_number) in self._frame_mapping.items():
+            if Path(_path).parts[-len(path):] == path :
+                return frame_number
+        return None
+
+    def split_dataset(self, dataset: Dataset):
+        for task_data in self.task_data:
+            if task_data._db_task.id not in self.new_tasks:
+                continue
+            subset_dataset: Dataset = dataset.subsets()[task_data.db_task.subset].as_dataset()
+            yield subset_dataset, task_data
+
+    def add_labels(self, labels: List[dict]):
+        attributes = []
+        _labels = []
+        for label in labels:
+            _attributes = label.pop('attributes')
+            _labels.append(Label(**label))
+            attributes += [(label['name'], AttributeSpec(**at)) for at in _attributes]
+        self._project_annotation.add_labels(_labels, attributes)
+
+    def add_task(self, task, files):
+        self._project_annotation.add_task(task, files, self)
 
 class CVATDataExtractorMixin:
     def __init__(self):
@@ -1192,23 +1376,33 @@ def match_dm_item(item, task_data, root_hint=None):
             "'%s' with any task frame" % item.id)
     return frame_number
 
-def find_dataset_root(dm_dataset, task_data):
+def find_dataset_root(dm_dataset, instance_data: Union[TaskData, ProjectData]):
     longest_path = max(dm_dataset, key=lambda x: len(Path(x.id).parts),
         default=None)
     if longest_path is None:
         return None
     longest_path = longest_path.id
 
-    longest_match = task_data.match_frame_fuzzy(longest_path)
+    longest_match = instance_data.match_frame_fuzzy(longest_path)
     if longest_match is None:
         return None
-    longest_match = osp.dirname(task_data.frame_info[longest_match]['path'])
+    longest_match = osp.dirname(instance_data.frame_info[longest_match]['path'])
     prefix = longest_match[:-len(osp.dirname(longest_path)) or None]
     if prefix.endswith('/'):
         prefix = prefix[:-1]
     return prefix
 
-def import_dm_annotations(dm_dataset, task_data):
+def import_dm_annotations(dm_dataset: Dataset, instance_data: Union[TaskData, ProjectData]):
+    if len(dm_dataset) == 0:
+        return
+
+    if isinstance(instance_data, ProjectData):
+        for sub_dataset, task_data in instance_data.split_dataset(dm_dataset):
+            # FIXME: temporary workaround for cvat format, will be removed after migration importer to datumaro
+            sub_dataset._format = dm_dataset.format
+            import_dm_annotations(sub_dataset, task_data)
+        return
+
     shapes = {
         datum_annotation.AnnotationType.bbox: ShapeType.RECTANGLE,
         datum_annotation.AnnotationType.polygon: ShapeType.POLYGON,
@@ -1217,16 +1411,15 @@ def import_dm_annotations(dm_dataset, task_data):
         datum_annotation.AnnotationType.cuboid_3d: ShapeType.CUBOID
     }
 
-    if len(dm_dataset) == 0:
-        return
-
     label_cat = dm_dataset.categories()[datum_annotation.AnnotationType.label]
 
-    root_hint = find_dataset_root(dm_dataset, task_data)
+    root_hint = find_dataset_root(dm_dataset, instance_data)
+
+    tracks = {}
 
     for item in dm_dataset:
-        frame_number = task_data.abs_frame_id(
-            match_dm_item(item, task_data, root_hint=root_hint))
+        frame_number = instance_data.abs_frame_id(
+            match_dm_item(item, instance_data, root_hint=root_hint))
 
         # do not store one-item groups
         group_map = {0: 0}
@@ -1255,27 +1448,117 @@ def import_dm_annotations(dm_dataset, task_data):
                         except Exception as e:
                             ann.points = ann.points
                         ann.z_order = 0
-                    task_data.add_shape(task_data.LabeledShape(
-                        type=shapes[ann.type],
-                        frame=frame_number,
-                        points = ann.points,
-                        label=label_cat.items[ann.label].name,
-                        occluded=ann.attributes.get('occluded') == True,
-                        z_order=ann.z_order,
-                        group=group_map.get(ann.group, 0),
-                        source='manual',
-                        attributes=[task_data.Attribute(name=n, value=str(v))
-                            for n, v in ann.attributes.items()],
-                    ))
+
+                    track_id = ann.attributes.pop('track_id', None)
+                    if track_id is None or dm_dataset.format != 'cvat' :
+                        instance_data.add_shape(instance_data.LabeledShape(
+                            type=shapes[ann.type],
+                            frame=frame_number,
+                            points=ann.points,
+                            label=label_cat.items[ann.label].name,
+                            occluded=ann.attributes.pop('occluded', None) == True,
+                            z_order=ann.z_order,
+                            group=group_map.get(ann.group, 0),
+                            source=str(ann.attributes.pop('source')).lower() \
+                                if str(ann.attributes.get('source', None)).lower() in {'auto', 'manual'} else 'manual',
+                            attributes=[instance_data.Attribute(name=n, value=str(v))
+                                for n, v in ann.attributes.items()],
+                        ))
+                        continue
+
+                    if ann.attributes.get('keyframe', None) == True or ann.attributes.get('outside', None) == True:
+                        track = instance_data.TrackedShape(
+                            type=shapes[ann.type],
+                            frame=frame_number,
+                            occluded=ann.attributes.pop('occluded', None) == True,
+                            outside=ann.attributes.pop('outside', None) == True,
+                            keyframe=ann.attributes.get('keyframe', None) == True,
+                            points=ann.points,
+                            z_order=ann.z_order,
+                            source=str(ann.attributes.pop('source')).lower() \
+                                if str(ann.attributes.get('source', None)).lower() in {'auto', 'manual'} else 'manual',
+                            attributes=[instance_data.Attribute(name=n, value=str(v))
+                                for n, v in ann.attributes.items()],
+                        )
+
+                        if track_id not in tracks:
+                            tracks[track_id] = instance_data.Track(
+                                label=label_cat.items[ann.label].name,
+                                group=group_map.get(ann.group, 0),
+                                source=str(ann.attributes.pop('source')).lower() \
+                                    if str(ann.attributes.get('source', None)).lower() in {'auto', 'manual'} else 'manual',
+                                shapes=[],
+                            )
+
+                        tracks[track_id].shapes.append(track)
+
                 elif ann.type == datum_annotation.AnnotationType.label:
-                    task_data.add_tag(task_data.Tag(
+                    instance_data.add_tag(instance_data.Tag(
                         frame=frame_number,
                         label=label_cat.items[ann.label].name,
                         group=group_map.get(ann.group, 0),
                         source='manual',
-                        attributes=[task_data.Attribute(name=n, value=str(v))
+                        attributes=[instance_data.Attribute(name=n, value=str(v))
                             for n, v in ann.attributes.items()],
                     ))
             except Exception as e:
                 raise CvatImportError("Image {}: can't import annotation "
-                    "#{} ({}): {}".format(item.id, idx, ann.type.name, e))
+                    "#{} ({}): {}".format(item.id, idx, ann.type.name, e)) from e
+
+    for track in tracks.values():
+        instance_data.add_track(track)
+
+
+def import_labels_to_project(project_annotation, dataset: Dataset):
+    labels = []
+    label_colors = []
+    for label in dataset.categories()[datum_annotation.AnnotationType.label].items:
+        db_label = Label(
+            name=label.name,
+            color=get_label_color(label.name, label_colors)
+        )
+        labels.append(db_label)
+        label_colors.append(db_label.color)
+    project_annotation.add_labels(labels)
+
+def load_dataset_data(project_annotation, dataset: Dataset, project_data):
+    if not project_annotation.db_project.label_set.count():
+        import_labels_to_project(project_annotation, dataset)
+    else:
+        for label in dataset.categories()[datum_annotation.AnnotationType.label].items:
+            if not project_annotation.db_project.label_set.filter(name=label.name).exists():
+                raise CvatImportError(f'Target project does not have label with name "{label.name}"')
+    for subset_id, subset in enumerate(dataset.subsets().values()):
+        job = rq.get_current_job()
+        job.meta['status'] = 'Task from dataset is being created...'
+        job.meta['progress'] = (subset_id + job.meta.get('task_progress', 0.)) / len(dataset.subsets().keys())
+        job.save_meta()
+
+        task_fields = {
+            'project': project_annotation.db_project,
+            'name': subset.name,
+            'owner': project_annotation.db_project.owner,
+            'subset': subset.name,
+        }
+
+        subset_dataset = subset.as_dataset()
+
+        dataset_files = {
+            'media': [],
+            'data_root': dataset.data_path + osp.sep,
+        }
+
+        for dataset_item in subset_dataset:
+            if dataset_item.image and dataset_item.image.has_data:
+                dataset_files['media'].append(dataset_item.image.path)
+            elif dataset_item.point_cloud:
+                dataset_files['media'].append(dataset_item.point_cloud)
+            if isinstance(dataset_item.related_images, list):
+                dataset_files['media'] += \
+                    list(map(lambda ri: ri.path, dataset_item.related_images))
+
+        shortes_path = min(dataset_files['media'], key=lambda x: len(Path(x).parts), default=None)
+        if shortes_path is not None:
+            dataset_files['data_root'] = str(Path(shortes_path).parent.absolute()) + osp.sep
+
+        project_annotation.add_task(task_fields, dataset_files, project_data)

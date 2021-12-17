@@ -17,6 +17,7 @@ import { BoundariesActionTypes } from 'actions/boundaries-actions';
 import { UserAgreementsActionTypes } from 'actions/useragreements-actions';
 import { ReviewActionTypes } from 'actions/review-actions';
 import { ExportActionTypes } from 'actions/export-actions';
+import { ImportActionTypes } from 'actions/import-actions';
 import { CloudStorageActionTypes } from 'actions/cloud-storage-actions';
 
 import getCore from 'cvat-core-wrapper';
@@ -114,6 +115,14 @@ const defaultState: NotificationsState = {
         },
         predictor: {
             prediction: null,
+        },
+        exporting: {
+            dataset: null,
+            annotation: null,
+        },
+        importing: {
+            dataset: null,
+            annotation: null,
         },
         cloudStorages: {
             creating: null,
@@ -327,13 +336,32 @@ export default function (state = defaultState, action: AnyAction): Notifications
                 ...state,
                 errors: {
                     ...state.errors,
-                    tasks: {
-                        ...state.errors.tasks,
-                        exportingAsDataset: {
+                    exporting: {
+                        ...state.errors.exporting,
+                        dataset: {
                             message:
                                 'Could not export dataset for the ' +
                                 `<a href="/${instanceType}s/${instanceID}" target="_blank">` +
                                 `${instanceType} ${instanceID}</a>`,
+                            reason: action.payload.error.toString(),
+                        },
+                    },
+                },
+            };
+        }
+        case ImportActionTypes.IMPORT_DATASET_FAILED: {
+            const instanceID = action.payload.instance.id;
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    exporting: {
+                        ...state.errors.exporting,
+                        dataset: {
+                            message:
+                                'Could not import dataset to the ' +
+                                `<a href="/projects/${instanceID}" target="_blank">` +
+                                `project ${instanceID}</a>`,
                             reason: action.payload.error.toString(),
                         },
                     },

@@ -71,7 +71,7 @@ Cypress.Commands.add('exportProject', ({
     projectName, type, dumpType, archiveCustomeName,
 }) => {
     cy.projectActions(projectName);
-    cy.get('.cvat-project-actions-menu').contains('Export project dataset').click();
+    cy.get('.cvat-project-actions-menu').contains('Export dataset').click();
     cy.get('.cvat-modal-export-project').should('be.visible').find('.cvat-modal-export-select').click();
     cy.contains('.cvat-modal-export-option-item', dumpType).should('be.visible').click();
     cy.get('.cvat-modal-export-select').should('contain.text', dumpType);

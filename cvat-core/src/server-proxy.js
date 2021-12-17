@@ -514,6 +514,44 @@
                 };
             }
 
+            async function importDataset(id, format, file, onUpdate) {
+                const { backendAPI } = config;
+                const url = `${backendAPI}/projects/${id}/dataset`;
+
+                const formData = new FormData();
+                formData.append('dataset_file', file);
+
+                return new Promise((resolve, reject) => {
+                    async function requestStatus() {
+                        try {
+                            const response = await Axios.get(`${url}?action=import_status`, {
+                                proxy: config.proxy,
+                            });
+                            if (response.status === 202) {
+                                if (onUpdate && response.data.message !== '') {
+                                    onUpdate(response.data.message, response.data.progress || 0);
+                                }
+                                setTimeout(requestStatus, 3000);
+                            } else if (response.status === 201) {
+                                resolve();
+                            } else {
+                                reject(generateError(response));
+                            }
+                        } catch (error) {
+                            reject(generateError(error));
+                        }
+                    }
+
+                    Axios.post(`${url}?format=${format}`, formData, {
+                        proxy: config.proxy,
+                    }).then(() => {
+                        setTimeout(requestStatus, 2000);
+                    }).catch((error) => {
+                        reject(generateError(error));
+                    });
+                });
+            }
+
             async function exportTask(id) {
                 const { backendAPI } = config;
                 const url = `${backendAPI}/tasks/${id}`;
@@ -577,7 +615,7 @@
                                 const response = await Axios.get(`${backendAPI}/tasks/${id}/status`);
                                 if (['Queued', 'Started'].includes(response.data.state)) {
                                     if (response.data.message !== '') {
-                                        onUpdate(response.data.message);
+                                        onUpdate(response.data.message, response.data.progress || 0);
                                     }
                                     setTimeout(checkStatus, 1000);
                                 } else if (response.data.state === 'Finished') {
@@ -637,7 +675,7 @@
 
                 let response = null;
 
-                onUpdate('The task is being created on the server..');
+                onUpdate('The task is being created on the server..', null);
                 try {
                     response = await Axios.post(`${backendAPI}/tasks`, JSON.stringify(taskSpec), {
                         proxy: config.proxy,
@@ -649,7 +687,7 @@
                     throw generateError(errorData);
                 }
 
-                onUpdate('The data are being uploaded to the server 0%');
+                onUpdate('The data are being uploaded to the server..', null);
 
                 async function chunkUpload(taskId, file) {
                     return new Promise((resolve, reject) => {
@@ -1438,6 +1476,7 @@
                             create: createProject,
                             delete: deleteProject,
                             exportDataset: exportDataset('projects'),
+                            importDataset,
                         }),
                         writable: false,
                     },
