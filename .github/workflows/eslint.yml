@@ -15,8 +15,8 @@ jobs:
         env:
           PR_FILES_AM: ${{ steps.files.outputs.added_modified }}
           PR_FILES_RENAMED: ${{ steps.files.outputs.renamed }}
-          PR_FILES: "$PR_FILES_AM $PR_FILES_RENAMED"
         run: |
+          PR_FILES="$PR_FILES_AM $PR_FILES_RENAMED"
           for FILE in $PR_FILES; do
               EXTENSION="${FILE##*.}"
               if [[ $EXTENSION == 'js' || $EXTENSION == 'ts' || $EXTENSION == 'jsx' || $EXTENSION == 'tsx' ]]; then
