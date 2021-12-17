@@ -54,6 +54,7 @@ After review, you may see the issues in the `issues` tab in the object sidebar.
 
 - In the workspace you can click on issue, you can send a comment on the issue or,
   if the issue is resolved, change the status to `Resolve`.
+  You can remove the issue by clicking `Remove` (if your account have the appropriate permissions).
 
   ![](/images/image232.jpg)
 

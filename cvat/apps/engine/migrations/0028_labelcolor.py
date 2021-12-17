@@ -11,7 +11,7 @@ def alter_label_colors(apps, schema_editor):
         label_names = list()
         for label in labels:
             label.color = get_label_color(label.name, label_names)
-            label_names.append(label.name)
+            label_names.append(label.color)
             label.save()
 
 class Migration(migrations.Migration):

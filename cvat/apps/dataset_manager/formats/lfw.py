@@ -14,12 +14,13 @@ from .registry import dm_env, exporter, importer
 
 
 @importer(name='LFW', ext='ZIP', version='1.0')
-def _import(src_file, instance_data):
+def _import(src_file, instance_data, load_data_callback=None):
     with TemporaryDirectory() as tmp_dir:
         Archive(src_file.name).extractall(tmp_dir)
 
         dataset = Dataset.import_from(tmp_dir, 'lfw')
-
+        if load_data_callback is not None:
+            load_data_callback(dataset, instance_data)
         import_dm_annotations(dataset, instance_data)
 
 @exporter(name='LFW', ext='ZIP', version='1.0')

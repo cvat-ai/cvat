@@ -1,9 +1,11 @@
-# Copyright (C) 2019 Intel Corporation
+# Copyright (C) 2019-2021 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
 import os.path as osp
 from hashlib import blake2s
+import itertools
+import operator
 
 from datumaro.util.os_util import make_file_name
 
@@ -20,7 +22,6 @@ def get_color_from_index(index):
 
     return tuple(color)
 
-DEFAULT_COLORMAP_CAPACITY = 2000
 DEFAULT_COLORMAP_PATH = osp.join(osp.dirname(__file__), 'predefined_colors.txt')
 def parse_default_colors(file_path=None):
     if file_path is None:
@@ -61,19 +62,40 @@ def make_colormap(instance_data):
 
     return {label['name']: [hex2rgb(label['color']), [], []] for label in labels}
 
+def generate_color(color, used_colors):
+    def tint_shade_color():
+        for added_color in (255, 0):
+            for factor in range(1, 10):
+                yield tuple(map(lambda c: int(c + (added_color - c) * factor / 10), color))
 
-def get_label_color(label_name, label_names):
+    def get_unused_color():
+        def get_avg_color(index):
+            sorted_colors = sorted(used_colors, key=operator.itemgetter(index))
+            max_dist_pair = max(zip(sorted_colors, sorted_colors[1:]),
+                key=lambda c_pair: c_pair[1][index] - c_pair[0][index])
+            return (max_dist_pair[0][index] + max_dist_pair[1][index]) // 2
+
+        return tuple(get_avg_color(i) for i in range(3))
+
+    #try to tint and shade color firstly
+    for new_color in tint_shade_color():
+        if new_color not in used_colors:
+            return new_color
+
+    return get_unused_color()
+
+def get_label_color(label_name, label_colors):
     predefined = parse_default_colors()
-    normalized_names = [normalize_label(l_name) for l_name in label_names]
+    label_colors = tuple(hex2rgb(c) for c in label_colors if c)
+    used_colors = set(itertools.chain(predefined.values(), label_colors))
     normalized_name = normalize_label(label_name)
 
     color = predefined.get(normalized_name, None)
-    name_hash = int.from_bytes(blake2s(normalized_name.encode(), digest_size=4).digest(), byteorder="big")
-    offset = name_hash + normalized_names.count(normalized_name)
-
     if color is None:
-        color = get_color_from_index(DEFAULT_COLORMAP_CAPACITY + offset)
-    elif normalized_names.count(normalized_name):
-        color = get_color_from_index(DEFAULT_COLORMAP_CAPACITY + offset - 1)
+        name_hash = int.from_bytes(blake2s(normalized_name.encode(), digest_size=3).digest(), byteorder="big")
+        color = get_color_from_index(name_hash)
+
+    if color in label_colors:
+        color = generate_color(color, used_colors)
 
     return rgb2hex(color)

@@ -1,12 +1,16 @@
 # Copyright (C) 2021 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
+
 import os
 import re
 import hashlib
 import mimetypes
 import cv2 as cv
 from av import VideoFrame
+from enum import Enum
+from natsort import os_sorted
+from random import shuffle
 
 def rotate_image(image, angle):
     height, width = image.shape[:2]
@@ -187,3 +191,29 @@ def detect_related_images(image_paths, root_path):
     elif data_are_3d:
         return _detect_related_images_3D(image_paths, root_path)
     return {}
+
+class SortingMethod(str, Enum):
+    LEXICOGRAPHICAL = 'lexicographical'
+    NATURAL = 'natural'
+    PREDEFINED = 'predefined'
+    RANDOM = 'random'
+
+    @classmethod
+    def choices(cls):
+        return tuple((x.value, x.name) for x in cls)
+
+    def __str__(self):
+        return self.value
+
+def sort(images, sorting_method=SortingMethod.LEXICOGRAPHICAL, func=None):
+    if sorting_method == SortingMethod.LEXICOGRAPHICAL:
+        return sorted(images, key=func)
+    elif sorting_method == SortingMethod.NATURAL:
+        return os_sorted(images, key=func)
+    elif sorting_method == SortingMethod.PREDEFINED:
+        return images
+    elif sorting_method == SortingMethod.RANDOM:
+        shuffle(images)
+        return images
+    else:
+        raise NotImplementedError()

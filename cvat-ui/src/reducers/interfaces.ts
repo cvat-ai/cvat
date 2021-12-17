@@ -117,6 +117,14 @@ export interface ExportState {
     modalVisible: boolean;
 }
 
+export interface ImportState {
+    importingId: number | null;
+    progress: number;
+    status: string;
+    instance: any;
+    modalVisible: boolean;
+}
+
 export interface FormatsState {
     annotationFormats: any;
     fetching: boolean;
@@ -396,6 +404,14 @@ export interface NotificationsState {
         predictor: {
             prediction: null | ErrorState;
         };
+        exporting: {
+            dataset: null | ErrorState;
+            annotation: null | ErrorState;
+        };
+        importing: {
+            dataset: null | ErrorState;
+            annotation: null | ErrorState;
+        };
         cloudStorages: {
             creating: null | ErrorState;
             fetching: null | ErrorState;
@@ -642,6 +658,7 @@ export interface WorkspaceSettingsState {
     toolsBlockerState: ToolsBlockerState;
     textFontSize: number;
     textPosition: 'auto' | 'center';
+    textContent: string;
 }
 
 export interface ShapesSettingsState {
@@ -704,6 +721,7 @@ export interface CombinedState {
     shortcuts: ShortcutsState;
     review: ReviewState;
     export: ExportState;
+    import: ImportState;
     cloudStorages: CloudStoragesState;
 }
 

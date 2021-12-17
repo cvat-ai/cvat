@@ -21,6 +21,7 @@ import TaskItem from 'components/tasks-page/task-item';
 import SearchField from 'components/search-field/search-field';
 import MoveTaskModal from 'components/move-task-modal/move-task-modal';
 import ModelRunnerDialog from 'components/model-runner-modal/model-runner-dialog';
+import ImportDatasetModal from 'components/import-dataset-modal/import-dataset-modal';
 import { useDidUpdateEffect } from 'utils/hooks';
 import DetailsComponent from './details';
 import ProjectTopBar from './top-bar';
@@ -171,6 +172,7 @@ export default function ProjectPageComponent(): JSX.Element {
             </Col>
             <MoveTaskModal />
             <ModelRunnerDialog />
+            <ImportDatasetModal />
         </Row>
     );
 }
