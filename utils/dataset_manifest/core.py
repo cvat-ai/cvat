@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+from enum import Enum
 import av
 import json
 import os
@@ -240,8 +241,19 @@ class Dataset3DImagesReader(DatasetImagesReader):
                 yield dict()
 
 class _Manifest:
+    class SupportedVersion(str, Enum):
+        V1 = '1.0'
+        V1_1 = '1.1'
+
+        @classmethod
+        def choices(cls):
+            return (x.value for x in cls)
+
+        def __str__(self):
+            return self.value
+
     FILE_NAME = 'manifest.jsonl'
-    VERSION = '1.1'
+    VERSION = SupportedVersion.V1_1
 
     def __init__(self, path, upload_dir=None):
         assert path, 'A path to manifest file not found'
@@ -602,14 +614,17 @@ class ImageManifestManager(_ManifestManager):
             image_name = f"{image['name']}{image['extension']}"
             if image_name in subset_names:
                 index_list.append(subset_names.index(image_name))
-                subset.append({
+                properties = {
                     'name': f"{image['name']}",
                     'extension': f"{image['extension']}",
                     'width': image['width'],
                     'height': image['height'],
-                    'meta': image['meta'],
-                    'checksum': f"{image['checksum']}"
-                })
+                }
+                for optional_field in {'meta', 'checksum'}:
+                    value = image.get(optional_field)
+                    if value:
+                        properties[optional_field] =  value
+                subset.append(properties)
         return index_list, subset
 
 
@@ -635,7 +650,7 @@ class _BaseManifestValidator(ABC):
 
     @staticmethod
     def _validate_version(_dict):
-        if not _dict['version'] == _Manifest.VERSION:
+        if not _dict['version'] in _Manifest.SupportedVersion.choices():
             raise ValueError('Incorrect version field')
 
     def _validate_type(self, _dict):
@@ -696,11 +711,12 @@ class _DatasetManifestStructureValidator(_BaseManifestValidator):
             raise ValueError('Incorrect name field')
         if not isinstance(_dict['extension'], str):
             raise ValueError('Incorrect extension field')
+        # width and height are required for 2d data
+        # FIXME for 3d
         if not isinstance(_dict['width'], int):
             raise ValueError('Incorrect width field')
         if not isinstance(_dict['height'], int):
             raise ValueError('Incorrect height field')
-        # TODO Is meta a required field?
 
 def is_manifest(full_manifest_path):
     return _is_video_manifest(full_manifest_path) or \

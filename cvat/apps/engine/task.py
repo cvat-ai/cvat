@@ -237,12 +237,17 @@ def _create_thread(tid, data, isImport=False):
     if data['remote_files']:
         data['remote_files'] = _download_data(data['remote_files'], upload_dir)
 
-    if data['server_files'] and db_data.storage == models.StorageChoice.SHARE:
-        upload_dir = settings.SHARE_ROOT
+    manifest_root = None
+    if db_data.storage == models.StorageChoice.LOCAL:
+        manifest_root = upload_dir
+    elif db_data.storage == models.StorageChoice.SHARE:
+        manifest_root = settings.SHARE_ROOT
+    elif db_data.storage == models.StorageChoice.CLOUD_STORAGE:
+        manifest_root = db_data.cloud_storage.get_storage_dirname()
 
     manifest_files = []
     media = _count_files(data, manifest_files)
-    manifest_file = _validate_manifest(manifest_files, upload_dir)
+    manifest_file = _validate_manifest(manifest_files, manifest_root)
     media, task_mode = _validate_data(media, manifest_file)
     if manifest_file and (not settings.USE_CACHE or db_data.storage_method != models.StorageMethodChoice.CACHE):
         raise Exception("File with meta information can be uploaded if 'Use cache' option is also selected")
@@ -250,8 +255,8 @@ def _create_thread(tid, data, isImport=False):
     if data['server_files']:
         if db_data.storage == models.StorageChoice.LOCAL:
             _copy_data_from_share(data['server_files'], upload_dir)
-        # elif db_data.storage == models.StorageChoice.SHARE:
-        #     upload_dir = settings.SHARE_ROOT
+        elif db_data.storage == models.StorageChoice.SHARE:
+            upload_dir = settings.SHARE_ROOT
         else: # cloud storage
             if not manifest_file: raise Exception('A manifest file not found')
             db_cloud_storage = db_data.cloud_storage
