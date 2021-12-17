@@ -62,6 +62,7 @@ interface Props {
     showObjectsTextAlways: boolean;
     textFontSize: number;
     textPosition: 'auto' | 'center';
+    textContent: string;
     showAllInterpolationTracks: boolean;
     workspace: Workspace;
     automaticBordering: boolean;
@@ -111,6 +112,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             smoothImage,
             textFontSize,
             textPosition,
+            textContent,
         } = this.props;
         const { canvasInstance } = this.props as { canvasInstance: Canvas };
 
@@ -130,6 +132,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             creationOpacity: selectedOpacity,
             textFontSize,
             textPosition,
+            textContent,
         });
 
         this.initialSetup();
@@ -166,6 +169,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             showObjectsTextAlways,
             textFontSize,
             textPosition,
+            textContent,
             showAllInterpolationTracks,
             automaticBordering,
             intelligentPolygonCrop,
@@ -182,7 +186,8 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             prevProps.selectedOpacity !== selectedOpacity ||
             prevProps.smoothImage !== smoothImage ||
             prevProps.textFontSize !== textFontSize ||
-            prevProps.textPosition !== textPosition
+            prevProps.textPosition !== textPosition ||
+            prevProps.textContent !== textContent
         ) {
             canvasInstance.configure({
                 undefinedAttrValue: consts.UNDEFINED_ATTRIBUTE_VALUE,
@@ -194,6 +199,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
                 smoothImage,
                 textFontSize,
                 textPosition,
+                textContent,
             });
         }
 

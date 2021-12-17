@@ -678,12 +678,12 @@ Cypress.Commands.add('checkFrameNum', (frameNum) => {
 });
 
 Cypress.Commands.add('goToNextFrame', (expectedFrameNum) => {
-    cy.get('.cvat-player-next-button').click();
+    cy.get('.cvat-player-next-button').click().trigger('mouseout');
     cy.checkFrameNum(expectedFrameNum);
 });
 
 Cypress.Commands.add('goToPreviousFrame', (expectedFrameNum) => {
-    cy.get('.cvat-player-previous-button').click();
+    cy.get('.cvat-player-previous-button').click().trigger('mouseout');
     cy.checkFrameNum(expectedFrameNum);
 });
 
