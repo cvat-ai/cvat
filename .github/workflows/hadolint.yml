@@ -5,25 +5,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+      - id: files
+        uses: jitterbit/get-changed-files@v1
 
       - name: Run checks
         env:
           HADOLINT: "${{ github.workspace }}/hadolint"
           HADOLINT_VER: "2.1.0"
           VERIFICATION_LEVEL: "error"
+          PR_FILES: ${{ steps.files.outputs.added_modified }}
         run: |
-          PER_PAGE=100
-          PR_URL="https://api.github.com/repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}"
-          COUNT_CHANGED_FILES=$(curl -s -X GET -G $PR_URL | jq .changed_files)
-          COUNT_PAGES=$((($COUNT_CHANGED_FILES / $PER_PAGE) + ($COUNT_CHANGED_FILES % $PER_PAGE > 0)))
-          for PAGE in $(seq 1 $COUNT_PAGES); do
-            URL="$PR_URL/files?page=$PAGE&per_page=$PER_PAGE"
-            PR_FILES=$(curl -s -X GET -G $URL | jq -r '.[] | select(.status != "removed") | .filename')
-            for FILE in $PR_FILES; do
-                if [[ $FILE =~ 'Dockerfile' ]]; then
-                    CHANGED_FILES+=" $FILE"
-                fi
-            done
+          for FILE in $PR_FILES; do
+              if [[ $FILE =~ 'Dockerfile' ]]; then
+                  CHANGED_FILES+=" $FILE"
+              fi
           done
 
           if [[ ! -z $CHANGED_FILES ]]; then

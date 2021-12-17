@@ -8,22 +8,18 @@ jobs:
       - uses: actions/setup-node@v2
         with:
             node-version: '16.x'
+      - id: files
+        uses: jitterbit/get-changed-files@v1
 
       - name: Run checks
+        env:
+          PR_FILES: ${{ steps.files.outputs.added_modified }}
         run: |
-          PER_PAGE=100
-          PR_URL="https://api.github.com/repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}"
-          COUNT_CHANGED_FILES=$(curl -s -X GET -G $PR_URL | jq .changed_files)
-          COUNT_PAGES=$((($COUNT_CHANGED_FILES / $PER_PAGE) + ($COUNT_CHANGED_FILES % $PER_PAGE > 0)))
-          for PAGE in $(seq 1 $COUNT_PAGES); do
-            URL="$PR_URL/files?page=$PAGE&per_page=$PER_PAGE"
-            PR_FILES=$(curl -s -X GET -G $URL | jq -r '.[] | select(.status != "removed") | .filename')
-            for FILE in $PR_FILES; do
-                EXTENSION="${FILE##*.}"
-                if [[ $EXTENSION == 'css' || $EXTENSION == 'scss' ]]; then
-                    CHANGED_FILES+=" $FILE"
-                fi
-            done
+          for FILE in $PR_FILES; do
+              EXTENSION="${FILE##*.}"
+              if [[ $EXTENSION == 'css' || $EXTENSION == 'scss' ]]; then
+                  CHANGED_FILES+=" $FILE"
+              fi
           done
 
           if [[ ! -z $CHANGED_FILES ]]; then
@@ -32,10 +28,10 @@ jobs:
 
             echo "StyleLint version: "$(npx stylelint --version)
             echo "The files will be checked: "$(echo $CHANGED_FILES)
-            npx stylelint --formatter json --output-file ./stylelint_report/stylelint_report.json $CHANGED_FILES || exit_code=`echo $?` || true
+            npx stylelint --formatter json --output-file ./stylelint_report/stylelint_report.json $CHANGED_FILES || EXIT_CODE=$(echo $?) || true
             pip install json2html
             python ./tests/json_to_html.py ./stylelint_report/stylelint_report.json
-            exit ${exit_code}
+            exit $EXIT_CODE
           else
             echo "No files with the \"css|scss\" extension found"
           fi
