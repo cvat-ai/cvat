@@ -46,6 +46,7 @@ UPDATE_STATE := "update:state"
 UPDATE_STAGE := "update:stage"
 CREATE_IN_JOB := "create@job"
 CREATE_IN_ISSUE := "create@issue"
+IMPORT_DATASET := "import:dataset"
 
 
 get_priority(privilege) = priority {

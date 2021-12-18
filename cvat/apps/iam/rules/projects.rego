@@ -3,7 +3,9 @@ import data.utils
 import data.organizations
 
 # input: {
-#     "scope": <"create"|"list"|"update:desc"|"update:owner"|"update:assignee"|"view"|"delete"|"export:dataset"|"export:annotations"> or null,
+#     "scope": <"create"|"list"|"update:desc"|"update:owner"|"update:assignee"|
+#               "view"|"delete"|"export:dataset"|"export:annotations"|
+#               "import:dataset"> or null,
 #     "auth": {
 #         "user": {
 #             "id": <num>,
@@ -138,37 +140,22 @@ allow {
 }
 
 allow {
-    input.scope == utils.UPDATE_DESC
+    { utils.UPDATE_DESC, utils.IMPORT_DATASET }[input.scope]
     utils.is_sandbox
-    utils.is_resource_owner
+    is_project_staff
     utils.has_perm(utils.WORKER)
 }
 
 allow {
-    input.scope == utils.UPDATE_DESC
-    utils.is_sandbox
-    utils.is_resource_assignee
-    utils.has_perm(utils.WORKER)
-}
-
-allow {
-    input.scope == utils.UPDATE_DESC
+    { utils.UPDATE_DESC, utils.IMPORT_DATASET }[input.scope]
     input.auth.organization.id == input.resource.organization.id
     utils.has_perm(utils.USER)
     organizations.is_staff
 }
 
 allow {
-    input.scope == utils.UPDATE_DESC
-    utils.is_resource_owner
-    input.auth.organization.id == input.resource.organization.id
-    utils.has_perm(utils.WORKER)
-    organizations.is_member
-}
-
-allow {
-    input.scope == utils.UPDATE_DESC
-    utils.is_resource_assignee
+    { utils.UPDATE_DESC, utils.IMPORT_DATASET }[input.scope]
+    is_project_staff
     input.auth.organization.id == input.resource.organization.id
     utils.has_perm(utils.WORKER)
     organizations.is_member

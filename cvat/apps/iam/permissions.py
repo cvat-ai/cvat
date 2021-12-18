@@ -436,15 +436,16 @@ class ProjectPermission(OpenPolicyAgentPermission):
     @staticmethod
     def get_scopes(request, view, obj):
         scope = {
-            'list': 'list',
-            'create': 'create',
-            'destroy': 'delete',
-            'partial_update': 'update',
-            'retrieve': 'view',
-            'tasks': 'view',
-            'annotations': 'export:annotations',
-            'dataset_export': 'export:dataset'
-        }.get(view.action)
+            ('list', 'GET'): 'list',
+            ('create', 'POST'): 'create',
+            ('destroy', 'DELETE'): 'delete',
+            ('partial_update', 'PATCH'): 'update',
+            ('retrieve', 'GET'): 'view',
+            ('tasks', 'GET'): 'view',
+            ('dataset', 'POST'): 'import:dataset',
+            ('annotations', 'GET'): 'export:annotations',
+            ('dataset', 'GET'): 'export:dataset',
+        }.get((view.action, request.method))
 
         scopes = []
         if scope == 'update':

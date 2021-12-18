@@ -1293,7 +1293,6 @@ class ProjectImportExportAPITestCase(APITestCase):
             {
                 "name": "my task #1",
                 "owner_id": self.owner.id,
-                "assignee_id": self.assignee.id,
                 "overlap": 0,
                 "segment_size": 100,
                 "project_id": self.projects[0]["id"],
@@ -1301,7 +1300,6 @@ class ProjectImportExportAPITestCase(APITestCase):
             {
                 "name": "my task #2",
                 "owner_id": self.owner.id,
-                "assignee_id": self.assignee.id,
                 "overlap": 1,
                 "segment_size": 3,
                 "project_id": self.projects[0]["id"],
@@ -1324,7 +1322,6 @@ class ProjectImportExportAPITestCase(APITestCase):
             {
                 "name": "Project for export",
                 "owner_id": self.owner.id,
-                "assignee_id": self.assignee.id,
                 "labels": [
                     {
                         "name": "car",
@@ -1342,7 +1339,6 @@ class ProjectImportExportAPITestCase(APITestCase):
             }, {
                 "name": "Project for import",
                 "owner_id": self.owner.id,
-                "assignee_id": self.assignee.id,
             },
         ]
 

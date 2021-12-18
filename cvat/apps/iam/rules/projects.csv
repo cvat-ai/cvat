@@ -32,3 +32,7 @@ export:dataset,Project,Sandbox,None,,GET,/projects/{id}/dataset,Admin,N/A
 export:dataset,Project,Sandbox,"Owner, Assignee",,GET,/projects/{id}/dataset,None,N/A
 export:dataset,Project,Organization,"Owner, Assignee",,GET,/projects/{id}/dataset,None,Worker
 export:dataset,Project,Organization,None,,GET,/projects/{id}/dataset,User,Maintainer
+import:dataset,Project,Sandbox,None,,POST,/projects/{id}/dataset,Admin,N/A
+import:dataset,Project,Sandbox,"Owner, Assignee",,POST,/projects/{id}/dataset,Worker,N/A
+import:dataset,Project,Organization,"Owner, Assignee",,POST,/projects/{id}/dataset,Worker,Worker
+import:dataset,Project,Organization,None,,POST,/projects/{id}/dataset,User,Maintainer
