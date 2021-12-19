@@ -10,7 +10,6 @@ import requests
 from django.conf import settings
 from django.db.models import Q
 from rest_framework.permissions import BasePermission
-from cvat.apps.engine import serializers
 
 from cvat.apps.organizations.models import Membership, Organization
 from cvat.apps.engine.models import Project, Task, Job, Issue
