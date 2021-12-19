@@ -9,6 +9,7 @@ from cvat.apps.iam.decorators import login_required
 from cvat.apps.engine.log import slogger
 from cvat.apps.engine import models
 from cvat.apps.dataset_repo.models import GitData
+import contextlib
 
 import cvat.apps.dataset_repo.dataset_repo as CVATGit
 import django_rq
@@ -65,10 +66,10 @@ def push_repository(request, tid):
 
         return JsonResponse({ "rq_id": rq_id })
     except Exception as ex:
-        try:
-            slogger.task[tid].error("error occurred during pushing repository request", exc_info=True)
-        except Exception:
-            pass
+        with contextlib.suppress(Exception):
+            slogger.task[tid].error("error occurred during pushing repository request",
+                exc_info=True)
+
         return HttpResponseBadRequest(str(ex))
 
 
@@ -78,10 +79,10 @@ def get_repository(request, tid):
         slogger.task[tid].info("get repository request")
         return JsonResponse(CVATGit.get(tid, request.user))
     except Exception as ex:
-        try:
-            slogger.task[tid].error("error occurred during getting repository info request", exc_info=True)
-        except Exception:
-            pass
+        with contextlib.suppress(Exception):
+            slogger.task[tid].error("error occurred during getting repository info request",
+                exc_info=True)
+
         return HttpResponseBadRequest(str(ex))
 
 

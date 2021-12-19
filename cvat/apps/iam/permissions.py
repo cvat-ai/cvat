@@ -59,16 +59,16 @@ class OpenPolicyAgentPermission:
             '&': operator.and_,
             '~': operator.not_,
         }
-        for token in r.json()['result']:
-            if isinstance(token, str):
+        for item in r.json()['result']:
+            if isinstance(item, str):
                 val1 = qobjects.pop()
-                if token == '~':
-                    qobjects.append(ops_dict[token](val1))
+                if item == '~':
+                    qobjects.append(ops_dict[item](val1))
                 else:
                     val2 = qobjects.pop()
-                    qobjects.append(ops_dict[token](val1, val2))
+                    qobjects.append(ops_dict[item](val1, val2))
             else:
-                qobjects.append(Q(**token))
+                qobjects.append(Q(**item))
 
         if qobjects:
             assert len(qobjects) == 1
