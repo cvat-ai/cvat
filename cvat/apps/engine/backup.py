@@ -280,22 +280,6 @@ class TaskExporter(_TaskBackupBase):
 
             return task
 
-        def serialize_comment(db_comment):
-            comment_serializer = CommentReadSerializer(db_comment)
-            comment_serializer.fields.pop('owner')
-
-            return self._prepare_comment_meta(comment_serializer.data)
-
-        def serialize_issue(db_issue):
-            issue_serializer = IssueReadSerializer(db_issue)
-            issue_serializer.fields.pop('owner')
-            issue_serializer.fields.pop('assignee')
-
-            issue = issue_serializer.data
-            issue['comments'] = (serialize_comment(c) for c in db_issue.comment_set.order_by('id'))
-
-            return self._prepare_issue_meta(issue)
-
         def serialize_segment(db_segment):
             db_job = db_segment.job_set.first()
             job_serializer = SimpleJobSerializer(db_job)

@@ -11,7 +11,7 @@ from django.conf import settings
 from .authentication import TokenAuthenticationEx
 
 def login_required(function=None, redirect_field_name=REDIRECT_FIELD_NAME,
-    login_url=None, redirect_methods=['GET']):
+    login_url=None, redirect_methods=('GET')):
     def decorator(view_func):
         @wraps(view_func)
         def _wrapped_view(request, *args, **kwargs):

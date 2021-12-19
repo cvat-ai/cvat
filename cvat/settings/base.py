@@ -20,7 +20,6 @@ import fcntl
 import shutil
 import subprocess
 import mimetypes
-from distutils.util import strtobool
 from corsheaders.defaults import default_headers
 
 mimetypes.add_type("application/wasm", ".wasm", True)
