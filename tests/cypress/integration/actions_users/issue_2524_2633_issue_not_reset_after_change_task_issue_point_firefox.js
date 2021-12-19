@@ -4,7 +4,7 @@
 
 /// <reference types="cypress" />
 
-context("Some parts of the Redux state (issues) isn't reset after changing a task.", () => {
+context('Some parts of the Redux state (issues) is not reset after changing a task.', () => {
     const issueId = '2524_2633';
     const labelName = `Issue ${issueId}`;
     const taskName = {
@@ -78,6 +78,7 @@ context("Some parts of the Redux state (issues) isn't reset after changing a tas
                     cy.get('.cvat-user-search-field').click();
                 });
             cy.get('.ant-select-dropdown').within(() => {
+                // eslint-disable-next-line security/detect-non-literal-regexp
                 cy.contains(new RegExp(`^${Cypress.env('user')}`)).click();
             });
             cy.contains('.cvat-request-review-dialog', 'Reviewer:').within(() => {

@@ -25,7 +25,7 @@ context('Changing a default value for an attribute.', () => {
     };
     const newTextValue = `${additionalLabel} text`;
     const newCheckboxValue = 'True';
-    let wrapperId = [];
+    const wrapperId = [];
 
     before(() => {
         cy.openTask(taskName);
@@ -42,6 +42,7 @@ context('Changing a default value for an attribute.', () => {
         it('Open label editor. Change default values for text & checkbox attributes, press Done.', () => {
             cy.intercept('PATCH', '/api/v1/tasks/**').as('patchTask');
             cy.get('.cvat-constructor-viewer').within(() => {
+                // eslint-disable-next-line security/detect-non-literal-regexp
                 cy.contains(new RegExp(`^${additionalLabel}$`))
                     .parents('.cvat-constructor-viewer-item')
                     .should('be.visible')
@@ -62,6 +63,7 @@ context('Changing a default value for an attribute.', () => {
                 });
             });
             cy.get('.ant-select-dropdown').not('.ant-select-dropdown-hidden').within(() => {
+                // eslint-disable-next-line security/detect-non-literal-regexp
                 cy.contains(new RegExp(`^${newCheckboxValue}$`)).click();
             });
             cy.contains('[type="submit"]', 'Done').click();
@@ -84,6 +86,7 @@ context('Changing a default value for an attribute.', () => {
                 [additionalAttrsLabel[1].additionalAttrName, additionalAttrsLabel[1].additionalValue.split(';')[0]],
                 [additionalAttrsLabel[2].additionalAttrName, newCheckboxValue.toLowerCase()],
             ].forEach(([attrName, attrValue]) => {
+                // eslint-disable-next-line security/detect-non-literal-regexp
                 cy.contains(new RegExp(`^${attrName}: ${attrValue}$`)).should('be.visible');
             });
         });

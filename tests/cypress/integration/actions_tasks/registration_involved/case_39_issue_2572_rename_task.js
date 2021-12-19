@@ -24,17 +24,17 @@ context('Rename a task.', () => {
     const newNaskName = taskName.replace('39', '3339');
     const secondUserName = 'Case39';
     const secondUser = {
-        firstName: `Firtstnamerenametask`,
-        lastName: `Lastnamerenametask`,
+        firstName: 'Firtstnamerenametask',
+        lastName: 'Lastnamerenametask',
         emailAddr: `${secondUserName.toLowerCase()}@local.local`,
         password: 'Pass!UserCase39',
     };
 
-    function renameTask(taskName, newValue) {
+    function renameTask(myTaskName, newValue) {
         cy.get('.cvat-task-details-task-name').within(() => {
             cy.get('[aria-label="edit"]').click();
         });
-        cy.contains('.cvat-text-color', taskName).click().type(newValue);
+        cy.contains('.cvat-text-color', myTaskName).click().type(newValue);
     }
 
     before(() => {

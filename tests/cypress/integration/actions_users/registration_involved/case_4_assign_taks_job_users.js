@@ -52,7 +52,6 @@ context('Multiple users. Assign task, job. Deactivating users.', () => {
         cy.contains('.cvat-task-details-task-name', taskName).should('exist');
     }
 
-
     before(() => {
         cy.imageGenerator(imagesFolder, imageFileName, width, height, color, posX, posY, labelName, imagesCount);
         cy.createZipArchive(directoryToArchive, archivePath);

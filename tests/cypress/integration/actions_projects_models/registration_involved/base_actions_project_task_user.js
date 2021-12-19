@@ -44,8 +44,8 @@ context('Base actions on the project', () => {
     let projectID = '';
     const projectSubsetFieldValue = 'Test';
 
-    function getProjectID(projectName) {
-        cy.contains('.cvat-project-name', projectName)
+    function getProjectID(myProjectName) {
+        cy.contains('.cvat-project-name', myProjectName)
             .parents('.cvat-project-details')
             .should('have.attr', 'cvat-project-id')
             .then(($projectID) => {
@@ -61,7 +61,7 @@ context('Base actions on the project', () => {
         cy.deletingRegisteredUsers([userName]);
     });
 
-    describe(`Testing "Base actions on the project"`, () => {
+    describe('Testing "Base actions on the project"', () => {
         it('Add some labels to project.', () => {
             cy.addNewLabel(newLabelName1);
             cy.addNewLabel(newLabelName2);
