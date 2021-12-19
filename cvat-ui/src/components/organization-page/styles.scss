@@ -118,14 +118,11 @@
 
     > .cvat-organization-member-item-dates {
         font-size: 12px;
+        display: grid;
     }
 
     > .cvat-organization-member-item-remove {
         text-align: center;
-    }
-
-    > .cvat-organization-member-item-dates {
-        display: grid;
     }
 
     > .cvat-organization-member-item-role {
