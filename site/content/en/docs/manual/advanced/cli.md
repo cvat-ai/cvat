@@ -5,7 +5,8 @@ weight: 28
 description: 'Guide to working with CVAT tasks in the command line interface. This section on [GitHub](https://github.com/openvinotoolkit/cvat/tree/develop/utils/cli).'
 ---
 
-**Description**
+## Description
+
 A simple command line interface for working with CVAT tasks. At the moment it
 implements a basic feature set but may serve as the starting point for a more
 comprehensive CVAT administration tool in the future.
@@ -21,7 +22,19 @@ Overview of functionality:
 - Export and download a whole task
 - Import a task
 
-**Usage**
+CVAT Command line interface use `argparse`.
+For learn more read the [argparse documentation](https://docs.python.org/library/argparse.html#).
+
+## Usage
+
+If you deployed CVAT using docker, to access the CLI, run:
+
+```bash
+docker exec -it cvat bash
+cd utils/cli
+cli.py -h
+```
+You get help for CLI.
 
 ```bash
 usage: cli.py [-h] [--auth USER:[PASS]] [--server-host SERVER_HOST]
@@ -46,6 +59,21 @@ optional arguments:
   --debug               show debug output
 ```
 
+You can get help for each positional arguments, for example `ls`:
+
+```bash
+cli.py ls -h
+```
+```bash
+usage: cli.py ls [-h] [--json]
+
+List all CVAT tasks in simple or JSON format.
+
+optional arguments:
+  -h, --help  show this help message and exit
+  --json      output JSON data
+```
+
 **Examples**
 
 - Create a task
@@ -56,3 +84,111 @@ optional arguments:
   `cli.py ls`
 - Dump annotations
   `cli.py dump --format "CVAT for images 1.1" 103 output.xml`
+
+## Arguments
+
+### Options
+
+- `-h`, `--help` - show help message and exit
+- `--auth USER:[PASS]` - defaults to the current user and supports the PASS environment variable or password prompt
+- `--server-host SERVER_HOST` - host (default: `localhost`)
+- `--server-port SERVER_PORT` - port (default: `8080`)
+- `--https` - using https connection (default: `False`)
+- `--debug ` - show debug output
+
+### Create
+
+- `create` - create a new CVAT task
+- `name` - name of the task
+- `--labels LABELS` - string or file containing JSON labels specification
+  Example JSON labels file structure:
+  ```json
+  [
+      {
+          "name": "car",
+          "color": "#2080c0",
+          "attributes": [
+            {
+              "name": "model",
+              "input_type": "text",
+              "mutable": false,
+            },
+          ]
+      },
+      {
+          "name": "person",
+          "color": "#c06060",
+          "attributes": []
+      }
+  ]
+  ```
+  You can create a JSON label specification by using the [label constructor](/docs/manual/basics/creating_an_annotation_task/#labels)
+- `--project_id PROJECT_ID` - project ID if project exists
+- `--overlap OVERLAP` - the number of intersected frames between different segments
+- `--segment_size SEGMENT_SIZE` - the number of frames in a segment
+- `--bug BUG` - bug tracker URL
+- `{local,share,remote}` - type of files specified
+  - `local` - use if you want to upload local files
+  - `remote` - use if you want to retrieve files from remote storage
+  - `share` -use if you want to download files from a share  storage
+- `resources` - list of paths to files or URLs. If you use a list file,
+  each path or URL must be written on a separate line
+- `--annotation_path ANNOTATION_PATH` - path to annotation file, input for attach annotation
+- `--annotation_format ANNOTATION_FORMAT` - format of the annotation file being uploaded, e.g. `CVAT 1.1`
+- `--completion_verification_period COMPLETION_VERIFICATION_PERIOD` - number of seconds to wait until checking
+  if data compression finished (necessary before uploading annotations)
+- `--dataset_repository_url DATASET_REPOSITORY_URL` - git repository to store annotations
+  e.g. `https://github.com/user/repos [annotation/<anno_file_name.zip>]`
+- `--lfs` - using lfs for dataset repository (default: `False`)
+- `--image_quality IMAGE_QUALITY` - set the image quality option in the advanced configuration when creating tasks
+  (default: `70`)
+- `--frame_step FRAME_STEP` -
+  set the frame step option in the advanced configuration when uploading image series or videos (default: `1`)
+- `--copy_data` - set the option to copy the data, only used when resource type is share (default: `False`)
+- `--use_cache` - set the option to use the cache (default: `True`)
+- `--sorting-method {lexicographical,natural,predefined,random}` - data sorting method (default: `lexicographical`)
+
+### Delete
+
+- `delete` - delete a CVAT task
+- `task_ids` - list of task IDs
+
+### List
+
+- `ls` - list all CVAT tasks in simple or JSON format
+- `--json` - output JSON data
+
+### Frames
+
+- `frames` - download all frame images for a CVAT task
+- `task_id` - task ID
+- `frame_ids` - list of frame IDs to download
+- `--outdir OUTDIR` - directory to save images (default: `CWD`)
+- `--quality {original,compressed}` - choose quality of images (default: `original`)
+
+### Dump Annotations
+
+- `dump` - download annotations for a CVAT task
+- `task_id` - task ID
+- `filename` - output file
+- `--format FILEFORMAT` - annotation format [list of supported formats](/docs/manual/advanced/formats),
+  (default: `CVAT for images 1.1`)
+
+### Upload Annotations
+
+- `upload` - upload annotations for a CVAT task
+- `task_id` - task ID
+- `filename` - upload file
+- `--format FILEFORMAT` - annotation format [list of supported formats](/docs/manual/advanced/formats),
+  (default: `CVAT 1.1`)
+
+### Export task
+
+- `export`- export a CVAT task
+- `task_id` - task ID
+- `filename` - output filename
+
+### Import task
+
+- `import` - import a CVAT task
+- `filename` - upload filename
