@@ -42,6 +42,8 @@ const defaultState: NotificationsState = {
             updating: null,
             deleting: null,
             creating: null,
+            restoring: null,
+            backuping: null,
         },
         tasks: {
             fetching: null,
@@ -145,6 +147,9 @@ const defaultState: NotificationsState = {
             registerDone: '',
             requestPasswordResetDone: '',
             resetPasswordDone: '',
+        },
+        projects: {
+            restoringDone: '',
         },
     },
 };
@@ -577,6 +582,51 @@ export default function (state = defaultState, action: AnyAction): Notifications
                             reason: action.payload.error.toString(),
                             className: 'cvat-notification-notice-delete-project-failed',
                         },
+                    },
+                },
+            };
+        }
+        case ProjectsActionTypes.BACKUP_PROJECT_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    projects: {
+                        ...state.errors.projects,
+                        backuping: {
+                            message: `Could not backup the project #${action.payload.projectId}`,
+                            reason: action.payload.error.toString(),
+                        },
+                    },
+                },
+            };
+        }
+        case ProjectsActionTypes.RESTORE_PROJECT_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    projects: {
+                        ...state.errors.projects,
+                        restoring: {
+                            message: 'Could not restore the project',
+                            reason: action.payload.error.toString(),
+                        },
+                    },
+                },
+            };
+        }
+        case ProjectsActionTypes.RESTORE_PROJECT_SUCCESS: {
+            const { projectID } = action.payload;
+            return {
+                ...state,
+                messages: {
+                    ...state.messages,
+                    projects: {
+                        ...state.messages.projects,
+                        restoringDone:
+                            `Project has been created succesfully.
+                             Click <a href="/projects/${projectID}">here</a> to open`,
                     },
                 },
             };

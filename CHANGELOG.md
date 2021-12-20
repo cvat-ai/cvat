@@ -57,6 +57,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add a tutorial on attaching cloud storage AWS-S3 (<https://github.com/openvinotoolkit/cvat/pull/3745>)
   and Azure Blob Container (<https://github.com/openvinotoolkit/cvat/pull/3778>)
 - The feature to remove annotations in a specified range of frames (<https://github.com/openvinotoolkit/cvat/pull/3617>)
+- Project backup/restore (<https://github.com/openvinotoolkit/cvat/pull/3852>)
 
 ### Changed
 
