@@ -40,6 +40,7 @@ export interface AdvancedConfiguration {
     useCache: boolean;
     copyData?: boolean;
     sortingMethod: SortingMethod;
+    uploadChunkSize: number;
 }
 
 const initialValues: AdvancedConfiguration = {
@@ -49,6 +50,7 @@ const initialValues: AdvancedConfiguration = {
     useCache: true,
     copyData: false,
     sortingMethod: SortingMethod.LEXICOGRAPHICAL,
+    uploadChunkSize: 100,
 };
 
 interface Props {
@@ -416,6 +418,32 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
         );
     }
 
+    private renderUploadChunkSize(): JSX.Element {
+        return (
+            <CVATTooltip
+                title={(
+                    <>
+                        Defines max file size sent with one request in megabytes.
+                        <br />
+                        Minimum value: 1mb
+                        <br />
+                        Maximum value: 1000mb
+                        <br />
+                        Recommended value: 100mb
+                    </>
+                )}
+            >
+                <Form.Item
+                    label='Upload chunk size'
+                    name='uploadChunkSize'
+                    rules={[{ validator: isInteger({ min: 1, max: 1000 }) }]}
+                >
+                    <Input size='large' type='number' />
+                </Form.Item>
+            </CVATTooltip>
+        );
+    }
+
     public render(): JSX.Element {
         const { installedGit, activeFileManagerTab } = this.props;
         return (
@@ -456,6 +484,7 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
 
                 <Row justify='start'>
                     <Col span={7}>{this.renderChunkSize()}</Col>
+                    <Col span={7} offset={1}>{this.renderUploadChunkSize()}</Col>
                 </Row>
 
                 {installedGit ? this.renderGit() : null}

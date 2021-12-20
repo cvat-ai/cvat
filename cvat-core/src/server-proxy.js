@@ -608,7 +608,8 @@
                     });
                 }
 
-                const chunkSize = 1024 * 1024 * 100; // 100 mb
+                const chunkSize = parseInt(taskDataSpec.upload_chunk_size, 10) * 1024 * 1024;
+                delete taskDataSpec.upload_chunk_size;
                 const clientFiles = taskDataSpec.client_files;
                 const chunkFiles = [];
                 const bulkFiles = [];

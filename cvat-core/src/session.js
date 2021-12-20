@@ -1018,6 +1018,7 @@
                 dimension: undefined,
                 cloud_storage_id: undefined,
                 sorting_method: undefined,
+                upload_chunk_size: undefined,
             };
 
             const updatedFields = new FieldUpdateTrigger({
@@ -1560,6 +1561,26 @@
                          */
                         get: () => data.sorting_method,
                     },
+                    uploadChunkSize: {
+                        /**
+                         * @name uploadChunkSize
+                         * @type {module:API.cvat.enums.SortingMethod}
+                         * @memberof module:API.cvat.classes.Task
+                         * @instance
+                         * @readonly
+                         */
+                        get: () => data.upload_chunk_size,
+                        set: (chunkSize) => {
+                            if (typeof chunkSize !== 'number' || chunkSize < 1) {
+                                throw new ArgumentError(
+                                    `Uploload chunk size value must be a positive number.
+                                     But value ${chunkSize} has been got.`,
+                                );
+                            }
+
+                            data.data_chunk_size = chunkSize;
+                        },
+                    },
                     _internalData: {
                         get: () => data,
                     },
@@ -2092,6 +2113,9 @@
         }
         if (typeof this.cloudStorageId !== 'undefined') {
             taskDataSpec.cloud_storage_id = this.cloudStorageId;
+        }
+        if (typeof this.uploadChunkSize !== 'undefined') {
+            taskDataSpec.upload_chunk_size = this.uploadChunkSize;
         }
 
         const task = await serverProxy.tasks.createTask(taskSpec, taskDataSpec, onUpdate);

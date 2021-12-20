@@ -12,8 +12,8 @@ context('Create task with tus file', () => {
     const textDefaultValue = 'Some default value for type Text';
     const imagesCount = 1;
     const imageFileName = `image_${labelName.replace(' ', '_').toLowerCase()}`;
-    const width = 6000;
-    const height = 6000;
+    const width = 1920;
+    const height = 1080;
     const posX = 10;
     const posY = 10;
     const color = 'gray';
@@ -23,6 +23,7 @@ context('Create task with tus file', () => {
     const directoryToArchive = imagesFolder;
     const zipLevel = 0;
     const extension = 'bmp';
+    const advancedConfigurationParams = { uploadChunkSize: 5 };
 
     before(() => {
         cy.visit('auth/login');
@@ -33,8 +34,9 @@ context('Create task with tus file', () => {
     });
 
     describe(`Testing "${labelName}"`, () => {
-        it('Create a task', () => {
-            cy.createAnnotationTask(taskName, labelName, attrName, textDefaultValue, archiveName);
+        it('Create a task with 5mb upload chunk size', () => {
+            cy.createAnnotationTask(taskName, labelName, attrName, textDefaultValue, archiveName,
+                null, advancedConfigurationParams);
         });
 
         it('Check if task exist', () => {
