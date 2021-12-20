@@ -220,6 +220,7 @@ class RqStatusSerializer(serializers.Serializer):
     state = serializers.ChoiceField(choices=[
         "Queued", "Started", "Finished", "Failed"])
     message = serializers.CharField(allow_blank=True, default="")
+    progress = serializers.FloatField(max_value=100, default=0)
 
 class WriteOnceMixin:
 
@@ -725,6 +726,15 @@ class LogEventSerializer(serializers.Serializer):
 
 class AnnotationFileSerializer(serializers.Serializer):
     annotation_file = serializers.FileField()
+
+class DatasetFileSerializer(serializers.Serializer):
+    dataset_file = serializers.FileField()
+
+    @staticmethod
+    def validate_dataset_file(value):
+        if os.path.splitext(value.name)[1] != '.zip':
+            raise serializers.ValidationError('Dataset file should be zip archive')
+        return value
 
 class TaskFileSerializer(serializers.Serializer):
     task_file = serializers.FileField()

@@ -1189,9 +1189,11 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 }
             }
 
+            const recreateText = configuration.textContent !== this.configuration.textContent;
             const updateTextPosition = configuration.displayAllText !== this.configuration.displayAllText ||
                 configuration.textFontSize !== this.configuration.textFontSize ||
-                configuration.textPosition !== this.configuration.textPosition;
+                configuration.textPosition !== this.configuration.textPosition ||
+                recreateText;
 
             if (configuration.smoothImage === true) {
                 this.background.classList.remove('cvat_canvas_pixelized');
@@ -1200,6 +1202,19 @@ export class CanvasViewImpl implements CanvasView, Listener {
             }
 
             this.configuration = configuration;
+            if (recreateText) {
+                const states = this.controller.objects;
+                for (const key of Object.keys(this.drawnStates)) {
+                    const clientID = +key;
+                    const [state] = states.filter((_state: any) => _state.clientID === clientID);
+                    if (clientID in this.svgTexts) {
+                        this.svgTexts[clientID].remove();
+                        delete this.svgTexts[clientID];
+                        if (state) this.svgTexts[clientID] = this.addText(state);
+                    }
+                }
+            }
+
             if (updateTextPosition) {
                 for (const i in this.drawnStates) {
                     if (i in this.svgTexts) {
@@ -2071,8 +2086,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
     // Update text position after corresponding box has been moved, resized, etc.
     private updateTextPosition(text: SVG.Text, shape: SVG.Shape): void {
         if (text.node.style.display === 'none') return; // wrong transformation matrix
-        const textFontSize = this.configuration.textFontSize || consts.DEFAULT_SHAPE_TEXT_SIZE;
-        const textPosition = this.configuration.textPosition || 'auto';
+        const { textFontSize, textPosition } = this.configuration;
 
         text.untransform();
         text.style({ 'font-size': `${textFontSize}px` });
@@ -2131,8 +2145,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
         // Translate found coordinates to text SVG
         const [x, y, rotX, rotY]: number[] = translateToSVG(this.text, [
-            clientX + consts.TEXT_MARGIN,
-            clientY + consts.TEXT_MARGIN,
+            clientX + (textPosition === 'auto' ? consts.TEXT_MARGIN : 0),
+            clientY + (textPosition === 'auto' ? consts.TEXT_MARGIN : 0),
             clientCX,
             clientCY,
         ]);
@@ -2156,6 +2170,13 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
     private addText(state: any): SVG.Text {
         const { undefinedAttrValue } = this.configuration;
+        const content = this.configuration.textContent;
+        const withID = content.includes('id');
+        const withAttr = content.includes('attributes');
+        const withLabel = content.includes('label');
+        const withSource = content.includes('source');
+        const withDescriptions = content.includes('descriptions');
+
         const textFontSize = this.configuration.textFontSize || 12;
         const {
             label, clientID, attributes, source, descriptions,
@@ -2167,28 +2188,32 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
         return this.adoptedText
             .text((block): void => {
-                block.tspan(`${label.name} ${clientID} (${source})`).style({
+                block.tspan(`${withLabel ? label.name : ''} ${withID ? clientID : ''} ${withSource ? `(${source})` : ''}`).style({
                     'text-transform': 'uppercase',
                 });
-                for (const desc of descriptions) {
-                    block
-                        .tspan(`${desc}`)
-                        .attr({
-                            dy: '1em',
-                            x: 0,
-                        })
-                        .addClass('cvat_canvas_text_description');
+                if (withDescriptions) {
+                    for (const desc of descriptions) {
+                        block
+                            .tspan(`${desc}`)
+                            .attr({
+                                dy: '1em',
+                                x: 0,
+                            })
+                            .addClass('cvat_canvas_text_description');
+                    }
                 }
-                for (const attrID of Object.keys(attributes)) {
-                    const value = attributes[attrID] === undefinedAttrValue ? '' : attributes[attrID];
-                    block
-                        .tspan(`${attrNames[attrID]}: ${value}`)
-                        .attr({
-                            attrID,
-                            dy: '1em',
-                            x: 0,
-                        })
-                        .addClass('cvat_canvas_text_attribute');
+                if (withAttr) {
+                    for (const attrID of Object.keys(attributes)) {
+                        const value = attributes[attrID] === undefinedAttrValue ? '' : attributes[attrID];
+                        block
+                            .tspan(`${attrNames[attrID]}: ${value}`)
+                            .attr({
+                                attrID,
+                                dy: '1em',
+                                x: 0,
+                            })
+                            .addClass('cvat_canvas_text_attribute');
+                    }
                 }
             })
             .move(0, 0)

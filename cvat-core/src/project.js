@@ -244,6 +244,7 @@
             // So, we need return it
             this.annotations = {
                 exportDataset: Object.getPrototypeOf(this).annotations.exportDataset.bind(this),
+                importDataset: Object.getPrototypeOf(this).annotations.importDataset.bind(this),
             };
         }
 
@@ -339,6 +340,16 @@
                             format,
                             saveImages,
                             customName,
+                        );
+                        return result;
+                    },
+                    async importDataset(format, file, updateStatusCallback = null) {
+                        const result = await PluginRegistry.apiWrapper.call(
+                            this,
+                            Project.prototype.annotations.importDataset,
+                            format,
+                            file,
+                            updateStatusCallback,
                         );
                         return result;
                     },

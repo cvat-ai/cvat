@@ -1859,6 +1859,165 @@ class ProjectExportAPITestCase(APITestCase):
         self._check_xml(pid, user, 3)
 
 
+class ProjectImportExportAPITestCase(APITestCase):
+    def setUp(self) -> None:
+        self.client = APIClient()
+        self.tasks = []
+        self.projects = []
+
+    @classmethod
+    def setUpTestData(cls) -> None:
+        create_db_users(cls)
+
+        cls.media_data = [
+            {
+                **{
+                   **{"client_files[{}]".format(i): generate_image_file("test_{}.jpg".format(i))[1] for i in range(10)},
+                },
+                **{
+                    "image_quality": 75,
+                },
+            },
+            {
+                **{
+                   **{"client_files[{}]".format(i): generate_image_file("test_{}.jpg".format(i))[1] for i in range(10)},
+                },
+                "image_quality": 75,
+            },
+        ]
+
+    def _create_tasks(self):
+        self.tasks = []
+
+        def _create_task(task_data, media_data):
+            response = self.client.post('/api/v1/tasks', data=task_data, format="json")
+            assert response.status_code == status.HTTP_201_CREATED
+            tid = response.data["id"]
+
+            for media in media_data.values():
+                if isinstance(media, io.BytesIO):
+                    media.seek(0)
+            response = self.client.post("/api/v1/tasks/{}/data".format(tid), data=media_data)
+            assert response.status_code == status.HTTP_202_ACCEPTED
+            response = self.client.get("/api/v1/tasks/{}".format(tid))
+            data_id = response.data["data"]
+            self.tasks.append({
+                "id": tid,
+                "data_id": data_id,
+            })
+
+        task_data = [
+            {
+                "name": "my task #1",
+                "owner_id": self.owner.id,
+                "assignee_id": self.assignee.id,
+                "overlap": 0,
+                "segment_size": 100,
+                "project_id": self.projects[0]["id"],
+            },
+            {
+                "name": "my task #2",
+                "owner_id": self.owner.id,
+                "assignee_id": self.assignee.id,
+                "overlap": 1,
+                "segment_size": 3,
+                "project_id": self.projects[0]["id"],
+            },
+        ]
+
+        with ForceLogin(self.owner, self.client):
+            for data, media in zip(task_data, self.media_data):
+                _create_task(data, media)
+
+    def _create_projects(self):
+        self.projects = []
+
+        def _create_project(project_data):
+            response = self.client.post('/api/v1/projects', data=project_data, format="json")
+            assert response.status_code == status.HTTP_201_CREATED
+            self.projects.append(response.data)
+
+        project_data = [
+            {
+                "name": "Project for export",
+                "owner_id": self.owner.id,
+                "assignee_id": self.assignee.id,
+                "labels": [
+                    {
+                        "name": "car",
+                        "color": "#ff00ff",
+                        "attributes": [{
+                            "name": "bool_attribute",
+                            "mutable": True,
+                            "input_type": AttributeType.CHECKBOX,
+                            "default_value": "true"
+                        }],
+                    }, {
+                        "name": "person",
+                    },
+                ]
+            }, {
+                "name": "Project for import",
+                "owner_id": self.owner.id,
+                "assignee_id": self.assignee.id,
+            },
+        ]
+
+        with ForceLogin(self.owner, self.client):
+            for data in project_data:
+                _create_project(data)
+
+    def _run_api_v1_projects_id_dataset_export(self, pid, user, query_params=""):
+        with ForceLogin(user, self.client):
+            response = self.client.get("/api/v1/projects/{}/dataset?{}".format(pid, query_params), format="json")
+        return response
+
+    def _run_api_v1_projects_id_dataset_import(self, pid, user, data, f):
+        with ForceLogin(user, self.client):
+            response = self.client.post("/api/v1/projects/{}/dataset?format={}".format(pid, f),  data=data, format="multipart")
+        return response
+
+    def _run_api_v1_projects_id_dataset_import_status(self, pid, user):
+        with ForceLogin(user, self.client):
+            response = self.client.get("/api/v1/projects/{}/dataset?action=import_status".format(pid), format="json")
+        return response
+
+    def test_api_v1_projects_id_export_import(self):
+
+        self._create_projects()
+        self._create_tasks()
+        pid_export, pid_import = self.projects[0]["id"], self.projects[1]["id"]
+        response = self._run_api_v1_projects_id_dataset_export(pid_export, self.owner, "format=CVAT for images 1.1")
+        self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
+
+        response = self._run_api_v1_projects_id_dataset_export(pid_export, self.owner, "format=CVAT for images 1.1")
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        response = self._run_api_v1_projects_id_dataset_export(pid_export, self.owner, "format=CVAT for images 1.1&action=download")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        self.assertTrue(response.streaming)
+        tmp_file = tempfile.NamedTemporaryFile(suffix=".zip")
+        tmp_file.write(b"".join(response.streaming_content))
+        tmp_file.seek(0)
+
+        import_data = {
+            "dataset_file": tmp_file,
+        }
+
+        response = self._run_api_v1_projects_id_dataset_import(pid_import, self.owner, import_data, "CVAT 1.1")
+        self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
+
+        response = self._run_api_v1_projects_id_dataset_import_status(pid_import, self.owner)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+    def tearDown(self) -> None:
+        for task in self.tasks:
+            shutil.rmtree(os.path.join(settings.TASKS_ROOT, str(task["id"])))
+            shutil.rmtree(os.path.join(settings.MEDIA_DATA_ROOT, str(task["data_id"])))
+        for project in self.projects:
+            shutil.rmtree(os.path.join(settings.PROJECTS_ROOT, str(project["id"])))
+
 class TaskListAPITestCase(APITestCase):
     def setUp(self):
         self.client = APIClient()
@@ -3153,6 +3312,13 @@ class TaskDataAPITestCase(APITestCase):
         shutil.rmtree(root_path)
         cls._image_sizes[filename] = image_sizes
 
+        file_name = 'test_1.pdf'
+        path = os.path.join(settings.SHARE_ROOT, file_name)
+        img_sizes, data = generate_pdf_file(file_name, page_count=5)
+        with open(path, "wb") as pdf_file:
+            pdf_file.write(data.read())
+        cls._image_sizes[file_name] = img_sizes
+
         generate_manifest_file(data_type='video', manifest_path=os.path.join(settings.SHARE_ROOT, 'videos', 'manifest.jsonl'),
             sources=[os.path.join(settings.SHARE_ROOT, 'videos', 'test_video_1.mp4')])
 
@@ -3188,6 +3354,9 @@ class TaskDataAPITestCase(APITestCase):
         os.rmdir(os.path.dirname(path))
 
         path = os.path.join(settings.SHARE_ROOT, "manifest.jsonl")
+        os.remove(path)
+
+        path = os.path.join(settings.SHARE_ROOT, "test_1.pdf")
         os.remove(path)
 
     def _run_api_v1_tasks_id_data_post(self, tid, user, data):
@@ -3272,10 +3441,12 @@ class TaskDataAPITestCase(APITestCase):
             db_data = Task.objects.get(pk=task_id).data
             self.assertEqual(expected_storage_method, db_data.storage_method)
             self.assertEqual(expected_uploaded_data_location, db_data.storage)
-            # check if used share without copying inside and files doesn`t exist in ../raw/
+            # check if used share without copying inside and files doesn`t exist in ../raw/ and exist in share
             if expected_uploaded_data_location is StorageChoice.SHARE:
-                self.assertEqual(False,
-                    os.path.exists(os.path.join(db_data.get_upload_dirname(), next(iter(data.values())))))
+                raw_file_path = os.path.join(db_data.get_upload_dirname(), next(iter(data.values())))
+                share_file_path = os.path.join(settings.SHARE_ROOT, next(iter(data.values())))
+                self.assertEqual(False, os.path.exists(raw_file_path))
+                self.assertEqual(True, os.path.exists(share_file_path))
 
         # check preview
         response = self._get_preview(task_id, user)
@@ -3342,6 +3513,10 @@ class TaskDataAPITestCase(APITestCase):
                 for f in source_files:
                     if zipfile.is_zipfile(f):
                         source_images.extend(self._extract_zip_chunk(f, dimension=dimension))
+                    elif isinstance(f, str) and f.endswith('.pdf'):
+                        with open(f, 'rb') as pdf_file:
+                            source_images.extend(convert_from_bytes(pdf_file.read(),
+                                fmt='png'))
                     elif isinstance(f, io.BytesIO) and \
                             str(getattr(f, 'name', None)).endswith('.pdf'):
                         source_images.extend(convert_from_bytes(f.getvalue(),
@@ -3860,6 +4035,18 @@ class TaskDataAPITestCase(APITestCase):
 
         self._test_api_v1_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
             image_sizes, StorageMethodChoice.CACHE, StorageChoice.SHARE)
+
+        task_spec.update([('name', 'task pdf in the shared folder #30')])
+        task_data = {
+            "server_files[0]": "test_1.pdf",
+            "image_quality": 70,
+            "copy_data": False,
+            "use_cache": True,
+        }
+        image_sizes = self._image_sizes[task_data["server_files[0]"]]
+
+        self._test_api_v1_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
+            image_sizes, StorageMethodChoice.CACHE, StorageChoice.LOCAL)
 
     def test_api_v1_tasks_id_data_admin(self):
         self._test_api_v1_tasks_id_data(self.admin)

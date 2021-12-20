@@ -30,16 +30,17 @@ def _export_images(dst_file, task_data, save_images=False):
 
 
 @importer(name='Kitti Raw Format', ext='ZIP', version='1.0', dimension=DimensionType.DIM_3D)
-def _import(src_file, task_data):
-    if zipfile.is_zipfile(src_file):
-        with TemporaryDirectory() as tmp_dir:
-            zipfile.ZipFile(src_file).extractall(tmp_dir)
+def _import(src_file, instance_data, load_data_callback=None):
+    with TemporaryDirectory() as tmp_dir:
+        if zipfile.is_zipfile(src_file):
+                zipfile.ZipFile(src_file).extractall(tmp_dir)
+
+                dataset = Dataset.import_from(
+                    tmp_dir, 'kitti_raw', env=dm_env)
+        else:
 
             dataset = Dataset.import_from(
-                tmp_dir, 'kitti_raw', env=dm_env)
-            import_dm_annotations(dataset, task_data)
-    else:
-
-        dataset = Dataset.import_from(
-            src_file.name, 'kitti_raw', env=dm_env)
-        import_dm_annotations(dataset, task_data)
+                src_file.name, 'kitti_raw', env=dm_env)
+        if load_data_callback is not None:
+            load_data_callback(dataset, instance_data)
+        import_dm_annotations(dataset, instance_data)
