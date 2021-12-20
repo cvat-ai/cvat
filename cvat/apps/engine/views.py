@@ -75,7 +75,6 @@ from cvat.apps.engine.serializers import (
     ProjectSerializer,
     ReviewSerializer,
     RqStatusSerializer,
-    TaskFileSerializer,
     TaskSerializer,
     UserSerializer,
     )
