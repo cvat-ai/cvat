@@ -10,10 +10,11 @@ const fs = require('fs-extra');
 
 function createZipArchive(args) {
     const directoryToArchive = args.directoryToArchive;
+    const level = args.level;
     const output = fs.createWriteStream(args.arhivePath);
     const archive = archiver('zip', {
         gzip: true,
-        zlib: { level: 9 },
+        zlib: { level },
     });
 
     archive.on('error', function (err) {

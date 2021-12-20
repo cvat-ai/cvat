@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-Cypress.Commands.add('imageGenerator', (directory, fileName, width, height, color, posX, posY, message, count) => {
+Cypress.Commands.add('imageGenerator', (directory, fileName, width, height, color, posX, posY, message, count, extension='png') => {
     return cy.task('imageGenerator', {
         directory: directory,
         fileName: fileName,
@@ -13,5 +13,6 @@ Cypress.Commands.add('imageGenerator', (directory, fileName, width, height, colo
         posY: posY,
         message: message,
         count: count,
+        extension: extension,
     });
 });
