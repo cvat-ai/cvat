@@ -632,19 +632,14 @@ class _BaseManifestValidator(ABC):
     def __init__(self, full_manifest_path):
         self._manifest = _Manifest(full_manifest_path)
 
-    def __bool__(self):
+    def validate(self):
         try:
             # we cannot use index in general because manifest may be e.g. in share point with ro mode
-            # TODO
-            is_valid = False
             with open(self._manifest.path, 'r') as manifest:
-                for idx, line in enumerate(manifest):
-                    is_valid =  True
-                    line = json.loads(line.strip())
-                    self.validators[idx](line)
-                    if idx == len(self.validators) - 1:
-                        break
-            return is_valid
+                for validator in self.validators:
+                    line = json.loads(manifest.readline().strip())
+                    validator(line)
+            return True
         except (ValueError, KeyError, JSONDecodeError):
             return False
 
@@ -712,7 +707,7 @@ class _DatasetManifestStructureValidator(_BaseManifestValidator):
         if not isinstance(_dict['extension'], str):
             raise ValueError('Incorrect extension field')
         # width and height are required for 2d data
-        # FIXME for 3d
+        # FIXME for 3d when manual preparation of the manifest will be implemented
         if not isinstance(_dict['width'], int):
             raise ValueError('Incorrect width field')
         if not isinstance(_dict['height'], int):
@@ -724,8 +719,8 @@ def is_manifest(full_manifest_path):
 
 def _is_video_manifest(full_manifest_path):
     validator = _VideoManifestStructureValidator(full_manifest_path)
-    return bool(validator)
+    return validator.validate()
 
 def _is_dataset_manifest(full_manifest_path):
     validator = _DatasetManifestStructureValidator(full_manifest_path)
-    return bool(validator)
+    return validator.validate()

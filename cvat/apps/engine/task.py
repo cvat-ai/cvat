@@ -197,6 +197,7 @@ def _validate_manifest(manifests, root_dir):
         full_manifest_path = os.path.join(root_dir, manifests[0])
         if is_manifest(full_manifest_path):
             return manifests[0]
+        raise Exception('Invalid manifest was uploaded')
     return None
 
 def _download_data(urls, upload_dir):
