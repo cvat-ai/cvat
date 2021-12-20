@@ -1564,16 +1564,15 @@
                     uploadChunkSize: {
                         /**
                          * @name uploadChunkSize
-                         * @type {module:API.cvat.enums.SortingMethod}
+                         * @type {integer}
                          * @memberof module:API.cvat.classes.Task
                          * @instance
-                         * @readonly
                          */
                         get: () => data.upload_chunk_size,
                         set: (chunkSize) => {
-                            if (typeof chunkSize !== 'number' || chunkSize < 1) {
+                            if (typeof chunkSize !== 'number' || chunkSize < 1 || chunkSize > 1000) {
                                 throw new ArgumentError(
-                                    `Uploload chunk size value must be a positive number.
+                                    `Uploload chunk size value must be a positive number between 1 and 1000.
                                      But value ${chunkSize} has been got.`,
                                 );
                             }
