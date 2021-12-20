@@ -27,7 +27,8 @@ context('Create task with tus file', () => {
     before(() => {
         cy.visit('auth/login');
         cy.login();
-        cy.imageGenerator(imagesFolder, imageFileName, width, height, color, posX, posY, labelName, imagesCount, extension);
+        cy.imageGenerator(imagesFolder, imageFileName, width, height, color, posX,
+            posY, labelName, imagesCount, extension);
         cy.createZipArchive(directoryToArchive, archivePath, zipLevel);
     });
 

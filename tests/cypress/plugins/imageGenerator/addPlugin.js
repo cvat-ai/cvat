@@ -1,4 +1,4 @@
-// Copyright (C) 2021 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -10,7 +10,7 @@ const jimp = require('jimp');
 
 function createImage(width, height, color) {
     return new Promise((resolve, reject) => {
-        // eslint-disable-next-line no-new
+        // eslint-disable-next-line new-cap, no-new
         new jimp(width, height, color, ((err, img) => {
             if (err) reject(err);
             resolve(img);
@@ -46,6 +46,7 @@ async function imageGenerator(args) {
             const image = await createImage(width, height, color);
             await saveImage(image, posX, posY, message, file, i, extension);
         }
+    // eslint-disable-next-line no-empty
     } catch (e) {}
     return null;
 }
