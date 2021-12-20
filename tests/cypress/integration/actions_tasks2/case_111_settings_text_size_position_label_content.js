@@ -146,14 +146,21 @@ context('Settings. Text size/position. Text labels content.', () => {
             cy.openSettings();
             cy.get('.cvat-workspace-settings-text-content').within(() => {
                 cy.get('[aria-label="close"]').click({ multiple: true });
-                cy.get('[data-icon="check"]').should('have.length', 0);
             });
+
+            cy.get('.cvat-workspace-settings-text-content').click();
+            cy.get('.ant-select-dropdown')
+                .not('.ant-select-dropdown-hidden')
+                .within(() => {
+                    cy.get('[data-icon="check"]').should('have.length', 0);
+                });
 
             cy.get('.cvat_canvas_text').each((el) => {
                 expect(el.text()).to.be.equal('  ');
             });
+            cy.get('.cvat_canvas_text_attribute').should('not.exist');
+            cy.get('.cvat_canvas_text_description').should('not.exist');
 
-            cy.get('.cvat-workspace-settings-text-content').click();
             cy.get('.ant-select-dropdown')
                 .not('.ant-select-dropdown-hidden')
                 .within(() => {
