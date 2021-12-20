@@ -655,7 +655,7 @@
                 async function chunkUpload(taskId, file) {
                     return new Promise((resolve, reject) => {
                         const upload = new tus.Upload(file, {
-                            endpoint: `${origin}/${backendAPI}/tasks/${taskId}/data/`,
+                            endpoint: `${origin}${backendAPI}/tasks/${taskId}/data/`,
                             metadata: {
                                 filename: file.name,
                                 filetype: file.type,
