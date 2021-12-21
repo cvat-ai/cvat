@@ -32,7 +32,7 @@ If you deployed CVAT using docker, to access the CLI, run:
 ```bash
 docker exec -it cvat bash
 cd utils/cli
-cli.py -h
+./cli.py -h
 ```
 You get help for CLI.
 
@@ -59,10 +59,10 @@ optional arguments:
   --debug               show debug output
 ```
 
-You can get help for each positional arguments, for example `ls`:
+You can get help for each positional argument, e.g. `ls`:
 
 ```bash
-cli.py ls -h
+./cli.py ls -h
 ```
 ```bash
 usage: cli.py ls [-h] [--json]
@@ -76,13 +76,16 @@ optional arguments:
 
 **Examples**
 
-- Create a task
+- Create a task named "new task", labels from the file "labels.json" and local images "file1.jpg" and "file2.jpg"
   `cli.py create "new task" --labels labels.json local file1.jpg file2.jpg`
-- Delete some tasks
+- Create a task named "task 1", labels from the project with id 1 and with a remote video file,
+  the task will be created on behalf of the user "user-1"
+  `cli.py --auth user-1:password create "task 1" --project_id 1 remote https://github.com/opencv/opencv/blob/master/samples/data/vtest.avi?raw=true`
+- Delete tasks with id "100", "101", "102"
   `cli.py delete 100 101 102`
 - List all tasks
   `cli.py ls`
-- Dump annotations
+- Dump annotation task with id 103, into "CVAT for images 1.1" format and save into "output.xml" file
   `cli.py dump --format "CVAT for images 1.1" 103 output.xml`
 
 ## Arguments
@@ -98,7 +101,8 @@ optional arguments:
 
 ### Create
 
-- `create` - create a new CVAT task
+- `create` - create a new CVAT task. To create a task, you need to specify labels using the `--labels` argument
+  or attach the task to an existing project using the `--project_id` argument.
 - `name` - name of the task
 - `--labels LABELS` - string or file containing JSON labels specification
   Example JSON labels file structure:
