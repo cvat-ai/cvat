@@ -784,6 +784,8 @@ class DatasetFileSerializer(serializers.Serializer):
 class TaskFileSerializer(serializers.Serializer):
     task_file = serializers.FileField()
 
+class ProjectFileSerializer(serializers.Serializer):
+    project_file = serializers.FileField()
 
 class CommentReadSerializer(serializers.ModelSerializer):
     owner = BasicUserSerializer(allow_null=True, required=False)
@@ -795,7 +797,6 @@ class CommentReadSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
 class CommentWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
-
     def to_representation(self, instance):
         serializer = CommentReadSerializer(instance, context=self.context)
         return serializer.data

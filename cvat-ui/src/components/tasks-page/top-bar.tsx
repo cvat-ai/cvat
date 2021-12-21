@@ -55,7 +55,7 @@ export default function TopBarComponent(props: VisibleTopBarProps): JSX.Element 
                                         disabled={taskImporting}
                                         icon={<UploadOutlined />}
                                     >
-                                        Import Task
+                                        Create from backup
                                         {taskImporting && <LoadingOutlined id='cvat-import-task-button-loading' />}
                                     </Button>
                                 </Upload>

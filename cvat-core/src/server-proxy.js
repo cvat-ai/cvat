@@ -599,7 +599,7 @@
                     ...enableOrganization(),
                     action: 'export',
                 };
-                const url = `${backendAPI}/tasks/${id}`;
+                const url = `${backendAPI}/tasks/${id}/backup`;
 
                 return new Promise((resolve, reject) => {
                     async function request() {
@@ -634,7 +634,7 @@
                 return new Promise((resolve, reject) => {
                     async function request() {
                         try {
-                            const response = await Axios.post(`${backendAPI}/tasks`, taskData, {
+                            const response = await Axios.post(`${backendAPI}/tasks/backup`, taskData, {
                                 proxy: config.proxy,
                                 params: {
                                     ...params,
@@ -649,6 +649,59 @@
                                 // to be able to get the task after it was created, pass frozen params
                                 const importedTask = await getTasks({ id: response.data.id, ...params });
                                 resolve(importedTask[0]);
+                            }
+                        } catch (errorData) {
+                            reject(generateError(errorData));
+                        }
+                    }
+
+                    setTimeout(request);
+                });
+            }
+
+            async function backupProject(id) {
+                const { backendAPI } = config;
+                const url = `${backendAPI}/projects/${id}/backup`;
+
+                return new Promise((resolve, reject) => {
+                    async function request() {
+                        try {
+                            const response = await Axios.get(url, {
+                                proxy: config.proxy,
+                            });
+                            if (response.status === 202) {
+                                setTimeout(request, 3000);
+                            } else {
+                                resolve(`${url}?action=download`);
+                            }
+                        } catch (errorData) {
+                            reject(generateError(errorData));
+                        }
+                    }
+
+                    setTimeout(request);
+                });
+            }
+
+            async function restoreProject(file) {
+                const { backendAPI } = config;
+
+                let data = new FormData();
+                data.append('project_file', file);
+
+                return new Promise((resolve, reject) => {
+                    async function request() {
+                        try {
+                            const response = await Axios.post(`${backendAPI}/projects/backup`, data, {
+                                proxy: config.proxy,
+                            });
+                            if (response.status === 202) {
+                                data = new FormData();
+                                data.append('rq_id', response.data.rq_id);
+                                setTimeout(request, 3000);
+                            } else {
+                                const restoredProject = await getProjects(`?id=${response.data.id}`);
+                                resolve(restoredProject[0]);
                             }
                         } catch (errorData) {
                             reject(generateError(errorData));
@@ -1708,6 +1761,8 @@
                             create: createProject,
                             delete: deleteProject,
                             exportDataset: exportDataset('projects'),
+                            backupProject,
+                            restoreProject,
                             importDataset,
                         }),
                         writable: false,
