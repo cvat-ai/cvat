@@ -444,6 +444,8 @@ class ProjectPermission(OpenPolicyAgentPermission):
             ('dataset', 'POST'): 'import:dataset',
             ('annotations', 'GET'): 'export:annotations',
             ('dataset', 'GET'): 'export:dataset',
+            ('export_backup', 'GET'): 'export:backup',
+            ('import_backup', 'POST'): 'import:backup',
         }.get((view.action, request.method))
 
         scopes = []

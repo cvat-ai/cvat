@@ -185,32 +185,6 @@ class _TaskBackupBase(_BackupBase):
 
         return annotations
 
-    def _prepare_review_meta(self, review):
-        allowed_fields = {
-            'estimated_quality',
-            'status',
-            'issues',
-        }
-        return self._prepare_meta(allowed_fields, review)
-
-    def _prepare_issue_meta(self, issue):
-        allowed_fields = {
-            'frame',
-            'position',
-            'created_date',
-            'resolved_date',
-            'comments',
-        }
-        return self._prepare_meta(allowed_fields, issue)
-
-    def _prepare_comment_meta(self, comment):
-        allowed_fields = {
-            'message',
-            'created_date',
-            'updated_date',
-        }
-        return self._prepare_meta(allowed_fields, comment)
-
     def _get_db_jobs(self):
         if self._db_task:
             db_segments = list(self._db_task.segment_set.all().prefetch_related('job_set'))
@@ -316,7 +290,7 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
         def serialize_segment(db_segment):
             db_job = db_segment.job_set.first()
             job_serializer = SimpleJobSerializer(db_job)
-            for field in ('url', 'assignee', 'reviewer'):
+            for field in ('url', 'assignee'):
                 job_serializer.fields.pop(field)
             job_data = self._prepare_job_meta(job_serializer.data)
 

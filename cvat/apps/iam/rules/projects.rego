@@ -140,21 +140,21 @@ allow {
 }
 
 allow {
-    { utils.UPDATE_DESC, utils.IMPORT_DATASET }[input.scope]
+    { utils.UPDATE_DESC, utils.IMPORT_DATASET, utils.IMPORT_BACKUP }[input.scope]
     utils.is_sandbox
     is_project_staff
     utils.has_perm(utils.WORKER)
 }
 
 allow {
-    { utils.UPDATE_DESC, utils.IMPORT_DATASET }[input.scope]
+    { utils.UPDATE_DESC, utils.IMPORT_DATASET, utils.IMPORT_BACKUP }[input.scope]
     input.auth.organization.id == input.resource.organization.id
     utils.has_perm(utils.USER)
     organizations.is_staff
 }
 
 allow {
-    { utils.UPDATE_DESC, utils.IMPORT_DATASET }[input.scope]
+    { utils.UPDATE_DESC, utils.IMPORT_DATASET, utils.IMPORT_BACKUP }[input.scope]
     is_project_staff
     input.auth.organization.id == input.resource.organization.id
     utils.has_perm(utils.WORKER)
@@ -199,20 +199,20 @@ allow {
 }
 
 allow {
-    { utils.EXPORT_ANNOTATIONS, utils.EXPORT_DATASET }[input.scope]
+    { utils.EXPORT_ANNOTATIONS, utils.EXPORT_DATASET, utils.EXPORT_BACKUP }[input.scope]
     utils.is_sandbox
     is_project_staff
 }
 
 allow {
-    { utils.EXPORT_ANNOTATIONS, utils.EXPORT_DATASET }[input.scope]
+    { utils.EXPORT_ANNOTATIONS, utils.EXPORT_DATASET, utils.EXPORT_BACKUP }[input.scope]
     input.auth.organization.id == input.resource.organization.id
     organizations.is_member
     is_project_staff
 }
 
 allow {
-    { utils.EXPORT_ANNOTATIONS, utils.EXPORT_DATASET }[input.scope]
+    { utils.EXPORT_ANNOTATIONS, utils.EXPORT_DATASET, utils.EXPORT_BACKUP }[input.scope]
     input.auth.organization.id == input.resource.organization.id
     utils.has_perm(utils.USER)
     organizations.has_perm(organizations.MAINTAINER)

@@ -41,15 +41,16 @@ logging.getLogger('libav').setLevel(logging.ERROR)
 
 def create_db_users(cls):
     (group_admin, _) = Group.objects.get_or_create(name="admin")
+    (group_business, _) = Group.objects.get_or_create(name="business")
     (group_user, _) = Group.objects.get_or_create(name="user")
-    (group_annotator, _) = Group.objects.get_or_create(name="annotator")
+    (group_annotator, _) = Group.objects.get_or_create(name="worker")
     (group_somebody, _) = Group.objects.get_or_create(name="somebody")
 
     user_admin = User.objects.create_superuser(username="admin", email="",
         password="admin")
     user_admin.groups.add(group_admin)
     user_owner = User.objects.create_user(username="user1", password="user1")
-    user_owner.groups.add(group_user)
+    user_owner.groups.add(group_business)
     user_assignee = User.objects.create_user(username="user2", password="user2")
     user_assignee.groups.add(group_annotator)
     user_annotator = User.objects.create_user(username="user3", password="user3")
@@ -1337,23 +1338,21 @@ class ProjectBackupAPITestCase(APITestCase):
         task_data = [
             {
                 "name": "my task #1",
-                "owner_id": cls.owner.id,
-                "assignee_id": cls.assignee.id,
+                "owner_id": project.owner.id,
                 "overlap": 0,
                 "segment_size": 100,
                 "project_id": project.id,
             },
             {
                 "name": "my task #2",
-                "owner_id": cls.owner.id,
-                "assignee_id": cls.assignee.id,
+                "owner_id": project.owner.id,
                 "overlap": 1,
                 "segment_size": 3,
                 "project_id": project.id,
             },
         ]
 
-        with ForceLogin(cls.owner, cls.client):
+        with ForceLogin(project.owner, cls.client):
             for data in task_data:
                 for media in cls.media_data:
                     _create_task(data, media)
@@ -1365,7 +1364,6 @@ class ProjectBackupAPITestCase(APITestCase):
         data = {
             "name": "my empty project",
             "owner": cls.owner,
-            "assignee": cls.assignee,
             "labels": [{
                 "name": "car",
                 "color": "#ff00ff",
@@ -1385,7 +1383,7 @@ class ProjectBackupAPITestCase(APITestCase):
 
         data = {
             "name": "my project without assignee",
-            "owner": cls.user,
+            "owner": cls.owner,
             "labels": [{
                 "name": "car",
                 "color": "#ff00ff",
@@ -1407,7 +1405,6 @@ class ProjectBackupAPITestCase(APITestCase):
         data = {
             "name": "my big project",
             "owner": cls.owner,
-            "assignee": cls.assignee,
             "labels": [{
                 "name": "car",
                 "color": "#ff00ff",
@@ -1428,6 +1425,7 @@ class ProjectBackupAPITestCase(APITestCase):
 
         data = {
             "name": "public project",
+            "owner": cls.owner,
             "labels": [{
                 "name": "car",
                 "color": "#ff00ff",
@@ -1449,7 +1447,6 @@ class ProjectBackupAPITestCase(APITestCase):
         data = {
             "name": "super project",
             "owner": cls.admin,
-            "assignee": cls.assignee,
             "labels": [{
                 "name": "car",
                 "color": "#ff00ff",
@@ -1489,14 +1486,14 @@ class ProjectBackupAPITestCase(APITestCase):
     def _run_api_v1_projects_id_export_import(self, user):
         for project in self.projects:
             if user:
-                if user is self.user and (project.assignee or not project.owner):
-                    HTTP_200_OK = status.HTTP_403_FORBIDDEN
-                    HTTP_202_ACCEPTED = status.HTTP_403_FORBIDDEN
-                    HTTP_201_CREATED = status.HTTP_403_FORBIDDEN
-                else:
+                if user in [project.assignee, project.owner, self.admin]:
                     HTTP_200_OK = status.HTTP_200_OK
                     HTTP_202_ACCEPTED = status.HTTP_202_ACCEPTED
                     HTTP_201_CREATED = status.HTTP_201_CREATED
+                else:
+                    HTTP_200_OK = status.HTTP_403_FORBIDDEN
+                    HTTP_202_ACCEPTED = status.HTTP_403_FORBIDDEN
+                    HTTP_201_CREATED = status.HTTP_403_FORBIDDEN
             else:
                 HTTP_200_OK = status.HTTP_401_UNAUTHORIZED
                 HTTP_202_ACCEPTED = status.HTTP_401_UNAUTHORIZED
@@ -1512,7 +1509,7 @@ class ProjectBackupAPITestCase(APITestCase):
             response = self._run_api_v1_projects_id_export(pid, user, "action=download")
             self.assertEqual(response.status_code, HTTP_200_OK)
 
-            if user and user is not self.observer and user is not self.user and user is not self.annotator:
+            if response.status_code == status.HTTP_200_OK:
                 self.assertTrue(response.streaming)
                 content = io.BytesIO(b"".join(response.streaming_content))
                 content.seek(0)
@@ -1522,7 +1519,7 @@ class ProjectBackupAPITestCase(APITestCase):
                 }
                 response = self._run_api_v1_projects_import(user, uploaded_data)
                 self.assertEqual(response.status_code, HTTP_202_ACCEPTED)
-                if user is not self.observer and user is not self.user and user is not self.annotator:
+                if response.status_code == status.HTTP_200_OK:
                     rq_id = response.data["rq_id"]
                     response = self._run_api_v1_projects_import(user, {"rq_id": rq_id})
                     self.assertEqual(response.status_code, HTTP_201_CREATED)
@@ -1552,11 +1549,12 @@ class ProjectBackupAPITestCase(APITestCase):
     def test_api_v1_projects_id_export_user(self):
         self._run_api_v1_projects_id_export_import(self.user)
 
-    def test_api_v1_projects_id_export_observer(self):
-        self._run_api_v1_projects_id_export_import(self.observer)
+    def test_api_v1_projects_id_export_somebody(self):
+        self._run_api_v1_projects_id_export_import(self.somebody)
 
     def test_api_v1_projects_id_export_no_auth(self):
         self._run_api_v1_projects_id_export_import(None)
+
 class ProjectExportAPITestCase(APITestCase):
     def setUp(self):
         self.client = APIClient()
@@ -3828,7 +3826,6 @@ class TaskDataAPITestCase(APITestCase):
         data = {
             "name": "my task #3",
             "owner_id": self.owner.id,
-            "assignee_id": self.assignee.id,
             "overlap": 0,
             "segment_size": 100,
             "labels": [

@@ -404,13 +404,12 @@ class ProjectViewSet(viewsets.ModelViewSet):
             return Response("Format is not specified",status=status.HTTP_400_BAD_REQUEST)
 
     @action(methods=['GET'], detail=True, url_path='backup')
-    def export(self, request, pk=None):
+    def export_backup(self, request, pk=None):
         db_project = self.get_object() # force to call check_object_permissions
         return backup.export(db_project, request)
 
-    @action(detail=False, methods=['POST'])
-    def backup(self, request, pk=None):
-        self._validate_project_limit(owner=self.request.user)
+    @action(detail=False, methods=['POST'], url_path='backup')
+    def import_backup(self, request, pk=None):
         return backup.import_project(request)
 
     @staticmethod
@@ -569,7 +568,6 @@ class TaskViewSet(UploadMixin, viewsets.ModelViewSet):
 
     @action(detail=False, methods=['POST'])
     def backup(self, request, pk=None):
-        self._validate_task_limit(owner=self.request.user)
         return backup.import_task(request)
 
     @action(methods=['GET'], detail=True, url_path='backup')
