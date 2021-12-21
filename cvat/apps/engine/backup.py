@@ -406,11 +406,12 @@ class _ImporterBase():
         return label_mapping
 
 class TaskImporter(_ImporterBase, _TaskBackupBase):
-    def __init__(self, file, user_id, project_id=None, subdir=None, label_mapping=None):
+    def __init__(self, file, user_id, org_id=None, project_id=None, subdir=None, label_mapping=None):
         super().__init__(logger=slogger.glob)
         self._file = file
         self._subdir = subdir
         self._user_id = user_id
+        self._org_id = org_id
         self._manifest, self._annotations = self._read_meta()
         self._version = self._read_version(self._manifest)
         self._labels_mapping = label_mapping
@@ -479,7 +480,7 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
         self._manifest['owner_id'] = self._user_id
         self._manifest['project_id'] = self._project_id
 
-        self._db_task = models.Task.objects.create(**self._manifest)
+        self._db_task = models.Task.objects.create(**self._manifest, organization_id=self._org_id)
         task_path = self._db_task.get_task_dirname()
         if os.path.isdir(task_path):
             shutil.rmtree(task_path)
@@ -528,12 +529,11 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
         return self._db_task
 
 @transaction.atomic
-def _import_task(filename, user):
+def _import_task(filename, user, org_id):
     av_scan_paths(filename)
-    task_importer = TaskImporter(filename, user)
+    task_importer = TaskImporter(filename, user, org_id)
     db_task = task_importer.import_task()
     return db_task.id
-
 
 class _ProjectBackupBase(_BackupBase):
     MANIFEST_FILENAME = 'project.json'
@@ -589,10 +589,11 @@ class ProjectExporter(_ExporterBase, _ProjectBackupBase):
 class ProjectImporter(_ImporterBase, _ProjectBackupBase):
     TASKNAME_RE = 'task_(\d+)/'
 
-    def __init__(self, filename, user_id):
+    def __init__(self, filename, user_id, org_id=None):
         super().__init__(logger=slogger.glob)
         self._filename = filename
         self._user_id = user_id
+        self._org_id = org_id
         self._manifest = self._read_meta()
         self._version = self._read_version(self._manifest)
         self._db_project = None
@@ -644,12 +645,11 @@ class ProjectImporter(_ImporterBase, _ProjectBackupBase):
         return self._db_project
 
 @transaction.atomic
-def _import_project(filename, user):
+def _import_project(filename, user, org_id):
     av_scan_paths(filename)
-    project_importer = ProjectImporter(filename, user)
+    project_importer = ProjectImporter(filename, user, org_id)
     db_project = project_importer.import_project()
     return db_project.id
-
 
 def _create_backup(db_instance, Exporter, output_path, logger, cache_ttl):
     try:
@@ -756,13 +756,14 @@ def _import(importer, request, rq_id, Serializer, file_field_name):
         serializer = Serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         payload_file = serializer.validated_data[file_field_name]
+        org_id = getattr(request.iam_context['organization'], 'id', None)
         fd, filename = mkstemp(prefix='cvat_')
         with open(filename, 'wb+') as f:
             for chunk in payload_file.chunks():
                 f.write(chunk)
         rq_job = queue.enqueue_call(
             func=importer,
-            args=(filename, request.user.id),
+            args=(filename, request.user.id, org_id),
             job_id=rq_id,
             meta={
                 'tmp_file': filename,
