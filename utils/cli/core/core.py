@@ -221,8 +221,7 @@ class CLI():
 
     def tasks_export(self, task_id, filename, export_verification_period=3, **kwargs):
         """ Export and download a whole task """
-        url = self.api.tasks_id(task_id)
-        export_url = url + '?action=export'
+        export_url = self.api.tasks_id(task_id) + '/backup'
 
         while True:
             response = self.session.get(export_url)
@@ -232,7 +231,7 @@ class CLI():
                 break
             sleep(export_verification_period)
 
-        response = self.session.get(url + '?action=download')
+        response = self.session.get(export_url + '?action=download')
         response.raise_for_status()
 
         with open(filename, 'wb') as fp:
@@ -243,7 +242,7 @@ class CLI():
 
     def tasks_import(self, filename, import_verification_period=3, **kwargs):
         """ Import a task"""
-        url = self.api.tasks + '?action=import'
+        url = self.api.tasks + '/backup'
         with open(filename, 'rb') as input_file:
             response = self.session.post(
                     url,

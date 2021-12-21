@@ -414,8 +414,8 @@ export function createTaskAsync(data: any): ThunkAction<Promise<void>, {}, {}, A
 
         dispatch(createTask());
         try {
-            const savedTask = await taskInstance.save((status: string): void => {
-                dispatch(createTaskUpdateStatus(status));
+            const savedTask = await taskInstance.save((status: string, progress: number): void => {
+                dispatch(createTaskUpdateStatus(status + (progress !== null ? ` ${Math.floor(progress * 100)}%` : '')));
             });
             dispatch(createTaskSuccess(savedTask.id));
         } catch (error) {

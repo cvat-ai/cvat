@@ -55,7 +55,7 @@ function ExportDatasetModal(): JSX.Element {
 
     useEffect(() => {
         initActivities();
-    }, [instance?.id, instance instanceof core.classes.Project]);
+    }, [instance?.id, instance instanceof core.classes.Project, taskExportActivities, projectExportActivities]);
 
     const closeModal = (): void => {
         form.resetFields();
