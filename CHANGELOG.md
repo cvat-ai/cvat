@@ -44,7 +44,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Original pdf file is deleted when using share(<https://github.com/openvinotoolkit/cvat/pull/3967>)
 
 ### Security
-- TDB
+- Updated ELK to 6.8.22 which uses log4j 2.17.0 (<https://github.com/openvinotoolkit/cvat/pull/4052>)
 
 ## \[1.7.0] - 2021-11-15
 
