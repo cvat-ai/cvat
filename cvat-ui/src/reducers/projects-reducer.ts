@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import { AnyAction } from 'redux';
+import { omit } from 'lodash';
 import { ProjectsActionTypes } from 'actions/projects-actions';
 import { BoundariesActionTypes } from 'actions/boundaries-actions';
 import { AuthActionTypes } from 'actions/auth-actions';
@@ -41,7 +42,9 @@ const defaultState: ProjectsState = {
             id: null,
             error: '',
         },
+        backups: {},
     },
+    restoring: false,
 };
 
 export default (state: ProjectsState = defaultState, action: AnyAction): ProjectsState => {
@@ -206,6 +209,48 @@ export default (state: ProjectsState = defaultState, action: AnyAction): Project
                 },
             };
         }
+        case ProjectsActionTypes.BACKUP_PROJECT: {
+            const { projectId } = action.payload;
+            const { backups } = state.activities;
+
+            return {
+                ...state,
+                activities: {
+                    ...state.activities,
+                    backups: {
+                        ...backups,
+                        ...Object.fromEntries([[projectId, true]]),
+                    },
+                },
+            };
+        }
+        case ProjectsActionTypes.BACKUP_PROJECT_FAILED:
+        case ProjectsActionTypes.BACKUP_PROJECT_SUCCESS: {
+            const { projectID } = action.payload;
+            const { backups } = state.activities;
+
+            return {
+                ...state,
+                activities: {
+                    ...state.activities,
+                    backups: omit(backups, [projectID]),
+                },
+            };
+        }
+        case ProjectsActionTypes.RESTORE_PROJECT: {
+            return {
+                ...state,
+                restoring: true,
+            };
+        }
+        case ProjectsActionTypes.RESTORE_PROJECT_FAILED:
+        case ProjectsActionTypes.RESTORE_PROJECT_SUCCESS: {
+            return {
+                ...state,
+                restoring: false,
+            };
+        }
+
         case BoundariesActionTypes.RESET_AFTER_ERROR:
         case AuthActionTypes.LOGOUT_SUCCESS: {
             return { ...defaultState };

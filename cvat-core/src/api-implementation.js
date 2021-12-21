@@ -238,14 +238,14 @@ const config = require('./config');
 
             checkExclusiveFields(filter, ['id', 'search'], ['page']);
 
-            const searchParams = new URLSearchParams();
+            const searchParams = {};
             for (const field of ['name', 'assignee', 'owner', 'search', 'status', 'id', 'page']) {
                 if (Object.prototype.hasOwnProperty.call(filter, field)) {
-                    searchParams.set(camelToSnake(field), filter[field]);
+                    searchParams[camelToSnake(field)] = filter[field];
                 }
             }
 
-            const projectsData = await serverProxy.projects.get(searchParams.toString());
+            const projectsData = await serverProxy.projects.get(searchParams);
             const projects = projectsData.map((project) => {
                 project.task_ids = project.tasks;
                 return project;

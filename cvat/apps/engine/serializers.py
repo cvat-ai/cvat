@@ -431,7 +431,7 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
             except models.Project.DoesNotExist:
                 raise serializers.ValidationError(f'The specified project #{project_id} does not exist.')
 
-            if project.organization != validated_data.get('organization'):
+            if project.organization != validated_data['organization']:
                 raise serializers.ValidationError(f'The task and its project should be in the same organization.')
 
         labels = validated_data.pop('label_set', [])
@@ -784,7 +784,6 @@ class DatasetFileSerializer(serializers.Serializer):
 class TaskFileSerializer(serializers.Serializer):
     task_file = serializers.FileField()
 
-
 class CommentReadSerializer(serializers.ModelSerializer):
     owner = BasicUserSerializer(allow_null=True, required=False)
 
@@ -793,6 +792,9 @@ class CommentReadSerializer(serializers.ModelSerializer):
         fields = ('id', 'issue', 'owner', 'message', 'created_date',
             'updated_date')
         read_only_fields = fields
+
+class ProjectFileSerializer(serializers.Serializer):
+    project_file = serializers.FileField()
 
 class CommentWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
 

@@ -396,12 +396,25 @@
                 return response.data.results;
             }
 
-            async function getProjects(filter = '') {
+            async function getProjects(filter = {}) {
                 const { backendAPI, proxy } = config;
 
                 let response = null;
                 try {
-                    response = await Axios.get(`${backendAPI}/projects?page_size=12&${filter}`, {
+                    if ('id' in filter) {
+                        response = await Axios.get(`${backendAPI}/projects/${filter.id}`, {
+                            proxy,
+                        });
+                        const results = [response.data];
+                        results.count = 1;
+                        return results;
+                    }
+
+                    response = await Axios.get(`${backendAPI}/projects`, {
+                        params: {
+                            ...filter,
+                            page_size: 12,
+                        },
                         proxy,
                     });
                 } catch (errorData) {
@@ -597,9 +610,8 @@
                 const { backendAPI } = config;
                 const params = {
                     ...enableOrganization(),
-                    action: 'export',
                 };
-                const url = `${backendAPI}/tasks/${id}`;
+                const url = `${backendAPI}/tasks/${id}/backup`;
 
                 return new Promise((resolve, reject) => {
                     async function request() {
@@ -634,12 +646,9 @@
                 return new Promise((resolve, reject) => {
                     async function request() {
                         try {
-                            const response = await Axios.post(`${backendAPI}/tasks`, taskData, {
+                            const response = await Axios.post(`${backendAPI}/tasks/backup`, taskData, {
                                 proxy: config.proxy,
-                                params: {
-                                    ...params,
-                                    action: 'import',
-                                },
+                                params,
                             });
                             if (response.status === 202) {
                                 taskData = new FormData();
@@ -649,6 +658,67 @@
                                 // to be able to get the task after it was created, pass frozen params
                                 const importedTask = await getTasks({ id: response.data.id, ...params });
                                 resolve(importedTask[0]);
+                            }
+                        } catch (errorData) {
+                            reject(generateError(errorData));
+                        }
+                    }
+
+                    setTimeout(request);
+                });
+            }
+
+            async function backupProject(id) {
+                const { backendAPI } = config;
+                // keep current default params to 'freeze" them during this request
+                const params = enableOrganization();
+                const url = `${backendAPI}/projects/${id}/backup`;
+
+                return new Promise((resolve, reject) => {
+                    async function request() {
+                        try {
+                            const response = await Axios.get(url, {
+                                proxy: config.proxy,
+                                params,
+                            });
+                            if (response.status === 202) {
+                                setTimeout(request, 3000);
+                            } else {
+                                params.action = 'download';
+                                resolve(`${url}?${new URLSearchParams(params).toString()}`);
+                            }
+                        } catch (errorData) {
+                            reject(generateError(errorData));
+                        }
+                    }
+
+                    setTimeout(request);
+                });
+            }
+
+            async function restoreProject(file) {
+                const { backendAPI } = config;
+                // keep current default params to 'freeze" them during this request
+                const params = enableOrganization();
+
+                let data = new FormData();
+                data.append('project_file', file);
+
+                return new Promise((resolve, reject) => {
+                    async function request() {
+                        try {
+                            const response = await Axios.post(`${backendAPI}/projects/backup`, data, {
+                                proxy: config.proxy,
+                                params,
+                            });
+                            if (response.status === 202) {
+                                data = new FormData();
+                                data.append('rq_id', response.data.rq_id);
+                                setTimeout(request, 3000);
+                            } else {
+                                // to be able to get the task after it was created, pass frozen params
+                                const restoredProject = await getProjects({ id: response.data.id, ...params });
+                                resolve(restoredProject[0]);
                             }
                         } catch (errorData) {
                             reject(generateError(errorData));
@@ -1708,6 +1778,8 @@
                             create: createProject,
                             delete: deleteProject,
                             exportDataset: exportDataset('projects'),
+                            backupProject,
+                            restoreProject,
                             importDataset,
                         }),
                         writable: false,

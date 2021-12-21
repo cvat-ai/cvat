@@ -10,6 +10,22 @@
     height: 100%;
     width: 100%;
 
+    .cvat-projects-page-top-bar {
+        > div:nth-child(1) {
+            > div:nth-child(1) {
+                width: 100%;
+
+                > div:nth-child(1) {
+                    display: flex;
+
+                    span {
+                        margin-right: $grid-unit-size;
+                    }
+                }
+            }
+        }
+    }
+
     > div:nth-child(1) {
         padding-bottom: $grid-unit-size;
 
@@ -45,18 +61,11 @@
     }
 }
 
-.cvat-projects-top-bar {
-    > div:first-child {
-        .cvat-title {
-            margin-right: $grid-unit-size;
+.cvat-projects-page-top-bar {
+    > div:nth-child(1) {
+        > div:nth-child(1) {
+            width: 100%;
         }
-
-        display: flex;
-    }
-
-    > div:nth-child(2) {
-        display: flex;
-        justify-content: flex-end;
     }
 }
 
@@ -141,4 +150,16 @@
 .cvat-projects-list {
     display: flex;
     flex-wrap: wrap;
+}
+
+#cvat-export-project-loading {
+    margin-left: 10;
+}
+
+#cvat-import-project-button {
+    padding: 0 30px;
+}
+
+#cvat-import-project-button-loading {
+    margin-left: 10;
 }
