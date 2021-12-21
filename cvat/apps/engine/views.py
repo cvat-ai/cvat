@@ -430,7 +430,6 @@ class ProjectViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['POST'])
     def backup(self, request, pk=None):
-        self._validate_project_limit(owner=self.request.user)
         return backup.import_project(request)
 
     @staticmethod
@@ -590,7 +589,6 @@ class TaskViewSet(UploadMixin, viewsets.ModelViewSet):
 
     @action(detail=False, methods=['POST'])
     def backup(self, request, pk=None):
-        self._validate_task_limit(owner=self.request.user)
         return backup.import_task(request)
 
     @action(methods=['GET'], detail=True, url_path='backup')
