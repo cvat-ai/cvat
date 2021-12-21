@@ -4,9 +4,14 @@
 
 /// <reference types="cypress" />
 
-import { taskName, labelName } from '../../support/const';
+import {
+    taskName,
+    labelName,
+    attrName,
+    textDefaultValue,
+} from '../../support/const';
 
-context('Settings. Text size/position.', () => {
+context('Settings. Text size/position. Text labels content.', () => {
     const caseId = '111';
     const rectangleShape2Points = {
         points: 'By 2 Points',
@@ -72,6 +77,20 @@ context('Settings. Text size/position.', () => {
         });
     }
 
+    function testLabelTextContent(id) {
+        let getTextContent;
+        if (id === 1) {
+            getTextContent = cy.get('.cvat_canvas_text').first();
+        } else {
+            getTextContent = cy.get('.cvat_canvas_text').last();
+        }
+        getTextContent.then(($labelText) => {
+            const labelText = $labelText.text();
+            expect(labelText).include(`${labelName} ${id} (manual)`);
+            expect(labelText).include(`${attrName}: ${textDefaultValue}`);
+        });
+    }
+
     before(() => {
         cy.openTaskJob(taskName);
         cy.createRectangle(rectangleShape2Points);
@@ -121,6 +140,41 @@ context('Settings. Text size/position.', () => {
                 .should('have.attr', 'value', '16');
             cy.closeSettings();
             cy.get('.cvat_canvas_text').should('have.attr', 'style', 'font-size: 16px;');
+        });
+
+        it('Text labels content.', () => {
+            cy.openSettings();
+            cy.get('.cvat-workspace-settings-text-content').within(() => {
+                cy.get('[aria-label="close"]').click({ multiple: true });
+            });
+
+            cy.get('.cvat-workspace-settings-text-content').click();
+            cy.get('.ant-select-dropdown')
+                .not('.ant-select-dropdown-hidden')
+                .within(() => {
+                    cy.get('[data-icon="check"]').should('have.length', 0);
+                });
+
+            cy.get('.cvat_canvas_text').each((el) => {
+                expect(el.text()).to.be.equal('  ');
+            });
+            cy.get('.cvat_canvas_text_attribute').should('not.exist');
+            cy.get('.cvat_canvas_text_description').should('not.exist');
+
+            cy.get('.ant-select-dropdown')
+                .not('.ant-select-dropdown-hidden')
+                .within(() => {
+                    const textContentItems = ['ID', 'Label', 'Attributes', 'Source', 'Descriptions'];
+                    for (const item of textContentItems) {
+                        cy.get(`[title=${item}]`).click();
+                    }
+                    cy.get('[data-icon="check"]').should('have.length', textContentItems.length);
+                });
+
+            testLabelTextContent(1);
+            testLabelTextContent(2);
+            cy.get('.cvat_canvas_text_attribute').should('have.length', 4);
+            cy.get('.cvat_canvas_text_description').should('not.exist');
         });
     });
 });
