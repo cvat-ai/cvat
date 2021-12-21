@@ -21,6 +21,7 @@ from django.conf import settings
 from django.contrib.auth.models import User
 from django.db import IntegrityError
 from django.http import HttpResponse, HttpResponseNotFound, HttpResponseBadRequest
+from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django_filters import rest_framework as filters
 from django_filters.rest_framework import DjangoFilterBackend
@@ -75,7 +76,6 @@ from cvat.apps.engine.serializers import (
     IssueWriteSerializer,
     CommentReadSerializer,
     CommentWriteSerializer,
-    TaskFileSerializer,
 )
 
 from utils.dataset_manifest import ImageManifestManager
