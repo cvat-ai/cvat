@@ -7,7 +7,7 @@
     const { getPreview } = require('./frames');
 
     const { Project } = require('./project');
-    const { exportDataset } = require('./annotations');
+    const { exportDataset, importDataset } = require('./annotations');
 
     function implementProject(projectClass) {
         projectClass.prototype.save.implementation = async function () {
@@ -61,10 +61,29 @@
         };
 
         projectClass.prototype.annotations.exportDataset.implementation = async function (
-            format, saveImages, customName,
+            format,
+            saveImages,
+            customName,
         ) {
             const result = exportDataset(this, format, customName, saveImages);
             return result;
+        };
+        projectClass.prototype.annotations.importDataset.implementation = async function (
+            format,
+            file,
+            updateStatusCallback,
+        ) {
+            return importDataset(this, format, file, updateStatusCallback);
+        };
+
+        projectClass.prototype.backup.implementation = async function () {
+            const result = await serverProxy.projects.backupProject(this.id);
+            return result;
+        };
+
+        projectClass.restore.implementation = async function (file) {
+            const result = await serverProxy.projects.restoreProject(file);
+            return result.id;
         };
 
         return projectClass;

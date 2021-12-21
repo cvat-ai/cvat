@@ -244,6 +244,7 @@
             // So, we need return it
             this.annotations = {
                 exportDataset: Object.getPrototypeOf(this).annotations.exportDataset.bind(this),
+                importDataset: Object.getPrototypeOf(this).annotations.importDataset.bind(this),
             };
         }
 
@@ -293,6 +294,38 @@
             const result = await PluginRegistry.apiWrapper.call(this, Project.prototype.delete);
             return result;
         }
+
+        /**
+         * Method makes a backup of a project
+         * @method export
+         * @memberof module:API.cvat.classes.Project
+         * @readonly
+         * @instance
+         * @async
+         * @throws {module:API.cvat.exceptions.ServerError}
+         * @throws {module:API.cvat.exceptions.PluginError}
+         * @returns {string} URL to get result archive
+         */
+        async backup() {
+            const result = await PluginRegistry.apiWrapper.call(this, Project.prototype.backup);
+            return result;
+        }
+
+        /**
+         * Method restores a project from a backup
+         * @method restore
+         * @memberof module:API.cvat.classes.Project
+         * @readonly
+         * @instance
+         * @async
+         * @throws {module:API.cvat.exceptions.ServerError}
+         * @throws {module:API.cvat.exceptions.PluginError}
+         * @returns {number} ID of the imported project
+         */
+        static async restore(file) {
+            const result = await PluginRegistry.apiWrapper.call(this, Project.restore, file);
+            return result;
+        }
     }
 
     Object.defineProperties(
@@ -307,6 +340,16 @@
                             format,
                             saveImages,
                             customName,
+                        );
+                        return result;
+                    },
+                    async importDataset(format, file, updateStatusCallback = null) {
+                        const result = await PluginRegistry.apiWrapper.call(
+                            this,
+                            Project.prototype.annotations.importDataset,
+                            format,
+                            file,
+                            updateStatusCallback,
                         );
                         return result;
                     },

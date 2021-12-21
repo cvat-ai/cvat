@@ -53,7 +53,11 @@ export interface ProjectsState {
         deletes: {
             [projectId: number]: boolean; // deleted (deleting if in dictionary)
         };
+        backups: {
+            [projectId: number]: boolean;
+        }
     };
+    restoring: boolean;
 }
 
 export interface TasksQuery {
@@ -113,6 +117,14 @@ export interface ExportState {
     projects: {
         [pid: number]: string[];
     };
+    instance: any;
+    modalVisible: boolean;
+}
+
+export interface ImportState {
+    importingId: number | null;
+    progress: number;
+    status: string;
     instance: any;
     modalVisible: boolean;
 }
@@ -322,6 +334,8 @@ export interface NotificationsState {
             updating: null | ErrorState;
             deleting: null | ErrorState;
             creating: null | ErrorState;
+            restoring: null | ErrorState;
+            backuping: null | ErrorState;
         };
         tasks: {
             fetching: null | ErrorState;
@@ -396,6 +410,14 @@ export interface NotificationsState {
         predictor: {
             prediction: null | ErrorState;
         };
+        exporting: {
+            dataset: null | ErrorState;
+            annotation: null | ErrorState;
+        };
+        importing: {
+            dataset: null | ErrorState;
+            annotation: null | ErrorState;
+        };
         cloudStorages: {
             creating: null | ErrorState;
             fetching: null | ErrorState;
@@ -418,6 +440,9 @@ export interface NotificationsState {
             requestPasswordResetDone: string;
             resetPasswordDone: string;
         };
+        projects: {
+            restoringDone: string;
+        }
     };
 }
 
@@ -642,6 +667,7 @@ export interface WorkspaceSettingsState {
     toolsBlockerState: ToolsBlockerState;
     textFontSize: number;
     textPosition: 'auto' | 'center';
+    textContent: string;
 }
 
 export interface ShapesSettingsState {
@@ -704,6 +730,7 @@ export interface CombinedState {
     shortcuts: ShortcutsState;
     review: ReviewState;
     export: ExportState;
+    import: ImportState;
     cloudStorages: CloudStoragesState;
 }
 

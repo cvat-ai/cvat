@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
+import consts from './consts';
 import { MasterImpl } from './master';
 
 export interface Size {
@@ -57,6 +58,7 @@ export interface Configuration {
     displayAllText?: boolean;
     textFontSize?: number;
     textPosition?: 'auto' | 'center';
+    textContent?: string;
     undefinedAttrValue?: string;
     showProjections?: boolean;
     forceDisableEditing?: boolean;
@@ -263,6 +265,9 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
                 displayAllText: false,
                 autoborders: false,
                 undefinedAttrValue: '',
+                textContent: 'id,label,attributes,source,descriptions',
+                textPosition: 'auto',
+                textFontSize: consts.DEFAULT_SHAPE_TEXT_SIZE,
             },
             imageBitmap: false,
             image: null,
@@ -649,12 +654,19 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
             this.data.configuration.displayAllText = configuration.displayAllText;
         }
 
-        if (typeof configuration.textFontSize === 'number') {
+        if (typeof configuration.textFontSize === 'number' && configuration.textFontSize >= consts.MINIMUM_TEXT_FONT_SIZE) {
             this.data.configuration.textFontSize = configuration.textFontSize;
         }
 
         if (['auto', 'center'].includes(configuration.textPosition)) {
             this.data.configuration.textPosition = configuration.textPosition;
+        }
+
+        if (typeof configuration.textContent === 'string') {
+            const splitted = configuration.textContent.split(',').filter((entry: string) => !!entry);
+            if (splitted.every((entry: string) => ['id', 'label', 'attributes', 'source', 'descriptions'].includes(entry))) {
+                this.data.configuration.textContent = configuration.textContent;
+            }
         }
 
         if (typeof configuration.showProjections === 'boolean') {
