@@ -160,7 +160,7 @@ def _count_files(data, manifest_files=None):
 
     return counter
 
-def _validate_data(counter, manifest_file=None):
+def _validate_data(counter, manifest_files=None):
     unique_entries = 0
     multiple_entries = 0
     for media_type, media_config in MEDIA_TYPES.items():
@@ -170,7 +170,7 @@ def _validate_data(counter, manifest_file=None):
             else:
                 multiple_entries += len(counter[media_type])
 
-            if manifest_file and media_type not in ('video', 'image'):
+            if manifest_files and media_type not in ('video', 'image'):
                 raise Exception('File with meta information can only be uploaded with video/images ')
 
     if unique_entries == 1 and multiple_entries > 0 or unique_entries > 1:
@@ -238,57 +238,57 @@ def _create_thread(tid, data, isImport=False):
     if data['remote_files']:
         data['remote_files'] = _download_data(data['remote_files'], upload_dir)
 
-    manifest_root = None
-    if db_data.storage == models.StorageChoice.LOCAL:
-        manifest_root = upload_dir
-    elif db_data.storage == models.StorageChoice.SHARE:
-        manifest_root = settings.SHARE_ROOT
-    elif db_data.storage == models.StorageChoice.CLOUD_STORAGE:
-        manifest_root = db_data.cloud_storage.get_storage_dirname()
-
     manifest_files = []
     media = _count_files(data, manifest_files)
-    manifest_file = _validate_manifest(manifest_files, manifest_root)
-    media, task_mode = _validate_data(media, manifest_file)
-    if manifest_file and (not settings.USE_CACHE or db_data.storage_method != models.StorageMethodChoice.CACHE):
-        raise Exception("File with meta information can be uploaded if 'Use cache' option is also selected")
+    media, task_mode = _validate_data(media, manifest_files)
 
     if data['server_files']:
         if db_data.storage == models.StorageChoice.LOCAL:
             _copy_data_from_share(data['server_files'], upload_dir)
         elif db_data.storage == models.StorageChoice.SHARE:
             upload_dir = settings.SHARE_ROOT
-        else: # cloud storage
-            if not manifest_file: raise Exception('A manifest file not found')
-            db_cloud_storage = db_data.cloud_storage
-            credentials = Credentials()
-            credentials.convert_from_db({
-               'type': db_cloud_storage.credentials_type,
-               'value': db_cloud_storage.credentials,
-            })
 
-            details = {
-                'resource': db_cloud_storage.resource,
-                'credentials': credentials,
-                'specific_attributes': db_cloud_storage.get_specific_attributes()
-            }
-            cloud_storage_instance = get_cloud_storage_instance(cloud_provider=db_cloud_storage.provider_type, **details)
-            sorted_media = sort(media['image'], data['sorting_method'])
-            first_sorted_media_image = sorted_media[0]
-            cloud_storage_instance.download_file(first_sorted_media_image, os.path.join(upload_dir, first_sorted_media_image))
+    manifest_root = None
+    if db_data.storage in {models.StorageChoice.LOCAL, models.StorageChoice.SHARE}:
+        manifest_root = upload_dir
+    elif db_data.storage == models.StorageChoice.CLOUD_STORAGE:
+        manifest_root = db_data.cloud_storage.get_storage_dirname()
 
-            # prepare task manifest file from cloud storage manifest file
-            # NOTE we should create manifest before defining chunk_size
-            # FIXME in the future when will be implemented archive support
-            manifest = ImageManifestManager(db_data.get_manifest_path())
-            cloud_storage_manifest = ImageManifestManager(
-                os.path.join(db_data.cloud_storage.get_storage_dirname(), manifest_file),
-                db_data.cloud_storage.get_storage_dirname()
-            )
-            cloud_storage_manifest.set_index()
-            sequence, content = cloud_storage_manifest.get_subset(sorted_media)
-            sorted_content = (i[1] for i in sorted(zip(sequence, content)))
-            manifest.create(sorted_content)
+    manifest_file = _validate_manifest(manifest_files, manifest_root)
+    if manifest_file and (not settings.USE_CACHE or db_data.storage_method != models.StorageMethodChoice.CACHE):
+        raise Exception("File with meta information can be uploaded if 'Use cache' option is also selected")
+
+    if data['server_files'] and db_data.storage == models.StorageChoice.CLOUD_STORAGE:
+        if not manifest_file: raise Exception('A manifest file not found')
+        db_cloud_storage = db_data.cloud_storage
+        credentials = Credentials()
+        credentials.convert_from_db({
+            'type': db_cloud_storage.credentials_type,
+            'value': db_cloud_storage.credentials,
+        })
+
+        details = {
+            'resource': db_cloud_storage.resource,
+            'credentials': credentials,
+            'specific_attributes': db_cloud_storage.get_specific_attributes()
+        }
+        cloud_storage_instance = get_cloud_storage_instance(cloud_provider=db_cloud_storage.provider_type, **details)
+        sorted_media = sort(media['image'], data['sorting_method'])
+        first_sorted_media_image = sorted_media[0]
+        cloud_storage_instance.download_file(first_sorted_media_image, os.path.join(upload_dir, first_sorted_media_image))
+
+        # prepare task manifest file from cloud storage manifest file
+        # NOTE we should create manifest before defining chunk_size
+        # FIXME in the future when will be implemented archive support
+        manifest = ImageManifestManager(db_data.get_manifest_path())
+        cloud_storage_manifest = ImageManifestManager(
+            os.path.join(db_data.cloud_storage.get_storage_dirname(), manifest_file),
+            db_data.cloud_storage.get_storage_dirname()
+        )
+        cloud_storage_manifest.set_index()
+        sequence, content = cloud_storage_manifest.get_subset(sorted_media)
+        sorted_content = (i[1] for i in sorted(zip(sequence, content)))
+        manifest.create(sorted_content)
 
     av_scan_paths(upload_dir)
 
