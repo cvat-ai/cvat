@@ -47,14 +47,14 @@ allow {
 }
 
 allow {
-    input.scope == utils.CREATE
+    { utils.CREATE, utils.IMPORT_BACKUP }[input.scope]
     utils.is_sandbox
     input.resource.user.num_resources < 3
     utils.has_perm(utils.USER)
 }
 
 allow {
-    input.scope == utils.CREATE
+    { utils.CREATE, utils.IMPORT_BACKUP }[input.scope]
     input.auth.organization.id == input.resource.organization.id
     input.resource.user.num_resources < 3
     utils.has_perm(utils.USER)
@@ -62,13 +62,13 @@ allow {
 }
 
 allow {
-    input.scope == utils.CREATE
+    { utils.CREATE, utils.IMPORT_BACKUP }[input.scope]
     utils.is_sandbox
     utils.has_perm(utils.BUSINESS)
 }
 
 allow {
-    input.scope == utils.CREATE
+    { utils.CREATE, utils.IMPORT_BACKUP }[input.scope]
     input.auth.organization.id == input.resource.organization.id
     utils.has_perm(utils.BUSINESS)
     organizations.has_perm(organizations.SUPERVISOR)
@@ -140,21 +140,21 @@ allow {
 }
 
 allow {
-    { utils.UPDATE_DESC, utils.IMPORT_DATASET, utils.IMPORT_BACKUP }[input.scope]
+    { utils.UPDATE_DESC, utils.IMPORT_DATASET }[input.scope]
     utils.is_sandbox
     is_project_staff
     utils.has_perm(utils.WORKER)
 }
 
 allow {
-    { utils.UPDATE_DESC, utils.IMPORT_DATASET, utils.IMPORT_BACKUP }[input.scope]
+    { utils.UPDATE_DESC, utils.IMPORT_DATASET }[input.scope]
     input.auth.organization.id == input.resource.organization.id
     utils.has_perm(utils.USER)
     organizations.is_staff
 }
 
 allow {
-    { utils.UPDATE_DESC, utils.IMPORT_DATASET, utils.IMPORT_BACKUP }[input.scope]
+    { utils.UPDATE_DESC, utils.IMPORT_DATASET }[input.scope]
     is_project_staff
     input.auth.organization.id == input.resource.organization.id
     utils.has_perm(utils.WORKER)

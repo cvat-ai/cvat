@@ -479,7 +479,7 @@ class ProjectPermission(OpenPolicyAgentPermission):
                     "id": getattr(self.obj.organization, 'id', None)
                 }
             }
-        elif self.view.action == 'create':
+        elif self.view.action in ['create', 'import_backup']:
             organization = self.request.iam_context['organization']
             data = {
                 "id": None,
