@@ -223,7 +223,7 @@ class LambdaFunction:
                     item["label"] = mapping.get(item["label"])
                 response = [item for item in response if item["label"]]
             # TODO: Need to add attributes mapping similar to labels.
-            # Currently attribute is impicitely discarded if it is not decalred as supported in function config.
+            # Currently attribute is expicitely discarded if it is not decalred as supported in function config.
             if self.attributes:
                 for item in response:
                     item['attributes'] = [attr for attr in item.get("attributes", []) if attr['name'] in self.attributes[item['label']]]
