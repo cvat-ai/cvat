@@ -568,7 +568,7 @@ class TaskPermission(OpenPolicyAgentPermission):
                     },
                 } if self.obj.project else None
             }
-        elif self.view.action == 'create':
+        elif self.view.action in ['create', 'import_backup']:
             organization = self.request.iam_context['organization']
             project_id = self.request.data.get('project_id') or self.request.data.get('project')
             project = None
@@ -624,6 +624,8 @@ class TaskPermission(OpenPolicyAgentPermission):
             ('append_tus_chunk', 'PATCH'): 'upload:data',
             ('append_tus_chunk', 'HEAD'): 'upload:data',
             ('jobs', 'GET'): 'view',
+            ('import_backup', 'POST'): 'import:backup',
+            ('export_backup', 'GET'): 'export:backup',
         }.get((view.action, request.method))
 
         scopes = []

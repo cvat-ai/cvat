@@ -3,6 +3,10 @@ create,Task,Sandbox,None,resource['user']['num_resources'] < 10,POST,/tasks,User
 create,Task,Organization,None,resource['user']['num_resources'] < 10,POST,/tasks,User,Supervisor
 create,Task,Sandbox,None,,POST,/tasks,Business,N/A
 create,Task,Organization,None,,POST,/tasks,Business,Supervisor
+import:backup,Task,Sandbox,None,resource['user']['num_resources'] < 10,POST,/tasks/backup,User,N/A
+import:backup,Task,Organization,None,resource['user']['num_resources'] < 10,POST,/tasks/backup,User,Supervisor
+import:backup,Task,Sandbox,None,,POST,/tasks/backup,Business,N/A
+import:backup,Task,Organization,None,,POST,/tasks/backup,Business,Supervisor
 create@project,"Task, Project",Sandbox,None,,POST,/tasks,Admin,N/A
 create@project,"Task, Project",Sandbox,"Project:owner, Project:assignee",resource['user']['num_resources'] < 10,POST,/tasks,User,N/A
 create@project,"Task, Project",Organization,None,resource['user']['num_resources'] < 10,POST,/tasks,User,Supervisor
@@ -68,3 +72,7 @@ export:annotations,Task,Sandbox,None,,GET,/tasks/{id}/annotations?format=,Admin,
 export:annotations,Task,Sandbox,"Owner, Project:owner, Assignee, Project:assignee",,GET,/tasks/{id}/annotations?format=,None,N/A
 export:annotations,Task,Organization,None,,GET,/tasks/{id}/annotations?format=,User,Maintainer
 export:annotations,Task,Organization,"Owner, Project:owner, Assignee, Project:assignee",,GET,/tasks/{id}/annotations?format=,None,Worker
+export:backup,Task,Sandbox,None,,GET,/tasks/{id}/backup,Admin,N/A
+export:backup,Task,Sandbox,"Owner, Project:owner, Assignee, Project:assignee",,GET,/tasks/{id}/backup,None,N/A
+export:backup,Task,Organization,None,,GET,/tasks/{id}/backup,User,Maintainer
+export:backup,Task,Organization,"Owner, Project:owner, Assignee, Project:assignee",,GET,/tasks/{id}/backup,None,Worker

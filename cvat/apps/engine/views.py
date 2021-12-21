@@ -566,12 +566,12 @@ class TaskViewSet(UploadMixin, viewsets.ModelViewSet):
 
         return queryset
 
-    @action(detail=False, methods=['POST'])
-    def backup(self, request, pk=None):
+    @action(detail=False, methods=['POST'], url_path='backup')
+    def import_backup(self, request, pk=None):
         return backup.import_task(request)
 
     @action(methods=['GET'], detail=True, url_path='backup')
-    def export(self, request, pk=None):
+    def export_backup(self, request, pk=None):
         db_task = self.get_object() # force to call check_object_permissions
         return backup.export(db_task, request)
 
