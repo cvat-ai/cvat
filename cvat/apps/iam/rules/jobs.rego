@@ -159,21 +159,24 @@ allow {
 }
 
 allow {
-    { utils.UPDATE_STATE, utils.UPDATE_ANNOTATIONS, utils.DELETE_ANNOTATIONS }[input.scope]
+    { utils.UPDATE_STATE, utils.UPDATE_ANNOTATIONS, utils.DELETE_ANNOTATIONS,
+      utils.IMPORT_ANNOTATIONS }[input.scope]
     utils.is_sandbox
     utils.has_perm(utils.WORKER)
     is_job_staff
 }
 
 allow {
-    { utils.UPDATE_STATE, utils.UPDATE_ANNOTATIONS, utils.DELETE_ANNOTATIONS }[input.scope]
+    { utils.UPDATE_STATE, utils.UPDATE_ANNOTATIONS, utils.DELETE_ANNOTATIONS,
+      utils.IMPORT_ANNOTATIONS }[input.scope]
     input.auth.organization.id == input.resource.organization.id
     utils.has_perm(utils.USER)
     organizations.has_perm(organizations.MAINTAINER)
 }
 
 allow {
-    { utils.UPDATE_STATE, utils.UPDATE_ANNOTATIONS, utils.DELETE_ANNOTATIONS }[input.scope]
+    { utils.UPDATE_STATE, utils.UPDATE_ANNOTATIONS, utils.DELETE_ANNOTATIONS,
+      utils.IMPORT_ANNOTATIONS }[input.scope]
     input.auth.organization.id == input.resource.organization.id
     utils.has_perm(utils.WORKER)
     organizations.has_perm(organizations.WORKER)
