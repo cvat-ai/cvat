@@ -14,7 +14,7 @@
       "is_active": true,
       "is_staff": true,
       "is_superuser": true,
-      "last_login": "2021-12-16T16:02:49.802270Z",
+      "last_login": "2021-12-22T07:32:58.602211Z",
       "last_name": "First",
       "url": "http://localhost:8080/api/v1/users/1",
       "username": "admin1"
@@ -30,7 +30,7 @@
       "is_active": true,
       "is_staff": false,
       "is_superuser": false,
-      "last_login": "2021-12-14T19:04:33.111650Z",
+      "last_login": "2021-12-22T07:55:35.269206Z",
       "last_name": "First",
       "url": "http://localhost:8080/api/v1/users/2",
       "username": "user1"

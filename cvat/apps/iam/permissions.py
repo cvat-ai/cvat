@@ -74,7 +74,11 @@ class OpenPolicyAgentPermission:
         else:
             qobjects.append(Q())
 
-        return queryset.filter(qobjects[0])
+        # By default, a QuerySet will not eliminate duplicate rows. If your
+        # query spans multiple tables (e.g. members__user_id, owner_id), it’s
+        # possible to get duplicate results when a QuerySet is evaluated.
+        # That’s when you’d use distinct().
+        return queryset.filter(qobjects[0]).distinct()
 
 class OrganizationPermission(OpenPolicyAgentPermission):
     @classmethod

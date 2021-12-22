@@ -66,7 +66,7 @@
       "size": 58,
       "status": "annotation",
       "subset": "train",
-      "updated_date": "2021-12-14T19:57:33.591878Z",
+      "updated_date": "2021-12-22T07:17:34.836384Z",
       "url": "http://localhost:8080/api/v1/tasks/4"
     },
     {
@@ -167,7 +167,7 @@
       "size": 148,
       "status": "annotation",
       "subset": "Train",
-      "updated_date": "2021-12-14T19:48:33.338162Z",
+      "updated_date": "2021-12-22T07:19:33.854760Z",
       "url": "http://localhost:8080/api/v1/tasks/3"
     },
     {
@@ -233,7 +233,7 @@
       "size": 23,
       "status": "annotation",
       "subset": "",
-      "updated_date": "2021-12-14T18:50:29.649546Z",
+      "updated_date": "2021-12-22T07:14:15.234748Z",
       "url": "http://localhost:8080/api/v1/tasks/2"
     },
     {
@@ -293,7 +293,7 @@
       "size": 130,
       "status": "annotation",
       "subset": "",
-      "updated_date": "2021-12-14T18:43:47.827276Z",
+      "updated_date": "2021-12-22T07:15:22.942484Z",
       "url": "http://localhost:8080/api/v1/tasks/1"
     }
   ]
