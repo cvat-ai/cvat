@@ -5,7 +5,7 @@ SPDX-License-Identifier: MIT
 -->
 
 <!-- Raised an issue to propose your change (https://github.com/opencv/cvat/issues).
-It will help to avoid duplication of efforts from multiple independent contributors.
+It helps to avoid duplication of efforts from multiple independent contributors.
 Discuss your ideas with maintainers to be sure that changes will be approved and merged.
 Read the [CONTRIBUTION](https://github.com/opencv/cvat/blob/develop/CONTRIBUTING.md)
 guide. -->
