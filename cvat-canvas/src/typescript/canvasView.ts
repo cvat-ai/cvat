@@ -25,6 +25,7 @@ import {
     translateToSVG,
     translateFromSVG,
     translateToCanvas,
+    translateFromCanvas,
     pointsToNumberArray,
     parsePoints,
     displayShapeSize,
@@ -89,7 +90,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
     private activeElement: ActiveElement;
     private configuration: Configuration;
     private snapToAngleResize: number;
-    private serviceFlags: {
+    private innerObjectsFlags: {
         drawHidden: Record<number, boolean>;
     };
 
@@ -113,7 +114,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
     private translateFromCanvas(points: number[]): number[] {
         const { offset } = this.controller.geometry;
-        return points.map((coord: number): number => coord - offset);
+        return translateFromCanvas(offset, points);
     }
 
     private translatePointsFromRotatedShape(shape: SVG.Shape, points: number[]): number[] {
@@ -159,12 +160,12 @@ export class CanvasViewImpl implements CanvasView, Listener {
         }, '');
     }
 
-    private isServiceHidden(clientID: number): boolean {
-        return this.serviceFlags.drawHidden[clientID] || false;
+    private isInnerHidden(clientID: number): boolean {
+        return this.innerObjectsFlags.drawHidden[clientID] || false;
     }
 
-    private setupServiceHidden(clientID: number, value: boolean): void {
-        this.serviceFlags.drawHidden[clientID] = value;
+    private setupInnerFlags(clientID: number, path: 'drawHidden', value: boolean): void {
+        this.innerObjectsFlags[path][clientID] = value;
         const shape = this.svgShapes[clientID];
         const text = this.svgTexts[clientID];
         const state = this.drawnStates[clientID];
@@ -180,7 +181,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 text.addClass('cvat_canvas_hidden');
             }
         } else {
-            delete this.serviceFlags.drawHidden[clientID];
+            delete this.innerObjectsFlags[path][clientID];
 
             if (state) {
                 if (!state.outside && !state.hidden) {
@@ -237,10 +238,11 @@ export class CanvasViewImpl implements CanvasView, Listener {
     }
 
     private onDrawDone(data: any | null, duration: number, continueDraw?: boolean): void {
-        const hiddenBecauseOfDraw = Object.keys(this.serviceFlags.drawHidden).map((_clientID): number => +_clientID);
+        const hiddenBecauseOfDraw = Object.keys(this.innerObjectsFlags.drawHidden)
+            .map((_clientID): number => +_clientID);
         if (hiddenBecauseOfDraw.length) {
             for (const hidden of hiddenBecauseOfDraw) {
-                this.setupServiceHidden(hidden, false);
+                this.setupInnerFlags(hidden, 'drawHidden', false);
             }
         }
 
@@ -968,7 +970,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         this.configuration = model.configuration;
         this.mode = Mode.IDLE;
         this.snapToAngleResize = consts.SNAP_TO_ANGLE_RESIZE_DEFAULT;
-        this.serviceFlags = {
+        this.innerObjectsFlags = {
             drawHidden: {},
         };
 
@@ -1368,7 +1370,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 this.canvas.style.cursor = 'crosshair';
                 this.mode = Mode.DRAW;
                 if (typeof data.redraw === 'number') {
-                    this.setupServiceHidden(data.redraw, true);
+                    this.setupInnerFlags(data.redraw, 'drawHidden', true);
                 }
                 this.drawHandler.draw(data, this.geometry);
             } else {
@@ -1603,7 +1605,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             const drawnState = this.drawnStates[clientID];
             const shape = this.svgShapes[state.clientID];
             const text = this.svgTexts[state.clientID];
-            const isInvisible = state.hidden || state.outside || this.isServiceHidden(state.clientID);
+            const isInvisible = state.hidden || state.outside || this.isInnerHidden(state.clientID);
 
             if (drawnState.hidden !== state.hidden || drawnState.outside !== state.outside) {
                 if (isInvisible) {
@@ -2260,7 +2262,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             rect.addClass('cvat_canvas_shape_occluded');
         }
 
-        if (state.hidden || state.outside || this.isServiceHidden(state.clientID)) {
+        if (state.hidden || state.outside || this.isInnerHidden(state.clientID)) {
             rect.addClass('cvat_canvas_hidden');
         }
 
@@ -2286,7 +2288,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             polygon.addClass('cvat_canvas_shape_occluded');
         }
 
-        if (state.hidden || state.outside || this.isServiceHidden(state.clientID)) {
+        if (state.hidden || state.outside || this.isInnerHidden(state.clientID)) {
             polygon.addClass('cvat_canvas_hidden');
         }
 
@@ -2312,7 +2314,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             polyline.addClass('cvat_canvas_shape_occluded');
         }
 
-        if (state.hidden || state.outside || this.isServiceHidden(state.clientID)) {
+        if (state.hidden || state.outside || this.isInnerHidden(state.clientID)) {
             polyline.addClass('cvat_canvas_hidden');
         }
 
@@ -2339,7 +2341,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             cube.addClass('cvat_canvas_shape_occluded');
         }
 
-        if (state.hidden || state.outside || this.isServiceHidden(state.clientID)) {
+        if (state.hidden || state.outside || this.isInnerHidden(state.clientID)) {
             cube.addClass('cvat_canvas_hidden');
         }
 
@@ -2398,7 +2400,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             rect.addClass('cvat_canvas_shape_occluded');
         }
 
-        if (state.hidden || state.outside || this.isServiceHidden(state.clientID)) {
+        if (state.hidden || state.outside || this.isInnerHidden(state.clientID)) {
             rect.addClass('cvat_canvas_hidden');
         }
 
@@ -2421,7 +2423,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
         const group = this.setupPoints(shape, state);
 
-        if (state.hidden || state.outside || this.isServiceHidden(state.clientID)) {
+        if (state.hidden || state.outside || this.isInnerHidden(state.clientID)) {
             group.addClass('cvat_canvas_hidden');
         }
 

@@ -1435,7 +1435,7 @@
 
         static distance(points, x, y, angle) {
             const [cx, cy, rightX, topY] = points;
-            const [rx, ry] = [rightX - cx, topY - cy];
+            const [rx, ry] = [rightX - cx, cy - topY];
             const [rotX, rotY] = rotatePoint(x, y, -angle, cx, cy);
             // https://math.stackexchange.com/questions/76457/check-if-a-point-is-within-an-ellipse
             const pointWithinEllipse = (_x, _y) => (
@@ -1461,22 +1461,23 @@
             // and find their interception with ellipse
             const x2Equation = (_y) => (((rx * ry) ** 2) - ((_y * rx) ** 2)) / (ry ** 2);
             const y2Equation = (_x) => (((rx * ry) ** 2) - ((_x * ry) ** 2)) / (rx ** 2);
-            const [x1, x2] = [Math.sqrt(x2Equation(y)), -Math.sqrt(x2Equation(y))];
-            const [y1, y2] = [Math.sqrt(y2Equation(x)), -Math.sqrt(y2Equation(x))];
+
+            // shift x,y to the ellipse coordinate system to compute equation correctly
+            // y axis is inverted
+            const [shiftedX, shiftedY] = [x - cx, cy - y];
+            const [x1, x2] = [Math.sqrt(x2Equation(shiftedY)), -Math.sqrt(x2Equation(shiftedY))];
+            const [y1, y2] = [Math.sqrt(y2Equation(shiftedX)), -Math.sqrt(y2Equation(shiftedX))];
 
             // found two points on ellipse edge
-            const ellipseP1X = (x - cx) >= 0 ? x1 : x2;
-            const ellipseP1Y = y;
-
-            const ellipseP2Y = (y - cy) >= 0 ? y1 : y2;
-            const ellipseP2X = x;
+            const ellipseP1X = shiftedX >= 0 ? x1 : x2; // ellipseP1Y is shiftedY
+            const ellipseP2Y = shiftedY >= 0 ? y1 : y2; // ellipseP1X is shiftedX
 
             // found diffs between two points on edges and target point
-            const [diff1X, diff1Y] = [ellipseP1X - x, ellipseP1Y - y];
-            const [diff2X, diff2Y] = [ellipseP2X - x, ellipseP2Y - y];
+            const diff1X = ellipseP1X - shiftedX;
+            const diff2Y = ellipseP2Y - shiftedY;
 
-            // return minimum
-            return Math.min(Math.sqrt(diff1X ** 2 + diff1Y ** 2), Math.sqrt(diff2X ** 2 + diff2Y ** 2));
+            // return minimum, get absolute value because we need distance, not diff
+            return Math.min(Math.abs(diff1X), Math.abs(diff2Y));
         }
     }
 

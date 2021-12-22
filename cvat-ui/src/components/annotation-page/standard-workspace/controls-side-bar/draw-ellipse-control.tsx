@@ -7,7 +7,7 @@ import Popover from 'antd/lib/popover';
 import Icon from '@ant-design/icons';
 
 import { Canvas } from 'cvat-canvas-wrapper';
-import { PointIcon } from 'icons';
+import { EllipseIcon } from 'icons';
 import { ShapeType } from 'reducers/interfaces';
 
 import DrawShapePopoverContainer from 'containers/annotation-page/standard-workspace/controls-side-bar/draw-shape-popover';
@@ -19,7 +19,7 @@ export interface Props {
     disabled?: boolean;
 }
 
-const CustomPopover = withVisibilityHandling(Popover, 'draw-points');
+const CustomPopover = withVisibilityHandling(Popover, 'draw-ellipse');
 function DrawPointsControl(props: Props): JSX.Element {
     const { canvasInstance, isDrawing, disabled } = props;
     const dynamcPopoverPros = isDrawing ? {
@@ -29,24 +29,24 @@ function DrawPointsControl(props: Props): JSX.Element {
     } : {};
 
     const dynamicIconProps = isDrawing ? {
-        className: 'cvat-draw-points-control cvat-active-canvas-control',
+        className: 'cvat-draw-ellipse-control cvat-active-canvas-control',
         onClick: (): void => {
             canvasInstance.draw({ enabled: false });
         },
     } : {
-        className: 'cvat-draw-points-control',
+        className: 'cvat-draw-ellipse-control',
     };
 
     return disabled ? (
-        <Icon className='cvat-draw-points-control cvat-disabled-canvas-control' component={PointIcon} />
+        <Icon className='cvat-draw-ellipse-control cvat-disabled-canvas-control' component={EllipseIcon} />
     ) : (
         <CustomPopover
             {...dynamcPopoverPros}
             overlayClassName='cvat-draw-shape-popover'
             placement='right'
-            content={<DrawShapePopoverContainer shapeType={ShapeType.POINTS} />}
+            content={<DrawShapePopoverContainer shapeType={ShapeType.ELLIPSE} />}
         >
-            <Icon {...dynamicIconProps} component={PointIcon} />
+            <Icon {...dynamicIconProps} component={EllipseIcon} />
         </CustomPopover>
     );
 }

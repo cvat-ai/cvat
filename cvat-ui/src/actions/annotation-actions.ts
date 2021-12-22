@@ -1515,7 +1515,10 @@ export function repeatDrawShapeAsync(): ThunkAction {
             activeControl = ActiveControl.DRAW_POLYLINE;
         } else if (activeShapeType === ShapeType.CUBOID) {
             activeControl = ActiveControl.DRAW_CUBOID;
+        } else if (activeShapeType === ShapeType.ELLIPSE) {
+            activeControl = ActiveControl.DRAW_ELLIPSE;
         }
+
         dispatch({
             type: AnnotationActionTypes.REPEAT_DRAW_SHAPE,
             payload: {
@@ -1533,7 +1536,7 @@ export function repeatDrawShapeAsync(): ThunkAction {
                 frame: frameNumber,
             });
             dispatch(createAnnotationsAsync(jobInstance, frameNumber, [objectState]));
-        } else {
+        } else if (canvasInstance) {
             canvasInstance.draw({
                 enabled: true,
                 rectDrawingMethod: activeRectDrawingMethod,
