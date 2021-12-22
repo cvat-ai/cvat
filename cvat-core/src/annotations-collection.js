@@ -746,6 +746,7 @@
                 checkObjectType('object state', state, null, ObjectState);
                 checkObjectType('state client ID', state.clientID, 'undefined', null);
                 checkObjectType('state frame', state.frame, 'integer', null);
+                checkObjectType('state rotation', state.rotation || 0, 'number', null);
                 checkObjectType('state attributes', state.attributes, null, Object);
                 checkObjectType('state label', state.label, null, Label);
 
@@ -789,6 +790,7 @@
                             label_id: state.label.id,
                             occluded: state.occluded || false,
                             points: [...state.points],
+                            rotation: state.rotation || 0,
                             type: state.shapeType,
                             z_order: state.zOrder,
                             source: state.source,
@@ -808,6 +810,7 @@
                                     occluded: state.occluded || false,
                                     outside: false,
                                     points: [...state.points],
+                                    rotation: state.rotation || 0,
                                     type: state.shapeType,
                                     z_order: state.zOrder,
                                 },
