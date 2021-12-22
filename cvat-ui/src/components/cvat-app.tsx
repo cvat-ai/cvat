@@ -307,6 +307,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             pluginsInitialized,
             formatsInitialized,
             modelsInitialized,
+            organizationsInitialized,
             switchShortcutsDialog,
             switchSettingsDialog,
             user,
@@ -321,6 +322,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                 formatsInitialized &&
                 pluginsInitialized &&
                 aboutInitialized &&
+                organizationsInitialized &&
                 (!isModelPluginActive || modelsInitialized));
 
         const subKeyMap = {
