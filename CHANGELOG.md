@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add "tag" return type for automatic annotation in Nuclio (<https://github.com/openvinotoolkit/cvat/pull/3896>)
 - Dataset importing to a project (<https://github.com/openvinotoolkit/cvat/pull/3790>)
 - User is able to customize information that text labels show (<https://github.com/openvinotoolkit/cvat/pull/4029>)
+- Support for uploading manifest with any name (<https://github.com/openvinotoolkit/cvat/pull/4041>)
 
 ### Changed
 - TDB

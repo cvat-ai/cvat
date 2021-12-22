@@ -1359,7 +1359,7 @@ class CloudStorageViewSet(auth.CloudStorageGetQuerySetMixin, viewsets.ModelViewS
             storage = get_cloud_storage_instance(cloud_provider=db_storage.provider_type, **details)
             if not db_storage.manifests.count():
                 raise Exception('There is no manifest file')
-            manifest_path = request.query_params.get('manifest_path', 'manifest.jsonl')
+            manifest_path = request.query_params.get('manifest_path', db_storage.manifests.first().filename)
             file_status = storage.get_file_status(manifest_path)
             if file_status == Status.NOT_FOUND:
                 raise FileNotFoundError(errno.ENOENT,
