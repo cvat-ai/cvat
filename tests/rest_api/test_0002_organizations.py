@@ -9,10 +9,10 @@ import json
 from .utils import config
 from deepdiff import DeepDiff
 
-def compare_organizations(id, response):
+def compare_organizations(org_id, response):
     assert response.status_code == HTTPStatus.OK
     with open(os.path.join(config.ASSETS_DIR, 'organizations.json')) as f:
-        org = next(filter(lambda org: org['id'] == id, json.load(f)))
+        org = next(filter(lambda org: org['id'] == org_id, json.load(f)))
     DeepDiff(org, response.json())
 
 def test_admin1_get_organization_id_1():
