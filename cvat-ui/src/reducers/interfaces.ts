@@ -732,6 +732,7 @@ export interface ReviewState {
 export interface OrganizationState {
     list: any[];
     current: any | null;
+    initialized: boolean;
     fetching: boolean;
     creating: boolean;
     updating: boolean;

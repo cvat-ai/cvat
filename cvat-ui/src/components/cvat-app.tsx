@@ -71,6 +71,7 @@ interface CVATAppProps {
     userInitialized: boolean;
     userFetching: boolean;
     organizationsFetching: boolean;
+    organizationsInitialized: boolean;
     pluginsInitialized: boolean;
     pluginsFetching: boolean;
     modelsInitialized: boolean;
@@ -153,7 +154,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
         }
     }
 
-    public componentDidUpdate(prevProps: CVATAppProps): void {
+    public componentDidUpdate(): void {
         const {
             verifyAuthorized,
             loadFormats,
@@ -166,6 +167,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             userInitialized,
             userFetching,
             organizationsFetching,
+            organizationsInitialized,
             formatsInitialized,
             formatsFetching,
             aboutInitialized,
@@ -190,15 +192,6 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             return;
         }
 
-        if (user && !prevProps.user) {
-            loadOrganizations();
-            return;
-        }
-
-        if (organizationsFetching) {
-            return;
-        }
-
         if (!userAgreementsInitialized && !userAgreementsFetching) {
             loadUserAgreements();
             return;
@@ -210,6 +203,10 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
 
         if (user == null || !user.isVerified) {
             return;
+        }
+
+        if (!organizationsInitialized && !organizationsFetching) {
+            loadOrganizations();
         }
 
         if (!formatsInitialized && !formatsFetching) {
@@ -310,6 +307,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             pluginsInitialized,
             formatsInitialized,
             modelsInitialized,
+            organizationsInitialized,
             switchShortcutsDialog,
             switchSettingsDialog,
             user,
@@ -324,6 +322,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                 formatsInitialized &&
                 pluginsInitialized &&
                 aboutInitialized &&
+                organizationsInitialized &&
                 (!isModelPluginActive || modelsInitialized));
 
         const subKeyMap = {

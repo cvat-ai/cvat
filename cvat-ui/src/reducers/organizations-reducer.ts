@@ -9,6 +9,7 @@ import { OrganizationState } from './interfaces';
 const defaultState: OrganizationState = {
     list: [],
     current: null,
+    initialized: false,
     fetching: false,
     creating: false,
     updating: false,
@@ -33,6 +34,7 @@ export default function (
             return {
                 ...state,
                 fetching: false,
+                initialized: true,
                 list: action.payload.list,
             };
         case OrganizationActionsTypes.GET_ORGANIZATIONS_FAILED:
