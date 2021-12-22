@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Organizations to create "shared space" for different groups of users (<https://github.com/openvinotoolkit/cvat/pull/3788>)
 - Dataset importing to a project (<https://github.com/openvinotoolkit/cvat/pull/3790>)
 - User is able to customize information that text labels show (<https://github.com/openvinotoolkit/cvat/pull/4029>)
+- Support for uploading manifest with any name (<https://github.com/openvinotoolkit/cvat/pull/4041>)
 
 ### Changed
 - Users don't have access to a task object anymore if they are assigneed only on some jobs of the task (<https://github.com/openvinotoolkit/cvat/pull/3788>)
@@ -47,7 +48,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Original pdf file is deleted when using share(<https://github.com/openvinotoolkit/cvat/pull/3967>)
 
 ### Security
-- TDB
+- Updated ELK to 6.8.22 which uses log4j 2.17.0 (<https://github.com/openvinotoolkit/cvat/pull/4052>)
 
 ## \[1.7.0] - 2021-11-15
 
