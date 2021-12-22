@@ -108,7 +108,8 @@ function FiltersModalComponent(): JSX.Element {
                         { value: 'points', title: 'Points' },
                         { value: 'polyline', title: 'Polyline' },
                         { value: 'polygon', title: 'Polygon' },
-                        { value: 'cuboids', title: 'Cuboids' },
+                        { value: 'cuboid', title: 'Cuboid' },
+                        { value: 'ellipse', title: 'Ellipse' },
                     ],
                 },
             },
@@ -212,8 +213,11 @@ function FiltersModalComponent(): JSX.Element {
         applyFilters([QbUtils.jsonLogicFormat(state.tree, config).logic]);
     };
 
-    const isModalConfirmable = (): boolean =>
-        QbUtils.queryString(state.tree, config)?.trim().length > 0 && QbUtils.isValidTree(state.tree);
+    const isModalConfirmable = (): boolean => (
+        (QbUtils.queryString(
+            state.tree, config,
+        ) || '').trim().length > 0 && QbUtils.isValidTree(state.tree)
+    );
 
     const renderBuilder = (builderProps: any): JSX.Element => (
         <div className='query-builder-container'>
