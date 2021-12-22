@@ -6,13 +6,23 @@ import React, { RefObject } from 'react';
 import { Row, Col } from 'antd/lib/grid';
 import { PercentageOutlined } from '@ant-design/icons';
 import Input from 'antd/lib/input';
+import Select from 'antd/lib/select';
+import Radio from 'antd/lib/radio';
 import Checkbox from 'antd/lib/checkbox';
 import Form, { FormInstance, RuleObject, RuleRender } from 'antd/lib/form';
 import Text from 'antd/lib/typography/Text';
 import { Store } from 'antd/lib/form/interface';
-
 import CVATTooltip from 'components/common/cvat-tooltip';
 import patterns from 'utils/validation-patterns';
+
+const { Option } = Select;
+
+export enum SortingMethod {
+    LEXICOGRAPHICAL = 'lexicographical',
+    NATURAL = 'natural',
+    PREDEFINED = 'predefined',
+    RANDOM = 'random',
+}
 
 export interface AdvancedConfiguration {
     bugTracker?: string;
@@ -23,11 +33,13 @@ export interface AdvancedConfiguration {
     stopFrame?: number;
     frameFilter?: string;
     lfs: boolean;
+    format?: string,
     repository?: string;
     useZipChunks: boolean;
     dataChunkSize?: number;
     useCache: boolean;
     copyData?: boolean;
+    sortingMethod: SortingMethod;
 }
 
 const initialValues: AdvancedConfiguration = {
@@ -36,12 +48,14 @@ const initialValues: AdvancedConfiguration = {
     useZipChunks: true,
     useCache: true,
     copyData: false,
+    sortingMethod: SortingMethod.LEXICOGRAPHICAL,
 };
 
 interface Props {
     onSubmit(values: AdvancedConfiguration): void;
     installedGit: boolean;
     activeFileManagerTab: string;
+    dumpers: []
 }
 
 function validateURL(_: RuleObject, value: string): Promise<void> {
@@ -174,6 +188,33 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
         );
     }
 
+    private renderSortingMethodRadio(): JSX.Element {
+        return (
+            <Form.Item
+                label='Sorting method'
+                name='sortingMethod'
+                rules={[
+                    {
+                        required: true,
+                        message: 'The field is required.',
+                    },
+                ]}
+                help='Specify how to sort images. It is not relevant for videos.'
+            >
+                <Radio.Group>
+                    <Radio value={SortingMethod.LEXICOGRAPHICAL} key={SortingMethod.LEXICOGRAPHICAL}>
+                        Lexicographical
+                    </Radio>
+                    <Radio value={SortingMethod.NATURAL} key={SortingMethod.NATURAL}>Natural</Radio>
+                    <Radio value={SortingMethod.PREDEFINED} key={SortingMethod.PREDEFINED}>
+                        Predefined
+                    </Radio>
+                    <Radio value={SortingMethod.RANDOM} key={SortingMethod.RANDOM}>Random</Radio>
+                </Radio.Group>
+            </Form.Item>
+        );
+    }
+
     private renderImageQuality(): JSX.Element {
         return (
             <CVATTooltip title='Defines images compression level'>
@@ -276,6 +317,23 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
         );
     }
 
+    private renderGitFormat(): JSX.Element {
+        const { dumpers } = this.props;
+        return (
+            <Form.Item
+                initialValue='CVAT for video 1.1'
+                name='format'
+                label='Choose format'
+            >
+                <Select style={{ width: '100%' }} initialValue='CVAT for video 1.1'>
+                    {
+                        dumpers.map((dumper: any) => <Option value={dumper.name}>{dumper.name}</Option>)
+                    }
+                </Select>
+            </Form.Item>
+        );
+    }
+
     private renderGit(): JSX.Element {
         return (
             <>
@@ -283,8 +341,12 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
                     <Col span={24}>{this.renderGitRepositoryURL()}</Col>
                 </Row>
                 <Row>
+                    <Col span={24}>{this.renderGitFormat()}</Col>
+                </Row>
+                <Row>
                     <Col span={24}>{this.renderGitLFSBox()}</Col>
                 </Row>
+
             </>
         );
     }
@@ -358,6 +420,9 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
         const { installedGit, activeFileManagerTab } = this.props;
         return (
             <Form initialValues={initialValues} ref={this.formRef} layout='vertical'>
+                <Row>
+                    <Col>{this.renderSortingMethodRadio()}</Col>
+                </Row>
                 {activeFileManagerTab === 'share' ? (
                     <Row>
                         <Col>{this.renderCopyDataChechbox()}</Col>

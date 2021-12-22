@@ -100,6 +100,7 @@
                 'occluded',
                 'z_order',
                 'points',
+                'rotation',
                 'type',
                 'shapes',
                 'attributes',
@@ -187,12 +188,10 @@
             return indexes;
         }
 
-        async save(onUpdate) {
-            if (typeof onUpdate !== 'function') {
-                onUpdate = (message) => {
-                    console.log(message);
-                };
-            }
+        async save(onUpdateArg) {
+            const onUpdate = typeof onUpdateArg === 'function' ? onUpdateArg : (message) => {
+                console.log(message);
+            };
 
             const exported = this.collection.export();
             const { flush } = this.collection;

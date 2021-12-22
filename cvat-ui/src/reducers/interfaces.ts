@@ -44,6 +44,7 @@ export interface ProjectsState {
     count: number;
     current: Project[];
     gettingQuery: ProjectsQuery;
+    tasksGettingQuery: TasksQuery;
     activities: {
         creates: {
             id: null | number;
@@ -52,7 +53,11 @@ export interface ProjectsState {
         deletes: {
             [projectId: number]: boolean; // deleted (deleting if in dictionary)
         };
+        backups: {
+            [projectId: number]: boolean;
+        }
     };
+    restoring: boolean;
 }
 
 export interface TasksQuery {
@@ -64,6 +69,7 @@ export interface TasksQuery {
     name: string | null;
     status: string | null;
     mode: string | null;
+    projectId: number | null;
     [key: string]: string | number | null;
 }
 
@@ -111,6 +117,14 @@ export interface ExportState {
     projects: {
         [pid: number]: string[];
     };
+    instance: any;
+    modalVisible: boolean;
+}
+
+export interface ImportState {
+    importingId: number | null;
+    progress: number;
+    status: string;
     instance: any;
     modalVisible: boolean;
 }
@@ -320,6 +334,8 @@ export interface NotificationsState {
             updating: null | ErrorState;
             deleting: null | ErrorState;
             creating: null | ErrorState;
+            restoring: null | ErrorState;
+            backuping: null | ErrorState;
         };
         tasks: {
             fetching: null | ErrorState;
@@ -389,9 +405,18 @@ export interface NotificationsState {
             reopeningIssue: null | ErrorState;
             commentingIssue: null | ErrorState;
             submittingReview: null | ErrorState;
+            deletingIssue: null | ErrorState;
         };
         predictor: {
             prediction: null | ErrorState;
+        };
+        exporting: {
+            dataset: null | ErrorState;
+            annotation: null | ErrorState;
+        };
+        importing: {
+            dataset: null | ErrorState;
+            annotation: null | ErrorState;
         };
         cloudStorages: {
             creating: null | ErrorState;
@@ -415,6 +440,9 @@ export interface NotificationsState {
             requestPasswordResetDone: string;
             resetPasswordDone: string;
         };
+        projects: {
+            restoringDone: string;
+        }
     };
 }
 
@@ -496,7 +524,7 @@ export interface AnnotationState {
             pointID: number | null;
             clientID: number | null;
         };
-        instance: Canvas | Canvas3d;
+        instance: Canvas | Canvas3d | null;
         ready: boolean;
         activeControl: ActiveControl;
     };
@@ -617,6 +645,7 @@ export interface PlayerSettingsState {
     frameSpeed: FrameSpeed;
     resetZoom: boolean;
     rotateAll: boolean;
+    smoothImage: boolean;
     grid: boolean;
     gridSize: number;
     gridColor: GridColor;
@@ -636,6 +665,9 @@ export interface WorkspaceSettingsState {
     intelligentPolygonCrop: boolean;
     defaultApproxPolyAccuracy: number;
     toolsBlockerState: ToolsBlockerState;
+    textFontSize: number;
+    textPosition: 'auto' | 'center';
+    textContent: string;
 }
 
 export interface ShapesSettingsState {
@@ -675,6 +707,7 @@ export interface ReviewState {
     activeReview: any | null;
     newIssuePosition: number[] | null;
     issuesHidden: boolean;
+    issuesResolvedHidden: boolean;
     fetching: {
         reviewId: number | null;
         issueId: number | null;
@@ -697,6 +730,7 @@ export interface CombinedState {
     shortcuts: ShortcutsState;
     review: ReviewState;
     export: ExportState;
+    import: ImportState;
     cloudStorages: CloudStoragesState;
 }
 

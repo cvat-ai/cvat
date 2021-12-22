@@ -28,6 +28,7 @@ const { Source } = require('./enums');
                 descriptions: [],
 
                 points: null,
+                rotation: null,
                 outside: null,
                 occluded: null,
                 keyframe: null,
@@ -196,10 +197,32 @@ const { Source } = require('./enums');
                                 data.points = [...points];
                             } else {
                                 throw new ArgumentError(
-                                    'Points are expected to be an array '
-                                        + `but got ${
+                                    'Points are expected to be an array ' +
+                                        `but got ${
                                             typeof points === 'object' ? points.constructor.name : typeof points
                                         }`,
+                                );
+                            }
+                        },
+                    },
+                    rotation: {
+                        /**
+                         * @name rotation
+                         * @type {number} angle measured by degrees
+                         * @memberof module:API.cvat.classes.ObjectState
+                         * @throws {module:API.cvat.exceptions.ArgumentError}
+                         * @instance
+                         */
+                        get: () => data.rotation,
+                        set: (rotation) => {
+                            if (typeof rotation === 'number') {
+                                data.updateFlags.points = true;
+                                data.rotation = rotation;
+                            } else {
+                                throw new ArgumentError(
+                                    `Rotation is expected to be a number, but got ${
+                                        typeof rotation === 'object' ? rotation.constructor.name : typeof points
+                                    }`,
                                 );
                             }
                         },
@@ -341,11 +364,11 @@ const { Source } = require('./enums');
                         set: (attributes) => {
                             if (typeof attributes !== 'object') {
                                 throw new ArgumentError(
-                                    'Attributes are expected to be an object '
-                                        + `but got ${
-                                            typeof attributes === 'object'
-                                                ? attributes.constructor.name
-                                                : typeof attributes
+                                    'Attributes are expected to be an object ' +
+                                        `but got ${
+                                            typeof attributes === 'object' ?
+                                                attributes.constructor.name :
+                                                typeof attributes
                                         }`,
                                 );
                             }
@@ -368,8 +391,8 @@ const { Source } = require('./enums');
                         get: () => [...data.descriptions],
                         set: (descriptions) => {
                             if (
-                                !Array.isArray(descriptions)
-                                || descriptions.some((description) => typeof description !== 'string')
+                                !Array.isArray(descriptions) ||
+                                descriptions.some((description) => typeof description !== 'string')
                             ) {
                                 throw new ArgumentError(
                                     `Descriptions are expected to be an array of strings but got ${data.descriptions}`,
@@ -410,12 +433,15 @@ const { Source } = require('./enums');
             if (typeof serialized.color === 'string') {
                 this.color = serialized.color;
             }
+            if (typeof serialized.rotation === 'number') {
+                this.rotation = serialized.rotation;
+            }
             if (Array.isArray(serialized.points)) {
                 this.points = serialized.points;
             }
             if (
-                Array.isArray(serialized.descriptions)
-                && serialized.descriptions.every((desc) => typeof desc === 'string')
+                Array.isArray(serialized.descriptions) &&
+                serialized.descriptions.every((desc) => typeof desc === 'string')
             ) {
                 this.descriptions = serialized.descriptions;
             }

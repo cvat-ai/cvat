@@ -17,6 +17,7 @@ import { BoundariesActionTypes } from 'actions/boundaries-actions';
 import { UserAgreementsActionTypes } from 'actions/useragreements-actions';
 import { ReviewActionTypes } from 'actions/review-actions';
 import { ExportActionTypes } from 'actions/export-actions';
+import { ImportActionTypes } from 'actions/import-actions';
 import { CloudStorageActionTypes } from 'actions/cloud-storage-actions';
 
 import getCore from 'cvat-core-wrapper';
@@ -41,6 +42,8 @@ const defaultState: NotificationsState = {
             updating: null,
             deleting: null,
             creating: null,
+            restoring: null,
+            backuping: null,
         },
         tasks: {
             fetching: null,
@@ -110,9 +113,18 @@ const defaultState: NotificationsState = {
             reopeningIssue: null,
             resolvingIssue: null,
             submittingReview: null,
+            deletingIssue: null,
         },
         predictor: {
             prediction: null,
+        },
+        exporting: {
+            dataset: null,
+            annotation: null,
+        },
+        importing: {
+            dataset: null,
+            annotation: null,
         },
         cloudStorages: {
             creating: null,
@@ -135,6 +147,9 @@ const defaultState: NotificationsState = {
             registerDone: '',
             requestPasswordResetDone: '',
             resetPasswordDone: '',
+        },
+        projects: {
+            restoringDone: '',
         },
     },
 };
@@ -326,13 +341,32 @@ export default function (state = defaultState, action: AnyAction): Notifications
                 ...state,
                 errors: {
                     ...state.errors,
-                    tasks: {
-                        ...state.errors.tasks,
-                        exportingAsDataset: {
+                    exporting: {
+                        ...state.errors.exporting,
+                        dataset: {
                             message:
                                 'Could not export dataset for the ' +
                                 `<a href="/${instanceType}s/${instanceID}" target="_blank">` +
                                 `${instanceType} ${instanceID}</a>`,
+                            reason: action.payload.error.toString(),
+                        },
+                    },
+                },
+            };
+        }
+        case ImportActionTypes.IMPORT_DATASET_FAILED: {
+            const instanceID = action.payload.instance.id;
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    exporting: {
+                        ...state.errors.exporting,
+                        dataset: {
+                            message:
+                                'Could not import dataset to the ' +
+                                `<a href="/projects/${instanceID}" target="_blank">` +
+                                `project ${instanceID}</a>`,
                             reason: action.payload.error.toString(),
                         },
                     },
@@ -548,6 +582,51 @@ export default function (state = defaultState, action: AnyAction): Notifications
                             reason: action.payload.error.toString(),
                             className: 'cvat-notification-notice-delete-project-failed',
                         },
+                    },
+                },
+            };
+        }
+        case ProjectsActionTypes.BACKUP_PROJECT_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    projects: {
+                        ...state.errors.projects,
+                        backuping: {
+                            message: `Could not backup the project #${action.payload.projectId}`,
+                            reason: action.payload.error.toString(),
+                        },
+                    },
+                },
+            };
+        }
+        case ProjectsActionTypes.RESTORE_PROJECT_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    projects: {
+                        ...state.errors.projects,
+                        restoring: {
+                            message: 'Could not restore the project',
+                            reason: action.payload.error.toString(),
+                        },
+                    },
+                },
+            };
+        }
+        case ProjectsActionTypes.RESTORE_PROJECT_SUCCESS: {
+            const { projectID } = action.payload;
+            return {
+                ...state,
+                messages: {
+                    ...state.messages,
+                    projects: {
+                        ...state.messages.projects,
+                        restoringDone:
+                            `Project has been created succesfully.
+                             Click <a href="/projects/${projectID}">here</a> to open`,
                     },
                 },
             };
@@ -1136,6 +1215,21 @@ export default function (state = defaultState, action: AnyAction): Notifications
                 },
             };
         }
+        case ReviewActionTypes.REMOVE_ISSUE_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    review: {
+                        ...state.errors.review,
+                        deletingIssue: {
+                            message: 'Could not remove issue from the server',
+                            reason: action.payload.error.toString(),
+                        },
+                    },
+                },
+            };
+        }
         case NotificationsActionType.RESET_ERRORS: {
             return {
                 ...state,
@@ -1241,9 +1335,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         ...state.errors.cloudStorages,
                         deleting: {
                             message:
-                                'Could not delete ' +
-                                `<a href="/cloudstorages/${cloudStorageID}" target="_blank">
-                                cloud storage ${cloudStorageID}</a>`,
+                                `Could not delete cloud storage ${cloudStorageID}`,
                             reason: action.payload.error.toString(),
                             className: 'cvat-notification-notice-delete-cloud-storage-failed',
                         },

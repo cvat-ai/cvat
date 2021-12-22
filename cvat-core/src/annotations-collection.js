@@ -36,23 +36,23 @@
 
         let shapeModel = null;
         switch (type) {
-        case 'rectangle':
-            shapeModel = new RectangleShape(shapeData, clientID, color, injection);
-            break;
-        case 'polygon':
-            shapeModel = new PolygonShape(shapeData, clientID, color, injection);
-            break;
-        case 'polyline':
-            shapeModel = new PolylineShape(shapeData, clientID, color, injection);
-            break;
-        case 'points':
-            shapeModel = new PointsShape(shapeData, clientID, color, injection);
-            break;
-        case 'cuboid':
-            shapeModel = new CuboidShape(shapeData, clientID, color, injection);
-            break;
-        default:
-            throw new DataError(`An unexpected type of shape "${type}"`);
+            case 'rectangle':
+                shapeModel = new RectangleShape(shapeData, clientID, color, injection);
+                break;
+            case 'polygon':
+                shapeModel = new PolygonShape(shapeData, clientID, color, injection);
+                break;
+            case 'polyline':
+                shapeModel = new PolylineShape(shapeData, clientID, color, injection);
+                break;
+            case 'points':
+                shapeModel = new PointsShape(shapeData, clientID, color, injection);
+                break;
+            case 'cuboid':
+                shapeModel = new CuboidShape(shapeData, clientID, color, injection);
+                break;
+            default:
+                throw new DataError(`An unexpected type of shape "${type}"`);
         }
 
         return shapeModel;
@@ -65,23 +65,23 @@
 
             let trackModel = null;
             switch (type) {
-            case 'rectangle':
-                trackModel = new RectangleTrack(trackData, clientID, color, injection);
-                break;
-            case 'polygon':
-                trackModel = new PolygonTrack(trackData, clientID, color, injection);
-                break;
-            case 'polyline':
-                trackModel = new PolylineTrack(trackData, clientID, color, injection);
-                break;
-            case 'points':
-                trackModel = new PointsTrack(trackData, clientID, color, injection);
-                break;
-            case 'cuboid':
-                trackModel = new CuboidTrack(trackData, clientID, color, injection);
-                break;
-            default:
-                throw new DataError(`An unexpected type of track "${type}"`);
+                case 'rectangle':
+                    trackModel = new RectangleTrack(trackData, clientID, color, injection);
+                    break;
+                case 'polygon':
+                    trackModel = new PolygonTrack(trackData, clientID, color, injection);
+                    break;
+                case 'polyline':
+                    trackModel = new PolylineTrack(trackData, clientID, color, injection);
+                    break;
+                case 'points':
+                    trackModel = new PointsTrack(trackData, clientID, color, injection);
+                    break;
+                case 'cuboid':
+                    trackModel = new CuboidTrack(trackData, clientID, color, injection);
+                    break;
+                default:
+                    throw new DataError(`An unexpected type of track "${type}"`);
             }
 
             return trackModel;
@@ -235,7 +235,7 @@
                 const object = this.objects[state.clientID];
                 if (typeof object === 'undefined') {
                     throw new ArgumentError(
-                        'The object has not been saved yet. Call ObjectState.put([state]) before you can merge it',
+                        'The object is not in collection yet. Call ObjectState.put([state]) before you can merge it',
                     );
                 }
                 return object;
@@ -282,6 +282,7 @@
                         frame: object.frame,
                         points: [...object.points],
                         occluded: object.occluded,
+                        rotation: object.rotation,
                         zOrder: object.zOrder,
                         outside: false,
                         attributes: Object.keys(object.attributes).reduce((accumulator, attrID) => {
@@ -333,25 +334,24 @@
                             type: shapeType,
                             frame: +keyframe,
                             points: [...shape.points],
+                            rotation: shape.rotation,
                             occluded: shape.occluded,
                             outside: shape.outside,
                             zOrder: shape.zOrder,
-                            attributes: updatedAttributes
-                                ? Object.keys(attributes).reduce((accumulator, attrID) => {
-                                    accumulator.push({
-                                        spec_id: +attrID,
-                                        value: attributes[attrID],
-                                    });
+                            attributes: updatedAttributes ? Object.keys(attributes).reduce((accumulator, attrID) => {
+                                accumulator.push({
+                                    spec_id: +attrID,
+                                    value: attributes[attrID],
+                                });
 
-                                    return accumulator;
-                                }, [])
-                                : [],
+                                return accumulator;
+                            }, []) : [],
                         };
                     }
                 } else {
                     throw new ArgumentError(
-                        `Trying to merge unknown object type: ${object.constructor.name}. `
-                            + 'Only shapes and tracks are expected.',
+                        `Trying to merge unknown object type: ${object.constructor.name}. ` +
+                            'Only shapes and tracks are expected.',
                     );
                 }
             }
@@ -444,6 +444,7 @@
             const position = {
                 type: objectState.shapeType,
                 points: [...objectState.points],
+                rotation: objectState.rotation,
                 occluded: objectState.occluded,
                 outside: objectState.outside,
                 zOrder: objectState.zOrder,
@@ -483,6 +484,12 @@
                 return shape;
             });
             prev.shapes.push(position);
+
+            // add extra keyframe if no other keyframes before outside
+            if (!prev.shapes.some((shape) => shape.frame === frame - 1)) {
+                prev.shapes.push(JSON.parse(JSON.stringify(position)));
+                prev.shapes[prev.shapes.length - 2].frame -= 1;
+            }
             prev.shapes[prev.shapes.length - 1].outside = true;
 
             let clientID = ++this.count;
@@ -553,14 +560,40 @@
             return groupIdx;
         }
 
-        clear() {
-            this.shapes = {};
-            this.tags = {};
-            this.tracks = [];
-            this.objects = {}; // by id
-            this.count = 0;
+        clear(startframe, endframe, delTrackKeyframesOnly) {
+            if (startframe !== undefined && endframe !== undefined) {
+                // If only a range of annotations need to be cleared
+                for (let frame = startframe; frame <= endframe; frame++) {
+                    this.shapes[frame] = [];
+                    this.tags[frame] = [];
+                }
+                const { tracks } = this;
+                tracks.forEach((track) => {
+                    if (track.frame <= endframe) {
+                        if (delTrackKeyframesOnly) {
+                            for (const keyframe in track.shapes) {
+                                if (keyframe >= startframe && keyframe <= endframe) { delete track.shapes[keyframe]; }
+                            }
+                        } else if (track.frame >= startframe) {
+                            const index = tracks.indexOf(track);
+                            if (index > -1) { tracks.splice(index, 1); }
+                        }
+                    }
+                });
+            } else if (startframe === undefined && endframe === undefined) {
+                // If all annotations need to be cleared
+                this.shapes = {};
+                this.tags = {};
+                this.tracks = [];
+                this.objects = {}; // by id
+                this.count = 0;
 
-            this.flush = true;
+                this.flush = true;
+            } else {
+                // If inputs provided were wrong
+                throw Error('Could not remove the annotations, please provide both inputs or' +
+                    ' leave the inputs below empty to remove all the annotations from this job');
+            }
         }
 
         statistics() {
@@ -820,7 +853,7 @@
                 if (typeof object === 'undefined') {
                     throw new ArgumentError('The object has not been saved yet. Call annotations.put([state]) before');
                 }
-                const distance = object.constructor.distance(state.points, x, y);
+                const distance = object.constructor.distance(state.points, x, y, state.rotation);
                 if (distance !== null && (minimumDistance === null || distance < minimumDistance)) {
                     minimumDistance = distance;
                     minimumState = state;

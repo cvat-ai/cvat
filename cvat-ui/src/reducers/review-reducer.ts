@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -16,6 +16,7 @@ const defaultState: ReviewState = {
     activeReview: null, // not saved on the server
     newIssuePosition: null,
     issuesHidden: false,
+    issuesResolvedHidden: false,
     fetching: {
         reviewId: null,
         issueId: null,
@@ -113,11 +114,10 @@ export default function (state: ReviewState = defaultState, action: any): Review
                     Array.from(
                         new Set(
                             [...state.latestComments, issue.comments[0].message].filter(
-                                (message: string): boolean =>
-                                    ![
-                                        consts.QUICK_ISSUE_INCORRECT_POSITION_TEXT,
-                                        consts.QUICK_ISSUE_INCORRECT_ATTRIBUTE_TEXT,
-                                    ].includes(message),
+                                (message: string): boolean => ![
+                                    consts.QUICK_ISSUE_INCORRECT_POSITION_TEXT,
+                                    consts.QUICK_ISSUE_INCORRECT_ATTRIBUTE_TEXT,
+                                ].includes(message),
                             ),
                         ),
                     ).slice(-consts.LATEST_COMMENTS_SHOWN_QUICK_ISSUE),
@@ -174,6 +174,23 @@ export default function (state: ReviewState = defaultState, action: any): Review
             return {
                 ...state,
                 issuesHidden: hidden,
+            };
+        }
+        case ReviewActionTypes.SWITCH_RESOLVED_ISSUES_HIDDEN_FLAG: {
+            const { hidden } = action.payload;
+            return {
+                ...state,
+                issuesResolvedHidden: hidden,
+            };
+        }
+        case ReviewActionTypes.REMOVE_ISSUE_SUCCESS: {
+            const { issueId, frame } = action.payload;
+            const issues = state.issues.filter((issue: any) => issue.id !== issueId);
+            const frameIssues = computeFrameIssues(issues, state.activeReview, frame);
+            return {
+                ...state,
+                issues,
+                frameIssues,
             };
         }
         case AnnotationActionTypes.CLOSE_JOB:

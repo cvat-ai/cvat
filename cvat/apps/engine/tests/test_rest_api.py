@@ -16,6 +16,7 @@ from enum import Enum
 from glob import glob
 from io import BytesIO
 from unittest import mock
+import logging
 
 import av
 import numpy as np
@@ -30,10 +31,13 @@ from rest_framework.test import APIClient, APITestCase
 
 from datumaro.util.test_utils import TestDir
 from cvat.apps.engine.models import (AttributeSpec, AttributeType, Data, Job, Project,
-    Segment, StatusChoice, Task, Label, StorageMethodChoice, StorageChoice)
-from cvat.apps.engine.media_extractors import ValidateDimension
-from cvat.apps.engine.models import DimensionType
+    Segment, StatusChoice, Task, Label, StorageMethodChoice, StorageChoice, DimensionType,
+    SortingMethod)
+from cvat.apps.engine.media_extractors import ValidateDimension, sort
 from utils.dataset_manifest import ImageManifestManager, VideoManifestManager
+
+#supress av warnings
+logging.getLogger('libav').setLevel(logging.ERROR)
 
 def create_db_users(cls):
     (group_admin, _) = Group.objects.get_or_create(name="admin")
@@ -1349,6 +1353,7 @@ class ProjectUpdateLabelsAPITestCase(UpdateLabelsAPITestCase):
             }]
         }
         self._check_api_v1_project(data)
+
 class ProjectListOfTasksAPITestCase(APITestCase):
     def setUp(self):
         self.client = APIClient()
@@ -1395,6 +1400,623 @@ class ProjectListOfTasksAPITestCase(APITestCase):
         response = self._run_api_v1_projects_id_tasks(None, project.id)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
+class ProjectBackupAPITestCase(APITestCase):
+    @classmethod
+    def setUpTestData(cls):
+        create_db_users(cls)
+        cls._create_media()
+        cls.client = APIClient()
+        cls._create_projects()
+
+    @classmethod
+    def tearDownClass(cls):
+        super().tearDownClass()
+        for task in cls.tasks:
+            shutil.rmtree(os.path.join(settings.TASKS_ROOT, str(task["id"])))
+            shutil.rmtree(os.path.join(settings.MEDIA_DATA_ROOT, str(task["data_id"])))
+
+        for f in cls.media['files']:
+            os.remove(f)
+        for d in cls.media['dirs']:
+            shutil.rmtree(d)
+
+    @classmethod
+    def _create_media(cls):
+        cls.media_data = []
+        cls.media = {
+            'files': [],
+            'dirs': [],
+        }
+        image_count = 10
+        imagename_pattern = "test_{}.jpg"
+        for i in range(image_count):
+            filename = imagename_pattern.format(i)
+            path = os.path.join(settings.SHARE_ROOT, filename)
+            cls.media['files'].append(path)
+            _, data = generate_image_file(filename)
+            with open(path, "wb") as image:
+                image.write(data.read())
+
+        cls.media_data.append(
+            {
+                **{"image_quality": 75,
+                   "copy_data": True,
+                   "start_frame": 2,
+                   "stop_frame": 9,
+                   "frame_filter": "step=2",
+                },
+                **{"server_files[{}]".format(i): imagename_pattern.format(i) for i in range(image_count)},
+            }
+        )
+
+        filename = "test_video_1.mp4"
+        path = os.path.join(settings.SHARE_ROOT, filename)
+        cls.media['files'].append(path)
+        _, data = generate_video_file(filename, width=1280, height=720)
+        with open(path, "wb") as video:
+            video.write(data.read())
+        cls.media_data.append(
+            {
+                "image_quality": 75,
+                "copy_data": True,
+                "start_frame": 2,
+                "stop_frame": 24,
+                "frame_filter": "step=2",
+                "server_files[0]": filename,
+            }
+        )
+
+        filename = os.path.join("test_archive_1.zip")
+        path = os.path.join(settings.SHARE_ROOT, filename)
+        cls.media['files'].append(path)
+        _, data = generate_zip_archive_file(filename, count=5)
+        with open(path, "wb") as zip_archive:
+            zip_archive.write(data.read())
+        cls.media_data.append(
+            {
+                "image_quality": 75,
+                "server_files[0]": filename,
+            }
+        )
+
+        filename = os.path.join("videos", "test_video_1.mp4")
+        path = os.path.join(settings.SHARE_ROOT, filename)
+        cls.media['dirs'].append(os.path.dirname(path))
+        os.makedirs(os.path.dirname(path))
+        _, data = generate_video_file(filename, width=1280, height=720)
+        with open(path, "wb") as video:
+            video.write(data.read())
+
+        manifest_path = os.path.join(settings.SHARE_ROOT, 'videos', 'manifest.jsonl')
+        generate_manifest_file(data_type='video', manifest_path=manifest_path, sources=[path])
+
+        cls.media_data.append(
+            {
+                "image_quality": 70,
+                "copy_data": True,
+                "server_files[0]": filename,
+                "server_files[1]": os.path.join("videos", "manifest.jsonl"),
+                "use_cache": True,
+            }
+        )
+
+        manifest_path = manifest_path=os.path.join(settings.SHARE_ROOT, 'manifest.jsonl')
+        generate_manifest_file(data_type='images', manifest_path=manifest_path,
+            sources=[os.path.join(settings.SHARE_ROOT, imagename_pattern.format(i)) for i in range(1, 8)])
+        cls.media['files'].append(manifest_path)
+        cls.media_data.append(
+            {
+                **{"image_quality": 70,
+                    "copy_data": True,
+                    "use_cache": True,
+                    "frame_filter": "step=2",
+                    "server_files[0]": "manifest.jsonl",
+                },
+                **{
+                    **{"server_files[{}]".format(i): imagename_pattern.format(i) for i in range(1, 8)},
+                }
+            }
+        )
+
+        cls.media_data.extend([
+            # image list local
+            {
+                "client_files[0]": generate_image_file("test_1.jpg")[1],
+                "client_files[1]": generate_image_file("test_2.jpg")[1],
+                "client_files[2]": generate_image_file("test_3.jpg")[1],
+                "image_quality": 75,
+            },
+            # video local
+            {
+                "client_files[0]": generate_video_file("test_video.mp4")[1],
+                "image_quality": 75,
+            },
+            # zip archive local
+            {
+                "client_files[0]": generate_zip_archive_file("test_archive_1.zip", 10)[1],
+                "image_quality": 50,
+            },
+            # pdf local
+            {
+                "client_files[0]": generate_pdf_file("test_pdf_1.pdf", 7)[1],
+                "image_quality": 54,
+            },
+        ])
+
+    @classmethod
+    def _create_tasks(cls, project):
+        def _create_task(task_data, media_data):
+            response = cls.client.post('/api/v1/tasks', data=task_data, format="json")
+            assert response.status_code == status.HTTP_201_CREATED
+            tid = response.data["id"]
+
+            for media in media_data.values():
+                if isinstance(media, io.BytesIO):
+                    media.seek(0)
+            response = cls.client.post("/api/v1/tasks/{}/data".format(tid), data=media_data)
+            assert response.status_code == status.HTTP_202_ACCEPTED
+            response = cls.client.get("/api/v1/tasks/{}".format(tid))
+            data_id = response.data["data"]
+            cls.tasks.append({
+                "id": tid,
+                "data_id": data_id,
+            })
+
+        task_data = [
+            {
+                "name": "my task #1",
+                "owner_id": cls.owner.id,
+                "assignee_id": cls.assignee.id,
+                "overlap": 0,
+                "segment_size": 100,
+                "project_id": project.id,
+            },
+            {
+                "name": "my task #2",
+                "owner_id": cls.owner.id,
+                "assignee_id": cls.assignee.id,
+                "overlap": 1,
+                "segment_size": 3,
+                "project_id": project.id,
+            },
+        ]
+
+        with ForceLogin(cls.owner, cls.client):
+            for data in task_data:
+                for media in cls.media_data:
+                    _create_task(data, media)
+
+    @classmethod
+    def _create_projects(cls):
+        cls.projects = []
+        cls.tasks = []
+        data = {
+            "name": "my empty project",
+            "owner": cls.owner,
+            "assignee": cls.assignee,
+            "labels": [{
+                "name": "car",
+                "color": "#ff00ff",
+                "attributes": [{
+                    "name": "bool_attribute",
+                    "mutable": True,
+                    "input_type": AttributeType.CHECKBOX,
+                    "default_value": "true"
+                }],
+                }, {
+                    "name": "person",
+                },
+            ],
+        }
+        db_project = create_db_project(data)
+        cls.projects.append(db_project)
+
+        data = {
+            "name": "my project without assignee",
+            "owner": cls.user,
+            "labels": [{
+                "name": "car",
+                "color": "#ff00ff",
+                "attributes": [{
+                    "name": "bool_attribute",
+                    "mutable": True,
+                    "input_type": AttributeType.CHECKBOX,
+                    "default_value": "true"
+                }],
+                }, {
+                    "name": "person",
+                },
+            ],
+        }
+        db_project = create_db_project(data)
+        cls._create_tasks(db_project)
+        cls.projects.append(db_project)
+
+        data = {
+            "name": "my big project",
+            "owner": cls.owner,
+            "assignee": cls.assignee,
+            "labels": [{
+                "name": "car",
+                "color": "#ff00ff",
+                "attributes": [{
+                    "name": "bool_attribute",
+                    "mutable": True,
+                    "input_type": AttributeType.CHECKBOX,
+                    "default_value": "true"
+                }],
+                }, {
+                    "name": "person",
+                },
+            ],
+        }
+        db_project = create_db_project(data)
+        cls._create_tasks(db_project)
+        cls.projects.append(db_project)
+
+        data = {
+            "name": "public project",
+            "labels": [{
+                "name": "car",
+                "color": "#ff00ff",
+                "attributes": [{
+                    "name": "bool_attribute",
+                    "mutable": True,
+                    "input_type": AttributeType.CHECKBOX,
+                    "default_value": "true"
+                }],
+                }, {
+                    "name": "person",
+                },
+            ],
+        }
+        db_project = create_db_project(data)
+        cls._create_tasks(db_project)
+        cls.projects.append(db_project)
+
+        data = {
+            "name": "super project",
+            "owner": cls.admin,
+            "assignee": cls.assignee,
+            "labels": [{
+                "name": "car",
+                "color": "#ff00ff",
+                "attributes": [{
+                    "name": "bool_attribute",
+                    "mutable": True,
+                    "input_type": AttributeType.CHECKBOX,
+                    "default_value": "true"
+                }],
+                }, {
+                    "name": "person",
+                },
+            ],
+        }
+        db_project = create_db_project(data)
+        cls._create_tasks(db_project)
+        cls.projects.append(db_project)
+
+    def _run_api_v1_projects_id_export(self, pid, user, query_params=""):
+        with ForceLogin(user, self.client):
+            response = self.client.get('/api/v1/projects/{}/backup?{}'.format(pid, query_params), format="json")
+
+        return response
+
+    def _run_api_v1_projects_import(self, user, data):
+        with ForceLogin(user, self.client):
+            response = self.client.post('/api/v1/projects/backup', data=data, format="multipart")
+
+        return response
+
+    def _run_api_v1_projects_id(self, pid, user):
+        with ForceLogin(user, self.client):
+            response = self.client.get('/api/v1/projects/{}'.format(pid), format="json")
+
+        return response.data
+
+    def _run_api_v1_projects_id_export_import(self, user):
+        for project in self.projects:
+            if user:
+                if user is self.user and (project.assignee or not project.owner):
+                    HTTP_200_OK = status.HTTP_403_FORBIDDEN
+                    HTTP_202_ACCEPTED = status.HTTP_403_FORBIDDEN
+                    HTTP_201_CREATED = status.HTTP_403_FORBIDDEN
+                else:
+                    HTTP_200_OK = status.HTTP_200_OK
+                    HTTP_202_ACCEPTED = status.HTTP_202_ACCEPTED
+                    HTTP_201_CREATED = status.HTTP_201_CREATED
+            else:
+                HTTP_200_OK = status.HTTP_401_UNAUTHORIZED
+                HTTP_202_ACCEPTED = status.HTTP_401_UNAUTHORIZED
+                HTTP_201_CREATED = status.HTTP_401_UNAUTHORIZED
+
+            pid = project.id
+            response = self._run_api_v1_projects_id_export(pid, user)
+            self.assertEqual(response.status_code, HTTP_202_ACCEPTED)
+
+            response = self._run_api_v1_projects_id_export(pid, user)
+            self.assertEqual(response.status_code, HTTP_201_CREATED)
+
+            response = self._run_api_v1_projects_id_export(pid, user, "action=download")
+            self.assertEqual(response.status_code, HTTP_200_OK)
+
+            if user and user is not self.observer and user is not self.user and user is not self.annotator:
+                self.assertTrue(response.streaming)
+                content = io.BytesIO(b"".join(response.streaming_content))
+                content.seek(0)
+
+                uploaded_data = {
+                    "project_file": content,
+                }
+                response = self._run_api_v1_projects_import(user, uploaded_data)
+                self.assertEqual(response.status_code, HTTP_202_ACCEPTED)
+                if user is not self.observer and user is not self.user and user is not self.annotator:
+                    rq_id = response.data["rq_id"]
+                    response = self._run_api_v1_projects_import(user, {"rq_id": rq_id})
+                    self.assertEqual(response.status_code, HTTP_201_CREATED)
+                    original_project = self._run_api_v1_projects_id(pid, user)
+                    imported_project = self._run_api_v1_projects_id(response.data["id"], user)
+                    compare_objects(
+                        self=self,
+                        obj1=original_project,
+                        obj2=imported_project,
+                        ignore_keys=(
+                            "data",
+                            "id",
+                            "url",
+                            "owner",
+                            "assignee",
+                            "created_date",
+                            "updated_date",
+                            "training_project",
+                            "project_id",
+                            "tasks",
+                        ),
+                    )
+
+    def test_api_v1_projects_id_export_admin(self):
+        self._run_api_v1_projects_id_export_import(self.admin)
+
+    def test_api_v1_projects_id_export_user(self):
+        self._run_api_v1_projects_id_export_import(self.user)
+
+    def test_api_v1_projects_id_export_observer(self):
+        self._run_api_v1_projects_id_export_import(self.observer)
+
+    def test_api_v1_projects_id_export_no_auth(self):
+        self._run_api_v1_projects_id_export_import(None)
+class ProjectExportAPITestCase(APITestCase):
+    def setUp(self):
+        self.client = APIClient()
+
+    @classmethod
+    def setUpTestData(cls):
+        create_db_users(cls)
+        project_data = {
+            "name": "Project for check tasks in a xml",
+            "owner": cls.admin,
+            "labels": [{
+                "name": "car"
+            }]
+        }
+
+        db_project = create_db_project(project_data)
+        create_dummy_db_tasks(cls, db_project)
+        cls.project = db_project
+
+    def _run_api_v1_project_id_export(self, pid, user, annotation_format=""):
+        with ForceLogin(user, self.client):
+            response = self.client.get(
+                '/api/v1/projects/{}/annotations?format={}'.format(pid, annotation_format),
+                format="json")
+        return response
+
+    def _run_api_v1_tasks_id_delete(self, tid, user):
+        with ForceLogin(user, self.client):
+            response = self.client.delete('/api/v1/tasks/{}'.format(tid), format="json")
+        return response
+
+    def _check_tasks_count(self, project, expected_result):
+        tasks_id = [task.id for task in project.tasks.all()]
+        self.assertEqual(len(tasks_id), expected_result)
+
+    def _check_xml(self, pid, user, expected_result):
+        annotation_format = "CVAT for images 1.1"
+        response = self._run_api_v1_project_id_export(pid, user, annotation_format)
+        self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
+
+        response = self._run_api_v1_project_id_export(pid, user, annotation_format)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        annotation_format = "CVAT for images 1.1&action=download"
+        response = self._run_api_v1_project_id_export(pid, user, annotation_format)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        content = io.BytesIO(b"".join(response.streaming_content))
+        content.seek(0)
+
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            zipfile.ZipFile(content).extractall(tmp_dir)
+            xml = osp.join(tmp_dir, 'annotations.xml')
+            self.assertTrue(xml)
+            root = ET.parse(xml).getroot()
+            tasks = root.findall('meta/project/tasks/task/name')
+            self.assertEqual(len(tasks), expected_result)
+
+    def test_api_v1_projects_remove_task_export(self):
+        project = self.project
+        pid = project.id
+        user = self.admin
+
+        self._check_tasks_count(project, 4)
+        self._check_xml(pid, user, 4)
+
+        tasks_id = [task.id for task in project.tasks.all()]
+        response = self._run_api_v1_tasks_id_delete(tasks_id[0], self.admin)
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+
+        self._check_tasks_count(project, 3)
+        self._check_xml(pid, user, 3)
+
+
+class ProjectImportExportAPITestCase(APITestCase):
+    def setUp(self) -> None:
+        self.client = APIClient()
+        self.tasks = []
+        self.projects = []
+
+    @classmethod
+    def setUpTestData(cls) -> None:
+        create_db_users(cls)
+
+        cls.media_data = [
+            {
+                **{
+                   **{"client_files[{}]".format(i): generate_image_file("test_{}.jpg".format(i))[1] for i in range(10)},
+                },
+                **{
+                    "image_quality": 75,
+                },
+            },
+            {
+                **{
+                   **{"client_files[{}]".format(i): generate_image_file("test_{}.jpg".format(i))[1] for i in range(10)},
+                },
+                "image_quality": 75,
+            },
+        ]
+
+    def _create_tasks(self):
+        self.tasks = []
+
+        def _create_task(task_data, media_data):
+            response = self.client.post('/api/v1/tasks', data=task_data, format="json")
+            assert response.status_code == status.HTTP_201_CREATED
+            tid = response.data["id"]
+
+            for media in media_data.values():
+                if isinstance(media, io.BytesIO):
+                    media.seek(0)
+            response = self.client.post("/api/v1/tasks/{}/data".format(tid), data=media_data)
+            assert response.status_code == status.HTTP_202_ACCEPTED
+            response = self.client.get("/api/v1/tasks/{}".format(tid))
+            data_id = response.data["data"]
+            self.tasks.append({
+                "id": tid,
+                "data_id": data_id,
+            })
+
+        task_data = [
+            {
+                "name": "my task #1",
+                "owner_id": self.owner.id,
+                "assignee_id": self.assignee.id,
+                "overlap": 0,
+                "segment_size": 100,
+                "project_id": self.projects[0]["id"],
+            },
+            {
+                "name": "my task #2",
+                "owner_id": self.owner.id,
+                "assignee_id": self.assignee.id,
+                "overlap": 1,
+                "segment_size": 3,
+                "project_id": self.projects[0]["id"],
+            },
+        ]
+
+        with ForceLogin(self.owner, self.client):
+            for data, media in zip(task_data, self.media_data):
+                _create_task(data, media)
+
+    def _create_projects(self):
+        self.projects = []
+
+        def _create_project(project_data):
+            response = self.client.post('/api/v1/projects', data=project_data, format="json")
+            assert response.status_code == status.HTTP_201_CREATED
+            self.projects.append(response.data)
+
+        project_data = [
+            {
+                "name": "Project for export",
+                "owner_id": self.owner.id,
+                "assignee_id": self.assignee.id,
+                "labels": [
+                    {
+                        "name": "car",
+                        "color": "#ff00ff",
+                        "attributes": [{
+                            "name": "bool_attribute",
+                            "mutable": True,
+                            "input_type": AttributeType.CHECKBOX,
+                            "default_value": "true"
+                        }],
+                    }, {
+                        "name": "person",
+                    },
+                ]
+            }, {
+                "name": "Project for import",
+                "owner_id": self.owner.id,
+                "assignee_id": self.assignee.id,
+            },
+        ]
+
+        with ForceLogin(self.owner, self.client):
+            for data in project_data:
+                _create_project(data)
+
+    def _run_api_v1_projects_id_dataset_export(self, pid, user, query_params=""):
+        with ForceLogin(user, self.client):
+            response = self.client.get("/api/v1/projects/{}/dataset?{}".format(pid, query_params), format="json")
+        return response
+
+    def _run_api_v1_projects_id_dataset_import(self, pid, user, data, f):
+        with ForceLogin(user, self.client):
+            response = self.client.post("/api/v1/projects/{}/dataset?format={}".format(pid, f),  data=data, format="multipart")
+        return response
+
+    def _run_api_v1_projects_id_dataset_import_status(self, pid, user):
+        with ForceLogin(user, self.client):
+            response = self.client.get("/api/v1/projects/{}/dataset?action=import_status".format(pid), format="json")
+        return response
+
+    def test_api_v1_projects_id_export_import(self):
+
+        self._create_projects()
+        self._create_tasks()
+        pid_export, pid_import = self.projects[0]["id"], self.projects[1]["id"]
+        response = self._run_api_v1_projects_id_dataset_export(pid_export, self.owner, "format=CVAT for images 1.1")
+        self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
+
+        response = self._run_api_v1_projects_id_dataset_export(pid_export, self.owner, "format=CVAT for images 1.1")
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        response = self._run_api_v1_projects_id_dataset_export(pid_export, self.owner, "format=CVAT for images 1.1&action=download")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        self.assertTrue(response.streaming)
+        tmp_file = tempfile.NamedTemporaryFile(suffix=".zip")
+        tmp_file.write(b"".join(response.streaming_content))
+        tmp_file.seek(0)
+
+        import_data = {
+            "dataset_file": tmp_file,
+        }
+
+        response = self._run_api_v1_projects_id_dataset_import(pid_import, self.owner, import_data, "CVAT 1.1")
+        self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
+
+        response = self._run_api_v1_projects_id_dataset_import_status(pid_import, self.owner)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+    def tearDown(self) -> None:
+        for task in self.tasks:
+            shutil.rmtree(os.path.join(settings.TASKS_ROOT, str(task["id"])))
+            shutil.rmtree(os.path.join(settings.MEDIA_DATA_ROOT, str(task["data_id"])))
+        for project in self.projects:
+            shutil.rmtree(os.path.join(settings.PROJECTS_ROOT, str(project["id"])))
 
 class TaskListAPITestCase(APITestCase):
     def setUp(self):
@@ -1539,7 +2161,6 @@ class TaskDeleteAPITestCase(APITestCase):
         for task in self.tasks:
             task_dir = task.get_task_dirname()
             self.assertFalse(os.path.exists(task_dir))
-
 
 class TaskUpdateAPITestCase(APITestCase):
 
@@ -2072,8 +2693,6 @@ class TaskCreateAPITestCase(APITestCase):
         }
         self._check_api_v1_tasks(None, data)
 
-
-
 class TaskImportExportAPITestCase(APITestCase):
 
     def setUp(self):
@@ -2095,17 +2714,29 @@ class TaskImportExportAPITestCase(APITestCase):
             with open(path, "wb") as image:
                 image.write(data.read())
 
-        cls.media_data.append(
-            {
-                **{"image_quality": 75,
-                   "copy_data": True,
-                   "start_frame": 2,
-                   "stop_frame": 9,
-                   "frame_filter": "step=2",
-                },
-                **{"server_files[{}]".format(i): imagename_pattern.format(i) for i in range(image_count)},
-            }
-        )
+        data = {
+            "image_quality": 75,
+            "copy_data": True,
+            "start_frame": 2,
+            "stop_frame": 9,
+            "frame_filter": "step=2",
+            **{"server_files[{}]".format(i): imagename_pattern.format(i) for i in range(image_count)},
+        }
+        use_cache_data = {
+            **data,
+            'use_cache': True,
+        }
+        cls.media_data.append(data)
+
+        data['sorting_method'] = SortingMethod.NATURAL
+        cls.media_data.append(data)
+        cls.media_data.append(use_cache_data)
+
+        use_cache_data['sorting_method'] = SortingMethod.NATURAL
+        cls.media_data.append(use_cache_data)
+
+        use_cache_data['sorting_method'] = SortingMethod.RANDOM
+        cls.media_data.append(use_cache_data)
 
         filename = "test_video_1.mp4"
         path = os.path.join(settings.SHARE_ROOT, filename)
@@ -2193,13 +2824,47 @@ class TaskImportExportAPITestCase(APITestCase):
             }
         )
 
+        data = {
+            "client_files[0]": generate_image_file("test_1.jpg")[1],
+            "client_files[1]": generate_image_file("test_2.jpg")[1],
+            "client_files[2]": generate_image_file("test_10.jpg")[1],
+            "client_files[3]": generate_image_file("test_3.jpg")[1],
+            "image_quality": 75,
+        }
+        use_cache_data = {
+            **data,
+            'use_cache': True,
+        }
         cls.media_data.extend([
             # image list local
+            # sorted data
+            # natural: test_1.jpg, test_2.jpg, test_3.jpg, test_10.jpg
             {
-                "client_files[0]": generate_image_file("test_1.jpg")[1],
-                "client_files[1]": generate_image_file("test_2.jpg")[1],
-                "client_files[2]": generate_image_file("test_3.jpg")[1],
-                "image_quality": 75,
+                **use_cache_data,
+                'sorting_method': SortingMethod.NATURAL,
+            },
+            {
+                **data,
+                'sorting_method': SortingMethod.NATURAL,
+            },
+            # random
+            {
+                **use_cache_data,
+                'sorting_method': SortingMethod.RANDOM,
+            },
+            # predefined: test_1.jpg, test_2.jpg, test_10.jpg, test_2.jpg
+            {
+                **use_cache_data,
+                'sorting_method': SortingMethod.PREDEFINED,
+            },
+            # lexicographical: test_1.jpg, test_10.jpg, test_2.jpg, test_3.jpg
+            {
+                **use_cache_data,
+                'sorting_method': SortingMethod.LEXICOGRAPHICAL,
+            },
+            {
+                **data,
+                'sorting_method': SortingMethod.LEXICOGRAPHICAL,
             },
             # video local
             {
@@ -2324,13 +2989,13 @@ class TaskImportExportAPITestCase(APITestCase):
 
     def _run_api_v1_tasks_id_export(self, tid, user, query_params=""):
         with ForceLogin(user, self.client):
-            response = self.client.get('/api/v1/tasks/{}?{}'.format(tid, query_params), format="json")
+            response = self.client.get('/api/v1/tasks/{}/backup?{}'.format(tid, query_params), format="json")
 
         return response
 
     def _run_api_v1_tasks_id_import(self, user, data):
         with ForceLogin(user, self.client):
-            response = self.client.post('/api/v1/tasks?action=import', data=data, format="multipart")
+            response = self.client.post('/api/v1/tasks/backup', data=data, format="multipart")
 
         return response
 
@@ -2358,10 +3023,10 @@ class TaskImportExportAPITestCase(APITestCase):
         self._create_tasks()
         for task in self.tasks:
             tid = task["id"]
-            response = self._run_api_v1_tasks_id_export(tid, user, "action=export")
+            response = self._run_api_v1_tasks_id_export(tid, user)
             self.assertEqual(response.status_code, HTTP_202_ACCEPTED)
 
-            response = self._run_api_v1_tasks_id_export(tid, user, "action=export")
+            response = self._run_api_v1_tasks_id_export(tid, user)
             self.assertEqual(response.status_code, HTTP_201_CREATED)
 
             response = self._run_api_v1_tasks_id_export(tid, user, "action=download")
@@ -2502,7 +3167,7 @@ def generate_manifest_file(data_type, manifest_path, sources):
     kwargs = {
         'images': {
             'sources': sources,
-            'is_sorted': False,
+            'sorting_method': SortingMethod.LEXICOGRAPHICAL,
         },
         'video': {
             'media_file': sources[0],
@@ -2553,6 +3218,13 @@ class TaskDataAPITestCase(APITestCase):
         cls._image_sizes[filename] = img_size
 
         filename = "test_3.jpg"
+        path = os.path.join(settings.SHARE_ROOT, filename)
+        img_size, data = generate_image_file(filename)
+        with open(path, "wb") as image:
+            image.write(data.read())
+        cls._image_sizes[filename] = img_size
+
+        filename = "test_10.jpg"
         path = os.path.join(settings.SHARE_ROOT, filename)
         img_size, data = generate_image_file(filename)
         with open(path, "wb") as image:
@@ -2640,6 +3312,13 @@ class TaskDataAPITestCase(APITestCase):
         shutil.rmtree(root_path)
         cls._image_sizes[filename] = image_sizes
 
+        file_name = 'test_1.pdf'
+        path = os.path.join(settings.SHARE_ROOT, file_name)
+        img_sizes, data = generate_pdf_file(file_name, page_count=5)
+        with open(path, "wb") as pdf_file:
+            pdf_file.write(data.read())
+        cls._image_sizes[file_name] = img_sizes
+
         generate_manifest_file(data_type='video', manifest_path=os.path.join(settings.SHARE_ROOT, 'videos', 'manifest.jsonl'),
             sources=[os.path.join(settings.SHARE_ROOT, 'videos', 'test_video_1.mp4')])
 
@@ -2658,6 +3337,9 @@ class TaskDataAPITestCase(APITestCase):
         path = os.path.join(settings.SHARE_ROOT, "test_3.jpg")
         os.remove(path)
 
+        path = os.path.join(settings.SHARE_ROOT, "test_10.jpg")
+        os.remove(path)
+
         path = os.path.join(settings.SHARE_ROOT, "data", "test_3.jpg")
         os.remove(path)
 
@@ -2672,6 +3354,9 @@ class TaskDataAPITestCase(APITestCase):
         os.rmdir(os.path.dirname(path))
 
         path = os.path.join(settings.SHARE_ROOT, "manifest.jsonl")
+        os.remove(path)
+
+        path = os.path.join(settings.SHARE_ROOT, "test_1.pdf")
         os.remove(path)
 
     def _run_api_v1_tasks_id_data_post(self, tid, user, data):
@@ -2756,10 +3441,12 @@ class TaskDataAPITestCase(APITestCase):
             db_data = Task.objects.get(pk=task_id).data
             self.assertEqual(expected_storage_method, db_data.storage_method)
             self.assertEqual(expected_uploaded_data_location, db_data.storage)
-            # check if used share without copying inside and files doesn`t exist in ../raw/
+            # check if used share without copying inside and files doesn`t exist in ../raw/ and exist in share
             if expected_uploaded_data_location is StorageChoice.SHARE:
-                self.assertEqual(False,
-                    os.path.exists(os.path.join(db_data.get_upload_dirname(), next(iter(data.values())))))
+                raw_file_path = os.path.join(db_data.get_upload_dirname(), next(iter(data.values())))
+                share_file_path = os.path.join(settings.SHARE_ROOT, next(iter(data.values())))
+                self.assertEqual(False, os.path.exists(raw_file_path))
+                self.assertEqual(True, os.path.exists(share_file_path))
 
         # check preview
         response = self._get_preview(task_id, user)
@@ -2818,14 +3505,18 @@ class TaskDataAPITestCase(APITestCase):
                 client_files = [img for key, img in data.items() if key.startswith("client_files")]
 
                 if server_files:
-                    source_files = [os.path.join(settings.SHARE_ROOT, f) for f in sorted(server_files)]
+                    source_files = [os.path.join(settings.SHARE_ROOT, f) for f in sort(server_files, data.get('sorting_method', SortingMethod.LEXICOGRAPHICAL))]
                 else:
-                    source_files = [f for f in sorted(client_files, key=lambda e: e.name)]
+                    source_files = [f for f in sort(client_files, data.get('sorting_method', SortingMethod.LEXICOGRAPHICAL), func=lambda e: e.name)]
 
                 source_images = []
                 for f in source_files:
                     if zipfile.is_zipfile(f):
                         source_images.extend(self._extract_zip_chunk(f, dimension=dimension))
+                    elif isinstance(f, str) and f.endswith('.pdf'):
+                        with open(f, 'rb') as pdf_file:
+                            source_images.extend(convert_from_bytes(pdf_file.read(),
+                                fmt='png'))
                     elif isinstance(f, io.BytesIO) and \
                             str(getattr(f, 'name', None)).endswith('.pdf'):
                         source_images.extend(convert_from_bytes(f.getvalue(),
@@ -3054,7 +3745,7 @@ class TaskDataAPITestCase(APITestCase):
                                              image_sizes, StorageMethodChoice.CACHE, StorageChoice.LOCAL)
 
         task_spec = {
-            "name": "cached images task without copying #16",
+            "name": "cached images task with default sorting data and without copying #16",
             "overlap": 0,
             "segment_size": 0,
             "labels": [
@@ -3066,14 +3757,14 @@ class TaskDataAPITestCase(APITestCase):
         task_data = {
             "server_files[0]": "test_1.jpg",
             "server_files[1]": "test_2.jpg",
-            "server_files[2]": "test_3.jpg",
+            "server_files[2]": "test_10.jpg",
             "image_quality": 70,
             "use_cache": True,
         }
         image_sizes = [
             self._image_sizes[task_data["server_files[0]"]],
-            self._image_sizes[task_data["server_files[1]"]],
             self._image_sizes[task_data["server_files[2]"]],
+            self._image_sizes[task_data["server_files[1]"]],
         ]
 
         self._test_api_v1_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET,
@@ -3304,6 +3995,56 @@ class TaskDataAPITestCase(APITestCase):
 
         task_spec.update([('name', 'my images+manifest #27')])
         task_data.update([('copy_data', True)])
+        self._test_api_v1_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
+            image_sizes, StorageMethodChoice.CACHE, StorageChoice.LOCAL)
+
+        # test predefined sorting
+        task_spec.update([('name', 'task custom data sequence #28')])
+        task_data = {
+            "server_files[0]": "test_1.jpg",
+            "server_files[1]": "test_3.jpg",
+            "server_files[2]": "test_2.jpg",
+            "image_quality": 70,
+            "use_cache": True,
+            "sorting_method": SortingMethod.PREDEFINED
+        }
+        image_sizes = [
+            self._image_sizes[task_data["server_files[0]"]],
+            self._image_sizes[task_data["server_files[1]"]],
+            self._image_sizes[task_data["server_files[2]"]],
+        ]
+
+        self._test_api_v1_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
+            image_sizes, StorageMethodChoice.CACHE, StorageChoice.SHARE)
+
+        # test a natural data sequence
+        task_spec.update([('name', 'task native data sequence #29')])
+        task_data = {
+            "server_files[0]": "test_10.jpg",
+            "server_files[1]": "test_2.jpg",
+            "server_files[2]": "test_1.jpg",
+            "image_quality": 70,
+            "use_cache": True,
+            "sorting_method": SortingMethod.NATURAL
+        }
+        image_sizes = [
+            self._image_sizes[task_data["server_files[2]"]],
+            self._image_sizes[task_data["server_files[1]"]],
+            self._image_sizes[task_data["server_files[0]"]],
+        ]
+
+        self._test_api_v1_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
+            image_sizes, StorageMethodChoice.CACHE, StorageChoice.SHARE)
+
+        task_spec.update([('name', 'task pdf in the shared folder #30')])
+        task_data = {
+            "server_files[0]": "test_1.pdf",
+            "image_quality": 70,
+            "copy_data": False,
+            "use_cache": True,
+        }
+        image_sizes = self._image_sizes[task_data["server_files[0]"]]
+
         self._test_api_v1_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
             image_sizes, StorageMethodChoice.CACHE, StorageChoice.LOCAL)
 
@@ -4488,7 +5229,8 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
         def _get_initial_annotation(annotation_format):
             if annotation_format not in ["Market-1501 1.0", "ICDAR Recognition 1.0",
                                          "ICDAR Localization 1.0", "ICDAR Segmentation 1.0",
-                                         'Kitti Raw Format 1.0', 'Sly Point Cloud Format 1.0']:
+                                         'Kitti Raw Format 1.0', 'Sly Point Cloud Format 1.0',
+                                         'Datumaro 3D 1.0']:
                 rectangle_tracks_with_attrs = [{
                     "frame": 0,
                     "label_id": task["labels"][0]["id"],
@@ -4809,6 +5551,21 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                 annotations["tags"] = tags_wo_attrs
                 annotations["shapes"] = points_wo_attrs \
                                       + rectangle_shapes_wo_attrs
+            elif annotation_format == "Cityscapes 1.0":
+                annotations["shapes"] = points_wo_attrs \
+                                      + rectangle_shapes_wo_attrs
+            elif annotation_format == "Open Images V6 1.0":
+                annotations["tags"] = tags_wo_attrs
+                annotations["shapes"] = rectangle_shapes_wo_attrs \
+                                      + polygon_shapes_wo_attrs
+
+            elif annotation_format == "LFW 1.0":
+                annotations["shapes"] = points_wo_attrs \
+                                      + tags_wo_attrs
+
+            elif annotation_format == "KITTI 1.0":
+                annotations["shapes"] = rectangle_shapes_wo_attrs \
+                                            + polygon_shapes_wo_attrs
 
             elif annotation_format == "Market-1501 1.0":
                 tags_with_attrs = [{
@@ -4832,7 +5589,8 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                     ],
                 }]
                 annotations["tags"] = tags_with_attrs
-            elif annotation_format in ['Kitti Raw Format 1.0','Sly Point Cloud Format 1.0']:
+            elif annotation_format in ['Kitti Raw Format 1.0',
+                    'Sly Point Cloud Format 1.0', 'Datumaro 3D 1.0']:
                 velodyne_wo_attrs = [{
                     "frame": 0,
                     "label_id": task["labels"][0]["id"],

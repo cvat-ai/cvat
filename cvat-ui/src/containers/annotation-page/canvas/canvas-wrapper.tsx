@@ -53,7 +53,7 @@ import { Canvas3d } from 'cvat-canvas3d-wrapper';
 
 interface StateToProps {
     sidebarCollapsed: boolean;
-    canvasInstance: Canvas | Canvas3d;
+    canvasInstance: Canvas | Canvas3d | null;
     jobInstance: any;
     activatedStateID: number | null;
     activatedAttributeID: number | null;
@@ -80,8 +80,12 @@ interface StateToProps {
     contrastLevel: number;
     saturationLevel: number;
     resetZoom: boolean;
+    smoothImage: boolean;
     aamZoomMargin: number;
     showObjectsTextAlways: boolean;
+    textFontSize: number;
+    textPosition: 'auto' | 'center';
+    textContent: string;
     showAllInterpolationTracks: boolean;
     workspace: Workspace;
     minZLayer: number;
@@ -155,6 +159,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 contrastLevel,
                 saturationLevel,
                 resetZoom,
+                smoothImage,
             },
             workspace: {
                 aamZoomMargin,
@@ -162,21 +167,28 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 showAllInterpolationTracks,
                 automaticBordering,
                 intelligentPolygonCrop,
+                textFontSize,
+                textPosition,
+                textContent,
             },
             shapes: {
                 opacity, colorBy, selectedOpacity, outlined, outlineColor, showBitmap, showProjections,
             },
         },
-        review: { frameIssues, issuesHidden },
+        review: { frameIssues, issuesHidden, issuesResolvedHidden },
         shortcuts: { keyMap },
     } = state;
+
+    const issues = frameIssues.filter((issue) => (
+        !issuesHidden && [Workspace.REVIEW_WORKSPACE, Workspace.STANDARD].includes(workspace) &&
+        !(!!issue.resolvedDate && issuesResolvedHidden)
+    ));
 
     return {
         sidebarCollapsed,
         canvasInstance,
         jobInstance,
-        frameIssues:
-            issuesHidden || ![Workspace.REVIEW_WORKSPACE, Workspace.STANDARD].includes(workspace) ? null : frameIssues,
+        frameIssues: issues,
         frameData,
         frameAngle: frameAngles[frame - jobInstance.startFrame],
         frameFetching,
@@ -201,8 +213,12 @@ function mapStateToProps(state: CombinedState): StateToProps {
         contrastLevel: contrastLevel / 100,
         saturationLevel: saturationLevel / 100,
         resetZoom,
+        smoothImage,
         aamZoomMargin,
         showObjectsTextAlways,
+        textFontSize,
+        textPosition,
+        textContent,
         showAllInterpolationTracks,
         curZLayer,
         minZLayer,

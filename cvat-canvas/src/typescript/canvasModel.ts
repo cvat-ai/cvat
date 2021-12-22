@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
+import consts from './consts';
 import { MasterImpl } from './master';
 
 export interface Size {
@@ -52,8 +53,12 @@ export enum CuboidDrawingMethod {
 }
 
 export interface Configuration {
+    smoothImage?: boolean;
     autoborders?: boolean;
     displayAllText?: boolean;
+    textFontSize?: number;
+    textPosition?: 'auto' | 'center';
+    textContent?: string;
     undefinedAttrValue?: string;
     showProjections?: boolean;
     forceDisableEditing?: boolean;
@@ -146,6 +151,7 @@ export enum UpdateReasons {
     ZOOM_CANVAS = 'zoom_canvas',
     CONFIG_UPDATED = 'config_updated',
     DATA_FAILED = 'data_failed',
+    DESTROY = 'destroy',
 }
 
 export enum Mode {
@@ -210,6 +216,7 @@ export interface CanvasModel {
     isAbleToChangeFrame(): boolean;
     configure(configuration: Configuration): void;
     cancel(): void;
+    destroy(): void;
 }
 
 export class CanvasModelImpl extends MasterImpl implements CanvasModel {
@@ -258,6 +265,9 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
                 displayAllText: false,
                 autoborders: false,
                 undefinedAttrValue: '',
+                textContent: 'id,label,attributes,source,descriptions',
+                textPosition: 'auto',
+                textFontSize: consts.DEFAULT_SHAPE_TEXT_SIZE,
             },
             imageBitmap: false,
             image: null,
@@ -644,29 +654,42 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
             this.data.configuration.displayAllText = configuration.displayAllText;
         }
 
+        if (typeof configuration.textFontSize === 'number' && configuration.textFontSize >= consts.MINIMUM_TEXT_FONT_SIZE) {
+            this.data.configuration.textFontSize = configuration.textFontSize;
+        }
+
+        if (['auto', 'center'].includes(configuration.textPosition)) {
+            this.data.configuration.textPosition = configuration.textPosition;
+        }
+
+        if (typeof configuration.textContent === 'string') {
+            const splitted = configuration.textContent.split(',').filter((entry: string) => !!entry);
+            if (splitted.every((entry: string) => ['id', 'label', 'attributes', 'source', 'descriptions'].includes(entry))) {
+                this.data.configuration.textContent = configuration.textContent;
+            }
+        }
+
         if (typeof configuration.showProjections === 'boolean') {
             this.data.configuration.showProjections = configuration.showProjections;
         }
         if (typeof configuration.autoborders === 'boolean') {
             this.data.configuration.autoborders = configuration.autoborders;
         }
-
+        if (typeof configuration.smoothImage === 'boolean') {
+            this.data.configuration.smoothImage = configuration.smoothImage;
+        }
         if (typeof configuration.undefinedAttrValue === 'string') {
             this.data.configuration.undefinedAttrValue = configuration.undefinedAttrValue;
         }
-
         if (typeof configuration.forceDisableEditing === 'boolean') {
             this.data.configuration.forceDisableEditing = configuration.forceDisableEditing;
         }
-
         if (typeof configuration.intelligentPolygonCrop === 'boolean') {
             this.data.configuration.intelligentPolygonCrop = configuration.intelligentPolygonCrop;
         }
-
         if (typeof configuration.forceFrameUpdate === 'boolean') {
             this.data.configuration.forceFrameUpdate = configuration.forceFrameUpdate;
         }
-
         if (typeof configuration.creationOpacity === 'number') {
             this.data.configuration.creationOpacity = configuration.creationOpacity;
         }
@@ -675,14 +698,18 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
     }
 
     public isAbleToChangeFrame(): boolean {
-        const isUnable = [Mode.DRAG, Mode.EDIT, Mode.RESIZE, Mode.INTERACT].includes(this.data.mode)
-            || (this.data.mode === Mode.DRAW && typeof this.data.drawData.redraw === 'number');
+        const isUnable = [Mode.DRAG, Mode.EDIT, Mode.RESIZE, Mode.INTERACT].includes(this.data.mode) ||
+            (this.data.mode === Mode.DRAW && typeof this.data.drawData.redraw === 'number');
 
         return !isUnable;
     }
 
     public cancel(): void {
         this.notify(UpdateReasons.CANCEL);
+    }
+
+    public destroy(): void {
+        this.notify(UpdateReasons.DESTROY);
     }
 
     public get configuration(): Configuration {

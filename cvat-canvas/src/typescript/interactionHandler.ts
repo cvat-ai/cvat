@@ -17,6 +17,7 @@ export interface InteractionHandler {
     transform(geometry: Geometry): void;
     interact(interactData: InteractionData): void;
     configurate(config: Configuration): void;
+    destroy(): void;
     cancel(): void;
 }
 
@@ -310,6 +311,7 @@ export class InteractionHandlerImpl implements InteractionHandler {
     }
 
     private selectize(value: boolean, shape: SVG.Element, erroredShape = false): void {
+        // eslint-disable-next-line @typescript-eslint/no-this-alias
         const self = this;
 
         if (value) {
@@ -348,17 +350,38 @@ export class InteractionHandlerImpl implements InteractionHandler {
     private visualComponentsChanged(interactionData: InteractionData): boolean {
         const allowedKeys = ['enabled', 'crosshair', 'enableThreshold', 'onChangeToolsBlockerState'];
         if (Object.keys(interactionData).every((key: string): boolean => allowedKeys.includes(key))) {
-            if (this.interactionData.enableThreshold !== undefined && interactionData.enableThreshold !== undefined
-                && this.interactionData.enableThreshold !== interactionData.enableThreshold) {
+            if (this.interactionData.enableThreshold !== undefined && interactionData.enableThreshold !== undefined &&
+                this.interactionData.enableThreshold !== interactionData.enableThreshold) {
                 return true;
             }
-            if (this.interactionData.crosshair !== undefined && interactionData.crosshair !== undefined
-                && this.interactionData.crosshair !== interactionData.crosshair) {
+            if (this.interactionData.crosshair !== undefined && interactionData.crosshair !== undefined &&
+                this.interactionData.crosshair !== interactionData.crosshair) {
                 return true;
             }
         }
         return false;
     }
+
+    private onKeyUp = (e: KeyboardEvent): void => {
+        if (this.interactionData.enabled && e.keyCode === 17) {
+            if (this.interactionData.onChangeToolsBlockerState && !this.thresholdWasModified) {
+                this.interactionData.onChangeToolsBlockerState('keyup');
+            }
+            if (this.shouldRaiseEvent(false)) {
+                // 17 is ctrl
+                this.onInteraction(this.prepareResult(), true, false);
+            }
+        }
+    };
+
+    private onKeyDown = (e: KeyboardEvent): void => {
+        if (!e.repeat && this.interactionData.enabled && e.keyCode === 17) {
+            if (this.interactionData.onChangeToolsBlockerState && !this.thresholdWasModified) {
+                this.interactionData.onChangeToolsBlockerState('keydown');
+            }
+            this.thresholdWasModified = false;
+        }
+    };
 
     public constructor(
         onInteraction: (
@@ -437,26 +460,8 @@ export class InteractionHandlerImpl implements InteractionHandler {
             }
         });
 
-        window.addEventListener('keyup', (e: KeyboardEvent): void => {
-            if (this.interactionData.enabled && e.keyCode === 17) {
-                if (this.interactionData.onChangeToolsBlockerState && !this.thresholdWasModified) {
-                    this.interactionData.onChangeToolsBlockerState('keyup');
-                }
-                if (this.shouldRaiseEvent(false)) {
-                    // 17 is ctrl
-                    this.onInteraction(this.prepareResult(), true, false);
-                }
-            }
-        });
-
-        window.addEventListener('keydown', (e: KeyboardEvent): void => {
-            if (this.interactionData.enabled && e.keyCode === 17) {
-                if (this.interactionData.onChangeToolsBlockerState && !this.thresholdWasModified) {
-                    this.interactionData.onChangeToolsBlockerState('keydown');
-                }
-                this.thresholdWasModified = false;
-            }
-        });
+        window.document.addEventListener('keyup', this.onKeyUp);
+        window.document.addEventListener('keydown', this.onKeyDown);
     }
 
     public transform(geometry: Geometry): void {
@@ -466,9 +471,9 @@ export class InteractionHandlerImpl implements InteractionHandler {
             this.crosshair.scale(this.geometry.scale);
         }
 
-        const shapesToBeScaled = this.currentInteractionShape
-            ? [...this.interactionShapes, this.currentInteractionShape]
-            : [...this.interactionShapes];
+        const shapesToBeScaled = this.currentInteractionShape ?
+            [...this.interactionShapes, this.currentInteractionShape] :
+            [...this.interactionShapes];
         for (const shape of shapesToBeScaled) {
             if (shape.type === 'circle') {
                 if (shape.hasClass('cvat_canvas_removable_interaction_point')) {
@@ -536,5 +541,10 @@ export class InteractionHandlerImpl implements InteractionHandler {
     public cancel(): void {
         this.release();
         this.onInteraction(null);
+    }
+
+    public destroy(): void {
+        window.document.removeEventListener('keyup', this.onKeyUp);
+        window.document.removeEventListener('keydown', this.onKeyDown);
     }
 }

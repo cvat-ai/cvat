@@ -11,12 +11,14 @@ const os = platform.os ? platform.os.toString() : 'unknown';
 let platformNotificationShown = window.localStorage.getItem('platformNotiticationShown') !== null;
 let featuresNotificationShown = window.localStorage.getItem('featuresNotificationShown') !== null;
 
-export function platformInfo(): {
+interface PlatformInfo {
     engine: string;
     name: string;
     version: string;
     os: string;
-} {
+}
+
+export function platformInfo(): PlatformInfo {
     return {
         engine,
         name,

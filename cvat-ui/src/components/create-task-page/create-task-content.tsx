@@ -20,7 +20,7 @@ import { Files } from 'components/file-manager/file-manager';
 import BasicConfigurationForm, { BaseConfiguration } from './basic-configuration-form';
 import ProjectSearchField from './project-search-field';
 import ProjectSubsetField from './project-subset-field';
-import AdvancedConfigurationForm, { AdvancedConfiguration } from './advanced-configuration-form';
+import AdvancedConfigurationForm, { AdvancedConfiguration, SortingMethod } from './advanced-configuration-form';
 
 export interface CreateTaskData {
     projectId: number | null;
@@ -39,6 +39,7 @@ interface Props {
     taskId: number | null;
     projectId: number | null;
     installedGit: boolean;
+    dumpers:[]
 }
 
 type State = CreateTaskData;
@@ -53,6 +54,7 @@ const defaultState = {
         lfs: false,
         useZipChunks: true,
         useCache: true,
+        sortingMethod: SortingMethod.LEXICOGRAPHICAL,
     },
     labels: [],
     files: {
@@ -311,13 +313,14 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
     }
 
     private renderAdvancedBlock(): JSX.Element {
-        const { installedGit } = this.props;
+        const { installedGit, dumpers } = this.props;
         const { activeFileManagerTab } = this.state;
         return (
             <Col span={24}>
                 <Collapse>
                     <Collapse.Panel key='1' header={<Text className='cvat-title'>Advanced configuration</Text>}>
                         <AdvancedConfigurationForm
+                            dumpers={dumpers}
                             installedGit={installedGit}
                             activeFileManagerTab={activeFileManagerTab}
                             ref={this.advancedConfigurationComponent}

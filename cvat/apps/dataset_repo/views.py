@@ -40,14 +40,14 @@ def check_process(request, rq_id):
 def create(request, tid):
     try:
         slogger.task[tid].info("create repository request")
-
         body = json.loads(request.body.decode('utf-8'))
         path = body["path"]
+        export_format = body["format"]
         lfs = body["lfs"]
         rq_id = "git.create.{}".format(tid)
         queue = django_rq.get_queue("default")
 
-        queue.enqueue_call(func = CVATGit.initial_create, args = (tid, path, lfs, request.user), job_id = rq_id)
+        queue.enqueue_call(func = CVATGit.initial_create, args = (tid, path, export_format, lfs, request.user), job_id = rq_id)
         return JsonResponse({ "rq_id": rq_id })
     except Exception as ex:
         slogger.glob.error("error occurred during initial cloning repository request with rq id {}".format(rq_id), exc_info=True)

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2020 Intel Corporation
+// Copyright (C) 2019-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -53,6 +53,7 @@ interface Canvas {
     cancel(): void;
     configure(configuration: Configuration): void;
     isAbleToChangeFrame(): boolean;
+    destroy(): void;
 
     readonly geometry: Geometry;
 }
@@ -108,7 +109,7 @@ class CanvasImpl implements Canvas {
         this.model.rotate(rotationAngle);
     }
 
-    public focus(clientID: number, padding: number = 0): void {
+    public focus(clientID: number, padding = 0): void {
         this.model.focus(clientID, padding);
     }
 
@@ -162,6 +163,10 @@ class CanvasImpl implements Canvas {
 
     public get geometry(): Geometry {
         return this.model.geometry;
+    }
+
+    public destroy(): void {
+        this.model.destroy();
     }
 }
 

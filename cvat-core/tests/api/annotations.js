@@ -60,6 +60,37 @@ describe('Feature: get annotations', () => {
     // TODO: Test filter (hasn't been implemented yet)
 });
 
+describe('Feature: get interpolated annotations', () => {
+    test('get interpolated box', async () => {
+        const task = (await window.cvat.tasks.get({ id: 101 }))[0];
+        let annotations = await task.annotations.get(5);
+        expect(Array.isArray(annotations)).toBeTruthy();
+        expect(annotations).toHaveLength(1);
+
+        const [xtl, ytl, xbr, ybr] = annotations[0].points;
+        const { rotation } = annotations[0];
+
+        expect(rotation).toBe(50);
+        expect(Math.round(xtl)).toBe(332);
+        expect(Math.round(ytl)).toBe(519);
+        expect(Math.round(xbr)).toBe(651);
+        expect(Math.round(ybr)).toBe(703);
+
+        annotations = await task.annotations.get(15);
+        expect(Array.isArray(annotations)).toBeTruthy();
+        expect(annotations).toHaveLength(2); // there is also a polygon on these frames (up to frame 22)
+        expect(annotations[1].rotation).toBe(40);
+        expect(annotations[1].shapeType).toBe('rectangle');
+
+        annotations = await task.annotations.get(30);
+        annotations[0].rotation = 20;
+        await annotations[0].save();
+        annotations = await task.annotations.get(25);
+        expect(annotations[0].rotation).toBe(0);
+        expect(annotations[0].shapeType).toBe('rectangle');
+    });
+});
+
 describe('Feature: put annotations', () => {
     test('put a shape to a task', async () => {
         const task = (await window.cvat.tasks.get({ id: 101 }))[0];
@@ -640,44 +671,44 @@ describe('Feature: clear annotations', () => {
     test('clear annotations in a task', async () => {
         const task = (await window.cvat.tasks.get({ id: 100 }))[0];
         let annotations = await task.annotations.get(0);
-        expect(annotations.length).not.toBe(0);
+        expect(annotations).not.toHaveLength(0);
         await task.annotations.clear();
         annotations = await task.annotations.get(0);
-        expect(annotations.length).toBe(0);
+        expect(annotations).toHaveLength(0);
     });
 
     test('clear annotations in a job', async () => {
         const job = (await window.cvat.jobs.get({ jobID: 100 }))[0];
         let annotations = await job.annotations.get(0);
-        expect(annotations.length).not.toBe(0);
+        expect(annotations).not.toHaveLength(0);
         await job.annotations.clear();
         annotations = await job.annotations.get(0);
-        expect(annotations.length).toBe(0);
+        expect(annotations).toHaveLength(0);
     });
 
     test('clear annotations with reload in a task', async () => {
         const task = (await window.cvat.tasks.get({ id: 100 }))[0];
         let annotations = await task.annotations.get(0);
-        expect(annotations.length).not.toBe(0);
+        expect(annotations).not.toHaveLength(0);
         annotations[0].occluded = true;
         await annotations[0].save();
         expect(task.annotations.hasUnsavedChanges()).toBe(true);
         await task.annotations.clear(true);
         annotations = await task.annotations.get(0);
-        expect(annotations.length).not.toBe(0);
+        expect(annotations).not.toHaveLength(0);
         expect(task.annotations.hasUnsavedChanges()).toBe(false);
     });
 
     test('clear annotations with reload in a job', async () => {
         const job = (await window.cvat.jobs.get({ jobID: 100 }))[0];
         let annotations = await job.annotations.get(0);
-        expect(annotations.length).not.toBe(0);
+        expect(annotations).not.toHaveLength(0);
         annotations[0].occluded = true;
         await annotations[0].save();
         expect(job.annotations.hasUnsavedChanges()).toBe(true);
         await job.annotations.clear(true);
         annotations = await job.annotations.get(0);
-        expect(annotations.length).not.toBe(0);
+        expect(annotations).not.toHaveLength(0);
         expect(job.annotations.hasUnsavedChanges()).toBe(false);
     });
 
@@ -714,16 +745,16 @@ describe('Feature: select object', () => {
         expect(result.state.shapeType).toBe(window.cvat.enums.ObjectShape.RECTANGLE);
         result = await task.annotations.select(annotations, 1415, 765);
         expect(result.state.shapeType).toBe(window.cvat.enums.ObjectShape.POLYGON);
-        expect(result.state.points.length).toBe(10);
+        expect(result.state.points).toHaveLength(10);
         result = await task.annotations.select(annotations, 1083, 543);
         expect(result.state.shapeType).toBe(window.cvat.enums.ObjectShape.POINTS);
-        expect(result.state.points.length).toBe(16);
+        expect(result.state.points).toHaveLength(16);
         result = await task.annotations.select(annotations, 613, 811);
         expect(result.state.shapeType).toBe(window.cvat.enums.ObjectShape.POLYGON);
-        expect(result.state.points.length).toBe(94);
+        expect(result.state.points).toHaveLength(94);
         result = await task.annotations.select(annotations, 600, 900);
         expect(result.state.shapeType).toBe(window.cvat.enums.ObjectShape.CUBOID);
-        expect(result.state.points.length).toBe(16);
+        expect(result.state.points).toHaveLength(16);
     });
 
     test('select object in a job', async () => {
@@ -737,10 +768,10 @@ describe('Feature: select object', () => {
         expect(result.state.shapeType).toBe(window.cvat.enums.ObjectShape.RECTANGLE);
         result = await job.annotations.select(annotations, 1490, 237);
         expect(result.state.shapeType).toBe(window.cvat.enums.ObjectShape.POLYGON);
-        expect(result.state.points.length).toBe(94);
+        expect(result.state.points).toHaveLength(94);
         result = await job.annotations.select(annotations, 600, 900);
         expect(result.state.shapeType).toBe(window.cvat.enums.ObjectShape.CUBOID);
-        expect(result.state.points.length).toBe(16);
+        expect(result.state.points).toHaveLength(16);
     });
 
     test('trying to select from not object states', async () => {

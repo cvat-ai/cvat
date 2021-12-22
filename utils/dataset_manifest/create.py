@@ -17,6 +17,8 @@ def get_args():
              'if by default the video does not meet the requirements and a manifest file is not prepared')
     parser.add_argument('--output-dir',type=str, help='Directory where the manifest file will be saved',
         default=os.getcwd())
+    parser.add_argument('--sorting', choices=['lexicographical', 'natural', 'predefined', 'random'],
+                        type=str, default='lexicographical')
     parser.add_argument('source', type=str, help='Source paths')
     return parser.parse_args()
 
@@ -24,7 +26,8 @@ def main():
     args = get_args()
 
     manifest_directory = os.path.abspath(args.output_dir)
-    os.makedirs(manifest_directory, exist_ok=True)
+    if not os.path.exists(manifest_directory):
+        os.makedirs(manifest_directory)
     source = os.path.abspath(os.path.expanduser(args.source))
 
     sources = []
@@ -62,7 +65,7 @@ def main():
         try:
             assert len(sources), 'A images was not found'
             manifest = ImageManifestManager(manifest_path=manifest_directory)
-            manifest.link(sources=sources, meta=meta, is_sorted=False,
+            manifest.link(sources=sources, meta=meta, sorting_method=args.sorting,
                     use_image_hash=True, data_dir=data_dir)
             manifest.create(_tqdm=tqdm)
         except Exception as ex:

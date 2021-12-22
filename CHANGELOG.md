@@ -5,7 +5,48 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## \[1.7.0] - Unreleased
+## \[2.0.0] - Unreleased
+### Added
+
+- Add additional environment variables for Nuclio configuration (<https://github.com/openvinotoolkit/cvat/pull/3894>)
+- Add KITTI segmentation and detection format (<https://github.com/openvinotoolkit/cvat/pull/3757>)
+- Add LFW format (<https://github.com/openvinotoolkit/cvat/pull/3770>)
+- Add Cityscapes format (<https://github.com/openvinotoolkit/cvat/pull/3758>)
+- Add Open Images V6 format (<https://github.com/openvinotoolkit/cvat/pull/3679>)
+- Rotated bounding boxes (<https://github.com/openvinotoolkit/cvat/pull/3832>)
+- Player option: Smooth image when zoom-in, enabled by default (<https://github.com/openvinotoolkit/cvat/pull/3933>)
+- Google Cloud Storage support in UI (<https://github.com/openvinotoolkit/cvat/pull/3919>)
+- Add project tasks paginations (<https://github.com/openvinotoolkit/cvat/pull/3910>)
+- Add remove issue button (<https://github.com/openvinotoolkit/cvat/pull/3952>)
+- Data sorting option (<https://github.com/openvinotoolkit/cvat/pull/3937>)
+- Options to change font size & position of text labels on the canvas (<https://github.com/openvinotoolkit/cvat/pull/3972>)
+- Add "tag" return type for automatic annotation in Nuclio (<https://github.com/openvinotoolkit/cvat/pull/3896>)
+- Dataset importing to a project (<https://github.com/openvinotoolkit/cvat/pull/3790>)
+- User is able to customize information that text labels show (<https://github.com/openvinotoolkit/cvat/pull/4029>)
+
+### Changed
+- TDB
+
+### Deprecated
+- TDB
+
+### Removed
+- TDB
+
+### Fixed
+- Fixed Interaction handler keyboard handlers (<https://github.com/openvinotoolkit/cvat/pull/3881>)
+- Points of invisible shapes are visible in autobordering (<https://github.com/openvinotoolkit/cvat/pull/3931>)
+- Order of the label attributes in the object item details(<https://github.com/openvinotoolkit/cvat/pull/3945>)
+- Order of labels in tasks and projects (<https://github.com/openvinotoolkit/cvat/pull/3987>)
+- Fixed task creating with large files via webpage (<https://github.com/openvinotoolkit/cvat/pull/3692>)
+- Added information to export CVAT_HOST when performing local installation for accessing over network (<https://github.com/openvinotoolkit/cvat/pull/4014>)
+- Fixed possible color collisions in the generated colormap (<https://github.com/openvinotoolkit/cvat/pull/4007>)
+- Original pdf file is deleted when using share(<https://github.com/openvinotoolkit/cvat/pull/3967>)
+
+### Security
+- Updated ELK to 6.8.22 which uses log4j 2.17.0 (<https://github.com/openvinotoolkit/cvat/pull/4052>)
+
+## \[1.7.0] - 2021-11-15
 
 ### Added
 
@@ -13,20 +54,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - interactor: add HRNet interactive segmentation serverless function (<https://github.com/openvinotoolkit/cvat/pull/3740>)
 - Added GPU implementation for SiamMask, reworked tracking approach (<https://github.com/openvinotoolkit/cvat/pull/3571>)
 - Progress bar for manifest creating (<https://github.com/openvinotoolkit/cvat/pull/3712>)
+- Add a tutorial on attaching cloud storage AWS-S3 (<https://github.com/openvinotoolkit/cvat/pull/3745>)
+  and Azure Blob Container (<https://github.com/openvinotoolkit/cvat/pull/3778>)
+- The feature to remove annotations in a specified range of frames (<https://github.com/openvinotoolkit/cvat/pull/3617>)
+- Project backup/restore (<https://github.com/openvinotoolkit/cvat/pull/3852>)
 
 ### Changed
 
 - UI tracking has been reworked (<https://github.com/openvinotoolkit/cvat/pull/3571>)
 - Manifest generation: Reduce creating time (<https://github.com/openvinotoolkit/cvat/pull/3712>)
 - Migration from NPM 6 to NPM 7 (<https://github.com/openvinotoolkit/cvat/pull/3773>)
-
-### Deprecated
-
-- TDB
-
-### Removed
-
-- TDB
+- Update Datumaro dependency to 0.2.0 (<https://github.com/openvinotoolkit/cvat/pull/3813>)
 
 ### Fixed
 
@@ -35,10 +73,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Exception `DataCloneError: The object could not be cloned` (<https://github.com/openvinotoolkit/cvat/pull/3733>)
 - Fixed extension comparison in task frames CLI (<https://github.com/openvinotoolkit/cvat/pull/3674>)
 - Incorrect work when copy job list with "Copy" button (<https://github.com/openvinotoolkit/cvat/pull/3749>)
+- Iterating over manifest (<https://github.com/openvinotoolkit/cvat/pull/3792>)
+- Manifest removing (<https://github.com/openvinotoolkit/cvat/pull/3791>)
+- Fixed project updated date (<https://github.com/openvinotoolkit/cvat/pull/3814>)
+- Fixed dextr deployment (<https://github.com/openvinotoolkit/cvat/pull/3820>)
+- Migration of `dataset_repo` application (<https://github.com/openvinotoolkit/cvat/pull/3827>)
+- Helm settings for external psql database were unused by backend (<https://github.com/openvinotoolkit/cvat/pull/3779>)
+- Updated WSL setup for development (<https://github.com/openvinotoolkit/cvat/pull/3828>)
+- Helm chart config (<https://github.com/openvinotoolkit/cvat/pull/3784>)
 
 ### Security
 
-- TDB
+- Fix security issues on the documentation website unsafe use of target blank
+  and potential clickjacking on legacy browsers (<https://github.com/openvinotoolkit/cvat/pull/3789>)
 
 ## \[1.6.0] - 2021-09-17
 

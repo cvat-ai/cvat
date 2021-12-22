@@ -6,6 +6,8 @@ import os
 import re
 import shutil
 
+from tempfile import NamedTemporaryFile
+
 from rest_framework import serializers, exceptions
 from django.contrib.auth.models import User, Group
 
@@ -109,10 +111,10 @@ class LabelSerializer(serializers.ModelSerializer):
             db_label.delete()
             return
         if not validated_data.get('color', None):
-            label_names = [l.name for l in
+            label_colors = [l.color for l in
                 instance[tuple(instance.keys())[0]].label_set.exclude(id=db_label.id).order_by('id')
             ]
-            db_label.color = get_label_color(db_label.name, label_names)
+            db_label.color = get_label_color(db_label.name, label_colors)
         else:
             db_label.color = validated_data.get('color', db_label.color)
         db_label.save()
@@ -218,6 +220,7 @@ class RqStatusSerializer(serializers.Serializer):
     state = serializers.ChoiceField(choices=[
         "Queued", "Started", "Finished", "Failed"])
     message = serializers.CharField(allow_blank=True, default="")
+    progress = serializers.FloatField(max_value=100, default=0)
 
 class WriteOnceMixin:
 
@@ -279,7 +282,7 @@ class DataSerializer(serializers.ModelSerializer):
         model = models.Data
         fields = ('chunk_size', 'size', 'image_quality', 'start_frame', 'stop_frame', 'frame_filter',
             'compressed_chunk_type', 'original_chunk_type', 'client_files', 'server_files', 'remote_files', 'use_zip_chunks',
-            'cloud_storage_id', 'use_cache', 'copy_data', 'storage_method', 'storage')
+            'cloud_storage_id', 'use_cache', 'copy_data', 'storage_method', 'storage', 'sorting_method')
 
     # pylint: disable=no-self-use
     def validate_frame_filter(self, value):
@@ -301,38 +304,55 @@ class DataSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError('Stop frame must be more or equal start frame')
         return data
 
-    # pylint: disable=no-self-use
     def create(self, validated_data):
-        client_files = validated_data.pop('client_files')
-        server_files = validated_data.pop('server_files')
-        remote_files = validated_data.pop('remote_files')
-        validated_data.pop('use_zip_chunks')
-        validated_data.pop('use_cache')
-        validated_data.pop('copy_data')
+        files = self._pop_data(validated_data)
         db_data = models.Data.objects.create(**validated_data)
+        db_data.make_dirs()
 
-        data_path = db_data.get_data_dirname()
-        if os.path.isdir(data_path):
-            shutil.rmtree(data_path)
-
-        os.makedirs(db_data.get_compressed_cache_dirname())
-        os.makedirs(db_data.get_original_cache_dirname())
-        os.makedirs(db_data.get_upload_dirname())
-
-        for f in client_files:
-            client_file = models.ClientFile(data=db_data, **f)
-            client_file.save()
-
-        for f in server_files:
-            server_file = models.ServerFile(data=db_data, **f)
-            server_file.save()
-
-        for f in remote_files:
-            remote_file = models.RemoteFile(data=db_data, **f)
-            remote_file.save()
+        self._create_files(db_data, files)
 
         db_data.save()
         return db_data
+
+    def update(self, instance, validated_data):
+        files = self._pop_data(validated_data)
+        for key, value in validated_data.items():
+            setattr(instance, key, value)
+        self._create_files(instance, files)
+        instance.save()
+        return instance
+
+    # pylint: disable=no-self-use
+    def _pop_data(self, validated_data):
+        client_files = validated_data.pop('client_files')
+        server_files = validated_data.pop('server_files')
+        remote_files = validated_data.pop('remote_files')
+
+        for extra_key in { 'use_zip_chunks', 'use_cache', 'copy_data' }:
+            validated_data.pop(extra_key)
+
+        files = {'client_files': client_files, 'server_files': server_files, 'remote_files': remote_files}
+        return files
+
+
+    # pylint: disable=no-self-use
+    def _create_files(self, instance, files):
+        if 'client_files' in files:
+            client_objects = []
+            for f in files['client_files']:
+                client_file = models.ClientFile(data=instance, **f)
+                client_objects.append(client_file)
+            models.ClientFile.objects.bulk_create(client_objects)
+
+        if 'server_files' in files:
+            for f in files['server_files']:
+                server_file = models.ServerFile(data=instance, **f)
+                server_file.save()
+
+        if 'remote_files' in files:
+            for f in files['remote_files']:
+                remote_file = models.RemoteFile(data=instance, **f)
+                remote_file.save()
 
 class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
     labels = LabelSerializer(many=True, source='label_set', partial=True, required=False)
@@ -371,12 +391,12 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
 
         labels = validated_data.pop('label_set', [])
         db_task = models.Task.objects.create(**validated_data)
-        label_names = list()
+        label_colors = list()
         for label in labels:
             attributes = label.pop('attributespec_set')
             if not label.get('color', None):
-                label['color'] = get_label_color(label['name'], label_names)
-            label_names.append(label['name'])
+                label['color'] = get_label_color(label['name'], label_colors)
+            label_colors.append(label['color'])
             db_label = models.Label.objects.create(task=db_task, **label)
             for attr in attributes:
                 models.AttributeSpec.objects.create(label=db_label, **attr)
@@ -499,7 +519,7 @@ class TrainingProjectSerializer(serializers.ModelSerializer):
         write_once_fields = ('host', 'username', 'password', 'project_class')
 
 
-class ProjectWithoutTaskSerializer(serializers.ModelSerializer):
+class ProjectSerializer(serializers.ModelSerializer):
     labels = LabelSerializer(many=True, source='label_set', partial=True, default=[])
     owner = BasicUserSerializer(required=False)
     owner_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)
@@ -513,7 +533,7 @@ class ProjectWithoutTaskSerializer(serializers.ModelSerializer):
         model = models.Project
         fields = ('url', 'id', 'name', 'labels', 'tasks', 'owner', 'assignee', 'owner_id', 'assignee_id',
                   'bug_tracker', 'task_subsets', 'created_date', 'updated_date', 'status', 'training_project', 'dimension')
-        read_only_fields = ('created_date', 'updated_date', 'status', 'owner', 'asignee', 'task_subsets', 'dimension')
+        read_only_fields = ('created_date', 'updated_date', 'tasks', 'status', 'owner', 'asignee', 'task_subsets', 'dimension')
         ordering = ['-id']
 
 
@@ -524,12 +544,6 @@ class ProjectWithoutTaskSerializer(serializers.ModelSerializer):
         response['task_subsets'] = list(task_subsets)
         response['dimension'] = instance.tasks.first().dimension if instance.tasks.count() else None
         return response
-
-class ProjectSerializer(ProjectWithoutTaskSerializer):
-    tasks = TaskSerializer(many=True, read_only=True)
-
-    class Meta(ProjectWithoutTaskSerializer.Meta):
-        fields = ProjectWithoutTaskSerializer.Meta.fields + ('tasks',)
 
     # pylint: disable=no-self-use
     def create(self, validated_data):
@@ -545,12 +559,12 @@ class ProjectSerializer(ProjectWithoutTaskSerializer):
                                                        training_project=tr_p)
         else:
             db_project = models.Project.objects.create(**validated_data)
-        label_names = list()
+        label_colors = list()
         for label in labels:
             attributes = label.pop('attributespec_set')
             if not label.get('color', None):
-                label['color'] = get_label_color(label['name'], label_names)
-            label_names.append(label['name'])
+                label['color'] = get_label_color(label['name'], label_colors)
+            label_colors.append(label['color'])
             db_label = models.Label.objects.create(project=db_project, **label)
             for attr in attributes:
                 models.AttributeSpec.objects.create(label=db_label, **attr)
@@ -582,11 +596,6 @@ class ProjectSerializer(ProjectWithoutTaskSerializer):
             if len(label_names) != len(set(label_names)):
                 raise serializers.ValidationError('All label names must be unique for the project')
         return value
-
-    def to_representation(self, instance):
-        response = serializers.ModelSerializer.to_representation(self, instance)  # ignoring subsets here
-        response['dimension'] = instance.tasks.first().dimension if instance.tasks.count() else None
-        return response
 
 class ExceptionSerializer(serializers.Serializer):
     system = serializers.CharField(max_length=255)
@@ -670,6 +679,7 @@ class ShapeSerializer(serializers.Serializer):
     type = serializers.ChoiceField(choices=models.ShapeType.choices())
     occluded = serializers.BooleanField()
     z_order = serializers.IntegerField(default=0)
+    rotation = serializers.FloatField(default=0, min_value=0, max_value=360)
     points = serializers.ListField(
         child=serializers.FloatField(),
         allow_empty=False,
@@ -717,8 +727,20 @@ class LogEventSerializer(serializers.Serializer):
 class AnnotationFileSerializer(serializers.Serializer):
     annotation_file = serializers.FileField()
 
+class DatasetFileSerializer(serializers.Serializer):
+    dataset_file = serializers.FileField()
+
+    @staticmethod
+    def validate_dataset_file(value):
+        if os.path.splitext(value.name)[1] != '.zip':
+            raise serializers.ValidationError('Dataset file should be zip archive')
+        return value
+
 class TaskFileSerializer(serializers.Serializer):
     task_file = serializers.FileField()
+
+class ProjectFileSerializer(serializers.Serializer):
+    project_file = serializers.FileField()
 
 class ReviewSerializer(serializers.ModelSerializer):
     assignee = BasicUserSerializer(allow_null=True, required=False)
@@ -807,7 +829,7 @@ class CloudStorageSerializer(serializers.ModelSerializer):
     session_token = serializers.CharField(max_length=440, allow_blank=True, required=False)
     key = serializers.CharField(max_length=20, allow_blank=True, required=False)
     secret_key = serializers.CharField(max_length=40, allow_blank=True, required=False)
-    key_file_path = serializers.CharField(max_length=64, allow_blank=True, required=False)
+    key_file = serializers.FileField(required=False)
     account_name = serializers.CharField(max_length=24, allow_blank=True, required=False)
     manifests = ManifestSerializer(many=True, default=[])
 
@@ -816,7 +838,7 @@ class CloudStorageSerializer(serializers.ModelSerializer):
         fields = (
             'provider_type', 'resource', 'display_name', 'owner', 'credentials_type',
             'created_date', 'updated_date', 'session_token', 'account_name', 'key',
-            'secret_key', 'key_file_path', 'specific_attributes', 'description', 'id', 'manifests',
+            'secret_key', 'key_file', 'specific_attributes', 'description', 'id', 'manifests',
         )
         read_only_fields = ('created_date', 'updated_date', 'owner')
 
@@ -830,23 +852,31 @@ class CloudStorageSerializer(serializers.ModelSerializer):
         return value
 
     def validate(self, attrs):
-        if attrs.get('provider_type') == models.CloudProviderChoice.AZURE_CONTAINER:
+        provider_type = attrs.get('provider_type')
+        if provider_type == models.CloudProviderChoice.AZURE_CONTAINER:
             if not attrs.get('account_name', ''):
                 raise serializers.ValidationError('Account name for Azure container was not specified')
-        if attrs.get('provider_type') == models.CloudProviderChoice.GOOGLE_CLOUD_STORAGE:
-            if not attrs.get('key_file_path', ''):
-                raise serializers.ValidationError('Key file path for Google cloud storage was not specified')
         return attrs
 
     def create(self, validated_data):
         provider_type = validated_data.get('provider_type')
         should_be_created = validated_data.pop('should_be_created', None)
+
+        key_file = validated_data.pop('key_file', None)
+        # we need to save it to temporary file to check the granted permissions
+        temporary_file = ''
+        if key_file:
+            with NamedTemporaryFile(mode='wb', prefix='cvat', delete=False) as temp_key:
+                temp_key.write(key_file.read())
+                temporary_file = temp_key.name
+            key_file.close()
+            del key_file
         credentials = Credentials(
             account_name=validated_data.pop('account_name', ''),
             key=validated_data.pop('key', ''),
             secret_key=validated_data.pop('secret_key', ''),
             session_token=validated_data.pop('session_token', ''),
-            key_file_path=validated_data.pop('key_file_path', ''),
+            key_file_path=temporary_file,
             credentials_type = validated_data.get('credentials_type')
         )
         details = {
@@ -893,6 +923,15 @@ class CloudStorageSerializer(serializers.ModelSerializer):
                 shutil.rmtree(cloud_storage_path)
 
             os.makedirs(db_storage.get_storage_logs_dirname(), exist_ok=True)
+            if temporary_file:
+                # so, gcs key file is valid and we need to set correct path to the file
+                real_path_to_key_file = db_storage.get_key_file_path()
+                shutil.copyfile(temporary_file, real_path_to_key_file)
+                os.remove(temporary_file)
+
+                credentials.key_file_path = real_path_to_key_file
+                db_storage.credentials = credentials.convert_to_db()
+                db_storage.save()
             return db_storage
         elif storage_status == Status.FORBIDDEN:
             field = 'credentials'
@@ -900,6 +939,8 @@ class CloudStorageSerializer(serializers.ModelSerializer):
         else:
             field = 'recource'
             message = 'The resource {} not found. It may have been deleted.'.format(storage.name)
+        if temporary_file:
+            os.remove(temporary_file)
         slogger.glob.error(message)
         raise serializers.ValidationError({field: message})
 
@@ -910,8 +951,22 @@ class CloudStorageSerializer(serializers.ModelSerializer):
             'type': instance.credentials_type,
             'value': instance.credentials,
         })
-        tmp = {k:v for k,v in validated_data.items() if k in {'key', 'secret_key', 'account_name', 'session_token', 'key_file_path', 'credentials_type'}}
-        credentials.mapping_with_new_values(tmp)
+        credentials_dict = {k:v for k,v in validated_data.items() if k in {
+            'key','secret_key', 'account_name', 'session_token', 'key_file_path',
+            'credentials_type'
+        }}
+
+        key_file = validated_data.pop('key_file', None)
+        temporary_file = ''
+        if key_file:
+            with NamedTemporaryFile(mode='wb', prefix='cvat', delete=False) as temp_key:
+                temp_key.write(key_file.read())
+                temporary_file = temp_key.name
+            credentials_dict['key_file_path'] = temporary_file
+            key_file.close()
+            del key_file
+
+        credentials.mapping_with_new_values(credentials_dict)
         instance.credentials = credentials.convert_to_db()
         instance.credentials_type = validated_data.get('credentials_type', instance.credentials_type)
         instance.resource = validated_data.get('resource', instance.resource)
@@ -950,6 +1005,13 @@ class CloudStorageSerializer(serializers.ModelSerializer):
                         })
                 manifest_instances = [models.Manifest(filename=f, cloud_storage=instance) for f in delta_to_create]
                 models.Manifest.objects.bulk_create(manifest_instances)
+            if temporary_file:
+                # so, gcs key file is valid and we need to set correct path to the file
+                real_path_to_key_file = instance.get_key_file_path()
+                shutil.copyfile(temporary_file, real_path_to_key_file)
+                os.remove(temporary_file)
+
+                instance.credentials = real_path_to_key_file
             instance.save()
             return instance
         elif storage_status == Status.FORBIDDEN:
@@ -958,6 +1020,8 @@ class CloudStorageSerializer(serializers.ModelSerializer):
         else:
             field = 'recource'
             message = 'The resource {} not found. It may have been deleted.'.format(storage.name)
+        if temporary_file:
+            os.remove(temporary_file)
         slogger.glob.error(message)
         raise serializers.ValidationError({field: message})
 

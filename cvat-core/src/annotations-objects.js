@@ -84,30 +84,34 @@
         return area >= MIN_SHAPE_AREA;
     }
 
-    function fitPoints(shapeType, points, maxX, maxY) {
+    function rotatePoint(x, y, angle, cx = 0, cy = 0) {
+        const sin = Math.sin((angle * Math.PI) / 180);
+        const cos = Math.cos((angle * Math.PI) / 180);
+        const rotX = (x - cx) * cos - (y - cy) * sin + cx;
+        const rotY = (y - cy) * cos + (x - cx) * sin + cy;
+        return [rotX, rotY];
+    }
+
+    function fitPoints(shapeType, points, rotation, maxX, maxY) {
+        checkObjectType('rotation', rotation, 'number', null);
+        points.forEach((coordinate) => checkObjectType('coordinate', coordinate, 'number', null));
+
+        if (shapeType === ObjectShape.CUBOID || !!rotation) {
+            // cuboids and rotated bounding boxes cannot be fitted
+            return points;
+        }
+
         const fittedPoints = [];
 
         for (let i = 0; i < points.length - 1; i += 2) {
             const x = points[i];
             const y = points[i + 1];
-
-            checkObjectType('coordinate', x, 'number', null);
-            checkObjectType('coordinate', y, 'number', null);
-
-            fittedPoints.push(Math.clamp(x, 0, maxX), Math.clamp(y, 0, maxY));
+            const clampedX = Math.clamp(x, 0, maxX);
+            const clampedY = Math.clamp(y, 0, maxY);
+            fittedPoints.push(clampedX, clampedY);
         }
 
-        return shapeType === ObjectShape.CUBOID ? points : fittedPoints;
-    }
-
-    function checkOutside(points, width, height) {
-        let inside = false;
-        for (let i = 0; i < points.length - 1; i += 2) {
-            const [x, y] = points.slice(i);
-            inside = inside || (x >= 0 && x <= width && y >= 0 && y <= height);
-        }
-
-        return !inside;
+        return fittedPoints;
     }
 
     function validateAttributeValue(value, attr) {
@@ -253,8 +257,8 @@
             for (const attribute of redoLabel.attributes) {
                 for (const oldAttribute of undoLabel.attributes) {
                     if (
-                        attribute.name === oldAttribute.name
-                        && validateAttributeValue(undoAttributes[oldAttribute.id], attribute)
+                        attribute.name === oldAttribute.name &&
+                        validateAttributeValue(undoAttributes[oldAttribute.id], attribute)
                     ) {
                         this.attributes[attribute.id] = undoAttributes[oldAttribute.id];
                     }
@@ -345,13 +349,13 @@
                 checkNumberOfPoints(this.shapeType, data.points);
                 // cut points
                 const { width, height, filename } = this.frameMeta[frame];
-                fittedPoints = fitPoints(this.shapeType, data.points, width, height);
+                fittedPoints = fitPoints(this.shapeType, data.points, data.rotation, width, height);
                 let check = true;
                 if (filename && filename.slice(filename.length - 3) === 'pcd') {
                     check = false;
                 }
                 if (check) {
-                    if (!checkShapeArea(this.shapeType, fittedPoints) || checkOutside(fittedPoints, width, height)) {
+                    if (!checkShapeArea(this.shapeType, fittedPoints)) {
                         fittedPoints = [];
                     }
                 }
@@ -492,6 +496,7 @@
         constructor(data, clientID, color, injection) {
             super(data, clientID, color, injection);
             this.points = data.points;
+            this.rotation = data.rotation || 0;
             this.occluded = data.occluded;
             this.zOrder = data.z_order;
         }
@@ -504,6 +509,7 @@
                 occluded: this.occluded,
                 z_order: this.zOrder,
                 points: [...this.points],
+                rotation: this.rotation,
                 attributes: Object.keys(this.attributes).reduce((attributeAccumulator, attrId) => {
                     attributeAccumulator.push({
                         spec_id: attrId,
@@ -535,6 +541,7 @@
                 lock: this.lock,
                 zOrder: this.zOrder,
                 points: [...this.points],
+                rotation: this.rotation,
                 attributes: { ...this.attributes },
                 descriptions: [...this.descriptions],
                 label: this.label,
@@ -548,9 +555,11 @@
             };
         }
 
-        _savePoints(points, frame) {
+        _savePoints(points, rotation, frame) {
             const undoPoints = this.points;
+            const undoRotation = this.rotation;
             const redoPoints = points;
+            const redoRotation = rotation;
             const undoSource = this.source;
             const redoSource = Source.MANUAL;
 
@@ -559,11 +568,13 @@
                 () => {
                     this.points = undoPoints;
                     this.source = undoSource;
+                    this.rotation = undoRotation;
                     this.updated = Date.now();
                 },
                 () => {
                     this.points = redoPoints;
                     this.source = redoSource;
+                    this.rotation = redoRotation;
                     this.updated = Date.now();
                 },
                 [this.clientID],
@@ -572,6 +583,7 @@
 
             this.source = Source.MANUAL;
             this.points = points;
+            this.rotation = rotation;
         }
 
         _saveOccluded(occluded, frame) {
@@ -637,6 +649,7 @@
 
             const updated = data.updateFlags;
             const fittedPoints = this._validateStateBeforeSave(frame, data, updated);
+            const { rotation } = data;
 
             // Now when all fields are validated, we can apply them
             if (updated.label) {
@@ -652,7 +665,7 @@
             }
 
             if (updated.points && fittedPoints.length) {
-                this._savePoints(fittedPoints, frame);
+                this._savePoints(fittedPoints, rotation, frame);
             }
 
             if (updated.occluded) {
@@ -696,6 +709,7 @@
                     zOrder: value.z_order,
                     points: value.points,
                     outside: value.outside,
+                    rotation: value.rotation || 0,
                     attributes: value.attributes.reduce((attributeAccumulator, attr) => {
                         attributeAccumulator[attr.spec_id] = attr.value;
                         return attributeAccumulator;
@@ -736,6 +750,7 @@
                         occluded: this.shapes[frame].occluded,
                         z_order: this.shapes[frame].zOrder,
                         points: [...this.shapes[frame].points],
+                        rotation: this.shapes[frame].rotation,
                         outside: this.shapes[frame].outside,
                         attributes: Object.keys(this.shapes[frame].attributes).reduce(
                             (attributeAccumulator, attrId) => {
@@ -919,13 +934,13 @@
                 if (!labelAttributes[attrID].mutable) {
                     redoAttributes[attrID] = attributes[attrID];
                 } else if (attributes[attrID] !== current.attributes[attrID]) {
-                    mutableAttributesUpdated = mutableAttributesUpdated
+                    mutableAttributesUpdated = mutableAttributesUpdated ||
                         // not keyframe yet
-                        || !(frame in this.shapes)
+                        !(frame in this.shapes) ||
                         // keyframe, but without this attrID
-                        || !(attrID in this.shapes[frame].attributes)
+                        !(attrID in this.shapes[frame].attributes) ||
                         // keyframe with attrID, but with another value
-                        || this.shapes[frame].attributes[attrID] !== attributes[attrID];
+                        this.shapes[frame].attributes[attrID] !== attributes[attrID];
                 }
             }
             let redoShape;
@@ -1009,22 +1024,21 @@
             );
         }
 
-        _savePoints(points, frame) {
+        _savePoints(points, rotation, frame) {
             const current = this.get(frame);
             const wasKeyframe = frame in this.shapes;
             const undoSource = this.source;
             const redoSource = Source.MANUAL;
             const undoShape = wasKeyframe ? this.shapes[frame] : undefined;
-            const redoShape = wasKeyframe
-                ? { ...this.shapes[frame], points }
-                : {
-                    frame,
-                    points,
-                    zOrder: current.zOrder,
-                    outside: current.outside,
-                    occluded: current.occluded,
-                    attributes: {},
-                };
+            const redoShape = wasKeyframe ? { ...this.shapes[frame], points, rotation } : {
+                frame,
+                points,
+                rotation,
+                zOrder: current.zOrder,
+                outside: current.outside,
+                occluded: current.occluded,
+                attributes: {},
+            };
 
             this.shapes[frame] = redoShape;
             this.source = Source.MANUAL;
@@ -1044,11 +1058,12 @@
             const undoSource = this.source;
             const redoSource = Source.MANUAL;
             const undoShape = wasKeyframe ? this.shapes[frame] : undefined;
-            const redoShape = wasKeyframe
-                ? { ...this.shapes[frame], outside }
-                : {
+            const redoShape = wasKeyframe ?
+                { ...this.shapes[frame], outside } :
+                {
                     frame,
                     outside,
+                    rotation: current.rotation,
                     zOrder: current.zOrder,
                     points: current.points,
                     occluded: current.occluded,
@@ -1073,11 +1088,12 @@
             const undoSource = this.source;
             const redoSource = Source.MANUAL;
             const undoShape = wasKeyframe ? this.shapes[frame] : undefined;
-            const redoShape = wasKeyframe
-                ? { ...this.shapes[frame], occluded }
-                : {
+            const redoShape = wasKeyframe ?
+                { ...this.shapes[frame], occluded } :
+                {
                     frame,
                     occluded,
+                    rotation: current.rotation,
                     zOrder: current.zOrder,
                     points: current.points,
                     outside: current.outside,
@@ -1102,11 +1118,12 @@
             const undoSource = this.source;
             const redoSource = Source.MANUAL;
             const undoShape = wasKeyframe ? this.shapes[frame] : undefined;
-            const redoShape = wasKeyframe
-                ? { ...this.shapes[frame], zOrder }
-                : {
+            const redoShape = wasKeyframe ?
+                { ...this.shapes[frame], zOrder } :
+                {
                     frame,
                     zOrder,
+                    rotation: current.rotation,
                     occluded: current.occluded,
                     points: current.points,
                     outside: current.outside,
@@ -1136,17 +1153,18 @@
             const undoSource = this.source;
             const redoSource = Source.MANUAL;
             const undoShape = wasKeyframe ? this.shapes[frame] : undefined;
-            const redoShape = keyframe
-                ? {
+            const redoShape = keyframe ?
+                {
                     frame,
+                    rotation: current.rotation,
                     zOrder: current.zOrder,
                     points: current.points,
                     outside: current.outside,
                     occluded: current.occluded,
                     attributes: {},
                     source: current.source,
-                }
-                : undefined;
+                } :
+                undefined;
 
             this.source = Source.MANUAL;
             if (redoShape) {
@@ -1172,6 +1190,7 @@
 
             const updated = data.updateFlags;
             const fittedPoints = this._validateStateBeforeSave(frame, data, updated);
+            const { rotation } = data;
 
             if (updated.label) {
                 this._saveLabel(data.label, frame);
@@ -1194,7 +1213,7 @@
             }
 
             if (updated.points && fittedPoints.length) {
-                this._savePoints(fittedPoints, frame);
+                this._savePoints(fittedPoints, rotation, frame);
             }
 
             if (updated.outside) {
@@ -1246,6 +1265,7 @@
             if (leftPosition) {
                 return {
                     points: [...leftPosition.points],
+                    rotation: leftPosition.rotation,
                     occluded: leftPosition.occluded,
                     outside: leftPosition.outside,
                     zOrder: leftPosition.zOrder,
@@ -1256,25 +1276,22 @@
             if (rightPosition) {
                 return {
                     points: [...rightPosition.points],
+                    rotation: rightPosition.rotation,
                     occluded: rightPosition.occluded,
-                    outside: true,
                     zOrder: rightPosition.zOrder,
                     keyframe: targetFrame in this.shapes,
+                    outside: true,
                 };
             }
 
             throw new DataError(
-                'No one left position or right position was found. '
-                    + `Interpolation impossible. Client ID: ${this.clientID}`,
+                'No one left position or right position was found. ' +
+                    `Interpolation impossible. Client ID: ${this.clientID}`,
             );
         }
     }
 
     class Tag extends Annotation {
-        constructor(data, clientID, color, injection) {
-            super(data, clientID, color, injection);
-        }
-
         // Method is used to export data to the server
         toJSON() {
             return {
@@ -1360,22 +1377,26 @@
             checkNumberOfPoints(this.shapeType, this.points);
         }
 
-        static distance(points, x, y) {
+        static distance(points, x, y, angle) {
             const [xtl, ytl, xbr, ybr] = points;
+            const cx = xtl + (xbr - xtl) / 2;
+            const cy = ytl + (ybr - ytl) / 2;
+            const [rotX, rotY] = rotatePoint(x, y, -angle, cx, cy);
 
-            if (!(x >= xtl && x <= xbr && y >= ytl && y <= ybr)) {
+            if (!(rotX >= xtl && rotX <= xbr && rotY >= ytl && rotY <= ybr)) {
                 // Cursor is outside of a box
                 return null;
             }
 
             // The shortest distance from point to an edge
-            return Math.min.apply(null, [x - xtl, y - ytl, xbr - x, ybr - y]);
+            return Math.min.apply(null, [rotX - xtl, rotY - ytl, xbr - rotX, ybr - rotY]);
         }
     }
 
     class PolyShape extends Shape {
         constructor(data, clientID, color, injection) {
             super(data, clientID, color, injection);
+            this.rotation = 0; // is not supported
         }
     }
 
@@ -1431,12 +1452,12 @@
 
                 if ((xCross - x1) * (x2 - xCross) >= 0 && (yCross - y1) * (y2 - yCross) >= 0) {
                     // Cross point is on segment between p1(x1,y1) and p2(x2,y2)
-                    distances.push(Math.sqrt(Math.pow(x - xCross, 2) + Math.pow(y - yCross, 2)));
+                    distances.push(Math.sqrt((x - xCross) ** 2 + (y - yCross) ** 2));
                 } else {
                     distances.push(
                         Math.min(
-                            Math.sqrt(Math.pow(x1 - x, 2) + Math.pow(y1 - y, 2)),
-                            Math.sqrt(Math.pow(x2 - x, 2) + Math.pow(y2 - y, 2)),
+                            Math.sqrt((x1 - x) ** 2 + (y1 - y) ** 2),
+                            Math.sqrt((x2 - x) ** 2 + (y2 - y) ** 2),
                         ),
                     );
                 }
@@ -1473,8 +1494,8 @@
                     // Find the length of a perpendicular
                     // https://en.wikipedia.org/wiki/Distance_from_a_point_to_a_line
                     distances.push(
-                        Math.abs((y2 - y1) * x - (x2 - x1) * y + x2 * y1 - y2 * x1)
-                            / Math.sqrt(Math.pow(y2 - y1, 2) + Math.pow(x2 - x1, 2)),
+                        Math.abs((y2 - y1) * x - (x2 - x1) * y + x2 * y1 - y2 * x1) /
+                            Math.sqrt((y2 - y1) ** 2 + (x2 - x1) ** 2),
                     );
                 } else {
                     // The link below works for lines (which have infinite length)
@@ -1483,8 +1504,8 @@
                     // Instead we use just distance to the nearest point
                     distances.push(
                         Math.min(
-                            Math.sqrt(Math.pow(x1 - x, 2) + Math.pow(y1 - y, 2)),
-                            Math.sqrt(Math.pow(x2 - x, 2) + Math.pow(y2 - y, 2)),
+                            Math.sqrt((x1 - x) ** 2 + (y1 - y) ** 2),
+                            Math.sqrt((x2 - x) ** 2 + (y2 - y) ** 2),
                         ),
                     );
                 }
@@ -1507,7 +1528,7 @@
                 const x1 = points[i];
                 const y1 = points[i + 1];
 
-                distances.push(Math.sqrt(Math.pow(x1 - x, 2) + Math.pow(y1 - y, 2)));
+                distances.push(Math.sqrt((x1 - x) ** 2 + (y1 - y) ** 2));
             }
 
             return Math.min.apply(null, distances);
@@ -1517,6 +1538,7 @@
     class CuboidShape extends Shape {
         constructor(data, clientID, color, injection) {
             super(data, clientID, color, injection);
+            this.rotation = 0;
             this.shapeType = ObjectShape.CUBOID;
             this.pinned = false;
             checkNumberOfPoints(this.shapeType, this.points);
@@ -1558,10 +1580,10 @@
                 lowerHull.pop();
 
                 if (
-                    upperHull.length === 1
-                    && lowerHull.length === 1
-                    && upperHull[0].x === lowerHull[0].x
-                    && upperHull[0].y === lowerHull[0].y
+                    upperHull.length === 1 &&
+                    lowerHull.length === 1 &&
+                    upperHull[0].x === lowerHull[0].x &&
+                    upperHull[0].y === lowerHull[0].y
                 ) return upperHull;
                 return upperHull.concat(lowerHull);
             }
@@ -1579,11 +1601,11 @@
             return makeHullPresorted(newPoints);
         }
 
-        static contain(points, x, y) {
+        static contain(shapePoints, x, y) {
             function isLeft(P0, P1, P2) {
                 return (P1.x - P0.x) * (P2.y - P0.y) - (P2.x - P0.x) * (P1.y - P0.y);
             }
-            points = CuboidShape.makeHull(points);
+            const points = CuboidShape.makeHull(shapePoints);
             let wn = 0;
             for (let i = 0; i < points.length; i += 1) {
                 const p1 = points[`${i}`];
@@ -1620,13 +1642,13 @@
                 const p2 = points[i + 1] || points[0];
 
                 // perpendicular from point to straight length
-                const distance = Math.abs((p2.y - p1.y) * x - (p2.x - p1.x) * y + p2.x * p1.y - p2.y * p1.x)
-                    / Math.sqrt(Math.pow(p2.y - p1.y, 2) + Math.pow(p2.x - p1.x, 2));
+                const distance = Math.abs((p2.y - p1.y) * x - (p2.x - p1.x) * y + p2.x * p1.y - p2.y * p1.x) /
+                    Math.sqrt((p2.y - p1.y) ** 2 + (p2.x - p1.x) ** 2);
 
                 // check if perpendicular belongs to the straight segment
-                const a = Math.pow(p1.x - x, 2) + Math.pow(p1.y - y, 2);
-                const b = Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2);
-                const c = Math.pow(p2.x - x, 2) + Math.pow(p2.y - y, 2);
+                const a = (p1.x - x) ** 2 + (p1.y - y) ** 2;
+                const b = (p2.x - p1.x) ** 2 + (p2.y - p1.y) ** 2;
+                const c = (p2.x - x) ** 2 + (p2.y - y) ** 2;
                 if (distance < minDistance && a + b - c >= 0 && c + b - a >= 0) {
                     minDistance = distance;
                 }
@@ -1646,10 +1668,25 @@
         }
 
         interpolatePosition(leftPosition, rightPosition, offset) {
+            function findAngleDiff(rightAngle, leftAngle) {
+                let angleDiff = rightAngle - leftAngle;
+                angleDiff = ((angleDiff + 180) % 360) - 180;
+                if (Math.abs(angleDiff) >= 180) {
+                    // if the main arc is bigger than 180, go another arc
+                    // to find it, just substract absolute value from 360 and inverse sign
+                    angleDiff = 360 - Math.abs(angleDiff) * Math.sign(angleDiff) * -1;
+                }
+                return angleDiff;
+            }
+
             const positionOffset = leftPosition.points.map((point, index) => rightPosition.points[index] - point);
 
             return {
                 points: leftPosition.points.map((point, index) => point + positionOffset[index] * offset),
+                rotation:
+                    (leftPosition.rotation + findAngleDiff(
+                        rightPosition.rotation, leftPosition.rotation,
+                    ) * offset + 360) % 360,
                 occluded: leftPosition.occluded,
                 outside: leftPosition.outside,
                 zOrder: leftPosition.zOrder,
@@ -1660,12 +1697,16 @@
     class PolyTrack extends Track {
         constructor(data, clientID, color, injection) {
             super(data, clientID, color, injection);
+            for (const shape of Object.values(this.shapes)) {
+                shape.rotation = 0; // is not supported
+            }
         }
 
         interpolatePosition(leftPosition, rightPosition, offset) {
             if (offset === 0) {
                 return {
                     points: [...leftPosition.points],
+                    rotation: leftPosition.rotation,
                     occluded: leftPosition.occluded,
                     outside: leftPosition.outside,
                     zOrder: leftPosition.zOrder,
@@ -1912,6 +1953,7 @@
 
             return {
                 points: toArray(reducedPoints),
+                rotation: leftPosition.rotation,
                 occluded: leftPosition.occluded,
                 outside: leftPosition.outside,
                 zOrder: leftPosition.zOrder,
@@ -1974,6 +2016,7 @@
                     points: leftPosition.points.map(
                         (value, index) => value + (rightPosition.points[index] - value) * offset,
                     ),
+                    rotation: leftPosition.rotation,
                     occluded: leftPosition.occluded,
                     outside: leftPosition.outside,
                     zOrder: leftPosition.zOrder,
@@ -1982,6 +2025,7 @@
 
             return {
                 points: [...leftPosition.points],
+                rotation: leftPosition.rotation,
                 occluded: leftPosition.occluded,
                 outside: leftPosition.outside,
                 zOrder: leftPosition.zOrder,
@@ -1996,6 +2040,7 @@
             this.pinned = false;
             for (const shape of Object.values(this.shapes)) {
                 checkNumberOfPoints(this.shapeType, shape.points);
+                shape.rotation = 0; // is not supported
             }
         }
 
@@ -2004,6 +2049,7 @@
 
             return {
                 points: leftPosition.points.map((point, index) => point + positionOffset[index] * offset),
+                rotation: leftPosition.rotation,
                 occluded: leftPosition.occluded,
                 outside: leftPosition.outside,
                 zOrder: leftPosition.zOrder,

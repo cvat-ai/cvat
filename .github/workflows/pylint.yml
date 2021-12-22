@@ -5,19 +5,23 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+      - id: files
+        uses: jitterbit/get-changed-files@v1
 
       - name: Run checks
+        env:
+          PR_FILES_AM: ${{ steps.files.outputs.added_modified }}
+          PR_FILES_RENAMED: ${{ steps.files.outputs.renamed }}
         run: |
-          URL="https://api.github.com/repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/files"
-          PR_FILES=$(curl -s -X GET -G $URL | jq -r '.[] | select(.status != "removed") | .filename')
-          for files in $PR_FILES; do
-            extension="${files##*.}"
-            if [[ $extension == 'py' ]]; then
-              changed_files_pylint+=" ${files}"
-            fi
+          PR_FILES="$PR_FILES_AM $PR_FILES_RENAMED"
+          for FILE in $PR_FILES; do
+              EXTENSION="${FILE##*.}"
+              if [[ $EXTENSION == 'py' ]]; then
+                  CHANGED_FILES+=" $FILE"
+              fi
           done
 
-          if [[ ! -z ${changed_files_pylint} ]]; then
+          if [[ ! -z $CHANGED_FILES ]]; then
             sudo apt-get --no-install-recommends install -y build-essential curl python3-dev python3-pip python3-venv
             python3 -m venv .env
             . .env/bin/activate
@@ -27,12 +31,12 @@ jobs:
             pip install $(egrep "Django.*" ./cvat/requirements/base.txt)
             mkdir -p pylint_report
 
-            echo "Pylint version: "`pylint --version | head -1`
-            echo "The files will be checked: "`echo ${changed_files_pylint}`
-            pylint ${changed_files_pylint} --output-format=json > ./pylint_report/pylint_checks.json || exit_code=`echo $?` || true
+            echo "Pylint version: "$(pylint --version | head -1)
+            echo "The files will be checked: "$(echo $CHANGED_FILES)
+            pylint $CHANGED_FILES --output-format=json > ./pylint_report/pylint_checks.json || EXIT_CODE=$(echo $?) || true
             pylint-json2html -o ./pylint_report/pylint_checks.html ./pylint_report/pylint_checks.json
             deactivate
-            exit ${exit_code}
+            exit $EXIT_CODE
           else
             echo "No files with the \"py\" extension found"
           fi

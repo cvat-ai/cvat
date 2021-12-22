@@ -84,11 +84,8 @@ class CacheInteraction:
                 }
                 try:
                     cloud_storage_instance = get_cloud_storage_instance(cloud_provider=db_cloud_storage.provider_type, **details)
-                    cloud_storage_instance.initialize_content()
                     for item in reader:
                         file_name = f"{item['name']}{item['extension']}"
-                        if file_name not in cloud_storage_instance:
-                            raise Exception('{} file was not found on a {} storage'.format(file_name, cloud_storage_instance.name))
                         with NamedTemporaryFile(mode='w+b', prefix='cvat', suffix=file_name.replace(os.path.sep, '#'), delete=False) as temp_file:
                             source_path = temp_file.name
                             buf = cloud_storage_instance.download_fileobj(file_name)

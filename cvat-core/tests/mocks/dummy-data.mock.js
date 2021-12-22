@@ -1740,6 +1740,7 @@ const taskAnnotationsDummyData = {
                         occluded: false,
                         z_order: 1,
                         points: [425.58984375, 540.298828125, 755.9765625, 745.6328125],
+                        rotation: 0,
                         id: 379,
                         frame: 0,
                         outside: false,
@@ -1759,6 +1760,7 @@ const taskAnnotationsDummyData = {
                         occluded: false,
                         z_order: 1,
                         points: [238.8000000000011, 498.6000000000022, 546.01171875, 660.720703125],
+                        rotation: 100,
                         id: 380,
                         frame: 10,
                         outside: false,
@@ -1769,6 +1771,7 @@ const taskAnnotationsDummyData = {
                         occluded: false,
                         z_order: 1,
                         points: [13.3955078125, 447.650390625, 320.6072265624989, 609.7710937499978],
+                        rotation: 340,
                         id: 381,
                         frame: 20,
                         outside: false,
@@ -2548,10 +2551,31 @@ const frameMetaDummyData = {
 };
 
 const cloudStoragesDummyData = {
-    count: 2,
+    count: 3,
     next: null,
     previous: null,
     results: [
+        {
+            id: 3,
+            owner: {
+                url: 'http://localhost:7000/api/v1/users/1',
+                id: 1,
+                username: 'maya',
+                first_name: '',
+                last_name: ''
+            },
+            manifests: [
+                'manifest.jsonl'
+            ],
+            provider_type: 'GOOGLE_CLOUD_STORAGE',
+            resource: 'gcsbucket',
+            display_name: 'Demo GCS',
+            created_date: '2021-09-01T09:29:47.094244Z',
+            updated_date: '2021-09-01T09:29:47.103264Z',
+            credentials_type: 'KEY_FILE_PATH',
+            specific_attributes: '',
+            description: 'It is first google cloud storage'
+        },
         {
             id: 2,
             owner: {

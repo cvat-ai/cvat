@@ -9,7 +9,6 @@ import os.path as osp
 import pytz
 import shutil
 import traceback
-import uuid
 from datetime import datetime
 from distutils.util import strtobool
 from tempfile import mkstemp, NamedTemporaryFile
@@ -48,22 +47,42 @@ from cvat.apps.engine.frame_provider import FrameProvider
 from cvat.apps.engine.media_extractors import ImageListReader
 from cvat.apps.engine.mime_types import mimetypes
 from cvat.apps.engine.models import (
-    Job, StatusChoice, Task, Project, Review, Issue,
+    Job, StatusChoice, Task, Data, Project, Review, Issue,
     Comment, StorageMethodChoice, ReviewStatus, StorageChoice, Image,
     CredentialsTypeChoice, CloudProviderChoice
 )
 from cvat.apps.engine.models import CloudStorage as CloudStorageModel
 from cvat.apps.engine.serializers import (
-    AboutSerializer, AnnotationFileSerializer, BasicUserSerializer,
-    DataMetaSerializer, DataSerializer, ExceptionSerializer,
-    FileInfoSerializer, JobSerializer, LabeledDataSerializer,
-    LogEventSerializer, ProjectSerializer, ProjectSearchSerializer, ProjectWithoutTaskSerializer,
-    RqStatusSerializer, TaskSerializer, UserSerializer, PluginsSerializer, ReviewSerializer,
-    CombinedReviewSerializer, IssueSerializer, CombinedIssueSerializer, CommentSerializer,
-    CloudStorageSerializer, BaseCloudStorageSerializer, TaskFileSerializer,)
+    AboutSerializer,
+    AnnotationFileSerializer,
+    BaseCloudStorageSerializer,
+    BasicUserSerializer,
+    CloudStorageSerializer,
+    CombinedIssueSerializer,
+    CombinedReviewSerializer,
+    CommentSerializer,
+    DataMetaSerializer,
+    DataSerializer,
+    DatasetFileSerializer,
+    ExceptionSerializer,
+    FileInfoSerializer,
+    IssueSerializer,
+    JobSerializer,
+    LabeledDataSerializer,
+    LogEventSerializer,
+    PluginsSerializer,
+    ProjectSearchSerializer,
+    ProjectSerializer,
+    ReviewSerializer,
+    RqStatusSerializer,
+    TaskSerializer,
+    UserSerializer,
+    )
 from utils.dataset_manifest import ImageManifestManager
 from cvat.apps.engine.utils import av_scan_paths
-from cvat.apps.engine.backup import import_task
+from cvat.apps.engine import backup
+from cvat.apps.engine.mixins import UploadMixin
+
 from . import models, task
 from .log import clogger, slogger
 
@@ -102,7 +121,6 @@ class ServerViewSet(viewsets.ViewSet):
     def exception(request):
         """
         Saves an exception from a client on the server
-
         Sends logs to the ELK if it is connected
         """
         serializer = ExceptionSerializer(data=request.data)
@@ -129,7 +147,6 @@ class ServerViewSet(viewsets.ViewSet):
     def logs(request):
         """
         Saves logs from a client on the server
-
         Sends logs to the ELK if it is connected
         """
         serializer = LogEventSerializer(many=True, data=request.data)
@@ -228,27 +245,26 @@ class ProjectFilter(filters.FilterSet):
         openapi.Parameter('status', openapi.IN_QUERY, description="Find all projects with a specific status",
             type=openapi.TYPE_STRING, enum=[str(i) for i in StatusChoice]),
         openapi.Parameter('names_only', openapi.IN_QUERY, description="Returns only names and id's of projects.",
-            type=openapi.TYPE_BOOLEAN),
-        openapi.Parameter('without_tasks', openapi.IN_QUERY, description="Returns only projects entities without related tasks",
-            type=openapi.TYPE_BOOLEAN)],))
+            type=openapi.TYPE_BOOLEAN)]))
 @method_decorator(name='create', decorator=swagger_auto_schema(operation_summary='Method creates a new project'))
 @method_decorator(name='retrieve', decorator=swagger_auto_schema(operation_summary='Method returns details of a specific project'))
 @method_decorator(name='destroy', decorator=swagger_auto_schema(operation_summary='Method deletes a specific project'))
 @method_decorator(name='partial_update', decorator=swagger_auto_schema(operation_summary='Methods does a partial update of chosen fields in a project'))
 class ProjectViewSet(auth.ProjectGetQuerySetMixin, viewsets.ModelViewSet):
-    queryset = models.Project.objects.all().order_by('-id')
+    queryset = models.Project.objects.prefetch_related(Prefetch('label_set',
+        queryset=models.Label.objects.order_by('id')
+    ))
     search_fields = ("name", "owner__username", "assignee__username", "status")
     filterset_class = ProjectFilter
     ordering_fields = ("id", "name", "owner", "status", "assignee")
-    http_method_names = ['get', 'post', 'head', 'patch', 'delete']
+    ordering = ("-id",)
+    http_method_names = ('get', 'post', 'head', 'patch', 'delete')
 
     def get_serializer_class(self):
         if self.request.path.endswith('tasks'):
             return TaskSerializer
         if self.request.query_params and self.request.query_params.get("names_only") == "true":
             return ProjectSearchSerializer
-        if self.request.query_params and self.request.query_params.get("without_tasks") == "true":
-            return ProjectWithoutTaskSerializer
         else:
             return ProjectSerializer
 
@@ -269,20 +285,20 @@ class ProjectViewSet(auth.ProjectGetQuerySetMixin, viewsets.ModelViewSet):
 
         return [perm() for perm in permissions]
 
-    def perform_create(self, serializer):
-        def validate_project_limit(owner):
-            admin_perm = auth.AdminRolePermission()
-            is_admin = admin_perm.has_permission(self.request, self)
-            if not is_admin and settings.RESTRICTIONS['project_limit'] is not None and \
-                Project.objects.filter(owner=owner).count() >= settings.RESTRICTIONS['project_limit']:
-                raise serializers.ValidationError('The user has the maximum number of projects')
+    def _validate_project_limit(self, owner):
+        admin_perm = auth.AdminRolePermission()
+        is_admin = admin_perm.has_permission(self.request, self)
+        if not is_admin and settings.RESTRICTIONS['project_limit'] is not None and \
+            Project.objects.filter(owner=owner).count() >= settings.RESTRICTIONS['project_limit']:
+            raise serializers.ValidationError('The user has the maximum number of projects')
 
+    def perform_create(self, serializer):
         owner = self.request.data.get('owner', None)
         if owner:
-            validate_project_limit(owner)
+            self._validate_project_limit(owner)
             serializer.save()
         else:
-            validate_project_limit(self.request.user)
+            self._validate_project_limit(self.request.user)
             serializer.save(owner=self.request.user)
 
     @swagger_auto_schema(method='get', operation_summary='Returns information of the tasks of the project with the selected id',
@@ -314,7 +330,7 @@ class ProjectViewSet(auth.ProjectGetQuerySetMixin, viewsets.ModelViewSet):
                 type=openapi.TYPE_STRING, required=False),
             openapi.Parameter('action', in_=openapi.IN_QUERY,
                 description='Used to start downloading process after annotation file had been created',
-                type=openapi.TYPE_STRING, required=False, enum=['download'])
+                type=openapi.TYPE_STRING, required=False, enum=['download', 'import_status'])
         ],
         responses={'202': openapi.Response(description='Exporting has been started'),
             '201': openapi.Response(description='Output file is ready for downloading'),
@@ -322,20 +338,68 @@ class ProjectViewSet(auth.ProjectGetQuerySetMixin, viewsets.ModelViewSet):
             '405': openapi.Response(description='Format is not available'),
         }
     )
-    @action(detail=True, methods=['GET'], serializer_class=None,
+    @swagger_auto_schema(method='post', operation_summary='Import dataset in specific format as a project',
+        manual_parameters=[
+            openapi.Parameter('format', openapi.IN_QUERY,
+                description="Desired dataset format name\nYou can get the list of supported formats at:\n/server/annotation/formats",
+                type=openapi.TYPE_STRING, required=True)
+        ],
+        responses={'202': openapi.Response(description='Exporting has been started'),
+            '400': openapi.Response(description='Failed to import dataset'),
+            '405': openapi.Response(description='Format is not available'),
+        }
+    )
+    @action(detail=True, methods=['GET', 'POST'], serializer_class=None,
         url_path='dataset')
-    def dataset_export(self, request, pk):
+    def dataset(self, request, pk):
         db_project = self.get_object() # force to call check_object_permissions
 
-        format_name = request.query_params.get("format", "")
-        return _export_annotations(db_instance=db_project,
-            rq_id="/api/v1/project/{}/dataset/{}".format(pk, format_name),
-            request=request,
-            action=request.query_params.get("action", "").lower(),
-            callback=dm.views.export_project_as_dataset,
-            format_name=format_name,
-            filename=request.query_params.get("filename", "").lower(),
-        )
+        if request.method == 'POST':
+            format_name = request.query_params.get("format", "")
+
+            return _import_project_dataset(
+                request=request,
+                rq_id=f"/api/v1/project/{pk}/dataset_import",
+                rq_func=dm.project.import_dataset_as_project,
+                pk=pk,
+                format_name=format_name,
+            )
+        else:
+            action = request.query_params.get("action", "").lower()
+            if action in ("import_status",):
+                queue = django_rq.get_queue("default")
+                rq_job = queue.fetch_job(f"/api/v1/project/{pk}/dataset_import")
+                if rq_job is None:
+                    return Response(status=status.HTTP_404_NOT_FOUND)
+                elif rq_job.is_finished:
+                    os.close(rq_job.meta['tmp_file_descriptor'])
+                    os.remove(rq_job.meta['tmp_file'])
+                    rq_job.delete()
+                    return Response(status=status.HTTP_201_CREATED)
+                elif rq_job.is_failed:
+                    os.close(rq_job.meta['tmp_file_descriptor'])
+                    os.remove(rq_job.meta['tmp_file'])
+                    rq_job.delete()
+                    return Response(
+                        data=str(rq_job.exc_info),
+                        status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                    )
+                else:
+                    return Response(
+                        data=self._get_rq_response('default', f'/api/v1/project/{pk}/dataset_import'),
+                        status=status.HTTP_202_ACCEPTED
+                    )
+            else:
+                format_name = request.query_params.get("format", "")
+                return _export_annotations(
+                    db_instance=db_project,
+                    rq_id="/api/v1/project/{}/dataset/{}".format(pk, format_name),
+                    request=request,
+                    action=action,
+                    callback=dm.views.export_project_as_dataset,
+                    format_name=format_name,
+                    filename=request.query_params.get("filename", "").lower(),
+                )
 
     @swagger_auto_schema(method='get', operation_summary='Method allows to download project annotations',
         manual_parameters=[
@@ -373,6 +437,33 @@ class ProjectViewSet(auth.ProjectGetQuerySetMixin, viewsets.ModelViewSet):
             )
         else:
             return Response("Format is not specified",status=status.HTTP_400_BAD_REQUEST)
+
+    @action(methods=['GET'], detail=True, url_path='backup')
+    def export(self, request, pk=None):
+        db_project = self.get_object() # force to call check_object_permissions
+        return backup.export(db_project, request)
+
+    @action(detail=False, methods=['POST'])
+    def backup(self, request, pk=None):
+        self._validate_project_limit(owner=self.request.user)
+        return backup.import_project(request)
+    @staticmethod
+    def _get_rq_response(queue, job_id):
+        queue = django_rq.get_queue(queue)
+        job = queue.fetch_job(job_id)
+        response = {}
+        if job is None or job.is_finished:
+            response = { "state": "Finished" }
+        elif job.is_queued:
+            response = { "state": "Queued" }
+        elif job.is_failed:
+            response = { "state": "Failed", "message": job.exc_info }
+        else:
+            response = { "state": "Started" }
+            response['message'] = job.meta.get('status', '')
+            response['progress'] = job.meta.get('progress', 0.)
+
+        return response
 
 class TaskFilter(filters.FilterSet):
     project = filters.CharFilter(field_name="project__name", lookup_expr="icontains")
@@ -416,15 +507,16 @@ class DjangoFilterInspector(CoreAPICompatInspector):
 @method_decorator(name='update', decorator=swagger_auto_schema(operation_summary='Method updates a task by id'))
 @method_decorator(name='destroy', decorator=swagger_auto_schema(operation_summary='Method deletes a specific task, all attached jobs, annotations, and data'))
 @method_decorator(name='partial_update', decorator=swagger_auto_schema(operation_summary='Methods does a partial update of chosen fields in a task'))
-class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
-    queryset = Task.objects.all().prefetch_related(
+class TaskViewSet(UploadMixin, auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
+    queryset = Task.objects.prefetch_related(
+            Prefetch('label_set', queryset=models.Label.objects.order_by('id')),
             "label_set__attributespec_set",
             "segment_set__job_set",
         ).order_by('-id')
     serializer_class = TaskSerializer
     search_fields = ("name", "owner__username", "mode", "status")
     filterset_class = TaskFilter
-    ordering_fields = ("id", "name", "owner", "status", "assignee")
+    ordering_fields = ("id", "name", "owner", "status", "assignee", "subset")
 
     def get_permissions(self):
         http_method = self.request.method
@@ -450,128 +542,35 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
             Task.objects.filter(owner=owner).count() >= settings.RESTRICTIONS['task_limit']:
             raise serializers.ValidationError('The user has the maximum number of tasks')
 
-    def create(self, request):
-        action = self.request.query_params.get('action', None)
-        if action is None:
-            return super().create(request)
-        elif action == 'import':
-            self._validate_task_limit(owner=self.request.user)
-            if 'rq_id' in request.data:
-                rq_id = request.data['rq_id']
-            else:
-                rq_id = "{}@/api/v1/tasks/{}/import".format(request.user, uuid.uuid4())
+    @action(detail=False, methods=['POST'])
+    def backup(self, request, pk=None):
+        self._validate_task_limit(owner=self.request.user)
+        return backup.import_task(request)
 
-            queue = django_rq.get_queue("default")
-            rq_job = queue.fetch_job(rq_id)
-
-            if not rq_job:
-                serializer = TaskFileSerializer(data=request.data)
-                serializer.is_valid(raise_exception=True)
-                task_file = serializer.validated_data['task_file']
-                fd, filename = mkstemp(prefix='cvat_')
-                with open(filename, 'wb+') as f:
-                    for chunk in task_file.chunks():
-                        f.write(chunk)
-                rq_job = queue.enqueue_call(
-                    func=import_task,
-                    args=(filename, request.user.id),
-                    job_id=rq_id,
-                    meta={
-                        'tmp_file': filename,
-                        'tmp_file_descriptor': fd,
-                    },
-                )
-
-            else:
-                if rq_job.is_finished:
-                    task_id = rq_job.return_value
-                    os.close(rq_job.meta['tmp_file_descriptor'])
-                    os.remove(rq_job.meta['tmp_file'])
-                    rq_job.delete()
-                    return Response({'id': task_id}, status=status.HTTP_201_CREATED)
-                elif rq_job.is_failed:
-                    os.close(rq_job.meta['tmp_file_descriptor'])
-                    os.remove(rq_job.meta['tmp_file'])
-                    exc_info = str(rq_job.exc_info)
-                    rq_job.delete()
-
-                    # RQ adds a prefix with exception class name
-                    import_error_prefix = '{}.{}'.format(
-                        CvatImportError.__module__, CvatImportError.__name__)
-                    if exc_info.startswith(import_error_prefix):
-                        exc_info = exc_info.replace(import_error_prefix + ': ', '')
-                        return Response(data=exc_info,
-                            status=status.HTTP_400_BAD_REQUEST)
-                    else:
-                        return Response(data=exc_info,
-                            status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-            return Response({'rq_id': rq_id}, status=status.HTTP_202_ACCEPTED)
-        else:
-            raise serializers.ValidationError(
-                "Unexpected action specified for the request")
-
-    def retrieve(self, request, pk=None):
+    @action(methods=['GET'], detail=True, url_path='backup')
+    def export(self, request, pk=None):
         db_task = self.get_object() # force to call check_object_permissions
-        action = self.request.query_params.get('action', None)
-        if action is None:
-            return super().retrieve(request, pk)
-        elif action in ('export', 'download'):
-            queue = django_rq.get_queue("default")
-            rq_id = "/api/v1/tasks/{}/export".format(pk)
+        return backup.export(db_task, request)
 
-            rq_job = queue.fetch_job(rq_id)
-            if rq_job:
-                last_task_update_time = timezone.localtime(db_task.updated_date)
-                request_time = rq_job.meta.get('request_time', None)
-                if request_time is None or request_time < last_task_update_time:
-                    rq_job.cancel()
-                    rq_job.delete()
-                else:
-                    if rq_job.is_finished:
-                        file_path = rq_job.return_value
-                        if action == "download" and osp.exists(file_path):
-                            rq_job.delete()
-
-                            timestamp = datetime.strftime(last_task_update_time,
-                                "%Y_%m_%d_%H_%M_%S")
-                            filename = "task_{}_backup_{}{}".format(
-                                db_task.name, timestamp,
-                                osp.splitext(file_path)[1])
-                            return sendfile(request, file_path, attachment=True,
-                                attachment_filename=filename.lower())
-                        else:
-                            if osp.exists(file_path):
-                                return Response(status=status.HTTP_201_CREATED)
-                    elif rq_job.is_failed:
-                        exc_info = str(rq_job.exc_info)
-                        rq_job.delete()
-                        return Response(exc_info,
-                            status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-                    else:
-                        return Response(status=status.HTTP_202_ACCEPTED)
-
-            ttl = dm.views.TASK_CACHE_TTL.total_seconds()
-            queue.enqueue_call(
-                func=dm.views.backup_task,
-                args=(pk, 'task_dump.zip'),
-                job_id=rq_id,
-                meta={ 'request_time': timezone.localtime() },
-                result_ttl=ttl, failure_ttl=ttl)
-            return Response(status=status.HTTP_202_ACCEPTED)
-
-        else:
-            raise serializers.ValidationError(
-                "Unexpected action specified for the request")
+    def perform_update(self, serializer):
+        instance = serializer.instance
+        updated_instance = serializer.save()
+        if instance.project:
+            instance.project.save()
+        if updated_instance.project:
+            updated_instance.project.save()
 
     def perform_create(self, serializer):
         owner = self.request.data.get('owner', None)
         if owner:
             self._validate_task_limit(owner)
-            serializer.save()
+            instance = serializer.save()
         else:
             self._validate_task_limit(self.request.user)
-            serializer.save(owner=self.request.user)
+            instance = serializer.save(owner=self.request.user)
+        if instance.project:
+            db_project = instance.project
+            db_project.save()
 
     def perform_destroy(self, instance):
         task_dirname = instance.get_task_dirname()
@@ -580,6 +579,9 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
         if instance.data and not instance.data.tasks.all():
             shutil.rmtree(instance.data.get_data_dirname(), ignore_errors=True)
             instance.data.delete()
+        if instance.project:
+            db_project = instance.project
+            db_project.save()
 
     @swagger_auto_schema(method='get', operation_summary='Returns a list of jobs for a specific task',
         responses={'200': JobSerializer(many=True)})
@@ -591,6 +593,40 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
             context={"request": request})
 
         return Response(serializer.data)
+
+    def upload_finished(self, request):
+        db_task = self.get_object() # call check_object_permissions as well
+        task_data = db_task.data
+        serializer = DataSerializer(task_data, data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = dict(serializer.validated_data.items())
+        uploaded_files = task_data.get_uploaded_files()
+        uploaded_files.extend(data.get('client_files'))
+        serializer.validated_data.update({'client_files': uploaded_files})
+
+        db_data = serializer.save()
+        db_task.data = db_data
+        db_task.save()
+        data = {k: v for k, v in serializer.data.items()}
+
+        data['use_zip_chunks'] = serializer.validated_data['use_zip_chunks']
+        data['use_cache'] = serializer.validated_data['use_cache']
+        data['copy_data'] = serializer.validated_data['copy_data']
+        if data['use_cache']:
+            db_task.data.storage_method = StorageMethodChoice.CACHE
+            db_task.data.save(update_fields=['storage_method'])
+        if data['server_files'] and not data.get('copy_data'):
+            db_task.data.storage = StorageChoice.SHARE
+            db_task.data.save(update_fields=['storage'])
+        if db_data.cloud_storage:
+            db_task.data.storage = StorageChoice.CLOUD_STORAGE
+            db_task.data.save(update_fields=['storage'])
+            # if the value of stop_frame is 0, then inside the function we cannot know
+            # the value specified by the user or it's default value from the database
+        if 'stop_frame' not in serializer.validated_data:
+            data['stop_frame'] = None
+        task.create(db_task.id, data)
+        return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
 
     @swagger_auto_schema(method='post', operation_summary='Method permanently attaches images or video to a task',
         request_body=DataSerializer,
@@ -607,37 +643,21 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
                 description="A unique number value identifying chunk or frame, doesn't matter for 'preview' type"),
             ]
     )
-    @action(detail=True, methods=['POST', 'GET'])
+    @action(detail=True, methods=['OPTIONS', 'POST', 'GET'], url_path=r'data/?$')
     def data(self, request, pk):
         db_task = self.get_object() # call check_object_permissions as well
-        if request.method == 'POST':
-            if db_task.data:
+        if request.method == 'POST' or request.method == 'OPTIONS':
+            task_data = db_task.data
+            if not task_data:
+                task_data = Data.objects.create()
+                task_data.make_dirs()
+                db_task.data = task_data
+                db_task.save()
+            elif task_data.size != 0:
                 return Response(data='Adding more data is not supported',
                     status=status.HTTP_400_BAD_REQUEST)
-            serializer = DataSerializer(data=request.data)
-            serializer.is_valid(raise_exception=True)
-            db_data = serializer.save()
-            db_task.data = db_data
-            db_task.save()
-            data = {k:v for k, v in serializer.data.items()}
-            data['use_zip_chunks'] = serializer.validated_data['use_zip_chunks']
-            data['use_cache'] = serializer.validated_data['use_cache']
-            data['copy_data'] = serializer.validated_data['copy_data']
-            if data['use_cache']:
-                db_task.data.storage_method = StorageMethodChoice.CACHE
-                db_task.data.save(update_fields=['storage_method'])
-            if data['server_files'] and not data.get('copy_data'):
-                db_task.data.storage = StorageChoice.SHARE
-                db_task.data.save(update_fields=['storage'])
-            if db_data.cloud_storage:
-                db_task.data.storage = StorageChoice.CLOUD_STORAGE
-                db_task.data.save(update_fields=['storage'])
-            # if the value of stop_frame is 0, then inside the function we cannot know
-            # the value specified by the user or it's default value from the database
-            if 'stop_frame' not in serializer.validated_data:
-                data['stop_frame'] = None
-            task.create(db_task.id, data)
-            return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
+            return self.upload_data(request)
+
         else:
             data_type = request.query_params.get('type', None)
             data_id = request.query_params.get('number', None)
@@ -825,6 +845,7 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
             response = { "state": "Started" }
             if 'status' in job.meta:
                 response['message'] = job.meta['status']
+            response['progress'] = job.meta.get('task_progress', 0.)
 
         return response
 
@@ -980,6 +1001,7 @@ class JobViewSet(viewsets.GenericViewSet,
         queryset = db_job.issue_set
         serializer = CombinedIssueSerializer(queryset, context={'request': request}, many=True)
         return Response(serializer.data)
+
 
 @method_decorator(name='create', decorator=swagger_auto_schema(operation_summary='Submit a review for a job'))
 @method_decorator(name='destroy', decorator=swagger_auto_schema(operation_summary='Method removes a review from a job'))
@@ -1321,6 +1343,7 @@ class CloudStorageViewSet(auth.CloudStorageGetQuerySetMixin, viewsets.ModelViewS
     )
     @action(detail=True, methods=['GET'], url_path='content')
     def content(self, request, pk):
+        storage = None
         try:
             db_storage = CloudStorageModel.objects.get(pk=pk)
             credentials = Credentials()
@@ -1365,7 +1388,7 @@ class CloudStorageViewSet(auth.CloudStorageGetQuerySetMixin, viewsets.ModelViewS
             return Response(data=msg, status=status.HTTP_404_NOT_FOUND)
         except Exception as ex:
             # check that cloud storage was not deleted
-            storage_status = storage.get_status()
+            storage_status = storage.get_status() if storage else None
             if storage_status == Status.FORBIDDEN:
                 msg = 'The resource {} is no longer available. Access forbidden.'.format(storage.name)
             elif storage_status == Status.NOT_FOUND:
@@ -1384,6 +1407,7 @@ class CloudStorageViewSet(auth.CloudStorageGetQuerySetMixin, viewsets.ModelViewS
     )
     @action(detail=True, methods=['GET'], url_path='preview')
     def preview(self, request, pk):
+        storage = None
         try:
             db_storage = CloudStorageModel.objects.get(pk=pk)
             if not os.path.exists(db_storage.get_preview_path()):
@@ -1442,7 +1466,7 @@ class CloudStorageViewSet(auth.CloudStorageGetQuerySetMixin, viewsets.ModelViewS
             return HttpResponseNotFound(message)
         except Exception as ex:
             # check that cloud storage was not deleted
-            storage_status = storage.get_status()
+            storage_status = storage.get_status() if storage else None
             if storage_status == Status.FORBIDDEN:
                 msg = 'The resource {} is no longer available. Access forbidden.'.format(storage.name)
             elif storage_status == Status.NOT_FOUND:
@@ -1571,8 +1595,8 @@ def _export_annotations(db_instance, rq_id, request, format_name, action, callba
         return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
     queue = django_rq.get_queue("default")
-
     rq_job = queue.fetch_job(rq_id)
+
     if rq_job:
         last_instance_update_time = timezone.localtime(db_instance.updated_date)
         if isinstance(db_instance, Project):
@@ -1621,4 +1645,39 @@ def _export_annotations(db_instance, rq_id, request, format_name, action, callba
         args=(db_instance.id, format_name, server_address), job_id=rq_id,
         meta={ 'request_time': timezone.localtime() },
         result_ttl=ttl, failure_ttl=ttl)
+    return Response(status=status.HTTP_202_ACCEPTED)
+
+def _import_project_dataset(request, rq_id, rq_func, pk, format_name):
+    format_desc = {f.DISPLAY_NAME: f
+        for f in dm.views.get_import_formats()}.get(format_name)
+    if format_desc is None:
+        raise serializers.ValidationError(
+            "Unknown input format '{}'".format(format_name))
+    elif not format_desc.ENABLED:
+        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    queue = django_rq.get_queue("default")
+    rq_job = queue.fetch_job(rq_id)
+
+    if not rq_job:
+        serializer = DatasetFileSerializer(data=request.data)
+        if serializer.is_valid(raise_exception=True):
+            dataset_file = serializer.validated_data['dataset_file']
+            fd, filename = mkstemp(prefix='cvat_{}'.format(pk))
+            with open(filename, 'wb+') as f:
+                for chunk in dataset_file.chunks():
+                    f.write(chunk)
+
+            rq_job = queue.enqueue_call(
+                func=rq_func,
+                args=(pk, filename, format_name),
+                job_id=rq_id,
+                meta={
+                    'tmp_file': filename,
+                    'tmp_file_descriptor': fd,
+                },
+            )
+    else:
+        return Response(status=status.HTTP_409_CONFLICT, data='Import job already exists')
+
     return Response(status=status.HTTP_202_ACCEPTED)

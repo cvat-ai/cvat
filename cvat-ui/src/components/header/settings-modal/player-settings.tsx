@@ -24,12 +24,14 @@ interface Props {
     frameSpeed: FrameSpeed;
     resetZoom: boolean;
     rotateAll: boolean;
+    smoothImage: boolean;
     canvasBackgroundColor: string;
     onChangeFrameStep(step: number): void;
     onChangeFrameSpeed(speed: FrameSpeed): void;
     onSwitchResetZoom(enabled: boolean): void;
     onSwitchRotateAll(rotateAll: boolean): void;
     onChangeCanvasBackgroundColor(color: string): void;
+    onSwitchSmoothImage(enabled: boolean): void;
 }
 
 export default function PlayerSettingsComponent(props: Props): JSX.Element {
@@ -38,11 +40,13 @@ export default function PlayerSettingsComponent(props: Props): JSX.Element {
         frameSpeed,
         resetZoom,
         rotateAll,
+        smoothImage,
         canvasBackgroundColor,
         onChangeFrameStep,
         onChangeFrameSpeed,
         onSwitchResetZoom,
         onSwitchRotateAll,
+        onSwitchSmoothImage,
         onChangeCanvasBackgroundColor,
     } = props;
 
@@ -172,6 +176,26 @@ export default function PlayerSettingsComponent(props: Props): JSX.Element {
                         </Col>
                         <Col span={24}>
                             <Text type='secondary'> Rotate all images simultaneously </Text>
+                        </Col>
+                    </Row>
+                </Col>
+            </Row>
+            <Row justify='start'>
+                <Col span={7}>
+                    <Row className='cvat-player-settings-smooth-image'>
+                        <Col span={24} className='cvat-player-settings-smooth-image-checkbox'>
+                            <Checkbox
+                                className='cvat-text-color'
+                                checked={smoothImage}
+                                onChange={(event: CheckboxChangeEvent): void => {
+                                    onSwitchSmoothImage(event.target.checked);
+                                }}
+                            >
+                                Smooth image
+                            </Checkbox>
+                        </Col>
+                        <Col span={24}>
+                            <Text type='secondary'> Smooth image when zoom-in it </Text>
                         </Col>
                     </Row>
                 </Col>
