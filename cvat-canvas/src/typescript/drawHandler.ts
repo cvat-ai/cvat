@@ -639,7 +639,10 @@ export class DrawHandlerImpl implements DrawHandler {
     private pasteShape(): void {
         function moveShape(shape: SVG.Shape, x: number, y: number): void {
             const bbox = shape.bbox();
+            const { rotation } = shape.transform();
+            shape.untransform();
             shape.move(x - bbox.width / 2, y - bbox.height / 2);
+            shape.rotate(rotation);
         }
 
         const { x: initialX, y: initialY } = this.cursorPosition;
@@ -651,7 +654,7 @@ export class DrawHandlerImpl implements DrawHandler {
         });
     }
 
-    private pasteBox(box: BBox): void {
+    private pasteBox(box: BBox, rotation: number): void {
         this.drawInstance = (this.canvas as any)
             .rect(box.width, box.height)
             .move(box.x, box.y)
@@ -659,7 +662,7 @@ export class DrawHandlerImpl implements DrawHandler {
             .attr({
                 'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
                 'fill-opacity': this.configuration.creationOpacity,
-            });
+            }).rotate(rotation);
         this.pasteShape();
 
         this.drawInstance.on('done', (e: CustomEvent): void => {
@@ -678,6 +681,7 @@ export class DrawHandlerImpl implements DrawHandler {
                     attributes: { ...this.drawData.initialState.attributes },
                     label: this.drawData.initialState.label,
                     color: this.drawData.initialState.color,
+                    rotation: this.drawData.initialState.rotation,
                 },
                 Date.now() - this.startTimestamp,
                 e.detail.originalEvent.ctrlKey,
@@ -799,7 +803,7 @@ export class DrawHandlerImpl implements DrawHandler {
                     y: ytl,
                     width: xbr - xtl,
                     height: ybr - ytl,
-                });
+                }, this.drawData.initialState.rotation);
             } else {
                 const points = this.drawData.initialState.points.map((coord: number): number => coord + offset);
                 const stringifiedPoints = stringifyPoints(points);
