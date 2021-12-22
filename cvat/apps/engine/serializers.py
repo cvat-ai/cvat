@@ -739,6 +739,9 @@ class DatasetFileSerializer(serializers.Serializer):
 class TaskFileSerializer(serializers.Serializer):
     task_file = serializers.FileField()
 
+class ProjectFileSerializer(serializers.Serializer):
+    project_file = serializers.FileField()
+
 class ReviewSerializer(serializers.ModelSerializer):
     assignee = BasicUserSerializer(allow_null=True, required=False)
     assignee_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)

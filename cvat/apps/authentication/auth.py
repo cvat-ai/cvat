@@ -21,7 +21,7 @@ class TokenAuthentication(_TokenAuthentication):
     def authenticate(self, request):
         auth = super().authenticate(request)
         session = getattr(request, 'session')
-        if auth is not None and session.session_key is None:
+        if auth is not None and (session.session_key is None or (not session.modified and not session.load())):
             login(request, auth[0], 'django.contrib.auth.backends.ModelBackend')
         return auth
 
