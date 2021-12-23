@@ -1561,25 +1561,6 @@
                          */
                         get: () => data.sorting_method,
                     },
-                    uploadChunkSize: {
-                        /**
-                         * @name uploadChunkSize
-                         * @type {integer}
-                         * @memberof module:API.cvat.classes.Task
-                         * @instance
-                         */
-                        get: () => data.upload_chunk_size,
-                        set: (chunkSize) => {
-                            if (typeof chunkSize !== 'number' || chunkSize < 1 || chunkSize > 1000) {
-                                throw new ArgumentError(
-                                    `Uploload chunk size value must be a positive number between 1 and 1000.
-                                     But value ${chunkSize} has been got.`,
-                                );
-                            }
-
-                            data.data_chunk_size = chunkSize;
-                        },
-                    },
                     _internalData: {
                         get: () => data,
                     },
@@ -2112,9 +2093,6 @@
         }
         if (typeof this.cloudStorageId !== 'undefined') {
             taskDataSpec.cloud_storage_id = this.cloudStorageId;
-        }
-        if (typeof this.uploadChunkSize !== 'undefined') {
-            taskDataSpec.upload_chunk_size = this.uploadChunkSize;
         }
 
         const task = await serverProxy.tasks.createTask(taskSpec, taskDataSpec, onUpdate);

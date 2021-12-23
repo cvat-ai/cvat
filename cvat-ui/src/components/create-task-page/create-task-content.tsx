@@ -55,7 +55,6 @@ const defaultState = {
         useZipChunks: true,
         useCache: true,
         sortingMethod: SortingMethod.LEXICOGRAPHICAL,
-        uploadChunkSize: 100,
     },
     labels: [],
     files: {

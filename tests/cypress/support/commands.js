@@ -560,10 +560,6 @@ Cypress.Commands.add('advancedConfiguration', (advancedConfigurationParams) => {
     if (advancedConfigurationParams.overlapSize) {
         cy.get('#overlapSize').type(advancedConfigurationParams.overlapSize);
     }
-
-    if (advancedConfigurationParams.uploadChunkSize) {
-        cy.get('#uploadChunkSize').clear().type(advancedConfigurationParams.uploadChunkSize);
-    }
 });
 
 Cypress.Commands.add('removeAnnotations', () => {

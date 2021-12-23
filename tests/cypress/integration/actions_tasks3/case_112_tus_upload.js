@@ -23,7 +23,6 @@ context('Create task with tus file', () => {
     const directoryToArchive = imagesFolder;
     const zipLevel = 0;
     const extension = 'bmp';
-    const advancedConfigurationParams = { uploadChunkSize: 5 };
 
     before(() => {
         cy.visit('auth/login');
@@ -35,8 +34,10 @@ context('Create task with tus file', () => {
 
     describe(`Testing "${labelName}"`, () => {
         it('Create a task with 5mb upload chunk size', () => {
-            cy.createAnnotationTask(taskName, labelName, attrName, textDefaultValue, archiveName,
-                null, advancedConfigurationParams);
+            const win = cy.state('window');
+            win.cvat.config.uploadChunkSize = 5;
+            cy.createAnnotationTask(taskName, labelName, attrName, textDefaultValue, archiveName)
+                .then(() => { win.cvat.config.uploadChunkSize = 100; });
         });
 
         it('Check if task exist', () => {

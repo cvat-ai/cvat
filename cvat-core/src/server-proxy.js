@@ -608,8 +608,7 @@
                     });
                 }
 
-                const chunkSize = parseInt(taskDataSpec.upload_chunk_size, 10) * 1024 * 1024;
-                delete taskDataSpec.upload_chunk_size;
+                const chunkSize = config.uploadChunkSize * 1024 * 1024;
                 const clientFiles = taskDataSpec.client_files;
                 const chunkFiles = [];
                 const bulkFiles = [];

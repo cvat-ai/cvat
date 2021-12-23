@@ -354,7 +354,6 @@ export function createTaskAsync(data: any): ThunkAction<Promise<void>, {}, {}, A
             use_zip_chunks: data.advanced.useZipChunks,
             use_cache: data.advanced.useCache,
             sorting_method: data.advanced.sortingMethod,
-            upload_chunk_size: data.advanced.uploadChunkSize,
         };
 
         if (data.projectId) {
