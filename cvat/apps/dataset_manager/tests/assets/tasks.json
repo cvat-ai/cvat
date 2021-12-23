@@ -3,8 +3,6 @@
     "name": "main task",
     "overlap": 0,
     "segment_size": 100,
-    "owner_id": 1,
-    "assignee_id": 2,
     "labels": [
       {
         "name": "car",
@@ -58,8 +56,6 @@
     "name": "icdar localization/recogntion task",
     "overlap": 0,
     "segment_size": 100,
-    "owner_id": 1,
-    "assignee_id": 2,
     "labels": [
       {
         "name": "icdar",
@@ -78,8 +74,6 @@
     "name": "icdar localization/recogntion task",
     "overlap": 0,
     "segment_size": 100,
-    "owner_id": 1,
-    "assignee_id": 2,
     "labels": [
       {
         "name": "icdar",
@@ -98,8 +92,6 @@
     "name": "icdar segmentation task",
     "overlap": 0,
     "segment_size": 100,
-    "owner_id": 1,
-    "assignee_id": 2,
     "labels": [
       {
         "name": "icdar",
@@ -136,8 +128,6 @@
     "name": "market1501 task",
     "overlap": 0,
     "segment_size": 100,
-    "owner_id": 1,
-    "assignee_id": 2,
     "labels": [
       {
         "name": "market-1501",
@@ -168,8 +158,6 @@
     "name": "cityscapes task",
     "overlap": 0,
     "segment_size": 100,
-    "owner_id": 1,
-    "assignee_id": 2,
     "labels": [
       {
         "name": "car",
@@ -200,8 +188,6 @@
     "name": "wrong checkbox value task",
     "overlap": 0,
     "segment_size": 100,
-    "owner_id": 1,
-    "assignee_id": 2,
     "labels": [
       {
         "name": "car",
@@ -255,7 +241,6 @@
     "name": "no attributes",
     "overlap": 0,
     "segment_size": 100,
-    "owner_id": 1,
     "labels": [
       {
         "name": "car",
@@ -268,7 +253,6 @@
     "name": "many jobs",
     "overlap": 0,
     "segment_size": 5,
-    "owner_id": 1,
     "labels": [
       {
         "name": "car",
@@ -281,7 +265,6 @@
     "name": "change overlap and segment size",
     "overlap": 3,
     "segment_size": 6,
-    "owner_id": 1,
     "labels": [
       {
         "name": "car",
@@ -294,8 +277,6 @@
     "name": "widerface task",
     "overlap": 0,
     "segment_size": 100,
-    "owner_id": 1,
-    "assignee_id": 2,
     "labels": [
       {
         "name": "face",
@@ -338,16 +319,12 @@
     "name": "First task in project",
     "project_id": 1,
     "overlap": 0,
-    "segment_size": 100,
-    "owner_id": 1,
-    "assignee_id": 2
+    "segment_size": 100
   },
   "task in project #2": {
     "name": "Second task in project",
     "project_id": 1,
     "overlap": 0,
-    "segment_size": 100,
-    "owner_id": 1,
-    "assignee_id": 2
+    "segment_size": 100
   }
 }

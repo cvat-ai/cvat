@@ -5,10 +5,11 @@
 from django.http import HttpResponseBadRequest, JsonResponse
 from rules.contrib.views import permission_required, objectgetter
 
-from cvat.apps.authentication.decorators import login_required
+from cvat.apps.iam.decorators import login_required
 from cvat.apps.engine.log import slogger
 from cvat.apps.engine import models
 from cvat.apps.dataset_repo.models import GitData
+import contextlib
 
 import cvat.apps.dataset_repo.dataset_repo as CVATGit
 import django_rq
@@ -55,8 +56,6 @@ def create(request, tid):
 
 
 @login_required
-@permission_required(perm=['engine.task.access'],
-    fn=objectgetter(models.Task, 'tid'), raise_exception=True)
 def push_repository(request, tid):
     try:
         slogger.task[tid].info("push repository request")
@@ -67,25 +66,23 @@ def push_repository(request, tid):
 
         return JsonResponse({ "rq_id": rq_id })
     except Exception as ex:
-        try:
-            slogger.task[tid].error("error occurred during pushing repository request", exc_info=True)
-        except Exception:
-            pass
+        with contextlib.suppress(Exception):
+            slogger.task[tid].error("error occurred during pushing repository request",
+                exc_info=True)
+
         return HttpResponseBadRequest(str(ex))
 
 
 @login_required
-@permission_required(perm=['engine.task.access'],
-    fn=objectgetter(models.Task, 'tid'), raise_exception=True)
 def get_repository(request, tid):
     try:
         slogger.task[tid].info("get repository request")
         return JsonResponse(CVATGit.get(tid, request.user))
     except Exception as ex:
-        try:
-            slogger.task[tid].error("error occurred during getting repository info request", exc_info=True)
-        except Exception:
-            pass
+        with contextlib.suppress(Exception):
+            slogger.task[tid].error("error occurred during getting repository info request",
+                exc_info=True)
+
         return HttpResponseBadRequest(str(ex))
 
 

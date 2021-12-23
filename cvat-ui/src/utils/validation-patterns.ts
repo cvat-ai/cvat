@@ -75,6 +75,16 @@ const validationPatterns = {
         pattern: /^\[\/?([A-z0-9-_+]+\/)*([A-z0-9]+\.(xml|zip|json))\]$/,
         message: 'Git path is not valid',
     },
+
+    validateOrganizationSlug: {
+        pattern: /^[a-zA-Z\d]+$/,
+        message: 'Only Latin characters and numbers are allowed',
+    },
+
+    validatePhoneNumber: {
+        pattern: /^[+]*[-\s0-9]*$/g,
+        message: 'Input phone number is not correct',
+    },
 };
 
 export default validationPatterns;

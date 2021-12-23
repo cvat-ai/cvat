@@ -56,6 +56,7 @@ they will need to be used in CVAT when adding cloud storage.
 #### Prepare dataset
 
 For example, let's take [The Oxford-IIIT Pet Dataset](https://www.robots.ox.ac.uk/~vgg/data/pets/):
+
 - Download the [archive with images](https://www.robots.ox.ac.uk/~vgg/data/pets/data/images.tar.gz).
 - Unpack the archive into the prepared folder
   and create a manifest file as described in [prepare manifest file section](/docs/manual/advanced/dataset_manifest/):
@@ -340,6 +341,7 @@ In the window that appears, select the created bucket and click export.
 ![](/images/aws-s3_tutorial_7.jpg)
 
 ### Prepare manifest file
+
 Now you need to prepare a manifest file. I used [AWS cli](https://aws.amazon.com/cli/) and
 [script for prepare manifest file](https://github.com/openvinotoolkit/cvat/tree/develop/utils/dataset_manifest).
 Perform the installation using the manual [aws-shell](https://github.com/awslabs/aws-shell),

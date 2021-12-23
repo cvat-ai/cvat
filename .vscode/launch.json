@@ -45,7 +45,7 @@
             "python": "${command:python.interpreterPath}",
             "program": "${workspaceRoot}/manage.py",
             "env": {
-                "CVAT_SERVERLESS":  "1"
+                "CVAT_SERVERLESS": "1"
             },
             "args": [
                 "runserver",
@@ -62,10 +62,10 @@
             "type": "pwa-chrome",
             "request": "launch",
             "url": "http://localhost:7000/",
-            "disableNetworkCache":true,
+            "disableNetworkCache": true,
             "trace": true,
             "showAsyncStacks": true,
-            "pathMapping":{
+            "pathMapping": {
                 "/static/engine/": "${workspaceFolder}/cvat/apps/engine/static/engine/",
                 "/static/dashboard/": "${workspaceFolder}/cvat/apps/dashboard/static/dashboard/",
             }
@@ -111,7 +111,7 @@
             "request": "launch",
             "justMyCode": false,
             "stopOnEntry": false,
-            "python":"${command:python.interpreterPath}",
+            "python": "${command:python.interpreterPath}",
             "program": "${workspaceRoot}/manage.py",
             "args": [
                 "rqworker",
@@ -195,8 +195,8 @@
             "name": "jest debug",
             "program": "${workspaceFolder}/node_modules/.bin/jest",
             "args": [
-              "--config",
-              "${workspaceFolder}/cvat-core/jest.config.js"
+                "--config",
+                "${workspaceFolder}/cvat-core/jest.config.js"
             ],
             "console": "integratedTerminal",
             "internalConsoleOptions": "neverOpen",

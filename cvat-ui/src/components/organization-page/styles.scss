@@ -1,0 +1,150 @@
+// Copyright (C) 2021 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
+
+@import 'base.scss';
+
+.cvat-organization-page {
+    height: 100%;
+    padding-top: $grid-unit-size * 2;
+    width: $grid-unit-size * 120;
+    margin: 0 auto;
+
+    .ant-empty {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+    }
+
+    > div:nth-child(1) {
+        align-items: flex-end;
+
+        .cvat-organization-top-bar-buttons-block {
+            text-align: right;
+        }
+
+        .cvat-organization-top-bar-descriptions {
+            > div {
+                > button {
+                    margin-top: $grid-unit-size;
+                }
+            }
+
+            > span {
+                display: block;
+            }
+
+            > span:nth-child(3) {
+                max-height: 7em;
+                display: grid;
+                overflow: auto;
+                margin-bottom: $grid-unit-size;
+            }
+
+            > span:not(.cvat-title),
+            div {
+                font-size: 12px;
+
+                span.anticon {
+                    margin-right: $grid-unit-size;
+                }
+
+                span.anticon[aria-label=edit] {
+                    margin-left: $grid-unit-size;
+                }
+            }
+        }
+
+        .cvat-organization-top-bar-contacts {
+            button {
+                margin-top: $grid-unit-size;
+                float: right;
+            }
+
+            > span {
+                display: block;
+            }
+
+            > span,
+            div {
+                font-size: 12px;
+
+                span.anticon {
+                    margin-right: $grid-unit-size;
+                }
+
+                span.anticon[aria-label=edit] {
+                    margin-left: $grid-unit-size;
+                }
+            }
+        }
+    }
+
+    > div:nth-child(2) {
+        overflow: auto;
+        height: auto;
+        max-height: 60%;
+        margin-top: $grid-unit-size;
+    }
+
+    @media screen and (min-height: 900px) {
+        > div:nth-child(2) {
+            max-height: 65%;
+        }
+    }
+
+    @media screen and (min-height: 1080px) {
+        > div:nth-child(2) {
+            max-height: 70%;
+        }
+    }
+}
+
+.cvat-organization-member-item {
+    border: 1px solid $border-color-1;
+    border-radius: 3px;
+    padding: $grid-unit-size;
+    background: $background-color-1;
+    margin-top: $grid-unit-size;
+    align-items: center;
+
+    > .cvat-organization-member-item-username,
+    .cvat-organization-member-item-name {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    > .cvat-organization-member-item-dates {
+        font-size: 12px;
+        display: grid;
+    }
+
+    > .cvat-organization-member-item-remove {
+        text-align: center;
+    }
+
+    > .cvat-organization-member-item-role {
+        > .ant-select {
+            width: 100%;
+        }
+    }
+}
+
+.cvat-organization-members-pagination-block {
+    display: flex;
+    justify-content: center;
+    margin-top: 8px;
+    margin-bottom: 8px;
+}
+
+.cvat-remove-organization-submit {
+    > input {
+        margin-top: $grid-unit-size;
+    }
+}
+
+.cvat-organization-invitation-field {
+    align-items: baseline;
+}
