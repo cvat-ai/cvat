@@ -59,8 +59,9 @@ context('Filters, sorting jobs.', () => {
     }
 
     function testSetJobFilter({ column, menuItem, reset }) {
-        cy.get(column).find('[role="button"]').trigger('mouseover').click().wait(300); // Waiting for dropdown menu transition
+        cy.get(column).find('[role="button"]').trigger('mouseover').click();
         cy.get('.ant-dropdown')
+            .should('be.visible')
             .not('.ant-dropdown-hidden')
             .within(() => {
                 if (!reset) {
