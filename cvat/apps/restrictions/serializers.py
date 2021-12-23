@@ -6,7 +6,7 @@
 from rest_framework import serializers
 from django.conf import settings
 
-from cvat.apps.authentication.serializers import RegisterSerializerEx
+from cvat.apps.iam.serializers import RegisterSerializerEx
 
 class UserAgreementSerializer(serializers.Serializer):
     name = serializers.CharField(max_length=256)

@@ -52,7 +52,7 @@ function DrawShapePopoverComponent(props: Props): JSX.Element {
         jobInstance,
     } = props;
 
-    const is2D = jobInstance.task.dimension === DimensionType.DIM_2D;
+    const is2D = jobInstance.dimension === DimensionType.DIM_2D;
 
     return (
         <div className='cvat-draw-shape-popover-content'>

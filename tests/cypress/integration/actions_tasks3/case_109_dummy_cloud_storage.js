@@ -15,7 +15,7 @@ context('Dummy cloud storages.', { browser: '!firefox' }, () => {
     const imageFolder = '../integration/actions_tasks3/assets/case_109';
 
     function testListDummyCloudStorages(dummyCS) {
-        cy.intercept('GET', 'api/v1/cloudstorages?page_size=12&page=1', dummyCS).as('listCS');
+        cy.intercept('GET', 'api/v1/cloudstorages?**', dummyCS).as('listCS');
         cy.contains('.cvat-header-button', 'Cloud Storages').should('be.visible').click();
         cy.wait('@listCS').its('response.statusCode').should('eq', 200);
         cy.get('.cvat-cloud-storage-item-empty-preview').should('have.length', 1);
@@ -57,10 +57,10 @@ context('Dummy cloud storages.', { browser: '!firefox' }, () => {
     }
 
     function testCSSetStatusPreview(id, status, image) {
-        cy.intercept('GET', `api/v1/cloudstorages/${id}/status`, status).as('csStatus');
+        cy.intercept('GET', `api/v1/cloudstorages/${id}/status?**`, status).as('csStatus');
         cy.intercept(
             'GET',
-            `api/v1/cloudstorages/${id}/preview`,
+            `api/v1/cloudstorages/${id}/preview?**`,
             { fixture: `${imageFolder}/${image}` },
         ).as('csPreview');
 

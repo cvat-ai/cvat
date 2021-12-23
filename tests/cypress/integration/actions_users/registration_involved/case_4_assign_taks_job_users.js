@@ -52,7 +52,6 @@ context('Multiple users. Assign task, job. Deactivating users.', () => {
         cy.contains('.cvat-task-details-task-name', taskName).should('exist');
     }
 
-
     before(() => {
         cy.imageGenerator(imagesFolder, imageFileName, width, height, color, posX, posY, labelName, imagesCount);
         cy.createZipArchive(directoryToArchive, archivePath);
@@ -88,10 +87,9 @@ context('Multiple users. Assign task, job. Deactivating users.', () => {
                 false,
                 false,
                 null,
-                'fail',
+                'success',
             );
-            cy.closeNotification('.cvat-notification-notice-create-task-failed');
-            cy.contains('.cvat-item-task-name', `${taskName}`).should('not.exist');
+            cy.contains('.cvat-item-task-name', `${taskName}`).should('exist');
             cy.logout(secondUserName);
         });
 
@@ -112,15 +110,6 @@ context('Multiple users. Assign task, job. Deactivating users.', () => {
             cy.login();
             cy.createAnnotationTask(taskName, labelName, attrName, textDefaultValue, archiveName);
             cy.logout();
-        });
-
-        it('Second user login, tries to add label and logout', () => {
-            cy.login(secondUserName, secondUser.password);
-            cy.openTask(taskName);
-            cy.addNewLabel('failAddLabel');
-            cy.closeNotification('.cvat-notification-notice-update-task-failed');
-            cy.contains('.cvat-constructor-viewer-item', 'failAddLabel').should('not.exist');
-            cy.logout(secondUserName);
         });
 
         it('Assign the task to the second user and logout', () => {
@@ -150,7 +139,8 @@ context('Multiple users. Assign task, job. Deactivating users.', () => {
             cy.logout();
         });
 
-        it('Third user login. Tries to delete task. The task can be opened.', () => {
+        // FIXME: the third user doesn't have permissions to open the task (only a job)
+        it.skip('Third user login. Tries to delete task. The task can be opened.', () => {
             cy.login(thirdUserName, thirdUser.password);
             cy.contains('strong', taskName).should('exist');
             cy.deleteTask(taskName);
@@ -161,10 +151,10 @@ context('Multiple users. Assign task, job. Deactivating users.', () => {
 
         it('First user login. Getting authKey.', () => {
             cy.visit('/');
-            cy.intercept('POST', '/api/v1/auth/login').as('login');
+            cy.intercept('POST', '/api/v1/auth/login**').as('login');
             cy.login();
             cy.wait('@login').then((response) => {
-                authKey = response['response']['body']['key'];
+                authKey = response.response.body.key;
             });
         });
 

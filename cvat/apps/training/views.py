@@ -2,23 +2,16 @@ from cacheops import cache, CacheMiss
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
-from rest_framework.permissions import IsAuthenticated, SAFE_METHODS
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from cvat.apps.authentication import auth
 from cvat.apps.engine.models import Project
 from cvat.apps.training.jobs import save_frame_prediction_to_cache_job, save_prediction_server_status_to_cache_job
 
 
 class PredictView(viewsets.ViewSet):
     def get_permissions(self):
-        http_method = self.request.method
         permissions = [IsAuthenticated]
-
-        if http_method in SAFE_METHODS:
-            permissions.append(auth.ProjectAccessPermission)
-        else:
-            permissions.append(auth.AdminRolePermission)
 
         return [perm() for perm in permissions]
 

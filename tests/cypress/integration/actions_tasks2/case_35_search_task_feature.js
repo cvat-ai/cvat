@@ -13,6 +13,7 @@ context('Search task feature.', () => {
         cy.intercept('GET', '/api/v1/tasks**').as('searchTask');
         cy.get('.cvat-search-field').find('[placeholder="Search"]').clear().type(`${option}{Enter}`);
         cy.wait('@searchTask').its('response.statusCode').should('equal', 200);
+        cy.get('.cvat-spinner').should('not.exist');
         cy.contains('.cvat-item-task-name', taskName).should(result);
     }
 

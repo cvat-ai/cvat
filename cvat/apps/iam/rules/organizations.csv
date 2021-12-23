@@ -1,0 +1,10 @@
+Scope,Resource,Context,Ownership,Limit,Method,URL,Privilege,Membership
+create,Organization,N/A,N/A,"resource[""user""][""num_resources""] < 1",POST,/organizations,User,N/A
+create,Organization,N/A,N/A,,POST,/organizations,Business,N/A
+list,N/A,N/A,N/A,,GET,/organizations,None,N/A
+view,Organization,N/A,"Worker, Supervisor, Maintainer, Owner",,GET,/organizations/{id},None,N/A
+view,Organization,N/A,None,,GET,/organizations/{id},Admin,N/A
+update,Organization,N/A,"Owner, Maintainer",,PATCH,/organizations/{id},Worker,N/A
+update,Organization,N/A,"None, Worker, Supervisor",,PATCH,/organizations/{id},Admin,N/A
+delete,Organization,N/A,Owner,,DELETE,/organizations/{id},Worker,N/A
+delete,Organization,N/A,"None, Worker, Supervisor, Maintainer",,DELETE,/organizations/{id},Admin,N/A
