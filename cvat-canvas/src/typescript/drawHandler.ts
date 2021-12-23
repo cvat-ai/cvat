@@ -38,6 +38,33 @@ interface FinalCoordinates {
     box: Box;
 }
 
+function checkConstraint(shapeType: string, points: number[], box: Box | null = null): boolean {
+    if (shapeType === 'rectangle') {
+        const [xtl, ytl, xbr, ybr] = points;
+        return (xbr - xtl) * (ybr - ytl) >= consts.AREA_THRESHOLD;
+    }
+
+    if (shapeType === 'polygon') {
+        return (box.xbr - box.xtl) * (box.ybr - box.ytl) >= consts.AREA_THRESHOLD && points.length >= 3 * 2;
+    }
+
+    if (shapeType === 'polyline') {
+        return (box.xbr - box.xtl >= consts.SIZE_THRESHOLD ||
+            box.ybr - box.ytl >= consts.SIZE_THRESHOLD) && points.length >= 2 * 2;
+    }
+
+    if (shapeType === 'points') {
+        return points.length > 2 || (points.length === 2 && points[0] !== 0 && points[1] !== 0);
+    }
+
+    if (shapeType === 'cuboid') {
+        return points.length === 4 * 2 || points.length === 8 * 2 ||
+            (points.length === 2 * 2 && (points[2] - points[0]) * (points[3] - points[1]) >= consts.AREA_THRESHOLD);
+    }
+
+    return false;
+}
+
 export class DrawHandlerImpl implements DrawHandler {
     // callback is used to notify about creating new shape
     private onDrawDone: (data: object | null, duration?: number, continueDraw?: boolean) => void;
@@ -358,15 +385,13 @@ export class DrawHandlerImpl implements DrawHandler {
                 this.release();
 
                 if (this.canceled) return;
-                if ((xbr - xtl) * (ybr - ytl) >= consts.AREA_THRESHOLD) {
-                    this.onDrawDone(
-                        {
-                            clientID,
-                            shapeType,
-                            points: [xtl, ytl, xbr, ybr],
-                        },
-                        Date.now() - this.startTimestamp,
-                    );
+                if (checkConstraint('rectangle', [xtl, ytl, xbr, ybr])) {
+                    this.onDrawDone({
+                        clientID,
+                        shapeType,
+                        points: [xtl, ytl, xbr, ybr],
+                    },
+                    Date.now() - this.startTimestamp);
                 }
             })
             .on('drawupdate', (): void => {
@@ -404,15 +429,13 @@ export class DrawHandlerImpl implements DrawHandler {
                     const { shapeType, redraw: clientID } = this.drawData;
                     this.cancel();
 
-                    if ((xbr - xtl) * (ybr - ytl) >= consts.AREA_THRESHOLD) {
-                        this.onDrawDone(
-                            {
-                                shapeType,
-                                clientID,
-                                points: [xtl, ytl, xbr, ybr],
-                            },
-                            Date.now() - this.startTimestamp,
-                        );
+                    if (checkConstraint('rectangle', [xtl, ytl, xbr, ybr])) {
+                        this.onDrawDone({
+                            shapeType,
+                            clientID,
+                            points: [xtl, ytl, xbr, ybr],
+                        },
+                        Date.now() - this.startTimestamp);
                     }
                 }
             })
@@ -499,30 +522,16 @@ export class DrawHandlerImpl implements DrawHandler {
             this.release();
 
             if (this.canceled) return;
-            if (
-                shapeType === 'polygon' &&
-                (box.xbr - box.xtl) * (box.ybr - box.ytl) >= consts.AREA_THRESHOLD &&
-                points.length >= 3 * 2
-            ) {
+            if (checkConstraint(shapeType, points, box)) {
+                if (shapeType === 'cuboid') {
+                    this.onDrawDone(
+                        { clientID, shapeType, points: cuboidFrom4Points(points) },
+                        Date.now() - this.startTimestamp,
+                    );
+                    return;
+                }
+
                 this.onDrawDone({ clientID, shapeType, points }, Date.now() - this.startTimestamp);
-            } else if (
-                shapeType === 'polyline' &&
-                (box.xbr - box.xtl >= consts.SIZE_THRESHOLD || box.ybr - box.ytl >= consts.SIZE_THRESHOLD) &&
-                points.length >= 2 * 2
-            ) {
-                this.onDrawDone({ clientID, shapeType, points }, Date.now() - this.startTimestamp);
-            } else if (shapeType === 'points' && (e.target as any).getAttribute('points') !== '0,0') {
-                this.onDrawDone({ clientID, shapeType, points }, Date.now() - this.startTimestamp);
-                // TODO: think about correct constraign for cuboids
-            } else if (shapeType === 'cuboid' && points.length === 4 * 2) {
-                this.onDrawDone(
-                    {
-                        clientID,
-                        shapeType,
-                        points: cuboidFrom4Points(points),
-                    },
-                    Date.now() - this.startTimestamp,
-                );
             }
         });
     }
@@ -586,16 +595,14 @@ export class DrawHandlerImpl implements DrawHandler {
                 this.release();
 
                 if (this.canceled) return;
-                if ((xbr - xtl) * (ybr - ytl) >= consts.AREA_THRESHOLD) {
+                if (checkConstraint('cuboid', [xtl, ytl, xbr, ybr])) {
                     const d = { x: (xbr - xtl) * 0.1, y: (ybr - ytl) * 0.1 };
-                    this.onDrawDone(
-                        {
-                            shapeType,
-                            points: cuboidFrom4Points([xtl, ybr, xbr, ybr, xbr, ytl, xbr + d.x, ytl - d.y]),
-                            clientID,
-                        },
-                        Date.now() - this.startTimestamp,
-                    );
+                    this.onDrawDone({
+                        shapeType,
+                        points: cuboidFrom4Points([xtl, ybr, xbr, ybr, xbr, ytl, xbr + d.x, ytl - d.y]),
+                        clientID,
+                    },
+                    Date.now() - this.startTimestamp);
                 }
             })
             .on('drawupdate', (): void => {
@@ -615,7 +622,8 @@ export class DrawHandlerImpl implements DrawHandler {
                 .split(/[,\s]/g)
                 .map((coord: string): number => +coord);
 
-            const { points } = this.drawData.initialState.shapeType === 'cuboid' ?
+            const { shapeType } = this.drawData.initialState;
+            const { points, box } = shapeType === 'cuboid' ?
                 this.getFinalCuboidCoordinates(targetPoints) :
                 this.getFinalPolyshapeCoordinates(targetPoints, true);
 
@@ -623,19 +631,21 @@ export class DrawHandlerImpl implements DrawHandler {
                 this.release();
             }
 
-            this.onDrawDone(
-                {
-                    shapeType: this.drawData.initialState.shapeType,
-                    objectType: this.drawData.initialState.objectType,
-                    points,
-                    occluded: this.drawData.initialState.occluded,
-                    attributes: { ...this.drawData.initialState.attributes },
-                    label: this.drawData.initialState.label,
-                    color: this.drawData.initialState.color,
-                },
-                Date.now() - this.startTimestamp,
-                e.detail.originalEvent.ctrlKey,
-            );
+            if (checkConstraint(shapeType, points, box)) {
+                this.onDrawDone(
+                    {
+                        shapeType,
+                        objectType: this.drawData.initialState.objectType,
+                        points,
+                        occluded: this.drawData.initialState.occluded,
+                        attributes: { ...this.drawData.initialState.attributes },
+                        label: this.drawData.initialState.label,
+                        color: this.drawData.initialState.color,
+                    },
+                    Date.now() - this.startTimestamp,
+                    e.detail.originalEvent.ctrlKey,
+                );
+            }
         });
     }
 
@@ -676,20 +686,22 @@ export class DrawHandlerImpl implements DrawHandler {
                 this.release();
             }
 
-            this.onDrawDone(
-                {
-                    shapeType: this.drawData.initialState.shapeType,
-                    objectType: this.drawData.initialState.objectType,
-                    points: [xtl, ytl, xbr, ybr],
-                    occluded: this.drawData.initialState.occluded,
-                    attributes: { ...this.drawData.initialState.attributes },
-                    label: this.drawData.initialState.label,
-                    color: this.drawData.initialState.color,
-                    rotation: this.drawData.initialState.rotation,
-                },
-                Date.now() - this.startTimestamp,
-                e.detail.originalEvent.ctrlKey,
-            );
+            if (checkConstraint('rectangle', [xtl, ytl, xbr, ybr])) {
+                this.onDrawDone(
+                    {
+                        shapeType: this.drawData.initialState.shapeType,
+                        objectType: this.drawData.initialState.objectType,
+                        points: [xtl, ytl, xbr, ybr],
+                        occluded: this.drawData.initialState.occluded,
+                        attributes: { ...this.drawData.initialState.attributes },
+                        label: this.drawData.initialState.label,
+                        color: this.drawData.initialState.color,
+                        rotation: this.drawData.initialState.rotation,
+                    },
+                    Date.now() - this.startTimestamp,
+                    e.detail.originalEvent.ctrlKey,
+                );
+            }
         });
     }
 
