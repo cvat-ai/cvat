@@ -8,10 +8,16 @@ import { Link, withRouter } from 'react-router-dom';
 import Title from 'antd/lib/typography/Title';
 import Text from 'antd/lib/typography/Text';
 import { Row, Col } from 'antd/lib/grid';
-import { Layout } from 'antd';
+import {
+    Button,
+    Divider,
+    Layout,
+    Space,
+} from 'antd';
 
 import FooterDrawer from 'components/login-page/intel-footer-drawer';
 
+import { OpenVINOIcon, CVATLogo } from 'icons';
 import LoginForm, { LoginData } from './login-form';
 
 interface LoginPageComponentProps {
@@ -36,7 +42,8 @@ function LoginPageComponent(props: LoginPageComponentProps & RouteComponentProps
     return (
         <Layout>
             <Content>
-                <Row justify='center' align='middle' style={{ height: '100%' }}>
+                <Row style={{ height: '33%' }} />
+                <Row justify='center' align='middle'>
                     <Col {...sizes}>
                         <Title level={2}> Login </Title>
                         <LoginForm
@@ -62,7 +69,38 @@ function LoginPageComponent(props: LoginPageComponentProps & RouteComponentProps
                                 </Col>
                             </Row>
                         )}
+
                     </Col>
+                </Row>
+                <Row justify='center'>
+                    <Space direction='vertical' size='large'>
+                        <Row justify='center'>
+                            <Col>
+                                <Divider />
+                                CVAT is developed as part of OpenVINO Toolkit ecosystem
+                            </Col>
+                        </Row>
+                        <Row justify='center' align='middle'>
+                            <Col>
+                                <Space size='large'>
+                                    <Button
+                                        href='https://openvinotoolkit.github.io/cvat/docs'
+                                        icon={<CVATLogo />}
+                                        block
+                                        type='link'
+                                        target='_blank'
+                                    />
+                                    <Button
+                                        href='https://docs.openvino.ai/latest/index.html'
+                                        icon={<OpenVINOIcon />}
+                                        block
+                                        type='link'
+                                        target='_blank'
+                                    />
+                                </Space>
+                            </Col>
+                        </Row>
+                    </Space>
                 </Row>
             </Content>
             <FooterDrawer />
