@@ -920,7 +920,7 @@ export class DrawHandlerImpl implements DrawHandler {
 
         if (typeof configuration.autoborders === 'boolean') {
             this.autobordersEnabled = configuration.autoborders;
-            if (this.drawInstance) {
+            if (this.drawInstance && !this.drawData.initialState) {
                 if (this.autobordersEnabled) {
                     this.autoborderHandler.autoborder(true, this.drawInstance, this.drawData.redraw);
                 } else {
