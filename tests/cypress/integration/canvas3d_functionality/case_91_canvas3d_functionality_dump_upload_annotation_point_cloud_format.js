@@ -79,7 +79,7 @@ context('Canvas 3D functionality. Dump/upload annotation. "Point Cloud" format',
             cy.wait('@uploadAnnotationsGet').its('response.statusCode').should('equal', 200);
             cy.get('#cvat-objects-sidebar-state-item-1').should('exist');
             cy.removeAnnotations();
-            cy.get('button').contains('Save').click({ force: true });
+            cy.get('button').contains('Save').click().trigger('mouseout');
             cy.get('#cvat-objects-sidebar-state-item-1').should('not.exist');
         });
 
@@ -108,7 +108,7 @@ context('Canvas 3D functionality. Dump/upload annotation. "Point Cloud" format',
             cy.openTaskJob(taskName);
             cy.get('#cvat-objects-sidebar-state-item-1').should('exist');
             cy.removeAnnotations();
-            cy.get('button').contains('Save').click({ force: true });
+            cy.get('button').contains('Save').click().trigger('mouseout');
         });
     });
 });
