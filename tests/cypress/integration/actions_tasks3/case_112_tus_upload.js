@@ -37,7 +37,7 @@ context('Create task with tus file', () => {
             const win = cy.state('window');
             win.cvat.config.uploadChunkSize = 5;
             cy.createAnnotationTask(taskName, labelName, attrName, textDefaultValue, archiveName)
-                .then(() => { win.cvat.config.uploadChunkSize = 100; });
+                .finally(() => { win.cvat.config.uploadChunkSize = 100; });
         });
 
         it('Check if task exist', () => {

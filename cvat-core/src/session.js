@@ -1018,7 +1018,6 @@
                 dimension: undefined,
                 cloud_storage_id: undefined,
                 sorting_method: undefined,
-                upload_chunk_size: undefined,
             };
 
             const updatedFields = new FieldUpdateTrigger({
