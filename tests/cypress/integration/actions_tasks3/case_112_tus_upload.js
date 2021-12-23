@@ -30,19 +30,21 @@ context('Create task with tus file', () => {
         cy.imageGenerator(imagesFolder, imageFileName, width, height, color, posX,
             posY, labelName, imagesCount, extension);
         cy.createZipArchive(directoryToArchive, archivePath, zipLevel);
+        cy.window().then((win) => { win.cvat.config.uploadChunkSize = 5; });
     });
 
     describe(`Testing "${labelName}"`, () => {
         it('Create a task with 5mb upload chunk size', () => {
-            const win = cy.state('window');
-            win.cvat.config.uploadChunkSize = 5;
-            cy.createAnnotationTask(taskName, labelName, attrName, textDefaultValue, archiveName)
-                .finally(() => { win.cvat.config.uploadChunkSize = 100; });
+            cy.createAnnotationTask(taskName, labelName, attrName, textDefaultValue, archiveName);
         });
 
         it('Check if task exist', () => {
             cy.goToTaskList();
             cy.contains('.cvat-item-task-name', taskName).should('exist');
         });
+    });
+
+    after(() => {
+        cy.window().then((win) => { win.cvat.config.uploadChunkSize = 100; });
     });
 });
