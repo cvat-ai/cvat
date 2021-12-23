@@ -9,7 +9,7 @@ from django.utils.decorators import method_decorator
 from django.conf import settings
 from rules.contrib.views import PermissionRequiredMixin
 
-from cvat.apps.authentication.decorators import login_required
+from cvat.apps.iam import login_required
 
 @method_decorator(login_required, name='dispatch')
 class LogViewerProxy(PermissionRequiredMixin, ProxyView):

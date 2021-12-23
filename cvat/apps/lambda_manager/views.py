@@ -11,12 +11,10 @@ from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from rest_framework import status, viewsets
 from rest_framework.response import Response
 
-from cvat.apps.authentication import auth
 import cvat.apps.dataset_manager as dm
 from cvat.apps.engine.frame_provider import FrameProvider
 from cvat.apps.engine.models import Task as TaskModel
 from cvat.apps.engine.serializers import LabeledDataSerializer
-from rest_framework.permissions import IsAuthenticated
 from cvat.apps.engine.models import ShapeType, SourceType
 
 class LambdaType(Enum):
@@ -545,6 +543,9 @@ def return_response(success_code=status.HTTP_200_OK):
             except ValidationError as err:
                 status_code = err.code
                 data = err.message
+            except ObjectDoesNotExist as err:
+                status_code = status.HTTP_400_BAD_REQUEST
+                data = str(err)
 
             return Response(data=data, status=status_code)
 
@@ -555,15 +556,6 @@ class FunctionViewSet(viewsets.ViewSet):
     lookup_value_regex = '[a-zA-Z0-9_.-]+'
     lookup_field = 'func_id'
 
-    def get_permissions(self):
-        http_method = self.request.method
-        permissions = [IsAuthenticated]
-
-        if http_method in ["POST"]:
-            permissions.append(auth.TaskAccessPermission)
-
-        return [perm() for perm in permissions]
-
     @return_response()
     def list(self, request):
         gateway = LambdaGateway()
@@ -571,17 +563,16 @@ class FunctionViewSet(viewsets.ViewSet):
 
     @return_response()
     def retrieve(self, request, func_id):
+        self.check_object_permissions(request, func_id)
         gateway = LambdaGateway()
         return gateway.get(func_id).to_dict()
 
     @return_response()
     def call(self, request, func_id):
+        self.check_object_permissions(request, func_id)
         try:
             task_id = request.data['task']
             db_task = TaskModel.objects.get(pk=task_id)
-            # Check that the user has enough permissions to read
-            # data from the task.
-            self.check_object_permissions(self.request, db_task)
         except (KeyError, ObjectDoesNotExist) as err:
             raise ValidationError(
                 '`{}` lambda function was run '.format(func_id) +
@@ -594,15 +585,6 @@ class FunctionViewSet(viewsets.ViewSet):
         return lambda_func.invoke(db_task, request.data)
 
 class RequestViewSet(viewsets.ViewSet):
-    def get_permissions(self):
-        http_method = self.request.method
-        permissions = [IsAuthenticated]
-
-        if http_method in ["POST", "DELETE"]:
-            permissions.append(auth.TaskChangePermission)
-
-        return [perm() for perm in permissions]
-
     @return_response()
     def list(self, request):
         queue = LambdaQueue()
@@ -618,12 +600,7 @@ class RequestViewSet(viewsets.ViewSet):
             cleanup = request.data.get('cleanup', False)
             mapping = request.data.get('mapping')
             max_distance = request.data.get('max_distance')
-
-            db_task = TaskModel.objects.get(pk=task)
-            # Check that the user has enough permissions to modify
-            # the task.
-            self.check_object_permissions(self.request, db_task)
-        except (KeyError, ObjectDoesNotExist) as err:
+        except KeyError as err:
             raise ValidationError(
                 '`{}` lambda function was run '.format(request.data.get('function', 'undefined')) +
                 'with wrong arguments ({})'.format(str(err)),
@@ -639,6 +616,7 @@ class RequestViewSet(viewsets.ViewSet):
 
     @return_response()
     def retrieve(self, request, pk):
+        self.check_object_permissions(request, pk)
         queue = LambdaQueue()
         job = queue.fetch_job(pk)
 
@@ -646,6 +624,7 @@ class RequestViewSet(viewsets.ViewSet):
 
     @return_response(status.HTTP_204_NO_CONTENT)
     def delete(self, request, pk):
+        self.check_object_permissions(request, pk)
         queue = LambdaQueue()
         job = queue.fetch_job(pk)
         job.delete()

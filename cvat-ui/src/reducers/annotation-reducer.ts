@@ -8,14 +8,15 @@ import { AuthActionTypes } from 'actions/auth-actions';
 import { BoundariesActionTypes } from 'actions/boundaries-actions';
 import { Canvas, CanvasMode } from 'cvat-canvas-wrapper';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
+
 import {
     ActiveControl,
     AnnotationState,
     ContextMenuType,
     DimensionType,
+    JobStage,
     ObjectType,
     ShapeType,
-    TaskStatus,
     Workspace,
 } from './interfaces';
 
@@ -111,8 +112,6 @@ const defaultState: AnnotationState = {
     sidebarCollapsed: false,
     appearanceCollapsed: false,
     filtersPanelVisible: false,
-    requestReviewDialogVisible: false,
-    submitReviewDialogVisible: false,
     predictor: {
         enabled: false,
         error: null,
@@ -157,11 +156,11 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 maxZ,
             } = action.payload;
 
-            const isReview = job.status === TaskStatus.REVIEW;
+            const isReview = job.stage === JobStage.REVIEW;
             let workspaceSelected = Workspace.STANDARD;
             let activeShapeType = ShapeType.RECTANGLE;
 
-            if (job.task.dimension === DimensionType.DIM_3D) {
+            if (job.dimension === DimensionType.DIM_3D) {
                 workspaceSelected = Workspace.STANDARD3D;
                 activeShapeType = ShapeType.CUBOID;
             }
@@ -177,14 +176,12 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     openTime,
                     fetching: false,
                     instance: job,
-                    labels: job.task.labels,
-                    attributes: job.task.labels.reduce((acc: Record<number, any[]>, label: any): Record<
-                    number,
-                    any[]
-                    > => {
-                        acc[label.id] = label.attributes;
-                        return acc;
-                    }, {}),
+                    labels: job.labels,
+                    attributes: job.labels
+                        .reduce((acc: Record<number, any[]>, label: any): Record<number, any[]> => {
+                            acc[label.id] = label.attributes;
+                            return acc;
+                        }, {}),
                 },
                 annotations: {
                     ...state.annotations,
@@ -209,13 +206,13 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
                 drawing: {
                     ...state.drawing,
-                    activeLabelID: job.task.labels.length ? job.task.labels[0].id : null,
-                    activeObjectType: job.task.mode === 'interpolation' ? ObjectType.TRACK : ObjectType.SHAPE,
+                    activeLabelID: job.labels.length ? job.labels[0].id : null,
+                    activeObjectType: job.mode === 'interpolation' ? ObjectType.TRACK : ObjectType.SHAPE,
                     activeShapeType,
                 },
                 canvas: {
                     ...state.canvas,
-                    instance: job.task.dimension === DimensionType.DIM_2D ? new Canvas() : new Canvas3d(),
+                    instance: job.dimension === DimensionType.DIM_2D ? new Canvas() : new Canvas3d(),
                 },
                 colors,
                 workspace: isReview ? Workspace.REVIEW_WORKSPACE : workspaceSelected,
@@ -1071,20 +1068,6 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                         ActiveControl.OPENCV_TOOLS :
                         ActiveControl.AI_TOOLS,
                 },
-            };
-        }
-        case AnnotationActionTypes.SWITCH_REQUEST_REVIEW_DIALOG: {
-            const { visible } = action.payload;
-            return {
-                ...state,
-                requestReviewDialogVisible: visible,
-            };
-        }
-        case AnnotationActionTypes.SWITCH_SUBMIT_REVIEW_DIALOG: {
-            const { visible } = action.payload;
-            return {
-                ...state,
-                submitReviewDialogVisible: visible,
             };
         }
         case AnnotationActionTypes.SET_FORCE_EXIT_ANNOTATION_PAGE_FLAG: {

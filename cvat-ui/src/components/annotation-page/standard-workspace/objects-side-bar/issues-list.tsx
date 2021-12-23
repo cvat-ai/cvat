@@ -21,11 +21,9 @@ export default function LabelsListComponent(): JSX.Element {
     const frame = useSelector((state: CombinedState): number => state.annotation.player.frame.number);
     const frameIssues = useSelector((state: CombinedState): any[] => state.review.frameIssues);
     const issues = useSelector((state: CombinedState): any[] => state.review.issues);
-    const activeReview = useSelector((state: CombinedState): any => state.review.activeReview);
     const issuesHidden = useSelector((state: CombinedState): any => state.review.issuesHidden);
     const issuesResolvedHidden = useSelector((state: CombinedState): any => state.review.issuesResolvedHidden);
-    const combinedIssues = activeReview ? issues.concat(activeReview.issues) : issues;
-    const frames = combinedIssues.map((issue: any): number => issue.frame).sort((a: number, b: number) => +a - +b);
+    const frames = issues.map((issue: any): number => issue.frame).sort((a: number, b: number) => +a - +b);
     const nearestLeft = frames.filter((_frame: number): boolean => _frame < frame).reverse()[0];
     const dinamicLeftProps: any = Number.isInteger(nearestLeft) ?
         {
@@ -101,6 +99,7 @@ export default function LabelsListComponent(): JSX.Element {
                 {frameIssues.map(
                     (frameIssue: any): JSX.Element => (
                         <div
+                            key={frameIssue.id}
                             id={`cvat-objects-sidebar-issue-item-${frameIssue.id}`}
                             className='cvat-objects-sidebar-issue-item'
                             onMouseEnter={() => {
@@ -120,20 +119,10 @@ export default function LabelsListComponent(): JSX.Element {
                                 }
                             }}
                         >
-                            {frameIssue.resolver ? (
-                                <Alert
-                                    description={<span>{`By ${frameIssue.resolver.username}`}</span>}
-                                    message='Resolved'
-                                    type='success'
-                                    showIcon
-                                />
+                            {frameIssue.resolved ? (
+                                <Alert message='Resolved' type='success' showIcon />
                             ) : (
-                                <Alert
-                                    description={<span>{`By ${frameIssue.owner.username}`}</span>}
-                                    message='Opened'
-                                    type='warning'
-                                    showIcon
-                                />
+                                <Alert message='Opened' type='warning' showIcon />
                             )}
                         </div>
                     ),

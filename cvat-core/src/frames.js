@@ -23,6 +23,7 @@
             height,
             name,
             taskID,
+            jobID,
             frameNumber,
             startFrame,
             stopFrame,
@@ -67,6 +68,17 @@
                     },
                     tid: {
                         value: taskID,
+                        writable: false,
+                    },
+                    /**
+                     * @name jid
+                     * @type {integer}
+                     * @memberof module:API.cvat.classes.FrameData
+                     * @readonly
+                     * @instance
+                     */
+                    jid: {
+                        value: jobID,
                         writable: false,
                     },
                     /**
@@ -191,7 +203,7 @@
                 const taskDataCache = frameDataCache[this.tid];
                 const activeChunk = taskDataCache.activeChunkRequest;
                 activeChunk.request = serverProxy.frames
-                    .getData(this.tid, activeChunk.chunkNumber)
+                    .getData(this.tid, this.jid, activeChunk.chunkNumber)
                     .then((chunk) => {
                         frameDataCache[this.tid].activeChunkRequest.completed = true;
                         if (!taskDataCache.nextChunkRequest) {
@@ -366,7 +378,7 @@
     }
 
     class FrameBuffer {
-        constructor(size, chunkSize, stopFrame, taskID) {
+        constructor(size, chunkSize, stopFrame, taskID, jobID) {
             this._size = size;
             this._buffer = {};
             this._contextImage = {};
@@ -375,6 +387,7 @@
             this._stopFrame = stopFrame;
             this._activeFillBufferRequest = false;
             this._taskID = taskID;
+            this._jobID = jobID;
         }
 
         isContextImageAvailable(frame) {
@@ -411,6 +424,7 @@
                     const frameData = new FrameData({
                         ...frameMeta,
                         taskID: this._taskID,
+                        jobID: this._jobID,
                         frameNumber: requestedFrame,
                         startFrame: frameDataCache[this._taskID].startFrame,
                         stopFrame: frameDataCache[this._taskID].stopFrame,
@@ -508,7 +522,7 @@
             }
         }
 
-        async require(frameNumber, taskID, fillBuffer, frameStep) {
+        async require(frameNumber, taskID, jobID, fillBuffer, frameStep) {
             for (const frame in this._buffer) {
                 if (frame < frameNumber || frame >= frameNumber + this._size * frameStep) {
                     delete this._buffer[frame];
@@ -520,6 +534,7 @@
             let frame = new FrameData({
                 ...frameMeta,
                 taskID,
+                jobID,
                 frameNumber,
                 startFrame: frameDataCache[taskID].startFrame,
                 stopFrame: frameDataCache[taskID].stopFrame,
@@ -576,10 +591,10 @@
         }
     }
 
-    async function getImageContext(taskID, frame) {
+    async function getImageContext(jobID, frame) {
         return new Promise((resolve, reject) => {
             serverProxy.frames
-                .getImageContext(taskID, frame)
+                .getImageContext(jobID, frame)
                 .then((result) => {
                     if (isNode) {
                         // eslint-disable-next-line no-undef
@@ -598,11 +613,11 @@
         });
     }
 
-    async function getContextImage(taskID, frame) {
+    async function getContextImage(taskID, jobID, frame) {
         if (frameDataCache[taskID].frameBuffer.isContextImageAvailable(frame)) {
             return frameDataCache[taskID].frameBuffer.getContextImage(frame);
         }
-        const response = getImageContext(taskID, frame);
+        const response = getImageContext(jobID, frame);
         frameDataCache[taskID].frameBuffer.addContextImage(frame, response);
         return frameDataCache[taskID].frameBuffer.getContextImage(frame);
     }
@@ -632,6 +647,7 @@
 
     async function getFrame(
         taskID,
+        jobID,
         chunkSize,
         chunkType,
         mode,
@@ -674,6 +690,7 @@
                     chunkSize,
                     stopFrame,
                     taskID,
+                    jobID,
                 ),
                 decodedBlocksCacheSize,
                 activeChunkRequest: null,
@@ -684,7 +701,7 @@
             frameDataCache[taskID].provider.setRenderSize(frameMeta.width, frameMeta.height);
         }
 
-        return frameDataCache[taskID].frameBuffer.require(frame, taskID, isPlaying, step);
+        return frameDataCache[taskID].frameBuffer.require(frame, taskID, jobID, isPlaying, step);
     }
 
     function getRanges(taskID) {
