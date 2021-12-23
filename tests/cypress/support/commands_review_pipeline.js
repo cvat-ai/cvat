@@ -25,6 +25,7 @@ Cypress.Commands.add('assignJobToUser', (jobID, user) => {
 
     cy.intercept('PATCH', '/api/v1/jobs/**').as('patchJobAssignee');
     cy.get('.ant-select-dropdown')
+        .should('be.visible')
         .not('.ant-select-dropdown-hidden')
         .contains(new RegExp(`^${user}$`, 'g'))
         .click();
@@ -59,6 +60,24 @@ Cypress.Commands.add('checkJobStatus', (jobID, status, assignee, reviewer) => {
                     cy.get('input[type="search"]').should('have.value', reviewer);
                 });
             });
+    });
+});
+
+Cypress.Commands.add('setJobStage', (jobID, stage) => {
+    cy.getJobNum(jobID).then(($job) => {
+        cy.get('.cvat-task-jobs-table')
+            .contains('a', `Job #${$job}`)
+            .parents('.cvat-task-jobs-table-row')
+            .find('.cvat-job-item-stage').click();
+        cy.intercept('PATCH', '/api/v1/jobs/**').as('patchJobStage');
+        cy.get('.ant-select-dropdown')
+            .should('be.visible')
+            .not('.ant-select-dropdown-hidden')
+            .within(() => {
+                cy.get(`[title="${stage}"]`).click();
+            });
+        cy.wait('@patchJobStage').its('response.statusCode').should('equal', 200);
+        cy.get('.cvat-spinner').should('not.exist');
     });
 });
 
