@@ -12,7 +12,6 @@ import {
     displayShapeSize,
     ShapeSizeElement,
     stringifyPoints,
-    pointsToNumberArray,
     BBox,
     Box,
     Point,
@@ -514,7 +513,7 @@ export class DrawHandlerImpl implements DrawHandler {
         });
 
         this.drawInstance.on('drawdone', (e: CustomEvent): void => {
-            const targetPoints = pointsToNumberArray((e.target as SVGElement).getAttribute('points'));
+            const targetPoints = readPointsFromShape((e.target as any as { instance: SVG.Shape }).instance);
             const { shapeType, redraw: clientID } = this.drawData;
             const { points, box } = shapeType === 'cuboid' ?
                 this.getFinalCuboidCoordinates(targetPoints) :
