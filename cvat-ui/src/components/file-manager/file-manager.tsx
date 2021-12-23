@@ -90,14 +90,13 @@ export class FileManager extends React.PureComponent<Props, State> {
         };
     }
 
-    private loadData = (key: string): Promise<void> =>
-        new Promise<void>((resolve, reject): void => {
-            const { onLoadData } = this.props;
+    private loadData = (key: string): Promise<void> => new Promise<void>((resolve, reject): void => {
+        const { onLoadData } = this.props;
 
-            const success = (): void => resolve();
-            const failure = (): void => reject();
-            onLoadData(key, success, failure);
-        });
+        const success = (): void => resolve();
+        const failure = (): void => reject();
+        onLoadData(key, success, failure);
+    });
 
     public reset(): void {
         const { active } = this.state;
@@ -161,8 +160,8 @@ export class FileManager extends React.PureComponent<Props, State> {
     private renderShareSelector(): JSX.Element {
         function renderTreeNodes(data: TreeNodeNormal[]): JSX.Element[] {
             // sort alphabetically
-            data.sort((a: TreeNodeNormal, b: TreeNodeNormal): number =>
-                a.key.toLocaleString().localeCompare(b.key.toLocaleString()));
+            data.sort((a: TreeNodeNormal, b: TreeNodeNormal): number => (
+                a.key.toLocaleString().localeCompare(b.key.toLocaleString())));
             return data.map((item: TreeNodeNormal) => {
                 if (item.children) {
                     return (
@@ -205,8 +204,8 @@ export class FileManager extends React.PureComponent<Props, State> {
                                 halfChecked: ReactText[];
                             },
                         ): void => {
-                            const keys = (checkedKeys as ReactText[]).map((text: ReactText): string =>
-                                text.toLocaleString());
+                            const keys = (checkedKeys as ReactText[]).map((text: ReactText): string => (
+                                text.toLocaleString()));
                             this.setState({
                                 files: {
                                     ...files,
@@ -267,7 +266,7 @@ export class FileManager extends React.PureComponent<Props, State> {
                 <CloudStorageTab
                     formRef={this.cloudStorageTabFormRef}
                     cloudStorage={cloudStorage}
-                    selectedFiles={files.cloudStorage.filter((item) => !item.endsWith('manifest.jsonl'))}
+                    selectedFiles={files.cloudStorage.filter((item) => !item.endsWith('.jsonl'))}
                     onSelectCloudStorage={(_cloudStorage: CloudStorage | null) => {
                         this.setState({ cloudStorage: _cloudStorage });
                     }}

@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -74,6 +74,16 @@ const validationPatterns = {
         // eslint-disable-next-line
         pattern: /^\[\/?([A-z0-9-_+]+\/)*([A-z0-9]+\.(xml|zip|json))\]$/,
         message: 'Git path is not valid',
+    },
+
+    validateOrganizationSlug: {
+        pattern: /^[a-zA-Z\d]+$/,
+        message: 'Only Latin characters and numbers are allowed',
+    },
+
+    validatePhoneNumber: {
+        pattern: /^[+]*[-\s0-9]*$/g,
+        message: 'Input phone number is not correct',
     },
 };
 

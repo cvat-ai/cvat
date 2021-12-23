@@ -1,1 +1,4 @@
-default_app_config = 'cvat.apps.training.apps.TrainingConfig'
+# Copyright (C) 2021 Intel Corporation
+#
+# SPDX-License-Identifier: MIT
+

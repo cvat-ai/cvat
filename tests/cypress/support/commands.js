@@ -29,7 +29,7 @@ Cypress.Commands.add('login', (username = Cypress.env('user'), password = Cypres
 
 Cypress.Commands.add('logout', (username = Cypress.env('user')) => {
     cy.get('.cvat-right-header').within(() => {
-        cy.get('.cvat-header-menu-dropdown').should('have.text', username).trigger('mouseover', { which: 1 });
+        cy.get('.cvat-header-menu-user-dropdown').should('have.text', username).trigger('mouseover', { which: 1 });
     });
     cy.get('span[aria-label="logout"]').click();
     cy.url().should('include', '/auth/login');
@@ -204,7 +204,7 @@ Cypress.Commands.add('openTask', (taskName, projectSubsetFieldValue) => {
 
 Cypress.Commands.add('saveJob', (method = 'PATCH', status = 200, as = 'saveJob') => {
     cy.intercept(method, '/api/v1/jobs/**').as(as);
-    cy.get('button').contains('Save').click({ force: true });
+    cy.get('button').contains('Save').click({ force: true }).trigger('mouseout');
     cy.wait(`@${as}`).its('response.statusCode').should('equal', status);
 });
 
@@ -380,7 +380,7 @@ Cypress.Commands.add('createPolygon', (createPolygonParams) => {
 });
 
 Cypress.Commands.add('openSettings', () => {
-    cy.get('.cvat-right-header').find('.cvat-header-menu-dropdown').trigger('mouseover', { which: 1 });
+    cy.get('.cvat-right-header').find('.cvat-header-menu-user-dropdown').trigger('mouseover', { which: 1 });
     cy.get('.anticon-setting').click();
     cy.get('.cvat-settings-modal').should('be.visible');
 });

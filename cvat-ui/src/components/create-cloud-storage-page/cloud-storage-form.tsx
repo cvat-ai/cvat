@@ -2,9 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, {
-    useState, useEffect, useRef,
-} from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useHistory } from 'react-router';
 import { Row, Col } from 'antd/lib/grid';
@@ -238,9 +236,7 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
 
         if (cloudStorageData.manifests && cloudStorageData.manifests.length) {
             delete cloudStorageData.manifests;
-            cloudStorageData.manifests = form
-                .getFieldValue('manifests')
-                .map((manifest: any): string => manifest.name);
+            cloudStorageData.manifests = form.getFieldValue('manifests').map((manifest: any): string => manifest.name);
         }
 
         if (cloudStorage) {
@@ -308,14 +304,13 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
 
     const commonProps = {
         className: 'cvat-cloud-storage-form-item',
-        labelCol: { span: 5 },
-        wrapperCol: { offset: 1 },
     };
 
     const credentialsBlok = (): JSX.Element => {
         const internalCommonProps = {
             ...commonProps,
             labelCol: { span: 8, offset: 2 },
+            wrapperCol: { offset: 2 },
         };
 
         if (providerType === ProviderType.AWS_S3_BUCKET && credentialsType === CredentialsType.KEY_SECRET_KEY_PAIR) {
@@ -466,7 +461,7 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
     const AWSS3Configuration = (): JSX.Element => {
         const internalCommonProps = {
             ...commonProps,
-            labelCol: { span: 6, offset: 1 },
+            labelCol: { offset: 1 },
             wrapperCol: { offset: 1 },
         };
 
@@ -506,7 +501,7 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
     const AzureBlobStorageConfiguration = (): JSX.Element => {
         const internalCommonProps = {
             ...commonProps,
-            labelCol: { span: 6, offset: 1 },
+            labelCol: { offset: 1 },
             wrapperCol: { offset: 1 },
         };
 
@@ -595,7 +590,7 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
     };
 
     return (
-        <Form className='cvat-cloud-storage-form' layout='horizontal' form={form}>
+        <Form className='cvat-cloud-storage-form' layout='vertical' form={form}>
             <Form.Item
                 {...commonProps}
                 label='Display name'

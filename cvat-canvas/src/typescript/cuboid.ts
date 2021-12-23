@@ -10,30 +10,28 @@ export enum Orientation {
     RIGHT = 'right',
 }
 
-function line(p1: Point, p2: Point): number[] {
-    const a = p1.y - p2.y;
-    const b = p2.x - p1.x;
-    const c = b * p1.y + a * p1.x;
-    return [a, b, c];
-}
-
 export function intersection(p1: Point, p2: Point, p3: Point, p4: Point): Point | null {
-    const L1 = line(p1, p2);
-    const L2 = line(p3, p4);
+    // Check if none of the lines are of length 0
+    const { x: x1, y: y1 } = p1;
+    const { x: x2, y: y2 } = p2;
+    const { x: x3, y: y3 } = p3;
+    const { x: x4, y: y4 } = p4;
 
-    const D = L1[0] * L2[1] - L1[1] * L2[0];
-    const Dx = L1[2] * L2[1] - L1[1] * L2[2];
-    const Dy = L1[0] * L2[2] - L1[2] * L2[0];
-
-    let x = null;
-    let y = null;
-    if (Math.abs(D) > Number.EPSILON) {
-        x = Dx / D;
-        y = Dy / D;
-        return { x, y };
+    if ((x1 === x2 && y1 === y2) || (x3 === x4 && y3 === y4)) {
+        return null;
     }
 
-    return null;
+    const denominator = ((y4 - y3) * (x2 - x1) - (x4 - x3) * (y2 - y1));
+
+    // Lines are parallel
+    if (Math.abs(denominator) < Number.EPSILON) {
+        return null;
+    }
+
+    const ua = ((x4 - x3) * (y1 - y3) - (y4 - y3) * (x1 - x3)) / denominator;
+
+    // Return a object with the x and y coordinates of the intersection
+    return { x: x1 + ua * (x2 - x1), y: y1 + ua * (y2 - y1) };
 }
 
 export class Equation {

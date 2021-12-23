@@ -325,9 +325,16 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
                 name='format'
                 label='Choose format'
             >
-                <Select style={{ width: '100%' }} initialValue='CVAT for video 1.1'>
+                <Select style={{ width: '100%' }}>
                     {
-                        dumpers.map((dumper: any) => <Option value={dumper.name}>{dumper.name}</Option>)
+                        dumpers.map((dumper: any) => (
+                            <Option
+                                key={dumper.name}
+                                value={dumper.name}
+                            >
+                                {dumper.name}
+                            </Option>
+                        ))
                     }
                 </Select>
             </Form.Item>

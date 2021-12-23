@@ -125,7 +125,7 @@ describe('Feature: put annotations', () => {
             shapeType: window.cvat.enums.ObjectShape.RECTANGLE,
             points: [0, 0, 100, 100],
             occluded: false,
-            label: job.task.labels[0],
+            label: job.labels[0],
             zOrder: 0,
         });
 
@@ -169,7 +169,7 @@ describe('Feature: put annotations', () => {
             shapeType: window.cvat.enums.ObjectShape.RECTANGLE,
             points: [0, 0, 100, 100],
             occluded: false,
-            label: job.task.labels[0],
+            label: job.labels[0],
             zOrder: 0,
         });
 
@@ -419,7 +419,7 @@ describe('Feature: save annotations', () => {
             shapeType: window.cvat.enums.ObjectShape.POLYGON,
             points: [0, 0, 100, 0, 100, 50],
             occluded: true,
-            label: job.task.labels[0],
+            label: job.labels[0],
             zOrder: 0,
         });
 
