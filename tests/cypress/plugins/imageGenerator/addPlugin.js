@@ -18,33 +18,26 @@ function createImage(width, height, color) {
     });
 }
 
-function saveImage(image, posX, posY, message, file, index, extension) {
+function appendText(image, posX, posY, message, index) {
     return new Promise((resolve, reject) => {
         jimp.loadFont(jimp.FONT_SANS_64_BLACK, (err, font) => {
             if (err) reject(err);
-            image.print(font, Number(posX), Number(posY), `${message}. Num ${index}`)
-                .write(`${file}_${index}.${extension}`);
-            resolve(null);
+            image.print(font, Number(posX), Number(posY), `${message}. Num ${index}`);
+            resolve(image);
         });
     });
 }
 
 async function imageGenerator(args) {
-    const { directory } = args;
-    const { fileName } = args;
-    const { width } = args;
-    const { height } = args;
-    const { color } = args;
-    const { posX } = args;
-    const { posY } = args;
-    const { message } = args;
+    const {
+        directory, fileName, width, height, color, posX, posY, message, count, extension,
+    } = args;
     const file = path.join(directory, fileName);
-    const { count } = args;
-    const { extension } = args;
     try {
         for (let i = 1; i <= count; i++) {
-            const image = await createImage(width, height, color);
-            await saveImage(image, posX, posY, message, file, i, extension);
+            let image = await createImage(width, height, color);
+            image = await appendText(image, posX, posY, message, i);
+            image.write(`${file}_${i}.${extension}`);
         }
     // eslint-disable-next-line no-empty
     } catch (e) {}
