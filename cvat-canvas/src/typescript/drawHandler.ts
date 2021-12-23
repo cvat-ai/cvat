@@ -16,6 +16,7 @@ import {
     BBox,
     Box,
     Point,
+    readPointsFromShape,
 } from './shared';
 import Crosshair from './crosshair';
 import consts from './consts';
@@ -62,24 +63,24 @@ export class DrawHandlerImpl implements DrawHandler {
     private pointsGroup: SVG.G | null;
     private shapeSizeElement: ShapeSizeElement;
 
-    private getFinalRectCoordinates(bbox: BBox): number[] {
+    private getFinalRectCoordinates(points: number[], fitIntoFrame: boolean): number[] {
         const frameWidth = this.geometry.image.width;
         const frameHeight = this.geometry.image.height;
         const { offset } = this.geometry;
 
-        let [xtl, ytl, xbr, ybr] = [bbox.x, bbox.y, bbox.x + bbox.width, bbox.y + bbox.height].map(
-            (coord: number): number => coord - offset,
-        );
+        let [xtl, ytl, xbr, ybr] = points.map((coord: number): number => coord - offset);
 
-        xtl = Math.min(Math.max(xtl, 0), frameWidth);
-        xbr = Math.min(Math.max(xbr, 0), frameWidth);
-        ytl = Math.min(Math.max(ytl, 0), frameHeight);
-        ybr = Math.min(Math.max(ybr, 0), frameHeight);
+        if (fitIntoFrame) {
+            xtl = Math.min(Math.max(xtl, 0), frameWidth);
+            xbr = Math.min(Math.max(xbr, 0), frameWidth);
+            ytl = Math.min(Math.max(ytl, 0), frameHeight);
+            ybr = Math.min(Math.max(ybr, 0), frameHeight);
+        }
 
         return [xtl, ytl, xbr, ybr];
     }
 
-    private getFinalPolyshapeCoordinates(targetPoints: number[]): FinalCoordinates {
+    private getFinalPolyshapeCoordinates(targetPoints: number[], fitIntoFrame: boolean): FinalCoordinates {
         const { offset } = this.geometry;
         let points = targetPoints.map((coord: number): number => coord - offset);
         const box = {
@@ -184,8 +185,10 @@ export class DrawHandlerImpl implements DrawHandler {
             return resultPoints;
         };
 
-        points = crop(points, Direction.Horizontal);
-        points = crop(points, Direction.Vertical);
+        if (fitIntoFrame) {
+            points = crop(points, Direction.Horizontal);
+            points = crop(points, Direction.Vertical);
+        }
 
         for (let i = 0; i < points.length - 1; i += 2) {
             box.xtl = Math.min(box.xtl, points[i]);
@@ -349,8 +352,8 @@ export class DrawHandlerImpl implements DrawHandler {
         this.drawInstance = this.canvas.rect();
         this.drawInstance
             .on('drawstop', (e: Event): void => {
-                const bbox = (e.target as SVGRectElement).getBBox();
-                const [xtl, ytl, xbr, ybr] = this.getFinalRectCoordinates(bbox);
+                const points = readPointsFromShape((e.target as any as { instance: SVG.Rect }).instance);
+                const [xtl, ytl, xbr, ybr] = this.getFinalRectCoordinates(points, true);
                 const { shapeType, redraw: clientID } = this.drawData;
                 this.release();
 
@@ -396,7 +399,8 @@ export class DrawHandlerImpl implements DrawHandler {
                 // finish if numberOfPoints are exactly four
                 if (numberOfPoints === 4) {
                     const bbox = (e.target as SVGPolylineElement).getBBox();
-                    const [xtl, ytl, xbr, ybr] = this.getFinalRectCoordinates(bbox);
+                    const points = [bbox.x, bbox.y, bbox.x + bbox.width, bbox.y + bbox.height];
+                    const [xtl, ytl, xbr, ybr] = this.getFinalRectCoordinates(points, true);
                     const { shapeType, redraw: clientID } = this.drawData;
                     this.cancel();
 
@@ -491,7 +495,7 @@ export class DrawHandlerImpl implements DrawHandler {
             const { shapeType, redraw: clientID } = this.drawData;
             const { points, box } = shapeType === 'cuboid' ?
                 this.getFinalCuboidCoordinates(targetPoints) :
-                this.getFinalPolyshapeCoordinates(targetPoints);
+                this.getFinalPolyshapeCoordinates(targetPoints, true);
             this.release();
 
             if (this.canceled) return;
@@ -576,8 +580,8 @@ export class DrawHandlerImpl implements DrawHandler {
         this.drawInstance = this.canvas.rect();
         this.drawInstance
             .on('drawstop', (e: Event): void => {
-                const bbox = (e.target as SVGRectElement).getBBox();
-                const [xtl, ytl, xbr, ybr] = this.getFinalRectCoordinates(bbox);
+                const points = readPointsFromShape((e.target as any as { instance: SVG.Rect }).instance);
+                const [xtl, ytl, xbr, ybr] = this.getFinalRectCoordinates(points, true);
                 const { shapeType, redraw: clientID } = this.drawData;
                 this.release();
 
@@ -613,7 +617,7 @@ export class DrawHandlerImpl implements DrawHandler {
 
             const { points } = this.drawData.initialState.shapeType === 'cuboid' ?
                 this.getFinalCuboidCoordinates(targetPoints) :
-                this.getFinalPolyshapeCoordinates(targetPoints);
+                this.getFinalPolyshapeCoordinates(targetPoints, true);
 
             if (!e.detail.originalEvent.ctrlKey) {
                 this.release();
@@ -666,8 +670,8 @@ export class DrawHandlerImpl implements DrawHandler {
         this.pasteShape();
 
         this.drawInstance.on('done', (e: CustomEvent): void => {
-            const bbox = this.drawInstance.node.getBBox();
-            const [xtl, ytl, xbr, ybr] = this.getFinalRectCoordinates(bbox);
+            const points = readPointsFromShape((e.target as any as { instance: SVG.Rect }).instance);
+            const [xtl, ytl, xbr, ybr] = this.getFinalRectCoordinates(points, !this.drawData.initialState.rotation);
             if (!e.detail.originalEvent.ctrlKey) {
                 this.release();
             }
