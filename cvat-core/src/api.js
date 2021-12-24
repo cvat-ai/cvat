@@ -699,6 +699,7 @@ function build() {
              * @memberof module:API.cvat.config
              * @property {string} origin ui URL origin
              * @memberof module:API.cvat.config
+             * @property {number} uploadChunkSize max size of one data request in mb
              * @memberof module:API.cvat.config
              */
             get backendAPI() {
@@ -718,6 +719,12 @@ function build() {
             },
             set origin(value) {
                 config.origin = value;
+            },
+            get uploadChunkSize() {
+                return config.uploadChunkSize;
+            },
+            set uploadChunkSize(value) {
+                config.uploadChunkSize = value;
             },
         },
         /**
