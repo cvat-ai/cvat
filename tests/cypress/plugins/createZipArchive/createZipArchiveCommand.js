@@ -1,10 +1,9 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
-Cypress.Commands.add('createZipArchive', function (directoryToArchive, arhivePath) {
-    return cy.task('createZipArchive', {
-        directoryToArchive: directoryToArchive,
-        arhivePath: arhivePath,
-    });
-});
+Cypress.Commands.add('createZipArchive', (directoryToArchive, arhivePath, level = 9) => cy.task('createZipArchive', {
+    directoryToArchive,
+    arhivePath,
+    level,
+}));

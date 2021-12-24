@@ -772,7 +772,7 @@
                     });
                 }
 
-                const chunkSize = 1024 * 1024 * 100; // 100 mb
+                const chunkSize = config.uploadChunkSize * 1024 * 1024;
                 const clientFiles = taskDataSpec.client_files;
                 const chunkFiles = [];
                 const bulkFiles = [];
@@ -819,7 +819,7 @@
                 async function chunkUpload(taskId, file) {
                     return new Promise((resolve, reject) => {
                         const upload = new tus.Upload(file, {
-                            endpoint: `${origin}/${backendAPI}/tasks/${taskId}/data/`,
+                            endpoint: `${origin}${backendAPI}/tasks/${taskId}/data/`,
                             metadata: {
                                 filename: file.name,
                                 filetype: file.type,
