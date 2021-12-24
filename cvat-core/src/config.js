@@ -7,4 +7,5 @@ module.exports = {
     proxy: false,
     organizationID: null,
     origin: '',
+    uploadChunkSize: 100,
 };

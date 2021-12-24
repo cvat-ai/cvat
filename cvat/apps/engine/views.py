@@ -648,8 +648,16 @@ class TaskViewSet(UploadMixin, viewsets.ModelViewSet):
         task.create(db_task.id, data)
         return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
 
-    @swagger_auto_schema(method='post', operation_summary='Method permanently attaches images or video to a task',
+    @swagger_auto_schema(method='post', operation_summary='Method permanently attaches images or video to a task. Supports tus uploads, see more https://tus.io/',
         request_body=DataSerializer,
+        manual_parameters=[
+                openapi.Parameter('Upload-Start', in_=openapi.IN_HEADER, type=openapi.TYPE_BOOLEAN,
+                    description="Initializes data upload. No data should be sent with this header"),
+                openapi.Parameter('Upload-Multiple', in_=openapi.IN_HEADER, type=openapi.TYPE_BOOLEAN,
+                    description="Indicates that data with this request are single or multiple files that should be attached to a task"),
+                openapi.Parameter('Upload-Finish', in_=openapi.IN_HEADER, type=openapi.TYPE_BOOLEAN,
+                    description="Finishes data upload. Can be combined with Upload-Start header to create task data with one request"),
+         ]
     )
     @swagger_auto_schema(method='get', operation_summary='Method returns data for a specific task',
         manual_parameters=[
