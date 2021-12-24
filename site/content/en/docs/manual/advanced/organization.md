@@ -33,10 +33,11 @@ To go to the organization page, open the user menu, go to `Organization` and cli
 
 To add members, click `Invite members`. In the window that appears,
 enter the email of the user you want to add and select the role (set of rules):
-  - `Worker` - role for workers.
-  - `Supervisor` - role for supervisors.
-  - `Maintainer` - role for maintainers.
-  - `Owner` - a role assigned to the creator of the organization with maximum capabilities.
+
+- `Worker` - role for workers.
+- `Supervisor` - role for supervisors.
+- `Maintainer` - role for maintainers.
+- `Owner` - a role assigned to the creator of the organization with maximum capabilities.
 
 Read more about the roles in [IAM system roles section](/docs/administration/advanced/iam_system_roles).
 
