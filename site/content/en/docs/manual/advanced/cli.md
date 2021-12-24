@@ -22,14 +22,7 @@ Overview of functionality:
 - Export and download a whole task
 - Import a task
 
-CVAT Command line interface use `argparse`.
-For learn more read the [argparse documentation](https://docs.python.org/library/argparse.html#).
-
 ## Usage
-
-If you want to access the console remotely via `ssh`,
-place the `ssh keys` in the repository `ssh` folder before deploying cvat
-[read more](https://github.com/openvinotoolkit/cvat/blob/develop/ssh/README.md).
 
 Or, if you deployed CVAT using docker, to access the CLI, run:
 
