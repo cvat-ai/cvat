@@ -76,6 +76,18 @@ context('Rotated bounding boxes.', () => {
         }
     }
 
+    function testCompareRotateBetweenShapes(shape1, shape2) {
+        cy.document().then((doc) => {
+            const shape1RotateDeg = decomposeMatrix(doc.getElementById(shape1).getCTM());
+            cy.document().then((docNext) => {
+                const shape2RotateDeg = (
+                    decomposeMatrix(docNext.getElementById(shape2).getCTM())
+                );
+                expect(shape1RotateDeg).to.deep.eq(shape2RotateDeg);
+            });
+        });
+    }
+
     before(() => {
         cy.openTask(taskName);
         cy.openJob();
@@ -165,15 +177,7 @@ context('Rotated bounding boxes.', () => {
                 cy.get('.cvat-object-item-button-outside').trigger('mouseout');
             });
 
-            cy.document().then((doc) => {
-                const shapeTranformMatrix = decomposeMatrix(doc.getElementById('cvat_canvas_shape_5').getCTM());
-                cy.document().then((docNext) => {
-                    const nextShapeTranformMatrix = (
-                        decomposeMatrix(docNext.getElementById('cvat_canvas_shape_6').getCTM())
-                    );
-                    expect(nextShapeTranformMatrix).to.deep.eq(shapeTranformMatrix);
-                });
-            });
+            testCompareRotateBetweenShapes('cvat_canvas_shape_5', 'cvat_canvas_shape_6');
         });
 
         it('Check rotation with hold Shift button.', () => {
@@ -188,19 +192,12 @@ context('Rotated bounding boxes.', () => {
                 .trigger('mousemove')
                 .should('have.class', 'cvat_canvas_shape_activated');
             cy.get('body').type('{ctrl}c');
-            cy.get('.cvat-canvas-container').trigger('mousemove', 500, 385)
+            cy.get('.cvat-canvas-container').trigger('mousemove', 500, 385);
             cy.get('body').type('{ctrl}v');
             cy.get('.cvat-canvas-container').click(500, 385);
             cy.get('#cvat_canvas_shape_7').should('be.visible');
-            cy.document().then((doc) => {
-                const shapeTranformMatrix = decomposeMatrix(doc.getElementById('cvat_canvas_shape_5').getCTM());
-                cy.document().then((docNext) => {
-                    const nextShapeTranformMatrix = (
-                        decomposeMatrix(docNext.getElementById('cvat_canvas_shape_7').getCTM())
-                    );
-                    expect(nextShapeTranformMatrix).to.deep.eq(shapeTranformMatrix);
-                });
-            });
+
+            testCompareRotateBetweenShapes('cvat_canvas_shape_5', 'cvat_canvas_shape_7');
         });
     });
 });
