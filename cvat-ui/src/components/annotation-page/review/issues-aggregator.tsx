@@ -84,8 +84,8 @@ export default function IssueAggregatorComponent(): JSX.Element | null {
     const { geometry } = canvasInstance;
     for (const issue of frameIssues) {
         if (issuesHidden) break;
-        if (issuesResolvedHidden && !!issue.resolvedDate) continue;
-        const issueResolved = !!issue.resolver;
+        const issueResolved = issue.resolved;
+        if (issuesResolvedHidden && issueResolved) continue;
         const offset = 15;
         const translated = issue.position.map((coord: number): number => coord + geometry.offset);
         const minX = Math.min(...translated.filter((_: number, idx: number): boolean => idx % 2 === 0)) + offset;

@@ -79,7 +79,7 @@ context('Canvas 3D functionality. Dump/upload annotation. "Velodyne Points" form
             cy.wait('@uploadAnnotationsGet').its('response.statusCode').should('equal', 200);
             cy.get('#cvat-objects-sidebar-state-item-1').should('exist');
             cy.removeAnnotations();
-            cy.get('button').contains('Save').click({ force: true });
+            cy.get('button').contains('Save').click().trigger('mouseout');
         });
 
         it('Upload annotation to task.', () => {
@@ -107,7 +107,7 @@ context('Canvas 3D functionality. Dump/upload annotation. "Velodyne Points" form
             cy.openTaskJob(taskName);
             cy.get('#cvat-objects-sidebar-state-item-1').should('exist');
             cy.removeAnnotations();
-            cy.get('button').contains('Save').click({ force: true });
+            cy.get('button').contains('Save').click().trigger('mouseout');
         });
     });
 });

@@ -45,16 +45,15 @@ function ShortcutsDialog(props: StateToProps & DispatchToProps): JSX.Element | n
     const { visible, switchShortcutsDialog, jobInstance } = props;
     const keyMap = getApplicationKeyMap();
 
-    const splitToRows = (data: string[]): JSX.Element[] =>
-        data.map(
-            (item: string, id: number): JSX.Element => (
-                // eslint-disable-next-line react/no-array-index-key
-                <span key={id}>
-                    {item}
-                    <br />
-                </span>
-            ),
-        );
+    const splitToRows = (data: string[]): JSX.Element[] => data.map(
+        (item: string, id: number): JSX.Element => (
+            // eslint-disable-next-line react/no-array-index-key
+            <span key={id}>
+                {item}
+                <br />
+            </span>
+        ),
+    );
 
     const columns = [
         {
@@ -81,8 +80,7 @@ function ShortcutsDialog(props: StateToProps & DispatchToProps): JSX.Element | n
         },
     ];
 
-    const dimensionType = jobInstance ? jobInstance.task.dimension : undefined;
-
+    const dimensionType = jobInstance?.dimension;
     const dataSource = Object.keys(keyMap)
         .filter((key: string) => !dimensionType || keyMap[key].applicable.includes(dimensionType))
         .map((key: string, id: number) => ({

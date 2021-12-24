@@ -8,6 +8,8 @@ const cvat: any = _cvat;
 
 cvat.config.backendAPI = '/api/v1';
 cvat.config.origin = window.location.origin;
+cvat.config.uploadChunkSize = 100;
+(globalThis as any).cvat = cvat;
 
 export default function getCore(): any {
     return cvat;

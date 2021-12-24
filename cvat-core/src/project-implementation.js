@@ -7,40 +7,40 @@
     const { getPreview } = require('./frames');
 
     const { Project } = require('./project');
-    const { exportDataset } = require('./annotations');
+    const { exportDataset, importDataset } = require('./annotations');
 
     function implementProject(projectClass) {
         projectClass.prototype.save.implementation = async function () {
-            const trainingProjectCopy = this.trainingProject;
             if (typeof this.id !== 'undefined') {
-                // project has been already created, need to update some data
-                const projectData = {
-                    name: this.name,
-                    assignee_id: this.assignee ? this.assignee.id : null,
-                    bug_tracker: this.bugTracker,
-                    labels: [...this._internalData.labels.map((el) => el.toJSON())],
-                };
-
-                if (trainingProjectCopy) {
-                    projectData.training_project = trainingProjectCopy;
+                const projectData = this._updateTrigger.getUpdated(this, {
+                    bugTracker: 'bug_tracker',
+                    trainingProject: 'training_project',
+                    assignee: 'assignee_id',
+                });
+                if (projectData.assignee_id) {
+                    projectData.assignee_id = projectData.assignee_id.id;
+                }
+                if (projectData.labels) {
+                    projectData.labels = projectData.labels.map((el) => el.toJSON());
                 }
 
                 await serverProxy.projects.save(this.id, projectData);
+                this._updateTrigger.reset();
                 return this;
             }
 
             // initial creating
             const projectSpec = {
                 name: this.name,
-                labels: [...this.labels.map((el) => el.toJSON())],
+                labels: this.labels.map((el) => el.toJSON()),
             };
 
             if (this.bugTracker) {
                 projectSpec.bug_tracker = this.bugTracker;
             }
 
-            if (trainingProjectCopy) {
-                projectSpec.training_project = trainingProjectCopy;
+            if (this.trainingProject) {
+                projectSpec.training_project = this.trainingProject;
             }
 
             const project = await serverProxy.projects.create(projectSpec);
@@ -61,10 +61,29 @@
         };
 
         projectClass.prototype.annotations.exportDataset.implementation = async function (
-            format, saveImages, customName,
+            format,
+            saveImages,
+            customName,
         ) {
             const result = exportDataset(this, format, customName, saveImages);
             return result;
+        };
+        projectClass.prototype.annotations.importDataset.implementation = async function (
+            format,
+            file,
+            updateStatusCallback,
+        ) {
+            return importDataset(this, format, file, updateStatusCallback);
+        };
+
+        projectClass.prototype.backup.implementation = async function () {
+            const result = await serverProxy.projects.backupProject(this.id);
+            return result;
+        };
+
+        projectClass.restore.implementation = async function (file) {
+            const result = await serverProxy.projects.restoreProject(file);
+            return result.id;
         };
 
         return projectClass;

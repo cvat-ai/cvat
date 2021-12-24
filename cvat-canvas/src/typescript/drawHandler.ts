@@ -12,7 +12,6 @@ import {
     displayShapeSize,
     ShapeSizeElement,
     stringifyPoints,
-    pointsToNumberArray,
     BBox,
     Box,
     Point,
@@ -37,6 +36,38 @@ export interface DrawHandler {
 interface FinalCoordinates {
     points: number[];
     box: Box;
+}
+
+function checkConstraint(shapeType: string, points: number[], box: Box | null = null): boolean {
+    if (shapeType === 'rectangle') {
+        const [xtl, ytl, xbr, ybr] = points;
+        return (xbr - xtl) * (ybr - ytl) >= consts.AREA_THRESHOLD;
+    }
+
+    if (shapeType === 'polygon') {
+        return (box.xbr - box.xtl) * (box.ybr - box.ytl) >= consts.AREA_THRESHOLD && points.length >= 3 * 2;
+    }
+
+    if (shapeType === 'polyline') {
+        return (box.xbr - box.xtl >= consts.SIZE_THRESHOLD ||
+            box.ybr - box.ytl >= consts.SIZE_THRESHOLD) && points.length >= 2 * 2;
+    }
+
+    if (shapeType === 'points') {
+        return points.length > 2 || (points.length === 2 && points[0] !== 0 && points[1] !== 0);
+    }
+
+    if (shapeType === 'ellipse') {
+        const [rx, ry] = [points[2] - points[0], points[1] - points[3]];
+        return rx * ry * Math.PI >= consts.AREA_THRESHOLD;
+    }
+
+    if (shapeType === 'cuboid') {
+        return points.length === 4 * 2 || points.length === 8 * 2 ||
+            (points.length === 2 * 2 && (points[2] - points[0]) * (points[3] - points[1]) >= consts.AREA_THRESHOLD);
+    }
+
+    return false;
 }
 
 export class DrawHandlerImpl implements DrawHandler {
@@ -64,39 +95,37 @@ export class DrawHandlerImpl implements DrawHandler {
     private pointsGroup: SVG.G | null;
     private shapeSizeElement: ShapeSizeElement;
 
-    private getFinalEllipseCoordinates(points: number[]): { points: number[]; rx: number, ry: number } {
+    private getFinalEllipseCoordinates(points: number[], fitIntoFrame: boolean): number[] {
         const { offset } = this.geometry;
         const [cx, cy, rightX, topY] = points.map((coord: number) => coord - offset);
         const [rx, ry] = [rightX - cx, cy - topY];
         const frameWidth = this.geometry.image.width;
         const frameHeight = this.geometry.image.height;
-        const [fitCX, fitCY] = [clamp(cx, 0, frameWidth), clamp(cy, 0, frameHeight)];
-        const [fitRX, fitRY] = [Math.min(rx, frameWidth - cx, cx), Math.min(ry, frameHeight - cy, cy)];
-        return {
-            points: [fitCX, fitCY, fitCX + fitRX, fitCY - fitRY],
-            rx: fitRX,
-            ry: fitRY,
-        };
+        const [fitCX, fitCY] = fitIntoFrame ?
+            [clamp(cx, 0, frameWidth), clamp(cy, 0, frameHeight)] : [cx, cy];
+        const [fitRX, fitRY] = fitIntoFrame ?
+            [Math.min(rx, frameWidth - cx, cx), Math.min(ry, frameHeight - cy, cy)] : [rx, ry];
+        return [fitCX, fitCY, fitCX + fitRX, fitCY - fitRY];
     }
 
-    private getFinalRectCoordinates(bbox: BBox): number[] {
+    private getFinalRectCoordinates(points: number[], fitIntoFrame: boolean): number[] {
         const frameWidth = this.geometry.image.width;
         const frameHeight = this.geometry.image.height;
         const { offset } = this.geometry;
 
-        let [xtl, ytl, xbr, ybr] = [bbox.x, bbox.y, bbox.x + bbox.width, bbox.y + bbox.height].map(
-            (coord: number): number => coord - offset,
-        );
+        let [xtl, ytl, xbr, ybr] = points.map((coord: number): number => coord - offset);
 
-        xtl = Math.min(Math.max(xtl, 0), frameWidth);
-        xbr = Math.min(Math.max(xbr, 0), frameWidth);
-        ytl = Math.min(Math.max(ytl, 0), frameHeight);
-        ybr = Math.min(Math.max(ybr, 0), frameHeight);
+        if (fitIntoFrame) {
+            xtl = Math.min(Math.max(xtl, 0), frameWidth);
+            xbr = Math.min(Math.max(xbr, 0), frameWidth);
+            ytl = Math.min(Math.max(ytl, 0), frameHeight);
+            ybr = Math.min(Math.max(ybr, 0), frameHeight);
+        }
 
         return [xtl, ytl, xbr, ybr];
     }
 
-    private getFinalPolyshapeCoordinates(targetPoints: number[]): FinalCoordinates {
+    private getFinalPolyshapeCoordinates(targetPoints: number[], fitIntoFrame: boolean): FinalCoordinates {
         const { offset } = this.geometry;
         let points = targetPoints.map((coord: number): number => coord - offset);
         const box = {
@@ -201,8 +230,10 @@ export class DrawHandlerImpl implements DrawHandler {
             return resultPoints;
         };
 
-        points = crop(points, Direction.Horizontal);
-        points = crop(points, Direction.Vertical);
+        if (fitIntoFrame) {
+            points = crop(points, Direction.Horizontal);
+            points = crop(points, Direction.Vertical);
+        }
 
         for (let i = 0; i < points.length - 1; i += 2) {
             box.xtl = Math.min(box.xtl, points[i]);
@@ -366,21 +397,19 @@ export class DrawHandlerImpl implements DrawHandler {
         this.drawInstance = this.canvas.rect();
         this.drawInstance
             .on('drawstop', (e: Event): void => {
-                const bbox = (e.target as SVGRectElement).getBBox();
-                const [xtl, ytl, xbr, ybr] = this.getFinalRectCoordinates(bbox);
+                const points = readPointsFromShape((e.target as any as { instance: SVG.Rect }).instance);
+                const [xtl, ytl, xbr, ybr] = this.getFinalRectCoordinates(points, true);
                 const { shapeType, redraw: clientID } = this.drawData;
                 this.release();
 
                 if (this.canceled) return;
-                if ((xbr - xtl) * (ybr - ytl) >= consts.AREA_THRESHOLD) {
-                    this.onDrawDone(
-                        {
-                            clientID,
-                            shapeType,
-                            points: [xtl, ytl, xbr, ybr],
-                        },
-                        Date.now() - this.startTimestamp,
-                    );
+                if (checkConstraint('rectangle', [xtl, ytl, xbr, ybr])) {
+                    this.onDrawDone({
+                        clientID,
+                        shapeType,
+                        points: [xtl, ytl, xbr, ybr],
+                    },
+                    Date.now() - this.startTimestamp);
                 }
             })
             .on('drawupdate', (): void => {
@@ -401,14 +430,14 @@ export class DrawHandlerImpl implements DrawHandler {
                 'fill-opacity': this.configuration.creationOpacity,
             })
             .on('drawstop', (e: Event): void => {
-                const { points, rx, ry } = this.getFinalEllipseCoordinates(
-                    readPointsFromShape((e.target as any as { instance: SVG.Ellipse }).instance),
+                const points = this.getFinalEllipseCoordinates(
+                    readPointsFromShape((e.target as any as { instance: SVG.Ellipse }).instance), true,
                 );
                 const { shapeType, redraw: clientID } = this.drawData;
                 this.release();
 
                 if (this.canceled) return;
-                if (rx * ry * Math.PI >= consts.AREA_THRESHOLD) {
+                if (checkConstraint('ellipse', points)) {
                     this.onDrawDone(
                         {
                             clientID,
@@ -441,19 +470,18 @@ export class DrawHandlerImpl implements DrawHandler {
                 // finish if numberOfPoints are exactly four
                 if (numberOfPoints === 4) {
                     const bbox = (e.target as SVGPolylineElement).getBBox();
-                    const [xtl, ytl, xbr, ybr] = this.getFinalRectCoordinates(bbox);
+                    const points = [bbox.x, bbox.y, bbox.x + bbox.width, bbox.y + bbox.height];
+                    const [xtl, ytl, xbr, ybr] = this.getFinalRectCoordinates(points, true);
                     const { shapeType, redraw: clientID } = this.drawData;
                     this.cancel();
 
-                    if ((xbr - xtl) * (ybr - ytl) >= consts.AREA_THRESHOLD) {
-                        this.onDrawDone(
-                            {
-                                shapeType,
-                                clientID,
-                                points: [xtl, ytl, xbr, ybr],
-                            },
-                            Date.now() - this.startTimestamp,
-                        );
+                    if (checkConstraint('rectangle', [xtl, ytl, xbr, ybr])) {
+                        this.onDrawDone({
+                            shapeType,
+                            clientID,
+                            points: [xtl, ytl, xbr, ybr],
+                        },
+                        Date.now() - this.startTimestamp);
                     }
                 }
             })
@@ -532,38 +560,24 @@ export class DrawHandlerImpl implements DrawHandler {
         });
 
         this.drawInstance.on('drawdone', (e: CustomEvent): void => {
-            const targetPoints = pointsToNumberArray((e.target as SVGElement).getAttribute('points'));
+            const targetPoints = readPointsFromShape((e.target as any as { instance: SVG.Shape }).instance);
             const { shapeType, redraw: clientID } = this.drawData;
             const { points, box } = shapeType === 'cuboid' ?
                 this.getFinalCuboidCoordinates(targetPoints) :
-                this.getFinalPolyshapeCoordinates(targetPoints);
+                this.getFinalPolyshapeCoordinates(targetPoints, true);
             this.release();
 
             if (this.canceled) return;
-            if (
-                shapeType === 'polygon' &&
-                (box.xbr - box.xtl) * (box.ybr - box.ytl) >= consts.AREA_THRESHOLD &&
-                points.length >= 3 * 2
-            ) {
+            if (checkConstraint(shapeType, points, box)) {
+                if (shapeType === 'cuboid') {
+                    this.onDrawDone(
+                        { clientID, shapeType, points: cuboidFrom4Points(points) },
+                        Date.now() - this.startTimestamp,
+                    );
+                    return;
+                }
+
                 this.onDrawDone({ clientID, shapeType, points }, Date.now() - this.startTimestamp);
-            } else if (
-                shapeType === 'polyline' &&
-                (box.xbr - box.xtl >= consts.SIZE_THRESHOLD || box.ybr - box.ytl >= consts.SIZE_THRESHOLD) &&
-                points.length >= 2 * 2
-            ) {
-                this.onDrawDone({ clientID, shapeType, points }, Date.now() - this.startTimestamp);
-            } else if (shapeType === 'points' && (e.target as any).getAttribute('points') !== '0,0') {
-                this.onDrawDone({ clientID, shapeType, points }, Date.now() - this.startTimestamp);
-                // TODO: think about correct constraign for cuboids
-            } else if (shapeType === 'cuboid' && points.length === 4 * 2) {
-                this.onDrawDone(
-                    {
-                        clientID,
-                        shapeType,
-                        points: cuboidFrom4Points(points),
-                    },
-                    Date.now() - this.startTimestamp,
-                );
             }
         });
     }
@@ -621,22 +635,20 @@ export class DrawHandlerImpl implements DrawHandler {
         this.drawInstance = this.canvas.rect();
         this.drawInstance
             .on('drawstop', (e: Event): void => {
-                const bbox = (e.target as SVGRectElement).getBBox();
-                const [xtl, ytl, xbr, ybr] = this.getFinalRectCoordinates(bbox);
+                const points = readPointsFromShape((e.target as any as { instance: SVG.Rect }).instance);
+                const [xtl, ytl, xbr, ybr] = this.getFinalRectCoordinates(points, true);
                 const { shapeType, redraw: clientID } = this.drawData;
                 this.release();
 
                 if (this.canceled) return;
-                if ((xbr - xtl) * (ybr - ytl) >= consts.AREA_THRESHOLD) {
+                if (checkConstraint('cuboid', [xtl, ytl, xbr, ybr])) {
                     const d = { x: (xbr - xtl) * 0.1, y: (ybr - ytl) * 0.1 };
-                    this.onDrawDone(
-                        {
-                            shapeType,
-                            points: cuboidFrom4Points([xtl, ybr, xbr, ybr, xbr, ytl, xbr + d.x, ytl - d.y]),
-                            clientID,
-                        },
-                        Date.now() - this.startTimestamp,
-                    );
+                    this.onDrawDone({
+                        shapeType,
+                        points: cuboidFrom4Points([xtl, ybr, xbr, ybr, xbr, ytl, xbr + d.x, ytl - d.y]),
+                        clientID,
+                    },
+                    Date.now() - this.startTimestamp);
                 }
             })
             .on('drawupdate', (): void => {
@@ -656,27 +668,30 @@ export class DrawHandlerImpl implements DrawHandler {
                 .split(/[,\s]/g)
                 .map((coord: string): number => +coord);
 
-            const { points } = this.drawData.initialState.shapeType === 'cuboid' ?
+            const { shapeType } = this.drawData.initialState;
+            const { points, box } = shapeType === 'cuboid' ?
                 this.getFinalCuboidCoordinates(targetPoints) :
-                this.getFinalPolyshapeCoordinates(targetPoints);
+                this.getFinalPolyshapeCoordinates(targetPoints, true);
 
             if (!e.detail.originalEvent.ctrlKey) {
                 this.release();
             }
 
-            this.onDrawDone(
-                {
-                    shapeType: this.drawData.initialState.shapeType,
-                    objectType: this.drawData.initialState.objectType,
-                    points,
-                    occluded: this.drawData.initialState.occluded,
-                    attributes: { ...this.drawData.initialState.attributes },
-                    label: this.drawData.initialState.label,
-                    color: this.drawData.initialState.color,
-                },
-                Date.now() - this.startTimestamp,
-                e.detail.originalEvent.ctrlKey,
-            );
+            if (checkConstraint(shapeType, points, box)) {
+                this.onDrawDone(
+                    {
+                        shapeType,
+                        objectType: this.drawData.initialState.objectType,
+                        points,
+                        occluded: this.drawData.initialState.occluded,
+                        attributes: { ...this.drawData.initialState.attributes },
+                        label: this.drawData.initialState.label,
+                        color: this.drawData.initialState.color,
+                    },
+                    Date.now() - this.startTimestamp,
+                    e.detail.originalEvent.ctrlKey,
+                );
+            }
         });
     }
 
@@ -711,26 +726,28 @@ export class DrawHandlerImpl implements DrawHandler {
         this.pasteShape();
 
         this.drawInstance.on('done', (e: CustomEvent): void => {
-            const bbox = this.drawInstance.node.getBBox();
-            const [xtl, ytl, xbr, ybr] = this.getFinalRectCoordinates(bbox);
+            const points = readPointsFromShape((e.target as any as { instance: SVG.Rect }).instance);
+            const [xtl, ytl, xbr, ybr] = this.getFinalRectCoordinates(points, !this.drawData.initialState.rotation);
             if (!e.detail.originalEvent.ctrlKey) {
                 this.release();
             }
 
-            this.onDrawDone(
-                {
-                    shapeType: this.drawData.initialState.shapeType,
-                    objectType: this.drawData.initialState.objectType,
-                    points: [xtl, ytl, xbr, ybr],
-                    occluded: this.drawData.initialState.occluded,
-                    attributes: { ...this.drawData.initialState.attributes },
-                    label: this.drawData.initialState.label,
-                    color: this.drawData.initialState.color,
-                    rotation: this.drawData.initialState.rotation,
-                },
-                Date.now() - this.startTimestamp,
-                e.detail.originalEvent.ctrlKey,
-            );
+            if (checkConstraint('rectangle', [xtl, ytl, xbr, ybr])) {
+                this.onDrawDone(
+                    {
+                        shapeType: this.drawData.initialState.shapeType,
+                        objectType: this.drawData.initialState.objectType,
+                        points: [xtl, ytl, xbr, ybr],
+                        occluded: this.drawData.initialState.occluded,
+                        attributes: { ...this.drawData.initialState.attributes },
+                        label: this.drawData.initialState.label,
+                        color: this.drawData.initialState.color,
+                        rotation: this.drawData.initialState.rotation,
+                    },
+                    Date.now() - this.startTimestamp,
+                    e.detail.originalEvent.ctrlKey,
+                );
+            }
         });
     }
 
@@ -746,28 +763,30 @@ export class DrawHandlerImpl implements DrawHandler {
         this.pasteShape();
 
         this.drawInstance.on('done', (e: CustomEvent): void => {
-            const { points } = this.getFinalEllipseCoordinates(
-                readPointsFromShape((e.target as any as { instance: SVG.Ellipse }).instance),
+            const points = this.getFinalEllipseCoordinates(
+                readPointsFromShape((e.target as any as { instance: SVG.Ellipse }).instance), true,
             );
 
             if (!e.detail.originalEvent.ctrlKey) {
                 this.release();
             }
 
-            this.onDrawDone(
-                {
-                    shapeType: this.drawData.initialState.shapeType,
-                    objectType: this.drawData.initialState.objectType,
-                    points,
-                    occluded: this.drawData.initialState.occluded,
-                    attributes: { ...this.drawData.initialState.attributes },
-                    label: this.drawData.initialState.label,
-                    color: this.drawData.initialState.color,
-                    rotation: this.drawData.initialState.rotation,
-                },
-                Date.now() - this.startTimestamp,
-                e.detail.originalEvent.ctrlKey,
-            );
+            if (checkConstraint('ellipse', points)) {
+                this.onDrawDone(
+                    {
+                        shapeType: this.drawData.initialState.shapeType,
+                        objectType: this.drawData.initialState.objectType,
+                        points,
+                        occluded: this.drawData.initialState.occluded,
+                        attributes: { ...this.drawData.initialState.attributes },
+                        label: this.drawData.initialState.label,
+                        color: this.drawData.initialState.color,
+                        rotation: this.drawData.initialState.rotation,
+                    },
+                    Date.now() - this.startTimestamp,
+                    e.detail.originalEvent.ctrlKey,
+                );
+            }
         });
     }
 
@@ -992,7 +1011,7 @@ export class DrawHandlerImpl implements DrawHandler {
 
         if (typeof configuration.autoborders === 'boolean') {
             this.autobordersEnabled = configuration.autoborders;
-            if (this.drawInstance) {
+            if (this.drawInstance && !this.drawData.initialState) {
                 if (this.autobordersEnabled) {
                     this.autoborderHandler.autoborder(true, this.drawInstance, this.drawData.redraw);
                 } else {

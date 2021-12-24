@@ -48,9 +48,9 @@ context('Filters functionality.', () => {
         labelName: labelShape,
         firstX: 550,
         firstY: 350,
-        secondX: 650,
+        secondX: 750,
         secondY: 350,
-        thirdX: 650,
+        thirdX: 750,
         thirdY: 450,
         fourthX: 550,
         fourthY: 450,
@@ -68,8 +68,8 @@ context('Filters functionality.', () => {
         numberOfPoints: 4,
     };
 
-    let cvatCanvasShapeList = [];
-    let cvatFiltesList = [];
+    const cvatCanvasShapeList = [];
+    const cvatFiltesList = [];
 
     function checkingFilterApplication(ids) {
         for (let i = 0; i < cvatCanvasShapeList.length; i++) {
@@ -123,7 +123,9 @@ context('Filters functionality.', () => {
             const textFilter = '(shape == "polygon" || shape == "rectangle")';
             cvatFiltesList.push(textFilter);
             cy.addFiltersRule(0);
-            cy.setFilter({ groupIndex: 0, ruleIndex: 0, field: 'Shape', operator: '==', value: 'polygon' });
+            cy.setFilter({
+                groupIndex: 0, ruleIndex: 0, field: 'Shape', operator: '==', value: 'polygon',
+            });
             cy.addFiltersRule(0);
             cy.setGroupCondition(0, 'Or');
             cy.setFilter({
@@ -134,7 +136,8 @@ context('Filters functionality.', () => {
                 value: 'rectangle',
                 submit: true,
             });
-            checkingFilterApplication([1, 2, 3, 4]); // #cvat_canvas_shape_1,2,3,4, #cvat-objects-sidebar-state-item-1,2,3,4
+            // #cvat_canvas_shape_1,2,3,4, #cvat-objects-sidebar-state-item-1,2,3,4
+            checkingFilterApplication([1, 2, 3, 4]);
             cy.clearFilters(); // Clear filters
         });
 
@@ -142,7 +145,9 @@ context('Filters functionality.', () => {
             const textFilter = 'type == "shape"';
             cvatFiltesList.push(textFilter);
             cy.addFiltersRule(0);
-            cy.setFilter({ groupIndex: 0, ruleIndex: 0, field: 'Type', operator: '==', value: 'shape', submit: true });
+            cy.setFilter({
+                groupIndex: 0, ruleIndex: 0, field: 'Type', operator: '==', value: 'shape', submit: true,
+            });
             checkingFilterApplication([1, 3]); // #cvat_canvas_shape_1,3, #cvat-objects-sidebar-state-item-1,3
             cy.clearFilters(); // Clear filters
         });
@@ -177,7 +182,8 @@ context('Filters functionality.', () => {
                 labelAttr: 'count points',
                 submit: true,
             });
-            checkingFilterApplication([2, 4]); // #cvat_canvas_shape_2,4, #cvat-objects-sidebar-state-item-2,4
+            // #cvat_canvas_shape_2,4, #cvat-objects-sidebar-state-item-2,4
+            checkingFilterApplication([2, 4]);
             cy.clearFilters(); // Clear filters
         });
 
@@ -194,7 +200,8 @@ context('Filters functionality.', () => {
                 value: 'Height',
                 submit: true,
             });
-            checkingFilterApplication([1, 2, 3, 4]); // #cvat_canvas_shape_1,2,3,4, #cvat-objects-sidebar-state-item-1,2,3,4
+            // #cvat_canvas_shape_1,2,3,4, #cvat-objects-sidebar-state-item-1,2,3,4
+            checkingFilterApplication([1, 2, 3, 4]);
             cy.clearFilters(); // Clear filters
         });
 
@@ -202,8 +209,11 @@ context('Filters functionality.', () => {
             const textFilter = 'objectID == 4';
             cvatFiltesList.push(textFilter);
             cy.addFiltersRule(0);
-            cy.setFilter({ groupIndex: 0, ruleIndex: 0, field: 'ObjectID', operator: '==', value: 4, submit: true });
-            checkingFilterApplication([4]); // #cvat_canvas_shape_4, #cvat-objects-sidebar-state-item-4
+            cy.setFilter({
+                groupIndex: 0, ruleIndex: 0, field: 'ObjectID', operator: '==', value: 4, submit: true,
+            });
+            // #cvat_canvas_shape_4, #cvat-objects-sidebar-state-item-4
+            checkingFilterApplication([4]);
             cy.clearFilters(); // Clear filters
         });
 
@@ -213,7 +223,9 @@ context('Filters functionality.', () => {
             cvatFiltesList.push(textFilter);
             cy.addFiltersGroup(0);
             cy.addFiltersGroup(0);
-            cy.setFilter({ groupIndex: 1, ruleIndex: 0, field: 'Label', operator: '==', value: labelShape });
+            cy.setFilter({
+                groupIndex: 1, ruleIndex: 0, field: 'Label', operator: '==', value: labelShape,
+            });
             cy.addFiltersRule(1);
             cy.setFilter({
                 groupIndex: 1,
@@ -224,10 +236,14 @@ context('Filters functionality.', () => {
                 label: labelTrack,
                 labelAttr: 'type',
             });
-            cy.setFilter({ groupIndex: 2, ruleIndex: 2, field: 'Label', operator: '==', value: labelTrack });
+            cy.setFilter({
+                groupIndex: 2, ruleIndex: 2, field: 'Label', operator: '==', value: labelTrack,
+            });
             cy.addFiltersRule(2);
             cy.setGroupCondition(0, 'Or');
-            cy.setFilter({ groupIndex: 2, ruleIndex: 3, field: 'Width', operator: '>', value: '60', submit: true });
+            cy.setFilter({
+                groupIndex: 2, ruleIndex: 3, field: 'Width', operator: '>', value: '60', submit: true,
+            });
             checkingFilterApplication([2, 4]); // #cvat_canvas_shape_2,4, #cvat-objects-sidebar-state-item-2,4
             cy.clearFilters(); // Clear filters
         });
@@ -237,7 +253,9 @@ context('Filters functionality.', () => {
                 '((label == "shape 3 points" || (attr.shape 3 points.type == "shape" && width > 50)) && height > 50)';
             cvatFiltesList.push(textFilter);
             cy.addFiltersGroup(0);
-            cy.setFilter({ groupIndex: 1, ruleIndex: 0, field: 'Label', operator: '==', value: labelShape });
+            cy.setFilter({
+                groupIndex: 1, ruleIndex: 0, field: 'Label', operator: '==', value: labelShape,
+            });
             cy.addFiltersGroup(1);
             cy.setGroupCondition(1, 'Or');
             cy.setFilter({
@@ -250,10 +268,14 @@ context('Filters functionality.', () => {
                 labelAttr: 'type',
             });
             cy.addFiltersRule(2);
-            cy.setFilter({ groupIndex: 2, ruleIndex: 2, field: 'Width', operator: '>', value: 50 });
+            cy.setFilter({
+                groupIndex: 2, ruleIndex: 2, field: 'Width', operator: '>', value: 50,
+            });
             cy.addFiltersGroup(0);
             cy.setGroupCondition(0, 'And');
-            cy.setFilter({ groupIndex: 3, ruleIndex: 3, field: 'Height', operator: '>', value: 50, submit: true });
+            cy.setFilter({
+                groupIndex: 3, ruleIndex: 3, field: 'Height', operator: '>', value: 50, submit: true,
+            });
             checkingFilterApplication([3]); // #cvat_canvas_shape_3, #cvat-objects-sidebar-state-item-3
             cy.clearFilters(); // Clear filters
         });
@@ -264,9 +286,7 @@ context('Filters functionality.', () => {
             cy.get('.ant-dropdown')
                 .not('.ant-dropdown-hidden')
                 .within(() => {
-                    cvatFiltesList.forEach(function (filterValue) {
-                        cy.contains('[role="menuitem"]', filterValue);
-                    });
+                    cvatFiltesList.forEach((filterValue) => cy.contains('[role="menuitem"]', filterValue));
                 });
         });
 

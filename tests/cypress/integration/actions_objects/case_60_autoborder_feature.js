@@ -39,23 +39,19 @@ context('Autoborder feature.', () => {
     };
 
     const keyCodeN = 78;
-    const rectangleSvgJsCircleId = [];
-    const rectangleSvgJsCircleIdSecond = [];
-    const polygonSvgJsCircleId = [];
-    const polylineSvgJsCircleId = [];
+    const rectanglePoints = [];
+    const polygonPoints = [];
+    const polylinePoints = [];
 
-    function testCollectCxCircleCoord(arrToPush) {
-        cy.get('circle').then((circle) => {
-            for (let i = 0; i < circle.length; i++) {
-                if (circle[i].id.match(/^SvgjsCircle\d+$/)) {
-                    cy.get(`#${circle[i].id}`)
-                        .invoke('attr', 'cx')
-                        .then(($circleCx) => {
-                            arrToPush.push($circleCx);
-                        });
-                }
-            }
-        });
+    function testCollectCoord(type, id, arrToPush) {
+        if (type === 'rect') {
+            cy.get(id).invoke('attr', 'x').then((x) => arrToPush.push(+x));
+            cy.get(id).invoke('attr', 'y').then((y) => arrToPush.push(+y));
+            cy.get(id).invoke('attr', 'width').then((width) => arrToPush.push(arrToPush[0] + +width));
+            cy.get(id).invoke('attr', 'height').then((height) => arrToPush.push(arrToPush[1] + +height));
+        } else {
+            cy.get(id).invoke('attr', 'points').then((points) => arrToPush.push(...points.split(/[\s]/)));
+        }
     }
 
     function testAutoborderPointsCount(expextedCount) {
@@ -65,11 +61,6 @@ context('Autoborder feature.', () => {
             .then(($autoborderPoints) => {
                 expect($autoborderPoints.length).to.be.equal(expextedCount);
             });
-    }
-
-    function testActivatingShape(x, y, expectedShape) {
-        cy.get('.cvat-canvas-container').trigger('mousemove', x, y);
-        cy.get(expectedShape).should('have.class', 'cvat_canvas_shape_activated');
     }
 
     before(() => {
@@ -86,10 +77,7 @@ context('Autoborder feature.', () => {
     describe(`Testing case "${caseId}"`, () => {
         it('Drawning a polygon with autoborder.', () => {
             // Collect the rectagle points coordinates
-            testActivatingShape(450, 400, '#cvat_canvas_shape_1');
-            testCollectCxCircleCoord(rectangleSvgJsCircleId);
-            testActivatingShape(650, 400, '#cvat_canvas_shape_2');
-            testCollectCxCircleCoord(rectangleSvgJsCircleIdSecond);
+            testCollectCoord('rect', '#cvat_canvas_shape_1', rectanglePoints);
 
             cy.interactControlButton('draw-polygon');
             cy.get('.cvat-draw-polygon-popover').find('[type="button"]').contains('Shape').click();
@@ -101,8 +89,7 @@ context('Autoborder feature.', () => {
             cy.get('.cvat_canvas_autoborder_point').should('not.exist');
 
             // Collect the polygon points coordinates
-            testActivatingShape(450, 300, '#cvat_canvas_shape_4');
-            testCollectCxCircleCoord(polygonSvgJsCircleId);
+            testCollectCoord('polygon', '#cvat_canvas_shape_4', polygonPoints);
         });
 
         it('Start drawing a polyline with autobordering between the two shapes.', () => {
@@ -120,17 +107,19 @@ context('Autoborder feature.', () => {
             cy.get('.cvat_canvas_autoborder_point').should('not.exist');
 
             // Collect the polygon points coordinates
-            testActivatingShape(550, 350, '#cvat_canvas_shape_5');
-            testCollectCxCircleCoord(polylineSvgJsCircleId);
+            testCollectCoord('polyline', '#cvat_canvas_shape_5', polylinePoints);
         });
 
         it('Checking whether the coordinates of the contact points of the shapes match.', () => {
-            expect(polygonSvgJsCircleId[0]).to
-                .be.equal(rectangleSvgJsCircleId[0]); // The 1st point of the rect and the 1st polygon point
-            expect(polygonSvgJsCircleId[2]).to
-                .be.equal(rectangleSvgJsCircleId[1]); // The 2nd point of the rect and the 3rd polygon point
-            expect(polylineSvgJsCircleId[1]).to
-                .be.equal(rectangleSvgJsCircleId[3]); // The 2nd point of the polyline and the 4th point rect
+            // The 1st point of the rect and the 1st polygon point
+            expect(polygonPoints[0]).to.be
+                .equal(`${rectanglePoints[0]},${rectanglePoints[1]}`);
+            // The 2nd point of the rect and the 3rd polygon point
+            expect(polygonPoints[2]).to
+                .be.equal(`${rectanglePoints[2]},${rectanglePoints[1]}`);
+            // The 2nd point of the polyline and the 4th point rect
+            expect(polylinePoints[1]).to
+                .be.equal(`${rectanglePoints[0]},${rectanglePoints[3]}`);
         });
     });
 });

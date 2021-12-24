@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -15,8 +15,8 @@ const defaultState: ModelsState = {
     detectors: [],
     trackers: [],
     reid: [],
-    visibleRunWindows: false,
-    activeRunTask: null,
+    modelRunnerIsVisible: false,
+    modelRunnerTask: null,
     inferences: {},
 };
 
@@ -50,15 +50,15 @@ export default function (state = defaultState, action: ModelsActions | AuthActio
         case ModelsActionTypes.SHOW_RUN_MODEL_DIALOG: {
             return {
                 ...state,
-                visibleRunWindows: true,
-                activeRunTask: action.payload.taskInstance,
+                modelRunnerIsVisible: true,
+                modelRunnerTask: action.payload.taskInstance,
             };
         }
         case ModelsActionTypes.CLOSE_RUN_MODEL_DIALOG: {
             return {
                 ...state,
-                visibleRunWindows: false,
-                activeRunTask: null,
+                modelRunnerIsVisible: false,
+                modelRunnerTask: null,
             };
         }
         case ModelsActionTypes.GET_INFERENCE_STATUS_SUCCESS: {

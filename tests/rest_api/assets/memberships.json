@@ -1,0 +1,142 @@
+{
+  "count": 9,
+  "next": null,
+  "previous": null,
+  "results": [
+    {
+      "id": 9,
+      "invitation": "h43G28di7vfs4Jv5VrKZ26xvGAfm6Yc2FFv14z9EKhiuIEDQ22pEnzmSCab8MnK1",
+      "is_active": true,
+      "joined_date": "2021-12-14T19:55:13.745912Z",
+      "organization": 2,
+      "role": "supervisor",
+      "user": {
+        "first_name": "User",
+        "id": 3,
+        "last_name": "Second",
+        "url": "http://localhost:8080/api/v1/users/3",
+        "username": "user2"
+      }
+    },
+    {
+      "id": 8,
+      "invitation": "mFpVV2Yh39uUdU8IpigSxvuPegqi8sjxFi6P9Jdy6fBE8Ky9Juzi1KjeGDQsizSS",
+      "is_active": true,
+      "joined_date": "2021-12-14T19:54:56.431899Z",
+      "organization": 2,
+      "role": "worker",
+      "user": {
+        "first_name": "Worker",
+        "id": 8,
+        "last_name": "Third",
+        "url": "http://localhost:8080/api/v1/users/8",
+        "username": "worker3"
+      }
+    },
+    {
+      "id": 7,
+      "invitation": "62HplmGPJuzpTXSyzPWiAlREkq8smCjK30GdtYze3q03J9X5ghQe3oMhlAyQ0WBH",
+      "is_active": true,
+      "joined_date": "2021-12-14T19:54:46.172754Z",
+      "organization": 2,
+      "role": "worker",
+      "user": {
+        "first_name": "Worker",
+        "id": 7,
+        "last_name": "Second",
+        "url": "http://localhost:8080/api/v1/users/7",
+        "username": "worker2"
+      }
+    },
+    {
+      "id": 6,
+      "invitation": "Y1I4FFU27WRqq2rWQLtKjDztMqpvqW7gJgg7q73F7oE4H5kukvXugWjiTLHclPDu",
+      "is_active": true,
+      "joined_date": "2021-12-14T19:54:33.591399Z",
+      "organization": 2,
+      "role": "maintainer",
+      "user": {
+        "first_name": "Business",
+        "id": 11,
+        "last_name": "Second",
+        "url": "http://localhost:8080/api/v1/users/11",
+        "username": "business2"
+      }
+    },
+    {
+      "id": 5,
+      "invitation": null,
+      "is_active": true,
+      "joined_date": "2021-12-14T19:51:38.667522Z",
+      "organization": 2,
+      "role": "owner",
+      "user": {
+        "first_name": "Business",
+        "id": 10,
+        "last_name": "First",
+        "url": "http://localhost:8080/api/v1/users/10",
+        "username": "business1"
+      }
+    },
+    {
+      "id": 4,
+      "invitation": "cbmm587Z05WQUYvesIZUCtbTl7CEL4thv1Au6Nr51psflITn9X6BsvNFXcNEkoYn",
+      "is_active": true,
+      "joined_date": "2021-12-14T18:48:46.579536Z",
+      "organization": 1,
+      "role": "maintainer",
+      "user": {
+        "first_name": "Business",
+        "id": 10,
+        "last_name": "First",
+        "url": "http://localhost:8080/api/v1/users/10",
+        "username": "business1"
+      }
+    },
+    {
+      "id": 3,
+      "invitation": "aViZkw9TaieLoZaswEnkMy8tTet1yYDRof3eKZDtZaHf1BItgCNNM6y6fnjrkrej",
+      "is_active": true,
+      "joined_date": "2021-12-14T18:47:49.322807Z",
+      "organization": 1,
+      "role": "worker",
+      "user": {
+        "first_name": "Worker",
+        "id": 7,
+        "last_name": "Second",
+        "url": "http://localhost:8080/api/v1/users/7",
+        "username": "worker2"
+      }
+    },
+    {
+      "id": 2,
+      "invitation": "Lzyzgo161I7Fej1vC5RXPdyUgCBfbuxsEEhHYeYOJqvbeJe5clPDnqCm7pKOC9tr",
+      "is_active": true,
+      "joined_date": "2021-12-14T18:47:39.935203Z",
+      "organization": 1,
+      "role": "worker",
+      "user": {
+        "first_name": "Worker",
+        "id": 6,
+        "last_name": "First",
+        "url": "http://localhost:8080/api/v1/users/6",
+        "username": "worker1"
+      }
+    },
+    {
+      "id": 1,
+      "invitation": null,
+      "is_active": true,
+      "joined_date": "2021-12-14T18:45:40.172529Z",
+      "organization": 1,
+      "role": "owner",
+      "user": {
+        "first_name": "User",
+        "id": 2,
+        "last_name": "First",
+        "url": "http://localhost:8080/api/v1/users/2",
+        "username": "user1"
+      }
+    }
+  ]
+}

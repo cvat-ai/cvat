@@ -233,7 +233,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
         return (
             <>
                 <Col span={24}>
-                    <Text className='cvat-text-color'>Project:</Text>
+                    <Text className='cvat-text-color'>Project</Text>
                 </Col>
                 <Col span={24}>
                     <ProjectSearchField onSelect={this.handleProjectIdChange} value={projectId} />
@@ -249,7 +249,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
             return (
                 <>
                     <Col span={24}>
-                        <Text className='cvat-text-color'>Subset:</Text>
+                        <Text className='cvat-text-color'>Subset</Text>
                     </Col>
                     <Col span={24}>
                         <ProjectSubsetField
@@ -272,7 +272,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
             return (
                 <>
                     <Col span={24}>
-                        <Text className='cvat-text-color'>Labels:</Text>
+                        <Text className='cvat-text-color'>Labels</Text>
                     </Col>
                     <Col span={24}>
                         <Text type='secondary'>Project labels will be used</Text>
@@ -284,7 +284,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
         return (
             <Col span={24}>
                 <Text type='danger'>* </Text>
-                <Text className='cvat-text-color'>Labels:</Text>
+                <Text className='cvat-text-color'>Labels</Text>
                 <LabelsEditor
                     labels={labels}
                     onSubmit={(newLabels): void => {
@@ -301,7 +301,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
         return (
             <Col span={24}>
                 <Text type='danger'>* </Text>
-                <Text className='cvat-text-color'>Select files:</Text>
+                <Text className='cvat-text-color'>Select files</Text>
                 <ConnectedFileManager
                     onChangeActiveKey={this.changeFileManagerTab}
                     ref={(container: any): void => {
