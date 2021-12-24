@@ -702,15 +702,29 @@ Cypress.Commands.add('setJobState', (choice) => {
     cy.get('.cvat-annotation-menu-job-state-submenu').within(() => {
         cy.contains(choice).click();
     });
-    cy.intercept('PATCH', '/api/v1/jobs/**').as('patchJobState');
     cy.get('.cvat-modal-content-change-job-state')
         .should('be.visible')
         .within(() => {
             cy.contains('[type="button"]', 'Continue').click();
         });
     cy.get('.cvat-modal-content-change-job-state').should('not.exist');
-    cy.wait('@patchJobState').its('response.statusCode').should('equal', 200);
     cy.get('.cvat-spinner').should('not.exist');
+});
+
+Cypress.Commands.add('setJobStage', (jobID, stage) => {
+    cy.getJobNum(jobID).then(($job) => {
+        cy.get('.cvat-task-jobs-table')
+            .contains('a', `Job #${$job}`)
+            .parents('.cvat-task-jobs-table-row')
+            .find('.cvat-job-item-stage').click();
+        cy.get('.ant-select-dropdown')
+            .should('be.visible')
+            .not('.ant-select-dropdown-hidden')
+            .within(() => {
+                cy.get(`[title="${stage}"]`).click();
+            });
+        cy.get('.cvat-spinner').should('not.exist');
+    });
 });
 
 Cypress.Commands.add('closeNotification', (className) => {
