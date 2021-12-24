@@ -2,22 +2,21 @@
 //
 // SPDX-License-Identifier: MIT
 
+import './styles.scss';
 import React from 'react';
 import { RouteComponentProps } from 'react-router';
 import { Link, withRouter } from 'react-router-dom';
 import Title from 'antd/lib/typography/Title';
 import Text from 'antd/lib/typography/Text';
 import { Row, Col } from 'antd/lib/grid';
-import {
-    Button,
-    Divider,
-    Layout,
-    Space,
-} from 'antd';
+import Button from 'antd/lib/button';
+import Divider from 'antd/lib/divider';
+import Layout from 'antd/lib/layout';
 
 import FooterDrawer from 'components/login-page/intel-footer-drawer';
 
-import { OpenVINOIcon, CVATLogo } from 'icons';
+import consts from 'consts';
+import { OpenVINOIcon } from 'icons';
 import LoginForm, { LoginData } from './login-form';
 
 interface LoginPageComponentProps {
@@ -31,8 +30,9 @@ function LoginPageComponent(props: LoginPageComponentProps & RouteComponentProps
         xs: { span: 14 },
         sm: { span: 14 },
         md: { span: 10 },
-        lg: { span: 4 },
-        xl: { span: 4 },
+        lg: { span: 8 },
+        xl: { span: 7 },
+        xxl: { span: 6 },
     };
 
     const { Content } = Layout;
@@ -72,35 +72,22 @@ function LoginPageComponent(props: LoginPageComponentProps & RouteComponentProps
 
                     </Col>
                 </Row>
-                <Row justify='center'>
-                    <Space direction='vertical' size='large'>
-                        <Row justify='center'>
-                            <Col>
-                                <Divider />
-                                CVAT is developed as part of OpenVINO Toolkit ecosystem
-                            </Col>
-                        </Row>
-                        <Row justify='center' align='middle'>
-                            <Col>
-                                <Space size='large'>
-                                    <Button
-                                        href='https://openvinotoolkit.github.io/cvat/docs'
-                                        icon={<CVATLogo />}
-                                        block
-                                        type='link'
-                                        target='_blank'
-                                    />
-                                    <Button
-                                        href='https://docs.openvino.ai/latest/index.html'
-                                        icon={<OpenVINOIcon />}
-                                        block
-                                        type='link'
-                                        target='_blank'
-                                    />
-                                </Space>
-                            </Col>
-                        </Row>
-                    </Space>
+                <Row className='cvat-login-openvino-block' justify='center'>
+                    <Col {...sizes}>
+                        <Divider />
+                        <Text type='secondary'>
+                            Learn more about products of
+                            <a target='_blank' rel='noopener noreferrer' href={consts.OPENVINO_URL}> OpenVINO </a>
+                            toolkit
+                        </Text>
+                        <Button
+                            href={consts.OPENVINO_URL}
+                            icon={<OpenVINOIcon />}
+                            block
+                            type='link'
+                            target='_blank'
+                        />
+                    </Col>
                 </Row>
             </Content>
             <FooterDrawer />

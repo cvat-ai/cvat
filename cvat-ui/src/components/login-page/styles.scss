@@ -1,0 +1,19 @@
+// Copyright (C) 2021 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
+
+@import './../../base.scss';
+
+.cvat-login-openvino-block {
+    > div {
+        text-align: center;
+
+        .ant-divider {
+            margin-bottom: $grid-unit-size;
+        }
+
+        > a {
+            margin-top: $grid-unit-size;
+        }
+    }
+}
