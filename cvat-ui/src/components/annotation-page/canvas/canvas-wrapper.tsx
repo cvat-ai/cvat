@@ -392,6 +392,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         state.label = state.label || jobInstance.labels.filter((label: any) => label.id === activeLabelID)[0];
         state.occluded = state.occluded || false;
         state.frame = frame;
+        state.rotation = state.rotation || 0;
         const objectState = new cvat.classes.ObjectState(state);
         onCreateAnnotations(jobInstance, frame, [objectState]);
     };
