@@ -31,11 +31,9 @@ interface RegisterPageComponentProps {
 
 function RegisterPageComponent(props: RegisterPageComponentProps & RouteComponentProps): JSX.Element {
     const sizes = {
-        xs: { span: 14 },
-        sm: { span: 14 },
-        md: { span: 10 },
-        lg: { span: 6 },
-        xl: { span: 5 },
+        style: {
+            width: 400,
+        },
     };
 
     const { fetching, userAgreements, onRegister } = props;

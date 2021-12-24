@@ -27,12 +27,9 @@ interface LoginPageComponentProps {
 
 function LoginPageComponent(props: LoginPageComponentProps & RouteComponentProps): JSX.Element {
     const sizes = {
-        xs: { span: 14 },
-        sm: { span: 14 },
-        md: { span: 10 },
-        lg: { span: 8 },
-        xl: { span: 7 },
-        xxl: { span: 6 },
+        style: {
+            width: 400,
+        },
     };
 
     const { Content } = Layout;
