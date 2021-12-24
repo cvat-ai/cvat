@@ -181,5 +181,26 @@ context('Rotated bounding boxes.', () => {
             testShapeRotate('#cvat_canvas_shape_4', 320, 375, '60.0', true);
             testShapeRotate('#cvat_canvas_shape_4', 325, 385, '75.0', true);
         });
+
+        it('Copy/paste a rotated shape.', () => {
+            cy.get('.cvat-canvas-container').click(500, 385);
+            cy.get('#cvat_canvas_shape_5')
+                .trigger('mousemove')
+                .should('have.class', 'cvat_canvas_shape_activated');
+            cy.get('body').type('{ctrl}c');
+            cy.get('.cvat-canvas-container').trigger('mousemove', 500, 385)
+            cy.get('body').type('{ctrl}v');
+            cy.get('.cvat-canvas-container').click(500, 385);
+            cy.get('#cvat_canvas_shape_7').should('be.visible');
+            cy.document().then((doc) => {
+                const shapeTranformMatrix = decomposeMatrix(doc.getElementById('cvat_canvas_shape_5').getCTM());
+                cy.document().then((docNext) => {
+                    const nextShapeTranformMatrix = (
+                        decomposeMatrix(docNext.getElementById('cvat_canvas_shape_7').getCTM())
+                    );
+                    expect(nextShapeTranformMatrix).to.deep.eq(shapeTranformMatrix);
+                });
+            });
+        });
     });
 });
