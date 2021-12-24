@@ -74,8 +74,7 @@ function LoginPageComponent(props: LoginPageComponentProps & RouteComponentProps
                         <Divider />
                         <Text type='secondary'>
                             Learn more about products of
-                            <a target='_blank' rel='noopener noreferrer' href={consts.OPENVINO_URL}> OpenVINO </a>
-                            toolkit
+                            <a target='_blank' rel='noopener noreferrer' href={consts.OPENVINO_URL}> OpenVINO™ Toolkit </a>
                         </Text>
                         <Button
                             href={consts.OPENVINO_URL}
