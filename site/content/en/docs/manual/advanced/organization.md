@@ -11,7 +11,6 @@ Your `Personal workspace` will display tasks you can access, and the tasks and p
 
 ## Create a new organization
 
-An organization can be created by a user who has the `admin` role.
 To create an organization, open the user menu, go to `Organization` and click `Create`.
 
 ![](/images/image233.jpg)
