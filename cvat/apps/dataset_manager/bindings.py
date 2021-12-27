@@ -217,7 +217,7 @@ class TaskData(InstanceLabelData):
                 "path": db_image.path,
                 "width": db_image.width,
                 "height": db_image.height,
-            } for db_image in self._db_task.data.images.all()}
+            } for db_image in self._db_task.data.images.all().order_by('frame')}
 
         self._frame_mapping = {
             self._get_filename(info["path"]): frame_number
@@ -716,7 +716,7 @@ class ProjectData(InstanceLabelData):
                     "width": db_image.width,
                     "height": db_image.height,
                     "subset": defaulted_subset
-                } for db_image in task.data.images.all()})
+                } for db_image in task.data.images.all().order_by('frame')})
 
         self._frame_mapping = {
             (self._db_tasks[frame_ident[0]].subset, self._get_filename(info["path"])): frame_ident
