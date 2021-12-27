@@ -545,6 +545,7 @@ Cypress.Commands.add('deleteTask', (taskName) => {
                 .within(() => {
                     cy.contains('button', 'Delete').click();
                 });
+            cy.get('.cvat-actions-menu').should('be.hidden');
         });
     cy.contains('.cvat-item-task-name', new RegExp(`^${taskName}$`))
         .parents('.cvat-tasks-list-item')
