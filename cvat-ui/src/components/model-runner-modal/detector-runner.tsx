@@ -14,7 +14,8 @@ import InputNumber from 'antd/lib/input-number';
 import Button from 'antd/lib/button';
 import notification from 'antd/lib/notification';
 
-import { Model, StringObject } from 'reducers/interfaces';
+import { Model, ModelAttribute, StringObject } from 'reducers/interfaces';
+
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { clamp } from 'utils/math';
 import consts from 'consts';
@@ -28,23 +29,33 @@ interface Props {
     runInference(model: Model, body: object): void;
 }
 
+interface LabelAttributesModel {
+    name: string;
+    attributes: StringObject;
+}
+
+type LabelsModel = Record<string, LabelAttributesModel>;
+
+interface Mapping {
+    model: string | null;
+    task: string | null;
+}
+
 function DetectorRunner(props: Props): JSX.Element {
     const {
         models, withCleanup, labels, dimension, runInference,
     } = props;
 
     const [modelID, setModelID] = useState<string | null>(null);
-    const [mapping, setMapping] = useState<StringObject>({});
+    const [mapping, setMapping] = useState<LabelsModel>({});
     const [threshold, setThreshold] = useState<number>(0.5);
     const [distance, setDistance] = useState<number>(50);
     const [cleanup, setCleanup] = useState<boolean>(false);
-    const [match, setMatch] = useState<{
-        model: string | null;
-        task: string | null;
-    }>({
+    const [match, setMatch] = useState<Mapping>({
         model: null,
         task: null,
     });
+    const [attrMatches, setAttrMatch] = useState<Record<string, Mapping>>({});
 
     const model = models.filter((_model): boolean => _model.id === modelID)[0];
     const isDetector = model && model.type === 'detector';
@@ -57,24 +68,49 @@ function DetectorRunner(props: Props): JSX.Element {
 
     if (model && model.type !== 'reid' && !model.labels.length) {
         notification.warning({
-            message: 'The selected model does not include any lables',
+            message: 'The selected model does not include any labels',
         });
     }
 
+    function matchAttributes(label: any, currentModel: Model, modelMatch: string): {} {
+        let attributes = {};
+        if (label.attributes) {
+            const modelAttributes = currentModel.attributes[modelMatch];
+
+            if (Array.isArray(modelAttributes)) {
+                attributes = label.attributes
+                    .reduce((attrAcc: StringObject, attr: any): StringObject => {
+                        if (modelAttributes.some((mAttr) => mAttr.name === attr.name)) {
+                            attrAcc[attr.name] = attr.name;
+                        }
+
+                        return attrAcc;
+                    }, {});
+            }
+        }
+
+        return attributes;
+    }
+
     function updateMatch(modelLabel: string | null, taskLabel: string | null): void {
-        if (match.model && taskLabel) {
-            const newmatch: { [index: string]: string } = {};
-            newmatch[match.model] = taskLabel;
-            setMapping({ ...mapping, ...newmatch });
+        function addMatch(modelMatch: string, taskMatch: string): void {
+            const newMatch: LabelsModel = {};
+            const label = labels.find((l) => l.name === taskMatch);
+            const currentModel = models.filter((_model): boolean => _model.id === modelID)[0];
+            const attributes = matchAttributes(label, currentModel, modelMatch);
+
+            newMatch[modelMatch] = { name: taskMatch, attributes };
+            setMapping({ ...mapping, ...newMatch });
             setMatch({ model: null, task: null });
+        }
+
+        if (match.model && taskLabel) {
+            addMatch(match.model, taskLabel);
             return;
         }
 
         if (match.task && modelLabel) {
-            const newmatch: { [index: string]: string } = {};
-            newmatch[modelLabel] = match.task;
-            setMapping({ ...mapping, ...newmatch });
-            setMatch({ model: null, task: null });
+            addMatch(modelLabel, match.task);
             return;
         }
 
@@ -82,6 +118,62 @@ function DetectorRunner(props: Props): JSX.Element {
             model: modelLabel,
             task: taskLabel,
         });
+    }
+
+    function updateAttrMatch(modelLabel: string, modelAttrLabel: string | null, taskAttrLabel: string | null): void {
+        function addAttributeMatch(modelAttr: string, attrLabel: string): void {
+            const newMatch: StringObject = {};
+            newMatch[modelAttr] = attrLabel;
+            mapping[modelLabel].attributes = { ...mapping[modelLabel].attributes, ...newMatch };
+
+            delete attrMatches[modelLabel];
+            setAttrMatch({ ...attrMatches });
+        }
+
+        const modelAttr = attrMatches[modelLabel]?.model;
+        if (modelAttr && taskAttrLabel) {
+            addAttributeMatch(modelAttr, taskAttrLabel);
+            return;
+        }
+
+        const taskAttrModel = attrMatches[modelLabel]?.task;
+        if (taskAttrModel && modelAttrLabel) {
+            addAttributeMatch(modelAttrLabel, taskAttrModel);
+            return;
+        }
+
+        attrMatches[modelLabel] = {
+            model: modelAttrLabel,
+            task: taskAttrLabel,
+        };
+        setAttrMatch({ ...attrMatches });
+    }
+
+    function renderMappingRow(
+        color: string,
+        leftLabel: string,
+        rightLabel: string,
+        removalTitle: string,
+        onClick: () => void,
+    ): JSX.Element {
+        return (
+            <Row key={leftLabel} justify='start' align='middle'>
+                <Col span={10}>
+                    <Tag color={color}>{leftLabel}</Tag>
+                </Col>
+                <Col span={10} offset={1}>
+                    <Tag color={color}>{rightLabel}</Tag>
+                </Col>
+                <Col offset={1}>
+                    <CVATTooltip title={removalTitle}>
+                        <DeleteOutlined
+                            className='cvat-danger-circle-icon'
+                            onClick={onClick}
+                        />
+                    </CVATTooltip>
+                </Col>
+            </Row>
+        );
     }
 
     function renderSelector(
@@ -130,16 +222,24 @@ function DetectorRunner(props: Props): JSX.Element {
                         disabled={dimension !== DimensionType.DIM_2D}
                         style={{ width: '100%' }}
                         onChange={(_modelID: string): void => {
-                            const newmodel = models.filter((_model): boolean => _model.id === _modelID)[0];
-                            const newmapping = labels.reduce((acc: StringObject, label: any): StringObject => {
-                                if (newmodel.labels.includes(label.name)) {
-                                    acc[label.name] = label.name;
+                            const newModel = models.filter((_model): boolean => _model.id === _modelID)[0];
+                            const newMapping = labels.reduce((acc: LabelsModel, label: any): LabelsModel => {
+                                if (newModel.labels.includes(label.name)) {
+                                    const res: LabelAttributesModel = {
+                                        name: label.name,
+                                        attributes: {},
+                                    };
+
+                                    res.attributes = matchAttributes(label, newModel, label.name);
+
+                                    acc[label.name] = res;
                                 }
                                 return acc;
                             }, {});
 
-                            setMapping(newmapping);
+                            setMapping(newMapping);
                             setMatch({ model: null, task: null });
+                            setAttrMatch({});
                             setModelID(_modelID);
                         }}
                     >
@@ -156,46 +256,90 @@ function DetectorRunner(props: Props): JSX.Element {
             {isDetector &&
                 !!Object.keys(mapping).length &&
                 Object.keys(mapping).map((modelLabel: string) => {
-                    const label = labels.filter((_label: any): boolean => _label.name === mapping[modelLabel])[0];
+                    const label = labels
+                        .find((_label: any): boolean => _label.name === mapping[modelLabel].name);
                     const color = label ? label.color : consts.NEW_LABEL_COLOR;
+                    const attributeLabels = model.attributes[modelLabel]
+                        .filter((_label: ModelAttribute): boolean => !(_label.name in mapping[modelLabel].attributes));
+                    const taskAttrLabels = labels
+                        .find((_label: any) => _label.name === mapping[modelLabel].name)
+                        .attributes
+                        .map((_attrLabel: any): string => _attrLabel.name);
                     return (
-                        <Row key={modelLabel} justify='start' align='middle'>
-                            <Col span={10}>
-                                <Tag color={color}>{modelLabel}</Tag>
-                            </Col>
-                            <Col span={10} offset={1}>
-                                <Tag color={color}>{mapping[modelLabel]}</Tag>
-                            </Col>
-                            <Col offset={1}>
-                                <CVATTooltip title='Remove the mapped values'>
-                                    <DeleteOutlined
-                                        className='cvat-danger-circle-icon'
-                                        onClick={(): void => {
-                                            const newmapping = { ...mapping };
-                                            delete newmapping[modelLabel];
-                                            setMapping(newmapping);
-                                        }}
-                                    />
-                                </CVATTooltip>
-                            </Col>
-                        </Row>
+                        <React.Fragment key={modelLabel}>
+                            {
+                                renderMappingRow(color,
+                                    modelLabel,
+                                    mapping[modelLabel].name,
+                                    'Remove the mapped values',
+                                    (): void => {
+                                        const newMapping = { ...mapping };
+                                        delete newMapping[modelLabel];
+                                        setMapping(newMapping);
+
+                                        const newAttrMatches = { ...attrMatches };
+                                        delete newAttrMatches[modelLabel];
+                                        setAttrMatch({ ...newAttrMatches });
+                                    })
+                            }
+                            {
+                                Object.keys(mapping[modelLabel].attributes)
+                                    .map((attributeLabel: string) => (
+                                        renderMappingRow(
+                                            consts.NEW_LABEL_COLOR,
+                                            attributeLabel,
+                                            mapping[modelLabel].attributes[attributeLabel],
+                                            'Remove the mapped attributes',
+                                            (): void => {
+                                                const newMapping = { ...mapping };
+                                                delete mapping[modelLabel]
+                                                    .attributes[attributeLabel];
+                                                setMapping(newMapping);
+                                            },
+                                        )
+                                    ))
+                            }
+                            {!!attributeLabels.length && !!taskAttrLabels.length && (
+                                <Row justify='start' align='middle'>
+                                    <Col span={10}>
+                                        {renderSelector(
+                                            attrMatches[modelLabel]?.model || '',
+                                            'Model attr labels', attributeLabels.map((l) => l.name),
+                                            (modelAttrLabel: string) => updateAttrMatch(
+                                                modelLabel, modelAttrLabel, null,
+                                            ),
+                                        )}
+                                    </Col>
+                                    <Col span={10} offset={1}>
+                                        {renderSelector(
+                                            attrMatches[modelLabel]?.task || '',
+                                            'Task attr labels', taskAttrLabels,
+                                            (taskAttrLabel: string) => updateAttrMatch(
+                                                modelLabel, null, taskAttrLabel,
+                                            ),
+                                        )}
+                                    </Col>
+                                    <Col span={1} offset={1}>
+                                        <CVATTooltip title='Specify a label mapping between model labels and task labels'>
+                                            <QuestionCircleOutlined className='cvat-info-circle-icon' />
+                                        </CVATTooltip>
+                                    </Col>
+                                </Row>
+                            )}
+                        </React.Fragment>
                     );
                 })}
             {isDetector && !!taskLabels.length && !!modelLabels.length && (
                 <>
                     <Row justify='start' align='middle'>
                         <Col span={10}>
-                            {renderSelector(
-                                match.model || '', 'Model labels', modelLabels, (modelLabel: string) => updateMatch(modelLabel, null),
-                            )}
+                            {renderSelector(match.model || '', 'Model labels', modelLabels, (modelLabel: string) => updateMatch(modelLabel, null))}
                         </Col>
                         <Col span={10} offset={1}>
-                            {renderSelector(
-                                match.task || '', 'Task labels', taskLabels, (taskLabel: string) => updateMatch(null, taskLabel),
-                            )}
+                            {renderSelector(match.task || '', 'Task labels', taskLabels, (taskLabel: string) => updateMatch(null, taskLabel))}
                         </Col>
                         <Col span={1} offset={1}>
-                            <CVATTooltip title='Specify a label mapping between model labels and task labels'>
+                            <CVATTooltip title='Specify an attribute mapping between model label and task label attributes'>
                                 <QuestionCircleOutlined className='cvat-info-circle-icon' />
                             </CVATTooltip>
                         </Col>
@@ -261,11 +405,20 @@ function DetectorRunner(props: Props): JSX.Element {
                         disabled={!buttonEnabled}
                         type='primary'
                         onClick={() => {
-                            runInference(model, model.type === 'detector' ?
-                                { mapping, cleanup } : {
-                                    threshold,
-                                    max_distance: distance,
-                                });
+                            runInference(
+                                model,
+                                model.type === 'detector' ?
+                                    {
+                                        mapping: Object.entries(mapping)
+                                            .reduce((acc, [key, { name }]) => ({ ...acc, [key]: name }), {}),
+                                        attrMapping: mapping,
+                                        cleanup,
+                                    } :
+                                    {
+                                        threshold,
+                                        max_distance: distance,
+                                    },
+                            );
                         }}
                     >
                         Annotate

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2021 Intel Corporation
+// Copyright (C) 2019-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -11,6 +11,7 @@ class MLModel {
         this._id = data.id;
         this._name = data.name;
         this._labels = data.labels;
+        this._attributes = data.attributes;
         this._framework = data.framework;
         this._description = data.description;
         this._type = data.type;
@@ -53,6 +54,14 @@ class MLModel {
         }
 
         return [];
+    }
+
+    /**
+     * @returns {Record<string, string[]>}
+     * @readonly
+     */
+    get attributes() {
+        return { ...this._attributes };
     }
 
     /**

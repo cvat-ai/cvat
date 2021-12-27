@@ -1056,7 +1056,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                     } catch (error) {
                         notification.error({
                             description: error.toString(),
-                            message: 'Detection error occured',
+                            message: 'Detection error occurred',
                         });
                     } finally {
                         this.setState({ fetching: false });
