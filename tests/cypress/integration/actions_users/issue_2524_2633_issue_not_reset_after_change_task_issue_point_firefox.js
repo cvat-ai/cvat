@@ -4,7 +4,7 @@
 
 /// <reference types="cypress" />
 
-context("Some parts of the Redux state (issues) isn't reset after changing a task.", () => {
+context('Some parts of the Redux state (issues) is not reset after changing a task.', () => {
     const issueId = '2524_2633';
     const labelName = `Issue ${issueId}`;
     const taskName = {
@@ -68,7 +68,8 @@ context("Some parts of the Redux state (issues) isn't reset after changing a tas
     });
 
     describe(`Testing "${labelName}"`, () => {
-        it('Open first task and request to review.', () => {
+        // FIXME: review pipeline was redesigned. Need to adjust the test
+        it.skip('Open first task and request to review.', () => {
             cy.openTaskJob(taskName.firstTaskName);
             cy.interactMenu('Request a review');
             cy.get('.cvat-request-review-dialog')
@@ -77,6 +78,7 @@ context("Some parts of the Redux state (issues) isn't reset after changing a tas
                     cy.get('.cvat-user-search-field').click();
                 });
             cy.get('.ant-select-dropdown').within(() => {
+                // eslint-disable-next-line security/detect-non-literal-regexp
                 cy.contains(new RegExp(`^${Cypress.env('user')}`)).click();
             });
             cy.contains('.cvat-request-review-dialog', 'Reviewer:').within(() => {
@@ -85,8 +87,9 @@ context("Some parts of the Redux state (issues) isn't reset after changing a tas
             cy.url().should('include', '/tasks');
         });
 
-        it('Open job again and create an issue. Check issue 2633.', () => {
-            cy.openJob();
+        // FIXME: review pipeline was redesigned. Need to adjust the test
+        it.skip('Open job again and create an issue. Check issue 2633.', () => {
+            cy.openTaskJob(taskName.firstTaskName);
             cy.createIssueFromControlButton(createIssueRectangle);
             cy.createIssueFromControlButton(createIssuePoint); // Issue 2633
         });

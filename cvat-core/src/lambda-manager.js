@@ -1,10 +1,9 @@
-// Copyright (C) 2019-2020 Intel Corporation
+// Copyright (C) 2019-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
 const serverProxy = require('./server-proxy');
 const { ArgumentError } = require('./exceptions');
-const { Task } = require('./session');
 const MLModel = require('./ml-model');
 const { RQStatus } = require('./enums');
 
@@ -35,11 +34,9 @@ class LambdaManager {
         return models;
     }
 
-    async run(task, model, args) {
-        if (!(task instanceof Task)) {
-            throw new ArgumentError(
-                `Argument task is expected to be an instance of Task class, but got ${typeof task}`,
-            );
+    async run(taskID, model, args) {
+        if (!Number.isInteger(taskID) || taskID < 0) {
+            throw new ArgumentError(`Argument taskID must be a positive integer. Got "${taskID}"`);
         }
 
         if (!(model instanceof MLModel)) {
@@ -52,17 +49,26 @@ class LambdaManager {
             throw new ArgumentError(`Argument args is expected to be an object, but got ${typeof model}`);
         }
 
-        const body = args;
-        body.task = task.id;
-        body.function = model.id;
+        const body = {
+            ...args,
+            task: taskID,
+            function: model.id,
+        };
 
         const result = await serverProxy.lambda.run(body);
         return result.id;
     }
 
-    async call(task, model, args) {
-        const body = args;
-        body.task = task.id;
+    async call(taskID, model, args) {
+        if (!Number.isInteger(taskID) || taskID < 0) {
+            throw new ArgumentError(`Argument taskID must be a positive integer. Got "${taskID}"`);
+        }
+
+        const body = {
+            ...args,
+            task: taskID,
+        };
+
         const result = await serverProxy.lambda.call(model.id, body);
         return result;
     }

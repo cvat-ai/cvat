@@ -16,7 +16,8 @@
 }
 
 .cvat-workspace-settings,
-.cvat-player-settings {
+.cvat-player-settings,
+.cvat-organizations-settings {
     width: 100%;
     height: max-content;
     background: $background-color-1;
@@ -36,6 +37,10 @@
     > div:first-child {
         margin-bottom: $grid-unit-size;
     }
+}
+
+.cvat-workspace-settings-text-content {
+    width: 100%;
 }
 
 .cvat-workspace-settings-approx-poly-threshold {
@@ -91,4 +96,15 @@
 
 .cvat-settings-modal .ant-modal-body {
     padding-top: 0;
+}
+
+.cvat-organizations-settings-list {
+    width: $grid-unit-size * 24;
+    margin-bottom: $grid-unit-size * 3;
+}
+
+.cvat-organizations-settings-list-item {
+    div {
+        width: 100%;
+    }
 }

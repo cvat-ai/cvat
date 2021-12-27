@@ -13,7 +13,6 @@ from cvat.apps.dataset_manager.util import make_zip_archive
 
 from .registry import dm_env, exporter, importer
 
-
 @exporter(name='COCO', ext='ZIP', version='1.0')
 def _export(dst_file, instance_data, save_images=False):
     dataset = Dataset.from_extractors(GetCVATDataExtractor(
@@ -25,12 +24,15 @@ def _export(dst_file, instance_data, save_images=False):
         make_zip_archive(temp_dir, dst_file)
 
 @importer(name='COCO', ext='JSON, ZIP', version='1.0')
-def _import(src_file, instance_data):
+def _import(src_file, instance_data, load_data_callback=None):
     if zipfile.is_zipfile(src_file):
         with TemporaryDirectory() as tmp_dir:
             zipfile.ZipFile(src_file).extractall(tmp_dir)
 
+
             dataset = Dataset.import_from(tmp_dir, 'coco', env=dm_env)
+            if load_data_callback is not None:
+                load_data_callback(dataset, instance_data)
             import_dm_annotations(dataset, instance_data)
     else:
         dataset = Dataset.import_from(src_file.name,

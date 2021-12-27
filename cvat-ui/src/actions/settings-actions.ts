@@ -25,6 +25,7 @@ export enum SettingsActionTypes {
     SWITCH_SMOOTH_IMAGE = 'SWITCH_SMOOTH_IMAGE',
     SWITCH_TEXT_FONT_SIZE = 'SWITCH_TEXT_FONT_SIZE',
     SWITCH_TEXT_POSITION = 'SWITCH_TEXT_POSITION',
+    SWITCH_TEXT_CONTENT = 'SWITCH_TEXT_CONTENT',
     CHANGE_BRIGHTNESS_LEVEL = 'CHANGE_BRIGHTNESS_LEVEL',
     CHANGE_CONTRAST_LEVEL = 'CHANGE_CONTRAST_LEVEL',
     CHANGE_SATURATION_LEVEL = 'CHANGE_SATURATION_LEVEL',
@@ -192,6 +193,15 @@ export function switchTextPosition(position: 'auto' | 'center'): AnyAction {
         type: SettingsActionTypes.SWITCH_TEXT_POSITION,
         payload: {
             position,
+        },
+    };
+}
+
+export function switchTextContent(textContent: string): AnyAction {
+    return {
+        type: SettingsActionTypes.SWITCH_TEXT_CONTENT,
+        payload: {
+            textContent,
         },
     };
 }

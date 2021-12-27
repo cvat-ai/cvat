@@ -76,7 +76,7 @@ class ServerProxy {
         }
 
         async function getProjects(filter = '') {
-            const queries = QueryStringToJSON(filter, ['without_tasks']);
+            const queries = QueryStringToJSON(filter);
             const result = projectsDummyData.results.filter((x) => {
                 for (const key in queries) {
                     if (Object.prototype.hasOwnProperty.call(queries, key)) {
@@ -170,6 +170,9 @@ class ServerProxy {
                     }
                 }
             }
+
+            const [updatedTask] = await getTasks({ id });
+            return updatedTask;
         }
 
         async function createTask(taskData) {
@@ -218,6 +221,12 @@ class ServerProxy {
                             copy.start_frame = segment.start_frame;
                             copy.stop_frame = segment.stop_frame;
                             copy.task_id = task.id;
+                            copy.dimension = task.dimension;
+                            copy.data_compressed_chunk_type = task.data_compressed_chunk_type;
+                            copy.data_chunk_size = task.data_chunk_size;
+                            copy.bug_tracker = task.bug_tracker;
+                            copy.mode = task.mode;
+                            copy.labels = task.labels;
 
                             acc.push(copy);
                         }
@@ -255,6 +264,8 @@ class ServerProxy {
                     object[prop] = jobData[prop];
                 }
             }
+
+            return getJob(id);
         }
 
         async function getUsers() {
@@ -402,10 +413,10 @@ class ServerProxy {
 
                 tasks: {
                     value: Object.freeze({
-                        getTasks,
-                        saveTask,
-                        createTask,
-                        deleteTask,
+                        get: getTasks,
+                        save: saveTask,
+                        create: createTask,
+                        delete: deleteTask,
                     }),
                     writable: false,
                 },

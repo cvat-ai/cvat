@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
+import { connect } from 'react-redux';
 import { Row, Col } from 'antd/lib/grid';
 import { QuestionCircleOutlined } from '@ant-design/icons';
 import Table from 'antd/lib/table';
@@ -11,38 +12,80 @@ import Spin from 'antd/lib/spin';
 import Text from 'antd/lib/typography/Text';
 
 import CVATTooltip from 'components/common/cvat-tooltip';
-import { DimensionType } from 'reducers/interfaces';
+import { CombinedState, DimensionType } from 'reducers/interfaces';
+import { showStatistics } from 'actions/annotation-actions';
 
-interface Props {
+interface StateToProps {
+    visible: boolean;
     collecting: boolean;
     data: any;
-    visible: boolean;
-    assignee: string;
-    reviewer: string;
-    startFrame: number;
-    stopFrame: number;
-    bugTracker: string;
     jobStatus: string;
     savingJobStatus: boolean;
-    closeStatistics(): void;
-    jobInstance: any;
+    bugTracker: string | null;
+    startFrame: number;
+    stopFrame: number;
+    dimension: DimensionType;
+    assignee: any | null;
 }
 
-export default function StatisticsModalComponent(props: Props): JSX.Element {
+interface DispatchToProps {
+    closeStatistics(): void;
+}
+
+function mapStateToProps(state: CombinedState): StateToProps {
+    const {
+        annotation: {
+            statistics: { visible, collecting, data },
+            job: {
+                saving: savingJobStatus,
+                instance: {
+                    bugTracker,
+                    startFrame,
+                    stopFrame,
+                    assignee,
+                    dimension,
+                    status: jobStatus,
+                },
+            },
+        },
+    } = state;
+
+    return {
+        visible,
+        collecting,
+        data,
+        jobStatus,
+        savingJobStatus,
+        bugTracker,
+        startFrame,
+        stopFrame,
+        dimension,
+        assignee: assignee || 'Nobody',
+    };
+}
+
+function mapDispatchToProps(dispatch: any): DispatchToProps {
+    return {
+        closeStatistics(): void {
+            dispatch(showStatistics(false));
+        },
+    };
+}
+
+function StatisticsModalComponent(props: StateToProps & DispatchToProps): JSX.Element {
     const {
         collecting,
         data,
         visible,
         assignee,
-        reviewer,
         startFrame,
         stopFrame,
         bugTracker,
         closeStatistics,
-        jobInstance,
+        dimension,
     } = props;
 
-    const is2D = jobInstance.task.dimension === DimensionType.DIM_2D;
+    const is2D = dimension === DimensionType.DIM_2D;
 
     const baseProps = {
         cancelButtonProps: { style: { display: 'none' } },
@@ -186,12 +229,6 @@ export default function StatisticsModalComponent(props: Props): JSX.Element {
                     </Col>
                     <Col span={4}>
                         <Text strong className='cvat-text'>
-                            Reviewer
-                        </Text>
-                        <Text className='cvat-text'>{reviewer}</Text>
-                    </Col>
-                    <Col span={4}>
-                        <Text strong className='cvat-text'>
                             Start frame
                         </Text>
                         <Text className='cvat-text'>{startFrame}</Text>
@@ -235,3 +272,5 @@ export default function StatisticsModalComponent(props: Props): JSX.Element {
         </Modal>
     );
 }
+
+export default connect(mapStateToProps, mapDispatchToProps)(StatisticsModalComponent);

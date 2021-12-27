@@ -71,6 +71,7 @@ export default function ManifestsManager(props: Props): JSX.Element {
         <>
             <Form.Item
                 name='manifests'
+                className='cvat-manifests-manager-form-item'
                 label={(
                     <>
                         Manifests

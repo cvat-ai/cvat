@@ -34,6 +34,7 @@ const defaultState: SettingsState = {
         defaultApproxPolyAccuracy: 9,
         textFontSize: 14,
         textPosition: 'auto',
+        textContent: 'id,source,label,attributes,descriptions',
         toolsBlockerState: {
             algorithmsLocked: false,
             buttonVisible: false,
@@ -213,6 +214,16 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
                 },
             };
         }
+        case SettingsActionTypes.SWITCH_TEXT_CONTENT: {
+            const { textContent } = action.payload;
+            return {
+                ...state,
+                workspace: {
+                    ...state.workspace,
+                    textContent,
+                },
+            };
+        }
         case SettingsActionTypes.CHANGE_BRIGHTNESS_LEVEL: {
             return {
                 ...state,
@@ -350,11 +361,11 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
                 ...state,
                 player: {
                     ...state.player,
-                    resetZoom: job && job.task.mode === 'annotation',
+                    resetZoom: job && job.mode === 'annotation',
                 },
                 shapes: {
                     ...defaultState.shapes,
-                    ...(job.task.dimension === DimensionType.DIM_3D ?
+                    ...(job.dimension === DimensionType.DIM_3D ?
                         {
                             opacity: 40,
                             selectedOpacity: 60,
