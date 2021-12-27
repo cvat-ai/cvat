@@ -11,7 +11,8 @@ import AntdWidgets from 'react-awesome-query-builder/lib/components/widgets/antd
 import AntdConfig from 'react-awesome-query-builder/lib/config/antd';
 import 'react-awesome-query-builder/lib/css/styles.css';
 import { DownOutlined } from '@ant-design/icons';
-import { Dropdown, Menu } from 'antd';
+import Dropdown from 'antd/lib/dropdown';
+import Menu from 'antd/lib/menu';
 import Button from 'antd/lib/button';
 import Modal from 'antd/lib/modal';
 import { omit } from 'lodash';
@@ -214,9 +215,7 @@ function FiltersModalComponent(): JSX.Element {
     };
 
     const isModalConfirmable = (): boolean => (
-        (QbUtils.queryString(
-            state.tree, config,
-        ) || '').trim().length > 0 && QbUtils.isValidTree(state.tree)
+        (QbUtils.queryString(state.tree, config) || '').trim().length > 0 && QbUtils.isValidTree(state.tree)
     );
 
     const renderBuilder = (builderProps: any): JSX.Element => (
