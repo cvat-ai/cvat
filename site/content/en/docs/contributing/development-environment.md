@@ -30,7 +30,9 @@ description: 'Installing a development environment for different operating syste
 
 - Install FFmpeg libraries (libav\*) version 4.0 or higher.
 
-- Install [VS Code](https://code.visualstudio.com/docs/setup/linux#_debian-and-ubuntu-based-distributions) and the following VS Code extensions:
+- Install [VS Code](https://code.visualstudio.com/docs/setup/linux#_debian-and-ubuntu-based-distributions).
+
+- Install the following VScode extensions:
 
   - [Debugger for Chrome](https://marketplace.visualstudio.com/items?itemName=msjsdiag.debugger-for-chrome)
   - [Python](https://marketplace.visualstudio.com/items?itemName=ms-python.python)
@@ -89,15 +91,16 @@ description: 'Installing a development environment for different operating syste
 
 ### Run CVAT
 - Start npm UI debug server (run the following command from CVAT root directory):
-    - If you want to run CVAT in localhost:
-        ```sh
-        npm run start:cvat-ui
-        ```
-    - If you want to access CVAT from outside of your host:
-        ```sh
-        CVAT_UI_HOST='<YOUR_HOST_IP>' npm run start:cvat-ui
-        ```
-- Open a new terminal window and run VScode from the virtual environment (run the following command from CVAT root directory):
+  - If you want to run CVAT in localhost:
+    ```sh
+    npm run start:cvat-ui
+     ```
+  - If you want to access CVAT from outside of your host:
+    ```sh
+    CVAT_UI_HOST='<YOUR_HOST_IP>' npm run start:cvat-ui
+    ```
+- Open a new terminal window.
+- Run VScode from the virtual environment (run the following command from CVAT root directory):
 
   ```sh
   source .env/bin/activate && code
