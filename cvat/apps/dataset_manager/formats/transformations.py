@@ -3,7 +3,10 @@
 # SPDX-License-Identifier: MIT
 
 import math
+import numpy as np
 from itertools import chain
+from pycocotools import mask as mask_utils
+from PIL import Image, ImageDraw
 
 from datumaro.components.extractor import ItemTransform
 import datumaro.components.annotation as datum_annotation
@@ -32,3 +35,16 @@ class RotatedBoxesToPolygons(ItemTransform):
                 z_order=ann.z_order))
 
         return item.wrap(annotations=annotations)
+
+class EllipsesToMasks(ItemTransform):
+    @staticmethod
+    def convert_ellipse(ellipse, img_h, img_w):
+        cx, cy, rightX, topY = ellipse.points
+        rx, ry = rightX - cx, cy - topY
+        shape = (cx - rx, cy - ry, cx + rx, cy + ry)
+        mask = Image.new('1', (img_w, img_h))
+        drawer = ImageDraw.Draw(mask)
+        drawer.ellipse(shape, fill = 1)
+        rle = mask_utils.encode(np.asfortranarray(mask))
+        return datum_annotation.RleMask(rle=rle, label=ellipse.label, z_order=ellipse.z_order,
+            attributes=ellipse.attributes, group=ellipse.group)
