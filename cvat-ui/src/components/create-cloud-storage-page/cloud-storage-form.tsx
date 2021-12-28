@@ -19,7 +19,7 @@ import { createCloudStorageAsync, updateCloudStorageAsync } from 'actions/cloud-
 import { ProviderType, CredentialsType } from 'utils/enums';
 import { QuestionCircleOutlined, UploadOutlined } from '@ant-design/icons';
 import Upload, { RcFile } from 'antd/lib/upload';
-import { Space } from 'antd';
+import Space from 'antd/lib/space';
 import { AzureProvider, S3Provider, GoogleCloudProvider } from '../../icons';
 import S3Region from './s3-region';
 import GCSLocation from './gcs-locatiion';
