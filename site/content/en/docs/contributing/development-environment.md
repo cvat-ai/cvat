@@ -34,7 +34,7 @@ description: 'Installing a development environment for different operating syste
 
 - Install the following VScode extensions:
 
-  - [Debugger for Chrome](https://marketplace.visualstudio.com/items?itemName=msjsdiag.debugger-for-chrome)
+  - [JavaScript Debugger](https://marketplace.visualstudio.com/items?itemName=ms-vscode.js-debug)
   - [Python](https://marketplace.visualstudio.com/items?itemName=ms-python.python)
   - [ESLint](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint)
   - [Stylelint](https://marketplace.visualstudio.com/items?itemName=stylelint.vscode-stylelint)
