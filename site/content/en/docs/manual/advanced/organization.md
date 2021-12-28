@@ -7,7 +7,7 @@ description: 'Using organization in CVAT.'
 
 ## Personal workspace
 
-Your `Personal workspace` will display tasks you can access, and the tasks and projects you've created.
+Your `Personal workspace` will display the tasks and projects you've created.
 
 ## Create a new organization
 
@@ -33,11 +33,16 @@ To go to the organization page, open the user menu, go to `Organization` and cli
 To add members, click `Invite members`. In the window that appears,
 enter the email of the user you want to add and select the role (set of rules):
 
-- `Worker` - role for workers.
-- `Supervisor` - role for supervisors.
-- `Maintainer` - role for maintainers.
+- `Worker` - worker sees only the tasks and projects assigned to it. Worker can work in the task assigned to it,
+  as well as create and comment issues.
+- `Supervisor` - supervisor role in addition to all the features of the worker,
+  allows you to create and assign jobs, tasks and projects to members of the organization.
+- `Maintainer` - maintainer role has all the capabilities of the role supervisor,
+  sees all tasks and projects created by other members of the organization, and can create,
+  update and remove `Cloud Storage`, add and remove organization members and modify member roles.
 - `Owner` - a role assigned to the creator of the organization with maximum capabilities.
 
+In addition to roles, there are groups of users that are configured on the `Admin page`.
 Read more about the roles in [IAM system roles section](/docs/administration/advanced/iam_system_roles).
 
 ![](/images/image236.jpg)
@@ -52,5 +57,7 @@ The member can leave the organization on his own by clicking `Leave organization
 
 ### Remove organization
 
-You can delete an organization that you created. In order to delete an organization,
-click `Remove organization`, you will be asked to confirm the deletion by entering the short name of the organization.
+You can remove an organization that you created.
+Deleting an organization will delete all projects and tasks created in that organization.
+In order to remove an organization, click `Remove organization`,
+you will be asked to confirm the deletion by entering the short name of the organization.

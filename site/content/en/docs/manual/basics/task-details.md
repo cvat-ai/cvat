@@ -19,6 +19,7 @@ and the details of the task (specified when the task was created) and the jobs s
      By clicking `Copy` you will copy the labels to the clipboard.
   5. Assigned to — is used to assign a task to a person. Start typing an assignee’s name and/or
      choose the right person out of the dropdown list.
+     In the list of users, you will only see the users of the [organization](/docs/manual/advanced/organization/) in which the task was created.
 - `Jobs` — is a list of all jobs for a particular task. Here you can find the next data:
   - Jobs name with a hyperlink to it.
   - Frames — the frame interval.
