@@ -24,9 +24,11 @@ and the details of the task (specified when the task was created) and the jobs s
 - `Jobs` — is a list of all jobs for a particular task. Here you can find the next data:
   - Jobs name with a hyperlink to it.
   - Frames — the frame interval.
-  - A status of the job. The status is specified by the user in the menu inside the job.
-    There are three types of status: annotation, validation or completed.
-    The status of the job is changes the progress bar of the task.
+  - A stage of the job. The stage is specified by a drop-down list.
+    There are three stage: `annotation`, `validation` or `completed`.
+    The stage of the job is changes the progress bar of the task.
+  - A state of the job. The status is specified by the user in the menu inside the job.
+    There are four types of state: `new`, `in progress`, `rejected`, `completed`.
   - Started on — start date of this job.
   - Duration — is the amount of time the job is being worked.
   - Assignee is the user who is working on the job.
