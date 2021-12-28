@@ -27,6 +27,7 @@ import Menu from 'antd/lib/menu';
 import Dropdown from 'antd/lib/dropdown';
 import Modal from 'antd/lib/modal';
 import Text from 'antd/lib/typography/Text';
+import Select from 'antd/lib/select';
 
 import getCore from 'cvat-core-wrapper';
 import consts from 'consts';
@@ -37,7 +38,6 @@ import CVATTooltip from 'components/common/cvat-tooltip';
 import { switchSettingsDialog as switchSettingsDialogAction } from 'actions/settings-actions';
 import { logoutAsync, authActions } from 'actions/auth-actions';
 import { CombinedState } from 'reducers/interfaces';
-import { Select } from 'antd';
 import SettingsModal from './settings-modal/settings-modal';
 
 const core = getCore();
