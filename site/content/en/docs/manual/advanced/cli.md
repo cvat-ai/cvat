@@ -24,7 +24,7 @@ Overview of functionality:
 
 ## Usage
 
-Or, if you deployed CVAT using docker, to access the CLI, run:
+If you deployed CVAT using docker, to access the CLI, run:
 
 ```bash
 docker exec -it cvat bash
