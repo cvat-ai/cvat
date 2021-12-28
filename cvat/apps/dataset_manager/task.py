@@ -7,6 +7,7 @@ from collections import OrderedDict
 from enum import Enum
 
 from django.db import transaction
+from django.db.models.query import Prefetch
 from django.utils import timezone
 
 from cvat.apps.engine import models, serializers
@@ -547,7 +548,9 @@ class JobAnnotation:
 
 class TaskAnnotation:
     def __init__(self, pk):
-        self.db_task = models.Task.objects.prefetch_related("data__images").get(id=pk)
+        self.db_task = models.Task.objects.prefetch_related(
+            Prefetch('data__images', queryset=models.Image.objects.order_by('frame'))
+        ).get(id=pk)
 
         # Postgres doesn't guarantee an order by default without explicit order_by
         self.db_jobs = models.Job.objects.select_related("segment").filter(segment__task_id=pk).order_by('id')
