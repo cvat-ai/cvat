@@ -11,7 +11,6 @@ from cvat.apps.iam.urls import urlpatterns as iam_url_patterns
 from django.urls import path, re_path
 from allauth.account.views import ConfirmEmailView, EmailVerificationSentView
 
-
 urlpatterns = iam_url_patterns + [
     re_path(r'^account-confirm-email/(?P<key>[-:\w]+)/$', ConfirmEmailView.as_view(),
             name='account_confirm_email'),
@@ -50,6 +49,8 @@ class AccountTests(APITestCase):
         """
         Ensure we can register a user and it does not return auth token key when email verification is turned on
         """
+        # Since override settings is loaded after URLConf, 'account_confirm_email' url is not loaded, so we need to
+        # override ROOT_URLCONF to fix the issue
         response = self.get_register_response()
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(response.data, {'first_name': 'test_first', 'last_name': 'test_last',
