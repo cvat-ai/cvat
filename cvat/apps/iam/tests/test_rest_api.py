@@ -1,3 +1,7 @@
+# Copyright (C) 2021 Intel Corporation
+#
+# SPDX-License-Identifier: MIT
+
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
