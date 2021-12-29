@@ -17,15 +17,21 @@ urlpatterns = iam_url_patterns + [
 
 
 class AccountTests(APITestCase):
+
+    user_data = {'first_name': 'test_first', 'last_name': 'test_last', 'username': 'test_username',
+                 'email': 'test_email@test.com', 'password1': '$Test357Test%', 'password2': '$Test357Test%',
+                 'confirmations': []}
+
+    def get_register_response(self):
+        url = reverse('rest_register')
+        response = self.client.post(url, self.user_data, format='json')
+        return response
+
     def test_register_account_without_email_verification(self):
         """
         Ensure we can register a user and get auth token key when email verification is turned off
         """
-        url = reverse('rest_register')
-        data = {'first_name': 'test_first', 'last_name': 'test_last', 'username': 'test_username',
-                'email': 'test_email@test.com', 'password1': '$Test357Test%', 'password2': '$Test357Test%',
-                'confirmations': []}
-        response = self.client.post(url, data, format='json')
+        response = self.get_register_response()
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         user_token = Token.objects.get(user__username=response.data['username'])
         self.assertEqual(response.data, {'first_name': 'test_first', 'last_name': 'test_last',
@@ -37,11 +43,10 @@ class AccountTests(APITestCase):
                        EMAIL_BACKEND='django.core.mail.backends.console.EmailBackend',
                        ACCOUNT_EMAIL_CONFIRMATION_HMAC=True, ROOT_URLCONF=__name__)
     def test_register_account_with_email_verification(self):
-        url = reverse('rest_register')
-        data = {'first_name': 'test_first', 'last_name': 'test_last', 'username': 'test_username',
-                'email': 'test_email@test.com', 'password1': '$Test357Test%', 'password2': '$Test357Test%',
-                'confirmations': []}
-        response = self.client.post(url, data, format='json')
+        """
+        Ensure we can register a user and it does not return auth token key when email verification is turned on
+        """
+        response = self.get_register_response()
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(response.data, {'first_name': 'test_first', 'last_name': 'test_last',
                                          'username': 'test_username', 'email': 'test_email@test.com',
