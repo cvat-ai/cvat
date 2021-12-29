@@ -266,11 +266,11 @@ function HeaderContainer(props: Props): JSX.Element {
                 icon={organizationsFetching ? <LoadingOutlined /> : <TeamOutlined />}
             >
                 {currentOrganization ? (
-                    <Menu.Item icon={<SettingOutlined />} key='open_organization' onClick={() => history.push('/organization')}>
+                    <Menu.Item icon={<SettingOutlined />} key='open_organization' onClick={() => history.push('/organization')} className='cvat-header-menu-open-organization'>
                         Settings
                     </Menu.Item>
                 ) : null}
-                <Menu.Item icon={<PlusOutlined />} key='create_organization' onClick={() => history.push('/organizations/create')}>Create</Menu.Item>
+                <Menu.Item icon={<PlusOutlined />} key='create_organization' onClick={() => history.push('/organizations/create')} className='cvat-header-menu-create-organization'>Create</Menu.Item>
                 { organizationsList.length > 5 ? (
                     <Menu.Item
                         key='switch_organization'
@@ -324,7 +324,7 @@ function HeaderContainer(props: Props): JSX.Element {
                             {organizationsList.map((organization: any): JSX.Element => (
                                 <Menu.Item
                                     className={currentOrganization?.slug === organization.slug ?
-                                        'cvat-header-menu-active-organization-item' : ''}
+                                        'cvat-header-menu-active-organization-item' : 'cvat-header-menu-organization-item'}
                                     key={organization.slug}
                                     onClick={() => setNewOrganization(organization)}
                                 >
