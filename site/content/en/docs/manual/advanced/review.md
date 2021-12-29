@@ -11,8 +11,8 @@ A special mode to check the annotation allows you to point to an object or area 
 ## Review
 
 To conduct a review, you need to change the stage to `validation` for the desired job on the task page and assign
-a user who will conduct the check. Now the job will open in a fashion review.
-You can also switch to the `Review` mode using the [`UI switcher`](/docs/manual/basics/top-panel/#ui-switcher) on the top panel.
+a user who will conduct the check. Now the job will open in a fashion review. You can also switch to the `Review` mode
+using the [`UI switcher`](/docs/manual/basics/top-panel/#ui-switcher) on the top panel.
 
 ![](/images/image194.jpg)
 
