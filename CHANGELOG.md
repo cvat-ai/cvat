@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## \[2.0.0] - Unreleased
 ### Added
-- Fixed to return auth token key when registration without email verification
+- Fixed to return auth token key when registration without email verification (<https://github.com/openvinotoolkit/cvat/pull/4092>)
 - Add additional environment variables for Nuclio configuration (<https://github.com/openvinotoolkit/cvat/pull/3894>)
 - Add KITTI segmentation and detection format (<https://github.com/openvinotoolkit/cvat/pull/3757>)
 - Add LFW format (<https://github.com/openvinotoolkit/cvat/pull/3770>)
