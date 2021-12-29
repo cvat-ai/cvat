@@ -28,7 +28,7 @@ context('Delete a label from a project.', () => {
     const multiAttrParams = false;
     let projectID = '';
 
-    function getProjectID(projectName) {
+    function getProjectID() {
         cy.contains('.cvat-project-name', projectName)
             .parents('.cvat-project-details')
             .should('have.attr', 'cvat-project-id')
