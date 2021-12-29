@@ -38,9 +38,9 @@ context('New organization pipeline.', () => {
     };
 
     before(() => {
-        cy.clearLocalStorage();
-        cy.visit('auth/register');
+        cy.visit('/');
 
+        cy.goToRegisterPage();
         cy.userRegistration(
             firstUser.firstName,
             firstUser.lastName,
@@ -69,6 +69,7 @@ context('New organization pipeline.', () => {
             thirdUser.password,
         );
         cy.logout(thirdUserName);
+        cy.clearLocalStorage();
 
         cy.login(firstUserName, firstUser.password);
     });
