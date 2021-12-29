@@ -14,11 +14,11 @@ require('cy-verify-downloads').addCustomCommand();
 
 let selectedValueGlobal = '';
 
-Cypress.Commands.add('login', (username = Cypress.env('user'), password = Cypress.env('password')) => {
+Cypress.Commands.add('login', (username = Cypress.env('user'), password = Cypress.env('password'), page = 'tasks') => {
     cy.get('[placeholder="Username"]').type(username);
     cy.get('[placeholder="Password"]').type(password);
     cy.get('[type="submit"]').click();
-    cy.url().should('match', /\/tasks$/);
+    cy.url().should('contain', page);
     cy.document().then((doc) => {
         const loadSettingFailNotice = Array.from(doc.querySelectorAll('.cvat-notification-notice-load-settings-fail'));
         if (loadSettingFailNotice.length > 0) {
