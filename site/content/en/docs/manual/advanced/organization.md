@@ -36,7 +36,8 @@ enter the email of the user you want to add and select the role (the role define
 - `Worker` - workers have only access to tasks, projects, and jobs, assigned to them.
 - `Supervisor` - this role allows you to create and assign jobs, tasks and projects to members of the organization.
 - `Maintainer` - a member with this role has all the capabilities of the role supervisor,
-  sees all the tasks and the projects created by other members of the organization, has full access to the `Cloud Storages` feature, and can modify members and their roles.
+  sees all the tasks and the projects created by other members of the organization,
+  has full access to the `Cloud Storages` feature, and can modify members and their roles.
 - `Owner` - a role assigned to the creator of the organization with maximum capabilities.
 
 In addition to roles, there are groups of users that are configured on the `Admin page`.
