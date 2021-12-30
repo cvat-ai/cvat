@@ -11,6 +11,7 @@ from cvat.apps.iam.urls import urlpatterns as iam_url_patterns
 from django.urls import path, re_path
 from allauth.account.views import ConfirmEmailView, EmailVerificationSentView
 
+
 urlpatterns = iam_url_patterns + [
     re_path(r'^account-confirm-email/(?P<key>[-:\w]+)/$', ConfirmEmailView.as_view(),
             name='account_confirm_email'),
@@ -19,40 +20,53 @@ urlpatterns = iam_url_patterns + [
 ]
 
 
-class AccountTests(APITestCase):
+class UserRegisterAPITestCase(APITestCase):
 
     user_data = {'first_name': 'test_first', 'last_name': 'test_last', 'username': 'test_username',
                  'email': 'test_email@test.com', 'password1': '$Test357Test%', 'password2': '$Test357Test%',
                  'confirmations': []}
 
-    def get_register_response(self):
+    def _run_api_v1_user_register(self, data):
         url = reverse('rest_register')
-        response = self.client.post(url, self.user_data, format='json')
+        response = self.client.post(url, data, format='json')
         return response
 
-    def test_register_account_without_email_verification(self):
-        """
-        Ensure we can register a user and get auth token key when email verification is turned off
-        """
-        response = self.get_register_response()
+    def _check_response(self, response, data):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        user_token = Token.objects.get(user__username=response.data['username'])
-        self.assertEqual(response.data, {'first_name': 'test_first', 'last_name': 'test_last',
-                                         'username': 'test_username', 'email': 'test_email@test.com',
-                                         'email_verification_required': False, 'key': user_token.key})
+        self.assertEqual(response.data, data)
 
-    @override_settings(ACCOUNT_AUTHENTICATION_METHOD='username', ACCOUNT_CONFIRM_EMAIL_ON_GET=True,
-                       ACCOUNT_EMAIL_REQUIRED=True, ACCOUNT_EMAIL_VERIFICATION='mandatory',
-                       EMAIL_BACKEND='django.core.mail.backends.console.EmailBackend',
-                       ACCOUNT_EMAIL_CONFIRMATION_HMAC=True, ROOT_URLCONF=__name__)
-    def test_register_account_with_email_verification(self):
+    @override_settings(ACCOUNT_EMAIL_VERIFICATION='none')
+    def test_api_v1_user_register_with_email_verification_none(self):
         """
-        Ensure we can register a user and it does not return auth token key when email verification is turned on
+        Ensure we can register a user and get auth token key when email verification is not mandatory
         """
-        # Since override settings is loaded after URLConf, 'account_confirm_email' url is not loaded, so we need to
-        # override ROOT_URLCONF to fix the issue
-        response = self.get_register_response()
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(response.data, {'first_name': 'test_first', 'last_name': 'test_last',
-                                         'username': 'test_username', 'email': 'test_email@test.com',
-                                         'email_verification_required': True, 'key': None})
+        response = self._run_api_v1_user_register(self.user_data)
+        user_token = Token.objects.get(user__username=response.data['username'])
+        self._check_response(response, {'first_name': 'test_first', 'last_name': 'test_last',
+                                        'username': 'test_username', 'email': 'test_email@test.com',
+                                        'email_verification_required': False, 'key': user_token.key})
+
+    # Since URLConf is executed before running the tests, so we have to manually configure the url patterns for
+    # the tests and pass it using ROOT_URLCONF in the override settings decorator
+
+    @override_settings(ACCOUNT_EMAIL_VERIFICATION='optional', ROOT_URLCONF=__name__)
+    def test_api_v1_user_register_with_email_verification_optional(self):
+        """
+        Ensure we can register a user and get auth token key when email verification is optional
+        """
+        response = self._run_api_v1_user_register(self.user_data)
+        user_token = Token.objects.get(user__username=response.data['username'])
+        self._check_response(response, {'first_name': 'test_first', 'last_name': 'test_last',
+                                        'username': 'test_username', 'email': 'test_email@test.com',
+                                        'email_verification_required': False, 'key': user_token.key})
+
+    @override_settings(ACCOUNT_EMAIL_REQUIRED=True, ACCOUNT_EMAIL_VERIFICATION='mandatory',
+                       EMAIL_BACKEND='django.core.mail.backends.console.EmailBackend', ROOT_URLCONF=__name__)
+    def test_register_account_with_email_verification_mandatory(self):
+        """
+        Ensure we can register a user and it does not return auth token key when email verification is mandatory
+        """
+        response = self._run_api_v1_user_register(self.user_data)
+        self._check_response(response, {'first_name': 'test_first', 'last_name': 'test_last',
+                                        'username': 'test_username', 'email': 'test_email@test.com',
+                                        'email_verification_required': True, 'key': None})
