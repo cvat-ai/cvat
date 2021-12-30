@@ -60,10 +60,12 @@ context('Filtering, sorting jobs.', () => {
     }
 
     function testSetJobFilter({ column, menuItem, reset }) {
-        cy.get(`.cvat-job-item-${column}`).find('[role="button"]').trigger('mouseover').click();
+        cy.get(`.cvat-job-item-${column}`).find('[role="button"]').click();
         cy.get('.ant-dropdown')
             .should('be.visible')
             .not('.ant-dropdown-hidden')
+            .should('not.have.class', 'ant-dropdown-hidden')
+            .should('not.have.class', 'ant-slide-up')
             .within(() => {
                 if (!reset) {
                     cy.contains('[role="menuitem"]', menuItem)
@@ -71,12 +73,12 @@ context('Filtering, sorting jobs.', () => {
                         .should('not.be.checked')
                         .check()
                         .should('be.checked');
-                    cy.contains('[type="button"]', 'OK').should('be.visible').click();
+                    cy.get('[type="button"]').contains('OK').should('be.visible').click();
                 } else {
-                    cy.contains('[type="button"]', 'Reset').should('be.visible').click();
+                    cy.get('[type="button"]').contains('Reset').should('be.visible').click();
                 }
             });
-        cy.get('.ant-dropdown').last().should('be.hidden');
+        cy.get('.ant-dropdown').should('be.hidden').and('have.class', 'ant-dropdown-hidden');
     }
 
     before(() => {
