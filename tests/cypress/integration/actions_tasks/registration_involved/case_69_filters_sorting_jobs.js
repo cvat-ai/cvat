@@ -4,7 +4,7 @@
 
 /// <reference types="cypress" />
 
-context('Filters, sorting jobs.', () => {
+context('Filtering, sorting jobs.', () => {
     const caseId = '69';
     const labelName = `Case ${caseId}`;
     const taskName = `New annotation task for ${labelName}`;
@@ -45,22 +45,24 @@ context('Filters, sorting jobs.', () => {
     }
 
     function checkContentsRow(index, stage, state, assignee) {
-        cy.get('.cvat-task-jobs-table-row').then(($jobsTableRows) => {
-            cy.get($jobsTableRows[index]).within(() => {
-                cy.get('.cvat-job-item-stage').invoke('text').should('equal', stage);
-                cy.get('.cvat-job-item-state').invoke('text').should('equal', state);
-                [
-                    ['.cvat-job-assignee-selector', assignee],
-                ].forEach(([el, val]) => {
-                    cy.get(el).find('[type="search"]').invoke('val').should('equal', val);
+        cy.getJobNum(index).then(($job) => {
+            cy.get('.cvat-task-jobs-table')
+                .contains('a', `Job #${$job}`)
+                .parents('.cvat-task-jobs-table-row').within(() => {
+                    cy.get('.cvat-job-item-stage').invoke('text').should('equal', stage);
+                    cy.get('.cvat-job-item-state').invoke('text').should('equal', state);
+                    cy.get('.cvat-job-item-assignee')
+                        .find('[type="search"]')
+                        .invoke('val')
+                        .should('equal', assignee);
                 });
-            });
         });
     }
 
     function testSetJobFilter({ column, menuItem, reset }) {
-        cy.get(column).find('[role="button"]').trigger('mouseover').click().wait(300); // Waiting for dropdown menu transition
+        cy.get(`.cvat-job-item-${column}`).find('[role="button"]').trigger('mouseover').click();
         cy.get('.ant-dropdown')
+            .should('be.visible')
             .not('.ant-dropdown-hidden')
             .within(() => {
                 if (!reset) {
@@ -78,7 +80,7 @@ context('Filters, sorting jobs.', () => {
     }
 
     before(() => {
-        // Preparing a jobs
+        // Preparing the jobs
         cy.visit('auth/register');
         cy.userRegistration(
             secondUser.firstName,
@@ -105,20 +107,13 @@ context('Filters, sorting jobs.', () => {
         cy.assignJobToUser(0, secondUserName);
         cy.assignJobToUser(1, secondUserName);
 
-        // The first job is transferred to the complete status
+        // The second job - status "completed"
         cy.openJob(1);
-        cy.contains('.cvat-annotation-header-button', 'Menu').click();
-        cy.get('.cvat-annotation-menu').within(() => {
-            cy.contains('Change job state').click();
-        });
-        cy.get('.cvat-annotation-menu-job-state-submenu').within(() => {
-            cy.contains('completed').click();
-        });
-
-        cy.contains('[type="button"]', 'Continue').click();
-        cy.get('.cvat-spinner').should('not.exist');
+        cy.setJobState('completed');
         cy.interactMenu('Open the task');
-        cy.get('.cvat-spinner').should('not.exist');
+
+        // The first job - stage "validation"
+        cy.setJobStage(0, 'validation');
     });
 
     after(() => {
@@ -129,51 +124,84 @@ context('Filters, sorting jobs.', () => {
     });
 
     describe(`Testing "${labelName}".`, () => {
-        it('Filtering jobs by stage.', () => {
-            testSetJobFilter({ column: '.cvat-job-item-stage', menuItem: 'annotation' });
+        it('Check all statuses.', () => {
             checkJobsTableRowCount(3);
-            checkContentsRow(0, 'annotation', 'new', secondUserName);
+            checkContentsRow(0, 'validation', 'new', secondUserName); // The 1st job
+            checkContentsRow(1, 'annotation', 'completed', secondUserName); // The 2nd job
+            checkContentsRow(2, 'annotation', 'new', ''); // The 3th job
         });
 
-        it('Filtering jobs by assignee and stage (annotation).', () => {
-            testSetJobFilter({ column: '.cvat-job-item-assignee', menuItem: secondUserName });
+        it('Filtering jobs by stage (annotation, validation, acceptance).', () => {
+            testSetJobFilter({ column: 'stage', menuItem: 'annotation' });
             checkJobsTableRowCount(2);
-            testSetJobFilter({ column: '.cvat-job-item-assignee', reset: true });
+            testSetJobFilter({ column: 'stage', reset: true });
+            testSetJobFilter({ column: 'stage', menuItem: 'validation' });
+            checkJobsTableRowCount(1);
+            testSetJobFilter({ column: 'stage', reset: true });
+            testSetJobFilter({ column: 'stage', menuItem: 'acceptance' });
+            checkJobsTableRowCount(0);
+            testSetJobFilter({ column: 'stage', reset: true });
+        });
+
+        it('Filtering jobs by assignee.', () => {
+            testSetJobFilter({ column: 'assignee', menuItem: secondUserName });
+            checkJobsTableRowCount(2);
+            testSetJobFilter({ column: 'assignee', reset: true });
             checkJobsTableRowCount(3);
         });
 
-        it('Filtering jobs by stage (annotation, validation)', () => {
-            testSetJobFilter({ column: '.cvat-job-item-stage', menuItem: 'validation' });
+        it('Filtering jobs by state (in progress, rejected, completed, new)', () => {
+            testSetJobFilter({ column: 'state', menuItem: 'in progress' });
+            checkJobsTableRowCount(0);
+            testSetJobFilter({ column: 'state', menuItem: 'rejected' });
+            checkJobsTableRowCount(0);
+            testSetJobFilter({ column: 'state', menuItem: 'completed' });
+            checkJobsTableRowCount(1);
+            testSetJobFilter({ column: 'state', menuItem: 'new' });
             checkJobsTableRowCount(3);
-            checkContentsRow(0, 'annotation', 'new', secondUserName);
+            testSetJobFilter({ column: 'state', reset: true });
         });
 
-        it('Filtering jobs by stage (annotation, validation, acceptance)', () => {
-            testSetJobFilter({ column: '.cvat-job-item-stage', menuItem: 'acceptance' });
+        it('Filtering jobs by validation, new, assignee to user.', () => {
+            testSetJobFilter({ column: 'stage', menuItem: 'validation' });
+            testSetJobFilter({ column: 'state', menuItem: 'new' });
+            testSetJobFilter({ column: 'assignee', menuItem: secondUserName });
+            checkJobsTableRowCount(1);
+            checkContentsRow(0, 'validation', 'new', secondUserName);
+            testSetJobFilter({ column: 'stage', reset: true });
+            testSetJobFilter({ column: 'state', reset: true });
+            testSetJobFilter({ column: 'assignee', reset: true });
             checkJobsTableRowCount(3);
-            checkContentsRow(0, 'annotation', 'new', secondUserName);
-            checkContentsRow(1, 'annotation', 'completed', secondUserName);
-            checkContentsRow(2, 'annotation', 'new', '');
-            testSetJobFilter({ column: '.cvat-job-item-stage', reset: true }); // Reset filter by status
         });
 
-        // FIXME: add tests to check state filtering
-        // FIXME: no reviewer anymore
-        it.skip('Filtering jobs by reviewer and sort by ascending status.', () => {
-            testSetJobFilter({ column: '.cvat-job-item-reviewer', menuItem: Cypress.env('user') });
-            checkContentsRow(0, 'validation', secondUserName, Cypress.env('user'));
-            checkContentsRow(1, 'completed', secondUserName, Cypress.env('user'));
-            cy.contains('.cvat-job-item-status', 'Status').click();
-            checkContentsRow(0, 'completed', secondUserName, Cypress.env('user'));
-            checkContentsRow(1, 'validation', secondUserName, Cypress.env('user'));
+        it('Sorting jobs by stage.', () => {
+            const sortStage = [];
+            cy.contains('.cvat-job-item-stage', 'Stage').click().trigger('mouseout');
+            cy.get('.cvat-job-item-stage').each((element) => {
+                sortStage.push(element.text());
+            }).then(() => {
+                expect(sortStage).to.deep.equal(['Stage', 'annotation', 'annotation', 'validation']);
+            });
         });
 
-        // FIXME: no reviewer anymore
-        it.skip('Filtering jobs by reviewer and sort by ascending status, assignee.', () => {
-            cy.contains('.cvat-job-item-status', 'Status').click();
-            cy.contains('.cvat-job-item-assignee', 'Assignee').click();
-            checkContentsRow(0, 'validation', secondUserName, Cypress.env('user'));
-            checkContentsRow(1, 'completed', secondUserName, Cypress.env('user'));
+        it('Sorting jobs by state.', () => {
+            const sortState = [];
+            cy.contains('.cvat-job-item-state', 'State').click().trigger('mouseout');
+            cy.get('.cvat-job-item-state').each((element) => {
+                sortState.push(element.text());
+            }).then(() => {
+                expect(sortState).to.deep.equal(['State', 'completed', 'new', 'new']);
+            });
+        });
+
+        it('Sorting jobs by assignee.', () => {
+            const sortAssignee = [];
+            cy.contains('.cvat-job-item-assignee', 'Assignee').click().trigger('mouseout');
+            cy.get('.cvat-job-item-assignee').find('[type="search"]').each((element) => {
+                sortAssignee.push(element.val());
+            }).then(() => {
+                expect(sortAssignee).to.deep.equal([secondUserName, secondUserName, '']);
+            });
         });
     });
 });

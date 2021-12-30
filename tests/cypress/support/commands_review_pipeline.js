@@ -25,6 +25,7 @@ Cypress.Commands.add('assignJobToUser', (jobID, user) => {
 
     cy.intercept('PATCH', '/api/v1/jobs/**').as('patchJobAssignee');
     cy.get('.ant-select-dropdown')
+        .should('be.visible')
         .not('.ant-select-dropdown-hidden')
         .contains(new RegExp(`^${user}$`, 'g'))
         .click();
