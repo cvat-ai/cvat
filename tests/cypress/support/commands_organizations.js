@@ -60,7 +60,7 @@ Cypress.Commands.add('сheckPresenceOrganization', (organizationShortName) => {
         .not('ant-dropdown-hidden')
         .find('[role="menuitem"]')
         .filter(':contains("Organization")')
-        .trigger('mouseover')
+        .trigger('mouseover');
     cy.contains('.cvat-header-menu-organization-item', organizationShortName).should('exist')
         .trigger('mouseout');
 });
