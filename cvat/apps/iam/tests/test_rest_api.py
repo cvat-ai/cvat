@@ -38,7 +38,7 @@ class UserRegisterAPITestCase(APITestCase):
     @override_settings(ACCOUNT_EMAIL_VERIFICATION='none')
     def test_api_v1_user_register_with_email_verification_none(self):
         """
-        Ensure we can register a user and get auth token key when email verification is not mandatory
+        Ensure we can register a user and get auth token key when email verification is none
         """
         response = self._run_api_v1_user_register(self.user_data)
         user_token = Token.objects.get(user__username=response.data['username'])
