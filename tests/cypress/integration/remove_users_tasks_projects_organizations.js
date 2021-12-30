@@ -6,7 +6,7 @@
 
 let authKey = '';
 
-describe('Delete users and tasks created during the test run.', () => {
+describe('Delete users, tasks, projects, organizations created during the test run.', () => {
     it('Get token', () => {
         cy.request({
             method: 'POST',
@@ -18,29 +18,6 @@ describe('Delete users and tasks created during the test run.', () => {
             },
         }).then(async (response) => {
             authKey = await response.body.key;
-        });
-    });
-
-    it('Get a list of users and delete all except id:1', () => {
-        cy.request({
-            url: '/api/v1/users',
-            headers: {
-                Authorization: `Token ${authKey}`,
-            },
-        }).then(async (response) => {
-            const responceResult = await response.body.results;
-            for (const user of responceResult) {
-                const userId = user.id;
-                if (userId !== 1) {
-                    cy.request({
-                        method: 'DELETE',
-                        url: `/api/v1/users/${userId}`,
-                        headers: {
-                            Authorization: `Token ${authKey}`,
-                        },
-                    });
-                }
-            }
         });
     });
 
@@ -103,6 +80,29 @@ describe('Delete users and tasks created during the test run.', () => {
                         Authorization: `Token ${authKey}`,
                     },
                 });
+            }
+        });
+    });
+
+    it('Get a list of users and delete all except id:1', () => {
+        cy.request({
+            url: '/api/v1/users',
+            headers: {
+                Authorization: `Token ${authKey}`,
+            },
+        }).then(async (response) => {
+            const responceResult = await response.body.results;
+            for (const user of responceResult) {
+                const userId = user.id;
+                if (userId !== 1) {
+                    cy.request({
+                        method: 'DELETE',
+                        url: `/api/v1/users/${userId}`,
+                        headers: {
+                            Authorization: `Token ${authKey}`,
+                        },
+                    });
+                }
             }
         });
     });

@@ -146,7 +146,7 @@ context('New organization pipeline.', () => {
             cy.checkOrganizationMembers(3, [firstUserName, secondUserName, thirdUserName]);
         });
 
-        it('Create a project, create a task.', () => {
+        it('Create a project, create a task. Deactivate organization.', () => {
             cy.goToProjectsList();
             cy.createProjects(
                 project.name,
@@ -161,6 +161,22 @@ context('New organization pipeline.', () => {
             cy.assignTaskToUser(secondUserName);
             cy.activateOrganization('Personal workspace');
             cy.get('.cvat-header-menu-user-dropdown').should('not.contain.text', organizationParams.shortName);
+        });
+
+        // FIXME: Activate after implementation
+        it.skip('The project, the task are invisible now.', () => {
+            cy.contains('.cvat-item-task-name', taskName).should('not.exist');
+            cy.goToProjectsList();
+            cy.contains('.cvat-projects-project-item-title', project.name).should('not.exist');
+        });
+
+        it('Login as the second user. Second user is able to see the organization and the task.', () => {
+            cy.logout(firstUserName);
+            cy.login(secondUserName, secondUser.password);
+            cy.сheckPresenceOrganization(organizationParams.shortName);
+            cy.contains('.cvat-item-task-name', taskName).should('exist');
+            cy.goToProjectsList();
+            cy.get('.cvat-empty-projects-list').should('exist');
         });
     });
 });

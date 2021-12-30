@@ -53,6 +53,18 @@ Cypress.Commands.add('openOrganization', (organizationShortName) => {
     cy.get('.cvat-organization-page').should('exist').and('be.visible');
 });
 
+Cypress.Commands.add('сheckPresenceOrganization', (organizationShortName) => {
+    cy.get('.cvat-header-menu-user-dropdown').trigger('mouseover');
+    cy.get('.ant-dropdown')
+        .should('be.visible')
+        .not('ant-dropdown-hidden')
+        .find('[role="menuitem"]')
+        .filter(':contains("Organization")')
+        .trigger('mouseover')
+    cy.contains('.cvat-header-menu-organization-item', organizationShortName).should('exist')
+        .trigger('mouseout');
+});
+
 Cypress.Commands.add('checkOrganizationParams', (organizationParams) => {
     cy.get('.cvat-organization-top-bar-descriptions').then((orgDescriptions) => {
         const orgDescText = orgDescriptions.text();
