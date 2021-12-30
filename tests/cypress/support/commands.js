@@ -527,22 +527,32 @@ Cypress.Commands.add('createPolyline', (createPolylineParams) => {
 
 Cypress.Commands.add('deleteTask', (taskName) => {
     let taskId = '';
-    cy.contains('.cvat-item-task-name', taskName)
+    cy.contains('.cvat-item-task-name', new RegExp(`^${taskName}$`))
         .parents('.cvat-task-item-description')
         .find('.cvat-item-task-id')
         .then(($taskId) => {
             taskId = $taskId.text().replace(/[^\d]/g, '');
-            cy.contains('.cvat-item-task-name', taskName)
+            cy.contains('.cvat-item-task-name', new RegExp(`^${taskName}$`))
                 .parents('.cvat-tasks-list-item')
                 .find('.cvat-menu-icon')
                 .trigger('mouseover');
-            cy.get('.cvat-actions-menu').contains('Delete').click();
+            cy.get('.cvat-actions-menu')
+                .should('be.visible')
+                .find('[role="menuitem"]')
+                .filter(':contains("Delete")')
+                .last()
+                .click();
             cy.get('.cvat-modal-confirm-delete-task')
                 .should('contain', `The task ${taskId} will be deleted`)
                 .within(() => {
                     cy.contains('button', 'Delete').click();
                 });
+            cy.get('.cvat-actions-menu').should('be.hidden');
         });
+    cy.contains('.cvat-item-task-name', new RegExp(`^${taskName}$`))
+        .parents('.cvat-tasks-list-item')
+        .should('have.attr', 'style')
+        .and('contain', 'pointer-events: none; opacity: 0.5;');
 });
 
 Cypress.Commands.add('advancedConfiguration', (advancedConfigurationParams) => {

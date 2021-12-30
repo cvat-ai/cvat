@@ -193,16 +193,16 @@ jobs:
           npm ci
           if [[ ${{ github.ref }} == 'refs/heads/develop' ]]; then
             if [ ${{ matrix.specs }} == 'canvas3d_functionality' ] || [ ${{ matrix.specs }} == 'canvas3d_functionality_2' ]; then
-              npx cypress run --headed --browser chrome --config-file cypress_canvas3d.json --spec 'cypress/integration/${{ matrix.specs }}/**/*.js'
+              npx cypress run --headed --browser chrome --config-file cypress_canvas3d.json --spec 'cypress/integration/${{ matrix.specs }}/**/*.js,cypress/integration/remove_users_tasks_projects.js'
             else
-              npx cypress run --browser chrome --spec 'cypress/integration/${{ matrix.specs }}/**/*.js'
+              npx cypress run --browser chrome --spec 'cypress/integration/${{ matrix.specs }}/**/*.js,cypress/integration/remove_users_tasks_projects.js'
             fi
             mv ./.nyc_output/out.json ./.nyc_output/out_${{ matrix.specs }}.json
           else
             if [ ${{ matrix.specs }} == 'canvas3d_functionality' ] || [ ${{ matrix.specs }} == 'canvas3d_functionality_2' ]; then
-              npx cypress run --headed --browser chrome --env coverage=false --config-file cypress_canvas3d.json --spec 'cypress/integration/${{ matrix.specs }}/**/*.js'
+              npx cypress run --headed --browser chrome --env coverage=false --config-file cypress_canvas3d.json --spec 'cypress/integration/${{ matrix.specs }}/**/*.js,cypress/integration/remove_users_tasks_projects.js'
             else
-              npx cypress run --browser chrome --env coverage=false --spec 'cypress/integration/${{ matrix.specs }}/**/*.js'
+              npx cypress run --browser chrome --env coverage=false --spec 'cypress/integration/${{ matrix.specs }}/**/*.js,cypress/integration/remove_users_tasks_projects.js'
             fi
           fi
       - name: Creating a log file from "cvat" container logs

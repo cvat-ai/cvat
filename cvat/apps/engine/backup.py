@@ -611,7 +611,7 @@ class ProjectImporter(_ImporterBase, _ProjectBackupBase):
         self._prepare_project_meta(self._manifest)
         self._manifest["owner_id"] = self._user_id
 
-        self._db_project = models.Project.objects.create(**self._manifest)
+        self._db_project = models.Project.objects.create(**self._manifest, organization_id=self._org_id)
         project_path = self._db_project.get_project_dirname()
         if os.path.isdir(project_path):
             shutil.rmtree(project_path)
@@ -634,6 +634,7 @@ class ProjectImporter(_ImporterBase, _ProjectBackupBase):
                 TaskImporter(
                     file=zf,
                     user_id=self._user_id,
+                    org_id=self._org_id,
                     project_id=self._db_project.id,
                     subdir=task_dir,
                     label_mapping=self._labels_mapping).import_task()
