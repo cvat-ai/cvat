@@ -57,3 +57,4 @@ google-cloud-storage==1.42.0
 datumaro==0.2.0 --no-binary=datumaro --no-binary=pycocotools
 urllib3>=1.26.5 # not directly required, pinned by Snyk to avoid a vulnerability
 natsort==8.0.0
+mistune>=2.0.1 # not directly required, pinned by Snyk to avoid a vulnerability
