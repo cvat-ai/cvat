@@ -31,10 +31,11 @@ li > details {
     max-width: 80%;
 }
 
-.highlight > .code-toolbar {
+.highlight > .code-toolbar,
+details > summary > .code-toolbar,
+details > .code-toolbar {
     max-width: 100%;
 }
-
 
 /* Increased left padding on the sidebar of documentation */
 
