@@ -19,12 +19,15 @@ and the details of the task (specified when the task was created) and the jobs s
      By clicking `Copy` you will copy the labels to the clipboard.
   5. Assigned to — is used to assign a task to a person. Start typing an assignee’s name and/or
      choose the right person out of the dropdown list.
+     In the list of users, you will only see the users of the [organization](/docs/manual/advanced/organization/)
+     where the task is created.
 - `Jobs` — is a list of all jobs for a particular task. Here you can find the next data:
   - Jobs name with a hyperlink to it.
   - Frames — the frame interval.
-  - A status of the job. The status is specified by the user in the menu inside the job.
-    There are three types of status: annotation, validation or completed.
-    The status of the job is changes the progress bar of the task.
+  - A stage of the job. The stage is specified by a drop-down list.
+    There are three stages: `annotation`, `validation` or `acceptance`. This value affects the task progress bar.
+  - A state of the job. The state can be changed by an assigned user in the menu inside the job.
+    There are several possible states: `new`, `in progress`, `rejected`, `completed`.
   - Started on — start date of this job.
   - Duration — is the amount of time the job is being worked.
   - Assignee is the user who is working on the job.
