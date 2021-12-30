@@ -10,14 +10,12 @@ import Spin from 'antd/lib/spin';
 import notification from 'antd/lib/notification';
 
 import AttributeAnnotationWorkspace from 'components/annotation-page/attribute-annotation-workspace/attribute-annotation-workspace';
-import SubmitAnnotationsModal from 'components/annotation-page/request-review-modal';
 import ReviewAnnotationsWorkspace from 'components/annotation-page/review-workspace/review-workspace';
-import SubmitReviewModal from 'components/annotation-page/review/submit-review-modal';
 import StandardWorkspaceComponent from 'components/annotation-page/standard-workspace/standard-workspace';
 import StandardWorkspace3DComponent from 'components/annotation-page/standard3D-workspace/standard3D-workspace';
 import TagAnnotationWorkspace from 'components/annotation-page/tag-annotation-workspace/tag-annotation-workspace';
 import FiltersModalComponent from 'components/annotation-page/top-bar/filters-modal';
-import StatisticsModalContainer from 'containers/annotation-page/top-bar/statistics-modal';
+import StatisticsModalComponent from 'components/annotation-page/top-bar/statistics-modal';
 import AnnotationTopBarContainer from 'containers/annotation-page/top-bar/top-bar';
 import { Workspace } from 'reducers/interfaces';
 import { usePrevious } from 'utils/hooks';
@@ -66,15 +64,15 @@ export default function AnnotationPageComponent(props: Props): JSX.Element {
     }, [job, fetching]);
 
     useEffect(() => {
-        if (prevFetching && !fetching && !prevJob && job && !job.task.labels.length) {
+        if (prevFetching && !fetching && !prevJob && job && !job.labels.length) {
             notification.warning({
                 message: 'No labels',
                 description: (
                     <span>
-                        {`${job.task.projectId ? 'Project' : 'Task'} ${
-                            job.task.projectId || job.task.id
+                        {`${job.projectId ? 'Project' : 'Task'} ${
+                            job.projectId || job.taskId
                         } does not contain any label. `}
-                        <a href={`/${job.task.projectId ? 'projects' : 'tasks'}/${job.task.projectId || job.task.id}/`}>
+                        <a href={`/${job.projectId ? 'projects' : 'tasks'}/${job.projectId || job.id}/`}>
                             Add
                         </a>
                         {' the first one for editing annotation.'}
@@ -132,9 +130,7 @@ export default function AnnotationPageComponent(props: Props): JSX.Element {
                 </Layout.Content>
             )}
             <FiltersModalComponent />
-            <StatisticsModalContainer />
-            <SubmitAnnotationsModal />
-            <SubmitReviewModal />
+            <StatisticsModalComponent />
         </Layout>
     );
 }

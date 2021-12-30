@@ -340,7 +340,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             try {
                 // run server request
                 this.setState({ fetching: true });
-                const response = await core.lambda.call(jobInstance.task, interactor, data);
+                const response = await core.lambda.call(jobInstance.taskId, interactor, data);
                 // approximation with cv.approxPolyDP
                 const approximated = await this.approximateResponsePoints(response);
 
@@ -430,7 +430,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         }
 
         const { activeLabelID } = this.state;
-        const [label] = jobInstance.task.labels.filter((_label: any): boolean => _label.id === activeLabelID);
+        const [label] = jobInstance.labels.filter((_label: any): boolean => _label.id === activeLabelID);
 
         const { isDone, shapesUpdated } = (e as CustomEvent).detail;
         if (!isDone || !shapesUpdated) {
@@ -535,8 +535,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                                         <EnvironmentFilled
                                             onClick={() => {
                                                 const filteredStates = trackedShapes.filter(
-                                                    (trackedShape: TrackedShape) =>
-                                                        trackedShape.clientID !== clientID,
+                                                    (trackedShape: TrackedShape) => trackedShape.clientID !== clientID,
                                                 );
                                                 /* eslint no-param-reassign: ["error", { "props": false }] */
                                                 objectState.descriptions = [];
@@ -690,8 +689,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                             0,
                         );
                         // eslint-disable-next-line no-await-in-loop
-                        const response = await core.lambda.call(jobInstance.task, tracker, {
-                            task: jobInstance.task,
+                        const response = await core.lambda.call(jobInstance.taskId, tracker, {
                             frame: frame - 1,
                             shapes: trackableObjects.shapes,
                         });
@@ -736,8 +734,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                             0,
                         );
                         // eslint-disable-next-line no-await-in-loop
-                        const response = await core.lambda.call(jobInstance.task, tracker, {
-                            task: jobInstance.task,
+                        const response = await core.lambda.call(jobInstance.taskId, tracker, {
                             frame: frame - 1,
                             shapes: trackableObjects.shapes,
                             states: trackableObjects.states,
@@ -1022,24 +1019,24 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             <DetectorRunner
                 withCleanup={false}
                 models={detectors}
-                task={jobInstance.task}
-                runInference={async (task: any, model: Model, body: object) => {
+                labels={jobInstance.labels}
+                dimension={jobInstance.dimension}
+                runInference={async (model: Model, body: object) => {
                     try {
                         this.setState({ mode: 'detection', fetching: true });
-                        const result = await core.lambda.call(task, model, { ...body, frame });
+                        const result = await core.lambda.call(jobInstance.taskId, model, { ...body, frame });
                         const states = result.map(
-                            (data: any): any =>
-                                new core.classes.ObjectState({
-                                    shapeType: data.type,
-                                    label: task.labels.filter((label: any): boolean => label.name === data.label)[0],
-                                    points: data.points,
-                                    objectType: ObjectType.SHAPE,
-                                    frame,
-                                    occluded: false,
-                                    source: 'auto',
-                                    attributes: {},
-                                    zOrder: curZOrder,
-                                }),
+                            (data: any): any => new core.classes.ObjectState({
+                                shapeType: data.type,
+                                label: jobInstance.labels.filter((label: any): boolean => label.name === data.label)[0],
+                                points: data.points,
+                                objectType: ObjectType.SHAPE,
+                                frame,
+                                occluded: false,
+                                source: 'auto',
+                                attributes: {},
+                                zOrder: curZOrder,
+                            }),
                         );
 
                         createAnnotations(jobInstance, frame, states);

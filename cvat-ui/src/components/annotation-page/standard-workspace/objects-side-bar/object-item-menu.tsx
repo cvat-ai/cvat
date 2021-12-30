@@ -225,7 +225,7 @@ export default function ItemMenu(props: Props): JSX.Element {
         REMOVE_ITEM = 'remove_item',
     }
 
-    const is2D = jobInstance.task.dimension === DimensionType.DIM_2D;
+    const is2D = jobInstance.dimension === DimensionType.DIM_2D;
 
     return (
         <Menu className='cvat-object-item-menu' selectable={false}>

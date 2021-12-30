@@ -361,11 +361,11 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
                 ...state,
                 player: {
                     ...state.player,
-                    resetZoom: job && job.task.mode === 'annotation',
+                    resetZoom: job && job.mode === 'annotation',
                 },
                 shapes: {
                     ...defaultState.shapes,
-                    ...(job.task.dimension === DimensionType.DIM_3D ?
+                    ...(job.dimension === DimensionType.DIM_3D ?
                         {
                             opacity: 40,
                             selectedOpacity: 60,
