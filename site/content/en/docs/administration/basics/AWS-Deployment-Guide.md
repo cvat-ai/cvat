@@ -25,7 +25,7 @@ There are two ways of deploying the CVAT.
 For any of above, don't forget to set the `CVAT_HOST` environemnt variable to the exposed
 AWS public IP address or hostname:
 
-```
+```bash
 export CVAT_HOST=your-instance.amazonaws.com
 ```
 
