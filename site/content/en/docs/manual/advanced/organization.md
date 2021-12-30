@@ -17,8 +17,8 @@ To create an organization, open the user menu, go to `Organization` and click `C
 
 Fill in the required information to create your organization.
 You need to enter a `Short name` of the organization, which will be displayed in the menu.
-You can enter the `Full Name`, the `Description` and the contact details
-of them will be visible on the organization settings page.
+You can specify other fields: `Full Name`, `Description` and the organization contacts.
+Of them will be visible on the organization settings page.
 
 ![](/images/image234.jpg)
 
@@ -31,15 +31,12 @@ To go to the organization page, open the user menu, go to `Organization` and cli
 ### Invite members into organization
 
 To add members, click `Invite members`. In the window that appears,
-enter the email of the user you want to add and select the role (set of rules):
+enter the email of the user you want to add and select the role (the role defines a set of rules):
 
-- `Worker` - worker sees only the tasks and projects assigned to it. Worker can work in the task assigned to it,
-  as well as create and comment issues.
-- `Supervisor` - supervisor role in addition to all the features of the worker,
-  allows you to create and assign jobs, tasks and projects to members of the organization.
-- `Maintainer` - maintainer role has all the capabilities of the role supervisor,
-  sees all tasks and projects created by other members of the organization, and can create,
-  update and remove `Cloud Storage`, add and remove organization members and modify member roles.
+- `Worker` - workers have only access to tasks, projects, and jobs, assigned to them.
+- `Supervisor` - this role allows you to create and assign jobs, tasks and projects to members of the organization.
+- `Maintainer` - a member with this role has all the capabilities of the role supervisor,
+  sees all the tasks and the projects created by other members of the organization, has full access to the `Cloud Storages` feature, and can modify members and their roles.
 - `Owner` - a role assigned to the creator of the organization with maximum capabilities.
 
 In addition to roles, there are groups of users that are configured on the `Admin page`.
@@ -47,8 +44,8 @@ Read more about the roles in [IAM system roles section](/docs/administration/adv
 
 ![](/images/image236.jpg)
 
-After you add members, they appear on your organization settings page,
-with each member listed and information on when and which member added them.
+After you add members, they will appear on your organization settings page,
+with each member listed and information about invitation details.
 You can change a member's role or remove a member at any time.
 
 ![](/images/image237.jpg)
@@ -58,6 +55,6 @@ The member can leave the organization on his own by clicking `Leave organization
 ### Remove organization
 
 You can remove an organization that you created.
-Deleting an organization will delete all projects and tasks created in that organization.
+Deleting an organization will delete all related resources (annotations, jobs, tasks, projects, cloud storages, ..).
 In order to remove an organization, click `Remove organization`,
 you will be asked to confirm the deletion by entering the short name of the organization.

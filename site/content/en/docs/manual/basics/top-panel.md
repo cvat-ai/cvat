@@ -27,8 +27,9 @@ Button assignment:
   ![](/images/image229.jpg)
 
 - `Open the task` — opens a page with details about the task.
-- `Change job state` - changes the status of the job.
-- `Finish the job`/`Renew the job` - changes the status of the job to `completed`/`new`.
+- `Change job state` - changes the state of the job (`new`, `in progress`, `rejected`, `completed`).
+- `Finish the job`/`Renew the job` - changes the job stage and state
+  to `acceptance` and `completed` / `annotation` and `new` correspondingly.
 
 ## Save Work
 
