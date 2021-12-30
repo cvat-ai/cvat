@@ -27,6 +27,15 @@ li > details {
     max-width: 100%;
 }
 
+.code-toolbar {
+    max-width: 80%;
+}
+
+.highlight > .code-toolbar {
+    max-width: 100%;
+}
+
+
 /* Increased left padding on the sidebar of documentation */
 
 .td-sidebar-nav__section .ul-1 ul {
