@@ -50,5 +50,60 @@ Cypress.Commands.add('openOrganization', (organizationShortName) => {
     cy.get('.cvat-header-menu-open-organization')
         .should('be.visible')
         .click();
-    cy.get('.cvat-organization-page').should('exist');
+    cy.get('.cvat-organization-page').should('exist').and('be.visible');
+});
+
+Cypress.Commands.add('checkOrganizationParams', (organizationParams) => {
+    cy.get('.cvat-organization-top-bar-descriptions').then((orgDescriptions) => {
+        const orgDescText = orgDescriptions.text();
+        expect(orgDescText).contain(organizationParams.shortName);
+        expect(orgDescText).contain(organizationParams.fullName);
+        expect(orgDescText).contain(organizationParams.description);
+    });
+    cy.get('.cvat-organization-top-bar-contacts').then((orgContacts) => {
+        const orgContactsText = orgContacts.text();
+        expect(orgContactsText).contain(organizationParams.email);
+        expect(orgContactsText).contain(organizationParams.phoneNumber);
+        expect(orgContactsText).contain(organizationParams.location);
+    });
+});
+
+Cypress.Commands.add('checkOrganizationMembers', (expectedMembersCount, expectedOrganizationMembers) => {
+    const orgMembersUserameText = [];
+    cy.get('.cvat-organization-member-item').should('have.length', expectedMembersCount);
+    cy.get('.cvat-organization-member-item-username').each((el) => {
+        orgMembersUserameText.push(el.text());
+    }).then(() => {
+        expect(orgMembersUserameText).to.include.members(expectedOrganizationMembers);
+    });
+});
+
+Cypress.Commands.add('inviteMembersToOrganization', (membersEmailRole) => {
+    cy.get('.cvat-organization-top-bar-buttons-block').should('exist');
+    cy.contains('button', 'Invite members').click();
+    cy.get('.cvat-organization-invitation-modal').should('be.visible');
+    let i = 0;
+    for (const el of membersEmailRole) {
+        cy.get('.cvat-organization-invitation-field-email')
+            .last()
+            .find('input')
+            .type(el.email)
+            .should('have.value', el.email);
+        cy.get('.cvat-organization-invitation-field-email')
+            .find('[aria-label="check-circle"]')
+            .should('exist');
+        cy.get('.cvat-organization-invitation-field-role').last().click();
+        cy.get('.ant-select-dropdown')
+            .should('be.visible')
+            .not('.ant-select-dropdown-hidden')
+            .find(`[title=${el.role}]`)
+            .click();
+        i++;
+        if (i !== Object.keys(membersEmailRole).length) {
+            cy.contains('button', 'Invite more').click();
+        }
+    }
+    cy.get('.cvat-organization-invitation-modal')
+        .contains('button', 'OK')
+        .click();
 });
