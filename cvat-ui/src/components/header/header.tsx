@@ -315,7 +315,8 @@ function HeaderContainer(props: Props): JSX.Element {
                         <Menu.Divider />
                         <Menu.ItemGroup>
                             <Menu.Item
-                                className={!currentOrganization ? 'cvat-header-menu-active-organization-item' : ''}
+                                className={!currentOrganization ?
+                                    'cvat-header-menu-active-organization-item' : 'cvat-header-menu-organization-item'}
                                 key='$personal'
                                 onClick={resetOrganization}
                             >
