@@ -31,7 +31,7 @@ For access from China, read [sources for users from China](#sources-for-users-fr
 - Type commands below into the terminal window to install `docker`. More
   instructions can be found [here](https://docs.docker.com/install/linux/docker-ce/ubuntu/).
 
-  ```sh
+  ```bash
   sudo apt-get update
   sudo apt-get --no-install-recommends install -y \
     apt-transport-https \
@@ -51,7 +51,7 @@ For access from China, read [sources for users from China](#sources-for-users-fr
 - Perform [post-installation steps](https://docs.docker.com/install/linux/linux-postinstall/)
   to run docker without root permissions.
 
-  ```sh
+  ```bash
   sudo groupadd docker
   sudo usermod -aG docker $USER
   ```
@@ -63,7 +63,7 @@ For access from China, read [sources for users from China](#sources-for-users-fr
 - Install docker-compose (1.19.0 or newer). Compose is a tool for
   defining and running multi-container docker applications.
 
-  ```sh
+  ```bash
   sudo apt-get --no-install-recommends install -y python3-pip python3-setuptools
   sudo python3 -m pip install setuptools docker-compose
   ```
@@ -71,28 +71,28 @@ For access from China, read [sources for users from China](#sources-for-users-fr
 - Clone _CVAT_ source code from the
   [GitHub repository](https://github.com/opencv/cvat).
 
-  ```sh
+  ```bash
   sudo apt-get --no-install-recommends install -y git
   git clone https://github.com/opencv/cvat
   cd cvat
   ```
 - To access CVAT over a network or through a different system, export `CVAT_HOST` environment variable
 
-  ```sh
+  ```bash
   export CVAT_HOST=your-ip-address
   ```
 
 - Run docker containers. It will take some time to download the latest CVAT
   release and other required images like postgres, redis, etc. from DockerHub and create containers.
 
-  ```sh
+  ```bash
   docker-compose up -d
   ```
 
 - Alternative: if you want to build the images locally with unreleased changes
   run the following command. It will take some time to build CVAT images.
 
-  ```sh
+  ```bash
   docker-compose -f docker-compose.yml -f docker-compose.dev.yml build
   docker-compose up -d
   ```
@@ -102,7 +102,7 @@ For access from China, read [sources for users from China](#sources-for-users-fr
   admin panel to assign correct groups to the user. Please use the command
   below:
 
-  ```sh
+  ```bash
   docker exec -it cvat bash -ic 'python3 ~/manage.py createsuperuser'
   ```
 
@@ -112,7 +112,7 @@ For access from China, read [sources for users from China](#sources-for-users-fr
 - Google Chrome is the only browser which is supported by CVAT. You need to
   install it as well. Type commands below in a terminal window:
 
-  ```sh
+  ```bash
   curl https://dl-ssl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
   sudo sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google-chrome.list'
   sudo apt-get update
@@ -150,7 +150,7 @@ For access from China, read [sources for users from China](#sources-for-users-fr
 - Clone _CVAT_ source code from the
   [GitHub repository](https://github.com/opencv/cvat).
 
-  ```sh
+  ```bash
   git clone https://github.com/opencv/cvat
   cd cvat
   ```
@@ -158,14 +158,14 @@ For access from China, read [sources for users from China](#sources-for-users-fr
 - Run docker containers. It will take some time to download the latest CVAT
   release and other required images like postgres, redis, etc. from DockerHub and create containers.
 
-  ```sh
+  ```bash
   docker-compose up -d
   ```
 
 - Alternative: if you want to build the images locally with unreleased changes
   run the following command. It will take some time to build CVAT images.
 
-  ```sh
+  ```bash
   docker-compose -f docker-compose.yml -f docker-compose.dev.yml build
   docker-compose up -d
   ```
@@ -175,13 +175,13 @@ For access from China, read [sources for users from China](#sources-for-users-fr
   admin panel to assign correct groups to other users. Please use the command
   below:
 
-  ```sh
+  ```bash
   winpty docker exec -it cvat bash -ic 'python3 ~/manage.py createsuperuser'
   ```
 
   If you don't have winpty installed or the above command does not work, you may also try the following:
 
-  ```sh
+  ```bash
   # enter docker image first
   docker exec -it cvat /bin/bash
   # then run
@@ -208,7 +208,7 @@ For access from China, read [sources for users from China](#sources-for-users-fr
   install the Xcode Command Line Tools. On Mavericks (10.9) or above you can
   do this simply by trying to run git from the Terminal the very first time.
 
-  ```sh
+  ```bash
   git --version
   ```
 
@@ -226,7 +226,7 @@ For access from China, read [sources for users from China](#sources-for-users-fr
 - Clone _CVAT_ source code from the
   [GitHub repository](https://github.com/opencv/cvat).
 
-  ```sh
+  ```bash
   git clone https://github.com/opencv/cvat
   cd cvat
   ```
@@ -234,14 +234,14 @@ For access from China, read [sources for users from China](#sources-for-users-fr
 - Run docker containers. It will take some time to download the latest CVAT
   release and other required images like postgres, redis, etc. from DockerHub and create containers.
 
-  ```sh
+  ```bash
   docker-compose up -d
   ```
 
 - Alternative: if you want to build the images locally with unreleased changes
   run the following command. It will take some time to build CVAT images.
 
-  ```sh
+  ```bash
   docker-compose -f docker-compose.yml -f docker-compose.dev.yml build
   docker-compose up -d
   ```
@@ -251,7 +251,7 @@ For access from China, read [sources for users from China](#sources-for-users-fr
   admin panel to assign correct groups to other users. Please use the command
   below:
 
-  ```sh
+  ```bash
   docker exec -it cvat bash -ic 'python3 ~/manage.py createsuperuser'
   ```
 
@@ -326,7 +326,7 @@ if you want to keep the dashboard in production you should read Traefik's
 
 - [Analytics: management and monitoring of data annotation team](/docs/administration/advanced/analytics/)
 
-```sh
+```bash
 # Build and run containers with Analytics component support:
 docker-compose -f docker-compose.yml \
   -f components/analytics/docker-compose.analytics.yml up -d --build
@@ -341,7 +341,7 @@ Please follow this [guide](/docs/administration/advanced/installation_automatic_
 The command below stops and removes containers, networks, volumes, and images
 created by `up`.
 
-```sh
+```bash
 docker-compose down
 ```
 
@@ -350,7 +350,7 @@ docker-compose down
 If you want to access your instance of CVAT outside of your localhost (on another domain),
 you should specify the `CVAT_HOST` environment variable, like this:
 
-```sh
+```bash
 export CVAT_HOST=<YOUR_DOMAIN>
 ```
 
@@ -422,14 +422,14 @@ enabling you to use HTTPS protocol to access your website.
 To enable this, first set the the `CVAT_HOST` (the domain of your website) and `ACME_EMAIL`
 (contact email for Let's Encrypt) environment variables:
 
-```sh
+```bash
 export CVAT_HOST=<YOUR_DOMAIN>
 export ACME_EMAIL=<YOUR_EMAIL>
 ```
 
 Then, use the `docker-compose.https.yml` file to override the base `docker-compose.yml` file:
 
-```sh
+```bash
 docker-compose -f docker-compose.yml -f docker-compose.https.yml up -d
 ```
 
@@ -444,14 +444,14 @@ If you stay in China, for installation you need to override the following source
   [Ubuntu mirroring help](https://mirrors.tuna.tsinghua.edu.cn/help/ubuntu/)
 
   Pre-compiled packages:
-  ```sh
+  ```bash
   deb https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ focal main restricted universe multiverse
   deb https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ focal-updates main restricted universe multiverse
   deb https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ focal-backports main restricted universe multiverse
   deb https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ focal-security main restricted universe multiverse
   ```
   Or source packages:
-  ```sh
+  ```bash
   deb-src https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ focal main restricted universe multiverse
   deb-src https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ focal-updates main restricted universe multiverse
   deb-src https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ focal-backports main restricted universe multiverse
@@ -476,14 +476,14 @@ If you stay in China, for installation you need to override the following source
 - For using `pip`:
 
   [PyPI mirroring help](https://mirrors.tuna.tsinghua.edu.cn/help/pypi/)
-  ```sh
+  ```bash
   pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
   ```
 
 - For using `npm`:
 
   [npm mirroring help](https://npmmirror.com/)
-  ```sh
+  ```bash
   npm config set registry https://registry.npm.taobao.org/
   ```
 
@@ -492,7 +492,7 @@ If you stay in China, for installation you need to override the following source
   [CVAT repository on gitee.com](https://gitee.com/monkeycc/cvat)
 
 - For replace acceleration source `docker.com` run:
-  ```sh
+  ```bash
   curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
   sudo add-apt-repository \
     "deb [arch=amd64] https://download.docker.com/linux/ubuntu \
@@ -500,6 +500,6 @@ If you stay in China, for installation you need to override the following source
   ```
 
 - For replace acceleration source `google.com` run:
-  ```sh
+  ```bash
   curl https://dl-ssl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
   ```

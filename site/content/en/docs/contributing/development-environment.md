@@ -9,11 +9,11 @@ description: 'Installing a development environment for different operating syste
 
   Ubuntu 18.04
 
-  ```sh
+  ```bash
   sudo apt-get update && sudo apt-get --no-install-recommends install -y build-essential curl redis-server python3-dev python3-pip python3-venv python3-tk libldap2-dev libsasl2-dev pkg-config libavformat-dev libavcodec-dev libavdevice-dev libavutil-dev libswscale-dev libswresample-dev libavfilter-dev
   ```
 
-  ```sh
+  ```bash
   # Install Node.js 16
   curl -sL https://deb.nodesource.com/setup_16.x | sudo -E bash -
   sudo apt-get install -y nodejs
@@ -21,7 +21,7 @@ description: 'Installing a development environment for different operating syste
 
   MacOS 10.15
 
-  ```sh
+  ```bash
   brew install git python pyenv redis curl openssl node
   ```
 
@@ -32,7 +32,7 @@ description: 'Installing a development environment for different operating syste
 
 - Install CVAT on your local host:
 
-  ```sh
+  ```bash
   git clone https://github.com/openvinotoolkit/cvat
   cd cvat && mkdir logs keys
   python3 -m venv .env
@@ -51,8 +51,10 @@ description: 'Installing a development environment for different operating syste
 
 - Create a super user for CVAT:
 
-  ```sh
-  $ python manage.py createsuperuser
+  ```bash
+  python manage.py createsuperuser
+  ```
+  ```
   Username (leave blank to use 'django'): ***
   Email address: ***
   Password: ***
@@ -61,7 +63,7 @@ description: 'Installing a development environment for different operating syste
 
 - Install npm packages for UI and start UI debug server (run the following command from CVAT root directory):
 
-  ```sh
+  ```bash
   npm ci && npm run start:cvat-ui
   ```
 
@@ -75,7 +77,7 @@ description: 'Installing a development environment for different operating syste
 
 - Open new terminal (Ctrl + Shift + T), run Visual Studio Code from the virtual environment
 
-  ```sh
+  ```bash
   source .env/bin/activate && code
   ```
 

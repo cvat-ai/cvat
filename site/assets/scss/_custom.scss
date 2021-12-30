@@ -13,14 +13,12 @@ pre[class*="language-"] {
     background: #f8f9fa !important;
 }
 
-.code-toolbar,
-details > pre,
-.td-content > details > .highlight {
+details {
     max-width: 80%;
 }
 
 @media (max-width: 991px) {
-    div.code-toolbar {
+    details {
         max-width: 100% !important;
     }
 }
