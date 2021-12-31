@@ -4,13 +4,14 @@ linkTitle: 'Development environment'
 weight: 2
 description: 'Installing a development environment for different operating systems.'
 ---
+### Setup the dependencies:
 
 - Install necessary dependencies:
 
   Ubuntu 18.04
 
   ```bash
-  sudo apt-get update && sudo apt-get --no-install-recommends install -y build-essential curl redis-server python3-dev python3-pip python3-venv python3-tk libldap2-dev libsasl2-dev pkg-config libavformat-dev libavcodec-dev libavdevice-dev libavutil-dev libswscale-dev libswresample-dev libavfilter-dev
+  sudo apt-get update && sudo apt-get --no-install-recommends install -y build-essential curl git redis-server python3-dev python3-pip python3-venv python3-tk libldap2-dev libsasl2-dev pkg-config libavformat-dev libavcodec-dev libavdevice-dev libavutil-dev libswscale-dev libswresample-dev libavfilter-dev
   ```
 
   ```bash
@@ -25,10 +26,22 @@ description: 'Installing a development environment for different operating syste
   brew install git python pyenv redis curl openssl node
   ```
 
+- Install Chrome
+
 - Install FFmpeg libraries (libav\*) version 4.0 or higher.
 
-- Install [Visual Studio Code](https://code.visualstudio.com/docs/setup/linux#_debian-and-ubuntu-based-distributions)
-  for development
+- Install [VS Code](https://code.visualstudio.com/docs/setup/linux#_debian-and-ubuntu-based-distributions).
+
+- Install the following VScode extensions:
+
+  - [JavaScript Debugger](https://marketplace.visualstudio.com/items?itemName=ms-vscode.js-debug)
+  - [Python](https://marketplace.visualstudio.com/items?itemName=ms-python.python)
+  - [ESLint](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint)
+  - [Stylelint](https://marketplace.visualstudio.com/items?itemName=stylelint.vscode-stylelint)
+  - [vscode-remark-lint](https://marketplace.visualstudio.com/items?itemName=drewbourne.vscode-remark-lint)
+  - [licenser](https://marketplace.visualstudio.com/items?itemName=ymotongpoo.licenser)
+  - [Trailing Spaces](https://marketplace.visualstudio.com/items?itemName=shardulm94.trailing-spaces)
+
 
 - Install CVAT on your local host:
 
@@ -54,17 +67,11 @@ description: 'Installing a development environment for different operating syste
   ```bash
   python manage.py createsuperuser
   ```
-  ```
-  Username (leave blank to use 'django'): ***
-  Email address: ***
-  Password: ***
-  Password (again): ***
-  ```
 
-- Install npm packages for UI and start UI debug server (run the following command from CVAT root directory):
+- Install npm packages for UI (run the following command from CVAT root directory):
 
   ```bash
-  npm ci && npm run start:cvat-ui
+  npm ci
   ```
 
   > Note for Mac users
@@ -75,25 +82,38 @@ description: 'Installing a development environment for different operating syste
   >
   > Read this article [Node Sass does not yet support your current environment](https://marketplace.visualstudio.com/items?itemName=msjsdiag.debugger-for-chrome)
 
-- Open new terminal (Ctrl + Shift + T), run Visual Studio Code from the virtual environment
+- Install [Docker Engine](https://docs.docker.com/engine/install/ubuntu/) and [Docker-Compose](https://docs.docker.com/compose/install/)
+
+- Pull OpenPolicyAgent Docker-image (run from CVAT root dir):
 
   ```bash
+  sudo docker-compose -f docker-compose.yml -f docker-compose.dev.yml up cvat_opa
+  ```
+
+### Run CVAT
+- Start npm UI debug server (run the following command from CVAT root directory):
+  - If you want to run CVAT in localhost:
+    ```sh
+    npm run start:cvat-ui
+     ```
+  - If you want to access CVAT from outside of your host:
+    ```sh
+    CVAT_UI_HOST='<YOUR_HOST_IP>' npm run start:cvat-ui
+    ```
+- Open a new terminal window.
+- Run VScode from the virtual environment (run the following command from CVAT root directory):
+
+  ```sh
   source .env/bin/activate && code
   ```
 
-- Install following VS Code extensions:
+- Inside VScode, Open CVAT root dir
 
-  - [Debugger for Chrome](https://marketplace.visualstudio.com/items?itemName=msjsdiag.debugger-for-chrome)
-  - [Python](https://marketplace.visualstudio.com/items?itemName=ms-python.python)
-  - [ESLint](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint)
-  - [Stylelint](https://marketplace.visualstudio.com/items?itemName=stylelint.vscode-stylelint)
-  - [vscode-remark-lint](https://marketplace.visualstudio.com/items?itemName=drewbourne.vscode-remark-lint)
-  - [licenser](https://marketplace.visualstudio.com/items?itemName=ymotongpoo.licenser)
-  - [Trailing Spaces](https://marketplace.visualstudio.com/items?itemName=shardulm94.trailing-spaces)
+- Select `server: debug` configuration and run it (F5) to run REST server and its workers
+- Make sure that ```Uncaught Exceptions``` option under breakpoints section is unchecked
+- If you choose to run CVAT in localhost: Select `server: chrome` configuration and run it (F5) to open CVAT in Chrome
+- Alternative: If you changed CVAT_UI_HOST just enter ```<YOUR_HOST_IP>:3000``` in your browser.
 
-- Reload Visual Studio Code from virtual environment
-
-- Select `server: debug` configuration and start it (F5) to run REST server and its workers
 
 You have done! Now it is possible to insert breakpoints and debug server and client of the tool.
 
