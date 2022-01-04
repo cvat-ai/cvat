@@ -94,7 +94,7 @@ class Git:
                 host = http_match.group(1)
                 repos = http_match.group(2)[1:]
             elif ssh_match:
-                user = ssh_match.group(1) + ssh_match.group(2) if ssh_match.groups(1) is not None else ssh_match.group(2)
+                user = ssh_match.group(1) + ssh_match.group(2) if ssh_match.group(1) is not None else ssh_match.group(2)
                 host = ssh_match.group(3)
                 repos = "{}{}".format(ssh_match.group(4), ssh_match.group(5))
             else:
