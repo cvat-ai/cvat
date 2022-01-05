@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -66,7 +66,7 @@ const validationPatterns = {
 
     validateURL: {
         // eslint-disable-next-line
-        pattern: /^((https?:\/\/)|(git@))[^\s$.?#].[^\s]*$/, // url, ssh url, ip
+        pattern: /^((https?:\/\/)|((ssh:\/\/)?git@))[^\s$.?#].[^\s]*$/, // url, ssh url, ip
         message: 'URL is not valid',
     },
 
