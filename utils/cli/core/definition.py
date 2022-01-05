@@ -132,7 +132,7 @@ task_create_parser.add_argument(
     help='format of the annotation file being uploaded, e.g. CVAT 1.1'
 )
 task_create_parser.add_argument(
-    '--bug_tracker',
+    '--bug_tracker', '--bug',
     default=None,
     type=str,
     help='bug tracker URL'
