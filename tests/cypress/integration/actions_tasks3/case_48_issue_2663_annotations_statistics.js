@@ -183,13 +183,13 @@ context('Annotations statistics.', () => {
                         .then((tableBodyFirstRowThs) => {
                             const elTextContent = Array.from(tableBodyFirstRowThs).map((el) => el.textContent);
                             expect(elTextContent[0]).to.be.equal(labelName);
-                            for (let i = 1; i < 6; i++) {
-                                expect(elTextContent[i]).to.be.equal('1 / 1'); // Rectangle, Polygon, Polyline, Points, Cuboids
+                            for (let i = 1; i < 7; i++) {
+                                expect(elTextContent[i]).to.be.equal('1 / 1'); // Rectangle, Polygon, Polyline, Points, Cuboids, Ellipses
                             }
-                            expect(elTextContent[6]).to.be.equal('1'); // Tags
-                            expect(elTextContent[7]).to.be.equal('11'); // Manually
-                            expect(elTextContent[8]).to.be.equal('35'); // Interpolated
-                            expect(elTextContent[9]).to.be.equal('46'); // Total
+                            expect(elTextContent[7]).to.be.equal('1'); // Tags
+                            expect(elTextContent[8]).to.be.equal('13'); // Manually
+                            expect(elTextContent[9]).to.be.equal('39'); // Interpolated
+                            expect(elTextContent[10]).to.be.equal('52'); // Total
                         });
                 });
             cy.contains('[type="button"]', 'OK').click();
