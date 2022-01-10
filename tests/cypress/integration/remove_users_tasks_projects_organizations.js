@@ -6,7 +6,7 @@
 
 let authKey = '';
 
-describe('Delete users, tasks, projects, organizations created during the test run.', () => {
+describe('Delete users, tasks, projects, organizations created during the tests run.', () => {
     it('Get token', () => {
         cy.request({
             method: 'POST',

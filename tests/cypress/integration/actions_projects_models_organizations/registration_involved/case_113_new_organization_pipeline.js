@@ -117,7 +117,6 @@ context('New organization pipeline.', () => {
             thirdUser.password,
         );
         cy.logout(thirdUserName);
-        cy.clearLocalStorage();
 
         cy.login(firstUserName, firstUser.password);
     });
@@ -127,12 +126,13 @@ context('New organization pipeline.', () => {
     });
 
     // FIXME: Rework after solving the issue 4088
+    // Now tasks must be deleted before deleting users
     after(() => {
         cy.logout(secondUserName);
-        cy.deletingCreatedProjects([project.name]);
         cy.deletingCreatedTasks([newTaskName]);
-        cy.deletingCreatedOrganizations([organizationParams.shortName]);
         cy.deletingRegisteredUsers([firstUserName, secondUserName, thirdUserName]);
+        cy.deletingCreatedProjects([project.name]);
+        cy.deletingCreatedOrganizations([organizationParams.shortName]);
     });
 
     describe(`Testing case "${caseId}"`, () => {
