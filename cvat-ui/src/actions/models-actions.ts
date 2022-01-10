@@ -146,23 +146,23 @@ export function getInferenceStatusAsync(): ThunkAction {
     };
 }
 
-export function startInferenceAsync(taskInstance: any, model: Model, body: object): ThunkAction {
+export function startInferenceAsync(taskId: number, model: Model, body: object): ThunkAction {
     return async (dispatch): Promise<void> => {
         try {
-            const requestID: string = await core.lambda.run(taskInstance, model, body);
+            const requestID: string = await core.lambda.run(taskId, model, body);
             const dispatchCallback = (action: ModelsActions): void => {
                 dispatch(action);
             };
 
             listen(
                 {
-                    taskID: taskInstance.id,
+                    taskID: taskId,
                     requestID,
                 },
                 dispatchCallback,
             );
         } catch (error) {
-            dispatch(modelsActions.startInferenceFailed(taskInstance.id, error));
+            dispatch(modelsActions.startInferenceFailed(taskId, error));
         }
     };
 }

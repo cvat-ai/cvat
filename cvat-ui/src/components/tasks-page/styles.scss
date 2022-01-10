@@ -14,12 +14,10 @@
     .cvat-tasks-page-top-bar {
         > div:nth-child(1) {
             > div:nth-child(1) {
-                width: 100%;
-
                 > div:nth-child(1) {
                     display: flex;
 
-                    span {
+                    > .cvat-title {
                         margin-right: $grid-unit-size;
                     }
                 }

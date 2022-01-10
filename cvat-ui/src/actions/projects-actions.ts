@@ -26,6 +26,12 @@ export enum ProjectsActionTypes {
     DELETE_PROJECT = 'DELETE_PROJECT',
     DELETE_PROJECT_SUCCESS = 'DELETE_PROJECT_SUCCESS',
     DELETE_PROJECT_FAILED = 'DELETE_PROJECT_FAILED',
+    BACKUP_PROJECT = 'BACKUP_PROJECT',
+    BACKUP_PROJECT_SUCCESS = 'BACKUP_PROJECT_SUCCESS',
+    BACKUP_PROJECT_FAILED = 'BACKUP_PROJECT_FAILED',
+    RESTORE_PROJECT = 'IMPORT_PROJECT',
+    RESTORE_PROJECT_SUCCESS = 'IMPORT_PROJECT_SUCCESS',
+    RESTORE_PROJECT_FAILED = 'IMPORT_PROJECT_FAILED',
 }
 
 // prettier-ignore
@@ -54,6 +60,20 @@ const projectActions = {
     ),
     deleteProjectFailed: (projectId: number, error: any) => (
         createAction(ProjectsActionTypes.DELETE_PROJECT_FAILED, { projectId, error })
+    ),
+    backupProject: (projectId: number) => createAction(ProjectsActionTypes.BACKUP_PROJECT, { projectId }),
+    backupProjectSuccess: (projectID: number) => (
+        createAction(ProjectsActionTypes.BACKUP_PROJECT_SUCCESS, { projectID })
+    ),
+    backupProjectFailed: (projectID: number, error: any) => (
+        createAction(ProjectsActionTypes.BACKUP_PROJECT_FAILED, { projectId: projectID, error })
+    ),
+    restoreProject: () => createAction(ProjectsActionTypes.RESTORE_PROJECT),
+    restoreProjectSuccess: (projectID: number) => (
+        createAction(ProjectsActionTypes.RESTORE_PROJECT_SUCCESS, { projectID })
+    ),
+    restoreProjectFailed: (error: any) => (
+        createAction(ProjectsActionTypes.RESTORE_PROJECT_FAILED, { error })
     ),
 };
 
@@ -160,6 +180,34 @@ export function deleteProjectAsync(projectInstance: any): ThunkAction {
             dispatch(projectActions.deleteProjectSuccess(projectInstance.id));
         } catch (error) {
             dispatch(projectActions.deleteProjectFailed(projectInstance.id, error));
+        }
+    };
+}
+
+export function restoreProjectAsync(file: File): ThunkAction {
+    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+        dispatch(projectActions.restoreProject());
+        try {
+            const projectInstance = await cvat.classes.Project.restore(file);
+            dispatch(projectActions.restoreProjectSuccess(projectInstance));
+        } catch (error) {
+            dispatch(projectActions.restoreProjectFailed(error));
+        }
+    };
+}
+
+export function backupProjectAsync(projectInstance: any): ThunkAction {
+    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+        dispatch(projectActions.backupProject(projectInstance.id));
+
+        try {
+            const url = await projectInstance.backup();
+            const downloadAnchor = window.document.getElementById('downloadAnchor') as HTMLAnchorElement;
+            downloadAnchor.href = url;
+            downloadAnchor.click();
+            dispatch(projectActions.backupProjectSuccess(projectInstance.id));
+        } catch (error) {
+            dispatch(projectActions.backupProjectFailed(projectInstance.id, error));
         }
     };
 }

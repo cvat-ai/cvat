@@ -106,7 +106,6 @@ export const loginAsync = (username: string, password: string): ThunkAction => a
     try {
         await cvat.server.login(username, password);
         const users = await cvat.users.get({ self: true });
-
         dispatch(authActions.loginSuccess(users[0]));
     } catch (error) {
         dispatch(authActions.loginFailed(error));
@@ -117,6 +116,7 @@ export const logoutAsync = (): ThunkAction => async (dispatch) => {
     dispatch(authActions.logout());
 
     try {
+        await cvat.organizations.deactivate();
         await cvat.server.logout();
         dispatch(authActions.logoutSuccess());
     } catch (error) {

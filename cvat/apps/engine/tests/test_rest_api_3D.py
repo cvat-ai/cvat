@@ -270,7 +270,7 @@ class Task3DTest(_DbTestBase):
                     image_sizes.append((int(data["WIDTH"]), int(data["HEIGHT"])))
         cls.task = {
             "name": "main task",
-            "owner_id": 1,
+            "owner_id": 2,
             "assignee_id": 2,
             "overlap": 0,
             "segment_size": 100,
@@ -281,7 +281,7 @@ class Task3DTest(_DbTestBase):
         }
         cls.task_with_attributes = {
             "name": "task with attributes",
-            "owner_id": 1,
+            "owner_id": 2,
             "assignee_id": 2,
             "overlap": 0,
             "segment_size": 100,
@@ -327,7 +327,7 @@ class Task3DTest(_DbTestBase):
         }
         cls.task_many_jobs = {
             "name": "task several jobs",
-            "owner_id": 1,
+            "owner_id": 2,
             "assignee_id": 2,
             "overlap": 3,
             "segment_size": 1,

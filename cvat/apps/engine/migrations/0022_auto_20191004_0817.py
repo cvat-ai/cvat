@@ -22,7 +22,7 @@ class Migration(migrations.Migration):
                 ('bug_tracker', models.CharField(blank=True, default='', max_length=2000)),
                 ('created_date', models.DateTimeField(auto_now_add=True)),
                 ('updated_date', models.DateTimeField(auto_now_add=True)),
-                ('status', models.CharField(choices=[('annotation', 'ANNOTATION'), ('validation', 'VALIDATION'), ('completed', 'COMPLETED')], default=cvat.apps.engine.models.StatusChoice('annotation'), max_length=32)),
+                ('status', models.CharField(choices=[('annotation', 'ANNOTATION'), ('validation', 'VALIDATION'), ('completed', 'COMPLETED')], default='annotation', max_length=32)),
                 ('assignee', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='+', to=settings.AUTH_USER_MODEL)),
                 ('owner', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='+', to=settings.AUTH_USER_MODEL)),
             ],

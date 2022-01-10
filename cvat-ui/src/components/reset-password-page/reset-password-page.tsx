@@ -8,7 +8,7 @@ import { connect } from 'react-redux';
 import Title from 'antd/lib/typography/Title';
 import Text from 'antd/lib/typography/Text';
 import { Row, Col } from 'antd/lib/grid';
-import { Layout } from 'antd';
+import Layout from 'antd/lib/layout';
 
 import { requestPasswordResetAsync } from 'actions/auth-actions';
 import { CombinedState } from 'reducers/interfaces';

@@ -237,7 +237,7 @@ const CanvasWrapperComponent = (props: Props): ReactElement => {
         }
 
         state.objectType = state.objectType || activeObjectType;
-        state.label = state.label || jobInstance.task.labels.filter((label: any) => label.id === activeLabelID)[0];
+        state.label = state.label || jobInstance.labels.filter((label: any) => label.id === activeLabelID)[0];
         state.occluded = state.occluded || false;
         state.frame = frame;
         state.zOrder = 0;

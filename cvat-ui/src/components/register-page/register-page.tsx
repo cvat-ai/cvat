@@ -9,7 +9,7 @@ import { Link, withRouter } from 'react-router-dom';
 import Title from 'antd/lib/typography/Title';
 import Text from 'antd/lib/typography/Text';
 import { Row, Col } from 'antd/lib/grid';
-import { Layout } from 'antd';
+import Layout from 'antd/lib/layout';
 
 import { UserAgreement } from 'reducers/interfaces';
 import FooterDrawer from 'components/login-page/intel-footer-drawer';
@@ -31,11 +31,9 @@ interface RegisterPageComponentProps {
 
 function RegisterPageComponent(props: RegisterPageComponentProps & RouteComponentProps): JSX.Element {
     const sizes = {
-        xs: { span: 14 },
-        sm: { span: 14 },
-        md: { span: 10 },
-        lg: { span: 6 },
-        xl: { span: 5 },
+        style: {
+            width: 400,
+        },
     };
 
     const { fetching, userAgreements, onRegister } = props;

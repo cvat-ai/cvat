@@ -29,7 +29,7 @@ Cypress.Commands.add('login', (username = Cypress.env('user'), password = Cypres
 
 Cypress.Commands.add('logout', (username = Cypress.env('user')) => {
     cy.get('.cvat-right-header').within(() => {
-        cy.get('.cvat-header-menu-dropdown').should('have.text', username).trigger('mouseover', { which: 1 });
+        cy.get('.cvat-header-menu-user-dropdown').should('have.text', username).trigger('mouseover', { which: 1 });
     });
     cy.get('span[aria-label="logout"]').click();
     cy.url().should('include', '/auth/login');
@@ -204,18 +204,20 @@ Cypress.Commands.add('openTask', (taskName, projectSubsetFieldValue) => {
 
 Cypress.Commands.add('saveJob', (method = 'PATCH', status = 200, as = 'saveJob') => {
     cy.intercept(method, '/api/v1/jobs/**').as(as);
-    cy.get('button').contains('Save').click({ force: true });
+    cy.get('button').contains('Save').click({ force: true }).trigger('mouseout');
     cy.wait(`@${as}`).its('response.statusCode').should('equal', status);
 });
 
 Cypress.Commands.add('getJobNum', (jobID) => {
-    cy.get('.cvat-task-jobs-table')
-        .contains(/^0-/)
-        .parents('.cvat-task-jobs-table-row')
-        .find('td')
-        .eq(0)
-        .invoke('text')
-        .then(($tdText) => (Number($tdText.match(/\d+/g)) + jobID));
+    const jobsKey = [];
+    cy.document().then((doc) => {
+        const jobs = Array.from(doc.querySelectorAll('.cvat-task-jobs-table-row'));
+        for (let i = 0; i < jobs.length; i++) {
+            jobsKey.push(jobs[i].getAttribute('data-row-key'));
+        }
+        const minKey = Math.min(...jobsKey);
+        return minKey + jobID;
+    });
 });
 
 Cypress.Commands.add('openJob', (jobID = 0, removeAnnotations = true, expectedFail = false) => {
@@ -380,7 +382,7 @@ Cypress.Commands.add('createPolygon', (createPolygonParams) => {
 });
 
 Cypress.Commands.add('openSettings', () => {
-    cy.get('.cvat-right-header').find('.cvat-header-menu-dropdown').trigger('mouseover', { which: 1 });
+    cy.get('.cvat-right-header').find('.cvat-header-menu-user-dropdown').trigger('mouseover', { which: 1 });
     cy.get('.anticon-setting').click();
     cy.get('.cvat-settings-modal').should('be.visible');
 });
@@ -525,22 +527,32 @@ Cypress.Commands.add('createPolyline', (createPolylineParams) => {
 
 Cypress.Commands.add('deleteTask', (taskName) => {
     let taskId = '';
-    cy.contains('.cvat-item-task-name', taskName)
+    cy.contains('.cvat-item-task-name', new RegExp(`^${taskName}$`))
         .parents('.cvat-task-item-description')
         .find('.cvat-item-task-id')
         .then(($taskId) => {
             taskId = $taskId.text().replace(/[^\d]/g, '');
-            cy.contains('.cvat-item-task-name', taskName)
+            cy.contains('.cvat-item-task-name', new RegExp(`^${taskName}$`))
                 .parents('.cvat-tasks-list-item')
                 .find('.cvat-menu-icon')
                 .trigger('mouseover');
-            cy.get('.cvat-actions-menu').contains('Delete').click();
+            cy.get('.cvat-actions-menu')
+                .should('be.visible')
+                .find('[role="menuitem"]')
+                .filter(':contains("Delete")')
+                .last()
+                .click();
             cy.get('.cvat-modal-confirm-delete-task')
                 .should('contain', `The task ${taskId} will be deleted`)
                 .within(() => {
                     cy.contains('button', 'Delete').click();
                 });
+            cy.get('.cvat-actions-menu').should('be.hidden');
         });
+    cy.contains('.cvat-item-task-name', new RegExp(`^${taskName}$`))
+        .parents('.cvat-tasks-list-item')
+        .should('have.attr', 'style')
+        .and('contain', 'pointer-events: none; opacity: 0.5;');
 });
 
 Cypress.Commands.add('advancedConfiguration', (advancedConfigurationParams) => {
@@ -690,7 +702,38 @@ Cypress.Commands.add('goToPreviousFrame', (expectedFrameNum) => {
 Cypress.Commands.add('interactMenu', (choice) => {
     cy.contains('.cvat-annotation-header-button', 'Menu').click();
     cy.get('.cvat-annotation-menu').within(() => {
-        cy.contains(new RegExp(`^${choice}$`, 'g')).click();
+        cy.contains(new RegExp(`^${choice}$`)).click();
+    });
+    cy.get('.cvat-spinner').should('not.exist');
+});
+
+Cypress.Commands.add('setJobState', (choice) => {
+    cy.interactMenu('Change job state');
+    cy.get('.cvat-annotation-menu-job-state-submenu').within(() => {
+        cy.contains(choice).click();
+    });
+    cy.get('.cvat-modal-content-change-job-state')
+        .should('be.visible')
+        .within(() => {
+            cy.contains('[type="button"]', 'Continue').click();
+        });
+    cy.get('.cvat-modal-content-change-job-state').should('not.exist');
+    cy.get('.cvat-spinner').should('not.exist');
+});
+
+Cypress.Commands.add('setJobStage', (jobID, stage) => {
+    cy.getJobNum(jobID).then(($job) => {
+        cy.get('.cvat-task-jobs-table')
+            .contains('a', `Job #${$job}`)
+            .parents('.cvat-task-jobs-table-row')
+            .find('.cvat-job-item-stage').click();
+        cy.get('.ant-select-dropdown')
+            .should('be.visible')
+            .not('.ant-select-dropdown-hidden')
+            .within(() => {
+                cy.get(`[title="${stage}"]`).click();
+            });
+        cy.get('.cvat-spinner').should('not.exist');
     });
 });
 
