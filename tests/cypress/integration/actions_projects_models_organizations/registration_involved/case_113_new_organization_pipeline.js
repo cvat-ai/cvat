@@ -212,5 +212,23 @@ context('New organization pipeline.', () => {
             cy.createCuboid(createCuboidShape2Points);
             cy.saveJob();
         });
+
+        it('Logout. Remove the first, the second user (deletion occurs from user admin).', () => {
+            cy.logout(thirdUserName);
+            cy.deletingRegisteredUsers([firstUserName, secondUserName]);
+        });
+
+        it('Login as the third user. The organization page can be opened.', () => {
+            cy.login(thirdUserName, thirdUser.password);
+            cy.activateOrganization(organizationParams.shortName);
+            cy.visit('/organization');
+            cy.checkOrganizationParams(organizationParams);
+            cy.checkOrganizationMembers(1, [thirdUserName]);
+        });
+
+        it('The job can be opened.', () => {
+            cy.visit(`/tasks/${taskID}/jobs/${jobID}`);
+            cy.get('.cvat-canvas-container').should('exist');
+        });
     });
 });
