@@ -127,7 +127,7 @@ context('New organization pipeline.', () => {
     });
 
     // TODO
-    // afterEach(() => {
+    // after(() => {
     //     remove organizations
     // });
 
@@ -213,12 +213,32 @@ context('New organization pipeline.', () => {
             cy.saveJob();
         });
 
-        it('Logout. Remove the first, the second user (deletion occurs from user admin).', () => {
+        it('The owner of the organization removes the second user from it.', () => {
             cy.logout(thirdUserName);
+            cy.login(firstUserName, firstUser.password);
+            cy.activateOrganization(organizationParams.shortName);
+            cy.openOrganization(organizationParams.shortName);
+            cy.removeMemberFromOrganization(secondUserName);
+            cy.checkOrganizationMembers(2, [firstUserName, thirdUserName]);
+        });
+
+        it('The organization, project is no longer available to the second user. The task is available.', () => {
+            cy.logout(firstUserName);
+            cy.login(secondUserName, secondUser.password);
+            cy.сheckPresenceOrganization(organizationParams.shortName, false);
+            cy.openTaskJob(newTaskName, 0, false);
+            cy.get('.cvat_canvas_shape_cuboid').should('be.visible');
+            cy.goToProjectsList();
+            cy.contains('.cvat-projects-project-item-title', project.name).should('not.exist');
+        });
+
+        // FIXME: Activate after solving the issue 4088
+        it.skip('Logout. Remove the first, the second user (deletion occurs from user admin).', () => {
+            cy.logout(secondUserName);
             cy.deletingRegisteredUsers([firstUserName, secondUserName]);
         });
 
-        it('Login as the third user. The organization page can be opened.', () => {
+        it.skip('Login as the third user. The organization page can be opened.', () => {
             cy.login(thirdUserName, thirdUser.password);
             cy.activateOrganization(organizationParams.shortName);
             cy.visit('/organization');
@@ -226,7 +246,7 @@ context('New organization pipeline.', () => {
             cy.checkOrganizationMembers(1, [thirdUserName]);
         });
 
-        it('The job can be opened.', () => {
+        it.skip('The job can be opened.', () => {
             cy.visit(`/tasks/${taskID}/jobs/${jobID}`);
             cy.get('.cvat-canvas-container').should('exist');
         });

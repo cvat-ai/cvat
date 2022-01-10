@@ -61,7 +61,7 @@ Cypress.Commands.add('openOrganization', (organizationShortName) => {
     cy.get('.cvat-organization-page').should('exist').and('be.visible');
 });
 
-Cypress.Commands.add('сheckPresenceOrganization', (organizationShortName) => {
+Cypress.Commands.add('сheckPresenceOrganization', (organizationShortName, present = true) => {
     cy.get('.cvat-header-menu-user-dropdown').trigger('mouseover');
     cy.get('.ant-dropdown')
         .should('be.visible')
@@ -69,8 +69,15 @@ Cypress.Commands.add('сheckPresenceOrganization', (organizationShortName) => {
         .find('[role="menuitem"]')
         .filter(':contains("Organization")')
         .trigger('mouseover');
-    cy.contains('.cvat-header-menu-organization-item', organizationShortName).should('exist')
-        .trigger('mouseout');
+    if (present) {
+        cy.contains('.cvat-header-menu-organization-item', organizationShortName)
+            .should('exist')
+            .trigger('mouseout')
+            .should('be.hidden');
+    } else {
+        cy.contains('.cvat-header-menu-organization-item', organizationShortName).should('not.exist');
+        cy.get('.cvat-header-menu-active-organization-item').trigger('mouseout').should('be.hidden');
+    }
 });
 
 Cypress.Commands.add('checkOrganizationParams', (organizationParams) => {
@@ -125,5 +132,15 @@ Cypress.Commands.add('inviteMembersToOrganization', (membersEmailRole) => {
     }
     cy.get('.cvat-organization-invitation-modal')
         .contains('button', 'OK')
+        .click();
+});
+
+Cypress.Commands.add('removeMemberFromOrganization', (username) => {
+    cy.contains('.cvat-organization-member-item-username', username)
+        .parents('.cvat-organization-member-item')
+        .find('.cvat-organization-member-item-remove')
+        .click();
+    cy.get('.cvat-modal-organization-member-remove')
+        .contains('button', 'Yes, remove')
         .click();
 });
