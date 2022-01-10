@@ -34,7 +34,6 @@ drf-yasg==1.20.0
 Shapely==1.7.1
 pdf2image==1.14.0
 django-rest-auth[with_social]==0.9.5
-cython==0.29.21
 opencv-python-headless==4.4.0.42
 h5py==2.10.0
 django-cors-headers==3.5.0
@@ -51,10 +50,7 @@ azure-storage-blob==12.8.1
 google-cloud-storage==1.42.0
 # --no-binary=datumaro: workaround for pip to install
 # opencv-headless instead of regular opencv, to actually run setup script
-# --no-binary=pycocotools: workaround for binary incompatibility on numpy 1.20
-# of pycocotools and tensorflow 2.4.1
-# when pycocotools is installed by wheel in python 3.8+
-datumaro==0.2.0 --no-binary=datumaro --no-binary=pycocotools
+datumaro==0.2.0 --no-binary=datumaro
 urllib3>=1.26.5 # not directly required, pinned by Snyk to avoid a vulnerability
 natsort==8.0.0
 mistune>=2.0.1 # not directly required, pinned by Snyk to avoid a vulnerability
