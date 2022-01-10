@@ -36,9 +36,10 @@ class CLI():
             data = {'server_files[{}]'.format(i): f for i, f in enumerate(resources)}
 
         ## capture additional kwargs
-        for property in ['chunk_size', 'copy_data', 'image_quality', 'sorting_method', 'start_frame', 'stop_frame', 'use_cache', 'use_zip_chunks']:
-            if kwargs.get(property) is not None:
-                data[property] = kwargs.get(property)
+        for flag in ['chunk_size', 'copy_data', 'image_quality', 'sorting_method',
+                    'start_frame', 'stop_frame', 'use_cache', 'use_zip_chunks']:
+            if kwargs.get(flag) is not None:
+                data[flag] = kwargs.get(flag)
         if kwargs.get('frame_step') is not None:
             data['frame_filter'] = f"step={kwargs.get('frame_step')}"
 
@@ -84,10 +85,10 @@ class CLI():
                 'labels': labels
         }
 
-        for property in ['bug_tracker', 'overlap', 'project_id', 'segment_size']:
-            if kwargs.get(property) is not None:
-                data[property] = kwargs.get(property)
-        
+        for flag in ['bug_tracker', 'overlap', 'project_id', 'segment_size']:
+            if kwargs.get(flag) is not None:
+                data[flag] = kwargs.get(flag)
+
         response = self.session.post(url, json=data)
         response.raise_for_status()
         response_json = response.json()
