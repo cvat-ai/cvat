@@ -79,7 +79,7 @@ function ExportDatasetModal(): JSX.Element {
                 message: 'Dataset export started',
                 description:
                     `Dataset export was started for ${instanceType}. ` +
-                    'Download will start automaticly as soon as the dataset is ready.',
+                    'Download will start automatically as soon as the dataset is ready.',
                 className: `cvat-notification-notice-export-${instanceType.split(' ')[0]}-start`,
             });
         },
