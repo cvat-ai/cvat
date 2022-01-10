@@ -1,0 +1,39 @@
+Scope,Resource,Context,Ownership,Limit,Method,URL,Privilege,Membership
+list,N/A,Sandbox,N/A,,GET,/tasks/{id}/jobs,None,N/A
+list,N/A,Organization,N/A,,GET,/tasks/{id}/jobs,None,Worker
+view,Job,Sandbox,None,,GET,/jobs/{id},Admin,N/A
+view,Job,Sandbox,"Project:owner, Project:assignee, Task:owner, Task:assignee, Assignee",,GET,/jobs/{id},None,N/A
+view,Job,Organization,None,,GET,/jobs/{id},User,Maintainer
+view,Job,Organization,"Project:owner, Project:assignee, Task:owner, Task:assignee, Assignee",,GET,/jobs/{id},None,Worker
+update:stage,Job,Sandbox,"None, Assignee",,PATCH,/jobs/{id},Admin,N/A
+update:stage,Job,Sandbox,"Project:owner, Project:assignee, Task:owner, Task:assignee",,PATCH,/jobs/{id},Worker,N/A
+update:stage,Job,Organization,"None, Assignee",,PATCH,/jobs/{id},User,Maintainer
+update:stage,Job,Organization,"Project:owner, Project:assignee, Task:owner, Task:assignee",,PATCH,/jobs/{id},Worker,Worker
+update:state,Job,Sandbox,None,,PATCH,/jobs/{id},Admin,N/A
+update:state,Job,Sandbox,"Project:owner, Project:assignee, Task:owner, Task:assignee, Assignee",,PATCH,/jobs/{id},Worker,N/A
+update:state,Job,Organization,None,,PATCH,/jobs/{id},User,Maintainer
+update:state,Job,Organization,"Project:owner, Project:assignee, Task:owner, Task:assignee, Assignee",,PATCH,/jobs/{id},Worker,Worker
+update:assignee,Job,Sandbox,"None, Assignee",,PATCH,/jobs/{id},Admin,N/A
+update:assignee,Job,Sandbox,"Project:owner, Project:assignee, Task:owner, Task:assignee",,PATCH,/jobs/{id},Worker,N/A
+update:assignee,Job,Organization,"None, Assignee",,PATCH,/jobs/{id},User,Maintainer
+update:assignee,Job,Organization,"Project:owner, Project:assignee, Task:owner, Task:assignee",,PATCH,/jobs/{id},Worker,Worker
+view:annotations,Job,Sandbox,None,,GET,/jobs/{id}/annotations,Admin,N/A
+view:annotations,Job,Sandbox,"Project:owner, Project:assignee, Task:owner, Task:assignee, Assignee",,GET,/jobs/{id}/annotations,None,N/A
+view:annotations,Job,Organization,None,,GET,/jobs/{id}/annotations,User,Maintainer
+view:annotations,Job,Organization,"Project:owner, Project:assignee, Task:owner, Task:assignee, Assignee",,GET,/jobs/{id}/annotations,None,Worker
+update:annotations,Job,Sandbox,None,,PATCH,/jobs/{id}/annotations,Admin,N/A
+update:annotations,Job,Sandbox,"Project:owner, Project:assignee, Task:owner, Task:assignee, Assignee",,PATCH,/jobs/{id}/annotations,Worker,N/A
+update:annotations,Job,Organization,None,,PATCH,/jobs/{id}/annotations,User,Maintainer
+update:annotations,Job,Organization,"Project:owner, Project:assignee, Task:owner, Task:assignee, Assignee",,PATCH,/jobs/{id}/annotations,Worker,Worker
+delete:annotations,Job,Sandbox,None,,DELETE,/jobs/{id}/annotations,Admin,N/A
+delete:annotations,Job,Sandbox,"Project:owner, Project:assignee, Task:owner, Task:assignee, Assignee",,DELETE,/jobs/{id}/annotations,Worker,N/A
+delete:annotations,Job,Organization,None,,DELETE,/jobs/{id}/annotations,User,Maintainer
+delete:annotations,Job,Organization,"Project:owner, Project:assignee, Task:owner, Task:assignee, Assignee",,DELETE,/jobs/{id}/annotations,Worker,Worker
+view:data,Job,Sandbox,None,,GET,/jobs/{id}/data,Admin,N/A
+view:data,Job,Sandbox,"Project:owner, Project:assignee, Task:owner, Task:assignee, Assignee",,GET,/jobs/{id}/data,None,N/A
+view:data,Job,Organization,None,,GET,/jobs/{id}/data,User,Maintainer
+view:data,Job,Organization,"Project:owner, Project:assignee, Task:owner, Task:assignee, Assignee",,GET,/jobs/{id}/data,None,Worker
+import:annotations,Job,Sandbox,None,,PUT,/jobs/{id}/annotations?format=,Admin,N/A
+import:annotations,Job,Sandbox,"Project:owner, Project:assignee, Task:owner, Task:assignee, Assignee",,PUT,/jobs/{id}/annotations?format=,Worker,N/A
+import:annotations,Job,Organization,None,,PUT,/jobs/{id}/annotations?format=,User,Maintainer
+import:annotations,Job,Organization,"Project:owner, Project:assignee, Task:owner, Task:assignee, Assignee",,PUT,/jobs/{id}/annotations?format=,Worker,Worker

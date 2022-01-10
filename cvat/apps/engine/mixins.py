@@ -153,7 +153,8 @@ class UploadMixin(object):
             metadata = self._get_metadata(request)
             filename = metadata.get('filename', '')
             if not self.validate_filename(filename):
-                return self._tus_response(status=status.HTTP_400_BAD_REQUEST, data="File name {} is not allowed".format(filename))
+                return self._tus_response(status=status.HTTP_400_BAD_REQUEST,
+                    data="File name {} is not allowed".format(filename))
 
 
             message_id = request.META.get("HTTP_MESSAGE_ID")
@@ -162,12 +163,13 @@ class UploadMixin(object):
 
             file_exists = os.path.lexists(os.path.join(self.get_upload_dir(), filename))
             if file_exists:
-                return self._tus_response(status=status.HTTP_409_CONFLICT, data="File with same name already exists")
+                return self._tus_response(status=status.HTTP_409_CONFLICT,
+                    data="File with same name already exists")
 
             file_size = int(request.META.get("HTTP_UPLOAD_LENGTH", "0"))
             if file_size > int(self._tus_max_file_size):
                 return self._tus_response(status=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-                        data="File size exceeds max limit of {} bytes".format(self._tus_max_file_size))
+                    data="File size exceeds max limit of {} bytes".format(self._tus_max_file_size))
 
             tus_file = TusFile.create_file(metadata, file_size, self.get_upload_dir())
 
@@ -177,6 +179,7 @@ class UploadMixin(object):
 
     @action(detail=True, methods=['HEAD', 'PATCH'], url_path=r'data/'+_file_id_regex)
     def append_tus_chunk(self, request, pk, file_id):
+        self.get_object() # call check_object_permissions as well
         if request.method == 'HEAD':
             tus_file = TusFile.get_tusfile(str(file_id), self.get_upload_dir())
             if tus_file:

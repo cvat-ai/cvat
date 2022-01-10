@@ -10,45 +10,42 @@ A special mode to check the annotation allows you to point to an object or area 
 
 ## Review
 
-To go into review mode, you need to select `Request a review` in the menu and assign the user to run a check.
+To conduct a review, you need to change the stage to `validation` for the desired job on the task page and assign
+a user who will conduct the check. Now the job will open in a fashion review. You can also switch to the `Review` mode
+using the [`UI switcher`](/docs/manual/basics/top-panel/#ui-switcher) on the top panel.
 
 ![](/images/image194.jpg)
 
-After that, the job status will be changed to `validation`
-and the reviewer will be able to open the task in review mode.
 Review mode is a UI mode, there is a special `Issue` tool which you can use to identify objects
-or areas in the frame and describe the problem.
+or areas in the frame and describe the issue.
 
 - To do this, first click `Open an issue` icon on the controls sidebar:
 
   ![](/images/image195.jpg)
 
 - Then click on a place in the frame to highlight the place or highlight the area by holding the left mouse button
-  and describe the problem. To select an object, right-click on it and select `Open an issue` or select one
+  and describe the issue. To select an object, right-click on it and select `Open an issue` or select one
   of several quick issues. The object or area will be shaded in red.
 
   ![](/images/image231.jpg)
 
 - The created issue will appear in the workspace and in the `Issues` tab on the objects sidebar.
 
-- Once all the problems are marked, save the annotation, open the menu and select `submit the review`.
-  After that you'll see a form containing the verification statistics,
-  here you can give an assessment of the job and choose further actions:
-
-  - Accept - changes the status of the job to `completed`.
-  - Review next – passes the job to another user for re-review.
-  - Reject - changes the status of the job to `annotation`.
+- Once all the issues are marked, save the annotation, open the menu and select job state `rejected` or `completed`.
 
   ![](/images/image197.jpg)
 
-After the review, other users will be able to see the problems, comment on each issue
-and change the status of the problem to `Resolved`.
+After the review, other users will be able to see the issues, comment on each issue
+and change the status of the issue to `Resolved`.
+
+After the issues are fixed select `Finish the job` from the menu to finish the task.
+Or you can switch stage to `acceptance` on the task page.
 
 ## Resolve issues
 
-After review, you may see the issues in the `issues` tab in the object sidebar.
+After review, you may see the issues in the `Issues` tab in the object sidebar.
 
-- You can use the arrows on the `Issues` tab to navigate the frames that contain problems.
+- You can use the arrows on the `Issues` tab to navigate the frames that contain issues.
 
   ![](/images/image196_detrac.jpg)
 

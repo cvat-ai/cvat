@@ -10,6 +10,7 @@ jobs:
             node-version: '16.x'
       - id: files
         uses: jitterbit/get-changed-files@v1
+        continue-on-error: true
 
       - name: Run checks
         env:

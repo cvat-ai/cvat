@@ -22,3 +22,7 @@ description: 'List of annotation formats supported by CVAT.'
 - [VGGFace2](format-vggface2)
 - [Market-1501](format-market1501)
 - [ICDAR13/15](format-icdar)
+- [Open Images](format-openimages)
+- [Cityscapes](format-cityscapes)
+- [KITTI](format-kitti)
+- [LFW](format-lfw)

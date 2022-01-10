@@ -1,8 +1,6 @@
 {
   "main": {
     "name": "Main project",
-    "owner_id": 1,
-    "assignee_id": 2,
     "labels": [
       {
         "name": "car",

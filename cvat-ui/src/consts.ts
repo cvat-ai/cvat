@@ -10,8 +10,8 @@ const GITTER_URL = 'https://gitter.im/opencv-cvat';
 const GITTER_PUBLIC_URL = 'https://gitter.im/opencv-cvat/public';
 const FORUM_URL = 'https://software.intel.com/en-us/forums/intel-distribution-of-openvino-toolkit';
 const GITHUB_URL = 'https://github.com/openvinotoolkit/cvat';
-const GITHUB_IMAGE_URL =
-    'https://github.com/openvinotoolkit/cvat/raw/develop/site/content/en/images/cvat.jpg';
+const GITHUB_IMAGE_URL = 'https://github.com/openvinotoolkit/cvat/raw/develop/site/content/en/images/cvat.jpg';
+const GUIDE_URL = 'https://openvinotoolkit.github.io/cvat/docs';
 const SHARE_MOUNT_GUIDE_URL =
     'https://openvinotoolkit.github.io/cvat/docs/administration/basics/installation/#share-path';
 const NUCLIO_GUIDE =
@@ -25,6 +25,7 @@ const DEFAULT_PROJECT_SUBSETS = ['Train', 'Test', 'Validation'];
 const INTEL_TERMS_OF_USE_URL = 'https://www.intel.com/content/www/us/en/legal/terms-of-use.html';
 const INTEL_COOKIES_URL = 'https://www.intel.com/content/www/us/en/privacy/intel-cookie-notice.html';
 const INTEL_PRIVACY_URL = 'https://www.intel.com/content/www/us/en/privacy/intel-privacy-notice.html';
+const OPENVINO_URL = 'https://docs.openvino.ai';
 const DEFAULT_AWS_S3_REGIONS: string[][] = [
     ['us-east-1', 'US East (N. Virginia)'],
     ['us-east-2', 'US East (Ohio)'],
@@ -94,6 +95,7 @@ export default {
     FORUM_URL,
     GITHUB_URL,
     GITHUB_IMAGE_URL,
+    GUIDE_URL,
     SHARE_MOUNT_GUIDE_URL,
     CANVAS_BACKGROUND_COLORS,
     NEW_LABEL_COLOR,
@@ -105,6 +107,7 @@ export default {
     INTEL_TERMS_OF_USE_URL,
     INTEL_COOKIES_URL,
     INTEL_PRIVACY_URL,
+    OPENVINO_URL,
     DEFAULT_AWS_S3_REGIONS,
     DEFAULT_GOOGLE_CLOUD_STORAGE_LOCATIONS,
 };

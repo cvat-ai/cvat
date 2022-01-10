@@ -32,17 +32,19 @@ services:
     depends_on:
       - cvat_redis
       - cvat_db
+      - cvat_opa
     environment:
       DJANGO_MODWSGI_EXTRA_ARGS: ''
       ALLOWED_HOSTS: '*'
       CVAT_REDIS_HOST: 'cvat_redis'
       CVAT_POSTGRES_HOST: 'cvat_db'
       ADAPTIVE_AUTO_ANNOTATION: 'false'
+      no_proxy: elasticsearch,kibana,logstash,nuclio,opa,${no_proxy}
     labels:
       - traefik.enable=true
       - traefik.http.services.cvat.loadbalancer.server.port=8080
       - traefik.http.routers.cvat.rule=Host(`${CVAT_HOST:-localhost}`) &&
-          PathPrefix(`/api/`, `/git/`, `/opencv/`, `/analytics/`, `/static/`, `/admin`, `/documentation/`, `/django-rq`)
+        PathPrefix(`/api/`, `/git/`, `/opencv/`, `/analytics/`, `/static/`, `/admin`, `/documentation/`, `/django-rq`)
       - traefik.http.routers.cvat.entrypoints=web
     volumes:
       - cvat_data:/home/django/data
@@ -70,9 +72,9 @@ services:
     container_name: traefik
     restart: always
     command:
-      - "--providers.docker.exposedByDefault=false"
-      - "--providers.docker.network=cvat"
-      - "--entryPoints.web.address=:8080"
+      - '--providers.docker.exposedByDefault=false'
+      - '--providers.docker.network=cvat'
+      - '--entryPoints.web.address=:8080'
     # Uncomment to get Traefik dashboard
     #   - "--entryPoints.dashboard.address=:8090"
     #   - "--api.dashboard=true"
@@ -88,6 +90,20 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock:ro
     networks:
       - cvat
+
+  cvat_opa:
+    container_name: cvat_opa
+    image: openpolicyagent/opa:0.34.2-rootless
+    restart: always
+    networks:
+      cvat:
+        aliases:
+          - opa
+    volumes:
+      - ./cvat/apps/iam/rules:/rules
+    ports:
+      - '8181:8181'
+    command: run --server --addr :8181 --set=decision_logs.console=true /rules
 
 volumes:
   cvat_db:
