@@ -46,6 +46,7 @@ context('New organization pipeline.', () => {
 
     const labelName = `Case ${caseId}`;
     const taskName = `New annotation task for ${labelName}`;
+    const newTaskName = labelName;
     const attrName = `Attr for ${labelName}`;
     const textDefaultValue = 'Some default value for type Text';
     const imagesCount = 1;
@@ -59,6 +60,18 @@ context('New organization pipeline.', () => {
     const archivePath = `cypress/fixtures/${archiveName}`;
     const imagesFolder = `cypress/fixtures/${imageFileName}`;
     const directoryToArchive = imagesFolder;
+    let taskID;
+    let jobID;
+
+    const createCuboidShape2Points = {
+        points: 'From rectangle',
+        type: 'Shape',
+        labelName,
+        firstX: 250,
+        firstY: 350,
+        secondX: 350,
+        secondY: 450,
+    };
 
     before(() => {
         cy.imageGenerator(
@@ -119,13 +132,9 @@ context('New organization pipeline.', () => {
     // });
 
     describe(`Testing case "${caseId}"`, () => {
-        it('Create an organization.', () => {
+        it('Create an organization. Activate the organization.', () => {
             cy.createOrganization(organizationParams);
-        });
-
-        it('Activate the organization.', () => {
             cy.activateOrganization(organizationParams.shortName);
-            cy.get('.cvat-header-menu-user-dropdown').should('contain.text', organizationParams.shortName);
         });
 
         it('Open the organization settings. Invite members.', () => {
@@ -160,7 +169,6 @@ context('New organization pipeline.', () => {
             cy.openTask(taskName);
             cy.assignTaskToUser(secondUserName);
             cy.activateOrganization('Personal workspace');
-            cy.get('.cvat-header-menu-user-dropdown').should('not.contain.text', organizationParams.shortName);
         });
 
         // FIXME: Activate after implementation
@@ -170,13 +178,39 @@ context('New organization pipeline.', () => {
             cy.contains('.cvat-projects-project-item-title', project.name).should('not.exist');
         });
 
-        it('Login as the second user. Second user is able to see the organization and the task.', () => {
+        it('Second user login. The user is able to see the organization, the task and can’t see the project.', () => {
             cy.logout(firstUserName);
             cy.login(secondUserName, secondUser.password);
             cy.сheckPresenceOrganization(organizationParams.shortName);
             cy.contains('.cvat-item-task-name', taskName).should('exist');
             cy.goToProjectsList();
             cy.get('.cvat-empty-projects-list').should('exist');
+        });
+
+        it('Open the task, assign one of jobs to the third user. Rename the task.', () => {
+            cy.activateOrganization(organizationParams.shortName);
+            cy.goToTaskList();
+            cy.openTask(taskName);
+            cy.assignJobToUser(0, thirdUserName);
+            cy.renameTask(taskName, newTaskName);
+            cy.url().then((url) => {
+                taskID = Number(url.split('/').slice(-1)[0]);
+            });
+            cy.getJobNum(0).then(($jobID) => {
+                jobID = $jobID;
+            });
+        });
+
+        it('Logout, the third user login. The user does not see the project, the task. The user can open the job using direct link. Create an object, save annotations.', () => {
+            cy.logout(secondUserName);
+            cy.login(thirdUserName, thirdUser.password);
+            cy.contains('.cvat-item-task-name', taskName).should('not.exist');
+            cy.goToProjectsList();
+            cy.contains('.cvat-projects-project-item-title', project.name).should('not.exist');
+            cy.visit(`/tasks/${taskID}/jobs/${jobID}`);
+            cy.get('.cvat-canvas-container').should('exist');
+            cy.createCuboid(createCuboidShape2Points);
+            cy.saveJob();
         });
     });
 });

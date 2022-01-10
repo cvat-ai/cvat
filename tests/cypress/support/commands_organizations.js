@@ -35,6 +35,14 @@ Cypress.Commands.add('activateOrganization', (organizationShortName) => {
         .filter(':contains("Organization")')
         .trigger('mouseover');
     cy.contains('.cvat-header-menu-organization-item', organizationShortName).click();
+    cy.get('.cvat-header-menu-user-dropdown').should('be.visible');
+    if (organizationShortName === 'Personal workspace') {
+        cy.get('.cvat-header-menu-user-dropdown-organization').should('not.exist');
+    } else {
+        cy.get('.cvat-header-menu-user-dropdown-organization')
+            .should('exist')
+            .and('have.text', organizationShortName);
+    }
 });
 
 Cypress.Commands.add('openOrganization', (organizationShortName) => {
