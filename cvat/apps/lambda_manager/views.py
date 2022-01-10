@@ -401,7 +401,7 @@ class LambdaJob:
                         "points": anno["points"],
                         "z_order": 0,
                         "group": None,
-                        "attributes": [],
+                        "attributes": anno.get('attributes', []),
                         "source": "auto"
                     })
 
