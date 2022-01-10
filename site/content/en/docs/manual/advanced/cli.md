@@ -34,7 +34,7 @@ cd utils/cli
 
 You will get help with `cli.py`.
 
-```bash
+```
 usage: cli.py [-h] [--auth USER:[PASS]] [--server-host SERVER_HOST]
               [--server-port SERVER_PORT] [--debug]
               {create,delete,ls,frames,dump,upload,export,import} ...
@@ -62,7 +62,7 @@ You can get help for each positional argument, e.g. `ls`:
 ```bash
 ./cli.py ls -h
 ```
-```bash
+```
 usage: cli.py ls [-h] [--json]
 
 List all CVAT tasks in simple or JSON format.
