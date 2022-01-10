@@ -31,7 +31,7 @@ nuctl deploy --project-name cvat \
 
 <details>
 
-```bash
+```
 20.07.17 12:02:23.247                     nuctl (I) Deploying function {"name": ""}
 20.07.17 12:02:23.248                     nuctl (I) Building {"versionInfo": "Label: 1.4.8, Git commit: 238d4539ac7783896d6c414535d0462b5f4cbcf1, OS: darwin, Arch: amd64, Go version: go1.14.3", "name": ""}
 20.07.17 12:02:23.447                     nuctl (I) Cleaning up before deployment
@@ -59,7 +59,7 @@ nuctl deploy --project-name cvat \
 
 <details>
 
-```bash
+```
 20.07.17 12:05:23.377                     nuctl (I) Deploying function {"name": ""}
 20.07.17 12:05:23.378                     nuctl (I) Building {"versionInfo": "Label: 1.4.8, Git commit: 238d4539ac7783896d6c414535d0462b5f4cbcf1, OS: darwin, Arch: amd64, Go version: go1.14.3", "name": ""}
 20.07.17 12:05:23.590                     nuctl (I) Cleaning up before deployment
@@ -87,7 +87,7 @@ nuctl get function
 
 <details>
 
-```bash
+```
   NAMESPACE |                             NAME                              | PROJECT | STATE | NODE PORT | REPLICAS
   nuclio    | openvino.dextr                                                | cvat    | ready |     55274 | 1/1
   nuclio    | openvino.omz.public.yolo-v3-tf                                | cvat    | ready |     57308 | 1/1
@@ -108,7 +108,7 @@ cat /tmp/input.json | nuctl invoke openvino.omz.public.yolo-v3-tf -c 'applicatio
 
 <details>
 
-```bash
+```
 20.07.17 12:07:44.519    nuctl.platform.invoker (I) Executing function {"method": "POST", "url": "http://:57308", "headers": {"Content-Type":["application/json"],"X-Nuclio-Log-Level":["info"],"X-Nuclio-Target":["openvino.omz.public.yolo-v3-tf"]}}
 20.07.17 12:07:45.275    nuctl.platform.invoker (I) Got response {"status": "200 OK"}
 20.07.17 12:07:45.275                     nuctl (I) >>> Start of function logs
@@ -142,7 +142,7 @@ Server = nuclio
 ## Run Cypress tests
 - Install Сypress as described in the [documentation](https://docs.cypress.io/guides/getting-started/installing-cypress.html).
 - Run cypress tests:
-```sh
+```bash
     cd <cvat_local_repository>/tests
     <cypress_installation_directory>/node_modules/.bin/cypress run --headless --browser chrome
 ```

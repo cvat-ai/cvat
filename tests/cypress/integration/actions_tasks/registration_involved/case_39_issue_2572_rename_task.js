@@ -21,7 +21,8 @@ context('Rename a task.', () => {
     const archivePath = `cypress/fixtures/${archiveName}`;
     const imagesFolder = `cypress/fixtures/${imageFileName}`;
     const directoryToArchive = imagesFolder;
-    const newNaskName = taskName.replace('39', '3339');
+    const newTaskName = taskName.replace('39', '3339');
+    const newTaskNameSecondUser = newTaskName.replace('3339', '33339');
     const secondUserName = 'Case39';
     const secondUser = {
         firstName: 'Firtstnamerenametask',
@@ -38,10 +39,18 @@ context('Rename a task.', () => {
     }
 
     before(() => {
-        cy.visit('auth/login');
-        cy.login();
         cy.imageGenerator(imagesFolder, imageFileName, width, height, color, posX, posY, labelName, imagesCount);
         cy.createZipArchive(directoryToArchive, archivePath);
+        cy.visit('auth/register');
+        cy.userRegistration(
+            secondUser.firstName,
+            secondUser.lastName,
+            secondUserName,
+            secondUser.emailAddr,
+            secondUser.password,
+        );
+        cy.logout(secondUserName);
+        cy.login();
         cy.createAnnotationTask(taskName, labelName, attrName, textDefaultValue, archiveName);
         cy.openTask(taskName);
     });
@@ -49,30 +58,22 @@ context('Rename a task.', () => {
     after(() => {
         cy.deletingRegisteredUsers([secondUserName]);
         cy.login();
-        cy.deleteTask(newNaskName);
+        cy.deleteTask(newTaskNameSecondUser);
     });
 
     describe(`Testing "${labelName}". Issue 2572.`, () => {
-        it('Rename the task. Issue is not reproduce.', () => {
+        it('The admin tries to rename the task and assigns to the second user. Issue is not reproduce.', () => {
             renameTask(taskName, '{leftarrow}{leftarrow}33{Enter}');
-            cy.contains('.cvat-task-details-task-name', newNaskName).should('exist');
+            cy.contains('.cvat-task-details-task-name', newTaskName).should('exist');
+            cy.assignTaskToUser(secondUserName);
             cy.logout();
         });
-        // FIXME: the task isn't visible for the user. Need to register it, assign on
-        // on the task and only after that try to rename.
-        it.skip('Registration a second user. Rename the task. Status 403 appear.', () => {
-            cy.goToRegisterPage();
-            cy.userRegistration(
-                secondUser.firstName,
-                secondUser.lastName,
-                secondUserName,
-                secondUser.emailAddr,
-                secondUser.password,
-            );
-            cy.openTask(newNaskName);
-            renameTask(newNaskName, '{leftarrow}{leftarrow}3{Enter}');
-            cy.get('.cvat-notification-notice-update-task-failed').should('exist');
-            cy.closeNotification('.cvat-notification-notice-update-task-failed');
+
+        it('The second user tries to rename the task. Success.', () => {
+            cy.login(secondUserName, secondUser.password);
+            cy.openTask(newTaskName);
+            renameTask(newTaskName, '{leftarrow}{leftarrow}3{Enter}');
+            cy.contains('.cvat-task-details-task-name', newTaskNameSecondUser).should('exist');
             cy.logout(secondUserName);
         });
     });

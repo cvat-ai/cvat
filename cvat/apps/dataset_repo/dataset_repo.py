@@ -71,7 +71,7 @@ class Git:
 
 
     # Method parses an got URL.
-    # SSH: git@github.com/proj/repos[.git]
+    # SSH: [ssh://]git@github.com/proj/repos[.git]
     # HTTP/HTTPS: [http://]github.com/proj/repos[.git]
     def _parse_url(self):
         try:
@@ -80,8 +80,8 @@ class Git:
             # https://github.com/git/git/blob/77bd3ea9f54f1584147b594abc04c26ca516d987/url.c
 
             host_pattern = r"((?:(?:(?:\d{1,3}\.){3}\d{1,3})|(?:[a-zA-Z0-9._-]+[.a-zA-Z]+))(?::\d+)?)"
-            http_pattern = r"(?:http[s]?://)?" + host_pattern + r"((?:/[a-zA-Z0-9._-]+){2,})"
-            ssh_pattern = r"([a-zA-Z0-9._-]+)@" + host_pattern + r":([a-zA-Z0-9._-]+)((?:/[a-zA-Z0-9._-]+)+)"
+            http_pattern = r"(?:http[s]?://)?" + host_pattern + r"((?:/[a-zA-Z0-9._\-~]+){2,})"
+            ssh_pattern = r"(ssh://)?([a-zA-Z0-9._-]+)@" + host_pattern + r":([a-zA-Z0-9._-]+)((?:/[a-zA-Z0-9._\-~]+)+)"
 
             http_match = re.match(http_pattern, self._url)
             ssh_match = re.match(ssh_pattern, self._url)
@@ -94,9 +94,9 @@ class Git:
                 host = http_match.group(1)
                 repos = http_match.group(2)[1:]
             elif ssh_match:
-                user = ssh_match.group(1)
-                host = ssh_match.group(2)
-                repos = "{}{}".format(ssh_match.group(3), ssh_match.group(4))
+                user = ssh_match.group(1) + ssh_match.group(2) if ssh_match.group(1) is not None else ssh_match.group(2)
+                host = ssh_match.group(3)
+                repos = "{}{}".format(ssh_match.group(4), ssh_match.group(5))
             else:
                 raise Exception("Git repository URL does not satisfy pattern")
 

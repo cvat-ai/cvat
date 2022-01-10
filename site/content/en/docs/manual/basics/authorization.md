@@ -17,7 +17,9 @@ weight: 1
   [Django administration panel](http://localhost:8080/admin) to assign correct
   groups to the user. Please use the command below to create an admin account:
 
-  `docker exec -it cvat bash -ic 'python3 ~/manage.py createsuperuser'`
+  ```bash
+    docker exec -it cvat bash -ic 'python3 ~/manage.py createsuperuser'
+  ```
 
 - If you want to create a non-admin account, you can do that using the link below
   on the login page. Don't forget to modify permissions for the new user in the
