@@ -86,8 +86,8 @@ context('New organization pipeline.', () => {
             imagesCount,
         );
         cy.createZipArchive(directoryToArchive, archivePath);
-        cy.visit('/');
 
+        cy.visit('/');
         cy.goToRegisterPage();
         cy.userRegistration(
             firstUser.firstName,
@@ -126,10 +126,14 @@ context('New organization pipeline.', () => {
         Cypress.Cookies.preserveOnce('sessionid', 'csrftoken');
     });
 
-    // TODO
-    // after(() => {
-    //     remove organizations
-    // });
+    // FIXME: Rework after solving the issue 4088
+    after(() => {
+        cy.logout(secondUserName);
+        cy.deletingCreatedProjects([project.name]);
+        cy.deletingCreatedTasks([newTaskName]);
+        cy.deletingCreatedOrganizations([organizationParams.shortName]);
+        cy.deletingRegisteredUsers([firstUserName, secondUserName, thirdUserName]);
+    });
 
     describe(`Testing case "${caseId}"`, () => {
         it('Create an organization. Activate the organization.', () => {
