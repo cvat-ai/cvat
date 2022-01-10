@@ -72,8 +72,7 @@ context('Rename a task.', () => {
         it('The second user tries to rename the task. Success.', () => {
             cy.login(secondUserName, secondUser.password);
             cy.openTask(newTaskName);
-            renameTask(newTaskName, '{leftarrow}{leftarrow}3{Enter}');
-            cy.contains('.cvat-task-details-task-name', newTaskNameSecondUser).should('exist');
+            cy.renameTask(newTaskName, newTaskNameSecondUser);
             cy.logout(secondUserName);
         });
     });

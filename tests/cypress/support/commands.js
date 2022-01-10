@@ -29,7 +29,7 @@ Cypress.Commands.add('login', (username = Cypress.env('user'), password = Cypres
 
 Cypress.Commands.add('logout', (username = Cypress.env('user')) => {
     cy.get('.cvat-right-header').within(() => {
-        cy.get('.cvat-header-menu-user-dropdown').should('have.text', username).trigger('mouseover', { which: 1 });
+        cy.get('.cvat-header-menu-user-dropdown-user').should('have.text', username).trigger('mouseover');
     });
     cy.get('span[aria-label="logout"]').click();
     cy.url().should('include', '/auth/login');
@@ -782,4 +782,16 @@ Cypress.Commands.add('exportTask', ({
     cy.contains('button', 'OK').click();
     cy.get('.cvat-notification-notice-export-task-start').should('be.visible');
     cy.closeNotification('.cvat-notification-notice-export-task-start');
+});
+
+Cypress.Commands.add('renameTask', (oldName, newName, clear = true) => {
+    cy.get('.cvat-task-details-task-name').within(() => {
+        cy.get('[aria-label="edit"]').click();
+    });
+    if (clear) {
+        cy.contains('.cvat-text-color', oldName).clear().type(`${newName}{Enter}`);
+    } else {
+        cy.contains('.cvat-text-color', oldName).type(`${newName}{Enter}`);
+    }
+    cy.contains('.cvat-task-details-task-name', newName).should('exist');
 });
