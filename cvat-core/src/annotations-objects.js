@@ -116,24 +116,12 @@
         checkObjectType('rotation', rotation, 'number', null);
         points.forEach((coordinate) => checkObjectType('coordinate', coordinate, 'number', null));
 
-        if (shapeType === ObjectShape.CUBOID || !!rotation) {
+        if (shapeType === ObjectShape.CUBOID || ObjectShape.ELLIPSE || !!rotation) {
             // cuboids and rotated bounding boxes cannot be fitted
             return points;
         }
 
         const fittedPoints = [];
-
-        if (shapeType === ObjectShape.ELLIPSE) {
-            const [rx, ry] = [points[2] - points[0], points[1] - points[3]]; // cx - rightX, cy - topY
-            const [cx, cy] = [Math.clamp(points[0], 0, maxX), Math.clamp(points[1], 0, maxY)];
-
-            // find top right and bottom left points (they are actually out of ellipse)
-            // but they must be on frame if we want ellipse to be on frame
-            const [rightX, topY] = [Math.clamp(cx + rx, 0, maxX), Math.clamp(cy - ry, 0, maxY)];
-            const [leftX, bottomY] = [Math.clamp(cx - rx, 0, maxX), Math.clamp(cy + ry, 0, maxY)];
-
-            return [cx, cy, cx + Math.min(rightX - cx, cx - leftX), cy - Math.min(cy - topY, bottomY - cy)];
-        }
 
         for (let i = 0; i < points.length - 1; i += 2) {
             const x = points[i];

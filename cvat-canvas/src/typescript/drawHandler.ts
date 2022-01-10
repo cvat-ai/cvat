@@ -431,7 +431,7 @@ export class DrawHandlerImpl implements DrawHandler {
             })
             .on('drawstop', (e: Event): void => {
                 const points = this.getFinalEllipseCoordinates(
-                    readPointsFromShape((e.target as any as { instance: SVG.Ellipse }).instance), true,
+                    readPointsFromShape((e.target as any as { instance: SVG.Ellipse }).instance), false,
                 );
                 const { shapeType, redraw: clientID } = this.drawData;
                 this.release();
@@ -764,7 +764,7 @@ export class DrawHandlerImpl implements DrawHandler {
 
         this.drawInstance.on('done', (e: CustomEvent): void => {
             const points = this.getFinalEllipseCoordinates(
-                readPointsFromShape((e.target as any as { instance: SVG.Ellipse }).instance), true,
+                readPointsFromShape((e.target as any as { instance: SVG.Ellipse }).instance), false,
             );
 
             if (!e.detail.originalEvent.ctrlKey) {
