@@ -476,13 +476,15 @@ function HeaderContainer(props: Props): JSX.Element {
                         <UserOutlined className='cvat-header-dropdown-icon' />
                         <Row>
                             <Col span={24}>
-                                <Text strong>
+                                <Text strong className='cvat-header-menu-user-dropdown-user'>
                                     {user.username.length > 14 ? `${user.username.slice(0, 10)} ...` : user.username}
                                 </Text>
                             </Col>
                             { currentOrganization ? (
                                 <Col span={24}>
-                                    <Text>{currentOrganization.slug}</Text>
+                                    <Text className='cvat-header-menu-user-dropdown-organization'>
+                                        {currentOrganization.slug}
+                                    </Text>
                                 </Col>
                             ) : null }
                         </Row>
