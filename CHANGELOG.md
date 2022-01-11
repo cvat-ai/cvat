@@ -47,6 +47,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added information to export CVAT_HOST when performing local installation for accessing over network (<https://github.com/openvinotoolkit/cvat/pull/4014>)
 - Fixed possible color collisions in the generated colormap (<https://github.com/openvinotoolkit/cvat/pull/4007>)
 - Original pdf file is deleted when using share (<https://github.com/openvinotoolkit/cvat/pull/3967>)
+- Order in an annotation file(<https://github.com/openvinotoolkit/cvat/pull/4087>)
 - Fixed task data upload progressbar (<https://github.com/openvinotoolkit/cvat/pull/4134>)
 
 ### Security
