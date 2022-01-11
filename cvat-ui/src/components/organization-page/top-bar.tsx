@@ -194,6 +194,7 @@ function OrganizationTopBar(props: Props): JSX.Element {
                                         onOk: () => {
                                             dispatch(leaveOrganizationAsync(organizationInstance));
                                         },
+                                        className: 'cvat-modal-organization-leave-confirm',
                                         content: (
                                             <>
                                                 <Text>Please, confirm leaving the organization</Text>
