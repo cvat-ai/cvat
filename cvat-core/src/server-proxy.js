@@ -772,7 +772,7 @@
                     });
                 }
 
-                const chunkSize = 1024 * 1024 * 100; // 100 mb
+                const chunkSize = config.uploadChunkSize * 1024 * 1024;
                 const clientFiles = taskDataSpec.client_files;
                 const chunkFiles = [];
                 const bulkFiles = [];
@@ -819,7 +819,7 @@
                 async function chunkUpload(taskId, file) {
                     return new Promise((resolve, reject) => {
                         const upload = new tus.Upload(file, {
-                            endpoint: `${origin}/${backendAPI}/tasks/${taskId}/data/`,
+                            endpoint: `${origin}${backendAPI}/tasks/${taskId}/data/`,
                             metadata: {
                                 filename: file.name,
                                 filetype: file.type,
@@ -840,8 +840,8 @@
                             },
                             onProgress(bytesUploaded) {
                                 const currentUploadedSize = totalSentSize + bytesUploaded;
-                                const percentage = ((currentUploadedSize / totalSize) * 100).toFixed(2);
-                                onUpdate(`The data are being uploaded to the server ${percentage}%`);
+                                const percentage = currentUploadedSize / totalSize;
+                                onUpdate('The data are being uploaded to the server', percentage);
                             },
                             onSuccess() {
                                 totalSentSize += file.size;
@@ -869,8 +869,8 @@
                         for (const [idx, element] of fileBulks[currentChunkNumber].files.entries()) {
                             taskData.append(`client_files[${idx}]`, element);
                         }
-                        onUpdate(`The data are being uploaded to the server
-                                    ${((totalSentSize / totalSize) * 100).toFixed(2)}%`);
+                        const percentage = totalSentSize / totalSize;
+                        onUpdate('The data are being uploaded to the server', percentage);
                         await Axios.post(`${backendAPI}/tasks/${taskId}/data`, taskData, {
                             ...params,
                             proxy: config.proxy,

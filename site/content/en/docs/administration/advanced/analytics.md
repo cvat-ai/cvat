@@ -33,12 +33,14 @@ At the moment it is not possible to save advanced settings. Below values should 
 
 ## Time picker default
 
+```json
 {
 "from": "now/d",
 "to": "now/d",
 "display": "Today",
 "section": 0
 }
+```
 
 ## Time picker quick ranges
 

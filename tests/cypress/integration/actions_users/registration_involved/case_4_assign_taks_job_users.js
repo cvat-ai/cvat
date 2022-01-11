@@ -8,6 +8,7 @@ context('Multiple users. Assign task, job. Deactivating users.', () => {
     const caseId = '4';
     const labelName = `Case ${caseId}`;
     const taskName = `New annotation task for ${labelName}`;
+    const secondTaskName = `${taskName} second`;
     const attrName = `Attr for ${labelName}`;
     const textDefaultValue = 'Some default value for type Text';
     const imagesCount = 1;
@@ -23,6 +24,8 @@ context('Multiple users. Assign task, job. Deactivating users.', () => {
     const directoryToArchive = imagesFolder;
     const secondUserName = 'Seconduser';
     const thirdUserName = 'Thirduser';
+    let taskID;
+    let jobID;
 
     const secondUser = {
         firstName: `${secondUserName} fitstname`,
@@ -58,10 +61,11 @@ context('Multiple users. Assign task, job. Deactivating users.', () => {
     });
 
     after(() => {
+        cy.goToTaskList();
+        cy.deleteTask(taskName);
+        cy.deleteTask(secondTaskName);
         cy.logout();
         cy.deletingRegisteredUsers([secondUserName, thirdUserName]);
-        cy.login();
-        cy.deleteTask(taskName);
     });
 
     describe(`Testing case "${caseId}"`, () => {
@@ -77,7 +81,7 @@ context('Multiple users. Assign task, job. Deactivating users.', () => {
                 secondUser.password,
             );
             cy.createAnnotationTask(
-                taskName,
+                secondTaskName,
                 labelName,
                 attrName,
                 textDefaultValue,
@@ -89,13 +93,12 @@ context('Multiple users. Assign task, job. Deactivating users.', () => {
                 null,
                 'success',
             );
-            cy.contains('.cvat-item-task-name', `${taskName}`).should('exist');
+            cy.contains('.cvat-item-task-name', secondTaskName).should('exist');
             cy.logout(secondUserName);
         });
 
         it('Register third user and logout.', () => {
-            cy.get('a[href="/auth/register"]').click();
-            cy.url().should('include', '/auth/register');
+            cy.goToRegisterPage();
             cy.userRegistration(
                 thirdUser.firstName,
                 thirdUser.lastName,
@@ -106,16 +109,18 @@ context('Multiple users. Assign task, job. Deactivating users.', () => {
             cy.logout(thirdUserName);
         });
 
-        it('First user login, create a task and logout', () => {
+        it('First user login, create a task, assign the task to the second user and logout.', () => {
             cy.login();
             cy.createAnnotationTask(taskName, labelName, attrName, textDefaultValue, archiveName);
-            cy.logout();
-        });
-
-        it('Assign the task to the second user and logout', () => {
-            cy.login();
+            cy.goToTaskList();
             cy.openTask(taskName);
             cy.assignTaskToUser(secondUserName);
+            cy.openJob();
+            // Getting the task and job id
+            cy.url().then((url) => {
+                jobID = Number(url.split('/').slice(-1)[0]);
+                taskID = Number(url.split('/').slice(-3)[0]);
+            });
             cy.logout();
         });
 
@@ -139,13 +144,11 @@ context('Multiple users. Assign task, job. Deactivating users.', () => {
             cy.logout();
         });
 
-        // FIXME: the third user doesn't have permissions to open the task (only a job)
-        it.skip('Third user login. Tries to delete task. The task can be opened.', () => {
+        it('The third user can open a job by a direct link.', () => {
             cy.login(thirdUserName, thirdUser.password);
-            cy.contains('strong', taskName).should('exist');
-            cy.deleteTask(taskName);
-            cy.closeNotification('.cvat-notification-notice-delete-task-failed');
-            cy.openTask(taskName);
+            cy.get('.cvat-item-task-name').should('not.exist');
+            cy.visit(`/tasks/${taskID}/jobs/${jobID}`);
+            cy.get('.cvat-canvas-container').should('exist');
             cy.logout(thirdUserName);
         });
 
