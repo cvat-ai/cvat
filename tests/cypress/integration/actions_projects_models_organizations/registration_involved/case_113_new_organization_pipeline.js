@@ -90,16 +90,6 @@ context('New organization pipeline.', () => {
         cy.visit('/');
         cy.goToRegisterPage();
         cy.userRegistration(
-            firstUser.firstName,
-            firstUser.lastName,
-            firstUserName,
-            firstUser.emailAddr,
-            firstUser.password,
-        );
-        cy.logout(firstUserName);
-        cy.goToRegisterPage();
-
-        cy.userRegistration(
             secondUser.firstName,
             secondUser.lastName,
             secondUserName,
@@ -107,8 +97,8 @@ context('New organization pipeline.', () => {
             secondUser.password,
         );
         cy.logout(secondUserName);
-        cy.goToRegisterPage();
 
+        cy.goToRegisterPage();
         cy.userRegistration(
             thirdUser.firstName,
             thirdUser.lastName,
@@ -118,7 +108,14 @@ context('New organization pipeline.', () => {
         );
         cy.logout(thirdUserName);
 
-        cy.login(firstUserName, firstUser.password);
+        cy.goToRegisterPage();
+        cy.userRegistration(
+            firstUser.firstName,
+            firstUser.lastName,
+            firstUserName,
+            firstUser.emailAddr,
+            firstUser.password,
+        );
     });
 
     beforeEach(() => {
@@ -136,7 +133,7 @@ context('New organization pipeline.', () => {
     });
 
     describe(`Testing case "${caseId}"`, () => {
-        it('Create an organization. Activate the organization.', () => {
+        it('The first user creates an organization and activates it.', () => {
             cy.createOrganization(organizationParams);
             cy.activateOrganization(organizationParams.shortName);
         });
@@ -172,7 +169,7 @@ context('New organization pipeline.', () => {
             cy.createAnnotationTask(taskName, labelName, attrName, textDefaultValue, archiveName);
             cy.openTask(taskName);
             cy.assignTaskToUser(secondUserName);
-            cy.activateOrganization('Personal workspace');
+            cy.activateOrganization('Personal workspace'); // Deactivate organization
         });
 
         // FIXME: Activate after implementation
@@ -182,8 +179,23 @@ context('New organization pipeline.', () => {
             cy.contains('.cvat-projects-project-item-title', project.name).should('not.exist');
         });
 
-        it('Second user login. The user is able to see the organization, the task and can’t see the project.', () => {
+        it('Admin tries to leave from organization (not successfully because he is not a member of it).', () => {
             cy.logout(firstUserName);
+            cy.login();
+            cy.activateOrganization(organizationParams.shortName);
+            cy.openOrganization(organizationParams.shortName);
+            cy.contains('button', 'Leave organization').should('be.visible').click();
+            cy.get('.cvat-modal-organization-leave-confirm')
+                .should('be.visible')
+                .within(() => {
+                    cy.contains('button', 'Leave').click();
+                });
+            cy.get('.cvat-notification-notice-leave-organization-failed').should('exist');
+            cy.closeNotification('.cvat-notification-notice-leave-organization-failed');
+        });
+
+        it('Second user login. The user is able to see the organization, the task and can’t see the project.', () => {
+            cy.logout();
             cy.login(secondUserName, secondUser.password);
             cy.сheckPresenceOrganization(organizationParams.shortName);
             cy.contains('.cvat-item-task-name', taskName).should('exist');
@@ -253,6 +265,7 @@ context('New organization pipeline.', () => {
         it.skip('The job can be opened.', () => {
             cy.visit(`/tasks/${taskID}/jobs/${jobID}`);
             cy.get('.cvat-canvas-container').should('exist');
+            cy.get('.cvat_canvas_shape_cuboid').should('be.visible');
         });
     });
 });
