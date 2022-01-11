@@ -116,7 +116,7 @@
         checkObjectType('rotation', rotation, 'number', null);
         points.forEach((coordinate) => checkObjectType('coordinate', coordinate, 'number', null));
 
-        if (shapeType === ObjectShape.CUBOID || ObjectShape.ELLIPSE || !!rotation) {
+        if (shapeType === ObjectShape.CUBOID || shapeType === ObjectShape.ELLIPSE || !!rotation) {
             // cuboids and rotated bounding boxes cannot be fitted
             return points;
         }

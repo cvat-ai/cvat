@@ -36,11 +36,12 @@ class RotatedBoxesToPolygons(ItemTransform):
 
         return item.wrap(annotations=annotations)
 
-class EllipsesToMasks(ItemTransform):
+class EllipsesToMasks:
     @staticmethod
     def convert_ellipse(ellipse, img_h, img_w):
         cx, cy, rightX, topY = ellipse.points
-        rx, ry = rightX - cx, cy - topY
+        rx = rightX - cx
+        ry = cy - topY
         shape = (cx - rx, cy - ry, cx + rx, cy + ry)
         mask = Image.new('1', (img_w, img_h))
         drawer = ImageDraw.Draw(mask)
