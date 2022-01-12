@@ -334,6 +334,22 @@ Cypress.Commands.add('createPoint', (createPointParams) => {
     cy.checkObjectParameters(createPointParams, 'POINTS');
 });
 
+Cypress.Commands.add('createEllipse', (createEllipseParams) => {
+    cy.interactControlButton('draw-ellipse');
+    cy.switchLabel(createEllipseParams.labelName, 'draw-ellipse');
+    cy.get('.cvat-draw-ellipse-popover').within(() => {
+        cy.get('.ant-select-selection-item').then(($labelValue) => {
+            selectedValueGlobal = $labelValue.text();
+        });
+        cy.contains('button', createEllipseParams.type).click();
+    });
+    cy.get('.cvat-canvas-container')
+        .click(createEllipseParams.cx, createEllipseParams.cy)
+        .click(createEllipseParams.rightX, createEllipseParams.topY);
+    cy.checkPopoverHidden('draw-ellipse');
+    cy.checkObjectParameters(createEllipseParams, 'ELLIPSE');
+});
+
 Cypress.Commands.add('changeAppearance', (colorBy) => {
     cy.get('.cvat-appearance-color-by-radio-group').within(() => {
         cy.get('[type="radio"]').check(colorBy, { force: true });

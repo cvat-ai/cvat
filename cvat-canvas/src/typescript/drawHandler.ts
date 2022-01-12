@@ -16,6 +16,7 @@ import {
     Box,
     Point,
     readPointsFromShape,
+    clamp,
 } from './shared';
 import Crosshair from './crosshair';
 import consts from './consts';
@@ -56,6 +57,11 @@ function checkConstraint(shapeType: string, points: number[], box: Box | null = 
         return points.length > 2 || (points.length === 2 && points[0] !== 0 && points[1] !== 0);
     }
 
+    if (shapeType === 'ellipse') {
+        const [rx, ry] = [points[2] - points[0], points[1] - points[3]];
+        return rx * ry * Math.PI >= consts.AREA_THRESHOLD;
+    }
+
     if (shapeType === 'cuboid') {
         return points.length === 4 * 2 || points.length === 8 * 2 ||
             (points.length === 2 * 2 && (points[2] - points[0]) * (points[3] - points[1]) >= consts.AREA_THRESHOLD);
@@ -88,6 +94,19 @@ export class DrawHandlerImpl implements DrawHandler {
     private canceled: boolean;
     private pointsGroup: SVG.G | null;
     private shapeSizeElement: ShapeSizeElement;
+
+    private getFinalEllipseCoordinates(points: number[], fitIntoFrame: boolean): number[] {
+        const { offset } = this.geometry;
+        const [cx, cy, rightX, topY] = points.map((coord: number) => coord - offset);
+        const [rx, ry] = [rightX - cx, cy - topY];
+        const frameWidth = this.geometry.image.width;
+        const frameHeight = this.geometry.image.height;
+        const [fitCX, fitCY] = fitIntoFrame ?
+            [clamp(cx, 0, frameWidth), clamp(cy, 0, frameHeight)] : [cx, cy];
+        const [fitRX, fitRY] = fitIntoFrame ?
+            [Math.min(rx, frameWidth - cx, cx), Math.min(ry, frameHeight - cy, cy)] : [rx, ry];
+        return [fitCX, fitCY, fitCX + fitRX, fitCY - fitRY];
+    }
 
     private getFinalRectCoordinates(points: number[], fitIntoFrame: boolean): number[] {
         const frameWidth = this.geometry.image.width;
@@ -328,7 +347,6 @@ export class DrawHandlerImpl implements DrawHandler {
         this.initialized = false;
         this.canvas.off('mousedown.draw');
         this.canvas.off('mousemove.draw');
-        this.canvas.off('click.draw');
 
         if (this.pointsGroup) {
             this.pointsGroup.remove();
@@ -401,6 +419,58 @@ export class DrawHandlerImpl implements DrawHandler {
                 'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
                 'fill-opacity': this.configuration.creationOpacity,
             });
+    }
+
+    private drawEllipse(): void {
+        this.drawInstance = (this.canvas as any).ellipse()
+            .addClass('cvat_canvas_shape_drawing')
+            .attr({
+                'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
+                'fill-opacity': this.configuration.creationOpacity,
+            });
+
+        const initialPoint: {
+            x: number;
+            y: number;
+        } = {
+            x: null,
+            y: null,
+        };
+
+        this.canvas.on('mousedown.draw', (e: MouseEvent): void => {
+            if (initialPoint.x === null || initialPoint.y === null) {
+                const translated = translateToSVG(this.canvas.node as any as SVGSVGElement, [e.clientX, e.clientY]);
+                [initialPoint.x, initialPoint.y] = translated;
+            } else {
+                const points = this.getFinalEllipseCoordinates(readPointsFromShape(this.drawInstance), false);
+                const { shapeType, redraw: clientID } = this.drawData;
+                this.release();
+
+                if (this.canceled) return;
+                if (checkConstraint('ellipse', points)) {
+                    this.onDrawDone(
+                        {
+                            clientID,
+                            shapeType,
+                            points,
+                        },
+                        Date.now() - this.startTimestamp,
+                    );
+                }
+            }
+        });
+
+        this.canvas.on('mousemove.draw', (e: MouseEvent): void => {
+            if (initialPoint.x !== null && initialPoint.y !== null) {
+                const translated = translateToSVG(this.canvas.node as any as SVGSVGElement, [e.clientX, e.clientY]);
+                const rx = Math.abs(translated[0] - initialPoint.x) / 2;
+                const ry = Math.abs(translated[1] - initialPoint.y) / 2;
+                const cx = initialPoint.x + rx * Math.sign(translated[0] - initialPoint.x);
+                const cy = initialPoint.y + ry * Math.sign(translated[1] - initialPoint.y);
+                this.drawInstance.center(cx, cy);
+                this.drawInstance.radius(rx, ry);
+            }
+        });
     }
 
     private drawBoxBy4Points(): void {
@@ -505,7 +575,7 @@ export class DrawHandlerImpl implements DrawHandler {
             }
         });
 
-        // We need scale just drawn points
+        // We need to scale points that have been just drawn
         this.drawInstance.on('drawstart drawpoint', (e: CustomEvent): void => {
             this.transform(this.geometry);
             lastDrawnPoint.x = e.detail.event.clientX;
@@ -704,6 +774,45 @@ export class DrawHandlerImpl implements DrawHandler {
         });
     }
 
+    private pasteEllipse([cx, cy, rx, ry]: number[], rotation: number): void {
+        this.drawInstance = (this.canvas as any)
+            .ellipse(rx * 2, ry * 2)
+            .center(cx, cy)
+            .addClass('cvat_canvas_shape_drawing')
+            .attr({
+                'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
+                'fill-opacity': this.configuration.creationOpacity,
+            }).rotate(rotation);
+        this.pasteShape();
+
+        this.drawInstance.on('done', (e: CustomEvent): void => {
+            const points = this.getFinalEllipseCoordinates(
+                readPointsFromShape((e.target as any as { instance: SVG.Ellipse }).instance), false,
+            );
+
+            if (!e.detail.originalEvent.ctrlKey) {
+                this.release();
+            }
+
+            if (checkConstraint('ellipse', points)) {
+                this.onDrawDone(
+                    {
+                        shapeType: this.drawData.initialState.shapeType,
+                        objectType: this.drawData.initialState.objectType,
+                        points,
+                        occluded: this.drawData.initialState.occluded,
+                        attributes: { ...this.drawData.initialState.attributes },
+                        label: this.drawData.initialState.label,
+                        color: this.drawData.initialState.color,
+                        rotation: this.drawData.initialState.rotation,
+                    },
+                    Date.now() - this.startTimestamp,
+                    e.detail.originalEvent.ctrlKey,
+                );
+            }
+        });
+    }
+
     private pastePolygon(points: string): void {
         this.drawInstance = (this.canvas as any)
             .polygon(points)
@@ -819,6 +928,12 @@ export class DrawHandlerImpl implements DrawHandler {
                     width: xbr - xtl,
                     height: ybr - ytl,
                 }, this.drawData.initialState.rotation);
+            } else if (this.drawData.shapeType === 'ellipse') {
+                const [cx, cy, rightX, topY] = this.drawData.initialState.points.map(
+                    (coord: number): number => coord + offset,
+                );
+
+                this.pasteEllipse([cx, cy, rightX - cx, cy - topY], this.drawData.initialState.rotation);
             } else {
                 const points = this.drawData.initialState.points.map((coord: number): number => coord + offset);
                 const stringifiedPoints = stringifyPoints(points);
@@ -837,12 +952,10 @@ export class DrawHandlerImpl implements DrawHandler {
         } else {
             if (this.drawData.shapeType === 'rectangle') {
                 if (this.drawData.rectDrawingMethod === RectDrawingMethod.EXTREME_POINTS) {
-                    // draw box by extreme clicking
-                    this.drawBoxBy4Points();
+                    this.drawBoxBy4Points(); // draw box by extreme clicking
                 } else {
-                    // default box drawing
-                    this.drawBox();
-                    // Draw instance was initialized after drawBox();
+                    this.drawBox(); // default box drawing
+                    // draw instance was initialized after drawBox();
                     this.shapeSizeElement = displayShapeSize(this.canvas, this.text);
                 }
             } else if (this.drawData.shapeType === 'polygon') {
@@ -851,6 +964,8 @@ export class DrawHandlerImpl implements DrawHandler {
                 this.drawPolyline();
             } else if (this.drawData.shapeType === 'points') {
                 this.drawPoints();
+            } else if (this.drawData.shapeType === 'ellipse') {
+                this.drawEllipse();
             } else if (this.drawData.shapeType === 'cuboid') {
                 if (this.drawData.cuboidDrawingMethod === CuboidDrawingMethod.CORNER_POINTS) {
                     this.drawCuboidBy4Points();
@@ -859,7 +974,10 @@ export class DrawHandlerImpl implements DrawHandler {
                     this.shapeSizeElement = displayShapeSize(this.canvas, this.text);
                 }
             }
-            this.setupDrawEvents();
+
+            if (this.drawData.shapeType !== 'ellipse') {
+                this.setupDrawEvents();
+            }
         }
 
         this.startTimestamp = Date.now();

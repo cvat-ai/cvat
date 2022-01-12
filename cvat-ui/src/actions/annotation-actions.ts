@@ -1515,7 +1515,10 @@ export function repeatDrawShapeAsync(): ThunkAction {
             activeControl = ActiveControl.DRAW_POLYLINE;
         } else if (activeShapeType === ShapeType.CUBOID) {
             activeControl = ActiveControl.DRAW_CUBOID;
+        } else if (activeShapeType === ShapeType.ELLIPSE) {
+            activeControl = ActiveControl.DRAW_ELLIPSE;
         }
+
         dispatch({
             type: AnnotationActionTypes.REPEAT_DRAW_SHAPE,
             payload: {
@@ -1533,14 +1536,14 @@ export function repeatDrawShapeAsync(): ThunkAction {
                 frame: frameNumber,
             });
             dispatch(createAnnotationsAsync(jobInstance, frameNumber, [objectState]));
-        } else {
+        } else if (canvasInstance) {
             canvasInstance.draw({
                 enabled: true,
                 rectDrawingMethod: activeRectDrawingMethod,
                 cuboidDrawingMethod: activeCuboidDrawingMethod,
                 numberOfPoints: activeNumOfPoints,
                 shapeType: activeShapeType,
-                crosshair: [ShapeType.RECTANGLE, ShapeType.CUBOID].includes(activeShapeType),
+                crosshair: [ShapeType.RECTANGLE, ShapeType.CUBOID, ShapeType.ELLIPSE].includes(activeShapeType),
             });
         }
     };
@@ -1582,7 +1585,7 @@ export function redrawShapeAsync(): ThunkAction {
                     enabled: true,
                     redraw: activatedStateID,
                     shapeType: state.shapeType,
-                    crosshair: [ShapeType.RECTANGLE, ShapeType.CUBOID].includes(state.shapeType),
+                    crosshair: [ShapeType.RECTANGLE, ShapeType.CUBOID, ShapeType.ELLIPSE].includes(state.shapeType),
                 });
             }
         }
