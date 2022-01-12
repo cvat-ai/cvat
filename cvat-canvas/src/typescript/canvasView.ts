@@ -870,7 +870,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             (shape as any).selectize(value, {
                 deepSelect: true,
                 pointSize: (2 * consts.BASE_POINT_SIZE) / this.geometry.scale,
-                rotationPoint: shape.type === 'rect',
+                rotationPoint: shape.type === 'rect' || shape.type === 'ellipse',
                 pointType(cx: number, cy: number): SVG.Circle {
                     const circle: SVG.Circle = this.nested
                         .circle(this.options.pointSize)

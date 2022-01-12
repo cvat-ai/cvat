@@ -1334,6 +1334,7 @@ def convert_cvat_anno_to_dm(cvat_frame_anno, label_attrs, map_label, format_name
                 "points": shape_obj.points,
                 "label": anno_label,
                 "z_order": shape_obj.z_order,
+                "rotation": shape_obj.rotation,
                 "group": anno_group,
                 "attributes": anno_attr,
             }), cvat_frame_anno.height, cvat_frame_anno.width)

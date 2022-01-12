@@ -347,7 +347,6 @@ export class DrawHandlerImpl implements DrawHandler {
         this.initialized = false;
         this.canvas.off('mousedown.draw');
         this.canvas.off('mousemove.draw');
-        this.canvas.off('click.draw');
 
         if (this.pointsGroup) {
             this.pointsGroup.remove();
@@ -428,11 +427,22 @@ export class DrawHandlerImpl implements DrawHandler {
             .attr({
                 'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
                 'fill-opacity': this.configuration.creationOpacity,
-            })
-            .on('drawstop', (e: Event): void => {
-                const points = this.getFinalEllipseCoordinates(
-                    readPointsFromShape((e.target as any as { instance: SVG.Ellipse }).instance), false,
-                );
+            });
+
+        const initialPoint: {
+            x: number;
+            y: number;
+        } = {
+            x: null,
+            y: null,
+        };
+
+        this.canvas.on('mousedown.draw', (e: MouseEvent): void => {
+            if (initialPoint.x === null || initialPoint.y === null) {
+                const translated = translateToSVG(this.canvas.node as any as SVGSVGElement, [e.clientX, e.clientY]);
+                [initialPoint.x, initialPoint.y] = translated;
+            } else {
+                const points = this.getFinalEllipseCoordinates(readPointsFromShape(this.drawInstance), false);
                 const { shapeType, redraw: clientID } = this.drawData;
                 this.release();
 
@@ -447,7 +457,20 @@ export class DrawHandlerImpl implements DrawHandler {
                         Date.now() - this.startTimestamp,
                     );
                 }
-            });
+            }
+        });
+
+        this.canvas.on('mousemove.draw', (e: MouseEvent): void => {
+            if (initialPoint.x !== null && initialPoint.y !== null) {
+                const translated = translateToSVG(this.canvas.node as any as SVGSVGElement, [e.clientX, e.clientY]);
+                const rx = Math.abs(translated[0] - initialPoint.x) / 2;
+                const ry = Math.abs(translated[1] - initialPoint.y) / 2;
+                const cx = initialPoint.x + rx * Math.sign(translated[0] - initialPoint.x);
+                const cy = initialPoint.y + ry * Math.sign(translated[1] - initialPoint.y);
+                this.drawInstance.center(cx, cy);
+                this.drawInstance.radius(rx, ry);
+            }
+        });
     }
 
     private drawBoxBy4Points(): void {
@@ -951,7 +974,10 @@ export class DrawHandlerImpl implements DrawHandler {
                     this.shapeSizeElement = displayShapeSize(this.canvas, this.text);
                 }
             }
-            this.setupDrawEvents();
+
+            if (this.drawData.shapeType !== 'ellipse') {
+                this.setupDrawEvents();
+            }
         }
 
         this.startTimestamp = Date.now();

@@ -24,7 +24,7 @@ export interface Props {
 const CustomPopover = withVisibilityHandling(Popover, 'draw-cuboid');
 function DrawPolygonControl(props: Props): JSX.Element {
     const { canvasInstance, isDrawing, disabled } = props;
-    const dynamcPopoverPros = isDrawing ? {
+    const dynamicPopoverProps = isDrawing ? {
         overlayStyle: {
             display: 'none',
         },
@@ -43,7 +43,7 @@ function DrawPolygonControl(props: Props): JSX.Element {
         <Icon className='cvat-draw-cuboid-control cvat-disabled-canvas-control' component={CubeIcon} />
     ) : (
         <CustomPopover
-            {...dynamcPopoverPros}
+            {...dynamicPopoverProps}
             overlayClassName='cvat-draw-shape-popover'
             placement='right'
             content={<DrawShapePopoverContainer shapeType={ShapeType.CUBOID} />}
