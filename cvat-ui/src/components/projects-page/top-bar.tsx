@@ -44,16 +44,17 @@ export default function TopBarComponent(): JSX.Element {
                                         dispatch(restoreProjectAsync(file));
                                         return false;
                                     }}
+                                    className='cvat-import-project'
                                 >
                                     <Button
                                         size='large'
-                                        id='cvat-import-task-button'
+                                        id='cvat-import-project-button'
                                         type='primary'
                                         disabled={isImporting}
                                         icon={<UploadOutlined />}
                                     >
                                         Create from backup
-                                        {isImporting && <LoadingOutlined id='cvat-import-task-button-loading' />}
+                                        {isImporting && <LoadingOutlined id='cvat-import-project-button-loading' />}
                                     </Button>
                                 </Upload>
                             </Col>
