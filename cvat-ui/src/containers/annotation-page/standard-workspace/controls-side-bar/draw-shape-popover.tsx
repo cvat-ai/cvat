@@ -124,7 +124,7 @@ class DrawShapePopoverContainer extends React.PureComponent<Props, State> {
             cuboidDrawingMethod,
             numberOfPoints,
             shapeType,
-            crosshair: [ShapeType.RECTANGLE, ShapeType.CUBOID].includes(shapeType),
+            crosshair: [ShapeType.RECTANGLE, ShapeType.CUBOID, ShapeType.ELLIPSE].includes(shapeType),
         });
 
         onDrawStart(shapeType, selectedLabelID, objectType, numberOfPoints, rectDrawingMethod, cuboidDrawingMethod);
