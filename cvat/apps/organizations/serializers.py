@@ -77,7 +77,8 @@ class InvitationWriteSerializer(serializers.ModelSerializer):
         membership_data = validated_data.pop('membership')
         organization = validated_data.pop('organization')
         try:
-            user = get_user_model().objects.get(**membership_data['user'])
+            user = get_user_model().objects.get(
+                email__iexact=membership_data['user']['email'])
             del membership_data['user']
         except ObjectDoesNotExist:
             raise serializers.ValidationError(f'You cannot invite an user '
