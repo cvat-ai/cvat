@@ -8,7 +8,7 @@ django-compressor==2.4
 django-rq==2.3.2
 EasyProcess==0.3
 Pillow==9.0.0
-numpy==1.19.5
+numpy==1.22.0
 python-ldap==3.4.0
 pytz==2020.1
 pyunpack==0.2.1
@@ -39,7 +39,7 @@ h5py==2.10.0
 django-cors-headers==3.5.0
 furl==2.1.0
 av==8.0.2 --no-binary=av
-tensorflow==2.4.1 # Optional requirement of Datumaro
+tensorflow==2.7.0 # Optional requirement of Datumaro
 # The package is used by pyunpack as a command line tool to support multiple
 # archives. Don't use as a python module because it has GPL license.
 patool==1.12
