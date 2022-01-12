@@ -9,7 +9,6 @@ import { RadioChangeEvent } from 'antd/lib/radio';
 import { CombinedState, ShapeType, ObjectType } from 'reducers/interfaces';
 import { rememberObject } from 'actions/annotation-actions';
 import { Canvas, RectDrawingMethod, CuboidDrawingMethod } from 'cvat-canvas-wrapper';
-import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import DrawShapePopoverComponent from 'components/annotation-page/standard-workspace/controls-side-bar/draw-shape-popover';
 
 interface OwnProps {
@@ -29,7 +28,7 @@ interface DispatchToProps {
 
 interface StateToProps {
     normalizedKeyMap: Record<string, string>;
-    canvasInstance: Canvas | Canvas3d;
+    canvasInstance: Canvas;
     shapeType: ShapeType;
     labels: any[];
     jobInstance: any;
@@ -70,7 +69,7 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
 
     return {
         ...own,
-        canvasInstance,
+        canvasInstance: canvasInstance as Canvas,
         labels,
         normalizedKeyMap,
         jobInstance,
@@ -104,11 +103,9 @@ class DrawShapePopoverContainer extends React.PureComponent<Props, State> {
 
         if (shapeType === ShapeType.POLYGON) {
             this.minimumPoints = 3;
-        }
-        if (shapeType === ShapeType.POLYLINE) {
+        } else if (shapeType === ShapeType.POLYLINE) {
             this.minimumPoints = 2;
-        }
-        if (shapeType === ShapeType.POINTS) {
+        } else if (shapeType === ShapeType.POINTS) {
             this.minimumPoints = 1;
         }
     }
@@ -127,7 +124,7 @@ class DrawShapePopoverContainer extends React.PureComponent<Props, State> {
             cuboidDrawingMethod,
             numberOfPoints,
             shapeType,
-            crosshair: [ShapeType.RECTANGLE, ShapeType.CUBOID].includes(shapeType),
+            crosshair: [ShapeType.RECTANGLE, ShapeType.CUBOID, ShapeType.ELLIPSE].includes(shapeType),
         });
 
         onDrawStart(shapeType, selectedLabelID, objectType, numberOfPoints, rectDrawingMethod, cuboidDrawingMethod);

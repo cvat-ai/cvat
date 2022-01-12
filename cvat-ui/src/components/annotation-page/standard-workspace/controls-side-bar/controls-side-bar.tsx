@@ -21,6 +21,7 @@ import DrawRectangleControl, { Props as DrawRectangleControlProps } from './draw
 import DrawPolygonControl, { Props as DrawPolygonControlProps } from './draw-polygon-control';
 import DrawPolylineControl, { Props as DrawPolylineControlProps } from './draw-polyline-control';
 import DrawPointsControl, { Props as DrawPointsControlProps } from './draw-points-control';
+import DrawEllipseControl, { Props as DrawEllipseControlProps } from './draw-ellipse-control';
 import DrawCuboidControl, { Props as DrawCuboidControlProps } from './draw-cuboid-control';
 import SetupTagControl, { Props as SetupTagControlProps } from './setup-tag-control';
 import MergeControl, { Props as MergeControlProps } from './merge-control';
@@ -57,6 +58,7 @@ const ObservedDrawRectangleControl = ControlVisibilityObserver<DrawRectangleCont
 const ObservedDrawPolygonControl = ControlVisibilityObserver<DrawPolygonControlProps>(DrawPolygonControl);
 const ObservedDrawPolylineControl = ControlVisibilityObserver<DrawPolylineControlProps>(DrawPolylineControl);
 const ObservedDrawPointsControl = ControlVisibilityObserver<DrawPointsControlProps>(DrawPointsControl);
+const ObservedDrawEllipseControl = ControlVisibilityObserver<DrawEllipseControlProps>(DrawEllipseControl);
 const ObservedDrawCuboidControl = ControlVisibilityObserver<DrawCuboidControlProps>(DrawCuboidControl);
 const ObservedSetupTagControl = ControlVisibilityObserver<SetupTagControlProps>(SetupTagControl);
 const ObservedMergeControl = ControlVisibilityObserver<MergeControlProps>(MergeControl);
@@ -239,6 +241,11 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
             <ObservedDrawPointsControl
                 canvasInstance={canvasInstance}
                 isDrawing={activeControl === ActiveControl.DRAW_POINTS}
+                disabled={!labels.length}
+            />
+            <ObservedDrawEllipseControl
+                canvasInstance={canvasInstance}
+                isDrawing={activeControl === ActiveControl.DRAW_ELLIPSE}
                 disabled={!labels.length}
             />
             <ObservedDrawCuboidControl

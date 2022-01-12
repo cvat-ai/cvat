@@ -298,8 +298,9 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
                     throw new Error('Canvas context is empty');
                 }
                 const imageData = context.getImageData(0, 0, width, height);
-                const newImageData = activeImageModifiers.reduce((oldImageData, activeImageModifier) =>
-                    activeImageModifier.modifier.processImage(oldImageData, frame), imageData);
+                const newImageData = activeImageModifiers.reduce((oldImageData, activeImageModifier) => (
+                    activeImageModifier.modifier.processImage(oldImageData, frame)
+                ), imageData);
                 const imageBitmap = await createImageBitmap(newImageData);
                 frameData.imageData = imageBitmap;
                 canvasInstance.setup(frameData, states, curZOrder);
@@ -346,7 +347,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
         return points;
     }
 
-    private imageModifier(alias: string): ImageProcessing|null {
+    private imageModifier(alias: string): ImageProcessing | null {
         const { activeImageModifiers } = this.state;
         return activeImageModifiers.find((imageModifier) => imageModifier.alias === alias)?.modifier || null;
     }
@@ -362,7 +363,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
         }
     }
 
-    private enableImageModifier(modifier: ImageProcessing, alias: string): void{
+    private enableImageModifier(modifier: ImageProcessing, alias: string): void {
         this.setState((prev: State) => ({
             ...prev,
             activeImageModifiers: [...prev.activeImageModifiers, { modifier, alias }],
@@ -371,13 +372,13 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
         });
     }
 
-    private enableCanvasForceUpdate():void{
+    private enableCanvasForceUpdate():void {
         const { canvasInstance } = this.props;
         canvasInstance.configure({ forceFrameUpdate: true });
         this.canvasForceUpdateWasEnabled = true;
     }
 
-    private disableCanvasForceUpdate():void{
+    private disableCanvasForceUpdate():void {
         if (this.canvasForceUpdateWasEnabled) {
             const { canvasInstance } = this.props;
             canvasInstance.configure({ forceFrameUpdate: false });
@@ -528,7 +529,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
     public render(): JSX.Element {
         const { isActivated, canvasInstance, labels } = this.props;
         const { libraryInitialized, approxPolyAccuracy } = this.state;
-        const dynamcPopoverPros = isActivated ?
+        const dynamicPopoverProps = isActivated ?
             {
                 overlayStyle: {
                     display: 'none',
@@ -552,7 +553,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
         ) : (
             <>
                 <CustomPopover
-                    {...dynamcPopoverPros}
+                    {...dynamicPopoverProps}
                     placement='right'
                     overlayClassName='cvat-opencv-control-popover'
                     content={this.renderContent()}

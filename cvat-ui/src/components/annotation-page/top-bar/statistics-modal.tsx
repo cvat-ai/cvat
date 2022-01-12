@@ -111,6 +111,7 @@ function StatisticsModalComponent(props: StateToProps & DispatchToProps): JSX.El
         polygon: `${data.label[key].polygon.shape} / ${data.label[key].polygon.track}`,
         polyline: `${data.label[key].polyline.shape} / ${data.label[key].polyline.track}`,
         points: `${data.label[key].points.shape} / ${data.label[key].points.track}`,
+        ellipse: `${data.label[key].ellipse.shape} / ${data.label[key].ellipse.track}`,
         cuboid: `${data.label[key].cuboid.shape} / ${data.label[key].cuboid.track}`,
         tags: data.label[key].tags,
         manually: data.label[key].manually,
@@ -125,6 +126,7 @@ function StatisticsModalComponent(props: StateToProps & DispatchToProps): JSX.El
         polygon: `${data.total.polygon.shape} / ${data.total.polygon.track}`,
         polyline: `${data.total.polyline.shape} / ${data.total.polyline.track}`,
         points: `${data.total.points.shape} / ${data.total.points.track}`,
+        ellipse: `${data.total.ellipse.shape} / ${data.total.ellipse.track}`,
         cuboid: `${data.total.cuboid.shape} / ${data.total.cuboid.track}`,
         tags: data.total.tags,
         manually: data.total.manually,
@@ -166,6 +168,11 @@ function StatisticsModalComponent(props: StateToProps & DispatchToProps): JSX.El
             title: makeShapesTracksTitle('Points'),
             dataIndex: 'points',
             key: 'points',
+        },
+        {
+            title: makeShapesTracksTitle('Ellipse'),
+            dataIndex: 'ellipse',
+            key: 'ellipse',
         },
         {
             title: makeShapesTracksTitle('Cuboids'),
