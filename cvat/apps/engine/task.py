@@ -326,13 +326,15 @@ def _create_thread(db_task, data, isBackupRestore=False, isDatasetImport=False):
                 db_data.start_frame = 0
                 data['stop_frame'] = None
                 db_data.frame_filter = ''
-            if isBackupRestore and media_type != 'video' and db_data.storage_method == models.StorageMethodChoice.CACHE:
+            if isBackupRestore and media_type != 'video' and db_data.storage_method == models.StorageMethodChoice.CACHE and \
+                    db_data.sorting_method in {models.SortingMethod.RANDOM, models.SortingMethod.PREDEFINED}:
                 # we should sort media_files according to the manifest content sequence
                 manifest = ImageManifestManager(db_data.get_manifest_path())
                 manifest.set_index()
                 sorted_media_files = []
-                for idx in range(len(media_files)):
-                    properties = manifest[manifest_index(idx)]
+
+                # FIXME it's bad solution because a manifest file can contain more files then were uploaded
+                for _, properties in manifest:
                     image_name = properties.get('name', None)
                     image_extension = properties.get('extension', None)
 
@@ -379,8 +381,15 @@ def _create_thread(db_task, data, isBackupRestore=False, isDatasetImport=False):
     if validate_dimension.dimension == models.DimensionType.DIM_3D:
         db_task.dimension = models.DimensionType.DIM_3D
 
+        keys_of_related_files = validate_dimension.related_files.keys()
+        absolute_keys_of_related_files = [os.path.join(upload_dir, f) for f in keys_of_related_files]
+        # When a task is created, the sorting method can be random and in this case, reinitialization will be with correct sorting
+        # but when a task is restored from a backup, a random sorting is changed to predefined and we need to manually sort files
+        # in the correct order.
+        source_files = absolute_keys_of_related_files if not isBackupRestore else \
+            [item for item in extractor.absolute_source_paths if item in absolute_keys_of_related_files]
         extractor.reconcile(
-            source_files=[os.path.join(upload_dir, f) for f in validate_dimension.related_files.keys()],
+            source_files=source_files,
             step=db_data.get_frame_step(),
             start=db_data.start_frame,
             stop=data['stop_frame'],
