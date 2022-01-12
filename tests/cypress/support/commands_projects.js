@@ -85,6 +85,11 @@ Cypress.Commands.add('exportProject', ({
     cy.get('.cvat-notification-notice-export-project-start').should('be.visible');
 });
 
+Cypress.Commands.add('backupProject', (projectName) => {
+    cy.projectActions(projectName);
+    cy.get('.cvat-project-actions-menu').contains('Backup Project').click();
+});
+
 Cypress.Commands.add('getDownloadFileName', () => {
     cy.intercept('GET', '**=download').as('download');
     cy.wait('@download').then((download) => {
