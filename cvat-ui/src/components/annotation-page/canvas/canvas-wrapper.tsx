@@ -308,12 +308,14 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             }
         }
 
-        const loadingAnimation = window.document.getElementById('cvat_canvas_loading_animation');
-        if (loadingAnimation && frameFetching !== prevProps.frameFetching) {
-            if (frameFetching) {
-                loadingAnimation.classList.remove('cvat_canvas_hidden');
-            } else {
-                loadingAnimation.classList.add('cvat_canvas_hidden');
+        if (frameFetching !== prevProps.frameFetching) {
+            const loadingAnimation = window.document.getElementById('cvat_canvas_loading_animation');
+            if (loadingAnimation) {
+                if (frameFetching) {
+                    loadingAnimation.classList.remove('cvat_canvas_hidden');
+                } else {
+                    loadingAnimation.classList.add('cvat_canvas_hidden');
+                }
             }
         }
 
