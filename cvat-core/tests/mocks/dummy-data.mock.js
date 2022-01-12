@@ -1830,6 +1830,38 @@ const taskAnnotationsDummyData = {
                     },
                 ],
             },
+
+            {
+                id: 61,
+                frame: 0,
+                label_id: 19,
+                group: 0,
+                shapes: [
+                    {
+                        type: 'ellipse',
+                        occluded: false,
+                        z_order: 1,
+                        points: [500, 500, 800, 100],
+                        rotation: 0,
+                        id: 611,
+                        frame: 0,
+                        outside: false,
+                        attributes: [],
+                    },
+                    {
+                        type: 'ellipse',
+                        occluded: false,
+                        z_order: 1,
+                        points: [600, 600, 1000, 200],
+                        rotation: 0,
+                        id: 612,
+                        frame: 10,
+                        outside: false,
+                        attributes: [],
+                    },
+                ],
+                attributes: [],
+            },
         ],
     },
     100: {
