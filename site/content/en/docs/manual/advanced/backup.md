@@ -15,7 +15,8 @@ To backup a task or project, open the action menu and select `Backup Task` or `B
 
 ### Backup structure
 
-As a result, you'll get a zip archive containing data, task or project and task specification and annotations with the following structure:
+As a result, you'll get a zip archive containing data,
+task or project and task specification and annotations with the following structure:
 
 {{< tabpane >}}
   {{< tab header="Task Backup Structure" >}}
@@ -44,7 +45,8 @@ As a result, you'll get a zip archive containing data, task or project and task 
 
 ## Create from backup
 
-To create a task or project from a backup, go to the tasks or projects page, click the `Create from backup` button and select the archive you need.
+To create a task or project from a backup, go to the tasks or projects page,
+click the `Create from backup` button and select the archive you need.
 
 ![](/images/image220.jpg)
 

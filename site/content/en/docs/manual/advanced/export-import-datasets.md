@@ -21,18 +21,21 @@ You can export a dataset to a project, task or job.
 
    ![](/images/image225.jpg)
 
-1. Choose the format for exporting the dataset. Exporting and importing is available in standard CVAT formats:
-   - [CVAT for video](/docs/manual/advanced/xml_format/#interpolation)
-     choose if the task is created in interpolation mode.
-   - [CVAT for images](/docs/manual/advanced/xml_format/#annotation)
-     choose if a task is created in annotation mode.
+1. Choose the format for exporting the dataset. Exporting and importing is available in:
+   - Standard CVAT formats:
+     - [CVAT for video](/docs/manual/advanced/xml_format/#interpolation)
+       choose if the task is created in interpolation mode.
+     - [CVAT for images](/docs/manual/advanced/xml_format/#annotation)
+       choose if a task is created in annotation mode.
 
-     and also in formats from the [list of annotation formats supported by CVAT](/docs/manual/advanced/formats/).
+       <br>
+   - And also in formats from the [list of annotation formats supported by CVAT](/docs/manual/advanced/formats/).
 
-   For 3D tasks, the following formats are available:
-    - [Kitti Raw Format 1.0](http://www.cvlibs.net/datasets/kitti/raw_data.php)
-    - Sly Point Cloud Format 1.0  - Supervisely Point Cloud dataset
+   - For 3D tasks, the following formats are available:
+     - [Kitti Raw Format 1.0](http://www.cvlibs.net/datasets/kitti/raw_data.php)
+     - Sly Point Cloud Format 1.0  - Supervisely Point Cloud dataset
 
+   <br>
 1. To download images with the dataset, tick the `Save images` box.
 1. (Optional) To name the resulting archive, use the `Custom name` field.
 
