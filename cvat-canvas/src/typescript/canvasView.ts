@@ -1549,7 +1549,9 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
                 if (state.shapeType === 'ellipse') {
                     const [cx, cy, rightX, topY] = state.points;
-                    ctx.ellipse(cx, cy, rightX - cx, cy - topY, 0, 0, 2 * Math.PI);
+                    ctx.beginPath();
+                    ctx.ellipse(cx, cy, rightX - cx, cy - topY, (state.rotation * Math.PI) / 180.0, 0, 2 * Math.PI);
+                    ctx.closePath();
                     ctx.fill();
                 }
 
