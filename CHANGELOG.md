@@ -174,6 +174,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Using combined data sources (directory and image) when create a task (<https://github.com/openvinotoolkit/cvat/pull/3424>)
 - Creating task with labels in project (<https://github.com/openvinotoolkit/cvat/pull/3454>)
 - Move task and autoannotation modals were invisible from project page (<https://github.com/openvinotoolkit/cvat/pull/3475>)
+- Fixed tus upload error over https (<https://github.com/openvinotoolkit/cvat/pull/4154>)
 
 ## \[1.4.0] - 2021-05-18
 
