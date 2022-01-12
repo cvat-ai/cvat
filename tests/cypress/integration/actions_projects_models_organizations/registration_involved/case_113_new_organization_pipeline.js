@@ -73,6 +73,18 @@ context('New organization pipeline.', () => {
         secondY: 450,
     };
 
+    function capitalizeEmail(email) {
+        const userName = email.split('@')[0];
+        const domainName = email.split('@')[1].split('.')[0];
+        const topLevelDomain = email.split('.')[1]
+        const emailParts = [];
+        for (const i of [userName, domainName, topLevelDomain]) {
+            emailParts.push(i[0].toUpperCase() + i.slice(1).toLowerCase());
+        }
+        const capitalizedEmail = `${emailParts[0]}@${emailParts[1]}.${emailParts[2]}`;
+        return capitalizedEmail;
+    }
+
     before(() => {
         cy.imageGenerator(
             imagesFolder,
@@ -144,7 +156,7 @@ context('New organization pipeline.', () => {
             cy.checkOrganizationMembers(1, [firstUserName]);
             const membersToInvite = [
                 {
-                    email: secondUser.emailAddr,
+                    email: capitalizeEmail(secondUser.emailAddr),
                     role: 'Worker',
                 },
                 {
