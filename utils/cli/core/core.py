@@ -34,6 +34,7 @@ class CLI():
             data = {'remote_files[{}]'.format(i): f for i, f in enumerate(resources)}
         elif resource_type == ResourceType.SHARE:
             data = {'server_files[{}]'.format(i): f for i, f in enumerate(resources)}
+        data['image_quality'] = 70
 
         ## capture additional kwargs
         for flag in ['chunk_size', 'copy_data', 'image_quality', 'sorting_method',
