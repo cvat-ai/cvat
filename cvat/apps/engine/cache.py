@@ -90,6 +90,7 @@ class CacheInteraction:
                             source_path = temp_file.name
                             buf = cloud_storage_instance.download_fileobj(file_name)
                             temp_file.write(buf.getvalue())
+                            temp_file.flush()
                             checksum = item.get('checksum', None)
                             if not checksum:
                                 slogger.cloud_storage[db_cloud_storage.id].warning('A manifest file does not contain checksum for image {}'.format(item.get('name')))
