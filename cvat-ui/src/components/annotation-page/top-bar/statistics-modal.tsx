@@ -60,7 +60,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         startFrame,
         stopFrame,
         dimension,
-        assignee: assignee || 'Nobody',
+        assignee: assignee?.username || 'Nobody',
     };
 }
 
