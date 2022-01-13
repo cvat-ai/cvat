@@ -52,6 +52,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Order in an annotation file(<https://github.com/openvinotoolkit/cvat/pull/4087>)
 - Fixed task data upload progressbar (<https://github.com/openvinotoolkit/cvat/pull/4134>)
 - Email in org invitations is case sensitive (<https://github.com/openvinotoolkit/cvat/pull/4153>)
+- Error in create project from backup for standard 3D annotation (<https://github.com/openvinotoolkit/cvat/pull/4160>)
 
 ### Security
 - Updated ELK to 6.8.22 which uses log4j 2.17.0 (<https://github.com/openvinotoolkit/cvat/pull/4052>)
