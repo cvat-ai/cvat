@@ -235,4 +235,8 @@ export function translateToCanvas(offset: number, points: number[]): number[] {
     return points.map((coord: number): number => coord + offset);
 }
 
+export function translateFromCanvas(offset: number, points: number[]): number[] {
+    return points.map((coord: number): number => coord - offset);
+}
+
 export type PropType<T, Prop extends keyof T> = T[Prop];
