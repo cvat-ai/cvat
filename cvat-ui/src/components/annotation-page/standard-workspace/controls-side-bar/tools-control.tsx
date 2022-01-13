@@ -1092,7 +1092,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
         if (![...interactors, ...detectors, ...trackers].length) return null;
 
-        const dynamcPopoverPros = isActivated ?
+        const dynamicPopoverProps = isActivated ?
             {
                 overlayStyle: {
                     display: 'none',
@@ -1142,7 +1142,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
         return showAnyContent ? (
             <>
-                <CustomPopover {...dynamcPopoverPros} placement='right' content={this.renderPopoverContent()}>
+                <CustomPopover {...dynamicPopoverProps} placement='right' content={this.renderPopoverContent()}>
                     <Icon {...dynamicIconProps} component={AIToolsIcon} />
                 </CustomPopover>
                 {interactionContent}

@@ -21,7 +21,7 @@ export interface Props {
 const CustomPopover = withVisibilityHandling(Popover, 'setup-tag');
 function SetupTagControl(props: Props): JSX.Element {
     const { isDrawing, disabled } = props;
-    const dynamcPopoverPros = isDrawing ?
+    const dynamicPopoverProps = isDrawing ?
         {
             overlayStyle: {
                 display: 'none',
@@ -32,7 +32,7 @@ function SetupTagControl(props: Props): JSX.Element {
     return disabled ? (
         <Icon className='cvat-setup-tag-control cvat-disabled-canvas-control' component={TagIcon} />
     ) : (
-        <CustomPopover {...dynamcPopoverPros} placement='right' content={<SetupTagPopoverContainer />}>
+        <CustomPopover {...dynamicPopoverProps} placement='right' content={<SetupTagPopoverContainer />}>
             <Icon className='cvat-setup-tag-control' component={TagIcon} />
         </CustomPopover>
     );

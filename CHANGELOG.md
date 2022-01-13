@@ -28,6 +28,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - User is able to customize information that text labels show (<https://github.com/openvinotoolkit/cvat/pull/4029>)
 - Support for uploading manifest with any name (<https://github.com/openvinotoolkit/cvat/pull/4041>)
 - Added information about OpenVINO toolkit to login page (<https://github.com/openvinotoolkit/cvat/pull/4077>)
+- Support for working with ellipses (<https://github.com/openvinotoolkit/cvat/pull/4062>)
+- Add several flags to task creation CLI (<https://github.com/openvinotoolkit/cvat/pull/4119>)
 
 ### Changed
 - Users don't have access to a task object anymore if they are assigneed only on some jobs of the task (<https://github.com/openvinotoolkit/cvat/pull/3788>)
@@ -50,6 +52,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Original pdf file is deleted when using share (<https://github.com/openvinotoolkit/cvat/pull/3967>)
 - Order in an annotation file(<https://github.com/openvinotoolkit/cvat/pull/4087>)
 - Fixed task data upload progressbar (<https://github.com/openvinotoolkit/cvat/pull/4134>)
+- Email in org invitations is case sensitive (<https://github.com/openvinotoolkit/cvat/pull/4153>)
+- Bug: canvas is busy when start playing, start resizing a shape and do not release the mouse cursor (<https://github.com/openvinotoolkit/cvat/pull/4151>)
 - Fixed tus upload error over https (<https://github.com/openvinotoolkit/cvat/pull/4154>)
 
 ### Security
