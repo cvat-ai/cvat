@@ -60,17 +60,18 @@ you the opportunity to speed up the execution of the annotation:
 - [AI tools](/docs/manual/advanced/ai-tools/) - tools requiring installation.
 - [Automatic annotation](/docs/manual/advanced/automatic-annotation/) - automatic annotation with using DL models.
 
-## Dump annotation
+## Export dataset
 
 ![](/images/image028.jpg)
 
 1. To download the annotations, first you have to save all changes.
    Click the `Save` button or press `Ctrl+S`to save annotations quickly.
 
-2. After you saved the changes, click the `Menu` button.
+1. After you saved the changes, click the `Menu` button.
 
-3. Then click the `Dump Annotation` button.
+1. Then click the `Export dataset` button.
 
-4. Lastly choose a format of the dump annotation file.
+1. Lastly choose a format of the dataset.
+   Exporting is available in formats from the [list of supported formats](/docs/manual/advanced/formats/).
 
-To learn more, go to [downloading annotations](/docs/manual/advanced/downloading-annotations/)
+To learn more, go to [export/import datasets](/docs/manual/advanced/export-import-datasets/) section.
