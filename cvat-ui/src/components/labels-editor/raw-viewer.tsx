@@ -146,23 +146,26 @@ export default class RawViewer extends React.PureComponent<Props> {
             <Form layout='vertical' onFinish={this.handleSubmit} ref={this.formRef}>
                 <Form.Item name='labels' initialValue={textLabels} rules={[{ validator: validateLabels }]}>
                     <Input.TextArea
-                        onPaste={(e: React.ClipboardEvent): boolean => {
+                        onPaste={(e: React.ClipboardEvent) => {
                             const data = e.clipboardData.getData('text');
                             const element = window.document.getElementsByClassName('cvat-raw-labels-viewer')[0] as HTMLTextAreaElement;
                             if (element && this.formRef.current) {
                                 const { selectionStart, selectionEnd } = element;
                                 // remove all "id": <number>,
-                                // remove all carriage characters (textarea value does not contain them)
-                                const replaced = data.replace(/[\s]*"id":[\s]?[-{0-9}]+[,]?/g, '').replace(/\r/g, '');
-                                const value = this.formRef.current.getFieldValue('labels');
-                                const updatedValue = value
-                                    .substr(0, selectionStart) + replaced + value.substr(selectionEnd);
-                                element.setSelectionRange(selectionEnd, selectionEnd);
-                                this.formRef.current.setFieldsValue({ labels: updatedValue });
+                                let replaced = data.replace(/[\s]*"id":[\s]?[-{0-9}]+[,]?/g, '');
+                                if (replaced !== data) {
+                                    // remove all carriage characters (textarea value does not contain them)
+                                    replaced = replaced.replace(/\r/g, '');
+                                    const value = this.formRef.current.getFieldValue('labels');
+                                    const updatedValue = value
+                                        .substr(0, selectionStart) + replaced + value.substr(selectionEnd);
+                                    this.formRef.current.setFieldsValue({ labels: updatedValue });
+                                    setTimeout(() => {
+                                        element.setSelectionRange(selectionEnd, selectionEnd);
+                                    });
+                                    e.preventDefault();
+                                }
                             }
-
-                            e.preventDefault();
-                            return true;
                         }}
                         rows={5}
                         className='cvat-raw-labels-viewer'
