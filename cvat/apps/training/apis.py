@@ -3,6 +3,7 @@ from abc import ABC, abstractmethod
 from collections import OrderedDict
 from functools import wraps
 from typing import Callable, List, Union
+from contextlib import suppress
 
 import requests
 
@@ -46,11 +47,9 @@ def retry(amount: int = 2) -> Callable:
             __amount = amount
             while __amount > 0:
                 __amount -= 1
-                try:
+                with suppress(Exception):
                     result = func(*args, **kwargs)
                     return result
-                except Exception:
-                    pass
 
         return wrapper
 

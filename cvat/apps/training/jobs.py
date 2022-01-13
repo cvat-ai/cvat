@@ -33,6 +33,8 @@ def save_prediction_server_status_to_cache_job(cache_key,
         'status': 'done'
     }
 
+    return resp # dummy code, need to delete training app in a separate PR
+
 
 @job
 def save_frame_prediction_to_cache_job(cache_key: str,
@@ -64,6 +66,8 @@ def save_frame_prediction_to_cache_job(cache_key: str,
         'annotation': annotation,
         'status': 'done'
     }
+
+    return resp # dummy code, need to delete training app in a separate PR
 
 
 @job
