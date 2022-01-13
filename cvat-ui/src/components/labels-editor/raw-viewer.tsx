@@ -47,12 +47,36 @@ interface Props {
     onSubmit: (labels: Label[]) => void;
 }
 
+function convertLabels(labels: Label[]): Label[] {
+    return labels.map(
+        (label: any): Label => ({
+            ...label,
+            id: label.id < 0 ? undefined : label.id,
+            attributes: label.attributes.map(
+                (attribute: any): Attribute => ({
+                    ...attribute,
+                    id: attribute.id < 0 ? undefined : attribute.id,
+                }),
+            ),
+        }),
+    );
+}
+
 export default class RawViewer extends React.PureComponent<Props> {
     private formRef: RefObject<FormInstance>;
 
     public constructor(props: Props) {
         super(props);
         this.formRef = React.createRef<FormInstance>();
+    }
+
+    public componentDidUpdate(prevProps: Props): void {
+        const { labels } = this.props;
+        if (JSON.stringify(prevProps.labels) !== JSON.stringify(labels) && this.formRef.current) {
+            const convertedLabels = convertLabels(labels);
+            const textLabels = JSON.stringify(convertedLabels, null, 2);
+            this.formRef.current.setFieldsValue({ labels: textLabels });
+        }
     }
 
     private handleSubmit = (values: Store): void => {
@@ -74,10 +98,10 @@ export default class RawViewer extends React.PureComponent<Props> {
             }
         }
 
-        const deletedLabels = labels.filter((_label: Label) => !labelIDs.includes(_label.id));
+        const deletedLabels = labels.filter((_label: Label) => _label.id >= 0 && !labelIDs.includes(_label.id));
         const deletedAttributes = labels
             .reduce((acc: Attribute[], _label) => [...acc, ..._label.attributes], [])
-            .filter((_attr: Attribute) => !attrIDs.includes(_attr.id));
+            .filter((_attr: Attribute) => _attr.id >= 0 && !attrIDs.includes(_attr.id));
 
         if (deletedLabels.length || deletedAttributes.length) {
             Modal.confirm({
@@ -116,19 +140,7 @@ export default class RawViewer extends React.PureComponent<Props> {
 
     public render(): JSX.Element {
         const { labels } = this.props;
-        const convertedLabels = labels.map(
-            (label: any): Label => ({
-                ...label,
-                id: label.id < 0 ? undefined : label.id,
-                attributes: label.attributes.map(
-                    (attribute: any): Attribute => ({
-                        ...attribute,
-                        id: attribute.id < 0 ? undefined : attribute.id,
-                    }),
-                ),
-            }),
-        );
-
+        const convertedLabels = convertLabels(labels);
         const textLabels = JSON.stringify(convertedLabels, null, 2);
         return (
             <Form layout='vertical' onFinish={this.handleSubmit} ref={this.formRef}>
@@ -158,14 +170,14 @@ export default class RawViewer extends React.PureComponent<Props> {
                 </Form.Item>
                 <Row justify='start' align='middle'>
                     <Col>
-                        <CVATTooltip title='Save labels and return'>
+                        <CVATTooltip title='Save labels'>
                             <Button style={{ width: '150px' }} type='primary' htmlType='submit'>
                                 Done
                             </Button>
                         </CVATTooltip>
                     </Col>
                     <Col offset={1}>
-                        <CVATTooltip title='Do not save the label and return'>
+                        <CVATTooltip title='Reset all changes'>
                             <Button
                                 type='primary'
                                 danger
