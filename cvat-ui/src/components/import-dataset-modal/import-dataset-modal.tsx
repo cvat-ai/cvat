@@ -2,7 +2,6 @@
 //
 // SPDX-License-Identifier: MIT
 
-// eslint-disable-next-line
 import './styles.scss';
 import React, { useCallback, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
