@@ -168,6 +168,7 @@
         POLYGON: 'polygon',
         POLYLINE: 'polyline',
         POINTS: 'points',
+        ELLIPSE: 'ellipse',
         CUBOID: 'cuboid',
     });
 

@@ -478,6 +478,8 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 activeControl = ActiveControl.DRAW_POLYLINE;
             } else if (payload.activeShapeType === ShapeType.POINTS) {
                 activeControl = ActiveControl.DRAW_POINTS;
+            } else if (payload.activeShapeType === ShapeType.ELLIPSE) {
+                activeControl = ActiveControl.DRAW_ELLIPSE;
             } else if (payload.activeShapeType === ShapeType.CUBOID) {
                 activeControl = ActiveControl.DRAW_CUBOID;
             } else if (payload.activeObjectType === ObjectType.TAG) {
