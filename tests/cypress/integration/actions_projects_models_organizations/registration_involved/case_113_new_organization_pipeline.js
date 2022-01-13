@@ -76,7 +76,7 @@ context('New organization pipeline.', () => {
     function capitalizeEmail(email) {
         const userName = email.split('@')[0];
         const domainName = email.split('@')[1].split('.')[0];
-        const topLevelDomain = email.split('.')[1]
+        const topLevelDomain = email.split('.')[1];
         const emailParts = [];
         for (const i of [userName, domainName, topLevelDomain]) {
             emailParts.push(i[0].toUpperCase() + i.slice(1).toLowerCase());
