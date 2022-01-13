@@ -27,7 +27,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - User is able to customize information that text labels show (<https://github.com/openvinotoolkit/cvat/pull/4029>)
 - Support for uploading manifest with any name (<https://github.com/openvinotoolkit/cvat/pull/4041>)
 - Added information about OpenVINO toolkit to login page (<https://github.com/openvinotoolkit/cvat/pull/4077>)
-- Support for working with ellipses (<https://github.com/openvinotoolkit/cvat/pull/4062>)
 - Add several flags to task creation CLI (<https://github.com/openvinotoolkit/cvat/pull/4119>)
 
 ### Changed
