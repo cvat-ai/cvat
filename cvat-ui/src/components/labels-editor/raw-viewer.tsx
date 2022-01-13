@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -7,7 +7,10 @@ import { Row, Col } from 'antd/lib/grid';
 import Input from 'antd/lib/input';
 import Button from 'antd/lib/button';
 import Form, { FormInstance, RuleObject } from 'antd/lib/form';
+import Tag from 'antd/lib/tag';
+import Modal from 'antd/lib/modal';
 import { Store } from 'antd/lib/form/interface';
+import Paragraph from 'antd/lib/typography/Paragraph';
 
 import CVATTooltip from 'components/common/cvat-tooltip';
 import {
@@ -53,15 +56,62 @@ export default class RawViewer extends React.PureComponent<Props> {
     }
 
     private handleSubmit = (values: Store): void => {
-        const { onSubmit } = this.props;
+        const { onSubmit, labels } = this.props;
         const parsed = JSON.parse(values.labels);
+
+        const labelIDs: number[] = [];
+        const attrIDs: number[] = [];
         for (const label of parsed) {
             label.id = label.id || idGenerator();
+            if (label.id >= 0) {
+                labelIDs.push(label.id);
+            }
             for (const attr of label.attributes) {
                 attr.id = attr.id || idGenerator();
+                if (attr.id >= 0) {
+                    attrIDs.push(attr.id);
+                }
             }
         }
-        onSubmit(parsed);
+
+        const deletedLabels = labels.filter((_label: Label) => !labelIDs.includes(_label.id));
+        const deletedAttributes = labels
+            .reduce((acc: Attribute[], _label) => [...acc, ..._label.attributes], [])
+            .filter((_attr: Attribute) => !attrIDs.includes(_attr.id));
+
+        if (deletedLabels.length || deletedAttributes.length) {
+            Modal.confirm({
+                title: 'You are going to remove existing labels/attributes',
+                content: (
+                    <>
+                        <Paragraph>
+                            Following labels are going to be removed:
+                            <div>
+                                {deletedLabels.map((_label: Label) => <Tag color={_label.color}>{_label.name}</Tag>)}
+                            </div>
+
+                        </Paragraph>
+                        <Paragraph>
+                            Following attributes are going to be removed:
+                            <div>
+                                {deletedAttributes.map((_attr: Attribute) => <Tag>{_attr.name}</Tag>)}
+                            </div>
+                        </Paragraph>
+                        <Paragraph type='danger'>All related annotations will be destroyed. Continue?</Paragraph>
+                    </>
+                ),
+                okText: 'Delete existing data',
+                okButtonProps: {
+                    danger: true,
+                },
+                onOk: () => {
+                    onSubmit(parsed);
+                },
+                closable: true,
+            });
+        } else {
+            onSubmit(parsed);
+        }
     };
 
     public render(): JSX.Element {
@@ -83,7 +133,28 @@ export default class RawViewer extends React.PureComponent<Props> {
         return (
             <Form layout='vertical' onFinish={this.handleSubmit} ref={this.formRef}>
                 <Form.Item name='labels' initialValue={textLabels} rules={[{ validator: validateLabels }]}>
-                    <Input.TextArea rows={5} className='cvat-raw-labels-viewer' />
+                    <Input.TextArea
+                        onPaste={(e: React.ClipboardEvent): boolean => {
+                            const data = e.clipboardData.getData('text');
+                            const element = window.document.getElementsByClassName('cvat-raw-labels-viewer')[0] as HTMLTextAreaElement;
+                            if (element && this.formRef.current) {
+                                const { selectionStart, selectionEnd } = element;
+                                // remove all "id": <number>,
+                                // remove all carriage characters (textarea value does not contain them)
+                                const replaced = data.replace(/[\s]*"id":[\s]?[-{0-9}]+[,]?/g, '').replace(/\r/g, '');
+                                const value = this.formRef.current.getFieldValue('labels');
+                                const updatedValue = value
+                                    .substr(0, selectionStart) + replaced + value.substr(selectionEnd);
+                                element.setSelectionRange(selectionEnd, selectionEnd);
+                                this.formRef.current.setFieldsValue({ labels: updatedValue });
+                            }
+
+                            e.preventDefault();
+                            return true;
+                        }}
+                        rows={5}
+                        className='cvat-raw-labels-viewer'
+                    />
                 </Form.Item>
                 <Row justify='start' align='middle'>
                     <Col>
