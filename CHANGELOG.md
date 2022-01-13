@@ -50,6 +50,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Original pdf file is deleted when using share (<https://github.com/openvinotoolkit/cvat/pull/3967>)
 - Order in an annotation file(<https://github.com/openvinotoolkit/cvat/pull/4087>)
 - Fixed task data upload progressbar (<https://github.com/openvinotoolkit/cvat/pull/4134>)
+- Fixed tus upload error over https (<https://github.com/openvinotoolkit/cvat/pull/4154>)
 
 ### Security
 - Updated ELK to 6.8.22 which uses log4j 2.17.0 (<https://github.com/openvinotoolkit/cvat/pull/4052>)
@@ -174,7 +175,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Using combined data sources (directory and image) when create a task (<https://github.com/openvinotoolkit/cvat/pull/3424>)
 - Creating task with labels in project (<https://github.com/openvinotoolkit/cvat/pull/3454>)
 - Move task and autoannotation modals were invisible from project page (<https://github.com/openvinotoolkit/cvat/pull/3475>)
-- Fixed tus upload error over https (<https://github.com/openvinotoolkit/cvat/pull/4154>)
 
 ## \[1.4.0] - 2021-05-18
 
