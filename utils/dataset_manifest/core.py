@@ -708,7 +708,7 @@ class _DatasetManifestStructureValidator(_BaseManifestValidator):
             raise ValueError('Incorrect extension field')
         # FIXME
         # Width and height are required for 2D data, but
-        # for 3d these parameters are not saved now.
+        # for 3D these parameters are not saved now.
         # It is necessary to uncomment these restrictions when manual preparation for 3D data is implemented.
 
         # if not isinstance(_dict['width'], int):
