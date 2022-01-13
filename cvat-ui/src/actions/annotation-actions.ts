@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -6,10 +6,12 @@ import {
     ActionCreator, AnyAction, Dispatch, Store,
 } from 'redux';
 import { ThunkAction } from 'utils/redux';
+import isAbleToChangeFrame from 'utils/is-able-to-change-frame';
 import { RectDrawingMethod, CuboidDrawingMethod, Canvas } from 'cvat-canvas-wrapper';
 import getCore from 'cvat-core-wrapper';
 import logger, { LogType } from 'cvat-logger';
 import { getCVATStore } from 'cvat-store';
+
 import {
     ActiveControl,
     CombinedState,
@@ -691,8 +693,8 @@ export function changeFrameAsync(
     frameStep?: number,
     forceUpdate?: boolean,
 ): ThunkAction {
-    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
-        const state: CombinedState = getStore().getState();
+    return async (dispatch: ActionCreator<Dispatch>, getState: () => CombinedState): Promise<void> => {
+        const state: CombinedState = getState();
         const { instance: job } = state.annotation.job;
         const { filters, frame, showAllInterpolationTracks } = receiveAnnotationsParameters();
 
@@ -701,37 +703,50 @@ export function changeFrameAsync(
                 throw Error(`Required frame ${toFrame} is out of the current job`);
             }
 
-            if (toFrame === frame && !forceUpdate) {
-                dispatch({
+            const abortAction = (): AnyAction => {
+                const currentState = getState();
+                return ({
                     type: AnnotationActionTypes.CHANGE_FRAME_SUCCESS,
                     payload: {
-                        number: state.annotation.player.frame.number,
-                        data: state.annotation.player.frame.data,
-                        filename: state.annotation.player.frame.filename,
-                        hasRelatedContext: state.annotation.player.frame.hasRelatedContext,
-                        delay: state.annotation.player.frame.delay,
-                        changeTime: state.annotation.player.frame.changeTime,
-                        states: state.annotation.annotations.states,
-                        minZ: state.annotation.annotations.zLayer.min,
-                        maxZ: state.annotation.annotations.zLayer.max,
-                        curZ: state.annotation.annotations.zLayer.cur,
+                        number: currentState.annotation.player.frame.number,
+                        data: currentState.annotation.player.frame.data,
+                        filename: currentState.annotation.player.frame.filename,
+                        hasRelatedContext: currentState.annotation.player.frame.hasRelatedContext,
+                        delay: currentState.annotation.player.frame.delay,
+                        changeTime: currentState.annotation.player.frame.changeTime,
+                        states: currentState.annotation.annotations.states,
+                        minZ: currentState.annotation.annotations.zLayer.min,
+                        maxZ: currentState.annotation.annotations.zLayer.max,
+                        curZ: currentState.annotation.annotations.zLayer.cur,
                     },
                 });
+            };
 
-                return;
-            }
-            // Start async requests
             dispatch({
                 type: AnnotationActionTypes.CHANGE_FRAME,
                 payload: {},
             });
 
+            if (toFrame === frame && !forceUpdate) {
+                dispatch(abortAction());
+                return;
+            }
+
+            // Start async requests
             await job.logger.log(LogType.changeFrame, {
                 from: frame,
                 to: toFrame,
             });
             const data = await job.frames.get(toFrame, fillBuffer, frameStep);
             const states = await job.annotations.get(toFrame, showAllInterpolationTracks, filters);
+
+            if (!isAbleToChangeFrame()) {
+                // while doing async actions above, canvas can become used by user in another way
+                // so, we need additional check and if it is used, we do not update state
+                dispatch(abortAction());
+                return;
+            }
+
             const [minZ, maxZ] = computeZRange(states);
             const currentTime = new Date().getTime();
             let frameSpeed;
