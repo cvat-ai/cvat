@@ -30,8 +30,8 @@ describe('Feature: get annotations', () => {
         const annotations10 = await job.annotations.get(10);
         expect(Array.isArray(annotations0)).toBeTruthy();
         expect(Array.isArray(annotations10)).toBeTruthy();
-        expect(annotations0).toHaveLength(1);
-        expect(annotations10).toHaveLength(2);
+        expect(annotations0).toHaveLength(2);
+        expect(annotations10).toHaveLength(3);
         for (const state of annotations0.concat(annotations10)) {
             expect(state).toBeInstanceOf(window.cvat.classes.ObjectState);
         }
@@ -57,7 +57,13 @@ describe('Feature: get annotations', () => {
         expect(job.annotations.get(-1)).rejects.toThrow(window.cvat.exceptions.ArgumentError);
     });
 
-    // TODO: Test filter (hasn't been implemented yet)
+    test('get only ellipses', async () => {
+        const job = (await window.cvat.jobs.get({ jobID: 101 }))[0];
+        const annotations = await job.annotations.get(5, false, JSON.parse('[{"and":[{"==":[{"var":"shape"},"ellipse"]}]}]'));
+        expect(Array.isArray(annotations)).toBeTruthy();
+        expect(annotations).toHaveLength(1);
+        expect(annotations[0].shapeType).toBe('ellipse');
+    });
 });
 
 describe('Feature: get interpolated annotations', () => {
@@ -65,7 +71,7 @@ describe('Feature: get interpolated annotations', () => {
         const task = (await window.cvat.tasks.get({ id: 101 }))[0];
         let annotations = await task.annotations.get(5);
         expect(Array.isArray(annotations)).toBeTruthy();
-        expect(annotations).toHaveLength(1);
+        expect(annotations).toHaveLength(2);
 
         const [xtl, ytl, xbr, ybr] = annotations[0].points;
         const { rotation } = annotations[0];
@@ -78,7 +84,7 @@ describe('Feature: get interpolated annotations', () => {
 
         annotations = await task.annotations.get(15);
         expect(Array.isArray(annotations)).toBeTruthy();
-        expect(annotations).toHaveLength(2); // there is also a polygon on these frames (up to frame 22)
+        expect(annotations).toHaveLength(3);
         expect(annotations[1].rotation).toBe(40);
         expect(annotations[1].shapeType).toBe('rectangle');
 
@@ -88,6 +94,19 @@ describe('Feature: get interpolated annotations', () => {
         annotations = await task.annotations.get(25);
         expect(annotations[0].rotation).toBe(0);
         expect(annotations[0].shapeType).toBe('rectangle');
+    });
+
+    test('get interpolated ellipse', async () => {
+        const task = (await window.cvat.tasks.get({ id: 101 }))[0];
+        const annotations = await task.annotations.get(5);
+        expect(Array.isArray(annotations)).toBeTruthy();
+        expect(annotations).toHaveLength(2);
+        expect(annotations[1].shapeType).toBe('ellipse');
+        const [cx, cy, rightX, topY] = annotations[1].points;
+        expect(Math.round(cx)).toBe(550);
+        expect(Math.round(cy)).toBe(550);
+        expect(Math.round(rightX)).toBe(900);
+        expect(Math.round(topY)).toBe(150);
     });
 });
 
@@ -125,6 +144,28 @@ describe('Feature: put annotations', () => {
             shapeType: window.cvat.enums.ObjectShape.RECTANGLE,
             points: [0, 0, 100, 100],
             occluded: false,
+            label: job.labels[0],
+            zOrder: 0,
+        });
+
+        const indexes = await job.annotations.put([state]);
+        expect(indexes).toBeInstanceOf(Array);
+        expect(indexes).toHaveLength(1);
+        annotations = await job.annotations.get(5);
+        expect(annotations).toHaveLength(length + 1);
+    });
+
+    test('put an ellipse shape to a job', async () => {
+        const job = (await window.cvat.jobs.get({ jobID: 100 }))[0];
+        let annotations = await job.annotations.get(5);
+        const { length } = annotations;
+
+        const state = new window.cvat.classes.ObjectState({
+            frame: 5,
+            objectType: window.cvat.enums.ObjectType.SHAPE,
+            shapeType: window.cvat.enums.ObjectShape.ELLIPSE,
+            points: [500, 500, 800, 100],
+            occluded: true,
             label: job.labels[0],
             zOrder: 0,
         });
@@ -593,7 +634,7 @@ describe('Feature: split annotations', () => {
         await task.annotations.split(annotations5[0], 5);
         const splitted4 = await task.annotations.get(4);
         const splitted5 = (await task.annotations.get(5)).filter((state) => !state.outside);
-        expect(splitted4[0].clientID).not.toBe(splitted5[0].clientID);
+        expect(splitted4[1].clientID).not.toBe(splitted5[1].clientID);
     });
 
     test('split annotations in a job', async () => {
@@ -605,7 +646,7 @@ describe('Feature: split annotations', () => {
         await job.annotations.split(annotations5[0], 5);
         const splitted4 = await job.annotations.get(4);
         const splitted5 = (await job.annotations.get(5)).filter((state) => !state.outside);
-        expect(splitted4[0].clientID).not.toBe(splitted5[0].clientID);
+        expect(splitted4[1].clientID).not.toBe(splitted5[1].clientID);
     });
 
     test('split on a bad frame', async () => {
@@ -733,7 +774,7 @@ describe('Feature: get statistics', () => {
         await job.annotations.clear(true);
         const statistics = await job.annotations.statistics();
         expect(statistics).toBeInstanceOf(window.cvat.classes.Statistics);
-        expect(statistics.total.total).toBe(512);
+        expect(statistics.total.total).toBe(1012);
     });
 });
 

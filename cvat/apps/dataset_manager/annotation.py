@@ -696,6 +696,7 @@ class TrackManager(ObjectManager):
         def interpolate(shape0, shape1):
             is_same_type = shape0["type"] == shape1["type"]
             is_rectangle = shape0["type"] == ShapeType.RECTANGLE
+            is_ellipse = shape0["type"] == ShapeType.ELLIPSE
             is_cuboid = shape0["type"] == ShapeType.CUBOID
             is_polygon = shape0["type"] == ShapeType.POLYGON
             is_polyline = shape0["type"] == ShapeType.POLYLINE
@@ -705,7 +706,7 @@ class TrackManager(ObjectManager):
                 raise NotImplementedError()
 
             shapes = []
-            if is_rectangle or is_cuboid:
+            if is_rectangle or is_cuboid or is_ellipse:
                 shapes = simple_interpolation(shape0, shape1)
             elif is_points:
                 shapes = points_interpolation(shape0, shape1)

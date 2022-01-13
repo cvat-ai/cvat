@@ -21,12 +21,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Data sorting option (<https://github.com/openvinotoolkit/cvat/pull/3937>)
 - Options to change font size & position of text labels on the canvas (<https://github.com/openvinotoolkit/cvat/pull/3972>)
 - Add "tag" return type for automatic annotation in Nuclio (<https://github.com/openvinotoolkit/cvat/pull/3896>)
+- Helm chart: Make user-data-permission-fix optional (<https://github.com/openvinotoolkit/cvat/pull/3994>)
 - Advanced identity access management system, using open policy agent (<https://github.com/openvinotoolkit/cvat/pull/3788>)
 - Organizations to create "shared space" for different groups of users (<https://github.com/openvinotoolkit/cvat/pull/3788>)
 - Dataset importing to a project (<https://github.com/openvinotoolkit/cvat/pull/3790>)
 - User is able to customize information that text labels show (<https://github.com/openvinotoolkit/cvat/pull/4029>)
 - Support for uploading manifest with any name (<https://github.com/openvinotoolkit/cvat/pull/4041>)
 - Added information about OpenVINO toolkit to login page (<https://github.com/openvinotoolkit/cvat/pull/4077>)
+- Support for working with ellipses (<https://github.com/openvinotoolkit/cvat/pull/4062>)
 - Add several flags to task creation CLI (<https://github.com/openvinotoolkit/cvat/pull/4119>)
 
 ### Changed
@@ -47,7 +49,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed task creating with large files via webpage (<https://github.com/openvinotoolkit/cvat/pull/3692>)
 - Added information to export CVAT_HOST when performing local installation for accessing over network (<https://github.com/openvinotoolkit/cvat/pull/4014>)
 - Fixed possible color collisions in the generated colormap (<https://github.com/openvinotoolkit/cvat/pull/4007>)
-- Original pdf file is deleted when using share(<https://github.com/openvinotoolkit/cvat/pull/3967>)
+- Original pdf file is deleted when using share (<https://github.com/openvinotoolkit/cvat/pull/3967>)
+- Order in an annotation file(<https://github.com/openvinotoolkit/cvat/pull/4087>)
+- Fixed task data upload progressbar (<https://github.com/openvinotoolkit/cvat/pull/4134>)
+- Email in org invitations is case sensitive (<https://github.com/openvinotoolkit/cvat/pull/4153>)
 
 ### Security
 - Updated ELK to 6.8.22 which uses log4j 2.17.0 (<https://github.com/openvinotoolkit/cvat/pull/4052>)

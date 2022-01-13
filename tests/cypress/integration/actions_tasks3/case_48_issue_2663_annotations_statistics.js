@@ -12,7 +12,7 @@ context('Annotations statistics.', () => {
     const createRectangleShape2Points = {
         points: 'By 2 Points',
         type: 'Shape',
-        labelName: labelName,
+        labelName,
         firstX: 250,
         firstY: 350,
         secondX: 350,
@@ -21,16 +21,32 @@ context('Annotations statistics.', () => {
     const createRectangleTrack2Points = {
         points: 'By 2 Points',
         type: 'Track',
-        labelName: labelName,
+        labelName,
         firstX: createRectangleShape2Points.firstX,
         firstY: createRectangleShape2Points.firstY - 150,
         secondX: createRectangleShape2Points.secondX,
         secondY: createRectangleShape2Points.secondY - 150,
     };
+    const createEllipseShape = {
+        type: 'Shape',
+        labelName,
+        cx: 400,
+        cy: 400,
+        rightX: 500,
+        topY: 350,
+    };
+    const createEllipseTrack = {
+        type: 'Track',
+        labelName,
+        cx: createEllipseShape.cx,
+        cy: createEllipseShape.cy - 150,
+        rightX: createEllipseShape.rightX,
+        topY: createEllipseShape.topY - 150,
+    };
     const createCuboidShape2Points = {
         points: 'From rectangle',
         type: 'Shape',
-        labelName: labelName,
+        labelName,
         firstX: 250,
         firstY: 350,
         secondX: 350,
@@ -39,7 +55,7 @@ context('Annotations statistics.', () => {
     const createCuboidTrack2Points = {
         points: 'From rectangle',
         type: 'Track',
-        labelName: labelName,
+        labelName,
         firstX: createCuboidShape2Points.firstX,
         firstY: createCuboidShape2Points.firstY + 150,
         secondX: createCuboidShape2Points.secondX,
@@ -48,7 +64,7 @@ context('Annotations statistics.', () => {
     const createPolygonShape = {
         reDraw: false,
         type: 'Shape',
-        labelName: labelName,
+        labelName,
         pointsMap: [
             { x: 100, y: 100 },
             { x: 150, y: 100 },
@@ -60,7 +76,7 @@ context('Annotations statistics.', () => {
     const createPolygonTrack = {
         reDraw: false,
         type: 'Track',
-        labelName: labelName,
+        labelName,
         pointsMap: [
             { x: 200, y: 100 },
             { x: 250, y: 100 },
@@ -71,7 +87,7 @@ context('Annotations statistics.', () => {
     };
     const createPolylinesShape = {
         type: 'Shape',
-        labelName: labelName,
+        labelName,
         pointsMap: [
             { x: 300, y: 100 },
             { x: 350, y: 100 },
@@ -82,7 +98,7 @@ context('Annotations statistics.', () => {
     };
     const createPolylinesTrack = {
         type: 'Track',
-        labelName: labelName,
+        labelName,
         pointsMap: [
             { x: 400, y: 100 },
             { x: 450, y: 100 },
@@ -93,14 +109,14 @@ context('Annotations statistics.', () => {
     };
     const createPointsShape = {
         type: 'Shape',
-        labelName: labelName,
+        labelName,
         pointsMap: [{ x: 200, y: 400 }],
         complete: true,
         numberOfPoints: null,
     };
     const createPointsTrack = {
         type: 'Track',
-        labelName: labelName,
+        labelName,
         pointsMap: [{ x: 300, y: 400 }],
         complete: true,
         numberOfPoints: null,
@@ -123,6 +139,9 @@ context('Annotations statistics.', () => {
         cy.goToNextFrame(4);
         cy.createPoint(createPointsShape);
         cy.createPoint(createPointsTrack);
+        cy.goToNextFrame(5);
+        cy.createEllipse(createEllipseShape);
+        cy.createEllipse(createEllipseTrack);
     });
 
     describe(`Testing case "${caseId}"`, () => {
@@ -142,12 +161,12 @@ context('Annotations statistics.', () => {
                     cy.get(jobInfoTableHeader)
                         .find('th')
                         .then((jobInfoTableHeaderColumns) => {
-                            jobInfoTableHeaderColumns = Array.from(jobInfoTableHeaderColumns);
-                            const elTextContent = jobInfoTableHeaderColumns.map((el) =>
-                                el.textContent.replace(/\s/g, ''),
-                            ); // Removing spaces. For example: " Tags ". In Firefox, this causes an error.
+                            const elTextContent = Array.from(jobInfoTableHeaderColumns).map((el) => (
+                                el.textContent.replace(/\s/g, '')
+                            )); // Removing spaces. For example: " Tags ". In Firefox, this causes an error.
                             for (let i = 0; i < objectTypes.length; i++) {
-                                expect(elTextContent).to.include(objectTypes[i]); // expected [ Array(11) ] to include Cuboids, etc.
+                                expect(elTextContent)
+                                    .to.include(objectTypes[i]); // expected [ Array(11) ] to include Cuboids, etc.
                             }
                         });
                 });
@@ -162,16 +181,15 @@ context('Annotations statistics.', () => {
                         .parents('tr')
                         .find('td')
                         .then((tableBodyFirstRowThs) => {
-                            tableBodyFirstRowThs = Array.from(tableBodyFirstRowThs);
-                            const elTextContent = tableBodyFirstRowThs.map((el) => el.textContent);
+                            const elTextContent = Array.from(tableBodyFirstRowThs).map((el) => el.textContent);
                             expect(elTextContent[0]).to.be.equal(labelName);
-                            for (let i = 1; i < 6; i++) {
-                                expect(elTextContent[i]).to.be.equal('1 / 1'); // Rectangle, Polygon, Polyline, Points, Cuboids
+                            for (let i = 1; i < 7; i++) {
+                                expect(elTextContent[i]).to.be.equal('1 / 1'); // Rectangle, Polygon, Polyline, Points, Cuboids, Ellipses
                             }
-                            expect(elTextContent[6]).to.be.equal('1'); // Tags
-                            expect(elTextContent[7]).to.be.equal('11'); // Manually
-                            expect(elTextContent[8]).to.be.equal('35'); // Interpolated
-                            expect(elTextContent[9]).to.be.equal('46'); // Total
+                            expect(elTextContent[7]).to.be.equal('1'); // Tags
+                            expect(elTextContent[8]).to.be.equal('13'); // Manually
+                            expect(elTextContent[9]).to.be.equal('39'); // Interpolated
+                            expect(elTextContent[10]).to.be.equal('52'); // Total
                         });
                 });
             cy.contains('[type="button"]', 'OK').click();
