@@ -1015,7 +1015,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             );
         }
         const attrsMap: Record<string, Record<string, number>> = {};
-        jobInstance.task.labels.forEach((label: any) => {
+        jobInstance.labels.forEach((label: any) => {
             attrsMap[label.name] = {};
             label.attributes.forEach((attr: any) => {
                 attrsMap[label.name][attr.name] = attr.id;
@@ -1035,7 +1035,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                         const states = result.map(
                             (data: any): any => new core.classes.ObjectState({
                                 shapeType: data.type,
-                                label: task.labels.filter((label: any): boolean => label.name === data.label)[0],
+                                label: jobInstance.labels.filter((label: any): boolean => label.name === data.label)[0],
                                 points: data.points,
                                 objectType: ObjectType.SHAPE,
                                 frame,
