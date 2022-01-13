@@ -116,7 +116,10 @@ class LabelSerializer(serializers.ModelSerializer):
         else:
             db_label.color = validated_data.get('color', db_label.color)
         db_label.save()
+        existing_attributes = [label[0] for label in db_label.attributespec_set.values_list('id')]
         for attr in attributes:
+            if 'id' in attr and attr['id'] not in existing_attributes:
+                del attr['id']
             (db_attr, created) = models.AttributeSpec.objects.get_or_create(
                 label=db_label, name=attr['name'], defaults=attr)
             if created:
@@ -439,11 +442,15 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
         label_colors = list()
         for label in labels:
             attributes = label.pop('attributespec_set')
+            if label.get('id', None):
+                del label['id']
             if not label.get('color', None):
                 label['color'] = get_label_color(label['name'], label_colors)
             label_colors.append(label['color'])
             db_label = models.Label.objects.create(task=db_task, **label)
             for attr in attributes:
+                if attr.get('id', None):
+                    del attr['id']
                 models.AttributeSpec.objects.create(label=db_label, **attr)
 
         task_path = db_task.get_task_dirname()
@@ -471,8 +478,11 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
             instance.bug_tracker)
         instance.subset = validated_data.get('subset', instance.subset)
         labels = validated_data.get('label_set', [])
+        existing_labels = [label[0] for label in instance.label_set.values_list('id')]
         if instance.project_id is None:
             for label in labels:
+                if 'id' in label and label['id'] not in existing_labels:
+                    del label['id']
                 LabelSerializer.update_instance(label, instance)
         validated_project_id = validated_data.get('project_id')
         if validated_project_id is not None and validated_project_id != instance.project_id:
@@ -606,12 +616,16 @@ class ProjectSerializer(serializers.ModelSerializer):
             db_project = models.Project.objects.create(**validated_data)
         label_colors = list()
         for label in labels:
+            if label.get('id', None):
+                del label['id']
             attributes = label.pop('attributespec_set')
             if not label.get('color', None):
                 label['color'] = get_label_color(label['name'], label_colors)
             label_colors.append(label['color'])
             db_label = models.Label.objects.create(project=db_project, **label)
             for attr in attributes:
+                if attr.get('id', None):
+                    del attr['id']
                 models.AttributeSpec.objects.create(label=db_label, **attr)
 
         project_path = db_project.get_project_dirname()
@@ -627,8 +641,11 @@ class ProjectSerializer(serializers.ModelSerializer):
         instance.owner_id = validated_data.get('owner_id', instance.owner_id)
         instance.assignee_id = validated_data.get('assignee_id', instance.assignee_id)
         instance.bug_tracker = validated_data.get('bug_tracker', instance.bug_tracker)
+        existing_labels = [label[0] for label in instance.label_set.values_list('id')]
         labels = validated_data.get('label_set', [])
         for label in labels:
+            if 'id' in label and label['id'] not in existing_labels:
+                del label['id']
             LabelSerializer.update_instance(label, instance)
 
         instance.save()
