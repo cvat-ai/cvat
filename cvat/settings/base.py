@@ -515,3 +515,7 @@ CORS_ALLOW_HEADERS = list(default_headers) + [
 TUS_MAX_FILE_SIZE = 26843545600 # 25gb
 TUS_DEFAULT_CHUNK_SIZE = 104857600  # 100 mb
 
+# This setting makes request secure if X-Forwarded-Proto: 'https' header is specified by our proxy
+# More about forwarded headers - https://doc.traefik.io/traefik/getting-started/faq/#what-are-the-forwarded-headers-when-proxying-http-requests
+# How django uses X-Forwarded-Proto - https://docs.djangoproject.com/en/2.2/ref/settings/#secure-proxy-ssl-header
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
