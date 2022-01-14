@@ -11,7 +11,7 @@ Before starting, you need to select the `ellipse` on the controls sidebar.
 
 ![](/images/image239.jpg)
 
-Choose a `Label` and click `Shape` or `Track` to enter drawing mode. An ellipse is created in the same way as
+Choose a `Label` and click `Shape` or `Track` to start drawing. An ellipse can be created the same way as
 a [rectangle](/docs/manual/advanced/annotation-with-rectangles/), you need to specify two opposite rectangle points,
 and the ellipse will be inscribed in a rectangle. Press `N` or click the `Done` button on the top panel
 to complete the shape.
