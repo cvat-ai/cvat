@@ -98,8 +98,7 @@ context('Actions on rectangle', () => {
             cy.createRectangle(createRectangleShape4PointsNewLabel);
         });
 
-        // FIXME: Activate for Firefox after solving the issue 4173
-        it('The second shape is activated if the first one was removed during the move (fix 4151).', { browser: '!firefox' }, () => {
+        it('The second shape is activated if the first one was removed during the move (fix 4151).', () => {
             let xCoordinate;
             cy.get('#cvat_canvas_shape_6')
                 .trigger('mousemove')
