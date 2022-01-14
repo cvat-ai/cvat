@@ -473,6 +473,7 @@ export enum ActiveControl {
     DRAW_POLYGON = 'draw_polygon',
     DRAW_POLYLINE = 'draw_polyline',
     DRAW_POINTS = 'draw_points',
+    DRAW_ELLIPSE = 'draw_ellipse',
     DRAW_CUBOID = 'draw_cuboid',
     MERGE = 'merge',
     GROUP = 'group',
@@ -489,6 +490,7 @@ export enum ShapeType {
     POLYGON = 'polygon',
     POLYLINE = 'polyline',
     POINTS = 'points',
+    ELLIPSE = 'ellipse',
     CUBOID = 'cuboid',
 }
 

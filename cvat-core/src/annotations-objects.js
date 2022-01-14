@@ -47,11 +47,26 @@
             }
         } else if (shapeType === ObjectShape.CUBOID) {
             if (points.length / 2 !== 8) {
-                throw new DataError(`Points must have exact 8 points, but got ${points.length / 2}`);
+                throw new DataError(`Cuboid must have 8 points, but got ${points.length / 2}`);
+            }
+        } else if (shapeType === ObjectShape.ELLIPSE) {
+            if (points.length / 2 !== 2) {
+                throw new DataError(`Ellipse must have 1 point, rx and ry but got ${points.toString()}`);
             }
         } else {
             throw new ArgumentError(`Unknown value of shapeType has been received ${shapeType}`);
         }
+    }
+
+    function findAngleDiff(rightAngle, leftAngle) {
+        let angleDiff = rightAngle - leftAngle;
+        angleDiff = ((angleDiff + 180) % 360) - 180;
+        if (Math.abs(angleDiff) >= 180) {
+            // if the main arc is bigger than 180, go another arc
+            // to find it, just substract absolute value from 360 and inverse sign
+            angleDiff = 360 - Math.abs(angleDiff) * Math.sign(angleDiff) * -1;
+        }
+        return angleDiff;
     }
 
     function checkShapeArea(shapeType, points) {
@@ -60,6 +75,12 @@
 
         if (shapeType === ObjectShape.POINTS) {
             return true;
+        }
+
+        if (shapeType === ObjectShape.ELLIPSE) {
+            const [cx, cy, rightX, topY] = points;
+            const [rx, ry] = [rightX - cx, cy - topY];
+            return rx * ry * Math.PI > MIN_SHAPE_AREA;
         }
 
         let xmin = Number.MAX_SAFE_INTEGER;
@@ -76,7 +97,6 @@
 
         if (shapeType === ObjectShape.POLYLINE) {
             const length = Math.max(xmax - xmin, ymax - ymin);
-
             return length >= MIN_SHAPE_LENGTH;
         }
 
@@ -96,7 +116,7 @@
         checkObjectType('rotation', rotation, 'number', null);
         points.forEach((coordinate) => checkObjectType('coordinate', coordinate, 'number', null));
 
-        if (shapeType === ObjectShape.CUBOID || !!rotation) {
+        if (shapeType === ObjectShape.CUBOID || shapeType === ObjectShape.ELLIPSE || !!rotation) {
             // cuboids and rotated bounding boxes cannot be fitted
             return points;
         }
@@ -1393,6 +1413,62 @@
         }
     }
 
+    class EllipseShape extends Shape {
+        constructor(data, clientID, color, injection) {
+            super(data, clientID, color, injection);
+            this.shapeType = ObjectShape.ELLIPSE;
+            this.pinned = false;
+            checkNumberOfPoints(this.shapeType, this.points);
+        }
+
+        static distance(points, x, y, angle) {
+            const [cx, cy, rightX, topY] = points;
+            const [rx, ry] = [rightX - cx, cy - topY];
+            const [rotX, rotY] = rotatePoint(x, y, -angle, cx, cy);
+            // https://math.stackexchange.com/questions/76457/check-if-a-point-is-within-an-ellipse
+            const pointWithinEllipse = (_x, _y) => (
+                ((_x - cx) ** 2) / rx ** 2) + (((_y - cy) ** 2) / ry ** 2
+            ) <= 1;
+
+            if (!pointWithinEllipse(rotX, rotY)) {
+                // Cursor is outside of an ellipse
+                return null;
+            }
+
+            if (Math.abs(x - cx) < Number.EPSILON && Math.abs(y - cy) < Number.EPSILON) {
+                // cursor is near to the center, just return minimum of height, width
+                return Math.min(rx, ry);
+            }
+
+            // ellipse equation is x^2/rx^2 + y^2/ry^2 = 1
+            // from this equation:
+            // x^2 = ((rx * ry)^2 - (y * rx)^2) / ry^2
+            // y^2 = ((rx * ry)^2 - (x * ry)^2) / rx^2
+
+            // we have one point inside the ellipse, let's build two lines (horizontal and vertical) through the point
+            // and find their interception with ellipse
+            const x2Equation = (_y) => (((rx * ry) ** 2) - ((_y * rx) ** 2)) / (ry ** 2);
+            const y2Equation = (_x) => (((rx * ry) ** 2) - ((_x * ry) ** 2)) / (rx ** 2);
+
+            // shift x,y to the ellipse coordinate system to compute equation correctly
+            // y axis is inverted
+            const [shiftedX, shiftedY] = [x - cx, cy - y];
+            const [x1, x2] = [Math.sqrt(x2Equation(shiftedY)), -Math.sqrt(x2Equation(shiftedY))];
+            const [y1, y2] = [Math.sqrt(y2Equation(shiftedX)), -Math.sqrt(y2Equation(shiftedX))];
+
+            // found two points on ellipse edge
+            const ellipseP1X = shiftedX >= 0 ? x1 : x2; // ellipseP1Y is shiftedY
+            const ellipseP2Y = shiftedY >= 0 ? y1 : y2; // ellipseP1X is shiftedX
+
+            // found diffs between two points on edges and target point
+            const diff1X = ellipseP1X - shiftedX;
+            const diff2Y = ellipseP2Y - shiftedY;
+
+            // return minimum, get absolute value because we need distance, not diff
+            return Math.min(Math.abs(diff1X), Math.abs(diff2Y));
+        }
+    }
+
     class PolyShape extends Shape {
         constructor(data, clientID, color, injection) {
             super(data, clientID, color, injection);
@@ -1668,17 +1744,31 @@
         }
 
         interpolatePosition(leftPosition, rightPosition, offset) {
-            function findAngleDiff(rightAngle, leftAngle) {
-                let angleDiff = rightAngle - leftAngle;
-                angleDiff = ((angleDiff + 180) % 360) - 180;
-                if (Math.abs(angleDiff) >= 180) {
-                    // if the main arc is bigger than 180, go another arc
-                    // to find it, just substract absolute value from 360 and inverse sign
-                    angleDiff = 360 - Math.abs(angleDiff) * Math.sign(angleDiff) * -1;
-                }
-                return angleDiff;
-            }
+            const positionOffset = leftPosition.points.map((point, index) => rightPosition.points[index] - point);
+            return {
+                points: leftPosition.points.map((point, index) => point + positionOffset[index] * offset),
+                rotation:
+                    (leftPosition.rotation + findAngleDiff(
+                        rightPosition.rotation, leftPosition.rotation,
+                    ) * offset + 360) % 360,
+                occluded: leftPosition.occluded,
+                outside: leftPosition.outside,
+                zOrder: leftPosition.zOrder,
+            };
+        }
+    }
 
+    class EllipseTrack extends Track {
+        constructor(data, clientID, color, injection) {
+            super(data, clientID, color, injection);
+            this.shapeType = ObjectShape.ELLIPSE;
+            this.pinned = false;
+            for (const shape of Object.values(this.shapes)) {
+                checkNumberOfPoints(this.shapeType, shape.points);
+            }
+        }
+
+        interpolatePosition(leftPosition, rightPosition, offset) {
             const positionOffset = leftPosition.points.map((point, index) => rightPosition.points[index] - point);
 
             return {
@@ -2061,6 +2151,7 @@
     PolygonTrack.distance = PolygonShape.distance;
     PolylineTrack.distance = PolylineShape.distance;
     PointsTrack.distance = PointsShape.distance;
+    EllipseTrack.distance = EllipseShape.distance;
     CuboidTrack.distance = CuboidShape.distance;
 
     module.exports = {
@@ -2068,11 +2159,13 @@
         PolygonShape,
         PolylineShape,
         PointsShape,
+        EllipseShape,
         CuboidShape,
         RectangleTrack,
         PolygonTrack,
         PolylineTrack,
         PointsTrack,
+        EllipseTrack,
         CuboidTrack,
         Track,
         Shape,

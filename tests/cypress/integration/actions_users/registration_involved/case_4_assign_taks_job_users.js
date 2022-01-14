@@ -149,6 +149,13 @@ context('Multiple users. Assign task, job. Deactivating users.', () => {
             cy.get('.cvat-item-task-name').should('not.exist');
             cy.visit(`/tasks/${taskID}/jobs/${jobID}`);
             cy.get('.cvat-canvas-container').should('exist');
+
+            // Check issue "Info modal does not work if a job assigneed to somebody (4140)"
+            cy.contains('.cvat-annotation-header-button', 'Info').click();
+            cy.get('.cvat-job-info-modal-window').should('be.visible');
+            cy.contains('[type="button"]', 'OK').click();
+            cy.get('.cvat-job-info-modal-window').should('not.be.visible');
+
             cy.logout(thirdUserName);
         });
 

@@ -7,7 +7,7 @@ import Popover from 'antd/lib/popover';
 import Icon from '@ant-design/icons';
 
 import { Canvas } from 'cvat-canvas-wrapper';
-import { PolygonIcon } from 'icons';
+import { EllipseIcon } from 'icons';
 import { ShapeType } from 'reducers/interfaces';
 
 import DrawShapePopoverContainer from 'containers/annotation-page/standard-workspace/controls-side-bar/draw-shape-popover';
@@ -19,8 +19,8 @@ export interface Props {
     disabled?: boolean;
 }
 
-const CustomPopover = withVisibilityHandling(Popover, 'draw-polygon');
-function DrawPolygonControl(props: Props): JSX.Element {
+const CustomPopover = withVisibilityHandling(Popover, 'draw-ellipse');
+function DrawPointsControl(props: Props): JSX.Element {
     const { canvasInstance, isDrawing, disabled } = props;
     const dynamicPopoverProps = isDrawing ? {
         overlayStyle: {
@@ -29,26 +29,26 @@ function DrawPolygonControl(props: Props): JSX.Element {
     } : {};
 
     const dynamicIconProps = isDrawing ? {
-        className: 'cvat-draw-polygon-control cvat-active-canvas-control',
+        className: 'cvat-draw-ellipse-control cvat-active-canvas-control',
         onClick: (): void => {
             canvasInstance.draw({ enabled: false });
         },
     } : {
-        className: 'cvat-draw-polygon-control',
+        className: 'cvat-draw-ellipse-control',
     };
 
     return disabled ? (
-        <Icon className='cvat-draw-polygon-control cvat-disabled-canvas-control' component={PolygonIcon} />
+        <Icon className='cvat-draw-ellipse-control cvat-disabled-canvas-control' component={EllipseIcon} />
     ) : (
         <CustomPopover
             {...dynamicPopoverProps}
             overlayClassName='cvat-draw-shape-popover'
             placement='right'
-            content={<DrawShapePopoverContainer shapeType={ShapeType.POLYGON} />}
+            content={<DrawShapePopoverContainer shapeType={ShapeType.ELLIPSE} />}
         >
-            <Icon {...dynamicIconProps} component={PolygonIcon} />
+            <Icon {...dynamicIconProps} component={EllipseIcon} />
         </CustomPopover>
     );
 }
 
-export default React.memo(DrawPolygonControl);
+export default React.memo(DrawPointsControl);
