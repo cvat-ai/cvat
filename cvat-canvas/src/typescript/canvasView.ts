@@ -2014,8 +2014,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 shapeSizeElement.rm();
                 shapeSizeElement = null;
             }
-            // disable internal resize events of SVG.js
-            window.dispatchEvent(new MouseEvent('mouseup'));
             this.mode = Mode.IDLE;
         };
 
@@ -2032,7 +2030,11 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 if (state.shapeType === 'rectangle') {
                     shapeSizeElement = displayShapeSize(this.adoptedContent, this.adoptedText);
                 }
-                (shape as any).on('remove.resize', resizeFinally);
+                (shape as any).on('remove.resize', () => {
+                    // disable internal resize events of SVG.js
+                    window.dispatchEvent(new MouseEvent('mouseup'));
+                    resizeFinally();
+                });
             })
             .on('resizing', (): void => {
                 resized = true;
