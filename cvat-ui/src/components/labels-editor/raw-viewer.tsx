@@ -108,19 +108,24 @@ export default class RawViewer extends React.PureComponent<Props> {
                 title: 'You are going to remove existing labels/attributes',
                 content: (
                     <>
-                        <Paragraph>
-                            Following labels are going to be removed:
-                            <div>
-                                {deletedLabels.map((_label: Label) => <Tag color={_label.color}>{_label.name}</Tag>)}
-                            </div>
+                        {deletedLabels.length ? (
+                            <Paragraph>
+                                Following labels are going to be removed:
+                                <div>
+                                    {deletedLabels
+                                        .map((_label: Label) => <Tag color={_label.color}>{_label.name}</Tag>)}
+                                </div>
 
-                        </Paragraph>
-                        <Paragraph>
-                            Following attributes are going to be removed:
-                            <div>
-                                {deletedAttributes.map((_attr: Attribute) => <Tag>{_attr.name}</Tag>)}
-                            </div>
-                        </Paragraph>
+                            </Paragraph>
+                        ) : null}
+                        {deletedAttributes.length ? (
+                            <Paragraph>
+                                Following attributes are going to be removed:
+                                <div>
+                                    {deletedAttributes.map((_attr: Attribute) => <Tag>{_attr.name}</Tag>)}
+                                </div>
+                            </Paragraph>
+                        ) : null}
                         <Paragraph type='danger'>All related annotations will be destroyed. Continue?</Paragraph>
                     </>
                 ),
