@@ -80,7 +80,6 @@ context('Actions on rectangle', () => {
         cy.openTask(taskName);
         cy.addNewLabel(newLabelName);
         cy.openJob();
-        Cypress.config('scrollBehavior', false);
     });
 
     describe(`Testing case "${caseId}"`, () => {
@@ -116,9 +115,10 @@ context('Actions on rectangle', () => {
             });
             cy.get('body').type('{del}');
             cy.get('#cvat_canvas_shape_6').should('not.exist');
-            cy.get('.cvat-canvas-container').trigger('mouseup', 550, 550);
-            cy.get('.cvat-canvas-container').trigger('mousemove', 300, 550);
-            cy.get('#cvat_canvas_shape_5').should('have.class', 'cvat_canvas_shape_activated');
+            cy.get('#cvat_canvas_shape_5')
+                .trigger('mousemove')
+                .trigger('mouseover')
+                .should('have.class', 'cvat_canvas_shape_activated');
         });
     });
 });
