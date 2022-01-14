@@ -1947,6 +1947,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     hideText();
                     (shape as any).on('remove.drag', (): void => {
                         this.mode = Mode.IDLE;
+                        // disable internal drag events of SVG.js
+                        window.dispatchEvent(new MouseEvent('mouseup'));
                     });
                 })
                 .on('dragend', (e: CustomEvent): void => {
@@ -2012,6 +2014,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 shapeSizeElement.rm();
                 shapeSizeElement = null;
             }
+            // disable internal resize events of SVG.js
+            window.dispatchEvent(new MouseEvent('mouseup'));
             this.mode = Mode.IDLE;
         };
 
