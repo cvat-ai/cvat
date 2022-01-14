@@ -4,7 +4,7 @@ linkTitle: 'Types of shapes'
 weight: 14
 description: 'List of shapes available for annotation.'
 ---
-There are five shapes which you can annotate your images with:
+There are several shapes with which you can annotate your images:
 
 - `Rectangle` or `Bounding box`
 - `Polygon`
