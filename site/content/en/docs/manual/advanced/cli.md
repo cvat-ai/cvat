@@ -24,7 +24,8 @@ Overview of functionality:
 
 ## Usage
 
-To access the CLI, you need to have python in environment, as well as a clone of the CVAT repository and the necessary modules:
+To access the CLI, you need to have python in environment,
+as well as a clone of the CVAT repository and the necessary modules:
 
 ```bash
 git clone https://github.com/openvinotoolkit/cvat.git
