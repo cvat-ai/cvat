@@ -41,7 +41,7 @@ if apps.is_installed('cvat.apps.opencv'):
     urlpatterns.append(path('opencv/', include('cvat.apps.opencv.urls')))
 
 if apps.is_installed('silk'):
-    urlpatterns.append(path('profiler/', include('silk.urls')))
+    urlpatterns.append(path('profiler/', include('silk.urls', namespace='silk')))
 
 if apps.is_installed('cvat.apps.training'):
     urlpatterns.append(path('api/v1/predict/', include('cvat.apps.training.urls')))

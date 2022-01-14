@@ -21,6 +21,7 @@ import shutil
 import subprocess
 import mimetypes
 from corsheaders.defaults import default_headers
+from distutils.util import strtobool
 
 mimetypes.add_type("application/wasm", ".wasm", True)
 
@@ -519,3 +520,21 @@ TUS_DEFAULT_CHUNK_SIZE = 104857600  # 100 mb
 # More about forwarded headers - https://doc.traefik.io/traefik/getting-started/faq/#what-are-the-forwarded-headers-when-proxying-http-requests
 # How django uses X-Forwarded-Proto - https://docs.djangoproject.com/en/2.2/ref/settings/#secure-proxy-ssl-header
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+# Django Silk profiler
+# https://github.com/jazzband/django-silk
+INSTALLED_APPS.insert(0, 'silk')
+MIDDLEWARE.append('silk.middleware.SilkyMiddleware')
+
+SILKY_PYTHON_PROFILER = True # use Python's built-in cProfile profiler
+SILKY_PYTHON_PROFILER_BINARY = True # generate a binary .prof file
+SILKY_PYTHON_PROFILER_RESULT_PATH = os.path.join(DATA_ROOT, 'profiles/')
+os.makedirs(SILKY_PYTHON_PROFILER_RESULT_PATH, exist_ok=True)
+SILKY_AUTHENTICATION = True
+SILKY_AUTHORISATION = True # only staff member can open /profiler page
+SILKY_MAX_REQUEST_BODY_SIZE = 1024
+SILKY_MAX_RESPONSE_BODY_SIZE = 1024
+SILKY_IGNORE_PATHS = ['/admin', '/django-rq', '/auth']
+SILKY_MAX_RECORDED_REQUESTS = 10**4
+SILKY_ANALYZE_QUERIES = True
+SILKY_INTERCEPT_FUNC = lambda request: strtobool(request.GET.get('profiler', 'off'))
