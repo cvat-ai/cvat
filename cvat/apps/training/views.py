@@ -1,5 +1,5 @@
 from cacheops import cache, CacheMiss
-from drf_yasg.utils import swagger_auto_schema
+
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
@@ -15,7 +15,7 @@ class PredictView(viewsets.ViewSet):
 
         return [perm() for perm in permissions]
 
-    @swagger_auto_schema(method='get', operation_summary='Returns prediction for image')
+    # @swagger_auto_schema(method='get', operation_summary='Returns prediction for image')
     @action(detail=False, methods=['GET'], url_path='frame')
     def predict_image(self, request):
         frame = self.request.query_params.get('frame')
@@ -37,8 +37,8 @@ class PredictView(viewsets.ViewSet):
 
         return Response(resp)
 
-    @swagger_auto_schema(method='get',
-                         operation_summary='Returns information of the tasks of the project with the selected id')
+    # @swagger_auto_schema(method='get',
+    #                      operation_summary='Returns information of the tasks of the project with the selected id')
     @action(detail=False, methods=['GET'], url_path='status')
     def predict_status(self, request):
         project_id = self.request.query_params.get('project')

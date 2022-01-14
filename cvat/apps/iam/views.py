@@ -13,8 +13,8 @@ from allauth.account import app_settings as allauth_settings
 from furl import furl
 
 from django.utils.decorators import method_decorator
-from drf_yasg.utils import swagger_auto_schema
-from drf_yasg import openapi
+
+
 
 from .authentication import Signer
 
@@ -73,18 +73,18 @@ class ContextMiddleware:
         return self.get_response(request)
 
 
-@method_decorator(name='post', decorator=swagger_auto_schema(
-    request_body=openapi.Schema(
-        type=openapi.TYPE_OBJECT,
-        required=[
-            'url'
-        ],
-        properties={
-            'url': openapi.Schema(type=openapi.TYPE_STRING)
-        }
-    ),
-    responses={'200': openapi.Response(description='text URL')}
-))
+# @method_decorator(name='post', decorator=swagger_auto_schema(
+#     request_body=openapi.Schema(
+#         type=openapi.TYPE_OBJECT,
+#         required=[
+#             'url'
+#         ],
+#         properties={
+#             'url': openapi.Schema(type=openapi.TYPE_STRING)
+#         }
+#     ),
+#     responses={'200': openapi.Response(description='text URL')}
+# ))
 class SigningView(views.APIView):
     """
     This method signs URL for access to the server.

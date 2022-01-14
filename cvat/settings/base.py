@@ -113,7 +113,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework.authtoken',
     'django_filters',
-    'drf_yasg',
+    'drf_spectacular',
     'rest_auth',
     'django.contrib.sites',
     'allauth',
@@ -176,6 +176,7 @@ REST_FRAMEWORK = {
         'anon': '100/minute',
     },
     'DEFAULT_METADATA_CLASS': 'rest_framework.metadata.SimpleMetadata',
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
 
 REST_AUTH_REGISTER_SERIALIZERS = {
@@ -515,3 +516,17 @@ CORS_ALLOW_HEADERS = list(default_headers) + [
 TUS_MAX_FILE_SIZE = 26843545600 # 25gb
 TUS_DEFAULT_CHUNK_SIZE = 104857600  # 100 mb
 
+
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'CVAT REST API',
+    'DESCRIPTION': 'REST API for Computer Vision Annotation Tool (CVAT)',
+    'VERSION': 'v1',
+    'CONTACT': {
+        'email': 'nikita.manovich@intel.com',
+    },
+    'LICENSE': {
+        'name': 'MIT License',
+    },
+    # OTHER SETTINGS
+    # https://drf-spectacular.readthedocs.io/en/latest/settings.html
+}
