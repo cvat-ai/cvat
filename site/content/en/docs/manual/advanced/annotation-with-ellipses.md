@@ -18,5 +18,5 @@ to complete the shape.
 
 ![](/images/image240_mapillary_vistas.jpg)
 
-You can rotate the created ellipse using a rotation point in the same way as
+You can rotate ellipses using a rotation point in the same way as
 a [rectangle](/docs/manual/advanced/annotation-with-rectangles/#rotation-rectangle).
