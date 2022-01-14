@@ -7,7 +7,7 @@ description: 'Guide to annotating tasks using ellipses.'
 
 It is used for road sign annotation etc.
 
-Before starting, you need to select the `ellipse` on the controls sidebar.
+First of all you need to select the `ellipse` on the controls sidebar.
 
 ![](/images/image239.jpg)
 
