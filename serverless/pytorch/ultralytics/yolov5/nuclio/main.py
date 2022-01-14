@@ -2,7 +2,6 @@ import json
 import base64
 from PIL import Image
 import io
-import yaml
 import torch
 
 def init_context(context):
