@@ -7,7 +7,8 @@ import React, {
 } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useHistory } from 'react-router';
-import { Switch, Select } from 'antd';
+import Switch from 'antd/lib/switch';
+import Select from 'antd/lib/select';
 import { Col, Row } from 'antd/lib/grid';
 import Text from 'antd/lib/typography/Text';
 import Form, { FormInstance } from 'antd/lib/form';

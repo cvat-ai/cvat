@@ -14,13 +14,13 @@ and backup all CVAT volumes.
 
 To update CVAT, you should clone or download the new version of CVAT and rebuild the CVAT docker images as usual.
 
-```sh
+```bash
 docker-compose build
 ```
 
 and run containers:
 
-```sh
+```bash
 docker-compose up -d
 ```
 
@@ -32,13 +32,13 @@ Please do not terminate the migration and wait till the process is complete.
 
 Make sure there aren't error messages from Elasticsearch:
 
-```sh
+```bash
 docker logs cvat_elasticsearch
 ```
 
 If you see errors like this:
 
-```sh
+```bash
 lood stage disk watermark [95%] exceeded on [uMg9WI30QIOJxxJNDiIPgQ][uMg9WI3][/usr/share/elasticsearch/data/nodes/0] free: 116.5gb[4%], all indices on this node will be marked read-only
 ```
 
@@ -48,20 +48,20 @@ You should free up disk space or change the threshold, to do so check: [Elastics
 
 To change the hostname, simply set the `CVAT_HOST` environemnt variable
 
-```
+```bash
 export CVAT_HOST=<YOUR_HOSTNAME_OR_IP>
 ```
 NOTE, if you're using `docker-compose` with `sudo` to run CVAT, then please add the `-E` (or `--preserve-env`)
 flag to preserve the user environment variable which set above to take effect in your docker containers:
 
-```
+```bash
 sudo -E docker-compose up -d
 ```
 
 If you want to change the default web application port, change the `ports` part of `traefik` service configuration
 in `docker-compose.yml`
 
-```
+```yml
 services:
   traefik:
     ...

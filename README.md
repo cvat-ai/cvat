@@ -70,6 +70,10 @@ For more information about supported formats look at the
 | [VGGFace2](https://github.com/ox-vgg/vgg_face2)                                                           | X      | X      |
 | [Market-1501](https://www.aitribune.com/dataset/2018051063)                                               | X      | X      |
 | [ICDAR13/15](https://rrc.cvc.uab.es/?ch=2)                                                                | X      | X      |
+| [Open Images V6](https://storage.googleapis.com/openimages/web/index.html)                                | X      | X      |
+| [Cityscapes](https://www.cityscapes-dataset.com/login/)                                                   | X      | X      |
+| [KITTI](http://www.cvlibs.net/datasets/kitti/)                                                            | X      | X      |
+| [LFW](http://vis-www.cs.umass.edu/lfw/)                                                                   | X      | X      |
 
 <!--lint enable maximum-line-length-->
 
