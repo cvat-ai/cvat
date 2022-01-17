@@ -80,6 +80,26 @@ optional arguments:
 Description of the options you can find in
 [Creating an annotation task](/docs/manual/basics/creating_an_annotation_task/) section.
 
+For create a task you need file contain labels in the `json` format, you can create a JSON label specification
+by using the [label constructor](/docs/manual/basics/creating_an_annotation_task/#labels).
+<details>
+<summary>Example JSON labels file</summary>
+
+  ```json
+  [
+      {
+          "name": "cat",
+          "attributes": []
+      },
+      {
+          "name": "dog",
+          "attributes": []
+      }
+  ]
+  ```
+</details>
+<br>
+
 - Create a task named "new task" on the default server "localhost:8080", labels from the file "labels.json"
   and local images "file1.jpg" and "file2.jpg", the task will be created as current user:
   ```bash
@@ -110,7 +130,7 @@ Description of the options you can find in
   the task will be created as user "user-2", and the password will need to be entered additionally:
   ```bash
   cli.py --auth user-2 create "task from dataset_1" --labels labels.json \
-  --bug https://bug-tracker.com/0001 --image_quality 75 --annotation_path annotation.xml \
+  --bug_tracker https://bug-tracker.com/0001 --image_quality 75 --annotation_path annotation.xml \
   --annotation_format "CVAT 1.1" local dataset_1/images/
   ```
 - Create a task named "segmented task 1", labels from the file "labels.json", with overlay size 5,
@@ -176,7 +196,7 @@ Description of the options you can find in
 
 ### Import
 
-- Import task with id 106 in the format `LabelMe 3.0` :
+- Import task from file "task_backup.zip" :
   ```bash
-  cli.py import --format "LabelMe 3.0" 106
+  cli.py import task_backup.zip
   ```
