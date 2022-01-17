@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -205,13 +205,20 @@ export default class LabelForm extends React.Component<Props> {
         );
     }
 
-    private renderBooleanValueInput(fieldInstance: any, attr: Attribute | null): JSX.Element {
+    private renderBooleanValueInput(fieldInstance: any): JSX.Element {
         const { key } = fieldInstance;
-        const value = attr ? attr.values[0] : 'false';
 
         return (
             <CVATTooltip title='Specify a default value'>
-                <Form.Item name={[key, 'values']} fieldKey={[fieldInstance.fieldKey, 'values']} initialValue={value}>
+                <Form.Item
+                    rules={[
+                        {
+                            required: true,
+                            message: 'Please, specify a default value',
+                        }]}
+                    name={[key, 'values']}
+                    fieldKey={[fieldInstance.fieldKey, 'values']}
+                >
                     <Select className='cvat-attribute-values-input'>
                         <Select.Option value='false'>False</Select.Option>
                         <Select.Option value='true'>True</Select.Option>
@@ -354,7 +361,7 @@ export default class LabelForm extends React.Component<Props> {
                                 if ([AttributeType.SELECT, AttributeType.RADIO].includes(type)) {
                                     element = this.renderAttributeValuesInput(fieldInstance, attr);
                                 } else if (type === AttributeType.CHECKBOX) {
-                                    element = this.renderBooleanValueInput(fieldInstance, attr);
+                                    element = this.renderBooleanValueInput(fieldInstance);
                                 } else if (type === AttributeType.NUMBER) {
                                     element = this.renderNumberRangeInput(fieldInstance, attr);
                                 } else {

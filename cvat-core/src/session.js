@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2021 Intel Corporation
+// Copyright (C) 2019-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -1434,7 +1434,6 @@
                         },
                     },
                     /**
-                     * After task has been created value can be appended only.
                      * @name labels
                      * @type {module:API.cvat.classes.Label[]}
                      * @memberof module:API.cvat.classes.Task
