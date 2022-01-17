@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -146,10 +146,12 @@ Cypress.Commands.add('createIssueFromControlButton', (createIssueParams) => {
             .trigger('mousedown', createIssueParams.firstX, createIssueParams.firstY, { button: 0 })
             .trigger('mouseup');
     }
+    cy.intercept('POST', '/api/v1/issues?*').as('issues');
     cy.get('.cvat-create-issue-dialog').within(() => {
         cy.get('#issue_description').type(createIssueParams.description);
         cy.get('[type="submit"]').click();
     });
+    cy.wait('@issues').its('response.statusCode').should('equal', 201);
     cy.checkIssueRegion();
 });
 

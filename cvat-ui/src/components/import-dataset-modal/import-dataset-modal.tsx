@@ -1,4 +1,4 @@
-// Copyright (C) 2021 Intel Corporation
+// Copyright (C) 2021-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -53,7 +53,7 @@ function ImportDatasetModal(): JSX.Element {
             dispatch(importDatasetAsync(instance, values.selectedFormat as string, file));
             closeModal();
             Notification.info({
-                message: 'Dataset export started',
+                message: 'Dataset import started',
                 description: `Dataset import was started for project #${instance?.id}. `,
                 className: 'cvat-notification-notice-import-dataset-start',
             });
@@ -91,7 +91,7 @@ function ImportDatasetModal(): JSX.Element {
                 >
                     <Form.Item
                         name='selectedFormat'
-                        label='Export format'
+                        label='Import format'
                         rules={[{ required: true, message: 'Format must be selected' }]}
                     >
                         <Select placeholder='Select dataset format' className='cvat-modal-import-select'>

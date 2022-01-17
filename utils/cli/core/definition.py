@@ -1,3 +1,5 @@
+# Copyright (C) 2021 Intel Corporation
+#
 # SPDX-License-Identifier: MIT
 import argparse
 import getpass
@@ -107,36 +109,6 @@ task_create_parser.add_argument(
     help='name of the task'
 )
 task_create_parser.add_argument(
-    '--labels',
-    default='[]',
-    type=parse_label_arg,
-    help='string or file containing JSON labels specification'
-)
-task_create_parser.add_argument(
-    '--project_id',
-    default=None,
-    type=int,
-    help='project ID if project exists'
-)
-task_create_parser.add_argument(
-    '--overlap',
-    default=0,
-    type=int,
-    help='the number of intersected frames between different segments'
-)
-task_create_parser.add_argument(
-    '--segment_size',
-    default=0,
-    type=int,
-    help='the number of frames in a segment'
-)
-task_create_parser.add_argument(
-    '--bug',
-    default='',
-    type=str,
-    help='bug tracker URL'
-)
-task_create_parser.add_argument(
     'resource_type',
     default='local',
     choices=list(ResourceType),
@@ -162,38 +134,23 @@ task_create_parser.add_argument(
     help='format of the annotation file being uploaded, e.g. CVAT 1.1'
 )
 task_create_parser.add_argument(
+    '--bug_tracker', '--bug',
+    default=None,
+    type=str,
+    help='bug tracker URL'
+)
+task_create_parser.add_argument(
+    '--chunk_size',
+    default=None,
+    type=int,
+    help='the number of frames per chunk'
+)
+task_create_parser.add_argument(
     '--completion_verification_period',
     default=20,
     type=int,
     help='''number of seconds to wait until checking
             if data compression finished (necessary before uploading annotations)'''
-)
-task_create_parser.add_argument(
-    '--dataset_repository_url',
-    default='',
-    type=str,
-    help=('git repository to store annotations e.g.'
-          ' https://github.com/user/repos [annotation/<anno_file_name.zip>]')
-)
-task_create_parser.add_argument(
-    '--lfs',
-    default=False,
-    action='store_true',
-    help='using lfs for dataset repository (default: %(default)s)'
-)
-task_create_parser.add_argument(
-    '--image_quality',
-    default=70,
-    type=int,
-    help='''set the image quality option in the advanced configuration
-            when creating tasks.(default: %(default)s)'''
-)
-task_create_parser.add_argument(
-    '--frame_step',
-    default=1,
-    type=int,
-    help='''set the frame step option in the advanced configuration
-            when uploading image series or videos (default: %(default)s)'''
 )
 task_create_parser.add_argument(
     '--copy_data',
@@ -203,16 +160,83 @@ task_create_parser.add_argument(
             share (default: %(default)s)'''
 )
 task_create_parser.add_argument(
-    '--use_cache',
-    default=True,
-    action='store_false',
-    help='''set the option to use the cache (default: %(default)s)'''
+    '--dataset_repository_url',
+    default='',
+    type=str,
+    help=('git repository to store annotations e.g.'
+          ' https://github.com/user/repos [annotation/<anno_file_name.zip>]')
+)
+task_create_parser.add_argument(
+    '--frame_step',
+    default=None,
+    type=int,
+    help='''set the frame step option in the advanced configuration
+            when uploading image series or videos (default: %(default)s)'''
+)
+task_create_parser.add_argument(
+    '--image_quality',
+    default=70,
+    type=int,
+    help='''set the image quality option in the advanced configuration
+            when creating tasks.(default: %(default)s)'''
+)
+task_create_parser.add_argument(
+    '--labels',
+    default='[]',
+    type=parse_label_arg,
+    help='string or file containing JSON labels specification'
+)
+task_create_parser.add_argument(
+    '--lfs',
+    default=False,
+    action='store_true',
+    help='using lfs for dataset repository (default: %(default)s)'
+)
+task_create_parser.add_argument(
+    '--project_id',
+    default=None,
+    type=int,
+    help='project ID if project exists'
+)
+task_create_parser.add_argument(
+    '--overlap',
+    default=None,
+    type=int,
+    help='the number of intersected frames between different segments'
+)
+task_create_parser.add_argument(
+    '--segment_size',
+    default=None,
+    type=int,
+    help='the number of frames in a segment'
 )
 task_create_parser.add_argument(
     '--sorting-method',
     default='lexicographical',
     choices=['lexicographical', 'natural', 'predefined', 'random'],
     help='''data soring method (default: %(default)s)'''
+)
+task_create_parser.add_argument(
+    '--start_frame',
+    default=None,
+    type=int,
+    help='the start frame of the video'
+)
+task_create_parser.add_argument(
+    '--stop_frame',
+    default=None,
+    type=int,
+    help='the stop frame of the video'
+)
+task_create_parser.add_argument(
+    '--use_cache',
+    action='store_true',  # automatically sets default=False
+    help='''use cache'''
+)
+task_create_parser.add_argument(
+    '--use_zip_chunks',
+    action='store_true',  # automatically sets default=False
+    help='''zip chunks before sending them to the server'''
 )
 
 #######################################################################
