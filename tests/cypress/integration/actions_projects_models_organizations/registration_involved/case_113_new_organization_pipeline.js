@@ -134,14 +134,14 @@ context('New organization pipeline.', () => {
         Cypress.Cookies.preserveOnce('sessionid', 'csrftoken');
     });
 
-    // FIXME: Rework after solving the issue 4088
-    // Now tasks must be deleted before deleting users
     after(() => {
-        cy.logout(secondUserName);
-        cy.deletingCreatedTasks([newTaskName]);
-        cy.deletingRegisteredUsers([firstUserName, secondUserName, thirdUserName]);
-        cy.deletingCreatedProjects([project.name]);
-        cy.deletingCreatedOrganizations([organizationParams.shortName]);
+        cy.logout(thirdUserName);
+        cy.getAuthKey().then((response) => {
+            cy.deletingRegisteredUsers(response, [firstUserName, secondUserName, thirdUserName]);
+            cy.deletingCreatedTasks(response, [newTaskName]);
+            cy.deletingCreatedProjects(response, [project.name]);
+            cy.deletingCreatedOrganizations(response, [organizationParams.shortName]);
+        });
     });
 
     describe(`Testing case "${caseId}"`, () => {
@@ -209,7 +209,7 @@ context('New organization pipeline.', () => {
         it('Second user login. The user is able to see the organization, the task and can’t see the project.', () => {
             cy.logout();
             cy.login(secondUserName, secondUser.password);
-            cy.сheckPresenceOrganization(organizationParams.shortName);
+            cy.checkPresenceOrganization(organizationParams.shortName);
             cy.contains('.cvat-item-task-name', taskName).should('exist');
             cy.goToProjectsList();
             cy.get('.cvat-empty-projects-list').should('exist');
@@ -253,20 +253,21 @@ context('New organization pipeline.', () => {
         it('The organization, project is no longer available to the second user. The task is available.', () => {
             cy.logout(firstUserName);
             cy.login(secondUserName, secondUser.password);
-            cy.сheckPresenceOrganization(organizationParams.shortName, false);
+            cy.checkPresenceOrganization(organizationParams.shortName, false);
             cy.openTaskJob(newTaskName, 0, false);
             cy.get('.cvat_canvas_shape_cuboid').should('be.visible');
             cy.goToProjectsList();
             cy.contains('.cvat-projects-project-item-title', project.name).should('not.exist');
         });
 
-        // FIXME: Activate after solving the issue 4088
-        it.skip('Logout. Remove the first, the second user (deletion occurs from user admin).', () => {
+        it('Logout. Remove the first, the second user (deletion occurs from user admin).', () => {
             cy.logout(secondUserName);
-            cy.deletingRegisteredUsers([firstUserName, secondUserName]);
+            cy.getAuthKey().then((response) => {
+                cy.deletingRegisteredUsers(response, [firstUserName, secondUserName]);
+            });
         });
 
-        it.skip('Login as the third user. The organization page can be opened.', () => {
+        it('Login as the third user. The organization page can be opened.', () => {
             cy.login(thirdUserName, thirdUser.password);
             cy.activateOrganization(organizationParams.shortName);
             cy.visit('/organization');
@@ -274,7 +275,7 @@ context('New organization pipeline.', () => {
             cy.checkOrganizationMembers(1, [thirdUserName]);
         });
 
-        it.skip('The job can be opened.', () => {
+        it('The job can be opened.', () => {
             cy.visit(`/tasks/${taskID}/jobs/${jobID}`);
             cy.get('.cvat-canvas-container').should('exist');
             cy.get('.cvat_canvas_shape_cuboid').should('be.visible');
