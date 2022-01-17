@@ -439,11 +439,15 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
         label_colors = list()
         for label in labels:
             attributes = label.pop('attributespec_set')
+            if label.get('id', None):
+                del label['id']
             if not label.get('color', None):
                 label['color'] = get_label_color(label['name'], label_colors)
             label_colors.append(label['color'])
             db_label = models.Label.objects.create(task=db_task, **label)
             for attr in attributes:
+                if attr.get('id', None):
+                    del attr['id']
                 models.AttributeSpec.objects.create(label=db_label, **attr)
 
         task_path = db_task.get_task_dirname()
@@ -606,12 +610,16 @@ class ProjectSerializer(serializers.ModelSerializer):
             db_project = models.Project.objects.create(**validated_data)
         label_colors = list()
         for label in labels:
+            if label.get('id', None):
+                del label['id']
             attributes = label.pop('attributespec_set')
             if not label.get('color', None):
                 label['color'] = get_label_color(label['name'], label_colors)
             label_colors.append(label['color'])
             db_label = models.Label.objects.create(project=db_project, **label)
             for attr in attributes:
+                if attr.get('id', None):
+                    del attr['id']
                 models.AttributeSpec.objects.create(label=db_label, **attr)
 
         project_path = db_project.get_project_dirname()
