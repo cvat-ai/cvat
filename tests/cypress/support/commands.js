@@ -50,7 +50,7 @@ Cypress.Commands.add('userRegistration', (firstName, lastName, userName, emailAd
     }
 });
 
-Cypress.Commands.add('deletingRegisteredUsers', (accountToDelete) => {
+Cypress.Commands.add('getAuthKey', () => {
     cy.request({
         method: 'POST',
         url: '/api/v1/auth/login',
@@ -59,33 +59,34 @@ Cypress.Commands.add('deletingRegisteredUsers', (accountToDelete) => {
             email: Cypress.env('email'),
             password: Cypress.env('password'),
         },
-    }).then((response) => {
-        const authKey = response.body.key;
-        cy.request({
-            url: '/api/v1/users?page_size=all',
-            headers: {
-                Authorization: `Token ${authKey}`,
-            },
-        }).then((_response) => {
-            const responceResult = _response.body.results;
-            for (const user of responceResult) {
-                const userId = user.id;
-                const userName = user.username;
-                for (const account of accountToDelete) {
-                    if (userName === account) {
-                        cy.request({
-                            method: 'DELETE',
-                            url: `/api/v1/users/${userId}`,
-                            headers: {
-                                Authorization: `Token ${authKey}`,
-                            },
-                        });
-                    }
+    });
+});
+
+Cypress.Commands.add('deletingRegisteredUsers', (response, accountToDelete) => {
+    const authKey = response.body.key;
+    cy.request({
+        url: '/api/v1/users?page_size=all',
+        headers: {
+            Authorization: `Token ${authKey}`,
+        },
+    }).then((_response) => {
+        const responceResult = _response.body.results;
+        for (const user of responceResult) {
+            const userId = user.id;
+            const userName = user.username;
+            for (const account of accountToDelete) {
+                if (userName === account) {
+                    cy.request({
+                        method: 'DELETE',
+                        url: `/api/v1/users/${userId}`,
+                        headers: {
+                            Authorization: `Token ${authKey}`,
+                        },
+                    });
                 }
             }
-        });
+        }
     });
-    cy.clearCookies();
 });
 
 Cypress.Commands.add('changeUserActiveStatus', (authKey, accountsToChangeActiveStatus, isActive) => {
@@ -133,42 +134,31 @@ Cypress.Commands.add('checkUserStatuses', (authKey, userName, staffStatus, super
     });
 });
 
-Cypress.Commands.add('deletingCreatedTasks', (tasksToDelete) => {
+Cypress.Commands.add('deletingCreatedTasks', (response, tasksToDelete) => {
+    const authKey = response.body.key;
     cy.request({
-        method: 'POST',
-        url: '/api/v1/auth/login',
-        body: {
-            username: Cypress.env('user'),
-            email: Cypress.env('email'),
-            password: Cypress.env('password'),
+        url: '/api/v1/tasks?page_size=all',
+        headers: {
+            Authorization: `Token ${authKey}`,
         },
-    }).then((response) => {
-        const authKey = response.body.key;
-        cy.request({
-            url: '/api/v1/tasks?page_size=all',
-            headers: {
-                Authorization: `Token ${authKey}`,
-            },
-        }).then((_response) => {
-            const responceResult = _response.body.results;
-            for (const task of responceResult) {
-                const taskId = task.id;
-                const taskName = task.name;
-                for (const taskToDelete of tasksToDelete) {
-                    if (taskName === taskToDelete) {
-                        cy.request({
-                            method: 'DELETE',
-                            url: `/api/v1/tasks/${taskId}`,
-                            headers: {
-                                Authorization: `Token ${authKey}`,
-                            },
-                        });
-                    }
+    }).then((_response) => {
+        const responceResult = _response.body.results;
+        for (const task of responceResult) {
+            const taskId = task.id;
+            const taskName = task.name;
+            for (const taskToDelete of tasksToDelete) {
+                if (taskName === taskToDelete) {
+                    cy.request({
+                        method: 'DELETE',
+                        url: `/api/v1/tasks/${taskId}`,
+                        headers: {
+                            Authorization: `Token ${authKey}`,
+                        },
+                    });
                 }
             }
-        });
+        }
     });
-    cy.clearCookies();
 });
 
 Cypress.Commands.add(

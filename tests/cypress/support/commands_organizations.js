@@ -26,42 +26,31 @@ Cypress.Commands.add('createOrganization', (organizationParams) => {
     });
 });
 
-Cypress.Commands.add('deletingCreatedOrganizations', (otrganizationsToDelete) => {
+Cypress.Commands.add('deletingCreatedOrganizations', (response, otrganizationsToDelete) => {
+    const authKey = response.body.key;
     cy.request({
-        method: 'POST',
-        url: '/api/v1/auth/login',
-        body: {
-            username: Cypress.env('user'),
-            email: Cypress.env('email'),
-            password: Cypress.env('password'),
+        url: '/api/v1/organizations?page_size=all',
+        headers: {
+            Authorization: `Token ${authKey}`,
         },
-    }).then((response) => {
-        const authKey = response.body.key;
-        cy.request({
-            url: '/api/v1/organizations?page_size=all',
-            headers: {
-                Authorization: `Token ${authKey}`,
-            },
-        }).then((_response) => {
-            const responceResult = _response.body;
-            for (const organization of responceResult) {
-                const organizationId = organization.id;
-                const organizationName = organization.slug;
-                for (const organizationToDelete of otrganizationsToDelete) {
-                    if (organizationName === organizationToDelete) {
-                        cy.request({
-                            method: 'DELETE',
-                            url: `/api/v1/organizations/${organizationId}`,
-                            headers: {
-                                Authorization: `Token ${authKey}`,
-                            },
-                        });
-                    }
+    }).then((_response) => {
+        const responceResult = _response.body;
+        for (const organization of responceResult) {
+            const organizationId = organization.id;
+            const organizationName = organization.slug;
+            for (const organizationToDelete of otrganizationsToDelete) {
+                if (organizationName === organizationToDelete) {
+                    cy.request({
+                        method: 'DELETE',
+                        url: `/api/v1/organizations/${organizationId}`,
+                        headers: {
+                            Authorization: `Token ${authKey}`,
+                        },
+                    });
                 }
             }
-        });
+        }
     });
-    cy.clearCookies();
 });
 
 Cypress.Commands.add('activateOrganization', (organizationShortName) => {
@@ -99,7 +88,7 @@ Cypress.Commands.add('openOrganization', (organizationShortName) => {
     cy.get('.cvat-organization-page').should('exist').and('be.visible');
 });
 
-Cypress.Commands.add('сheckPresenceOrganization', (organizationShortName, present = true) => {
+Cypress.Commands.add('checkPresenceOrganization', (organizationShortName, present = true) => {
     cy.get('.cvat-header-menu-user-dropdown').trigger('mouseover');
     cy.get('.ant-dropdown')
         .should('be.visible')

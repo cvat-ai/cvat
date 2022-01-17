@@ -37,42 +37,31 @@ Cypress.Commands.add(
     },
 );
 
-Cypress.Commands.add('deletingCreatedProjects', (projectsToDelete) => {
+Cypress.Commands.add('deletingCreatedProjects', (response, projectsToDelete) => {
+    const authKey = response.body.key;
     cy.request({
-        method: 'POST',
-        url: '/api/v1/auth/login',
-        body: {
-            username: Cypress.env('user'),
-            email: Cypress.env('email'),
-            password: Cypress.env('password'),
+        url: '/api/v1/projects?page_size=all',
+        headers: {
+            Authorization: `Token ${authKey}`,
         },
-    }).then((response) => {
-        const authKey = response.body.key;
-        cy.request({
-            url: '/api/v1/projects?page_size=all',
-            headers: {
-                Authorization: `Token ${authKey}`,
-            },
-        }).then((_response) => {
-            const responceResult = _response.body.results;
-            for (const project of responceResult) {
-                const projectId = project.id;
-                const projectName = project.name;
-                for (const projectToDelete of projectsToDelete) {
-                    if (projectName === projectToDelete) {
-                        cy.request({
-                            method: 'DELETE',
-                            url: `/api/v1/projects/${projectId}`,
-                            headers: {
-                                Authorization: `Token ${authKey}`,
-                            },
-                        });
-                    }
+    }).then((_response) => {
+        const responceResult = _response.body.results;
+        for (const project of responceResult) {
+            const projectId = project.id;
+            const projectName = project.name;
+            for (const projectToDelete of projectsToDelete) {
+                if (projectName === projectToDelete) {
+                    cy.request({
+                        method: 'DELETE',
+                        url: `/api/v1/projects/${projectId}`,
+                        headers: {
+                            Authorization: `Token ${authKey}`,
+                        },
+                    });
                 }
             }
-        });
+        }
     });
-    cy.clearCookies();
 });
 
 Cypress.Commands.add('openProject', (projectName) => {
