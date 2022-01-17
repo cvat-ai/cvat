@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -61,11 +61,11 @@ context('Multiple users. Assign task, job. Deactivating users.', () => {
     });
 
     after(() => {
-        cy.goToTaskList();
-        cy.deleteTask(taskName);
-        cy.deleteTask(secondTaskName);
         cy.logout();
-        cy.deletingRegisteredUsers([secondUserName, thirdUserName]);
+        cy.getAuthKey().then((response) => {
+            cy.deletingRegisteredUsers(response, [secondUserName, thirdUserName]);
+            cy.deletingCreatedTasks(response, [taskName, secondTaskName]);
+        });
     });
 
     describe(`Testing case "${caseId}"`, () => {

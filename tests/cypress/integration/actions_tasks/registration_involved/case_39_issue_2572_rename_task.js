@@ -56,9 +56,11 @@ context('Rename a task.', () => {
     });
 
     after(() => {
-        cy.deletingRegisteredUsers([secondUserName]);
-        cy.login();
-        cy.deleteTask(newTaskNameSecondUser);
+        cy.logout(secondUserName);
+        cy.getAuthKey().then((response) => {
+            cy.deletingRegisteredUsers(response, [secondUserName]);
+            cy.deletingCreatedTasks(response, [newTaskNameSecondUser]);
+        });
     });
 
     describe(`Testing "${labelName}". Issue 2572.`, () => {
@@ -73,7 +75,6 @@ context('Rename a task.', () => {
             cy.login(secondUserName, secondUser.password);
             cy.openTask(newTaskName);
             cy.renameTask(newTaskName, newTaskNameSecondUser);
-            cy.logout(secondUserName);
         });
     });
 });
