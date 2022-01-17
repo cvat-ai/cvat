@@ -123,7 +123,7 @@ Description of the options you can find in
 - Create a task named "task 1 with sync annotation", labels from the file "labels.json"
   with annotation storage in `git` repository, enable `lfs` and the image files from the shared resource:
   ```bash
-  cli.py create "task 1 with sync annotation" \
+  cli.py create "task 1 with sync annotation" --labels labels.json \
   --dataset_repository_url https://github.com/user/dataset/blob/main/annotation/anno_file_name.zip \
   --lfs share //share/large_dataset/images/
   ```
