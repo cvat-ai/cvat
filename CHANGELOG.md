@@ -29,6 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Support for uploading manifest with any name (<https://github.com/openvinotoolkit/cvat/pull/4041>)
 - Added information about OpenVINO toolkit to login page (<https://github.com/openvinotoolkit/cvat/pull/4077>)
 - Support for working with ellipses (<https://github.com/openvinotoolkit/cvat/pull/4062>)
+- Add several flags to task creation CLI (<https://github.com/openvinotoolkit/cvat/pull/4119>)
 
 ### Changed
 - Users don't have access to a task object anymore if they are assigneed only on some jobs of the task (<https://github.com/openvinotoolkit/cvat/pull/3788>)
@@ -52,6 +53,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Order in an annotation file(<https://github.com/openvinotoolkit/cvat/pull/4087>)
 - Fixed task data upload progressbar (<https://github.com/openvinotoolkit/cvat/pull/4134>)
 - Email in org invitations is case sensitive (<https://github.com/openvinotoolkit/cvat/pull/4153>)
+- Caching for tasks and jobs can lead to an exception if its assignee user is removed (<https://github.com/openvinotoolkit/cvat/pull/4165>)
+- Added intelligent function when paste labels to another task (<https://github.com/openvinotoolkit/cvat/pull/4161>)
+- Uncaught TypeError: this.el.node.getScreenCTM() is null in Firefox (<https://github.com/openvinotoolkit/cvat/pull/4175>)
+- Bug: canvas is busy when start playing, start resizing a shape and do not release the mouse cursor (<https://github.com/openvinotoolkit/cvat/pull/4151>)
+- Fixed tus upload error over https (<https://github.com/openvinotoolkit/cvat/pull/4154>)
+
 
 ### Security
 - Updated ELK to 6.8.22 which uses log4j 2.17.0 (<https://github.com/openvinotoolkit/cvat/pull/4052>)
