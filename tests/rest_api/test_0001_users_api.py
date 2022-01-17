@@ -2,55 +2,47 @@
 #
 # SPDX-License-Identifier: MIT
 
-import json
-import os.path as osp
 from http import HTTPStatus
-
-import pytest
 from deepdiff import DeepDiff
 
-from .utils.config import ASSETS_DIR, get_method
+from .utils.config import get_method
 
-@pytest.fixture(scope='module')
-def users():
-    with open(osp.join(ASSETS_DIR, 'users.json')) as f:
-        return json.load(f)
-
-def test_non_admin_cannot_see_others():
-    for username in ['business1', 'dummy1', 'user1', 'worker1']:
-        response = get_method(username, 'users')
+class TestGetUsers:
+    def _test_can_see(self, user, data, endpoint='users', exclude_paths='', **kwargs):
+        response = get_method(user, endpoint, **kwargs)
+        response_data = response.json()
 
         assert response.status_code == HTTPStatus.OK
-        assert response.json()['count'] == 1
+        assert DeepDiff(data, response_data, ignore_order=True,
+            exclude_paths=exclude_paths) == {}
 
-def test_non_members_cannot_see_list_of_members():
-    response = get_method('user2', 'users', org='org1')
-    assert response.status_code == HTTPStatus.FORBIDDEN
+    def _test_cannot_see(self, user, endpoint='users', **kwargs):
+        response = get_method(user, endpoint, **kwargs)
 
-def test_admin_can_see_all_others(users):
-    response = get_method('admin2', 'users')
+        assert response.status_code == HTTPStatus.FORBIDDEN
 
-    assert response.status_code == HTTPStatus.OK
-    assert response.json()['count'] == users['count']
+    def test_admin_can_see_all_others(self, users):
+        self._test_can_see('admin2', list(users.values()),
+            exclude_paths="root['last_login']", page_size="all")
 
-def test_everybody_can_see_self(users):
-    users = {user['username']: user for user in users['results']}
+    def test_everybody_can_see_self(self, users):
+        for user, data in users.items():
+            self._test_can_see(user, data, "users/self", "root['last_login']")
 
-    for username in ['admin1', 'business1', 'dummy1', 'user1', 'worker1']:
-        response = get_method(username, 'users/self')
+    def test_non_members_cannot_see_list_of_members(self):
+        self._test_cannot_see('user2', org='org1')
 
-        assert response.status_code == HTTPStatus.OK
-        assert DeepDiff(users[username], response.json(), ignore_order=True,
-            exclude_paths="root['last_login']") == {}
+    def test_non_admin_cannot_see_others(self, users):
+        non_admins = ((k, v) for k, v in users.items() if not v['is_superuser'])
+        user, id = next(non_admins)[0], next(non_admins)[1]['id']
 
-def test_all_members_can_see_list_of_members(users):
-    available_fields = ['url', 'id', 'username', 'first_name', 'last_name']
-    org1_members = ['business1', 'user1', 'worker1', 'worker2']
-    users = [dict(filter(lambda row: row[0] in available_fields, user.items()))
-        for user in users['results'] if user['username'] in org1_members]
+        self._test_cannot_see(user, f"users/{id}")
 
-    for username in org1_members:
-        response = get_method(username, 'users', org='org1')
+    def test_all_members_can_see_list_of_members(self, members, users):
+        available_fields = ['url', 'id', 'username', 'first_name', 'last_name']
+        org1_members = members[1]
+        data = [dict(filter(lambda row: row[0] in available_fields, data.items()))
+            for user, data in users.items() if user in org1_members]
 
-        assert response.status_code == HTTPStatus.OK
-        assert DeepDiff(users, response.json()['results'], ignore_order=True) == {}
+        for username in org1_members:
+            self._test_can_see(username, data, org='org1')

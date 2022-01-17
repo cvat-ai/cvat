@@ -2,33 +2,13 @@
 #
 # SPDX-License-Identifier: MIT
 
-import json
-import os.path as osp
 from http import HTTPStatus
-
-import pytest
 from deepdiff import DeepDiff
+from tests.rest_api.conftest import roles_by_org
 
-from .utils.config import ASSETS_DIR, get_method, patch_method
+from .utils.config import get_method, patch_method
 
-@pytest.fixture(scope='module')
-def memberships():
-    with open(osp.join(ASSETS_DIR, 'memberships.json')) as f:
-        return json.load(f)['results']
-
-@pytest.fixture(scope='module')
-def roles(memberships):
-    data = {}
-    for membership in memberships:
-        org = membership['organization']
-        role = membership['role']
-        data.setdefault(org, {}).setdefault(role, []).append({
-            'username': membership['user']['username'],
-            'id': membership['id']
-        })
-    return data
-
-class TestGetMembership:
+class TestGetMemberships:
     def _test_can_see_memberships(self, user, data, **kwargs):
         response = get_method(user, 'memberships', **kwargs)
 
@@ -61,7 +41,7 @@ class TestGetMembership:
             self._test_cannot_see_memberships(user, org_id=1)
 
 
-class TestPatchMembership:
+class TestPatchMemberships:
     _ORG = 2
 
     def _test_can_change_membership(self, user, membership_id, new_role):
@@ -89,9 +69,9 @@ class TestPatchMembership:
         ('owner',      'worker',     'supervisor', True),
         ('owner',      'maintainer', 'worker',     True),
     ])
-    def test_user_can_change_role_of_member(self, who, whom, new_role, is_allow, roles):
-        user = roles[self._ORG][who][0]['username']
-        membership_id = roles[self._ORG][whom][1]['id']
+    def test_user_can_change_role_of_member(self, who, whom, new_role, is_allow, roles_by_org):
+        user = roles_by_org[self._ORG][who][0]['username']
+        membership_id = roles_by_org[self._ORG][whom][1]['id']
 
         if is_allow:
             self._test_can_change_membership(user, membership_id, new_role)
