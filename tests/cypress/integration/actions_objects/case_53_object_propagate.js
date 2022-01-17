@@ -1,4 +1,4 @@
-// Copyright (C) 2021 Intel Corporation
+// Copyright (C) 2021-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -11,7 +11,7 @@ context('Object propagate.', () => {
     const createCuboidShape2Points = {
         points: 'From rectangle',
         type: 'Shape',
-        labelName: labelName,
+        labelName,
         firstX: 250,
         firstY: 350,
         secondX: 350,
@@ -38,7 +38,7 @@ context('Object propagate.', () => {
             cy.get('.cvat-propagate-confirm-object-on-frames') // Change value in the "copy of the object on frame" field
                 .find('input')
                 .clear()
-                .type(propagateOnOneFrame);
+                .should('have.value', 1);
             cy.get('.cvat-propagate-confirm-object-up-to-frame') // Value of "up to the frame" field should be same
                 .find('input')
                 .should('have.attr', 'value', propagateOnOneFrame);
