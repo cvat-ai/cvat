@@ -383,7 +383,7 @@ export_task_parser.add_argument(
 
 import_task_parser = task_subparser.add_parser(
     'import',
-    description='import a CVAT task.'
+    description='Import a CVAT task.'
 )
 import_task_parser.add_argument(
     'filename',
