@@ -111,8 +111,8 @@ Description of the options you can find in
   cli.py create "segmented task 1" --overlap 5 --segment_size 100 --start_frame 5 --stop_frame 705 --use_cache \
   remote https://github.com/opencv/opencv/blob/master/samples/data/vtest.avi?raw=true
   ```
-- Create a task named "task 1 with sync annotation", with annotation storage in git repository, and enable `lfs`
-  and the images file from the shared resource:
+- Create a task named "task 1 with sync annotation", with annotation storage in `git` repository, enable `lfs`
+  and the image files from the shared resource:
   ```bash
   cli.py create "task 1 with sync annotation" \
   --dataset_repository_url https://github.com/user/dataset/blob/main/annotation/anno_file_name.zip --lfs \
@@ -121,7 +121,7 @@ Description of the options you can find in
 
 ### Delete
 
-- Delete tasks with id "100", "101", "102" , the command will be executed from user-1 having delete permissions:
+- Delete tasks with id "100", "101", "102" , the command will be executed from "user-1" having delete permissions:
   ```bash
   cli.py --auth user-1:password delete 100 101 102
   ```
@@ -167,7 +167,7 @@ Description of the options you can find in
 
 ### Import
 
-- Import task with id 136 in the format `LabelMe 3.0` :
+- Import task with id 106 in the format `LabelMe 3.0` :
   ```bash
   cli.py import --format "LabelMe 3.0" 106
   ```
