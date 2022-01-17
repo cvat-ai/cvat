@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -29,6 +29,8 @@ interface Props {
     top: number;
     resolved: boolean;
     isFetching: boolean;
+    angle: number;
+    scale: number;
     collapse: () => void;
     resolve: () => void;
     reopen: () => void;
@@ -46,6 +48,8 @@ export default function IssueDialog(props: Props): JSX.Element {
         id,
         left,
         top,
+        scale,
+        angle,
         resolved,
         isFetching,
         collapse,
@@ -112,7 +116,7 @@ export default function IssueDialog(props: Props): JSX.Element {
     );
 
     return ReactDOM.createPortal(
-        <div style={{ top, left }} ref={ref} className='cvat-issue-dialog'>
+        <div style={{ top, left, transform: `scale(${scale}) rotate(${angle}deg)` }} ref={ref} className='cvat-issue-dialog'>
             <Row className='cvat-issue-dialog-header' justify='space-between'>
                 <Col>
                     <Title level={4}>{id >= 0 ? `Issue #${id}` : 'Issue'}</Title>
