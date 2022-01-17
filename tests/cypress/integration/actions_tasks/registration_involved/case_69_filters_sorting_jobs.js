@@ -1,4 +1,4 @@
-// Copyright (C) 2021 Intel Corporation
+// Copyright (C) 2021-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -76,6 +76,7 @@ context('Filtering, sorting jobs.', () => {
                     cy.get('[type="button"]').contains('OK').should('be.visible').click();
                 } else {
                     cy.get('[type="button"]').contains('Reset').should('be.visible').click();
+                    cy.get('[type="button"]').contains('OK').should('be.visible').click();
                 }
             });
         cy.get('.ant-dropdown').should('be.hidden').and('have.class', 'ant-dropdown-hidden');
