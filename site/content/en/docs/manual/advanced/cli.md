@@ -80,9 +80,15 @@ optional arguments:
 Description of the options you can find in
 [Creating an annotation task](/docs/manual/basics/creating_an_annotation_task/) section.
 
-- Create a task named "new task", labels from the file "labels.json" and local images "file1.jpg" and "file2.jpg":
+- Create a task named "new task" on the default server "localhost:8080", labels from the file "labels.json"
+  and local images "file1.jpg" and "file2.jpg", the task will be created as current user:
   ```bash
   cli.py create "new task" --labels labels.json local file1.jpg file2.jpg
+  ```
+- Create a task named "task 1" on the server "example.com" labels from the file "labels.json"
+  and local image "image1.jpg", the task will be created as user "user-1":
+  ```bash
+  cli.py --server-host example.com --auth user-1 create "task 1" --labels labels.json local image1.jpg
   ```
 - Create a task named "task 1", labels from the project with id 1 and with a remote video file,
   the task will be created as user "user-1":
@@ -97,22 +103,22 @@ Description of the options you can find in
   cli.py create "task 1 sort random" --labels labels.json --chunk_size 8 \
   --sorting-method random --frame_step 10 --copy_data --use_zip_chunks share //share/dataset_1/video.avi
   ```
-- Create a task named "task from dataset_1", with link to bug tracker, image quality will be reduced to 75,
-  annotation in the format "CVAT 1.1" will be taken from the file "annotation.xml",
-  the data will be loaded from "dataset_1/images/", the task will be created as user "user-2",
-  and the password will need to be entered additionally:
+- Create a task named "task from dataset_1", with labels "cat" and "dog", with link to bug tracker,
+  image quality will be reduced to 75, annotation in the format "CVAT 1.1" will be taken
+  from the file "annotation.xml", the data will be loaded from "dataset_1/images/",
+  the task will be created as user "user-2", and the password will need to be entered additionally:
   ```bash
-  cli.py --auth user-2 create "task from dataset_1" --bug https://bug-tracker.com/0001 --image_quality 75 \
-  --annotation_path annotation.xml --annotation_format "CVAT 1.1" local dataset_1/images/
+  cli.py --auth user-2 create "task from dataset_1" --labels cat dog --bug https://bug-tracker.com/0001 \
+  --image_quality 75 --annotation_path annotation.xml --annotation_format "CVAT 1.1" local dataset_1/images/
   ```
-- Create a task named "segmented task 1", with overlay size 5, segment size 100, with frames 5 through 705,
-  using cache and with a remote video file:
+- Create a task named "segmented task 1", labels from the file "labels.json", with overlay size 5,
+  segment size 100, with frames 5 through 705, using cache and with a remote video file:
   ```bash
-  cli.py create "segmented task 1" --overlap 5 --segment_size 100 --start_frame 5 --stop_frame 705 --use_cache \
-  remote https://github.com/opencv/opencv/blob/master/samples/data/vtest.avi?raw=true
+  cli.py create "segmented task 1" --labels labels.json --overlap 5 --segment_size 100 --start_frame 5 \
+  --stop_frame 705 --use_cache remote https://github.com/opencv/opencv/blob/master/samples/data/vtest.avi?raw=true
   ```
-- Create a task named "task 1 with sync annotation", with annotation storage in `git` repository, enable `lfs`
-  and the image files from the shared resource:
+- Create a task named "task 1 with sync annotation", labels from the file "labels.json"
+  with annotation storage in `git` repository, enable `lfs` and the image files from the shared resource:
   ```bash
   cli.py create "task 1 with sync annotation" \
   --dataset_repository_url https://github.com/user/dataset/blob/main/annotation/anno_file_name.zip --lfs \
@@ -141,7 +147,7 @@ Description of the options you can find in
 
 - Save frame 12, 15, 22 from task with id 119, into "images" folder with compressed quality:
   ```bash
-  cli.py frames --outdir images/  --quality compressed 119 12 15 22
+  cli.py frames --outdir images --quality compressed 119 12 15 22
   ```
 
 ### Dump annotation
