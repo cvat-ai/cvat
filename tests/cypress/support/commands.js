@@ -634,13 +634,13 @@ Cypress.Commands.add('deleteLabel', (labelName) => {
         .and('be.visible')
         .find('[aria-label="close"]')
         .click();
-    cy.intercept('PATCH', '/api/v1/tasks/**').as('tasks');
+    cy.intercept('PATCH', /\/api\/v1\/(tasks|projects)\/.*/).as('deleteLabel');
     cy.get('.cvat-modal-delete-label')
         .should('be.visible')
         .within(() => {
             cy.contains('[type="button"]', 'OK').click();
         });
-    cy.wait('@tasks').its('response.statusCode').should('equal', 200);
+    cy.wait('@deleteLabel').its('response.statusCode').should('equal', 200);
     cy.contains('.cvat-constructor-viewer-item', new RegExp(`^${labelName}$`)).should('not.exist');
 });
 
