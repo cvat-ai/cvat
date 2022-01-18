@@ -1,4 +1,3 @@
-from cacheops import cache, CacheMiss
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
@@ -25,15 +24,11 @@ class PredictView(viewsets.ViewSet):
         if not frame:
             return Response(data='query param "frame" empty or not provided', status=status.HTTP_400_BAD_REQUEST)
         cache_key = f'predict_image_{task_id}_{frame}'
-        try:
-            resp = cache.get(cache_key)
-        except CacheMiss:
-            save_frame_prediction_to_cache_job.delay(cache_key, task_id=task_id,
-                                                     frame=frame)
-            resp = {
-                'status': 'queued',
-            }
-            cache.set(cache_key=cache_key, data=resp, timeout=60)
+        save_frame_prediction_to_cache_job.delay(cache_key, task_id=task_id,
+                                                    frame=frame)
+        resp = {
+            'status': 'queued',
+        }
 
         return Response(resp)
 
@@ -49,13 +44,9 @@ class PredictView(viewsets.ViewSet):
             Response({'status': 'done'})
 
         cache_key = f'predict_status_{project_id}'
-        try:
-            resp = cache.get(cache_key)
-        except CacheMiss:
-            save_prediction_server_status_to_cache_job.delay(cache_key, cvat_project_id=project_id)
-            resp = {
-                'status': 'queued',
-            }
-            cache.set(cache_key=cache_key, data=resp, timeout=60)
+        save_prediction_server_status_to_cache_job.delay(cache_key, cvat_project_id=project_id)
+        resp = {
+            'status': 'queued',
+        }
 
         return Response(resp)

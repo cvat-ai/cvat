@@ -3,10 +3,9 @@ from abc import ABC, abstractmethod
 from collections import OrderedDict
 from functools import wraps
 from typing import Callable, List, Union
+from contextlib import suppress
 
 import requests
-
-from cacheops import cache, CacheMiss
 
 from cvat.apps.engine.models import TrainingProject, ShapeType
 
@@ -48,11 +47,9 @@ def retry(amount: int = 2) -> Callable:
             __amount = amount
             while __amount > 0:
                 __amount -= 1
-                try:
+                with suppress(Exception):
                     result = func(*args, **kwargs)
                     return result
-                except Exception:
-                    pass
 
         return wrapper
 
@@ -222,9 +219,6 @@ class TrainingServerAPI(TrainingServerAPIAbs):
         response = self.request(method='GET', url=url, headers=headers)
         return response
 
-    def __delete_token(self):
-        cache.delete(self.token_key)
-
     @retry()
     def __upload_annotation(self, project_id: str, image_id: str, annotation: List[dict]):
         url = f'{self.host}/v2/projects/{project_id}/media/images/{image_id}/annotations'
@@ -264,13 +258,9 @@ class TrainingServerAPI(TrainingServerAPIAbs):
             r = requests.post(url=url, files=data, verify=False)  # nosec
             return r.json()
 
-        try:
-            token = cache.get(self.token_key)
-        except CacheMiss:
-            response = get_token(self.host, self.username, self.password)
-            token = response.get('secure_token', '')
-            expires_in = response.get('expires_in', 3600)
-            cache.set(cache_key=self.token_key, data=token, timeout=expires_in)
+        response = get_token(self.host, self.username, self.password)
+        token = response.get('secure_token', '')
+
         return token
 
     @property
@@ -280,7 +270,6 @@ class TrainingServerAPI(TrainingServerAPIAbs):
     def request(self, method: str, url: str, **kwargs) -> Union[list, dict, str]:
         response = requests.request(method=method, url=url, verify=False, **kwargs)
         if response.status_code == 401:
-            self.__delete_token()
             raise Exception("401")
         result = response.json()
         return result

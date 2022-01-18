@@ -106,7 +106,6 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django_rq',
     'compressor',
-    'cacheops',
     'sendfile',
     'dj_pagination',
     'revproxy',
@@ -314,26 +313,6 @@ AUTH_PASSWORD_VALIDATORS = [
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
 ]
-
-# Cache DB access (e.g. for engine.task.get_frame)
-# https://github.com/Suor/django-cacheops
-CACHEOPS_REDIS = {
-    'host': 'localhost', # redis-server is on same machine
-    'port': 6379,        # default redis port
-    'db': 1,             # SELECT non-default redis database
-}
-
-CACHEOPS = {
-    # Automatically cache any Task.objects.get() calls for 15 minutes
-    # This also includes .first() and .last() calls.
-    'engine.task': {'ops': 'get', 'timeout': 60*15},
-
-    # Automatically cache any Job.objects.get() calls for 15 minutes
-    # This also includes .first() and .last() calls.
-    'engine.job': {'ops': 'get', 'timeout': 60*15},
-}
-
-CACHEOPS_DEGRADE_ON_FAILURE = True
 
 # Internationalization
 # https://docs.djangoproject.com/en/2.0/topics/i18n/
