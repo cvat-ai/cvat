@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -253,6 +253,10 @@ export class AutoborderHandlerImpl implements AutoborderHandler {
                 let points = '';
                 if (shape.tagName === 'polyline' || shape.tagName === 'polygon') {
                     points = shape.getAttribute('points');
+                } else if (shape.tagName === 'ellipse') {
+                    const cx = +shape.getAttribute('cx');
+                    const cy = +shape.getAttribute('cy');
+                    points = `${cx},${cy}`;
                 } else if (shape.tagName === 'rect') {
                     const x = +shape.getAttribute('x');
                     const y = +shape.getAttribute('y');

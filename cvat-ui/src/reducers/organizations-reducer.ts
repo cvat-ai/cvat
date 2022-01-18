@@ -1,4 +1,4 @@
-// Copyright (C) 2021 Intel Corporation
+// Copyright (C) 2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -41,6 +41,7 @@ export default function (
             return {
                 ...state,
                 fetching: false,
+                initialized: true,
             };
         case OrganizationActionsTypes.ACTIVATE_ORGANIZATION_SUCCESS: {
             return {

@@ -1,4 +1,4 @@
-// Copyright (C) 2021 Intel Corporation
+// Copyright (C) 2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -109,7 +109,8 @@ function FiltersModalComponent(): JSX.Element {
                         { value: 'points', title: 'Points' },
                         { value: 'polyline', title: 'Polyline' },
                         { value: 'polygon', title: 'Polygon' },
-                        { value: 'cuboids', title: 'Cuboids' },
+                        { value: 'cuboid', title: 'Cuboid' },
+                        { value: 'ellipse', title: 'Ellipse' },
                     ],
                 },
             },

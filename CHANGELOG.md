@@ -7,7 +7,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## \[2.0.0] - Unreleased
 ### Added
-
 - Add additional environment variables for Nuclio configuration (<https://github.com/openvinotoolkit/cvat/pull/3894>)
 - Add KITTI segmentation and detection format (<https://github.com/openvinotoolkit/cvat/pull/3757>)
 - Add LFW format (<https://github.com/openvinotoolkit/cvat/pull/3770>)
@@ -21,13 +20,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Data sorting option (<https://github.com/openvinotoolkit/cvat/pull/3937>)
 - Options to change font size & position of text labels on the canvas (<https://github.com/openvinotoolkit/cvat/pull/3972>)
 - Add "tag" return type for automatic annotation in Nuclio (<https://github.com/openvinotoolkit/cvat/pull/3896>)
+- Helm chart: Make user-data-permission-fix optional (<https://github.com/openvinotoolkit/cvat/pull/3994>)
 - Advanced identity access management system, using open policy agent (<https://github.com/openvinotoolkit/cvat/pull/3788>)
 - Organizations to create "shared space" for different groups of users (<https://github.com/openvinotoolkit/cvat/pull/3788>)
 - Dataset importing to a project (<https://github.com/openvinotoolkit/cvat/pull/3790>)
 - User is able to customize information that text labels show (<https://github.com/openvinotoolkit/cvat/pull/4029>)
 - Support for uploading manifest with any name (<https://github.com/openvinotoolkit/cvat/pull/4041>)
 - Added information about OpenVINO toolkit to login page (<https://github.com/openvinotoolkit/cvat/pull/4077>)
-
+- Support for working with ellipses (<https://github.com/openvinotoolkit/cvat/pull/4062>)
+- Add several flags to task creation CLI (<https://github.com/openvinotoolkit/cvat/pull/4119>)
+- Add YOLOv5 serverless function for automatic annotation (<https://github.com/openvinotoolkit/cvat/pull/4178>)
 ### Changed
 - Users don't have access to a task object anymore if they are assigneed only on some jobs of the task (<https://github.com/openvinotoolkit/cvat/pull/3788>)
 - Different resources (tasks, projects) are not visible anymore for all CVAT instance users by default (<https://github.com/openvinotoolkit/cvat/pull/3788>)
@@ -46,7 +48,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed task creating with large files via webpage (<https://github.com/openvinotoolkit/cvat/pull/3692>)
 - Added information to export CVAT_HOST when performing local installation for accessing over network (<https://github.com/openvinotoolkit/cvat/pull/4014>)
 - Fixed possible color collisions in the generated colormap (<https://github.com/openvinotoolkit/cvat/pull/4007>)
-- Original pdf file is deleted when using share(<https://github.com/openvinotoolkit/cvat/pull/3967>)
+- Original pdf file is deleted when using share (<https://github.com/openvinotoolkit/cvat/pull/3967>)
+- Order in an annotation file(<https://github.com/openvinotoolkit/cvat/pull/4087>)
+- Fixed task data upload progressbar (<https://github.com/openvinotoolkit/cvat/pull/4134>)
+- Email in org invitations is case sensitive (<https://github.com/openvinotoolkit/cvat/pull/4153>)
+- Caching for tasks and jobs can lead to an exception if its assignee user is removed (<https://github.com/openvinotoolkit/cvat/pull/4165>)
+- Added intelligent function when paste labels to another task (<https://github.com/openvinotoolkit/cvat/pull/4161>)
+- Uncaught TypeError: this.el.node.getScreenCTM() is null in Firefox (<https://github.com/openvinotoolkit/cvat/pull/4175>)
+- Bug: canvas is busy when start playing, start resizing a shape and do not release the mouse cursor (<https://github.com/openvinotoolkit/cvat/pull/4151>)
+- Bug: could not receive frame N. TypeError: Cannot read properties of undefined (reding "filename") (<https://github.com/openvinotoolkit/cvat/pull/4187>)
+- Fixed tus upload error over https (<https://github.com/openvinotoolkit/cvat/pull/4154>)
+- Auth token key is not returned when registering without email verification (<https://github.com/openvinotoolkit/cvat/pull/4092>)
 
 ### Security
 - Updated ELK to 6.8.22 which uses log4j 2.17.0 (<https://github.com/openvinotoolkit/cvat/pull/4052>)

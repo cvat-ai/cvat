@@ -61,7 +61,7 @@ For example, let's take [The Oxford-IIIT Pet Dataset](https://www.robots.ox.ac.u
 - Unpack the archive into the prepared folder
   and create a manifest file as described in [prepare manifest file section](/docs/manual/advanced/dataset_manifest/):
 
-  ```
+  ```bash
   python <cvat repository>/utils/dataset_manifest/create.py --output-dir <yourfolder> <yourfolder>
   ```
 
@@ -349,7 +349,7 @@ I used `aws-cli 1.20.49` `Python 3.7.9` `Windows 10`.
 You can configure credentials by running `aws configure`.
 You will need to enter `Access Key ID` and `Secret Access Key` as well as region.
 
-```
+```bash
 aws configure
 Access Key ID: <your Access Key ID>
 Secret Access Key: <your Secret Access Key>
@@ -357,20 +357,20 @@ Secret Access Key: <your Secret Access Key>
 
 Copy the content of the bucket to a folder on your computer:
 
-```
+```bash
 aws s3 cp <s3://bucket-name> <yourfolder> --recursive
 ```
 
 After copying the files, you can create a manifest file as described in [preapair manifest file section](/docs/manual/advanced/dataset_manifest/):
 
-```
+```bash
 python <cvat repository>/utils/dataset_manifest/create.py --output-dir <yourfolder> <yourfolder>
 ```
 
 When the manifest file is ready, you can upload it to aws s3 bucket. If you gave full write permissions
 when you created the user, run:
 
-```
+```bash
 aws s3 cp <yourfolder>/manifest.jsonl <s3://bucket-name>
 ```
 

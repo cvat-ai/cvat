@@ -34,19 +34,15 @@ class CLI():
             data = {'remote_files[{}]'.format(i): f for i, f in enumerate(resources)}
         elif resource_type == ResourceType.SHARE:
             data = {'server_files[{}]'.format(i): f for i, f in enumerate(resources)}
-        data['image_quality'] = 50
+        data['image_quality'] = 70
 
         ## capture additional kwargs
-        if 'image_quality' in kwargs:
-            data['image_quality'] = kwargs.get('image_quality')
-        if 'frame_step' in kwargs:
+        for flag in ['chunk_size', 'copy_data', 'image_quality', 'sorting_method',
+                    'start_frame', 'stop_frame', 'use_cache', 'use_zip_chunks']:
+            if kwargs.get(flag) is not None:
+                data[flag] = kwargs.get(flag)
+        if kwargs.get('frame_step') is not None:
             data['frame_filter'] = f"step={kwargs.get('frame_step')}"
-        if 'copy_data' in kwargs:
-            data['copy_data'] = kwargs.get('copy_data')
-        if 'use_cache' in kwargs:
-            data['use_cache'] = kwargs.get('use_cache')
-        if 'sorting_method' in kwargs:
-            data['sorting_method'] = kwargs.get('sorting_method')
 
         response = self.session.post(url, data=data, files=files)
         response.raise_for_status()
@@ -76,25 +72,24 @@ class CLI():
             response.raise_for_status()
         return output
 
-    def tasks_create(self, name, labels, overlap, segment_size, bug, resource_type, resources,
+    def tasks_create(self, name, labels, resource_type, resources,
                      annotation_path='', annotation_format='CVAT XML 1.1',
                      completion_verification_period=20,
                      git_completion_verification_period=2,
                      dataset_repository_url='',
-                     project_id=None,
                      lfs=False, **kwargs):
         """ Create a new task with the given name and labels JSON and
         add the files to it. """
         url = self.api.tasks
-        labels = [] if project_id is not None else labels
+        labels = [] if kwargs.get('project_id') is not None else labels
         data = {'name': name,
-                'labels': labels,
-                'overlap': overlap,
-                'segment_size': segment_size,
-                'bug_tracker': bug,
+                'labels': labels
         }
-        if project_id:
-            data.update({'project_id': project_id})
+
+        for flag in ['bug_tracker', 'overlap', 'project_id', 'segment_size']:
+            if kwargs.get(flag) is not None:
+                data[flag] = kwargs.get(flag)
+
         response = self.session.post(url, json=data)
         response.raise_for_status()
         response_json = response.json()

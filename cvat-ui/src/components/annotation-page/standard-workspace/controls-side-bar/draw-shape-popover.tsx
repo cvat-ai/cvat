@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -126,7 +126,7 @@ function DrawShapePopoverComponent(props: Props): JSX.Element {
                     </Row>
                 </>
             )}
-            {is2D && shapeType !== ShapeType.RECTANGLE && shapeType !== ShapeType.CUBOID && (
+            {is2D && ![ShapeType.RECTANGLE, ShapeType.CUBOID, ShapeType.ELLIPSE].includes(shapeType) ? (
                 <Row justify='space-around' align='middle'>
                     <Col span={14}>
                         <Text className='cvat-text-color'> Number of points: </Text>
@@ -147,7 +147,7 @@ function DrawShapePopoverComponent(props: Props): JSX.Element {
                         />
                     </Col>
                 </Row>
-            )}
+            ) : null}
             <Row justify='space-around'>
                 <Col span={12}>
                     <CVATTooltip title={`Press ${repeatShapeShortcut} to draw again`}>

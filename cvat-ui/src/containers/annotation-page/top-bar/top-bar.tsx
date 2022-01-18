@@ -1,4 +1,4 @@
-// Copyright (C) 2021 Intel Corporation
+// Copyright (C) 2021-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -53,6 +53,7 @@ interface StateToProps {
     frameStep: number;
     frameSpeed: FrameSpeed;
     frameDelay: number;
+    frameFetching: boolean;
     playing: boolean;
     saving: boolean;
     canvasIsReady: boolean;
@@ -102,6 +103,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
                     filename: frameFilename,
                     number: frameNumber,
                     delay: frameDelay,
+                    fetching: frameFetching,
                 },
             },
             annotations: {
@@ -131,6 +133,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         frameStep,
         frameSpeed,
         frameDelay,
+        frameFetching,
         playing,
         canvasIsReady,
         saving,
@@ -235,7 +238,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
 
     public componentDidMount(): void {
         const {
-            autoSaveInterval, history, jobInstance, frameData, setForceExitAnnotationFlag, showDeletedFrames,
+            autoSaveInterval, history, jobInstance, setForceExitAnnotationFlag,
         } = this.props;
         this.autoSaveInterval = window.setInterval(this.autoSave.bind(this), autoSaveInterval);
 
@@ -555,13 +558,14 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
             frameSpeed,
             frameNumber,
             frameDelay,
+            frameFetching,
             playing,
             canvasIsReady,
             onSwitchPlay,
             onChangeFrame,
         } = this.props;
 
-        if (playing && canvasIsReady) {
+        if (playing && canvasIsReady && !frameFetching) {
             if (frameNumber < jobInstance.stopFrame) {
                 let framesSkipped = 0;
                 if (frameSpeed === FrameSpeed.Fast && frameNumber + 1 < jobInstance.stopFrame) {

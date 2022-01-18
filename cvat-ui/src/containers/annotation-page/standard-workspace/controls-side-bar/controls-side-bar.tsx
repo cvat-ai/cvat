@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -53,7 +53,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
 
     return {
         rotateAll,
-        canvasInstance,
+        canvasInstance: canvasInstance as Canvas,
         activeControl,
         labels,
         normalizedKeyMap,

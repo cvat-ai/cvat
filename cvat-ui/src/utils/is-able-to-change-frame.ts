@@ -1,4 +1,4 @@
-// Copyright (C) 2021 Intel Corporation
+// Copyright (C) 2021-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -9,5 +9,7 @@ export default function isAbleToChangeFrame(): boolean {
     const store = getCVATStore();
 
     const state: CombinedState = store.getState();
-    return state.annotation.canvas.instance.isAbleToChangeFrame() && !state.annotation.player.navigationBlocked;
+    const { instance } = state.annotation.canvas;
+    return !!instance && instance.isAbleToChangeFrame() &&
+        !state.annotation.player.navigationBlocked;
 }

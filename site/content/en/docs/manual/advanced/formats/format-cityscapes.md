@@ -126,7 +126,7 @@ Original Cityscapes color map:
 
 ```
 
-<details>
+</details>
 
 Upload images when creating a task:
 
