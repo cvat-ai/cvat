@@ -384,7 +384,7 @@ def _create_thread(db_task, data, isBackupRestore=False, isDatasetImport=False):
         related_images = detect_related_images(extractor.absolute_source_paths, upload_dir)
 
     if isBackupRestore and not isinstance(extractor, MEDIA_TYPES['video']['extractor']) and db_data.storage_method == models.StorageMethodChoice.CACHE and \
-            db_data.sorting_method in {models.SortingMethod.RANDOM, models.SortingMethod.PREDEFINED}:
+            db_data.sorting_method in {models.SortingMethod.RANDOM, models.SortingMethod.PREDEFINED} and validate_dimension.dimension != models.DimensionType.DIM_3D:
         # we should sort media_files according to the manifest content sequence
         # and we should do this in general after validation step for 3D data and after filtering from related_images
         manifest = ImageManifestManager(db_data.get_manifest_path())
