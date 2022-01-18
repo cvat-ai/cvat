@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -628,24 +628,39 @@ Cypress.Commands.add('collectLabelsName', () => {
     });
 });
 
+Cypress.Commands.add('deleteLabel', (labelName) => {
+    cy.contains('.cvat-constructor-viewer-item', new RegExp(`^${labelName}$`))
+        .should('exist')
+        .and('be.visible')
+        .find('[aria-label="close"]')
+        .click();
+    cy.get('.cvat-modal-delete-label')
+        .should('be.visible')
+        .within(() => {
+            cy.contains('[type="button"]', 'OK').click();
+        });
+    cy.contains('.cvat-constructor-viewer-item', labelName).should('not.exist');
+});
+
 Cypress.Commands.add('addNewLabel', (newLabelName, additionalAttrs, labelColor) => {
     cy.collectLabelsName().then((labelsNames) => {
-        if (labelsNames.indexOf(newLabelName) === -1) {
-            cy.contains('button', 'Add label').click();
-            cy.get('[placeholder="Label name"]').type(newLabelName);
-            if (labelColor) {
-                cy.get('.cvat-change-task-label-color-badge').click();
-                cy.changeColorViaBadge(labelColor);
-            }
-            if (additionalAttrs) {
-                for (let i = 0; i < additionalAttrs.length; i++) {
-                    cy.updateAttributes(additionalAttrs[i]);
-                }
-            }
-            cy.contains('button', 'Done').click();
-            cy.get('.cvat-constructor-viewer').should('be.visible');
+        if (labelsNames.includes(newLabelName)) {
+            cy.deleteLabel(newLabelName);
         }
     });
+    cy.contains('button', 'Add label').click();
+    cy.get('[placeholder="Label name"]').type(newLabelName);
+    if (labelColor) {
+        cy.get('.cvat-change-task-label-color-badge').click();
+        cy.changeColorViaBadge(labelColor);
+    }
+    if (additionalAttrs) {
+        for (let i = 0; i < additionalAttrs.length; i++) {
+            cy.updateAttributes(additionalAttrs[i]);
+        }
+    }
+    cy.contains('button', 'Done').click();
+    cy.get('.cvat-constructor-viewer').should('be.visible');
 });
 
 Cypress.Commands.add('addNewLabelViaContinueButton', (additionalLabels) => {
