@@ -331,13 +331,14 @@ class ZipReader(ImageListReader):
         else: # necessary for mime_type definition
             return self._source_path[i]
 
-    def reconcile(self, source_files, step=1, start=0, stop=None, dimension=DimensionType.DIM_2D):
+    def reconcile(self, source_files, step=1, start=0, stop=None, dimension=DimensionType.DIM_2D, sorting_method=None):
         super().reconcile(
             source_files=source_files,
             step=step,
             start=start,
             stop=stop,
             dimension=dimension,
+            sorting_method=sorting_method
         )
 
     def extract(self):
