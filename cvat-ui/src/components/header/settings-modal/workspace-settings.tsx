@@ -23,6 +23,7 @@ interface Props {
     aamZoomMargin: number;
     showAllInterpolationTracks: boolean;
     showObjectsTextAlways: boolean;
+    showDeletedFrames: boolean;
     automaticBordering: boolean;
     intelligentPolygonCrop: boolean;
     defaultApproxPolyAccuracy: number;
@@ -35,6 +36,7 @@ interface Props {
     onChangeDefaultApproxPolyAccuracy(approxPolyAccuracy: number): void;
     onSwitchShowingInterpolatedTracks(enabled: boolean): void;
     onSwitchShowingObjectsTextAlways(enabled: boolean): void;
+    onSwitchShowingDeletedFrames(enabled: boolean): void;
     onSwitchAutomaticBordering(enabled: boolean): void;
     onSwitchIntelligentPolygonCrop(enabled: boolean): void;
     onChangeTextFontSize(fontSize: number): void;
@@ -49,6 +51,7 @@ function WorkspaceSettingsComponent(props: Props): JSX.Element {
         aamZoomMargin,
         showAllInterpolationTracks,
         showObjectsTextAlways,
+        showDeletedFrames,
         automaticBordering,
         intelligentPolygonCrop,
         defaultApproxPolyAccuracy,
@@ -62,6 +65,7 @@ function WorkspaceSettingsComponent(props: Props): JSX.Element {
         onSwitchShowingObjectsTextAlways,
         onSwitchAutomaticBordering,
         onSwitchIntelligentPolygonCrop,
+        onSwitchShowingDeletedFrames,
         onChangeDefaultApproxPolyAccuracy,
         onChangeTextFontSize,
         onChangeTextPosition,
@@ -107,20 +111,38 @@ function WorkspaceSettingsComponent(props: Props): JSX.Element {
                     <Text type='secondary'> minutes </Text>
                 </Col>
             </Row>
-            <Row className='cvat-workspace-settings-show-interpolated'>
-                <Col span={24}>
-                    <Checkbox
-                        className='cvat-text-color'
-                        checked={showAllInterpolationTracks}
-                        onChange={(event: CheckboxChangeEvent): void => {
-                            onSwitchShowingInterpolatedTracks(event.target.checked);
-                        }}
-                    >
-                        Show all interpolation tracks
-                    </Checkbox>
+            <Row>
+                <Col span={12} className='cvat-workspace-settings-show-interpolated'>
+                    <Row>
+                        <Checkbox
+                            className='cvat-text-color'
+                            checked={showAllInterpolationTracks}
+                            onChange={(event: CheckboxChangeEvent): void => {
+                                onSwitchShowingInterpolatedTracks(event.target.checked);
+                            }}
+                        >
+                            Show all interpolation tracks
+                        </Checkbox>
+                    </Row>
+                    <Row>
+                        <Text type='secondary'> Show hidden interpolated objects in the side panel</Text>
+                    </Row>
                 </Col>
-                <Col span={24}>
-                    <Text type='secondary'> Show hidden interpolated objects in the side panel </Text>
+                <Col span={12}>
+                    <Row>
+                        <Checkbox
+                            className='cvat-text-color'
+                            checked={showDeletedFrames}
+                            onChange={(event: CheckboxChangeEvent): void => {
+                                onSwitchShowingDeletedFrames(event.target.checked);
+                            }}
+                        >
+                            Show deleted frames
+                        </Checkbox>
+                    </Row>
+                    <Row>
+                        <Text type='secondary'>You won&apos;t be able to edit annotation on it, but you will be able to restore it</Text>
+                    </Row>
                 </Col>
             </Row>
             <Row className='cvat-workspace-settings-show-text-always'>

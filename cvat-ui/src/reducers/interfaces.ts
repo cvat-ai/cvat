@@ -399,6 +399,9 @@ export interface NotificationsState {
             redo: null | ErrorState;
             search: null | ErrorState;
             searchEmptyFrame: null | ErrorState;
+            searchNonDeletedFrame: null | ErrorState;
+            deleteFrame: null | ErrorState;
+            restoreFrame: null | ErrorState;
             savingLogs: null | ErrorState;
         };
         boundaries: {
@@ -683,6 +686,7 @@ export interface WorkspaceSettingsState {
     defaultApproxPolyAccuracy: number;
     toolsBlockerState: ToolsBlockerState;
     textFontSize: number;
+    showDeletedFrames: boolean;
     textPosition: 'auto' | 'center';
     textContent: string;
 }

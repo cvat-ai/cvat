@@ -179,6 +179,7 @@ export enum AnnotationActionTypes {
     ADD_Z_LAYER = 'ADD_Z_LAYER',
     SEARCH_ANNOTATIONS_FAILED = 'SEARCH_ANNOTATIONS_FAILED',
     SEARCH_EMPTY_FRAME_FAILED = 'SEARCH_EMPTY_FRAME_FAILED',
+    SEARCH_NON_DELETED_FRAME_FAILED = 'SEARCH_NON_DELETED_FRAME_FAILED',
     CHANGE_WORKSPACE = 'CHANGE_WORKSPACE',
     SAVE_LOGS_SUCCESS = 'SAVE_LOGS_SUCCESS',
     SAVE_LOGS_FAILED = 'SAVE_LOGS_FAILED',
@@ -194,6 +195,9 @@ export enum AnnotationActionTypes {
     GET_CONTEXT_IMAGE_SUCCESS = 'GET_CONTEXT_IMAGE_SUCCESS',
     GET_CONTEXT_IMAGE_FAILED = 'GET_CONTEXT_IMAGE_FAILED',
     SWITCH_NAVIGATION_BLOCKED = 'SWITCH_NAVIGATION_BLOCKED',
+    DELETE_FRAME_FAILED = 'DELETE_FRAME_FAILED',
+    RESTORE_FRAME_FAILED = 'RESTORE_FRAME_FAILED',
+    RESTORE_FRAME_SUCCESS = 'RESTORE_FRAME_SUCCESS',
 }
 
 export function saveLogsAsync(): ThunkAction {
@@ -999,7 +1003,15 @@ export function getJobAsync(tid: number, jid: number, initialFrame: number, init
                 [job] = await cvat.jobs.get({ jobID: jid });
             }
 
-            const frameNumber = Math.max(Math.min(job.stopFrame, initialFrame), job.startFrame);
+            let frameNumber;
+            if (initialFrame < 0) {
+                frameNumber = await job.frames.searchNonDeleted(job.startFrame, job.stopFrame);
+                if (frameNumber === null) {
+                    frameNumber = job.startFrame;
+                }
+            } else {
+                frameNumber = Math.max(Math.min(job.stopFrame, initialFrame), job.startFrame);
+            }
             const frameData = await job.frames.get(frameNumber);
             // call first getting of frame data before rendering interface
             // to load and decode first chunk
@@ -1405,6 +1417,36 @@ export function searchEmptyFrameAsync(sessionInstance: any, frameFrom: number, f
     };
 }
 
+export function searchNonDeletedFrameAsync(frameFrom: number, frameTo: number, backwardFrameTo?: number): ThunkAction {
+    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+        const state: CombinedState = getStore().getState();
+        const {
+            annotation: {
+                job: {
+                    instance: jobInstance,
+                },
+            },
+        } = state;
+
+        try {
+            let frame = await jobInstance.frames.searchNonDeleted(frameFrom, frameTo);
+            if (frame === null && backwardFrameTo !== undefined) {
+                frame = await jobInstance.frames.searchNonDeleted(frameFrom, backwardFrameTo);
+            }
+            if (frame !== null) {
+                dispatch(changeFrameAsync(frame));
+            }
+        } catch (error) {
+            dispatch({
+                type: AnnotationActionTypes.SEARCH_NON_DELETED_FRAME_FAILED,
+                payload: {
+                    error,
+                },
+            });
+        }
+    };
+}
+
 export function pasteShapeAsync(): ThunkAction {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         const {
@@ -1647,5 +1689,68 @@ export function switchNavigationBlocked(navigationBlocked: boolean): AnyAction {
         payload: {
             navigationBlocked,
         },
+    };
+}
+
+export function deleteFrameAsync(): ThunkAction {
+    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+        const state: CombinedState = getStore().getState();
+        const {
+            annotation: {
+                player: {
+                    frame: {
+                        data: frameData,
+                    },
+                },
+                job: {
+                    instance: jobInstance,
+                },
+            },
+        } = state;
+
+        try {
+            await jobInstance.frames.delete(frameData.number);
+
+            dispatch(searchNonDeletedFrameAsync(
+                frameData.number, frameData.stopFrame, frameData.startFrame,
+            ));
+        } catch (error) {
+            dispatch({
+                type: AnnotationActionTypes.DELETE_FRAME_FAILED,
+                payload: { error },
+            });
+        }
+    };
+}
+
+export function restoreFrameAsync(): ThunkAction {
+    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+        const state: CombinedState = getStore().getState();
+        const {
+            annotation: {
+                player: {
+                    frame: {
+                        number: frameNumber,
+                    },
+                },
+                job: {
+                    instance: jobInstance,
+                },
+            },
+        } = state;
+
+        try {
+            await jobInstance.frames.restore(frameNumber);
+            const frameData = await jobInstance.frames.get(frameNumber);
+            dispatch({
+                type: AnnotationActionTypes.RESTORE_FRAME_SUCCESS,
+                payload: { frameData },
+            });
+        } catch (error) {
+            dispatch({
+                type: AnnotationActionTypes.RESTORE_FRAME_FAILED,
+                payload: { error },
+            });
+        }
     };
 }

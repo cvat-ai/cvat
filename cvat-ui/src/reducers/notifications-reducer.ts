@@ -102,6 +102,8 @@ const defaultState: NotificationsState = {
             redo: null,
             search: null,
             searchEmptyFrame: null,
+            searchNonDeletedFrame: null,
+            deleteFrame: null,
             savingLogs: null,
         },
         boundaries: {
@@ -1115,6 +1117,21 @@ export default function (state = defaultState, action: AnyAction): Notifications
                 },
             };
         }
+        case AnnotationActionTypes.SEARCH_NON_DELETED_FRAME_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    annotation: {
+                        ...state.errors.annotation,
+                        searchNonDeletedFrame: {
+                            message: 'Could not search an non-deleted frame',
+                            reason: action.payload.error.toString(),
+                        },
+                    },
+                },
+            };
+        }
         case AnnotationActionTypes.SAVE_LOGS_FAILED: {
             return {
                 ...state,
@@ -1291,6 +1308,36 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         ...state.errors.predictor,
                         prediction: {
                             message: 'Could not fetch prediction data',
+                            reason: action.payload.error,
+                        },
+                    },
+                },
+            };
+        }
+        case AnnotationActionTypes.DELETE_FRAME_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    annotation: {
+                        ...state.errors.annotation,
+                        deleteFrame: {
+                            message: 'Could not delete frame',
+                            reason: action.payload.error,
+                        },
+                    },
+                },
+            };
+        }
+        case AnnotationActionTypes.RESTORE_FRAME_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    annotation: {
+                        ...state.errors.annotation,
+                        restoreFrame: {
+                            message: 'Could not restore frame',
                             reason: action.payload.error,
                         },
                     },

@@ -11,6 +11,7 @@ import {
     changeAAMZoomMargin,
     switchShowingInterpolatedTracks,
     switchShowingObjectsTextAlways,
+    switchShowingDeletedFrames,
     switchAutomaticBordering,
     switchIntelligentPolygonCrop,
     changeDefaultApproxPolyAccuracy,
@@ -29,6 +30,7 @@ interface StateToProps {
     aamZoomMargin: number;
     showAllInterpolationTracks: boolean;
     showObjectsTextAlways: boolean;
+    showDeletedFrames: boolean;
     defaultApproxPolyAccuracy: number;
     automaticBordering: boolean;
     intelligentPolygonCrop: boolean;
@@ -43,6 +45,7 @@ interface DispatchToProps {
     onChangeAAMZoomMargin(margin: number): void;
     onSwitchShowingInterpolatedTracks(enabled: boolean): void;
     onSwitchShowingObjectsTextAlways(enabled: boolean): void;
+    onSwitchShowingDeletedFrames(enabled: boolean): void;
     onSwitchAutomaticBordering(enabled: boolean): void;
     onSwitchIntelligentPolygonCrop(enabled: boolean): void;
     onChangeDefaultApproxPolyAccuracy(approxPolyAccuracy: number): void;
@@ -59,6 +62,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         aamZoomMargin,
         showAllInterpolationTracks,
         showObjectsTextAlways,
+        showDeletedFrames,
         automaticBordering,
         intelligentPolygonCrop,
         defaultApproxPolyAccuracy,
@@ -73,6 +77,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         aamZoomMargin,
         showAllInterpolationTracks,
         showObjectsTextAlways,
+        showDeletedFrames,
         automaticBordering,
         intelligentPolygonCrop,
         defaultApproxPolyAccuracy,
@@ -98,6 +103,9 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         },
         onSwitchShowingObjectsTextAlways(enabled: boolean): void {
             dispatch(switchShowingObjectsTextAlways(enabled));
+        },
+        onSwitchShowingDeletedFrames(enabled: boolean): void {
+            dispatch(switchShowingDeletedFrames(enabled));
         },
         onSwitchAutomaticBordering(enabled: boolean): void {
             dispatch(switchAutomaticBordering(enabled));

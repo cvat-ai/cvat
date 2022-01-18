@@ -171,6 +171,7 @@ export enum Mode {
 
 export interface CanvasModel {
     readonly imageBitmap: boolean;
+    readonly imageDeleted: boolean;
     readonly image: Image | null;
     readonly issueRegions: Record<number, number[]>;
     readonly objects: any[];
@@ -230,6 +231,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         imageID: number | null;
         imageOffset: number;
         imageSize: Size;
+        imageDeleted: boolean;
         focusData: FocusData;
         gridSize: Size;
         left: number;
@@ -277,6 +279,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
                 height: 0,
                 width: 0,
             },
+            imageDeleted: false,
             focusData: {
                 clientID: 0,
                 padding: 0,
@@ -413,6 +416,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         }
 
         this.data.imageID = frameData.number;
+        this.data.imageDeleted = frameData.deleted;
         frameData
             .data((): void => {
                 this.data.image = null;
@@ -750,6 +754,10 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
 
     public get imageBitmap(): boolean {
         return this.data.imageBitmap;
+    }
+
+    public get imageDeleted(): boolean {
+        return this.data.imageDeleted;
     }
 
     public get image(): Image | null {

@@ -1205,6 +1205,18 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
             };
         }
+        case AnnotationActionTypes.RESTORE_FRAME_SUCCESS: {
+            return {
+                ...state,
+                player: {
+                    ...state.player,
+                    frame: {
+                        ...state.player.frame,
+                        data: action.payload.frameData,
+                    },
+                },
+            };
+        }
         case AnnotationActionTypes.CLOSE_JOB:
         case AuthActionTypes.LOGOUT_SUCCESS: {
             if (state.canvas.instance) {

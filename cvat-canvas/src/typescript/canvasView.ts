@@ -68,6 +68,9 @@ export class CanvasViewImpl implements CanvasView, Listener {
     private canvas: HTMLDivElement;
     private gridPath: SVGPathElement;
     private gridPattern: SVGPatternElement;
+    private deletedImageOverlay: SVGSVGElement;
+    private deletedImageOverlayPath: SVGPathElement;
+    private deletedImageOverlayPattern: SVGPatternElement;
     private controller: CanvasController;
     private svgShapes: Record<number, SVG.Shape>;
     private svgTexts: Record<number, SVG.Text>;
@@ -491,7 +494,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
     }
 
     private moveCanvas(): void {
-        for (const obj of [this.background, this.grid, this.bitmap]) {
+        for (const obj of [this.background, this.grid, this.deletedImageOverlay, this.bitmap]) {
             obj.style.top = `${this.geometry.top}px`;
             obj.style.left = `${this.geometry.left}px`;
         }
@@ -512,12 +515,17 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
     private transformCanvas(): void {
         // Transform canvas
-        for (const obj of [this.background, this.grid, this.content, this.bitmap, this.attachmentBoard]) {
+        for (const obj of [
+            this.background, this.grid, this.deletedImageOverlay, this.content, this.bitmap, this.attachmentBoard,
+        ]) {
             obj.style.transform = `scale(${this.geometry.scale}) rotate(${this.geometry.angle}deg)`;
         }
 
         // Transform grid
         this.gridPath.setAttribute('stroke-width', `${consts.BASE_GRID_WIDTH / this.geometry.scale}px`);
+
+        // Transform deleted frame overlay pattern
+        this.deletedImageOverlayPath.setAttribute('stroke-width', `${consts.BASE_DELETED_PATTERN_WIDTH / this.geometry.scale}px`);
 
         // Transform all shape points
         for (const element of [
@@ -592,7 +600,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
     }
 
     private resizeCanvas(): void {
-        for (const obj of [this.background, this.grid, this.bitmap]) {
+        for (const obj of [this.background, this.grid, this.deletedImageOverlay, this.bitmap]) {
             obj.style.width = `${this.geometry.image.width}px`;
             obj.style.height = `${this.geometry.image.height}px`;
         }
@@ -983,6 +991,10 @@ export class CanvasViewImpl implements CanvasView, Listener {
         this.gridPath = window.document.createElementNS('http://www.w3.org/2000/svg', 'path');
         this.gridPattern = window.document.createElementNS('http://www.w3.org/2000/svg', 'pattern');
 
+        this.deletedImageOverlay = window.document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        this.deletedImageOverlayPath = window.document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        this.deletedImageOverlayPattern = window.document.createElementNS('http://www.w3.org/2000/svg', 'pattern');
+
         this.content = window.document.createElementNS('http://www.w3.org/2000/svg', 'svg');
         this.adoptedContent = SVG.adopt((this.content as any) as HTMLElement) as SVG.Container;
 
@@ -991,11 +1003,15 @@ export class CanvasViewImpl implements CanvasView, Listener {
         this.canvas = window.document.createElement('div');
 
         const loadingCircle: SVGCircleElement = window.document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+
         const gridDefs: SVGDefsElement = window.document.createElementNS('http://www.w3.org/2000/svg', 'defs');
         const gridRect: SVGRectElement = window.document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        const deletedImageOverlayDefs: SVGDefsElement = window.document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+        const deletedImageOverlayRect: SVGRectElement = window.document.createElementNS('http://www.w3.org/2000/svg', 'rect');
 
         // Setup defs
         const contentDefs = this.adoptedContent.defs();
+
         this.issueRegionPattern_1 = contentDefs
             .pattern(consts.BASE_PATTERN_SIZE, consts.BASE_PATTERN_SIZE, (add): void => {
                 add.line(0, 0, 0, 10).stroke('red');
@@ -1038,6 +1054,22 @@ export class CanvasViewImpl implements CanvasView, Listener {
         gridRect.setAttribute('height', '100%');
         gridRect.setAttribute('fill', 'url(#cvat_canvas_grid_pattern)');
 
+        // Setup deleted frame overlay
+        this.deletedImageOverlay.setAttribute('id', 'cvat_canvas_deleted_frame_overlay');
+        this.deletedImageOverlay.setAttribute('version', '2');
+        this.deletedImageOverlayPath.setAttribute('d', 'M 1000 0 L 0 0 1000 0');
+        this.deletedImageOverlayPath.setAttribute('fill', 'none');
+        this.deletedImageOverlayPath.setAttribute('stroke-width', `${consts.BASE_DELETED_PATTERN_WIDTH}`);
+        this.deletedImageOverlayPath.setAttribute('opacity', '0.6');
+        this.deletedImageOverlayPattern.setAttribute('id', 'cvat_canvas_deleted_frame_overlay_pattern');
+        this.deletedImageOverlayPattern.setAttribute('width', '100');
+        this.deletedImageOverlayPattern.setAttribute('height', '100');
+        this.deletedImageOverlayPattern.setAttribute('patternUnits', 'userSpaceOnUse');
+        this.deletedImageOverlayPattern.setAttribute('patternTransform', 'rotate(45)');
+        deletedImageOverlayRect.setAttribute('width', '100%');
+        deletedImageOverlayRect.setAttribute('height', '100%');
+        deletedImageOverlayRect.setAttribute('fill', 'url(#cvat_canvas_deleted_frame_overlay_pattern)');
+
         // Setup content
         this.text.setAttribute('id', 'cvat_canvas_text_content');
         this.background.setAttribute('id', 'cvat_canvas_background');
@@ -1059,10 +1091,17 @@ export class CanvasViewImpl implements CanvasView, Listener {
         gridDefs.appendChild(this.gridPattern);
         this.gridPattern.appendChild(this.gridPath);
 
+        this.deletedImageOverlay.appendChild(deletedImageOverlayDefs);
+        this.deletedImageOverlay.appendChild(deletedImageOverlayRect);
+
+        deletedImageOverlayDefs.appendChild(this.deletedImageOverlayPattern);
+        this.deletedImageOverlayPattern.appendChild(this.deletedImageOverlayPath);
+
         this.canvas.appendChild(this.loadingAnimation);
         this.canvas.appendChild(this.text);
         this.canvas.appendChild(this.background);
         this.canvas.appendChild(this.bitmap);
+        this.canvas.appendChild(this.deletedImageOverlay);
         this.canvas.appendChild(this.grid);
         this.canvas.appendChild(this.content);
         this.canvas.appendChild(this.attachmentBoard);
@@ -1264,6 +1303,19 @@ export class CanvasViewImpl implements CanvasView, Listener {
                         ctx.drawImage(image.imageData, 0, 0);
                     }
                 }
+
+                if (model.imageDeleted) {
+                    this.deletedImageOverlay.style.display = null;
+                    this.background.setAttribute('prevFilter', this.background.style.filter);
+                    this.background.style.filter = 'saturate(0)';
+                } else {
+                    if (this.background.hasAttribute('prevFilter')) {
+                        this.background.style.filter = this.background.getAttribute('prevFilter');
+                        this.background.removeAttribute('prevFilter');
+                    }
+                    this.deletedImageOverlay.style.display = 'none';
+                }
+
                 this.moveCanvas();
                 this.resizeCanvas();
                 this.transformCanvas();

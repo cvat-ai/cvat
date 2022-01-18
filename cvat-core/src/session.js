@@ -7,7 +7,14 @@
     const loggerStorage = require('./logger-storage');
     const serverProxy = require('./server-proxy');
     const {
-        getFrame, getRanges, getPreview, clear: clearFrames, getContextImage,
+        getFrame,
+        deleteFrame,
+        restoreFrame,
+        getRanges,
+        getPreview,
+        clear: clearFrames,
+        searchNonDeletedFrame,
+        getContextImage,
     } = require('./frames');
     const { ArgumentError, DataError } = require('./exceptions');
     const { JobStage, JobState } = require('./enums');
@@ -170,12 +177,35 @@
                         );
                         return result;
                     },
+                    async delete(frame) {
+                        await PluginRegistry.apiWrapper.call(
+                            this,
+                            prototype.frames.delete,
+                            frame,
+                        );
+                    },
+                    async restore(frame) {
+                        await PluginRegistry.apiWrapper.call(
+                            this,
+                            prototype.frames.restore,
+                            frame,
+                        );
+                    },
                     async ranges() {
                         const result = await PluginRegistry.apiWrapper.call(this, prototype.frames.ranges);
                         return result;
                     },
                     async preview() {
                         const result = await PluginRegistry.apiWrapper.call(this, prototype.frames.preview);
+                        return result;
+                    },
+                    async searchNonDeleted(frameFrom, frameTo) {
+                        const result = await PluginRegistry.apiWrapper.call(
+                            this,
+                            prototype.frames.searchNonDeleted,
+                            frameFrom,
+                            frameTo,
+                        );
                         return result;
                     },
                     async contextImage(frameId) {
@@ -400,7 +430,7 @@
              * @memberof Session.annotations
              * @param {integer} from lower bound of a search
              * @param {integer} to upper bound of a search
-             * @returns {integer|null} a frame that contains objects according to the filter
+             * @returns {integer|null} a empty frame according boundaries
              * @throws {module:API.cvat.exceptions.PluginError}
              * @throws {module:API.cvat.exceptions.ArgumentError}
              * @instance
@@ -525,6 +555,22 @@
              * @throws {module:API.cvat.exceptions.ServerError}
              * @throws {module:API.cvat.exceptions.DataError}
              * @throws {module:API.cvat.exceptions.ArgumentError}
+             */
+            /**
+             * Find the nearest non-deleted frame
+             * FIXME: Need to check extension on Task class
+             * @method searchNonDeleted
+             * @memberof Session.frames
+             * @param {integer} from lower bound of a search
+             * @param {integer} to upper bound of a search
+             * @returns {integer|null} a non-deleted frame according boundaries
+             * @throws {module:API.cvat.exceptions.PluginError}
+             * @throws {module:API.cvat.exceptions.ArgumentError}
+             * @instance
+             * @async
+             */
+            /**
+             * FIXME: add delete and restore reference
              */
             /**
              * Get the first frame of a task for preview
@@ -985,8 +1031,11 @@
 
             this.frames = {
                 get: Object.getPrototypeOf(this).frames.get.bind(this),
+                delete: Object.getPrototypeOf(this).frames.delete.bind(this),
+                restore: Object.getPrototypeOf(this).frames.restore.bind(this),
                 ranges: Object.getPrototypeOf(this).frames.ranges.bind(this),
                 preview: Object.getPrototypeOf(this).frames.preview.bind(this),
+                searchNonDeleted: Object.getPrototypeOf(this).frames.searchNonDeleted.bind(this),
                 contextImage: Object.getPrototypeOf(this).frames.contextImage.bind(this),
             };
 
@@ -1107,6 +1156,7 @@
                 data_chunk_size: undefined,
                 data_compressed_chunk_type: undefined,
                 data_original_chunk_type: undefined,
+                deleted_frames: undefined,
                 use_zip_chunks: undefined,
                 use_cache: undefined,
                 copy_data: undefined,
@@ -1630,6 +1680,23 @@
                         get: () => data.data_compressed_chunk_type,
                     },
                     /**
+                    * List of deleted frames from the data
+                    * @name deletedFrames
+                    * @type {Array}
+                    * @memberof module:API.cvat.classes.Task
+                    * @instance
+                    * @throws {module:API.cvat.exceptions.ArgumentError}
+                    */
+                    deletedFrames: {
+                        get: () => data.deleted_frames,
+                        set: (frames) => {
+                            if (!(frames instanceof Array) || frames.reduce((prev, curr) => prev || typeof curr !== 'number', false)) {
+                                throw new ArgumentError(`frames should be array of numbers not ${typeof frames}`);
+                            }
+                            data.deletedFrames = frames;
+                        },
+                    },
+                    /**
                      * @name dimension
                      * @type {module:API.cvat.enums.DimensionType}
                      * @memberof module:API.cvat.classes.Task
@@ -1699,9 +1766,12 @@
 
             this.frames = {
                 get: Object.getPrototypeOf(this).frames.get.bind(this),
+                delete: Object.getPrototypeOf(this).frames.delete.bind(this),
+                restore: Object.getPrototypeOf(this).frames.restore.bind(this),
                 ranges: Object.getPrototypeOf(this).frames.ranges.bind(this),
                 preview: Object.getPrototypeOf(this).frames.preview.bind(this),
                 contextImage: Object.getPrototypeOf(this).frames.contextImage.bind(this),
+                searchNonDeleted: Object.getPrototypeOf(this).frames.searchNonDeleted.bind(this),
             };
 
             this.logger = {
@@ -1882,6 +1952,30 @@
         return frameData;
     };
 
+    Job.prototype.frames.delete.implementation = async function (frame) {
+        if (!Number.isInteger(frame)) {
+            throw new Error(`Frame must be an integer. Got: "${frame}"`);
+        }
+
+        if (frame < 0 || frame >= this.size) {
+            throw new Error('The frame is out of the task');
+        }
+
+        await deleteFrame(this.taskId, frame);
+    };
+
+    Job.prototype.frames.restore.implementation = async function (frame) {
+        if (!Number.isInteger(frame)) {
+            throw new Error(`Frame must be an integer. Got: "${frame}"`);
+        }
+
+        if (frame < 0 || frame >= this.size) {
+            throw new Error('The frame is out of the task');
+        }
+
+        await restoreFrame(this.taskId, frame);
+    };
+
     Job.prototype.frames.ranges.implementation = async function () {
         const rangesData = await getRanges(this.taskId);
         return rangesData;
@@ -1890,6 +1984,28 @@
     Job.prototype.frames.preview.implementation = async function () {
         const frameData = await getPreview(this.taskId);
         return frameData;
+    };
+
+    Job.prototype.frames.contextImage.implementation = async function (frameId) {
+        const result = await getContextImage(this.taskId, this.id, frameId);
+        return result;
+    };
+
+    Job.prototype.frames.searchNonDeleted.implementation = async function (frameFrom, frameTo) {
+        if (!Number.isInteger(frameFrom) || !Number.isInteger(frameTo)) {
+            throw new ArgumentError('The start and end frames both must be an integer');
+        }
+
+        if (frameFrom < this.startFrame || frameFrom > this.stopFrame) {
+            throw new ArgumentError('The start frame is out of the job');
+        }
+
+        if (frameTo < this.startFrame || frameTo > this.stopFrame) {
+            throw new ArgumentError('The stop frame is out of the job');
+        }
+
+        const result = await searchNonDeletedFrame(this.taskId, frameFrom, frameTo);
+        return result;
     };
 
     // TODO: Check filter for annotations
@@ -2078,11 +2194,6 @@
         return result;
     };
 
-    Job.prototype.frames.contextImage.implementation = async function (frameId) {
-        const result = await getContextImage(this.taskId, this.id, frameId);
-        return result;
-    };
-
     Job.prototype.close.implementation = function closeTask() {
         clearFrames(this.taskId);
         closeSession(this);
@@ -2107,6 +2218,7 @@
                 bugTracker: 'bug_tracker',
                 projectId: 'project_id',
                 assignee: 'assignee_id',
+                deletedFrames: 'deleted_frames',
             });
             if (taskData.assignee_id) {
                 taskData.assignee_id = taskData.assignee_id.id;
@@ -2223,6 +2335,47 @@
     Task.prototype.frames.preview.implementation = async function () {
         const frameData = await getPreview(this.id);
         return frameData;
+    };
+
+    Task.prototype.frames.delete.implementation = async function (frame) {
+        if (!Number.isInteger(frame)) {
+            throw new Error(`Frame must be an integer. Got: "${frame}"`);
+        }
+
+        if (frame < 0 || frame >= this.size) {
+            throw new Error('The frame is out of the task');
+        }
+
+        await deleteFrame(this.id, frame);
+    };
+
+    Task.prototype.frames.restore.implementation = async function (frame) {
+        if (!Number.isInteger(frame)) {
+            throw new Error(`Frame must be an integer. Got: "${frame}"`);
+        }
+
+        if (frame < 0 || frame >= this.size) {
+            throw new Error('The frame is out of the task');
+        }
+
+        await restoreFrame(this.id, frame);
+    };
+
+    Task.prototype.frames.searchNonDeleted.implementation = async function (frameFrom, frameTo) {
+        if (!Number.isInteger(frameFrom) || !Number.isInteger(frameTo)) {
+            throw new ArgumentError('The start and end frames both must be an integer');
+        }
+
+        if (frameFrom < 0 || frameFrom > this.size) {
+            throw new ArgumentError('The start frame is out of the task');
+        }
+
+        if (frameTo < 0 || frameTo > this.size) {
+            throw new ArgumentError('The stop frame is out of the task');
+        }
+
+        const result = await searchNonDeletedFrame(this.id, frameFrom, frameTo);
+        return result;
     };
 
     // TODO: Check filter for annotations

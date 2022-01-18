@@ -1155,6 +1155,21 @@
                 return response.data;
             }
 
+            async function patchMeta(tid, meta) {
+                const { backendAPI } = config;
+
+                let response = null;
+                try {
+                    response = await Axios.patch(`${backendAPI}/tasks/${tid}/data/meta`, meta, {
+                        proxy: config.proxy,
+                    });
+                } catch (errorData) {
+                    throw generateError(errorData);
+                }
+
+                return response.data;
+            }
+
             // Session is 'task' or 'job'
             async function getAnnotations(session, id) {
                 const { backendAPI } = config;
@@ -1818,6 +1833,7 @@
                         value: Object.freeze({
                             getData,
                             getMeta,
+                            patchMeta,
                             getPreview,
                             getImageContext,
                         }),

@@ -186,7 +186,9 @@ button.cvat-predictor-button {
     word-break: break-all;
 }
 
-.cvat-player-frame-url-icon {
+.cvat-player-frame-url-icon,
+.cvat-player-delete-frame,
+.cvat-player-restore-frame {
     opacity: 0.7;
     color: $objects-bar-icons-color;
 
@@ -198,6 +200,12 @@ button.cvat-predictor-button {
         opacity: 0.7;
     }
 }
+
+.cvat-player-delete-frame,
+.cvat-player-restore-frame {
+    margin-left: $grid-unit-size * 2;
+}
+
 
 .cvat-player-frame-selector {
     width: 5em;

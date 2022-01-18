@@ -35,6 +35,7 @@ const defaultState: SettingsState = {
         textFontSize: 14,
         textPosition: 'auto',
         textContent: 'id,source,label,attributes,descriptions',
+        showDeletedFrames: false,
         toolsBlockerState: {
             algorithmsLocked: false,
             buttonVisible: false,
@@ -351,6 +352,15 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
             return {
                 ...state,
                 ...action.payload.settings,
+            };
+        }
+        case SettingsActionTypes.SWITCH_SHOWING_DELETED_FRAMES: {
+            return {
+                ...state,
+                workspace: {
+                    ...state.workspace,
+                    showDeletedFrames: action.payload.showDeletedFrames,
+                },
             };
         }
         case BoundariesActionTypes.RESET_AFTER_ERROR:

@@ -28,6 +28,7 @@
             startFrame,
             stopFrame,
             decodeForward,
+            deleted,
             has_related_context: hasRelatedContext,
         }) {
             Object.defineProperties(
@@ -114,6 +115,10 @@
                     },
                     decodeForward: {
                         value: decodeForward,
+                        writable: false,
+                    },
+                    deleted: {
+                        value: deleted,
                         writable: false,
                     },
                 }),
@@ -429,6 +434,7 @@
                         startFrame: frameDataCache[this._taskID].startFrame,
                         stopFrame: frameDataCache[this._taskID].stopFrame,
                         decodeForward: false,
+                        deleted: frameDataCache[this._taskID].meta.deleted_frames.includes(requestedFrame),
                     });
 
                     frameData
@@ -539,6 +545,7 @@
                 startFrame: frameDataCache[taskID].startFrame,
                 stopFrame: frameDataCache[taskID].stopFrame,
                 decodeForward: !fillBuffer,
+                deleted: frameDataCache[taskID].meta.deleted_frames.includes(frameNumber),
             });
 
             if (frameNumber in this._buffer) {
@@ -704,6 +711,49 @@
         return frameDataCache[taskID].frameBuffer.require(frame, taskID, jobID, isPlaying, step);
     }
 
+    async function deleteFrame(taskID, frame) {
+        const { meta } = frameDataCache[taskID];
+        if (meta.deleted_frames.includes(frame)) {
+            throw new ArgumentError('Frame should not be deleted');
+        }
+        const deleteFrames = [...meta.deleted_frames, frame];
+        const newMeta = await serverProxy.frames.patchMeta(taskID, {
+            deleted_frames: deleteFrames,
+        });
+        frameDataCache[taskID].meta = newMeta;
+    }
+
+    async function restoreFrame(taskID, frame) {
+        const { meta } = frameDataCache[taskID];
+        if (!meta.deleted_frames.includes(frame)) {
+            throw new ArgumentError('Frame should be from deleted frames');
+        }
+        const deleteFrames = meta.deleted_frames.filter((e) => e !== frame);
+        const newMeta = await serverProxy.frames.patchMeta(taskID, {
+            deleted_frames: deleteFrames,
+        });
+        frameDataCache[taskID].meta = newMeta;
+    }
+
+    async function searchNonDeletedFrame(taskID, frameFrom, frameTo) {
+        let meta;
+        if (!frameDataCache[taskID]) {
+            meta = await serverProxy.frames.getMeta(taskID);
+        } else {
+            meta = frameDataCache[taskID].meta;
+        }
+        const sign = Math.sign(frameTo - frameFrom);
+        const predicate = sign > 0 ? (frame) => frame <= frameTo : (frame) => frame >= frameTo;
+        const update = sign > 0 ? (frame) => frame + 1 : (frame) => frame - 1;
+        for (let frame = frameFrom; predicate(frame); frame = update(frame)) {
+            if (!meta.deleted_frames.includes(frame)) {
+                return frame;
+            }
+        }
+
+        return null;
+    }
+
     function getRanges(taskID) {
         if (!(taskID in frameDataCache)) {
             return {
@@ -728,9 +778,12 @@
     module.exports = {
         FrameData,
         getFrame,
+        deleteFrame,
+        restoreFrame,
         getRanges,
         getPreview,
         clear,
+        searchNonDeletedFrame,
         getContextImage,
     };
 })();
