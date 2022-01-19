@@ -136,11 +136,11 @@ context('New organization pipeline.', () => {
 
     after(() => {
         cy.logout(thirdUserName);
-        cy.getAuthKey().then((response) => {
-            cy.deletingRegisteredUsers(response, [firstUserName, secondUserName, thirdUserName]);
-            cy.deletingCreatedTasks(response, [newTaskName]);
-            cy.deletingCreatedProjects(response, [project.name]);
-            cy.deletingCreatedOrganizations(response, [organizationParams.shortName]);
+        cy.getAuthKey().then((authKey) => {
+            cy.deletingRegisteredUsers(authKey, [thirdUserName]);
+            cy.deletingCreatedTasks(authKey, [newTaskName]);
+            cy.deletingCreatedProjects(authKey, [project.name]);
+            cy.deletingCreatedOrganizations(authKey, [organizationParams.shortName]);
         });
     });
 
@@ -262,8 +262,8 @@ context('New organization pipeline.', () => {
 
         it('Logout. Remove the first, the second user (deletion occurs from user admin).', () => {
             cy.logout(secondUserName);
-            cy.getAuthKey().then((response) => {
-                cy.deletingRegisteredUsers(response, [firstUserName, secondUserName]);
+            cy.getAuthKey().then((authKey) => {
+                cy.deletingRegisteredUsers(authKey, [firstUserName, secondUserName]);
             });
         });
 

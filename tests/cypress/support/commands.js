@@ -62,23 +62,22 @@ Cypress.Commands.add('getAuthKey', () => {
     });
 });
 
-Cypress.Commands.add('deletingRegisteredUsers', (response, accountToDelete) => {
-    const authKey = response.body.key;
+Cypress.Commands.add('deletingRegisteredUsers', (authResponse, accountsToDelete) => {
+    const authKey = authResponse.body.key;
     cy.request({
         url: '/api/v1/users?page_size=all',
         headers: {
             Authorization: `Token ${authKey}`,
         },
     }).then((_response) => {
-        const responceResult = _response.body.results;
-        for (const user of responceResult) {
-            const userId = user.id;
-            const userName = user.username;
-            for (const account of accountToDelete) {
-                if (userName === account) {
+        const responseResult = _response.body.results;
+        for (const user of responseResult) {
+            const { id, username } = user;
+            for (const account of accountsToDelete) {
+                if (username === account) {
                     cy.request({
                         method: 'DELETE',
-                        url: `/api/v1/users/${userId}`,
+                        url: `/api/v1/users/${id}`,
                         headers: {
                             Authorization: `Token ${authKey}`,
                         },
@@ -134,8 +133,8 @@ Cypress.Commands.add('checkUserStatuses', (authKey, userName, staffStatus, super
     });
 });
 
-Cypress.Commands.add('deletingCreatedTasks', (response, tasksToDelete) => {
-    const authKey = response.body.key;
+Cypress.Commands.add('deletingCreatedTasks', (authResponse, tasksToDelete) => {
+    const authKey = authResponse.body.key;
     cy.request({
         url: '/api/v1/tasks?page_size=all',
         headers: {
@@ -144,13 +143,12 @@ Cypress.Commands.add('deletingCreatedTasks', (response, tasksToDelete) => {
     }).then((_response) => {
         const responceResult = _response.body.results;
         for (const task of responceResult) {
-            const taskId = task.id;
-            const taskName = task.name;
+            const { id, taskname } = task;
             for (const taskToDelete of tasksToDelete) {
-                if (taskName === taskToDelete) {
+                if (taskname === taskToDelete) {
                     cy.request({
                         method: 'DELETE',
-                        url: `/api/v1/tasks/${taskId}`,
+                        url: `/api/v1/tasks/${id}`,
                         headers: {
                             Authorization: `Token ${authKey}`,
                         },

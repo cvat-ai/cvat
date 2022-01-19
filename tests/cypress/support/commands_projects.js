@@ -37,8 +37,8 @@ Cypress.Commands.add(
     },
 );
 
-Cypress.Commands.add('deletingCreatedProjects', (response, projectsToDelete) => {
-    const authKey = response.body.key;
+Cypress.Commands.add('deletingCreatedProjects', (authResponse, projectsToDelete) => {
+    const authKey = authResponse.body.key;
     cy.request({
         url: '/api/v1/projects?page_size=all',
         headers: {
@@ -47,13 +47,12 @@ Cypress.Commands.add('deletingCreatedProjects', (response, projectsToDelete) => 
     }).then((_response) => {
         const responceResult = _response.body.results;
         for (const project of responceResult) {
-            const projectId = project.id;
-            const projectName = project.name;
+            const { id, projectname } = project;
             for (const projectToDelete of projectsToDelete) {
-                if (projectName === projectToDelete) {
+                if (projectname === projectToDelete) {
                     cy.request({
                         method: 'DELETE',
-                        url: `/api/v1/projects/${projectId}`,
+                        url: `/api/v1/projects/${id}`,
                         headers: {
                             Authorization: `Token ${authKey}`,
                         },

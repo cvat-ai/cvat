@@ -138,9 +138,9 @@ context('Review pipeline feature', () => {
 
     after(() => {
         cy.logout();
-        cy.getAuthKey().then((response) => {
-            cy.deletingRegisteredUsers(response, [secondUserName, thirdUserName]);
-            cy.deletingCreatedTasks(response, [taskName]);
+        cy.getAuthKey().then((authKey) => {
+            cy.deletingRegisteredUsers(authKey, [secondUserName, thirdUserName]);
+            cy.deletingCreatedTasks(authKey, [taskName]);
         });
     });
 

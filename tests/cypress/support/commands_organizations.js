@@ -26,8 +26,8 @@ Cypress.Commands.add('createOrganization', (organizationParams) => {
     });
 });
 
-Cypress.Commands.add('deletingCreatedOrganizations', (response, otrganizationsToDelete) => {
-    const authKey = response.body.key;
+Cypress.Commands.add('deletingCreatedOrganizations', (authResponse, otrganizationsToDelete) => {
+    const authKey = authResponse.body.key;
     cy.request({
         url: '/api/v1/organizations?page_size=all',
         headers: {
@@ -36,13 +36,12 @@ Cypress.Commands.add('deletingCreatedOrganizations', (response, otrganizationsTo
     }).then((_response) => {
         const responceResult = _response.body;
         for (const organization of responceResult) {
-            const organizationId = organization.id;
-            const organizationName = organization.slug;
+            const { id, organizationname } = organization;
             for (const organizationToDelete of otrganizationsToDelete) {
-                if (organizationName === organizationToDelete) {
+                if (organizationname === organizationToDelete) {
                     cy.request({
                         method: 'DELETE',
-                        url: `/api/v1/organizations/${organizationId}`,
+                        url: `/api/v1/organizations/${id}`,
                         headers: {
                             Authorization: `Token ${authKey}`,
                         },

@@ -66,7 +66,7 @@ context('Delete a label from a project.', () => {
 
         it('Delete a label from project.', () => {
             cy.openProject(projectName);
-            getProjectID(projectName);
+            getProjectID();
             cy.contains('.cvat-constructor-viewer-item', labelName)
                 .should('exist')
                 .and('be.visible')

@@ -62,9 +62,9 @@ context('Multiple users. Assign task, job. Deactivating users.', () => {
 
     after(() => {
         cy.logout();
-        cy.getAuthKey().then((response) => {
-            cy.deletingRegisteredUsers(response, [secondUserName, thirdUserName]);
-            cy.deletingCreatedTasks(response, [taskName, secondTaskName]);
+        cy.getAuthKey().then(($authKey) => {
+            cy.deletingRegisteredUsers($authKey, [secondUserName, thirdUserName]);
+            cy.deletingCreatedTasks($authKey, [taskName, secondTaskName]);
         });
     });
 

@@ -18,8 +18,8 @@ context('Issue 1599 (Chinese alphabet).', () => {
 
     after(() => {
         cy.logout(userName);
-        cy.getAuthKey().then((response) => {
-            cy.deletingRegisteredUsers(response, [userName]);
+        cy.getAuthKey().then((authKey) => {
+            cy.deletingRegisteredUsers(authKey, [userName]);
         });
     });
 
