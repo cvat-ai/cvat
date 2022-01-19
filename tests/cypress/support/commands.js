@@ -62,7 +62,7 @@ Cypress.Commands.add('getAuthKey', () => {
     });
 });
 
-Cypress.Commands.add('deletingRegisteredUsers', (authResponse, accountsToDelete) => {
+Cypress.Commands.add('deleteUsers', (authResponse, accountsToDelete) => {
     const authKey = authResponse.body.key;
     cy.request({
         url: '/api/v1/users?page_size=all',
@@ -143,9 +143,9 @@ Cypress.Commands.add('deletingCreatedTasks', (authResponse, tasksToDelete) => {
     }).then((_response) => {
         const responceResult = _response.body.results;
         for (const task of responceResult) {
-            const { id, taskname } = task;
+            const { id, name } = task;
             for (const taskToDelete of tasksToDelete) {
-                if (taskname === taskToDelete) {
+                if (name === taskToDelete) {
                     cy.request({
                         method: 'DELETE',
                         url: `/api/v1/tasks/${id}`,
@@ -827,14 +827,10 @@ Cypress.Commands.add('exportTask', ({
     cy.closeNotification('.cvat-notification-notice-export-task-start');
 });
 
-Cypress.Commands.add('renameTask', (oldName, newName, clear = true) => {
+Cypress.Commands.add('renameTask', (oldName, newName) => {
     cy.get('.cvat-task-details-task-name').within(() => {
         cy.get('[aria-label="edit"]').click();
     });
-    if (clear) {
-        cy.contains('.cvat-text-color', oldName).clear().type(`${newName}{Enter}`);
-    } else {
-        cy.contains('.cvat-text-color', oldName).type(`${newName}{Enter}`);
-    }
+    cy.contains('.cvat-text-color', oldName).clear().type(`${newName}{Enter}`);
     cy.contains('.cvat-task-details-task-name', newName).should('exist');
 });

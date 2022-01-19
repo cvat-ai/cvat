@@ -21,7 +21,7 @@ context('Move a task to a project.', { browser: '!firefox' }, () => {
         name3d: `Case ${caseID} 3D`,
         label3d: 'Bus',
         attrName3d: 'Type',
-        attrValue3d: 'Сity bus',
+        attrValue3d: 'City bus',
     };
 
     const project = {

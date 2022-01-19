@@ -59,7 +59,7 @@ context('Base actions on the project', () => {
 
     after(() => {
         cy.getAuthKey().then((authKey) => {
-            cy.deletingRegisteredUsers(authKey, [userName]);
+            cy.deleteUsers(authKey, [userName]);
         });
     });
 

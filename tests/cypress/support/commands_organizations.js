@@ -22,11 +22,13 @@ Cypress.Commands.add('createOrganization', (organizationParams) => {
         cy.get('#email').type(organizationParams.email);
         cy.get('#phoneNumber').type(organizationParams.phoneNumber);
         cy.get('#location').type(organizationParams.location);
+        cy.intercept('POST', '/api/v1/organizations**').as('createOrganizations');
         cy.get('[type="submit"]').click();
+        cy.wait('@createOrganizations').its('response.statusCode').should('equal', 201);
     });
 });
 
-Cypress.Commands.add('deletingCreatedOrganizations', (authResponse, otrganizationsToDelete) => {
+Cypress.Commands.add('deleteOrganizations', (authResponse, otrganizationsToDelete) => {
     const authKey = authResponse.body.key;
     cy.request({
         url: '/api/v1/organizations?page_size=all',
@@ -36,9 +38,9 @@ Cypress.Commands.add('deletingCreatedOrganizations', (authResponse, otrganizatio
     }).then((_response) => {
         const responceResult = _response.body;
         for (const organization of responceResult) {
-            const { id, organizationname } = organization;
+            const { id, slug } = organization;
             for (const organizationToDelete of otrganizationsToDelete) {
-                if (organizationname === organizationToDelete) {
+                if (slug === organizationToDelete) {
                     cy.request({
                         method: 'DELETE',
                         url: `/api/v1/organizations/${id}`,
@@ -62,13 +64,22 @@ Cypress.Commands.add('activateOrganization', (organizationShortName) => {
         .trigger('mouseover');
     cy.contains('.cvat-header-menu-organization-item', organizationShortName).click();
     cy.get('.cvat-header-menu-user-dropdown').should('be.visible');
-    if (organizationShortName === 'Personal workspace') {
-        cy.get('.cvat-header-menu-user-dropdown-organization').should('not.exist');
-    } else {
-        cy.get('.cvat-header-menu-user-dropdown-organization')
-            .should('exist')
-            .and('have.text', organizationShortName);
-    }
+    cy.get('.cvat-header-menu-user-dropdown-organization')
+        .should('exist')
+        .and('have.text', organizationShortName);
+});
+
+Cypress.Commands.add('deactivateOrganization', () => {
+    cy.get('.cvat-header-menu-user-dropdown').trigger('mouseover');
+    cy.get('.ant-dropdown')
+        .should('be.visible')
+        .not('ant-dropdown-hidden')
+        .find('[role="menuitem"]')
+        .filter(':contains("Organization")')
+        .trigger('mouseover');
+    cy.contains('.cvat-header-menu-organization-item', 'Personal workspace').click();
+    cy.get('.cvat-header-menu-user-dropdown').should('be.visible');
+    cy.get('.cvat-header-menu-user-dropdown-organization').should('not.exist');
 });
 
 Cypress.Commands.add('openOrganization', (organizationShortName) => {
@@ -87,7 +98,7 @@ Cypress.Commands.add('openOrganization', (organizationShortName) => {
     cy.get('.cvat-organization-page').should('exist').and('be.visible');
 });
 
-Cypress.Commands.add('checkPresenceOrganization', (organizationShortName, present = true) => {
+Cypress.Commands.add('checkOrganizationExists', (organizationShortName, shouldExist = true) => {
     cy.get('.cvat-header-menu-user-dropdown').trigger('mouseover');
     cy.get('.ant-dropdown')
         .should('be.visible')
@@ -95,7 +106,7 @@ Cypress.Commands.add('checkPresenceOrganization', (organizationShortName, presen
         .find('[role="menuitem"]')
         .filter(':contains("Organization")')
         .trigger('mouseover');
-    if (present) {
+    if (shouldExist) {
         cy.contains('.cvat-header-menu-organization-item', organizationShortName)
             .should('exist')
             .trigger('mouseout')
@@ -131,12 +142,12 @@ Cypress.Commands.add('checkOrganizationMembers', (expectedMembersCount, expected
     });
 });
 
-Cypress.Commands.add('inviteMembersToOrganization', (membersEmailRole) => {
+Cypress.Commands.add('inviteMembersToOrganization', (members) => {
     cy.get('.cvat-organization-top-bar-buttons-block').should('exist');
     cy.contains('button', 'Invite members').click();
     cy.get('.cvat-organization-invitation-modal').should('be.visible');
-    let i = 0;
-    for (const el of membersEmailRole) {
+    let addedMembers = 0;
+    for (const el of members) {
         cy.get('.cvat-organization-invitation-field-email')
             .last()
             .find('input')
@@ -151,8 +162,8 @@ Cypress.Commands.add('inviteMembersToOrganization', (membersEmailRole) => {
             .not('.ant-select-dropdown-hidden')
             .find(`[title=${el.role}]`)
             .click();
-        i++;
-        if (i !== Object.keys(membersEmailRole).length) {
+        addedMembers++;
+        if (addedMembers !== Object.keys(members).length) {
             cy.contains('button', 'Invite more').click();
         }
     }

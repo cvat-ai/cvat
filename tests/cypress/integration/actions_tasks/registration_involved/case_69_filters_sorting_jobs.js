@@ -121,7 +121,7 @@ context('Filtering, sorting jobs.', () => {
     after(() => {
         cy.logout();
         cy.getAuthKey().then((authKey) => {
-            cy.deletingRegisteredUsers(authKey, [secondUserName]);
+            cy.deleteUsers(authKey, [secondUserName]);
             cy.deletingCreatedTasks(authKey, [taskName]);
         });
     });

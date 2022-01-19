@@ -74,15 +74,7 @@ context('New organization pipeline.', () => {
     };
 
     function capitalizeEmail(email) {
-        const userName = email.split('@')[0];
-        const domainName = email.split('@')[1].split('.')[0];
-        const topLevelDomain = email.split('.')[1];
-        const emailParts = [];
-        for (const i of [userName, domainName, topLevelDomain]) {
-            emailParts.push(i[0].toUpperCase() + i.slice(1).toLowerCase());
-        }
-        const capitalizedEmail = `${emailParts[0]}@${emailParts[1]}.${emailParts[2]}`;
-        return capitalizedEmail;
+        return email.split('@').map((part) => `${part.toUpperCase()[0]}${part.slice(1)}`).join('@');
     }
 
     before(() => {
@@ -137,10 +129,10 @@ context('New organization pipeline.', () => {
     after(() => {
         cy.logout(thirdUserName);
         cy.getAuthKey().then((authKey) => {
-            cy.deletingRegisteredUsers(authKey, [thirdUserName]);
+            cy.deleteUsers(authKey, [thirdUserName]);
             cy.deletingCreatedTasks(authKey, [newTaskName]);
-            cy.deletingCreatedProjects(authKey, [project.name]);
-            cy.deletingCreatedOrganizations(authKey, [organizationParams.shortName]);
+            cy.deleteProjects(authKey, [project.name]);
+            cy.deleteOrganizations(authKey, [organizationParams.shortName]);
         });
     });
 
@@ -181,10 +173,10 @@ context('New organization pipeline.', () => {
             cy.createAnnotationTask(taskName, labelName, attrName, textDefaultValue, archiveName);
             cy.openTask(taskName);
             cy.assignTaskToUser(secondUserName);
-            cy.activateOrganization('Personal workspace'); // Deactivate organization
+            cy.deactivateOrganization();
         });
 
-        // FIXME: Activate after implementation
+        // Activate after implementation
         it.skip('The project, the task are invisible now.', () => {
             cy.contains('.cvat-item-task-name', taskName).should('not.exist');
             cy.goToProjectsList();
@@ -206,10 +198,10 @@ context('New organization pipeline.', () => {
             cy.closeNotification('.cvat-notification-notice-leave-organization-failed');
         });
 
-        it('Second user login. The user is able to see the organization, the task and can’t see the project.', () => {
+        it('Second user login. The user is able to see the organization, the task and can\'t see the project.', () => {
             cy.logout();
             cy.login(secondUserName, secondUser.password);
-            cy.checkPresenceOrganization(organizationParams.shortName);
+            cy.checkOrganizationExists(organizationParams.shortName);
             cy.contains('.cvat-item-task-name', taskName).should('exist');
             cy.goToProjectsList();
             cy.get('.cvat-empty-projects-list').should('exist');
@@ -253,7 +245,7 @@ context('New organization pipeline.', () => {
         it('The organization, project is no longer available to the second user. The task is available.', () => {
             cy.logout(firstUserName);
             cy.login(secondUserName, secondUser.password);
-            cy.checkPresenceOrganization(organizationParams.shortName, false);
+            cy.checkOrganizationExists(organizationParams.shortName, false);
             cy.openTaskJob(newTaskName, 0, false);
             cy.get('.cvat_canvas_shape_cuboid').should('be.visible');
             cy.goToProjectsList();
@@ -263,7 +255,7 @@ context('New organization pipeline.', () => {
         it('Logout. Remove the first, the second user (deletion occurs from user admin).', () => {
             cy.logout(secondUserName);
             cy.getAuthKey().then((authKey) => {
-                cy.deletingRegisteredUsers(authKey, [firstUserName, secondUserName]);
+                cy.deleteUsers(authKey, [firstUserName, secondUserName]);
             });
         });
 

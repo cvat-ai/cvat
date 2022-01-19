@@ -19,7 +19,7 @@ context('Issue 1599 (Polish alphabet).', () => {
     after(() => {
         cy.logout(userName);
         cy.getAuthKey().then((authKey) => {
-            cy.deletingRegisteredUsers(authKey, [userName]);
+            cy.deleteUsers(authKey, [userName]);
         });
     });
 

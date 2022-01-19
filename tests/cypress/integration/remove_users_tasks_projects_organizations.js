@@ -16,8 +16,8 @@ describe('Delete users, tasks, projects, organizations created during the tests 
                 email: Cypress.env('email'),
                 password: Cypress.env('password'),
             },
-        }).then(async (response) => {
-            authKey = await response.body.key;
+        }).then((response) => {
+            authKey = response.body.key;
         });
     });
 
@@ -27,13 +27,13 @@ describe('Delete users, tasks, projects, organizations created during the tests 
             headers: {
                 Authorization: `Token ${authKey}`,
             },
-        }).then(async (response) => {
-            const responceResult = await response.body.results;
-            for (const tasks of responceResult) {
-                const taskId = tasks.id;
+        }).then((response) => {
+            const responseResult = response.body.results;
+            for (const task of responseResult) {
+                const { id } = task;
                 cy.request({
                     method: 'DELETE',
-                    url: `/api/v1/tasks/${taskId}`,
+                    url: `/api/v1/tasks/${id}`,
                     headers: {
                         Authorization: `Token ${authKey}`,
                     },
@@ -48,13 +48,13 @@ describe('Delete users, tasks, projects, organizations created during the tests 
             headers: {
                 Authorization: `Token ${authKey}`,
             },
-        }).then(async (response) => {
-            const responceResult = await response.body.results;
-            for (const tasks of responceResult) {
-                const taskId = tasks.id;
+        }).then((response) => {
+            const responseResult = response.body.results;
+            for (const project of responseResult) {
+                const { id } = project;
                 cy.request({
                     method: 'DELETE',
-                    url: `/api/v1/projects/${taskId}`,
+                    url: `/api/v1/projects/${id}`,
                     headers: {
                         Authorization: `Token ${authKey}`,
                     },
@@ -69,13 +69,13 @@ describe('Delete users, tasks, projects, organizations created during the tests 
             headers: {
                 Authorization: `Token ${authKey}`,
             },
-        }).then(async (response) => {
-            const responceResult = await response.body;
-            for (const orgs of responceResult) {
-                const orgId = orgs.id;
+        }).then((response) => {
+            const responseResult = response.body;
+            for (const org of responseResult) {
+                const { id } = org;
                 cy.request({
                     method: 'DELETE',
-                    url: `/api/v1/organizations/${orgId}`,
+                    url: `/api/v1/organizations/${id}`,
                     headers: {
                         Authorization: `Token ${authKey}`,
                     },
@@ -90,14 +90,14 @@ describe('Delete users, tasks, projects, organizations created during the tests 
             headers: {
                 Authorization: `Token ${authKey}`,
             },
-        }).then(async (response) => {
-            const responceResult = await response.body.results;
-            for (const user of responceResult) {
-                const userId = user.id;
-                if (userId !== 1) {
+        }).then((response) => {
+            const responseResult = response.body.results;
+            for (const user of responseResult) {
+                const { id } = user;
+                if (id !== 1) {
                     cy.request({
                         method: 'DELETE',
-                        url: `/api/v1/users/${userId}`,
+                        url: `/api/v1/users/${id}`,
                         headers: {
                             Authorization: `Token ${authKey}`,
                         },
