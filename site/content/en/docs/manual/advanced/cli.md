@@ -117,11 +117,11 @@ by using the [label constructor](/docs/manual/basics/creating_an_annotation_task
   cli.py --auth user-1:password create "task 1" --project_id 1 \
   remote https://github.com/opencv/opencv/blob/master/samples/data/vtest.avi?raw=true
   ```
-- Create a task named "task 1 sort random", labels from the "labels.json" file, with chunk size 8,
+- Create a task named "task 1 sort random", with labels "cat" and "dog", with chunk size 8,
   with sorting-method random, frame step 10, copy the data on the CVAT server,
   with use zip chunks and the video file will be taken from the shared resource:
   ```bash
-  cli.py create "task 1 sort random" --labels labels.json --chunk_size 8 \
+  cli.py create "task 1 sort random" --labels '[{"name": "cat"},{"name": "dog"}]' --chunk_size 8 \
   --sorting-method random --frame_step 10 --copy_data --use_zip_chunks share //share/dataset_1/video.avi
   ```
 - Create a task named "task from dataset_1", labels from the file "labels.json", with link to bug tracker,
@@ -140,10 +140,10 @@ by using the [label constructor](/docs/manual/basics/creating_an_annotation_task
   --start_frame 5 --stop_frame 705 --use_cache \
   remote https://github.com/opencv/opencv/blob/master/samples/data/vtest.avi?raw=true
   ```
-- Create a task named "task 1 with sync annotation", labels from the file "labels.json"
+- Create a task named "task 1 with sync annotation", with label "person",
   with annotation storage in `git` repository, enable `lfs` and the image files from the shared resource:
   ```bash
-  cli.py create "task 1 with sync annotation" --labels labels.json \
+  cli.py create "task 1 with sync annotation" --labels '[{"name": "person"}]' \
   --dataset_repository_url https://github.com/user/dataset/blob/main/annotation/anno_file_name.zip \
   --lfs share //share/large_dataset/images/
   ```
