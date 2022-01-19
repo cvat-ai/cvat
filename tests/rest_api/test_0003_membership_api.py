@@ -2,9 +2,9 @@
 #
 # SPDX-License-Identifier: MIT
 
+import pytest
 from http import HTTPStatus
 from deepdiff import DeepDiff
-from tests.rest_api.conftest import roles_by_org
 
 from .utils.config import get_method, patch_method
 
