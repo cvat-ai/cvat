@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -86,7 +86,8 @@ export default function (state: ReviewState = defaultState, action: any): Review
         }
         case ReviewActionTypes.FINISH_ISSUE_SUCCESS: {
             const { frame, issue } = action.payload;
-            const frameIssues = [...state.issues, issue].filter((_issue: any): boolean => _issue.frame === frame);
+            const issues = [...state.issues, issue];
+            const frameIssues = issues.filter((_issue: any): boolean => _issue.frame === frame);
 
             return {
                 ...state,
@@ -103,6 +104,7 @@ export default function (state: ReviewState = defaultState, action: any): Review
                         ),
                     ).slice(-consts.LATEST_COMMENTS_SHOWN_QUICK_ISSUE),
                 frameIssues,
+                issues,
                 newIssuePosition: null,
             };
         }

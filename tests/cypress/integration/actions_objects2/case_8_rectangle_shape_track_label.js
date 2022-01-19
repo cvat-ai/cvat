@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -12,7 +12,7 @@ context('Actions on rectangle', () => {
     const createRectangleShape2Points = {
         points: 'By 2 Points',
         type: 'Shape',
-        labelName: labelName,
+        labelName,
         firstX: 250,
         firstY: 350,
         secondX: 350,
@@ -21,7 +21,7 @@ context('Actions on rectangle', () => {
     const createRectangleShape4Points = {
         points: 'By 4 Points',
         type: 'Shape',
-        labelName: labelName,
+        labelName,
         firstX: 400,
         firstY: 350,
         secondX: 500,
@@ -34,7 +34,7 @@ context('Actions on rectangle', () => {
     const createRectangleTrack2Points = {
         points: 'By 2 Points',
         type: 'Track',
-        labelName: labelName,
+        labelName,
         firstX: createRectangleShape2Points.firstX,
         firstY: createRectangleShape2Points.firstY - 150,
         secondX: createRectangleShape2Points.secondX,
@@ -43,7 +43,7 @@ context('Actions on rectangle', () => {
     const createRectangleTrack4Points = {
         points: 'By 4 Points',
         type: 'Track',
-        labelName: labelName,
+        labelName,
         firstX: createRectangleShape4Points.firstX,
         firstY: createRectangleShape4Points.firstY - 150,
         secondX: createRectangleShape4Points.secondX - 100,
@@ -87,13 +87,37 @@ context('Actions on rectangle', () => {
             cy.createRectangle(createRectangleShape2Points);
             cy.createRectangle(createRectangleShape4Points);
         });
+
         it('Draw a rectangle track in two ways (by 2 points, by 4 points)', () => {
             cy.createRectangle(createRectangleTrack2Points);
             cy.createRectangle(createRectangleTrack4Points);
         });
+
         it('Draw a new rectangle shape in two ways (by 2 points, by 4 points) with second label', () => {
             cy.createRectangle(createRectangleShape2PointsNewLabel);
             cy.createRectangle(createRectangleShape4PointsNewLabel);
+        });
+
+        it('The second shape is activated if the first one was removed during the move (fix 4151).', () => {
+            let xCoordinate;
+            cy.get('#cvat_canvas_shape_6')
+                .trigger('mousemove')
+                .trigger('mouseover')
+                .should('have.class', 'cvat_canvas_shape_activated')
+                .trigger('mousedown', { which: 1 }).then((shape) => {
+                    xCoordinate = shape.attr('x');
+                });
+            cy.get('.cvat_canvas_text').should('have.class', 'cvat_canvas_hidden');
+            cy.get('.cvat-canvas-container').trigger('mousemove', 550, 550);
+            cy.get('#cvat_canvas_shape_6').then((shape) => {
+                expect(Number(xCoordinate)).lt(Number(shape.attr('x')));
+            });
+            cy.get('body').type('{del}');
+            cy.get('#cvat_canvas_shape_6').should('not.exist');
+            cy.get('#cvat_canvas_shape_5')
+                .trigger('mousemove')
+                .trigger('mouseover')
+                .should('have.class', 'cvat_canvas_shape_activated');
         });
     });
 });

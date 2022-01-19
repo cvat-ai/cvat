@@ -15,8 +15,6 @@ NUCLIO['HOST'] = os.getenv('CVAT_NUCLIO_HOST', 'nuclio')
 for key in RQ_QUEUES:
     RQ_QUEUES[key]['HOST'] = os.getenv('CVAT_REDIS_HOST', 'cvat_redis')
 
-CACHEOPS_REDIS['host'] = os.getenv('CVAT_REDIS_HOST', 'cvat_redis')
-
 # Django-sendfile:
 # https://github.com/johnsensible/django-sendfile
 SENDFILE_BACKEND = 'sendfile.backends.xsendfile'

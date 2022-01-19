@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -32,7 +32,6 @@ interface Props {
     activatedStateID: number | null;
     activatedAttributeID: number | null;
     annotations: any[];
-    frameIssues: any[] | null;
     frameData: any;
     frameAngle: number;
     frameFetching: boolean;
@@ -136,7 +135,6 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         });
 
         this.initialSetup();
-        this.updateIssueRegions();
         this.updateCanvas();
     }
 
@@ -148,7 +146,6 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             outlined,
             outlineColor,
             showBitmap,
-            frameIssues,
             frameData,
             frameAngle,
             annotations,
@@ -256,10 +253,6 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             }
         }
 
-        if (prevProps.frameIssues !== frameIssues) {
-            this.updateIssueRegions();
-        }
-
         if (
             prevProps.annotations !== annotations ||
             prevProps.frameData !== frameData ||
@@ -308,12 +301,14 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             }
         }
 
-        const loadingAnimation = window.document.getElementById('cvat_canvas_loading_animation');
-        if (loadingAnimation && frameFetching !== prevProps.frameFetching) {
-            if (frameFetching) {
-                loadingAnimation.classList.remove('cvat_canvas_hidden');
-            } else {
-                loadingAnimation.classList.add('cvat_canvas_hidden');
+        if (frameFetching !== prevProps.frameFetching) {
+            const loadingAnimation = window.document.getElementById('cvat_canvas_loading_animation');
+            if (loadingAnimation) {
+                if (frameFetching) {
+                    loadingAnimation.classList.remove('cvat_canvas_hidden');
+                } else {
+                    loadingAnimation.classList.add('cvat_canvas_hidden');
+                }
             }
         }
 
@@ -679,23 +674,6 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
                 (shapeView as any).instance.fill({ color: shapeColor, opacity });
                 (shapeView as any).instance.stroke({ color: outlined ? outlineColor : shapeColor });
             }
-        }
-    }
-
-    private updateIssueRegions(): void {
-        const { frameIssues } = this.props;
-        const { canvasInstance } = this.props as { canvasInstance: Canvas };
-        if (frameIssues === null) {
-            canvasInstance.setupIssueRegions({});
-        } else {
-            const regions = frameIssues.reduce((acc: Record<number, number[]>, issue: any): Record<
-            number,
-            number[]
-            > => {
-                acc[issue.id] = issue.position;
-                return acc;
-            }, {});
-            canvasInstance.setupIssueRegions(regions);
         }
     }
 

@@ -1,7 +1,7 @@
 ---
-title: 'Annotation with Tags'
-linkTitle: 'Annotation with Tags'
-weight: 11
+title: 'Annotation with tags'
+linkTitle: 'Annotation with tags'
+weight: 13
 ---
 
 It is used to annotate frames, tags are not displayed in the workspace.

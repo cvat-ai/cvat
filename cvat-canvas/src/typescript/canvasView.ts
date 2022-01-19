@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2021 Intel Corporation
+// Copyright (C) 2019-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -606,7 +606,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         }
     }
 
-    private setupIssueRegions(issueRegions: Record<number, number[]>): void {
+    private setupIssueRegions(issueRegions: Record<number, { hidden: boolean; points: number[] }>): void {
         for (const issueRegion of Object.keys(this.drawnIssueRegions)) {
             if (!(issueRegion in issueRegions) || !+issueRegion) {
                 this.drawnIssueRegions[+issueRegion].remove();
@@ -616,7 +616,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
         for (const issueRegion of Object.keys(issueRegions)) {
             if (issueRegion in this.drawnIssueRegions) continue;
-            const points = this.translateToCanvas(issueRegions[+issueRegion]);
+            const points = this.translateToCanvas(issueRegions[+issueRegion].points);
             if (points.length === 2) {
                 this.drawnIssueRegions[+issueRegion] = this.adoptedContent
                     .circle((consts.BASE_POINT_SIZE * 3 * 2) / this.geometry.scale)
@@ -656,6 +656,10 @@ export class CanvasViewImpl implements CanvasView, Listener {
                         'stroke-width': `${consts.BASE_STROKE_WIDTH / this.geometry.scale}`,
                     });
             }
+
+            if (issueRegions[+issueRegion].hidden) {
+                this.drawnIssueRegions[+issueRegion].style({ display: 'none' });
+            }
         }
     }
 
@@ -684,18 +688,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 this.deactivate();
             }
 
-            for (const state of deleted) {
-                if (state.clientID in this.svgTexts) {
-                    this.svgTexts[state.clientID].remove();
-                    delete this.svgTexts[state.clientID];
-                }
-
-                this.svgShapes[state.clientID].off('click.canvas');
-                this.svgShapes[state.clientID].remove();
-                delete this.drawnStates[state.clientID];
-                delete this.svgShapes[state.clientID];
-            }
-
+            this.deleteObjects(deleted);
             this.addObjects(created);
             this.updateObjects(updated);
             this.sortObjects();
@@ -1274,8 +1267,15 @@ export class CanvasViewImpl implements CanvasView, Listener {
         } else if (reason === UpdateReasons.FITTED_CANVAS) {
             // Canvas geometry is going to be changed. Old object positions aren't valid any more
             this.setupObjects([]);
+            this.setupIssueRegions({});
             this.moveCanvas();
             this.resizeCanvas();
+            this.canvas.dispatchEvent(
+                new CustomEvent('canvas.reshape', {
+                    bubbles: false,
+                    cancelable: true,
+                }),
+            );
         } else if ([UpdateReasons.IMAGE_ZOOMED, UpdateReasons.IMAGE_FITTED].includes(reason)) {
             this.moveCanvas();
             this.transformCanvas();
@@ -1727,6 +1727,22 @@ export class CanvasViewImpl implements CanvasView, Listener {
         }
     }
 
+    private deleteObjects(states: any[]): void {
+        for (const state of states) {
+            if (state.clientID in this.svgTexts) {
+                this.svgTexts[state.clientID].remove();
+                delete this.svgTexts[state.clientID];
+            }
+
+            this.svgShapes[state.clientID].fire('remove');
+            this.svgShapes[state.clientID].off('click');
+            this.svgShapes[state.clientID].off('remove');
+            this.svgShapes[state.clientID].remove();
+            delete this.drawnStates[state.clientID];
+            delete this.svgShapes[state.clientID];
+        }
+    }
+
     private addObjects(states: any[]): void {
         const { displayAllText } = this.configuration;
         for (const state of states) {
@@ -1940,10 +1956,16 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 .on('dragstart', (): void => {
                     this.mode = Mode.DRAG;
                     hideText();
+                    (shape as any).on('remove.drag', (): void => {
+                        this.mode = Mode.IDLE;
+                        // disable internal drag events of SVG.js
+                        window.dispatchEvent(new MouseEvent('mouseup'));
+                    });
                 })
                 .on('dragend', (e: CustomEvent): void => {
-                    showText();
+                    (shape as any).off('remove.drag');
                     this.mode = Mode.IDLE;
+                    showText();
                     const p1 = e.detail.handler.startPoints.point;
                     const p2 = e.detail.p;
                     const delta = 1;
@@ -1997,6 +2019,15 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
         let shapeSizeElement: ShapeSizeElement | null = null;
         let resized = false;
+
+        const resizeFinally = (): void => {
+            if (shapeSizeElement) {
+                shapeSizeElement.rm();
+                shapeSizeElement = null;
+            }
+            this.mode = Mode.IDLE;
+        };
+
         (shape as any)
             .resize({
                 snapToGrid: 0.1,
@@ -2010,6 +2041,11 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 if (state.shapeType === 'rectangle') {
                     shapeSizeElement = displayShapeSize(this.adoptedContent, this.adoptedText);
                 }
+                (shape as any).on('remove.resize', () => {
+                    // disable internal resize events of SVG.js
+                    window.dispatchEvent(new MouseEvent('mouseup'));
+                    resizeFinally();
+                });
             })
             .on('resizing', (): void => {
                 resized = true;
@@ -2018,16 +2054,10 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 }
             })
             .on('resizedone', (): void => {
-                if (shapeSizeElement) {
-                    shapeSizeElement.rm();
-                    shapeSizeElement = null;
-                }
-
+                (shape as any).off('remove.resize');
+                resizeFinally();
                 showDirection();
                 showText();
-
-                this.mode = Mode.IDLE;
-
                 if (resized) {
                     let rotation = shape.transform().rotation || 0;
 
