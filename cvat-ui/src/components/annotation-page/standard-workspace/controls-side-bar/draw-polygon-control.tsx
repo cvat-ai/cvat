@@ -22,30 +22,26 @@ export interface Props {
 const CustomPopover = withVisibilityHandling(Popover, 'draw-polygon');
 function DrawPolygonControl(props: Props): JSX.Element {
     const { canvasInstance, isDrawing, disabled } = props;
-    const dynamcPopoverPros = isDrawing ?
-        {
-            overlayStyle: {
-                display: 'none',
-            },
-        } :
-        {};
+    const dynamicPopoverProps = isDrawing ? {
+        overlayStyle: {
+            display: 'none',
+        },
+    } : {};
 
-    const dynamicIconProps = isDrawing ?
-        {
-            className: 'cvat-draw-polygon-control cvat-active-canvas-control',
-            onClick: (): void => {
-                canvasInstance.draw({ enabled: false });
-            },
-        } :
-        {
-            className: 'cvat-draw-polygon-control',
-        };
+    const dynamicIconProps = isDrawing ? {
+        className: 'cvat-draw-polygon-control cvat-active-canvas-control',
+        onClick: (): void => {
+            canvasInstance.draw({ enabled: false });
+        },
+    } : {
+        className: 'cvat-draw-polygon-control',
+    };
 
     return disabled ? (
         <Icon className='cvat-draw-polygon-control cvat-disabled-canvas-control' component={PolygonIcon} />
     ) : (
         <CustomPopover
-            {...dynamcPopoverPros}
+            {...dynamicPopoverProps}
             overlayClassName='cvat-draw-shape-popover'
             placement='right'
             content={<DrawShapePopoverContainer shapeType={ShapeType.POLYGON} />}

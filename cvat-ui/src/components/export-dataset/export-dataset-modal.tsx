@@ -40,11 +40,12 @@ function ExportDatasetModal(): JSX.Element {
 
     const initActivities = (): void => {
         if (instance instanceof core.classes.Project) {
-            setInstanceType('project');
+            setInstanceType(`project #${instance.id}`);
             setActivities(projectExportActivities[instance.id] || []);
-        } else if (instance instanceof core.classes.Task) {
-            setInstanceType('task');
-            setActivities(taskExportActivities[instance.id] || []);
+        } else if (instance) {
+            const taskID = instance instanceof core.classes.Task ? instance.id : instance.taskId;
+            setInstanceType(`task #${taskID}`);
+            setActivities(taskExportActivities[taskID] || []);
             if (instance.mode === 'interpolation' && instance.dimension === '2d') {
                 form.setFieldsValue({ selectedFormat: 'CVAT for video 1.1' });
             } else if (instance.mode === 'annotation' && instance.dimension === '2d') {
@@ -55,7 +56,7 @@ function ExportDatasetModal(): JSX.Element {
 
     useEffect(() => {
         initActivities();
-    }, [instance?.id, instance instanceof core.classes.Project]);
+    }, [instance?.id, instance instanceof core.classes.Project, taskExportActivities, projectExportActivities]);
 
     const closeModal = (): void => {
         form.resetFields();
@@ -77,21 +78,21 @@ function ExportDatasetModal(): JSX.Element {
             Notification.info({
                 message: 'Dataset export started',
                 description:
-                    `Dataset export was started for ${instanceType} #${instance?.id}. ` +
-                    'Download will start automaticly as soon as the dataset is ready.',
-                className: `cvat-notification-notice-export-${instanceType}-start`,
+                    `Dataset export was started for ${instanceType}. ` +
+                    'Download will start automatically as soon as the dataset is ready.',
+                className: `cvat-notification-notice-export-${instanceType.split(' ')[0]}-start`,
             });
         },
-        [instance?.id, instance instanceof core.classes.Project, instanceType],
+        [instance, instanceType],
     );
 
     return (
         <Modal
-            title={`Export ${instanceType} #${instance?.id} as a dataset`}
+            title={`Export ${instanceType} as a dataset`}
             visible={modalVisible}
             onCancel={closeModal}
             onOk={() => form.submit()}
-            className={`cvat-modal-export-${instanceType}`}
+            className={`cvat-modal-export-${instanceType.split(' ')[0]}`}
             destroyOnClose
         >
             <Form

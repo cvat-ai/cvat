@@ -322,9 +322,9 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
                     throw new Error('Canvas context is empty');
                 }
                 const imageData = context.getImageData(0, 0, width, height);
-                const newImageData = activeImageModifiers
-                    .reduce((oldImageData, activeImageModifier) => activeImageModifier
-                        .modifier.processImage(oldImageData, frame), imageData);
+                const newImageData = activeImageModifiers.reduce((oldImageData, activeImageModifier) => (
+                    activeImageModifier.modifier.processImage(oldImageData, frame)
+                ), imageData);
                 const imageBitmap = await createImageBitmap(newImageData);
                 frameData.imageData = imageBitmap;
                 canvasInstance.setup(frameData, states, curZOrder);
@@ -603,7 +603,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
     public render(): JSX.Element {
         const { isActivated, canvasInstance, labels } = this.props;
         const { libraryInitialized, approxPolyAccuracy } = this.state;
-        const dynamcPopoverPros = isActivated ?
+        const dynamicPopoverProps = isActivated ?
             {
                 overlayStyle: {
                     display: 'none',
@@ -627,7 +627,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
         ) : (
             <>
                 <CustomPopover
-                    {...dynamcPopoverPros}
+                    {...dynamicPopoverProps}
                     placement='right'
                     overlayClassName='cvat-opencv-control-popover'
                     content={this.renderContent()}

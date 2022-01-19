@@ -20,7 +20,7 @@ import fcntl
 import shutil
 import subprocess
 import mimetypes
-from distutils.util import strtobool
+from corsheaders.defaults import default_headers
 
 mimetypes.add_type("application/wasm", ".wasm", True)
 
@@ -96,6 +96,7 @@ try:
 except Exception as ex:
     print(str(ex))
 
+DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -103,20 +104,11 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'cvat.apps.authentication',
-    'cvat.apps.dataset_manager',
-    'cvat.apps.engine',
-    'cvat.apps.dataset_repo',
-    'cvat.apps.restrictions',
-    'cvat.apps.lambda_manager',
-    'cvat.apps.opencv',
     'django_rq',
     'compressor',
-    'cacheops',
     'sendfile',
     'dj_pagination',
     'revproxy',
-    'rules',
     'rest_framework',
     'rest_framework.authtoken',
     'django_filters',
@@ -127,21 +119,34 @@ INSTALLED_APPS = [
     'allauth.account',
     'corsheaders',
     'allauth.socialaccount',
-    'rest_auth.registration'
+    'rest_auth.registration',
+    'cvat.apps.iam',
+    'cvat.apps.dataset_manager',
+    'cvat.apps.organizations',
+    'cvat.apps.engine',
+    'cvat.apps.dataset_repo',
+    'cvat.apps.restrictions',
+    'cvat.apps.lambda_manager',
+    'cvat.apps.opencv'
 ]
-
-if strtobool(os.environ.get("ADAPTIVE_AUTO_ANNOTATION", 'false')):
-    INSTALLED_APPS.append('cvat.apps.training')
 
 SITE_ID = 1
 
 REST_FRAMEWORK = {
+    'DEFAULT_PARSER_CLASSES': [
+        'rest_framework.parsers.JSONParser',
+        'rest_framework.parsers.FormParser',
+        'rest_framework.parsers.MultiPartParser',
+        'cvat.apps.engine.parsers.TusUploadParser',
+    ],
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
+        'cvat.apps.iam.permissions.IsMemberInOrganization',
+        'cvat.apps.iam.permissions.PolicyEnforcer',
     ],
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        'cvat.apps.authentication.auth.TokenAuthentication',
-        'cvat.apps.authentication.auth.SignatureAuthentication',
+        'cvat.apps.iam.authentication.TokenAuthenticationEx',
+        'cvat.apps.iam.authentication.SignatureAuthentication',
         'rest_framework.authentication.SessionAuthentication',
         'rest_framework.authentication.BasicAuthentication'
     ],
@@ -158,7 +163,8 @@ REST_FRAMEWORK = {
     'DEFAULT_FILTER_BACKENDS': (
         'rest_framework.filters.SearchFilter',
         'django_filters.rest_framework.DjangoFilterBackend',
-        'rest_framework.filters.OrderingFilter'),
+        'rest_framework.filters.OrderingFilter',
+        'cvat.apps.iam.filters.OrganizationFilterBackend'),
 
     # Disable default handling of the 'format' query parameter by REST framework
     'URL_FORMAT_OVERRIDE': 'scheme',
@@ -168,6 +174,7 @@ REST_FRAMEWORK = {
     'DEFAULT_THROTTLE_RATES': {
         'anon': '100/minute',
     },
+    'DEFAULT_METADATA_CLASS': 'rest_framework.metadata.SimpleMetadata',
 }
 
 REST_AUTH_REGISTER_SERIALIZERS = {
@@ -175,7 +182,7 @@ REST_AUTH_REGISTER_SERIALIZERS = {
 }
 
 REST_AUTH_SERIALIZERS = {
-    'PASSWORD_RESET_SERIALIZER': 'cvat.apps.authentication.serializers.PasswordResetSerializerEx',
+    'PASSWORD_RESET_SERIALIZER': 'cvat.apps.iam.serializers.PasswordResetSerializerEx',
 }
 
 if os.getenv('DJANGO_LOG_VIEWER_HOST'):
@@ -193,6 +200,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'dj_pagination.middleware.PaginationMiddleware',
+    'cvat.apps.iam.views.ContextMiddleware',
 ]
 
 UI_URL = ''
@@ -223,14 +231,21 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'cvat.wsgi.application'
 
-# Django Auth
-DJANGO_AUTH_TYPE = 'BASIC'
-DJANGO_AUTH_DEFAULT_GROUPS = []
+# IAM settings
+IAM_TYPE = 'BASIC'
+IAM_DEFAULT_ROLES = ['user']
+IAM_ADMIN_ROLE = 'admin'
+# Index in the list below corresponds to the priority (0 has highest priority)
+IAM_ROLES = [IAM_ADMIN_ROLE, 'business', 'user', 'worker']
+IAM_OPA_DATA_URL = 'http://opa:8181/v1/data'
 LOGIN_URL = 'rest_login'
 LOGIN_REDIRECT_URL = '/'
 
+# ORG settings
+ORG_INVITATION_CONFIRM = 'No'
+
+
 AUTHENTICATION_BACKENDS = [
-    'rules.permissions.ObjectPermissionBackend',
     'django.contrib.auth.backends.ModelBackend',
     'allauth.account.auth_backends.AuthenticationBackend',
 ]
@@ -298,26 +313,6 @@ AUTH_PASSWORD_VALIDATORS = [
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
 ]
-
-# Cache DB access (e.g. for engine.task.get_frame)
-# https://github.com/Suor/django-cacheops
-CACHEOPS_REDIS = {
-    'host': 'localhost', # redis-server is on same machine
-    'port': 6379,        # default redis port
-    'db': 1,             # SELECT non-default redis database
-}
-
-CACHEOPS = {
-    # Automatically cache any Task.objects.get() calls for 15 minutes
-    # This also includes .first() and .last() calls.
-    'engine.task': {'ops': 'get', 'timeout': 60*15},
-
-    # Automatically cache any Job.objects.get() calls for 15 minutes
-    # This also includes .first() and .last() calls.
-    'engine.job': {'ops': 'get', 'timeout': 60*15},
-}
-
-CACHEOPS_DEGRADE_ON_FAILURE = True
 
 # Internationalization
 # https://docs.djangoproject.com/en/2.0/topics/i18n/
@@ -482,3 +477,24 @@ CACHES = {
 
 USE_CACHE = True
 
+CORS_ALLOW_HEADERS = list(default_headers) + [
+    # tus upload protocol headers
+    'upload-offset',
+    'upload-length',
+    'tus-version',
+    'tus-resumable',
+
+    # extended upload protocol headers
+    'upload-start',
+    'upload-finish',
+    'upload-multiple',
+    'x-organization',
+]
+
+TUS_MAX_FILE_SIZE = 26843545600 # 25gb
+TUS_DEFAULT_CHUNK_SIZE = 104857600  # 100 mb
+
+# This setting makes request secure if X-Forwarded-Proto: 'https' header is specified by our proxy
+# More about forwarded headers - https://doc.traefik.io/traefik/getting-started/faq/#what-are-the-forwarded-headers-when-proxying-http-requests
+# How django uses X-Forwarded-Proto - https://docs.djangoproject.com/en/2.2/ref/settings/#secure-proxy-ssl-header
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')

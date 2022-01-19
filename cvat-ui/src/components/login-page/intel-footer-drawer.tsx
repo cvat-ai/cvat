@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-import { Layout } from 'antd';
+import Layout from 'antd/lib/layout';
 
 import { isPublic } from 'utils/enviroment';
 import consts from 'consts';

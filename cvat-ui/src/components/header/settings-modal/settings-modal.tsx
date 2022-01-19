@@ -118,4 +118,4 @@ const SettingsModal = (props: SettingsModalProps): JSX.Element => {
     );
 };
 
-export default SettingsModal;
+export default React.memo(SettingsModal);

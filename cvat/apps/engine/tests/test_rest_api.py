@@ -16,6 +16,7 @@ from enum import Enum
 from glob import glob
 from io import BytesIO
 from unittest import mock
+import logging
 
 import av
 import numpy as np
@@ -29,29 +30,33 @@ from rest_framework import status
 from rest_framework.test import APIClient, APITestCase
 
 from datumaro.util.test_utils import TestDir
-from cvat.apps.engine.models import (AttributeSpec, AttributeType, Data, Job, Project,
-    Segment, StatusChoice, Task, Label, StorageMethodChoice, StorageChoice)
-from cvat.apps.engine.media_extractors import ValidateDimension
-from cvat.apps.engine.models import DimensionType
+from cvat.apps.engine.models import (AttributeSpec, AttributeType, Data, Job,
+    Project, Segment, StageChoice, StatusChoice, Task, Label, StorageMethodChoice,
+    StorageChoice, DimensionType, SortingMethod)
+from cvat.apps.engine.media_extractors import ValidateDimension, sort
 from utils.dataset_manifest import ImageManifestManager, VideoManifestManager
+
+#supress av warnings
+logging.getLogger('libav').setLevel(logging.ERROR)
 
 def create_db_users(cls):
     (group_admin, _) = Group.objects.get_or_create(name="admin")
+    (group_business, _) = Group.objects.get_or_create(name="business")
     (group_user, _) = Group.objects.get_or_create(name="user")
-    (group_annotator, _) = Group.objects.get_or_create(name="annotator")
-    (group_observer, _) = Group.objects.get_or_create(name="observer")
+    (group_annotator, _) = Group.objects.get_or_create(name="worker")
+    (group_somebody, _) = Group.objects.get_or_create(name="somebody")
 
     user_admin = User.objects.create_superuser(username="admin", email="",
         password="admin")
     user_admin.groups.add(group_admin)
     user_owner = User.objects.create_user(username="user1", password="user1")
-    user_owner.groups.add(group_user)
+    user_owner.groups.add(group_business)
     user_assignee = User.objects.create_user(username="user2", password="user2")
     user_assignee.groups.add(group_annotator)
     user_annotator = User.objects.create_user(username="user3", password="user3")
     user_annotator.groups.add(group_annotator)
-    user_observer = User.objects.create_user(username="user4", password="user4")
-    user_observer.groups.add(group_observer)
+    user_somebody = User.objects.create_user(username="user4", password="user4")
+    user_somebody.groups.add(group_somebody)
     user_dummy = User.objects.create_user(username="user5", password="user5")
     user_dummy.groups.add(group_user)
 
@@ -59,7 +64,7 @@ def create_db_users(cls):
     cls.owner = cls.user1 = user_owner
     cls.assignee = cls.user2 = user_assignee
     cls.annotator = cls.user3 = user_annotator
-    cls.observer = cls.user4 = user_observer
+    cls.somebody = cls.user4 = user_somebody
     cls.user = cls.user5 = user_dummy
 
 def create_db_task(data):
@@ -290,10 +295,10 @@ class JobGetAPITestCase(APITestCase):
         response = self._run_api_v1_jobs_id(self.job.id + 10, self.annotator)
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
-    def test_api_v1_jobs_id_observer(self):
-        response = self._run_api_v1_jobs_id(self.job.id, self.observer)
-        self._check_request(response)
-        response = self._run_api_v1_jobs_id(self.job.id + 10, self.observer)
+    def test_api_v1_jobs_id_somebody(self):
+        response = self._run_api_v1_jobs_id(self.job.id, self.somebody)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        response = self._run_api_v1_jobs_id(self.job.id + 10, self.somebody)
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_api_v1_jobs_id_user(self):
@@ -330,49 +335,49 @@ class JobUpdateAPITestCase(APITestCase):
     def _check_request(self, response, data):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["id"], self.job.id)
-        self.assertEqual(response.data["status"], data.get('status', self.job.status))
+        self.assertEqual(response.data["stage"], data.get('stage', self.job.status))
         assignee = self.job.assignee.id if self.job.assignee else None
-        self.assertEqual(response.data["assignee"]["id"], data.get('assignee_id', assignee))
+        self.assertEqual(response.data["assignee"]["id"], data.get('assignee', assignee))
         self.assertEqual(response.data["start_frame"], self.job.segment.start_frame)
         self.assertEqual(response.data["stop_frame"], self.job.segment.stop_frame)
 
     def test_api_v1_jobs_id_admin(self):
-        data = {"status": StatusChoice.COMPLETED, "assignee_id": self.owner.id}
+        data = {"stage": StageChoice.ANNOTATION, "assignee": self.owner.id }
         response = self._run_api_v1_jobs_id(self.job.id, self.admin, data)
         self._check_request(response, data)
         response = self._run_api_v1_jobs_id(self.job.id + 10, self.admin, data)
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_api_v1_jobs_id_owner(self):
-        data = {"status": StatusChoice.VALIDATION, "assignee_id": self.annotator.id}
+        data = {"stage": StageChoice.ANNOTATION, "assignee": self.owner.id}
         response = self._run_api_v1_jobs_id(self.job.id, self.owner, data)
         self._check_request(response, data)
         response = self._run_api_v1_jobs_id(self.job.id + 10, self.owner, data)
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_api_v1_jobs_id_annotator(self):
-        data = {"status": StatusChoice.ANNOTATION, "assignee_id": self.user.id}
+        data = {"stage": StageChoice.ANNOTATION, "assignee": self.annotator.id}
         response = self._run_api_v1_jobs_id(self.job.id, self.annotator, data)
         self._check_request(response, data)
         response = self._run_api_v1_jobs_id(self.job.id + 10, self.annotator, data)
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
-    def test_api_v1_jobs_id_observer(self):
-        data = {"status": StatusChoice.ANNOTATION, "assignee_id": self.admin.id}
-        response = self._run_api_v1_jobs_id(self.job.id, self.observer, data)
+    def test_api_v1_jobs_id_somebody(self):
+        data = {"stage": StageChoice.ANNOTATION, "assignee": self.admin.id}
+        response = self._run_api_v1_jobs_id(self.job.id, self.somebody, data)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-        response = self._run_api_v1_jobs_id(self.job.id + 10, self.observer, data)
+        response = self._run_api_v1_jobs_id(self.job.id + 10, self.somebody, data)
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_api_v1_jobs_id_user(self):
-        data = {"status": StatusChoice.ANNOTATION, "assignee_id": self.user.id}
+        data = {"stage": StageChoice.ANNOTATION, "assignee": self.user.id}
         response = self._run_api_v1_jobs_id(self.job.id, self.user, data)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         response = self._run_api_v1_jobs_id(self.job.id + 10, self.user, data)
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_api_v1_jobs_id_no_auth(self):
-        data = {"status": StatusChoice.ANNOTATION, "assignee_id": self.user.id}
+        data = {"stage": StageChoice.ANNOTATION, "assignee": self.user.id}
         response = self._run_api_v1_jobs_id(self.job.id, None, data)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
         response = self._run_api_v1_jobs_id(self.job.id + 10, None, data)
@@ -386,7 +391,7 @@ class JobPartialUpdateAPITestCase(JobUpdateAPITestCase):
         return response
 
     def test_api_v1_jobs_id_annotator_partial(self):
-        data = {"status": StatusChoice.VALIDATION}
+        data = {"stage": StageChoice.ANNOTATION}
         response = self._run_api_v1_jobs_id(self.job.id, self.owner, data)
         self._check_request(response, data)
 
@@ -394,227 +399,6 @@ class JobPartialUpdateAPITestCase(JobUpdateAPITestCase):
         data = {"assignee_id": self.user.id}
         response = self._run_api_v1_jobs_id(self.job.id, self.owner, data)
         self._check_request(response, data)
-
-class JobReview(APITestCase):
-    def setUp(self):
-        self.client = APIClient()
-
-    @classmethod
-    def setUpTestData(cls):
-        create_db_users(cls)
-        cls.task = create_dummy_db_tasks(cls)[0]
-        cls.job = Job.objects.filter(segment__task_id=cls.task.id).first()
-        cls.reviewer = cls.annotator
-        cls.job.reviewer = cls.reviewer
-        cls.job.assignee = cls.assignee
-        cls.job.save()
-        cls.reject_review_data = {
-            "job": cls.job.id,
-            "issue_set": [
-                {
-                "position": [
-                    50, 50, 100, 100
-                ],
-                "comment_set": [
-                    {
-                    "message": "This is wrong!"
-                    }, {
-                    "message": "This is wrong 2!"
-                    }
-                ],
-                "frame": 0
-                }
-            ],
-            "estimated_quality": 3,
-            "status": "rejected"
-        }
-
-        cls.accept_review_data = {
-            "job": cls.job.id,
-            "issue_set": [],
-            "estimated_quality": 5,
-            "status": "accepted"
-        }
-
-        cls.review_further_data = {
-            "job": cls.job.id,
-            "issue_set": [],
-            "estimated_quality": 4,
-            "status": "review_further",
-            "reviewer_id": cls.reviewer.id
-        }
-
-        cls.create_comment_data = [{
-            "message": "This is testing message"
-        }, {
-            "message": "This is testing message 2"
-        }, {
-            "message": "This is testing message 3"
-        }]
-
-    def _post_request(self, path, user, data):
-        with ForceLogin(user, self.client):
-            response = self.client.post(path, data=data, format='json')
-
-        return response
-
-    def _patch_request(self, path, user, data):
-        with ForceLogin(user, self.client):
-            response = self.client.patch(path, data=data, format='json')
-
-        return response
-
-    def _get_request(self, path, user):
-        with ForceLogin(user, self.client):
-            response = self.client.get(path)
-
-        return response
-
-    def _delete_request(self, path, user):
-        with ForceLogin(user, self.client):
-            response = self.client.delete(path)
-
-        return response
-
-    def _fetch_job_from_db(self):
-        self.job = Job.objects.prefetch_related(
-            'review_set',
-            'review_set__issue_set',
-            'review_set__issue_set__comment_set').filter(segment__task_id=self.task.id).first()
-
-    def _set_annotation_status(self):
-        self._patch_request('/api/v1/jobs/{}'.format(self.job.id), self.admin, {'status': 'annotation'})
-
-    def _set_validation_status(self):
-        self._patch_request('/api/v1/jobs/{}'.format(self.job.id), self.admin, {'status': 'validation'})
-
-    def test_api_v1_job_annotation_review(self):
-        self._set_annotation_status()
-        response = self._post_request('/api/v1/reviews', self.reviewer, self.accept_review_data)
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-        response = self._post_request('/api/v1/reviews', self.assignee, self.accept_review_data)
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-
-    def test_api_v1_job_validation_review_create(self):
-        self._set_validation_status()
-        response = self._post_request('/api/v1/reviews', self.reviewer, self.accept_review_data)
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self._fetch_job_from_db()
-        self.assertEqual(self.job.status, 'completed')
-        response = self._post_request('/api/v1/reviews', self.assignee, self.accept_review_data)
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-        self.job.review_set.first().delete()
-
-    def test_api_v1_job_reject_review(self):
-        self._set_validation_status()
-        response = self._post_request('/api/v1/reviews', self.reviewer, self.reject_review_data)
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self._fetch_job_from_db()
-        self.assertEqual(self.job.status, 'annotation')
-        self.job.review_set.first().delete()
-
-    def test_api_v1_job_review_further(self):
-        self._set_validation_status()
-        response = self._post_request('/api/v1/reviews', self.reviewer, self.review_further_data)
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self._fetch_job_from_db()
-        self.assertEqual(self.job.status, 'validation')
-        self.job.review_set.first().delete()
-
-    def test_api_v1_create_review_comment(self):
-        self._set_validation_status()
-        response = self._post_request('/api/v1/reviews', self.reviewer, self.reject_review_data)
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        issue_id = response.data['issue_set'][0]['id']
-        comments = self.create_comment_data[:]
-        for comment in comments:
-            comment.update({
-                'issue': issue_id
-            })
-            response = self._post_request('/api/v1/comments', self.assignee, comment)
-            self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        response = self._get_request('/api/v1/issues/{}/comments'.format(issue_id), self.reviewer)
-        self.assertIsInstance(response.data, cls = list)
-        self.assertEqual(len(response.data), 5)
-        self.job.review_set.all().delete()
-        self.job.issue_set.all().delete()
-
-    def test_api_v1_edit_review_comment(self):
-        self._set_validation_status()
-        response = self._post_request('/api/v1/reviews', self.reviewer, self.reject_review_data)
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        issue_id = response.data['issue_set'][0]['id']
-        comments = self.create_comment_data[:]
-        for comment in comments:
-            comment.update({
-                'issue': issue_id
-            })
-            response = self._post_request('/api/v1/comments', self.assignee, comment)
-            self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        response = self._get_request('/api/v1/issues/{}/comments'.format(issue_id), self.reviewer)
-        last_comment = max(response.data, key=lambda comment: comment['id'])
-        last_comment.update({
-            'message': 'fixed message 3'
-        })
-        last_comment.update({
-            'author_id': last_comment['author']['id'],
-            'author': None
-        })
-        response = self._patch_request('/api/v1/comments/{}'.format(last_comment['id']), self.reviewer, last_comment)
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-        response = self._patch_request('/api/v1/comments/{}'.format(last_comment['id']), self.assignee, last_comment)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data['message'], last_comment['message'])
-        response = self._get_request('/api/v1/issues/{}/comments'.format(issue_id), self.reviewer)
-        updated_last_comment = max(response.data, key=lambda comment: comment['id'])
-        self.assertEqual(updated_last_comment['message'], last_comment['message'])
-        self.job.review_set.all().delete()
-        self.job.issue_set.all().delete()
-
-    def test_api_v1_remove_comment(self):
-        self._set_validation_status()
-        response = self._post_request('/api/v1/reviews', self.reviewer, self.reject_review_data)
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        issue_id = response.data['issue_set'][0]['id']
-        comments = self.create_comment_data[:]
-        for comment in comments:
-            comment.update({
-                'issue': issue_id
-            })
-            response = self._post_request('/api/v1/comments', self.assignee, comment)
-            self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        response = self._get_request('/api/v1/issues/{}/comments'.format(issue_id), self.reviewer)
-        last_comment = max(response.data, key=lambda comment: comment['id'])
-        response = self._delete_request('/api/v1/comments/{}'.format(last_comment['id']), self.reviewer)
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-        response = self._delete_request('/api/v1/comments/{}'.format(last_comment['id']), self.assignee)
-        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
-        self._fetch_job_from_db()
-        ids = list(map(lambda comment: comment.id, self.job.issue_set.first().comment_set.all()))
-        self.assertNotIn(last_comment['id'], ids)
-        self.job.review_set.all().delete()
-        self.job.issue_set.all().delete()
-
-    def test_api_v1_resolve_reopen_issue(self):
-        self._set_validation_status()
-        response = self._post_request('/api/v1/reviews', self.reviewer, self.reject_review_data)
-        response = self._get_request('/api/v1/jobs/{}/issues'.format(self.job.id), self.assignee)
-        issue_id = response.data[0]['id']
-
-        response = self._patch_request('/api/v1/issues/{}'.format(issue_id), self.assignee, {'resolver_id': self.assignee.id})
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        response = self._get_request('/api/v1/jobs/{}/issues'.format(self.job.id), self.assignee)
-        self.assertEqual(response.data[0]['resolver']['id'], self.assignee.id)
-
-        response = self._patch_request('/api/v1/issues/{}'.format(issue_id), self.reviewer, {'resolver_id': None})
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        response = self._get_request('/api/v1/jobs/{}/issues'.format(self.job.id), self.assignee)
-        self.assertEqual(response.data[0]['resolver'], None)
-
-        response = self._patch_request('/api/v1/issues/{}'.format(issue_id), self.reviewer, {'resolver_id': self.reviewer.id})
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        response = self._get_request('/api/v1/jobs/{}/issues'.format(self.job.id), self.reviewer)
-        self.assertEqual(response.data[0]['resolver']['id'], self.reviewer.id)
 
 class ServerAboutAPITestCase(APITestCase):
     def setUp(self):
@@ -788,9 +572,9 @@ class UserListAPITestCase(UserAPITestCase):
         response = self._run_api_v1_users(self.annotator)
         self._check_response(self.annotator, response, False)
 
-    def test_api_v1_users_observer(self):
-        response = self._run_api_v1_users(self.observer)
-        self._check_response(self.observer, response, False)
+    def test_api_v1_users_somebody(self):
+        response = self._run_api_v1_users(self.somebody)
+        self._check_response(self.somebody, response, False)
 
     def test_api_v1_users_no_auth(self):
         response = self._run_api_v1_users(None)
@@ -815,9 +599,9 @@ class UserSelfAPITestCase(UserAPITestCase):
         response = self._run_api_v1_users_self(self.annotator)
         self._check_response(self.annotator, response)
 
-    def test_api_v1_users_self_observer(self):
-        response = self._run_api_v1_users_self(self.observer)
-        self._check_response(self.observer, response)
+    def test_api_v1_users_self_somebody(self):
+        response = self._run_api_v1_users_self(self.somebody)
+        self._check_response(self.somebody, response)
 
     def test_api_v1_users_self_no_auth(self):
         response = self._run_api_v1_users_self(None)
@@ -845,21 +629,21 @@ class UserGetAPITestCase(UserAPITestCase):
         self._check_response(self.user, response, True)
 
         response = self._run_api_v1_users_id(self.user, self.owner.id)
-        self._check_response(self.owner, response, False)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_api_v1_users_id_annotator(self):
         response = self._run_api_v1_users_id(self.annotator, self.annotator.id)
         self._check_response(self.annotator, response, True)
 
         response = self._run_api_v1_users_id(self.annotator, self.user.id)
-        self._check_response(self.user, response, False)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
-    def test_api_v1_users_id_observer(self):
-        response = self._run_api_v1_users_id(self.observer, self.observer.id)
-        self._check_response(self.observer, response, True)
+    def test_api_v1_users_id_somebody(self):
+        response = self._run_api_v1_users_id(self.somebody, self.somebody.id)
+        self._check_response(self.somebody, response, True)
 
-        response = self._run_api_v1_users_id(self.observer, self.user.id)
-        self._check_response(self.user, response, False)
+        response = self._run_api_v1_users_id(self.somebody, self.user.id)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_api_v1_users_id_no_auth(self):
         response = self._run_api_v1_users_id(None, self.user.id)
@@ -939,11 +723,11 @@ class UserDeleteAPITestCase(UserAPITestCase):
         response = self._run_api_v1_users_id(self.annotator, self.annotator.id)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
 
-    def test_api_v1_users_id_observer(self):
-        response = self._run_api_v1_users_id(self.observer, self.user.id)
+    def test_api_v1_users_id_somebody(self):
+        response = self._run_api_v1_users_id(self.somebody, self.user.id)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
-        response = self._run_api_v1_users_id(self.observer, self.observer.id)
+        response = self._run_api_v1_users_id(self.somebody, self.somebody.id)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
 
     def test_api_v1_users_id_no_auth(self):
@@ -977,15 +761,14 @@ class ProjectListAPITestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertListEqual(
             sorted([project.name for project in self.projects
-                if 'my empty project' != project.name]),
+                if self.user in [project.owner, project.assignee]]),
             sorted([res["name"] for res in response.data["results"]]))
 
-    def test_api_v1_projects_observer(self):
-        response = self._run_api_v1_projects(self.observer)
+    def test_api_v1_projects_somebody(self):
+        response = self._run_api_v1_projects(self.somebody)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertListEqual(
-            sorted([project.name for project in self.projects]),
-            sorted([res["name"] for res in response.data["results"]]))
+        self.assertListEqual([],
+            [res["name"] for res in response.data["results"]])
 
     def test_api_v1_projects_no_auth(self):
         response = self._run_api_v1_projects(None)
@@ -1021,12 +804,12 @@ class ProjectGetAPITestCase(APITestCase):
     def _check_api_v1_projects_id(self, user):
         for db_project in self.projects:
             response = self._run_api_v1_projects_id(db_project.id, user)
-            if user and user.has_perm("engine.project.access", db_project):
-                self._check_response(response, db_project)
-            elif user:
-                self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-            else:
+            if user is None:
                 self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+            elif user == db_project.owner or user == db_project.assignee or user.is_superuser:
+                self._check_response(response, db_project)
+            else:
+                self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_api_v1_projects_id_admin(self):
         self._check_api_v1_projects_id(self.admin)
@@ -1034,8 +817,8 @@ class ProjectGetAPITestCase(APITestCase):
     def test_api_v1_projects_id_user(self):
         self._check_api_v1_projects_id(self.user)
 
-    def test_api_v1_projects_id_observer(self):
-        self._check_api_v1_projects_id(self.observer)
+    def test_api_v1_projects_id_somebody(self):
+        self._check_api_v1_projects_id(self.somebody)
 
     def test_api_v1_projects_id_no_auth(self):
         self._check_api_v1_projects_id(None)
@@ -1058,12 +841,13 @@ class ProjectDeleteAPITestCase(APITestCase):
     def _check_api_v1_projects_id(self, user):
         for db_project in self.projects:
             response = self._run_api_v1_projects_id(db_project.id, user)
-            if user and user.has_perm("engine.project.delete", db_project):
-                self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
-            elif user:
-                self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-            else:
+            if user is None:
                 self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+            elif user == db_project.owner or user.is_superuser:
+                self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+            else:
+                self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
 
     def test_api_v1_projects_id_admin(self):
         self._check_api_v1_projects_id(self.admin)
@@ -1071,8 +855,8 @@ class ProjectDeleteAPITestCase(APITestCase):
     def test_api_v1_projects_id_user(self):
         self._check_api_v1_projects_id(self.user)
 
-    def test_api_v1_projects_id_observer(self):
-        self._check_api_v1_projects_id(self.observer)
+    def test_api_v1_projects_id_somebody(self):
+        self._check_api_v1_projects_id(self.somebody)
 
     def test_api_v1_projects_id_no_auth(self):
         self._check_api_v1_projects_id(None)
@@ -1106,10 +890,8 @@ class ProjectCreateAPITestCase(APITestCase):
 
     def _check_api_v1_projects(self, user, data):
         response = self._run_api_v1_projects(user, data)
-        if user and user.has_perm("engine.project.create"):
+        if user:
             self._check_response(response, user, data)
-        elif user:
-            self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         else:
             self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
@@ -1150,20 +932,20 @@ class ProjectCreateAPITestCase(APITestCase):
         self._check_api_v1_projects(self.user, data)
 
         data = {
-            "owner_id": self.owner.id,
-            "assignee_id": self.assignee.id,
+            "owner_id": self.user.id,
+            "assignee_id": self.user.id,
             "name": "My import project with data"
         }
         self._check_api_v1_projects(self.user, data)
 
 
-    def test_api_v1_projects_observer(self):
+    def test_api_v1_projects_somebody(self):
         data = {
             "name": "My Project #1",
-            "owner_id": self.owner.id,
-            "assignee_id": self.assignee.id
+            "owner_id": self.somebody.id,
+            "assignee_id": self.somebody.id
         }
-        self._check_api_v1_projects(self.observer, data)
+        self._check_api_v1_projects(self.somebody, data)
 
     def test_api_v1_projects_no_auth(self):
         data = {
@@ -1240,11 +1022,11 @@ class ProjectPartialUpdateAPITestCase(APITestCase):
         }
         self._check_api_v1_projects_id(self.user, data)
 
-    def test_api_v1_projects_id_observer(self):
+    def test_api_v1_projects_id_somebody(self):
         data = {
             "name": "new name for the project",
         }
-        self._check_api_v1_projects_id(self.observer, data)
+        self._check_api_v1_projects_id(self.somebody, data)
 
     def test_api_v1_projects_id_no_auth(self):
         data = {
@@ -1374,27 +1156,404 @@ class ProjectListOfTasksAPITestCase(APITestCase):
             sorted([res["name"] for res in response.data["results"]]))
 
     def test_api_v1_projects_id_tasks_user(self):
-        project = self.projects[1]
+        project = self.projects[1] # the user is owner of the project
         response = self._run_api_v1_projects_id_tasks(self.user, project.id)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertListEqual(
-            sorted([task.name for task in project.tasks.all()
-                if  task.owner in [None, self.user] or
-                    task.assignee in [None, self.user]]),
-            sorted([res["name"] for res in response.data["results"]]))
-
-    def test_api_v1_projects_id_tasks_observer(self):
-        project = self.projects[1]
-        response = self._run_api_v1_projects_id_tasks(self.observer, project.id)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertListEqual(
             sorted([task.name for task in project.tasks.all()]),
             sorted([res["name"] for res in response.data["results"]]))
 
+    def test_api_v1_projects_id_tasks_somebody(self):
+        project = self.projects[1]
+        response = self._run_api_v1_projects_id_tasks(self.somebody, project.id)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
     def test_api_v1_projects_id_tasks_no_auth(self):
         project = self.projects[1]
         response = self._run_api_v1_projects_id_tasks(None, project.id)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+class ProjectBackupAPITestCase(APITestCase):
+    @classmethod
+    def setUpTestData(cls):
+        create_db_users(cls)
+        cls._create_media()
+        cls.client = APIClient()
+        cls._create_projects()
+
+    @classmethod
+    def tearDownClass(cls):
+        super().tearDownClass()
+        for task in cls.tasks:
+            shutil.rmtree(os.path.join(settings.TASKS_ROOT, str(task["id"])))
+            shutil.rmtree(os.path.join(settings.MEDIA_DATA_ROOT, str(task["data_id"])))
+
+        for f in cls.media['files']:
+            os.remove(f)
+        for d in cls.media['dirs']:
+            shutil.rmtree(d)
+
+    @classmethod
+    def _create_media(cls):
+        cls.media_data = []
+        cls.media = {
+            'files': [],
+            'dirs': [],
+        }
+        image_count = 10
+        imagename_pattern = "test_{}.jpg"
+        for i in range(image_count):
+            filename = imagename_pattern.format(i)
+            path = os.path.join(settings.SHARE_ROOT, filename)
+            cls.media['files'].append(path)
+            _, data = generate_image_file(filename)
+            with open(path, "wb") as image:
+                image.write(data.read())
+
+        cls.media_data.append(
+            {
+                **{"image_quality": 75,
+                   "copy_data": True,
+                   "start_frame": 2,
+                   "stop_frame": 9,
+                   "frame_filter": "step=2",
+                },
+                **{"server_files[{}]".format(i): imagename_pattern.format(i) for i in range(image_count)},
+            }
+        )
+
+        filename = "test_video_1.mp4"
+        path = os.path.join(settings.SHARE_ROOT, filename)
+        cls.media['files'].append(path)
+        _, data = generate_video_file(filename, width=1280, height=720)
+        with open(path, "wb") as video:
+            video.write(data.read())
+        cls.media_data.append(
+            {
+                "image_quality": 75,
+                "copy_data": True,
+                "start_frame": 2,
+                "stop_frame": 24,
+                "frame_filter": "step=2",
+                "server_files[0]": filename,
+            }
+        )
+
+        filename = os.path.join("test_archive_1.zip")
+        path = os.path.join(settings.SHARE_ROOT, filename)
+        cls.media['files'].append(path)
+        _, data = generate_zip_archive_file(filename, count=5)
+        with open(path, "wb") as zip_archive:
+            zip_archive.write(data.read())
+        cls.media_data.append(
+            {
+                "image_quality": 75,
+                "server_files[0]": filename,
+            }
+        )
+
+        filename = os.path.join("videos", "test_video_1.mp4")
+        path = os.path.join(settings.SHARE_ROOT, filename)
+        cls.media['dirs'].append(os.path.dirname(path))
+        os.makedirs(os.path.dirname(path))
+        _, data = generate_video_file(filename, width=1280, height=720)
+        with open(path, "wb") as video:
+            video.write(data.read())
+
+        manifest_path = os.path.join(settings.SHARE_ROOT, 'videos', 'manifest.jsonl')
+        generate_manifest_file(data_type='video', manifest_path=manifest_path, sources=[path])
+
+        cls.media_data.append(
+            {
+                "image_quality": 70,
+                "copy_data": True,
+                "server_files[0]": filename,
+                "server_files[1]": os.path.join("videos", "manifest.jsonl"),
+                "use_cache": True,
+            }
+        )
+
+        manifest_path = manifest_path=os.path.join(settings.SHARE_ROOT, 'manifest.jsonl')
+        generate_manifest_file(data_type='images', manifest_path=manifest_path,
+            sources=[os.path.join(settings.SHARE_ROOT, imagename_pattern.format(i)) for i in range(1, 8)])
+        cls.media['files'].append(manifest_path)
+        cls.media_data.append(
+            {
+                **{"image_quality": 70,
+                    "copy_data": True,
+                    "use_cache": True,
+                    "frame_filter": "step=2",
+                    "server_files[0]": "manifest.jsonl",
+                },
+                **{
+                    **{"server_files[{}]".format(i): imagename_pattern.format(i) for i in range(1, 8)},
+                }
+            }
+        )
+
+        cls.media_data.extend([
+            # image list local
+            {
+                "client_files[0]": generate_image_file("test_1.jpg")[1],
+                "client_files[1]": generate_image_file("test_2.jpg")[1],
+                "client_files[2]": generate_image_file("test_3.jpg")[1],
+                "image_quality": 75,
+            },
+            # video local
+            {
+                "client_files[0]": generate_video_file("test_video.mp4")[1],
+                "image_quality": 75,
+            },
+            # zip archive local
+            {
+                "client_files[0]": generate_zip_archive_file("test_archive_1.zip", 10)[1],
+                "image_quality": 50,
+            },
+            # pdf local
+            {
+                "client_files[0]": generate_pdf_file("test_pdf_1.pdf", 7)[1],
+                "image_quality": 54,
+            },
+        ])
+
+    @classmethod
+    def _create_tasks(cls, project):
+        def _create_task(task_data, media_data):
+            response = cls.client.post('/api/v1/tasks', data=task_data, format="json")
+            assert response.status_code == status.HTTP_201_CREATED
+            tid = response.data["id"]
+
+            for media in media_data.values():
+                if isinstance(media, io.BytesIO):
+                    media.seek(0)
+            response = cls.client.post("/api/v1/tasks/{}/data".format(tid), data=media_data)
+            assert response.status_code == status.HTTP_202_ACCEPTED
+            response = cls.client.get("/api/v1/tasks/{}".format(tid))
+            data_id = response.data["data"]
+            cls.tasks.append({
+                "id": tid,
+                "data_id": data_id,
+            })
+
+        task_data = [
+            {
+                "name": "my task #1",
+                "owner_id": project.owner.id,
+                "overlap": 0,
+                "segment_size": 100,
+                "project_id": project.id,
+            },
+            {
+                "name": "my task #2",
+                "owner_id": project.owner.id,
+                "overlap": 1,
+                "segment_size": 3,
+                "project_id": project.id,
+            },
+        ]
+
+        with ForceLogin(project.owner, cls.client):
+            for data in task_data:
+                for media in cls.media_data:
+                    _create_task(data, media)
+
+    @classmethod
+    def _create_projects(cls):
+        cls.projects = []
+        cls.tasks = []
+        data = {
+            "name": "my empty project",
+            "owner": cls.owner,
+            "labels": [{
+                "name": "car",
+                "color": "#ff00ff",
+                "attributes": [{
+                    "name": "bool_attribute",
+                    "mutable": True,
+                    "input_type": AttributeType.CHECKBOX,
+                    "default_value": "true"
+                }],
+                }, {
+                    "name": "person",
+                },
+            ],
+        }
+        db_project = create_db_project(data)
+        cls.projects.append(db_project)
+
+        data = {
+            "name": "my project without assignee",
+            "owner": cls.owner,
+            "labels": [{
+                "name": "car",
+                "color": "#ff00ff",
+                "attributes": [{
+                    "name": "bool_attribute",
+                    "mutable": True,
+                    "input_type": AttributeType.CHECKBOX,
+                    "default_value": "true"
+                }],
+                }, {
+                    "name": "person",
+                },
+            ],
+        }
+        db_project = create_db_project(data)
+        cls._create_tasks(db_project)
+        cls.projects.append(db_project)
+
+        data = {
+            "name": "my big project",
+            "owner": cls.owner,
+            "labels": [{
+                "name": "car",
+                "color": "#ff00ff",
+                "attributes": [{
+                    "name": "bool_attribute",
+                    "mutable": True,
+                    "input_type": AttributeType.CHECKBOX,
+                    "default_value": "true"
+                }],
+                }, {
+                    "name": "person",
+                },
+            ],
+        }
+        db_project = create_db_project(data)
+        cls._create_tasks(db_project)
+        cls.projects.append(db_project)
+
+        data = {
+            "name": "public project",
+            "owner": cls.owner,
+            "labels": [{
+                "name": "car",
+                "color": "#ff00ff",
+                "attributes": [{
+                    "name": "bool_attribute",
+                    "mutable": True,
+                    "input_type": AttributeType.CHECKBOX,
+                    "default_value": "true"
+                }],
+                }, {
+                    "name": "person",
+                },
+            ],
+        }
+        db_project = create_db_project(data)
+        cls._create_tasks(db_project)
+        cls.projects.append(db_project)
+
+        data = {
+            "name": "super project",
+            "owner": cls.admin,
+            "labels": [{
+                "name": "car",
+                "color": "#ff00ff",
+                "attributes": [{
+                    "name": "bool_attribute",
+                    "mutable": True,
+                    "input_type": AttributeType.CHECKBOX,
+                    "default_value": "true"
+                }],
+                }, {
+                    "name": "person",
+                },
+            ],
+        }
+        db_project = create_db_project(data)
+        cls._create_tasks(db_project)
+        cls.projects.append(db_project)
+
+    def _run_api_v1_projects_id_export(self, pid, user, query_params=""):
+        with ForceLogin(user, self.client):
+            response = self.client.get('/api/v1/projects/{}/backup?{}'.format(pid, query_params), format="json")
+
+        return response
+
+    def _run_api_v1_projects_import(self, user, data):
+        with ForceLogin(user, self.client):
+            response = self.client.post('/api/v1/projects/backup', data=data, format="multipart")
+
+        return response
+
+    def _run_api_v1_projects_id(self, pid, user):
+        with ForceLogin(user, self.client):
+            response = self.client.get('/api/v1/projects/{}'.format(pid), format="json")
+
+        return response.data
+
+    def _run_api_v1_projects_id_export_import(self, user):
+        for project in self.projects:
+            if user:
+                if user in [project.assignee, project.owner, self.admin]:
+                    HTTP_200_OK = status.HTTP_200_OK
+                    HTTP_202_ACCEPTED = status.HTTP_202_ACCEPTED
+                    HTTP_201_CREATED = status.HTTP_201_CREATED
+                else:
+                    HTTP_200_OK = status.HTTP_403_FORBIDDEN
+                    HTTP_202_ACCEPTED = status.HTTP_403_FORBIDDEN
+                    HTTP_201_CREATED = status.HTTP_403_FORBIDDEN
+            else:
+                HTTP_200_OK = status.HTTP_401_UNAUTHORIZED
+                HTTP_202_ACCEPTED = status.HTTP_401_UNAUTHORIZED
+                HTTP_201_CREATED = status.HTTP_401_UNAUTHORIZED
+
+            pid = project.id
+            response = self._run_api_v1_projects_id_export(pid, user)
+            self.assertEqual(response.status_code, HTTP_202_ACCEPTED)
+
+            response = self._run_api_v1_projects_id_export(pid, user)
+            self.assertEqual(response.status_code, HTTP_201_CREATED)
+
+            response = self._run_api_v1_projects_id_export(pid, user, "action=download")
+            self.assertEqual(response.status_code, HTTP_200_OK)
+
+            if response.status_code == status.HTTP_200_OK:
+                self.assertTrue(response.streaming)
+                content = io.BytesIO(b"".join(response.streaming_content))
+                content.seek(0)
+
+                uploaded_data = {
+                    "project_file": content,
+                }
+                response = self._run_api_v1_projects_import(user, uploaded_data)
+                self.assertEqual(response.status_code, HTTP_202_ACCEPTED)
+                if response.status_code == status.HTTP_200_OK:
+                    rq_id = response.data["rq_id"]
+                    response = self._run_api_v1_projects_import(user, {"rq_id": rq_id})
+                    self.assertEqual(response.status_code, HTTP_201_CREATED)
+                    original_project = self._run_api_v1_projects_id(pid, user)
+                    imported_project = self._run_api_v1_projects_id(response.data["id"], user)
+                    compare_objects(
+                        self=self,
+                        obj1=original_project,
+                        obj2=imported_project,
+                        ignore_keys=(
+                            "data",
+                            "id",
+                            "url",
+                            "owner",
+                            "assignee",
+                            "created_date",
+                            "updated_date",
+                            "training_project",
+                            "project_id",
+                            "tasks",
+                        ),
+                    )
+
+    def test_api_v1_projects_id_export_admin(self):
+        self._run_api_v1_projects_id_export_import(self.admin)
+
+    def test_api_v1_projects_id_export_user(self):
+        self._run_api_v1_projects_id_export_import(self.user)
+
+    def test_api_v1_projects_id_export_somebody(self):
+        self._run_api_v1_projects_id_export_import(self.somebody)
+
+    def test_api_v1_projects_id_export_no_auth(self):
+        self._run_api_v1_projects_id_export_import(None)
 
 class ProjectExportAPITestCase(APITestCase):
     def setUp(self):
@@ -1470,6 +1629,161 @@ class ProjectExportAPITestCase(APITestCase):
         self._check_xml(pid, user, 3)
 
 
+class ProjectImportExportAPITestCase(APITestCase):
+    def setUp(self) -> None:
+        self.client = APIClient()
+        self.tasks = []
+        self.projects = []
+
+    @classmethod
+    def setUpTestData(cls) -> None:
+        create_db_users(cls)
+
+        cls.media_data = [
+            {
+                **{
+                   **{"client_files[{}]".format(i): generate_image_file("test_{}.jpg".format(i))[1] for i in range(10)},
+                },
+                **{
+                    "image_quality": 75,
+                },
+            },
+            {
+                **{
+                   **{"client_files[{}]".format(i): generate_image_file("test_{}.jpg".format(i))[1] for i in range(10)},
+                },
+                "image_quality": 75,
+            },
+        ]
+
+    def _create_tasks(self):
+        self.tasks = []
+
+        def _create_task(task_data, media_data):
+            response = self.client.post('/api/v1/tasks', data=task_data, format="json")
+            assert response.status_code == status.HTTP_201_CREATED
+            tid = response.data["id"]
+
+            for media in media_data.values():
+                if isinstance(media, io.BytesIO):
+                    media.seek(0)
+            response = self.client.post("/api/v1/tasks/{}/data".format(tid), data=media_data)
+            assert response.status_code == status.HTTP_202_ACCEPTED
+            response = self.client.get("/api/v1/tasks/{}".format(tid))
+            data_id = response.data["data"]
+            self.tasks.append({
+                "id": tid,
+                "data_id": data_id,
+            })
+
+        task_data = [
+            {
+                "name": "my task #1",
+                "owner_id": self.owner.id,
+                "overlap": 0,
+                "segment_size": 100,
+                "project_id": self.projects[0]["id"],
+            },
+            {
+                "name": "my task #2",
+                "owner_id": self.owner.id,
+                "overlap": 1,
+                "segment_size": 3,
+                "project_id": self.projects[0]["id"],
+            },
+        ]
+
+        with ForceLogin(self.owner, self.client):
+            for data, media in zip(task_data, self.media_data):
+                _create_task(data, media)
+
+    def _create_projects(self):
+        self.projects = []
+
+        def _create_project(project_data):
+            response = self.client.post('/api/v1/projects', data=project_data, format="json")
+            assert response.status_code == status.HTTP_201_CREATED
+            self.projects.append(response.data)
+
+        project_data = [
+            {
+                "name": "Project for export",
+                "owner_id": self.owner.id,
+                "labels": [
+                    {
+                        "name": "car",
+                        "color": "#ff00ff",
+                        "attributes": [{
+                            "name": "bool_attribute",
+                            "mutable": True,
+                            "input_type": AttributeType.CHECKBOX,
+                            "default_value": "true"
+                        }],
+                    }, {
+                        "name": "person",
+                    },
+                ]
+            }, {
+                "name": "Project for import",
+                "owner_id": self.owner.id,
+            },
+        ]
+
+        with ForceLogin(self.owner, self.client):
+            for data in project_data:
+                _create_project(data)
+
+    def _run_api_v1_projects_id_dataset_export(self, pid, user, query_params=""):
+        with ForceLogin(user, self.client):
+            response = self.client.get("/api/v1/projects/{}/dataset?{}".format(pid, query_params), format="json")
+        return response
+
+    def _run_api_v1_projects_id_dataset_import(self, pid, user, data, f):
+        with ForceLogin(user, self.client):
+            response = self.client.post("/api/v1/projects/{}/dataset?format={}".format(pid, f),  data=data, format="multipart")
+        return response
+
+    def _run_api_v1_projects_id_dataset_import_status(self, pid, user):
+        with ForceLogin(user, self.client):
+            response = self.client.get("/api/v1/projects/{}/dataset?action=import_status".format(pid), format="json")
+        return response
+
+    def test_api_v1_projects_id_export_import(self):
+
+        self._create_projects()
+        self._create_tasks()
+        pid_export, pid_import = self.projects[0]["id"], self.projects[1]["id"]
+        response = self._run_api_v1_projects_id_dataset_export(pid_export, self.owner, "format=CVAT for images 1.1")
+        self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
+
+        response = self._run_api_v1_projects_id_dataset_export(pid_export, self.owner, "format=CVAT for images 1.1")
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        response = self._run_api_v1_projects_id_dataset_export(pid_export, self.owner, "format=CVAT for images 1.1&action=download")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        self.assertTrue(response.streaming)
+        tmp_file = tempfile.NamedTemporaryFile(suffix=".zip")
+        tmp_file.write(b"".join(response.streaming_content))
+        tmp_file.seek(0)
+
+        import_data = {
+            "dataset_file": tmp_file,
+        }
+
+        response = self._run_api_v1_projects_id_dataset_import(pid_import, self.owner, import_data, "CVAT 1.1")
+        self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
+
+        response = self._run_api_v1_projects_id_dataset_import_status(pid_import, self.owner)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+    def tearDown(self) -> None:
+        for task in self.tasks:
+            shutil.rmtree(os.path.join(settings.TASKS_ROOT, str(task["id"])))
+            shutil.rmtree(os.path.join(settings.MEDIA_DATA_ROOT, str(task["data_id"])))
+        for project in self.projects:
+            shutil.rmtree(os.path.join(settings.PROJECTS_ROOT, str(project["id"])))
+
 class TaskListAPITestCase(APITestCase):
     def setUp(self):
         self.client = APIClient()
@@ -1497,15 +1811,14 @@ class TaskListAPITestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertListEqual(
             sorted([task.name for task in self.tasks
-                if (task.owner == self.user or task.assignee == None)]),
+                if self.user in [task.owner, task.assignee]]),
             sorted([res["name"] for res in response.data["results"]]))
 
-    def test_api_v1_tasks_observer(self):
-        response = self._run_api_v1_tasks(self.observer)
+    def test_api_v1_tasks_somebody(self):
+        response = self._run_api_v1_tasks(self.somebody)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertListEqual(
-            sorted([task.name for task in self.tasks]),
-            sorted([res["name"] for res in response.data["results"]]))
+        self.assertListEqual([],
+            [res["name"] for res in response.data["results"]])
 
     def test_api_v1_tasks_no_auth(self):
         response = self._run_api_v1_tasks(None)
@@ -1549,12 +1862,13 @@ class TaskGetAPITestCase(APITestCase):
     def _check_api_v1_tasks_id(self, user):
         for db_task in self.tasks:
             response = self._run_api_v1_tasks_id(db_task.id, user)
-            if user and user.has_perm("engine.task.access", db_task):
-                self._check_response(response, db_task)
-            elif user:
-                self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-            else:
+            if user is None:
                 self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+            elif user == db_task.owner or user.is_superuser:
+                self._check_response(response, db_task)
+            else:
+                self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
 
     def test_api_v1_tasks_id_admin(self):
         self._check_api_v1_tasks_id(self.admin)
@@ -1562,8 +1876,8 @@ class TaskGetAPITestCase(APITestCase):
     def test_api_v1_tasks_id_user(self):
         self._check_api_v1_tasks_id(self.user)
 
-    def test_api_v1_tasks_id_observer(self):
-        self._check_api_v1_tasks_id(self.observer)
+    def test_api_v1_tasks_id_somebody(self):
+        self._check_api_v1_tasks_id(self.somebody)
 
     def test_api_v1_tasks_id_no_auth(self):
         self._check_api_v1_tasks_id(None)
@@ -1586,12 +1900,13 @@ class TaskDeleteAPITestCase(APITestCase):
     def _check_api_v1_tasks_id(self, user):
         for db_task in self.tasks:
             response = self._run_api_v1_tasks_id(db_task.id, user)
-            if user and user.has_perm("engine.task.delete", db_task):
-                self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
-            elif user:
-                self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-            else:
+            if user is None:
                 self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+            elif user == db_task.owner or user.is_superuser:
+                self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+            else:
+                self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
 
     def test_api_v1_tasks_id_admin(self):
         self._check_api_v1_tasks_id(self.admin)
@@ -1599,8 +1914,8 @@ class TaskDeleteAPITestCase(APITestCase):
     def test_api_v1_tasks_id_user(self):
         self._check_api_v1_tasks_id(self.user)
 
-    def test_api_v1_tasks_id_observer(self):
-        self._check_api_v1_tasks_id(self.observer)
+    def test_api_v1_tasks_id_somebody(self):
+        self._check_api_v1_tasks_id(self.somebody)
 
     def test_api_v1_tasks_id_no_auth(self):
         self._check_api_v1_tasks_id(None)
@@ -1613,7 +1928,6 @@ class TaskDeleteAPITestCase(APITestCase):
         for task in self.tasks:
             task_dir = task.get_task_dirname()
             self.assertFalse(os.path.exists(task_dir))
-
 
 class TaskUpdateAPITestCase(APITestCase):
 
@@ -1666,12 +1980,12 @@ class TaskUpdateAPITestCase(APITestCase):
     def _check_api_v1_tasks_id(self, user, data):
         for db_task in self.tasks:
             response = self._run_api_v1_tasks_id(db_task.id, user, data)
-            if user and user.has_perm("engine.task.change", db_task):
-                self._check_response(response, db_task, data)
-            elif user:
-                self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-            else:
+            if user is None:
                 self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+            elif user == db_task.owner or user == db_task.assignee or user.is_superuser:
+                self._check_response(response, db_task, data)
+            else:
+                self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_api_v1_tasks_id_admin(self):
         data = {
@@ -1692,7 +2006,7 @@ class TaskUpdateAPITestCase(APITestCase):
     def test_api_v1_tasks_id_user(self):
         data = {
             "name": "new name for the task",
-            "owner_id": self.assignee.id,
+            "owner_id": self.user.id,
             "labels": [{
                 "name": "car",
                 "attributes": [{
@@ -1706,14 +2020,14 @@ class TaskUpdateAPITestCase(APITestCase):
         }
         self._check_api_v1_tasks_id(self.user, data)
 
-    def test_api_v1_tasks_id_observer(self):
+    def test_api_v1_tasks_id_somebody(self):
         data = {
             "name": "new name for the task",
             "labels": [{
                 "name": "test",
             }]
         }
-        self._check_api_v1_tasks_id(self.observer, data)
+        self._check_api_v1_tasks_id(self.somebody, data)
 
     def test_api_v1_tasks_id_no_auth(self):
         data = {
@@ -1763,17 +2077,17 @@ class TaskPartialUpdateAPITestCase(TaskUpdateAPITestCase):
         self._check_api_v1_tasks_id(self.user, data)
 
         data = {
-            "owner_id": self.observer.id,
-            "assignee_id": self.annotator.id
+            "owner_id": self.user.id,
+            "assignee_id": self.user.id
         }
         self._check_api_v1_tasks_id(self.user, data)
 
 
-    def test_api_v1_tasks_id_observer(self):
+    def test_api_v1_tasks_id_somebody(self):
         data = {
             "name": "my task #3"
         }
-        self._check_api_v1_tasks_id(self.observer, data)
+        self._check_api_v1_tasks_id(self.somebody, data)
 
     def test_api_v1_tasks_id_no_auth(self):
         data = {
@@ -2078,12 +2392,10 @@ class TaskCreateAPITestCase(APITestCase):
 
     def _check_api_v1_tasks(self, user, data):
         response = self._run_api_v1_tasks(user, data)
-        if user and user.has_perm("engine.task.create"):
-            self._check_response(response, user, data)
-        elif user:
-            self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-        else:
+        if user is None:
             self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        else:
+            self._check_response(response, user, data)
 
     def test_api_v1_tasks_admin(self):
         data = {
@@ -2103,7 +2415,7 @@ class TaskCreateAPITestCase(APITestCase):
     def test_api_v1_tasks_user(self):
         data = {
             "name": "new name for the task",
-            "owner_id": self.assignee.id,
+            "owner_id": self.user.id,
             "labels": [{
                 "name": "car",
                 "attributes": [{
@@ -2128,14 +2440,14 @@ class TaskCreateAPITestCase(APITestCase):
         }]
         self._check_response(response, self.user, data)
 
-    def test_api_v1_tasks_observer(self):
+    def test_api_v1_tasks_somebody(self):
         data = {
             "name": "new name for the task",
             "labels": [{
                 "name": "test",
             }]
         }
-        self._check_api_v1_tasks(self.observer, data)
+        self._check_api_v1_tasks(self.somebody, data)
 
     def test_api_v1_tasks_no_auth(self):
         data = {
@@ -2145,8 +2457,6 @@ class TaskCreateAPITestCase(APITestCase):
             }]
         }
         self._check_api_v1_tasks(None, data)
-
-
 
 class TaskImportExportAPITestCase(APITestCase):
 
@@ -2169,17 +2479,29 @@ class TaskImportExportAPITestCase(APITestCase):
             with open(path, "wb") as image:
                 image.write(data.read())
 
-        cls.media_data.append(
-            {
-                **{"image_quality": 75,
-                   "copy_data": True,
-                   "start_frame": 2,
-                   "stop_frame": 9,
-                   "frame_filter": "step=2",
-                },
-                **{"server_files[{}]".format(i): imagename_pattern.format(i) for i in range(image_count)},
-            }
-        )
+        data = {
+            "image_quality": 75,
+            "copy_data": True,
+            "start_frame": 2,
+            "stop_frame": 9,
+            "frame_filter": "step=2",
+            **{"server_files[{}]".format(i): imagename_pattern.format(i) for i in range(image_count)},
+        }
+        use_cache_data = {
+            **data,
+            'use_cache': True,
+        }
+        cls.media_data.append(data)
+
+        data['sorting_method'] = SortingMethod.NATURAL
+        cls.media_data.append(data)
+        cls.media_data.append(use_cache_data)
+
+        use_cache_data['sorting_method'] = SortingMethod.NATURAL
+        cls.media_data.append(use_cache_data)
+
+        use_cache_data['sorting_method'] = SortingMethod.RANDOM
+        cls.media_data.append(use_cache_data)
 
         filename = "test_video_1.mp4"
         path = os.path.join(settings.SHARE_ROOT, filename)
@@ -2267,13 +2589,47 @@ class TaskImportExportAPITestCase(APITestCase):
             }
         )
 
+        data = {
+            "client_files[0]": generate_image_file("test_1.jpg")[1],
+            "client_files[1]": generate_image_file("test_2.jpg")[1],
+            "client_files[2]": generate_image_file("test_10.jpg")[1],
+            "client_files[3]": generate_image_file("test_3.jpg")[1],
+            "image_quality": 75,
+        }
+        use_cache_data = {
+            **data,
+            'use_cache': True,
+        }
         cls.media_data.extend([
             # image list local
+            # sorted data
+            # natural: test_1.jpg, test_2.jpg, test_3.jpg, test_10.jpg
             {
-                "client_files[0]": generate_image_file("test_1.jpg")[1],
-                "client_files[1]": generate_image_file("test_2.jpg")[1],
-                "client_files[2]": generate_image_file("test_3.jpg")[1],
-                "image_quality": 75,
+                **use_cache_data,
+                'sorting_method': SortingMethod.NATURAL,
+            },
+            {
+                **data,
+                'sorting_method': SortingMethod.NATURAL,
+            },
+            # random
+            {
+                **use_cache_data,
+                'sorting_method': SortingMethod.RANDOM,
+            },
+            # predefined: test_1.jpg, test_2.jpg, test_10.jpg, test_2.jpg
+            {
+                **use_cache_data,
+                'sorting_method': SortingMethod.PREDEFINED,
+            },
+            # lexicographical: test_1.jpg, test_10.jpg, test_2.jpg, test_3.jpg
+            {
+                **use_cache_data,
+                'sorting_method': SortingMethod.LEXICOGRAPHICAL,
+            },
+            {
+                **data,
+                'sorting_method': SortingMethod.LEXICOGRAPHICAL,
             },
             # video local
             {
@@ -2352,7 +2708,7 @@ class TaskImportExportAPITestCase(APITestCase):
             {
                 "name": "my task #1",
                 "owner_id": self.owner.id,
-                "assignee_id": self.assignee.id,
+                "assignee_id": self.owner.id,
                 "overlap": 0,
                 "segment_size": 100,
                 "labels": [{
@@ -2372,7 +2728,7 @@ class TaskImportExportAPITestCase(APITestCase):
             {
                 "name": "my task #2",
                 "owner_id": self.owner.id,
-                "assignee_id": self.assignee.id,
+                "assignee_id": self.owner.id,
                 "overlap": 1,
                 "segment_size": 3,
                 "labels": [{
@@ -2398,13 +2754,13 @@ class TaskImportExportAPITestCase(APITestCase):
 
     def _run_api_v1_tasks_id_export(self, tid, user, query_params=""):
         with ForceLogin(user, self.client):
-            response = self.client.get('/api/v1/tasks/{}?{}'.format(tid, query_params), format="json")
+            response = self.client.get('/api/v1/tasks/{}/backup?{}'.format(tid, query_params), format="json")
 
         return response
 
     def _run_api_v1_tasks_id_import(self, user, data):
         with ForceLogin(user, self.client):
-            response = self.client.post('/api/v1/tasks?action=import', data=data, format="multipart")
+            response = self.client.post('/api/v1/tasks/backup', data=data, format="multipart")
 
         return response
 
@@ -2416,14 +2772,14 @@ class TaskImportExportAPITestCase(APITestCase):
 
     def _run_api_v1_tasks_id_export_import(self, user):
         if user:
-            if user is self.user or user is self.annotator:
-                HTTP_200_OK = status.HTTP_403_FORBIDDEN
-                HTTP_202_ACCEPTED = status.HTTP_403_FORBIDDEN
-                HTTP_201_CREATED = status.HTTP_403_FORBIDDEN
-            else:
+            if user == self.owner or user.is_superuser:
                 HTTP_200_OK = status.HTTP_200_OK
                 HTTP_202_ACCEPTED = status.HTTP_202_ACCEPTED
                 HTTP_201_CREATED = status.HTTP_201_CREATED
+            else:
+                HTTP_200_OK = status.HTTP_403_FORBIDDEN
+                HTTP_202_ACCEPTED = status.HTTP_403_FORBIDDEN
+                HTTP_201_CREATED = status.HTTP_403_FORBIDDEN
         else:
             HTTP_200_OK = status.HTTP_401_UNAUTHORIZED
             HTTP_202_ACCEPTED = status.HTTP_401_UNAUTHORIZED
@@ -2432,16 +2788,16 @@ class TaskImportExportAPITestCase(APITestCase):
         self._create_tasks()
         for task in self.tasks:
             tid = task["id"]
-            response = self._run_api_v1_tasks_id_export(tid, user, "action=export")
+            response = self._run_api_v1_tasks_id_export(tid, user)
             self.assertEqual(response.status_code, HTTP_202_ACCEPTED)
 
-            response = self._run_api_v1_tasks_id_export(tid, user, "action=export")
+            response = self._run_api_v1_tasks_id_export(tid, user)
             self.assertEqual(response.status_code, HTTP_201_CREATED)
 
             response = self._run_api_v1_tasks_id_export(tid, user, "action=download")
             self.assertEqual(response.status_code, HTTP_200_OK)
 
-            if user and user is not self.observer and user is not self.user and user is not self.annotator:
+            if user and user is not self.somebody and user is not self.user and user is not self.annotator:
                 self.assertTrue(response.streaming)
                 content = io.BytesIO(b"".join(response.streaming_content))
                 content.seek(0)
@@ -2451,7 +2807,7 @@ class TaskImportExportAPITestCase(APITestCase):
                 }
                 response = self._run_api_v1_tasks_id_import(user, uploaded_data)
                 self.assertEqual(response.status_code, HTTP_202_ACCEPTED)
-                if user is not self.observer and user is not self.user and user is not self.annotator:
+                if user is not self.somebody and user is not self.user and user is not self.annotator:
                     rq_id = response.data["rq_id"]
                     response = self._run_api_v1_tasks_id_import(user, {"rq_id": rq_id})
                     self.assertEqual(response.status_code, HTTP_201_CREATED)
@@ -2482,8 +2838,8 @@ class TaskImportExportAPITestCase(APITestCase):
     def test_api_v1_tasks_id_export_annotator(self):
         self._run_api_v1_tasks_id_export_import(self.annotator)
 
-    def test_api_v1_tasks_id_export_observer(self):
-        self._run_api_v1_tasks_id_export_import(self.observer)
+    def test_api_v1_tasks_id_export_somebody(self):
+        self._run_api_v1_tasks_id_export_import(self.somebody)
 
     def test_api_v1_tasks_id_export_no_auth(self):
         self._run_api_v1_tasks_id_export_import(None)
@@ -2576,7 +2932,7 @@ def generate_manifest_file(data_type, manifest_path, sources):
     kwargs = {
         'images': {
             'sources': sources,
-            'is_sorted': False,
+            'sorting_method': SortingMethod.LEXICOGRAPHICAL,
         },
         'video': {
             'media_file': sources[0],
@@ -2627,6 +2983,13 @@ class TaskDataAPITestCase(APITestCase):
         cls._image_sizes[filename] = img_size
 
         filename = "test_3.jpg"
+        path = os.path.join(settings.SHARE_ROOT, filename)
+        img_size, data = generate_image_file(filename)
+        with open(path, "wb") as image:
+            image.write(data.read())
+        cls._image_sizes[filename] = img_size
+
+        filename = "test_10.jpg"
         path = os.path.join(settings.SHARE_ROOT, filename)
         img_size, data = generate_image_file(filename)
         with open(path, "wb") as image:
@@ -2714,6 +3077,13 @@ class TaskDataAPITestCase(APITestCase):
         shutil.rmtree(root_path)
         cls._image_sizes[filename] = image_sizes
 
+        file_name = 'test_1.pdf'
+        path = os.path.join(settings.SHARE_ROOT, file_name)
+        img_sizes, data = generate_pdf_file(file_name, page_count=5)
+        with open(path, "wb") as pdf_file:
+            pdf_file.write(data.read())
+        cls._image_sizes[file_name] = img_sizes
+
         generate_manifest_file(data_type='video', manifest_path=os.path.join(settings.SHARE_ROOT, 'videos', 'manifest.jsonl'),
             sources=[os.path.join(settings.SHARE_ROOT, 'videos', 'test_video_1.mp4')])
 
@@ -2732,6 +3102,9 @@ class TaskDataAPITestCase(APITestCase):
         path = os.path.join(settings.SHARE_ROOT, "test_3.jpg")
         os.remove(path)
 
+        path = os.path.join(settings.SHARE_ROOT, "test_10.jpg")
+        os.remove(path)
+
         path = os.path.join(settings.SHARE_ROOT, "data", "test_3.jpg")
         os.remove(path)
 
@@ -2746,6 +3119,9 @@ class TaskDataAPITestCase(APITestCase):
         os.rmdir(os.path.dirname(path))
 
         path = os.path.join(settings.SHARE_ROOT, "manifest.jsonl")
+        os.remove(path)
+
+        path = os.path.join(settings.SHARE_ROOT, "test_1.pdf")
         os.remove(path)
 
     def _run_api_v1_tasks_id_data_post(self, tid, user, data):
@@ -2830,10 +3206,12 @@ class TaskDataAPITestCase(APITestCase):
             db_data = Task.objects.get(pk=task_id).data
             self.assertEqual(expected_storage_method, db_data.storage_method)
             self.assertEqual(expected_uploaded_data_location, db_data.storage)
-            # check if used share without copying inside and files doesn`t exist in ../raw/
+            # check if used share without copying inside and files doesn`t exist in ../raw/ and exist in share
             if expected_uploaded_data_location is StorageChoice.SHARE:
-                self.assertEqual(False,
-                    os.path.exists(os.path.join(db_data.get_upload_dirname(), next(iter(data.values())))))
+                raw_file_path = os.path.join(db_data.get_upload_dirname(), next(iter(data.values())))
+                share_file_path = os.path.join(settings.SHARE_ROOT, next(iter(data.values())))
+                self.assertEqual(False, os.path.exists(raw_file_path))
+                self.assertEqual(True, os.path.exists(share_file_path))
 
         # check preview
         response = self._get_preview(task_id, user)
@@ -2892,14 +3270,18 @@ class TaskDataAPITestCase(APITestCase):
                 client_files = [img for key, img in data.items() if key.startswith("client_files")]
 
                 if server_files:
-                    source_files = [os.path.join(settings.SHARE_ROOT, f) for f in sorted(server_files)]
+                    source_files = [os.path.join(settings.SHARE_ROOT, f) for f in sort(server_files, data.get('sorting_method', SortingMethod.LEXICOGRAPHICAL))]
                 else:
-                    source_files = [f for f in sorted(client_files, key=lambda e: e.name)]
+                    source_files = [f for f in sort(client_files, data.get('sorting_method', SortingMethod.LEXICOGRAPHICAL), func=lambda e: e.name)]
 
                 source_images = []
                 for f in source_files:
                     if zipfile.is_zipfile(f):
                         source_images.extend(self._extract_zip_chunk(f, dimension=dimension))
+                    elif isinstance(f, str) and f.endswith('.pdf'):
+                        with open(f, 'rb') as pdf_file:
+                            source_images.extend(convert_from_bytes(pdf_file.read(),
+                                fmt='png'))
                     elif isinstance(f, io.BytesIO) and \
                             str(getattr(f, 'name', None)).endswith('.pdf'):
                         source_images.extend(convert_from_bytes(f.getvalue(),
@@ -2920,8 +3302,8 @@ class TaskDataAPITestCase(APITestCase):
     def _test_api_v1_tasks_id_data(self, user):
         task_spec = {
             "name": "my task #1",
-            "owner_id": self.owner.id,
-            "assignee_id": self.assignee.id,
+            "owner_id": user.id,
+            "assignee_id": user.id,
             "overlap": 0,
             "segment_size": 100,
             "labels": [
@@ -3128,7 +3510,7 @@ class TaskDataAPITestCase(APITestCase):
                                              image_sizes, StorageMethodChoice.CACHE, StorageChoice.LOCAL)
 
         task_spec = {
-            "name": "cached images task without copying #16",
+            "name": "cached images task with default sorting data and without copying #16",
             "overlap": 0,
             "segment_size": 0,
             "labels": [
@@ -3140,14 +3522,14 @@ class TaskDataAPITestCase(APITestCase):
         task_data = {
             "server_files[0]": "test_1.jpg",
             "server_files[1]": "test_2.jpg",
-            "server_files[2]": "test_3.jpg",
+            "server_files[2]": "test_10.jpg",
             "image_quality": 70,
             "use_cache": True,
         }
         image_sizes = [
             self._image_sizes[task_data["server_files[0]"]],
-            self._image_sizes[task_data["server_files[1]"]],
             self._image_sizes[task_data["server_files[2]"]],
+            self._image_sizes[task_data["server_files[1]"]],
         ]
 
         self._test_api_v1_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET,
@@ -3381,6 +3763,56 @@ class TaskDataAPITestCase(APITestCase):
         self._test_api_v1_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
             image_sizes, StorageMethodChoice.CACHE, StorageChoice.LOCAL)
 
+        # test predefined sorting
+        task_spec.update([('name', 'task custom data sequence #28')])
+        task_data = {
+            "server_files[0]": "test_1.jpg",
+            "server_files[1]": "test_3.jpg",
+            "server_files[2]": "test_2.jpg",
+            "image_quality": 70,
+            "use_cache": True,
+            "sorting_method": SortingMethod.PREDEFINED
+        }
+        image_sizes = [
+            self._image_sizes[task_data["server_files[0]"]],
+            self._image_sizes[task_data["server_files[1]"]],
+            self._image_sizes[task_data["server_files[2]"]],
+        ]
+
+        self._test_api_v1_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
+            image_sizes, StorageMethodChoice.CACHE, StorageChoice.SHARE)
+
+        # test a natural data sequence
+        task_spec.update([('name', 'task native data sequence #29')])
+        task_data = {
+            "server_files[0]": "test_10.jpg",
+            "server_files[1]": "test_2.jpg",
+            "server_files[2]": "test_1.jpg",
+            "image_quality": 70,
+            "use_cache": True,
+            "sorting_method": SortingMethod.NATURAL
+        }
+        image_sizes = [
+            self._image_sizes[task_data["server_files[2]"]],
+            self._image_sizes[task_data["server_files[1]"]],
+            self._image_sizes[task_data["server_files[0]"]],
+        ]
+
+        self._test_api_v1_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
+            image_sizes, StorageMethodChoice.CACHE, StorageChoice.SHARE)
+
+        task_spec.update([('name', 'task pdf in the shared folder #30')])
+        task_data = {
+            "server_files[0]": "test_1.pdf",
+            "image_quality": 70,
+            "copy_data": False,
+            "use_cache": True,
+        }
+        image_sizes = self._image_sizes[task_data["server_files[0]"]]
+
+        self._test_api_v1_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
+            image_sizes, StorageMethodChoice.CACHE, StorageChoice.LOCAL)
+
     def test_api_v1_tasks_id_data_admin(self):
         self._test_api_v1_tasks_id_data(self.admin)
 
@@ -3394,7 +3826,6 @@ class TaskDataAPITestCase(APITestCase):
         data = {
             "name": "my task #3",
             "owner_id": self.owner.id,
-            "assignee_id": self.assignee.id,
             "overlap": 0,
             "segment_size": 100,
             "labels": [
@@ -4062,11 +4493,11 @@ class JobAnnotationAPITestCase(APITestCase):
             self.assignee)
 
     def test_api_v1_jobs_id_annotations_user(self):
-        self._run_api_v1_jobs_id_annotations(self.user, self.assignee,
-            self.assignee)
+        self._run_api_v1_jobs_id_annotations(self.user, self.user,
+            self.user)
 
-    def test_api_v1_jobs_id_annotations_observer(self):
-        _, jobs = self._create_task(self.user, self.assignee)
+    def test_api_v1_jobs_id_annotations_somebody(self):
+        _, jobs = self._create_task(self.user, self.user)
         job = jobs[0]
         data = {
             "version": 0,
@@ -4075,21 +4506,21 @@ class JobAnnotationAPITestCase(APITestCase):
             "tracks": []
         }
 
-        response = self._get_api_v1_jobs_id_data(job["id"], self.observer)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-
-        response = self._put_api_v1_jobs_id_data(job["id"], self.observer, data)
+        response = self._get_api_v1_jobs_id_data(job["id"], self.somebody)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
-        response = self._patch_api_v1_jobs_id_data(job["id"], self.observer, "create", data)
+        response = self._put_api_v1_jobs_id_data(job["id"], self.somebody, data)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
-        response = self._delete_api_v1_jobs_id_data(job["id"], self.observer)
+        response = self._patch_api_v1_jobs_id_data(job["id"], self.somebody, "create", data)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+        response = self._delete_api_v1_jobs_id_data(job["id"], self.somebody)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
 
     def test_api_v1_jobs_id_annotations_no_auth(self):
-        self._run_api_v1_jobs_id_annotations(self.user, self.assignee, None)
+        self._run_api_v1_jobs_id_annotations(self.user, self.user, None)
 
 class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
     def _put_api_v1_tasks_id_annotations(self, pk, user, data):
@@ -4154,16 +4585,11 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                 print(e)
                 raise
 
-    def _run_api_v1_tasks_id_annotations(self, owner, assignee, annotator):
+    def _run_api_v1_tasks_id_annotations(self, owner, assignee):
         task, _ = self._create_task(owner, assignee)
-        if annotator:
-            HTTP_200_OK = status.HTTP_200_OK
-            HTTP_204_NO_CONTENT = status.HTTP_204_NO_CONTENT
-            HTTP_400_BAD_REQUEST = status.HTTP_400_BAD_REQUEST
-        else:
-            HTTP_200_OK = status.HTTP_401_UNAUTHORIZED
-            HTTP_204_NO_CONTENT = status.HTTP_401_UNAUTHORIZED
-            HTTP_400_BAD_REQUEST = status.HTTP_401_UNAUTHORIZED
+        HTTP_200_OK = status.HTTP_200_OK
+        HTTP_204_NO_CONTENT = status.HTTP_204_NO_CONTENT
+        HTTP_400_BAD_REQUEST = status.HTTP_400_BAD_REQUEST
 
         data = {
             "version": 0,
@@ -4171,7 +4597,7 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
             "shapes": [],
             "tracks": []
         }
-        response = self._put_api_v1_tasks_id_annotations(task["id"], annotator, data)
+        response = self._put_api_v1_tasks_id_annotations(task["id"], owner, data)
         data["version"] += 1
         self.assertEqual(response.status_code, HTTP_200_OK)
 
@@ -4273,21 +4699,21 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                 },
             ]
         }
-        response = self._put_api_v1_tasks_id_annotations(task["id"], annotator, data)
+        response = self._put_api_v1_tasks_id_annotations(task["id"], owner, data)
         data["version"] += 1
 
         self.assertEqual(response.status_code, HTTP_200_OK)
         self._check_response(response, data)
 
         default_attr_values = self._get_default_attr_values(task)
-        response = self._get_api_v1_tasks_id_annotations(task["id"], annotator)
+        response = self._get_api_v1_tasks_id_annotations(task["id"], owner)
         # server should add default attribute values if puted data doesn't contain it
         data["tags"][0]["attributes"] = default_attr_values[data["tags"][0]["label_id"]]["all"]
         data["tracks"][0]["shapes"][1]["attributes"] = default_attr_values[data["tracks"][0]["label_id"]]["mutable"]
         self.assertEqual(response.status_code, HTTP_200_OK)
         self._check_response(response, data)
 
-        response = self._delete_api_v1_tasks_id_annotations(task["id"], annotator)
+        response = self._delete_api_v1_tasks_id_annotations(task["id"], owner)
         data["version"] += 1
         self.assertEqual(response.status_code, HTTP_204_NO_CONTENT)
 
@@ -4297,7 +4723,7 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
             "shapes": [],
             "tracks": []
         }
-        response = self._get_api_v1_tasks_id_annotations(task["id"], annotator)
+        response = self._get_api_v1_tasks_id_annotations(task["id"], owner)
         self.assertEqual(response.status_code, HTTP_200_OK)
         self._check_response(response, data)
 
@@ -4398,13 +4824,13 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                 },
             ]
         }
-        response = self._patch_api_v1_tasks_id_annotations(task["id"], annotator,
+        response = self._patch_api_v1_tasks_id_annotations(task["id"], owner,
             "create", data)
         data["version"] += 1
         self.assertEqual(response.status_code, HTTP_200_OK)
         self._check_response(response, data)
 
-        response = self._get_api_v1_tasks_id_annotations(task["id"], annotator)
+        response = self._get_api_v1_tasks_id_annotations(task["id"], owner)
         # server should add default attribute values if puted data doesn't contain it
         data["tags"][0]["attributes"] = default_attr_values[data["tags"][0]["label_id"]]["all"]
         data["tracks"][0]["shapes"][1]["attributes"] = default_attr_values[data["tracks"][0]["label_id"]]["mutable"]
@@ -4421,17 +4847,17 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
             data["tracks"][0]["shapes"][0]["outside"] = False
             data["tracks"][0]["shapes"][0]["occluded"] = False
 
-        response = self._patch_api_v1_tasks_id_annotations(task["id"], annotator,
+        response = self._patch_api_v1_tasks_id_annotations(task["id"], owner,
             "update", data)
         data["version"] = data.get("version", 0) + 1
         self.assertEqual(response.status_code, HTTP_200_OK)
         self._check_response(response, data)
 
-        response = self._get_api_v1_tasks_id_annotations(task["id"], annotator)
+        response = self._get_api_v1_tasks_id_annotations(task["id"], owner)
         self.assertEqual(response.status_code, HTTP_200_OK)
         self._check_response(response, data)
 
-        response = self._patch_api_v1_tasks_id_annotations(task["id"], annotator,
+        response = self._patch_api_v1_tasks_id_annotations(task["id"], owner,
             "delete", data)
         data["version"] += 1
         self.assertEqual(response.status_code, HTTP_200_OK)
@@ -4443,7 +4869,7 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
             "shapes": [],
             "tracks": []
         }
-        response = self._get_api_v1_tasks_id_annotations(task["id"], annotator)
+        response = self._get_api_v1_tasks_id_annotations(task["id"], owner)
         self.assertEqual(response.status_code, HTTP_200_OK)
         self._check_response(response, data)
 
@@ -4543,12 +4969,12 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                 },
             ]
         }
-        response = self._patch_api_v1_tasks_id_annotations(task["id"], annotator,
+        response = self._patch_api_v1_tasks_id_annotations(task["id"], owner,
             "create", data)
         self.assertEqual(response.status_code, HTTP_400_BAD_REQUEST)
 
-    def _run_api_v1_tasks_id_annotations_dump_load(self, owner, assignee, annotator):
-        if annotator:
+    def _run_api_v1_tasks_id_annotations_dump_load(self, owner):
+        if owner:
             HTTP_200_OK = status.HTTP_200_OK
             HTTP_204_NO_CONTENT = status.HTTP_204_NO_CONTENT
             HTTP_202_ACCEPTED = status.HTTP_202_ACCEPTED
@@ -5064,9 +5490,9 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
 
             return annotations
 
-        response = self._get_formats(annotator)
+        response = self._get_formats(owner)
         self.assertEqual(response.status_code, HTTP_200_OK)
-        if annotator is not None:
+        if owner is not None:
             data = response.data
         else:
             data = self._get_formats(owner).data
@@ -5095,45 +5521,42 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
             with self.subTest(export_format=export_format,
                     import_format=import_format):
                 # 1. create task
-                task, jobs = self._create_task(owner, assignee, import_format)
+                task, jobs = self._create_task(owner, owner, import_format)
 
                 # 2. add annotation
                 data = _get_initial_annotation(export_format)
-                response = self._put_api_v1_tasks_id_annotations(task["id"], annotator, data)
+                response = self._put_api_v1_tasks_id_annotations(task["id"], owner, data)
                 data["version"] += 1
 
                 self.assertEqual(response.status_code, HTTP_200_OK)
                 self._check_response(response, data)
 
                 # 3. download annotation
-                response = self._dump_api_v1_tasks_id_annotations(task["id"], annotator,
+                response = self._dump_api_v1_tasks_id_annotations(task["id"], owner,
                     "?format={}".format(export_format))
-                if annotator and not export_formats[export_format]['enabled']:
+                if not export_formats[export_format]['enabled']:
                     self.assertEqual(response.status_code,
                         status.HTTP_405_METHOD_NOT_ALLOWED)
                     continue
                 else:
                     self.assertEqual(response.status_code, HTTP_202_ACCEPTED)
 
-                response = self._dump_api_v1_tasks_id_annotations(task["id"], annotator,
+                response = self._dump_api_v1_tasks_id_annotations(task["id"], owner,
                     "?format={}".format(export_format))
                 self.assertEqual(response.status_code, HTTP_201_CREATED)
 
-                response = self._dump_api_v1_tasks_id_annotations(task["id"], annotator,
+                response = self._dump_api_v1_tasks_id_annotations(task["id"], owner,
                     "?format={}&action=download".format(export_format))
                 self.assertEqual(response.status_code, HTTP_200_OK)
 
                 # 4. check downloaded data
-                if annotator is not None:
-                    self.assertTrue(response.streaming)
-                    content = io.BytesIO(b"".join(response.streaming_content))
-                    self._check_dump_content(content, task, jobs, data, export_format)
-                    content.seek(0)
-                else:
-                    content = io.BytesIO()
+                self.assertTrue(response.streaming)
+                content = io.BytesIO(b"".join(response.streaming_content))
+                self._check_dump_content(content, task, jobs, data, export_format)
+                content.seek(0)
 
                 # 5. remove annotation form the task
-                response = self._delete_api_v1_tasks_id_annotations(task["id"], annotator)
+                response = self._delete_api_v1_tasks_id_annotations(task["id"], owner)
                 data["version"] += 1
                 self.assertEqual(response.status_code, HTTP_204_NO_CONTENT)
 
@@ -5145,12 +5568,12 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                     "annotation_file": content,
                 }
                 response = self._upload_api_v1_tasks_id_annotations(
-                    task["id"], annotator, uploaded_data,
+                    task["id"], owner, uploaded_data,
                     "format={}".format(import_format))
                 self.assertEqual(response.status_code, HTTP_202_ACCEPTED)
 
                 response = self._upload_api_v1_tasks_id_annotations(
-                    task["id"], annotator, {},
+                    task["id"], owner, {},
                     "format={}".format(import_format))
                 self.assertEqual(response.status_code, HTTP_201_CREATED)
 
@@ -5158,11 +5581,9 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                 if export_format in {"Segmentation mask 1.1", "MOTS PNG 1.0",
                         "CamVid 1.0", "ICDAR Segmentation 1.0"}:
                     continue # can't really predict the result to check
-                response = self._get_api_v1_tasks_id_annotations(task["id"], annotator)
+                response = self._get_api_v1_tasks_id_annotations(task["id"], owner)
                 self.assertEqual(response.status_code, HTTP_200_OK)
 
-                if annotator is None:
-                    continue
                 data["version"] += 2 # upload is delete + put
                 self._check_response(response, data)
 
@@ -5287,26 +5708,19 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_api_v1_tasks_id_annotations_admin(self):
-        self._run_api_v1_tasks_id_annotations(self.admin, self.assignee,
-            self.assignee)
+        self._run_api_v1_tasks_id_annotations(self.admin, self.assignee)
 
     def test_api_v1_tasks_id_annotations_user(self):
-        self._run_api_v1_tasks_id_annotations(self.user, self.assignee,
-            self.assignee)
-
-    def test_api_v1_tasks_id_annotations_no_auth(self):
-        self._run_api_v1_tasks_id_annotations(self.user, self.assignee, None)
+        self._run_api_v1_tasks_id_annotations(self.user, self.user)
 
     def test_api_v1_tasks_id_annotations_dump_load_admin(self):
-        self._run_api_v1_tasks_id_annotations_dump_load(self.admin, self.assignee,
-            self.assignee)
+        self._run_api_v1_tasks_id_annotations_dump_load(self.admin)
 
     def test_api_v1_tasks_id_annotations_dump_load_user(self):
-        self._run_api_v1_tasks_id_annotations_dump_load(self.user, self.assignee,
-            self.assignee)
+        self._run_api_v1_tasks_id_annotations_dump_load(self.user)
 
     def test_api_v1_tasks_id_annotations_dump_load_no_auth(self):
-        self._run_api_v1_tasks_id_annotations_dump_load(self.user, self.assignee, None)
+        self._run_api_v1_tasks_id_annotations_dump_load(self.user)
 
     def test_api_v1_tasks_id_annotations_upload_coco_user(self):
         self._run_coco_annotation_upload_test(self.user)
@@ -5421,8 +5835,8 @@ class ServerShareAPITestCase(APITestCase):
     def test_api_v1_server_share_annotator(self):
         self._test_api_v1_server_share(self.annotator)
 
-    def test_api_v1_server_share_observer(self):
-        self._test_api_v1_server_share(self.observer)
+    def test_api_v1_server_share_somebody(self):
+        self._test_api_v1_server_share(self.somebody)
 
     def test_api_v1_server_share_no_auth(self):
         response = self._run_api_v1_server_share(None, "/")
@@ -5444,7 +5858,7 @@ class ServerShareDifferentTypesAPITestCase(APITestCase):
             img_path = os.path.join(settings.SHARE_ROOT, img)
             if not osp.exists(osp.dirname(img_path)):
                 os.makedirs(osp.dirname(img_path))
-            image.save(img_path, img_path.split(".")[1:][0])
+            image.save(img_path)
 
     def _get_request(self, path):
         with ForceLogin(self.user, self.client):

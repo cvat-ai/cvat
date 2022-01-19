@@ -21,6 +21,7 @@ import logger, { LogType } from 'cvat-logger';
 import createCVATStore, { getCVATStore } from 'cvat-store';
 import { KeyMap } from 'utils/mousetrap-react';
 import createRootReducer from 'reducers/root-reducer';
+import { getOrganizationsAsync } from 'actions/organization-actions';
 import { resetErrors, resetMessages } from './actions/notification-actions';
 import { CombinedState, NotificationsState } from './reducers/interfaces';
 
@@ -34,6 +35,8 @@ interface StateToProps {
     modelsFetching: boolean;
     userInitialized: boolean;
     userFetching: boolean;
+    organizationsFetching: boolean;
+    organizationsInitialized: boolean;
     aboutInitialized: boolean;
     aboutFetching: boolean;
     formatsInitialized: boolean;
@@ -62,6 +65,7 @@ interface DispatchToProps {
     loadUserAgreements: () => void;
     switchSettingsDialog: () => void;
     loadAuthActions: () => void;
+    loadOrganizations: () => void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -72,10 +76,13 @@ function mapStateToProps(state: CombinedState): StateToProps {
     const { shortcuts } = state;
     const { userAgreements } = state;
     const { models } = state;
+    const { organizations } = state;
 
     return {
         userInitialized: auth.initialized,
         userFetching: auth.fetching,
+        organizationsFetching: organizations.fetching,
+        organizationsInitialized: organizations.initialized,
         pluginsInitialized: plugins.initialized,
         pluginsFetching: plugins.fetching,
         modelsInitialized: models.initialized,
@@ -110,6 +117,7 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         switchShortcutsDialog: (): void => dispatch(shortcutsActions.switchShortcutsDialog()),
         switchSettingsDialog: (): void => dispatch(switchSettingsDialog()),
         loadAuthActions: (): void => dispatch(loadAuthActionsAsync()),
+        loadOrganizations: (): void => dispatch(getOrganizationsAsync()),
     };
 }
 

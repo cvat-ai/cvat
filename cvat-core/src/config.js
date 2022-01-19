@@ -5,4 +5,7 @@
 module.exports = {
     backendAPI: '/api/v1',
     proxy: false,
+    organizationID: null,
+    origin: '',
+    uploadChunkSize: 100,
 };

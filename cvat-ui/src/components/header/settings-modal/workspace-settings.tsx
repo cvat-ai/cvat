@@ -9,6 +9,7 @@ import Checkbox, { CheckboxChangeEvent } from 'antd/lib/checkbox';
 import InputNumber from 'antd/lib/input-number';
 import Text from 'antd/lib/typography/Text';
 import Slider from 'antd/lib/slider';
+import Select from 'antd/lib/select';
 
 import {
     MAX_ACCURACY,
@@ -25,6 +26,9 @@ interface Props {
     automaticBordering: boolean;
     intelligentPolygonCrop: boolean;
     defaultApproxPolyAccuracy: number;
+    textFontSize: number;
+    textPosition: 'center' | 'auto';
+    textContent: string;
     onSwitchAutoSave(enabled: boolean): void;
     onChangeAutoSaveInterval(interval: number): void;
     onChangeAAMZoomMargin(margin: number): void;
@@ -33,6 +37,9 @@ interface Props {
     onSwitchShowingObjectsTextAlways(enabled: boolean): void;
     onSwitchAutomaticBordering(enabled: boolean): void;
     onSwitchIntelligentPolygonCrop(enabled: boolean): void;
+    onChangeTextFontSize(fontSize: number): void;
+    onChangeTextPosition(position: 'auto' | 'center'): void;
+    onChangeTextContent(textContent: string[]): void;
 }
 
 function WorkspaceSettingsComponent(props: Props): JSX.Element {
@@ -45,6 +52,9 @@ function WorkspaceSettingsComponent(props: Props): JSX.Element {
         automaticBordering,
         intelligentPolygonCrop,
         defaultApproxPolyAccuracy,
+        textFontSize,
+        textPosition,
+        textContent,
         onSwitchAutoSave,
         onChangeAutoSaveInterval,
         onChangeAAMZoomMargin,
@@ -53,6 +63,9 @@ function WorkspaceSettingsComponent(props: Props): JSX.Element {
         onSwitchAutomaticBordering,
         onSwitchIntelligentPolygonCrop,
         onChangeDefaultApproxPolyAccuracy,
+        onChangeTextFontSize,
+        onChangeTextPosition,
+        onChangeTextContent,
     } = props;
 
     const minAutoSaveInterval = 1;
@@ -126,6 +139,52 @@ function WorkspaceSettingsComponent(props: Props): JSX.Element {
                     <Text type='secondary'>
                         Show text for an object on the canvas not only when the object is activated
                     </Text>
+                </Col>
+            </Row>
+            <Row className='cvat-workspace-settings-text-settings'>
+                <Col span={24}>
+                    <Text>Content of a text</Text>
+                </Col>
+                <Col span={16}>
+                    <Select
+                        className='cvat-workspace-settings-text-content'
+                        mode='multiple'
+                        value={textContent.split(',').filter((entry: string) => !!entry)}
+                        onChange={onChangeTextContent}
+                    >
+                        <Select.Option value='id'>ID</Select.Option>
+                        <Select.Option value='label'>Label</Select.Option>
+                        <Select.Option value='attributes'>Attributes</Select.Option>
+                        <Select.Option value='source'>Source</Select.Option>
+                        <Select.Option value='descriptions'>Descriptions</Select.Option>
+                    </Select>
+                </Col>
+            </Row>
+            <Row className='cvat-workspace-settings-text-settings'>
+                <Col span={12}>
+                    <Text>Position of a text</Text>
+                </Col>
+                <Col span={12}>
+                    <Text>Font size of a text</Text>
+                </Col>
+                <Col span={12}>
+                    <Select
+                        className='cvat-workspace-settings-text-position'
+                        value={textPosition}
+                        onChange={onChangeTextPosition}
+                    >
+                        <Select.Option value='auto'>Auto</Select.Option>
+                        <Select.Option value='center'>Center</Select.Option>
+                    </Select>
+                </Col>
+                <Col span={12}>
+                    <InputNumber
+                        className='cvat-workspace-settings-text-size'
+                        onChange={onChangeTextFontSize}
+                        min={8}
+                        max={20}
+                        value={textFontSize}
+                    />
                 </Col>
             </Row>
             <Row className='cvat-workspace-settings-autoborders'>

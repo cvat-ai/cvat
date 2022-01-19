@@ -12,6 +12,8 @@ cvat:
     replicas: 1
     image: openvino/cvat_server
     tag: latest
+    permissionFix:
+      enabled: true
     labels: {}
     #  test: test
     annotations: {}

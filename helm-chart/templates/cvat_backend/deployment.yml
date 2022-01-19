@@ -116,6 +116,7 @@ spec:
           {{- toYaml . | nindent 10 }}
           {{- end }}
       initContainers:
+        {{- if .Values.cvat.backend.permissionFix.enabled }}
         - name: user-data-permission-fix
           image: busybox
           command: ["/bin/chmod", "-R", "777", "/home/django"]
@@ -141,6 +142,7 @@ spec:
           {{- with .Values.cvat.backend.additionalVolumeMounts }}
           {{- toYaml . | nindent 10 }}
           {{- end }}
+        {{- end }}
       {{- with .Values.cvat.backend.affinity }}
       affinity:
       {{- toYaml . | nindent 8 }}

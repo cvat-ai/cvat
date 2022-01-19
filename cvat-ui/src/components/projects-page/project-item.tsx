@@ -24,7 +24,7 @@ interface Props {
 
 const useCardHeight = useCardHeightHOC({
     containerClassName: 'cvat-projects-page',
-    siblingClassNames: ['cvat-projects-pagination', 'cvat-projects-top-bar'],
+    siblingClassNames: ['cvat-projects-pagination', 'cvat-projects-page-top-bar'],
     paddings: 40,
     numberOfRows: 3,
 });

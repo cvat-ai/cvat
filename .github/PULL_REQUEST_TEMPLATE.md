@@ -1,11 +1,11 @@
 <!---
-Copyright (C) 2020-2021 Intel Corporation
+Copyright (C) 2020-2022 Intel Corporation
 
 SPDX-License-Identifier: MIT
 -->
 
 <!-- Raised an issue to propose your change (https://github.com/opencv/cvat/issues).
-It will help avoiding duplication of efforts from multiple independent contributors.
+It helps to avoid duplication of efforts from multiple independent contributors.
 Discuss your ideas with maintainers to be sure that changes will be approved and merged.
 Read the [CONTRIBUTION](https://github.com/opencv/cvat/blob/develop/CONTRIBUTING.md)
 guide. -->
@@ -25,10 +25,10 @@ see how your change affects other areas of the code, etc. -->
 ### Checklist
 <!-- Go over all the following points, and put an `x` in all the boxes that apply.
 If an item isn't applicable by a reason then ~~explicitly strikethrough~~ the whole
-line. If you don't do that github will show incorrect process for the pull request.
+line. If you don't do that github will show an incorrect process for the pull request.
 If you're unsure about any of these, don't hesitate to ask. We're here to help! -->
 - [ ] I submit my changes into the `develop` branch
-- [ ] I have added description of my changes into [CHANGELOG](https://github.com/opencv/cvat/blob/develop/CHANGELOG.md) file
+- [ ] I have added a description of my changes into [CHANGELOG](https://github.com/opencv/cvat/blob/develop/CHANGELOG.md) file
 - [ ] I have updated the [documentation](
   https://github.com/opencv/cvat/blob/develop/README.md#documentation) accordingly
 - [ ] I have added tests to cover my changes
@@ -45,7 +45,7 @@ If you're unsure about any of these, don't hesitate to ask. We're here to help! 
 - [ ] I have updated the license header for each file (see an example below)
 
 ```python
-# Copyright (C) 2021 Intel Corporation
+# Copyright (C) 2022 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 ```

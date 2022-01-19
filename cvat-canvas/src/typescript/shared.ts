@@ -188,6 +188,22 @@ export function parsePoints(source: string | number[]): Point[] {
         );
 }
 
+export function readPointsFromShape(shape: SVG.Shape): number[] {
+    let points = null;
+    if (shape.type === 'ellipse') {
+        const [rx, ry] = [+shape.attr('rx'), +shape.attr('ry')];
+        const [cx, cy] = [+shape.attr('cx'), +shape.attr('cy')];
+        points = `${cx},${cy} ${cx + rx},${cy - ry}`;
+    } else if (shape.type === 'rect') {
+        points = `${shape.attr('x')},${shape.attr('y')} ` +
+            `${shape.attr('x') + shape.attr('width')},${shape.attr('y') + shape.attr('height')}`;
+    } else {
+        points = shape.attr('points');
+    }
+
+    return pointsToNumberArray(points);
+}
+
 export function stringifyPoints(points: (Point | number)[]): string {
     if (typeof points[0] === 'number') {
         return points.reduce((acc: string, val: number, idx: number): string => {
@@ -217,6 +233,10 @@ export function vectorLength(vector: Vector2D): number {
 
 export function translateToCanvas(offset: number, points: number[]): number[] {
     return points.map((coord: number): number => coord + offset);
+}
+
+export function translateFromCanvas(offset: number, points: number[]): number[] {
+    return points.map((coord: number): number => coord - offset);
 }
 
 export type PropType<T, Prop extends keyof T> = T[Prop];
