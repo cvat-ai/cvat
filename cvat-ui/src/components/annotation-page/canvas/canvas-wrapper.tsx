@@ -32,7 +32,6 @@ interface Props {
     activatedStateID: number | null;
     activatedAttributeID: number | null;
     annotations: any[];
-    frameIssues: any[] | null;
     frameData: any;
     frameAngle: number;
     frameFetching: boolean;
@@ -136,7 +135,6 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         });
 
         this.initialSetup();
-        this.updateIssueRegions();
         this.updateCanvas();
     }
 
@@ -148,7 +146,6 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             outlined,
             outlineColor,
             showBitmap,
-            frameIssues,
             frameData,
             frameAngle,
             annotations,
@@ -254,10 +251,6 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
                 const filter = `brightness(${brightnessLevel}) contrast(${contrastLevel}) saturate(${saturationLevel})`;
                 backgroundElement.style.filter = filter;
             }
-        }
-
-        if (prevProps.frameIssues !== frameIssues) {
-            this.updateIssueRegions();
         }
 
         if (
@@ -681,23 +674,6 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
                 (shapeView as any).instance.fill({ color: shapeColor, opacity });
                 (shapeView as any).instance.stroke({ color: outlined ? outlineColor : shapeColor });
             }
-        }
-    }
-
-    private updateIssueRegions(): void {
-        const { frameIssues } = this.props;
-        const { canvasInstance } = this.props as { canvasInstance: Canvas };
-        if (frameIssues === null) {
-            canvasInstance.setupIssueRegions({});
-        } else {
-            const regions = frameIssues.reduce((acc: Record<number, number[]>, issue: any): Record<
-            number,
-            number[]
-            > => {
-                acc[issue.id] = issue.position;
-                return acc;
-            }, {});
-            canvasInstance.setupIssueRegions(regions);
         }
     }
 
