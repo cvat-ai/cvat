@@ -1,17 +1,15 @@
+# Copyright (C) 2020-2022 Intel Corporation
+#
+# SPDX-License-Identifier: MIT
+
 import json
 import base64
 from PIL import Image
 import io
 from model_handler import FaceDetectorHandler, AttributesExtractorHandler
-import yaml
-import debugpy
 
 def init_context(context):
     context.logger.info("Init context...  0%")
-
-    # Read labels
-    with open("/opt/nuclio/function.yaml", 'rb') as function_file:
-        functionconfig = yaml.safe_load(function_file)
 
      # Read the DL model
     context.user_data.detector_model = FaceDetectorHandler()

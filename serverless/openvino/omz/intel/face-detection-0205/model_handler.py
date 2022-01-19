@@ -1,9 +1,8 @@
-# Copyright (C) 2020 Intel Corporation
+# Copyright (C) 2020-2022 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
 import os
-import cv2
 import numpy as np
 from model_loader import ModelLoader
 
