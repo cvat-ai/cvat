@@ -12,7 +12,7 @@ def restore_db():
     # TO-DO: handle case when retcode != 0
     def restore():
        p1 = Popen(['cat', osp.join(ASSETS_DIR, 'cvat_db.sql')], stdout=PIPE)
-       p2 = Popen(['docker exec -i cvat_db psql -q -U root -d cvat'].split(), stdin=p1.stdout, stdout=PIPE)
+       p2 = Popen('docker exec -i cvat_db psql -q -U root -d cvat'.split(), stdin=p1.stdout, stdout=PIPE)
        p1.stdout.close()
        p2.communicate()[0]
 
