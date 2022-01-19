@@ -1,4 +1,4 @@
-// Copyright (C) 2021 Intel Corporation
+// Copyright (C) 2021-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -8,6 +8,8 @@ export interface ImageProcessing {
 }
 
 export interface Tracking{
+    name: string;
+    type: string;
     init: (src: ImageData, x: number, y: number, width: number, height: number) => void;
     update: (src: ImageData) => void;
 }

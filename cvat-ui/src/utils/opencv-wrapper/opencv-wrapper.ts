@@ -1,9 +1,8 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import getCore from 'cvat-core-wrapper';
-import waitFor from '../wait-for';
 import HistogramEqualizationImplementation, { HistogramEqualization } from './histogram-equalization';
 import TrackerMImplementation, { TrackerMIL } from './tracker-mil';
 import IntelligentScissorsImplementation, { IntelligentScissors } from './intelligent-scissors';
@@ -77,12 +76,8 @@ export class OpenCVWrapper {
         OpenCVConstructor();
 
         const global = window as any;
-        await waitFor(
-            100,
-            () => typeof global.cv !== 'undefined' && typeof global.cv.segmentation_IntelligentScissorsMB !== 'undefined',
-        );
 
-        this.cv = global.cv;
+        this.cv = await global.cv;
         this.initialized = true;
     }
 

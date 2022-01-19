@@ -1,4 +1,4 @@
-// Copyright (C) 2021 Intel Corporation
+// Copyright (C) 2021-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -33,8 +33,9 @@ import CVATTooltip from 'components/common/cvat-tooltip';
 import ApproximationAccuracy, {
     thresholdFromAccuracy,
 } from 'components/annotation-page/standard-workspace/controls-side-bar/approximation-accuracy';
-import { ImageProcessing } from 'utils/opencv-wrapper/opencv-interfaces';
+import { ImageProcessing, Tracking } from 'utils/opencv-wrapper/opencv-interfaces';
 import { switchToolsBlockerState } from 'actions/settings-actions';
+import { TrackerMIL } from 'utils/opencv-wrapper/tracker-mil';
 import withVisibilityHandling from './handle-popover-visibility';
 
 interface Props {
@@ -60,6 +61,12 @@ interface DispatchToProps {
     onSwitchToolsBlockerState(toolsBlockerState: ToolsBlockerState):void;
 }
 
+interface TrackedShape {
+    clientID: number;
+    shapePoints: number[];
+    trackerModel: Tracking;
+}
+
 interface State {
     libraryInitialized: boolean;
     initializationError: boolean;
@@ -67,7 +74,8 @@ interface State {
     activeLabelID: number;
     approxPolyAccuracy: number;
     activeImageModifiers: ImageModifier[];
-    trackerControl: any;
+    mode: 'interaction' | 'tracking';
+    trackedShapes: TrackedShape[];
 }
 
 interface ImageModifier {
@@ -122,6 +130,7 @@ const mapDispatchToProps = {
 
 class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps, State> {
     private activeTool: IntelligentScissors | null;
+    private activeTracker: TrackerMIL | null;
     private latestPoints: number[];
     private canvasForceUpdateWasEnabled: boolean;
 
@@ -129,6 +138,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
         super(props);
         const { labels, defaultApproxPolyAccuracy } = props;
         this.activeTool = null;
+        this.activeTracker = null;
         this.latestPoints = [];
         this.canvasForceUpdateWasEnabled = false;
 
@@ -139,7 +149,8 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
             approxPolyAccuracy: defaultApproxPolyAccuracy,
             activeLabelID: labels.length ? labels[0].id : null,
             activeImageModifiers: [],
-            trackerControl: null,
+            mode: 'interaction',
+            trackedShapes: [],
         };
     }
 
@@ -186,6 +197,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
             !!this.activeTool?.switchBlockMode) {
             this.activeTool.switchBlockMode(toolsBlockerState.algorithmsLocked);
         }
+        this.checkTrackedStates(prevProps);
     }
 
     public componentWillUnmount(): void {
@@ -195,6 +207,18 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
     }
 
     private interactionListener = async (e: Event): Promise<void> => {
+        const { mode } = this.state;
+
+        if (mode === 'interaction') {
+            await this.onInteraction(e);
+        }
+
+        if (mode === 'tracking') {
+            await this.onTracking(e);
+        }
+    };
+
+    private onInteraction = async (e: Event): Promise<void> => {
         const { approxPolyAccuracy } = this.state;
         const {
             createAnnotations, isActivated, jobInstance, frame, labels, curZOrder, canvasInstance, toolsBlockerState,
@@ -265,6 +289,58 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
         }
     };
 
+    private onTracking = async (e: Event): Promise<void> => {
+        const {
+            isActivated, jobInstance, frame, curZOrder, fetchAnnotations,
+        } = this.props;
+
+        if (!isActivated) {
+            return;
+        }
+
+        const { activeLabelID, trackedShapes } = this.state;
+        const [label] = jobInstance.labels.filter((_label: any): boolean => _label.id === activeLabelID);
+
+        const { isDone, shapesUpdated } = (e as CustomEvent).detail;
+        if (!isDone || !shapesUpdated) {
+            return;
+        }
+
+        try {
+            const { points } = (e as CustomEvent).detail.shapes[0];
+            const state = new core.classes.ObjectState({
+                shapeType: ShapeType.RECTANGLE,
+                objectType: ObjectType.TRACK,
+                zOrder: curZOrder,
+                label,
+                points,
+                frame,
+                occluded: false,
+                attributes: {},
+                descriptions: [`Trackable (${this.activeTracker?.name})`],
+            });
+            const [clientID] = await jobInstance.annotations.put([state]);
+            this.setState({
+                trackedShapes: [
+                    ...trackedShapes,
+                    {
+                        clientID,
+                        shapePoints: points,
+                        trackerModel: this.activeTracker as Tracking,
+                    },
+                ],
+            });
+
+            // update annotations on a canvas
+            fetchAnnotations();
+        } catch (err) {
+            notification.error({
+                description: err.toString(),
+                message: 'Tracking error occured',
+            });
+        }
+    };
+
     private onChangeToolsBlockerState = (event:string):void => {
         const {
             isActivated, toolsBlockerState, onSwitchToolsBlockerState, canvasInstance,
@@ -281,32 +357,11 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
     };
 
     private runImageModifier = async ():Promise<void> => {
-        const { activeImageModifiers, trackerControl } = this.state;
+        const { activeImageModifiers } = this.state;
         const {
             frameData, states, curZOrder, canvasInstance, frame,
         } = this.props;
 
-        if (trackerControl) {
-            console.log('tracking active');
-            const canvas: HTMLCanvasElement | undefined = window.document.getElementById('cvat_canvas_background') as
-            | HTMLCanvasElement
-            | undefined;
-            if (!canvas) {
-                throw new Error('Element #cvat_canvas_background was not found');
-            }
-            const { width, height } = canvas;
-            const context = canvas.getContext('2d');
-            if (!context) {
-                throw new Error('Canvas context is empty');
-            }
-            const imageData = context.getImageData(0, 0, width, height);
-            const {
-                x, y, widthR, heightR,
-            } = trackerControl.update(imageData);
-            console.log(x, y, widthR, heightR);
-            context.strokeStyle = '#FFFF00';
-            context.strokeRect(x, y, widthR, heightR);
-        }
         try {
             if (activeImageModifiers.length !== 0 && activeImageModifiers[0].modifier.currentProcessedImage !== frame) {
                 this.enableCanvasForceUpdate();
@@ -322,9 +377,9 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
                     throw new Error('Canvas context is empty');
                 }
                 const imageData = context.getImageData(0, 0, width, height);
-                const newImageData = activeImageModifiers.reduce((oldImageData, activeImageModifier) => (
-                    activeImageModifier.modifier.processImage(oldImageData, frame)
-                ), imageData);
+                const newImageData = activeImageModifiers
+                    .reduce((oldImageData, activeImageModifier) => activeImageModifier
+                        .modifier.processImage(oldImageData, frame), imageData);
                 const imageBitmap = await createImageBitmap(newImageData);
                 frameData.imageData = imageBitmap;
                 canvasInstance.setup(frameData, states, curZOrder);
@@ -339,6 +394,35 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
             this.disableCanvasForceUpdate();
         }
     };
+
+    private async checkTrackedStates(prevProps: Props): Promise<void> {
+        const {
+            frame,
+        //     jobInstance,
+        //     states: objectStates,
+        //     trackers,
+        //     fetchAnnotations,
+        //     switchNavigationBlocked,
+        } = this.props;
+        const { trackedShapes } = this.state;
+        if (prevProps.frame !== frame && trackedShapes.length) {
+            const canvas: HTMLCanvasElement | undefined = window.document.getElementById('cvat_canvas_background') as
+            | HTMLCanvasElement
+            | undefined;
+            if (!canvas) {
+                throw new Error('Element #cvat_canvas_background was not found');
+            }
+            const { width, height } = canvas;
+            const context = canvas.getContext('2d');
+            if (!context) {
+                throw new Error('Canvas context is empty');
+            }
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            const imageData = context.getImageData(0, 0, width, height);
+
+            console.log('need to apply tracking');
+        }
+    }
 
     private async runCVAlgorithm(pressedPoints: number[], threshold: number): Promise<number[]> {
         // Getting image data
@@ -431,6 +515,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
                         <CVATTooltip title='Intelligent scissors' className='cvat-opencv-drawing-tool'>
                             <Button
                                 onClick={() => {
+                                    this.setState({ mode: 'interaction' });
                                     this.activeTool = openCVWrapper.segmentation
                                         .intelligentScissorsFactory(this.onChangeToolsBlockerState);
                                     canvasInstance.cancel();
@@ -476,55 +561,35 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
                         </Button>
                     </CVATTooltip>
                 </Col>
+            </Row>
+        );
+    }
+
+    private renderTrackingContent(): JSX.Element {
+        const { activeLabelID } = this.state;
+        const { canvasInstance, onInteractionStart } = this.props;
+        return (
+            <Row justify='start'>
                 <Col>
                     <Button
                         className={this.imageModifier('histogram') ? 'cvat-opencv-image-tool-active' : ''}
                         onClick={() => {
-                            const control = openCVWrapper.tracking.trackerMIL();
-                            this.enableCanvasForceUpdate();
-                            const canvas: HTMLCanvasElement | undefined = window.document.getElementById('cvat_canvas_background') as
-                                | HTMLCanvasElement
-                                | undefined;
-                            if (!canvas) {
-                                throw new Error('Element #cvat_canvas_background was not found');
-                            }
-                            const { width, height } = canvas;
-                            const context = canvas.getContext('2d');
-                            if (!context) {
-                                throw new Error('Canvas context is empty');
-                            }
-                            const imageData = context.getImageData(0, 0, width, height);
-                            context.strokeStyle = '#FFFF00';
-                            control.init(imageData, 590, 190, 155, 120);
-                            context.strokeRect(590, 190, 155, 120);
-                            this.setState({
-                                trackerControl: control,
+                            this.activeTracker = openCVWrapper.tracking.trackerMIL();
+                            this.setState({ mode: 'tracking' });
+                            canvasInstance.cancel();
+                            canvasInstance.interact({
+                                shapeType: 'rectangle',
+                                enabled: true,
                             });
+
+                            onInteractionStart(this.activeTracker, activeLabelID);
+                            // const { onSwitchToolsBlockerState } = this.props;
+                            // onSwitchToolsBlockerState({ buttonVisible: false });
                         }}
                     >
                         <AreaChartOutlined />
                     </Button>
 
-                </Col>
-                <Col>
-                    <Button
-                        className={this.imageModifier('histogram') ? 'cvat-opencv-image-tool-active' : ''}
-                        onClick={() => {
-                            const canvas: HTMLCanvasElement | undefined = window.document.getElementById('cvat_canvas_background') as
-                                | HTMLCanvasElement
-                                | undefined;
-                            if (!canvas) {
-                                throw new Error('Element #cvat_canvas_background was not found');
-                            }
-                            const context = canvas.getContext('2d');
-                            if (!context) {
-                                throw new Error('Canvas context is empty');
-                            }
-                            context.strokeRect(590, 190, 155, 120);
-                        }}
-                    >
-                        <AreaChartOutlined />
-                    </Button>
                 </Col>
             </Row>
         );
@@ -549,6 +614,9 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
                         </Tabs.TabPane>
                         <Tabs.TabPane key='image' tab='Image' className='cvat-opencv-control-tabpane'>
                             {this.renderImageContent()}
+                        </Tabs.TabPane>
+                        <Tabs.TabPane key='tracking' tab='Tracking' className='cvat-opencv-control-tabpane'>
+                            {this.renderTrackingContent()}
                         </Tabs.TabPane>
                     </Tabs>
                 ) : (
@@ -603,7 +671,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
     public render(): JSX.Element {
         const { isActivated, canvasInstance, labels } = this.props;
         const { libraryInitialized, approxPolyAccuracy } = this.state;
-        const dynamicPopoverProps = isActivated ?
+        const dynamcPopoverPros = isActivated ?
             {
                 overlayStyle: {
                     display: 'none',
@@ -627,7 +695,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
         ) : (
             <>
                 <CustomPopover
-                    {...dynamicPopoverProps}
+                    {...dynamcPopoverPros}
                     placement='right'
                     overlayClassName='cvat-opencv-control-popover'
                     content={this.renderContent()}
