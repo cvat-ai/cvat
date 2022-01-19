@@ -140,7 +140,7 @@ context('Review pipeline feature', () => {
         cy.logout();
         cy.getAuthKey().then((authKey) => {
             cy.deleteUsers(authKey, [secondUserName, thirdUserName]);
-            cy.deletingCreatedTasks(authKey, [taskName]);
+            cy.deleteTasks(authKey, [taskName]);
         });
     });
 

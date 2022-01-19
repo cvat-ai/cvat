@@ -130,7 +130,7 @@ context('New organization pipeline.', () => {
         cy.logout(thirdUserName);
         cy.getAuthKey().then((authKey) => {
             cy.deleteUsers(authKey, [thirdUserName]);
-            cy.deletingCreatedTasks(authKey, [newTaskName]);
+            cy.deleteTasks(authKey, [newTaskName]);
             cy.deleteProjects(authKey, [project.name]);
             cy.deleteOrganizations(authKey, [organizationParams.shortName]);
         });

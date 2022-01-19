@@ -133,7 +133,7 @@ Cypress.Commands.add('checkUserStatuses', (authKey, userName, staffStatus, super
     });
 });
 
-Cypress.Commands.add('deletingCreatedTasks', (authResponse, tasksToDelete) => {
+Cypress.Commands.add('deleteTasks', (authResponse, tasksToDelete) => {
     const authKey = authResponse.body.key;
     cy.request({
         url: '/api/v1/tasks?page_size=all',
