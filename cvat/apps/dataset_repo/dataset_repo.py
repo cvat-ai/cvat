@@ -311,7 +311,7 @@ class Git:
                     summary_diff[key] += diff[key]
 
         message = "CVAT Annotation updated by {}. \n".format(self._user["name"])
-        message += 'Task URL: {}://{}/dashboard?id={}\n'.format(scheme, host, db_task.id)
+        message += 'Task URL: {}://{}/tasks/{}\n'.format(scheme, host, db_task.id)
         if db_task.bug_tracker:
             message += 'Bug Tracker URL: {}\n'.format(db_task.bug_tracker)
         message += "Created: {}, updated: {}, deleted: {}\n".format(
