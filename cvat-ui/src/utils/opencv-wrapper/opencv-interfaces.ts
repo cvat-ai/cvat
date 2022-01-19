@@ -7,9 +7,14 @@ export interface ImageProcessing {
     currentProcessedImage: number | undefined;
 }
 
+export interface TrackingResult{
+    updated: boolean;
+    points: any[];
+}
+
 export interface Tracking{
     name: string;
     type: string;
     init: (src: ImageData, x: number, y: number, width: number, height: number) => void;
-    update: (src: ImageData) => void;
+    update: (src: ImageData) => TrackingResult;
 }

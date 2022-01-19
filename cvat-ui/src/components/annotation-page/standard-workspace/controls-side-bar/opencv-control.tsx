@@ -308,6 +308,8 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
 
         try {
             const { points } = (e as CustomEvent).detail.shapes[0];
+            const imageData = this.getCanvasImageData();
+            this.activeTracker?.init(imageData, points[0], points[1], points[2] - points[0], points[3] - points[1]);
             const state = new core.classes.ObjectState({
                 shapeType: ShapeType.RECTANGLE,
                 objectType: ObjectType.TRACK,
@@ -341,6 +343,21 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
         }
     };
 
+    private getCanvasImageData = ():ImageData => {
+        const canvas: HTMLCanvasElement | undefined = window.document.getElementById('cvat_canvas_background') as
+        | HTMLCanvasElement
+        | undefined;
+        if (!canvas) {
+            throw new Error('Element #cvat_canvas_background was not found');
+        }
+        const { width, height } = canvas;
+        const context = canvas.getContext('2d');
+        if (!context) {
+            throw new Error('Canvas context is empty');
+        }
+        return context.getImageData(0, 0, width, height);
+    };
+
     private onChangeToolsBlockerState = (event:string):void => {
         const {
             isActivated, toolsBlockerState, onSwitchToolsBlockerState, canvasInstance,
@@ -365,18 +382,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
         try {
             if (activeImageModifiers.length !== 0 && activeImageModifiers[0].modifier.currentProcessedImage !== frame) {
                 this.enableCanvasForceUpdate();
-                const canvas: HTMLCanvasElement | undefined = window.document.getElementById('cvat_canvas_background') as
-                    | HTMLCanvasElement
-                    | undefined;
-                if (!canvas) {
-                    throw new Error('Element #cvat_canvas_background was not found');
-                }
-                const { width, height } = canvas;
-                const context = canvas.getContext('2d');
-                if (!context) {
-                    throw new Error('Canvas context is empty');
-                }
-                const imageData = context.getImageData(0, 0, width, height);
+                const imageData = this.getCanvasImageData();
                 const newImageData = activeImageModifiers
                     .reduce((oldImageData, activeImageModifier) => activeImageModifier
                         .modifier.processImage(oldImageData, frame), imageData);
@@ -398,29 +404,33 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
     private async checkTrackedStates(prevProps: Props): Promise<void> {
         const {
             frame,
-        //     jobInstance,
-        //     states: objectStates,
-        //     trackers,
-        //     fetchAnnotations,
-        //     switchNavigationBlocked,
+            //     jobInstance,
+            states: objectStates,
+            fetchAnnotations,
         } = this.props;
         const { trackedShapes } = this.state;
         if (prevProps.frame !== frame && trackedShapes.length) {
-            const canvas: HTMLCanvasElement | undefined = window.document.getElementById('cvat_canvas_background') as
-            | HTMLCanvasElement
-            | undefined;
-            if (!canvas) {
-                throw new Error('Element #cvat_canvas_background was not found');
+            try {
+                const imageData = this.getCanvasImageData();
+                trackedShapes.forEach((shape:TrackedShape) => {
+                    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                    const { updated, points } = shape.trackerModel.update(imageData);
+                    const [objectState] = objectStates.filter(
+                        (_state: any): boolean => _state.clientID === shape.clientID,
+                    );
+                    objectState.points = points;
+                    objectState.save().then(() => {
+                        shape.shapePoints = points;
+                    });
+                });
+            } catch (error) {
+                notification.error({
+                    message: 'Tracking error',
+                    description: error.toString(),
+                });
+            } finally {
+                fetchAnnotations();
             }
-            const { width, height } = canvas;
-            const context = canvas.getContext('2d');
-            if (!context) {
-                throw new Error('Canvas context is empty');
-            }
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            const imageData = context.getImageData(0, 0, width, height);
-
-            console.log('need to apply tracking');
         }
     }
 
