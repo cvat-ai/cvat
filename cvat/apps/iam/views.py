@@ -4,7 +4,7 @@
 
 from django.core.exceptions import BadRequest
 from django.utils.functional import SimpleLazyObject
-from rest_framework import views
+from rest_framework import views, serializers
 from rest_framework.exceptions import ValidationError
 from django.conf import settings
 from rest_framework.response import Response
@@ -12,8 +12,7 @@ from rest_auth.registration.views import RegisterView
 from allauth.account import app_settings as allauth_settings
 from furl import furl
 
-from django.utils.decorators import method_decorator
-
+from drf_spectacular.utils import OpenApiResponse, extend_schema, inline_serializer, extend_schema_view
 
 
 from .authentication import Signer
@@ -73,25 +72,22 @@ class ContextMiddleware:
         return self.get_response(request)
 
 
-# @method_decorator(name='post', decorator=swagger_auto_schema(
-#     request_body=openapi.Schema(
-#         type=openapi.TYPE_OBJECT,
-#         required=[
-#             'url'
-#         ],
-#         properties={
-#             'url': openapi.Schema(type=openapi.TYPE_STRING)
-#         }
-#     ),
-#     responses={'200': openapi.Response(description='text URL')}
-# ))
+@extend_schema_view(post=extend_schema(
+    summary='This method signs URL for access to the server',
+    description='Signed URL contains a token which authenticates a user on the server.'
+                'Signed URL is valid during 30 seconds since signing.',
+    request=inline_serializer(
+        name='Signing',
+        fields={
+            'url': serializers.CharField(),
+        }
+    ),
+    responses={'200': OpenApiResponse(description='text URL')},
+    tags=['auth'],
+    versions=['v1'],
+))
 class SigningView(views.APIView):
-    """
-    This method signs URL for access to the server.
 
-    Signed URL contains a token which authenticates a user on the server.
-    Signed URL is valid during 30 seconds since signing.
-    """
     def post(self, request):
         url = request.data.get('url')
         if not url:
