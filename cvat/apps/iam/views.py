@@ -45,12 +45,12 @@ def get_context(request):
             organization = Organization.objects.get(slug=org_slug)
             membership = Membership.objects.filter(organization=organization,
                 user=request.user).first()
-            org_filter = { 'organization': org_id }
+            org_filter = { 'organization': organization.id }
         elif org_id:
             organization = Organization.objects.get(id=int(org_id))
             membership = Membership.objects.filter(organization=organization,
                 user=request.user).first()
-            org_filter = { 'organization': org_id }
+            org_filter = { 'organization': organization.id }
         elif org_slug is not None:
             org_filter = { 'organization': None }
     except Organization.DoesNotExist:
