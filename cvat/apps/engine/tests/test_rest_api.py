@@ -1,4 +1,4 @@
-# Copyright (C) 2020-2021 Intel Corporation
+# Copyright (C) 2020-2022 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -2553,6 +2553,16 @@ class TaskImportExportAPITestCase(APITestCase):
             }
         )
 
+        for sorting, _ in SortingMethod.choices():
+            cls.media_data.append(
+                {
+                    "image_quality": 75,
+                    "server_files[0]": filename,
+                    'use_cache': True,
+                    'sorting_method': sorting,
+                }
+            )
+
         filename = os.path.join("videos", "test_video_1.mp4")
         path = os.path.join(settings.SHARE_ROOT, filename)
         os.makedirs(os.path.dirname(path))
@@ -2617,7 +2627,7 @@ class TaskImportExportAPITestCase(APITestCase):
                 **use_cache_data,
                 'sorting_method': SortingMethod.RANDOM,
             },
-            # predefined: test_1.jpg, test_2.jpg, test_10.jpg, test_2.jpg
+            # predefined: test_1.jpg, test_2.jpg, test_10.jpg, test_3.jpg
             {
                 **use_cache_data,
                 'sorting_method': SortingMethod.PREDEFINED,

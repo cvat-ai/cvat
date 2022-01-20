@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -16,7 +16,7 @@ interface Props {
     selectIssuePosition(enabled: boolean): void;
 }
 
-function ResizeControl(props: Props): JSX.Element {
+function CreateIssueControl(props: Props): JSX.Element {
     const { activeControl, canvasInstance, selectIssuePosition } = props;
 
     return (
@@ -43,4 +43,4 @@ function ResizeControl(props: Props): JSX.Element {
     );
 }
 
-export default React.memo(ResizeControl);
+export default React.memo(CreateIssueControl);

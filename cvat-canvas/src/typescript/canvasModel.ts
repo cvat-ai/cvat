@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2021 Intel Corporation
+// Copyright (C) 2019-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -172,7 +172,7 @@ export enum Mode {
 export interface CanvasModel {
     readonly imageBitmap: boolean;
     readonly image: Image | null;
-    readonly issueRegions: Record<number, number[]>;
+    readonly issueRegions: Record<number, { hidden: boolean; points: number[] }>;
     readonly objects: any[];
     readonly zLayer: number | null;
     readonly gridSize: Size;
@@ -193,7 +193,7 @@ export interface CanvasModel {
     move(topOffset: number, leftOffset: number): void;
 
     setup(frameData: any, objectStates: any[], zLayer: number): void;
-    setupIssueRegions(issueRegions: Record<number, number[]>): void;
+    setupIssueRegions(issueRegions: Record<number, { hidden: boolean; points: number[] }>): void;
     activate(clientID: number | null, attributeID: number | null): void;
     rotate(rotationAngle: number): void;
     focus(clientID: number, padding: number): void;
@@ -234,7 +234,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         gridSize: Size;
         left: number;
         objects: any[];
-        issueRegions: Record<number, number[]>;
+        issueRegions: Record<number, { hidden: boolean; points: number[] }>;
         scale: number;
         top: number;
         zLayer: number | null;
@@ -353,6 +353,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
 
         this.notify(UpdateReasons.FITTED_CANVAS);
         this.notify(UpdateReasons.OBJECTS_UPDATED);
+        this.notify(UpdateReasons.ISSUE_REGIONS_UPDATED);
     }
 
     public bitmap(enabled: boolean): void {
@@ -445,7 +446,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
             });
     }
 
-    public setupIssueRegions(issueRegions: Record<number, number[]>): void {
+    public setupIssueRegions(issueRegions: Record<number, { hidden: boolean; points: number[] }>): void {
         this.data.issueRegions = issueRegions;
         this.notify(UpdateReasons.ISSUE_REGIONS_UPDATED);
     }
@@ -756,7 +757,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         return this.data.image;
     }
 
-    public get issueRegions(): Record<number, number[]> {
+    public get issueRegions(): Record<number, { hidden: boolean; points: number[] }> {
         return { ...this.data.issueRegions };
     }
 

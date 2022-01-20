@@ -67,8 +67,6 @@ There are two ways of working with labels (available only if the task is not rel
   The `Done` button applies the changes and the `Reset` button cancels the changes.
   ![](/images/image126.jpg)
 
-In `Raw` and `Constructor` mode, you can press the `Copy` button to copy the list of labels.
-
 ### Select files
 
 Press tab `My computer` to choose some files for annotation from your PC.

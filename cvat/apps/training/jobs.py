@@ -1,7 +1,6 @@
 from collections import OrderedDict
 from typing import List
 
-from cacheops import cache
 from django_rq import job
 
 from cvat.apps import dataset_manager as dm
@@ -33,7 +32,8 @@ def save_prediction_server_status_to_cache_job(cache_key,
         **status,
         'status': 'done'
     }
-    cache.set(cache_key=cache_key, data=resp, timeout=timeout)
+
+    return resp # dummy code, need to delete training app in a separate PR
 
 
 @job
@@ -44,10 +44,6 @@ def save_frame_prediction_to_cache_job(cache_key: str,
     task = Task.objects.get(pk=task_id)
     training_project_image = TrainingProjectImage.objects.filter(idx=frame, task=task).first()
     if not training_project_image:
-        cache.set(cache_key=cache_key, data={
-            'annotation': [],
-            'status': 'done'
-        }, timeout=timeout)
         return
 
     cvat_labels = Label.objects.filter(project__id=task.project_id).all()
@@ -70,7 +66,8 @@ def save_frame_prediction_to_cache_job(cache_key: str,
         'annotation': annotation,
         'status': 'done'
     }
-    cache.set(cache_key=cache_key, data=resp, timeout=timeout)
+
+    return resp # dummy code, need to delete training app in a separate PR
 
 
 @job
