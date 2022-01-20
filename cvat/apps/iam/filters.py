@@ -21,9 +21,9 @@ class OrganizationFilterBackend(BaseFilterBackend):
         # objects inside an organization if the request in context of the
         # organization.
         try:
-            organization = request.iam_context['organization']
-            if organization:
-                return queryset.filter(organization=organization)
+            visibility = request.iam_context['visibility']
+            if visibility:
+                return queryset.filter(**visibility)
             else:
                 return queryset
         except FieldError:
