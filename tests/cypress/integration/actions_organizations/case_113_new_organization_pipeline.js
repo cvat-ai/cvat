@@ -209,8 +209,7 @@ context('New organization pipeline.', () => {
         it('The second user activates the organization, can\'t see the project because it is not assigned to him.', () => {
             cy.activateOrganization(organizationParams.shortName);
             cy.goToProjectsList();
-            // Uncomment the following line after fix
-            // cy.contains('.cvat-projects-project-item-title', project.name).should('not.exist');
+            cy.contains('.cvat-projects-project-item-title', project.name).should('not.exist');
         });
 
         it('Open the task, assign one of jobs to the third user. Rename the task.', () => {

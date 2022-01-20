@@ -7,6 +7,7 @@
 Cypress.Commands.add('goToProjectsList', () => {
     cy.get('[value="projects"]').click();
     cy.url().should('include', '/projects');
+    cy.get('.cvat-spinner').should('not.exist');
 });
 
 Cypress.Commands.add(
