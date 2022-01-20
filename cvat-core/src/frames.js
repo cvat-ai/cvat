@@ -1,4 +1,4 @@
-// Copyright (C) 2021 Intel Corporation
+// Copyright (C) 2021-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -477,31 +477,47 @@
 
             let bufferedFrames = new Set();
 
+            // if we send one request to get frame 1 with filling the buffer
+            // then quicky send one more request to get frame 1
+            // frame 1 will be already decoded and written to buffer
+            // the second request gets frame 1 from the buffer, removes it from there and returns
+            // after the first request finishes decoding it tries to get frame 1, but failed
+            // because frame 1 was already removed from the buffer by the second request
+            // to prevent this behavior we do not write decoded frames to buffer till the end of decoding all chunks
+            const buffersToBeCommited = [];
+            const commitBuffers = () => {
+                for (const buffer of buffersToBeCommited) {
+                    this._buffer = {
+                        ...this._buffer,
+                        ...buffer,
+                    };
+                }
+            };
+
             // Need to decode chunks in sequence
             // eslint-disable-next-line no-async-promise-executor
             return new Promise(async (resolve, reject) => {
-                for (const chunkIdx in this._requestedChunks) {
-                    if (Object.prototype.hasOwnProperty.call(this._requestedChunks, chunkIdx)) {
-                        try {
-                            const chunkFrames = await this.requestOneChunkFrames(chunkIdx);
-                            if (chunkIdx in this._requestedChunks) {
-                                bufferedFrames = new Set([...bufferedFrames, ...chunkFrames]);
-                                this._buffer = {
-                                    ...this._buffer,
-                                    ...this._requestedChunks[chunkIdx].buffer,
-                                };
-                                delete this._requestedChunks[chunkIdx];
-                                if (Object.keys(this._requestedChunks).length === 0) {
-                                    resolve(bufferedFrames);
-                                }
-                            } else {
-                                reject(chunkIdx);
-                                break;
+                for (const chunkIdx of Object.keys(this._requestedChunks)) {
+                    try {
+                        const chunkFrames = await this.requestOneChunkFrames(chunkIdx);
+                        if (chunkIdx in this._requestedChunks) {
+                            bufferedFrames = new Set([...bufferedFrames, ...chunkFrames]);
+
+                            buffersToBeCommited.push(this._requestedChunks[chunkIdx].buffer);
+                            delete this._requestedChunks[chunkIdx];
+                            if (Object.keys(this._requestedChunks).length === 0) {
+                                commitBuffers();
+                                resolve(bufferedFrames);
                             }
-                        } catch (error) {
-                            reject(error);
+                        } else {
+                            commitBuffers();
+                            reject(chunkIdx);
                             break;
                         }
+                    } catch (error) {
+                        commitBuffers();
+                        reject(error);
+                        break;
                     }
                 }
             });
@@ -524,7 +540,7 @@
 
         async require(frameNumber, taskID, jobID, fillBuffer, frameStep) {
             for (const frame in this._buffer) {
-                if (frame < frameNumber || frame >= frameNumber + this._size * frameStep) {
+                if (+frame < frameNumber || +frame >= frameNumber + this._size * frameStep) {
                     delete this._buffer[frame];
                 }
             }
@@ -563,7 +579,6 @@
             } else if (fillBuffer) {
                 this.clear();
                 await this.makeFillRequest(frameNumber, frameStep, fillBuffer ? null : 1);
-
                 frame = this._buffer[frameNumber];
             } else {
                 this.clear();

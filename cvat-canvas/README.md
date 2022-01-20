@@ -184,6 +184,7 @@ Standard JS events are used.
     - canvas.zoomstart
     - canvas.zoomstop
     - canvas.zoom
+    - canvas.reshape
     - canvas.fit
     - canvas.dragshape => {id: number}
     - canvas.roiselected => {points: number[]}
