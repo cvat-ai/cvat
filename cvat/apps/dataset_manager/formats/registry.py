@@ -57,10 +57,11 @@ EXPORT_FORMATS = {}
 
 def format_for(export_format, mode):
     format_name = export_format
-    if mode == "annotation":
-        format_name = "CVAT for images 1.1"
-    elif export_format not in EXPORT_FORMATS:
-        format_name = "CVAT for video 1.1"
+    if export_format not in EXPORT_FORMATS:
+        if mode == "annotation":
+            format_name = "CVAT for images 1.1"
+        else:
+            format_name = "CVAT for video 1.1"
     return format_name
 
 
