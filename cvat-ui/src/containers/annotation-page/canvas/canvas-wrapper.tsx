@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -58,7 +58,6 @@ interface StateToProps {
     activatedStateID: number | null;
     activatedAttributeID: number | null;
     annotations: any[];
-    frameIssues: any[] | null;
     frameData: any;
     frameAngle: number;
     frameFetching: boolean;
@@ -175,20 +174,13 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 opacity, colorBy, selectedOpacity, outlined, outlineColor, showBitmap, showProjections,
             },
         },
-        review: { frameIssues, issuesHidden, issuesResolvedHidden },
         shortcuts: { keyMap },
     } = state;
-
-    const issues = frameIssues.filter((issue) => (
-        !issuesHidden && [Workspace.REVIEW_WORKSPACE, Workspace.STANDARD].includes(workspace) &&
-        !(!!issue.resolvedDate && issuesResolvedHidden)
-    ));
 
     return {
         sidebarCollapsed,
         canvasInstance,
         jobInstance,
-        frameIssues: issues,
         frameData,
         frameAngle: frameAngles[frame - jobInstance.startFrame],
         frameFetching,

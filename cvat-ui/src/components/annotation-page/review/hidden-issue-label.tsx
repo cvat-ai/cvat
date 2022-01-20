@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -14,6 +14,8 @@ interface Props {
     message: string;
     top: number;
     left: number;
+    angle: number;
+    scale: number;
     resolved: boolean;
     onClick: () => void;
     highlight: () => void;
@@ -22,7 +24,7 @@ interface Props {
 
 export default function HiddenIssueLabel(props: Props): ReactPortal {
     const {
-        id, message, top, left, resolved, onClick, highlight, blur,
+        id, message, top, left, angle, scale, resolved, onClick, highlight, blur,
     } = props;
 
     const ref = useRef<HTMLElement>(null);
@@ -54,7 +56,7 @@ export default function HiddenIssueLabel(props: Props): ReactPortal {
                         }
                     }
                 }}
-                style={{ top, left }}
+                style={{ top, left, transform: `scale(${scale}) rotate(${angle}deg)` }}
                 className='cvat-hidden-issue-label'
             >
                 {resolved ? (
