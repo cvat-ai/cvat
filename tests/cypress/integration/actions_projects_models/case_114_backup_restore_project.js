@@ -111,8 +111,7 @@ context('Backup, restore a project.', { browser: '!firefox' }, () => {
     });
 });
 
-// FIXME: Activate after solving the issue 4105
-context.skip('Backup, restore a project with a 3D task.', { browser: '!firefox' }, () => {
+context('Backup, restore a project with a 3D task.', { browser: '!firefox' }, () => {
     const archiveName3d = '../../cypress/integration/canvas3d_functionality/assets/test_canvas3d.zip';
 
     const cuboidCreationParams = {
