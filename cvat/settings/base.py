@@ -522,11 +522,25 @@ SPECTACULAR_SETTINGS = {
     'DESCRIPTION': 'REST API for Computer Vision Annotation Tool (CVAT)',
     'VERSION': 'v1',
     'CONTACT': {
+        'name': 'Nikita Manovich',
+        'url': 'https://github.com/nmanovic',
         'email': 'nikita.manovich@intel.com',
     },
     'LICENSE': {
         'name': 'MIT License',
+        'url': 'https://en.wikipedia.org/wiki/MIT_License',
     },
+    'SERVE_PUBLIC': True,
+    'SCHEMA_COERCE_PATH_PK_SUFFIX': True,
+    'SCHEMA_PATH_PREFIX': '/api/v[0-9]',
+    'SERVE_PERMISSIONS': ['rest_framework.permissions.IsAuthenticated'],
+    # 'SERVERS': [
+    #     {
+    #     'url': 'https://cvat.org',
+    #     'description': 'Production server',
+    #     }
+    # ],
+    'TERMS_OF_SERVICE': 'https://www.google.com/policies/terms/', # TODO, it's not an existing setting, so it doesn't display
     # OTHER SETTINGS
     # https://drf-spectacular.readthedocs.io/en/latest/settings.html
 }
