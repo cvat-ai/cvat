@@ -5,6 +5,7 @@
 /// <reference types="cypress" />
 
 import { taskName, labelName } from '../../support/const';
+import { decomposeMatrix } from '../../support/utils';
 
 context('Actions on ellipse.', () => {
     const caseId = '115';
@@ -42,6 +43,19 @@ context('Actions on ellipse.', () => {
         topY: createEllipseShape.topY - 150,
     };
 
+    function testCompareRotate(shape, toFrame) {
+        for (let frame = 8; frame >= toFrame; frame--) {
+            cy.document().then((doc) => {
+                const shapeTranformMatrix = decomposeMatrix(doc.getElementById(shape).getCTM());
+                cy.goToPreviousFrame(frame);
+                cy.document().then((doc2) => {
+                    const shapeTranformMatrix2 = decomposeMatrix(doc2.getElementById(shape).getCTM());
+                    expect(shapeTranformMatrix).not.deep.eq(shapeTranformMatrix2);
+                });
+            });
+        }
+    }
+
     before(() => {
         cy.openTask(taskName);
         cy.addNewLabel(newLabelName);
@@ -56,13 +70,26 @@ context('Actions on ellipse.', () => {
             cy.createEllipse(createEllipseTrackSwitchLabel);
         });
 
-        it('Ellipse rotation.', () => {
+        it('Ellipse rotation/interpolation.', () => {
             Cypress.config('scrollBehavior', false);
+            cy.get('.cvat-player-last-button').click();
             cy.shapeRotate(
-                '#cvat_canvas_shape_1',
-                (createEllipseShape.rightX + createEllipseShape.cx) / 2,
-                createEllipseShape.topY + 20,
+                '#cvat_canvas_shape_4',
+                (createEllipseTrackSwitchLabel.rightX + createEllipseTrackSwitchLabel.cx) / 2,
+                createEllipseTrackSwitchLabel.topY + 20,
                 '53.1',
+                false,
+                false,
+            );
+            testCompareRotate('cvat_canvas_shape_4', 0);
+            // Rotation with shift
+            cy.shapeRotate(
+                '#cvat_canvas_shape_4',
+                (createEllipseTrackSwitchLabel.rightX + createEllipseTrackSwitchLabel.cx) / 2,
+                createEllipseTrackSwitchLabel.topY + 20,
+                '60.0',
+                true,
+                false,
             );
         });
     });
