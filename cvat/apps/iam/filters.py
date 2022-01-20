@@ -3,7 +3,6 @@
 # SPDX-License-Identifier: MIT
 
 import coreapi
-from django.core.exceptions import FieldError
 from rest_framework.filters import BaseFilterBackend
 
 class OrganizationFilterBackend(BaseFilterBackend):
