@@ -20,11 +20,9 @@ class OrganizationFilterBackend(BaseFilterBackend):
         # filter isn't necessary but it is an extra check that we show only
         # objects inside an organization if the request in context of the
         # organization.
-        try:
-            visibility = request.iam_context['visibility']
-            if visibility:
-                return queryset.filter(**visibility)
-            else:
-                return queryset
-        except FieldError:
+        visibility = request.iam_context['visibility']
+        if visibility and view.iam_organization_field:
+            visibility[view.iam_organization_field] = visibility.pop('organization')
+            return queryset.filter(**visibility).distinct()
+        else:
             return queryset
