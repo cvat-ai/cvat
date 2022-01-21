@@ -57,7 +57,7 @@ class TestPatchMemberships:
 
         assert response.status_code == HTTPStatus.FORBIDDEN
 
-    @pytest.mark.parametrize("who, whom, new_role, is_allow", [
+    @pytest.mark.parametrize('who, whom, new_role, is_allow', [
         ('supervisor', 'worker',     'supervisor', False),
         ('supervisor', 'maintainer', 'supervisor', False),
         ('worker',     'supervisor', 'worker',     False),
