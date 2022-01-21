@@ -309,7 +309,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
         try {
             const { points } = (e as CustomEvent).detail.shapes[0];
             const imageData = this.getCanvasImageData();
-            this.activeTracker?.init(imageData, points[0], points[1], points[2] - points[0], points[3] - points[1]);
+            this.activeTracker?.init(imageData, points);
             const state = new core.classes.ObjectState({
                 shapeType: ShapeType.RECTANGLE,
                 objectType: ObjectType.TRACK,
@@ -404,7 +404,6 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
     private async checkTrackedStates(prevProps: Props): Promise<void> {
         const {
             frame,
-            //     jobInstance,
             states: objectStates,
             fetchAnnotations,
         } = this.props;
@@ -413,15 +412,33 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
             try {
                 const imageData = this.getCanvasImageData();
                 trackedShapes.forEach((shape:TrackedShape) => {
-                    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                    const { updated, points } = shape.trackerModel.update(imageData);
                     const [objectState] = objectStates.filter(
                         (_state: any): boolean => _state.clientID === shape.clientID,
                     );
-                    objectState.points = points;
-                    objectState.save().then(() => {
-                        shape.shapePoints = points;
-                    });
+
+                    if (
+                        !objectState ||
+                        objectState.keyframes.prev !== frame - 1 ||
+                        objectState.keyframes.last >= frame
+                    ) {
+                        return;
+                    }
+
+                    const stateIsRelevant =
+                        objectState.points.length === shape.shapePoints.length &&
+                        objectState.points.every((coord: number, i: number) => coord === shape.shapePoints[i]);
+                    if (!stateIsRelevant) {
+                        shape.trackerModel.reinit(objectState.points);
+                        shape.shapePoints = objectState.points;
+                    }
+
+                    const { updated, points } = shape.trackerModel.update(imageData);
+                    if (updated) {
+                        objectState.points = points;
+                        objectState.save().then(() => {
+                            shape.shapePoints = points;
+                        });
+                    }
                 });
             } catch (error) {
                 notification.error({

@@ -15,6 +15,7 @@ export interface TrackingResult{
 export interface Tracking{
     name: string;
     type: string;
-    init: (src: ImageData, x: number, y: number, width: number, height: number) => void;
+    init: (src: ImageData, points: number[]) => void;
+    reinit: (points: number[]) => void;
     update: (src: ImageData) => TrackingResult;
 }
