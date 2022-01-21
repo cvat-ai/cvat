@@ -1,10 +1,11 @@
-// Copyright (C) 2021 Intel Corporation
+// Copyright (C) 2021-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
 /// <reference types="cypress" />
 
 import { labelName, taskName } from '../../support/const';
+import { decomposeMatrix } from '../../support/utils';
 
 context('Rotated bounding boxes.', () => {
     const caseId = '108';
@@ -26,42 +27,6 @@ context('Rotated bounding boxes.', () => {
         secondX: createRectangleShape2Points.secondX,
         secondY: createRectangleShape2Points.secondY - 150,
     };
-
-    function deltaTransformPoint(matrix, point) {
-        const dx = point.x * matrix.a + point.y * matrix.c;
-        const dy = point.x * matrix.b + point.y * matrix.d;
-        return { x: dx, y: dy };
-    }
-
-    function decomposeMatrix(matrix) {
-        const px = deltaTransformPoint(matrix, { x: 0, y: 1 });
-        const skewX = ((180 / Math.PI) * Math.atan2(px.y, px.x) - 90).toFixed(1);
-        return skewX;
-    }
-
-    function testShapeRotate(shape, x, y, expectedRotateDeg, pressShift) {
-        cy.get(shape)
-            .trigger('mousemove')
-            .trigger('mouseover')
-            .should('have.class', 'cvat_canvas_shape_activated');
-        cy.get('.cvat-canvas-container')
-            .trigger('mousemove', x, y)
-            .trigger('mouseenter', x, y);
-        cy.get('.svg_select_points_rot').should('have.class', 'cvat_canvas_selected_point');
-        cy.get('.cvat-canvas-container').trigger('mousedown', x, y, { button: 0 });
-        if (pressShift) {
-            cy.get('body').type('{shift}', { release: false });
-        }
-        cy.get('.cvat-canvas-container').trigger('mousemove', x + 20, y);
-        cy.get(shape).should('have.attr', 'transform');
-        cy.document().then((doc) => {
-            const modShapeIDString = shape.substring(1); // Remove "#" from the shape id string
-            const shapeTranformMatrix = decomposeMatrix(doc.getElementById(modShapeIDString).getCTM());
-            cy.get('#cvat_canvas_text_content').should('contain.text', `${shapeTranformMatrix}°`);
-            expect(`${expectedRotateDeg}°`).to.be.equal(`${shapeTranformMatrix}°`);
-        });
-        cy.get('.cvat-canvas-container').trigger('mouseup');
-    }
 
     function testCompareRotate(shape, toFrame) {
         for (let frame = 8; frame >= toFrame; frame--) {
@@ -101,13 +66,13 @@ context('Rotated bounding boxes.', () => {
 
     describe(`Testing case "${caseId}"`, () => {
         it('Check that bounding boxes can be rotated.', () => {
-            testShapeRotate(
+            cy.shapeRotate(
                 '#cvat_canvas_shape_1',
                 (createRectangleShape2Points.firstX + createRectangleShape2Points.secondX) / 2,
                 createRectangleShape2Points.firstY + 20,
                 '33.7',
             );
-            testShapeRotate(
+            cy.shapeRotate(
                 '#cvat_canvas_shape_2',
                 (createRectangleTrack2Points.firstX + createRectangleTrack2Points.secondX) / 2,
                 createRectangleTrack2Points.firstY + 20,
@@ -130,7 +95,7 @@ context('Rotated bounding boxes.', () => {
                 }
             });
 
-            testShapeRotate('#cvat_canvas_shape_2', 320, 225, '53.0');
+            cy.shapeRotate('#cvat_canvas_shape_2', 320, 225, '53.0');
 
             // Comparison of the values of the shape attribute of the current frame with the previous frame
             testCompareRotate('cvat_canvas_shape_2', 0);
@@ -155,7 +120,7 @@ context('Rotated bounding boxes.', () => {
             cy.get('#cvat_canvas_shape_4').should('be.visible');
             cy.goCheckFrameNumber(9);
 
-            testShapeRotate(
+            cy.shapeRotate(
                 '#cvat_canvas_shape_4',
                 (createRectangleShape2Points.firstX + createRectangleShape2Points.secondX) / 2,
                 createRectangleShape2Points.firstY + 20,
@@ -182,8 +147,8 @@ context('Rotated bounding boxes.', () => {
 
         it('Check rotation with hold Shift button.', () => {
             cy.goCheckFrameNumber(0);
-            testShapeRotate('#cvat_canvas_shape_4', 320, 375, '60.0', true);
-            testShapeRotate('#cvat_canvas_shape_4', 325, 385, '75.0', true);
+            cy.shapeRotate('#cvat_canvas_shape_4', 320, 375, '60.0', true);
+            cy.shapeRotate('#cvat_canvas_shape_4', 325, 385, '75.0', true);
         });
 
         it('Copy/paste a rotated shape.', () => {
