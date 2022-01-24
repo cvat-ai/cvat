@@ -16,11 +16,11 @@ require('cy-verify-downloads').addCustomCommand();
 
 let selectedValueGlobal = '';
 
-Cypress.Commands.add('login', (username = Cypress.env('user'), password = Cypress.env('password')) => {
+Cypress.Commands.add('login', (username = Cypress.env('user'), password = Cypress.env('password'), page = 'tasks') => {
     cy.get('[placeholder="Username"]').type(username);
     cy.get('[placeholder="Password"]').type(password);
     cy.get('[type="submit"]').click();
-    cy.url().should('match', /\/tasks$/);
+    cy.url().should('contain', `/${page}`);
     cy.document().then((doc) => {
         const loadSettingFailNotice = Array.from(doc.querySelectorAll('.cvat-notification-notice-load-settings-fail'));
         if (loadSettingFailNotice.length > 0) {
@@ -31,7 +31,7 @@ Cypress.Commands.add('login', (username = Cypress.env('user'), password = Cypres
 
 Cypress.Commands.add('logout', (username = Cypress.env('user')) => {
     cy.get('.cvat-right-header').within(() => {
-        cy.get('.cvat-header-menu-user-dropdown').should('have.text', username).trigger('mouseover', { which: 1 });
+        cy.get('.cvat-header-menu-user-dropdown-user').should('have.text', username).trigger('mouseover');
     });
     cy.get('span[aria-label="logout"]').click();
     cy.url().should('include', '/auth/login');
@@ -52,7 +52,7 @@ Cypress.Commands.add('userRegistration', (firstName, lastName, userName, emailAd
     }
 });
 
-Cypress.Commands.add('deletingRegisteredUsers', (accountToDelete) => {
+Cypress.Commands.add('getAuthKey', () => {
     cy.request({
         method: 'POST',
         url: '/api/v1/auth/login',
@@ -61,31 +61,32 @@ Cypress.Commands.add('deletingRegisteredUsers', (accountToDelete) => {
             email: Cypress.env('email'),
             password: Cypress.env('password'),
         },
-    }).then((response) => {
-        const authKey = response.body.key;
-        cy.request({
-            url: '/api/v1/users?page_size=all',
-            headers: {
-                Authorization: `Token ${authKey}`,
-            },
-        }).then((_response) => {
-            const responceResult = _response.body.results;
-            for (const user of responceResult) {
-                const userId = user.id;
-                const userName = user.username;
-                for (const account of accountToDelete) {
-                    if (userName === account) {
-                        cy.request({
-                            method: 'DELETE',
-                            url: `/api/v1/users/${userId}`,
-                            headers: {
-                                Authorization: `Token ${authKey}`,
-                            },
-                        });
-                    }
+    });
+});
+
+Cypress.Commands.add('deleteUsers', (authResponse, accountsToDelete) => {
+    const authKey = authResponse.body.key;
+    cy.request({
+        url: '/api/v1/users?page_size=all',
+        headers: {
+            Authorization: `Token ${authKey}`,
+        },
+    }).then((_response) => {
+        const responseResult = _response.body.results;
+        for (const user of responseResult) {
+            const { id, username } = user;
+            for (const account of accountsToDelete) {
+                if (username === account) {
+                    cy.request({
+                        method: 'DELETE',
+                        url: `/api/v1/users/${id}`,
+                        headers: {
+                            Authorization: `Token ${authKey}`,
+                        },
+                    });
                 }
             }
-        });
+        }
     });
 });
 
@@ -131,6 +132,32 @@ Cypress.Commands.add('checkUserStatuses', (authKey, userName, staffStatus, super
                 expect(activeStatus).to.be.equal(user.is_active);
             }
         });
+    });
+});
+
+Cypress.Commands.add('deleteTasks', (authResponse, tasksToDelete) => {
+    const authKey = authResponse.body.key;
+    cy.request({
+        url: '/api/v1/tasks?page_size=all',
+        headers: {
+            Authorization: `Token ${authKey}`,
+        },
+    }).then((_response) => {
+        const responceResult = _response.body.results;
+        for (const task of responceResult) {
+            const { id, name } = task;
+            for (const taskToDelete of tasksToDelete) {
+                if (name === taskToDelete) {
+                    cy.request({
+                        method: 'DELETE',
+                        url: `/api/v1/tasks/${id}`,
+                        headers: {
+                            Authorization: `Token ${authKey}`,
+                        },
+                    });
+                }
+            }
+        }
     });
 });
 
@@ -800,6 +827,14 @@ Cypress.Commands.add('exportTask', ({
     cy.contains('button', 'OK').click();
     cy.get('.cvat-notification-notice-export-task-start').should('be.visible');
     cy.closeNotification('.cvat-notification-notice-export-task-start');
+});
+
+Cypress.Commands.add('renameTask', (oldName, newName) => {
+    cy.get('.cvat-task-details-task-name').within(() => {
+        cy.get('[aria-label="edit"]').click();
+    });
+    cy.contains('.cvat-text-color', oldName).clear().type(`${newName}{Enter}`);
+    cy.contains('.cvat-task-details-task-name', newName).should('exist');
 });
 
 Cypress.Commands.add('shapeRotate', (shape, x, y, expectedRotateDeg, pressShift = false) => {

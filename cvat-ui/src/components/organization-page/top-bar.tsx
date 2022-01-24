@@ -1,4 +1,4 @@
-// Copyright (C) 2021 Intel Corporation
+// Copyright (C) 2021-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -194,6 +194,7 @@ function OrganizationTopBar(props: Props): JSX.Element {
                                         onOk: () => {
                                             dispatch(leaveOrganizationAsync(organizationInstance));
                                         },
+                                        className: 'cvat-modal-organization-leave-confirm',
                                         content: (
                                             <>
                                                 <Text>Please, confirm leaving the organization</Text>
@@ -260,6 +261,7 @@ function OrganizationTopBar(props: Props): JSX.Element {
                 </Col>
             </Row>
             <Modal
+                className='cvat-organization-invitation-modal'
                 visible={visibleInviteModal}
                 onCancel={() => {
                     setVisibleInviteModal(false);
@@ -294,6 +296,7 @@ function OrganizationTopBar(props: Props): JSX.Element {
                                     <Row className='cvat-organization-invitation-field' key={field.key}>
                                         <Col span={10}>
                                             <Form.Item
+                                                className='cvat-organization-invitation-field-email'
                                                 hasFeedback
                                                 name={[field.name, 'email']}
                                                 fieldKey={[field.fieldKey, 'email']}
@@ -307,6 +310,7 @@ function OrganizationTopBar(props: Props): JSX.Element {
                                         </Col>
                                         <Col span={10} offset={1}>
                                             <Form.Item
+                                                className='cvat-organization-invitation-field-role'
                                                 name={[field.name, 'role']}
                                                 fieldKey={[field.fieldKey, 'role']}
                                                 initialValue='worker'

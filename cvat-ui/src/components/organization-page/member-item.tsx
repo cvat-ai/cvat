@@ -1,4 +1,4 @@
-// Copyright (C) 2021 Intel Corporation
+// Copyright (C) 2021-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -65,6 +65,7 @@ function MemberItem(props: Props): JSX.Element {
                     <CloseOutlined
                         onClick={() => {
                             Modal.confirm({
+                                className: 'cvat-modal-organization-member-remove',
                                 title: `You are removing "${username}" from this organization`,
                                 content: 'The person will not have access to the organization data anymore. Continue?',
                                 okText: 'Yes, remove',
