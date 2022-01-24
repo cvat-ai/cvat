@@ -555,6 +555,7 @@ def return_response(success_code=status.HTTP_200_OK):
 class FunctionViewSet(viewsets.ViewSet):
     lookup_value_regex = '[a-zA-Z0-9_.-]+'
     lookup_field = 'func_id'
+    iam_organization_field = None
 
     @return_response()
     def list(self, request):
@@ -585,6 +586,8 @@ class FunctionViewSet(viewsets.ViewSet):
         return lambda_func.invoke(db_task, request.data)
 
 class RequestViewSet(viewsets.ViewSet):
+    iam_organization_field = None
+
     @return_response()
     def list(self, request):
         queue = LambdaQueue()
