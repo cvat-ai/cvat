@@ -1,3 +1,7 @@
+# Copyright (C) 2022 Intel Corporation
+#
+# SPDX-License-Identifier: MIT
+
 import pytest
 import json
 import os.path as osp
@@ -59,58 +63,49 @@ def memberships_by_org(memberships):
     members = {}
     for membership in memberships:
         org = membership['organization']
-        members.setdefault(org, []).append(membership['user']['username'])
+        members.setdefault(org, []).append(membership)
     return members
 
 @pytest.fixture(scope='module')
 def memberships_by_role(memberships):
     members = {}
     for membership in memberships:
-        org = membership['organization']
-        members.setdefault(org, []).append(membership['user']['username'])
+        role = membership['role']
+        members.setdefault(role, []).append(membership)
     return members
 
-@pytest.fixture(scope='module')
-def data_by_field(memberships_by_org, memberships_by_role, users_by_group):
-    return {
-        'privilege': users_by_group,
-        'role': memberships_by_role,
-        'org': memberships_by_org
-    }
-
 
 @pytest.fixture(scope='module')
-def find_user(users_by_group):
+def find_users_by_privilege(users_by_group):
     def find(privilege=None):
         if privilege is None:
             return None
 
         keys = {'username', 'id', 'groups'}
-        return [dict(filter(lambda a: a[0] in keys, user))
+        return [dict(filter(lambda a: a[0] in keys, user.items()))
             for user in users_by_group[privilege]]
 
     return find
 
 @pytest.fixture(scope='module')
-def find_member(data_by_field, memberships):
-    def find(**kwargs):
-        assert len(kwargs) > 0
-        assert any(kwargs)
+def find_members(memberships, memberships_by_role, memberships_by_org):
+    def find(role=None, org=None):
+        if not any((role, org)):
+            return None
 
-        candidates = [set(membership['id'] for membership in membeships)
-            for key, value in kwargs
-            for membeships in data_by_field[key][value]
-        ]
-
-        matches = [membership for membership in memberships
-            if membership['id'] in set.intersection(*candidates)]
+        if role is None:
+            matches = set(m['id'] for m in memberships_by_org[org])
+        elif org is None:
+            matches = set(m['id'] for m in memberships_by_role[role])
+        else:
+            matches = set(m['id'] for m in memberships_by_org[org]) \
+                & set(m['id'] for m in memberships_by_role[role])
 
         data = []
-        for membership in matches:
+        for membership in filter(lambda a: a['id'] in matches, memberships):
             data.append({
                 'username': membership['user']['username'],
-                'id': membership['user']['user_id'],
-                'groups': membership['user']['groups'],
+                'id': membership['user']['id'],
                 'membership_id': membership['id'],
                 'role': membership['role'],
                 'org': membership['organization'],
@@ -119,6 +114,23 @@ def find_member(data_by_field, memberships):
         return data
     return find
 
+@pytest.fixture(scope='module')
+def find_users(find_users_by_privilege, find_members):
+    def find(**kwargs):
+        assert len(kwargs) > 0
+        assert any(kwargs)
 
+        members = find_members(role=kwargs.get('role'), org=kwargs.get('org'))
+        users = find_users_by_privilege(privilege=kwargs.get('privilege'))
 
-    return user
+        if members is None:
+            return users
+        if users is None:
+            return members
+
+        matches = set(user['username'] for user in users) \
+            & set(user['username'] for user in members)
+
+        return list(filter(lambda a: a['username'] in matches, members))
+
+    return find
