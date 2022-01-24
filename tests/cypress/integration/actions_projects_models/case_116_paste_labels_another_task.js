@@ -5,7 +5,7 @@
 /// <reference types="cypress" />
 
 context('Paste labels from another task.', { browser: '!firefox' }, () => {
-    const caseID = '115';
+    const caseID = '116';
     const task = {
         name: `Case ${caseID}`,
         label: 'Tree',
