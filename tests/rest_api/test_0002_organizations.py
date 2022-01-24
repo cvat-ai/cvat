@@ -26,20 +26,23 @@ class TestGetOrganizations:
     def _test_cannot_see_organization(self, user, endpoint, **kwargs):
         response = get_method(user, endpoint, **kwargs)
 
-        assert response.status_code == HTTPStatus.FORBIDDEN
+        assert response.status_code == HTTPStatus.NOT_FOUND
 
-    @pytest.mark.parametrize('privilege, role, org, is_allow', [
-        ('admin',    None,         None, True),
-        ('user',     None,         1,    False),
-        ('business', None,         1,    False),
-        ('worker',   None,         1,    False),
-        (None,       'owner',      2,    True),
-        (None,       'maintainer', 2,    True),
-        (None,       'worker',     2,    True),
-        (None,       'supervisor', 2,    True),
+    @pytest.mark.parametrize('privilege, role, is_member, is_allow', [
+        ('admin',    None,         None,  True),
+        ('user',     None,         False, False),
+        ('business', None,         False, False),
+        ('worker',   None,         False, False),
+        (None,       'owner',      True,  True),
+        (None,       'maintainer', True,  True),
+        (None,       'worker',     True,  True),
+        (None,       'supervisor', True,  True),
     ])
-    def test_can_see_specific_organization(self, privilege, role, org, is_allow, find_users):
-        user = find_users(privilege=privilege, role=role, org=org)[0]
+    def test_can_see_specific_organization(self, privilege, role, is_member, is_allow, find_users):
+        exclude_org = None if is_member else self._ORG
+        org = self._ORG if is_member else None
+        user = find_users(privilege=privilege, role=role, org=org,
+            exclude_org=exclude_org)[0]
         if is_allow:
             self._test_can_see_organization(user['username'], f'organizations/{self._ORG}')
         else:

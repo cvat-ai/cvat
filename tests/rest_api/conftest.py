@@ -1,7 +1,3 @@
-# Copyright (C) 2022 Intel Corporation
-#
-# SPDX-License-Identifier: MIT
-
 import pytest
 import json
 import os.path as osp
@@ -51,11 +47,31 @@ def users_by_name(users):
     return {user['username']: user for user in users}
 
 @pytest.fixture(scope='module')
+def members(memberships):
+    members = {}
+    for membership in memberships:
+        org = membership['organization']
+        members.setdefault(org, []).append(membership['user']['username'])
+    return members
+
+@pytest.fixture(scope='module')
 def users_by_group(users):
     data = {}
     for user in users:
         for group in user['groups']:
             data.setdefault(group, []).append(user)
+    return data
+
+@pytest.fixture(scope='module')
+def roles_by_org(memberships):
+    data = {}
+    for membership in memberships:
+        org = membership['organization']
+        role = membership['role']
+        data.setdefault(org, {}).setdefault(role, []).append({
+            'username': membership['user']['username'],
+            'id': membership['id']
+        })
     return data
 
 @pytest.fixture(scope='module')
@@ -74,63 +90,46 @@ def memberships_by_role(memberships):
         members.setdefault(role, []).append(membership)
     return members
 
-
 @pytest.fixture(scope='module')
-def find_users_by_privilege(users_by_group):
-    def find(privilege=None):
-        if privilege is None:
-            return None
-
-        keys = {'username', 'id', 'groups'}
-        return [dict(filter(lambda a: a[0] in keys, user.items()))
-            for user in users_by_group[privilege]]
-
-    return find
-
-@pytest.fixture(scope='module')
-def find_members(memberships, memberships_by_role, memberships_by_org):
-    def find(role=None, org=None):
-        if not any((role, org)):
-            return None
-
-        if role is None:
-            matches = set(m['id'] for m in memberships_by_org[org])
-        elif org is None:
-            matches = set(m['id'] for m in memberships_by_role[role])
-        else:
-            matches = set(m['id'] for m in memberships_by_org[org]) \
-                & set(m['id'] for m in memberships_by_role[role])
-
-        data = []
-        for membership in filter(lambda a: a['id'] in matches, memberships):
-            data.append({
-                'username': membership['user']['username'],
-                'id': membership['user']['id'],
-                'membership_id': membership['id'],
-                'role': membership['role'],
-                'org': membership['organization'],
-            })
-
-        return data
-    return find
-
-@pytest.fixture(scope='module')
-def find_users(find_users_by_privilege, find_members):
+def find_users(test_db):
     def find(**kwargs):
         assert len(kwargs) > 0
         assert any(kwargs)
 
-        members = find_members(role=kwargs.get('role'), org=kwargs.get('org'))
-        users = find_users_by_privilege(privilege=kwargs.get('privilege'))
+        data = test_db
+        kwargs = dict(filter(lambda a: a[1] is not None, kwargs.items()))
+        for field, value in kwargs.items():
+            if field.startswith('exclude_'):
+                field = field.split('_', maxsplit=1)[1]
+                exclude_rows = set(v['id'] for v in
+                    filter(lambda a: a[field] == value, test_db))
+                data = list(filter(lambda a: a['id'] not in exclude_rows, data))
+            else:
+                data = list(filter(lambda a: a[field] == value, data))
 
-        if members is None:
-            return users
-        if users is None:
-            return members
-
-        matches = set(user['username'] for user in users) \
-            & set(user['username'] for user in members)
-
-        return list(filter(lambda a: a['username'] in matches, members))
-
+        return data
     return find
+
+
+@pytest.fixture(scope='module')
+def test_db(users, users_by_name, memberships):
+    data = []
+    fields = ['username', 'id', 'privilege', 'role', 'org', 'membership_id']
+    def add_row(**kwargs):
+        data.append({field: kwargs.get(field) for field in fields})
+
+    for user in users:
+        for group in user['groups']:
+            add_row(username=user['username'], id=user['id'], privilege=group)
+
+    for membership in memberships:
+        username = membership['user']['username']
+        for group in users_by_name[username]['groups']:
+            add_row(username=username, role=membership['role'], privilege=group,
+                id=membership['user']['id'], org=membership['organization'],
+                membership_id=membership['id'])
+
+    return data
+
+
+
