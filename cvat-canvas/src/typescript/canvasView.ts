@@ -2038,7 +2038,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 resized = false;
                 hideDirection();
                 hideText();
-                if (state.shapeType === 'rectangle') {
+                if (state.shapeType === 'rectangle' || state.shapeType === 'ellipse') {
                     shapeSizeElement = displayShapeSize(this.adoptedContent, this.adoptedText);
                 }
                 (shape as any).on('remove.resize', () => {
