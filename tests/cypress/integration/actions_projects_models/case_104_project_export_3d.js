@@ -23,12 +23,9 @@ context('Export project dataset with 3D task.', { browser: '!firefox' }, () => {
     let datasetArchiveName;
 
     function getProjectID() {
-        cy.contains('.cvat-project-name', projectName)
-            .parents('.cvat-project-details')
-            .should('have.attr', 'cvat-project-id')
-            .then(($projectID) => {
-                projectID = $projectID;
-            });
+        cy.url().then((url) => {
+            projectID = Number(url.split('/').slice(-1)[0].split('?')[0]);
+        });
     }
 
     before(() => {
