@@ -4,6 +4,7 @@
 
 /// <reference types="cypress" />
 
+// The test is disabled for Firefox because the "Cypress Real Events" plugin does not work with this browser.
 context('Paste labels from another task.', { browser: '!firefox' }, () => {
     const caseID = '116';
     const task = {
