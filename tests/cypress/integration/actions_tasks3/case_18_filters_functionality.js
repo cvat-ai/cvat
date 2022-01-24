@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -67,6 +67,14 @@ context('Filters functionality.', () => {
         ],
         numberOfPoints: 4,
     };
+    const createEllipseTrack = {
+        type: 'Track',
+        labelName: labelTrack,
+        cx: 250,
+        cy: 350,
+        rightX: 450,
+        topY: 280,
+    };
 
     const cvatCanvasShapeList = [];
     const cvatFiltesList = [];
@@ -101,6 +109,7 @@ context('Filters functionality.', () => {
                     cvatCanvasShapeList.push(Number($cvatCanvasShapeList[i].id.match(/\d+$/)));
                 }
             });
+            cy.createEllipse(createEllipseTrack);
         });
 
         it('Filter: shape == "polygon". Only the polygon exist.', () => {
@@ -164,7 +173,7 @@ context('Filters functionality.', () => {
                 value: labelTrack,
                 submit: true,
             });
-            checkingFilterApplication([2, 4]); // #cvat_canvas_shape_2,4, #cvat-objects-sidebar-state-item-2,4
+            checkingFilterApplication([2, 4, 5]); // #cvat_canvas_shape_2,4,5, #cvat-objects-sidebar-state-item-2,4,5
             cy.clearFilters(); // Clear filters
         });
 
@@ -182,8 +191,8 @@ context('Filters functionality.', () => {
                 labelAttr: 'count points',
                 submit: true,
             });
-            // #cvat_canvas_shape_2,4, #cvat-objects-sidebar-state-item-2,4
-            checkingFilterApplication([2, 4]);
+            // #cvat_canvas_shape_2,4,5, #cvat-objects-sidebar-state-item-2,4,5
+            checkingFilterApplication([2, 4, 5]);
             cy.clearFilters(); // Clear filters
         });
 
@@ -200,8 +209,8 @@ context('Filters functionality.', () => {
                 value: 'Height',
                 submit: true,
             });
-            // #cvat_canvas_shape_1,2,3,4, #cvat-objects-sidebar-state-item-1,2,3,4
-            checkingFilterApplication([1, 2, 3, 4]);
+            // #cvat_canvas_shape_1,2,3,4,5, #cvat-objects-sidebar-state-item-1,2,3,4,5
+            checkingFilterApplication([1, 2, 3, 4, 5]);
             cy.clearFilters(); // Clear filters
         });
 
@@ -244,7 +253,7 @@ context('Filters functionality.', () => {
             cy.setFilter({
                 groupIndex: 2, ruleIndex: 3, field: 'Width', operator: '>', value: '60', submit: true,
             });
-            checkingFilterApplication([2, 4]); // #cvat_canvas_shape_2,4, #cvat-objects-sidebar-state-item-2,4
+            checkingFilterApplication([2, 4, 5]); // #cvat_canvas_shape_2,4,5, #cvat-objects-sidebar-state-item-2,4,5
             cy.clearFilters(); // Clear filters
         });
 
@@ -277,6 +286,22 @@ context('Filters functionality.', () => {
                 groupIndex: 3, ruleIndex: 3, field: 'Height', operator: '>', value: 50, submit: true,
             });
             checkingFilterApplication([3]); // #cvat_canvas_shape_3, #cvat-objects-sidebar-state-item-3
+            cy.clearFilters(); // Clear filters
+        });
+
+        it('Filter: shape == "ellipse". Only the ellipse exist.', () => {
+            const textFilter = 'shape == "ellipse"';
+            cvatFiltesList.push(textFilter);
+            cy.addFiltersRule(0);
+            cy.setFilter({
+                groupIndex: 0,
+                ruleIndex: 0,
+                field: 'Shape',
+                operator: '==',
+                value: 'ellipse',
+                submit: true,
+            });
+            checkingFilterApplication([5]); // #cvat_canvas_shape_5, #cvat-objects-sidebar-state-item-5
             cy.clearFilters(); // Clear filters
         });
 

@@ -606,7 +606,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         }
     }
 
-    private setupIssueRegions(issueRegions: Record<number, number[]>): void {
+    private setupIssueRegions(issueRegions: Record<number, { hidden: boolean; points: number[] }>): void {
         for (const issueRegion of Object.keys(this.drawnIssueRegions)) {
             if (!(issueRegion in issueRegions) || !+issueRegion) {
                 this.drawnIssueRegions[+issueRegion].remove();
@@ -616,7 +616,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
         for (const issueRegion of Object.keys(issueRegions)) {
             if (issueRegion in this.drawnIssueRegions) continue;
-            const points = this.translateToCanvas(issueRegions[+issueRegion]);
+            const points = this.translateToCanvas(issueRegions[+issueRegion].points);
             if (points.length === 2) {
                 this.drawnIssueRegions[+issueRegion] = this.adoptedContent
                     .circle((consts.BASE_POINT_SIZE * 3 * 2) / this.geometry.scale)
@@ -655,6 +655,10 @@ export class CanvasViewImpl implements CanvasView, Listener {
                         fill: 'url(#cvat_issue_region_pattern_1)',
                         'stroke-width': `${consts.BASE_STROKE_WIDTH / this.geometry.scale}`,
                     });
+            }
+
+            if (issueRegions[+issueRegion].hidden) {
+                this.drawnIssueRegions[+issueRegion].style({ display: 'none' });
             }
         }
     }
@@ -1263,8 +1267,15 @@ export class CanvasViewImpl implements CanvasView, Listener {
         } else if (reason === UpdateReasons.FITTED_CANVAS) {
             // Canvas geometry is going to be changed. Old object positions aren't valid any more
             this.setupObjects([]);
+            this.setupIssueRegions({});
             this.moveCanvas();
             this.resizeCanvas();
+            this.canvas.dispatchEvent(
+                new CustomEvent('canvas.reshape', {
+                    bubbles: false,
+                    cancelable: true,
+                }),
+            );
         } else if ([UpdateReasons.IMAGE_ZOOMED, UpdateReasons.IMAGE_FITTED].includes(reason)) {
             this.moveCanvas();
             this.transformCanvas();

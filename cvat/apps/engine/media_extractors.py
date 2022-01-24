@@ -1,4 +1,4 @@
-# Copyright (C) 2019-2020 Intel Corporation
+# Copyright (C) 2019-2022 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -136,6 +136,9 @@ class ImageListReader(IMediaReader):
         for i in range(self._start, self._stop, self._step):
             yield (self.get_image(i), self.get_path(i), i)
 
+    def __contains__(self, media_file):
+        return media_file in self._source_path
+
     def filter(self, callback):
         source_path = list(filter(callback, self._source_path))
         ImageListReader.__init__(
@@ -172,14 +175,14 @@ class ImageListReader(IMediaReader):
         img = Image.open(self._source_path[i])
         return img.width, img.height
 
-    def reconcile(self, source_files, step=1, start=0, stop=None, dimension=DimensionType.DIM_2D):
+    def reconcile(self, source_files, step=1, start=0, stop=None, dimension=DimensionType.DIM_2D, sorting_method=None):
         # FIXME
         ImageListReader.__init__(self,
             source_path=source_files,
             step=step,
             start=start,
             stop=stop,
-            sorting_method=self._sorting_method,
+            sorting_method=sorting_method if sorting_method else self._sorting_method,
         )
         self._dimension = dimension
 
@@ -328,13 +331,14 @@ class ZipReader(ImageListReader):
         else: # necessary for mime_type definition
             return self._source_path[i]
 
-    def reconcile(self, source_files, step=1, start=0, stop=None, dimension=DimensionType.DIM_2D):
+    def reconcile(self, source_files, step=1, start=0, stop=None, dimension=DimensionType.DIM_2D, sorting_method=None):
         super().reconcile(
             source_files=source_files,
             step=step,
             start=start,
             stop=stop,
             dimension=dimension,
+            sorting_method=sorting_method
         )
 
     def extract(self):
