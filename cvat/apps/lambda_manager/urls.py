@@ -24,6 +24,9 @@ router.register('requests', views.RequestViewSet, basename='request')
 # GET  /api/v1/lambda/requests - get list of requests
 # GET  /api/v1/lambda/requests/<int:rid> - get status of the request
 # DEL  /api/v1/lambda/requests/<int:rid> - cancel a request (don't delete)
+# urlpatterns = [
+#     path('api/v1/lambda/', include((router.urls, 'lambda_manager'), namespace='v1'))
+# ]
 urlpatterns = [
     path('api/v1/lambda/', include((router.urls, 'cvat'), namespace='v1'))
 ]

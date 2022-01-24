@@ -38,4 +38,5 @@ if settings.IAM_TYPE == 'BASIC':
                 name='account_email_verification_sent'),
         ]
 
+#urlpatterns = [path('auth/', include(urlpatterns))]
 urlpatterns = [path('auth/', include((urlpatterns, 'cvat'), namespace='v1'))]
