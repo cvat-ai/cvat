@@ -177,7 +177,7 @@ context('New organization pipeline.', () => {
         });
 
         // Activate after implementation
-        it.skip('The project, the task are invisible now.', () => {
+        it('The project, the task are invisible now.', () => {
             cy.contains('.cvat-item-task-name', taskName).should('not.exist');
             cy.goToProjectsList();
             cy.contains('.cvat-projects-project-item-title', project.name).should('not.exist');
@@ -203,7 +203,7 @@ context('New organization pipeline.', () => {
             cy.login(secondUserName, secondUser.password);
             cy.checkOrganizationExists(organizationParams.shortName);
             // Uncomment the following line after fix
-            // cy.contains('.cvat-item-task-name', taskName).should('not.exist');
+            cy.contains('.cvat-item-task-name', taskName).should('not.exist');
         });
 
         it('The second user activates the organization, can\'t see the project because it is not assigned to him.', () => {
@@ -242,12 +242,20 @@ context('New organization pipeline.', () => {
             });
         });
 
-        it('Logout, the third user login. The user does not see the project, the task. The user can open the job using direct link. Create an object, save annotations.', () => {
+        it('Logout, the third user login. The user does not see the project, the task. The user can\'t open the job using direct link.', () => {
             cy.logout(secondUserName);
             cy.login(thirdUserName, thirdUser.password);
             cy.contains('.cvat-item-task-name', taskName).should('not.exist');
             cy.goToProjectsList();
             cy.contains('.cvat-projects-project-item-title', project.name).should('not.exist');
+            cy.visit(`/tasks/${taskID}/jobs/${jobID}`);
+            cy.get('.cvat-canvas-container').should('not.exist');
+            cy.get('.cvat-notification-notice-fetch-job-failed').should('be.visible');
+            cy.closeNotification('.cvat-notification-notice-fetch-job-failed');
+        });
+
+        it('The third user activates the organization. Now can open the job using direct link. Create an object, save annotations.', () => {
+            cy.activateOrganization(organizationParams.shortName);
             cy.visit(`/tasks/${taskID}/jobs/${jobID}`);
             cy.get('.cvat-canvas-container').should('exist');
             cy.createCuboid(createCuboidShape2Points);
@@ -263,16 +271,15 @@ context('New organization pipeline.', () => {
             cy.checkOrganizationMembers(2, [firstUserName, thirdUserName]);
         });
 
-        it('The organization, project is no longer available to the second user. The task is available.', () => {
+        it('The organization, project, task is no longer available to the second user.', () => {
             cy.logout(firstUserName);
             cy.login(secondUserName, secondUser.password);
             cy.checkOrganizationExists(organizationParams.shortName, false);
-            cy.openTaskJob(newTaskName, 0, false);
-            cy.get('.cvat_canvas_shape_cuboid').should('be.visible');
+            cy.contains('.cvat-item-task-name', taskName).should('not.exist');
             cy.goToProjectsList();
             // Uncomment the following check after fix
             // now the project is available to him outside the organization because it is assigned to him
-            // cy.contains('.cvat-projects-project-item-title', project.name).should('not.exist');
+            cy.contains('.cvat-projects-project-item-title', project.name).should('not.exist');
         });
 
         it('Logout. Remove the first, the second user (deletion occurs from user admin).', () => {
@@ -282,15 +289,12 @@ context('New organization pipeline.', () => {
             });
         });
 
-        it('Login as the third user. The organization page can be opened.', () => {
+        it('Login as the third user. The organization page can be opened. The job can be opened.', () => {
             cy.login(thirdUserName, thirdUser.password);
             cy.activateOrganization(organizationParams.shortName);
             cy.visit('/organization');
             cy.checkOrganizationParams(organizationParams);
             cy.checkOrganizationMembers(1, [thirdUserName]);
-        });
-
-        it('The job can be opened.', () => {
             cy.visit(`/tasks/${taskID}/jobs/${jobID}`);
             cy.get('.cvat-canvas-container').should('exist');
             cy.get('.cvat_canvas_shape_cuboid').should('be.visible');
