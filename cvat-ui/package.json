@@ -34,7 +34,7 @@
     "@types/react-share": "^3.0.3",
     "@types/redux-logger": "^3.0.9",
     "@types/resize-observer-browser": "^0.1.6",
-    "antd": "^4.16.13",
+    "antd": "^4.17.0",
     "copy-to-clipboard": "^3.3.1",
     "cvat-canvas": "file:../cvat-canvas",
     "cvat-canvas3d": "file:../cvat-canvas3d",

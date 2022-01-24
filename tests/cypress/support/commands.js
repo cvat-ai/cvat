@@ -1,8 +1,10 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
 /// <reference types="cypress" />
+
+import { decomposeMatrix } from './utils';
 
 require('cypress-file-upload');
 require('../plugins/imageGenerator/imageGeneratorCommand');
@@ -798,4 +800,31 @@ Cypress.Commands.add('exportTask', ({
     cy.contains('button', 'OK').click();
     cy.get('.cvat-notification-notice-export-task-start').should('be.visible');
     cy.closeNotification('.cvat-notification-notice-export-task-start');
+});
+
+// FIXME: remove "checkText" after implementstion for ellipse
+Cypress.Commands.add('shapeRotate', (shape, x, y, expectedRotateDeg, pressShift, checkText = true) => {
+    cy.get(shape)
+        .trigger('mousemove')
+        .trigger('mouseover')
+        .should('have.class', 'cvat_canvas_shape_activated');
+    cy.get('.cvat-canvas-container')
+        .trigger('mousemove', x, y)
+        .trigger('mouseenter', x, y);
+    cy.get('.svg_select_points_rot').should('have.class', 'cvat_canvas_selected_point');
+    cy.get('.cvat-canvas-container').trigger('mousedown', x, y, { button: 0 });
+    if (pressShift) {
+        cy.get('body').type('{shift}', { release: false });
+    }
+    cy.get('.cvat-canvas-container').trigger('mousemove', x + 20, y);
+    cy.get(shape).should('have.attr', 'transform');
+    cy.document().then((doc) => {
+        const modShapeIDString = shape.substring(1); // Remove "#" from the shape id string
+        const shapeTranformMatrix = decomposeMatrix(doc.getElementById(modShapeIDString).getCTM());
+        if (checkText) {
+            cy.get('#cvat_canvas_text_content').should('contain.text', `${shapeTranformMatrix}°`);
+        }
+        expect(`${expectedRotateDeg}°`).to.be.equal(`${shapeTranformMatrix}°`);
+    });
+    cy.get('.cvat-canvas-container').trigger('mouseup');
 });
