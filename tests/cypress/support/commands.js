@@ -802,7 +802,7 @@ Cypress.Commands.add('exportTask', ({
     cy.closeNotification('.cvat-notification-notice-export-task-start');
 });
 
-Cypress.Commands.add('shapeRotate', (shape, x, y, expectedRotateDeg, pressShift) => {
+Cypress.Commands.add('shapeRotate', (shape, x, y, expectedRotateDeg, pressShift = false) => {
     cy.get(shape)
         .trigger('mousemove')
         .trigger('mouseover')
