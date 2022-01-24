@@ -10,6 +10,7 @@ require('./commands_filters_feature');
 require('./commands_models');
 require('./commands_opencv');
 require('@cypress/code-coverage/support');
+require('cypress-real-events/support');
 
 before(() => {
     if (Cypress.browser.family !== 'chromium') {
