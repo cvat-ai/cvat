@@ -176,7 +176,6 @@ context('New organization pipeline.', () => {
             cy.deactivateOrganization();
         });
 
-        // Activate after implementation
         it('The project, the task are invisible now.', () => {
             cy.contains('.cvat-item-task-name', taskName).should('not.exist');
             cy.goToProjectsList();
@@ -202,7 +201,6 @@ context('New organization pipeline.', () => {
             cy.logout();
             cy.login(secondUserName, secondUser.password);
             cy.checkOrganizationExists(organizationParams.shortName);
-            // Uncomment the following line after fix
             cy.contains('.cvat-item-task-name', taskName).should('not.exist');
         });
 
@@ -277,8 +275,6 @@ context('New organization pipeline.', () => {
             cy.checkOrganizationExists(organizationParams.shortName, false);
             cy.contains('.cvat-item-task-name', taskName).should('not.exist');
             cy.goToProjectsList();
-            // Uncomment the following check after fix
-            // now the project is available to him outside the organization because it is assigned to him
             cy.contains('.cvat-projects-project-item-title', project.name).should('not.exist');
         });
 
