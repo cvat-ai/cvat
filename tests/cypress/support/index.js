@@ -11,7 +11,6 @@ require('./commands_models');
 require('./commands_opencv');
 require('./commands_organizations');
 require('@cypress/code-coverage/support');
-require('cypress-plugin-tab');
 
 before(() => {
     if (Cypress.browser.family !== 'chromium') {

@@ -4,6 +4,8 @@
 
 /// <reference types="cypress" />
 
+import { decomposeMatrix } from './utils';
+
 require('cypress-file-upload');
 require('../plugins/imageGenerator/imageGeneratorCommand');
 require('../plugins/createZipArchive/createZipArchiveCommand');
@@ -833,4 +835,31 @@ Cypress.Commands.add('renameTask', (oldName, newName) => {
     });
     cy.contains('.cvat-text-color', oldName).clear().type(`${newName}{Enter}`);
     cy.contains('.cvat-task-details-task-name', newName).should('exist');
+});
+
+// FIXME: remove "checkText" after implementstion for ellipse
+Cypress.Commands.add('shapeRotate', (shape, x, y, expectedRotateDeg, pressShift, checkText = true) => {
+    cy.get(shape)
+        .trigger('mousemove')
+        .trigger('mouseover')
+        .should('have.class', 'cvat_canvas_shape_activated');
+    cy.get('.cvat-canvas-container')
+        .trigger('mousemove', x, y)
+        .trigger('mouseenter', x, y);
+    cy.get('.svg_select_points_rot').should('have.class', 'cvat_canvas_selected_point');
+    cy.get('.cvat-canvas-container').trigger('mousedown', x, y, { button: 0 });
+    if (pressShift) {
+        cy.get('body').type('{shift}', { release: false });
+    }
+    cy.get('.cvat-canvas-container').trigger('mousemove', x + 20, y);
+    cy.get(shape).should('have.attr', 'transform');
+    cy.document().then((doc) => {
+        const modShapeIDString = shape.substring(1); // Remove "#" from the shape id string
+        const shapeTranformMatrix = decomposeMatrix(doc.getElementById(modShapeIDString).getCTM());
+        if (checkText) {
+            cy.get('#cvat_canvas_text_content').should('contain.text', `${shapeTranformMatrix}°`);
+        }
+        expect(`${expectedRotateDeg}°`).to.be.equal(`${shapeTranformMatrix}°`);
+    });
+    cy.get('.cvat-canvas-container').trigger('mouseup');
 });

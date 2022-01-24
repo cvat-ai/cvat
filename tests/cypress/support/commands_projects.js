@@ -112,6 +112,22 @@ Cypress.Commands.add('exportProject', ({
     cy.get('.cvat-notification-notice-export-project-start').should('be.visible');
 });
 
+Cypress.Commands.add('backupProject', (projectName) => {
+    cy.projectActions(projectName);
+    cy.get('.cvat-project-actions-menu').contains('Backup Project').click();
+});
+
+Cypress.Commands.add('restoreProject', (archiveWithBackup) => {
+    cy.intercept('POST', '/api/v1/projects/backup?**').as('restoreProject');
+    cy.get('.cvat-import-project').click().find('input[type=file]').attachFile(archiveWithBackup);
+    cy.wait('@restoreProject', { timeout: 5000 }).its('response.statusCode').should('equal', 202);
+    cy.wait('@restoreProject').its('response.statusCode').should('equal', 201);
+    cy.contains('Project has been created succesfully')
+        .should('exist')
+        .and('be.visible');
+    cy.get('[data-icon="close"]').click(); // Close the notification
+});
+
 Cypress.Commands.add('getDownloadFileName', () => {
     cy.intercept('GET', '**=download').as('download');
     cy.wait('@download').then((download) => {

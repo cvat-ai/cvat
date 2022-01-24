@@ -1,4 +1,4 @@
-# Copyright (C) 2021 Intel Corporation
+# Copyright (C) 2021-2022 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -324,7 +324,7 @@ class _Index:
 
     def __getitem__(self, number):
         assert 0 <= number < len(self), \
-            'A invalid index number: {}\nMax: {}'.format(number, len(self))
+            'Invalid index number: {}\nMax: {}'.format(number, len(self) - 1)
         return self._index[number]
 
     def __len__(self):
@@ -706,12 +706,15 @@ class _DatasetManifestStructureValidator(_BaseManifestValidator):
             raise ValueError('Incorrect name field')
         if not isinstance(_dict['extension'], str):
             raise ValueError('Incorrect extension field')
-        # width and height are required for 2d data
-        # FIXME for 3d when manual preparation of the manifest will be implemented
-        if not isinstance(_dict['width'], int):
-            raise ValueError('Incorrect width field')
-        if not isinstance(_dict['height'], int):
-            raise ValueError('Incorrect height field')
+        # FIXME
+        # Width and height are required for 2D data, but
+        # for 3D these parameters are not saved now.
+        # It is necessary to uncomment these restrictions when manual preparation for 3D data is implemented.
+
+        # if not isinstance(_dict['width'], int):
+        #     raise ValueError('Incorrect width field')
+        # if not isinstance(_dict['height'], int):
+        #     raise ValueError('Incorrect height field')
 
 def is_manifest(full_manifest_path):
     return _is_video_manifest(full_manifest_path) or \
