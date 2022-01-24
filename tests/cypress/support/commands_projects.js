@@ -91,6 +91,11 @@ Cypress.Commands.add('importProject', ({
     cy.projectActions(projectName);
     cy.get('.cvat-project-actions-menu').contains('Import dataset').click();
     cy.get('.cvat-modal-import-dataset').find('.cvat-modal-import-select').click();
+    if (format === 'Sly Point Cloud Format') {
+        cy.get('.ant-select-dropdown')
+            .not('.ant-select-dropdown-hidden')
+            .trigger('wheel', { deltaY: 1000 });
+    }
     cy.contains('.cvat-modal-import-dataset-option-item', format).click();
     cy.get('.cvat-modal-import-select').should('contain.text', format);
     cy.get('input[type="file"]').last().attachFile(archive, { subjectType: 'drag-n-drop' });

@@ -94,7 +94,8 @@ context('Export project dataset with 3D task.', { browser: '!firefox' }, () => {
             cy.waitForDownload();
         });
 
-        it('Import dataset.', () => {
+        // FIXME: Activate after implementation
+        it.skip('Import dataset.', () => {
             cy.openProject(projectName);
             cy.deleteTask(task.name3d);
             cy.get('.cvat-tasks-list-item')
