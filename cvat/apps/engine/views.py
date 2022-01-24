@@ -6,7 +6,6 @@ import errno
 import io
 import os
 import os.path as osp
-from pydoc import resolve
 import pytz
 import shutil
 import traceback
@@ -28,9 +27,9 @@ from django_filters.rest_framework import DjangoFilterBackend
 
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import (
-    OpenApiExample, OpenApiParameter, OpenApiResponse, extend_schema, PolymorphicProxySerializer, extend_schema_view
+    OpenApiExample, OpenApiParameter, OpenApiResponse, PolymorphicProxySerializer,
+    extend_schema_view, extend_schema
 )
-
 
 from rest_framework import mixins, serializers, status, viewsets
 from rest_framework.decorators import action
@@ -39,6 +38,7 @@ from rest_framework.permissions import SAFE_METHODS
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 from rest_framework.exceptions import PermissionDenied
+#from rest_framework.versioning import NamespaceVersioning
 from sendfile import sendfile
 
 import cvat.apps.dataset_manager as dm
@@ -61,8 +61,8 @@ from cvat.apps.engine.serializers import (
     FileInfoSerializer, JobReadSerializer, JobWriteSerializer, LabeledDataSerializer,
     LogEventSerializer, ProjectSerializer, ProjectSearchSerializer,
     RqStatusSerializer, TaskSerializer, UserSerializer, PluginsSerializer, IssueReadSerializer,
-    IssueWriteSerializer, CommentReadSerializer, CommentWriteSerializer, WriteCloudStorageSerializer,
-    ReadCloudStorageSerializer, DatasetFileSerializer)
+    IssueWriteSerializer, CommentReadSerializer, CommentWriteSerializer, CloudStorageWriteSerializer,
+    CloudStorageReadSerializer, DatasetFileSerializer)
 
 from utils.dataset_manifest import ImageManifestManager
 from cvat.apps.engine.utils import av_scan_paths
@@ -1323,7 +1323,7 @@ class CloudStorageFilter(filters.FilterSet):
 @extend_schema_view(retrieve=extend_schema(
     summary='Method returns details of a specific cloud storage',
     responses={
-        '200': ReadCloudStorageSerializer,
+        '200': CloudStorageReadSerializer,
     }, tags=['cloud storages'], versions=['v1']))
 @extend_schema_view(list=extend_schema(
     summary='Returns a paginated list of storages according to query parameters',
@@ -1342,7 +1342,7 @@ class CloudStorageFilter(filters.FilterSet):
     #FIXME
     #field_inspectors=[RedefineDescriptionField]
     responses={
-        '200': ReadCloudStorageSerializer(many=True),
+        '200': CloudStorageReadSerializer(many=True),
     }, tags=['cloud storages'], versions=['v1']))
 @extend_schema_view(destroy=extend_schema(
     summary='Method deletes a specific cloud storage',
@@ -1354,26 +1354,27 @@ class CloudStorageFilter(filters.FilterSet):
     # FIXME
     #field_inspectors=[RedefineDescriptionField]
     responses={
-        '200': WriteCloudStorageSerializer,
+        '200': CloudStorageWriteSerializer,
     }, tags=['cloud storages'], versions=['v1']))
 @extend_schema_view(create=extend_schema(
     summary='Method creates a cloud storage with a specified characteristics',
     # FIXME
     #field_inspectors=[RedefineDescriptionField],
     responses={
-        '201': WriteCloudStorageSerializer,
+        '201': CloudStorageWriteSerializer,
     }, tags=['cloud storages'], versions=['v1']))
 class CloudStorageViewSet(viewsets.ModelViewSet):
     http_method_names = ['get', 'post', 'patch', 'delete']
     queryset = CloudStorageModel.objects.all().prefetch_related('data').order_by('-id')
     search_fields = ('provider_type', 'display_name', 'resource', 'credentials_type', 'owner__username', 'description')
     filterset_class = CloudStorageFilter
+    #versioning_class = NamespaceVersioning
 
     def get_serializer_class(self):
         if self.request.method in ('POST', 'PATCH'):
-            return WriteCloudStorageSerializer
+            return CloudStorageWriteSerializer
         else:
-            return ReadCloudStorageSerializer
+            return CloudStorageReadSerializer
 
     def get_queryset(self):
         queryset = super().get_queryset()

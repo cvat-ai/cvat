@@ -863,7 +863,7 @@ class ManifestSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         return instance.filename if instance else instance
 
-class ReadCloudStorageSerializer(serializers.ModelSerializer):
+class CloudStorageReadSerializer(serializers.ModelSerializer):
     owner = BasicUserSerializer(required=False)
     manifests = ManifestSerializer(many=True, default=[])
     class Meta:
@@ -934,7 +934,7 @@ class ReadCloudStorageSerializer(serializers.ModelSerializer):
         )
     ]
 )
-class WriteCloudStorageSerializer(serializers.ModelSerializer):
+class CloudStorageWriteSerializer(serializers.ModelSerializer):
     owner = BasicUserSerializer(required=False)
     session_token = serializers.CharField(max_length=440, allow_blank=True, required=False)
     key = serializers.CharField(max_length=20, allow_blank=True, required=False)
