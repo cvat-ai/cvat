@@ -532,15 +532,32 @@ SPECTACULAR_SETTINGS = {
     },
     'SERVE_PUBLIC': True,
     'SCHEMA_COERCE_PATH_PK_SUFFIX': True,
-    'SCHEMA_PATH_PREFIX': '/api/v[0-9]',
+    'SCHEMA_PATH_PREFIX': r'/api/v[0-9]',
+    'SCHEMA_PATH_PREFIX_TRIM': True,
     'SERVE_PERMISSIONS': ['rest_framework.permissions.IsAuthenticated'],
-    # 'SERVERS': [
-    #     {
-    #     'url': 'https://cvat.org',
-    #     'description': 'Production server',
-    #     }
-    # ],
-    'TERMS_OF_SERVICE': 'https://www.google.com/policies/terms/', # TODO, it's not an existing setting, so it doesn't display
+    'SERVERS': [
+        {
+            'url': 'https://localhost:7000/',
+            'description': 'Development server',
+            'variables': {
+                'protocol': {
+                    'enum': ['http', 'https'],
+                    'default': 'http',
+                }
+            },
+        }
+    ],
+    'SWAGGER_UI_SETTINGS': {
+        'deepLinking': True,
+        'displayOperationId': True,
+        'displayRequestDuration': True,
+        'filter': True,
+    },
+    'TOS': 'https://www.google.com/policies/terms/',
+    'EXTERNAL_DOCS': {
+        'description': 'CVAT documentation',
+        'url': 'https://openvinotoolkit.github.io/cvat/docs/',
+    },
     # OTHER SETTINGS
     # https://drf-spectacular.readthedocs.io/en/latest/settings.html
 }
