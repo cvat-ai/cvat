@@ -37,7 +37,7 @@ class UserAgreementsTest(APITestCase):
         settings.RESTRICTIONS['user_agreements'] = self.user_agreements
 
     def _get_user_agreements(self):
-        response = self.client.get('/api/v1/restrictions/user-agreements')
+        response = self.client.get('/api/restrictions/user-agreements')
         assert response.status_code == status.HTTP_200_OK
         for agreements in response.data:
             assert 'name' in agreements, agreements['name']
@@ -46,7 +46,7 @@ class UserAgreementsTest(APITestCase):
         return response.data
 
     def _register_user(self, data):
-        response = self.client.post('/api/v1/auth/register', data=data, format="json")
+        response = self.client.post('/api/auth/register', data=data, format="json")
         return response
 
 

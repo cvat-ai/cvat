@@ -124,14 +124,14 @@ class _DbTestBase(APITestCase):
 
     def _put_api_v1_task_id_annotations(self, tid, data):
         with ForceLogin(self.admin, self.client):
-            response = self.client.put("/api/v1/tasks/%s/annotations" % tid,
+            response = self.client.put("/api/tasks/%s/annotations" % tid,
                 data=data, format="json")
 
         return response
 
     def _put_api_v1_job_id_annotations(self, jid, data):
         with ForceLogin(self.admin, self.client):
-            response = self.client.put("/api/v1/jobs/%s/annotations" % jid,
+            response = self.client.put("/api/jobs/%s/annotations" % jid,
                 data=data, format="json")
 
         return response
@@ -150,22 +150,22 @@ class _DbTestBase(APITestCase):
 
     def _create_task(self, data, image_data):
         with ForceLogin(self.user, self.client):
-            response = self.client.post('/api/v1/tasks', data=data, format="json")
+            response = self.client.post('/api/tasks', data=data, format="json")
             assert response.status_code == status.HTTP_201_CREATED, response.status_code
             tid = response.data["id"]
 
-            response = self.client.post("/api/v1/tasks/%s/data" % tid,
+            response = self.client.post("/api/tasks/%s/data" % tid,
                 data=image_data)
             assert response.status_code == status.HTTP_202_ACCEPTED, response.status_code
 
-            response = self.client.get("/api/v1/tasks/%s" % tid)
+            response = self.client.get("/api/tasks/%s" % tid)
             task = response.data
 
         return task
 
     def _create_project(self, data):
         with ForceLogin(self.user, self.client):
-            response = self.client.post('/api/v1/projects', data=data, format="json")
+            response = self.client.post('/api/projects', data=data, format="json")
             assert response.status_code == status.HTTP_201_CREATED, response.status_code
             project = response.data
 
@@ -173,7 +173,7 @@ class _DbTestBase(APITestCase):
 
     def _get_jobs(self, task_id):
         with ForceLogin(self.admin, self.client):
-            response = self.client.get("/api/v1/tasks/{}/jobs".format(task_id))
+            response = self.client.get("/api/tasks/{}/jobs".format(task_id))
         return response.data
 
     def _get_request(self, path, user):
@@ -298,25 +298,25 @@ class _DbTestBase(APITestCase):
             raise FileNotFoundError(f"File '{file_name}' was not downloaded")
 
     def _generate_url_dump_tasks_annotations(self, task_id):
-        return f"/api/v1/tasks/{task_id}/annotations"
+        return f"/api/tasks/{task_id}/annotations"
 
     def _generate_url_upload_tasks_annotations(self, task_id, upload_format_name):
-        return f"/api/v1/tasks/{task_id}/annotations?format={upload_format_name}"
+        return f"/api/tasks/{task_id}/annotations?format={upload_format_name}"
 
     def _generate_url_dump_job_annotations(self, job_id):
-        return f"/api/v1/jobs/{job_id}/annotations"
+        return f"/api/jobs/{job_id}/annotations"
 
     def _generate_url_upload_job_annotations(self, job_id, upload_format_name):
-        return f"/api/v1/jobs/{job_id}/annotations?format={upload_format_name}"
+        return f"/api/jobs/{job_id}/annotations?format={upload_format_name}"
 
     def _generate_url_dump_task_dataset(self, task_id):
-        return f"/api/v1/tasks/{task_id}/dataset"
+        return f"/api/tasks/{task_id}/dataset"
 
     def _generate_url_dump_project_annotations(self, project_id, format_name):
-        return f"/api/v1/projects/{project_id}/annotations?format={format_name}"
+        return f"/api/projects/{project_id}/annotations?format={format_name}"
 
     def _generate_url_dump_project_dataset(self, project_id, format_name):
-        return f"/api/v1/projects/{project_id}/dataset?format={format_name}"
+        return f"/api/projects/{project_id}/dataset?format={format_name}"
 
     def _remove_annotations(self, url, user):
         response = self._delete_request(url, user)
@@ -324,7 +324,7 @@ class _DbTestBase(APITestCase):
         return response
 
     def _delete_project(self, project_id, user):
-        response = self._delete_request(f'/api/v1/projects/{project_id}', user)
+        response = self._delete_request(f'/api/projects/{project_id}', user)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         return response
 
@@ -628,7 +628,7 @@ class TaskDumpUploadTest(_DbTestBase):
                     with open(file_zip_name, 'rb') as binary_file:
                         self._upload_file(url_upload, binary_file, self.admin)
 
-                        response = self._get_request(f"/api/v1/tasks/{task_id}/annotations", self.admin)
+                        response = self._get_request(f"/api/tasks/{task_id}/annotations", self.admin)
                         self.assertEqual(len(response.data["shapes"]), 2)
                         self.assertEqual(len(response.data["tracks"]), 0)
 
@@ -670,7 +670,7 @@ class TaskDumpUploadTest(_DbTestBase):
                         self._upload_file(url_upload, binary_file, self.admin)
                         self.assertEqual(osp.exists(file_zip_name), True)
 
-                        response = self._get_request(f"/api/v1/tasks/{task_id}/annotations", self.admin)
+                        response = self._get_request(f"/api/tasks/{task_id}/annotations", self.admin)
                         self.assertEqual(len(response.data["shapes"]), 0)
                         self.assertEqual(len(response.data["tracks"]), 2)
 

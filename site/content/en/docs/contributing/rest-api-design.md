@@ -21,7 +21,7 @@ Common scheme for our REST API is `<VERB> [namespace] <objects> <id> <action>`.
 ## Design principles
 
 - Use nouns instead of verbs in endpoint paths. For example,
-  `POST /api/v1/tasks` instead of `POST /api/v1/tasks/create`.
+  `POST /api/tasks` instead of `POST /api/tasks/create`.
 - Accept and respond with JSON whenever it is possible
 - Name collections with plural nouns (e.g. `/tasks`, `/projects`)
 - Try to keep the API structure flat. Prefer two separate endpoints
@@ -36,7 +36,7 @@ Common scheme for our REST API is `<VERB> [namespace] <objects> <id> <action>`.
 - Allow filtering, sorting, and pagination
 - Maintain good security practices
 - Cache data to improve performance
-- Versioning our APIs (e.g. `/api/v1`, `/api/v2`). It should be done when you
+- Versioning our APIs (e.g. `/api`, `/api/v2`). It should be done when you
   delete an endpoint or modify its behaviors.
 
 ## Links

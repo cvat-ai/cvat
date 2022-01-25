@@ -84,7 +84,7 @@ with requests.Session() as session:
     session.auth = ('admin1', '!Q@W#E$R')
 
     for obj in ['user', 'project', 'task', 'job']:
-        response = session.get(f'http://localhost:8080/api/v1/{obj}s')
+        response = session.get(f'http://localhost:8080/api/{obj}s')
         with open(f'{obj}s.json', 'w') as f:
             json.dump(response.json(), f, indent=2, sort_keys=True)
 ```

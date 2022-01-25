@@ -193,14 +193,14 @@ class GitDatasetRepoTest(APITestCase):
 
     def _run_api_v1_job_id_annotation(self, jid, data, user):
         with ForceLogin(user, self.client):
-            response = self.client.patch('/api/v1/jobs/{}/annotations?action=create'.format(jid),
+            response = self.client.patch('/api/jobs/{}/annotations?action=create'.format(jid),
                 data=data, format="json")
 
         return response
 
     def _get_jobs(self, task_id):
         with ForceLogin(self.admin, self.client):
-            response = self.client.get("/api/v1/tasks/{}/jobs".format(task_id))
+            response = self.client.get("/api/tasks/{}/jobs".format(task_id))
         return response.data
 
     def _create_task(self, init_repos=False):
@@ -224,15 +224,15 @@ class GitDatasetRepoTest(APITestCase):
         images["image_quality"] = 75
 
         with ForceLogin(self.user, self.client):
-            response = self.client.post('/api/v1/tasks', data=data, format="json")
+            response = self.client.post('/api/tasks', data=data, format="json")
             assert response.status_code == status.HTTP_201_CREATED, response.status_code
             tid = response.data["id"]
 
-            response = self.client.post("/api/v1/tasks/%s/data" % tid,
+            response = self.client.post("/api/tasks/%s/data" % tid,
                                         data=images)
             assert response.status_code == status.HTTP_202_ACCEPTED, response.status_code
 
-            response = self.client.get("/api/v1/tasks/%s" % tid)
+            response = self.client.get("/api/tasks/%s" % tid)
             task = response.data
 
             db_task = Task.objects.get(pk=task["id"])

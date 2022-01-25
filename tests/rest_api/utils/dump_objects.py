@@ -8,7 +8,7 @@ with requests.Session() as session:
 
     for obj in ['user', 'project', 'task', 'job', 'organization', 'membership',
         'invitation']:
-        response = session.get(f'http://localhost:8080/api/v1/{obj}s?page_size=all')
+        response = session.get(f'http://localhost:8080/api/{obj}s?page_size=all')
         with open(os.path.join(config.ASSETS_DIR, f'{obj}s.json'), 'w') as f:
             json.dump(response.json(), f, indent=2, sort_keys=True)
 

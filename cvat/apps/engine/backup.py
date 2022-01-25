@@ -708,7 +708,7 @@ def export(db_instance, request):
             "Unexpected type of db_isntance: {}".format(type(db_instance)))
 
     queue = django_rq.get_queue("default")
-    rq_id = "/api/v1/{}s/{}/backup".format(filename_prefix, db_instance.pk)
+    rq_id = "/api/{}s/{}/backup".format(filename_prefix, db_instance.pk)
     rq_job = queue.fetch_job(rq_id)
     if rq_job:
         last_project_update_time = timezone.localtime(db_instance.updated_date)
@@ -801,7 +801,7 @@ def import_project(request):
     if 'rq_id' in request.data:
         rq_id = request.data['rq_id']
     else:
-        rq_id = "{}@/api/v1/projects/{}/import".format(request.user, uuid.uuid4())
+        rq_id = "{}@/api/projects/{}/import".format(request.user, uuid.uuid4())
     Serializer = ProjectFileSerializer
     file_field_name = 'project_file'
 
@@ -817,7 +817,7 @@ def import_task(request):
     if 'rq_id' in request.data:
         rq_id = request.data['rq_id']
     else:
-        rq_id = "{}@/api/v1/tasks/{}/import".format(request.user, uuid.uuid4())
+        rq_id = "{}@/api/tasks/{}/import".format(request.user, uuid.uuid4())
     Serializer = TaskFileSerializer
     file_field_name = 'task_file'
 

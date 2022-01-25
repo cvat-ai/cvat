@@ -69,14 +69,14 @@ class _DbTestBase(APITestCase):
 
     def _put_api_v1_task_id_annotations(self, tid, data):
         with ForceLogin(self.admin, self.client):
-            response = self.client.put("/api/v1/tasks/%s/annotations" % tid,
+            response = self.client.put("/api/tasks/%s/annotations" % tid,
                                        data=data, format="json")
 
         return response
 
     def _put_api_v1_job_id_annotations(self, jid, data):
         with ForceLogin(self.admin, self.client):
-            response = self.client.put("/api/v1/jobs/%s/annotations" % jid,
+            response = self.client.put("/api/jobs/%s/annotations" % jid,
                                        data=data, format="json")
 
         return response
@@ -84,7 +84,7 @@ class _DbTestBase(APITestCase):
     def _patch_api_v1_task_id_annotations(self, tid, data, action, user):
         with ForceLogin(user, self.client):
             response = self.client.patch(
-                "/api/v1/tasks/{}/annotations?action={}".format(tid, action),
+                "/api/tasks/{}/annotations?action={}".format(tid, action),
                 data=data, format="json")
 
         return response
@@ -92,22 +92,22 @@ class _DbTestBase(APITestCase):
     def _patch_api_v1_job_id_annotations(self, jid, data, action, user):
         with ForceLogin(user, self.client):
             response = self.client.patch(
-                "/api/v1/jobs/{}/annotations?action={}".format(jid, action),
+                "/api/jobs/{}/annotations?action={}".format(jid, action),
                 data=data, format="json")
 
         return response
 
     def _create_task(self, data, image_data):
         with ForceLogin(self.user, self.client):
-            response = self.client.post('/api/v1/tasks', data=data, format="json")
+            response = self.client.post('/api/tasks', data=data, format="json")
             assert response.status_code == status.HTTP_201_CREATED, response.status_code
             tid = response.data["id"]
 
-            response = self.client.post("/api/v1/tasks/%s/data" % tid,
+            response = self.client.post("/api/tasks/%s/data" % tid,
                 data=image_data)
             assert response.status_code == status.HTTP_202_ACCEPTED, response.status_code
 
-            response = self.client.get("/api/v1/tasks/%s" % tid)
+            response = self.client.get("/api/tasks/%s" % tid)
             task = response.data
 
         return task
@@ -140,7 +140,7 @@ class _DbTestBase(APITestCase):
 
     def _get_jobs(self, task_id):
         with ForceLogin(self.admin, self.client):
-            response = self.client.get("/api/v1/tasks/{}/jobs".format(task_id))
+            response = self.client.get("/api/tasks/{}/jobs".format(task_id))
         return response.data
 
     def _get_request(self, path, user):
@@ -175,22 +175,22 @@ class _DbTestBase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
     def _generate_url_dump_tasks_annotations(self, task_id):
-        return f"/api/v1/tasks/{task_id}/annotations"
+        return f"/api/tasks/{task_id}/annotations"
 
     def _generate_url_upload_tasks_annotations(self, task_id, upload_format_name):
-        return f"/api/v1/tasks/{task_id}/annotations?format={upload_format_name}"
+        return f"/api/tasks/{task_id}/annotations?format={upload_format_name}"
 
     def _generate_url_dump_job_annotations(self, job_id):
-        return f"/api/v1/jobs/{job_id}/annotations"
+        return f"/api/jobs/{job_id}/annotations"
 
     def _generate_url_upload_job_annotations(self, job_id, upload_format_name):
-        return f"/api/v1/jobs/{job_id}/annotations?format={upload_format_name}"
+        return f"/api/jobs/{job_id}/annotations?format={upload_format_name}"
 
     def _generate_url_dump_dataset(self, task_id):
-        return f"/api/v1/tasks/{task_id}/dataset"
+        return f"/api/tasks/{task_id}/dataset"
 
     def _remove_annotations(self, tid):
-        response = self._delete_request(f"/api/v1/tasks/{tid}/annotations", self.admin)
+        response = self._delete_request(f"/api/tasks/{tid}/annotations", self.admin)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         return response
 
@@ -200,7 +200,7 @@ class _DbTestBase(APITestCase):
         return response
 
     def _delete_task(self, tid):
-        response = self._delete_request('/api/v1/tasks/{}'.format(tid), self.admin)
+        response = self._delete_request('/api/tasks/{}'.format(tid), self.admin)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         return response
 

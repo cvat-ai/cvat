@@ -266,7 +266,7 @@ class JobGetAPITestCase(APITestCase):
 
     def _run_api_v1_jobs_id(self, jid, user):
         with ForceLogin(user, self.client):
-            response = self.client.get('/api/v1/jobs/{}'.format(jid))
+            response = self.client.get('/api/jobs/{}'.format(jid))
 
         return response
 
@@ -328,7 +328,7 @@ class JobUpdateAPITestCase(APITestCase):
 
     def _run_api_v1_jobs_id(self, jid, user, data):
         with ForceLogin(user, self.client):
-            response = self.client.put('/api/v1/jobs/{}'.format(jid), data=data, format='json')
+            response = self.client.put('/api/jobs/{}'.format(jid), data=data, format='json')
 
         return response
 
@@ -386,7 +386,7 @@ class JobUpdateAPITestCase(APITestCase):
 class JobPartialUpdateAPITestCase(JobUpdateAPITestCase):
     def _run_api_v1_jobs_id(self, jid, user, data):
         with ForceLogin(user, self.client):
-            response = self.client.patch('/api/v1/jobs/{}'.format(jid), data=data, format='json')
+            response = self.client.patch('/api/jobs/{}'.format(jid), data=data, format='json')
 
         return response
 
@@ -410,7 +410,7 @@ class ServerAboutAPITestCase(APITestCase):
 
     def _run_api_v1_server_about(self, user):
         with ForceLogin(user, self.client):
-            response = self.client.get('/api/v1/server/about')
+            response = self.client.get('/api/server/about')
 
         return response
 
@@ -458,7 +458,7 @@ class ServerExceptionAPITestCase(APITestCase):
         with ForceLogin(user, self.client):
             #pylint: disable=unused-variable
             with mock.patch("cvat.apps.engine.views.clogger") as clogger:
-                response = self.client.post('/api/v1/server/exception',
+                response = self.client.post('/api/server/exception',
                     self.data, format='json')
 
         return response
@@ -506,7 +506,7 @@ class ServerLogsAPITestCase(APITestCase):
         with ForceLogin(user, self.client):
             #pylint: disable=unused-variable
             with mock.patch("cvat.apps.engine.views.clogger") as clogger:
-                response = self.client.post('/api/v1/server/logs',
+                response = self.client.post('/api/server/logs',
                     self.data, format='json')
 
         return response
@@ -550,7 +550,7 @@ class UserAPITestCase(APITestCase):
 class UserListAPITestCase(UserAPITestCase):
     def _run_api_v1_users(self, user):
         with ForceLogin(user, self.client):
-            response = self.client.get('/api/v1/users')
+            response = self.client.get('/api/users')
 
         return response
 
@@ -583,7 +583,7 @@ class UserListAPITestCase(UserAPITestCase):
 class UserSelfAPITestCase(UserAPITestCase):
     def _run_api_v1_users_self(self, user):
         with ForceLogin(user, self.client):
-            response = self.client.get('/api/v1/users/self')
+            response = self.client.get('/api/users/self')
 
         return response
 
@@ -610,7 +610,7 @@ class UserSelfAPITestCase(UserAPITestCase):
 class UserGetAPITestCase(UserAPITestCase):
     def _run_api_v1_users_id(self, user, user_id):
         with ForceLogin(user, self.client):
-            response = self.client.get('/api/v1/users/{}'.format(user_id))
+            response = self.client.get('/api/users/{}'.format(user_id))
 
         return response
 
@@ -652,7 +652,7 @@ class UserGetAPITestCase(UserAPITestCase):
 class UserPartialUpdateAPITestCase(UserAPITestCase):
     def _run_api_v1_users_id(self, user, user_id, data):
         with ForceLogin(user, self.client):
-            response = self.client.patch('/api/v1/users/{}'.format(user_id), data=data)
+            response = self.client.patch('/api/users/{}'.format(user_id), data=data)
 
         return response
 
@@ -698,7 +698,7 @@ class UserPartialUpdateAPITestCase(UserAPITestCase):
 class UserDeleteAPITestCase(UserAPITestCase):
     def _run_api_v1_users_id(self, user, user_id):
         with ForceLogin(user, self.client):
-            response = self.client.delete('/api/v1/users/{}'.format(user_id))
+            response = self.client.delete('/api/users/{}'.format(user_id))
 
         return response
 
@@ -745,7 +745,7 @@ class ProjectListAPITestCase(APITestCase):
 
     def _run_api_v1_projects(self, user, params=""):
         with ForceLogin(user, self.client):
-            response = self.client.get('/api/v1/projects{}'.format(params))
+            response = self.client.get('/api/projects{}'.format(params))
 
         return response
 
@@ -785,7 +785,7 @@ class ProjectGetAPITestCase(APITestCase):
 
     def _run_api_v1_projects_id(self, pid, user):
         with ForceLogin(user, self.client):
-            response = self.client.get('/api/v1/projects/{}'.format(pid))
+            response = self.client.get('/api/projects/{}'.format(pid))
 
         return response
 
@@ -834,7 +834,7 @@ class ProjectDeleteAPITestCase(APITestCase):
 
     def _run_api_v1_projects_id(self, pid, user):
         with ForceLogin(user, self.client):
-            response = self.client.delete('/api/v1/projects/{}'.format(pid), format="json")
+            response = self.client.delete('/api/projects/{}'.format(pid), format="json")
 
         return response
 
@@ -871,7 +871,7 @@ class ProjectCreateAPITestCase(APITestCase):
 
     def _run_api_v1_projects(self, user, data):
         with ForceLogin(user, self.client):
-            response = self.client.post('/api/v1/projects', data=data, format="json")
+            response = self.client.post('/api/projects', data=data, format="json")
 
         return response
 
@@ -965,7 +965,7 @@ class ProjectPartialUpdateAPITestCase(APITestCase):
 
     def _run_api_v1_projects_id(self, pid, user, data):
         with ForceLogin(user, self.client):
-            response = self.client.patch('/api/v1/projects/{}'.format(pid),
+            response = self.client.patch('/api/projects/{}'.format(pid),
                 data=data, format="json")
 
         return response
@@ -1099,7 +1099,7 @@ class ProjectUpdateLabelsAPITestCase(UpdateLabelsAPITestCase):
 
     def _run_api_v1_project_id(self, pid, user, data):
         with ForceLogin(user, self.client):
-            response = self.client.patch('/api/v1/projects/{}'.format(pid),
+            response = self.client.patch('/api/projects/{}'.format(pid),
                 data=data, format="json")
 
         return response
@@ -1143,7 +1143,7 @@ class ProjectListOfTasksAPITestCase(APITestCase):
 
     def _run_api_v1_projects_id_tasks(self, user, pid):
         with ForceLogin(user, self.client):
-            response = self.client.get('/api/v1/projects/{}/tasks'.format(pid))
+            response = self.client.get('/api/projects/{}/tasks'.format(pid))
 
         return response
 
@@ -1319,16 +1319,16 @@ class ProjectBackupAPITestCase(APITestCase):
     @classmethod
     def _create_tasks(cls, project):
         def _create_task(task_data, media_data):
-            response = cls.client.post('/api/v1/tasks', data=task_data, format="json")
+            response = cls.client.post('/api/tasks', data=task_data, format="json")
             assert response.status_code == status.HTTP_201_CREATED
             tid = response.data["id"]
 
             for media in media_data.values():
                 if isinstance(media, io.BytesIO):
                     media.seek(0)
-            response = cls.client.post("/api/v1/tasks/{}/data".format(tid), data=media_data)
+            response = cls.client.post("/api/tasks/{}/data".format(tid), data=media_data)
             assert response.status_code == status.HTTP_202_ACCEPTED
-            response = cls.client.get("/api/v1/tasks/{}".format(tid))
+            response = cls.client.get("/api/tasks/{}".format(tid))
             data_id = response.data["data"]
             cls.tasks.append({
                 "id": tid,
@@ -1467,19 +1467,19 @@ class ProjectBackupAPITestCase(APITestCase):
 
     def _run_api_v1_projects_id_export(self, pid, user, query_params=""):
         with ForceLogin(user, self.client):
-            response = self.client.get('/api/v1/projects/{}/backup?{}'.format(pid, query_params), format="json")
+            response = self.client.get('/api/projects/{}/backup?{}'.format(pid, query_params), format="json")
 
         return response
 
     def _run_api_v1_projects_import(self, user, data):
         with ForceLogin(user, self.client):
-            response = self.client.post('/api/v1/projects/backup', data=data, format="multipart")
+            response = self.client.post('/api/projects/backup', data=data, format="multipart")
 
         return response
 
     def _run_api_v1_projects_id(self, pid, user):
         with ForceLogin(user, self.client):
-            response = self.client.get('/api/v1/projects/{}'.format(pid), format="json")
+            response = self.client.get('/api/projects/{}'.format(pid), format="json")
 
         return response.data
 
@@ -1577,13 +1577,13 @@ class ProjectExportAPITestCase(APITestCase):
     def _run_api_v1_project_id_export(self, pid, user, annotation_format=""):
         with ForceLogin(user, self.client):
             response = self.client.get(
-                '/api/v1/projects/{}/annotations?format={}'.format(pid, annotation_format),
+                '/api/projects/{}/annotations?format={}'.format(pid, annotation_format),
                 format="json")
         return response
 
     def _run_api_v1_tasks_id_delete(self, tid, user):
         with ForceLogin(user, self.client):
-            response = self.client.delete('/api/v1/tasks/{}'.format(tid), format="json")
+            response = self.client.delete('/api/tasks/{}'.format(tid), format="json")
         return response
 
     def _check_tasks_count(self, project, expected_result):
@@ -1660,16 +1660,16 @@ class ProjectImportExportAPITestCase(APITestCase):
         self.tasks = []
 
         def _create_task(task_data, media_data):
-            response = self.client.post('/api/v1/tasks', data=task_data, format="json")
+            response = self.client.post('/api/tasks', data=task_data, format="json")
             assert response.status_code == status.HTTP_201_CREATED
             tid = response.data["id"]
 
             for media in media_data.values():
                 if isinstance(media, io.BytesIO):
                     media.seek(0)
-            response = self.client.post("/api/v1/tasks/{}/data".format(tid), data=media_data)
+            response = self.client.post("/api/tasks/{}/data".format(tid), data=media_data)
             assert response.status_code == status.HTTP_202_ACCEPTED
-            response = self.client.get("/api/v1/tasks/{}".format(tid))
+            response = self.client.get("/api/tasks/{}".format(tid))
             data_id = response.data["data"]
             self.tasks.append({
                 "id": tid,
@@ -1701,7 +1701,7 @@ class ProjectImportExportAPITestCase(APITestCase):
         self.projects = []
 
         def _create_project(project_data):
-            response = self.client.post('/api/v1/projects', data=project_data, format="json")
+            response = self.client.post('/api/projects', data=project_data, format="json")
             assert response.status_code == status.HTTP_201_CREATED
             self.projects.append(response.data)
 
@@ -1735,17 +1735,17 @@ class ProjectImportExportAPITestCase(APITestCase):
 
     def _run_api_v1_projects_id_dataset_export(self, pid, user, query_params=""):
         with ForceLogin(user, self.client):
-            response = self.client.get("/api/v1/projects/{}/dataset?{}".format(pid, query_params), format="json")
+            response = self.client.get("/api/projects/{}/dataset?{}".format(pid, query_params), format="json")
         return response
 
     def _run_api_v1_projects_id_dataset_import(self, pid, user, data, f):
         with ForceLogin(user, self.client):
-            response = self.client.post("/api/v1/projects/{}/dataset?format={}".format(pid, f),  data=data, format="multipart")
+            response = self.client.post("/api/projects/{}/dataset?format={}".format(pid, f),  data=data, format="multipart")
         return response
 
     def _run_api_v1_projects_id_dataset_import_status(self, pid, user):
         with ForceLogin(user, self.client):
-            response = self.client.get("/api/v1/projects/{}/dataset?action=import_status".format(pid), format="json")
+            response = self.client.get("/api/projects/{}/dataset?action=import_status".format(pid), format="json")
         return response
 
     def test_api_v1_projects_id_export_import(self):
@@ -1795,7 +1795,7 @@ class TaskListAPITestCase(APITestCase):
 
     def _run_api_v1_tasks(self, user, params=""):
         with ForceLogin(user, self.client):
-            response = self.client.get('/api/v1/tasks{}'.format(params))
+            response = self.client.get('/api/tasks{}'.format(params))
 
         return response
 
@@ -1835,7 +1835,7 @@ class TaskGetAPITestCase(APITestCase):
 
     def _run_api_v1_tasks_id(self, tid, user):
         with ForceLogin(user, self.client):
-            response = self.client.get('/api/v1/tasks/{}'.format(tid))
+            response = self.client.get('/api/tasks/{}'.format(tid))
 
         return response
 
@@ -1893,7 +1893,7 @@ class TaskDeleteAPITestCase(APITestCase):
 
     def _run_api_v1_tasks_id(self, tid, user):
         with ForceLogin(user, self.client):
-            response = self.client.delete('/api/v1/tasks/{}'.format(tid), format="json")
+            response = self.client.delete('/api/tasks/{}'.format(tid), format="json")
 
         return response
 
@@ -1941,7 +1941,7 @@ class TaskUpdateAPITestCase(APITestCase):
 
     def _run_api_v1_tasks_id(self, tid, user, data):
         with ForceLogin(user, self.client):
-            response = self.client.put('/api/v1/tasks/{}'.format(tid),
+            response = self.client.put('/api/tasks/{}'.format(tid),
                 data=data, format="json")
 
         return response
@@ -2041,7 +2041,7 @@ class TaskUpdateAPITestCase(APITestCase):
 class TaskPartialUpdateAPITestCase(TaskUpdateAPITestCase):
     def _run_api_v1_tasks_id(self, tid, user, data):
         with ForceLogin(user, self.client):
-            response = self.client.patch('/api/v1/tasks/{}'.format(tid),
+            response = self.client.patch('/api/tasks/{}'.format(tid),
                 data=data, format="json")
 
         return response
@@ -2132,7 +2132,7 @@ class TaskUpdateLabelsAPITestCase(UpdateLabelsAPITestCase):
 
     def _run_api_v1_task_id(self, tid, user, data):
         with ForceLogin(user, self.client):
-            response = self.client.patch('/api/v1/tasks/{}'.format(tid),
+            response = self.client.patch('/api/tasks/{}'.format(tid),
                 data=data, format="json")
 
         return response
@@ -2300,14 +2300,14 @@ class TaskMoveAPITestCase(APITestCase):
 
     def _run_api_v1_tasks_id(self, tid, data):
         with ForceLogin(self.admin, self.client):
-            response = self.client.patch('/api/v1/tasks/{}'.format(tid),
+            response = self.client.patch('/api/tasks/{}'.format(tid),
                 data=data, format="json")
 
         return response
 
     def _run_api_v1_job_id_annotation(self, jid, data):
         with ForceLogin(self.admin, self.client):
-            response = self.client.patch('/api/v1/jobs/{}/annotations?action=create'.format(jid),
+            response = self.client.patch('/api/jobs/{}/annotations?action=create'.format(jid),
                 data=data, format="json")
 
         return response
@@ -2369,7 +2369,7 @@ class TaskCreateAPITestCase(APITestCase):
 
     def _run_api_v1_tasks(self, user, data):
         with ForceLogin(user, self.client):
-            response = self.client.post('/api/v1/tasks', data=data, format="json")
+            response = self.client.post('/api/tasks', data=data, format="json")
 
         return response
 
@@ -2698,16 +2698,16 @@ class TaskImportExportAPITestCase(APITestCase):
         self.tasks = []
 
         def _create_task(task_data, media_data):
-            response = self.client.post('/api/v1/tasks', data=task_data, format="json")
+            response = self.client.post('/api/tasks', data=task_data, format="json")
             assert response.status_code == status.HTTP_201_CREATED
             tid = response.data["id"]
 
             for media in media_data.values():
                 if isinstance(media, io.BytesIO):
                     media.seek(0)
-            response = self.client.post("/api/v1/tasks/{}/data".format(tid), data=media_data)
+            response = self.client.post("/api/tasks/{}/data".format(tid), data=media_data)
             assert response.status_code == status.HTTP_202_ACCEPTED
-            response = self.client.get("/api/v1/tasks/{}".format(tid))
+            response = self.client.get("/api/tasks/{}".format(tid))
             data_id = response.data["data"]
             self.tasks.append({
                 "id": tid,
@@ -2764,19 +2764,19 @@ class TaskImportExportAPITestCase(APITestCase):
 
     def _run_api_v1_tasks_id_export(self, tid, user, query_params=""):
         with ForceLogin(user, self.client):
-            response = self.client.get('/api/v1/tasks/{}/backup?{}'.format(tid, query_params), format="json")
+            response = self.client.get('/api/tasks/{}/backup?{}'.format(tid, query_params), format="json")
 
         return response
 
     def _run_api_v1_tasks_id_import(self, user, data):
         with ForceLogin(user, self.client):
-            response = self.client.post('/api/v1/tasks/backup', data=data, format="multipart")
+            response = self.client.post('/api/tasks/backup', data=data, format="multipart")
 
         return response
 
     def _run_api_v1_tasks_id(self, tid, user):
         with ForceLogin(user, self.client):
-            response = self.client.get('/api/v1/tasks/{}'.format(tid), format="json")
+            response = self.client.get('/api/tasks/{}'.format(tid), format="json")
 
         return response.data
 
@@ -3136,22 +3136,22 @@ class TaskDataAPITestCase(APITestCase):
 
     def _run_api_v1_tasks_id_data_post(self, tid, user, data):
         with ForceLogin(user, self.client):
-            response = self.client.post('/api/v1/tasks/{}/data'.format(tid),
+            response = self.client.post('/api/tasks/{}/data'.format(tid),
                 data=data)
 
         return response
 
     def _create_task(self, user, data):
         with ForceLogin(user, self.client):
-            response = self.client.post('/api/v1/tasks', data=data, format="json")
+            response = self.client.post('/api/tasks', data=data, format="json")
         return response
 
     def _get_task(self, user, tid):
         with ForceLogin(user, self.client):
-            return self.client.get("/api/v1/tasks/{}".format(tid))
+            return self.client.get("/api/tasks/{}".format(tid))
 
     def _run_api_v1_task_id_data_get(self, tid, user, data_type, data_quality=None, data_number=None):
-        url = '/api/v1/tasks/{}/data?type={}'.format(tid, data_type)
+        url = '/api/tasks/{}/data?type={}'.format(tid, data_type)
         if data_quality is not None:
             url += '&quality={}'.format(data_quality)
         if data_number is not None:
@@ -4015,7 +4015,7 @@ class JobAnnotationAPITestCase(APITestCase):
             }]
 
         with ForceLogin(owner, self.client):
-            response = self.client.post('/api/v1/tasks', data=data, format="json")
+            response = self.client.post('/api/tasks', data=data, format="json")
             assert response.status_code == status.HTTP_201_CREATED
             tid = response.data["id"]
 
@@ -4041,13 +4041,13 @@ class JobAnnotationAPITestCase(APITestCase):
                     "image_quality": 100,
                 }
 
-            response = self.client.post("/api/v1/tasks/{}/data".format(tid), data=images)
+            response = self.client.post("/api/tasks/{}/data".format(tid), data=images)
             assert response.status_code == status.HTTP_202_ACCEPTED
 
-            response = self.client.get("/api/v1/tasks/{}".format(tid))
+            response = self.client.get("/api/tasks/{}".format(tid))
             task = response.data
 
-            response = self.client.get("/api/v1/tasks/{}/jobs".format(tid))
+            response = self.client.get("/api/tasks/{}/jobs".format(tid))
             jobs = response.data
 
         return (task, jobs)
@@ -4075,20 +4075,20 @@ class JobAnnotationAPITestCase(APITestCase):
 
     def _put_api_v1_jobs_id_data(self, jid, user, data):
         with ForceLogin(user, self.client):
-            response = self.client.put("/api/v1/jobs/{}/annotations".format(jid),
+            response = self.client.put("/api/jobs/{}/annotations".format(jid),
                 data=data, format="json")
 
         return response
 
     def _get_api_v1_jobs_id_data(self, jid, user):
         with ForceLogin(user, self.client):
-            response = self.client.get("/api/v1/jobs/{}/annotations".format(jid))
+            response = self.client.get("/api/jobs/{}/annotations".format(jid))
 
         return response
 
     def _delete_api_v1_jobs_id_data(self, jid, user):
         with ForceLogin(user, self.client):
-            response = self.client.delete("/api/v1/jobs/{}/annotations".format(jid),
+            response = self.client.delete("/api/jobs/{}/annotations".format(jid),
             format="json")
 
         return response
@@ -4096,7 +4096,7 @@ class JobAnnotationAPITestCase(APITestCase):
     def _patch_api_v1_jobs_id_data(self, jid, user, action, data):
         with ForceLogin(user, self.client):
             response = self.client.patch(
-                "/api/v1/jobs/{}/annotations?action={}".format(jid, action),
+                "/api/jobs/{}/annotations?action={}".format(jid, action),
                 data=data, format="json")
 
         return response
@@ -4535,20 +4535,20 @@ class JobAnnotationAPITestCase(APITestCase):
 class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
     def _put_api_v1_tasks_id_annotations(self, pk, user, data):
         with ForceLogin(user, self.client):
-            response = self.client.put("/api/v1/tasks/{}/annotations".format(pk),
+            response = self.client.put("/api/tasks/{}/annotations".format(pk),
                 data=data, format="json")
 
         return response
 
     def _get_api_v1_tasks_id_annotations(self, pk, user):
         with ForceLogin(user, self.client):
-            response = self.client.get("/api/v1/tasks/{}/annotations".format(pk))
+            response = self.client.get("/api/tasks/{}/annotations".format(pk))
 
         return response
 
     def _delete_api_v1_tasks_id_annotations(self, pk, user):
         with ForceLogin(user, self.client):
-            response = self.client.delete("/api/v1/tasks/{}/annotations".format(pk),
+            response = self.client.delete("/api/tasks/{}/annotations".format(pk),
             format="json")
 
         return response
@@ -4556,14 +4556,14 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
     def _dump_api_v1_tasks_id_annotations(self, pk, user, query_params=""):
         with ForceLogin(user, self.client):
             response = self.client.get(
-                "/api/v1/tasks/{0}/annotations{1}".format(pk, query_params))
+                "/api/tasks/{0}/annotations{1}".format(pk, query_params))
 
         return response
 
     def _patch_api_v1_tasks_id_annotations(self, pk, user, action, data):
         with ForceLogin(user, self.client):
             response = self.client.patch(
-                "/api/v1/tasks/{}/annotations?action={}".format(pk, action),
+                "/api/tasks/{}/annotations?action={}".format(pk, action),
                 data=data, format="json")
 
         return response
@@ -4571,7 +4571,7 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
     def _upload_api_v1_tasks_id_annotations(self, pk, user, data, query_params=""):
         with ForceLogin(user, self.client):
             response = self.client.put(
-                path="/api/v1/tasks/{0}/annotations?{1}".format(pk, query_params),
+                path="/api/tasks/{0}/annotations?{1}".format(pk, query_params),
                 data=data,
                 format="multipart",
                 )
@@ -4581,7 +4581,7 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
     def _get_formats(self, user):
         with ForceLogin(user, self.client):
             response = self.client.get(
-                path="/api/v1/server/annotation/formats"
+                path="/api/server/annotation/formats"
             )
         return response
 
@@ -5772,7 +5772,7 @@ class ServerShareAPITestCase(APITestCase):
     def _run_api_v1_server_share(self, user, directory):
         with ForceLogin(user, self.client):
             response = self.client.get(
-                '/api/v1/server/share?directory={}'.format(directory))
+                '/api/server/share?directory={}'.format(directory))
 
         return response
 
@@ -5878,20 +5878,20 @@ class ServerShareDifferentTypesAPITestCase(APITestCase):
     def _run_api_v1_server_share(self, directory):
         with ForceLogin(self.user, self.client):
             response = self.client.get(
-                '/api/v1/server/share?directory={}'.format(directory))
+                '/api/server/share?directory={}'.format(directory))
 
         return response
 
     def _create_task(self, data, image_data):
         with ForceLogin(self.user, self.client):
-            response = self.client.post('/api/v1/tasks', data=data, format="json")
+            response = self.client.post('/api/tasks', data=data, format="json")
             self.assertEqual(response.status_code, status.HTTP_201_CREATED)
             tid = response.data["id"]
 
-            response = self.client.post("/api/v1/tasks/%s/data" % tid,
+            response = self.client.post("/api/tasks/%s/data" % tid,
                                         data=image_data)
             self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
-            response = self.client.get("/api/v1/tasks/%s" % tid)
+            response = self.client.get("/api/tasks/%s" % tid)
             task = response.data
 
         return task
@@ -5933,7 +5933,7 @@ class ServerShareDifferentTypesAPITestCase(APITestCase):
         image_data.update(remote_files)
         # create task with server
         task = self._create_task(task, image_data)
-        response = self._get_request("/api/v1/tasks/%s/data/meta" % task["id"])
+        response = self._get_request("/api/tasks/%s/data/meta" % task["id"])
         self.assertEqual(len(response.data["frames"]), images_count)
 
 
@@ -5966,15 +5966,15 @@ class TaskAnnotation2DContext(APITestCase):
 
     def _create_task(self, data, image_data):
         with ForceLogin(self.user, self.client):
-            response = self.client.post('/api/v1/tasks', data=data, format="json")
+            response = self.client.post('/api/tasks', data=data, format="json")
             assert response.status_code == status.HTTP_201_CREATED, response.status_code
             tid = response.data["id"]
 
-            response = self.client.post("/api/v1/tasks/%s/data" % tid,
+            response = self.client.post("/api/tasks/%s/data" % tid,
                                             data=image_data)
             assert response.status_code == status.HTTP_202_ACCEPTED, response.status_code
 
-            response = self.client.get("/api/v1/tasks/%s" % tid)
+            response = self.client.get("/api/tasks/%s" % tid)
             task = response.data
 
         return task
@@ -6008,7 +6008,7 @@ class TaskAnnotation2DContext(APITestCase):
                 task = self._create_task(self.task, img_data)
                 task_id = task["id"]
 
-                response = self._get_request("/api/v1/tasks/%s/data/meta" % task_id, self.admin)
+                response = self._get_request("/api/tasks/%s/data/meta" % task_id, self.admin)
                 for frame in response.data["frames"]:
                     self.assertEqual(context_img_data[frame["name"]], frame["has_related_context"])
 
@@ -6028,5 +6028,5 @@ class TaskAnnotation2DContext(APITestCase):
                 "type": "context_image",
                 "number": 0
             }
-            response = self._get_request_with_data("/api/v1/tasks/%s/data" % task_id, data, self.admin)
+            response = self._get_request_with_data("/api/tasks/%s/data" % task_id, data, self.admin)
             self.assertEqual(response.status_code, status.HTTP_200_OK)

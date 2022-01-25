@@ -16,7 +16,7 @@ from PIL import Image
 from rest_framework import status
 from rest_framework.test import APIClient, APITestCase
 
-LAMBDA_ROOT_PATH = '/api/v1/lambda'
+LAMBDA_ROOT_PATH = '/api/lambda'
 LAMBDA_FUNCTIONS_PATH = f'{LAMBDA_ROOT_PATH}/functions'
 LAMBDA_REQUESTS_PATH = f'{LAMBDA_ROOT_PATH}/requests'
 
@@ -154,15 +154,15 @@ class LambdaTestCase(APITestCase):
 
     def _create_task(self, data, image_data):
         with ForceLogin(self.admin, self.client):
-            response = self.client.post('/api/v1/tasks', data=data, format="json")
+            response = self.client.post('/api/tasks', data=data, format="json")
             assert response.status_code == status.HTTP_201_CREATED, response.status_code
             tid = response.data["id"]
 
-            response = self.client.post("/api/v1/tasks/%s/data" % tid,
+            response = self.client.post("/api/tasks/%s/data" % tid,
                 data=image_data)
             assert response.status_code == status.HTTP_202_ACCEPTED, response.status_code
 
-            response = self.client.get("/api/v1/tasks/%s" % tid)
+            response = self.client.get("/api/tasks/%s" % tid)
             task = response.data
 
         return task

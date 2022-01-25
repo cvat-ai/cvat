@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -38,7 +38,7 @@ context('Check error сannot read property at saving job', () => {
         });
 
         it('Save job and go to previous frame at saving job', () => {
-            cy.intercept('PATCH', '/api/v1/jobs/**').as('saveJob');
+            cy.intercept('PATCH', '/api/jobs/**').as('saveJob');
             cy.saveJob();
             cy.get('body').type('d');
             cy.wait('@saveJob').its('response.statusCode').should('equal', 200);
