@@ -12,7 +12,7 @@ import Tabs from 'antd/lib/tabs';
 import Button from 'antd/lib/button';
 import Progress from 'antd/lib/progress';
 import notification from 'antd/lib/notification';
-import message, { MessageType } from 'antd/lib/message';
+import message from 'antd/lib/message';
 
 import { OpenCVIcon } from 'icons';
 import { Canvas, convertShapesForInteractor } from 'cvat-canvas-wrapper';
@@ -402,26 +402,6 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
         }
     };
 
-    private applyTracking = (shape: TrackedShape, objectState: any):void => {
-        const imageData = this.getCanvasImageData();
-
-        const stateIsRelevant =
-            objectState.points.length === shape.shapePoints.length &&
-            objectState.points.every((coord: number, i: number) => coord === shape.shapePoints[i]);
-        if (!stateIsRelevant) {
-            shape.trackerModel.reinit(objectState.points);
-            shape.shapePoints = objectState.points;
-        }
-
-        const { updated, points } = shape.trackerModel.update(imageData);
-        if (updated) {
-            objectState.points = points;
-            objectState.save().then(() => {
-                shape.shapePoints = points;
-            });
-        }
-    };
-
     private async checkTrackedStates(prevProps: Props): Promise<void> {
         const {
             frame,
@@ -429,7 +409,6 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
             fetchAnnotations,
         } = this.props;
         const { trackedShapes } = this.state;
-        const hideMessages: MessageType[] = [];
         if (prevProps.frame !== frame && trackedShapes.length) {
             type AccumulatorType = {
                 [index: string]: TrackedShape[];
@@ -443,47 +422,60 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
                     return acc;
                 }, {},
             );
-            try {
-                for (const trackerID of Object.keys(trackingData)) {
-                    const numOfObjects = trackingData[trackerID].length;
-                    const hideMessage = message.loading(
-                        `${trackerID}: ${numOfObjects} ${
-                            numOfObjects > 1 ? 'objects are' : 'object is'
-                        } being tracked..`,
-                        0,
+            for (const trackerID of Object.keys(trackingData)) {
+                const numOfObjects = trackingData[trackerID].length;
+                const hideMessage = message.loading(
+                    `${trackerID}: ${numOfObjects} ${
+                        numOfObjects > 1 ? 'objects are' : 'object is'
+                    } being tracked..`,
+                    0,
+                );
+                for (let i = 0; i < numOfObjects; i++) {
+                    const shape = trackedShapes[i];
+                    const [objectState] = objectStates.filter(
+                        (_state: any): boolean => _state.clientID === shape.clientID,
                     );
-                    hideMessages.push(hideMessage);
-                    for (let i = 0; i < numOfObjects; i++) {
-                        const shape = trackedShapes[i];
-                        const [objectState] = objectStates.filter(
-                            (_state: any): boolean => _state.clientID === shape.clientID,
-                        );
-                        if (
-                            !objectState ||
+                    if (
+                        !objectState ||
                                 objectState.keyframes.prev !== frame - 1 ||
                                 objectState.keyframes.last >= frame
-                        ) {
-                            continue;
-                        }
-                        setTimeout(this.applyTracking.bind(this, shape, objectState));
+                    ) {
+                        continue;
                     }
+                    const imageData = this.getCanvasImageData();
                     setTimeout(() => {
-                        if (hideMessage) hideMessage();
+                        try {
+                            const stateIsRelevant =
+                                    objectState.points.length === shape.shapePoints.length &&
+                                    objectState.points.every(
+                                        (coord: number, index: number) => coord === shape.shapePoints[index],
+                                    );
+                            if (!stateIsRelevant) {
+                                shape.trackerModel.reinit(objectState.points);
+                                shape.shapePoints = objectState.points;
+                            }
+                            const { updated, points } = shape.trackerModel.update(imageData);
+                            if (updated) {
+                                objectState.points = points;
+                                objectState.save().then(() => {
+                                    shape.shapePoints = points;
+                                });
+                            }
+                        } catch (error) {
+                            notification.error({
+                                message: 'Tracking error',
+                                description: error.toString(),
+                            });
+                        }
                     });
                 }
-            } catch (error) {
-                notification.error({
-                    message: 'Tracking error',
-                    description: error.toString(),
-                });
-            } finally {
                 setTimeout(() => {
-                    hideMessages.forEach((hideMessage: MessageType) => {
-                        if (hideMessage) hideMessage();
-                    });
-                    fetchAnnotations();
+                    if (hideMessage) hideMessage();
                 });
             }
+            setTimeout(() => {
+                fetchAnnotations();
+            });
         }
     }
 
