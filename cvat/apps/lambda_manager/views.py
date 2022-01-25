@@ -553,9 +553,9 @@ def return_response(success_code=status.HTTP_200_OK):
     return wrap_response
 
 @extend_schema_view(retrieve=extend_schema(
-    summary='Method returns the information about the function', tags=['lambda'], versions=['v1']))
+    summary='Method returns the information about the function', tags=['lambda'], versions=['1.0']))
 @extend_schema_view(list=extend_schema(
-    summary='Method returns a list of functions', tags=['lambda'], versions=['v1']))
+    summary='Method returns a list of functions', tags=['lambda'], versions=['1.0']))
 class FunctionViewSet(viewsets.ViewSet):
     lookup_value_regex = '[a-zA-Z0-9_.-]+'
     lookup_field = 'func_id'
@@ -589,14 +589,14 @@ class FunctionViewSet(viewsets.ViewSet):
         return lambda_func.invoke(db_task, request.data)
 
 @extend_schema_view(retrieve=extend_schema(
-    summary='Method returns the status of the request', tags=['lambda'], versions=['v1']))
+    summary='Method returns the status of the request', tags=['lambda'], versions=['1.0']))
 @extend_schema_view(list=extend_schema(
-    summary='Method returns a list of requests', tags=['lambda'], versions=['v1']))
+    summary='Method returns a list of requests', tags=['lambda'], versions=['1.0']))
 #TODO
 @extend_schema_view(create=extend_schema(
-    summary='Method calls the function', tags=['lambda'], versions=['v1']))
+    summary='Method calls the function', tags=['lambda'], versions=['1.0']))
 @extend_schema_view(delete=extend_schema(
-    summary='Method cancels the request', tags=['lambda'], versions=['v1']))
+    summary='Method cancels the request', tags=['lambda'], versions=['1.0']))
 class RequestViewSet(viewsets.ViewSet):
     @return_response()
     def list(self, request):

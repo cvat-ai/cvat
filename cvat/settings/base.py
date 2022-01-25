@@ -520,7 +520,7 @@ TUS_DEFAULT_CHUNK_SIZE = 104857600  # 100 mb
 SPECTACULAR_SETTINGS = {
     'TITLE': 'CVAT REST API',
     'DESCRIPTION': 'REST API for Computer Vision Annotation Tool (CVAT)',
-    'VERSION': 'v1',
+    'VERSION': '1.0',
     'CONTACT': {
         'name': 'Nikita Manovich',
         'url': 'https://github.com/nmanovic',
@@ -532,7 +532,7 @@ SPECTACULAR_SETTINGS = {
     },
     'SERVE_PUBLIC': True,
     'SCHEMA_COERCE_PATH_PK_SUFFIX': True,
-    'SCHEMA_PATH_PREFIX': r'/api/v[0-9]',
+    'SCHEMA_PATH_PREFIX': '/api',
     'SCHEMA_PATH_PREFIX_TRIM': True,
     'SERVE_PERMISSIONS': ['rest_framework.permissions.IsAuthenticated'],
     'SERVERS': [
