@@ -5,7 +5,7 @@
 /// <reference types="cypress" />
 
 // The test is disabled for Firefox because the "Cypress Real Events" plugin work only in the chromium-based browser.
-context('Paste labels from another task.', { browser: '!firefox' }, () => {
+context('Paste labels from one task to another.', { browser: '!firefox' }, () => {
     const caseID = '117';
     const task = {
         name: `Case ${caseID}`,
@@ -14,7 +14,7 @@ context('Paste labels from another task.', { browser: '!firefox' }, () => {
         attrValue: 'Oak',
         nameSecond: `Case ${caseID} second`,
         labelSecond: 'Car',
-        attrNameSecons: 'Color',
+        attrNameSecond: 'Color',
         attrValueSecond: 'Red',
     };
 
@@ -38,15 +38,15 @@ context('Paste labels from another task.', { browser: '!firefox' }, () => {
         cy.goToTaskList();
         cy.createAnnotationTask(task.name, task.label, task.attrName, task.attrValue, archiveName);
         cy.createAnnotationTask(
-            task.nameSecond, task.labelSecond, task.attrNameSecons, task.attrValueSecond, archiveName,
+            task.nameSecond, task.labelSecond, task.attrNameSecond, task.attrValueSecond, archiveName,
         );
     });
 
     after(() => {
-        cy.goToProjectsList();
-        cy.deleteProject(projectName, projectID);
-        cy.goToTaskList();
-        cy.deleteTask(task.name);
+        cy.logout();
+        cy.getAuthKey().then((authKey) => {
+            cy.deleteTasks(authKey, [task.name, task.nameSecond]);
+        });
     });
 
     describe(`Testing "Case ${caseID}"`, () => {
@@ -59,10 +59,10 @@ context('Paste labels from another task.', { browser: '!firefox' }, () => {
                 .realPress(['ControlLeft', 'c']);
         });
 
-        it('Creating a project with copying labels from the task.', () => {
-            cy.goToProjectsList();
-            cy.get('.cvat-create-project-button').click();
-            cy.get('#name').type(projectName);
+        it('Paste the labels to another task instead of existing.', () => {
+            cy.goToTaskList();
+            cy.openTask(task.nameSecond);
+            cy.contains('.cvat-constructor-viewer-item', task.labelSecond).should('exist');
             cy.contains('[role="tab"]', 'Raw').click();
             cy.get('.cvat-raw-labels-viewer')
                 .focus()
@@ -72,17 +72,20 @@ context('Paste labels from another task.', { browser: '!firefox' }, () => {
                 expect(raw.text()).not.contain('"id":');
             });
             cy.contains('button', 'Done').click();
-            cy.contains('[role="tab"]', 'Constructor').click();
-            cy.contains('.cvat-constructor-viewer-item', task.label).should('exist');
-            cy.contains('button', 'Submit').click();
-            cy.get('.cvat-notification-create-project-success').should('exist').find('[data-icon="close"]').click();
-            cy.goToProjectsList();
-            cy.openProject(projectName);
-            getProjectID();
-            cy.contains('[role="tab"]', 'Raw').click();
+            cy.get('.cvat-modal-confirm-remove-existing-labels').should('be.visible').within(() => {
+                cy.get('.cvat-modal-confirm-content-remove-existing-labels').should('have.text', task.labelSecond);
+                cy.get('.cvat-modal-confirm-content-remove-existing-attributes')
+                    .should('have.text', task.attrNameSecond);
+                cy.contains('button', 'Delete existing data').click();
+            });
+            cy.get('.cvat-modal-confirm-remove-existing-labels').should('not.exist');
             cy.get('.cvat-raw-labels-viewer').then((raw) => {
                 expect(raw.text()).contain('"id":');
             });
+            cy.contains('[role="tab"]', 'Constructor').click();
+            cy.get('.cvat-constructor-viewer-item').should('have.length', 1);
+            cy.contains('.cvat-constructor-viewer-item', task.label).should('exist');
+            cy.contains('.cvat-constructor-viewer-item', task.labelSecond).should('not.exist');
         });
     });
 });

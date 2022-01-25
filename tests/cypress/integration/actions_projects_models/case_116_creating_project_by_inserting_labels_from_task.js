@@ -5,7 +5,7 @@
 /// <reference types="cypress" />
 
 // The test is disabled for Firefox because the "Cypress Real Events" plugin work only in the chromium-based browser.
-context('Paste labels from another task.', { browser: '!firefox' }, () => {
+context('Creating a project by inserting labels from a task.', { browser: '!firefox' }, () => {
     const caseID = '116';
     const task = {
         name: `Case ${caseID}`,
@@ -27,13 +27,6 @@ context('Paste labels from another task.', { browser: '!firefox' }, () => {
     const archivePath = `cypress/fixtures/${archiveName}`;
     const imagesFolder = `cypress/fixtures/${imageFileName}`;
     const directoryToArchive = imagesFolder;
-    let projectID = '';
-
-    function getProjectID() {
-        cy.url().then((url) => {
-            projectID = Number(url.split('/').slice(-1)[0].split('?')[0]);
-        });
-    }
 
     before(() => {
         cy.visit('/');
@@ -45,14 +38,15 @@ context('Paste labels from another task.', { browser: '!firefox' }, () => {
     });
 
     after(() => {
-        cy.goToProjectsList();
-        cy.deleteProject(projectName, projectID);
-        cy.goToTaskList();
-        cy.deleteTask(task.name);
+        cy.logout();
+        cy.getAuthKey().then((authKey) => {
+            cy.deleteTasks(authKey, [task.name]);
+            cy.deleteProjects(authKey, [projectName]);
+        });
     });
 
     describe(`Testing "Case ${caseID}"`, () => {
-        it('Copying a label from a task via the raw editor.', () => {
+        it('Copying a labels from the task from the raw editor.', () => {
             cy.openTask(task.name);
             cy.contains('[role="tab"]', 'Raw').click();
             cy.get('.cvat-raw-labels-viewer')
@@ -80,7 +74,6 @@ context('Paste labels from another task.', { browser: '!firefox' }, () => {
             cy.get('.cvat-notification-create-project-success').should('exist').find('[data-icon="close"]').click();
             cy.goToProjectsList();
             cy.openProject(projectName);
-            getProjectID();
             cy.contains('[role="tab"]', 'Raw').click();
             cy.get('.cvat-raw-labels-viewer').then((raw) => {
                 expect(raw.text()).contain('"id":');
