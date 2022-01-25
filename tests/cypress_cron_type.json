@@ -21,6 +21,6 @@
     "actions_projects_models/*.js",
     "actions_users/*.js",
     "email_system/*.js",
-    "remove_users_tasks_projects.js"
+    "remove_users_tasks_projects_organizations.js"
   ]
 }

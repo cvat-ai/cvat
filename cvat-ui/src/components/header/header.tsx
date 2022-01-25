@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -266,11 +266,11 @@ function HeaderContainer(props: Props): JSX.Element {
                 icon={organizationsFetching ? <LoadingOutlined /> : <TeamOutlined />}
             >
                 {currentOrganization ? (
-                    <Menu.Item icon={<SettingOutlined />} key='open_organization' onClick={() => history.push('/organization')}>
+                    <Menu.Item icon={<SettingOutlined />} key='open_organization' onClick={() => history.push('/organization')} className='cvat-header-menu-open-organization'>
                         Settings
                     </Menu.Item>
                 ) : null}
-                <Menu.Item icon={<PlusOutlined />} key='create_organization' onClick={() => history.push('/organizations/create')}>Create</Menu.Item>
+                <Menu.Item icon={<PlusOutlined />} key='create_organization' onClick={() => history.push('/organizations/create')} className='cvat-header-menu-create-organization'>Create</Menu.Item>
                 { organizationsList.length > 5 ? (
                     <Menu.Item
                         key='switch_organization'
@@ -315,7 +315,8 @@ function HeaderContainer(props: Props): JSX.Element {
                         <Menu.Divider />
                         <Menu.ItemGroup>
                             <Menu.Item
-                                className={!currentOrganization ? 'cvat-header-menu-active-organization-item' : ''}
+                                className={!currentOrganization ?
+                                    'cvat-header-menu-active-organization-item' : 'cvat-header-menu-organization-item'}
                                 key='$personal'
                                 onClick={resetOrganization}
                             >
@@ -324,7 +325,7 @@ function HeaderContainer(props: Props): JSX.Element {
                             {organizationsList.map((organization: any): JSX.Element => (
                                 <Menu.Item
                                     className={currentOrganization?.slug === organization.slug ?
-                                        'cvat-header-menu-active-organization-item' : ''}
+                                        'cvat-header-menu-active-organization-item' : 'cvat-header-menu-organization-item'}
                                     key={organization.slug}
                                     onClick={() => setNewOrganization(organization)}
                                 >
@@ -475,13 +476,15 @@ function HeaderContainer(props: Props): JSX.Element {
                         <UserOutlined className='cvat-header-dropdown-icon' />
                         <Row>
                             <Col span={24}>
-                                <Text strong>
+                                <Text strong className='cvat-header-menu-user-dropdown-user'>
                                     {user.username.length > 14 ? `${user.username.slice(0, 10)} ...` : user.username}
                                 </Text>
                             </Col>
                             { currentOrganization ? (
                                 <Col span={24}>
-                                    <Text>{currentOrganization.slug}</Text>
+                                    <Text className='cvat-header-menu-user-dropdown-organization'>
+                                        {currentOrganization.slug}
+                                    </Text>
                                 </Col>
                             ) : null }
                         </Row>

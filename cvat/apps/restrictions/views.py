@@ -16,6 +16,7 @@ class RestrictionsViewSet(viewsets.ViewSet):
     serializer_class = None
     permission_classes = [AllowAny]
     authentication_classes = []
+    iam_organization_field = None
 
     # To get nice documentation about ServerViewSet actions it is necessary
     # to implement the method. By default, ViewSet doesn't provide it.

@@ -121,9 +121,10 @@ context('Filtering, sorting jobs.', () => {
 
     after(() => {
         cy.logout();
-        cy.deletingRegisteredUsers([secondUserName]);
-        cy.login();
-        cy.deleteTask(taskName);
+        cy.getAuthKey().then((authKey) => {
+            cy.deleteUsers(authKey, [secondUserName]);
+            cy.deleteTasks(authKey, [taskName]);
+        });
     });
 
     describe(`Testing "${labelName}".`, () => {
