@@ -6,16 +6,13 @@
 from django.urls import path, include
 from . import views
 from rest_framework import routers
-#from rest_framework.versioning import NamespaceVersioning
 
 from django.views.generic import RedirectView
 from django.conf import settings
 from cvat.apps.restrictions.views import RestrictionsViewSet
-from cvat.apps.iam.decorators import login_required
 from cvat.apps.training.views import PredictView
 
 from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
-
 
 router = routers.DefaultRouter(trailing_slash=False)
 router.register('projects', views.ProjectViewSet)
@@ -35,7 +32,7 @@ urlpatterns = [
          query_string=True)),
 
     # documentation for API
-    path('api/schema/', SpectacularAPIView.as_view(api_version='v1'), name='schema'), # versioning_class=NamespaceVersioning
+    path('api/schema/', SpectacularAPIView.as_view(api_version='1.0'), name='schema'),
     path('api/swagger/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger'),
     path('api/docs/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
 

@@ -12,4 +12,3 @@ router.register('invitations', InvitationViewSet)
 router.register('memberships', MembershipViewSet)
 
 urlpatterns = router.urls
-#urlpatterns = [path('', include((router.urls, 'organizations'), namespace='v1'))]
