@@ -1887,7 +1887,11 @@
     };
 
     Job.prototype.frames.preview.implementation = async function () {
-        const frameData = await getPreview(this.taskId);
+        if (!this.jobID || !this.taskId) {
+            return '';
+        }
+
+        const frameData = await getPreview(this.taskId, this.jobID);
         return frameData;
     };
 
@@ -2220,6 +2224,10 @@
     };
 
     Task.prototype.frames.preview.implementation = async function () {
+        if (!this.id) {
+            return '';
+        }
+
         const frameData = await getPreview(this.id);
         return frameData;
     };
