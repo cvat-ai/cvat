@@ -106,12 +106,13 @@ export default class RawViewer extends React.PureComponent<Props> {
         if (deletedLabels.length || deletedAttributes.length) {
             Modal.confirm({
                 title: 'You are going to remove existing labels/attributes',
+                className: 'cvat-modal-confirm-remove-existing-labels',
                 content: (
                     <>
                         {deletedLabels.length ? (
                             <Paragraph>
                                 Following labels are going to be removed:
-                                <div>
+                                <div className='cvat-modal-confirm-content-remove-existing-labels'>
                                     {deletedLabels
                                         .map((_label: Label) => <Tag color={_label.color}>{_label.name}</Tag>)}
                                 </div>
@@ -121,7 +122,7 @@ export default class RawViewer extends React.PureComponent<Props> {
                         {deletedAttributes.length ? (
                             <Paragraph>
                                 Following attributes are going to be removed:
-                                <div>
+                                <div className='cvat-modal-confirm-content-remove-existing-attributes'>
                                     {deletedAttributes.map((_attr: Attribute) => <Tag>{_attr.name}</Tag>)}
                                 </div>
                             </Paragraph>

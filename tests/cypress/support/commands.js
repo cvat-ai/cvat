@@ -224,7 +224,9 @@ Cypress.Commands.add(
 );
 
 Cypress.Commands.add('openTask', (taskName, projectSubsetFieldValue) => {
-    cy.contains('strong', taskName).parents('.cvat-tasks-list-item').contains('a', 'Open').click({ force: true });
+    cy.contains('strong', new RegExp(`^${taskName}$`))
+        .parents('.cvat-tasks-list-item')
+        .contains('a', 'Open').click({ force: true });
     cy.get('.cvat-task-details').should('exist');
     if (projectSubsetFieldValue) {
         cy.get('.cvat-project-subset-field').find('input').should('have.attr', 'value', projectSubsetFieldValue);
