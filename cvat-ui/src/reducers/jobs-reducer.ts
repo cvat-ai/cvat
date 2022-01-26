@@ -6,12 +6,10 @@ import { JobsActions, JobsActionTypes } from 'actions/jobs-actions';
 import { JobsState } from './interfaces';
 
 const defaultState: JobsState = {
-    initialized: false,
     fetching: false,
     count: 0,
     query: {
         page: 1,
-        id: null,
         state: null,
         stage: null,
         assignee: null,
@@ -36,7 +34,6 @@ export default (state: JobsState = defaultState, action: JobsActions): JobsState
             return {
                 ...state,
                 fetching: false,
-                initialized: true,
                 current: action.payload.jobs,
                 previews: action.payload.previews,
             };
@@ -45,7 +42,6 @@ export default (state: JobsState = defaultState, action: JobsActions): JobsState
             return {
                 ...state,
                 fetching: false,
-                initialized: true,
             };
         }
         default: {

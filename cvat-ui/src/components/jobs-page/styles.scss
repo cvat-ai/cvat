@@ -1,0 +1,103 @@
+// Copyright (C) 2022 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
+
+@import '../../base.scss';
+
+.cvat-jobs-page {
+    padding-top: $grid-unit-size * 2;
+    padding-bottom: $grid-unit-size;
+    height: 100%;
+    width: 100%;
+
+    .cvat-jobs-page-top-bar {
+        > div:nth-child(1) {
+            > div:nth-child(1) {
+                width: 100%;
+
+                > div:nth-child(1) {
+                    display: flex;
+
+                    span {
+                        margin-right: $grid-unit-size;
+                    }
+                }
+            }
+        }
+    }
+
+    > div:nth-child(1) {
+        padding-bottom: $grid-unit-size;
+
+        div > {
+            span {
+                color: $text-color;
+            }
+        }
+    }
+
+    .cvat-job-page-list-item {
+        width: 25%;
+        border-width: $grid-unit-size / 2;
+        display: flex;
+        flex-direction: column;
+
+        .ant-card-cover {
+            flex: 1;
+            height: 0;
+            margin: 0;
+        }
+
+        &:hover {
+            .cvat-job-page-list-item-id {
+                opacity: 1;
+                padding: 2px 32px 2px 4px;
+            }
+
+            .cvat-job-page-list-item-dimension {
+                opacity: 1;
+            }
+        }
+
+        .cvat-jobs-page-job-item-card-preview {
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            object-fit: cover;
+            cursor: pointer;
+        }
+
+        .cvat-job-page-list-item-dimension {
+            position: absolute;
+            top: 0;
+            right: 0;
+            margin: 8px;
+            width: 32px;
+            background: white;
+            border-radius: 4px;
+            text-align: center;
+            opacity: 0.5;
+            padding: 2px 4px 2px 4px;
+        }
+
+        .cvat-job-page-list-item-id {
+            position: absolute;
+            top: 0;
+            left: 0;
+            margin: 8px 8px 8px 0px;
+            width: fit-content;
+            background: white;
+            border-radius: 0 4px 4px 0px;
+            padding: 2px 8px 2px 4px;
+            opacity: 0.5;
+            transition: 0.15s all ease;
+            box-shadow: $box-shadow-base;
+        }
+    }
+
+    .cvat-jobs-page-list {
+        display: flex;
+        flex-wrap: wrap;
+    }
+}

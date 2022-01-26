@@ -35,7 +35,7 @@ export const getJobsAsync = (query: JobsQuery): ThunkAction => async (dispatch) 
         }
 
         dispatch(jobsActions.getJobs(filteredQuery));
-        const jobs = cvat.jobs.get(filteredQuery);
+        const jobs = await cvat.jobs.get(filteredQuery);
         const previewPromises = jobs.map((job: any) => (job as any).frames.preview().catch(() => ''));
         dispatch(jobsActions.getJobsSuccess(jobs, await Promise.all(previewPromises)));
     } catch (error) {

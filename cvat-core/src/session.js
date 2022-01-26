@@ -1887,7 +1887,7 @@
     };
 
     Job.prototype.frames.preview.implementation = async function () {
-        if (!this.jobID || !this.taskId) {
+        if (this.id === null || this.taskId === null) {
             return '';
         }
 
@@ -2224,7 +2224,7 @@
     };
 
     Task.prototype.frames.preview.implementation = async function () {
-        if (!this.id) {
+        if (this.id === null) {
             return '';
         }
 

@@ -80,7 +80,6 @@ export interface Task {
 
 export interface JobsQuery {
     page: number;
-    id: number | null;
     assignee: string | null;
     stage: 'annotation' | 'validation' | 'acceptance' | null;
     state: 'new' | 'in progress' | 'rejected' | 'completed' | null;
@@ -88,7 +87,6 @@ export interface JobsQuery {
 }
 
 export interface JobsState {
-    initialized: boolean;
     query: JobsQuery;
     fetching: boolean;
     count: number;
