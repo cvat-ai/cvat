@@ -2,13 +2,12 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { Tracking, TrackingResult } from './opencv-interfaces';
+import { TrackerModel, TrackingResult } from './opencv-interfaces';
 
-export type TrackerMIL = Tracking;
+export type TrackerMIL = TrackerModel;
 
 export default class TrackerMILImplementation implements TrackerMIL {
-    public name:string;
-    public type:string;
+    public name: string;
     private prevImageData: ImageData | null;
     private cv:any;
     private trackerMIL:any;
@@ -16,9 +15,8 @@ export default class TrackerMILImplementation implements TrackerMIL {
     constructor(cv:any) {
         this.cv = cv;
         this.trackerMIL = new cv.TrackerMIL();
-        this.name = 'TrackerMIL';
-        this.type = 'opencv_tracker_mil';
         this.prevImageData = null;
+        this.name = 'TrackerMil';
     }
 
     public init(src: ImageData, points: number[]): void {

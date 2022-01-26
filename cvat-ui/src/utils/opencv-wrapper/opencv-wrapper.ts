@@ -4,8 +4,9 @@
 
 import getCore from 'cvat-core-wrapper';
 import HistogramEqualizationImplementation, { HistogramEqualization } from './histogram-equalization';
-import TrackerMImplementation, { TrackerMIL } from './tracker-mil';
+import TrackerMImplementation from './tracker-mil';
 import IntelligentScissorsImplementation, { IntelligentScissors } from './intelligent-scissors';
+import { OpenCVTracker } from './opencv-interfaces';
 
 const core = getCore();
 const baseURL = core.config.backendAPI.slice(0, -7);
@@ -23,7 +24,7 @@ export interface ImgProc {
 }
 
 export interface Tracking {
-    trackerMIL: () => TrackerMIL;
+    trackerMIL: OpenCVTracker;
 }
 
 export class OpenCVWrapper {
@@ -144,7 +145,12 @@ export class OpenCVWrapper {
             throw new Error('Need to initialize OpenCV first');
         }
         return {
-            trackerMIL: () => new TrackerMImplementation(this.cv),
+            trackerMIL: {
+                model: () => new TrackerMImplementation(this.cv),
+                name: 'TrackerMIL',
+                description: 'TrackerMIL',
+                type: 'opencv_tracker_mil',
+            },
         };
     }
 }

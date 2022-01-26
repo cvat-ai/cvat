@@ -12,10 +12,16 @@ export interface TrackingResult{
     points: any[];
 }
 
-export interface Tracking{
+export interface TrackerModel {
     name: string;
-    type: string;
     init: (src: ImageData, points: number[]) => void;
     reinit: (points: number[]) => void;
     update: (src: ImageData) => TrackingResult;
+}
+
+export interface OpenCVTracker{
+    name: string,
+    description: string,
+    type: string;
+    model: () => TrackerModel,
 }

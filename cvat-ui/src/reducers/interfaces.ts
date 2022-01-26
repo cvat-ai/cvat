@@ -6,7 +6,7 @@ import { Canvas3d } from 'cvat-canvas3d/src/typescript/canvas3d';
 import { Canvas, RectDrawingMethod, CuboidDrawingMethod } from 'cvat-canvas-wrapper';
 import { IntelligentScissors } from 'utils/opencv-wrapper/intelligent-scissors';
 import { KeyMap } from 'utils/mousetrap-react';
-import { Tracking } from 'utils/opencv-wrapper/opencv-interfaces';
+import { OpenCVTracker } from 'utils/opencv-wrapper/opencv-interfaces';
 
 export type StringObject = {
     [index: string]: string;
@@ -269,7 +269,7 @@ export interface Model {
     };
 }
 
-export type OpenCVTool = IntelligentScissors | Tracking;
+export type OpenCVTool = IntelligentScissors | OpenCVTracker;
 
 export interface ToolsBlockerState {
     algorithmsLocked?: boolean;

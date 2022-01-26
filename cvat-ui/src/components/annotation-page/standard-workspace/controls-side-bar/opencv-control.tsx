@@ -11,6 +11,7 @@ import Text from 'antd/lib/typography/Text';
 import Tabs from 'antd/lib/tabs';
 import Button from 'antd/lib/button';
 import Progress from 'antd/lib/progress';
+import Select from 'antd/lib/select';
 import notification from 'antd/lib/notification';
 import message from 'antd/lib/message';
 
@@ -28,15 +29,15 @@ import {
     updateAnnotationsAsync,
     createAnnotationsAsync,
     changeFrameAsync,
+    switchNavigationBlocked as switchNavigationBlockedAction,
 } from 'actions/annotation-actions';
 import LabelSelector from 'components/label-selector/label-selector';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import ApproximationAccuracy, {
     thresholdFromAccuracy,
 } from 'components/annotation-page/standard-workspace/controls-side-bar/approximation-accuracy';
-import { ImageProcessing, Tracking } from 'utils/opencv-wrapper/opencv-interfaces';
+import { ImageProcessing, OpenCVTracker, TrackerModel } from 'utils/opencv-wrapper/opencv-interfaces';
 import { switchToolsBlockerState } from 'actions/settings-actions';
-import { TrackerMIL } from 'utils/opencv-wrapper/tracker-mil';
 import withVisibilityHandling from './handle-popover-visibility';
 
 interface Props {
@@ -60,12 +61,13 @@ interface DispatchToProps {
     fetchAnnotations(): void;
     changeFrame(toFrame: number, fillBuffer?: boolean, frameStep?: number, forceUpdate?: boolean):void;
     onSwitchToolsBlockerState(toolsBlockerState: ToolsBlockerState):void;
+    switchNavigationBlocked(navigationBlocked: boolean): void;
 }
 
 interface TrackedShape {
     clientID: number;
     shapePoints: number[];
-    trackerModel: Tracking;
+    trackerModel: TrackerModel;
 }
 
 interface State {
@@ -77,6 +79,8 @@ interface State {
     activeImageModifiers: ImageModifier[];
     mode: 'interaction' | 'tracking';
     trackedShapes: TrackedShape[];
+    activeTracker: OpenCVTracker | null;
+    trackers: OpenCVTracker[]
 }
 
 interface ImageModifier {
@@ -127,11 +131,11 @@ const mapDispatchToProps = {
     createAnnotations: createAnnotationsAsync,
     changeFrame: changeFrameAsync,
     onSwitchToolsBlockerState: switchToolsBlockerState,
+    switchNavigationBlocked: switchNavigationBlockedAction,
 };
 
 class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps, State> {
     private activeTool: IntelligentScissors | null;
-    private activeTracker: TrackerMIL | null;
     private latestPoints: number[];
     private canvasForceUpdateWasEnabled: boolean;
 
@@ -139,7 +143,6 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
         super(props);
         const { labels, defaultApproxPolyAccuracy } = props;
         this.activeTool = null;
-        this.activeTracker = null;
         this.latestPoints = [];
         this.canvasForceUpdateWasEnabled = false;
 
@@ -152,6 +155,8 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
             activeImageModifiers: [],
             mode: 'interaction',
             trackedShapes: [],
+            activeTracker: null,
+            trackers: [],
         };
     }
 
@@ -299,18 +304,19 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
             return;
         }
 
-        const { activeLabelID, trackedShapes } = this.state;
+        const { activeLabelID, trackedShapes, activeTracker } = this.state;
         const [label] = jobInstance.labels.filter((_label: any): boolean => _label.id === activeLabelID);
 
         const { isDone, shapesUpdated } = (e as CustomEvent).detail;
-        if (!isDone || !shapesUpdated) {
+        if (!isDone || !shapesUpdated || !activeTracker) {
             return;
         }
 
         try {
             const { points } = (e as CustomEvent).detail.shapes[0];
             const imageData = this.getCanvasImageData();
-            this.activeTracker?.init(imageData, points);
+            const trackerModel = activeTracker.model();
+            trackerModel.init(imageData, points);
             const state = new core.classes.ObjectState({
                 shapeType: ShapeType.RECTANGLE,
                 objectType: ObjectType.TRACK,
@@ -320,7 +326,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
                 frame,
                 occluded: false,
                 attributes: {},
-                descriptions: [`Trackable (${this.activeTracker?.name})`],
+                descriptions: [`Trackable (${activeTracker.name})`],
             });
             const [clientID] = await jobInstance.annotations.put([state]);
             this.setState({
@@ -328,8 +334,8 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
                     ...trackedShapes,
                     {
                         clientID,
+                        trackerModel,
                         shapePoints: points,
-                        trackerModel: this.activeTracker as Tracking,
                     },
                 ],
             });
@@ -402,11 +408,46 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
         }
     };
 
-    private async checkTrackedStates(prevProps: Props): Promise<void> {
+    private applyTracking = (imageData: ImageData, shape: TrackedShape,
+        objectState:any):Promise<void> => new Promise((resolve, reject) => {
+        setTimeout(() => {
+            try {
+                const stateIsRelevant =
+                    objectState.points.length === shape.shapePoints.length &&
+                    objectState.points.every(
+                        (coord: number, index: number) => coord === shape.shapePoints[index],
+                    );
+                if (!stateIsRelevant) {
+                    shape.trackerModel.reinit(objectState.points);
+                    shape.shapePoints = objectState.points;
+                }
+                const { updated, points } = shape.trackerModel.update(imageData);
+                if (updated) {
+                    objectState.points = points;
+                    objectState.save().then(() => {
+                        shape.shapePoints = points;
+                    });
+                }
+                resolve();
+            } catch (error) {
+                reject(error);
+            }
+        });
+    });
+
+    private setActiveTracker = (value: string): void => {
+        const { trackers } = this.state;
+        this.setState({
+            activeTracker: trackers.filter((tracker: OpenCVTracker) => tracker.name === value)[0],
+        });
+    };
+
+    private checkTrackedStates(prevProps: Props): void {
         const {
             frame,
             states: objectStates,
             fetchAnnotations,
+            switchNavigationBlocked,
         } = this.props;
         const { trackedShapes } = this.state;
         if (prevProps.frame !== frame && trackedShapes.length) {
@@ -415,6 +456,17 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
             };
             const trackingData = trackedShapes.reduce<AccumulatorType>(
                 (acc: AccumulatorType, trackedShape: TrackedShape): AccumulatorType => {
+                    const [clientState] = objectStates.filter(
+                        (_state: any): boolean => _state.clientID === trackedShape.clientID,
+                    );
+                    if (
+                        !clientState ||
+                        clientState.keyframes.prev !== frame - 1 ||
+                        clientState.keyframes.last >= frame
+                    ) {
+                        return acc;
+                    }
+
                     if (!acc[trackedShape.trackerModel.name]) {
                         acc[trackedShape.trackerModel.name] = [];
                     }
@@ -422,60 +474,48 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
                     return acc;
                 }, {},
             );
-            for (const trackerID of Object.keys(trackingData)) {
-                const numOfObjects = trackingData[trackerID].length;
-                const hideMessage = message.loading(
-                    `${trackerID}: ${numOfObjects} ${
-                        numOfObjects > 1 ? 'objects are' : 'object is'
-                    } being tracked..`,
-                    0,
-                );
-                for (let i = 0; i < numOfObjects; i++) {
-                    const shape = trackedShapes[i];
-                    const [objectState] = objectStates.filter(
-                        (_state: any): boolean => _state.clientID === shape.clientID,
+            switchNavigationBlocked(true);
+            try {
+                for (const trackerID of Object.keys(trackingData)) {
+                    const numOfObjects = trackingData[trackerID].length;
+                    const hideMessage = message.loading(
+                        `${trackerID}: ${numOfObjects} ${
+                            numOfObjects > 1 ? 'objects are' : 'object is'
+                        } being tracked..`,
+                        0,
                     );
-                    if (
-                        !objectState ||
-                                objectState.keyframes.prev !== frame - 1 ||
-                                objectState.keyframes.last >= frame
-                    ) {
-                        continue;
-                    }
                     const imageData = this.getCanvasImageData();
-                    setTimeout(() => {
-                        try {
-                            const stateIsRelevant =
-                                    objectState.points.length === shape.shapePoints.length &&
-                                    objectState.points.every(
-                                        (coord: number, index: number) => coord === shape.shapePoints[index],
-                                    );
-                            if (!stateIsRelevant) {
-                                shape.trackerModel.reinit(objectState.points);
-                                shape.shapePoints = objectState.points;
-                            }
-                            const { updated, points } = shape.trackerModel.update(imageData);
-                            if (updated) {
-                                objectState.points = points;
-                                objectState.save().then(() => {
-                                    shape.shapePoints = points;
-                                });
-                            }
-                        } catch (error) {
-                            notification.error({
-                                message: 'Tracking error',
-                                description: error.toString(),
-                            });
+                    for (let i = 0; i < numOfObjects; i++) {
+                        const shape = trackedShapes[i];
+                        const [objectState] = objectStates.filter(
+                            (_state: any): boolean => _state.clientID === shape.clientID,
+                        );
+                        if (
+                            !objectState ||
+                                        objectState.keyframes.prev !== frame - 1 ||
+                                        objectState.keyframes.last >= frame
+                        ) {
+                            continue;
                         }
+
+                        this.applyTracking(imageData, shape, objectState)
+                            .catch((error) => {
+                                notification.error({
+                                    message: 'Tracking error',
+                                    description: error.toString(),
+                                });
+                            });
+                    }
+                    setTimeout(() => {
+                        if (hideMessage) hideMessage();
                     });
                 }
+            } finally {
                 setTimeout(() => {
-                    if (hideMessage) hideMessage();
+                    fetchAnnotations();
+                    switchNavigationBlocked(false);
                 });
             }
-            setTimeout(() => {
-                fetchAnnotations();
-            });
         }
     }
 
@@ -621,32 +661,86 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
     }
 
     private renderTrackingContent(): JSX.Element {
-        const { activeLabelID } = this.state;
-        const { canvasInstance, onInteractionStart } = this.props;
+        const { activeLabelID, trackers, activeTracker } = this.state;
+        const { labels, canvasInstance, onInteractionStart } = this.props;
+        if (!trackers.length) {
+            return (
+                <Row justify='center' align='middle' style={{ marginTop: '5px' }}>
+                    <Col>
+                        <Text type='warning' className='cvat-text-color'>
+                            No available trackers found
+                        </Text>
+                    </Col>
+                </Row>
+            );
+        }
         return (
-            <Row justify='start'>
-                <Col>
-                    <Button
-                        className={this.imageModifier('histogram') ? 'cvat-opencv-image-tool-active' : ''}
-                        onClick={() => {
-                            this.activeTracker = openCVWrapper.tracking.trackerMIL();
-                            this.setState({ mode: 'tracking' });
-                            canvasInstance.cancel();
-                            canvasInstance.interact({
-                                shapeType: 'rectangle',
-                                enabled: true,
-                            });
+            <>
+                <Row justify='start'>
+                    <Col>
+                        <Text className='cvat-text-color'>Label</Text>
+                    </Col>
+                </Row>
+                <Row justify='center'>
+                    <Col span={24}>
+                        <LabelSelector
+                            style={{ width: '100%' }}
+                            labels={labels}
+                            value={activeLabelID}
+                            onChange={(value: any) => this.setState({ activeLabelID: value.id })}
+                        />
+                    </Col>
+                </Row>
+                <Row justify='start'>
+                    <Col>
+                        <Text className='cvat-text-color'>Tracker</Text>
+                    </Col>
+                </Row>
+                <Row align='middle' justify='center'>
+                    <Col span={24}>
+                        <Select
+                            style={{ width: '100%' }}
+                            defaultValue={trackers[0].name}
+                            onChange={this.setActiveTracker}
+                        >
+                            {trackers.map(
+                                (tracker: OpenCVTracker): JSX.Element => (
+                                    <Select.Option value={tracker.name} title={tracker.description} key={tracker.name}>
+                                        {tracker.name}
+                                    </Select.Option>
+                                ),
+                            )}
+                        </Select>
+                    </Col>
+                </Row>
+                <Row align='middle' justify='end'>
+                    <Col>
+                        <Button
+                            type='primary'
+                            // loading={fetching}
+                            className='cvat-tools-track-button'
+                            // disabled={!activeTracker || fetching || frame === jobInstance.stopFrame}
+                            onClick={() => {
+                                this.setState({ mode: 'tracking' });
 
-                            onInteractionStart(this.activeTracker, activeLabelID);
-                            // const { onSwitchToolsBlockerState } = this.props;
-                            // onSwitchToolsBlockerState({ buttonVisible: false });
-                        }}
-                    >
-                        <AreaChartOutlined />
-                    </Button>
+                                if (activeTracker) {
+                                    canvasInstance.cancel();
+                                    canvasInstance.interact({
+                                        shapeType: 'rectangle',
+                                        enabled: true,
+                                    });
 
-                </Col>
-            </Row>
+                                    onInteractionStart(activeTracker as OpenCVTracker, activeLabelID);
+                                    const { onSwitchToolsBlockerState } = this.props;
+                                    onSwitchToolsBlockerState({ buttonVisible: false });
+                                }
+                            }}
+                        >
+                            Track
+                        </Button>
+                    </Col>
+                </Row>
+            </>
         );
     }
 
@@ -690,7 +784,12 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
                                             await openCVWrapper.initialize((progress: number) => {
                                                 this.setState({ initializationProgress: progress });
                                             });
-                                            this.setState({ libraryInitialized: true });
+                                            const trackers = Object.values(openCVWrapper.tracking);
+                                            this.setState({
+                                                libraryInitialized: true,
+                                                activeTracker: trackers[0],
+                                                trackers,
+                                            });
                                         } catch (error) {
                                             notification.error({
                                                 description: error.toString(),
@@ -725,7 +824,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
 
     public render(): JSX.Element {
         const { isActivated, canvasInstance, labels } = this.props;
-        const { libraryInitialized, approxPolyAccuracy } = this.state;
+        const { libraryInitialized, approxPolyAccuracy, mode } = this.state;
         const dynamcPopoverPros = isActivated ?
             {
                 overlayStyle: {
@@ -764,7 +863,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
                 >
                     <Icon {...dynamicIconProps} component={OpenCVIcon} />
                 </CustomPopover>
-                {isActivated ? (
+                {isActivated && mode !== 'tracking' ? (
                     <ApproximationAccuracy
                         approxPolyAccuracy={approxPolyAccuracy}
                         onChange={(value: number) => {
