@@ -109,7 +109,6 @@ INSTALLED_APPS = [
     'compressor',
     'sendfile',
     'dj_pagination',
-    'revproxy',
     'rest_framework',
     'rest_framework.authtoken',
     'django_filters',
@@ -420,11 +419,6 @@ LOGGING = {
         'cvat.client': {
             'handlers': [],
             'level': os.getenv('DJANGO_LOG_LEVEL', 'DEBUG'),
-        },
-
-        'revproxy': {
-            'handlers': ['console', 'server_file'],
-            'level': os.getenv('DJANGO_LOG_LEVEL', 'DEBUG')
         },
         'django': {
             'handlers': ['console', 'server_file'],
