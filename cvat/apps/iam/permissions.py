@@ -252,6 +252,27 @@ class ServerPermission(OpenPolicyAgentPermission):
             'share': 'list:content'
         }.get(self.view.action, None)
 
+class LogViewerPermission(OpenPolicyAgentPermission):
+    @classmethod
+    def create(cls, request, view, obj):
+        permissions = []
+        if view.basename == 'analytics':
+            self = cls(request, view, obj)
+            permissions.append(self)
+
+        return permissions
+
+    def __init__(self, request, view, obj):
+        super().__init__(request, view, obj)
+        self.url = settings.IAM_OPA_DATA_URL + '/analytics/allow'
+        self.payload['input']['scope'] = self.scope
+
+    @property
+    def scope(self):
+        return {
+            'access': 'view',
+        }.get(self.view.action, None)
+
 class UserPermission(OpenPolicyAgentPermission):
     @classmethod
     def create(cls, request, view, obj):

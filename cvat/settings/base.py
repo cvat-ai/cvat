@@ -21,6 +21,7 @@ import shutil
 import subprocess
 import mimetypes
 from corsheaders.defaults import default_headers
+from distutils.util import strtobool
 
 mimetypes.add_type("application/wasm", ".wasm", True)
 
@@ -127,7 +128,7 @@ INSTALLED_APPS = [
     'cvat.apps.dataset_repo',
     'cvat.apps.restrictions',
     'cvat.apps.lambda_manager',
-    'cvat.apps.opencv'
+    'cvat.apps.opencv',
 ]
 
 SITE_ID = 1
@@ -185,7 +186,7 @@ REST_AUTH_SERIALIZERS = {
     'PASSWORD_RESET_SERIALIZER': 'cvat.apps.iam.serializers.PasswordResetSerializerEx',
 }
 
-if os.getenv('DJANGO_LOG_VIEWER_HOST'):
+if strtobool(os.getenv('CVAT_ANALYTICS', '0')):
     INSTALLED_APPS += ['cvat.apps.log_viewer']
 
 MIDDLEWARE = [
@@ -453,14 +454,6 @@ RESTRICTIONS = {
 
     # this setting reduces task visibility to owner and assignee only
     'reduce_task_visibility': False,
-
-    # allow access to analytics component to users with the following roles
-    'analytics_access': (
-        'engine.role.observer',
-        'engine.role.annotator',
-        'engine.role.user',
-        'engine.role.admin',
-        ),
 }
 
 # http://www.grantjenks.com/docs/diskcache/tutorial.html#djangocache

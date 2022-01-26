@@ -44,7 +44,7 @@ services:
       - traefik.enable=true
       - traefik.http.services.cvat.loadbalancer.server.port=8080
       - traefik.http.routers.cvat.rule=Host(`${CVAT_HOST:-localhost}`) &&
-        PathPrefix(`/api/`, `/git/`, `/opencv/`, `/analytics/`, `/static/`, `/admin`, `/documentation/`, `/django-rq`)
+        PathPrefix(`/api/`, `/git/`, `/opencv/`, `/static/`, `/admin`, `/documentation/`, `/django-rq`)
       - traefik.http.routers.cvat.entrypoints=web
     volumes:
       - cvat_data:/home/django/data
@@ -75,6 +75,7 @@ services:
       - '--providers.docker.exposedByDefault=false'
       - '--providers.docker.network=cvat'
       - '--entryPoints.web.address=:8080'
+      - '--providers.file.directory=/etc/traefik/rules'
     # Uncomment to get Traefik dashboard
     #   - "--entryPoints.dashboard.address=:8090"
     #   - "--api.dashboard=true"
