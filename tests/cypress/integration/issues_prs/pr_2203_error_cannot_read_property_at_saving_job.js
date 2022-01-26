@@ -11,7 +11,7 @@ context('Check error сannot read property at saving job', () => {
     const createRectangleShape2Points = {
         points: 'By 2 Points',
         type: 'Shape',
-        labelName: labelName,
+        labelName,
         firstX: 100,
         firstY: 100,
         secondX: 300,
