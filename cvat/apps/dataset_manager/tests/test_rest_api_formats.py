@@ -16,6 +16,7 @@ import itertools
 
 from datumaro.components.dataset import Dataset
 from datumaro.util.test_utils import compare_datasets, TestDir
+from django.conf import settings
 from django.contrib.auth.models import Group, User
 from PIL import Image
 from rest_framework import status
@@ -85,14 +86,16 @@ def generate_video_file(filename, width=1280, height=720, duration=1, fps=25, co
 
 
 class ForceLogin:
-    def __init__(self, user, client):
+    def __init__(self, user, client, version=settings.BACKEND_VERSIONS.V1_0):
         self.user = user
         self.client = client
+        self.version = version
 
     def __enter__(self):
         if self.user:
             self.client.force_login(self.user,
                 backend='django.contrib.auth.backends.ModelBackend')
+        self.client.credentials(HTTP_ACCEPT=f'application/vnd.cvat+json; version={self.version}')
 
         return self
 
@@ -100,9 +103,13 @@ class ForceLogin:
         if self.user:
             self.client.logout()
 
+class VersionedAPIClient(APIClient):
+    def __init__(self, version=settings.BACKEND_VERSIONS.V1_0):
+        super().__init__(HTTP_ACCEPT=f'application/vnd.cvat+json; version={version}')
+
 class _DbTestBase(APITestCase):
     def setUp(self):
-        self.client = APIClient()
+        self.client = VersionedAPIClient()
 
     @classmethod
     def setUpTestData(cls):

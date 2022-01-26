@@ -1,4 +1,4 @@
-# Copyright (C) 2020 Intel Corporation
+# Copyright (C) 2020-2022 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -7,10 +7,13 @@ from rest_framework.test import APITestCase, APIClient
 from rest_framework import status
 from django.conf import settings
 
+class VersionedAPIClient(APIClient):
+    def __init__(self, version=settings.BACKEND_VERSIONS.V1_0):
+        super().__init__(HTTP_ACCEPT=f'application/vnd.cvat+json; version={version}')
 
 class UserAgreementsTest(APITestCase):
     def setUp(self):
-        self.client = APIClient()
+        self.client = VersionedAPIClient()
         self.user_agreements = settings.RESTRICTIONS['user_agreements']
         settings.RESTRICTIONS['user_agreements'] = [
             {

@@ -21,6 +21,7 @@ import shutil
 import subprocess
 import mimetypes
 from corsheaders.defaults import default_headers
+from enum import Enum
 
 mimetypes.add_type("application/wasm", ".wasm", True)
 
@@ -132,6 +133,12 @@ INSTALLED_APPS = [
 
 SITE_ID = 1
 
+class BACKEND_VERSIONS(str, Enum):
+    V1_0 = '1.0'
+
+    def __str__(self):
+        return self.value
+
 REST_FRAMEWORK = {
     'DEFAULT_PARSER_CLASSES': [
         'rest_framework.parsers.JSONParser',
@@ -159,7 +166,7 @@ REST_FRAMEWORK = {
         # of all possible methods isn't readable).
         'rest_framework.versioning.AcceptHeaderVersioning',
     # Need to add 'api-docs' here as a workaround for include_docs_urls.
-    'ALLOWED_VERSIONS': ('1.0', 'api-docs'),
+    'ALLOWED_VERSIONS': (BACKEND_VERSIONS.V1_0, 'api-docs'),
     'DEFAULT_PAGINATION_CLASS':
         'cvat.apps.engine.pagination.CustomPagination',
     'PAGE_SIZE': 10,

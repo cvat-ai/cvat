@@ -2,9 +2,10 @@
 #
 # SPDX-License-Identifier: MIT
 
+from django.conf import settings
 from django.urls import reverse
 from rest_framework import status
-from rest_framework.test import APITestCase
+from rest_framework.test import APITestCase, APIClient
 from rest_framework.authtoken.models import Token
 from django.test import override_settings
 from cvat.apps.iam.urls import urlpatterns as iam_url_patterns
@@ -19,12 +20,18 @@ urlpatterns = iam_url_patterns + [
          name='account_email_verification_sent'),
 ]
 
+class VersionedAPIClient(APIClient):
+    def __init__(self, version=settings.BACKEND_VERSIONS.V1_0):
+        super().__init__(HTTP_ACCEPT=f'application/vnd.cvat+json; version={version}')
 
 class UserRegisterAPITestCase(APITestCase):
 
     user_data = {'first_name': 'test_first', 'last_name': 'test_last', 'username': 'test_username',
                  'email': 'test_email@test.com', 'password1': '$Test357Test%', 'password2': '$Test357Test%',
                  'confirmations': []}
+
+    def setUp(self):
+        self.client = VersionedAPIClient()
 
     def _run_api_v1_user_register(self, data):
         url = reverse('rest_register')

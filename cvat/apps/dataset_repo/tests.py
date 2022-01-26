@@ -15,6 +15,7 @@ from unittest import mock
 from rest_framework.test import APIClient, APITestCase
 from rest_framework import status
 from django.utils import timezone
+from django.conf import settings
 from django.contrib.auth.models import Group, User
 from cvat.apps.engine.models import Task
 from cvat.apps.dataset_repo.dataset_repo import (Git, initial_create, push, get)
@@ -35,14 +36,16 @@ def generate_image_file(filename, size=(100, 50)):
 
 
 class ForceLogin:
-    def __init__(self, user, client):
+    def __init__(self, user, client, version=settings.BACKEND_VERSIONS.V1_0):
         self.user = user
         self.client = client
+        self.version = version
 
     def __enter__(self):
         if self.user:
             self.client.force_login(self.user,
                 backend='django.contrib.auth.backends.ModelBackend')
+        self.client.credentials(HTTP_ACCEPT=f'application/vnd.cvat+json; version={self.version}')
 
         return self
 
@@ -141,6 +144,9 @@ class TestGit(Git):
     def reclone(self):
         self._reclone()
 
+class VersionedAPIClient(APIClient):
+    def __init__(self, version=settings.BACKEND_VERSIONS.V1_0):
+        super().__init__(HTTP_ACCEPT=f'application/vnd.cvat+json; version={version}')
 
 class GitDatasetRepoTest(APITestCase):
     class FakeGit:
@@ -148,7 +154,7 @@ class GitDatasetRepoTest(APITestCase):
             self._url = url
 
     def setUp(self):
-        self.client = APIClient()
+        self.client = VersionedAPIClient()
         db_git = GitData()
         db_git.url = GIT_URL
 

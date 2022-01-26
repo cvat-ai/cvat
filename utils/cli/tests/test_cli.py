@@ -23,6 +23,7 @@ class TestCLI(APITestCase):
         self.client = RequestsClient()
         self.credentials = ('admin', 'admin')
         self.api = CVAT_API_V1('testserver')
+        self.client.headers.update({'Accept': f'application/vnd.cvat+json; version={settings.BACKEND_VERSIONS.V1_0}'})
         self.cli = CLI(self.client, self.api, self.credentials)
         self.taskname = 'test_task'
         self.cli.tasks_create(self.taskname,
