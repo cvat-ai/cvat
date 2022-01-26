@@ -1,4 +1,4 @@
-// Copyright (C) 2021 Intel Corporation
+// Copyright (C) 2021-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -56,9 +56,11 @@ context('Rename a task.', () => {
     });
 
     after(() => {
-        cy.deletingRegisteredUsers([secondUserName]);
-        cy.login();
-        cy.deleteTask(newTaskNameSecondUser);
+        cy.logout(secondUserName);
+        cy.getAuthKey().then((authKey) => {
+            cy.deleteUsers(authKey, [secondUserName]);
+            cy.deleteTasks(authKey, [newTaskNameSecondUser]);
+        });
     });
 
     describe(`Testing "${labelName}". Issue 2572.`, () => {
@@ -72,9 +74,7 @@ context('Rename a task.', () => {
         it('The second user tries to rename the task. Success.', () => {
             cy.login(secondUserName, secondUser.password);
             cy.openTask(newTaskName);
-            renameTask(newTaskName, '{leftarrow}{leftarrow}3{Enter}');
-            cy.contains('.cvat-task-details-task-name', newTaskNameSecondUser).should('exist');
-            cy.logout(secondUserName);
+            cy.renameTask(newTaskName, newTaskNameSecondUser);
         });
     });
 });
