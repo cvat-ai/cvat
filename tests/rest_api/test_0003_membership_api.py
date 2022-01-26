@@ -62,16 +62,16 @@ class TestPatchMemberships:
         ('supervisor', 'maintainer', 'supervisor', False),
         ('worker',     'supervisor', 'worker',     False),
         ('worker',     'maintainer', 'worker',     False),
+        ('owner',      'maintainer', 'worker',     True),
         ('maintainer', 'maintainer', 'worker',     False),
         ('maintainer', 'supervisor', 'worker',     True),
         ('maintainer', 'worker',     'supervisor', True),
         ('owner',      'supervisor', 'worker',     True),
         ('owner',      'worker',     'supervisor', True),
-        ('owner',      'maintainer', 'worker',     True),
     ])
     def test_user_can_change_role_of_member(self, who, whom, new_role, is_allow, roles_by_org):
         user = roles_by_org[self._ORG][who][0]['username']
-        membership_id = roles_by_org[self._ORG][whom][1]['id']
+        membership_id = roles_by_org[self._ORG][whom][0]['id']
 
         if is_allow:
             self._test_can_change_membership(user, membership_id, new_role)

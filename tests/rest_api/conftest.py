@@ -2,30 +2,57 @@ import pytest
 import json
 import os.path as osp
 from .utils.config import ASSETS_DIR
-from subprocess import Popen, PIPE
+import time
+import docker
 
 cvat_db_asset = osp.join(ASSETS_DIR, 'cvat_db.sql')
 cvat_data_asset = osp.join(ASSETS_DIR, 'cvat_data.tar.bz2')
 
+@pytest.fixture(scope='session')
+def docker_client():
+    yield docker.from_env()
+
+@pytest.fixture(scope='session')
+def cvat_db_container(docker_client):
+    yield docker_client.containers.get('cvat_db')
+
 @pytest.fixture(scope='session', autouse=True)
-def restore_db():
-    # TO-DO: handle case when retcode != 0
-    def restore():
-       p1 = Popen(['cat', osp.join(ASSETS_DIR, 'cvat_db.sql')], stdout=PIPE)
-       p2 = Popen('docker exec -i cvat_db psql -q -U root -d cvat'.split(), stdin=p1.stdout, stdout=PIPE)
-       p1.stdout.close()
-       p2.communicate()[0]
+def restore_volumes(docker_client):
+    start = time.time()
+    docker_client.containers.run('ubuntu',
+        'tar -xj --strip 3 -C /home/django/data -f /mnt/cvat_data.tar.bz2',
+        remove=True,
+        volumes_from=['cvat'],
+        mounts=[docker.types.Mount('/mnt/', ASSETS_DIR, type='bind')],
+    )
+    print('Restore volumes', time.time() - start)
 
-       p3 = Popen(['cat', osp.join(ASSETS_DIR, 'cvat_data.tar.bz2')], stdout=PIPE)
-       p4 = Popen(['docker', 'run', '--rm', '-i', '--volumes-from', 'cvat', 'ubuntu',
-           'tar', '-xj', '--strip', '3', '-C', '/home/django/data'
-       ], stdin=p3.stdout, stdout=PIPE)
-       p3.stdout.close()
-       p4.communicate()[0]
+@pytest.fixture(scope='session', autouse=True)
+def put_archive(cvat_db_container):
+    start = time.time()
+    with open(osp.join(ASSETS_DIR, 'cvat_db.tar'), 'rb') as f:
+        cvat_db_container.put_archive('/', f)
 
-    restore()
+    cvat_db_container.exec_run('pg_restore -c -U root -d cvat -1 /cvat_db/cvat_db.dump')
+    cvat_db_container.exec_run('psql -U root -d postgres -c "CREATE DATABASE test_db WITH TEMPLATE cvat"')
+
+    print('Put archieve', time.time() - start)
+
     yield
-    restore()
+
+    start = time.time()
+
+    cvat_db_container.exec_run('rm -r cvat_db')
+    cvat_db_container.exec_run('dumpdb test_db')
+
+    print('Clean all', time.time() - start)
+
+
+@pytest.fixture(scope='function', autouse=True)
+def restore_cvat_db(cvat_db_container):
+    start = time.time()
+    cvat_db_container.exec_run('psql -q -U root -d postgres -f /cvat_db/restore_cvat_db.sql')
+    print('Restore cvat db', time.time() - start)
 
 @pytest.fixture(scope='module')
 def users():
