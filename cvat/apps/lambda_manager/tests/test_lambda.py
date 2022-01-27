@@ -66,7 +66,7 @@ class ForceLogin:
     def __enter__(self):
         if self.user:
             self.client.force_login(self.user, backend='django.contrib.auth.backends.ModelBackend')
-        self.client.credentials(HTTP_ACCEPT=f'application/vnd.cvat+json; version={self.version}')
+        self.client.credentials(HTTP_ACCEPT=settings.ACCEPT_HEADER_TEMPLATE.format(self.version))
 
         return self
 
@@ -76,7 +76,7 @@ class ForceLogin:
 
 class VersionedAPIClient(APIClient):
     def __init__(self, version=settings.BACKEND_VERSIONS.V1_0):
-        super().__init__(HTTP_ACCEPT=f'application/vnd.cvat+json; version={version}')
+        super().__init__(HTTP_ACCEPT=settings.ACCEPT_HEADER_TEMPLATE.format(version))
 
 class LambdaTestCase(APITestCase):
     def setUp(self):

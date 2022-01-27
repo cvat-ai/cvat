@@ -7,7 +7,7 @@ const Axios = require('axios');
 Axios.defaults.withCredentials = true;
 Axios.defaults.xsrfHeaderName = 'X-CSRFTOKEN';
 Axios.defaults.xsrfCookieName = 'csrftoken';
-Axios.defaults.headers.common.Accept = 'application/vnd.cvat+json; version=1.0';
+Axios.defaults.headers.common.Accept = 'application/vnd.cvat.v1.0+json';
 
 onmessage = (e) => {
     Axios.get(e.data.url, e.data.config)

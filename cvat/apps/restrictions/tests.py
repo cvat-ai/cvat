@@ -9,7 +9,7 @@ from django.conf import settings
 
 class VersionedAPIClient(APIClient):
     def __init__(self, version=settings.BACKEND_VERSIONS.V1_0):
-        super().__init__(HTTP_ACCEPT=f'application/vnd.cvat+json; version={version}')
+        super().__init__(HTTP_ACCEPT=settings.ACCEPT_HEADER_TEMPLATE.format(version))
 
 class UserAgreementsTest(APITestCase):
     def setUp(self):

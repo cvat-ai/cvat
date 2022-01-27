@@ -139,6 +139,8 @@ class BACKEND_VERSIONS(str, Enum):
     def __str__(self):
         return self.value
 
+ACCEPT_HEADER_TEMPLATE = 'application/vnd.cvat.v{}+json'
+
 REST_FRAMEWORK = {
     'DEFAULT_PARSER_CLASSES': [
         'rest_framework.parsers.JSONParser',
@@ -164,7 +166,7 @@ REST_FRAMEWORK = {
         # Don't try to use URLPathVersioning. It will give you /api/{version}
         # in path and '/api/docs' will not collapse similar items (flat list
         # of all possible methods isn't readable).
-        'rest_framework.versioning.AcceptHeaderVersioning',
+        'cvat.apps.engine.versioning.CustomAcceptHeaderVersioning',
     # Need to add 'api-docs' here as a workaround for include_docs_urls.
     'ALLOWED_VERSIONS': (BACKEND_VERSIONS.V1_0, 'api-docs'),
     'DEFAULT_PAGINATION_CLASS':
