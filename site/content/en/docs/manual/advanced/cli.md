@@ -179,6 +179,10 @@ by using the [label constructor](/docs/manual/basics/creating_an_annotation_task
   ```bash
   cli.py dump --format "CVAT for images 1.1" 103 output.xml
   ```
+- Dump annotation task with id 104, in the format `COCO 1.0` and save to the file "output.tar":
+  ```bash
+  cli.py dump --format "COCO 1.0" 104 output.tar
+  ```
 
 ### Upload annotation
 
