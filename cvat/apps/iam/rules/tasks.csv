@@ -76,3 +76,7 @@ export:backup,Task,Sandbox,None,,GET,/tasks/{id}/backup,Admin,N/A
 export:backup,Task,Sandbox,"Owner, Project:owner, Assignee, Project:assignee",,GET,/tasks/{id}/backup,None,N/A
 export:backup,Task,Organization,None,,GET,/tasks/{id}/backup,User,Maintainer
 export:backup,Task,Organization,"Owner, Project:owner, Assignee, Project:assignee",,GET,/tasks/{id}/backup,None,Worker
+update:organization,"Task, Organization",Sandbox,"None, Assignee",,PATCH,/tasks/{id},Admin,N/A
+update:organization,"Task, Organization",Sandbox,"Owner, Project:owner, Project:assignee",,PATCH,/tasks/{id},Worker,N/A
+update:organization,"Task, Organization",Organization,"None, Assignee",,PATCH,/tasks/{id},User,Maintainer
+update:organization,"Task, Organization",Organization,"Owner, Project:owner, Project:assignee",,PATCH,/tasks/{id},Worker,Worker
