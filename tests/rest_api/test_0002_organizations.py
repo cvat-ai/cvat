@@ -2,18 +2,9 @@
 #
 # SPDX-License-Identifier: MIT
 
-import os
 from http import HTTPStatus
-import json
 import pytest
-from .utils.config import get_method, ASSETS_DIR
-from deepdiff import DeepDiff
-
-def compare_organizations(org_id, response):
-    assert response.status_code == HTTPStatus.OK
-    with open(os.path.join(ASSETS_DIR, 'organizations.json')) as f:
-        org = next(filter(lambda org: org['id'] == org_id, json.load(f)))
-    DeepDiff(org, response.json())
+from .utils.config import get_method
 
 class TestGetOrganizations:
     _ORG = 2
