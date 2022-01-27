@@ -662,7 +662,9 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
 
     private renderTrackingContent(): JSX.Element {
         const { activeLabelID, trackers, activeTracker } = this.state;
-        const { labels, canvasInstance, onInteractionStart } = this.props;
+        const {
+            labels, canvasInstance, onInteractionStart, frame, jobInstance,
+        } = this.props;
         if (!trackers.length) {
             return (
                 <Row justify='center' align='middle' style={{ marginTop: '5px' }}>
@@ -717,9 +719,8 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
                     <Col>
                         <Button
                             type='primary'
-                            // loading={fetching}
                             className='cvat-tools-track-button'
-                            // disabled={!activeTracker || fetching || frame === jobInstance.stopFrame}
+                            disabled={!activeTracker || frame === jobInstance.stopFrame}
                             onClick={() => {
                                 this.setState({ mode: 'tracking' });
 
