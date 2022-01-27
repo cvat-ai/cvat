@@ -3,7 +3,6 @@
 # SPDX-License-Identifier: MIT
 
 import coreapi
-from django.core.exceptions import FieldError
 from rest_framework.filters import BaseFilterBackend
 
 class OrganizationFilterBackend(BaseFilterBackend):
@@ -20,11 +19,9 @@ class OrganizationFilterBackend(BaseFilterBackend):
         # filter isn't necessary but it is an extra check that we show only
         # objects inside an organization if the request in context of the
         # organization.
-        try:
-            organization = request.iam_context['organization']
-            if organization:
-                return queryset.filter(organization=organization)
-            else:
-                return queryset
-        except FieldError:
+        visibility = request.iam_context['visibility']
+        if visibility and view.iam_organization_field:
+            visibility[view.iam_organization_field] = visibility.pop('organization')
+            return queryset.filter(**visibility).distinct()
+        else:
             return queryset
