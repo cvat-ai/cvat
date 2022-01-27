@@ -12,25 +12,34 @@ cvat_db_asset = osp.join(ASSETS_DIR, 'cvat_db.sql')
 cvat_data_asset = osp.join(ASSETS_DIR, 'cvat_data.tar.bz2')
 
 def _run(command):
-    try:
-        run(command.split(), check=True)
-    except CalledProcessError:
-        pytest.exit(f"Cannot to run command: {command}")
+    run(command.split(), check=True)
 
-@pytest.fixture(scope='session', autouse=True)
-def init_test_db():
-    _run('docker run --rm --volumes-from cvat '\
-        f'--mount type=bind,source={ASSETS_DIR},target=/mnt/ ' \
-        'ubuntu tar --strip 3 -C /home/django/data  -xjf /mnt/cvat_data.tar.bz2'
-    )
+def restore_data_volume():
+    _run('docker run --rm --volumes-from cvat --mount ' \
+        f'type=bind,source={ASSETS_DIR},target=/mnt/ ubuntu tar ' \
+        '--strip 3 -C /home/django/data  -xjf /mnt/cvat_data.tar.bz2')
+
+def drop_test_db():
+    _run('docker exec cvat_db rm -rf /cvat_db')
+    _run('docker exec cvat_db dropdb test_db')
+
+def create_test_db():
     _run(f'docker container cp {osp.join(ASSETS_DIR, "cvat_db")} cvat_db:/')
     _run('docker exec cvat_db createdb test_db')
     _run('docker exec cvat_db pg_restore -U root -d test_db /cvat_db/cvat_db.dump')
 
+@pytest.fixture(scope='session', autouse=True)
+def init_test_db():
+    try:
+        restore_data_volume()
+        create_test_db()
+    except CalledProcessError:
+        drop_test_db()
+        pytest.exit(f"Cannot to initialize test DB")
+
     yield
 
-    _run('docker exec cvat_db rm -r /cvat_db')
-    _run('docker exec cvat_db dropdb test_db')
+    drop_test_db()
 
 @pytest.fixture(scope='function', autouse=True)
 def restore_cvat_db():
