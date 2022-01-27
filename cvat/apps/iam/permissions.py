@@ -266,12 +266,19 @@ class LogViewerPermission(OpenPolicyAgentPermission):
         super().__init__(request, view, obj)
         self.url = settings.IAM_OPA_DATA_URL + '/analytics/allow'
         self.payload['input']['scope'] = self.scope
+        self.payload['input']['resource'] = self.resource
 
     @property
     def scope(self):
         return {
             'access': 'view',
         }.get(self.view.action, None)
+
+    @property
+    def resource(self):
+        return {
+            'visibility': 'public' if settings.RESTRICTIONS['analytics_visibility'] else 'private',
+        }
 
 class UserPermission(OpenPolicyAgentPermission):
     @classmethod

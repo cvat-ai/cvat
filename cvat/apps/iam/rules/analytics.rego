@@ -17,6 +17,9 @@ import data.utils
 #                 "role": <"owner"|"maintainer"|"supervisor"|"worker"> or null
 #             }
 #         } or null,
+#     },
+#     "resource": {
+#         "visibility": <"public"|"private"> or null,
 #     }
 # }
 
@@ -27,6 +30,7 @@ allow {
 }
 
 allow {
+    input.resource.visibility == utils.PUBLIC
     input.scope == utils.VIEW
     utils.has_perm(utils.BUSINESS)
 }
