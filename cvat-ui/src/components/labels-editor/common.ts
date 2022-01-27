@@ -1,4 +1,4 @@
-// Copyright (C) 2021 Intel Corporation
+// Copyright (C) 2021-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -64,11 +64,11 @@ export function validateParsedLabel(label: Label): void {
         );
     }
 
-    if (typeof label.color !== 'string') {
+    if (label.color && typeof label.color !== 'string') {
         throw new Error(`Label "${label.name}". Label color must be a string. Got ${typeof label.color}`);
     }
 
-    if (!label.color.match(/^#[0-9a-fA-F]{6}$|^$/)) {
+    if (label.color && !label.color.match(/^#[0-9a-fA-F]{6}$|^$/)) {
         throw new Error(
             `Label "${label.name}". ` +
                 `Type of label color must be only a valid color string. Got value ${label.color}`,

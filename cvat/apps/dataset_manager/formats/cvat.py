@@ -496,6 +496,11 @@ def create_xml_dumper(file_object):
             self.xmlgen.startElement("box", box)
             self._level += 1
 
+        def open_ellipse(self, ellipse):
+            self._indent()
+            self.xmlgen.startElement("ellipse", ellipse)
+            self._level += 1
+
         def open_polygon(self, polygon):
             self._indent()
             self.xmlgen.startElement("polygon", polygon)
@@ -531,6 +536,11 @@ def create_xml_dumper(file_object):
             self._level -= 1
             self._indent()
             self.xmlgen.endElement("box")
+
+        def close_ellipse(self):
+            self._level -= 1
+            self._indent()
+            self.xmlgen.endElement("ellipse")
 
         def close_polygon(self):
             self._level -= 1
@@ -619,6 +629,18 @@ def dump_as_cvat_annotation(dumper, annotations):
                     dump_data.update(OrderedDict([
                         ("rotation", "{:.2f}".format(shape.rotation))
                     ]))
+            elif shape.type == "ellipse":
+                dump_data.update(OrderedDict([
+                    ("cx", "{:.2f}".format(shape.points[0])),
+                    ("cy", "{:.2f}".format(shape.points[1])),
+                    ("rx", "{:.2f}".format(shape.points[2] - shape.points[0])),
+                    ("ry", "{:.2f}".format(shape.points[1] - shape.points[3]))
+                ]))
+
+                if shape.rotation:
+                    dump_data.update(OrderedDict([
+                        ("rotation", "{:.2f}".format(shape.rotation))
+                    ]))
             elif shape.type == "cuboid":
                 dump_data.update(OrderedDict([
                     ("xtl1", "{:.2f}".format(shape.points[0])),
@@ -652,9 +674,10 @@ def dump_as_cvat_annotation(dumper, annotations):
             if shape.group:
                 dump_data['group_id'] = str(shape.group)
 
-
             if shape.type == "rectangle":
                 dumper.open_box(dump_data)
+            elif shape.type == "ellipse":
+                dumper.open_ellipse(dump_data)
             elif shape.type == "polygon":
                 dumper.open_polygon(dump_data)
             elif shape.type == "polyline":
@@ -674,6 +697,8 @@ def dump_as_cvat_annotation(dumper, annotations):
 
             if shape.type == "rectangle":
                 dumper.close_box()
+            elif shape.type == "ellipse":
+                dumper.close_ellipse()
             elif shape.type == "polygon":
                 dumper.close_polygon()
             elif shape.type == "polyline":
@@ -747,6 +772,18 @@ def dump_as_cvat_interpolation(dumper, annotations):
                     dump_data.update(OrderedDict([
                         ("rotation", "{:.2f}".format(shape.rotation))
                     ]))
+            elif shape.type == "ellipse":
+                dump_data.update(OrderedDict([
+                    ("cx", "{:.2f}".format(shape.points[0])),
+                    ("cy", "{:.2f}".format(shape.points[1])),
+                    ("rx", "{:.2f}".format(shape.points[2] - shape.points[0])),
+                    ("ry", "{:.2f}".format(shape.points[1] - shape.points[3]))
+                ]))
+
+                if shape.rotation:
+                    dump_data.update(OrderedDict([
+                        ("rotation", "{:.2f}".format(shape.rotation))
+                    ]))
             elif shape.type == "cuboid":
                 dump_data.update(OrderedDict([
                     ("xtl1", "{:.2f}".format(shape.points[0])),
@@ -776,6 +813,8 @@ def dump_as_cvat_interpolation(dumper, annotations):
 
             if shape.type == "rectangle":
                 dumper.open_box(dump_data)
+            elif shape.type == "ellipse":
+                dumper.open_ellipse(dump_data)
             elif shape.type == "polygon":
                 dumper.open_polygon(dump_data)
             elif shape.type == "polyline":
@@ -795,6 +834,8 @@ def dump_as_cvat_interpolation(dumper, annotations):
 
             if shape.type == "rectangle":
                 dumper.close_box()
+            elif shape.type == "ellipse":
+                dumper.close_ellipse()
             elif shape.type == "polygon":
                 dumper.close_polygon()
             elif shape.type == "polyline":
@@ -857,7 +898,7 @@ def dump_as_cvat_interpolation(dumper, annotations):
     dumper.close_root()
 
 def load_anno(file_object, annotations):
-    supported_shapes = ('box', 'polygon', 'polyline', 'points', 'cuboid')
+    supported_shapes = ('box', 'ellipse', 'polygon', 'polyline', 'points', 'cuboid')
     context = ElementTree.iterparse(file_object, events=("start", "end"))
     context = iter(context)
     next(context)
@@ -927,6 +968,11 @@ def load_anno(file_object, annotations):
                     shape['points'].append(el.attrib['ytl'])
                     shape['points'].append(el.attrib['xbr'])
                     shape['points'].append(el.attrib['ybr'])
+                elif el.tag == 'ellipse':
+                    shape['points'].append(el.attrib['cx'])
+                    shape['points'].append(el.attrib['cy'])
+                    shape['points'].append("{:.2f}".format(float(el.attrib['cx']) + float(el.attrib['rx'])))
+                    shape['points'].append("{:.2f}".format(float(el.attrib['cy']) - float(el.attrib['ry'])))
                 elif el.tag == 'cuboid':
                     shape['points'].append(el.attrib['xtl1'])
                     shape['points'].append(el.attrib['ytl1'])

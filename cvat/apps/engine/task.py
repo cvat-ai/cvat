@@ -1,5 +1,5 @@
 
-# Copyright (C) 2018-2021 Intel Corporation
+# Copyright (C) 2018-2022 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -326,22 +326,6 @@ def _create_thread(db_task, data, isBackupRestore=False, isDatasetImport=False):
                 db_data.start_frame = 0
                 data['stop_frame'] = None
                 db_data.frame_filter = ''
-            if isBackupRestore and media_type != 'video' and db_data.storage_method == models.StorageMethodChoice.CACHE:
-                # we should sort media_files according to the manifest content sequence
-                manifest = ImageManifestManager(db_data.get_manifest_path())
-                manifest.set_index()
-                sorted_media_files = []
-                for idx in range(len(media_files)):
-                    properties = manifest[manifest_index(idx)]
-                    image_name = properties.get('name', None)
-                    image_extension = properties.get('extension', None)
-
-                    full_image_path = f"{image_name}{image_extension}" if image_name and image_extension else None
-                    if full_image_path and full_image_path in media_files:
-                        sorted_media_files.append(full_image_path)
-                media_files = sorted_media_files.copy()
-                del sorted_media_files
-                data['sorting_method'] = models.SortingMethod.PREDEFINED
             source_paths=[os.path.join(upload_dir, f) for f in media_files]
             if manifest_file and not isBackupRestore and data['sorting_method'] in {models.SortingMethod.RANDOM, models.SortingMethod.PREDEFINED}:
                 raise Exception("It isn't supported to upload manifest file and use random sorting")
@@ -368,8 +352,8 @@ def _create_thread(db_task, data, isBackupRestore=False, isDatasetImport=False):
         extractor.extract()
 
     if db_data.storage == models.StorageChoice.LOCAL or \
-        (db_data.storage == models.StorageChoice.SHARE and \
-        isinstance(extractor, MEDIA_TYPES['zip']['extractor'])):
+            (db_data.storage == models.StorageChoice.SHARE and \
+            isinstance(extractor, MEDIA_TYPES['zip']['extractor'])):
         validate_dimension.set_path(upload_dir)
         validate_dimension.validate()
 
@@ -379,8 +363,15 @@ def _create_thread(db_task, data, isBackupRestore=False, isDatasetImport=False):
     if validate_dimension.dimension == models.DimensionType.DIM_3D:
         db_task.dimension = models.DimensionType.DIM_3D
 
+        keys_of_related_files = validate_dimension.related_files.keys()
+        absolute_keys_of_related_files = [os.path.join(upload_dir, f) for f in keys_of_related_files]
+        # When a task is created, the sorting method can be random and in this case, reinitialization will be with correct sorting
+        # but when a task is restored from a backup, a random sorting is changed to predefined and we need to manually sort files
+        # in the correct order.
+        source_files = absolute_keys_of_related_files if not isBackupRestore else \
+            [item for item in extractor.absolute_source_paths if item in absolute_keys_of_related_files]
         extractor.reconcile(
-            source_files=[os.path.join(upload_dir, f) for f in validate_dimension.related_files.keys()],
+            source_files=source_files,
             step=db_data.get_frame_step(),
             start=db_data.start_frame,
             stop=data['stop_frame'],
@@ -391,6 +382,33 @@ def _create_thread(db_task, data, isBackupRestore=False, isDatasetImport=False):
     if isinstance(extractor, MEDIA_TYPES['image']['extractor']):
         extractor.filter(lambda x: not re.search(r'(^|{0})related_images{0}'.format(os.sep), x))
         related_images = detect_related_images(extractor.absolute_source_paths, upload_dir)
+
+    if isBackupRestore and not isinstance(extractor, MEDIA_TYPES['video']['extractor']) and db_data.storage_method == models.StorageMethodChoice.CACHE and \
+            db_data.sorting_method in {models.SortingMethod.RANDOM, models.SortingMethod.PREDEFINED} and validate_dimension.dimension != models.DimensionType.DIM_3D:
+        # we should sort media_files according to the manifest content sequence
+        # and we should do this in general after validation step for 3D data and after filtering from related_images
+        manifest = ImageManifestManager(db_data.get_manifest_path())
+        manifest.set_index()
+        sorted_media_files = []
+
+        for idx in range(len(extractor.absolute_source_paths)):
+            properties = manifest[idx]
+            image_name = properties.get('name', None)
+            image_extension = properties.get('extension', None)
+
+            full_image_path = os.path.join(upload_dir, f"{image_name}{image_extension}") if image_name and image_extension else None
+            if full_image_path and full_image_path in extractor:
+                sorted_media_files.append(full_image_path)
+        media_files = sorted_media_files.copy()
+        del sorted_media_files
+        data['sorting_method'] = models.SortingMethod.PREDEFINED
+        extractor.reconcile(
+            source_files=media_files,
+            step=db_data.get_frame_step(),
+            start=db_data.start_frame,
+            stop=data['stop_frame'],
+            sorting_method=data['sorting_method'],
+        )
 
     db_task.mode = task_mode
     db_data.compressed_chunk_type = models.DataChoice.VIDEO if task_mode == 'interpolation' and not data['use_zip_chunks'] else models.DataChoice.IMAGESET

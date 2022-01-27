@@ -14,6 +14,6 @@
     "auth_page.js",
     "canvas3d_functionality/*.js",
     "canvas3d_functionality_2/*.js",
-    "remove_users_tasks_projects.js"
+    "remove_users_tasks_projects_organizations.js"
   ]
 }

@@ -559,6 +559,7 @@ def return_response(success_code=status.HTTP_200_OK):
 class FunctionViewSet(viewsets.ViewSet):
     lookup_value_regex = '[a-zA-Z0-9_.-]+'
     lookup_field = 'func_id'
+    iam_organization_field = None
 
     @return_response()
     def list(self, request):
@@ -598,6 +599,8 @@ class FunctionViewSet(viewsets.ViewSet):
 @extend_schema_view(delete=extend_schema(
     summary='Method cancels the request', tags=['lambda'], versions=['1.0']))
 class RequestViewSet(viewsets.ViewSet):
+    iam_organization_field = None
+
     @return_response()
     def list(self, request):
         queue = LambdaQueue()

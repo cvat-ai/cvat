@@ -106,7 +106,6 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django_rq',
     'compressor',
-    'cacheops',
     'sendfile',
     'dj_pagination',
     'revproxy',
@@ -316,26 +315,6 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-# Cache DB access (e.g. for engine.task.get_frame)
-# https://github.com/Suor/django-cacheops
-CACHEOPS_REDIS = {
-    'host': 'localhost', # redis-server is on same machine
-    'port': 6379,        # default redis port
-    'db': 1,             # SELECT non-default redis database
-}
-
-CACHEOPS = {
-    # Automatically cache any Task.objects.get() calls for 15 minutes
-    # This also includes .first() and .last() calls.
-    'engine.task': {'ops': 'get', 'timeout': 60*15},
-
-    # Automatically cache any Job.objects.get() calls for 15 minutes
-    # This also includes .first() and .last() calls.
-    'engine.job': {'ops': 'get', 'timeout': 60*15},
-}
-
-CACHEOPS_DEGRADE_ON_FAILURE = True
-
 # Internationalization
 # https://docs.djangoproject.com/en/2.0/topics/i18n/
 
@@ -516,6 +495,10 @@ CORS_ALLOW_HEADERS = list(default_headers) + [
 TUS_MAX_FILE_SIZE = 26843545600 # 25gb
 TUS_DEFAULT_CHUNK_SIZE = 104857600  # 100 mb
 
+# This setting makes request secure if X-Forwarded-Proto: 'https' header is specified by our proxy
+# More about forwarded headers - https://doc.traefik.io/traefik/getting-started/faq/#what-are-the-forwarded-headers-when-proxying-http-requests
+# How django uses X-Forwarded-Proto - https://docs.djangoproject.com/en/2.2/ref/settings/#secure-proxy-ssl-header
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 SPECTACULAR_SETTINGS = {
     'TITLE': 'CVAT REST API',

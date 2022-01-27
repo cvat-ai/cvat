@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -37,7 +37,9 @@ context('Register user, change password, login with new password', () => {
     after(() => {
         cy.get('.cvat-modal-change-password').find('[aria-label="Close"]').click();
         cy.logout(userName);
-        cy.deletingRegisteredUsers([userName]);
+        cy.getAuthKey().then((authKey) => {
+            cy.deleteUsers(authKey, [userName]);
+        });
     });
 
     describe(`Testing "Case ${caseId}"`, () => {

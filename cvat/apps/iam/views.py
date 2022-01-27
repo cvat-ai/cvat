@@ -31,22 +31,27 @@ def get_context(request):
         org_id = request.GET.get('org_id')
         org_header = request.headers.get('X-Organization')
 
-        if org_id and (org_slug or org_header):
+        if org_id != None and (org_slug != None or org_header != None):
             raise BadRequest('You cannot specify "org_id" query parameter with ' +
                 '"org" query parameter or "X-Organization" HTTP header at the same time.')
-        if org_slug and org_header and org_slug != org_header:
+        if org_slug != None and org_header != None and org_slug != org_header:
             raise BadRequest('You cannot specify "org" query parameter and ' +
                 '"X-Organization" HTTP header with different values.')
-        org_slug = org_slug or org_header
+        org_slug = org_slug if org_slug != None else org_header
 
+        org_filter = None
         if org_slug:
             organization = Organization.objects.get(slug=org_slug)
             membership = Membership.objects.filter(organization=organization,
                 user=request.user).first()
+            org_filter = { 'organization': organization.id }
         elif org_id:
-                organization = Organization.objects.get(id=int(org_id))
-                membership = Membership.objects.filter(organization=organization,
-                    user=request.user).first()
+            organization = Organization.objects.get(id=int(org_id))
+            membership = Membership.objects.filter(organization=organization,
+                user=request.user).first()
+            org_filter = { 'organization': organization.id }
+        elif org_slug is not None:
+            org_filter = { 'organization': None }
     except Organization.DoesNotExist:
         raise BadRequest(f'{org_slug or org_id} organization does not exist.')
 
@@ -57,6 +62,7 @@ def get_context(request):
         "privilege": groups[0] if groups else None,
         "membership": membership,
         "organization": organization,
+        "visibility": org_filter,
     }
 
     return context
@@ -101,7 +107,10 @@ class SigningView(views.APIView):
 class RegisterViewEx(RegisterView):
     def get_response_data(self, user):
         data = self.get_serializer(user).data
-        data['email_verification_required'] = allauth_settings.EMAIL_VERIFICATION == \
-            allauth_settings.EmailVerificationMethod.MANDATORY
-
+        data['email_verification_required'] = True
+        data['key'] = None
+        if allauth_settings.EMAIL_VERIFICATION != \
+            allauth_settings.EmailVerificationMethod.MANDATORY:
+            data['email_verification_required'] = False
+            data['key'] = user.auth_token.key
         return data
