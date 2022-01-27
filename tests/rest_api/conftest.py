@@ -1,58 +1,36 @@
+from subprocess import run, CalledProcessError
 import pytest
 import json
 import os.path as osp
 from .utils.config import ASSETS_DIR
-import time
-import docker
 
 cvat_db_asset = osp.join(ASSETS_DIR, 'cvat_db.sql')
 cvat_data_asset = osp.join(ASSETS_DIR, 'cvat_data.tar.bz2')
 
-@pytest.fixture(scope='session')
-def docker_client():
-    yield docker.from_env()
-
-@pytest.fixture(scope='session')
-def cvat_db_container(docker_client):
-    yield docker_client.containers.get('cvat_db')
+def _run(command):
+    try:
+        run(command.split(), check=True)
+    except CalledProcessError:
+        pytest.exit(f"Cannot to run command: {command}")
 
 @pytest.fixture(scope='session', autouse=True)
-def restore_volumes(docker_client):
-    start = time.time()
-    docker_client.containers.run('ubuntu',
-        'tar -xj --strip 3 -C /home/django/data -f /mnt/cvat_data.tar.bz2',
-        remove=True,
-        volumes_from=['cvat'],
-        mounts=[docker.types.Mount('/mnt/', ASSETS_DIR, type='bind')],
+def init_test_db():
+    _run('docker run --rm --volumes-from cvat '\
+        f'--mount type=bind,source={ASSETS_DIR},target=/mnt/ ' \
+        'ubuntu tar --strip 3 -C /home/django/data  -xjf /mnt/cvat_data.tar.bz2'
     )
-    print('Restore volumes', time.time() - start)
-
-@pytest.fixture(scope='session', autouse=True)
-def put_archive(cvat_db_container):
-    start = time.time()
-    with open(osp.join(ASSETS_DIR, 'cvat_db.tar'), 'rb') as f:
-        cvat_db_container.put_archive('/', f)
-
-    cvat_db_container.exec_run('pg_restore -c -U root -d cvat -1 /cvat_db/cvat_db.dump')
-    cvat_db_container.exec_run('psql -U root -d postgres -c "CREATE DATABASE test_db WITH TEMPLATE cvat"')
-
-    print('Put archieve', time.time() - start)
+    _run(f'docker container cp {osp.join(ASSETS_DIR, "cvat_db")} cvat_db:/')
+    _run('docker exec cvat_db createdb test_db')
+    _run('docker exec cvat_db pg_restore -U root -d test_db /cvat_db/cvat_db.dump')
 
     yield
 
-    start = time.time()
+    _run('docker exec cvat_db rm -r /cvat_db')
+    _run('docker exec cvat_db dropdb test_db')
 
-    cvat_db_container.exec_run('rm -r cvat_db')
-    cvat_db_container.exec_run('dumpdb test_db')
-
-    print('Clean all', time.time() - start)
-
-
-@pytest.fixture(scope='function', autouse=True)
-def restore_cvat_db(cvat_db_container):
-    start = time.time()
-    cvat_db_container.exec_run('psql -q -U root -d postgres -f /cvat_db/restore_cvat_db.sql')
-    print('Restore cvat db', time.time() - start)
+@pytest.fixture(scope='class', autouse=True)
+def restore_cvat_db():
+    _run('docker exec cvat_db psql -U root -d postgres -f /cvat_db/cvat_db.sql')
 
 @pytest.fixture(scope='module')
 def users():
