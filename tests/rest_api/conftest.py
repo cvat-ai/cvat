@@ -72,18 +72,6 @@ def users_by_group(users):
     return data
 
 @pytest.fixture(scope='module')
-def roles_by_org(memberships):
-    data = {}
-    for membership in memberships:
-        org = membership['organization']
-        role = membership['role']
-        data.setdefault(org, {}).setdefault(role, []).append({
-            'username': membership['user']['username'],
-            'id': membership['id']
-        })
-    return data
-
-@pytest.fixture(scope='module')
 def memberships_by_org(memberships):
     members = {}
     for membership in memberships:
