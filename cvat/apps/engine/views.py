@@ -23,11 +23,10 @@ from django.db import IntegrityError
 from django.http import HttpResponse, HttpResponseNotFound, HttpResponseBadRequest
 from django.utils import timezone
 from django_filters import rest_framework as filters
-from django_filters.rest_framework import DjangoFilterBackend
 
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import (
-    OpenApiExample, OpenApiParameter, OpenApiResponse, PolymorphicProxySerializer,
+    OpenApiParameter, OpenApiResponse, PolymorphicProxySerializer,
     extend_schema_view, extend_schema
 )
 
