@@ -1,3 +1,7 @@
+# Copyright (C) 2021 Intel Corporation
+#
+# SPDX-License-Identifier: MIT
+
 from subprocess import run, CalledProcessError
 import pytest
 import json
@@ -28,7 +32,7 @@ def init_test_db():
     _run('docker exec cvat_db rm -r /cvat_db')
     _run('docker exec cvat_db dropdb test_db')
 
-@pytest.fixture(scope='class', autouse=True)
+@pytest.fixture(scope='function', autouse=True)
 def restore_cvat_db():
     _run('docker exec cvat_db psql -U root -d postgres -f /cvat_db/cvat_db.sql')
 
@@ -135,6 +139,7 @@ def test_db(users, users_by_name, memberships):
                 membership_id=membership['id'])
 
     return data
+
 
 
 
