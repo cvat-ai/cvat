@@ -54,7 +54,6 @@ class OpenPolicyAgentPermission(metaclass=ABCMeta):
         self.payload = {
             'input': {
                 'scope': self.scope,
-                'resource': self.get_resource(),
                 'auth': {
                     'user': {
                         'id': self.user_id,
@@ -73,6 +72,8 @@ class OpenPolicyAgentPermission(metaclass=ABCMeta):
             }
         }
 
+        self.payload['input']['resource'] = self.get_resource()
+
     @abstractmethod
     def get_resource(self):
         return None
@@ -84,7 +85,7 @@ class OpenPolicyAgentPermission(metaclass=ABCMeta):
     def filter(self, queryset):
         url = self.url.replace('/allow', '/filter')
         r = requests.post(url, json=self.payload)
-        qobjects = []
+        q_objects = []
         ops_dict = {
             '|': operator.or_,
             '&': operator.and_,
@@ -92,25 +93,25 @@ class OpenPolicyAgentPermission(metaclass=ABCMeta):
         }
         for item in r.json()['result']:
             if isinstance(item, str):
-                val1 = qobjects.pop()
+                val1 = q_objects.pop()
                 if item == '~':
-                    qobjects.append(ops_dict[item](val1))
+                    q_objects.append(ops_dict[item](val1))
                 else:
-                    val2 = qobjects.pop()
-                    qobjects.append(ops_dict[item](val1, val2))
+                    val2 = q_objects.pop()
+                    q_objects.append(ops_dict[item](val1, val2))
             else:
-                qobjects.append(Q(**item))
+                q_objects.append(Q(**item))
 
-        if qobjects:
-            assert len(qobjects) == 1
+        if q_objects:
+            assert len(q_objects) == 1
         else:
-            qobjects.append(Q())
+            q_objects.append(Q())
 
         # By default, a QuerySet will not eliminate duplicate rows. If your
         # query spans multiple tables (e.g. members__user_id, owner_id), it’s
         # possible to get duplicate results when a QuerySet is evaluated.
         # That’s when you’d use distinct().
-        return queryset.filter(qobjects[0]).distinct()
+        return queryset.filter(q_objects[0]).distinct()
 
 class OrganizationPermission(OpenPolicyAgentPermission):
     @classmethod
@@ -364,7 +365,7 @@ class LambdaPermission(OpenPolicyAgentPermission):
             ('request', 'list'): 'call:offline',
             ('request', 'retrieve'): 'call:offline',
             ('request', 'destroy'): 'call:offline',
-        }.get((view.name, view.action), None)]
+        }.get((view.basename, view.action), None)]
 
     def get_resource(self):
         return None
@@ -757,7 +758,7 @@ class JobPermission(OpenPolicyAgentPermission):
         self.url = settings.IAM_OPA_DATA_URL + '/jobs/allow'
 
     @staticmethod
-    def get_scopes(cls, request, view, obj):
+    def get_scopes(request, view, obj):
         scope = {
             ('list', 'GET'): 'list', # TODO: need to add the method
             ('retrieve', 'GET'): 'view',
