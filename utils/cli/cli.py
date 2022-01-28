@@ -35,7 +35,7 @@ def main():
         api = CVAT_API_V1('%s:%s' % (args.server_host, args.server_port), args.https)
         cli = CLI(session, api, args.auth)
         #TODO add version indication
-        session.headers.update({'Accept': 'application/vnd.cvat.v1.0+json'})
+        session.headers.update({'Accept': 'application/vnd.cvat+json; version=1.0'})
         try:
             actions[args.action](cli, **args.__dict__)
         except (requests.exceptions.HTTPError,

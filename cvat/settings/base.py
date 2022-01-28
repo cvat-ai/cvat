@@ -139,7 +139,9 @@ class BACKEND_VERSIONS(str, Enum):
     def __str__(self):
         return self.value
 
-ACCEPT_HEADER_TEMPLATE = 'application/vnd.cvat.v{}+json'
+    @classmethod
+    def list(cls):
+        return list(map(lambda x: x.value, cls))
 
 REST_FRAMEWORK = {
     'DEFAULT_PARSER_CLASSES': [
@@ -150,6 +152,7 @@ REST_FRAMEWORK = {
     ],
     'DEFAULT_RENDERER_CLASSES': [
         'cvat.apps.engine.renderers.CVATAPIRenderer',
+        'rest_framework.renderers.BrowsableAPIRenderer',
     ],
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
@@ -168,7 +171,8 @@ REST_FRAMEWORK = {
         # of all possible methods isn't readable).
         'cvat.apps.engine.versioning.CustomAcceptHeaderVersioning',
     # Need to add 'api-docs' here as a workaround for include_docs_urls.
-    'ALLOWED_VERSIONS': (BACKEND_VERSIONS.V1_0, 'api-docs'),
+    'ALLOWED_VERSIONS': (*BACKEND_VERSIONS.list(), 'api-docs'),
+    'VERSION_PARAM': 'version',
     'DEFAULT_PAGINATION_CLASS':
         'cvat.apps.engine.pagination.CustomPagination',
     'PAGE_SIZE': 10,
@@ -188,6 +192,9 @@ REST_FRAMEWORK = {
     },
     'DEFAULT_METADATA_CLASS': 'rest_framework.metadata.SimpleMetadata',
 }
+
+ACCEPT_HEADER_TEMPLATE_WITH_VERSION_PARAM = f'application/vnd.cvat+json; {REST_FRAMEWORK["VERSION_PARAM"]}='
+ACCEPT_HEADER_TEMPLATE = ''.join([ACCEPT_HEADER_TEMPLATE_WITH_VERSION_PARAM, '{}'])
 
 REST_AUTH_REGISTER_SERIALIZERS = {
     'REGISTER_SERIALIZER': 'cvat.apps.restrictions.serializers.RestrictedRegisterSerializer',

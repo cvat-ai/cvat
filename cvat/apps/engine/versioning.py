@@ -3,23 +3,16 @@
 # SPDX-License-Identifier: MIT
 
 from rest_framework.versioning import AcceptHeaderVersioning
-from rest_framework.exceptions import NotAcceptable
 
 class CustomAcceptHeaderVersioning(AcceptHeaderVersioning):
     """
     GET /api/something/ HTTP/1.1
     Host: localhost:8080
-    Accept: application/vnd.cvat.v1.0+json
+    Accept: application/vnd.cvat+json; version=1.0
     """
 
     def determine_version(self, request, *args, **kwargs):
-        version = self._parse_version(request.accepted_media_type)
-        if not self.is_allowed_version(version):
-            raise NotAcceptable(self.invalid_version_message)
-
-    def _parse_version(self, media_type):
-        try:
-            version = media_type.split('vnd.cvat')[1].split('+')[0].split('v')[1]
-        except Exception:
-            version = None
-        return version
+        # it's needed for browsable api
+        if request.accepted_media_type in {'text/html', 'application/json'}:
+            return 'api-docs'
+        return super().determine_version(request, *args, **kwargs)
