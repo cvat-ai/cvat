@@ -179,6 +179,10 @@ by using the [label constructor](/docs/manual/basics/creating_an_annotation_task
   ```bash
   cli.py dump --format "CVAT for images 1.1" 103 output.xml
   ```
+- Dump annotation task with id 104, in the format `COCO 1.0` and save to the file "output.tar":
+  ```bash
+  cli.py dump --format "COCO 1.0" 104 output.tar
+  ```
 
 ### Upload annotation
 
@@ -189,14 +193,14 @@ by using the [label constructor](/docs/manual/basics/creating_an_annotation_task
 
 ### Export task
 
-- Export task with id 136 in the format `COCO 1.0` :
+- Export task with id 136 to file "task_136.tar":
   ```bash
-  cli.py export --format "COCO 1.0" 136
+  cli.py export 136 task_136.tar
   ```
 
 ### Import
 
-- Import task from file "task_backup.zip" :
+- Import task from file "task_backup.zip":
   ```bash
   cli.py import task_backup.zip
   ```

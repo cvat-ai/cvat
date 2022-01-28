@@ -78,8 +78,6 @@ context('Actions on ellipse.', () => {
                 (createEllipseTrackSwitchLabel.rightX + createEllipseTrackSwitchLabel.cx) / 2,
                 createEllipseTrackSwitchLabel.topY + 20,
                 '53.1',
-                false,
-                false,
             );
             testCompareRotate('cvat_canvas_shape_4', 0);
             // Rotation with shift
@@ -89,7 +87,6 @@ context('Actions on ellipse.', () => {
                 createEllipseTrackSwitchLabel.topY + 20,
                 '60.0',
                 true,
-                false,
             );
         });
     });

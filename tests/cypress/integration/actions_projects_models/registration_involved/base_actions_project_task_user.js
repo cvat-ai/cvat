@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -58,7 +58,9 @@ context('Base actions on the project', () => {
     });
 
     after(() => {
-        cy.deletingRegisteredUsers([userName]);
+        cy.getAuthKey().then((authKey) => {
+            cy.deleteUsers(authKey, [userName]);
+        });
     });
 
     describe('Testing "Base actions on the project"', () => {
