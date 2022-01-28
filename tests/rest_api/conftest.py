@@ -11,22 +11,27 @@ from .utils.config import ASSETS_DIR
 cvat_db_asset = osp.join(ASSETS_DIR, 'cvat_db.sql')
 cvat_data_asset = osp.join(ASSETS_DIR, 'cvat_data.tar.bz2')
 
-def _run(command):
-    run(command.split(), check=True)
+def cvat_db_container(command):
+    run(('docker exec cvat_db ' + command).split(), check=True)
+
+def docker_cp(source, target):
+    run(' '.join(['docker container cp', source, target]).split(), check=True)
 
 def restore_data_volume():
-    _run('docker run --rm --volumes-from cvat --mount ' \
+    run('docker run --rm --volumes-from cvat --mount ' \
         f'type=bind,source={ASSETS_DIR},target=/mnt/ ubuntu tar ' \
-        '--strip 3 -C /home/django/data  -xjf /mnt/cvat_data.tar.bz2')
+        '--strip 3 -C /home/django/data -xjf /mnt/cvat_data.tar.bz2'.split(),
+        check=True)
 
 def drop_test_db():
-    _run('docker exec cvat_db rm -rf /cvat_db')
-    _run('docker exec cvat_db dropdb test_db')
+    cvat_db_container('pg_restore -c -U root -d cvat /cvat_db/cvat_db.dump')
+    cvat_db_container('rm -rf /cvat_db')
+    cvat_db_container('dropdb test_db')
 
 def create_test_db():
-    _run(f'docker container cp {osp.join(ASSETS_DIR, "cvat_db")} cvat_db:/')
-    _run('docker exec cvat_db createdb test_db')
-    _run('docker exec cvat_db pg_restore -U root -d test_db /cvat_db/cvat_db.dump')
+    docker_cp(source=osp.join(ASSETS_DIR, "cvat_db"), target='cvat_db:/')
+    cvat_db_container('createdb test_db')
+    cvat_db_container('pg_restore -U root -d test_db /cvat_db/cvat_db.dump')
 
 @pytest.fixture(scope='session', autouse=True)
 def init_test_db():
@@ -43,7 +48,7 @@ def init_test_db():
 
 @pytest.fixture(scope='function', autouse=True)
 def restore_cvat_db():
-    _run('docker exec cvat_db psql -U root -d postgres -f /cvat_db/cvat_db.sql')
+    cvat_db_container('psql -U root -d postgres -f /cvat_db/cvat_db.sql')
 
 @pytest.fixture(scope='module')
 def users():
