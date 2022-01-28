@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+from email import header
 import os
 import requests
 
@@ -18,4 +19,5 @@ def get_method(username, endpoint, **kwargs):
     return requests.get(get_api_url(endpoint, **kwargs), auth=(username, USER_PASS))
 
 def patch_method(username, endpoint, data, **kwargs):
-    return requests.patch(get_api_url(endpoint, **kwargs), data, auth=(username, USER_PASS))
+    response = requests.patch(get_api_url(endpoint, **kwargs), json=data, auth=(username, USER_PASS))
+    return response
