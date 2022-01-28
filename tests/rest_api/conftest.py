@@ -44,7 +44,15 @@ def users():
 @pytest.fixture(scope='module')
 def organizations():
     with open(osp.join(ASSETS_DIR, 'organizations.json')) as f:
-        return json.load(f)
+        print('q')
+        data = json.load(f)
+
+    def _organizations(org_id=None):
+        if org_id:
+            return [org for org in data if org['id'] == org_id][0]
+        return data
+
+    return _organizations
 
 @pytest.fixture(scope='module')
 def memberships():
