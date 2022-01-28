@@ -936,7 +936,10 @@
                     } else {
                         response = await Axios.get(`${backendAPI}/jobs`, {
                             proxy: config.proxy,
-                            params: filter,
+                            params: {
+                                ...filter,
+                                page_size: 12,
+                            },
                         });
                     }
                 } catch (errorData) {

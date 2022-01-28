@@ -34,7 +34,7 @@ function JobsPageComponent(): JSX.Element {
             }
         }
 
-        dispatch(getJobsAsync(query));
+        dispatch(getJobsAsync(copiedQuery));
     }, []);
 
     useEffect(() => {
@@ -67,7 +67,18 @@ function JobsPageComponent(): JSX.Element {
 
     return (
         <div className='cvat-jobs-page'>
-            <TopBarComponent />
+            <TopBarComponent
+                query={query}
+                onChangeFilters={(filters: Record<string, string | null>) => {
+                    dispatch(
+                        getJobsAsync({
+                            ...query,
+                            ...filters,
+                            page: 1,
+                        }),
+                    );
+                }}
+            />
             <JobsContentComponent />
             <Row justify='space-around' about='middle'>
                 <Col {...dimensions}>
@@ -81,7 +92,7 @@ function JobsPageComponent(): JSX.Element {
                         }}
                         showSizeChanger={false}
                         total={count}
-                        pageSize={10}
+                        pageSize={12}
                         current={query.page}
                         showQuickJumper
                     />

@@ -373,6 +373,7 @@ export interface NotificationsState {
         };
         jobs: {
             updating: null | ErrorState;
+            fetching: null | ErrorState;
         };
         formats: {
             fetching: null | ErrorState;
