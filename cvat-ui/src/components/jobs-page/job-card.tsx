@@ -6,6 +6,12 @@ import React from 'react';
 import { useHistory } from 'react-router';
 import Card from 'antd/lib/card';
 import Empty from 'antd/lib/empty';
+import Descriptions from 'antd/lib/descriptions';
+import { MoreOutlined } from '@ant-design/icons';
+import Dropdown from 'antd/lib/dropdown';
+import Menu from 'antd/lib/menu';
+// eslint-disable-next-line import/no-extraneous-dependencies
+import { MenuInfo } from 'rc-menu/lib/interface';
 
 import { useCardHeightHOC } from 'utils/hooks';
 
@@ -56,7 +62,35 @@ function JobCardComponent(props: Props): JSX.Element {
                 </>
             )}
         >
-            <div style={{ width: '100%', height: '33%' }}>Test</div>
+            <Descriptions column={2} size='small'>
+                <Descriptions.Item label='stage'>{job.stage}</Descriptions.Item>
+                <Descriptions.Item label='size'>{job.stopFrame - job.startFrame + 1}</Descriptions.Item>
+                <Descriptions.Item label='state'>{job.state}</Descriptions.Item>
+                { job.assignee ? (
+                    <Descriptions.Item label='assignee'>{job.assignee.username}</Descriptions.Item>
+                ) : null}
+            </Descriptions>
+            <Dropdown overlay={(
+                <Menu onClick={(action: MenuInfo) => {
+                    if (action.key === 'task') {
+                        history.push(`/tasks/${job.taskId}`);
+                    } else if (action.key === 'project') {
+                        history.push(`/projects/${job.projectId}`);
+                    } else if (action.key === 'bug_tracker') {
+                        // false alarm
+                        // eslint-disable-next-line security/detect-non-literal-fs-filename
+                        window.open(job.bugTracker, '_blank', 'noopener noreferrer');
+                    }
+                }}
+                >
+                    <Menu.Item key='task' disabled={job.taskId === null}>Go to the task</Menu.Item>
+                    <Menu.Item key='project' disabled={job.projectId === null}>Go to the project</Menu.Item>
+                    <Menu.Item key='bug_tracker' disabled={!job.bugTracker}>Go to the bug tracker</Menu.Item>
+                </Menu>
+            )}
+            >
+                <MoreOutlined className='cvat-job-card-more-button' />
+            </Dropdown>
         </Card>
     );
 }

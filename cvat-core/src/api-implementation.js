@@ -177,7 +177,7 @@ const config = require('./config');
                 }
             }
 
-            const jobsData = await serverProxy.jobs.get(filter.jobID);
+            const jobsData = await serverProxy.jobs.get(null, filter);
             const jobs = jobsData.results.map((jobData) => new Job(jobData));
             jobs.count = jobsData.count;
             return jobs;

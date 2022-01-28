@@ -34,6 +34,7 @@ export default (state: JobsState = defaultState, action: JobsActions): JobsState
             return {
                 ...state,
                 fetching: false,
+                count: action.payload.jobs.count,
                 current: action.payload.jobs,
                 previews: action.payload.previews,
             };

@@ -14,9 +14,13 @@ export enum JobsActionTypes {
     GET_JOBS_FAILED = 'GET_JOBS_FAILED',
 }
 
+interface JobsList extends Array<any> {
+    count: number;
+}
+
 const jobsActions = {
     getJobs: (query: Partial<JobsQuery>) => createAction(JobsActionTypes.GET_JOBS, { query }),
-    getJobsSuccess: (jobs: any[], previews: string[]) => (
+    getJobsSuccess: (jobs: JobsList, previews: string[]) => (
         createAction(JobsActionTypes.GET_JOBS_SUCCESS, { jobs, previews })
     ),
     getJobsFailed: (error: any) => createAction(JobsActionTypes.GET_JOBS_FAILED, { error }),
