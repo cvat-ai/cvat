@@ -3,9 +3,8 @@
 # SPDX-License-Identifier: MIT
 
 from http import HTTPStatus
-from urllib import request
 import pytest
-from .utils.config import get_method, patch_method
+from .utils.config import get_method, patch_method, delete_method
 from deepdiff import DeepDiff
 
 class TestGetOrganizations:
@@ -72,5 +71,32 @@ class TestPatchOrganizations:
             assert response.status_code == HTTPStatus.OK
             assert DeepDiff(expected_data, response.json(),
                 exclude_paths="root['updated_date']") == {}
+        else:
+            assert response.status_code != HTTPStatus.OK
+
+class TestDeleteOrganizations:
+    _ORG = 2
+
+    @pytest.mark.parametrize('privilege, role, is_member, is_allow', [
+        ('admin',    None,         None,  True),
+        (None,       'owner',      True,  True),
+        (None,       'maintainer', True,  False),
+        (None,       'worker',     True,  False),
+        (None,       'supervisor', True,  False),
+        ('user',     None,         False, False),
+        ('business', None,         False, False),
+        ('worker',   None,         False, False),
+    ])
+    def test_can_delete(self, privilege, role, is_member,
+            is_allow, find_users):
+        exclude_org = None if is_member else self._ORG
+        org = self._ORG if is_member else None
+        user = find_users(privilege=privilege, role=role, org=org,
+            exclude_org=exclude_org)[0]['username']
+
+        response = delete_method(user, f'organizations/{self._ORG}')
+
+        if is_allow:
+            assert response.status_code == HTTPStatus.NO_CONTENT
         else:
             assert response.status_code != HTTPStatus.OK
