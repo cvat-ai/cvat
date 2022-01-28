@@ -12,6 +12,7 @@ from .utils import config
 def test_check_objects_integrity():
     with requests.Session() as session:
         session.auth = ('admin1', config.USER_PASS)
+        session.headers.update({'Accept': config.ACCEPT_HEADER})
 
         for filename in glob.glob(os.path.join(config.ASSETS_DIR, '*.json')):
             with open(filename) as f:

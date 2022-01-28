@@ -16,10 +16,12 @@ def compare_organizations(org_id, response):
     DeepDiff(org, response.json())
 
 def test_admin1_get_organization_id_1():
-    response = requests.get(config.get_api_url('organizations/1'), auth=('admin1', config.USER_PASS))
+    response = requests.get(config.get_api_url('organizations/1'), auth=('admin1', config.USER_PASS),
+                            headers={'Accept': config.ACCEPT_HEADER})
     compare_organizations(1, response)
 
 def test_user1_get_organization_id_1():
-    response = requests.get(config.get_api_url('organizations/1'), auth=('user1', config.USER_PASS))
+    response = requests.get(config.get_api_url('organizations/1'), auth=('user1', config.USER_PASS),
+                            headers={'Accept': config.ACCEPT_HEADER})
     compare_organizations(1, response)
 
