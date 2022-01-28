@@ -34,14 +34,7 @@ context('Export project dataset.', { browser: '!firefox' }, () => {
     const imagesFolder = `cypress/fixtures/${imageFileName}`;
     const directoryToArchive = imagesFolder;
 
-    let projectID = '';
     let datasetArchiveName;
-
-    function getProjectID() {
-        cy.url().then((url) => {
-            projectID = Number(url.split('/').slice(-1)[0].split('?')[0]);
-        });
-    }
 
     function checkCounTasksInXML(projectParams, expectedCount) {
         cy.exportProject(projectParams);
@@ -57,7 +50,6 @@ context('Export project dataset.', { browser: '!firefox' }, () => {
         cy.imageGenerator(imagesFolder, imageFileName, width, height, color, posX, posY, labelName, imagesCount);
         cy.createZipArchive(directoryToArchive, archivePath);
         cy.openProject(projectName);
-        getProjectID();
         cy.createAnnotationTask(
             task.nameSecond,
             task.labelSecond,
@@ -86,8 +78,10 @@ context('Export project dataset.', { browser: '!firefox' }, () => {
     });
 
     after(() => {
-        cy.goToProjectsList();
-        cy.deleteProject(projectName, projectID);
+        cy.logout();
+        cy.getAuthKey().then((authKey) => {
+            cy.deleteProjects(authKey, [projectName]);
+        });
     });
 
     describe(`Testing "Case ${caseID}"`, () => {
@@ -151,6 +145,38 @@ context('Export project dataset.', { browser: '!firefox' }, () => {
             cy.importProject(importDataset);
             cy.openProject(projectName);
             cy.get('.cvat-tasks-list-item').should('have.length', 1);
+        });
+
+        it('Import dataset to project without labels.', () => {
+            // Deleting the task
+            cy.get('.cvat-item-task-name').then((name) => {
+                cy.deleteTask(name.text());
+            });
+            cy.get('.cvat-tasks-list-item')
+                .should('have.length', 1)
+                .should('have.attr', 'style')
+                .and('contain', 'pointer-events: none; opacity: 0.5;');
+            // Deleting the label
+            cy.get('.cvat-constructor-viewer-item')
+                .should('have.length', 1)
+                .find('[aria-label="close"]')
+                .click();
+            cy.get('.cvat-modal-delete-label')
+                .contains('button', 'OK')
+                .click();
+            cy.get('.cvat-modal-delete-label').should('not.exist');
+            cy.goToProjectsList();
+            const importDataset = {
+                projectName,
+                format: 'CVAT 1.1',
+                archive: datasetArchiveName,
+            };
+            cy.importProject(importDataset);
+            cy.openProject(projectName);
+            cy.get('.cvat-tasks-list-item').should('have.length', 1);
+            cy.get('.cvat-constructor-viewer-item')
+                .should('have.length', 1)
+                .should('have.text', labelName);
         });
     });
 });
