@@ -9,6 +9,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import Spin from 'antd/lib/spin';
 import { Col, Row } from 'antd/lib/grid';
 import Pagination from 'antd/lib/pagination';
+import Empty from 'antd/lib/empty';
 
 import { CombinedState } from 'reducers/interfaces';
 import { getJobsAsync } from 'actions/jobs-actions';
@@ -28,9 +29,14 @@ function JobsPageComponent(): JSX.Element {
         const { location } = history;
         const searchParams = new URLSearchParams(location.search);
         const copiedQuery = { ...query };
-        for (const [key, value] of searchParams.entries()) {
-            if (key in copiedQuery) {
-                copiedQuery[key] = key === 'page' ? +value : value;
+        for (const key of Object.keys(copiedQuery)) {
+            if (searchParams.has(key)) {
+                const value = searchParams.get(key);
+                if (value) {
+                    copiedQuery[key] = key === 'page' ? +value : value;
+                }
+            } else {
+                copiedQuery[key] = null;
             }
         }
 
@@ -79,25 +85,30 @@ function JobsPageComponent(): JSX.Element {
                     );
                 }}
             />
-            <JobsContentComponent />
-            <Row justify='space-around' about='middle'>
-                <Col {...dimensions}>
-                    <Pagination
-                        className='cvat-jobs-page-pagination'
-                        onChange={(page: number) => {
-                            dispatch(getJobsAsync({
-                                ...query,
-                                page,
-                            }));
-                        }}
-                        showSizeChanger={false}
-                        total={count}
-                        pageSize={12}
-                        current={query.page}
-                        showQuickJumper
-                    />
-                </Col>
-            </Row>
+            {count ? (
+                <>
+                    <JobsContentComponent />
+                    <Row justify='space-around' about='middle'>
+                        <Col {...dimensions}>
+                            <Pagination
+                                className='cvat-jobs-page-pagination'
+                                onChange={(page: number) => {
+                                    dispatch(getJobsAsync({
+                                        ...query,
+                                        page,
+                                    }));
+                                }}
+                                showSizeChanger={false}
+                                total={count}
+                                pageSize={12}
+                                current={query.page}
+                                showQuickJumper
+                            />
+                        </Col>
+                    </Row>
+                </>
+            ) : <Empty />}
+
         </div>
     );
 }
