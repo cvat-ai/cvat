@@ -53,6 +53,10 @@
 
         .ant-card-body {
             padding: $grid-unit-size;
+
+            .ant-descriptions-item {
+                padding: 0;
+            }
         }
 
         &:hover {

@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useHistory } from 'react-router';
 import Card from 'antd/lib/card';
 import Empty from 'antd/lib/empty';
@@ -29,6 +29,7 @@ interface Props {
 
 function JobCardComponent(props: Props): JSX.Element {
     const { job, preview } = props;
+    const [expanded, setExpanded] = useState<boolean>(false);
     const history = useHistory();
     const height = useCardHeight();
     const onClick = (): void => {
@@ -37,6 +38,8 @@ function JobCardComponent(props: Props): JSX.Element {
 
     return (
         <Card
+            onMouseEnter={() => setExpanded(true)}
+            onMouseLeave={() => setExpanded(false)}
             style={{ height }}
             className='cvat-job-page-list-item'
             cover={(
@@ -62,12 +65,14 @@ function JobCardComponent(props: Props): JSX.Element {
                 </>
             )}
         >
-            <Descriptions column={2} size='small'>
-                <Descriptions.Item label='stage'>{job.stage}</Descriptions.Item>
-                <Descriptions.Item label='size'>{job.stopFrame - job.startFrame + 1}</Descriptions.Item>
-                <Descriptions.Item label='state'>{job.state}</Descriptions.Item>
-                { job.assignee ? (
-                    <Descriptions.Item label='assignee'>{job.assignee.username}</Descriptions.Item>
+            <Descriptions column={1} size='small'>
+                <Descriptions.Item label='Stage'>{job.stage}</Descriptions.Item>
+                <Descriptions.Item label='State'>{job.state}</Descriptions.Item>
+                { expanded ? (
+                    <Descriptions.Item label='Size'>{job.stopFrame - job.startFrame + 1}</Descriptions.Item>
+                ) : null}
+                { expanded && job.assignee ? (
+                    <Descriptions.Item label='Assignee'>{job.assignee.username}</Descriptions.Item>
                 ) : null}
             </Descriptions>
             <Dropdown overlay={(

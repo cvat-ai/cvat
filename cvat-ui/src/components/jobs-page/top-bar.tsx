@@ -49,7 +49,7 @@ function TopBarComponent(props: Props): JSX.Element {
             title: 'Assignee',
             dataIndex: 'assignee',
             key: 'assignee',
-            filteredValue: query.assignee || null,
+            filteredValue: query.assignee ? [query.assignee] : null,
             className: `${query.assignee ? 'cvat-jobs-page-filter cvat-jobs-page-filter-active' : 'cvat-jobs-page-filter'}`,
             filterDropdown: (
                 <div>
