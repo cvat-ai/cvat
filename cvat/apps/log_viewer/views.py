@@ -11,8 +11,7 @@ from rest_framework.response import Response
 class LogViewerAccessViewSet(viewsets.ViewSet):
     serializer_class = None
 
-    @action(detail=False, methods=['GET'])
-    def access(self, request):
+    def list(self, request):
         return Response(status=status.HTTP_200_OK)
 
     # All log view requests are proxied by Traefik in production mode which is not available in debug mode,

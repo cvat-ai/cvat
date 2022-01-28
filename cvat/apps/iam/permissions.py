@@ -271,7 +271,7 @@ class LogViewerPermission(OpenPolicyAgentPermission):
     @property
     def scope(self):
         return {
-            'access': 'view',
+            'list': 'view',
         }.get(self.view.action, None)
 
     @property
