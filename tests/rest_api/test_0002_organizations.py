@@ -4,7 +4,7 @@
 
 from http import HTTPStatus
 import pytest
-from .utils.config import get_method
+from .utils.config import get_method, patch_method
 from deepdiff import DeepDiff
 
 class TestGetOrganizations:
@@ -31,5 +31,34 @@ class TestGetOrganizations:
         if is_allow:
             assert response.status_code == HTTPStatus.OK
             assert DeepDiff(organizations(self._ORG), response.json()) == {}
+        else:
+            assert response.status_code == HTTPStatus.NOT_FOUND
+
+class TestPatchOrganizations:
+    _ORG = 2
+
+    @pytest.mark.parametrize('privilege, role, is_member, is_allow', [
+        ('admin',    None,         None,  True),
+        ('user',     None,         False, False),
+        ('business', None,         False, False),
+        ('worker',   None,         False, False),
+        (None,       'owner',      True,  True),
+        (None,       'maintainer', True,  True),
+        (None,       'worker',     True,  False),
+        (None,       'supervisor', True,  False),
+    ])
+    def test_can_update_specific_organization(self, privilege, role, is_member,
+            is_allow, find_users):
+        exclude_org = None if is_member else self._ORG
+        org = self._ORG if is_member else None
+        user = find_users(privilege=privilege, role=role, org=org,
+            exclude_org=exclude_org)[0]['username']
+
+        data = {'slug': 'new', 'name': 'new', 'descrition': 'new',
+            'contact': {'email': 'new@cvat.org'}}
+        response = patch_method(user, f'organization/{self._ORG}', data)
+        if is_allow:
+            assert response.status_code == HTTPStatus.OK
+            assert DeepDiff(data, response.json()) == {}
         else:
             assert response.status_code == HTTPStatus.NOT_FOUND
