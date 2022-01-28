@@ -48,17 +48,21 @@ class TestPatchOrganizations:
         (None,       'supervisor', True,  False),
     ])
     def test_can_update_specific_organization(self, privilege, role, is_member,
-            is_allow, find_users):
+            is_allow, find_users, organizations):
         exclude_org = None if is_member else self._ORG
         org = self._ORG if is_member else None
         user = find_users(privilege=privilege, role=role, org=org,
             exclude_org=exclude_org)[0]['username']
 
-        data = {'slug': 'new', 'name': 'new', 'descrition': 'new',
-            'contact': {'email': 'new@cvat.org'}}
-        response = patch_method(user, f'organization/{self._ORG}', data)
+        data = {'slug': 'new', 'name': 'new', 'description': 'new'}
+        expected_data = organizations(self._ORG).copy()
+        expected_data.update(data)
+        response = patch_method(user, f'organizations/{self._ORG}', data)
+
+
         if is_allow:
             assert response.status_code == HTTPStatus.OK
-            assert DeepDiff(data, response.json()) == {}
+            assert DeepDiff(expected_data,
+                response.json(), exclude_paths="root['updated_date']") == {}
         else:
-            assert response.status_code == HTTPStatus.NOT_FOUND
+            assert response.status_code != HTTPStatus.OK
