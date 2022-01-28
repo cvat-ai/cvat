@@ -23,6 +23,10 @@ class OpenPolicyAgentPermission(metaclass=ABCMeta):
             obj=obj,
             **cls.unpack_context(request), **kwargs)
 
+    @classmethod
+    def create_scope_list(cls, request):
+        return cls(**cls.unpack_context(request), scope='list')
+
     @staticmethod
     def unpack_context(request):
         privilege = request.iam_context['privilege']
@@ -561,8 +565,11 @@ class TaskPermission(OpenPolicyAgentPermission):
     def create(cls, request, view, obj):
         permissions = []
         if view.basename == 'task':
+            project_id = request.data.get('project_id') or request.data.get('project')
+            assignee_id = request.data.get('assignee_id') or request.data.get('assignee')
             for scope in cls.get_scopes(request, view, obj):
-                self = cls.create_base_perm(request, view, scope, obj)
+                self = cls.create_base_perm(request, view, scope, obj,
+                    project_id=project_id, assignee_id=assignee_id)
                 permissions.append(self)
 
             if view.action == 'jobs':
@@ -574,12 +581,10 @@ class TaskPermission(OpenPolicyAgentPermission):
                 perm = UserPermission.create_scope_view(request, owner)
                 permissions.append(perm)
 
-            assignee = request.data.get('assignee_id') or request.data.get('assignee')
-            if assignee:
-                perm = UserPermission.create_scope_view(request, assignee)
+            if assignee_id:
+                perm = UserPermission.create_scope_view(request, assignee_id)
                 permissions.append(perm)
 
-            project_id = request.data.get('project_id') or request.data.get('project')
             if project_id:
                 perm = ProjectPermission.create_scope_view(request, project_id)
                 permissions.append(perm)
@@ -589,17 +594,23 @@ class TaskPermission(OpenPolicyAgentPermission):
                 perm = TaskPermission.create_scope_create(request, org_id)
                 # We don't create a project, just move it. Thus need to decrease
                 # the number of resources.
-                perm.payload['input']['resource']['user']['num_resources'] -= 1
+                if obj != None:
+                    perm.payload['input']['resource']['user']['num_resources'] -= 1
+                    if obj.project != None:
+                        ValidationError('Cannot change the organization for '
+                            'a task inside a project')
                 permissions.append(perm)
 
         return permissions
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        self.project_id = kwargs.get('project_id')
+        self.assignee_id = kwargs.get('assignee_id')
         self.url = settings.IAM_OPA_DATA_URL + '/tasks/allow'
 
-    @classmethod
-    def get_scopes(cls, request, view, obj):
+    @staticmethod
+    def get_scopes(request, view, obj):
         scope = {
             ('list', 'GET'): 'list',
             ('create', 'POST'): 'create',
@@ -663,22 +674,15 @@ class TaskPermission(OpenPolicyAgentPermission):
 
         return scopes
 
-
-    @classmethod
-    def create_scope_list(cls, request):
-        view = namedtuple('View', ['action'])(action='list')
-        return cls('list', request, view)
-
     @classmethod
     def create_scope_view_data(cls, request, task_id):
         try:
             obj = Task.objects.get(id=task_id)
         except Task.DoesNotExist as ex:
             raise ValidationError(str(ex))
-        view = namedtuple('View', ['action'])(action='data')
-        return cls('view:data', request, view, obj)
+        return cls(**cls.unpack_context(request), obj=obj, scope='view:data')
 
-    def get_resource(self): # FIXME: self.requesT
+    def get_resource(self):
         data = None
         if self.obj:
             data = {
@@ -696,25 +700,22 @@ class TaskPermission(OpenPolicyAgentPermission):
                     },
                 } if self.obj.project else None
             }
-        elif self.view.action in ['create', 'import_backup']:
-            organization = self.request.iam_context['organization']
-            project_id = self.request.data.get('project_id') or self.request.data.get('project')
+        elif self.scope in ['create', 'create@project', 'import:backup']:
             project = None
-            if project_id:
+            if self.project_id:
                 try:
-                    project = Project.objects.get(id=project_id)
+                    project = Project.objects.get(id=self.project_id)
                 except Project.DoesNotExist as ex:
                     raise ValidationError(str(ex))
 
             data = {
                 "id": None,
-                "owner": { "id": self.request.user.id },
+                "owner": { "id": self.user_id },
                 "assignee": {
-                    "id": self.request.data.get('assignee_id') or
-                        self.request.data.get('assignee')
+                    "id": self.assignee_id
                 },
                 'organization': {
-                    "id": organization.id if organization else None
+                    "id": self.org_id
                 },
                 "project": {
                     "owner": { "id": getattr(project.owner, 'id', None) },
@@ -725,7 +726,7 @@ class TaskPermission(OpenPolicyAgentPermission):
                 } if project else None,
                 "user": {
                     "num_resources": Project.objects.filter(
-                        owner_id=self.request.user.id).count()
+                        owner_id=self.user_id).count()
                 }
             }
 
@@ -744,9 +745,9 @@ class JobPermission(OpenPolicyAgentPermission):
                 perm = IssuePermission.create_scope_list(request)
                 permissions.append(perm)
 
-            assignee = request.data.get('assignee')
-            if assignee:
-                perm = UserPermission.create_scope_view(request, assignee)
+            assignee_id = request.data.get('assignee')
+            if assignee_id:
+                perm = UserPermission.create_scope_view(request, assignee_id)
                 permissions.append(perm)
 
         return permissions
@@ -755,7 +756,7 @@ class JobPermission(OpenPolicyAgentPermission):
         super().__init__(**kwargs)
         self.url = settings.IAM_OPA_DATA_URL + '/jobs/allow'
 
-    @classmethod
+    @staticmethod
     def get_scopes(cls, request, view, obj):
         scope = {
             ('list', 'GET'): 'list', # TODO: need to add the method
@@ -803,11 +804,6 @@ class JobPermission(OpenPolicyAgentPermission):
 
         return scopes
 
-    @classmethod
-    def create_scope_list(cls, request):
-        view = namedtuple('View', ['action'])(action='list')
-        return cls('list', request, view)
-
     def get_resource(self):
         data = None
         if self.obj:
@@ -850,10 +846,6 @@ class CommentPermission(OpenPolicyAgentPermission):
         super().__init__(**kwargs)
         self.issue_id = kwargs.get('issue_id')
         self.url = settings.IAM_OPA_DATA_URL + '/comments/allow'
-
-    @classmethod
-    def create_scope_list(cls, request):
-        return cls(**cls.unpack_context(request), scope='list')
 
     @staticmethod
     def get_scopes(request, view, obj):
@@ -932,10 +924,6 @@ class IssuePermission(OpenPolicyAgentPermission):
                 permissions.append(perm)
 
         return permissions
-
-    @classmethod
-    def create_scope_list(cls, request):
-        return cls(**cls.unpack_context(request), scope='list')
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)

@@ -25,7 +25,7 @@ class OrganizationViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        permission = OrganizationPermission(self.request, self)
+        permission = OrganizationPermission.create_scope_list(self.request)
         return permission.filter(queryset)
 
     def get_serializer_class(self):
@@ -63,7 +63,7 @@ class MembershipViewSet(mixins.RetrieveModelMixin, mixins.DestroyModelMixin,
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        permission = MembershipPermission(self.request, self)
+        permission = MembershipPermission.create_scope_list(self.request)
         return permission.filter(queryset)
 
 class InvitationViewSet(viewsets.ModelViewSet):
@@ -80,7 +80,7 @@ class InvitationViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        permission = InvitationPermission(self.request, self)
+        permission = InvitationPermission.create_scope_list(self.request)
         return permission.filter(queryset)
 
     def perform_create(self, serializer):
