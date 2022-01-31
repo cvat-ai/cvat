@@ -1,243 +1,243 @@
 package analytics
 
 test_scope_VIEW_context_SANDBOX_ownership_NONE_privilege_ADMIN_membership_NONE {
-    allow with input as {"scope": "view", "auth": {"user": {"id": 26, "privilege": "admin"}, "organization": null}, "resource": {"visibility": "public"}}
+    allow with input as {"scope": "view", "auth": {"user": {"id": 76, "privilege": "admin"}, "organization": null}, "resource": {"visibility": "public"}}
 }
 
 test_scope_VIEW_context_SANDBOX_ownership_NONE_privilege_ADMIN_membership_NONE {
-    allow with input as {"scope": "view", "auth": {"user": {"id": 7, "privilege": "admin"}, "organization": null}, "resource": {"visibility": "private"}}
+    allow with input as {"scope": "view", "auth": {"user": {"id": 70, "privilege": "admin"}, "organization": null}, "resource": {"visibility": "private"}}
 }
 
 test_scope_VIEW_context_SANDBOX_ownership_NONE_privilege_BUSINESS_membership_NONE {
-    allow with input as {"scope": "view", "auth": {"user": {"id": 11, "privilege": "business"}, "organization": null}, "resource": {"visibility": "public"}}
+    allow with input as {"scope": "view", "auth": {"user": {"id": 45, "privilege": "business"}, "organization": null}, "resource": {"visibility": "public"}}
 }
 
 test_scope_VIEW_context_SANDBOX_ownership_NONE_privilege_BUSINESS_membership_NONE {
-    not allow with input as {"scope": "view", "auth": {"user": {"id": 19, "privilege": "business"}, "organization": null}, "resource": {"visibility": "private"}}
+    not allow with input as {"scope": "view", "auth": {"user": {"id": 11, "privilege": "business"}, "organization": null}, "resource": {"visibility": "private"}}
 }
 
 test_scope_VIEW_context_SANDBOX_ownership_NONE_privilege_USER_membership_NONE {
-    not allow with input as {"scope": "view", "auth": {"user": {"id": 72, "privilege": "user"}, "organization": null}, "resource": {"visibility": "public"}}
+    not allow with input as {"scope": "view", "auth": {"user": {"id": 70, "privilege": "user"}, "organization": null}, "resource": {"visibility": "public"}}
 }
 
 test_scope_VIEW_context_SANDBOX_ownership_NONE_privilege_USER_membership_NONE {
-    not allow with input as {"scope": "view", "auth": {"user": {"id": 99, "privilege": "user"}, "organization": null}, "resource": {"visibility": "private"}}
+    not allow with input as {"scope": "view", "auth": {"user": {"id": 52, "privilege": "user"}, "organization": null}, "resource": {"visibility": "private"}}
 }
 
 test_scope_VIEW_context_SANDBOX_ownership_NONE_privilege_WORKER_membership_NONE {
-    not allow with input as {"scope": "view", "auth": {"user": {"id": 11, "privilege": "worker"}, "organization": null}, "resource": {"visibility": "public"}}
+    not allow with input as {"scope": "view", "auth": {"user": {"id": 34, "privilege": "worker"}, "organization": null}, "resource": {"visibility": "public"}}
 }
 
 test_scope_VIEW_context_SANDBOX_ownership_NONE_privilege_WORKER_membership_NONE {
-    not allow with input as {"scope": "view", "auth": {"user": {"id": 81, "privilege": "worker"}, "organization": null}, "resource": {"visibility": "private"}}
+    not allow with input as {"scope": "view", "auth": {"user": {"id": 70, "privilege": "worker"}, "organization": null}, "resource": {"visibility": "private"}}
 }
 
 test_scope_VIEW_context_SANDBOX_ownership_NONE_privilege_NONE_membership_NONE {
-    not allow with input as {"scope": "view", "auth": {"user": {"id": 15, "privilege": "none"}, "organization": null}, "resource": {"visibility": "public"}}
+    not allow with input as {"scope": "view", "auth": {"user": {"id": 73, "privilege": "none"}, "organization": null}, "resource": {"visibility": "public"}}
 }
 
 test_scope_VIEW_context_SANDBOX_ownership_NONE_privilege_NONE_membership_NONE {
-    not allow with input as {"scope": "view", "auth": {"user": {"id": 0, "privilege": "none"}, "organization": null}, "resource": {"visibility": "private"}}
+    not allow with input as {"scope": "view", "auth": {"user": {"id": 98, "privilege": "none"}, "organization": null}, "resource": {"visibility": "private"}}
 }
 
 test_scope_VIEW_context_ORGANIZATION_ownership_NONE_privilege_ADMIN_membership_OWNER {
-    allow with input as {"scope": "view", "auth": {"user": {"id": 39, "privilege": "admin"}, "organization": {"id": 141, "owner": {"id": 39}, "user": {"role": "owner"}}}, "resource": {"visibility": "public"}}
+    allow with input as {"scope": "view", "auth": {"user": {"id": 56, "privilege": "admin"}, "organization": {"id": 112, "owner": {"id": 56}, "user": {"role": "owner"}}}, "resource": {"visibility": "public"}}
 }
 
 test_scope_VIEW_context_ORGANIZATION_ownership_NONE_privilege_ADMIN_membership_OWNER {
-    allow with input as {"scope": "view", "auth": {"user": {"id": 79, "privilege": "admin"}, "organization": {"id": 198, "owner": {"id": 79}, "user": {"role": "owner"}}}, "resource": {"visibility": "private"}}
+    allow with input as {"scope": "view", "auth": {"user": {"id": 98, "privilege": "admin"}, "organization": {"id": 114, "owner": {"id": 98}, "user": {"role": "owner"}}}, "resource": {"visibility": "private"}}
 }
 
 test_scope_VIEW_context_ORGANIZATION_ownership_NONE_privilege_ADMIN_membership_MAINTAINER {
-    allow with input as {"scope": "view", "auth": {"user": {"id": 67, "privilege": "admin"}, "organization": {"id": 145, "owner": {"id": 213}, "user": {"role": "maintainer"}}}, "resource": {"visibility": "public"}}
+    allow with input as {"scope": "view", "auth": {"user": {"id": 31, "privilege": "admin"}, "organization": {"id": 115, "owner": {"id": 244}, "user": {"role": "maintainer"}}}, "resource": {"visibility": "public"}}
 }
 
 test_scope_VIEW_context_ORGANIZATION_ownership_NONE_privilege_ADMIN_membership_MAINTAINER {
-    allow with input as {"scope": "view", "auth": {"user": {"id": 17, "privilege": "admin"}, "organization": {"id": 156, "owner": {"id": 268}, "user": {"role": "maintainer"}}}, "resource": {"visibility": "private"}}
+    allow with input as {"scope": "view", "auth": {"user": {"id": 40, "privilege": "admin"}, "organization": {"id": 190, "owner": {"id": 208}, "user": {"role": "maintainer"}}}, "resource": {"visibility": "private"}}
 }
 
 test_scope_VIEW_context_ORGANIZATION_ownership_NONE_privilege_ADMIN_membership_SUPERVISOR {
-    allow with input as {"scope": "view", "auth": {"user": {"id": 99, "privilege": "admin"}, "organization": {"id": 146, "owner": {"id": 249}, "user": {"role": "supervisor"}}}, "resource": {"visibility": "public"}}
+    allow with input as {"scope": "view", "auth": {"user": {"id": 57, "privilege": "admin"}, "organization": {"id": 137, "owner": {"id": 294}, "user": {"role": "supervisor"}}}, "resource": {"visibility": "public"}}
 }
 
 test_scope_VIEW_context_ORGANIZATION_ownership_NONE_privilege_ADMIN_membership_SUPERVISOR {
-    allow with input as {"scope": "view", "auth": {"user": {"id": 49, "privilege": "admin"}, "organization": {"id": 136, "owner": {"id": 268}, "user": {"role": "supervisor"}}}, "resource": {"visibility": "private"}}
+    allow with input as {"scope": "view", "auth": {"user": {"id": 65, "privilege": "admin"}, "organization": {"id": 193, "owner": {"id": 253}, "user": {"role": "supervisor"}}}, "resource": {"visibility": "private"}}
 }
 
 test_scope_VIEW_context_ORGANIZATION_ownership_NONE_privilege_ADMIN_membership_WORKER {
-    allow with input as {"scope": "view", "auth": {"user": {"id": 51, "privilege": "admin"}, "organization": {"id": 171, "owner": {"id": 291}, "user": {"role": "worker"}}}, "resource": {"visibility": "public"}}
+    allow with input as {"scope": "view", "auth": {"user": {"id": 11, "privilege": "admin"}, "organization": {"id": 140, "owner": {"id": 257}, "user": {"role": "worker"}}}, "resource": {"visibility": "public"}}
 }
 
 test_scope_VIEW_context_ORGANIZATION_ownership_NONE_privilege_ADMIN_membership_WORKER {
-    allow with input as {"scope": "view", "auth": {"user": {"id": 20, "privilege": "admin"}, "organization": {"id": 135, "owner": {"id": 255}, "user": {"role": "worker"}}}, "resource": {"visibility": "private"}}
+    allow with input as {"scope": "view", "auth": {"user": {"id": 29, "privilege": "admin"}, "organization": {"id": 133, "owner": {"id": 291}, "user": {"role": "worker"}}}, "resource": {"visibility": "private"}}
 }
 
 test_scope_VIEW_context_ORGANIZATION_ownership_NONE_privilege_ADMIN_membership_NONE {
-    allow with input as {"scope": "view", "auth": {"user": {"id": 55, "privilege": "admin"}, "organization": {"id": 129, "owner": {"id": 283}, "user": {"role": null}}}, "resource": {"visibility": "public"}}
+    allow with input as {"scope": "view", "auth": {"user": {"id": 25, "privilege": "admin"}, "organization": {"id": 185, "owner": {"id": 266}, "user": {"role": null}}}, "resource": {"visibility": "public"}}
 }
 
 test_scope_VIEW_context_ORGANIZATION_ownership_NONE_privilege_ADMIN_membership_NONE {
-    allow with input as {"scope": "view", "auth": {"user": {"id": 90, "privilege": "admin"}, "organization": {"id": 153, "owner": {"id": 257}, "user": {"role": null}}}, "resource": {"visibility": "private"}}
+    allow with input as {"scope": "view", "auth": {"user": {"id": 9, "privilege": "admin"}, "organization": {"id": 199, "owner": {"id": 225}, "user": {"role": null}}}, "resource": {"visibility": "private"}}
 }
 
 test_scope_VIEW_context_ORGANIZATION_ownership_NONE_privilege_BUSINESS_membership_OWNER {
-    allow with input as {"scope": "view", "auth": {"user": {"id": 85, "privilege": "business"}, "organization": {"id": 117, "owner": {"id": 85}, "user": {"role": "owner"}}}, "resource": {"visibility": "public"}}
+    allow with input as {"scope": "view", "auth": {"user": {"id": 40, "privilege": "business"}, "organization": {"id": 144, "owner": {"id": 40}, "user": {"role": "owner"}}}, "resource": {"visibility": "public"}}
 }
 
 test_scope_VIEW_context_ORGANIZATION_ownership_NONE_privilege_BUSINESS_membership_OWNER {
-    not allow with input as {"scope": "view", "auth": {"user": {"id": 4, "privilege": "business"}, "organization": {"id": 131, "owner": {"id": 4}, "user": {"role": "owner"}}}, "resource": {"visibility": "private"}}
+    not allow with input as {"scope": "view", "auth": {"user": {"id": 74, "privilege": "business"}, "organization": {"id": 141, "owner": {"id": 74}, "user": {"role": "owner"}}}, "resource": {"visibility": "private"}}
 }
 
 test_scope_VIEW_context_ORGANIZATION_ownership_NONE_privilege_BUSINESS_membership_MAINTAINER {
-    allow with input as {"scope": "view", "auth": {"user": {"id": 54, "privilege": "business"}, "organization": {"id": 122, "owner": {"id": 209}, "user": {"role": "maintainer"}}}, "resource": {"visibility": "public"}}
+    allow with input as {"scope": "view", "auth": {"user": {"id": 18, "privilege": "business"}, "organization": {"id": 137, "owner": {"id": 275}, "user": {"role": "maintainer"}}}, "resource": {"visibility": "public"}}
 }
 
 test_scope_VIEW_context_ORGANIZATION_ownership_NONE_privilege_BUSINESS_membership_MAINTAINER {
-    not allow with input as {"scope": "view", "auth": {"user": {"id": 30, "privilege": "business"}, "organization": {"id": 101, "owner": {"id": 295}, "user": {"role": "maintainer"}}}, "resource": {"visibility": "private"}}
+    not allow with input as {"scope": "view", "auth": {"user": {"id": 4, "privilege": "business"}, "organization": {"id": 105, "owner": {"id": 285}, "user": {"role": "maintainer"}}}, "resource": {"visibility": "private"}}
 }
 
 test_scope_VIEW_context_ORGANIZATION_ownership_NONE_privilege_BUSINESS_membership_SUPERVISOR {
-    allow with input as {"scope": "view", "auth": {"user": {"id": 3, "privilege": "business"}, "organization": {"id": 132, "owner": {"id": 224}, "user": {"role": "supervisor"}}}, "resource": {"visibility": "public"}}
+    allow with input as {"scope": "view", "auth": {"user": {"id": 45, "privilege": "business"}, "organization": {"id": 102, "owner": {"id": 291}, "user": {"role": "supervisor"}}}, "resource": {"visibility": "public"}}
 }
 
 test_scope_VIEW_context_ORGANIZATION_ownership_NONE_privilege_BUSINESS_membership_SUPERVISOR {
-    not allow with input as {"scope": "view", "auth": {"user": {"id": 56, "privilege": "business"}, "organization": {"id": 141, "owner": {"id": 269}, "user": {"role": "supervisor"}}}, "resource": {"visibility": "private"}}
+    not allow with input as {"scope": "view", "auth": {"user": {"id": 66, "privilege": "business"}, "organization": {"id": 152, "owner": {"id": 255}, "user": {"role": "supervisor"}}}, "resource": {"visibility": "private"}}
 }
 
 test_scope_VIEW_context_ORGANIZATION_ownership_NONE_privilege_BUSINESS_membership_WORKER {
-    allow with input as {"scope": "view", "auth": {"user": {"id": 95, "privilege": "business"}, "organization": {"id": 194, "owner": {"id": 271}, "user": {"role": "worker"}}}, "resource": {"visibility": "public"}}
+    allow with input as {"scope": "view", "auth": {"user": {"id": 65, "privilege": "business"}, "organization": {"id": 198, "owner": {"id": 227}, "user": {"role": "worker"}}}, "resource": {"visibility": "public"}}
 }
 
 test_scope_VIEW_context_ORGANIZATION_ownership_NONE_privilege_BUSINESS_membership_WORKER {
-    not allow with input as {"scope": "view", "auth": {"user": {"id": 43, "privilege": "business"}, "organization": {"id": 118, "owner": {"id": 249}, "user": {"role": "worker"}}}, "resource": {"visibility": "private"}}
+    not allow with input as {"scope": "view", "auth": {"user": {"id": 74, "privilege": "business"}, "organization": {"id": 125, "owner": {"id": 208}, "user": {"role": "worker"}}}, "resource": {"visibility": "private"}}
 }
 
 test_scope_VIEW_context_ORGANIZATION_ownership_NONE_privilege_BUSINESS_membership_NONE {
-    allow with input as {"scope": "view", "auth": {"user": {"id": 94, "privilege": "business"}, "organization": {"id": 182, "owner": {"id": 247}, "user": {"role": null}}}, "resource": {"visibility": "public"}}
+    allow with input as {"scope": "view", "auth": {"user": {"id": 99, "privilege": "business"}, "organization": {"id": 115, "owner": {"id": 276}, "user": {"role": null}}}, "resource": {"visibility": "public"}}
 }
 
 test_scope_VIEW_context_ORGANIZATION_ownership_NONE_privilege_BUSINESS_membership_NONE {
-    not allow with input as {"scope": "view", "auth": {"user": {"id": 1, "privilege": "business"}, "organization": {"id": 110, "owner": {"id": 262}, "user": {"role": null}}}, "resource": {"visibility": "private"}}
+    not allow with input as {"scope": "view", "auth": {"user": {"id": 57, "privilege": "business"}, "organization": {"id": 190, "owner": {"id": 253}, "user": {"role": null}}}, "resource": {"visibility": "private"}}
 }
 
 test_scope_VIEW_context_ORGANIZATION_ownership_NONE_privilege_USER_membership_OWNER {
-    not allow with input as {"scope": "view", "auth": {"user": {"id": 50, "privilege": "user"}, "organization": {"id": 111, "owner": {"id": 50}, "user": {"role": "owner"}}}, "resource": {"visibility": "public"}}
+    not allow with input as {"scope": "view", "auth": {"user": {"id": 54, "privilege": "user"}, "organization": {"id": 130, "owner": {"id": 54}, "user": {"role": "owner"}}}, "resource": {"visibility": "public"}}
 }
 
 test_scope_VIEW_context_ORGANIZATION_ownership_NONE_privilege_USER_membership_OWNER {
-    not allow with input as {"scope": "view", "auth": {"user": {"id": 38, "privilege": "user"}, "organization": {"id": 134, "owner": {"id": 38}, "user": {"role": "owner"}}}, "resource": {"visibility": "private"}}
+    not allow with input as {"scope": "view", "auth": {"user": {"id": 74, "privilege": "user"}, "organization": {"id": 145, "owner": {"id": 74}, "user": {"role": "owner"}}}, "resource": {"visibility": "private"}}
 }
 
 test_scope_VIEW_context_ORGANIZATION_ownership_NONE_privilege_USER_membership_MAINTAINER {
-    not allow with input as {"scope": "view", "auth": {"user": {"id": 48, "privilege": "user"}, "organization": {"id": 128, "owner": {"id": 248}, "user": {"role": "maintainer"}}}, "resource": {"visibility": "public"}}
+    not allow with input as {"scope": "view", "auth": {"user": {"id": 44, "privilege": "user"}, "organization": {"id": 157, "owner": {"id": 223}, "user": {"role": "maintainer"}}}, "resource": {"visibility": "public"}}
 }
 
 test_scope_VIEW_context_ORGANIZATION_ownership_NONE_privilege_USER_membership_MAINTAINER {
-    not allow with input as {"scope": "view", "auth": {"user": {"id": 70, "privilege": "user"}, "organization": {"id": 111, "owner": {"id": 282}, "user": {"role": "maintainer"}}}, "resource": {"visibility": "private"}}
+    not allow with input as {"scope": "view", "auth": {"user": {"id": 55, "privilege": "user"}, "organization": {"id": 142, "owner": {"id": 292}, "user": {"role": "maintainer"}}}, "resource": {"visibility": "private"}}
 }
 
 test_scope_VIEW_context_ORGANIZATION_ownership_NONE_privilege_USER_membership_SUPERVISOR {
-    not allow with input as {"scope": "view", "auth": {"user": {"id": 10, "privilege": "user"}, "organization": {"id": 187, "owner": {"id": 209}, "user": {"role": "supervisor"}}}, "resource": {"visibility": "public"}}
+    not allow with input as {"scope": "view", "auth": {"user": {"id": 7, "privilege": "user"}, "organization": {"id": 154, "owner": {"id": 243}, "user": {"role": "supervisor"}}}, "resource": {"visibility": "public"}}
 }
 
 test_scope_VIEW_context_ORGANIZATION_ownership_NONE_privilege_USER_membership_SUPERVISOR {
-    not allow with input as {"scope": "view", "auth": {"user": {"id": 92, "privilege": "user"}, "organization": {"id": 158, "owner": {"id": 278}, "user": {"role": "supervisor"}}}, "resource": {"visibility": "private"}}
+    not allow with input as {"scope": "view", "auth": {"user": {"id": 72, "privilege": "user"}, "organization": {"id": 199, "owner": {"id": 225}, "user": {"role": "supervisor"}}}, "resource": {"visibility": "private"}}
 }
 
 test_scope_VIEW_context_ORGANIZATION_ownership_NONE_privilege_USER_membership_WORKER {
-    not allow with input as {"scope": "view", "auth": {"user": {"id": 8, "privilege": "user"}, "organization": {"id": 177, "owner": {"id": 221}, "user": {"role": "worker"}}}, "resource": {"visibility": "public"}}
+    not allow with input as {"scope": "view", "auth": {"user": {"id": 82, "privilege": "user"}, "organization": {"id": 148, "owner": {"id": 273}, "user": {"role": "worker"}}}, "resource": {"visibility": "public"}}
 }
 
 test_scope_VIEW_context_ORGANIZATION_ownership_NONE_privilege_USER_membership_WORKER {
-    not allow with input as {"scope": "view", "auth": {"user": {"id": 53, "privilege": "user"}, "organization": {"id": 166, "owner": {"id": 207}, "user": {"role": "worker"}}}, "resource": {"visibility": "private"}}
+    not allow with input as {"scope": "view", "auth": {"user": {"id": 27, "privilege": "user"}, "organization": {"id": 147, "owner": {"id": 296}, "user": {"role": "worker"}}}, "resource": {"visibility": "private"}}
 }
 
 test_scope_VIEW_context_ORGANIZATION_ownership_NONE_privilege_USER_membership_NONE {
-    not allow with input as {"scope": "view", "auth": {"user": {"id": 34, "privilege": "user"}, "organization": {"id": 157, "owner": {"id": 218}, "user": {"role": null}}}, "resource": {"visibility": "public"}}
+    not allow with input as {"scope": "view", "auth": {"user": {"id": 35, "privilege": "user"}, "organization": {"id": 146, "owner": {"id": 298}, "user": {"role": null}}}, "resource": {"visibility": "public"}}
 }
 
 test_scope_VIEW_context_ORGANIZATION_ownership_NONE_privilege_USER_membership_NONE {
-    not allow with input as {"scope": "view", "auth": {"user": {"id": 70, "privilege": "user"}, "organization": {"id": 163, "owner": {"id": 217}, "user": {"role": null}}}, "resource": {"visibility": "private"}}
+    not allow with input as {"scope": "view", "auth": {"user": {"id": 8, "privilege": "user"}, "organization": {"id": 118, "owner": {"id": 247}, "user": {"role": null}}}, "resource": {"visibility": "private"}}
 }
 
 test_scope_VIEW_context_ORGANIZATION_ownership_NONE_privilege_WORKER_membership_OWNER {
-    not allow with input as {"scope": "view", "auth": {"user": {"id": 34, "privilege": "worker"}, "organization": {"id": 137, "owner": {"id": 34}, "user": {"role": "owner"}}}, "resource": {"visibility": "public"}}
+    not allow with input as {"scope": "view", "auth": {"user": {"id": 34, "privilege": "worker"}, "organization": {"id": 112, "owner": {"id": 34}, "user": {"role": "owner"}}}, "resource": {"visibility": "public"}}
 }
 
 test_scope_VIEW_context_ORGANIZATION_ownership_NONE_privilege_WORKER_membership_OWNER {
-    not allow with input as {"scope": "view", "auth": {"user": {"id": 38, "privilege": "worker"}, "organization": {"id": 126, "owner": {"id": 38}, "user": {"role": "owner"}}}, "resource": {"visibility": "private"}}
+    not allow with input as {"scope": "view", "auth": {"user": {"id": 47, "privilege": "worker"}, "organization": {"id": 149, "owner": {"id": 47}, "user": {"role": "owner"}}}, "resource": {"visibility": "private"}}
 }
 
 test_scope_VIEW_context_ORGANIZATION_ownership_NONE_privilege_WORKER_membership_MAINTAINER {
-    not allow with input as {"scope": "view", "auth": {"user": {"id": 1, "privilege": "worker"}, "organization": {"id": 101, "owner": {"id": 296}, "user": {"role": "maintainer"}}}, "resource": {"visibility": "public"}}
+    not allow with input as {"scope": "view", "auth": {"user": {"id": 4, "privilege": "worker"}, "organization": {"id": 147, "owner": {"id": 277}, "user": {"role": "maintainer"}}}, "resource": {"visibility": "public"}}
 }
 
 test_scope_VIEW_context_ORGANIZATION_ownership_NONE_privilege_WORKER_membership_MAINTAINER {
-    not allow with input as {"scope": "view", "auth": {"user": {"id": 5, "privilege": "worker"}, "organization": {"id": 103, "owner": {"id": 288}, "user": {"role": "maintainer"}}}, "resource": {"visibility": "private"}}
+    not allow with input as {"scope": "view", "auth": {"user": {"id": 52, "privilege": "worker"}, "organization": {"id": 150, "owner": {"id": 233}, "user": {"role": "maintainer"}}}, "resource": {"visibility": "private"}}
 }
 
 test_scope_VIEW_context_ORGANIZATION_ownership_NONE_privilege_WORKER_membership_SUPERVISOR {
-    not allow with input as {"scope": "view", "auth": {"user": {"id": 53, "privilege": "worker"}, "organization": {"id": 178, "owner": {"id": 265}, "user": {"role": "supervisor"}}}, "resource": {"visibility": "public"}}
+    not allow with input as {"scope": "view", "auth": {"user": {"id": 58, "privilege": "worker"}, "organization": {"id": 102, "owner": {"id": 275}, "user": {"role": "supervisor"}}}, "resource": {"visibility": "public"}}
 }
 
 test_scope_VIEW_context_ORGANIZATION_ownership_NONE_privilege_WORKER_membership_SUPERVISOR {
-    not allow with input as {"scope": "view", "auth": {"user": {"id": 55, "privilege": "worker"}, "organization": {"id": 144, "owner": {"id": 261}, "user": {"role": "supervisor"}}}, "resource": {"visibility": "private"}}
+    not allow with input as {"scope": "view", "auth": {"user": {"id": 63, "privilege": "worker"}, "organization": {"id": 106, "owner": {"id": 258}, "user": {"role": "supervisor"}}}, "resource": {"visibility": "private"}}
 }
 
 test_scope_VIEW_context_ORGANIZATION_ownership_NONE_privilege_WORKER_membership_WORKER {
-    not allow with input as {"scope": "view", "auth": {"user": {"id": 8, "privilege": "worker"}, "organization": {"id": 126, "owner": {"id": 205}, "user": {"role": "worker"}}}, "resource": {"visibility": "public"}}
+    not allow with input as {"scope": "view", "auth": {"user": {"id": 11, "privilege": "worker"}, "organization": {"id": 171, "owner": {"id": 212}, "user": {"role": "worker"}}}, "resource": {"visibility": "public"}}
 }
 
 test_scope_VIEW_context_ORGANIZATION_ownership_NONE_privilege_WORKER_membership_WORKER {
-    not allow with input as {"scope": "view", "auth": {"user": {"id": 21, "privilege": "worker"}, "organization": {"id": 186, "owner": {"id": 241}, "user": {"role": "worker"}}}, "resource": {"visibility": "private"}}
+    not allow with input as {"scope": "view", "auth": {"user": {"id": 57, "privilege": "worker"}, "organization": {"id": 150, "owner": {"id": 216}, "user": {"role": "worker"}}}, "resource": {"visibility": "private"}}
 }
 
 test_scope_VIEW_context_ORGANIZATION_ownership_NONE_privilege_WORKER_membership_NONE {
-    not allow with input as {"scope": "view", "auth": {"user": {"id": 77, "privilege": "worker"}, "organization": {"id": 172, "owner": {"id": 225}, "user": {"role": null}}}, "resource": {"visibility": "public"}}
+    not allow with input as {"scope": "view", "auth": {"user": {"id": 62, "privilege": "worker"}, "organization": {"id": 112, "owner": {"id": 233}, "user": {"role": null}}}, "resource": {"visibility": "public"}}
 }
 
 test_scope_VIEW_context_ORGANIZATION_ownership_NONE_privilege_WORKER_membership_NONE {
-    not allow with input as {"scope": "view", "auth": {"user": {"id": 93, "privilege": "worker"}, "organization": {"id": 133, "owner": {"id": 239}, "user": {"role": null}}}, "resource": {"visibility": "private"}}
+    not allow with input as {"scope": "view", "auth": {"user": {"id": 75, "privilege": "worker"}, "organization": {"id": 146, "owner": {"id": 241}, "user": {"role": null}}}, "resource": {"visibility": "private"}}
 }
 
 test_scope_VIEW_context_ORGANIZATION_ownership_NONE_privilege_NONE_membership_OWNER {
-    not allow with input as {"scope": "view", "auth": {"user": {"id": 31, "privilege": "none"}, "organization": {"id": 155, "owner": {"id": 31}, "user": {"role": "owner"}}}, "resource": {"visibility": "public"}}
+    not allow with input as {"scope": "view", "auth": {"user": {"id": 75, "privilege": "none"}, "organization": {"id": 122, "owner": {"id": 75}, "user": {"role": "owner"}}}, "resource": {"visibility": "public"}}
 }
 
 test_scope_VIEW_context_ORGANIZATION_ownership_NONE_privilege_NONE_membership_OWNER {
-    not allow with input as {"scope": "view", "auth": {"user": {"id": 93, "privilege": "none"}, "organization": {"id": 139, "owner": {"id": 93}, "user": {"role": "owner"}}}, "resource": {"visibility": "private"}}
+    not allow with input as {"scope": "view", "auth": {"user": {"id": 54, "privilege": "none"}, "organization": {"id": 181, "owner": {"id": 54}, "user": {"role": "owner"}}}, "resource": {"visibility": "private"}}
 }
 
 test_scope_VIEW_context_ORGANIZATION_ownership_NONE_privilege_NONE_membership_MAINTAINER {
-    not allow with input as {"scope": "view", "auth": {"user": {"id": 39, "privilege": "none"}, "organization": {"id": 176, "owner": {"id": 285}, "user": {"role": "maintainer"}}}, "resource": {"visibility": "public"}}
+    not allow with input as {"scope": "view", "auth": {"user": {"id": 44, "privilege": "none"}, "organization": {"id": 159, "owner": {"id": 238}, "user": {"role": "maintainer"}}}, "resource": {"visibility": "public"}}
 }
 
 test_scope_VIEW_context_ORGANIZATION_ownership_NONE_privilege_NONE_membership_MAINTAINER {
-    not allow with input as {"scope": "view", "auth": {"user": {"id": 35, "privilege": "none"}, "organization": {"id": 161, "owner": {"id": 259}, "user": {"role": "maintainer"}}}, "resource": {"visibility": "private"}}
+    not allow with input as {"scope": "view", "auth": {"user": {"id": 65, "privilege": "none"}, "organization": {"id": 152, "owner": {"id": 296}, "user": {"role": "maintainer"}}}, "resource": {"visibility": "private"}}
 }
 
 test_scope_VIEW_context_ORGANIZATION_ownership_NONE_privilege_NONE_membership_SUPERVISOR {
-    not allow with input as {"scope": "view", "auth": {"user": {"id": 88, "privilege": "none"}, "organization": {"id": 141, "owner": {"id": 265}, "user": {"role": "supervisor"}}}, "resource": {"visibility": "public"}}
+    not allow with input as {"scope": "view", "auth": {"user": {"id": 41, "privilege": "none"}, "organization": {"id": 188, "owner": {"id": 223}, "user": {"role": "supervisor"}}}, "resource": {"visibility": "public"}}
 }
 
 test_scope_VIEW_context_ORGANIZATION_ownership_NONE_privilege_NONE_membership_SUPERVISOR {
-    not allow with input as {"scope": "view", "auth": {"user": {"id": 87, "privilege": "none"}, "organization": {"id": 143, "owner": {"id": 202}, "user": {"role": "supervisor"}}}, "resource": {"visibility": "private"}}
+    not allow with input as {"scope": "view", "auth": {"user": {"id": 84, "privilege": "none"}, "organization": {"id": 132, "owner": {"id": 284}, "user": {"role": "supervisor"}}}, "resource": {"visibility": "private"}}
 }
 
 test_scope_VIEW_context_ORGANIZATION_ownership_NONE_privilege_NONE_membership_WORKER {
-    not allow with input as {"scope": "view", "auth": {"user": {"id": 95, "privilege": "none"}, "organization": {"id": 153, "owner": {"id": 289}, "user": {"role": "worker"}}}, "resource": {"visibility": "public"}}
+    not allow with input as {"scope": "view", "auth": {"user": {"id": 15, "privilege": "none"}, "organization": {"id": 136, "owner": {"id": 216}, "user": {"role": "worker"}}}, "resource": {"visibility": "public"}}
 }
 
 test_scope_VIEW_context_ORGANIZATION_ownership_NONE_privilege_NONE_membership_WORKER {
-    not allow with input as {"scope": "view", "auth": {"user": {"id": 71, "privilege": "none"}, "organization": {"id": 122, "owner": {"id": 273}, "user": {"role": "worker"}}}, "resource": {"visibility": "private"}}
+    not allow with input as {"scope": "view", "auth": {"user": {"id": 83, "privilege": "none"}, "organization": {"id": 106, "owner": {"id": 258}, "user": {"role": "worker"}}}, "resource": {"visibility": "private"}}
 }
 
 test_scope_VIEW_context_ORGANIZATION_ownership_NONE_privilege_NONE_membership_NONE {
-    not allow with input as {"scope": "view", "auth": {"user": {"id": 18, "privilege": "none"}, "organization": {"id": 148, "owner": {"id": 206}, "user": {"role": null}}}, "resource": {"visibility": "public"}}
+    not allow with input as {"scope": "view", "auth": {"user": {"id": 35, "privilege": "none"}, "organization": {"id": 178, "owner": {"id": 246}, "user": {"role": null}}}, "resource": {"visibility": "public"}}
 }
 
 test_scope_VIEW_context_ORGANIZATION_ownership_NONE_privilege_NONE_membership_NONE {
-    not allow with input as {"scope": "view", "auth": {"user": {"id": 93, "privilege": "none"}, "organization": {"id": 141, "owner": {"id": 213}, "user": {"role": null}}}, "resource": {"visibility": "private"}}
+    not allow with input as {"scope": "view", "auth": {"user": {"id": 3, "privilege": "none"}, "organization": {"id": 181, "owner": {"id": 234}, "user": {"role": null}}}, "resource": {"visibility": "private"}}
 }
 
 
@@ -400,4 +400,5 @@ test_scope_VIEW_context_ORGANIZATION_ownership_NONE_privilege_NONE_membership_NO
 
 # analytics.csv
 # Scope,Resource,Context,Ownership,Limit,Method,URL,Privilege,Membership
-# view,Analytics,N/A,N/A,resource['visibility']=='public',GET,"/analytics/access",Business,N/A
+# view,Analytics,N/A,N/A,resource['visibility']=='public',GET,"/analytics",business,N/A
+# view,Analytics,N/A,N/A,,GET,"/analytics",admin,N/A
