@@ -8,9 +8,6 @@ import json
 import os.path as osp
 from .utils.config import ASSETS_DIR
 
-cvat_db_asset = osp.join(ASSETS_DIR, 'cvat_db.sql')
-cvat_data_asset = osp.join(ASSETS_DIR, 'cvat_data.tar.bz2')
-
 def cvat_db_container(command):
     run(('docker exec cvat_db ' + command).split(), check=True)
 
@@ -29,7 +26,7 @@ def drop_test_db():
     cvat_db_container('dropdb test_db')
 
 def create_test_db():
-    docker_cp(source=osp.join(ASSETS_DIR, "cvat_db"), target='cvat_db:/')
+    docker_cp(source=osp.join(ASSETS_DIR, 'cvat_db'), target='cvat_db:/')
     cvat_db_container('createdb test_db')
     cvat_db_container('pg_restore -U root -d test_db /cvat_db/cvat_db.dump')
 
@@ -75,30 +72,6 @@ def memberships():
 @pytest.fixture(scope='module')
 def users_by_name(users):
     return {user['username']: user for user in users}
-
-@pytest.fixture(scope='module')
-def users_by_group(users):
-    data = {}
-    for user in users:
-        for group in user['groups']:
-            data.setdefault(group, []).append(user)
-    return data
-
-@pytest.fixture(scope='module')
-def memberships_by_org(memberships):
-    members = {}
-    for membership in memberships:
-        org = membership['organization']
-        members.setdefault(org, []).append(membership)
-    return members
-
-@pytest.fixture(scope='module')
-def memberships_by_role(memberships):
-    members = {}
-    for membership in memberships:
-        role = membership['role']
-        members.setdefault(role, []).append(membership)
-    return members
 
 @pytest.fixture(scope='module')
 def find_users(test_db):
