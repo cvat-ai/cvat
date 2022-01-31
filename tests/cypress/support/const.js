@@ -4,7 +4,7 @@
 
 /// <reference types="cypress" />
 
-export const labelName = `Main task`;
+export const labelName = 'Main task';
 export const taskName = `New annotation task for ${labelName}`;
 export const attrName = `Attr for ${labelName}`;
 export const textDefaultValue = 'Some default value for type Text';
@@ -28,8 +28,8 @@ export const advancedConfigurationParams = {
     frameStep: 2,
 };
 export const multiAttrParams = {
-    additionalAttrName: `Attr 2`,
-    additionalValue: `Attr value 2`,
+    additionalAttrName: 'Attr 2',
+    additionalValue: 'Attr value 2',
     typeAttribute: 'Text',
 };
 export const acceptHeader = 'application/vnd.cvat+json; version=1.0';
@@ -38,14 +38,14 @@ it('Prepare to testing', () => {
     cy.visit('/');
     cy.login();
     cy.get('.cvat-tasks-page').should('exist');
-    let listItems = [];
+    const listItems = [];
     cy.document().then((doc) => {
         const collection = Array.from(doc.querySelectorAll('.cvat-item-task-name'));
         for (let i = 0; i < collection.length; i++) {
             listItems.push(collection[i].innerText);
         }
         if (listItems.indexOf(taskName) === -1) {
-            cy.task('log', "A task doesn't exist. Creating.");
+            cy.task('log', 'A task doesn\'t exist. Creating.');
             cy.imageGenerator(imagesFolder, imageFileName, width, height, color, posX, posY, labelName, imagesCount);
             cy.createZipArchive(directoryToArchive, archivePath);
             cy.createAnnotationTask(
