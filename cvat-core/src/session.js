@@ -1981,7 +1981,11 @@
     };
 
     Job.prototype.frames.preview.implementation = async function () {
-        const frameData = await getPreview(this.taskId);
+        if (this.id === null || this.taskId === null) {
+            return '';
+        }
+
+        const frameData = await getPreview(this.taskId, this.jobID);
         return frameData;
     };
 
@@ -2332,6 +2336,10 @@
     };
 
     Task.prototype.frames.preview.implementation = async function () {
+        if (this.id === null) {
+            return '';
+        }
+
         const frameData = await getPreview(this.id);
         return frameData;
     };

@@ -35,7 +35,7 @@ from rest_framework.permissions import SAFE_METHODS
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 from rest_framework.exceptions import PermissionDenied
-from sendfile import sendfile
+from django_sendfile import sendfile
 
 import cvat.apps.dataset_manager as dm
 import cvat.apps.dataset_manager.views  # pylint: disable=unused-import
@@ -886,6 +886,18 @@ class TaskViewSet(UploadMixin, viewsets.ModelViewSet):
             filename=request.query_params.get("filename", "").lower(),
         )
 
+class CharInFilter(filters.BaseInFilter, filters.CharFilter):
+    pass
+
+class JobFilter(filters.FilterSet):
+    assignee = filters.CharFilter(field_name="assignee__username", lookup_expr="icontains")
+    stage = CharInFilter(field_name="stage", lookup_expr="in")
+    state = CharInFilter(field_name="state", lookup_expr="in")
+
+    class Meta:
+        model = Job
+        fields = ("assignee", )
+
 @method_decorator(name='retrieve', decorator=swagger_auto_schema(operation_summary='Method returns details of a job'))
 @method_decorator(name='update', decorator=swagger_auto_schema(operation_summary='Method updates a job by id'))
 @method_decorator(name='partial_update', decorator=swagger_auto_schema(
@@ -893,6 +905,7 @@ class TaskViewSet(UploadMixin, viewsets.ModelViewSet):
 class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     mixins.RetrieveModelMixin, mixins.UpdateModelMixin):
     queryset = Job.objects.all().order_by('id')
+    filterset_class = JobFilter
     iam_organization_field = 'segment__task__organization'
 
     def get_queryset(self):
