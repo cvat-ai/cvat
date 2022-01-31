@@ -1,3 +1,0 @@
-pytest==6.2.5
-requests==2.26.0
-deepdiff==5.6.0
