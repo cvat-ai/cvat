@@ -106,7 +106,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django_rq',
     'compressor',
-    'sendfile',
+    'django_sendfile',
     'dj_pagination',
     'revproxy',
     'rest_framework',
@@ -498,3 +498,8 @@ TUS_DEFAULT_CHUNK_SIZE = 104857600  # 100 mb
 # More about forwarded headers - https://doc.traefik.io/traefik/getting-started/faq/#what-are-the-forwarded-headers-when-proxying-http-requests
 # How django uses X-Forwarded-Proto - https://docs.djangoproject.com/en/2.2/ref/settings/#secure-proxy-ssl-header
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+
+# Django-sendfile requires to set SENDFILE_ROOT
+# https://github.com/moggers87/django-sendfile2
+SENDFILE_ROOT = BASE_DIR

@@ -152,8 +152,9 @@ Cypress.Commands.add('restoreProject', (archiveWithBackup) => {
 Cypress.Commands.add('getDownloadFileName', () => {
     cy.intercept('GET', '**=download').as('download');
     cy.wait('@download').then((download) => {
-        const filename = download.response.headers['content-disposition'].split('filename="b\'')[1].split('\'')[0];
-        return filename;
+        const filename = download.response.headers['content-disposition'].split(';')[1].split('filename=')[1];
+        // need to remove quotes
+        return filename.substring(1, filename.length - 1);
     });
 });
 
