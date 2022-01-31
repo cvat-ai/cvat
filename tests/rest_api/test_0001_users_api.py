@@ -41,11 +41,12 @@ class TestGetUsers:
 
         self._test_cannot_see(user, f"users/{id}")
 
-    def test_all_members_can_see_list_of_members(self, members, users_by_name):
-        org_id = 1
+    def test_all_members_can_see_list_of_members(self, find_users, users):
+        org_members = [user['username'] for user in find_users(org=1)]
         available_fields = ['url', 'id', 'username', 'first_name', 'last_name']
-        data = [dict(filter(lambda row: row[0] in available_fields, data.items()))
-            for user, data in users_by_name.items() if user in members[org_id]]
 
-        for username in members[org_id]:
-            self._test_can_see(username, data, org='org1')
+        data = [dict(filter(lambda row: row[0] in available_fields, user.items()))
+            for user in users if user['username'] in org_members]
+
+        for member in org_members:
+            self._test_can_see(member, data, org='org1')
