@@ -212,7 +212,7 @@ class TaskData(InstanceLabelData):
                 "width": self._db_task.data.video.width,
                 "height": self._db_task.data.video.height,
             } for frame in range(self._db_task.data.size)
-            if frame not in self._db_task.data.deleted_frames}
+            if frame not in [int(f) for f in self._db_task.data.deleted_frames.split(',') if f]}
         else:
             self._frame_info = {self.rel_frame_id(db_image.frame): {
                 "id": db_image.id,
@@ -220,7 +220,7 @@ class TaskData(InstanceLabelData):
                 "width": db_image.width,
                 "height": db_image.height,
             } for db_image in self._db_task.data.images.all()
-            if db_image.frame not in self._db_task.data.deleted_frames}
+            if db_image.id not in [int(f) for f in self._db_task.data.deleted_frames.split(',') if f]}
 
         self._frame_mapping = {
             self._get_filename(info["path"]): frame_number
@@ -715,7 +715,7 @@ class ProjectData(InstanceLabelData):
                     "height": task.data.video.height,
                     "subset": defaulted_subset,
                 } for frame in range(task.data.size)
-                if frame not in self._db_task.data.deleted_frames})
+                if frame not in [int(f) for f in task.data.deleted_frames.split(',') if f]})
             else:
                 self._frame_info.update({(task.id, self.rel_frame_id(task.id, db_image.frame)): {
                     "path": mangle_image_name(db_image.path, defaulted_subset, original_names),
@@ -724,7 +724,7 @@ class ProjectData(InstanceLabelData):
                     "height": db_image.height,
                     "subset": defaulted_subset
                 } for db_image in task.data.images.all()
-                if db_image.frame not in self._db_task.data.deleted_frames})
+                if db_image.id not in [int(f) for f in task.data.deleted_frames.split(',') if f]})
 
         self._frame_mapping = {
             (self._db_tasks[frame_ident[0]].subset, self._get_filename(info["path"])): frame_ident

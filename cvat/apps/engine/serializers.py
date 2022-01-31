@@ -394,7 +394,6 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
     data_chunk_size = serializers.ReadOnlyField(source='data.chunk_size')
     data_compressed_chunk_type = serializers.ReadOnlyField(source='data.compressed_chunk_type')
     data_original_chunk_type = serializers.ReadOnlyField(source='data.original_chunk_type')
-    deleted_frames = serializers.ListField(child=serializers.IntegerField(min_value=0), source='data.deleted_frames')
     size = serializers.ReadOnlyField(source='data.size')
     image_quality = serializers.ReadOnlyField(source='data.image_quality')
     data = serializers.ReadOnlyField(source='data.id')
@@ -409,7 +408,7 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
         model = models.Task
         fields = ('url', 'id', 'name', 'project_id', 'mode', 'owner', 'assignee',
             'owner_id', 'assignee_id', 'bug_tracker', 'created_date', 'updated_date',
-            'overlap', 'segment_size', 'status', 'labels', 'segments', 'deleted_frames',
+            'overlap', 'segment_size', 'status', 'labels', 'segments',
             'data_chunk_size', 'data_compressed_chunk_type', 'data_original_chunk_type',
             'size', 'image_quality', 'data', 'dimension', 'subset', 'organization')
         read_only_fields = ('mode', 'created_date', 'updated_date', 'status',

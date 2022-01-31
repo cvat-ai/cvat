@@ -2544,6 +2544,7 @@ const frameMetaDummyData = {
         start_frame: 0,
         stop_frame: 8,
         frame_filter: '',
+        deleted_frames: [],
         frames: [
             {
                 width: 1920,
@@ -2590,6 +2591,7 @@ const frameMetaDummyData = {
         start_frame: 0,
         stop_frame: 74,
         frame_filter: '',
+        deleted_frames: [],
         frames: [
             {
                 width: 1920,
@@ -2604,6 +2606,7 @@ const frameMetaDummyData = {
         start_frame: 0,
         stop_frame: 5001,
         frame_filter: '',
+        deleted_frames: [],
         frames: [
             {
                 width: 1888,
@@ -2618,6 +2621,7 @@ const frameMetaDummyData = {
         start_frame: 0,
         stop_frame: 8,
         frame_filter: '',
+        deleted_frames: [],
         frames: [
             {
                 width: 1920,
@@ -2664,6 +2668,7 @@ const frameMetaDummyData = {
         start_frame: 0,
         stop_frame: 5001,
         frame_filter: '',
+        deleted_frames: [],
         frames: [
             {
                 width: 1888,
@@ -2678,6 +2683,7 @@ const frameMetaDummyData = {
         start_frame: 0,
         stop_frame: 0,
         frame_filter: '',
+        deleted_frames: [],
         frames: [
             {
                 width: 1920,
