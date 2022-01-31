@@ -924,13 +924,14 @@
                 return createdTask[0];
             }
 
-            async function getJobs(jobID = null, filter = {}) {
+            async function getJobs(filter = {}) {
                 const { backendAPI } = config;
+                const id = filter.id || null;
 
                 let response = null;
                 try {
-                    if (jobID !== null) {
-                        response = await Axios.get(`${backendAPI}/jobs/${jobID}`, {
+                    if (id !== null) {
+                        response = await Axios.get(`${backendAPI}/jobs/${id}`, {
                             proxy: config.proxy,
                         });
                     } else {

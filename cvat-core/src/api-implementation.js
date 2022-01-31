@@ -174,13 +174,13 @@ const config = require('./config');
             }
 
             if ('jobID' in filter) {
-                const job = await serverProxy.jobs.get(filter.jobID);
+                const job = await serverProxy.jobs.get({ id: filter.jobID });
                 if (job) {
                     return [new Job(job)];
                 }
             }
 
-            const jobsData = await serverProxy.jobs.get(null, filter);
+            const jobsData = await serverProxy.jobs.get(filter);
             const jobs = jobsData.results.map((jobData) => new Job(jobData));
             jobs.count = jobsData.count;
             return jobs;

@@ -68,7 +68,6 @@
         &:hover {
             .cvat-job-page-list-item-id {
                 opacity: 1;
-                padding: $grid-unit-size $grid-unit-size * 4 $grid-unit-size $grid-unit-size;
             }
 
             .cvat-job-page-list-item-dimension {
@@ -106,7 +105,7 @@
             width: fit-content;
             background: white;
             border-radius: 0 4px 4px 0;
-            padding: $grid-unit-size $grid-unit-size * 4 $grid-unit-size $grid-unit-size;
+            padding: $grid-unit-size;
             opacity: 0.5;
             transition: 0.15s all ease;
             box-shadow: $box-shadow-base;
