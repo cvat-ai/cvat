@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -32,6 +32,7 @@ export const multiAttrParams = {
     additionalValue: `Attr value 2`,
     typeAttribute: 'Text',
 };
+export const acceptHeader = 'application/vnd.cvat+json; version=1.0';
 
 it('Prepare to testing', () => {
     cy.visit('/');

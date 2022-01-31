@@ -4,6 +4,8 @@
 
 /// <reference types="cypress" />
 
+import { acceptHeader } from '../support/const';
+
 let authKey = '';
 
 describe('Delete users, tasks, projects, organizations created during the tests run.', () => {
@@ -11,6 +13,9 @@ describe('Delete users, tasks, projects, organizations created during the tests 
         cy.request({
             method: 'POST',
             url: '/api/auth/login',
+            headers: {
+                Accept: acceptHeader,
+            },
             body: {
                 username: Cypress.env('user'),
                 email: Cypress.env('email'),
@@ -26,6 +31,7 @@ describe('Delete users, tasks, projects, organizations created during the tests 
             url: '/api/tasks?page_size=1000',
             headers: {
                 Authorization: `Token ${authKey}`,
+                Accept: acceptHeader,
             },
         }).then((response) => {
             const responseResult = response.body.results;
@@ -36,6 +42,7 @@ describe('Delete users, tasks, projects, organizations created during the tests 
                     url: `/api/tasks/${id}`,
                     headers: {
                         Authorization: `Token ${authKey}`,
+                        Accept: acceptHeader,
                     },
                 });
             }
@@ -47,6 +54,7 @@ describe('Delete users, tasks, projects, organizations created during the tests 
             url: '/api/projects?page_size=all',
             headers: {
                 Authorization: `Token ${authKey}`,
+                Accept: acceptHeader,
             },
         }).then((response) => {
             const responseResult = response.body.results;
@@ -57,6 +65,7 @@ describe('Delete users, tasks, projects, organizations created during the tests 
                     url: `/api/projects/${id}`,
                     headers: {
                         Authorization: `Token ${authKey}`,
+                        Accept: acceptHeader,
                     },
                 });
             }
@@ -68,6 +77,7 @@ describe('Delete users, tasks, projects, organizations created during the tests 
             url: '/api/organizations?page_size=all',
             headers: {
                 Authorization: `Token ${authKey}`,
+                Accept: acceptHeader,
             },
         }).then((response) => {
             const responseResult = response.body;
@@ -78,6 +88,7 @@ describe('Delete users, tasks, projects, organizations created during the tests 
                     url: `/api/organizations/${id}`,
                     headers: {
                         Authorization: `Token ${authKey}`,
+                        Accept: acceptHeader,
                     },
                 });
             }
@@ -89,6 +100,7 @@ describe('Delete users, tasks, projects, organizations created during the tests 
             url: '/api/users',
             headers: {
                 Authorization: `Token ${authKey}`,
+                Accept: acceptHeader,
             },
         }).then((response) => {
             const responseResult = response.body.results;
@@ -100,6 +112,7 @@ describe('Delete users, tasks, projects, organizations created during the tests 
                         url: `/api/users/${id}`,
                         headers: {
                             Authorization: `Token ${authKey}`,
+                            Accept: acceptHeader,
                         },
                     });
                 }

@@ -4,7 +4,7 @@
 
 /// <reference types="cypress" />
 
-import { taskName } from '../../support/const';
+import { acceptHeader, taskName } from '../../support/const';
 
 context('When clicking on the Logout button, get the user session closed.', () => {
     const issueId = '1810';
@@ -60,6 +60,9 @@ context('When clicking on the Logout button, get the user session closed.', () =
             cy.request({
                 method: 'POST',
                 url: '/api/auth/login',
+                headers: {
+                    Accept: acceptHeader,
+                },
                 body: {
                     username: Cypress.env('user'),
                     email: Cypress.env('email'),
