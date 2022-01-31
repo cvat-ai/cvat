@@ -101,7 +101,10 @@ parser.add_argument(
 
 task_create_parser = task_subparser.add_parser(
     'create',
-    description='Create a new CVAT task.'
+    description='''Create a new CVAT task. To create a task, you need
+                   to specify labels using the --labels argument or
+                   attach the task to an existing project using the
+                   --project_id argument.'''
 )
 task_create_parser.add_argument(
     'name',
@@ -380,7 +383,7 @@ export_task_parser.add_argument(
 
 import_task_parser = task_subparser.add_parser(
     'import',
-    description='import a CVAT task.'
+    description='Import a CVAT task.'
 )
 import_task_parser.add_argument(
     'filename',

@@ -73,6 +73,7 @@ from cvat.apps.iam.permissions import (CloudStoragePermission,
 
 class ServerViewSet(viewsets.ViewSet):
     serializer_class = None
+    iam_organization_field = None
 
     # To get nice documentation about ServerViewSet actions it is necessary
     # to implement the method. By default, ViewSet doesn't provide it.
@@ -245,6 +246,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
     ordering_fields = ("id", "name", "owner", "status", "assignee")
     ordering = ("-id",)
     http_method_names = ('get', 'post', 'head', 'patch', 'delete')
+    iam_organization_field = 'organization'
 
     def get_serializer_class(self):
         if self.request.path.endswith('tasks'):
@@ -557,6 +559,7 @@ class TaskViewSet(UploadMixin, viewsets.ModelViewSet):
     search_fields = ("name", "owner__username", "mode", "status")
     filterset_class = TaskFilter
     ordering_fields = ("id", "name", "owner", "status", "assignee", "subset")
+    iam_organization_field = 'organization'
 
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -589,6 +592,7 @@ class TaskViewSet(UploadMixin, viewsets.ModelViewSet):
         if instance.project:
             db_project = instance.project
             db_project.save()
+            assert instance.organization == db_project.organization
 
     def perform_destroy(self, instance):
         task_dirname = instance.get_task_dirname()
@@ -889,6 +893,7 @@ class TaskViewSet(UploadMixin, viewsets.ModelViewSet):
 class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     mixins.RetrieveModelMixin, mixins.UpdateModelMixin):
     queryset = Job.objects.all().order_by('id')
+    iam_organization_field = 'segment__task__organization'
 
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -993,6 +998,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 class IssueViewSet(viewsets.ModelViewSet):
     queryset = Issue.objects.all().order_by('-id')
     http_method_names = ['get', 'post', 'patch', 'delete', 'options']
+    iam_organization_field = 'job__segment__task__organization'
 
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -1027,6 +1033,7 @@ class IssueViewSet(viewsets.ModelViewSet):
 class CommentViewSet(viewsets.ModelViewSet):
     queryset = Comment.objects.all().order_by('-id')
     http_method_names = ['get', 'post', 'patch', 'delete', 'options']
+    iam_organization_field = 'issue__job__segment__task__organization'
 
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -1068,6 +1075,7 @@ class UserViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     http_method_names = ['get', 'post', 'head', 'patch', 'delete']
     search_fields = ('username', 'first_name', 'last_name')
     filterset_class = UserFilter
+    iam_organization_field = 'memberships__organization'
 
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -1161,6 +1169,7 @@ class CloudStorageViewSet(viewsets.ModelViewSet):
     queryset = CloudStorageModel.objects.all().prefetch_related('data').order_by('-id')
     search_fields = ('provider_type', 'display_name', 'resource', 'credentials_type', 'owner__username', 'description')
     filterset_class = CloudStorageFilter
+    iam_organization_field = 'organization'
 
     def get_serializer_class(self):
         if self.request.method in ("POST", "PATCH"):

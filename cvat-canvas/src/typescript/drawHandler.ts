@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2021 Intel Corporation
+// Copyright (C) 2019-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -469,6 +469,7 @@ export class DrawHandlerImpl implements DrawHandler {
                 const cy = initialPoint.y + ry * Math.sign(translated[1] - initialPoint.y);
                 this.drawInstance.center(cx, cy);
                 this.drawInstance.radius(rx, ry);
+                this.shapeSizeElement.update(this.drawInstance);
             }
         });
     }
@@ -966,6 +967,7 @@ export class DrawHandlerImpl implements DrawHandler {
                 this.drawPoints();
             } else if (this.drawData.shapeType === 'ellipse') {
                 this.drawEllipse();
+                this.shapeSizeElement = displayShapeSize(this.canvas, this.text);
             } else if (this.drawData.shapeType === 'cuboid') {
                 if (this.drawData.cuboidDrawingMethod === CuboidDrawingMethod.CORNER_POINTS) {
                     this.drawCuboidBy4Points();
@@ -1050,7 +1052,7 @@ export class DrawHandlerImpl implements DrawHandler {
     public transform(geometry: Geometry): void {
         this.geometry = geometry;
 
-        if (this.shapeSizeElement && this.drawInstance && this.drawData.shapeType === 'rectangle') {
+        if (this.shapeSizeElement && this.drawInstance && ['rectangle', 'ellipse'].includes(this.drawData.shapeType)) {
             this.shapeSizeElement.update(this.drawInstance);
         }
 
