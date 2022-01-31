@@ -1,4 +1,4 @@
-// Copyright (C) 2022 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -1207,6 +1207,40 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
             };
         }
+        case AnnotationActionTypes.DELETE_FRAME:
+        case AnnotationActionTypes.RESTORE_FRAME: {
+            return {
+                ...state,
+                player: {
+                    ...state.player,
+                    frame: {
+                        ...state.player.frame,
+                        fetching: true,
+                    },
+                },
+                canvas: {
+                    ...state.canvas,
+                    ready: false,
+                },
+            };
+        }
+        case AnnotationActionTypes.DELETE_FRAME_FAILED:
+        case AnnotationActionTypes.RESTORE_FRAME_FAILED: {
+            return {
+                ...state,
+                player: {
+                    ...state.player,
+                    frame: {
+                        ...state.player.frame,
+                        fetching: false,
+                    },
+                },
+                canvas: {
+                    ...state.canvas,
+                    ready: true,
+                },
+            };
+        }
         case AnnotationActionTypes.RESTORE_FRAME_SUCCESS: {
             return {
                 ...state,
@@ -1214,8 +1248,30 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     ...state.player,
                     frame: {
                         ...state.player.frame,
-                        data: action.payload.frameData,
+                        data: action.payload.data,
+                        fetching: false,
                     },
+                },
+                canvas: {
+                    ...state.canvas,
+                    ready: true,
+                },
+            };
+        }
+        case AnnotationActionTypes.DELETE_FRAME_SUCCESS: {
+            return {
+                ...state,
+                player: {
+                    ...state.player,
+                    frame: {
+                        ...state.player.frame,
+                        data: action.payload.data ? action.payload.data : state.player.frame.data,
+                        fetching: false,
+                    },
+                },
+                canvas: {
+                    ...state.canvas,
+                    ready: true,
                 },
             };
         }

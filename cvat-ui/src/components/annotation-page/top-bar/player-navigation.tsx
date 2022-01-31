@@ -1,16 +1,17 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import React, { useState, useEffect, useCallback } from 'react';
 
 import { Row, Col } from 'antd/lib/grid';
-import { LinkOutlined, DeleteOutlined } from '@ant-design/icons';
+import Icon, { LinkOutlined, DeleteOutlined } from '@ant-design/icons';
 import Slider from 'antd/lib/slider';
 import InputNumber from 'antd/lib/input-number';
 import Input from 'antd/lib/input';
 import Text from 'antd/lib/typography/Text';
 
+import { RestoreIcon } from 'icons';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { clamp } from 'utils/math';
 import modal from 'antd/lib/modal';
@@ -97,7 +98,7 @@ function PlayerNavigation(props: Props): JSX.Element {
                             </CVATTooltip>
                         ) : (
                             <CVATTooltip title='Restore current frame'>
-                                <DeleteOutlined className='cvat-player-restore-frame' onClick={onRestoreFrame} />
+                                <Icon className='cvat-player-restore-frame' onClick={onRestoreFrame} component={RestoreIcon} />
                             </CVATTooltip>
                         )}
                     </Col>

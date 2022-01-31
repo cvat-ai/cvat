@@ -5,6 +5,8 @@
 import {
     ActionCreator, AnyAction, Dispatch, Store,
 } from 'redux';
+import _ from 'lodash';
+
 import { ThunkAction } from 'utils/redux';
 import isAbleToChangeFrame from 'utils/is-able-to-change-frame';
 import { RectDrawingMethod, CuboidDrawingMethod, Canvas } from 'cvat-canvas-wrapper';
@@ -197,9 +199,12 @@ export enum AnnotationActionTypes {
     GET_CONTEXT_IMAGE_SUCCESS = 'GET_CONTEXT_IMAGE_SUCCESS',
     GET_CONTEXT_IMAGE_FAILED = 'GET_CONTEXT_IMAGE_FAILED',
     SWITCH_NAVIGATION_BLOCKED = 'SWITCH_NAVIGATION_BLOCKED',
+    DELETE_FRAME = 'DELETE_FRAME',
+    DELETE_FRAME_SUCCESS = 'DELETE_FRAME_SUCCESS',
     DELETE_FRAME_FAILED = 'DELETE_FRAME_FAILED',
-    RESTORE_FRAME_FAILED = 'RESTORE_FRAME_FAILED',
+    RESTORE_FRAME = 'RESTORE_FRAME',
     RESTORE_FRAME_SUCCESS = 'RESTORE_FRAME_SUCCESS',
+    RESTORE_FRAME_FAILED = 'RESTORE_FRAME_FAILED',
 }
 
 export function saveLogsAsync(): ThunkAction {
@@ -984,7 +989,7 @@ export function getJobAsync(tid: number, jid: number, initialFrame: number, init
             const filters = initialFilters;
             const {
                 settings: {
-                    workspace: { showAllInterpolationTracks },
+                    workspace: { showAllInterpolationTracks, showDeletedFrames },
                 },
             } = state;
 
@@ -1019,7 +1024,7 @@ export function getJobAsync(tid: number, jid: number, initialFrame: number, init
             }
 
             let frameNumber;
-            if (initialFrame < 0) {
+            if (initialFrame < 0 && !showDeletedFrames) {
                 frameNumber = await job.frames.searchNonDeleted(job.startFrame, job.stopFrame);
                 if (frameNumber === null) {
                     frameNumber = job.startFrame;
@@ -1396,10 +1401,35 @@ export function changeGroupColorAsync(group: number, color: string): ThunkAction
 }
 
 export function searchAnnotationsAsync(sessionInstance: any, frameFrom: number, frameTo: number): ThunkAction {
-    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+    return async (dispatch: ActionCreator<Dispatch>, getState): Promise<void> => {
         try {
+            const {
+                settings: {
+                    workspace: { showDeletedFrames },
+                },
+            } = getState();
             const { filters } = receiveAnnotationsParameters();
-            const frame = await sessionInstance.annotations.search(filters, frameFrom, frameTo);
+
+            let frame: number;
+            if (showDeletedFrames) {
+                frame = await sessionInstance.annotations.search(filters, frameFrom, frameTo);
+            } else {
+                let searchedFrame: number;
+                frame = frameFrom;
+                do {
+                    searchedFrame = await sessionInstance.annotations.search(filters, frameFrom, frameTo);
+                    if (searchedFrame === null) {
+                        return;
+                    }
+                    frame = await sessionInstance.frames.searchNonDeleted(searchedFrame, frameTo);
+                    if (frame === searchedFrame) {
+                        break;
+                    }
+                } while (_.inRange(frame, frameFrom, frameTo + Math.sign(frameTo - frameFrom)));
+                if (frame !== searchedFrame) {
+                    return;
+                }
+            }
             if (frame !== null) {
                 dispatch(changeFrameAsync(frame));
             }
@@ -1415,9 +1445,33 @@ export function searchAnnotationsAsync(sessionInstance: any, frameFrom: number, 
 }
 
 export function searchEmptyFrameAsync(sessionInstance: any, frameFrom: number, frameTo: number): ThunkAction {
-    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+    return async (dispatch: ActionCreator<Dispatch>, getState): Promise<void> => {
         try {
-            const frame = await sessionInstance.annotations.searchEmpty(frameFrom, frameTo);
+            const {
+                settings: {
+                    workspace: { showDeletedFrames },
+                },
+            } = getState();
+            let frame: number;
+            if (showDeletedFrames) {
+                frame = await sessionInstance.annotations.searchEmpty(frameFrom, frameTo);
+            } else {
+                let searchedFrame: number;
+                frame = frameFrom;
+                do {
+                    searchedFrame = await sessionInstance.annotations.searchEmpty(frame, frameTo);
+                    if (searchedFrame === null) {
+                        return;
+                    }
+                    frame = await sessionInstance.frames.searchNonDeleted(searchedFrame, frameTo);
+                    if (frame === searchedFrame) {
+                        break;
+                    }
+                } while (_.inRange(frame, frameFrom, frameTo + Math.sign(frameTo - frameFrom)));
+                if (frame !== searchedFrame) {
+                    return;
+                }
+            }
             if (frame !== null) {
                 dispatch(changeFrameAsync(frame));
             }
@@ -1724,14 +1778,29 @@ export function deleteFrameAsync(): ThunkAction {
                     instance: jobInstance,
                 },
             },
+            settings: {
+                workspace: { showDeletedFrames },
+            },
         } = state;
 
         try {
-            await jobInstance.frames.delete(frameData.number);
+            dispatch({
+                type: AnnotationActionTypes.DELETE_FRAME,
+            });
 
-            dispatch(searchNonDeletedFrameAsync(
-                frameData.number, frameData.stopFrame, frameData.startFrame,
-            ));
+            await jobInstance.frames.delete(frameData.number);
+            const data = await jobInstance.frames.get(frameData.number);
+
+            if (!showDeletedFrames) {
+                dispatch(searchNonDeletedFrameAsync(
+                    frameData.number, frameData.stopFrame, frameData.startFrame,
+                ));
+            }
+            dispatch({
+                type: AnnotationActionTypes.DELETE_FRAME_SUCCESS,
+                payload: { data: showDeletedFrames ? data : null },
+
+            });
         } catch (error) {
             dispatch({
                 type: AnnotationActionTypes.DELETE_FRAME_FAILED,
@@ -1758,11 +1827,15 @@ export function restoreFrameAsync(): ThunkAction {
         } = state;
 
         try {
+            dispatch({
+                type: AnnotationActionTypes.RESTORE_FRAME,
+            });
+
             await jobInstance.frames.restore(frameNumber);
             const frameData = await jobInstance.frames.get(frameNumber);
             dispatch({
                 type: AnnotationActionTypes.RESTORE_FRAME_SUCCESS,
-                payload: { frameData },
+                payload: { data: frameData },
             });
         } catch (error) {
             dispatch({

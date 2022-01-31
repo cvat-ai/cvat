@@ -491,7 +491,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
             if (playing) {
                 onSwitchPlay(false);
             }
-            if (showDeletedFrames) {
+            if (!showDeletedFrames) {
                 const frameTo = value >= frameNumber ? jobInstance.startFrame : jobInstance.stopFrame;
                 const frameToBackward = value >= frameNumber ? jobInstance.stopFrame : jobInstance.startFrame;
                 searchNonDeletedFrame(value, frameTo, frameToBackward);

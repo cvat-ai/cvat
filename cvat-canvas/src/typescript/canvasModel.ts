@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2021 Intel Corporation
+// Copyright (C) 2019-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -408,7 +408,10 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
                 throw Error(`Canvas is busy. Action: ${this.data.mode}`);
             }
         }
-        if (frameData.number === this.data.imageID && !this.data.configuration.forceFrameUpdate) {
+        if (frameData.number === this.data.imageID &&
+            this.data.imageDeleted === frameData.deleted &&
+            !this.data.configuration.forceFrameUpdate
+        ) {
             this.data.zLayer = zLayer;
             this.data.objects = objectStates;
             this.notify(UpdateReasons.OBJECTS_UPDATED);

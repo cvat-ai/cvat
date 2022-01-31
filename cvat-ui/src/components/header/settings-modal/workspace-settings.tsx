@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -128,7 +128,7 @@ function WorkspaceSettingsComponent(props: Props): JSX.Element {
                         <Text type='secondary'> Show hidden interpolated objects in the side panel</Text>
                     </Row>
                 </Col>
-                <Col span={12}>
+                <Col span={12} className='cvat-workspace-settings-show-deleted'>
                     <Row>
                         <Checkbox
                             className='cvat-text-color'
@@ -141,7 +141,7 @@ function WorkspaceSettingsComponent(props: Props): JSX.Element {
                         </Checkbox>
                     </Row>
                     <Row>
-                        <Text type='secondary'>You won&apos;t be able to edit annotation on it, but you will be able to restore it</Text>
+                        <Text type='secondary'>You will be able to restore deleted frame</Text>
                     </Row>
                 </Col>
             </Row>
