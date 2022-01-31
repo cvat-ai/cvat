@@ -21,7 +21,7 @@ from rest_framework import serializers, status
 from rest_framework.parsers import JSONParser
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
-from sendfile import sendfile
+from django_sendfile import sendfile
 
 import cvat.apps.dataset_manager as dm
 from cvat.apps.engine import models
