@@ -15,10 +15,10 @@ def docker_cp(source, target):
     run(' '.join(['docker container cp', source, target]).split(), check=True) #nosec
 
 def restore_data_volume():
-    run('docker run --rm --volumes-from cvat --mount ' \
+    command = 'docker run --rm --volumes-from cvat --mount ' \
         f'type=bind,source={ASSETS_DIR},target=/mnt/ ubuntu tar ' \
-        '--strip 3 -C /home/django/data -xjf /mnt/cvat_data.tar.bz2'.split(),
-        check=True) #nosec
+        '--strip 3 -C /home/django/data -xjf /mnt/cvat_data.tar.bz2'
+    run(command.split(), check=True) #nosec
 
 def drop_test_db():
     cvat_db_container('pg_restore -c -U root -d cvat /cvat_db/cvat_db.dump')
