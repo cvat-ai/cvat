@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2021 Intel Corporation
+// Copyright (C) 2019-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -152,16 +152,16 @@ const config = require('./config');
 
         cvat.jobs.get.implementation = async (filter) => {
             checkFilter(filter, {
+                page: isInteger,
+                stage: isString,
+                state: isString,
+                assignee: isString,
                 taskID: isInteger,
                 jobID: isInteger,
             });
 
             if ('taskID' in filter && 'jobID' in filter) {
-                throw new ArgumentError('Only one of fields "taskID" and "jobID" allowed simultaneously');
-            }
-
-            if (!Object.keys(filter).length) {
-                throw new ArgumentError('Job filter must not be empty');
+                throw new ArgumentError('Filter fields "taskID" and "jobID" are not permitted to be used at the same time');
             }
 
             if ('taskID' in filter) {
@@ -173,12 +173,17 @@ const config = require('./config');
                 return [];
             }
 
-            const job = await serverProxy.jobs.get(filter.jobID);
-            if (job) {
-                return [new Job(job)];
+            if ('jobID' in filter) {
+                const job = await serverProxy.jobs.get({ id: filter.jobID });
+                if (job) {
+                    return [new Job(job)];
+                }
             }
 
-            return [];
+            const jobsData = await serverProxy.jobs.get(filter);
+            const jobs = jobsData.results.map((jobData) => new Job(jobData));
+            jobs.count = jobsData.count;
+            return jobs;
         };
 
         cvat.tasks.get.implementation = async (filter) => {
