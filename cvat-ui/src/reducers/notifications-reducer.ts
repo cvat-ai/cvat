@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -20,6 +20,7 @@ import { ExportActionTypes } from 'actions/export-actions';
 import { ImportActionTypes } from 'actions/import-actions';
 import { CloudStorageActionTypes } from 'actions/cloud-storage-actions';
 import { OrganizationActionsTypes } from 'actions/organization-actions';
+import { JobsActionTypes } from 'actions/jobs-actions';
 
 import getCore from 'cvat-core-wrapper';
 import { NotificationsState } from './interfaces';
@@ -60,6 +61,7 @@ const defaultState: NotificationsState = {
         },
         jobs: {
             updating: null,
+            fetching: null,
         },
         formats: {
             fetching: null,
@@ -1570,6 +1572,22 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         ...state.errors.organizations,
                         updatingMembership: {
                             message: `Could not assign role "${role}" to the user "${username}"`,
+                            reason: action.payload.error.toString(),
+                            className: 'cvat-notification-notice-update-organization-membership-failed',
+                        },
+                    },
+                },
+            };
+        }
+        case JobsActionTypes.GET_JOBS_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    jobs: {
+                        ...state.errors.jobs,
+                        fetching: {
+                            message: 'Could not fetch a list of jobs',
                             reason: action.payload.error.toString(),
                             className: 'cvat-notification-notice-update-organization-membership-failed',
                         },

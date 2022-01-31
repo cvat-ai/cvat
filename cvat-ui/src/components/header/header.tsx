@@ -378,7 +378,7 @@ function HeaderContainer(props: Props): JSX.Element {
                     className='cvat-header-button'
                     type='link'
                     value='projects'
-                    href='/projects'
+                    href='/projects?page=1'
                     onClick={(event: React.MouseEvent): void => {
                         event.preventDefault();
                         history.push('/projects');
@@ -397,6 +397,18 @@ function HeaderContainer(props: Props): JSX.Element {
                     }}
                 >
                     Tasks
+                </Button>
+                <Button
+                    className='cvat-header-button'
+                    type='link'
+                    value='jobs'
+                    href='/jobs?page=1'
+                    onClick={(event: React.MouseEvent): void => {
+                        event.preventDefault();
+                        history.push('/jobs');
+                    }}
+                >
+                    Jobs
                 </Button>
                 <Button
                     className='cvat-header-button'

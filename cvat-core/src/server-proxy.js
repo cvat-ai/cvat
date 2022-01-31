@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2021 Intel Corporation
+// Copyright (C) 2019-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -924,14 +924,25 @@
                 return createdTask[0];
             }
 
-            async function getJob(jobID) {
+            async function getJobs(filter = {}) {
                 const { backendAPI } = config;
+                const id = filter.id || null;
 
                 let response = null;
                 try {
-                    response = await Axios.get(`${backendAPI}/jobs/${jobID}`, {
-                        proxy: config.proxy,
-                    });
+                    if (id !== null) {
+                        response = await Axios.get(`${backendAPI}/jobs/${id}`, {
+                            proxy: config.proxy,
+                        });
+                    } else {
+                        response = await Axios.get(`${backendAPI}/jobs`, {
+                            proxy: config.proxy,
+                            params: {
+                                ...filter,
+                                page_size: 12,
+                            },
+                        });
+                    }
                 } catch (errorData) {
                     throw generateError(errorData);
                 }
@@ -1069,12 +1080,13 @@
                 return response.data;
             }
 
-            async function getPreview(tid) {
+            async function getPreview(tid, jid) {
                 const { backendAPI } = config;
 
                 let response = null;
                 try {
-                    response = await Axios.get(`${backendAPI}/tasks/${tid}/data`, {
+                    const url = `${backendAPI}/${jid !== null ? 'jobs' : 'tasks'}/${jid || tid}/data`;
+                    response = await Axios.get(url, {
                         params: {
                             type: 'preview',
                         },
@@ -1800,7 +1812,7 @@
 
                     jobs: {
                         value: Object.freeze({
-                            get: getJob,
+                            get: getJobs,
                             save: saveJob,
                         }),
                         writable: false,
