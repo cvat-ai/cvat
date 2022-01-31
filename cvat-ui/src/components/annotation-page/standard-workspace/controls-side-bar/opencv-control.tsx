@@ -474,8 +474,13 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
                     return acc;
                 }, {},
             );
-            switchNavigationBlocked(true);
+
+            if (Object.keys(trackingData).length === 0) {
+                return;
+            }
+
             try {
+                switchNavigationBlocked(true);
                 for (const trackerID of Object.keys(trackingData)) {
                     const numOfObjects = trackingData[trackerID].length;
                     const hideMessage = message.loading(
