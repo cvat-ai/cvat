@@ -112,6 +112,27 @@ Cypress.Commands.add('exportProject', ({
     cy.get('.cvat-notification-notice-export-project-start').should('be.visible');
 });
 
+Cypress.Commands.add('importProject', ({
+    projectName, format, archive,
+}) => {
+    cy.projectActions(projectName);
+    cy.get('.cvat-project-actions-menu').contains('Import dataset').click();
+    cy.get('.cvat-modal-import-dataset').find('.cvat-modal-import-select').click();
+    if (format === 'Sly Point Cloud Format') {
+        cy.get('.ant-select-dropdown')
+            .not('.ant-select-dropdown-hidden')
+            .trigger('wheel', { deltaY: 1000 });
+    }
+    cy.contains('.cvat-modal-import-dataset-option-item', format).click();
+    cy.get('.cvat-modal-import-select').should('contain.text', format);
+    cy.get('input[type="file"]').last().attachFile(archive, { subjectType: 'drag-n-drop' });
+    cy.get(`[title="${archive}"]`).should('be.visible');
+    cy.contains('button', 'OK').click();
+    cy.get('.cvat-modal-import-dataset-status').should('be.visible');
+    cy.get('.cvat-notification-notice-import-dataset-start').should('be.visible');
+    cy.get('.cvat-modal-import-dataset-status').should('not.exist');
+});
+
 Cypress.Commands.add('backupProject', (projectName) => {
     cy.projectActions(projectName);
     cy.get('.cvat-project-actions-menu').contains('Backup Project').click();
