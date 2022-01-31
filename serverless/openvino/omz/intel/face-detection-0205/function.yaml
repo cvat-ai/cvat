@@ -5,10 +5,25 @@ metadata:
     name: Attributed face detection
     type: detector
     framework: openvino
-    # attribute names have to be the same as in annotated task, otherwise values will be ignored
     spec: |
       [
-        { "id": 0, "name": "face", "attributes": ["age", "gender", "emotion"]}
+        { "id": 0, "name": "face", "attributes": [
+          {
+            "name": "age",
+            "input_type": "number",
+            "values": ["0", "150", "1"]
+          },
+          {
+            "name": "gender",
+            "input_type": "select",
+            "values": ["female", "male"]
+          },
+          {
+            "name": "emotion",
+            "input_type": "select",
+            "values": ["neutral", "happy", "sad", "surprise", "anger"]
+          }]
+        }
       ]
 
 spec:

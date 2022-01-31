@@ -56,14 +56,14 @@ class AttributesExtractorHandler:
         self.emotions_map = ["neutral", "happy", "sad", "surprise", "anger"]
 
     def infer(self, image):
-        age_gender_reqest = self.age_gender_model.async_infer(image)
-        emotions_reqest = self.emotions_model.async_infer(image)
+        age_gender_request = self.age_gender_model.async_infer(image)
+        emotions_request = self.emotions_model.async_infer(image)
         # Wait until both age_gender and emotion recognition async inferences finish
-        while not (age_gender_reqest.wait(0) == 0 and emotions_reqest.wait(0) == 0):
+        while not (age_gender_request.wait(0) == 0 and emotions_request.wait(0) == 0):
             continue
-        age = int(np.squeeze(age_gender_reqest.output_blobs["age_conv3"].buffer) * 100)
-        gender = self.genders_map[np.argmax(np.squeeze(age_gender_reqest.output_blobs["prob"].buffer))]
-        emotion = self.emotions_map[np.argmax(np.squeeze(emotions_reqest.output_blobs['prob_emotion'].buffer))]
+        age = int(np.squeeze(age_gender_request.output_blobs["age_conv3"].buffer) * 100)
+        gender = self.genders_map[np.argmax(np.squeeze(age_gender_request.output_blobs["prob"].buffer))]
+        emotion = self.emotions_map[np.argmax(np.squeeze(emotions_request.output_blobs['prob_emotion'].buffer))]
         return {"attributes": [
             {"name": "age", "value": str(age)},
             {"name": "gender", "value": gender},
