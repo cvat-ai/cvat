@@ -1085,6 +1085,7 @@ CREATE TABLE public.engine_data (
     storage character varying(15) NOT NULL,
     cloud_storage_id integer,
     sorting_method character varying(15) NOT NULL,
+    deleted_frames text NOT NULL,
     CONSTRAINT engine_data_chunk_size_check CHECK ((chunk_size >= 0)),
     CONSTRAINT engine_data_image_quality_check CHECK ((image_quality >= 0)),
     CONSTRAINT engine_data_size_check CHECK ((size >= 0)),
@@ -3052,6 +3053,7 @@ COPY public.django_migrations (id, app, name, applied) FROM stdin;
 86	dataset_repo	0001_initial	2021-12-14 17:51:27.585687+00
 87	dataset_repo	0003_gitdata_lfs	2021-12-14 17:51:27.587237+00
 88	dataset_repo	0002_auto_20190123_1305	2021-12-14 17:51:27.588845+00
+89	engine	0049_deleted_frames	2022-01-31 22:57:49.74203+00
 \.
 
 
@@ -3478,11 +3480,11 @@ COPY public.engine_comment (id, message, created_date, updated_date, owner_id, i
 -- Data for Name: engine_data; Type: TABLE DATA; Schema: public; Owner: root
 --
 
-COPY public.engine_data (id, chunk_size, size, image_quality, start_frame, stop_frame, frame_filter, compressed_chunk_type, original_chunk_type, storage_method, storage, cloud_storage_id, sorting_method) FROM stdin;
-1	72	130	70	0	129		imageset	imageset	cache	local	\N	natural
-2	72	23	70	0	22		imageset	imageset	cache	local	\N	lexicographical
-3	72	148	70	0	147		imageset	imageset	cache	local	\N	random
-4	72	58	70	0	57		imageset	imageset	cache	local	\N	lexicographical
+COPY public.engine_data (id, chunk_size, size, image_quality, start_frame, stop_frame, frame_filter, compressed_chunk_type, original_chunk_type, storage_method, storage, cloud_storage_id, sorting_method, deleted_frames) FROM stdin;
+1	72	130	70	0	129		imageset	imageset	cache	local	\N	natural 
+2	72	23	70	0	22		imageset	imageset	cache	local	\N	lexicographical 
+3	72	148	70	0	147		imageset	imageset	cache	local	\N	random 
+4	72	58	70	0	57		imageset	imageset	cache	local	\N	lexicographical 
 \.
 
 
@@ -4287,7 +4289,7 @@ SELECT pg_catalog.setval('public.django_content_type_id_seq', 48, true);
 -- Name: django_migrations_id_seq; Type: SEQUENCE SET; Schema: public; Owner: root
 --
 
-SELECT pg_catalog.setval('public.django_migrations_id_seq', 88, true);
+SELECT pg_catalog.setval('public.django_migrations_id_seq', 89, true);
 
 
 --
