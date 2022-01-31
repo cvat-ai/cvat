@@ -105,3 +105,9 @@ cat assets/cvat_data.tar.bz2 | docker run --rm -i --volumes-from cvat ubuntu tar
    Construction of some objects can be complex and takes time (backup
    and restore should be much faster). Construction of objects in UI is more
    intuitive.
+
+1. How we solve the problem of dependent tests?
+
+   Since some tests change the database, these tests may be dependent on each
+   other, so in current implementation we avoid such problem by restoring
+   the database after each test function (see `conftest.py`)
