@@ -155,8 +155,8 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
             activeImageModifiers: [],
             mode: 'interaction',
             trackedShapes: [],
-            activeTracker: null,
-            trackers: [],
+            trackers: openCVWrapper.isInitialized ? Object.values(openCVWrapper.tracking) : [],
+            activeTracker: openCVWrapper.isInitialized ? Object.values(openCVWrapper.tracking)[0] : null,
         };
     }
 
@@ -485,18 +485,10 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
                         0,
                     );
                     const imageData = this.getCanvasImageData();
-                    for (let i = 0; i < numOfObjects; i++) {
-                        const shape = trackedShapes[i];
+                    for (const shape of trackingData[trackerID]) {
                         const [objectState] = objectStates.filter(
                             (_state: any): boolean => _state.clientID === shape.clientID,
                         );
-                        if (
-                            !objectState ||
-                                        objectState.keyframes.prev !== frame - 1 ||
-                                        objectState.keyframes.last >= frame
-                        ) {
-                            continue;
-                        }
 
                         this.applyTracking(imageData, shape, objectState)
                             .catch((error) => {
