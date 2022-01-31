@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -76,6 +76,22 @@ export interface TasksQuery {
 export interface Task {
     instance: any; // cvat-core instance
     preview: string;
+}
+
+export interface JobsQuery {
+    page: number;
+    assignee: string | null;
+    stage: 'annotation' | 'validation' | 'acceptance' | null;
+    state: 'new' | 'in progress' | 'rejected' | 'completed' | null;
+    [index: string]: number | null | string | undefined;
+}
+
+export interface JobsState {
+    query: JobsQuery;
+    fetching: boolean;
+    count: number;
+    current: any[];
+    previews: string[];
 }
 
 export interface TasksState {
@@ -357,6 +373,7 @@ export interface NotificationsState {
         };
         jobs: {
             updating: null | ErrorState;
+            fetching: null | ErrorState;
         };
         formats: {
             fetching: null | ErrorState;
@@ -747,6 +764,7 @@ export interface OrganizationState {
 export interface CombinedState {
     auth: AuthState;
     projects: ProjectsState;
+    jobs: JobsState;
     tasks: TasksState;
     about: AboutState;
     share: ShareState;

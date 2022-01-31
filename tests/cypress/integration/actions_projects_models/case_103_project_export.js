@@ -1,4 +1,4 @@
-// Copyright (C) 2021 Intel Corporation
+// Copyright (C) 2021-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -34,16 +34,7 @@ context('Export project dataset.', { browser: '!firefox' }, () => {
     const imagesFolder = `cypress/fixtures/${imageFileName}`;
     const directoryToArchive = imagesFolder;
 
-    let projectID = '';
-
-    function getProjectID() {
-        cy.contains('.cvat-project-name', projectName)
-            .parents('.cvat-project-details')
-            .should('have.attr', 'cvat-project-id')
-            .then(($projectID) => {
-                projectID = $projectID;
-            });
-    }
+    let datasetArchiveName;
 
     function checkCounTasksInXML(projectParams, expectedCount) {
         cy.exportProject(projectParams);
@@ -59,7 +50,6 @@ context('Export project dataset.', { browser: '!firefox' }, () => {
         cy.imageGenerator(imagesFolder, imageFileName, width, height, color, posX, posY, labelName, imagesCount);
         cy.createZipArchive(directoryToArchive, archivePath);
         cy.openProject(projectName);
-        getProjectID();
         cy.createAnnotationTask(
             task.nameSecond,
             task.labelSecond,
@@ -88,8 +78,10 @@ context('Export project dataset.', { browser: '!firefox' }, () => {
     });
 
     after(() => {
-        cy.goToProjectsList();
-        cy.deleteProject(projectName, projectID);
+        cy.logout();
+        cy.getAuthKey().then((authKey) => {
+            cy.deleteProjects(authKey, [projectName]);
+        });
     });
 
     describe(`Testing "Case ${caseID}"`, () => {
@@ -102,7 +94,10 @@ context('Export project dataset.', { browser: '!firefox' }, () => {
                 dumpType: 'CVAT for images',
             };
             cy.exportProject(exportAnnotation);
-            cy.waitForDownload();
+            cy.getDownloadFileName().then((file) => {
+                datasetArchiveName = file;
+                cy.verifyDownload(datasetArchiveName);
+            });
         });
 
         it('Export project dataset. Dataset.', () => {
@@ -111,7 +106,7 @@ context('Export project dataset.', { browser: '!firefox' }, () => {
                 projectName,
                 as: 'exportDataset',
                 type: 'dataset',
-                dumpType: 'CVAT for video',
+                dumpType: 'CVAT for images',
             };
             cy.exportProject(exportDataset);
             cy.waitForDownload();
@@ -132,6 +127,56 @@ context('Export project dataset.', { browser: '!firefox' }, () => {
             cy.deleteTask(task.nameSecond);
             cy.goToProjectsList();
             checkCounTasksInXML(exportAnnotationsRenameArchive, 1);
+        });
+
+        it('Import dataset.', () => {
+            cy.openProject(projectName);
+            cy.deleteTask(task.name);
+            cy.get('.cvat-tasks-list-item')
+                .should('have.length', 1)
+                .should('have.attr', 'style')
+                .and('contain', 'pointer-events: none; opacity: 0.5;');
+            cy.goToProjectsList();
+            const importDataset = {
+                projectName,
+                format: 'CVAT 1.1',
+                archive: datasetArchiveName,
+            };
+            cy.importProject(importDataset);
+            cy.openProject(projectName);
+            cy.get('.cvat-tasks-list-item').should('have.length', 1);
+        });
+
+        it('Import dataset to project without labels.', () => {
+            // Deleting the task
+            cy.get('.cvat-item-task-name').then((name) => {
+                cy.deleteTask(name.text());
+            });
+            cy.get('.cvat-tasks-list-item')
+                .should('have.length', 1)
+                .should('have.attr', 'style')
+                .and('contain', 'pointer-events: none; opacity: 0.5;');
+            // Deleting the label
+            cy.get('.cvat-constructor-viewer-item')
+                .should('have.length', 1)
+                .find('[aria-label="close"]')
+                .click();
+            cy.get('.cvat-modal-delete-label')
+                .contains('button', 'OK')
+                .click();
+            cy.get('.cvat-modal-delete-label').should('not.exist');
+            cy.goToProjectsList();
+            const importDataset = {
+                projectName,
+                format: 'CVAT 1.1',
+                archive: datasetArchiveName,
+            };
+            cy.importProject(importDataset);
+            cy.openProject(projectName);
+            cy.get('.cvat-tasks-list-item').should('have.length', 1);
+            cy.get('.cvat-constructor-viewer-item')
+                .should('have.length', 1)
+                .should('have.text', labelName);
         });
     });
 });

@@ -11,6 +11,7 @@ require('./commands_models');
 require('./commands_opencv');
 require('./commands_organizations');
 require('@cypress/code-coverage/support');
+require('cypress-real-events/support');
 
 before(() => {
     if (Cypress.browser.family !== 'chromium') {
