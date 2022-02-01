@@ -433,9 +433,13 @@ Then, use the `docker-compose.https.yml` file to override the base `docker-compo
 docker-compose -f docker-compose.yml -f docker-compose.https.yml up -d
 ```
 
+> In firewall, for ports 80 and 443 must be allow ingress from any
+
 Then, the CVAT instance will be available at your domain on ports 443 (HTTPS) and 80 (HTTP, redirects to 443).
 
-## Sources for users from China
+## Troubleshooting
+
+### Sources for users from China
 
 If you stay in China, for installation you need to override the following sources.
 
@@ -503,3 +507,64 @@ If you stay in China, for installation you need to override the following source
   ```bash
   curl https://dl-ssl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
   ```
+
+### HTTPS is not working because of a certificate
+
+If you're having trouble with SSL connection, you need to get logs traefic.
+First, get the traefik container ID from the docker:
+
+```bash
+docker ps --filter NAME=^traefik$
+```
+<details>
+<summary>Example</summary>
+<!--lint disable maximum-line-length-->
+
+```
+CONTAINER ID        IMAGE               COMMAND                  CREATED             STATUS              PORTS                                                    NAMES
+dbb5abded3e8        traefik:v2.4        "/entrypoint.sh --pr…"   3 weeks ago         Up 3 weeks          0.0.0.0:8080->8080/tcp, 80/tcp, 0.0.0.0:8090->8090/tcp   traefik
+```
+<!--lint enable maximum-line-length-->
+</details>
+<br>
+
+Get logs:
+
+```bash
+docker logs <ID_OF_THE_TRAEFIK_CONTAINER>
+```
+<details>
+<summary>Example</summary>
+
+```
+$ docker logs dbb5abded3e8 > traefic_logs.txt
+```
+</details>
+<br>
+
+The logs will help you find out the probable error.
+
+If the error is related to a firewall that:
+- Into firewall open ports 80 and 443 (if you haven't done so before)
+- Delete `acme.json`.
+  The location should be something like: `/var/lib/docker/volumes/cvat_cvat_letsencrypt/_data/acme.json`
+
+After `acme.json` is removed, make sure you are in the cvat repository clone with `yaml` files,
+and stop all cvat docker containers:
+
+```bash
+docker-compose down
+```
+
+Make sure variables set (with your values):
+
+```bash
+export CVAT_HOST=<YOUR_DOMAIN>
+export ACME_EMAIL=<YOUR_EMAIL>
+```
+
+and restart docker:
+
+```bash
+docker-compose -f docker-compose.yml -f docker-compose.https.yml up -d
+```
