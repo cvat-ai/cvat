@@ -171,7 +171,7 @@ REST_FRAMEWORK = {
         # of all possible methods isn't readable).
         'cvat.apps.engine.versioning.CustomAcceptHeaderVersioning',
     # Need to add 'api-docs' here as a workaround for include_docs_urls.
-    'ALLOWED_VERSIONS': (*BACKEND_VERSIONS.list(), 'api-docs'),
+    'ALLOWED_VERSIONS': (*BACKEND_VERSIONS.list(), 'api-docs', 'downloading'),
     'VERSION_PARAM': 'version',
     'DEFAULT_PAGINATION_CLASS':
         'cvat.apps.engine.pagination.CustomPagination',

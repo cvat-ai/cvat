@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 from rest_framework.versioning import AcceptHeaderVersioning
+from rest_framework.exceptions import NotAcceptable
 
 class CustomAcceptHeaderVersioning(AcceptHeaderVersioning):
     """
@@ -15,4 +16,11 @@ class CustomAcceptHeaderVersioning(AcceptHeaderVersioning):
         # it's needed for browsable api
         if request.accepted_media_type in {'text/html', 'application/json'}:
             return 'api-docs'
-        return super().determine_version(request, *args, **kwargs)
+        try:
+            version = super().determine_version(request, *args, **kwargs)
+        except NotAcceptable:
+            # resource download requests such as backup/annotation files
+            if request.query_params.get('action') == 'download':
+                version = 'downloading'
+            else: raise
+        return version
