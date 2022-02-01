@@ -77,8 +77,6 @@ jobs:
         run: |
           docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f components/serverless/docker-compose.serverless.yml up -d
           /bin/bash -c 'while [[ "$(curl -s -o /dev/null -w ''%{http_code}'' ${API_ABOUT_PAGE})" != "401" ]]; do sleep 5; done'
-          cat tests/rest_api/assets/cvat_db.sql | docker exec -i cvat_db psql -q -U root -d cvat
-          cat tests/rest_api/assets/cvat_data.tar.bz2 | docker run --rm -i --volumes-from cvat ubuntu tar -xj --strip 3 -C /home/django/data
           pip3 install --user -r tests/rest_api/requirements.txt
           pytest tests/rest_api/
           docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f components/serverless/docker-compose.serverless.yml down -v
