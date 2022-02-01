@@ -3481,10 +3481,10 @@ COPY public.engine_comment (id, message, created_date, updated_date, owner_id, i
 --
 
 COPY public.engine_data (id, chunk_size, size, image_quality, start_frame, stop_frame, frame_filter, compressed_chunk_type, original_chunk_type, storage_method, storage, cloud_storage_id, sorting_method, deleted_frames) FROM stdin;
-1	72	130	70	0	129		imageset	imageset	cache	local	\N	natural 
-2	72	23	70	0	22		imageset	imageset	cache	local	\N	lexicographical 
-3	72	148	70	0	147		imageset	imageset	cache	local	\N	random 
-4	72	58	70	0	57		imageset	imageset	cache	local	\N	lexicographical 
+1	72	130	70	0	129		imageset	imageset	cache	local	\N	natural	
+2	72	23	70	0	22		imageset	imageset	cache	local	\N	lexicographical	
+3	72	148	70	0	147		imageset	imageset	cache	local	\N	random	
+4	72	58	70	0	57		imageset	imageset	cache	local	\N	lexicographical	
 \.
 
 
