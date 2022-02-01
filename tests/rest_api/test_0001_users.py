@@ -37,9 +37,9 @@ class TestGetUsers:
     def test_non_admin_cannot_see_others(self, users):
         non_admins = (v for v in users if not v['is_superuser'])
         user = next(non_admins)['username']
-        id = next(non_admins)['id']
+        user_id = next(non_admins)['id']
 
-        self._test_cannot_see(user, f"users/{id}")
+        self._test_cannot_see(user, f"users/{user_id}")
 
     def test_all_members_can_see_list_of_members(self, find_users, users):
         org_members = [user['username'] for user in find_users(org=1)]
