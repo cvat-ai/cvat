@@ -36,8 +36,8 @@ Common scheme for our REST API is `<VERB> [namespace] <objects> <id> <action>`.
 - Allow filtering, sorting, and pagination
 - Maintain good security practices
 - Cache data to improve performance
-- Versioning our APIs (e.g. `/api`, `/api/v2`). It should be done when you
-  delete an endpoint or modify its behaviors.
+- Versioning our APIs. It should be done when you delete an endpoint or modify
+  its behaviors. Versioning uses a schema with `Accept` header with vendor media type.
 
 ## Links
 
