@@ -35,7 +35,7 @@ available in the system like comments, users, issues, please use the following
 procedure to add them:
 
 1. Run a clean CVAT instance
-1. Restore DB and data volume using commands below
+1. Restore DB and data volume using commands below or running tests
 1. Add new objects (e.g. issues, comments, tasks, projects)
 1. Backup DB and data volume using commands below
 1. Don't forget to dump new objects into corresponding json files inside
@@ -58,35 +58,31 @@ for i, color in enumerate(colormap):
     img.save(f'{i}.png')
 ```
 
+## How to backup DB and data volume?
+
 To backup DB and data volume, please use commands below.
 
 ```console
-docker exec -i cvat_db pg_dump -c -U root -d cvat > assets/cvat_db.sql
+docker exec cvat_db pg_dump -c -C -Fc -U root -d cvat > assets/cvat_db.dump
 docker run --rm --volumes-from cvat ubuntu tar -cjv /home/django/data > assets/cvat_data.tar.bz2
 ```
+
+# How to update *.json files in the assets directory?
+
+If you have updated the test database and want to update the assets/*.json
+files as well, run the appropriate script:
+
+```
+python utils/dump_objects.py
+```
+
+# How to restore DB and data volume?
 
 To restore DB and data volume, please use commands below.
 
 ```console
-cat assets/cvat_db.sql | docker exec -i cvat_db psql -q -U root -d cvat
+cat assets/cvat_db/cvat_db.dump | docker exec -i cvat_db pg_restore -1 -c -U root -d cvat
 cat assets/cvat_data.tar.bz2 | docker run --rm -i --volumes-from cvat ubuntu tar -xj --strip 3 -C /home/django/data
-```
-
-To dump an object into JSON, please look at the sample code below. You also
-can find similar code in `utils/dump_objects.py` script. All users in the
-testing system has the same password `!Q@W#E$R`.
-
-```python
-import requests
-import json
-
-with requests.Session() as session:
-    session.auth = ('admin1', '!Q@W#E$R')
-
-    for obj in ['user', 'project', 'task', 'job']:
-        response = session.get(f'http://localhost:8080/api/v1/{obj}s')
-        with open(f'{obj}s.json', 'w') as f:
-            json.dump(response.json(), f, indent=2, sort_keys=True)
 ```
 
 ## FAQ
@@ -97,7 +93,7 @@ with requests.Session() as session:
    you have json description of all objects together with cvat_db.sql, it will
    be possible to recreate them manually.
 
-1. How to upgrade cvat_data.tar.bz2 and cvat_db.sql?
+1. How to upgrade cvat_data.tar.bz2 and cvat_db.dump?
 
    After every commit which changes the layout of DB and data directory it is
    possible to break these files. But failed tests should be a clear indicator
@@ -109,3 +105,9 @@ with requests.Session() as session:
    Construction of some objects can be complex and takes time (backup
    and restore should be much faster). Construction of objects in UI is more
    intuitive.
+
+1. How we solve the problem of dependent tests?
+
+   Since some tests change the database, these tests may be dependent on each
+   other, so in current implementation we avoid such problem by restoring
+   the database after each test function (see `conftest.py`)
