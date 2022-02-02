@@ -57,6 +57,11 @@ cvat_data.tar.bz2  cvat_db.tar.bz2  cvat_events.tar.bz2
 
 ## How to restore CVAT from backup
 
+**Warning: use exactly the same CVAT version to restore DB. Otherwise
+it will not work because between CVAT releases the layout of DB can be
+changed. You always can upgrade CVAT later. It will take care to migrate
+your data properly internally.**
+
 Note: CVAT containers must exist (if no, please follow the [installation guide](/docs/administration/basics/installation/#quick-installation-guide)).
 Stop all CVAT containers:
 
