@@ -816,13 +816,13 @@ class TaskViewSet(UploadMixin, viewsets.ModelViewSet):
 
         return response
 
-    @staticmethod
     @swagger_auto_schema(method='get', operation_summary='Method provides a meta information about media files which are related with the task',
         responses={'200': DataMetaSerializer()})
     @swagger_auto_schema(method='patch', operation_summary='Method performs an update of data meta fields (deleted frames)')
     @action(detail=True, methods=['GET', 'PATCH'], serializer_class=DataMetaSerializer,
         url_path='data/meta')
-    def data_info(request, pk):
+    def data_info(self, request, pk):
+        self.get_object() #force to call check_object_permissions
         db_task = models.Task.objects.prefetch_related(
             Prefetch('data', queryset=models.Data.objects.select_related('video').prefetch_related(
                 Prefetch('images', queryset=models.Image.objects.prefetch_related('related_files').order_by('frame'))

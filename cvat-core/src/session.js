@@ -558,7 +558,6 @@
              */
             /**
              * Find the nearest non-deleted frame
-             * FIXME: Need to check extension on Task class
              * @method searchNonDeleted
              * @memberof Session.frames
              * @param {integer} from lower bound of a search
@@ -570,7 +569,24 @@
              * @async
              */
             /**
-             * FIXME: add delete and restore reference
+             * Delete frame from the job
+             * @method delete
+             * @memberof Session.frames
+             * @param {integer} frame number of frame which you want to delete
+             * @throws {module:API.cvat.exceptions.ArgumentError}
+             * @throws {module:API.cvat.exceptions.PluginError}
+             * @instance
+             * @async
+             */
+            /**
+             * Restore frame from the job
+             * @method delete
+             * @memberof Session.frames
+             * @param {integer} frame number of frame which you want to restore
+             * @throws {module:API.cvat.exceptions.ArgumentError}
+             * @throws {module:API.cvat.exceptions.PluginError}
+             * @instance
+             * @async
              */
             /**
              * Get the first frame of a task for preview

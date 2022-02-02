@@ -732,7 +732,7 @@
             throw new ArgumentError('Frame should not be deleted');
         }
         const deleteFrames = [...meta.deleted_frames, frame];
-        const newMeta = await serverProxy.frames.patchMeta(taskID, {
+        const newMeta = await serverProxy.frames.saveMeta(taskID, {
             deleted_frames: deleteFrames,
         });
         frameDataCache[taskID].meta = newMeta;
@@ -744,7 +744,7 @@
             throw new ArgumentError('Frame should be from deleted frames');
         }
         const deleteFrames = meta.deleted_frames.filter((e) => e !== frame);
-        const newMeta = await serverProxy.frames.patchMeta(taskID, {
+        const newMeta = await serverProxy.frames.saveMeta(taskID, {
             deleted_frames: deleteFrames,
         });
         frameDataCache[taskID].meta = newMeta;

@@ -2098,6 +2098,49 @@ class TaskPartialUpdateAPITestCase(TaskUpdateAPITestCase):
         }
         self._check_api_v1_tasks_id(None, data)
 
+class TaskDataMetaPartialUpdateAPITestCase(APITestCase):
+
+    def setUp(self):
+        self.client = APIClient()
+
+    @classmethod
+    def setUpTestData(cls):
+        create_db_users(cls)
+        cls.tasks = create_dummy_db_tasks(cls)
+
+    def _run_api_v1_task_data_meta_id(self, tid, user, data):
+        with ForceLogin(user, self.client):
+            response = self.client.patch('/api/v1/tasks/{}/data/meta'.format(tid),
+                data=data, format="json")
+
+        return response
+
+    def _check_response(self, response, db_data, data):
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        deleted_frames = data.get("deleted_frames", db_data.deleted_frames)
+        self.assertEqual(response.data["deleted_frames"], deleted_frames)
+
+    def _check_api_v1_task_data_id(self, user, data):
+        for db_task in self.tasks:
+            response = self._run_api_v1_task_data_meta_id(db_task.id, user, data)
+            if user is None:
+                self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+            elif user == db_task.owner or user == db_task.assignee or user.is_superuser:
+                self._check_response(response, db_task.data, data)
+            else:
+                self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_api_v1_tasks_data_meta(self):
+        data = {
+            "deleted_frames": [1,2,3]
+        }
+        self._check_api_v1_task_data_id(self.user, data)
+
+        data = {
+            "deleted_frames": []
+        }
+        self._check_api_v1_task_data_id(self.user, data)
+
 class TaskUpdateLabelsAPITestCase(UpdateLabelsAPITestCase):
     @classmethod
     def setUpTestData(cls):

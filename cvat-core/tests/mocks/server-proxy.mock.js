@@ -289,6 +289,24 @@ class ServerProxy {
             return JSON.parse(JSON.stringify(frameMetaDummyData[tid]));
         }
 
+        async function saveMeta(tid, meta) {
+            const object = frameMetaDummyData[tid];
+            for (const prop in meta) {
+                if (
+                    Object.prototype.hasOwnProperty.call(meta, prop) &&
+                    Object.prototype.hasOwnProperty.call(object, prop)
+                ) {
+                    if (prop === 'labels') {
+                        object[prop] = meta[prop].filter((label) => !label.deleted);
+                    } else {
+                        object[prop] = meta[prop];
+                    }
+                }
+            }
+
+            return getMeta(tid);
+        }
+
         async function getAnnotations(session, id) {
             if (session === 'task') {
                 return JSON.parse(JSON.stringify(taskAnnotationsDummyData[id]));
@@ -442,6 +460,7 @@ class ServerProxy {
                     value: Object.freeze({
                         getData,
                         getMeta,
+                        saveMeta,
                         getPreview,
                     }),
                     writable: false,

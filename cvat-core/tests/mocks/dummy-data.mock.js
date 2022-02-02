@@ -2621,7 +2621,7 @@ const frameMetaDummyData = {
         start_frame: 0,
         stop_frame: 8,
         frame_filter: '',
-        deleted_frames: [],
+        deleted_frames: [7,8],
         frames: [
             {
                 width: 1920,

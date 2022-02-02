@@ -1167,7 +1167,7 @@
                 return response.data;
             }
 
-            async function patchMeta(tid, meta) {
+            async function saveMeta(tid, meta) {
                 const { backendAPI } = config;
 
                 let response = null;
@@ -1845,7 +1845,7 @@
                         value: Object.freeze({
                             getData,
                             getMeta,
-                            patchMeta,
+                            saveMeta,
                             getPreview,
                             getImageContext,
                         }),
