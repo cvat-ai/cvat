@@ -237,15 +237,13 @@ def create_dummy_db_projects(obj):
 
 
 class ForceLogin:
-    def __init__(self, user, client, version=settings.BACKEND_VERSIONS.V1_0):
+    def __init__(self, user, client):
         self.user = user
         self.client = client
-        self.version = version
 
     def __enter__(self):
         if self.user:
             self.client.force_login(self.user, backend='django.contrib.auth.backends.ModelBackend')
-        self.client.credentials(HTTP_ACCEPT=settings.ACCEPT_HEADER_TEMPLATE.format(self.version))
 
         return self
 
@@ -253,14 +251,9 @@ class ForceLogin:
         if self.user:
             self.client.logout()
 
-
-class VersionedAPIClient(APIClient):
-    def __init__(self, version=settings.BACKEND_VERSIONS.V1_0):
-        super().__init__(HTTP_ACCEPT=settings.ACCEPT_HEADER_TEMPLATE.format(version))
-
 class JobGetAPITestCase(APITestCase):
     def setUp(self):
-        self.client = VersionedAPIClient()
+        self.client = APIClient()
 
     @classmethod
     def setUpTestData(cls):
@@ -322,7 +315,7 @@ class JobGetAPITestCase(APITestCase):
 
 class JobUpdateAPITestCase(APITestCase):
     def setUp(self):
-        self.client = VersionedAPIClient()
+        self.client = APIClient()
         self.task = create_dummy_db_tasks(self)[0]
         self.job = Job.objects.filter(segment__task_id=self.task.id).first()
         self.job.assignee = self.annotator
@@ -408,7 +401,7 @@ class JobPartialUpdateAPITestCase(JobUpdateAPITestCase):
 
 class ServerAboutAPITestCase(APITestCase):
     def setUp(self):
-        self.client = VersionedAPIClient()
+        self.client = APIClient()
 
     @classmethod
     def setUpTestData(cls):
@@ -440,7 +433,7 @@ class ServerAboutAPITestCase(APITestCase):
 
 class ServerExceptionAPITestCase(APITestCase):
     def setUp(self):
-        self.client = VersionedAPIClient()
+        self.client = APIClient()
 
     @classmethod
     def setUpTestData(cls):
@@ -484,7 +477,7 @@ class ServerExceptionAPITestCase(APITestCase):
 
 class ServerLogsAPITestCase(APITestCase):
     def setUp(self):
-        self.client = VersionedAPIClient()
+        self.client = APIClient()
 
     @classmethod
     def setUpTestData(cls):
@@ -532,7 +525,7 @@ class ServerLogsAPITestCase(APITestCase):
 
 class UserAPITestCase(APITestCase):
     def setUp(self):
-        self.client = VersionedAPIClient()
+        self.client = APIClient()
         create_db_users(self)
 
     def _check_response(self, user, response, is_full=True):
@@ -742,7 +735,7 @@ class UserDeleteAPITestCase(UserAPITestCase):
 
 class ProjectListAPITestCase(APITestCase):
     def setUp(self):
-        self.client = VersionedAPIClient()
+        self.client = APIClient()
 
     @classmethod
     def setUpTestData(cls):
@@ -782,7 +775,7 @@ class ProjectListAPITestCase(APITestCase):
 
 class ProjectGetAPITestCase(APITestCase):
     def setUp(self):
-        self.client = VersionedAPIClient()
+        self.client = APIClient()
 
     @classmethod
     def setUpTestData(cls):
@@ -831,7 +824,7 @@ class ProjectGetAPITestCase(APITestCase):
 
 class ProjectDeleteAPITestCase(APITestCase):
     def setUp(self):
-        self.client = VersionedAPIClient()
+        self.client = APIClient()
 
     @classmethod
     def setUpTestData(cls):
@@ -869,7 +862,7 @@ class ProjectDeleteAPITestCase(APITestCase):
 
 class ProjectCreateAPITestCase(APITestCase):
     def setUp(self):
-        self.client = VersionedAPIClient()
+        self.client = APIClient()
 
     @classmethod
     def setUpTestData(cls):
@@ -962,7 +955,7 @@ class ProjectCreateAPITestCase(APITestCase):
 
 class ProjectPartialUpdateAPITestCase(APITestCase):
     def setUp(self):
-        self.client = VersionedAPIClient()
+        self.client = APIClient()
 
     @classmethod
     def setUpTestData(cls):
@@ -1042,7 +1035,7 @@ class ProjectPartialUpdateAPITestCase(APITestCase):
 
 class UpdateLabelsAPITestCase(APITestCase):
     def setUp(self):
-        self.client = VersionedAPIClient()
+        self.client = APIClient()
 
     def assertLabelsEqual(self, label1, label2):
         self.assertEqual(label1.get("name", label2.get("name")), label2.get("name"))
@@ -1140,7 +1133,7 @@ class ProjectUpdateLabelsAPITestCase(UpdateLabelsAPITestCase):
 
 class ProjectListOfTasksAPITestCase(APITestCase):
     def setUp(self):
-        self.client = VersionedAPIClient()
+        self.client = APIClient()
 
     @classmethod
     def setUpTestData(cls):
@@ -1563,7 +1556,7 @@ class ProjectBackupAPITestCase(APITestCase):
 
 class ProjectExportAPITestCase(APITestCase):
     def setUp(self):
-        self.client = VersionedAPIClient()
+        self.client = APIClient()
 
     @classmethod
     def setUpTestData(cls):
@@ -1637,7 +1630,7 @@ class ProjectExportAPITestCase(APITestCase):
 
 class ProjectImportExportAPITestCase(APITestCase):
     def setUp(self) -> None:
-        self.client = VersionedAPIClient()
+        self.client = APIClient()
         self.tasks = []
         self.projects = []
 
@@ -1792,7 +1785,7 @@ class ProjectImportExportAPITestCase(APITestCase):
 
 class TaskListAPITestCase(APITestCase):
     def setUp(self):
-        self.client = VersionedAPIClient()
+        self.client = APIClient()
 
     @classmethod
     def setUpTestData(cls):
@@ -1832,7 +1825,7 @@ class TaskListAPITestCase(APITestCase):
 
 class TaskGetAPITestCase(APITestCase):
     def setUp(self):
-        self.client = VersionedAPIClient()
+        self.client = APIClient()
 
     @classmethod
     def setUpTestData(cls):
@@ -1890,7 +1883,7 @@ class TaskGetAPITestCase(APITestCase):
 
 class TaskDeleteAPITestCase(APITestCase):
     def setUp(self):
-        self.client = VersionedAPIClient()
+        self.client = APIClient()
 
     @classmethod
     def setUpTestData(cls):
@@ -1938,7 +1931,7 @@ class TaskDeleteAPITestCase(APITestCase):
 class TaskUpdateAPITestCase(APITestCase):
 
     def setUp(self):
-        self.client = VersionedAPIClient()
+        self.client = APIClient()
 
     @classmethod
     def setUpTestData(cls):
@@ -2174,7 +2167,7 @@ class TaskUpdateLabelsAPITestCase(UpdateLabelsAPITestCase):
 class TaskMoveAPITestCase(APITestCase):
 
     def setUp(self):
-        self.client = VersionedAPIClient()
+        self.client = APIClient()
 
         self._run_api_v1_job_id_annotation(self.task.segment_set.first().job_set.first().id, self.annotation_data)
 
@@ -2357,7 +2350,7 @@ class TaskMoveAPITestCase(APITestCase):
 
 class TaskCreateAPITestCase(APITestCase):
     def setUp(self):
-        self.client = VersionedAPIClient()
+        self.client = APIClient()
         project = {
             "name": "Project for task creation",
             "owner": self.user,
@@ -2467,7 +2460,7 @@ class TaskCreateAPITestCase(APITestCase):
 class TaskImportExportAPITestCase(APITestCase):
 
     def setUp(self):
-        self.client = VersionedAPIClient()
+        self.client = APIClient()
         self.tasks = []
 
     @classmethod
@@ -2975,7 +2968,7 @@ class TaskDataAPITestCase(APITestCase):
             return self.value
 
     def setUp(self):
-        self.client = VersionedAPIClient()
+        self.client = APIClient()
 
     @classmethod
     def setUpTestData(cls):
@@ -3884,7 +3877,7 @@ def compare_objects(self, obj1, obj2, ignore_keys, fp_tolerance=.001,
 
 class JobAnnotationAPITestCase(APITestCase):
     def setUp(self):
-        self.client = VersionedAPIClient()
+        self.client = APIClient()
 
     @classmethod
     def setUpTestData(cls):
@@ -5743,7 +5736,7 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
 
 class ServerShareAPITestCase(APITestCase):
     def setUp(self):
-        self.client = VersionedAPIClient()
+        self.client = APIClient()
 
     @classmethod
     def setUpTestData(cls):
@@ -5861,7 +5854,7 @@ class ServerShareAPITestCase(APITestCase):
 
 class ServerShareDifferentTypesAPITestCase(APITestCase):
     def setUp(self):
-        self.client = VersionedAPIClient()
+        self.client = APIClient()
 
     @classmethod
     def setUpTestData(cls):
@@ -5945,7 +5938,7 @@ class ServerShareDifferentTypesAPITestCase(APITestCase):
 
 class TaskAnnotation2DContext(APITestCase):
     def setUp(self):
-        self.client = VersionedAPIClient()
+        self.client = APIClient()
         self.task = {
             "name": "my archive task without copying #11",
             "overlap": 0,

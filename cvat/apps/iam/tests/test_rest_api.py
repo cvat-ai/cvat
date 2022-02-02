@@ -20,10 +20,6 @@ urlpatterns = iam_url_patterns + [
          name='account_email_verification_sent'),
 ]
 
-class VersionedAPIClient(APIClient):
-    def __init__(self, version=settings.BACKEND_VERSIONS.V1_0):
-        super().__init__(HTTP_ACCEPT=settings.ACCEPT_HEADER_TEMPLATE.format(version))
-
 class UserRegisterAPITestCase(APITestCase):
 
     user_data = {'first_name': 'test_first', 'last_name': 'test_last', 'username': 'test_username',
@@ -31,7 +27,7 @@ class UserRegisterAPITestCase(APITestCase):
                  'confirmations': []}
 
     def setUp(self):
-        self.client = VersionedAPIClient()
+        self.client = APIClient()
 
     def _run_api_v1_user_register(self, data):
         url = reverse('rest_register')

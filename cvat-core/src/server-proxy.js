@@ -136,7 +136,6 @@
             Axios.defaults.withCredentials = true;
             Axios.defaults.xsrfHeaderName = 'X-CSRFTOKEN';
             Axios.defaults.xsrfCookieName = 'csrftoken';
-            Axios.defaults.headers.common.Accept = 'application/vnd.cvat+json; version=1.0';
             const workerAxios = new WorkerWrappedAxios();
             Axios.interceptors.request.use((reqConfig) => {
                 if ('params' in reqConfig && 'org' in reqConfig.params) {
@@ -827,7 +826,6 @@
                             },
                             headers: {
                                 Authorization: `Token ${store.get('token')}`,
-                                Accept: 'application/vnd.cvat+json; version=1.0',
                             },
                             chunkSize,
                             retryDelays: null,

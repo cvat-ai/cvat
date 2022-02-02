@@ -7,13 +7,9 @@ from rest_framework.test import APITestCase, APIClient
 from rest_framework import status
 from django.conf import settings
 
-class VersionedAPIClient(APIClient):
-    def __init__(self, version=settings.BACKEND_VERSIONS.V1_0):
-        super().__init__(HTTP_ACCEPT=settings.ACCEPT_HEADER_TEMPLATE.format(version))
-
 class UserAgreementsTest(APITestCase):
     def setUp(self):
-        self.client = VersionedAPIClient()
+        self.client = APIClient()
         self.user_agreements = settings.RESTRICTIONS['user_agreements']
         settings.RESTRICTIONS['user_agreements'] = [
             {

@@ -4,8 +4,6 @@
 
 /// <reference types="cypress" />
 
-import { acceptHeader } from './const';
-
 Cypress.Commands.add('goToProjectsList', () => {
     cy.get('[value="projects"]').click();
     cy.url().should('include', '/projects');
@@ -46,7 +44,6 @@ Cypress.Commands.add('deleteProjects', (authResponse, projectsToDelete) => {
         url: '/api/projects?page_size=all',
         headers: {
             Authorization: `Token ${authKey}`,
-            Accept: acceptHeader,
         },
     }).then((_response) => {
         const responceResult = _response.body.results;
@@ -59,7 +56,6 @@ Cypress.Commands.add('deleteProjects', (authResponse, projectsToDelete) => {
                         url: `/api/projects/${id}`,
                         headers: {
                             Authorization: `Token ${authKey}`,
-                            Accept: acceptHeader,
                         },
                     });
                 }

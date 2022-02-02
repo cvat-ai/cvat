@@ -58,15 +58,13 @@ def generate_image_file(filename, size=(100, 100)):
 
 
 class ForceLogin:
-    def __init__(self, user, client, version=settings.BACKEND_VERSIONS.V1_0):
+    def __init__(self, user, client):
         self.user = user
         self.client = client
-        self.version = version
 
     def __enter__(self):
         if self.user:
             self.client.force_login(self.user, backend='django.contrib.auth.backends.ModelBackend')
-        self.client.credentials(HTTP_ACCEPT=settings.ACCEPT_HEADER_TEMPLATE.format(self.version))
 
         return self
 
@@ -74,13 +72,9 @@ class ForceLogin:
         if self.user:
             self.client.logout()
 
-class VersionedAPIClient(APIClient):
-    def __init__(self, version=settings.BACKEND_VERSIONS.V1_0):
-        super().__init__(HTTP_ACCEPT=settings.ACCEPT_HEADER_TEMPLATE.format(version))
-
 class LambdaTestCase(APITestCase):
     def setUp(self):
-        self.client = VersionedAPIClient()
+        self.client = APIClient()
 
         patcher = mock.patch('cvat.apps.lambda_manager.views.LambdaGateway._http', side_effect = self.__get_response_data_from_lambda_gateway_http)
         self.addCleanup(patcher.stop)

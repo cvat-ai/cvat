@@ -36,23 +36,20 @@ def generate_image_file(filename, size=(100, 50)):
 
 
 class ForceLogin:
-    def __init__(self, user, client, version=settings.BACKEND_VERSIONS.V1_0):
+    def __init__(self, user, client):
         self.user = user
         self.client = client
-        self.version = version
 
     def __enter__(self):
         if self.user:
             self.client.force_login(self.user,
                 backend='django.contrib.auth.backends.ModelBackend')
-        self.client.credentials(HTTP_ACCEPT=settings.ACCEPT_HEADER_TEMPLATE.format(self.version))
 
         return self
 
     def __exit__(self, exception_type, exception_value, traceback):
         if self.user:
             self.client.logout()
-
 
 class GitRemote:
     def pull(self, refspec=None, progress=None, **kwargs):
@@ -144,17 +141,13 @@ class TestGit(Git):
     def reclone(self):
         self._reclone()
 
-class VersionedAPIClient(APIClient):
-    def __init__(self, version=settings.BACKEND_VERSIONS.V1_0):
-        super().__init__(HTTP_ACCEPT=settings.ACCEPT_HEADER_TEMPLATE.format(version))
-
 class GitDatasetRepoTest(APITestCase):
     class FakeGit:
         def __init__(self, url):
             self._url = url
 
     def setUp(self):
-        self.client = VersionedAPIClient()
+        self.client = APIClient()
         db_git = GitData()
         db_git.url = GIT_URL
 

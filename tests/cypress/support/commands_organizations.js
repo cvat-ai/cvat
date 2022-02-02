@@ -4,8 +4,6 @@
 
 /// <reference types="cypress" />
 
-import { acceptHeader } from './const';
-
 Cypress.Commands.add('createOrganization', (organizationParams) => {
     cy.get('.cvat-header-menu-user-dropdown').trigger('mouseover');
     cy.get('.cvat-header-menu')
@@ -36,7 +34,6 @@ Cypress.Commands.add('deleteOrganizations', (authResponse, otrganizationsToDelet
         url: '/api/organizations?page_size=all',
         headers: {
             Authorization: `Token ${authKey}`,
-            Accept: acceptHeader,
         },
     }).then((_response) => {
         const responceResult = _response.body;
@@ -49,7 +46,6 @@ Cypress.Commands.add('deleteOrganizations', (authResponse, otrganizationsToDelet
                         url: `/api/organizations/${id}`,
                         headers: {
                             Authorization: `Token ${authKey}`,
-                            Accept: acceptHeader,
                         },
                     });
                 }

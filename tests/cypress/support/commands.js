@@ -5,7 +5,6 @@
 /// <reference types="cypress" />
 
 import { decomposeMatrix } from './utils';
-import { acceptHeader } from './const';
 
 require('cypress-file-upload');
 require('../plugins/imageGenerator/imageGeneratorCommand');
@@ -57,9 +56,6 @@ Cypress.Commands.add('getAuthKey', () => {
     cy.request({
         method: 'POST',
         url: '/api/auth/login',
-        headers: {
-            Accept: acceptHeader,
-        },
         body: {
             username: Cypress.env('user'),
             email: Cypress.env('email'),
@@ -74,7 +70,6 @@ Cypress.Commands.add('deleteUsers', (authResponse, accountsToDelete) => {
         url: '/api/users?page_size=all',
         headers: {
             Authorization: `Token ${authKey}`,
-            Accept: acceptHeader,
         },
     }).then((_response) => {
         const responseResult = _response.body.results;
@@ -87,7 +82,6 @@ Cypress.Commands.add('deleteUsers', (authResponse, accountsToDelete) => {
                         url: `/api/users/${id}`,
                         headers: {
                             Authorization: `Token ${authKey}`,
-                            Accept: acceptHeader,
                         },
                     });
                 }
@@ -101,7 +95,6 @@ Cypress.Commands.add('changeUserActiveStatus', (authKey, accountsToChangeActiveS
         url: '/api/users?page_size=all',
         headers: {
             Authorization: `Token ${authKey}`,
-            Accept: acceptHeader,
         },
     }).then((response) => {
         const responceResult = response.body.results;
@@ -114,7 +107,6 @@ Cypress.Commands.add('changeUserActiveStatus', (authKey, accountsToChangeActiveS
                     url: `/api/users/${userId}`,
                     headers: {
                         Authorization: `Token ${authKey}`,
-                        Accept: acceptHeader,
                     },
                     body: {
                         is_active: isActive,
@@ -130,7 +122,6 @@ Cypress.Commands.add('checkUserStatuses', (authKey, userName, staffStatus, super
         url: '/api/users?page_size=all',
         headers: {
             Authorization: `Token ${authKey}`,
-            Accept: acceptHeader,
         },
     }).then((response) => {
         const responceResult = response.body.results;
@@ -150,7 +141,6 @@ Cypress.Commands.add('deleteTasks', (authResponse, tasksToDelete) => {
         url: '/api/tasks?page_size=all',
         headers: {
             Authorization: `Token ${authKey}`,
-            Accept: acceptHeader,
         },
     }).then((_response) => {
         const responceResult = _response.body.results;
@@ -163,7 +153,6 @@ Cypress.Commands.add('deleteTasks', (authResponse, tasksToDelete) => {
                         url: `/api/tasks/${id}`,
                         headers: {
                             Authorization: `Token ${authKey}`,
-                            Accept: acceptHeader,
                         },
                     });
                 }

@@ -32,7 +32,6 @@ export const multiAttrParams = {
     additionalValue: 'Attr value 2',
     typeAttribute: 'Text',
 };
-export const acceptHeader = 'application/vnd.cvat+json; version=1.0';
 
 it('Prepare to testing', () => {
     cy.visit('/');
