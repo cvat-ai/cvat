@@ -637,11 +637,11 @@
         return frameDataCache[taskID].frameBuffer.getContextImage(frame);
     }
 
-    async function getPreview(taskID) {
+    async function getPreview(taskID = null, jobID = null) {
         return new Promise((resolve, reject) => {
             // Just go to server and get preview (no any cache)
             serverProxy.frames
-                .getPreview(taskID)
+                .getPreview(taskID, jobID)
                 .then((result) => {
                     if (isNode) {
                         // eslint-disable-next-line no-undef
