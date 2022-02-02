@@ -16,7 +16,6 @@ import itertools
 
 from datumaro.components.dataset import Dataset
 from datumaro.util.test_utils import compare_datasets, TestDir
-from django.conf import settings
 from django.contrib.auth.models import Group, User
 from PIL import Image
 from rest_framework import status

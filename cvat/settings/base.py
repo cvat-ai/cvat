@@ -21,7 +21,6 @@ import shutil
 import subprocess
 import mimetypes
 from corsheaders.defaults import default_headers
-from enum import Enum
 from distutils.util import strtobool
 
 mimetypes.add_type("application/wasm", ".wasm", True)

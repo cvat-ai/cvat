@@ -1,5 +1,5 @@
 
-# Copyright (C) 2021 Intel Corporation
+# Copyright (C) 2021-2022 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -10,7 +10,6 @@ from unittest import mock, skip
 import os
 
 import requests
-from django.conf import settings
 from django.contrib.auth.models import Group, User
 from django.http import HttpResponseNotFound, HttpResponseServerError
 from PIL import Image

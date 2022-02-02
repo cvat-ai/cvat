@@ -12,7 +12,6 @@ from io import BytesIO
 import datumaro
 from datumaro.components.dataset import Dataset, DatasetItem
 from datumaro.components.annotation import Mask
-from django.conf import settings
 from django.contrib.auth.models import Group, User
 from PIL import Image
 

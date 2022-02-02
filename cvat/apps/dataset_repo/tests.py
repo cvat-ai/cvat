@@ -15,7 +15,6 @@ from unittest import mock
 from rest_framework.test import APIClient, APITestCase
 from rest_framework import status
 from django.utils import timezone
-from django.conf import settings
 from django.contrib.auth.models import Group, User
 from cvat.apps.engine.models import Task
 from cvat.apps.dataset_repo.dataset_repo import (Git, initial_create, push, get)

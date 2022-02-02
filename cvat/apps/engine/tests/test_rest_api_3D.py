@@ -16,7 +16,6 @@ import copy
 from shutil import copyfile
 import itertools
 
-from django.conf import settings
 from django.contrib.auth.models import Group, User
 from rest_framework import status
 from rest_framework.test import APIClient, APITestCase
