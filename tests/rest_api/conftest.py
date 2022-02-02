@@ -77,7 +77,7 @@ def users_by_name(users):
 def find_users(test_db):
     def find(**kwargs):
         assert len(kwargs) > 0
-        assert any(kwargs)
+        assert any(kwargs.values())
 
         data = test_db
         kwargs = dict(filter(lambda a: a[1] is not None, kwargs.items()))
