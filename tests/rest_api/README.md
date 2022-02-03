@@ -63,7 +63,7 @@ for i, color in enumerate(colormap):
 To backup DB and data volume, please use commands below.
 
 ```console
-docker exec cvat_db pg_dump -c -C -Fc -U root -d cvat > assets/cvat_db.dump
+docker exec cvat_db pg_dump -c -Fp -U root -d cvat > assets/cvat_db/cvat_db.sql
 docker run --rm --volumes-from cvat ubuntu tar -cjv /home/django/data > assets/cvat_data.tar.bz2
 ```
 
@@ -81,7 +81,7 @@ python utils/dump_objects.py
 To restore DB and data volume, please use commands below.
 
 ```console
-cat assets/cvat_db/cvat_db.dump | docker exec -i cvat_db pg_restore -1 -c -U root -d cvat
+cat assets/cvat_db/cvat_db.sql | docker exec -i cvat_db psql -U root -d cvat
 cat assets/cvat_data.tar.bz2 | docker run --rm -i --volumes-from cvat ubuntu tar -xj --strip 3 -C /home/django/data
 ```
 
@@ -93,7 +93,7 @@ cat assets/cvat_data.tar.bz2 | docker run --rm -i --volumes-from cvat ubuntu tar
    you have json description of all objects together with cvat_db.sql, it will
    be possible to recreate them manually.
 
-1. How to upgrade cvat_data.tar.bz2 and cvat_db.dump?
+1. How to upgrade cvat_data.tar.bz2 and cvat_db.sql?
 
    After every commit which changes the layout of DB and data directory it is
    possible to break these files. But failed tests should be a clear indicator
