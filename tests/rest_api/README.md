@@ -63,7 +63,7 @@ for i, color in enumerate(colormap):
 To backup DB and data volume, please use commands below.
 
 ```console
-docker exec cvat_db pg_dump -c -Fp -U root -d cvat > assets/cvat_db.sql
+docker exec cvat_db pg_dump -c -Fp -U root -d cvat > assets/cvat_db/cvat_db.sql
 docker run --rm --volumes-from cvat ubuntu tar -cjv /home/django/data > assets/cvat_data.tar.bz2
 ```
 
