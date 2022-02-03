@@ -433,7 +433,7 @@ Then, use the `docker-compose.https.yml` file to override the base `docker-compo
 docker-compose -f docker-compose.yml -f docker-compose.https.yml up -d
 ```
 
-> In firewall, for ports 80 and 443 must be allow ingress from any
+> In firewall, ports 80 and 443 must be open for inbound connections from any
 
 Then, the CVAT instance will be available at your domain on ports 443 (HTTPS) and 80 (HTTP, redirects to 443).
 
@@ -510,37 +510,11 @@ If you stay in China, for installation you need to override the following source
 
 ### HTTPS is not working because of a certificate
 
-If you're having trouble with SSL connection, you need to get logs traefic.
-First, get the traefik container ID from the docker:
+If you're having trouble with SSL connection, you need to get logs from traefik:
 
 ```bash
-docker ps --filter NAME=^traefik$
+docker logs traefik
 ```
-<details>
-<summary>Example</summary>
-<!--lint disable maximum-line-length-->
-
-```
-CONTAINER ID        IMAGE               COMMAND                  CREATED             STATUS              PORTS                                                    NAMES
-dbb5abded3e8        traefik:v2.4        "/entrypoint.sh --pr…"   3 weeks ago         Up 3 weeks          0.0.0.0:8080->8080/tcp, 80/tcp, 0.0.0.0:8090->8090/tcp   traefik
-```
-<!--lint enable maximum-line-length-->
-</details>
-<br>
-
-Get logs:
-
-```bash
-docker logs <ID_OF_THE_TRAEFIK_CONTAINER>
-```
-<details>
-<summary>Example</summary>
-
-```
-$ docker logs dbb5abded3e8 > traefic_logs.txt
-```
-</details>
-<br>
 
 The logs will help you find out the probable error.
 
