@@ -21,7 +21,7 @@ module.exports = (env) => ({
     },
     output: {
         path: path.resolve(__dirname, 'dist'),
-        filename: '[name].[contenthash].min.js',
+        filename: 'assets/[name].[contenthash].min.js',
         publicPath: '/',
     },
     devServer: {
@@ -109,7 +109,7 @@ module.exports = (env) => ({
                     loader: 'worker-loader',
                     options: {
                         publicPath: '/',
-                        name: '3rdparty/[name].[contenthash].js',
+                        name: 'assets/3rdparty/[name].[contenthash].js',
                     },
                 },
             },
@@ -120,7 +120,7 @@ module.exports = (env) => ({
                     loader: 'worker-loader',
                     options: {
                         publicPath: '/',
-                        name: '[name].[contenthash].js',
+                        name: 'assets/[name].[contenthash].js',
                     },
                 },
             },
@@ -137,7 +137,7 @@ module.exports = (env) => ({
         new CopyPlugin([
             {
                 from: '../cvat-data/src/js/3rdparty/avc.wasm',
-                to: '3rdparty/',
+                to: 'assets/3rdparty/',
             },
         ]),
     ],
