@@ -46,7 +46,7 @@ def init_test_db():
 
     drop_test_db()
 
-@pytest.fixture(scope='session', autouse=True)
+@pytest.fixture(scope='function', autouse=True)
 def restore():
     restore_cvat_db()
 
