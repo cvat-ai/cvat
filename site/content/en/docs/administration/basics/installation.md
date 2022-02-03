@@ -520,9 +520,9 @@ docker logs traefik
 The logs will help you find out the probable error.
 
 If the error is related to a firewall, then:
-- Into firewall open ports 80 and 443 (if you haven't done so before)
+- Into firewall, open ports 80 and 443 for inbound connections from any (if you haven't already).
 - Delete `acme.json`.
-  The location should be something like: `/var/lib/docker/volumes/cvat_cvat_letsencrypt/_data/acme.json`
+  The location should be something like: `/var/lib/docker/volumes/cvat_cvat_letsencrypt/_data/acme.json`.
 
 After `acme.json` is removed, make sure you are in the cvat repository clone with `yaml` files,
 and stop all cvat docker containers:
