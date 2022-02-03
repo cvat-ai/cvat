@@ -510,7 +510,8 @@ If you stay in China, for installation you need to override the following source
 
 ### HTTPS is not working because of a certificate
 
-If you're having trouble with SSL connection, you need to get logs from traefik:
+If you're having trouble with SSL connection, to find the cause,
+you'll need to get the logs from traefik by runing:
 
 ```bash
 docker logs traefik
@@ -518,7 +519,7 @@ docker logs traefik
 
 The logs will help you find out the probable error.
 
-If the error is related to a firewall that:
+If the error is related to a firewall, then:
 - Into firewall open ports 80 and 443 (if you haven't done so before)
 - Delete `acme.json`.
   The location should be something like: `/var/lib/docker/volumes/cvat_cvat_letsencrypt/_data/acme.json`
