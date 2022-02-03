@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -229,22 +229,20 @@ function AnnotationMenuComponent(props: Props & RouteComponentProps): JSX.Elemen
                     Open the task
                 </a>
             </Menu.Item>
-            {jobStage !== JobStage.ACCEPTANCE ? (
-                <Menu.SubMenu popupClassName='cvat-annotation-menu-job-state-submenu' key='job-state-submenu' title='Change job state'>
-                    <Menu.Item key={`state:${JobState.NEW}`}>
-                        <Text className={computeClassName(JobState.NEW)}>{JobState.NEW}</Text>
-                    </Menu.Item>
-                    <Menu.Item key={`state:${JobState.IN_PROGRESS}`}>
-                        <Text className={computeClassName(JobState.IN_PROGRESS)}>{JobState.IN_PROGRESS}</Text>
-                    </Menu.Item>
-                    <Menu.Item key={`state:${JobState.REJECTED}`}>
-                        <Text className={computeClassName(JobState.REJECTED)}>{JobState.REJECTED}</Text>
-                    </Menu.Item>
-                    <Menu.Item key={`state:${JobState.COMPLETED}`}>
-                        <Text className={computeClassName(JobState.COMPLETED)}>{JobState.COMPLETED}</Text>
-                    </Menu.Item>
-                </Menu.SubMenu>
-            ) : null }
+            <Menu.SubMenu popupClassName='cvat-annotation-menu-job-state-submenu' key='job-state-submenu' title='Change job state'>
+                <Menu.Item key={`state:${JobState.NEW}`}>
+                    <Text className={computeClassName(JobState.NEW)}>{JobState.NEW}</Text>
+                </Menu.Item>
+                <Menu.Item key={`state:${JobState.IN_PROGRESS}`}>
+                    <Text className={computeClassName(JobState.IN_PROGRESS)}>{JobState.IN_PROGRESS}</Text>
+                </Menu.Item>
+                <Menu.Item key={`state:${JobState.REJECTED}`}>
+                    <Text className={computeClassName(JobState.REJECTED)}>{JobState.REJECTED}</Text>
+                </Menu.Item>
+                <Menu.Item key={`state:${JobState.COMPLETED}`}>
+                    <Text className={computeClassName(JobState.COMPLETED)}>{JobState.COMPLETED}</Text>
+                </Menu.Item>
+            </Menu.SubMenu>
             {[JobStage.ANNOTATION, JobStage.REVIEW].includes(jobStage) ?
                 <Menu.Item key={Actions.FINISH_JOB}>Finish the job</Menu.Item> : null}
             {jobStage === JobStage.ACCEPTANCE ?
