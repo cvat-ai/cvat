@@ -45,3 +45,19 @@ export function rotatePoint(x: number, y: number, angle: number, cx = 0, cy = 0)
     const rotY = (y - cy) * cos + (x - cx) * sin + cy;
     return [rotX, rotY];
 }
+
+export function convertPointInBounds(x: number, y: number, maxX: number, maxY: number): Point {
+    let newX = x;
+    let newY = y;
+    if (x < 0) {
+        newX = 0;
+    } else if (x > maxX) {
+        newX = maxX;
+    }
+    if (y < 0) {
+        newY = 0;
+    } else if (y > maxY) {
+        newY = maxY;
+    }
+    return { x: newX, y: newY };
+}

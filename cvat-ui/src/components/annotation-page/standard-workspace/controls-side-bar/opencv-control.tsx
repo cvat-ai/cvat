@@ -314,6 +314,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
 
         try {
             const { points } = (e as CustomEvent).detail.shapes[0];
+            console.log((e as CustomEvent).detail, points);
             const imageData = this.getCanvasImageData();
             const trackerModel = activeTracker.model();
             trackerModel.init(imageData, points);
@@ -417,6 +418,8 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
                     objectState.points.every(
                         (coord: number, index: number) => coord === shape.shapePoints[index],
                     );
+                console.log(objectState);
+                console.log(objectState.points);
                 if (!stateIsRelevant) {
                     shape.trackerModel.reinit(objectState.points);
                     shape.shapePoints = objectState.points;
