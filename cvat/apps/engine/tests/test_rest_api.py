@@ -400,6 +400,8 @@ class JobPartialUpdateAPITestCase(JobUpdateAPITestCase):
         self._check_request(response, data)
 
 class ServerAboutAPITestCase(APITestCase):
+    ACCEPT_HEADER_TEMPLATE = 'application/vnd.cvat+json; version={}'
+
     def setUp(self):
         self.client = APIClient()
 
@@ -412,6 +414,15 @@ class ServerAboutAPITestCase(APITestCase):
             response = self.client.get('/api/server/about')
 
         return response
+
+    def _run_api_server_about(self, user, version):
+        with ForceLogin(user, self.client):
+            response = self.client.get('/api/server/about',
+                HTTP_ACCEPT=self.ACCEPT_HEADER_TEMPLATE.format(version))
+        return response
+
+    def _check_response_version(self, response, version):
+        self.assertEqual(response.accepted_media_type, self.ACCEPT_HEADER_TEMPLATE.format(version))
 
     def _check_request(self, response):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -430,6 +441,11 @@ class ServerAboutAPITestCase(APITestCase):
     def test_api_v1_server_about_no_auth(self):
         response = self._run_api_v1_server_about(None)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_api_server_about_versions_admin(self):
+        for version in settings.REST_FRAMEWORK['ALLOWED_VERSIONS']:
+            response = self._run_api_server_about(self.admin, version)
+            self._check_response_version(response, version)
 
 class ServerExceptionAPITestCase(APITestCase):
     def setUp(self):
