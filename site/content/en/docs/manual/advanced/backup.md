@@ -54,7 +54,7 @@ As a result, you'll get a task containing data, parameters, and annotations of t
 
 ### Create from backup API
 
-- endpoint: `/api/v1/tasks/backup` or `/api/v1/projects/backup`
+- endpoint: `/api/tasks/backup` or `/api/projects/backup`
 - method: `POST`
 - Content-Type: `multipart/form-data`
 - responses: 202, 201 with json payload

@@ -326,7 +326,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
 
             return _import_project_dataset(
                 request=request,
-                rq_id=f"/api/v1/project/{pk}/dataset_import",
+                rq_id=f"/api/project/{pk}/dataset_import",
                 rq_func=dm.project.import_dataset_as_project,
                 pk=pk,
                 format_name=format_name,
@@ -335,7 +335,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
             action = request.query_params.get("action", "").lower()
             if action in ("import_status",):
                 queue = django_rq.get_queue("default")
-                rq_job = queue.fetch_job(f"/api/v1/project/{pk}/dataset_import")
+                rq_job = queue.fetch_job(f"/api/project/{pk}/dataset_import")
                 if rq_job is None:
                     return Response(status=status.HTTP_404_NOT_FOUND)
                 elif rq_job.is_finished:
@@ -353,14 +353,14 @@ class ProjectViewSet(viewsets.ModelViewSet):
                     )
                 else:
                     return Response(
-                        data=self._get_rq_response('default', f'/api/v1/project/{pk}/dataset_import'),
+                        data=self._get_rq_response('default', f'/api/project/{pk}/dataset_import'),
                         status=status.HTTP_202_ACCEPTED
                     )
             else:
                 format_name = request.query_params.get("format", "")
                 return _export_annotations(
                     db_instance=db_project,
-                    rq_id="/api/v1/project/{}/dataset/{}".format(pk, format_name),
+                    rq_id="/api/project/{}/dataset/{}".format(pk, format_name),
                     request=request,
                     action=action,
                     callback=dm.views.export_project_as_dataset,
@@ -395,7 +395,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
         format_name = request.query_params.get('format')
         if format_name:
             return _export_annotations(db_instance=db_project,
-                rq_id="/api/v1/projects/{}/annotations/{}".format(pk, format_name),
+                rq_id="/api/projects/{}/annotations/{}".format(pk, format_name),
                 request=request,
                 action=request.query_params.get("action", "").lower(),
                 callback=dm.views.export_project_annotations,
@@ -744,7 +744,7 @@ class TaskViewSet(UploadMixin, viewsets.ModelViewSet):
             format_name = request.query_params.get('format')
             if format_name:
                 return _export_annotations(db_instance=db_task,
-                    rq_id="/api/v1/tasks/{}/annotations/{}".format(pk, format_name),
+                    rq_id="/api/tasks/{}/annotations/{}".format(pk, format_name),
                     request=request,
                     action=request.query_params.get("action", "").lower(),
                     callback=dm.views.export_task_annotations,
@@ -761,7 +761,7 @@ class TaskViewSet(UploadMixin, viewsets.ModelViewSet):
             if format_name:
                 return _import_annotations(
                     request=request,
-                    rq_id="{}@/api/v1/tasks/{}/annotations/upload".format(request.user, pk),
+                    rq_id="{}@/api/tasks/{}/annotations/upload".format(request.user, pk),
                     rq_func=dm.task.import_task_annotations,
                     pk=pk,
                     format_name=format_name,
@@ -791,7 +791,7 @@ class TaskViewSet(UploadMixin, viewsets.ModelViewSet):
     @action(detail=True, methods=['GET'], serializer_class=RqStatusSerializer)
     def status(self, request, pk):
         self.get_object() # force to call check_object_permissions
-        response = self._get_rq_response(queue="default", job_id=f"/api/v1/tasks/{pk}")
+        response = self._get_rq_response(queue="default", job_id=f"/api/tasks/{pk}")
         serializer = RqStatusSerializer(data=response)
 
         if serializer.is_valid(raise_exception=True):
@@ -871,7 +871,7 @@ class TaskViewSet(UploadMixin, viewsets.ModelViewSet):
 
         format_name = request.query_params.get("format", "")
         return _export_annotations(db_instance=db_task,
-            rq_id="/api/v1/tasks/{}/dataset/{}".format(pk, format_name),
+            rq_id="/api/tasks/{}/dataset/{}".format(pk, format_name),
             request=request,
             action=request.query_params.get("action", "").lower(),
             callback=dm.views.export_task_as_dataset,
@@ -934,7 +934,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             if format_name:
                 return _import_annotations(
                     request=request,
-                    rq_id="{}@/api/v1/jobs/{}/annotations/upload".format(request.user, pk),
+                    rq_id="{}@/api/jobs/{}/annotations/upload".format(request.user, pk),
                     rq_func=dm.task.import_job_annotations,
                     pk=pk,
                     format_name=format_name

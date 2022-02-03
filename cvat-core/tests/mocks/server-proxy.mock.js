@@ -113,7 +113,7 @@ class ServerProxy {
             const id = Math.max(...projectsDummyData.results.map((el) => el.id)) + 1;
             projectsDummyData.results.push({
                 id,
-                url: `http://localhost:7000/api/v1/projects/${id}`,
+                url: `http://localhost:7000/api/projects/${id}`,
                 name: projectData.name,
                 owner: 1,
                 assignee: null,
@@ -179,7 +179,7 @@ class ServerProxy {
             const id = Math.max(...tasksDummyData.results.map((el) => el.id)) + 1;
             tasksDummyData.results.push({
                 id,
-                url: `http://localhost:7000/api/v1/tasks/${id}`,
+                url: `http://localhost:7000/api/tasks/${id}`,
                 name: taskData.name,
                 project_id: taskData.project_id || null,
                 size: 5000,

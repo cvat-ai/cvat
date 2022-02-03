@@ -1,5 +1,5 @@
 
-# Copyright (C) 2020 Intel Corporation
+# Copyright (C) 2020-2022 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -69,38 +69,38 @@ class _DbTestBase(APITestCase):
 
         cls.user = admin
 
-    def _put_api_v1_task_id_annotations(self, tid, data):
+    def _put_api_v2_task_id_annotations(self, tid, data):
         with ForceLogin(self.user, self.client):
-            response = self.client.put("/api/v1/tasks/%s/annotations" % tid,
+            response = self.client.put("/api/tasks/%s/annotations" % tid,
                 data=data, format="json")
 
         return response
 
-    def _put_api_v1_job_id_annotations(self, jid, data):
+    def _put_api_v2_job_id_annotations(self, jid, data):
         with ForceLogin(self.user, self.client):
-            response = self.client.put("/api/v1/jobs/%s/annotations" % jid,
+            response = self.client.put("/api/jobs/%s/annotations" % jid,
                 data=data, format="json")
 
         return response
 
     def _create_task(self, data, image_data):
         with ForceLogin(self.user, self.client):
-            response = self.client.post('/api/v1/tasks', data=data, format="json")
+            response = self.client.post('/api/tasks', data=data, format="json")
             assert response.status_code == status.HTTP_201_CREATED, response.status_code
             tid = response.data["id"]
 
-            response = self.client.post("/api/v1/tasks/%s/data" % tid,
+            response = self.client.post("/api/tasks/%s/data" % tid,
                 data=image_data)
             assert response.status_code == status.HTTP_202_ACCEPTED, response.status_code
 
-            response = self.client.get("/api/v1/tasks/%s" % tid)
+            response = self.client.get("/api/tasks/%s" % tid)
             task = response.data
 
         return task
 
 class TaskExportTest(_DbTestBase):
     def _generate_custom_annotations(self, annotations, task):
-        self._put_api_v1_task_id_annotations(task["id"], annotations)
+        self._put_api_v2_task_id_annotations(task["id"], annotations)
         return annotations
 
     def _generate_annotations(self, task):
@@ -497,7 +497,7 @@ class TaskExportTest(_DbTestBase):
                 },
             ]
         }
-        self._put_api_v1_job_id_annotations(
+        self._put_api_v2_job_id_annotations(
             task["segments"][2]["jobs"][0]["id"], annotations)
 
         task_ann = TaskAnnotation(task["id"])
@@ -602,7 +602,7 @@ class FrameMatchingTest(_DbTestBase):
 
 class TaskAnnotationsImportTest(_DbTestBase):
     def _generate_custom_annotations(self, annotations, task):
-        self._put_api_v1_task_id_annotations(task["id"], annotations)
+        self._put_api_v2_task_id_annotations(task["id"], annotations)
         return annotations
 
     def _generate_task_images(self, count, name="image", **image_params):

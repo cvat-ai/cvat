@@ -10,7 +10,7 @@ describe('Delete users, tasks, projects, organizations created during the tests 
     it('Get token', () => {
         cy.request({
             method: 'POST',
-            url: '/api/v1/auth/login',
+            url: '/api/auth/login',
             body: {
                 username: Cypress.env('user'),
                 email: Cypress.env('email'),
@@ -23,7 +23,7 @@ describe('Delete users, tasks, projects, organizations created during the tests 
 
     it('Get a list of tasks and delete them all', () => {
         cy.request({
-            url: '/api/v1/tasks?page_size=1000',
+            url: '/api/tasks?page_size=1000',
             headers: {
                 Authorization: `Token ${authKey}`,
             },
@@ -33,7 +33,7 @@ describe('Delete users, tasks, projects, organizations created during the tests 
                 const { id } = task;
                 cy.request({
                     method: 'DELETE',
-                    url: `/api/v1/tasks/${id}`,
+                    url: `/api/tasks/${id}`,
                     headers: {
                         Authorization: `Token ${authKey}`,
                     },
@@ -44,7 +44,7 @@ describe('Delete users, tasks, projects, organizations created during the tests 
 
     it('Get a list of projects and delete them all', () => {
         cy.request({
-            url: '/api/v1/projects?page_size=all',
+            url: '/api/projects?page_size=all',
             headers: {
                 Authorization: `Token ${authKey}`,
             },
@@ -54,7 +54,7 @@ describe('Delete users, tasks, projects, organizations created during the tests 
                 const { id } = project;
                 cy.request({
                     method: 'DELETE',
-                    url: `/api/v1/projects/${id}`,
+                    url: `/api/projects/${id}`,
                     headers: {
                         Authorization: `Token ${authKey}`,
                     },
@@ -65,7 +65,7 @@ describe('Delete users, tasks, projects, organizations created during the tests 
 
     it('Get a list of organizations and delete them all', () => {
         cy.request({
-            url: '/api/v1/organizations?page_size=all',
+            url: '/api/organizations?page_size=all',
             headers: {
                 Authorization: `Token ${authKey}`,
             },
@@ -75,7 +75,7 @@ describe('Delete users, tasks, projects, organizations created during the tests 
                 const { id } = org;
                 cy.request({
                     method: 'DELETE',
-                    url: `/api/v1/organizations/${id}`,
+                    url: `/api/organizations/${id}`,
                     headers: {
                         Authorization: `Token ${authKey}`,
                     },
@@ -86,7 +86,7 @@ describe('Delete users, tasks, projects, organizations created during the tests 
 
     it('Get a list of users and delete all except id:1', () => {
         cy.request({
-            url: '/api/v1/users',
+            url: '/api/users',
             headers: {
                 Authorization: `Token ${authKey}`,
             },
@@ -97,7 +97,7 @@ describe('Delete users, tasks, projects, organizations created during the tests 
                 if (id !== 1) {
                     cy.request({
                         method: 'DELETE',
-                        url: `/api/v1/users/${id}`,
+                        url: `/api/users/${id}`,
                         headers: {
                             Authorization: `Token ${authKey}`,
                         },
