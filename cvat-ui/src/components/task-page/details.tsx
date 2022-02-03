@@ -1,11 +1,11 @@
-// Copyright (C) 2019-2021 Intel Corporation
+// Copyright (C) 2019-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
 import { Row, Col } from 'antd/lib/grid';
 import Tag from 'antd/lib/tag';
-import { CheckCircleOutlined, LoadingOutlined, WarningOutlined } from '@ant-design/icons';
+import { CheckCircleOutlined, ExclamationCircleOutlined, LoadingOutlined } from '@ant-design/icons';
 import Modal from 'antd/lib/modal';
 import notification from 'antd/lib/notification';
 import Text from 'antd/lib/typography/Text';
@@ -276,7 +276,7 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
                                         });
                                 }}
                             >
-                                <WarningOutlined />
+                                <ExclamationCircleOutlined />
                                 Synchronize
                             </Tag>
                         )}

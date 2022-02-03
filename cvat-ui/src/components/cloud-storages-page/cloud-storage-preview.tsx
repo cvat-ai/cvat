@@ -1,11 +1,11 @@
-// Copyright (C) 2021 Intel Corporation
+// Copyright (C) 2021-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import React, { useEffect } from 'react';
 
 import { useDispatch, useSelector } from 'react-redux';
-import { CloudSyncOutlined } from '@ant-design/icons';
+import { PictureOutlined } from '@ant-design/icons';
 import Spin from 'antd/lib/spin';
 import { getCloudStoragePreviewAsync } from 'actions/cloud-storage-actions';
 import { CombinedState, CloudStorage } from 'reducers/interfaces';
@@ -35,7 +35,7 @@ export default function Preview({ cloudStorage }: Props): JSX.Element {
     if (preview.initialized && !preview.preview) {
         return (
             <div className='cvat-cloud-storage-item-empty-preview' aria-hidden>
-                <CloudSyncOutlined />
+                <PictureOutlined />
             </div>
         );
     }

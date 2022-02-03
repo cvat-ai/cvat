@@ -16,7 +16,8 @@ import Select from 'antd/lib/select';
 import { useForm } from 'antd/lib/form/Form';
 import { Store } from 'antd/lib/form/interface';
 import {
-    CloseOutlined, EditTwoTone, EnvironmentOutlined, MailOutlined, PhoneOutlined, PlusCircleOutlined,
+    MinusCircleOutlined, EditTwoTone, EnvironmentOutlined,
+    MailOutlined, PhoneOutlined, PlusCircleOutlined,
 } from '@ant-design/icons';
 
 import {
@@ -324,7 +325,9 @@ function OrganizationTopBar(props: Props): JSX.Element {
                                             </Form.Item>
                                         </Col>
                                         <Col span={1} offset={1}>
-                                            {index > 0 ? <CloseOutlined onClick={() => remove(field.name)} /> : null}
+                                            {index > 0 ? (
+                                                <MinusCircleOutlined onClick={() => remove(field.name)} />
+                                            ) : null}
                                         </Col>
                                     </Row>
                                 ))}
