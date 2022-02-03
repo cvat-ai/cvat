@@ -16,7 +16,7 @@
       "is_superuser": true,
       "last_login": "2021-12-22T08:11:58.502575Z",
       "last_name": "First",
-      "url": "http://localhost:8080/api/v1/users/1",
+      "url": "http://localhost:8080/api/users/1",
       "username": "admin1"
     },
     {
@@ -32,7 +32,7 @@
       "is_superuser": false,
       "last_login": "2021-12-22T07:55:35.269206Z",
       "last_name": "First",
-      "url": "http://localhost:8080/api/v1/users/2",
+      "url": "http://localhost:8080/api/users/2",
       "username": "user1"
     },
     {
@@ -48,7 +48,7 @@
       "is_superuser": false,
       "last_login": null,
       "last_name": "Second",
-      "url": "http://localhost:8080/api/v1/users/3",
+      "url": "http://localhost:8080/api/users/3",
       "username": "user2"
     },
     {
@@ -64,7 +64,7 @@
       "is_superuser": false,
       "last_login": null,
       "last_name": "Third",
-      "url": "http://localhost:8080/api/v1/users/4",
+      "url": "http://localhost:8080/api/users/4",
       "username": "user3"
     },
     {
@@ -80,7 +80,7 @@
       "is_superuser": false,
       "last_login": null,
       "last_name": "Fourth",
-      "url": "http://localhost:8080/api/v1/users/5",
+      "url": "http://localhost:8080/api/users/5",
       "username": "user4"
     },
     {
@@ -96,7 +96,7 @@
       "is_superuser": false,
       "last_login": "2021-12-14T19:11:21.048740Z",
       "last_name": "First",
-      "url": "http://localhost:8080/api/v1/users/6",
+      "url": "http://localhost:8080/api/users/6",
       "username": "worker1"
     },
     {
@@ -112,7 +112,7 @@
       "is_superuser": false,
       "last_login": null,
       "last_name": "Second",
-      "url": "http://localhost:8080/api/v1/users/7",
+      "url": "http://localhost:8080/api/users/7",
       "username": "worker2"
     },
     {
@@ -128,7 +128,7 @@
       "is_superuser": false,
       "last_login": null,
       "last_name": "Third",
-      "url": "http://localhost:8080/api/v1/users/8",
+      "url": "http://localhost:8080/api/users/8",
       "username": "worker3"
     },
     {
@@ -144,7 +144,7 @@
       "is_superuser": false,
       "last_login": null,
       "last_name": "Fourth",
-      "url": "http://localhost:8080/api/v1/users/9",
+      "url": "http://localhost:8080/api/users/9",
       "username": "worker4"
     },
     {
@@ -160,7 +160,7 @@
       "is_superuser": false,
       "last_login": "2022-01-19T13:52:59.477881Z",
       "last_name": "First",
-      "url": "http://localhost:8080/api/v1/users/10",
+      "url": "http://localhost:8080/api/users/10",
       "username": "business1"
     },
     {
@@ -176,7 +176,7 @@
       "is_superuser": false,
       "last_login": null,
       "last_name": "Second",
-      "url": "http://localhost:8080/api/v1/users/11",
+      "url": "http://localhost:8080/api/users/11",
       "username": "business2"
     },
     {
@@ -192,7 +192,7 @@
       "is_superuser": false,
       "last_login": null,
       "last_name": "Third",
-      "url": "http://localhost:8080/api/v1/users/12",
+      "url": "http://localhost:8080/api/users/12",
       "username": "business3"
     },
     {
@@ -208,7 +208,7 @@
       "is_superuser": false,
       "last_login": null,
       "last_name": "Fourth",
-      "url": "http://localhost:8080/api/v1/users/13",
+      "url": "http://localhost:8080/api/users/13",
       "username": "business4"
     },
     {
@@ -222,7 +222,7 @@
       "is_superuser": false,
       "last_login": null,
       "last_name": "First",
-      "url": "http://localhost:8080/api/v1/users/14",
+      "url": "http://localhost:8080/api/users/14",
       "username": "dummy1"
     },
     {
@@ -236,7 +236,7 @@
       "is_superuser": false,
       "last_login": null,
       "last_name": "Second",
-      "url": "http://localhost:8080/api/v1/users/15",
+      "url": "http://localhost:8080/api/users/15",
       "username": "dummy2"
     },
     {
@@ -250,7 +250,7 @@
       "is_superuser": false,
       "last_login": null,
       "last_name": "Third",
-      "url": "http://localhost:8080/api/v1/users/16",
+      "url": "http://localhost:8080/api/users/16",
       "username": "dummy3"
     },
     {
@@ -264,7 +264,7 @@
       "is_superuser": false,
       "last_login": null,
       "last_name": "Fourth",
-      "url": "http://localhost:8080/api/v1/users/17",
+      "url": "http://localhost:8080/api/users/17",
       "username": "dummy4"
     },
     {
@@ -280,7 +280,7 @@
       "is_superuser": true,
       "last_login": null,
       "last_name": "Second",
-      "url": "http://localhost:8080/api/v1/users/18",
+      "url": "http://localhost:8080/api/users/18",
       "username": "admin2"
     }
   ]

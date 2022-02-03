@@ -55,7 +55,7 @@ Cypress.Commands.add('userRegistration', (firstName, lastName, userName, emailAd
 Cypress.Commands.add('getAuthKey', () => {
     cy.request({
         method: 'POST',
-        url: '/api/v1/auth/login',
+        url: '/api/auth/login',
         body: {
             username: Cypress.env('user'),
             email: Cypress.env('email'),
@@ -67,7 +67,7 @@ Cypress.Commands.add('getAuthKey', () => {
 Cypress.Commands.add('deleteUsers', (authResponse, accountsToDelete) => {
     const authKey = authResponse.body.key;
     cy.request({
-        url: '/api/v1/users?page_size=all',
+        url: '/api/users?page_size=all',
         headers: {
             Authorization: `Token ${authKey}`,
         },
@@ -79,7 +79,7 @@ Cypress.Commands.add('deleteUsers', (authResponse, accountsToDelete) => {
                 if (username === account) {
                     cy.request({
                         method: 'DELETE',
-                        url: `/api/v1/users/${id}`,
+                        url: `/api/users/${id}`,
                         headers: {
                             Authorization: `Token ${authKey}`,
                         },
@@ -92,7 +92,7 @@ Cypress.Commands.add('deleteUsers', (authResponse, accountsToDelete) => {
 
 Cypress.Commands.add('changeUserActiveStatus', (authKey, accountsToChangeActiveStatus, isActive) => {
     cy.request({
-        url: '/api/v1/users?page_size=all',
+        url: '/api/users?page_size=all',
         headers: {
             Authorization: `Token ${authKey}`,
         },
@@ -104,7 +104,7 @@ Cypress.Commands.add('changeUserActiveStatus', (authKey, accountsToChangeActiveS
             if (userName.includes(accountsToChangeActiveStatus)) {
                 cy.request({
                     method: 'PATCH',
-                    url: `/api/v1/users/${userId}`,
+                    url: `/api/users/${userId}`,
                     headers: {
                         Authorization: `Token ${authKey}`,
                     },
@@ -119,7 +119,7 @@ Cypress.Commands.add('changeUserActiveStatus', (authKey, accountsToChangeActiveS
 
 Cypress.Commands.add('checkUserStatuses', (authKey, userName, staffStatus, superuserStatus, activeStatus) => {
     cy.request({
-        url: '/api/v1/users?page_size=all',
+        url: '/api/users?page_size=all',
         headers: {
             Authorization: `Token ${authKey}`,
         },
@@ -138,7 +138,7 @@ Cypress.Commands.add('checkUserStatuses', (authKey, userName, staffStatus, super
 Cypress.Commands.add('deleteTasks', (authResponse, tasksToDelete) => {
     const authKey = authResponse.body.key;
     cy.request({
-        url: '/api/v1/tasks?page_size=all',
+        url: '/api/tasks?page_size=all',
         headers: {
             Authorization: `Token ${authKey}`,
         },
@@ -150,7 +150,7 @@ Cypress.Commands.add('deleteTasks', (authResponse, tasksToDelete) => {
                 if (name === taskToDelete) {
                     cy.request({
                         method: 'DELETE',
-                        url: `/api/v1/tasks/${id}`,
+                        url: `/api/tasks/${id}`,
                         headers: {
                             Authorization: `Token ${authKey}`,
                         },
@@ -234,7 +234,7 @@ Cypress.Commands.add('openTask', (taskName, projectSubsetFieldValue) => {
 });
 
 Cypress.Commands.add('saveJob', (method = 'PATCH', status = 200, as = 'saveJob') => {
-    cy.intercept(method, '/api/v1/jobs/**').as(as);
+    cy.intercept(method, '/api/jobs/**').as(as);
     cy.get('button').contains('Save').click({ force: true }).trigger('mouseout');
     cy.wait(`@${as}`).its('response.statusCode').should('equal', status);
 });

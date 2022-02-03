@@ -207,7 +207,7 @@ context('Review pipeline feature', () => {
         });
 
         it('Second user sends the job to review.', () => {
-            cy.intercept('POST', '/api/v1/server/logs').as('sendLogs');
+            cy.intercept('POST', '/api/server/logs').as('sendLogs');
             cy.interactMenu('Request a review');
             cy.contains('.cvat-modal-content-save-job', 'The job has unsaved annotations')
                 .should('exist')

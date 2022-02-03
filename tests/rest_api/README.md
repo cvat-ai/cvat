@@ -67,7 +67,7 @@ docker exec cvat_db pg_dump -c -Fp -U root -d cvat > assets/cvat_db/cvat_db.sql
 docker run --rm --volumes-from cvat ubuntu tar -cjv /home/django/data > assets/cvat_data.tar.bz2
 ```
 
-# How to update *.json files in the assets directory?
+## How to update *.json files in the assets directory?
 
 If you have updated the test database and want to update the assets/*.json
 files as well, run the appropriate script:
@@ -76,7 +76,7 @@ files as well, run the appropriate script:
 python utils/dump_objects.py
 ```
 
-# How to restore DB and data volume?
+## How to restore DB and data volume?
 
 To restore DB and data volume, please use commands below.
 

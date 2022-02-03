@@ -1,4 +1,4 @@
-// Copyright (C) 2021 Intel Corporation
+// Copyright (C) 2021-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -10,7 +10,7 @@ const dummyGoogleStorage = {
         {
             id: 3,
             owner: {
-                url: 'http://localhost:7000/api/v1/users/1',
+                url: 'http://localhost:7000/api/users/1',
                 id: 1,
                 username: 'maya',
                 first_name: '',
@@ -39,7 +39,7 @@ const dummyAzureContainer = {
         {
             id: 2,
             owner: {
-                url: 'http://localhost:7000/api/v1/users/1',
+                url: 'http://localhost:7000/api/users/1',
                 id: 1,
                 username: 'maya',
                 first_name: '',
@@ -68,7 +68,7 @@ const dummyAWSBucket = {
         {
             id: 1,
             owner: {
-                url: 'http://localhost:7000/api/v1/users/1',
+                url: 'http://localhost:7000/api/users/1',
                 id: 1,
                 username: 'maya',
                 first_name: '',

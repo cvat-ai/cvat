@@ -32,14 +32,14 @@
       "status": "annotation",
       "stop_frame": 129,
       "task_id": 1,
-      "url": "http://localhost:8080/api/v1/jobs/1"
+      "url": "http://localhost:8080/api/jobs/1"
     },
     {
       "assignee": {
         "first_name": "Worker",
         "id": 6,
         "last_name": "First",
-        "url": "http://localhost:8080/api/v1/users/6",
+        "url": "http://localhost:8080/api/users/6",
         "username": "worker1"
       },
       "bug_tracker": null,
@@ -69,7 +69,7 @@
       "status": "annotation",
       "stop_frame": 22,
       "task_id": 2,
-      "url": "http://localhost:8080/api/v1/jobs/2"
+      "url": "http://localhost:8080/api/jobs/2"
     },
     {
       "assignee": null,
@@ -113,7 +113,7 @@
       "status": "annotation",
       "stop_frame": 49,
       "task_id": 3,
-      "url": "http://localhost:8080/api/v1/jobs/3"
+      "url": "http://localhost:8080/api/jobs/3"
     },
     {
       "assignee": null,
@@ -157,7 +157,7 @@
       "status": "validation",
       "stop_frame": 99,
       "task_id": 3,
-      "url": "http://localhost:8080/api/v1/jobs/4"
+      "url": "http://localhost:8080/api/jobs/4"
     },
     {
       "assignee": null,
@@ -201,14 +201,14 @@
       "status": "validation",
       "stop_frame": 147,
       "task_id": 3,
-      "url": "http://localhost:8080/api/v1/jobs/5"
+      "url": "http://localhost:8080/api/jobs/5"
     },
     {
       "assignee": {
         "first_name": "Worker",
         "id": 7,
         "last_name": "Second",
-        "url": "http://localhost:8080/api/v1/users/7",
+        "url": "http://localhost:8080/api/users/7",
         "username": "worker2"
       },
       "bug_tracker": "",
@@ -238,7 +238,7 @@
       "status": "annotation",
       "stop_frame": 57,
       "task_id": 4,
-      "url": "http://localhost:8080/api/v1/jobs/6"
+      "url": "http://localhost:8080/api/jobs/6"
     }
   ]
 }
