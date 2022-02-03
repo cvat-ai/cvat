@@ -1,5 +1,5 @@
 
-# Copyright (C) 2020 Intel Corporation
+# Copyright (C) 2020-2022 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -69,14 +69,14 @@ class _DbTestBase(APITestCase):
 
         cls.user = admin
 
-    def _put_api_v1_task_id_annotations(self, tid, data):
+    def _put_api_v2_task_id_annotations(self, tid, data):
         with ForceLogin(self.user, self.client):
             response = self.client.put("/api/tasks/%s/annotations" % tid,
                 data=data, format="json")
 
         return response
 
-    def _put_api_v1_job_id_annotations(self, jid, data):
+    def _put_api_v2_job_id_annotations(self, jid, data):
         with ForceLogin(self.user, self.client):
             response = self.client.put("/api/jobs/%s/annotations" % jid,
                 data=data, format="json")
@@ -100,7 +100,7 @@ class _DbTestBase(APITestCase):
 
 class TaskExportTest(_DbTestBase):
     def _generate_custom_annotations(self, annotations, task):
-        self._put_api_v1_task_id_annotations(task["id"], annotations)
+        self._put_api_v2_task_id_annotations(task["id"], annotations)
         return annotations
 
     def _generate_annotations(self, task):
@@ -497,7 +497,7 @@ class TaskExportTest(_DbTestBase):
                 },
             ]
         }
-        self._put_api_v1_job_id_annotations(
+        self._put_api_v2_job_id_annotations(
             task["segments"][2]["jobs"][0]["id"], annotations)
 
         task_ann = TaskAnnotation(task["id"])
@@ -602,7 +602,7 @@ class FrameMatchingTest(_DbTestBase):
 
 class TaskAnnotationsImportTest(_DbTestBase):
     def _generate_custom_annotations(self, annotations, task):
-        self._put_api_v1_task_id_annotations(task["id"], annotations)
+        self._put_api_v2_task_id_annotations(task["id"], annotations)
         return annotations
 
     def _generate_task_images(self, count, name="image", **image_params):

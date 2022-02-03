@@ -1,4 +1,4 @@
-# Copyright (C) 2018 Intel Corporation
+# Copyright (C) 2018-2022 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -189,7 +189,7 @@ class GitDatasetRepoTest(APITestCase):
             ]
         }
 
-    def _run_api_v1_job_id_annotation(self, jid, data, user):
+    def _run_api_v2_job_id_annotation(self, jid, data, user):
         with ForceLogin(user, self.client):
             response = self.client.patch('/api/jobs/{}/annotations?action=create'.format(jid),
                 data=data, format="json")
@@ -507,6 +507,6 @@ class GitDatasetRepoTest(APITestCase):
             ],
             "tracks": []
         }
-        self._run_api_v1_job_id_annotation(jobs[0]["id"], ann, self.user)
+        self._run_api_v2_job_id_annotation(jobs[0]["id"], ann, self.user)
         db_git = GitData()
         self.assertEqual(db_git.status, GitStatusChoice.NON_SYNCED)
