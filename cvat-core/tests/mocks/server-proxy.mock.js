@@ -285,12 +285,12 @@ class ServerProxy {
             return 'DUMMY_IMAGE';
         }
 
-        async function getMeta(tid) {
-            return JSON.parse(JSON.stringify(frameMetaDummyData[tid]));
+        async function getMeta(jid) {
+            return JSON.parse(JSON.stringify(frameMetaDummyData[jid]));
         }
 
-        async function saveMeta(tid, meta) {
-            const object = frameMetaDummyData[tid];
+        async function saveMeta(jid, meta) {
+            const object = frameMetaDummyData[jid];
             for (const prop in meta) {
                 if (
                     Object.prototype.hasOwnProperty.call(meta, prop) &&
@@ -304,7 +304,7 @@ class ServerProxy {
                 }
             }
 
-            return getMeta(tid);
+            return getMeta(jid);
         }
 
         async function getAnnotations(session, id) {

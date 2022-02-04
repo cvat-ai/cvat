@@ -22,7 +22,6 @@
             width,
             height,
             name,
-            taskID,
             jobID,
             frameNumber,
             startFrame,
@@ -67,10 +66,6 @@
                         value: height,
                         writable: false,
                     },
-                    tid: {
-                        value: taskID,
-                        writable: false,
-                    },
                     /**
                      * @name jid
                      * @type {integer}
@@ -105,10 +100,26 @@
                         value: hasRelatedContext,
                         writable: false,
                     },
+                    /**
+                     * Start frame of the frame in the job
+                     * @name startFrame
+                     * @type {integer}
+                     * @memberof module:API.cvat.classes.FrameData
+                     * @readonly
+                     * @instance
+                     */
                     startFrame: {
                         value: startFrame,
                         writable: false,
                     },
+                    /**
+                     * Stop frame of the frame in the job
+                     * @name stopFrame
+                     * @type {integer}
+                     * @memberof module:API.cvat.classes.FrameData
+                     * @readonly
+                     * @instance
+                     */
                     stopFrame: {
                         value: stopFrame,
                         writable: false,
@@ -117,6 +128,14 @@
                         value: decodeForward,
                         writable: false,
                     },
+                    /**
+                     * True if frame deleted from the task data
+                     * @name deleted
+                     * @type {boolean}
+                     * @memberof module:API.cvat.classes.FrameData
+                     * @readonly
+                     * @instance
+                     */
                     deleted: {
                         value: deleted,
                         writable: false,
@@ -167,18 +186,18 @@
                 return;
             }
 
-            const { provider } = frameDataCache[this.tid];
-            const { chunkSize } = frameDataCache[this.tid];
+            const { provider } = frameDataCache[this.jid];
+            const { chunkSize } = frameDataCache[this.jid];
             const start = parseInt(this.number / chunkSize, 10) * chunkSize;
             const stop = Math.min(this.stopFrame, (parseInt(this.number / chunkSize, 10) + 1) * chunkSize - 1);
             const chunkNumber = Math.floor(this.number / chunkSize);
 
             const onDecodeAll = async (frameNumber) => {
                 if (
-                    frameDataCache[this.tid].activeChunkRequest &&
-                    chunkNumber === frameDataCache[this.tid].activeChunkRequest.chunkNumber
+                    frameDataCache[this.jid].activeChunkRequest &&
+                    chunkNumber === frameDataCache[this.jid].activeChunkRequest.chunkNumber
                 ) {
-                    const callbackArray = frameDataCache[this.tid].activeChunkRequest.callbacks;
+                    const callbackArray = frameDataCache[this.jid].activeChunkRequest.callbacks;
                     for (let i = callbackArray.length - 1; i >= 0; --i) {
                         if (callbackArray[i].frameNumber === frameNumber) {
                             const callback = callbackArray[i];
@@ -187,30 +206,30 @@
                         }
                     }
                     if (callbackArray.length === 0) {
-                        frameDataCache[this.tid].activeChunkRequest = null;
+                        frameDataCache[this.jid].activeChunkRequest = null;
                     }
                 }
             };
 
             const rejectRequestAll = () => {
                 if (
-                    frameDataCache[this.tid].activeChunkRequest &&
-                    chunkNumber === frameDataCache[this.tid].activeChunkRequest.chunkNumber
+                    frameDataCache[this.jid].activeChunkRequest &&
+                    chunkNumber === frameDataCache[this.jid].activeChunkRequest.chunkNumber
                 ) {
-                    for (const r of frameDataCache[this.tid].activeChunkRequest.callbacks) {
+                    for (const r of frameDataCache[this.jid].activeChunkRequest.callbacks) {
                         r.reject(r.frameNumber);
                     }
-                    frameDataCache[this.tid].activeChunkRequest = null;
+                    frameDataCache[this.jid].activeChunkRequest = null;
                 }
             };
 
             const makeActiveRequest = () => {
-                const taskDataCache = frameDataCache[this.tid];
+                const taskDataCache = frameDataCache[this.jid];
                 const activeChunk = taskDataCache.activeChunkRequest;
                 activeChunk.request = serverProxy.frames
-                    .getData(this.tid, this.jid, activeChunk.chunkNumber)
+                    .getData(null, this.jid, activeChunk.chunkNumber)
                     .then((chunk) => {
-                        frameDataCache[this.tid].activeChunkRequest.completed = true;
+                        frameDataCache[this.jid].activeChunkRequest.completed = true;
                         if (!taskDataCache.nextChunkRequest) {
                             provider.requestDecodeBlock(
                                 chunk,
@@ -250,7 +269,7 @@
                     .then((frame) => {
                         if (frame === null) {
                             onServerRequest();
-                            const activeRequest = frameDataCache[this.tid].activeChunkRequest;
+                            const activeRequest = frameDataCache[this.jid].activeChunkRequest;
                             if (!provider.isChunkCached(start, stop)) {
                                 if (
                                     !activeRequest ||
@@ -261,7 +280,7 @@
                                     if (activeRequest && activeRequest.rejectRequestAll) {
                                         activeRequest.rejectRequestAll();
                                     }
-                                    frameDataCache[this.tid].activeChunkRequest = {
+                                    frameDataCache[this.jid].activeChunkRequest = {
                                         request: null,
                                         chunkNumber,
                                         start,
@@ -289,13 +308,13 @@
                                         frameNumber: this.number,
                                     });
                                 } else {
-                                    if (frameDataCache[this.tid].nextChunkRequest) {
-                                        const { callbacks } = frameDataCache[this.tid].nextChunkRequest;
+                                    if (frameDataCache[this.jid].nextChunkRequest) {
+                                        const { callbacks } = frameDataCache[this.jid].nextChunkRequest;
                                         for (const r of callbacks) {
                                             r.reject(r.frameNumber);
                                         }
                                     }
-                                    frameDataCache[this.tid].nextChunkRequest = {
+                                    frameDataCache[this.jid].nextChunkRequest = {
                                         request: null,
                                         chunkNumber,
                                         start,
@@ -333,8 +352,8 @@
                                     const nextStart = nextChunkNumber * chunkSize;
                                     const nextStop = Math.min(this.stopFrame, (nextChunkNumber + 1) * chunkSize - 1);
                                     if (!provider.isChunkCached(nextStart, nextStop)) {
-                                        if (!frameDataCache[this.tid].activeChunkRequest) {
-                                            frameDataCache[this.tid].activeChunkRequest = {
+                                        if (!frameDataCache[this.jid].activeChunkRequest) {
+                                            frameDataCache[this.jid].activeChunkRequest = {
                                                 request: null,
                                                 chunkNumber: nextChunkNumber,
                                                 start: nextStart,
@@ -365,8 +384,8 @@
         });
     };
 
-    function getFrameMeta(taskID, frame) {
-        const { meta, mode } = frameDataCache[taskID];
+    function getFrameMeta(jobID, frame) {
+        const { meta, mode } = frameDataCache[jobID];
         let size = null;
         if (mode === 'interpolation') {
             [size] = meta.frames;
@@ -383,7 +402,7 @@
     }
 
     class FrameBuffer {
-        constructor(size, chunkSize, stopFrame, taskID, jobID) {
+        constructor(size, chunkSize, stopFrame, jobID) {
             this._size = size;
             this._buffer = {};
             this._contextImage = {};
@@ -391,7 +410,6 @@
             this._chunkSize = chunkSize;
             this._stopFrame = stopFrame;
             this._activeFillBufferRequest = false;
-            this._taskID = taskID;
             this._jobID = jobID;
         }
 
@@ -425,16 +443,15 @@
                 };
                 for (const frame of this._requestedChunks[chunkIdx].requestedFrames.entries()) {
                     const requestedFrame = frame[1];
-                    const frameMeta = getFrameMeta(this._taskID, requestedFrame);
+                    const frameMeta = getFrameMeta(this._jobID, requestedFrame);
                     const frameData = new FrameData({
                         ...frameMeta,
-                        taskID: this._taskID,
                         jobID: this._jobID,
                         frameNumber: requestedFrame,
-                        startFrame: frameDataCache[this._taskID].startFrame,
-                        stopFrame: frameDataCache[this._taskID].stopFrame,
+                        startFrame: frameDataCache[this._jobID].startFrame,
+                        stopFrame: frameDataCache[this._jobID].stopFrame,
                         decodeForward: false,
-                        deleted: frameDataCache[this._taskID].meta.deleted_frames.includes(requestedFrame),
+                        deleted: frameDataCache[this._jobID].meta.deleted_frames.includes(requestedFrame),
                     });
 
                     frameData
@@ -544,7 +561,7 @@
             }
         }
 
-        async require(frameNumber, taskID, jobID, fillBuffer, frameStep) {
+        async require(frameNumber, jobID, fillBuffer, frameStep) {
             for (const frame in this._buffer) {
                 if (+frame < frameNumber || +frame >= frameNumber + this._size * frameStep) {
                     delete this._buffer[frame];
@@ -552,16 +569,15 @@
             }
 
             this._required = frameNumber;
-            const frameMeta = getFrameMeta(taskID, frameNumber);
+            const frameMeta = getFrameMeta(jobID, frameNumber);
             let frame = new FrameData({
                 ...frameMeta,
-                taskID,
                 jobID,
                 frameNumber,
-                startFrame: frameDataCache[taskID].startFrame,
-                stopFrame: frameDataCache[taskID].stopFrame,
+                startFrame: frameDataCache[jobID].startFrame,
+                stopFrame: frameDataCache[jobID].stopFrame,
                 decodeForward: !fillBuffer,
-                deleted: frameDataCache[taskID].meta.deleted_frames.includes(frameNumber),
+                deleted: frameDataCache[jobID].meta.deleted_frames.includes(frameNumber),
             });
 
             if (frameNumber in this._buffer) {
@@ -635,13 +651,13 @@
         });
     }
 
-    async function getContextImage(taskID, jobID, frame) {
-        if (frameDataCache[taskID].frameBuffer.isContextImageAvailable(frame)) {
-            return frameDataCache[taskID].frameBuffer.getContextImage(frame);
+    async function getContextImage(jobID, frame) {
+        if (frameDataCache[jobID].frameBuffer.isContextImageAvailable(frame)) {
+            return frameDataCache[jobID].frameBuffer.getContextImage(frame);
         }
         const response = getImageContext(jobID, frame);
-        frameDataCache[taskID].frameBuffer.addContextImage(frame, response);
-        return frameDataCache[taskID].frameBuffer.getContextImage(frame);
+        frameDataCache[jobID].frameBuffer.addContextImage(frame, response);
+        return frameDataCache[jobID].frameBuffer.getContextImage(frame);
     }
 
     async function getPreview(taskID = null, jobID = null) {
@@ -668,7 +684,6 @@
     }
 
     async function getFrame(
-        taskID,
         jobID,
         chunkSize,
         chunkType,
@@ -680,10 +695,10 @@
         step,
         dimension,
     ) {
-        if (!(taskID in frameDataCache)) {
+        if (!(jobID in frameDataCache)) {
             const blockType = chunkType === 'video' ? cvatData.BlockType.MP4VIDEO : cvatData.BlockType.ARCHIVE;
 
-            const meta = await serverProxy.frames.getMeta(taskID);
+            const meta = await serverProxy.frames.getMeta(jobID);
             const mean = meta.frames.reduce((a, b) => a + b.width * b.height, 0) / meta.frames.length;
             const stdDev = Math.sqrt(
                 meta.frames.map((x) => (x.width * x.height - mean) ** 2).reduce((a, b) => a + b) /
@@ -693,7 +708,7 @@
             // limit of decoded frames cache by 2GB
             const decodedBlocksCacheSize = Math.floor(2147483648 / (mean + stdDev) / 4 / chunkSize) || 1;
 
-            frameDataCache[taskID] = {
+            frameDataCache[jobID] = {
                 meta,
                 chunkSize,
                 mode,
@@ -711,51 +726,50 @@
                     Math.min(180, decodedBlocksCacheSize * chunkSize),
                     chunkSize,
                     stopFrame,
-                    taskID,
                     jobID,
                 ),
                 decodedBlocksCacheSize,
                 activeChunkRequest: null,
                 nextChunkRequest: null,
             };
-            const frameMeta = getFrameMeta(taskID, frame);
+            const frameMeta = getFrameMeta(jobID, frame);
             // actual only for video chunks
-            frameDataCache[taskID].provider.setRenderSize(frameMeta.width, frameMeta.height);
+            frameDataCache[jobID].provider.setRenderSize(frameMeta.width, frameMeta.height);
         }
 
-        return frameDataCache[taskID].frameBuffer.require(frame, taskID, jobID, isPlaying, step);
+        return frameDataCache[jobID].frameBuffer.require(frame, jobID, isPlaying, step);
     }
 
-    async function deleteFrame(taskID, frame) {
-        const { meta } = frameDataCache[taskID];
+    async function deleteFrame(jobID, frame) {
+        const { meta } = frameDataCache[jobID];
         if (meta.deleted_frames.includes(frame)) {
             throw new ArgumentError('Frame should not be deleted');
         }
         const deleteFrames = [...meta.deleted_frames, frame];
-        const newMeta = await serverProxy.frames.saveMeta(taskID, {
+        const newMeta = await serverProxy.frames.saveMeta(jobID, {
             deleted_frames: deleteFrames,
         });
-        frameDataCache[taskID].meta = newMeta;
+        frameDataCache[jobID].meta = newMeta;
     }
 
-    async function restoreFrame(taskID, frame) {
-        const { meta } = frameDataCache[taskID];
+    async function restoreFrame(jobID, frame) {
+        const { meta } = frameDataCache[jobID];
         if (!meta.deleted_frames.includes(frame)) {
             throw new ArgumentError('Frame should be from deleted frames');
         }
         const deleteFrames = meta.deleted_frames.filter((e) => e !== frame);
-        const newMeta = await serverProxy.frames.saveMeta(taskID, {
+        const newMeta = await serverProxy.frames.saveMeta(jobID, {
             deleted_frames: deleteFrames,
         });
-        frameDataCache[taskID].meta = newMeta;
+        frameDataCache[jobID].meta = newMeta;
     }
 
-    async function searchNonDeletedFrame(taskID, frameFrom, frameTo) {
+    async function searchNonDeletedFrame(jobID, frameFrom, frameTo) {
         let meta;
-        if (!frameDataCache[taskID]) {
-            meta = await serverProxy.frames.getMeta(taskID);
+        if (!frameDataCache[jobID]) {
+            meta = await serverProxy.frames.getMeta(jobID);
         } else {
-            meta = frameDataCache[taskID].meta;
+            meta = frameDataCache[jobID].meta;
         }
         const sign = Math.sign(frameTo - frameFrom);
         const predicate = sign > 0 ? (frame) => frame <= frameTo : (frame) => frame >= frameTo;
@@ -769,8 +783,8 @@
         return null;
     }
 
-    function getRanges(taskID) {
-        if (!(taskID in frameDataCache)) {
+    function getRanges(jobID) {
+        if (!(jobID in frameDataCache)) {
             return {
                 decoded: [],
                 buffered: [],
@@ -778,15 +792,15 @@
         }
 
         return {
-            decoded: frameDataCache[taskID].provider.cachedFrames,
-            buffered: frameDataCache[taskID].frameBuffer.cachedFrames(),
+            decoded: frameDataCache[jobID].provider.cachedFrames,
+            buffered: frameDataCache[jobID].frameBuffer.cachedFrames(),
         };
     }
 
-    function clear(taskID) {
-        if (taskID in frameDataCache) {
-            frameDataCache[taskID].frameBuffer.clear();
-            delete frameDataCache[taskID];
+    function clear(jobID) {
+        if (jobID in frameDataCache) {
+            frameDataCache[jobID].frameBuffer.clear();
+            delete frameDataCache[jobID];
         }
     }
 

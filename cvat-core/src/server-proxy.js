@@ -1152,12 +1152,12 @@
                 return response;
             }
 
-            async function getMeta(tid) {
+            async function getMeta(jid) {
                 const { backendAPI } = config;
 
                 let response = null;
                 try {
-                    response = await Axios.get(`${backendAPI}/tasks/${tid}/data/meta`, {
+                    response = await Axios.get(`${backendAPI}/jobs/${jid}/data/meta`, {
                         proxy: config.proxy,
                     });
                 } catch (errorData) {
@@ -1167,12 +1167,12 @@
                 return response.data;
             }
 
-            async function saveMeta(tid, meta) {
+            async function saveMeta(jid, meta) {
                 const { backendAPI } = config;
 
                 let response = null;
                 try {
-                    response = await Axios.patch(`${backendAPI}/tasks/${tid}/data/meta`, meta, {
+                    response = await Axios.patch(`${backendAPI}/jobs/${jid}/data/meta`, meta, {
                         proxy: config.proxy,
                     });
                 } catch (errorData) {

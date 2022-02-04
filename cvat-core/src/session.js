@@ -1952,7 +1952,6 @@
         }
 
         const frameData = await getFrame(
-            this.taskId,
             this.id,
             this.dataChunkSize,
             this.dataChunkType,
@@ -1976,7 +1975,7 @@
             throw new Error('The frame is out of the task');
         }
 
-        await deleteFrame(this.taskId, frame);
+        await deleteFrame(this.id, frame);
     };
 
     Job.prototype.frames.restore.implementation = async function (frame) {
@@ -1988,11 +1987,11 @@
             throw new Error('The frame is out of the task');
         }
 
-        await restoreFrame(this.taskId, frame);
+        await restoreFrame(this.id, frame);
     };
 
     Job.prototype.frames.ranges.implementation = async function () {
-        const rangesData = await getRanges(this.taskId);
+        const rangesData = await getRanges(this.id);
         return rangesData;
     };
 
@@ -2023,7 +2022,7 @@
             throw new ArgumentError('The stop frame is out of the job');
         }
 
-        const result = await searchNonDeletedFrame(this.taskId, frameFrom, frameTo);
+        const result = await searchNonDeletedFrame(this.id, frameFrom, frameTo);
         return result;
     };
 
@@ -2214,14 +2213,14 @@
     };
 
     Job.prototype.close.implementation = function closeTask() {
-        clearFrames(this.taskId);
+        clearFrames(this.id);
         closeSession(this);
         return this;
     };
 
     Task.prototype.close.implementation = function closeTask() {
-        clearFrames(this.id);
         for (const job of this.jobs) {
+            clearFrames(job.id);
             closeSession(job);
         }
 
@@ -2331,15 +2330,16 @@
             throw new ArgumentError(`The frame with number ${frame} is out of the task`);
         }
 
+        const job = this.jobs.filter((_job) => _job.startFrame <= frame && _job.stopFrame >= frame)[0];
+
         const result = await getFrame(
-            this.id,
-            null,
+            job.id,
             this.dataChunkSize,
             this.dataChunkType,
             this.mode,
             frame,
-            0,
-            this.size - 1,
+            job.startFrame,
+            job.stopFrame,
             isPlaying,
             step,
         );
@@ -2347,7 +2347,15 @@
     };
 
     Task.prototype.frames.ranges.implementation = async function () {
-        const rangesData = await getRanges(this.id);
+        const rangesData = {
+            decoded: [],
+            buffered: [],
+        };
+        for (const job of this.jobs) {
+            const { decoded, buffered } = await getRanges(job.id);
+            rangesData.decoded.push(decoded);
+            rangesData.buffered.push(buffered);
+        }
         return rangesData;
     };
 
@@ -2369,7 +2377,9 @@
             throw new Error('The frame is out of the task');
         }
 
-        await deleteFrame(this.id, frame);
+        const job = this.jobs.filter((_job) => _job.startFrame <= frame && _job.stopFrame >= frame)[0];
+
+        await deleteFrame(job.id, frame);
     };
 
     Task.prototype.frames.restore.implementation = async function (frame) {
@@ -2381,7 +2391,9 @@
             throw new Error('The frame is out of the task');
         }
 
-        await restoreFrame(this.id, frame);
+        const job = this.jobs.filter((_job) => _job.startFrame <= frame && _job.stopFrame >= frame)[0];
+
+        await restoreFrame(job.id, frame);
     };
 
     Task.prototype.frames.searchNonDeleted.implementation = async function (frameFrom, frameTo) {
@@ -2397,8 +2409,21 @@
             throw new ArgumentError('The stop frame is out of the task');
         }
 
-        const result = await searchNonDeletedFrame(this.id, frameFrom, frameTo);
-        return result;
+        const jobs = this.jobs.filter((_job) => (
+            (frameFrom >= _job.startFrame && frameFrom <= _job.stopFrame) &&
+            (frameTo >= _job.startFrame && frameTo <= _job.stopFrame) &&
+            (frameFrom < _job.startFrame && frameTo > _job.stopFrame)
+        ));
+
+        for (const job of jobs) {
+            const result = await searchNonDeletedFrame(
+                job.id, Math.max(frameFrom, job.startFrame), Math.min(frameTo, job.stopFrame),
+            );
+            if (result !== null) {
+                return result;
+            }
+        }
+        return null;
     };
 
     // TODO: Check filter for annotations

@@ -1008,6 +1008,65 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         return data_getter(request, db_job.segment.start_frame,
             db_job.segment.stop_frame, db_job.segment.task.data)
 
+    @swagger_auto_schema(method='get', operation_summary='Method provides a meta information about media files which are related with the job',
+        responses={'200': DataMetaSerializer()})
+    @swagger_auto_schema(method='patch', operation_summary='Method performs an update of data meta fields (deleted frames)')
+    @action(detail=True, methods=['GET', 'PATCH'], serializer_class=DataMetaSerializer,
+        url_path='data/meta')
+    def data_info(self, request, pk):
+        self.get_object() #force to call check_object_permissions
+        db_job = models.Job.objects.prefetch_related(
+            'segment',
+            'segment__task',
+            Prefetch('segment__task__data', queryset=models.Data.objects.select_related('video').prefetch_related(
+                Prefetch('images', queryset=models.Image.objects.prefetch_related('related_files').order_by('frame'))
+            ))
+        ).get(pk=pk)
+
+        db_data = db_job.segment.task.data
+
+        if request.method == 'PATCH':
+            serializer = DataMetaSerializer(instance=db_data, data=request.data)
+            if serializer.is_valid(raise_exception=True):
+                serializer.validated_data['deleted_frames'] = list(filter(
+                    lambda frame: frame >= db_job.segment.start_frame and frame <= db_job.segment.stop_frame,
+                    serializer.validated_data['deleted_frames']
+                )) + list(filter(
+                    lambda frame: frame < db_job.segment.start_frame and frame > db_job.segment.stop_frame,
+                    db_data.deleted_frames,
+                ))
+                serializer.save()
+                db_data.refresh_from_db()
+
+        if hasattr(db_data, 'video'):
+            media = [db_data.video]
+        else:
+            media = list(db_data.images.filter(
+                frame__gte=db_job.segment.start_frame,
+                frame__lte=db_job.segment.stop_frame,
+            ).all())
+
+        # Filter data with segment size
+        # Should data.size also be cropped by segment size?
+        db_data.deleted_frames = filter(
+            lambda frame: frame >= db_job.segment.start_frame and frame <= db_job.segment.stop_frame,
+            db_data.deleted_frames,
+        )
+        db_data.start_frame = db_job.segment.start_frame
+        db_data.stop_frame = db_job.segment.stop_frame
+
+        frame_meta = [{
+            'width': item.width,
+            'height': item.height,
+            'name': item.path,
+            'has_related_context': hasattr(item, 'related_files') and item.related_files.exists()
+        } for item in media]
+
+        db_data.frames = frame_meta
+
+        serializer = DataMetaSerializer(db_data)
+        return Response(serializer.data)
+
 class IssueViewSet(viewsets.ModelViewSet):
     queryset = Issue.objects.all().order_by('-id')
     http_method_names = ['get', 'post', 'patch', 'delete', 'options']
