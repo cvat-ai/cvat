@@ -914,10 +914,10 @@ docker logs cvat
 ```
 ```
 2021-07-06 13:44:54,699 DEBG 'runserver' stderr output:
-[Tue Jul 06 13:44:54.699431 2021] [wsgi:error] [pid 625:tid 140010969868032] [remote 172.28.0.3:40972] [2021-07-06 13:44:54,699] ERROR django.request: Internal Server Error: /api/v1/lambda/functions/pth.shiyinzhang.iog
+[Tue Jul 06 13:44:54.699431 2021] [wsgi:error] [pid 625:tid 140010969868032] [remote 172.28.0.3:40972] [2021-07-06 13:44:54,699] ERROR django.request: Internal Server Error: /api/lambda/functions/pth.shiyinzhang.iog
 
 2021-07-06 13:44:54,700 DEBG 'runserver' stderr output:
-[Tue Jul 06 13:44:54.699712 2021] [wsgi:error] [pid 625:tid 140010969868032] [remote 172.28.0.3:40972] ERROR - 2021-07-06 13:44:54,699 - log - Internal Server Error: /api/v1/lambda/functions/pth.shiyinzhang.iog
+[Tue Jul 06 13:44:54.699712 2021] [wsgi:error] [pid 625:tid 140010969868032] [remote 172.28.0.3:40972] ERROR - 2021-07-06 13:44:54,699 - log - Internal Server Error: /api/lambda/functions/pth.shiyinzhang.iog
 
 ```
 ```bash

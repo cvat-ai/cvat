@@ -1,4 +1,4 @@
-// Copyright (C) 2021 Intel Corporation
+// Copyright (C) 2021-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -75,7 +75,7 @@ context('Canvas 3D functionality. Dump/upload annotation. "Point Cloud" format',
                         });
                 });
             confirmUpdate('.cvat-modal-content-load-job-annotation');
-            cy.intercept('GET', '/api/v1/jobs/**/annotations**').as('uploadAnnotationsGet');
+            cy.intercept('GET', '/api/jobs/**/annotations**').as('uploadAnnotationsGet');
             cy.wait('@uploadAnnotationsGet').its('response.statusCode').should('equal', 200);
             cy.get('#cvat-objects-sidebar-state-item-1').should('exist');
             cy.removeAnnotations();

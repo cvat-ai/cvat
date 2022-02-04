@@ -7,4 +7,3 @@ for obj in ['user', 'project', 'task', 'job', 'organization', 'membership',
     response = get_method('admin1', obj, page_size='all')
     with open(osp.join(ASSETS_DIR, f'{obj}s.json'), 'w') as f:
         json.dump(response.json(), f, indent=2, sort_keys=True)
-

@@ -1,4 +1,4 @@
-// Copyright (C) 2021 Intel Corporation
+// Copyright (C) 2021-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -33,14 +33,14 @@ context('Changing a default value for an attribute.', () => {
 
     describe(`Testing case "${caseId}", issue 2968`, () => {
         it('Add a label, add text (leave it’s value empty by default) & checkbox attributes.', () => {
-            cy.intercept('PATCH', '/api/v1/tasks/**').as('patchTask');
+            cy.intercept('PATCH', '/api/tasks/**').as('patchTask');
             cy.addNewLabel(additionalLabel, additionalAttrsLabel);
             cy.wait('@patchTask').its('response.statusCode').should('equal', 200);
             cy.get('.cvat-constructor-viewer').should('exist').and('be.visible');
         });
 
         it('Open label editor. Change default values for text & checkbox attributes, press Done.', () => {
-            cy.intercept('PATCH', '/api/v1/tasks/**').as('patchTask');
+            cy.intercept('PATCH', '/api/tasks/**').as('patchTask');
             cy.get('.cvat-constructor-viewer').within(() => {
                 // eslint-disable-next-line security/detect-non-literal-regexp
                 cy.contains(new RegExp(`^${additionalLabel}$`))

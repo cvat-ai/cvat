@@ -11,7 +11,7 @@
         "first_name": "Business",
         "id": 10,
         "last_name": "First",
-        "url": "http://localhost:8080/api/v1/users/10",
+        "url": "http://localhost:8080/api/users/10",
         "username": "business1"
       },
       "role": "maintainer",
@@ -19,7 +19,7 @@
         "first_name": "User",
         "id": 5,
         "last_name": "Fourth",
-        "url": "http://localhost:8080/api/v1/users/5",
+        "url": "http://localhost:8080/api/users/5",
         "username": "user4"
       }
     },
@@ -31,7 +31,7 @@
         "first_name": "Business",
         "id": 10,
         "last_name": "First",
-        "url": "http://localhost:8080/api/v1/users/10",
+        "url": "http://localhost:8080/api/users/10",
         "username": "business1"
       },
       "role": "supervisor",
@@ -39,7 +39,7 @@
         "first_name": "User",
         "id": 4,
         "last_name": "Third",
-        "url": "http://localhost:8080/api/v1/users/4",
+        "url": "http://localhost:8080/api/users/4",
         "username": "user3"
       }
     },
@@ -51,7 +51,7 @@
         "first_name": "Business",
         "id": 10,
         "last_name": "First",
-        "url": "http://localhost:8080/api/v1/users/10",
+        "url": "http://localhost:8080/api/users/10",
         "username": "business1"
       },
       "role": "supervisor",
@@ -59,7 +59,7 @@
         "first_name": "User",
         "id": 3,
         "last_name": "Second",
-        "url": "http://localhost:8080/api/v1/users/3",
+        "url": "http://localhost:8080/api/users/3",
         "username": "user2"
       }
     },
@@ -71,7 +71,7 @@
         "first_name": "Business",
         "id": 10,
         "last_name": "First",
-        "url": "http://localhost:8080/api/v1/users/10",
+        "url": "http://localhost:8080/api/users/10",
         "username": "business1"
       },
       "role": "worker",
@@ -79,7 +79,7 @@
         "first_name": "Worker",
         "id": 8,
         "last_name": "Third",
-        "url": "http://localhost:8080/api/v1/users/8",
+        "url": "http://localhost:8080/api/users/8",
         "username": "worker3"
       }
     },
@@ -91,7 +91,7 @@
         "first_name": "Business",
         "id": 10,
         "last_name": "First",
-        "url": "http://localhost:8080/api/v1/users/10",
+        "url": "http://localhost:8080/api/users/10",
         "username": "business1"
       },
       "role": "worker",
@@ -99,7 +99,7 @@
         "first_name": "Worker",
         "id": 7,
         "last_name": "Second",
-        "url": "http://localhost:8080/api/v1/users/7",
+        "url": "http://localhost:8080/api/users/7",
         "username": "worker2"
       }
     },
@@ -111,7 +111,7 @@
         "first_name": "Business",
         "id": 10,
         "last_name": "First",
-        "url": "http://localhost:8080/api/v1/users/10",
+        "url": "http://localhost:8080/api/users/10",
         "username": "business1"
       },
       "role": "maintainer",
@@ -119,7 +119,7 @@
         "first_name": "Business",
         "id": 11,
         "last_name": "Second",
-        "url": "http://localhost:8080/api/v1/users/11",
+        "url": "http://localhost:8080/api/users/11",
         "username": "business2"
       }
     },
@@ -131,7 +131,7 @@
         "first_name": "User",
         "id": 2,
         "last_name": "First",
-        "url": "http://localhost:8080/api/v1/users/2",
+        "url": "http://localhost:8080/api/users/2",
         "username": "user1"
       },
       "role": "maintainer",
@@ -139,7 +139,7 @@
         "first_name": "Business",
         "id": 10,
         "last_name": "First",
-        "url": "http://localhost:8080/api/v1/users/10",
+        "url": "http://localhost:8080/api/users/10",
         "username": "business1"
       }
     },
@@ -151,7 +151,7 @@
         "first_name": "User",
         "id": 2,
         "last_name": "First",
-        "url": "http://localhost:8080/api/v1/users/2",
+        "url": "http://localhost:8080/api/users/2",
         "username": "user1"
       },
       "role": "worker",
@@ -159,7 +159,7 @@
         "first_name": "Worker",
         "id": 7,
         "last_name": "Second",
-        "url": "http://localhost:8080/api/v1/users/7",
+        "url": "http://localhost:8080/api/users/7",
         "username": "worker2"
       }
     },
@@ -171,7 +171,7 @@
         "first_name": "User",
         "id": 2,
         "last_name": "First",
-        "url": "http://localhost:8080/api/v1/users/2",
+        "url": "http://localhost:8080/api/users/2",
         "username": "user1"
       },
       "role": "worker",
@@ -179,7 +179,7 @@
         "first_name": "Worker",
         "id": 6,
         "last_name": "First",
-        "url": "http://localhost:8080/api/v1/users/6",
+        "url": "http://localhost:8080/api/users/6",
         "username": "worker1"
       }
     }

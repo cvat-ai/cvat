@@ -5,7 +5,7 @@ import logging
 import requests
 import sys
 from http.client import HTTPConnection
-from core.core import CLI, CVAT_API_V1
+from core.core import CLI, CVAT_API_V2
 from core.definition import parser
 log = logging.getLogger(__name__)
 
@@ -32,7 +32,7 @@ def main():
     args = parser.parse_args()
     config_log(args.loglevel)
     with requests.Session() as session:
-        api = CVAT_API_V1('%s:%s' % (args.server_host, args.server_port), args.https)
+        api = CVAT_API_V2('%s:%s' % (args.server_host, args.server_port), args.https)
         cli = CLI(session, api, args.auth)
         try:
             actions[args.action](cli, **args.__dict__)

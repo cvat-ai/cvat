@@ -64,7 +64,25 @@ context('Some parts of the Redux state (issues) is not reset after changing a ta
         it('Create an issue. Check issue 2633.', () => {
             cy.openTaskJob(taskName.firstTaskName);
             cy.changeWorkspace('Review');
-            cy.createIssueFromControlButton(createIssueRectangle);
+            cy.createIssueFromControlButton(createIssueRectangle).then(() => {
+                const viewportHeight = Cypress.config('viewportHeight');
+                const viewportWidth = Cypress.config('viewportWidth');
+                function waitForResize() {
+                    return new Cypress.Promise((resolve) => {
+                        cy.window().then((win) => {
+                            win.addEventListener('resize', () => {
+                                resolve();
+                            }, { once: true });
+                        });
+                    });
+                }
+
+                cy.viewport(viewportHeight + 50, viewportWidth + 50);
+                cy.wrap(waitForResize()).then(() => {
+                    cy.get('.cvat_canvas_issue_region').should('be.visible');
+                    cy.viewport(viewportHeight, viewportWidth);
+                });
+            });
             cy.createIssueFromControlButton(createIssuePoint); // Issue 2633
         });
 

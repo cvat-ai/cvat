@@ -20,15 +20,18 @@ def restore_data_volume():
         '--strip 3 -C /home/django/data -xjf /mnt/cvat_data.tar.bz2'
     run(command.split(), check=True) #nosec
 
+def restore_cvat_db():
+    cvat_db_container('psql -U root -d postgres -f /cvat_db/restore_db.sql')
+
 def drop_test_db():
-    cvat_db_container('pg_restore -c -U root -d cvat /cvat_db/cvat_db.dump')
+    restore_cvat_db()
     cvat_db_container('rm -rf /cvat_db')
     cvat_db_container('dropdb test_db')
 
 def create_test_db():
     docker_cp(source=osp.join(ASSETS_DIR, 'cvat_db'), target='cvat_db:/')
     cvat_db_container('createdb test_db')
-    cvat_db_container('pg_restore -U root -d test_db /cvat_db/cvat_db.dump')
+    cvat_db_container('psql -U root -d test_db -f /cvat_db/cvat_db.sql')
 
 @pytest.fixture(scope='session', autouse=True)
 def init_test_db():
@@ -44,8 +47,8 @@ def init_test_db():
     drop_test_db()
 
 @pytest.fixture(scope='function', autouse=True)
-def restore_cvat_db():
-    cvat_db_container('psql -U root -d postgres -f /cvat_db/cvat_db.sql')
+def restore():
+    restore_cvat_db()
 
 @pytest.fixture(scope='module')
 def users():
@@ -77,7 +80,7 @@ def users_by_name(users):
 def find_users(test_db):
     def find(**kwargs):
         assert len(kwargs) > 0
-        assert any(kwargs)
+        assert any(kwargs.values())
 
         data = test_db
         kwargs = dict(filter(lambda a: a[1] is not None, kwargs.items()))
