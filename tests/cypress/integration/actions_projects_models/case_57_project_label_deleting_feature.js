@@ -28,8 +28,8 @@ context('Delete a label from a project.', () => {
     const multiAttrParams = false;
     let projectID = '';
 
-    function getProjectID(_projectName) {
-        cy.contains('.cvat-project-name', _projectName)
+    function getProjectID() {
+        cy.contains('.cvat-project-name', projectName)
             .parents('.cvat-project-details')
             .should('have.attr', 'cvat-project-id')
             .then(($projectID) => {
@@ -67,17 +67,7 @@ context('Delete a label from a project.', () => {
         it('Delete a label from project.', () => {
             cy.openProject(projectName);
             getProjectID(projectName);
-            cy.contains('.cvat-constructor-viewer-item', labelName)
-                .should('exist')
-                .and('be.visible')
-                .find('[aria-label="minus-circle"]')
-                .click();
-            cy.get('.cvat-modal-delete-label')
-                .should('be.visible')
-                .within(() => {
-                    cy.contains('[type="button"]', 'OK').click();
-                });
-            cy.contains('.cvat-constructor-viewer-item', labelName).should('not.exist');
+            cy.deleteLabel(labelName);
         });
 
         it('Try to open job with no labels in the project. Successful.', () => {

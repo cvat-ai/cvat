@@ -38,17 +38,7 @@ context('Delete a label from a task.', () => {
 
     describe(`Testing "${labelName}"`, () => {
         it('Delete a label from the task.', () => {
-            cy.contains('.cvat-constructor-viewer-item', labelName)
-                .should('exist')
-                .and('be.visible')
-                .find('[aria-label="minus-circle"]')
-                .click();
-            cy.get('.cvat-modal-delete-label')
-                .should('be.visible')
-                .within(() => {
-                    cy.contains('[type="button"]', 'OK').click();
-                });
-            cy.contains('.cvat-constructor-viewer-item', labelName).should('not.exist');
+            cy.deleteLabel(labelName);
         });
 
         it('Try to open a job with no labels. Successful.', () => {
