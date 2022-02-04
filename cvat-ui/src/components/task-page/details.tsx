@@ -19,7 +19,7 @@ import { getReposData, syncRepos, changeRepo } from 'utils/git-utils';
 import { ActiveInference } from 'reducers/interfaces';
 import AutomaticAnnotationProgress from 'components/tasks-page/automatic-annotation-progress';
 import Descriptions from 'antd/lib/descriptions';
-import { Space } from 'antd';
+import Space from 'antd/lib/space';
 import UserSelector, { User } from './user-selector';
 import BugTrackerEditor from './bug-tracker-editor';
 import LabelsEditorComponent from '../labels-editor/labels-editor';
