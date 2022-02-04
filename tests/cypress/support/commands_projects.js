@@ -41,7 +41,7 @@ Cypress.Commands.add(
 Cypress.Commands.add('deleteProjects', (authResponse, projectsToDelete) => {
     const authKey = authResponse.body.key;
     cy.request({
-        url: '/api/v1/projects?page_size=all',
+        url: '/api/projects?page_size=all',
         headers: {
             Authorization: `Token ${authKey}`,
         },
@@ -53,7 +53,7 @@ Cypress.Commands.add('deleteProjects', (authResponse, projectsToDelete) => {
                 if (name === projectToDelete) {
                     cy.request({
                         method: 'DELETE',
-                        url: `/api/v1/projects/${id}`,
+                        url: `/api/projects/${id}`,
                         headers: {
                             Authorization: `Token ${authKey}`,
                         },
@@ -112,13 +112,34 @@ Cypress.Commands.add('exportProject', ({
     cy.get('.cvat-notification-notice-export-project-start').should('be.visible');
 });
 
+Cypress.Commands.add('importProject', ({
+    projectName, format, archive,
+}) => {
+    cy.projectActions(projectName);
+    cy.get('.cvat-project-actions-menu').contains('Import dataset').click();
+    cy.get('.cvat-modal-import-dataset').find('.cvat-modal-import-select').click();
+    if (format === 'Sly Point Cloud Format') {
+        cy.get('.ant-select-dropdown')
+            .not('.ant-select-dropdown-hidden')
+            .trigger('wheel', { deltaY: 1000 });
+    }
+    cy.contains('.cvat-modal-import-dataset-option-item', format).click();
+    cy.get('.cvat-modal-import-select').should('contain.text', format);
+    cy.get('input[type="file"]').last().attachFile(archive, { subjectType: 'drag-n-drop' });
+    cy.get(`[title="${archive}"]`).should('be.visible');
+    cy.contains('button', 'OK').click();
+    cy.get('.cvat-modal-import-dataset-status').should('be.visible');
+    cy.get('.cvat-notification-notice-import-dataset-start').should('be.visible');
+    cy.get('.cvat-modal-import-dataset-status').should('not.exist');
+});
+
 Cypress.Commands.add('backupProject', (projectName) => {
     cy.projectActions(projectName);
     cy.get('.cvat-project-actions-menu').contains('Backup Project').click();
 });
 
 Cypress.Commands.add('restoreProject', (archiveWithBackup) => {
-    cy.intercept('POST', '/api/v1/projects/backup?**').as('restoreProject');
+    cy.intercept('POST', '/api/projects/backup?**').as('restoreProject');
     cy.get('.cvat-import-project').click().find('input[type=file]').attachFile(archiveWithBackup);
     cy.wait('@restoreProject', { timeout: 5000 }).its('response.statusCode').should('equal', 202);
     cy.wait('@restoreProject').its('response.statusCode').should('equal', 201);
@@ -131,8 +152,9 @@ Cypress.Commands.add('restoreProject', (archiveWithBackup) => {
 Cypress.Commands.add('getDownloadFileName', () => {
     cy.intercept('GET', '**=download').as('download');
     cy.wait('@download').then((download) => {
-        const filename = download.response.headers['content-disposition'].split('filename="b\'')[1].split('\'')[0];
-        return filename;
+        const filename = download.response.headers['content-disposition'].split(';')[1].split('filename=')[1];
+        // need to remove quotes
+        return filename.substring(1, filename.length - 1);
     });
 });
 

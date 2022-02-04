@@ -16,8 +16,8 @@ for key in RQ_QUEUES:
     RQ_QUEUES[key]['HOST'] = os.getenv('CVAT_REDIS_HOST', 'cvat_redis')
 
 # Django-sendfile:
-# https://github.com/johnsensible/django-sendfile
-SENDFILE_BACKEND = 'sendfile.backends.xsendfile'
+# https://github.com/moggers87/django-sendfile2
+SENDFILE_BACKEND = 'django_sendfile.backends.xsendfile'
 
 # Database
 # https://docs.djangoproject.com/en/2.0/ref/settings/#databases

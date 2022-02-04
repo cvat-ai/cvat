@@ -21,6 +21,7 @@ import shutil
 import subprocess
 import mimetypes
 from corsheaders.defaults import default_headers
+from distutils.util import strtobool
 
 mimetypes.add_type("application/wasm", ".wasm", True)
 
@@ -106,9 +107,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django_rq',
     'compressor',
-    'sendfile',
+    'django_sendfile',
     'dj_pagination',
-    'revproxy',
     'rest_framework',
     'rest_framework.authtoken',
     'django_filters',
@@ -127,7 +127,7 @@ INSTALLED_APPS = [
     'cvat.apps.dataset_repo',
     'cvat.apps.restrictions',
     'cvat.apps.lambda_manager',
-    'cvat.apps.opencv'
+    'cvat.apps.opencv',
 ]
 
 SITE_ID = 1
@@ -138,6 +138,10 @@ REST_FRAMEWORK = {
         'rest_framework.parsers.FormParser',
         'rest_framework.parsers.MultiPartParser',
         'cvat.apps.engine.parsers.TusUploadParser',
+    ],
+    'DEFAULT_RENDERER_CLASSES': [
+        'cvat.apps.engine.renderers.CVATAPIRenderer',
+        'rest_framework.renderers.BrowsableAPIRenderer',
     ],
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
@@ -151,12 +155,10 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.BasicAuthentication'
     ],
     'DEFAULT_VERSIONING_CLASS':
-        # Don't try to use URLPathVersioning. It will give you /api/{version}
-        # in path and '/api/docs' will not collapse similar items (flat list
-        # of all possible methods isn't readable).
-        'rest_framework.versioning.NamespaceVersioning',
-    # Need to add 'api-docs' here as a workaround for include_docs_urls.
-    'ALLOWED_VERSIONS': ('v1', 'api-docs'),
+        'rest_framework.versioning.AcceptHeaderVersioning',
+    'ALLOWED_VERSIONS': ('1.0', '2.0'),
+    'DEFAULT_VERSION': '2.0',
+    'VERSION_PARAM': 'version',
     'DEFAULT_PAGINATION_CLASS':
         'cvat.apps.engine.pagination.CustomPagination',
     'PAGE_SIZE': 10,
@@ -185,7 +187,7 @@ REST_AUTH_SERIALIZERS = {
     'PASSWORD_RESET_SERIALIZER': 'cvat.apps.iam.serializers.PasswordResetSerializerEx',
 }
 
-if os.getenv('DJANGO_LOG_VIEWER_HOST'):
+if strtobool(os.getenv('CVAT_ANALYTICS', '0')):
     INSTALLED_APPS += ['cvat.apps.log_viewer']
 
 MIDDLEWARE = [
@@ -420,11 +422,6 @@ LOGGING = {
             'handlers': [],
             'level': os.getenv('DJANGO_LOG_LEVEL', 'DEBUG'),
         },
-
-        'revproxy': {
-            'handlers': ['console', 'server_file'],
-            'level': os.getenv('DJANGO_LOG_LEVEL', 'DEBUG')
-        },
         'django': {
             'handlers': ['console', 'server_file'],
             'level': 'INFO',
@@ -454,13 +451,9 @@ RESTRICTIONS = {
     # this setting reduces task visibility to owner and assignee only
     'reduce_task_visibility': False,
 
-    # allow access to analytics component to users with the following roles
-    'analytics_access': (
-        'engine.role.observer',
-        'engine.role.annotator',
-        'engine.role.user',
-        'engine.role.admin',
-        ),
+    # allow access to analytics component to users with business role
+    # otherwise, only the administrator has access
+    'analytics_visibility': True,
 }
 
 # http://www.grantjenks.com/docs/diskcache/tutorial.html#djangocache
@@ -498,3 +491,8 @@ TUS_DEFAULT_CHUNK_SIZE = 104857600  # 100 mb
 # More about forwarded headers - https://doc.traefik.io/traefik/getting-started/faq/#what-are-the-forwarded-headers-when-proxying-http-requests
 # How django uses X-Forwarded-Proto - https://docs.djangoproject.com/en/2.2/ref/settings/#secure-proxy-ssl-header
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+
+# Django-sendfile requires to set SENDFILE_ROOT
+# https://github.com/moggers87/django-sendfile2
+SENDFILE_ROOT = BASE_DIR

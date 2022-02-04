@@ -1,0 +1,26 @@
+http:
+  routers:
+    kibana:
+      entryPoints:
+      - web
+      middlewares:
+      - analytics-auth
+      - strip-prefix
+      service: kibana
+      rule: Host(`{{ env "CVAT_HOST" }}`) && PathPrefix(`/analytics`)
+
+  middlewares:
+    analytics-auth:
+      forwardauth:
+        address: http://cvat:8080/analytics
+    strip-prefix:
+      stripprefix:
+        prefixes:
+        - /analytics
+
+  services:
+    kibana:
+      loadBalancer:
+        servers:
+        - url: http://{{ env "DJANGO_LOG_VIEWER_HOST" }}:{{ env "DJANGO_LOG_VIEWER_PORT" }}
+        passHostHeader: false

@@ -36,7 +36,7 @@
         "first_name": "Business",
         "id": 10,
         "last_name": "First",
-        "url": "http://localhost:8080/api/v1/users/10",
+        "url": "http://localhost:8080/api/users/10",
         "username": "business1"
       },
       "project_id": 2,
@@ -49,14 +49,14 @@
                 "first_name": "Worker",
                 "id": 7,
                 "last_name": "Second",
-                "url": "http://localhost:8080/api/v1/users/7",
+                "url": "http://localhost:8080/api/users/7",
                 "username": "worker2"
               },
               "id": 6,
               "stage": "annotation",
               "state": "new",
               "status": "annotation",
-              "url": "http://localhost:8080/api/v1/jobs/6"
+              "url": "http://localhost:8080/api/jobs/6"
             }
           ],
           "start_frame": 0,
@@ -67,7 +67,7 @@
       "status": "annotation",
       "subset": "train",
       "updated_date": "2021-12-22T07:17:34.836384Z",
-      "url": "http://localhost:8080/api/v1/tasks/4"
+      "url": "http://localhost:8080/api/tasks/4"
     },
     {
       "assignee": null,
@@ -115,7 +115,7 @@
         "first_name": "Business",
         "id": 10,
         "last_name": "First",
-        "url": "http://localhost:8080/api/v1/users/10",
+        "url": "http://localhost:8080/api/users/10",
         "username": "business1"
       },
       "project_id": 1,
@@ -129,7 +129,7 @@
               "stage": "annotation",
               "state": "new",
               "status": "annotation",
-              "url": "http://localhost:8080/api/v1/jobs/3"
+              "url": "http://localhost:8080/api/jobs/3"
             }
           ],
           "start_frame": 0,
@@ -143,7 +143,7 @@
               "stage": "validation",
               "state": "new",
               "status": "validation",
-              "url": "http://localhost:8080/api/v1/jobs/4"
+              "url": "http://localhost:8080/api/jobs/4"
             }
           ],
           "start_frame": 50,
@@ -157,7 +157,7 @@
               "stage": "acceptance",
               "state": "new",
               "status": "validation",
-              "url": "http://localhost:8080/api/v1/jobs/5"
+              "url": "http://localhost:8080/api/jobs/5"
             }
           ],
           "start_frame": 100,
@@ -168,7 +168,7 @@
       "status": "annotation",
       "subset": "Train",
       "updated_date": "2021-12-22T07:19:33.854760Z",
-      "url": "http://localhost:8080/api/v1/tasks/3"
+      "url": "http://localhost:8080/api/tasks/3"
     },
     {
       "assignee": null,
@@ -203,7 +203,7 @@
         "first_name": "User",
         "id": 2,
         "last_name": "First",
-        "url": "http://localhost:8080/api/v1/users/2",
+        "url": "http://localhost:8080/api/users/2",
         "username": "user1"
       },
       "project_id": null,
@@ -216,14 +216,14 @@
                 "first_name": "Worker",
                 "id": 6,
                 "last_name": "First",
-                "url": "http://localhost:8080/api/v1/users/6",
+                "url": "http://localhost:8080/api/users/6",
                 "username": "worker1"
               },
               "id": 2,
               "stage": "annotation",
               "state": "new",
               "status": "annotation",
-              "url": "http://localhost:8080/api/v1/jobs/2"
+              "url": "http://localhost:8080/api/jobs/2"
             }
           ],
           "start_frame": 0,
@@ -234,7 +234,7 @@
       "status": "annotation",
       "subset": "",
       "updated_date": "2021-12-22T07:14:15.234748Z",
-      "url": "http://localhost:8080/api/v1/tasks/2"
+      "url": "http://localhost:8080/api/tasks/2"
     },
     {
       "assignee": null,
@@ -269,7 +269,7 @@
         "first_name": "User",
         "id": 2,
         "last_name": "First",
-        "url": "http://localhost:8080/api/v1/users/2",
+        "url": "http://localhost:8080/api/users/2",
         "username": "user1"
       },
       "project_id": null,
@@ -283,7 +283,7 @@
               "stage": "annotation",
               "state": "new",
               "status": "annotation",
-              "url": "http://localhost:8080/api/v1/jobs/1"
+              "url": "http://localhost:8080/api/jobs/1"
             }
           ],
           "start_frame": 0,
@@ -294,7 +294,7 @@
       "status": "annotation",
       "subset": "",
       "updated_date": "2021-12-22T07:15:22.942484Z",
-      "url": "http://localhost:8080/api/v1/tasks/1"
+      "url": "http://localhost:8080/api/tasks/1"
     }
   ]
 }

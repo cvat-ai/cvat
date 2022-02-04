@@ -11,7 +11,7 @@
       "first_name": "Business",
       "id": 10,
       "last_name": "First",
-      "url": "http://localhost:8080/api/v1/users/10",
+      "url": "http://localhost:8080/api/users/10",
       "username": "business1"
     },
     "slug": "org2",
@@ -29,7 +29,7 @@
       "first_name": "User",
       "id": 2,
       "last_name": "First",
-      "url": "http://localhost:8080/api/v1/users/2",
+      "url": "http://localhost:8080/api/users/2",
       "username": "user1"
     },
     "slug": "org1",
