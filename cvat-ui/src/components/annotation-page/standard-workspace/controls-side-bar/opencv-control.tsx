@@ -314,7 +314,6 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
 
         try {
             const { points } = (e as CustomEvent).detail.shapes[0];
-            console.log((e as CustomEvent).detail, points);
             const imageData = this.getCanvasImageData();
             const trackerModel = activeTracker.model();
             trackerModel.init(imageData, points);
@@ -352,9 +351,9 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
     };
 
     private getCanvasImageData = ():ImageData => {
-        const canvas: HTMLCanvasElement | undefined = window.document.getElementById('cvat_canvas_background') as
+        const canvas: HTMLCanvasElement | null = window.document.getElementById('cvat_canvas_background') as
         | HTMLCanvasElement
-        | undefined;
+        | null;
         if (!canvas) {
             throw new Error('Element #cvat_canvas_background was not found');
         }
@@ -410,7 +409,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
     };
 
     private applyTracking = (imageData: ImageData, shape: TrackedShape,
-        objectState:any):Promise<void> => new Promise((resolve, reject) => {
+        objectState: any): Promise<void> => new Promise((resolve, reject) => {
         setTimeout(() => {
             try {
                 const stateIsRelevant =
@@ -418,8 +417,6 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
                     objectState.points.every(
                         (coord: number, index: number) => coord === shape.shapePoints[index],
                     );
-                console.log(objectState);
-                console.log(objectState.points);
                 if (!stateIsRelevant) {
                     shape.trackerModel.reinit(objectState.points);
                     shape.shapePoints = objectState.points;
@@ -429,6 +426,8 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
                     objectState.points = points;
                     objectState.save().then(() => {
                         shape.shapePoints = points;
+                    }).catch((error) => {
+                        reject(error);
                     });
                 }
                 resolve();
@@ -470,10 +469,11 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
                         return acc;
                     }
 
-                    if (!acc[trackedShape.trackerModel.name]) {
-                        acc[trackedShape.trackerModel.name] = [];
+                    const { name: trackerName } = trackedShape.trackerModel;
+                    if (!acc[trackerName]) {
+                        acc[trackerName] = [];
                     }
-                    acc[trackedShape.trackerModel.name].push(trackedShape);
+                    acc[trackerName].push(trackedShape);
                     return acc;
                 }, {},
             );
@@ -667,7 +667,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
         } = this.props;
         if (!trackers.length) {
             return (
-                <Row justify='center' align='middle' style={{ marginTop: '5px' }}>
+                <Row justify='center' align='middle' className='cvat-opencv-tracker-content'>
                     <Col>
                         <Text type='warning' className='cvat-text-color'>
                             No available trackers found
@@ -686,7 +686,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
                 <Row justify='center'>
                     <Col span={24}>
                         <LabelSelector
-                            style={{ width: '100%' }}
+                            className='cvat-opencv-tracker-select'
                             labels={labels}
                             value={activeLabelID}
                             onChange={(value: any) => this.setState({ activeLabelID: value.id })}
@@ -701,7 +701,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
                 <Row align='middle' justify='center'>
                     <Col span={24}>
                         <Select
-                            style={{ width: '100%' }}
+                            className='cvat-opencv-tracker-select'
                             defaultValue={trackers[0].name}
                             onChange={this.setActiveTracker}
                         >

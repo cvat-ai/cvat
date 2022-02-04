@@ -7,9 +7,9 @@ export interface ImageProcessing {
     currentProcessedImage: number | undefined;
 }
 
-export interface TrackingResult{
+export interface TrackingResult {
     updated: boolean;
-    points: any[];
+    points: number[];
 }
 
 export interface TrackerModel {
@@ -19,9 +19,9 @@ export interface TrackerModel {
     update: (src: ImageData) => TrackingResult;
 }
 
-export interface OpenCVTracker{
-    name: string,
-    description: string,
+export interface OpenCVTracker {
+    name: string;
+    description: string;
     type: string;
-    model: () => TrackerModel,
+    model: (() => TrackerModel);
 }
