@@ -64,7 +64,7 @@ context('Add/delete labels and attributes.', () => {
         });
 
         it('Delete the added label. The label removed.', () => {
-            cy.get('.cvat-constructor-viewer-item').find('[aria-label="minus-circle"]').click();
+            cy.get('.cvat-constructor-viewer-item').find('[aria-label="delete"]').click();
             cy.get('.cvat-constructor-viewer-item').should('not.exist');
         });
     });
