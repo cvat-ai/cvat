@@ -665,7 +665,7 @@ Cypress.Commands.add('deleteLabel', (labelName) => {
         .and('be.visible')
         .find('[aria-label="close"]')
         .click();
-    cy.intercept('PATCH', /\/api\/v1\/(tasks|projects)\/.*/).as('deleteLabel');
+    cy.intercept('PATCH', /\/api\/(tasks|projects)\/.*/).as('deleteLabel');
     cy.get('.cvat-modal-delete-label')
         .should('be.visible')
         .within(() => {
