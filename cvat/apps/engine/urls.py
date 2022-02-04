@@ -32,7 +32,7 @@ urlpatterns = [
          query_string=True)),
 
     # documentation for API
-    path('api/schema/', SpectacularAPIView.as_view(api_version='1.0'), name='schema'),
+    path('api/schema/', SpectacularAPIView.as_view(api_version='2.0'), name='schema'),
     path('api/swagger/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger'),
     path('api/docs/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
 

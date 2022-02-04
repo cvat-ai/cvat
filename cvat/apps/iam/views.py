@@ -88,7 +88,7 @@ class ContextMiddleware:
             'url': serializers.CharField(),
         }
     ),
-    responses={'200': OpenApiResponse(description='text URL')}, tags=['auth'], versions=['1.0']))
+    responses={'200': OpenApiResponse(description='text URL')}, tags=['auth'], versions=['2.0']))
 class SigningView(views.APIView):
 
     def post(self, request):

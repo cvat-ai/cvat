@@ -27,7 +27,7 @@ class RestrictionsViewSet(viewsets.ViewSet):
     @staticmethod
     @extend_schema(summary='Method provides user agreements that the user must accept to register',
                   responses={'200': UserAgreementSerializer},
-                  tags=['restrictions'], versions=['1.0'])
+                  tags=['restrictions'], versions=['2.0'])
     @action(detail=False, methods=['GET'], serializer_class=UserAgreementSerializer, url_path='user-agreements')
     def user_agreements(request):
         user_agreements = settings.RESTRICTIONS['user_agreements']
@@ -38,7 +38,7 @@ class RestrictionsViewSet(viewsets.ViewSet):
     @staticmethod
     @extend_schema(summary='Method provides CVAT terms of use',
                 responses={'200': OpenApiResponse(description='CVAT terms of use')},
-                tags=['restrictions'], versions=['1.0'])
+                tags=['restrictions'], versions=['2.0'])
     @action(detail=False, methods=['GET'], renderer_classes=(TemplateHTMLRenderer,),
         url_path='terms-of-use')
     def terms_of_use(request):
