@@ -1318,6 +1318,8 @@ class UserViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         serializer = serializer_class(request.user, context={ "request": request })
         return Response(serializer.data)
 
+# TODO: it will be good to find a way to define description using drf_spectacular.
+# But now it will be enough to use an example
 # class RedefineDescriptionField(FieldInspector):
 #     # pylint: disable=no-self-use
 #     def process_result(self, result, method_name, obj, **kwargs):
