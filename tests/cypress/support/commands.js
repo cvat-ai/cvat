@@ -659,24 +659,42 @@ Cypress.Commands.add('collectLabelsName', () => {
     });
 });
 
+Cypress.Commands.add('deleteLabel', (labelName) => {
+    cy.contains('.cvat-constructor-viewer-item', new RegExp(`^${labelName}$`))
+        .should('exist')
+        .and('be.visible')
+        .find('[aria-label="close"]')
+        .click();
+    cy.intercept('PATCH', /\/api\/v1\/(tasks|projects)\/.*/).as('deleteLabel');
+    cy.get('.cvat-modal-delete-label')
+        .should('be.visible')
+        .within(() => {
+            cy.contains('[type="button"]', 'OK').click();
+        });
+    cy.wait('@deleteLabel').its('response.statusCode').should('equal', 200);
+    cy.contains('.cvat-constructor-viewer-item', new RegExp(`^${labelName}$`)).should('not.exist');
+});
+
 Cypress.Commands.add('addNewLabel', (newLabelName, additionalAttrs, labelColor) => {
     cy.collectLabelsName().then((labelsNames) => {
-        if (labelsNames.indexOf(newLabelName) === -1) {
-            cy.contains('button', 'Add label').click();
-            cy.get('[placeholder="Label name"]').type(newLabelName);
-            if (labelColor) {
-                cy.get('.cvat-change-task-label-color-badge').click();
-                cy.changeColorViaBadge(labelColor);
-            }
-            if (additionalAttrs) {
-                for (let i = 0; i < additionalAttrs.length; i++) {
-                    cy.updateAttributes(additionalAttrs[i]);
-                }
-            }
-            cy.contains('button', 'Done').click();
-            cy.get('.cvat-constructor-viewer').should('be.visible');
+        if (labelsNames.includes(newLabelName)) {
+            cy.deleteLabel(newLabelName);
         }
     });
+    cy.contains('button', 'Add label').click();
+    cy.get('[placeholder="Label name"]').type(newLabelName);
+    if (labelColor) {
+        cy.get('.cvat-change-task-label-color-badge').click();
+        cy.changeColorViaBadge(labelColor);
+    }
+    if (additionalAttrs) {
+        for (let i = 0; i < additionalAttrs.length; i++) {
+            cy.updateAttributes(additionalAttrs[i]);
+        }
+    }
+    cy.contains('button', 'Done').click();
+    cy.get('.cvat-constructor-viewer').should('be.visible');
+    cy.contains('.cvat-constructor-viewer-item', new RegExp(`^${newLabelName}$`)).should('exist');
 });
 
 Cypress.Commands.add('addNewLabelViaContinueButton', (additionalLabels) => {
