@@ -1,4 +1,4 @@
-// Copyright (C) 2021 Intel Corporation
+// Copyright (C) 2021-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -41,7 +41,7 @@ context('Delete a label from a task.', () => {
             cy.contains('.cvat-constructor-viewer-item', labelName)
                 .should('exist')
                 .and('be.visible')
-                .find('[aria-label="close"]')
+                .find('[aria-label="minus-circle"]')
                 .click();
             cy.get('.cvat-modal-delete-label')
                 .should('be.visible')
