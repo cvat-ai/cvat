@@ -168,8 +168,6 @@ REST_FRAMEWORK = {
         'rest_framework.filters.OrderingFilter',
         'cvat.apps.iam.filters.OrganizationFilterBackend'),
 
-    # Disable default handling of the 'format' query parameter by REST framework
-    'URL_FORMAT_OVERRIDE': 'scheme',
     'DEFAULT_THROTTLE_CLASSES': [
         'rest_framework.throttling.AnonRateThrottle',
     ],
@@ -500,7 +498,10 @@ SENDFILE_ROOT = BASE_DIR
 SPECTACULAR_SETTINGS = {
     'TITLE': 'CVAT REST API',
     'DESCRIPTION': 'REST API for Computer Vision Annotation Tool (CVAT)',
-    'VERSION': '1.0',
+    # Statically set schema version. May also be an empty string. When used together with
+    # view versioning, will become '0.0.0 (v2)' for 'v2' versioned requests.
+    # Set VERSION to None if only the request version should be rendered.
+    'VERSION': None,
     'CONTACT': {
         'name': 'Nikita Manovich',
         'url': 'https://github.com/nmanovic',
@@ -516,9 +517,20 @@ SPECTACULAR_SETTINGS = {
     'SCHEMA_PATH_PREFIX_TRIM': True,
     'SERVE_PERMISSIONS': ['rest_framework.permissions.IsAuthenticated'],
     'SERVERS': [
+        # https://swagger.io/specification/#schema-object
         {
-            'url': 'https://localhost:7000/',
+            'url': '{protocol}://localhost:7000/api/',
             'description': 'Development server',
+            'variables': {
+                'protocol': {
+                    'enum': ['http', 'https'],
+                    'default': 'http',
+                }
+            },
+        },
+        {
+            'url': '{protocol}://localhost:8080/api/',
+            'description': 'Production server',
             'variables': {
                 'protocol': {
                     'enum': ['http', 'https'],
@@ -527,11 +539,13 @@ SPECTACULAR_SETTINGS = {
             },
         }
     ],
+    # https://swagger.io/docs/open-source-tools/swagger-ui/usage/configuration/
     'SWAGGER_UI_SETTINGS': {
         'deepLinking': True,
         'displayOperationId': True,
         'displayRequestDuration': True,
         'filter': True,
+        'showExtensions': True,
     },
     'TOS': 'https://www.google.com/policies/terms/',
     'EXTERNAL_DOCS': {
