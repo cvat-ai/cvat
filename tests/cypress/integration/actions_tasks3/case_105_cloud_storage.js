@@ -46,7 +46,7 @@ context('Cloud storage.', () => {
                 .should('have.attr', 'value', '')
                 .type(dummyData.manifest)
                 .should('have.attr', 'value', dummyData.manifest);
-            cy.get('[data-icon="deletes"]').should('be.visible').click();
+            cy.get('[data-icon="delete"]').should('be.visible').click();
             cy.get('[placeholder="manifest.jsonl"]').should('not.exist');
         });
 
