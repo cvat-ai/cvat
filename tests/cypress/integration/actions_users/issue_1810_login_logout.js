@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -59,7 +59,7 @@ context('When clicking on the Logout button, get the user session closed.', () =
             // get token and login to task
             cy.request({
                 method: 'POST',
-                url: '/api/v1/auth/login',
+                url: '/api/auth/login',
                 body: {
                     username: Cypress.env('user'),
                     email: Cypress.env('email'),

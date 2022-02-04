@@ -1,4 +1,4 @@
-# Copyright (C) 2020 Intel Corporation
+# Copyright (C) 2020-2022 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -14,7 +14,7 @@ from rest_framework.test import APITestCase, RequestsClient
 
 from cvat.apps.engine.tests.test_rest_api import (create_db_users,
     generate_image_file)
-from utils.cli.core import CLI, CVAT_API_V1, ResourceType
+from utils.cli.core import CLI, CVAT_API_V2, ResourceType
 
 
 class TestCLI(APITestCase):
@@ -22,7 +22,7 @@ class TestCLI(APITestCase):
     def setUp(self, mock_stdout):
         self.client = RequestsClient()
         self.credentials = ('admin', 'admin')
-        self.api = CVAT_API_V1('testserver')
+        self.api = CVAT_API_V2('testserver')
         self.cli = CLI(self.client, self.api, self.credentials)
         self.taskname = 'test_task'
         self.cli.tasks_create(self.taskname,

@@ -139,6 +139,10 @@ REST_FRAMEWORK = {
         'rest_framework.parsers.MultiPartParser',
         'cvat.apps.engine.parsers.TusUploadParser',
     ],
+    'DEFAULT_RENDERER_CLASSES': [
+        'cvat.apps.engine.renderers.CVATAPIRenderer',
+        'rest_framework.renderers.BrowsableAPIRenderer',
+    ],
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
         'cvat.apps.iam.permissions.IsMemberInOrganization',
@@ -151,12 +155,10 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.BasicAuthentication'
     ],
     'DEFAULT_VERSIONING_CLASS':
-        # Don't try to use URLPathVersioning. It will give you /api/{version}
-        # in path and '/api/docs' will not collapse similar items (flat list
-        # of all possible methods isn't readable).
-        'rest_framework.versioning.NamespaceVersioning',
-    # Need to add 'api-docs' here as a workaround for include_docs_urls.
-    'ALLOWED_VERSIONS': ('v1', 'api-docs'),
+        'rest_framework.versioning.AcceptHeaderVersioning',
+    'ALLOWED_VERSIONS': ('1.0', '2.0'),
+    'DEFAULT_VERSION': '2.0',
+    'VERSION_PARAM': 'version',
     'DEFAULT_PAGINATION_CLASS':
         'cvat.apps.engine.pagination.CustomPagination',
     'PAGE_SIZE': 10,
