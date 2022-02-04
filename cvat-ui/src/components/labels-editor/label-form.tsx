@@ -4,7 +4,7 @@
 
 import React, { RefObject } from 'react';
 import { Row, Col } from 'antd/lib/grid';
-import Icon, { MinusCircleOutlined, PlusCircleOutlined } from '@ant-design/icons';
+import Icon, { DeleteOutlined, PlusCircleOutlined } from '@ant-design/icons';
 import Input from 'antd/lib/input';
 import Button from 'antd/lib/button';
 import Checkbox from 'antd/lib/checkbox';
@@ -329,7 +329,7 @@ export default class LabelForm extends React.Component<Props> {
                             this.removeAttribute(key);
                         }}
                     >
-                        <MinusCircleOutlined />
+                        <DeleteOutlined />
                     </Button>
                 </Form.Item>
             </CVATTooltip>
@@ -536,7 +536,7 @@ export default class LabelForm extends React.Component<Props> {
                     <Col span={3} offset={1}>
                         {this.renderChangeColorButton()}
                     </Col>
-                    <Col span={6} offset={1}>
+                    <Col offset={1}>
                         {this.renderNewAttributeButton()}
                     </Col>
                 </Row>

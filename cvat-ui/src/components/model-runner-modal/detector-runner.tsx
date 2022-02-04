@@ -5,7 +5,7 @@
 import './styles.scss';
 import React, { useState } from 'react';
 import { Row, Col } from 'antd/lib/grid';
-import { MinusCircleOutlined, QuestionCircleOutlined } from '@ant-design/icons';
+import { DeleteOutlined, QuestionCircleOutlined } from '@ant-design/icons';
 import Select, { BaseOptionType } from 'antd/lib/select';
 import Checkbox, { CheckboxChangeEvent } from 'antd/lib/checkbox';
 import Tag from 'antd/lib/tag';
@@ -168,7 +168,7 @@ function DetectorRunner(props: Props): JSX.Element {
                             </Col>
                             <Col offset={1}>
                                 <CVATTooltip title='Remove the mapped values'>
-                                    <MinusCircleOutlined
+                                    <DeleteOutlined
                                         className='cvat-danger-circle-icon'
                                         onClick={(): void => {
                                             const newmapping = { ...mapping };

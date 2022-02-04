@@ -6,7 +6,6 @@ import React from 'react';
 
 import SVGCVATLogo from './assets/cvat-logo.svg';
 import SVGEmptyTasksIcon from './assets/empty-tasks-icon.svg';
-import SVGMenuIcon from './assets/menu-icon.svg';
 import SVGCursorIcon from './assets/cursor-icon.svg';
 import SVGMoveIcon from './assets/move-icon.svg';
 import SVGRotateIcon from './assets/rotate-icon.svg';
@@ -56,7 +55,6 @@ import SVGOpenVINO from './assets/openvino.svg';
 
 export const CVATLogo = React.memo((): JSX.Element => <SVGCVATLogo />);
 export const EmptyTasksIcon = React.memo((): JSX.Element => <SVGEmptyTasksIcon />);
-export const MenuIcon = React.memo((): JSX.Element => <SVGMenuIcon />);
 export const CursorIcon = React.memo((): JSX.Element => <SVGCursorIcon />);
 export const MoveIcon = React.memo((): JSX.Element => <SVGMoveIcon />);
 export const RotateIcon = React.memo((): JSX.Element => <SVGRotateIcon />);

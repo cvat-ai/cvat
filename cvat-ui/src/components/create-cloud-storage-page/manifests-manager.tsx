@@ -1,9 +1,9 @@
-// Copyright (C) 2021 Intel Corporation
+// Copyright (C) 2021-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import React, { useEffect, useRef, useState } from 'react';
-import { MinusCircleOutlined, PlusCircleOutlined, QuestionCircleOutlined } from '@ant-design/icons';
+import { DeleteOutlined, PlusCircleOutlined, QuestionCircleOutlined } from '@ant-design/icons';
 import Button from 'antd/lib/button';
 import Col from 'antd/lib/col';
 import Form from 'antd/lib/form';
@@ -116,7 +116,7 @@ export default function ManifestsManager(props: Props): JSX.Element {
                                         <Col>
                                             <Form.Item>
                                                 <Button type='link' onClick={() => onDeleteManifestItem(idx)}>
-                                                    <MinusCircleOutlined />
+                                                    <DeleteOutlined />
                                                 </Button>
                                             </Form.Item>
                                         </Col>

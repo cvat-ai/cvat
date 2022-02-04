@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-import { EditOutlined, MinusCircleOutlined } from '@ant-design/icons';
+import { DeleteOutlined, EditOutlined } from '@ant-design/icons';
 import Text from 'antd/lib/typography/Text';
 
 import CVATTooltip from 'components/common/cvat-tooltip';
@@ -42,7 +42,7 @@ export default function ConstructorViewerItem(props: ConstructorViewerItemProps)
                     onClick={(): void => onDelete(label)}
                     onKeyPress={(): boolean => false}
                 >
-                    <MinusCircleOutlined />
+                    <DeleteOutlined />
                 </span>
             </CVATTooltip>
         </div>
