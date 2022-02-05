@@ -1132,7 +1132,7 @@ export function saveAnnotationsAsync(sessionInstance: any, afterSave?: () => voi
 
             if (sessionInstance instanceof cvat.classes.Job && sessionInstance.state === cvat.enums.JobState.NEW) {
                 sessionInstance.state = cvat.enums.JobState.IN_PROGRESS;
-                updateJobAsync(sessionInstance);
+                dispatch(updateJobAsync(sessionInstance));
             }
 
             dispatch({

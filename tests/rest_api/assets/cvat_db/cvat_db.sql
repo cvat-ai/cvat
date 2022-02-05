@@ -2800,9 +2800,9 @@ COPY public.auth_user (id, password, last_login, is_superuser, username, first_n
 17	pbkdf2_sha256$260000$ZgcuAD4y4yevdl8uH9uDkv$D89cXpicXu+B4Vs+Nlew/sXYpZvO4kOO1IMoyYs1AvE=	\N	f	dummy4	Dummy	Fourth	dummy4@cvat.org	f	t	2021-12-14 18:37:41+00
 18	pbkdf2_sha256$260000$uOqP32bk2zHuvO0sdGBGmu$hMbzA1yBWcY5rIU670sZ3SHXRLUa7bCkbrMnrEDGSRM=	\N	t	admin2	Admin	Second	admin2@cvat.org	t	t	2021-12-14 18:38:46+00
 6	pbkdf2_sha256$260000$15iUjDNh5gPg5683u1HhOG$fF8hW6AR90o9SCsO/MomzdQFkgQsMUW3YQUlwwiC1vA=	2021-12-14 19:11:21.04874+00	f	worker1	Worker	First	worker1@cvat.org	f	t	2021-12-14 18:30:00+00
-10	pbkdf2_sha256$260000$X4F89IRqnBtojZuHidrwQG$j1+EpXfyvMesHdod4N+dNUfF4WKS2NWFfeGDec/43as=	2021-12-14 19:44:48.526708+00	f	business1	Business	First	business1@cvat.org	f	t	2021-12-14 18:33:06+00
 2	pbkdf2_sha256$260000$Pf2xYWXBedoAJ504jyDD8e$8sJ244Ai0xhZrUTelapPNHlEg7CV0cCUaxbcxZtfaug=	2021-12-22 07:55:35.269206+00	f	user1	User	First	user1@cvat.org	f	t	2021-12-14 18:21:09+00
 1	pbkdf2_sha256$260000$DevmxlmLwciP1P6sZs2Qag$U9DFtjTWx96Sk95qY6UXVcvpdQEP2LcoFBftk5D2RKY=	2021-12-22 08:11:58.502575+00	t	admin1	Admin	First	admin1@cvat.org	t	t	2021-12-14 18:04:57+00
+10	pbkdf2_sha256$260000$X4F89IRqnBtojZuHidrwQG$j1+EpXfyvMesHdod4N+dNUfF4WKS2NWFfeGDec/43as=	2022-01-19 13:52:59.477881+00	f	business1	Business	First	business1@cvat.org	f	t	2021-12-14 18:33:06+00
 \.
 
 
@@ -3064,6 +3064,7 @@ qje4thj4oqumlmj2fe27gae72jg4j6u8	.eJxVjDsOwjAQBe_iGll2Ev8o6TmDtetd4wCypTipEHeHSC
 ic4rcr36vkoymwaw6p322bjqlryvq2jd	.eJxVjMsOwiAQRf-FtSEDFRhcuu83kBkeUjU0Ke3K-O_apAvd3nPOfYlA21rD1vMSpiQuQonT78YUH7ntIN2p3WYZ57YuE8tdkQftcpxTfl4P9--gUq_fWns0mX22NsLZDlE7INLWAzkyODjFyKwzAnExUQNQUamgRnIOkzLi_QHSyzeb:1mxPj7:Bl2FnM4tKrtDftiy20PMjYuIfpHYUK6FG6IYdZjPS6o	2021-12-29 08:33:29.459216+00
 mnb97kue40xo05g2rwwkw6d34sxrnesw	.eJxVjDsOwjAQBe_iGllO8E-U9JzB2l3v4gBypDipEHfHkVJAOzPvvVWCbS1pa7ykKauLGtTplyHQk-su8gPqfdY013WZUO-JPmzTtznz63q0fwcFWunrgELAEtGgEzcCGTp7I4ZCdA5iN9KRFaA8YARvDXoL7GNgO5Jn9fkCIRs5Sw:1mxQKq:6A9lz-3mKMJukzqDk-DXfGIbDNeLeGul_TgZ7A6Xlf8	2021-12-29 09:12:28.010763+00
 po0rbd1yhywmc0i2jfam69r419a66aj8	.eJxVjMsOwiAQRf-FtSE8pB1cuvcbCMMMUjWQlHZl_HdD0oVu7znnvkWI-1bC3nkNC4mL0OL0u2FMT64D0CPWe5Op1W1dUA5FHrTLWyN-XQ_376DEXkY9QeKzIpWVn9gYhEhkI3lyYFg7jTMDg7WkAdF5mCFh9mRZZUhOi88X-eU4dg:1mzwj8:CWx3-u6eXmWLpwiFMK5_yWnoPY3yUSf1QCZY-UdJcF8	2022-01-05 08:11:58.507079+00
+v28l0efbrv9x06z97ilwcf7lwtuf4ctc	.eJxVjDsOwjAQRO_iGlm22fhDSc8ZrLV3gwPIluKkQtydREoBzRTz3sxbRFyXEtfOc5xIXIRW4vRbJsxPrjuhB9Z7k7nVZZ6S3BV50C5vjfh1Pdy_g4K9bGuLXqMDQqdDTtYN6AHIIoGGMIJlQwxB-VFn3gLPzjil3ABkAIBZfL7_vTer:1nABOV:0UAK9VV6D18QF1-189XQ2T9LrQUSdioGNoHdRUzzt7o	2022-02-02 13:52:59.489923+00
 \.
 
 
@@ -4151,6 +4152,8 @@ Y1I4FFU27WRqq2rWQLtKjDztMqpvqW7gJgg7q73F7oE4H5kukvXugWjiTLHclPDu	2021-12-14 19:5
 62HplmGPJuzpTXSyzPWiAlREkq8smCjK30GdtYze3q03J9X5ghQe3oMhlAyQ0WBH	2021-12-14 19:54:46.172754+00	7	10
 mFpVV2Yh39uUdU8IpigSxvuPegqi8sjxFi6P9Jdy6fBE8Ky9Juzi1KjeGDQsizSS	2021-12-14 19:54:56.431899+00	8	10
 h43G28di7vfs4Jv5VrKZ26xvGAfm6Yc2FFv14z9EKhiuIEDQ22pEnzmSCab8MnK1	2021-12-14 19:55:13.745912+00	9	10
+5FjIXya6fTGvlRpauFvi2QN1wDOqo1V9REB5rJinDR8FZO9gr0qmtWpghsCte8Y1	2022-01-19 13:54:42.005381+00	10	10
+BrwoDmMNQQ1v9WXOukp9DwQVuqB3RDPjpUECCEq6QcAuG0Pi8k1IYtQ9uz9jg0Bv	2022-01-19 13:54:42.015131+00	11	10
 \.
 
 
@@ -4168,6 +4171,8 @@ COPY public.organizations_membership (id, is_active, joined_date, role, organiza
 7	t	2021-12-14 19:54:46.172754+00	worker	2	7
 8	t	2021-12-14 19:54:56.431899+00	worker	2	8
 9	t	2021-12-14 19:55:13.745912+00	supervisor	2	3
+10	t	2022-01-19 13:54:42.005381+00	supervisor	2	4
+11	t	2022-01-19 13:54:42.015131+00	maintainer	2	5
 \.
 
 
@@ -4511,7 +4516,7 @@ SELECT pg_catalog.setval('public.engine_video_id_seq', 1, false);
 -- Name: organizations_membership_id_seq; Type: SEQUENCE SET; Schema: public; Owner: root
 --
 
-SELECT pg_catalog.setval('public.organizations_membership_id_seq', 9, true);
+SELECT pg_catalog.setval('public.organizations_membership_id_seq', 11, true);
 
 
 --

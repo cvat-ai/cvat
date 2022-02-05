@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -25,6 +25,8 @@ import GlobalErrorBoundary from 'components/global-error-boundary/global-error-b
 import ShortcutsDialog from 'components/shortcuts-dialog/shortcuts-dialog';
 import ExportDatasetModal from 'components/export-dataset/export-dataset-modal';
 import ModelsPageContainer from 'containers/models-page/models-page';
+
+import JobsPageComponent from 'components/jobs-page/jobs-page';
 
 import TasksPageContainer from 'containers/tasks-page/tasks-page';
 import CreateTaskPageContainer from 'containers/create-task-page/create-task-page';
@@ -360,6 +362,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                                         <Route exact path='/tasks/create' component={CreateTaskPageContainer} />
                                         <Route exact path='/tasks/:id' component={TaskPageContainer} />
                                         <Route exact path='/tasks/:tid/jobs/:jid' component={AnnotationPageContainer} />
+                                        <Route exact path='/jobs' component={JobsPageComponent} />
                                         <Route exact path='/cloudstorages' component={CloudStoragesPageComponent} />
                                         <Route
                                             exact

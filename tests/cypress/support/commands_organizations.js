@@ -22,7 +22,7 @@ Cypress.Commands.add('createOrganization', (organizationParams) => {
         cy.get('#email').type(organizationParams.email);
         cy.get('#phoneNumber').type(organizationParams.phoneNumber);
         cy.get('#location').type(organizationParams.location);
-        cy.intercept('POST', '/api/v1/organizations**').as('createOrganizations');
+        cy.intercept('POST', '/api/organizations**').as('createOrganizations');
         cy.get('[type="submit"]').click();
         cy.wait('@createOrganizations').its('response.statusCode').should('equal', 201);
     });
@@ -31,7 +31,7 @@ Cypress.Commands.add('createOrganization', (organizationParams) => {
 Cypress.Commands.add('deleteOrganizations', (authResponse, otrganizationsToDelete) => {
     const authKey = authResponse.body.key;
     cy.request({
-        url: '/api/v1/organizations?page_size=all',
+        url: '/api/organizations?page_size=all',
         headers: {
             Authorization: `Token ${authKey}`,
         },
@@ -43,7 +43,7 @@ Cypress.Commands.add('deleteOrganizations', (authResponse, otrganizationsToDelet
                 if (slug === organizationToDelete) {
                     cy.request({
                         method: 'DELETE',
-                        url: `/api/v1/organizations/${id}`,
+                        url: `/api/organizations/${id}`,
                         headers: {
                             Authorization: `Token ${authKey}`,
                         },

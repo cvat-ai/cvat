@@ -35,7 +35,7 @@ def create(tid, data):
     """Schedule the task"""
     q = django_rq.get_queue('default')
     q.enqueue_call(func=_create_thread, args=(tid, data),
-        job_id="/api/v1/tasks/{}".format(tid))
+        job_id="/api/tasks/{}".format(tid))
 
 @transaction.atomic
 def rq_handler(job, exc_type, exc_value, traceback):

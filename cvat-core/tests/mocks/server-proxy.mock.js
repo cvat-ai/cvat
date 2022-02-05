@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -113,7 +113,7 @@ class ServerProxy {
             const id = Math.max(...projectsDummyData.results.map((el) => el.id)) + 1;
             projectsDummyData.results.push({
                 id,
-                url: `http://localhost:7000/api/v1/projects/${id}`,
+                url: `http://localhost:7000/api/projects/${id}`,
                 name: projectData.name,
                 owner: 1,
                 assignee: null,
@@ -179,7 +179,7 @@ class ServerProxy {
             const id = Math.max(...tasksDummyData.results.map((el) => el.id)) + 1;
             tasksDummyData.results.push({
                 id,
-                url: `http://localhost:7000/api/v1/tasks/${id}`,
+                url: `http://localhost:7000/api/tasks/${id}`,
                 name: taskData.name,
                 project_id: taskData.project_id || null,
                 size: 5000,
@@ -212,7 +212,8 @@ class ServerProxy {
             }
         }
 
-        async function getJob(jobID) {
+        async function getJobs(filter = {}) {
+            const id = filter.id || null;
             const jobs = tasksDummyData.results
                 .reduce((acc, task) => {
                     for (const segment of task.segments) {
@@ -234,7 +235,7 @@ class ServerProxy {
 
                     return acc;
                 }, [])
-                .filter((job) => job.id === jobID);
+                .filter((job) => job.id === id);
 
             return (
                 jobs[0] || {
@@ -265,7 +266,7 @@ class ServerProxy {
                 }
             }
 
-            return getJob(id);
+            return getJobs({ id });
         }
 
         async function getUsers() {
@@ -423,7 +424,7 @@ class ServerProxy {
 
                 jobs: {
                     value: Object.freeze({
-                        get: getJob,
+                        get: getJobs,
                         save: saveJob,
                     }),
                     writable: false,

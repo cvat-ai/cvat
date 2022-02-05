@@ -8,7 +8,7 @@
         "first_name": "User",
         "id": 3,
         "last_name": "Second",
-        "url": "http://localhost:8080/api/v1/users/3",
+        "url": "http://localhost:8080/api/users/3",
         "username": "user2"
       },
       "bug_tracker": "",
@@ -35,7 +35,7 @@
         "first_name": "Business",
         "id": 10,
         "last_name": "First",
-        "url": "http://localhost:8080/api/v1/users/10",
+        "url": "http://localhost:8080/api/users/10",
         "username": "business1"
       },
       "status": "annotation",
@@ -47,7 +47,7 @@
       ],
       "training_project": null,
       "updated_date": "2021-12-14T19:55:57.483506Z",
-      "url": "http://localhost:8080/api/v1/projects/2"
+      "url": "http://localhost:8080/api/projects/2"
     },
     {
       "assignee": null,
@@ -88,7 +88,7 @@
         "first_name": "Business",
         "id": 10,
         "last_name": "First",
-        "url": "http://localhost:8080/api/v1/users/10",
+        "url": "http://localhost:8080/api/users/10",
         "username": "business1"
       },
       "status": "annotation",
@@ -100,7 +100,7 @@
       ],
       "training_project": null,
       "updated_date": "2021-12-14T19:48:33.103265Z",
-      "url": "http://localhost:8080/api/v1/projects/1"
+      "url": "http://localhost:8080/api/projects/1"
     }
   ]
 }
