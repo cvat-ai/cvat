@@ -70,6 +70,8 @@ class Container:
         return len(self.raw_data)
 
     def __getitem__(self, key):
+        if isinstance(key, slice):
+            return self.raw_data[key]
         return self.map_data[key]
 
 @pytest.fixture(scope='module')
