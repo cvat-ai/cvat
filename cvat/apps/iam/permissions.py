@@ -772,6 +772,8 @@ class JobPermission(OpenPolicyAgentPermission):
             ('annotations', 'DELETE'): 'delete:annotations',
             ('annotations', 'PUT'): 'update:annotations',
             ('data', 'GET'): 'view:data',
+            ('data_info','GET'): 'view:data',
+            ('data_info','PATCH'): 'update:data',
             ('issues', 'GET'): 'view',
         }.get((view.action, request.method))
 

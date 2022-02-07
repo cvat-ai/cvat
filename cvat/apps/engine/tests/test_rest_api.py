@@ -413,7 +413,7 @@ class JobDataMetaPartialUpdateAPITestCase(APITestCase):
 
     def _run_api_v1_jobs_data_meta_id(self, jid, user, data):
         with ForceLogin(user, self.client):
-            response = self.client.patch('/api/v1/jobs/{}/data/meta'.format(jid), data=data, format='json')
+            response = self.client.patch('/api/jobs/{}/data/meta'.format(jid), data=data, format='json')
 
         return response
 
@@ -435,12 +435,12 @@ class JobDataMetaPartialUpdateAPITestCase(APITestCase):
         data = {
             "deleted_frames": [1,2,3]
         }
-        self._check_api_v1_jobs_data_meta_id(self.user, data)
+        self._check_api_v1_jobs_data_meta_id(self.admin, data)
 
         data = {
             "deleted_frames": []
         }
-        self._check_api_v1_jobs_data_meta_id(self.user, data)
+        self._check_api_v1_jobs_data_meta_id(self.admin, data)
 
 class ServerAboutAPITestCase(APITestCase):
     ACCEPT_HEADER_TEMPLATE = 'application/vnd.cvat+json; version={}'

@@ -19583,7 +19583,7 @@ test_scope_UPDATE_DATA_context_ORGANIZATION_ownership_NONE_privilege_NONE_member
 
 
 # tasks_test.gen.rego.py
-# # Copyright (C) 2021 Intel Corporation
+# # Copyright (C) 2021-2022 Intel Corporation
 # #
 # # SPDX-License-Identifier: MIT
 #
@@ -19596,6 +19596,8 @@ test_scope_UPDATE_DATA_context_ORGANIZATION_ownership_NONE_privilege_NONE_member
 #
 #
 # NAME = 'tasks'
+#
+# random.seed(42)
 #
 # def read_rules(name):
 #     rules = []

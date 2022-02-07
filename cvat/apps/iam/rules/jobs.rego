@@ -160,7 +160,7 @@ allow {
 
 allow {
     { utils.UPDATE_STATE, utils.UPDATE_ANNOTATIONS, utils.DELETE_ANNOTATIONS,
-      utils.IMPORT_ANNOTATIONS }[input.scope]
+      utils.IMPORT_ANNOTATIONS, utils.UPDATE_DATA }[input.scope]
     utils.is_sandbox
     utils.has_perm(utils.WORKER)
     is_job_staff
@@ -168,7 +168,7 @@ allow {
 
 allow {
     { utils.UPDATE_STATE, utils.UPDATE_ANNOTATIONS, utils.DELETE_ANNOTATIONS,
-      utils.IMPORT_ANNOTATIONS }[input.scope]
+      utils.IMPORT_ANNOTATIONS, utils.UPDATE_DATA }[input.scope]
     input.auth.organization.id == input.resource.organization.id
     utils.has_perm(utils.USER)
     organizations.has_perm(organizations.MAINTAINER)
@@ -176,7 +176,7 @@ allow {
 
 allow {
     { utils.UPDATE_STATE, utils.UPDATE_ANNOTATIONS, utils.DELETE_ANNOTATIONS,
-      utils.IMPORT_ANNOTATIONS }[input.scope]
+      utils.IMPORT_ANNOTATIONS, utils.UPDATE_DATA }[input.scope]
     input.auth.organization.id == input.resource.organization.id
     utils.has_perm(utils.WORKER)
     organizations.has_perm(organizations.WORKER)
