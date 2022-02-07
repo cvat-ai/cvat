@@ -2,7 +2,6 @@
 //
 // SPDX-License-Identifier: MIT
 
-@use "sass:math";
 @import '../../base.scss';
 
 .cvat-jobs-page {
@@ -48,7 +47,7 @@
 
     .cvat-job-page-list-item {
         width: 25%;
-        border-width: math.div($grid-unit-size, 2);
+        border-width: $grid-unit-size * 0.5;
         display: flex;
         flex-direction: column;
 
