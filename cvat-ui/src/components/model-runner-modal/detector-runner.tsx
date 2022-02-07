@@ -1,25 +1,21 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import './styles.scss';
 import React, { useState } from 'react';
 import { Row, Col } from 'antd/lib/grid';
-import { CloseCircleOutlined, QuestionCircleOutlined } from '@ant-design/icons';
-import Select from 'antd/lib/select';
+import { DeleteOutlined, QuestionCircleOutlined } from '@ant-design/icons';
+import Select, { BaseOptionType } from 'antd/lib/select';
 import Checkbox, { CheckboxChangeEvent } from 'antd/lib/checkbox';
 import Tag from 'antd/lib/tag';
 import Text from 'antd/lib/typography/Text';
 import InputNumber from 'antd/lib/input-number';
 import Button from 'antd/lib/button';
 import notification from 'antd/lib/notification';
-// eslint-disable-next-line import/no-extraneous-dependencies
-import { OptionData, OptionGroupData } from 'rc-select/lib/interface';
 
 import { Model, StringObject } from 'reducers/interfaces';
-
 import CVATTooltip from 'components/common/cvat-tooltip';
-
 import { clamp } from 'utils/math';
 import consts from 'consts';
 import { DimensionType } from '../../reducers/interfaces';
@@ -101,7 +97,7 @@ function DetectorRunner(props: Props): JSX.Element {
                     onChange={onChange}
                     style={{ width: '100%' }}
                     showSearch
-                    filterOption={(input: string, option?: OptionData | OptionGroupData) => {
+                    filterOption={(input: string, option: BaseOptionType | undefined) => {
                         if (option) {
                             const { children } = option.props;
                             if (typeof children === 'string') {
@@ -172,7 +168,7 @@ function DetectorRunner(props: Props): JSX.Element {
                             </Col>
                             <Col offset={1}>
                                 <CVATTooltip title='Remove the mapped values'>
-                                    <CloseCircleOutlined
+                                    <DeleteOutlined
                                         className='cvat-danger-circle-icon'
                                         onClick={(): void => {
                                             const newmapping = { ...mapping };
