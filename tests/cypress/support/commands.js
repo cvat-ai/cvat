@@ -663,7 +663,7 @@ Cypress.Commands.add('deleteLabel', (labelName) => {
     cy.contains('.cvat-constructor-viewer-item', new RegExp(`^${labelName}$`))
         .should('exist')
         .and('be.visible')
-        .find('[aria-label="close"]')
+        .find('[aria-label="delete"]')
         .click();
     cy.intercept('PATCH', /\/api\/(tasks|projects)\/.*/).as('deleteLabel');
     cy.get('.cvat-modal-delete-label')

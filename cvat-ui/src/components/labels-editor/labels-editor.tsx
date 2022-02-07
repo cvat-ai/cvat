@@ -156,8 +156,8 @@ export default class LabelsEditor extends React.PureComponent<LabelsEditorProps,
         if (typeof label.id !== 'undefined' && label.id >= 0) {
             ModalConfirm({
                 className: 'cvat-modal-delete-label',
-                title: `Do you want to delete "${label.name}" label?`,
                 icon: <ExclamationCircleOutlined />,
+                title: `Do you want to delete "${label.name}" label?`,
                 content: 'This action is irreversible. Annotation corresponding with this label will be deleted.',
                 type: 'warning',
                 okType: 'danger',
