@@ -42,7 +42,7 @@ export default function DetailsComponent(props: DetailsComponentProps): JSX.Elem
             </Col>
             <Col>
                 <Dropdown overlay={<ActionsMenuContainer taskInstance={taskInstance} />}>
-                    <Button size='large'>
+                    <Button size='middle' className='cvat-task-page-actions-button'>
                         <Text className='cvat-text-color'>Actions</Text>
                         <MoreOutlined className='cvat-menu-icon' />
                     </Button>
