@@ -59,6 +59,16 @@ class TestGetJobs:
         response = get_method(user, f'jobs/{jid}', **kwargs)
         assert response.status_code == HTTPStatus.FORBIDDEN
 
+    def _test_get_job_annotations_200(self, user, jid, data, **kwargs):
+        response = get_method(user, f'jobs/{jid}/annotations', **kwargs)
+
+        assert response.status_code == HTTPStatus.OK
+        assert DeepDiff(data, response.json()) == {}
+
+    def _test_get_job_annotations_403(self, user, jid, **kwargs):
+        response = get_method(user, f'jobs/{jid}/annotations', **kwargs)
+        assert response.status_code == HTTPStatus.FORBIDDEN
+
     @pytest.mark.parametrize('org', [None, '', 1, 2])
     def test_admin_list_jobs(self, jobs, tasks, org):
         jobs, kwargs = filter_jobs(jobs, tasks, org)
@@ -71,6 +81,16 @@ class TestGetJobs:
         # keep only the reasonable amount of jobs
         for job in jobs[:8]:
             self._test_get_job_200('admin2', job['id'], job, **kwargs)
+
+    @pytest.mark.parametrize('org', [None, '', 1, 2])
+    def test_admin_get_job_annotations(self, jobs, tasks, annotations, org):
+        jobs, kwargs = filter_jobs(jobs, tasks, org)
+
+        # keep only the reasonable amount of jobs
+        for job in jobs[:8]:
+            jid = str(job['id'])
+            self._test_get_job_annotations_200('admin2', jid,
+                annotations['job'][jid], **kwargs)
 
     @pytest.mark.parametrize('org', ['', None])
     @pytest.mark.parametrize('groups', [['business'], ['user'], ['worker'], []])
