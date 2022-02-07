@@ -1,4 +1,4 @@
-// Copyright (C) 2021 Intel Corporation
+// Copyright (C) 2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -57,5 +57,29 @@ Cypress.Commands.add('opencvCheckObjectParameters', (objectType) => {
             .within(() => {
                 cy.get('.ant-select-selection-item').should('have.text', selectedValueGlobal);
             });
+    });
+});
+
+Cypress.Commands.add('opencvOpenTab', (trackParams) => {
+    cy.interactOpenCVControlButton();
+    cy.get('.cvat-opencv-control-popover')
+        .contains('[role="tab"]', 'Tracking')
+        .click()
+        .parents('.ant-tabs-tab')
+        .should('have.class', 'ant-tabs-tab-active');
+    cy.get('.cvat-opencv-tracker-select').first().find('.ant-select-selection-item').click();
+    cy.get('.ant-select-dropdown')
+        .not('.ant-select-dropdown-hidden')
+        .find(`.ant-select-item-option[title="${'Case 101'}"]`)
+        .click();
+    cy.get('.cvat-opencv-tracker-select').eq(1).find('.ant-select-selection-item').click();
+    cy.get('.ant-select-dropdown').eq(1)
+        .not('.ant-select-dropdown-hidden')
+        .find('.ant-select-item-option-content')
+        .contains('TrackerMIL')
+        .click();
+    cy.get('.cvat-tools-track-button').click();
+    trackParams.pointsMap.forEach((point) => {
+        cy.get('.cvat-canvas-container').click(point.x, point.y);
     });
 });
