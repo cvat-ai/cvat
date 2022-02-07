@@ -1,10 +1,10 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
 import { Col } from 'antd/lib/grid';
-import Icon, { StopOutlined, CheckOutlined } from '@ant-design/icons';
+import Icon, { StopOutlined, CheckCircleOutlined } from '@ant-design/icons';
 import Modal from 'antd/lib/modal';
 import Button from 'antd/lib/button';
 import Timeline from 'antd/lib/timeline';
@@ -120,7 +120,7 @@ function LeftGroup(props: Props): JSX.Element {
                 {includesDoneButton ? (
                     <CVATTooltip overlay={`Press "${drawShortcut}" to finish`}>
                         <Button type='link' className='cvat-annotation-header-button' onClick={onFinishDraw}>
-                            <CheckOutlined />
+                            <CheckCircleOutlined />
                             Done
                         </Button>
                     </CVATTooltip>

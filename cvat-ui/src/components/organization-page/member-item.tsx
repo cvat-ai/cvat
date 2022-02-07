@@ -7,7 +7,7 @@ import Select from 'antd/lib/select';
 import Text from 'antd/lib/typography/Text';
 import { Row, Col } from 'antd/lib/grid';
 import moment from 'moment';
-import { CloseOutlined } from '@ant-design/icons';
+import { DeleteOutlined } from '@ant-design/icons';
 import Modal from 'antd/lib/modal';
 
 export interface Props {
@@ -62,7 +62,7 @@ function MemberItem(props: Props): JSX.Element {
             </Col>
             <Col span={1} className='cvat-organization-member-item-remove'>
                 {role !== 'owner' ? (
-                    <CloseOutlined
+                    <DeleteOutlined
                         onClick={() => {
                             Modal.confirm({
                                 className: 'cvat-modal-organization-member-remove',
