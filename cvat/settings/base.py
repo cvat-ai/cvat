@@ -168,6 +168,8 @@ REST_FRAMEWORK = {
         'rest_framework.filters.OrderingFilter',
         'cvat.apps.iam.filters.OrganizationFilterBackend'),
 
+    # Disable default handling of the 'format' query parameter by REST framework
+    'URL_FORMAT_OVERRIDE': 'scheme',
     'DEFAULT_THROTTLE_CLASSES': [
         'rest_framework.throttling.AnonRateThrottle',
     ],
