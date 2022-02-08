@@ -96,6 +96,10 @@ def find_users(test_db):
         return data
     return find
 
+@pytest.fixture(scope='module')
+def tasks():
+    with open(osp.join(ASSETS_DIR, 'tasks.json')) as f:
+        return json.load(f)['results']
 
 @pytest.fixture(scope='module')
 def test_db(users, users_by_name, memberships):
