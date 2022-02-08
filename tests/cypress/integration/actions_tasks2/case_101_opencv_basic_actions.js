@@ -195,7 +195,7 @@ context('OpenCV. Intelligent scissors. Histogram Equalization. TrackerMIL.', () 
 
         it('Create a shape with "TrackerMIL". Track it for several frames.', () => {
             // Track shape and move from 0 to 1 frame to init tracker
-            // We will start testing tracking from 2 frame becuse it's a bit unstable on inintialization
+            // We will start testing tracking from 2 frame because it's a bit unstable on inintialization
             cy.opencvTrackObject(createOpencvTrackerShape);
             cy.goToNextFrame(1);
             cy.get('#cvat_canvas_shape_3')
