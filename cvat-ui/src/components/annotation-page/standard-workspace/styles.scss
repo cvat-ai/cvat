@@ -256,6 +256,14 @@
     border-color: #40a9ff;
 }
 
+.cvat-opencv-tracker-select {
+    width: 100%;
+}
+
+.cvat-opencv-tracker-content {
+    margin-top: $grid-unit-size;
+}
+
 .cvat-setup-tag-popover-content,
 .cvat-draw-shape-popover-content {
     padding: $grid-unit-size;
