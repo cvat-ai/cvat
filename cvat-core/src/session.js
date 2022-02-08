@@ -2005,7 +2005,7 @@
     };
 
     Job.prototype.frames.contextImage.implementation = async function (frameId) {
-        const result = await getContextImage(this.taskId, this.id, frameId);
+        const result = await getContextImage(this.id, frameId);
         return result;
     };
 
