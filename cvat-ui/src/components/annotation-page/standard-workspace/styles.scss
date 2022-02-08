@@ -261,7 +261,7 @@
 }
 
 .cvat-opencv-tracking-label-select {
-    @extend .cvat-opencv-tracker-select
+    @extend .cvat-opencv-tracker-select;
 }
 
 .cvat-opencv-tracker-content {

@@ -207,12 +207,10 @@ context('OpenCV. Intelligent scissors. Histogram Equalization. TrackerMIL.', () 
                             for (let i = 2; i < imagesCount; i++) {
                                 cy.goToNextFrame(i);
                                 cy.get('#cvat_canvas_shape_3').invoke('attr', 'x').then((xVal) => {
-                                    const newX = parseFloat(xVal);
-                                    expect(newX).to.be.closeTo(Math.round(defaultX) + (i - 1) * 5, 2.5);
+                                    expect(parseFloat(xVal)).to.be.closeTo(Math.round(defaultX) + (i - 1) * 5, 2.5);
                                 });
                                 cy.get('#cvat_canvas_shape_3').invoke('attr', 'y').then((yVal) => {
-                                    const newY = parseFloat(yVal);
-                                    expect(newY).to.be.closeTo(Math.round(defaultY) + (i - 1) * 5, 2.5);
+                                    expect(parseFloat(yVal)).to.be.closeTo(Math.round(defaultY) + (i - 1) * 5, 2.5);
                                 });
                             }
                         });
