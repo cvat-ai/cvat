@@ -385,7 +385,7 @@
     };
 
     function getFrameMeta(jobID, frame) {
-        const { meta, mode } = frameDataCache[jobID];
+        const { meta, mode, startFrame } = frameDataCache[jobID];
         let size = null;
         if (mode === 'interpolation') {
             [size] = meta.frames;
@@ -393,7 +393,7 @@
             if (frame >= meta.size) {
                 throw new ArgumentError(`Meta information about frame ${frame} can't be received from the server`);
             } else {
-                size = meta.frames[frame];
+                size = meta.frames[frame - startFrame];
             }
         } else {
             throw new DataError(`Invalid mode is specified ${mode}`);
