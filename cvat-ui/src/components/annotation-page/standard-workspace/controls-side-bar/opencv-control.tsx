@@ -686,7 +686,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
                 <Row justify='center'>
                     <Col span={24}>
                         <LabelSelector
-                            className='cvat-opencv-tracker-select'
+                            className='cvat-opencv-tracking-label-select'
                             labels={labels}
                             value={activeLabelID}
                             onChange={(value: any) => this.setState({ activeLabelID: value.id })}

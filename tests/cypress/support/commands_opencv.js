@@ -60,23 +60,28 @@ Cypress.Commands.add('opencvCheckObjectParameters', (objectType) => {
     });
 });
 
-Cypress.Commands.add('opencvOpenTab', (trackParams) => {
+Cypress.Commands.add('opencvOpenTab', (tabName) => {
+    cy.checkPopoverHidden('opencv-control');
     cy.interactOpenCVControlButton();
     cy.get('.cvat-opencv-control-popover')
-        .contains('[role="tab"]', 'Tracking')
+        .contains('[role="tab"]', tabName)
         .click()
         .parents('.ant-tabs-tab')
         .should('have.class', 'ant-tabs-tab-active');
-    cy.get('.cvat-opencv-tracker-select').first().find('.ant-select-selection-item').click();
+});
+
+Cypress.Commands.add('opencvTrackObject', (trackParams) => {
+    cy.opencvOpenTab('Tracking');
+    cy.get('.cvat-opencv-tracking-label-select').find('.ant-select-selection-item').click();
     cy.get('.ant-select-dropdown')
         .not('.ant-select-dropdown-hidden')
-        .find(`.ant-select-item-option[title="${'Case 101'}"]`)
+        .find(`.ant-select-item-option[title="${trackParams.labelName}"]`)
         .click();
-    cy.get('.cvat-opencv-tracker-select').eq(1).find('.ant-select-selection-item').click();
-    cy.get('.ant-select-dropdown').eq(1)
+    cy.get('.cvat-opencv-tracker-select').find('.ant-select-selection-item').click();
+    cy.get('.ant-select-dropdown')
         .not('.ant-select-dropdown-hidden')
         .find('.ant-select-item-option-content')
-        .contains('TrackerMIL')
+        .contains(trackParams.tracker)
         .click();
     cy.get('.cvat-tools-track-button').click();
     trackParams.pointsMap.forEach((point) => {
