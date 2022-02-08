@@ -393,7 +393,7 @@
             if (frame >= meta.size) {
                 throw new ArgumentError(`Meta information about frame ${frame} can't be received from the server`);
             } else {
-                size = meta.frames[frame - meta.start_frame];
+                size = meta.frames[frame];
             }
         } else {
             throw new DataError(`Invalid mode is specified ${mode}`);

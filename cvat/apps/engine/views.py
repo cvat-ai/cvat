@@ -1024,15 +1024,17 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         ).get(pk=pk)
 
         db_data = db_job.segment.task.data
+        start_frame =  db_data.start_frame + db_job.segment.start_frame * db_data.get_frame_step()
+        stop_frame =  db_data.start_frame + db_job.segment.stop_frame * db_data.get_frame_step()
 
         if request.method == 'PATCH':
             serializer = DataMetaSerializer(instance=db_data, data=request.data)
             if serializer.is_valid(raise_exception=True):
                 serializer.validated_data['deleted_frames'] = list(filter(
-                    lambda frame: frame >= db_job.segment.start_frame and frame <= db_job.segment.stop_frame,
+                    lambda frame: frame >= start_frame and frame <= stop_frame,
                     serializer.validated_data['deleted_frames']
                 )) + list(filter(
-                    lambda frame: frame < db_job.segment.start_frame and frame > db_job.segment.stop_frame,
+                    lambda frame: frame < start_frame and frame > stop_frame,
                     db_data.deleted_frames,
                 ))
                 serializer.save()
@@ -1042,18 +1044,17 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             media = [db_data.video]
         else:
             media = list(db_data.images.filter(
-                frame__gte=db_job.segment.start_frame,
-                frame__lte=db_job.segment.stop_frame,
+                frame__gte=start_frame, frame__lte=stop_frame,
             ).all())
 
         # Filter data with segment size
         # Should data.size also be cropped by segment size?
         db_data.deleted_frames = filter(
-            lambda frame: frame >= db_job.segment.start_frame and frame <= db_job.segment.stop_frame,
+            lambda frame: frame >= start_frame and frame <= stop_frame,
             db_data.deleted_frames,
         )
-        db_data.start_frame = db_job.segment.start_frame
-        db_data.stop_frame = db_job.segment.stop_frame
+        db_data.start_frame = start_frame
+        db_data.stop_frame = stop_frame
 
         frame_meta = [{
             'width': item.width,
