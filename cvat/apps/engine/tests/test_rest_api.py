@@ -2168,7 +2168,7 @@ class TaskDataMetaPartialUpdateAPITestCase(APITestCase):
 
     def _run_api_v1_task_data_meta_id(self, tid, user, data):
         with ForceLogin(user, self.client):
-            response = self.client.patch('/api/v1/tasks/{}/data/meta'.format(tid),
+            response = self.client.patch('/api/tasks/{}/data/meta'.format(tid),
                 data=data, format="json")
 
         return response
