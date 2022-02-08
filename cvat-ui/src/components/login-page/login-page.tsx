@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -74,7 +74,9 @@ function LoginPageComponent(props: LoginPageComponentProps & RouteComponentProps
                         <Divider />
                         <Text type='secondary'>
                             Learn more about products of
-                            <a target='_blank' rel='noopener noreferrer' href={consts.OPENVINO_URL}> OpenVINO™ Toolkit </a>
+                            {/* It is important to keep the referer header here */}
+                            {/* eslint-disable-next-line react/jsx-no-target-blank */}
+                            <a target='_blank' rel='noopener' href={consts.OPENVINO_URL}> OpenVINO™ Toolkit </a>
                         </Text>
                         <Button
                             href={consts.OPENVINO_URL}

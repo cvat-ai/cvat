@@ -1,4 +1,4 @@
-// Copyright (C) 2021 Intel Corporation
+// Copyright (C) 2021-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -65,7 +65,7 @@ context('Import annotations for frames with dots in name.', { browser: '!firefox
     describe(`Testing case "${issueId}"`, () => {
         it('Save job. Dump annotation to YOLO format. Remove annotation. Save job.', () => {
             cy.saveJob('PATCH', 200, 'saveJobDump');
-            cy.intercept('GET', '/api/v1/tasks/**/annotations**').as('dumpAnnotations');
+            cy.intercept('GET', '/api/tasks/**/annotations**').as('dumpAnnotations');
             cy.interactMenu('Export task dataset');
             cy.get('.cvat-modal-export-task').find('.cvat-modal-export-select').click();
             cy.get('.ant-select-dropdown')
@@ -105,7 +105,7 @@ context('Import annotations for frames with dots in name.', { browser: '!firefox
                         .get('input[type=file]')
                         .attachFile(annotationArchiveName);
                 });
-            cy.intercept('GET', '/api/v1/jobs/**/annotations?**').as('uploadAnnotationsGet');
+            cy.intercept('GET', '/api/jobs/**/annotations?**').as('uploadAnnotationsGet');
             confirmUpdate('.cvat-modal-content-load-job-annotation');
             cy.wait('@uploadAnnotationsGet').its('response.statusCode').should('equal', 200);
             cy.get('.cvat-notification-notice-upload-annotations-fail').should('not.exist');

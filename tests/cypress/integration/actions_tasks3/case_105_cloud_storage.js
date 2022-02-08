@@ -1,4 +1,4 @@
-// Copyright (C) 2021 Intel Corporation
+// Copyright (C) 2021-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -46,7 +46,7 @@ context('Cloud storage.', () => {
                 .should('have.attr', 'value', '')
                 .type(dummyData.manifest)
                 .should('have.attr', 'value', dummyData.manifest);
-            cy.get('[data-icon="minus-circle"]').should('be.visible').click();
+            cy.get('[data-icon="delete"]').should('be.visible').click();
             cy.get('[placeholder="manifest.jsonl"]').should('not.exist');
         });
 

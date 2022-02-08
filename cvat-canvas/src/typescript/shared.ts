@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2021 Intel Corporation
+// Copyright (C) 2019-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -97,7 +97,7 @@ export function displayShapeSize(shapesContainer: SVG.Container, textContainer: 
             .addClass('cvat_canvas_text'),
         update(shape: SVG.Shape): void {
             let text = `${Math.round(shape.width())}x${Math.round(shape.height())}px`;
-            if (shape.type === 'rect') {
+            if (shape.type === 'rect' || shape.type === 'ellipse') {
                 let rotation = shape.transform().rotation || 0;
                 // be sure, that rotation in range [0; 360]
                 while (rotation < 0) rotation += 360;

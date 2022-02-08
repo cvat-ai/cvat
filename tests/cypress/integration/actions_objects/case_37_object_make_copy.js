@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -56,7 +56,15 @@ context('Object make a copy.', () => {
         complete: true,
         numberOfPoints: null,
     };
-    const countObject = 5;
+    const createEllipseShape = {
+        type: 'Shape',
+        labelName,
+        cx: 550,
+        cy: 100,
+        rightX: 600,
+        topY: 150,
+    };
+    const countObject = 6;
 
     function checkObjectArrSize(expectedValueShape, expectedValueSidebar) {
         cy.get('.cvat_canvas_shape').then(($cvatCanvasShape) => {
@@ -79,6 +87,9 @@ context('Object make a copy.', () => {
     function compareObjectsSidebarAttr(objectSidebar1, objectSidebar2) {
         cy.get(objectSidebar1).then(($cvatObjectsSidebarStateItem1) => {
             cy.get(objectSidebar2).then(($cvatObjectsSidebarStateItem2) => {
+                // Check type of a shape
+                expect($cvatObjectsSidebarStateItem1.text().match(/[a-zA-Z]+/)[0])
+                    .be.eq($cvatObjectsSidebarStateItem2.text().match(/[a-zA-Z]+/)[0]);
                 expect($cvatObjectsSidebarStateItem1.attr('style')).be.eq($cvatObjectsSidebarStateItem2.attr('style'));
             });
         });
@@ -90,6 +101,7 @@ context('Object make a copy.', () => {
         cy.createCuboid(createCuboidShape2Points);
         cy.createPolygon(createPolygonShape);
         cy.createPolyline(createPolylinesShape);
+        cy.createEllipse(createEllipseShape);
         cy.createPoint(createPointsShape);
         cy.createTag(labelName);
     });
@@ -102,7 +114,8 @@ context('Object make a copy.', () => {
                 cy.get(`#cvat-objects-sidebar-state-item-${id}`).within(() => {
                     cy.get('[aria-label="more"]').trigger('mouseover').wait(300); // Wait dropdown menu transition
                 });
-                cy.get('.cvat-object-item-menu').last().should('be.visible').contains('button', 'Make a copy').click(); // Get the last element from cvat-object-item-menu array
+                // Get the last element from cvat-object-item-menu array
+                cy.get('.cvat-object-item-menu').last().should('be.visible').contains('button', 'Make a copy').click();
                 cy.get('.cvat-canvas-container').click(coordX, coordY);
                 cy.get('.cvat-canvas-container').click();
                 coordX += 100;
@@ -110,16 +123,16 @@ context('Object make a copy.', () => {
         });
 
         it('After copying via sidebar, the attributes of the objects are the same.', () => {
-            checkObjectArrSize(10, 12);
+            checkObjectArrSize(12, 14);
             for (let id = 1; id < countObject; id++) {
-                // Parameters id 1 equal patameters id 7, 2 to 8, etc.
+                // Parameters id 1 equal patameters id 8, 2 to 9, etc.
                 compareObjectsAttr(`#cvat_canvas_shape_${id}`, `#cvat_canvas_shape_${id + countObject + 1}`);
             }
             for (let idSidebar = 1; idSidebar < 7; idSidebar++) {
                 compareObjectsSidebarAttr(
                     `#cvat-objects-sidebar-state-item-${idSidebar}`,
                     `#cvat-objects-sidebar-state-item-${idSidebar + countObject + 1}`,
-                ); // Parameters sidebar id 1 equal patameters sidebar id 7, 2 to 8, etc.
+                ); // Parameters sidebar id 1 equal patameters sidebar id 8, 2 to 9, etc.
             }
         });
 
@@ -140,7 +153,8 @@ context('Object make a copy.', () => {
                     .find('[aria-label="more"]')
                     .trigger('mouseover')
                     .wait(300); // Wait dropdown menu transition;
-                cy.get('.cvat-object-item-menu').last().should('be.visible').contains('button', 'Make a copy').click(); // Get the last element from cvat-object-item-menu array
+                // Get the last element from cvat-object-item-menu array
+                cy.get('.cvat-object-item-menu').last().should('be.visible').contains('button', 'Make a copy').click();
                 cy.get('.cvat-canvas-container').click(coordX, coordY);
                 cy.get('.cvat-canvas-container').click(); // Deactivate all objects and hide context menu
                 coordX += 100;
@@ -151,16 +165,16 @@ context('Object make a copy.', () => {
             'After copying via object context menu, the attributes of the objects are the same.',
             { browser: '!firefox' },
             () => {
-                checkObjectArrSize(14, 16); // The point and tag was not copied via the object's context menu
+                checkObjectArrSize(17, 19); // The point and tag was not copied via the object's context menu
                 for (let id = 1; id < countObject; id++) {
                     // Parameters id 1 equal patameters id 13, 2 to 14, etc.
-                    compareObjectsAttr(`#cvat_canvas_shape_${id}`, `#cvat_canvas_shape_${id + countObject + 7}`);
+                    compareObjectsAttr(`#cvat_canvas_shape_${id}`, `#cvat_canvas_shape_${id + countObject + 8}`);
                 }
                 for (let idSidebar = 1; idSidebar < 6; idSidebar++) {
                     compareObjectsSidebarAttr(
                         `#cvat-objects-sidebar-state-item-${idSidebar}`,
-                        `#cvat-objects-sidebar-state-item-${idSidebar + countObject + 6}`,
-                    ); // Parameters sidebar id 1 equal patameters sidebar id 13, 2 to 14, etc.
+                        `#cvat-objects-sidebar-state-item-${idSidebar + countObject + 8}`,
+                    ); // Parameters sidebar id 1 equal patameters sidebar id 15, 2 to 16, etc.
                 }
             },
         );

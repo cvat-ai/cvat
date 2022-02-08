@@ -35,7 +35,7 @@ from rest_framework.permissions import SAFE_METHODS
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 from rest_framework.exceptions import PermissionDenied
-from sendfile import sendfile
+from django_sendfile import sendfile
 
 import cvat.apps.dataset_manager as dm
 import cvat.apps.dataset_manager.views  # pylint: disable=unused-import
@@ -73,6 +73,7 @@ from cvat.apps.iam.permissions import (CloudStoragePermission,
 
 class ServerViewSet(viewsets.ViewSet):
     serializer_class = None
+    iam_organization_field = None
 
     # To get nice documentation about ServerViewSet actions it is necessary
     # to implement the method. By default, ViewSet doesn't provide it.
@@ -245,6 +246,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
     ordering_fields = ("id", "name", "owner", "status", "assignee")
     ordering = ("-id",)
     http_method_names = ('get', 'post', 'head', 'patch', 'delete')
+    iam_organization_field = 'organization'
 
     def get_serializer_class(self):
         if self.request.path.endswith('tasks'):
@@ -324,7 +326,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
 
             return _import_project_dataset(
                 request=request,
-                rq_id=f"/api/v1/project/{pk}/dataset_import",
+                rq_id=f"/api/project/{pk}/dataset_import",
                 rq_func=dm.project.import_dataset_as_project,
                 pk=pk,
                 format_name=format_name,
@@ -333,7 +335,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
             action = request.query_params.get("action", "").lower()
             if action in ("import_status",):
                 queue = django_rq.get_queue("default")
-                rq_job = queue.fetch_job(f"/api/v1/project/{pk}/dataset_import")
+                rq_job = queue.fetch_job(f"/api/project/{pk}/dataset_import")
                 if rq_job is None:
                     return Response(status=status.HTTP_404_NOT_FOUND)
                 elif rq_job.is_finished:
@@ -351,14 +353,14 @@ class ProjectViewSet(viewsets.ModelViewSet):
                     )
                 else:
                     return Response(
-                        data=self._get_rq_response('default', f'/api/v1/project/{pk}/dataset_import'),
+                        data=self._get_rq_response('default', f'/api/project/{pk}/dataset_import'),
                         status=status.HTTP_202_ACCEPTED
                     )
             else:
                 format_name = request.query_params.get("format", "")
                 return _export_annotations(
                     db_instance=db_project,
-                    rq_id="/api/v1/project/{}/dataset/{}".format(pk, format_name),
+                    rq_id="/api/project/{}/dataset/{}".format(pk, format_name),
                     request=request,
                     action=action,
                     callback=dm.views.export_project_as_dataset,
@@ -393,7 +395,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
         format_name = request.query_params.get('format')
         if format_name:
             return _export_annotations(db_instance=db_project,
-                rq_id="/api/v1/projects/{}/annotations/{}".format(pk, format_name),
+                rq_id="/api/projects/{}/annotations/{}".format(pk, format_name),
                 request=request,
                 action=request.query_params.get("action", "").lower(),
                 callback=dm.views.export_project_annotations,
@@ -557,6 +559,7 @@ class TaskViewSet(UploadMixin, viewsets.ModelViewSet):
     search_fields = ("name", "owner__username", "mode", "status")
     filterset_class = TaskFilter
     ordering_fields = ("id", "name", "owner", "status", "assignee", "subset")
+    iam_organization_field = 'organization'
 
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -589,6 +592,7 @@ class TaskViewSet(UploadMixin, viewsets.ModelViewSet):
         if instance.project:
             db_project = instance.project
             db_project.save()
+            assert instance.organization == db_project.organization
 
     def perform_destroy(self, instance):
         task_dirname = instance.get_task_dirname()
@@ -740,7 +744,7 @@ class TaskViewSet(UploadMixin, viewsets.ModelViewSet):
             format_name = request.query_params.get('format')
             if format_name:
                 return _export_annotations(db_instance=db_task,
-                    rq_id="/api/v1/tasks/{}/annotations/{}".format(pk, format_name),
+                    rq_id="/api/tasks/{}/annotations/{}".format(pk, format_name),
                     request=request,
                     action=request.query_params.get("action", "").lower(),
                     callback=dm.views.export_task_annotations,
@@ -757,7 +761,7 @@ class TaskViewSet(UploadMixin, viewsets.ModelViewSet):
             if format_name:
                 return _import_annotations(
                     request=request,
-                    rq_id="{}@/api/v1/tasks/{}/annotations/upload".format(request.user, pk),
+                    rq_id="{}@/api/tasks/{}/annotations/upload".format(request.user, pk),
                     rq_func=dm.task.import_task_annotations,
                     pk=pk,
                     format_name=format_name,
@@ -787,7 +791,7 @@ class TaskViewSet(UploadMixin, viewsets.ModelViewSet):
     @action(detail=True, methods=['GET'], serializer_class=RqStatusSerializer)
     def status(self, request, pk):
         self.get_object() # force to call check_object_permissions
-        response = self._get_rq_response(queue="default", job_id=f"/api/v1/tasks/{pk}")
+        response = self._get_rq_response(queue="default", job_id=f"/api/tasks/{pk}")
         serializer = RqStatusSerializer(data=response)
 
         if serializer.is_valid(raise_exception=True):
@@ -867,13 +871,25 @@ class TaskViewSet(UploadMixin, viewsets.ModelViewSet):
 
         format_name = request.query_params.get("format", "")
         return _export_annotations(db_instance=db_task,
-            rq_id="/api/v1/tasks/{}/dataset/{}".format(pk, format_name),
+            rq_id="/api/tasks/{}/dataset/{}".format(pk, format_name),
             request=request,
             action=request.query_params.get("action", "").lower(),
             callback=dm.views.export_task_as_dataset,
             format_name=format_name,
             filename=request.query_params.get("filename", "").lower(),
         )
+
+class CharInFilter(filters.BaseInFilter, filters.CharFilter):
+    pass
+
+class JobFilter(filters.FilterSet):
+    assignee = filters.CharFilter(field_name="assignee__username", lookup_expr="icontains")
+    stage = CharInFilter(field_name="stage", lookup_expr="in")
+    state = CharInFilter(field_name="state", lookup_expr="in")
+
+    class Meta:
+        model = Job
+        fields = ("assignee", )
 
 @method_decorator(name='retrieve', decorator=swagger_auto_schema(operation_summary='Method returns details of a job'))
 @method_decorator(name='update', decorator=swagger_auto_schema(operation_summary='Method updates a job by id'))
@@ -882,6 +898,8 @@ class TaskViewSet(UploadMixin, viewsets.ModelViewSet):
 class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     mixins.RetrieveModelMixin, mixins.UpdateModelMixin):
     queryset = Job.objects.all().order_by('id')
+    filterset_class = JobFilter
+    iam_organization_field = 'segment__task__organization'
 
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -916,7 +934,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             if format_name:
                 return _import_annotations(
                     request=request,
-                    rq_id="{}@/api/v1/jobs/{}/annotations/upload".format(request.user, pk),
+                    rq_id="{}@/api/jobs/{}/annotations/upload".format(request.user, pk),
                     rq_func=dm.task.import_job_annotations,
                     pk=pk,
                     format_name=format_name
@@ -986,6 +1004,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 class IssueViewSet(viewsets.ModelViewSet):
     queryset = Issue.objects.all().order_by('-id')
     http_method_names = ['get', 'post', 'patch', 'delete', 'options']
+    iam_organization_field = 'job__segment__task__organization'
 
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -1020,6 +1039,7 @@ class IssueViewSet(viewsets.ModelViewSet):
 class CommentViewSet(viewsets.ModelViewSet):
     queryset = Comment.objects.all().order_by('-id')
     http_method_names = ['get', 'post', 'patch', 'delete', 'options']
+    iam_organization_field = 'issue__job__segment__task__organization'
 
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -1061,6 +1081,7 @@ class UserViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     http_method_names = ['get', 'post', 'head', 'patch', 'delete']
     search_fields = ('username', 'first_name', 'last_name')
     filterset_class = UserFilter
+    iam_organization_field = 'memberships__organization'
 
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -1154,6 +1175,7 @@ class CloudStorageViewSet(viewsets.ModelViewSet):
     queryset = CloudStorageModel.objects.all().prefetch_related('data').order_by('-id')
     search_fields = ('provider_type', 'display_name', 'resource', 'credentials_type', 'owner__username', 'description')
     filterset_class = CloudStorageFilter
+    iam_organization_field = 'organization'
 
     def get_serializer_class(self):
         if self.request.method in ("POST", "PATCH"):

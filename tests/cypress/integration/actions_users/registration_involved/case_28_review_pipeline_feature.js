@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -137,11 +137,11 @@ context('Review pipeline feature', () => {
     });
 
     after(() => {
-        cy.login();
-        cy.goToTaskList();
-        cy.deleteTask(taskName);
         cy.logout();
-        cy.deletingRegisteredUsers([secondUserName, thirdUserName]);
+        cy.getAuthKey().then((authKey) => {
+            cy.deleteUsers(authKey, [secondUserName, thirdUserName]);
+            cy.deleteTasks(authKey, [taskName]);
+        });
     });
 
     describe(`Testing "${labelName}"`, () => {
@@ -193,7 +193,6 @@ context('Review pipeline feature', () => {
             cy.login();
             cy.openTask(taskName);
             cy.assignJobToUser(0, secondUserName);
-            cy.logout();
         });
 
         /* FIXME: Second user has access to a job inside the task. Need to redesign openTaskJob.
@@ -208,7 +207,7 @@ context('Review pipeline feature', () => {
         });
 
         it('Second user sends the job to review.', () => {
-            cy.intercept('POST', '/api/v1/server/logs').as('sendLogs');
+            cy.intercept('POST', '/api/server/logs').as('sendLogs');
             cy.interactMenu('Request a review');
             cy.contains('.cvat-modal-content-save-job', 'The job has unsaved annotations')
                 .should('exist')

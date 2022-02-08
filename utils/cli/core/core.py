@@ -1,4 +1,4 @@
-# Copyright (C) 2020-2021 Intel Corporation
+# Copyright (C) 2020-2022 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -269,7 +269,7 @@ class CLI():
             self.session.headers['X-CSRFToken'] = response.cookies['csrftoken']
 
 
-class CVAT_API_V1():
+class CVAT_API_V2():
     """ Build parameterized API URLs """
 
     def __init__(self, host, https=False):
@@ -279,7 +279,7 @@ class CVAT_API_V1():
             host = host.replace('http://', '')
             host = host.replace('https://', '')
         scheme = 'https' if https else 'http'
-        self.base = '{}://{}/api/v1/'.format(scheme, host)
+        self.base = '{}://{}/api/'.format(scheme, host)
         self.git = f'{scheme}://{host}/git/repository/'
 
     @property

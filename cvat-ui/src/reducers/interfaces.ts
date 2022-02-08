@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -6,6 +6,7 @@ import { Canvas3d } from 'cvat-canvas3d/src/typescript/canvas3d';
 import { Canvas, RectDrawingMethod, CuboidDrawingMethod } from 'cvat-canvas-wrapper';
 import { IntelligentScissors } from 'utils/opencv-wrapper/intelligent-scissors';
 import { KeyMap } from 'utils/mousetrap-react';
+import { OpenCVTracker } from 'utils/opencv-wrapper/opencv-interfaces';
 
 export type StringObject = {
     [index: string]: string;
@@ -76,6 +77,22 @@ export interface TasksQuery {
 export interface Task {
     instance: any; // cvat-core instance
     preview: string;
+}
+
+export interface JobsQuery {
+    page: number;
+    assignee: string | null;
+    stage: 'annotation' | 'validation' | 'acceptance' | null;
+    state: 'new' | 'in progress' | 'rejected' | 'completed' | null;
+    [index: string]: number | null | string | undefined;
+}
+
+export interface JobsState {
+    query: JobsQuery;
+    fetching: boolean;
+    count: number;
+    current: any[];
+    previews: string[];
 }
 
 export interface TasksState {
@@ -268,7 +285,7 @@ export interface Model {
     };
 }
 
-export type OpenCVTool = IntelligentScissors;
+export type OpenCVTool = IntelligentScissors | OpenCVTracker;
 
 export interface ToolsBlockerState {
     algorithmsLocked?: boolean;
@@ -357,6 +374,7 @@ export interface NotificationsState {
         };
         jobs: {
             updating: null | ErrorState;
+            fetching: null | ErrorState;
         };
         formats: {
             fetching: null | ErrorState;
@@ -747,6 +765,7 @@ export interface OrganizationState {
 export interface CombinedState {
     auth: AuthState;
     projects: ProjectsState;
+    jobs: JobsState;
     tasks: TasksState;
     about: AboutState;
     share: ShareState;

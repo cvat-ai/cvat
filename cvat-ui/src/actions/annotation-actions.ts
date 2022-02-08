@@ -27,6 +27,7 @@ import {
     Workspace,
 } from 'reducers/interfaces';
 import { updateJobAsync } from './tasks-actions';
+import { switchToolsBlockerState } from './settings-actions';
 
 interface AnnotationsParameters {
     filters: string[];
@@ -1132,7 +1133,7 @@ export function saveAnnotationsAsync(sessionInstance: any, afterSave?: () => voi
 
             if (sessionInstance instanceof cvat.classes.Job && sessionInstance.state === cvat.enums.JobState.NEW) {
                 sessionInstance.state = cvat.enums.JobState.IN_PROGRESS;
-                updateJobAsync(sessionInstance);
+                dispatch(updateJobAsync(sessionInstance));
             }
 
             dispatch({
@@ -1503,12 +1504,13 @@ export function repeatDrawShapeAsync(): ThunkAction {
 
         let activeControl = ActiveControl.CURSOR;
         if (activeInteractor && canvasInstance instanceof Canvas) {
-            if (activeInteractor.type === 'tracker') {
+            if (activeInteractor.type.includes('tracker')) {
                 canvasInstance.interact({
                     enabled: true,
                     shapeType: 'rectangle',
                 });
                 dispatch(interactWithCanvas(activeInteractor, activeLabelID));
+                dispatch(switchToolsBlockerState({ buttonVisible: false }));
             } else {
                 canvasInstance.interact({
                     enabled: true,

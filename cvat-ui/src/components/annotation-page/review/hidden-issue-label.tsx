@@ -1,11 +1,11 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import React, { ReactPortal, useEffect, useRef } from 'react';
 import ReactDOM from 'react-dom';
 import Tag from 'antd/lib/tag';
-import { CheckOutlined, CloseCircleOutlined } from '@ant-design/icons';
+import { CheckCircleOutlined, CloseCircleOutlined } from '@ant-design/icons';
 
 import CVATTooltip from 'components/common/cvat-tooltip';
 
@@ -14,6 +14,8 @@ interface Props {
     message: string;
     top: number;
     left: number;
+    angle: number;
+    scale: number;
     resolved: boolean;
     onClick: () => void;
     highlight: () => void;
@@ -22,7 +24,7 @@ interface Props {
 
 export default function HiddenIssueLabel(props: Props): ReactPortal {
     const {
-        id, message, top, left, resolved, onClick, highlight, blur,
+        id, message, top, left, angle, scale, resolved, onClick, highlight, blur,
     } = props;
 
     const ref = useRef<HTMLElement>(null);
@@ -54,11 +56,11 @@ export default function HiddenIssueLabel(props: Props): ReactPortal {
                         }
                     }
                 }}
-                style={{ top, left }}
+                style={{ top, left, transform: `scale(${scale}) rotate(${angle}deg)` }}
                 className='cvat-hidden-issue-label'
             >
                 {resolved ? (
-                    <CheckOutlined className='cvat-hidden-issue-resolved-indicator' />
+                    <CheckCircleOutlined className='cvat-hidden-issue-resolved-indicator' />
                 ) : (
                     <CloseCircleOutlined className='cvat-hidden-issue-unsolved-indicator' />
                 )}
