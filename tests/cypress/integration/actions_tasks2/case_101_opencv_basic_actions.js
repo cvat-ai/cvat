@@ -194,6 +194,8 @@ context('OpenCV. Intelligent scissors. Histogram Equalization. TrackerMIL.', () 
         });
 
         it('Create a shape with "TrackerMIL". Track it for several frames.', () => {
+            // Track shape and move from 0 to 1 frame to init tracker
+            // We will start testing tracking from 2 frame becuse it's a bit unstable on inintialization
             cy.opencvTrackObject(createOpencvTrackerShape);
             cy.goToNextFrame(1);
             cy.get('#cvat_canvas_shape_3')
@@ -202,15 +204,15 @@ context('OpenCV. Intelligent scissors. Histogram Equalization. TrackerMIL.', () 
                     cy.get('#cvat_canvas_shape_3')
                         .invoke('attr', 'y')
                         .then((defaultY) => {
-                            for (let i = 1; i < imagesCount - 1; i++) {
-                                cy.goToNextFrame(i + 1);
+                            for (let i = 2; i < imagesCount; i++) {
+                                cy.goToNextFrame(i);
                                 cy.get('#cvat_canvas_shape_3').invoke('attr', 'x').then((xVal) => {
                                     const newX = parseFloat(xVal);
-                                    expect(newX).to.be.closeTo(Math.round(defaultX) + i * 5, 2.5);
+                                    expect(newX).to.be.closeTo(Math.round(defaultX) + (i - 1) * 5, 2.5);
                                 });
                                 cy.get('#cvat_canvas_shape_3').invoke('attr', 'y').then((yVal) => {
                                     const newY = parseFloat(yVal);
-                                    expect(newY).to.be.closeTo(Math.round(defaultY) + i * 5, 2.5);
+                                    expect(newY).to.be.closeTo(Math.round(defaultY) + (i - 1) * 5, 2.5);
                                 });
                             }
                         });
