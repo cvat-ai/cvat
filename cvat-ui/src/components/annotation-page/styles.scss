@@ -495,3 +495,17 @@ button.cvat-predictor-button {
 
     font-weight: bold;
 }
+
+.cvat-continue-job-button {
+    padding: 0;
+
+    > span {
+        &::before {
+            content: '\00a0';
+        }
+
+        &::after {
+            content: '\00a0';
+        }
+    }
+}
