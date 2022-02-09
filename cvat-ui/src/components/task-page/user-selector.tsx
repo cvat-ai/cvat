@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -19,6 +19,7 @@ export interface User {
 
 interface Props {
     value: User | null;
+    username?: string;
     className?: string;
     onSelect: (user: User | null) => void;
 }
@@ -44,8 +45,10 @@ const searchUsers = debounce(
 );
 
 export default function UserSelector(props: Props): JSX.Element {
-    const { value, className, onSelect } = props;
-    const [searchPhrase, setSearchPhrase] = useState('');
+    const {
+        value, className, username, onSelect,
+    } = props;
+    const [searchPhrase, setSearchPhrase] = useState(username || '');
     const [initialUsers, setInitialUsers] = useState<User[]>([]);
     const [users, setUsers] = useState<User[]>([]);
     const autocompleteRef = useRef<RefSelectProps | null>(null);
