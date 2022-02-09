@@ -113,6 +113,7 @@ class _TaskBackupBase(_BackupBase):
             'storage_method',
             'storage',
             'sorting_method',
+            'deleted_frames',
         }
 
         self._prepare_meta(allowed_fields, data)
@@ -310,6 +311,8 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
             data_serializer = DataSerializer(self._db_data)
             data = data_serializer.data
             data['chunk_type'] = data.pop('compressed_chunk_type')
+            # There are no deleted frames in DataSerializer so we need to pick it
+            data['deleted_frames'] = self._db_data.deleted_frames
             return self._prepare_data_meta(data)
 
         task = serialize_task()
@@ -511,8 +514,9 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
         db_data.start_frame = data['start_frame']
         db_data.stop_frame = data['stop_frame']
         db_data.frame_filter = data['frame_filter']
+        db_data.deleted_frames = data_serializer.initial_data.get('deleted_frames', [])
         db_data.storage = StorageChoice.LOCAL
-        db_data.save(update_fields=['start_frame', 'stop_frame', 'frame_filter', 'storage'])
+        db_data.save(update_fields=['start_frame', 'stop_frame', 'frame_filter', 'storage', 'deleted_frames'])
 
         for db_job, job in zip(self._get_db_jobs(), jobs):
             db_job.status = job['status']
