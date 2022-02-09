@@ -147,5 +147,4 @@ Fast online Object Tracking and Segmentation. Tracker is able to track different
 Trackable object will be tracked automatically if the previous frame was
 a latest keyframe for the object. Have tracker indication on canvas. `SiamMask` tracker supported CUDA.
 
-> Note that `SiamMask` tracker is optimized for GPUs,
-> if you plan to use the CPU for tracking, use [TrackerMIL from OpenCV](/docs/manual/advanced/opencv-tools/#trackermil).
+> If you plan to track simple non-overlapping objects consider using fast client-side [TrackerMIL from OpenCV](/docs/manual/advanced/opencv-tools/#trackermil).
