@@ -6,7 +6,6 @@ from http import HTTPStatus
 from deepdiff import DeepDiff
 import pytest
 from .utils.config import get_method
-from .conftest import tasks as get_tasks
 
 def get_job_staff(job, tasks, projects):
     job_staff = []

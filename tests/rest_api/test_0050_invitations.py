@@ -2,9 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-import enum
 from http import HTTPStatus
-from deepdiff import DeepDiff
 import pytest
 from .utils.config import post_method
 
