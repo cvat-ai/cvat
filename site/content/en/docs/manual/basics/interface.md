@@ -44,7 +44,7 @@ After creating a task, you can immediately open it by clicking `Open task`.
 #### Continue to the frame on which the work on the job is finished
 
 When you open a job that you previously worked on, you will receive pop-up messages with a proposal
-to go to the frame in which the work was completed (last time saved).
+to go to the frame in which the work was paused (last time saved).
 
 ### Error Messages
 
