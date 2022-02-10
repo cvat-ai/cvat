@@ -196,24 +196,29 @@ context('OpenCV. Intelligent scissors. Histogram Equalization. TrackerMIL.', () 
         it('Create a shape with "TrackerMIL". Track it for several frames.', () => {
             // Track shape and move from 0 to 1 frame to init tracker
             // We will start testing tracking from 2 frame because it's a bit unstable on inintialization
-            cy.opencvTrackObject(createOpencvTrackerShape);
+            cy.createOpenCVTrack(createOpencvTrackerShape);
             cy.goToNextFrame(1);
             cy.get('#cvat_canvas_shape_3')
-                .invoke('attr', 'x')
-                .then((defaultX) => {
-                    cy.get('#cvat_canvas_shape_3')
-                        .invoke('attr', 'y')
-                        .then((defaultY) => {
-                            for (let i = 2; i < imagesCount; i++) {
-                                cy.goToNextFrame(i);
-                                cy.get('#cvat_canvas_shape_3').invoke('attr', 'x').then((xVal) => {
-                                    expect(parseFloat(xVal)).to.be.closeTo(Math.round(defaultX) + (i - 1) * 5, 2.5);
-                                });
-                                cy.get('#cvat_canvas_shape_3').invoke('attr', 'y').then((yVal) => {
-                                    expect(parseFloat(yVal)).to.be.closeTo(Math.round(defaultY) + (i - 1) * 5, 2.5);
-                                });
-                            }
+                .then((shape) => {
+                    const x = Math.round(shape.attr('x'));
+                    const y = Math.round(shape.attr('y'));
+                    for (let i = 2; i < imagesCount; i++) {
+                        cy.goToNextFrame(i);
+                        // In the beginning of this test we created images with text
+                        // On each frame text is moved by 5px on x and y axis,
+                        // so we expect shape to be close to real text positions
+                        cy.get('#cvat_canvas_shape_3').invoke('attr', 'x').then((xVal) => {
+                            expect(parseFloat(xVal)).to.be.closeTo(x + (i - 1) * 5, 1.0);
                         });
+                        cy.get('#cvat_canvas_shape_3').invoke('attr', 'y').then((yVal) => {
+                            expect(parseFloat(yVal)).to.be.closeTo(y + (i - 1) * 5, 1.0);
+                        });
+                        cy.get('#cvat-objects-sidebar-state-item-3')
+                            .should('contain', 'RECTANGLE TRACK')
+                            .within(() => {
+                                cy.get('.cvat-object-item-button-keyframe-enabled').should('exist');
+                            });
+                    }
                 });
         });
     });

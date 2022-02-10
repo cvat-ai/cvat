@@ -70,7 +70,7 @@ Cypress.Commands.add('opencvOpenTab', (tabName) => {
         .should('have.class', 'ant-tabs-tab-active');
 });
 
-Cypress.Commands.add('opencvTrackObject', (trackParams) => {
+Cypress.Commands.add('createOpenCVTrack', (trackParams) => {
     cy.opencvOpenTab('Tracking');
     cy.get('.cvat-opencv-tracking-label-select').find('.ant-select-selection-item').click();
     cy.get('.ant-select-dropdown')
