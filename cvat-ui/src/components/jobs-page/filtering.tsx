@@ -116,8 +116,8 @@ function keepFilterInLocalStorage(filter: string): void {
     } catch (_: any) {
         // nothing to do
     }
-    savedItems = Array.from(new Set(savedItems.splice(0, 0, filter)));
-    savedItems = savedItems.slice(0, 10);
+    savedItems.splice(0, 0, filter);
+    savedItems = Array.from(new Set(savedItems)).slice(0, 10);
     localStorage.setItem(LOCAL_STORAGE_FILTERING_KEYWORD, JSON.stringify(savedItems));
 }
 
@@ -175,11 +175,30 @@ function FiltersModalComponent(props: Props): JSX.Element {
         }
     }, [user]);
 
+    useEffect(() => {
+        function unite(filters: string[]): string {
+            if (filters.length > 1) {
+                return JSON.stringify({
+                    and: [filters.map((filter: string): JSON => JSON.parse(filter))],
+                });
+            }
+
+            return filters[0];
+        }
+
+        if (appliedFilter.predefined?.length) {
+            onApplyFilters(unite(appliedFilter.predefined));
+        } else if (appliedFilter.recent?.length) {
+            onApplyFilters(unite(appliedFilter.recent));
+        } else if (appliedFilter.built) {
+            onApplyFilters(appliedFilter.built);
+        }
+    }, [appliedFilter]);
+
     // TODO:
     // pass filters to query, to server
     // make server to handle the request with the query
     // todo: colorify applied filters
-    // todo: unite filters
 
     const [state, setState] = useState<ImmutableTree>(
         QbUtils.checkTree(
@@ -305,7 +324,7 @@ function FiltersModalComponent(props: Props): JSX.Element {
                                     const filter = QbUtils.jsonLogicFormat(state, config).logic;
                                     const stringified = JSON.stringify(filter);
                                     keepFilterInLocalStorage(stringified);
-                                    onApplyFilters(stringified);
+                                    setRecentFilters(receiveRecentFilters());
                                     setAppliedFilter({
                                         predefined: null,
                                         recent: null,
