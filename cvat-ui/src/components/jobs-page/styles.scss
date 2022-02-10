@@ -128,17 +128,6 @@
         right: $grid-unit-size;
         font-size: 16px;
     }
-
-    .cvat-jobs-page-filters {
-        .ant-table-cell {
-            width: $grid-unit-size * 15;
-            background: #f0f2f5;
-        }
-
-        .ant-table-tbody {
-            display: none;
-        }
-    }
 }
 
 .cvat-jobs-filter-dropdown-users {
@@ -152,14 +141,6 @@
 
     span[aria-label=down] {
         margin-right: $grid-unit-size;
-    }
-
-    > * {
-        margin-right: $grid-unit-size * 2;
-
-        &:last-child {
-            margin-right: 0;
-        }
     }
 }
 
@@ -184,4 +165,16 @@
             margin-bottom: 0;
         }
     }
+}
+
+.cvat-jobs-filters-close {
+    position: absolute;
+    top: $grid-unit-size;
+    right: $grid-unit-size;
+}
+
+.cvat-jobs-page-filters-space {
+    justify-content: right;
+    align-items: center;
+    display: flex;
 }

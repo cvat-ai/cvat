@@ -7,14 +7,18 @@ import {
     Builder, Config, ImmutableTree, Query, Utils as QbUtils,
 } from 'react-awesome-query-builder';
 import AntdConfig from 'react-awesome-query-builder/lib/config/antd';
+
 import 'react-awesome-query-builder/lib/css/styles.css';
-import { DownOutlined, FilterOutlined } from '@ant-design/icons';
+import { FilterFilled, FilterOutlined } from '@ant-design/icons';
 import Dropdown from 'antd/lib/dropdown';
 import Space from 'antd/lib/space';
 import Button from 'antd/lib/button';
 import { useSelector } from 'react-redux';
 import { CombinedState } from 'reducers/interfaces';
 import Checkbox, { CheckboxChangeEvent } from 'antd/lib/checkbox/Checkbox';
+import getCore from 'cvat-core-wrapper';
+
+const core = getCore();
 
 const LOCAL_STORAGE_FILTERING_KEYWORD = 'jobsPageRecentFilters';
 const config: Config = {
@@ -61,9 +65,29 @@ const config: Config = {
         },
         assignee: {
             label: 'Assignee',
-            type: 'text',
-            operators: ['equal', 'is_empty', 'is_not_empty'],
+            type: 'select',
             valueSources: ['value'],
+            fieldSettings: {
+                useAsyncSearch: true,
+                forceAsyncSearch: true,
+                // async fetch does not work for now in this library for AntdConfig
+                // but that issue was solved, see https://github.com/ukrbublik/react-awesome-query-builder/issues/616
+                // waiting for a new release, alternative is to use material design, but it is not the best option too
+                asyncFetch: async (search: string | null) => {
+                    const users = await core.users.get({
+                        limit: 10,
+                        is_active: true,
+                        ...(search ? { search } : {}),
+                    });
+
+                    return {
+                        values: users.map((user: any) => ({
+                            value: user.id.toString(), title: user.username,
+                        })),
+                        hasMore: false,
+                    };
+                },
+            },
         },
         last_updated: {
             label: 'Last updated',
@@ -121,7 +145,7 @@ function keepFilterInLocalStorage(filter: string): void {
     localStorage.setItem(LOCAL_STORAGE_FILTERING_KEYWORD, JSON.stringify(savedItems));
 }
 
-function receiveRecentFilters(): string[] {
+function receiveRecentFilters(): Record<string, string> {
     let recentFilters: string[] = [];
     try {
         recentFilters = JSON.parse(localStorage.getItem(LOCAL_STORAGE_FILTERING_KEYWORD) || '[]');
@@ -132,38 +156,49 @@ function receiveRecentFilters(): string[] {
         // nothing to do
     }
 
-    return recentFilters;
+    return recentFilters
+        .reduce((acc: Record<string, string>, val: string) => ({ ...acc, [val]: val }), {});
 }
 
-function receivePredefinedFilters(username: string): Record<string, string> {
+function receivePredefinedFilters(userID: number): Record<string, string> {
     return {
-        'Assigned to you': '{"and":[{"==":[{"var":"assignee"},"username"]}]}'.replace('username', username),
+        'Assigned to you': '{"and":[{"==":[{"var":"assignee"},"userID"]}]}'.replace('userID', `${userID}`),
         'Not completed': '{"!":{"or":[{"==":[{"var":"state"},"completed"]},{"==":[{"var":"stage"},"acceptance"]}]}}',
     };
 }
 
-interface AppliedFilter {
+const defaultAppliedFilter: {
     predefined: string[] | null;
     recent: string[] | null;
     built: string | null;
-}
+} = {
+    predefined: null,
+    recent: null,
+    built: null,
+};
+
+const defaultVisibility: {
+    predefined: boolean;
+    recent: boolean;
+    built: boolean;
+} = {
+    predefined: false,
+    recent: false,
+    built: false,
+};
 
 interface Props {
-    onApplyFilters(filters: string): void;
+    onApplyFilters(filters: string | null): void;
 }
 
 function FiltersModalComponent(props: Props): JSX.Element {
     const { onApplyFilters } = props;
     const user = useSelector((state: CombinedState) => state.auth.user);
 
-    const [visible, setVisible] = useState<boolean>(false);
-    const [recentFilters, setRecentFilters] = useState<string[]>([]);
+    const [recentFilters, setRecentFilters] = useState<Record<string, string>>({});
     const [predefinedFilters, setPredefinedFilters] = useState<Record<string, string>>({});
-    const [appliedFilter, setAppliedFilter] = useState<AppliedFilter>({
-        predefined: null,
-        recent: null,
-        built: null,
-    });
+    const [appliedFilter, setAppliedFilter] = useState<typeof defaultAppliedFilter>(defaultAppliedFilter);
+    const [visibilitySetup, setVisibilitySetup] = useState<typeof defaultVisibility>(defaultVisibility);
 
     useEffect(() => {
         setRecentFilters(receiveRecentFilters());
@@ -171,7 +206,7 @@ function FiltersModalComponent(props: Props): JSX.Element {
 
     useEffect(() => {
         if (user) {
-            setPredefinedFilters(receivePredefinedFilters(user.username));
+            setPredefinedFilters(receivePredefinedFilters(user.id));
         }
     }, [user]);
 
@@ -179,7 +214,7 @@ function FiltersModalComponent(props: Props): JSX.Element {
         function unite(filters: string[]): string {
             if (filters.length > 1) {
                 return JSON.stringify({
-                    and: [filters.map((filter: string): JSON => JSON.parse(filter))],
+                    and: filters.map((filter: string): JSON => JSON.parse(filter)),
                 });
             }
 
@@ -192,13 +227,14 @@ function FiltersModalComponent(props: Props): JSX.Element {
             onApplyFilters(unite(appliedFilter.recent));
         } else if (appliedFilter.built) {
             onApplyFilters(appliedFilter.built);
+        } else {
+            onApplyFilters(null);
         }
     }, [appliedFilter]);
 
-    // TODO:
-    // pass filters to query, to server
-    // make server to handle the request with the query
-    // todo: colorify applied filters
+    // TODO: users list from the server
+    // TODO: datetime comparison
+    // TODO: add sorting
 
     const [state, setState] = useState<ImmutableTree>(
         QbUtils.checkTree(
@@ -215,98 +251,96 @@ function FiltersModalComponent(props: Props): JSX.Element {
         </div>
     );
 
+    const closeButton = (
+        <Button
+            size='small'
+            onClick={() => setVisibilitySetup(defaultVisibility)}
+        >
+            Close
+        </Button>
+    );
+
+    const closeButtonWithinSpace = (
+        <Space className='cvat-jobs-page-filters-space'>
+            { closeButton }
+        </Space>
+    );
+
+    function renderDropdownList(
+        className: string,
+        listKey: 'predefined' | 'recent',
+        listContent: Record<string, string>,
+    ): JSX.Element {
+        return (
+            <div className={className}>
+                {Object.keys(listContent).map((key: string): JSX.Element => (
+                    <Checkbox
+                        checked={appliedFilter[listKey]?.includes(listContent[key])}
+                        onChange={(event: CheckboxChangeEvent) => {
+                            let updatedValue: string[] | null = appliedFilter[listKey] || [];
+                            if (event.target.checked) {
+                                updatedValue.push(listContent[key]);
+                            } else {
+                                updatedValue = updatedValue
+                                    .filter((appliedValue: string) => appliedValue !== listContent[key]);
+                            }
+
+                            if (!updatedValue.length) {
+                                updatedValue = null;
+                            }
+
+                            setAppliedFilter({
+                                ...defaultAppliedFilter,
+                                [listKey]: updatedValue,
+                            });
+                        }}
+                        key={key}
+                    >
+                        {key}
+                    </Checkbox>
+                ))}
+                { closeButtonWithinSpace }
+            </div>
+        );
+    }
+
     return (
         <div className='cvat-jobs-page-filters'>
             <Dropdown
                 trigger={['click']}
+                destroyPopupOnHide
+                visible={visibilitySetup.predefined}
                 placement='bottomCenter'
-                overlay={(): JSX.Element => (
-                    <div className='cvat-jobs-page-predefined-filters-list'>
-                        {Object.keys(predefinedFilters).map((key: string): JSX.Element => (
-                            <Checkbox
-                                checked={appliedFilter.predefined?.includes(predefinedFilters[key])}
-                                onChange={(event: CheckboxChangeEvent) => {
-                                    const updatedAppliedFilter: AppliedFilter = {
-                                        predefined: appliedFilter.predefined || [],
-                                        recent: null,
-                                        built: null,
-                                    };
-                                    if (event.target.checked) {
-                                        (updatedAppliedFilter.predefined as string[]).push(predefinedFilters[key]);
-                                    } else {
-                                        updatedAppliedFilter.predefined = (updatedAppliedFilter.predefined as string[])
-                                            .filter((appliedValue: string) => appliedValue !== predefinedFilters[key]);
-                                    }
-                                    setAppliedFilter(updatedAppliedFilter);
-                                }}
-                                key={key}
-                            >
-                                {key}
-                            </Checkbox>
-                        ))}
-                    </div>
-                )}
+                overlay={renderDropdownList('cvat-jobs-page-predefined-filters-list', 'predefined', predefinedFilters)}
             >
-                <div>
-                    <DownOutlined />
-                    Predefined filters
-                </div>
+                <Button type='link' onClick={() => setVisibilitySetup({ ...defaultVisibility, predefined: true })}>
+                    Predefined
+                    { appliedFilter.predefined ?
+                        <FilterFilled /> :
+                        <FilterOutlined />}
+                </Button>
             </Dropdown>
-            { recentFilters.length ? (
+            { Object.keys(recentFilters).length ? (
                 <Dropdown
                     trigger={['click']}
                     placement='bottomCenter'
-                    overlay={(): JSX.Element => (
-                        <div className='cvat-jobs-page-recent-filters-list'>
-                            {recentFilters.map((value: string): JSX.Element | null => {
-                                try {
-                                    const tree = QbUtils.loadFromJsonLogic(JSON.parse(value), config);
-                                    const queryString = QbUtils.queryString(tree, config);
-                                    if (!tree || !queryString) {
-                                        throw new Error('Empty json logic');
-                                    }
-
-                                    return (
-                                        <Checkbox
-                                            checked={appliedFilter.recent?.includes(value)}
-                                            onChange={(event: CheckboxChangeEvent) => {
-                                                const updatedAppliedFilter: AppliedFilter = {
-                                                    predefined: null,
-                                                    recent: [],
-                                                    built: null,
-                                                };
-                                                if (event.target.checked) {
-                                                    (updatedAppliedFilter.recent as string[]).push(value);
-                                                } else {
-                                                    updatedAppliedFilter
-                                                        .recent = (updatedAppliedFilter.recent as string[])
-                                                            .filter((appliedValue: string) => appliedValue !== value);
-                                                }
-                                                setAppliedFilter(updatedAppliedFilter);
-                                            }}
-                                            key={queryString}
-                                        >
-                                            {queryString}
-                                        </Checkbox>
-                                    );
-                                } catch (_: any) {
-                                    // nothing to do
-                                }
-
-                                return null;
-                            }).filter((value: JSX.Element | null) => !!value)}
-                        </div>
-                    )}
+                    visible={visibilitySetup.recent}
+                    destroyPopupOnHide
+                    overlay={renderDropdownList('cvat-jobs-page-recent-filters-list', 'recent', recentFilters)}
                 >
-                    <div>
-                        <DownOutlined />
-                        Recently used
-                    </div>
+                    <Button type='link' onClick={() => setVisibilitySetup({ ...defaultVisibility, recent: true })}>
+                        Recent
+                        { appliedFilter.recent ?
+                            <FilterFilled /> :
+                            <FilterOutlined />}
+                    </Button>
                 </Dropdown>
             ) : null}
             <Dropdown
-                visible={visible}
+                trigger={['click']}
                 placement='bottomRight'
+                visible={visibilitySetup.built}
+                destroyPopupOnHide
                 overlay={(
                     <div className='cvat-jobs-page-filters-builder'>
                         <Query
@@ -317,14 +351,16 @@ function FiltersModalComponent(props: Props): JSX.Element {
                             value={state}
                             renderBuilder={renderBuilder}
                         />
-                        <Space>
+                        <Space className='cvat-jobs-page-filters-space'>
                             <Button
+                                size='small'
                                 type='primary'
                                 onClick={() => {
                                     const filter = QbUtils.jsonLogicFormat(state, config).logic;
                                     const stringified = JSON.stringify(filter);
                                     keepFilterInLocalStorage(stringified);
                                     setRecentFilters(receiveRecentFilters());
+                                    setVisibilitySetup(defaultVisibility);
                                     setAppliedFilter({
                                         predefined: null,
                                         recent: null,
@@ -334,11 +370,17 @@ function FiltersModalComponent(props: Props): JSX.Element {
                             >
                                 Apply
                             </Button>
+                            { closeButton }
                         </Space>
                     </div>
                 )}
             >
-                <Button type='link' icon={<FilterOutlined />} onClick={() => setVisible(true)} />
+                <Button type='link' onClick={() => setVisibilitySetup({ ...defaultVisibility, built: true })}>
+                    Setup
+                    { appliedFilter.built ?
+                        <FilterFilled /> :
+                        <FilterOutlined />}
+                </Button>
             </Dropdown>
         </div>
     );

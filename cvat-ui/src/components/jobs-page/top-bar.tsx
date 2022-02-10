@@ -8,7 +8,7 @@ import Text from 'antd/lib/typography/Text';
 import FilteringComponent from './filtering';
 
 interface Props {
-    onApplyFilters(filters: string): void;
+    onApplyFilters(filters: string | null): void;
 }
 
 function TopBarComponent(props: Props): JSX.Element {
