@@ -144,3 +144,44 @@
 .cvat-jobs-filter-dropdown-users {
     padding: $grid-unit-size;
 }
+
+.cvat-jobs-page-filters {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    span[aria-label=down] {
+        margin-right: $grid-unit-size;
+    }
+
+    > * {
+        margin-right: $grid-unit-size * 2;
+
+        &:last-child {
+            margin-right: 0;
+        }
+    }
+}
+
+.cvat-jobs-page-predefined-filters-list,
+.cvat-jobs-page-recent-filters-list,
+.cvat-jobs-page-filters-builder {
+    background: white;
+    padding: $grid-unit-size;
+    border-radius: 4px;
+}
+
+.cvat-jobs-page-predefined-filters-list,
+.cvat-jobs-page-recent-filters-list {
+    display: flex;
+    flex-direction: column;
+
+    > .ant-checkbox-wrapper {
+        margin-bottom: $grid-unit-size;
+        margin-left: 0;
+
+        &:last-child {
+            margin-bottom: 0;
+        }
+    }
+}

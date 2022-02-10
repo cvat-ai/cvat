@@ -155,6 +155,7 @@ const config = require('./config');
                 page: isInteger,
                 stage: isString,
                 state: isString,
+                filters: isString,
                 assignee: isString,
                 taskID: isInteger,
                 jobID: isInteger,

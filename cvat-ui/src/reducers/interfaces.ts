@@ -81,6 +81,7 @@ export interface Task {
 
 export interface JobsQuery {
     page: number;
+    filters: string | null;
     assignee: string | null;
     stage: 'annotation' | 'validation' | 'acceptance' | null;
     state: 'new' | 'in progress' | 'rejected' | 'completed' | null;
