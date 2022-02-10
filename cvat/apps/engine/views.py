@@ -7,7 +7,10 @@ import io
 import os
 import os.path as osp
 import pytz
+import json
 import shutil
+import operator
+from functools import reduce
 import traceback
 from datetime import datetime
 from distutils.util import strtobool
@@ -19,6 +22,7 @@ import django_rq
 from django.apps import apps
 from django.conf import settings
 from django.contrib.auth.models import User
+from django.db.models import Q
 from django.db import IntegrityError
 from django.http import HttpResponse, HttpResponseNotFound, HttpResponseBadRequest
 from django.utils import timezone
@@ -891,6 +895,59 @@ class JobFilter(filters.FilterSet):
         model = Job
         fields = ("assignee", )
 
+
+class JobJsonLogicFilter:
+    @classmethod
+    def _build_Q(cls, rules):
+        op, args = next(iter(rules.items()))
+        if op in ['or', 'and']:
+            return reduce({
+                'or': operator.or_,
+                'and': operator.and_
+            }[op], [cls._build_Q(arg) for arg in args])
+        elif op == '!':
+            return ~cls._build_Q(args)
+        elif op == '!!':
+            return cls._build_Q(args)
+        elif op == 'var':
+            return Q(**{args + '__isnull': False})
+        elif op in ['==', '<', '>', '<=', '>='] and len(args) == 2:
+            var = cls._get_lookup_field(args[0]['var'])
+            q_var = var + {
+                '==': '',
+                '<': '__lt',
+                '<=': '__lte',
+                '>': '__gt',
+                '>=': '__gte'
+            }[op]
+            return Q(**{q_var: args[1]})
+        elif op == 'in':
+            if isinstance(args[0], dict):
+                var = cls._get_lookup_field(args[0]['var'])
+                return Q(**{var + '__in': args[1]})
+            else:
+                var = cls._get_lookup_field(args[1]['var'])
+                return Q(**{var + '__contains': args[0]})
+        elif op == '<=' and len(args) == 3:
+            var = cls._get_lookup_field(args[1]['var'])
+            return Q(**{var + '__gte': args[0]}) & Q(**{var + '__lte': args[2]})
+        else:
+            raise NotImplementedError(f'{op} operation with {args} arguments is not implemented')
+
+    @classmethod
+    def filter(cls, queryset, rules):
+        return queryset.filter(cls._build_Q(rules))
+
+    @classmethod
+    def _get_lookup_field(cls, var):
+        return {
+            'dimension': 'segment__task__dimension',
+            'task_id': 'segment__task_id',
+            'project_id': 'segment__task__project_id',
+            'task_name': 'segment__task__name',
+            'project_name': 'segment__task__project__name',
+        }.get(var, var)
+
 @method_decorator(name='retrieve', decorator=swagger_auto_schema(operation_summary='Method returns details of a job'))
 @method_decorator(name='update', decorator=swagger_auto_schema(operation_summary='Method updates a job by id'))
 @method_decorator(name='partial_update', decorator=swagger_auto_schema(
@@ -906,6 +963,11 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         if self.action == 'list':
             perm = JobPermission.create_list(self.request)
             queryset = perm.filter(queryset)
+
+        json_rules = self.request.query_params.get('filters')
+        if json_rules:
+            rules = json.loads(json_rules)
+            queryset = JobJsonLogicFilter.filter(queryset, rules)
 
         return queryset
 
@@ -930,7 +992,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             data = dm.task.get_job_data(pk)
             return Response(data)
         elif request.method == 'PUT':
-            format_name = request.query_params.get("format", "")
+            format_name = request.query_params.get('format', '')
             if format_name:
                 return _import_annotations(
                     request=request,
