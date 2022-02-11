@@ -248,7 +248,6 @@ function FiltersModalComponent(props: Props): JSX.Element {
     }, [appliedFilter]);
 
     // TODO: users list from the server
-    // TODO: datetime comparison
     // TODO: add sorting
 
     const [state, setState] = useState<ImmutableTree>(
