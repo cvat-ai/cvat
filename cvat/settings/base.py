@@ -516,7 +516,7 @@ SPECTACULAR_SETTINGS = {
     'SERVE_PUBLIC': True,
     'SCHEMA_COERCE_PATH_PK_SUFFIX': True,
     'SCHEMA_PATH_PREFIX': '/api',
-    'SCHEMA_PATH_PREFIX_TRIM': True,
+    'SCHEMA_PATH_PREFIX_TRIM': False,
     'SERVE_PERMISSIONS': ['rest_framework.permissions.IsAuthenticated'],
     # https://swagger.io/docs/open-source-tools/swagger-ui/usage/configuration/
     'SWAGGER_UI_SETTINGS': {
