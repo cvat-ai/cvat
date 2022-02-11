@@ -46,6 +46,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 - Review rating, reviewer field from the job instance (use assignee field together with stage field instead) (<https://github.com/openvinotoolkit/cvat/pull/3788>)
+- Training django app (<https://github.com/openvinotoolkit/cvat/pull/4330>)
 
 ### Fixed
 - Fixed Interaction handler keyboard handlers (<https://github.com/openvinotoolkit/cvat/pull/3881>)
