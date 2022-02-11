@@ -152,22 +152,26 @@
     border-radius: 4px;
 
     // redefine default awesome react query builder styles below
-    .group.group-or-rule {
-        background: none !important;
-        border: none !important;
-    }
+    .query-builder {
+        margin: $grid-unit-size;
 
-    .group--actions.group--actions--tr {
-        opacity: 1 !important;
-    }
+        .group.group-or-rule {
+            background: none !important;
+            border: none !important;
+        }
 
-    .group--conjunctions {
-        div.ant-btn-group {
-            button.ant-btn {
-                width: auto !important;
-                opacity: 1 !important;
-                margin-right: 8px !important;
-                padding: 0 8px !important;
+        .group--actions.group--actions--tr {
+            opacity: 1 !important;
+        }
+
+        .group--conjunctions {
+            div.ant-btn-group {
+                button.ant-btn {
+                    width: auto !important;
+                    opacity: 1 !important;
+                    margin-right: 8px !important;
+                    padding: 0 8px !important;
+                }
             }
         }
     }
