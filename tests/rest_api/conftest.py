@@ -50,27 +50,69 @@ def init_test_db():
 def restore():
     restore_cvat_db()
 
+class Container:
+    def __init__(self, data, key='id'):
+        self.raw_data = data
+        self.map_data = { obj[key]: obj for obj in data }
+
+    @property
+    def raw(self):
+        return self.raw_data
+
+    @property
+    def map(self):
+        return self.map_data
+
+    def __iter__(self):
+        return iter(self.raw_data)
+
+    def __len__(self):
+        return len(self.raw_data)
+
+    def __getitem__(self, key):
+        if isinstance(key, slice):
+            return self.raw_data[key]
+        return self.map_data[key]
+
 @pytest.fixture(scope='module')
 def users():
     with open(osp.join(ASSETS_DIR, 'users.json')) as f:
-        return json.load(f)['results']
+        return Container(json.load(f)['results'])
 
 @pytest.fixture(scope='module')
 def organizations():
     with open(osp.join(ASSETS_DIR, 'organizations.json')) as f:
-        data = json.load(f)
-
-    def _organizations(org_id=None):
-        if org_id:
-            return [org for org in data if org['id'] == org_id][0]
-        return data
-
-    return _organizations
+        return Container(json.load(f))
 
 @pytest.fixture(scope='module')
 def memberships():
     with open(osp.join(ASSETS_DIR, 'memberships.json')) as f:
-        return json.load(f)['results']
+        return Container(json.load(f)['results'])
+
+@pytest.fixture(scope='module')
+def tasks():
+    with open(osp.join(ASSETS_DIR, 'tasks.json')) as f:
+        return Container(json.load(f)['results'])
+
+@pytest.fixture(scope='module')
+def projects():
+    with open(osp.join(ASSETS_DIR, 'projects.json')) as f:
+        return Container(json.load(f)['results'])
+
+@pytest.fixture(scope='module')
+def jobs():
+    with open(osp.join(ASSETS_DIR, 'jobs.json')) as f:
+        return Container(json.load(f)['results'])
+
+@pytest.fixture(scope='module')
+def invitations():
+    with open(osp.join(ASSETS_DIR, 'invitations.json')) as f:
+        return Container(json.load(f)['results'], key='key')
+
+@pytest.fixture(scope='module')
+def annotations():
+    with open(osp.join(ASSETS_DIR, 'annotations.json')) as f:
+        return json.load(f)
 
 @pytest.fixture(scope='module')
 def users_by_name(users):
@@ -116,7 +158,3 @@ def test_db(users, users_by_name, memberships):
                 membership_id=membership['id'])
 
     return data
-
-
-
-
