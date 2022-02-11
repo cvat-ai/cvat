@@ -518,29 +518,6 @@ SPECTACULAR_SETTINGS = {
     'SCHEMA_PATH_PREFIX': '/api',
     'SCHEMA_PATH_PREFIX_TRIM': True,
     'SERVE_PERMISSIONS': ['rest_framework.permissions.IsAuthenticated'],
-    'SERVERS': [
-        # https://swagger.io/specification/#schema-object
-        {
-            'url': '{protocol}://localhost:7000/api/',
-            'description': 'Development server',
-            'variables': {
-                'protocol': {
-                    'enum': ['http', 'https'],
-                    'default': 'http',
-                }
-            },
-        },
-        {
-            'url': '{protocol}://localhost:8080/api/',
-            'description': 'Production server',
-            'variables': {
-                'protocol': {
-                    'enum': ['http', 'https'],
-                    'default': 'http',
-                }
-            },
-        }
-    ],
     # https://swagger.io/docs/open-source-tools/swagger-ui/usage/configuration/
     'SWAGGER_UI_SETTINGS': {
         'deepLinking': True,
