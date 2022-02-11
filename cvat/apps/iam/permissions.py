@@ -43,13 +43,9 @@ class OpenPolicyAgentPermission(metaclass=ABCMeta):
         }
 
     def __init__(self, **kwargs):
-        self.scope = kwargs['scope']
-        self.user_id = kwargs['user_id']
-        self.group_name = kwargs['group_name']
-        self.org_id = kwargs['org_id']
-        self.org_owner_id = kwargs['org_owner_id']
-        self.org_role = kwargs['org_role']
-        self.obj = kwargs.get('obj')
+        self.obj = None
+        for name, val in kwargs.items():
+            setattr(self, name, val)
 
         self.payload = {
             'input': {
@@ -484,7 +480,6 @@ class ProjectPermission(OpenPolicyAgentPermission):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.assignee_id = kwargs.get('assignee_id')
         self.url = settings.IAM_OPA_DATA_URL + '/projects/allow'
 
     @staticmethod
@@ -632,8 +627,6 @@ class TaskPermission(OpenPolicyAgentPermission):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.project_id = kwargs.get('project_id')
-        self.assignee_id = kwargs.get('assignee_id')
         self.url = settings.IAM_OPA_DATA_URL + '/tasks/allow'
 
     @staticmethod
@@ -871,7 +864,6 @@ class CommentPermission(OpenPolicyAgentPermission):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.issue_id = kwargs.get('issue_id')
         self.url = settings.IAM_OPA_DATA_URL + '/comments/allow'
 
     @staticmethod
@@ -954,8 +946,6 @@ class IssuePermission(OpenPolicyAgentPermission):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.job_id = kwargs.get('job_id')
-        self.assignee_id = kwargs.get('assignee_id')
         self.url = settings.IAM_OPA_DATA_URL + '/issues/allow'
 
     @staticmethod
