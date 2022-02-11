@@ -10,7 +10,6 @@ from rest_framework import routers
 from django.views.generic import RedirectView
 from django.conf import settings
 from cvat.apps.restrictions.views import RestrictionsViewSet
-from cvat.apps.training.views import PredictView
 
 from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
 
@@ -23,7 +22,6 @@ router.register('server', views.ServerViewSet, basename='server')
 router.register('issues', views.IssueViewSet)
 router.register('comments', views.CommentViewSet)
 router.register('restrictions', RestrictionsViewSet, basename='restrictions')
-router.register('predict', PredictView, basename='predict')
 router.register('cloudstorages', views.CloudStorageViewSet)
 
 urlpatterns = [

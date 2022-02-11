@@ -159,7 +159,7 @@ context('Export project dataset.', { browser: '!firefox' }, () => {
             // Deleting the label
             cy.get('.cvat-constructor-viewer-item')
                 .should('have.length', 1)
-                .find('[aria-label="close"]')
+                .find('[aria-label="delete"]')
                 .click();
             cy.get('.cvat-modal-delete-label')
                 .contains('button', 'OK')

@@ -47,7 +47,7 @@
 
     .cvat-job-page-list-item {
         width: 25%;
-        border-width: $grid-unit-size / 2;
+        border-width: 4px;
         display: flex;
         flex-direction: column;
 
@@ -139,4 +139,8 @@
             display: none;
         }
     }
+}
+
+.cvat-jobs-filter-dropdown-users {
+    padding: $grid-unit-size;
 }
