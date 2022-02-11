@@ -880,3 +880,16 @@ Cypress.Commands.add('shapeRotate', (shape, x, y, expectedRotateDeg, pressShift 
     });
     cy.get('.cvat-canvas-container').trigger('mouseup');
 });
+
+Cypress.Commands.add('deleteFrame', (action = 'delete') => {
+    cy.intercept('PATCH', '/api/jobs/**/data/meta**').as('patchMeta');
+    if (action === 'restore') {
+        cy.get('.cvat-player-restore-frame').click();
+    } else if (action === 'delete') {
+        cy.get('.cvat-player-delete-frame').click();
+        cy.get('.cvat-modal-delete-frame').within(() => {
+            cy.contains('button', 'Delete').click();
+        });
+    }
+    cy.wait('@patchMeta').its('response.statusCode').should('equal', 200);
+});

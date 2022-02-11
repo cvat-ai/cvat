@@ -1024,8 +1024,10 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         ).get(pk=pk)
 
         db_data = db_job.segment.task.data
-        start_frame =  db_data.start_frame + db_job.segment.start_frame * db_data.get_frame_step()
-        stop_frame =  db_data.start_frame + db_job.segment.stop_frame * db_data.get_frame_step()
+        start_frame = db_job.segment.start_frame
+        stop_frame = db_job.segment.stop_frame
+        data_start_frame = db_data.start_frame + start_frame * db_data.get_frame_step()
+        data_stop_frame = db_data.stop_frame + stop_frame * db_data.get_frame_step()
 
         if request.method == 'PATCH':
             serializer = DataMetaSerializer(instance=db_data, data=request.data)
@@ -1044,7 +1046,8 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             media = [db_data.video]
         else:
             media = list(db_data.images.filter(
-                frame__gte=start_frame, frame__lte=stop_frame,
+                frame__gte=data_start_frame,
+                frame__lte=data_stop_frame,
             ).all())
 
         # Filter data with segment size
@@ -1053,8 +1056,8 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             lambda frame: frame >= start_frame and frame <= stop_frame,
             db_data.deleted_frames,
         )
-        db_data.start_frame = start_frame
-        db_data.stop_frame = stop_frame
+        db_data.start_frame = data_start_frame
+        db_data.stop_frame = data_stop_frame
 
         frame_meta = [{
             'width': item.width,
