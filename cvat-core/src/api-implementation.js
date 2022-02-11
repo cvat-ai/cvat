@@ -153,7 +153,7 @@ const config = require('./config');
         cvat.jobs.get.implementation = async (filter) => {
             checkFilter(filter, {
                 page: isInteger,
-                filters: isString,
+                filter: isString,
                 taskID: isInteger,
                 jobID: isInteger,
             });

@@ -8,11 +8,11 @@ import Text from 'antd/lib/typography/Text';
 import FilteringComponent from './filtering';
 
 interface Props {
-    onApplyFilters(filters: string | null): void;
+    onApplyFilter(filter: string | null): void;
 }
 
 function TopBarComponent(props: Props): JSX.Element {
-    const { onApplyFilters } = props;
+    const { onApplyFilter } = props;
     return (
         <Row className='cvat-jobs-page-top-bar' justify='center' align='middle'>
             <Col md={22} lg={18} xl={16} xxl={16}>
@@ -20,7 +20,7 @@ function TopBarComponent(props: Props): JSX.Element {
                     <Col>
                         <Text className='cvat-title'>Jobs</Text>
                     </Col>
-                    <FilteringComponent onApplyFilters={onApplyFilters} />
+                    <FilteringComponent onApplyFilter={onApplyFilter} />
                 </Row>
             </Col>
         </Row>

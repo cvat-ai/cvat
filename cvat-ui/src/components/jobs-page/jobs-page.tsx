@@ -56,11 +56,11 @@ function JobsPageComponent(): JSX.Element {
     return (
         <div className='cvat-jobs-page'>
             <TopBarComponent
-                onApplyFilters={(filters: string | null) => {
+                onApplyFilter={(filter: string | null) => {
                     dispatch(
                         getJobsAsync({
                             ...query,
-                            filters,
+                            filter,
                             page: 1,
                         }),
                     );

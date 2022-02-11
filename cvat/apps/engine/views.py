@@ -883,19 +883,6 @@ class TaskViewSet(UploadMixin, viewsets.ModelViewSet):
             filename=request.query_params.get("filename", "").lower(),
         )
 
-class CharInFilter(filters.BaseInFilter, filters.CharFilter):
-    pass
-
-class JobFilter(filters.FilterSet):
-    assignee = filters.CharFilter(field_name="assignee__username", lookup_expr="icontains")
-    stage = CharInFilter(field_name="stage", lookup_expr="in")
-    state = CharInFilter(field_name="state", lookup_expr="in")
-
-    class Meta:
-        model = Job
-        fields = ("assignee", )
-
-
 class JobJsonLogicFilter:
     @classmethod
     def _build_Q(cls, rules):
@@ -946,6 +933,7 @@ class JobJsonLogicFilter:
             'project_id': 'segment__task__project_id',
             'task_name': 'segment__task__name',
             'project_name': 'segment__task__project__name',
+            'updated_date': 'segment__task__updated_date',
         }.get(var, var)
 
 @method_decorator(name='retrieve', decorator=swagger_auto_schema(operation_summary='Method returns details of a job'))
@@ -955,7 +943,6 @@ class JobJsonLogicFilter:
 class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     mixins.RetrieveModelMixin, mixins.UpdateModelMixin):
     queryset = Job.objects.all().order_by('id')
-    filterset_class = JobFilter
     iam_organization_field = 'segment__task__organization'
 
     def get_queryset(self):
@@ -964,7 +951,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             perm = JobPermission.create_list(self.request)
             queryset = perm.filter(queryset)
 
-        json_rules = self.request.query_params.get('filters')
+        json_rules = self.request.query_params.get('filter')
         if json_rules:
             rules = json.loads(json_rules)
             queryset = JobJsonLogicFilter.filter(queryset, rules)

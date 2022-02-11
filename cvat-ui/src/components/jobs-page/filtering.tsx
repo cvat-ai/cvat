@@ -20,7 +20,7 @@ import getCore from 'cvat-core-wrapper';
 
 const core = getCore();
 
-const LOCAL_STORAGE_FILTERING_KEYWORD = 'jobsPageRecentFilters';
+const LOCAL_STORAGE_FILTERING_KEYWORD = 'jobsPageRecentFilter';
 const config: Config = {
     ...AntdConfig,
     fields: {
@@ -192,13 +192,14 @@ const defaultVisibility: {
 };
 
 interface Props {
-    onApplyFilters(filters: string | null): void;
+    onApplyFilter(filter: string | null): void;
 }
 
 function FiltersModalComponent(props: Props): JSX.Element {
-    const { onApplyFilters } = props;
+    const { onApplyFilter } = props;
     const user = useSelector((state: CombinedState) => state.auth.user);
 
+    const [isMounted, setIsMounted] = useState<boolean>(false);
     const [recentFilters, setRecentFilters] = useState<Record<string, string>>({});
     const [predefinedFilters, setPredefinedFilters] = useState<Record<string, string>>({});
     const [appliedFilter, setAppliedFilter] = useState<typeof defaultAppliedFilter>(defaultAppliedFilter);
@@ -206,6 +207,11 @@ function FiltersModalComponent(props: Props): JSX.Element {
 
     useEffect(() => {
         setRecentFilters(receiveRecentFilters());
+        setIsMounted(true);
+        setAppliedFilter({
+            ...appliedFilter,
+            predefined: [receivePredefinedFilters(0)['Not completed']],
+        });
     }, []);
 
     useEffect(() => {
@@ -225,14 +231,19 @@ function FiltersModalComponent(props: Props): JSX.Element {
             return filters[0];
         }
 
+        if (!isMounted) {
+            // do not request jobs before until on mount hook is done
+            return;
+        }
+
         if (appliedFilter.predefined?.length) {
-            onApplyFilters(unite(appliedFilter.predefined));
+            onApplyFilter(unite(appliedFilter.predefined));
         } else if (appliedFilter.recent?.length) {
-            onApplyFilters(unite(appliedFilter.recent));
+            onApplyFilter(unite(appliedFilter.recent));
         } else if (appliedFilter.built) {
-            onApplyFilters(appliedFilter.built);
+            onApplyFilter(appliedFilter.built);
         } else {
-            onApplyFilters(null);
+            onApplyFilter(null);
         }
     }, [appliedFilter]);
 

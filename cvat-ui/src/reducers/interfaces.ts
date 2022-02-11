@@ -81,7 +81,7 @@ export interface Task {
 
 export interface JobsQuery {
     page: number;
-    filters: string | null;
+    filter: string | null;
 }
 
 export interface JobsState {
