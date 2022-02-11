@@ -1552,7 +1552,6 @@ class ProjectBackupAPITestCase(APITestCase):
                             "assignee",
                             "created_date",
                             "updated_date",
-                            "training_project",
                             "project_id",
                             "tasks",
                         ),

@@ -13,7 +13,6 @@ from django.views.generic import RedirectView
 from django.conf import settings
 from cvat.apps.restrictions.views import RestrictionsViewSet
 from cvat.apps.iam.decorators import login_required
-from cvat.apps.training.views import PredictView
 
 schema_view = get_schema_view(
    openapi.Info(
@@ -53,7 +52,6 @@ router.register('server', views.ServerViewSet, basename='server')
 router.register('issues', views.IssueViewSet)
 router.register('comments', views.CommentViewSet)
 router.register('restrictions', RestrictionsViewSet, basename='restrictions')
-router.register('predict', PredictView, basename='predict')
 router.register('cloudstorages', views.CloudStorageViewSet)
 
 urlpatterns = [
