@@ -1,12 +1,12 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import getCore from 'cvat-core-wrapper';
-import waitFor from '../wait-for';
 import HistogramEqualizationImplementation, { HistogramEqualization } from './histogram-equalization';
-
+import TrackerMImplementation from './tracker-mil';
 import IntelligentScissorsImplementation, { IntelligentScissors } from './intelligent-scissors';
+import { OpenCVTracker } from './opencv-interfaces';
 
 const core = getCore();
 const baseURL = core.config.backendAPI.slice(0, -7);
@@ -21,6 +21,10 @@ export interface Contours {
 
 export interface ImgProc {
     hist: () => HistogramEqualization;
+}
+
+export interface Tracking {
+    trackerMIL: OpenCVTracker;
 }
 
 export class OpenCVWrapper {
@@ -73,13 +77,8 @@ export class OpenCVWrapper {
         OpenCVConstructor();
 
         const global = window as any;
-        await waitFor(
-            100,
-            () =>
-                typeof global.cv !== 'undefined' && typeof global.cv.segmentation_IntelligentScissorsMB !== 'undefined',
-        );
 
-        this.cv = global.cv;
+        this.cv = await global.cv;
         this.initialized = true;
     }
 
@@ -126,8 +125,9 @@ export class OpenCVWrapper {
         }
 
         return {
-            intelligentScissorsFactory: (onChangeToolsBlockerState:(event:string)=>void) =>
-                new IntelligentScissorsImplementation(this.cv, onChangeToolsBlockerState),
+            intelligentScissorsFactory:
+            (onChangeToolsBlockerState:
+            (event:string)=>void) => new IntelligentScissorsImplementation(this.cv, onChangeToolsBlockerState),
         };
     }
 
@@ -137,6 +137,20 @@ export class OpenCVWrapper {
         }
         return {
             hist: () => new HistogramEqualizationImplementation(this.cv),
+        };
+    }
+
+    public get tracking(): Tracking {
+        if (!this.initialized) {
+            throw new Error('Need to initialize OpenCV first');
+        }
+        return {
+            trackerMIL: {
+                model: () => new TrackerMImplementation(this.cv),
+                name: 'TrackerMIL',
+                description: 'Light client-side model useful to track simple objects',
+                type: 'opencv_tracker_mil',
+            },
         };
     }
 }

@@ -7,8 +7,9 @@ import { Col, Row } from 'antd/lib/grid';
 import Text from 'antd/lib/typography/Text';
 import Table from 'antd/lib/table';
 import { FilterValue, TablePaginationConfig } from 'antd/lib/table/interface';
+
 import { JobsQuery } from 'reducers/interfaces';
-import Input from 'antd/lib/input';
+import UserSelector, { User } from 'components/task-page/user-selector';
 import Button from 'antd/lib/button';
 
 interface Props {
@@ -52,21 +53,21 @@ function TopBarComponent(props: Props): JSX.Element {
             filteredValue: query.assignee ? [query.assignee] : null,
             className: `${query.assignee ? 'cvat-jobs-page-filter cvat-jobs-page-filter-active' : 'cvat-jobs-page-filter'}`,
             filterDropdown: (
-                <div>
-                    <Input.Search
-                        defaultValue={query.assignee || ''}
-                        placeholder='Filter by assignee'
-                        onSearch={(value: string) => {
-                            onChangeFilters({ assignee: value });
+                <div className='cvat-jobs-filter-dropdown-users'>
+                    <UserSelector
+                        username={query.assignee ? query.assignee : undefined}
+                        value={null}
+                        onSelect={(value: User | null): void => {
+                            if (value) {
+                                if (query.assignee !== value.username) {
+                                    onChangeFilters({ assignee: value.username });
+                                }
+                            } else if (query.assignee !== null) {
+                                onChangeFilters({ assignee: null });
+                            }
                         }}
-                        enterButton
                     />
-                    <Button
-                        type='link'
-                        onClick={() => {
-                            onChangeFilters({ assignee: null });
-                        }}
-                    >
+                    <Button disabled={query.assignee === null} type='link' onClick={() => onChangeFilters({ assignee: null })}>
                         Reset
                     </Button>
                 </div>

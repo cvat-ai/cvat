@@ -1,4 +1,4 @@
-// Copyright (C) 2021 Intel Corporation
+// Copyright (C) 2021-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -9,7 +9,7 @@ import Modal from 'antd/lib/modal';
 import { Row, Col } from 'antd/lib/grid';
 import Divider from 'antd/lib/divider';
 import notification from 'antd/lib/notification';
-import { QuestionCircleFilled } from '@ant-design/icons';
+import { QuestionCircleOutlined } from '@ant-design/icons';
 
 import ProjectSearch from 'components/create-task-page/project-search-field';
 import CVATTooltip from 'components/common/cvat-tooltip';
@@ -121,7 +121,7 @@ export default function MoveTaskModal(): JSX.Element {
                     {`Move task ${task?.id} to project`}
                     {/* TODO: replace placeholder */}
                     <CVATTooltip title='Some moving process description here'>
-                        <QuestionCircleFilled className='ant-typography-secondary' />
+                        <QuestionCircleOutlined className='ant-typography-secondary' />
                     </CVATTooltip>
                 </span>
             )}

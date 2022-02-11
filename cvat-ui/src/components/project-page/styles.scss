@@ -55,9 +55,10 @@
     }
 }
 
-.cvat-project-top-bar-actions > button {
+.cvat-project-page-actions-button {
     display: flex;
     align-items: center;
+    line-height: 14px;
 }
 
 .cvat-project-tasks-pagination {
