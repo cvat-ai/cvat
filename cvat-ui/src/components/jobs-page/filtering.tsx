@@ -397,6 +397,11 @@ function FiltersModalComponent(props: Props): JSX.Element {
                         <FilterOutlined />}
                 </Button>
             </Dropdown>
+            { (appliedFilter.built || appliedFilter.predefined || appliedFilter.recent) ? (
+                <Button type='link' onClick={() => { setAppliedFilter({ ...defaultAppliedFilter }); }}>
+                    Reset filter
+                </Button>
+            ) : null}
         </div>
     );
 }
