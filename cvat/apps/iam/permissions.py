@@ -288,25 +288,23 @@ class LogViewerPermission(OpenPolicyAgentPermission):
     def create(cls, request, view, obj):
         permissions = []
         if view.basename == 'analytics':
-            self = cls(request, view, obj)
-            permissions.append(self)
+            for scope in cls.get_scopes(request, view, obj):
+                self = cls.create_base_perm(request, view, scope, obj)
+                permissions.append(self)
 
         return permissions
 
-    def __init__(self, request, view, obj):
-        super().__init__(request, view, obj)
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
         self.url = settings.IAM_OPA_DATA_URL + '/analytics/allow'
-        self.payload['input']['scope'] = self.scope
-        self.payload['input']['resource'] = self.resource
 
-    @property
-    def scope(self):
-        return {
+    @staticmethod
+    def get_scopes(request, view, obj):
+        return [{
             'list': 'view',
-        }.get(self.view.action, None)
+        }.get(view.action, None)]
 
-    @property
-    def resource(self):
+    def get_resource(self):
         return {
             'visibility': 'public' if settings.RESTRICTIONS['analytics_visibility'] else 'private',
         }
