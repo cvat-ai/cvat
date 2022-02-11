@@ -41,7 +41,7 @@ from django_sendfile import sendfile
 
 import cvat.apps.dataset_manager as dm
 import cvat.apps.dataset_manager.views  # pylint: disable=unused-import
-from cvat.apps.engine.cloud_provider import get_cloud_storage_instance, Credentials, Status
+from cvat.apps.engine.cloud_provider import get_cloud_storage_instance, Credentials, Status as CloudStorageStatus
 from cvat.apps.dataset_manager.bindings import CvatImportError
 from cvat.apps.dataset_manager.serializers import DatasetFormatsSerializer
 from cvat.apps.engine.frame_provider import FrameProvider
@@ -254,7 +254,7 @@ class ProjectFilter(filters.FilterSet):
         '200': PolymorphicProxySerializer(component_name='PolymorphicProject',
             serializers=[
                 ProjectSerializer, ProjectSearchSerializer,
-            ], resource_type_field_name='type', many=True),
+            ], resource_type_field_name='name', many=True),
         }, tags=['projects'], versions=['2.0']))
 @extend_schema_view(create=extend_schema(
     summary='Method creates a new project',
@@ -454,7 +454,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
 
     @extend_schema(summary='Methods create a project from a backup',
         responses={
-            '201': OpenApiResponse(description='The project has been imported'),
+            '201': OpenApiResponse(description='The project has been imported'), # or better specify {id: project_id}
             '202': OpenApiResponse(description='Importing a backup file has been started'),
         }, tags=['projects'], versions=['2.0'])
     @action(detail=False, methods=['POST'], url_path='backup')
@@ -589,7 +589,7 @@ class TaskFilter(filters.FilterSet):
 @extend_schema_view(create=extend_schema(
     summary='Method creates a new task in a database without any attached images and videos',
     responses={
-        '201': OpenApiResponse(description='The task has been created'),
+        '201': TaskSerializer,
     }, tags=['tasks'], versions=['2.0']))
 @extend_schema_view(retrieve=extend_schema(
     summary='Method returns details of a specific task',
@@ -602,7 +602,7 @@ class TaskFilter(filters.FilterSet):
 @extend_schema_view(destroy=extend_schema(
     summary='Method deletes a specific task, all attached jobs, annotations, and data',
     responses={
-        '204': OpenApiResponse('The task has been deleted'),
+        '204': OpenApiResponse(description='The task has been deleted'),
     }, tags=['tasks'], versions=['2.0']))
 @extend_schema_view(partial_update=extend_schema(
     summary='Methods does a partial update of chosen fields in a task',
@@ -631,7 +631,7 @@ class TaskViewSet(UploadMixin, viewsets.ModelViewSet):
 
     @extend_schema(summary='Method recreates a task from an attached task backup file',
         responses={
-            '201': OpenApiResponse(description='The task has been imported'),
+            '201': OpenApiResponse(description='The task has been imported'), # or better specify {id: task_id}
             '202': OpenApiResponse(description='Importing a backup file has been started'),
         }, tags=['tasks'], versions=['2.0'])
     @action(detail=False, methods=['POST'], url_path='backup')
@@ -735,7 +735,7 @@ class TaskViewSet(UploadMixin, viewsets.ModelViewSet):
                 description='Finishes data upload. Can be combined with Upload-Start header to create task data with one request'),
         ],
         responses={
-            '202': OpenApiResponse(),
+            '202': OpenApiResponse(description=''),
         }, tags=['tasks'], versions=['2.0'])
     @extend_schema(methods=['GET'], summary='Method returns data for a specific task',
         parameters=[
@@ -749,7 +749,7 @@ class TaskViewSet(UploadMixin, viewsets.ModelViewSet):
                 description="A unique number value identifying chunk or frame, doesn't matter for 'preview' type"),
         ],
         responses={
-            '200': OpenApiResponse('Data of a specific type'),
+            '200': OpenApiResponse(description='Data of a specific type'),
         }, tags=['tasks'], versions=['2.0'])
     @action(detail=True, methods=['OPTIONS', 'POST', 'GET'], url_path=r'data/?$')
     def data(self, request, pk):
@@ -1029,11 +1029,11 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         ],
         responses={
             #TODO
-            '200': OpenApiResponse(),
+            '200': OpenApiResponse(description=''),
         }, tags=['jobs'], versions=['2.0'])
     @extend_schema(methods=['DELETE'], summary='Method deletes all annotations for a specific job',
         responses={
-            '204': OpenApiResponse('The annotation has been deleted'),
+            '204': OpenApiResponse(description='The annotation has been deleted'),
         }, tags=['jobs'], versions=['2.0'])
     @action(detail=True, methods=['GET', 'DELETE', 'PUT', 'PATCH'],
         serializer_class=LabeledDataSerializer)
@@ -1145,7 +1145,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 @extend_schema_view(destroy=extend_schema(
     summary='Method deletes an issue',
     responses={
-        '204': OpenApiResponse('The issue has been deleted'),
+        '204': OpenApiResponse(description='The issue has been deleted'),
     }, tags=['issues'], versions=['2.0']))
 class IssueViewSet(viewsets.ModelViewSet):
     queryset = Issue.objects.all().order_by('-id')
@@ -1210,7 +1210,7 @@ class IssueViewSet(viewsets.ModelViewSet):
 @extend_schema_view(destroy=extend_schema(
     summary='Method deletes a comment',
     responses={
-        '204': OpenApiResponse('The comment has been deleted'),
+        '204': OpenApiResponse(description='The comment has been deleted'),
     }, tags=['comments'], versions=['2.0']))
 class CommentViewSet(viewsets.ModelViewSet):
     queryset = Comment.objects.all().order_by('-id')
@@ -1251,7 +1251,7 @@ class UserFilter(filters.FilterSet):
         '200': PolymorphicProxySerializer(component_name='MetaUser',
             serializers=[
                 UserSerializer, BasicUserSerializer,
-            ], resource_type_field_name='type'),
+            ], resource_type_field_name='username'),
     }, tags=['users'], versions=['2.0']))
 @extend_schema_view(retrieve=extend_schema(
     summary='Method provides information of a specific user',
@@ -1259,7 +1259,7 @@ class UserFilter(filters.FilterSet):
         '200': PolymorphicProxySerializer(component_name='MetaUser',
             serializers=[
                 UserSerializer, BasicUserSerializer,
-            ], resource_type_field_name='type'),
+            ], resource_type_field_name='username'),
     }, tags=['users'], versions=['2.0']))
 @extend_schema_view(partial_update=extend_schema(
     summary='Method updates chosen fields of a user',
@@ -1267,12 +1267,12 @@ class UserFilter(filters.FilterSet):
         '200': PolymorphicProxySerializer(component_name='MetaUser',
             serializers=[
                 UserSerializer, BasicUserSerializer,
-            ], resource_type_field_name='type'),
+            ], resource_type_field_name='username'),
     }, tags=['users'], versions=['2.0']))
 @extend_schema_view(destroy=extend_schema(
     summary='Method deletes a specific user from the server',
     responses={
-        '204': OpenApiResponse('The user has been deleted'),
+        '204': OpenApiResponse(description='The user has been deleted'),
     }, tags=['users'], versions=['2.0']))
 class UserViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     mixins.RetrieveModelMixin, mixins.UpdateModelMixin, mixins.DestroyModelMixin):
@@ -1307,7 +1307,7 @@ class UserViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             '200': PolymorphicProxySerializer(component_name='MetaUser',
                 serializers=[
                     UserSerializer, BasicUserSerializer,
-                ], resource_type_field_name='type'),
+                ], resource_type_field_name='username'),
         }, tags=['users'], versions=['2.0'])
     @action(detail=False, methods=['GET'])
     def self(self, request):
@@ -1444,7 +1444,7 @@ class CloudStorageViewSet(viewsets.ModelViewSet):
                 location=OpenApiParameter.QUERY, type=OpenApiTypes.STR),
         ],
         responses={
-            '200': OpenApiResponse(description='A manifest content'),
+            '200': OpenApiResponse(response=OpenApiTypes.OBJECT, description='A manifest content'),
         }, tags=['cloud storages'], versions=['2.0'])
     @action(detail=True, methods=['GET'], url_path='content')
     def content(self, request, pk):
@@ -1466,10 +1466,10 @@ class CloudStorageViewSet(viewsets.ModelViewSet):
                 raise Exception('There is no manifest file')
             manifest_path = request.query_params.get('manifest_path', db_storage.manifests.first().filename)
             file_status = storage.get_file_status(manifest_path)
-            if file_status == Status.NOT_FOUND:
+            if file_status == CloudStorageStatus.NOT_FOUND:
                 raise FileNotFoundError(errno.ENOENT,
                     "Not found on the cloud storage {}".format(db_storage.display_name), manifest_path)
-            elif file_status == Status.FORBIDDEN:
+            elif file_status == CloudStorageStatus.FORBIDDEN:
                 raise PermissionError(errno.EACCES,
                     "Access to the file on the '{}' cloud storage is denied".format(db_storage.display_name), manifest_path)
 
@@ -1494,9 +1494,9 @@ class CloudStorageViewSet(viewsets.ModelViewSet):
         except Exception as ex:
             # check that cloud storage was not deleted
             storage_status = storage.get_status() if storage else None
-            if storage_status == Status.FORBIDDEN:
+            if storage_status == CloudStorageStatus.FORBIDDEN:
                 msg = 'The resource {} is no longer available. Access forbidden.'.format(storage.name)
-            elif storage_status == Status.NOT_FOUND:
+            elif storage_status == CloudStorageStatus.NOT_FOUND:
                 msg = 'The resource {} not found. It may have been deleted.'.format(storage.name)
             else:
                 msg = str(ex)
@@ -1548,10 +1548,10 @@ class CloudStorageViewSet(viewsets.ModelViewSet):
                     return HttpResponseBadRequest(msg)
 
                 file_status = storage.get_file_status(preview_path)
-                if file_status == Status.NOT_FOUND:
+                if file_status == CloudStorageStatus.NOT_FOUND:
                     raise FileNotFoundError(errno.ENOENT,
                         "Not found on the cloud storage {}".format(db_storage.display_name), preview_path)
-                elif file_status == Status.FORBIDDEN:
+                elif file_status == CloudStorageStatus.FORBIDDEN:
                     raise PermissionError(errno.EACCES,
                         "Access to the file on the '{}' cloud storage is denied".format(db_storage.display_name), preview_path)
                 with NamedTemporaryFile() as temp_image:
@@ -1570,9 +1570,9 @@ class CloudStorageViewSet(viewsets.ModelViewSet):
         except Exception as ex:
             # check that cloud storage was not deleted
             storage_status = storage.get_status() if storage else None
-            if storage_status == Status.FORBIDDEN:
+            if storage_status == CloudStorageStatus.FORBIDDEN:
                 msg = 'The resource {} is no longer available. Access forbidden.'.format(storage.name)
-            elif storage_status == Status.NOT_FOUND:
+            elif storage_status == CloudStorageStatus.NOT_FOUND:
                 msg = 'The resource {} not found. It may have been deleted.'.format(storage.name)
             else:
                 msg = str(ex)
@@ -1580,7 +1580,7 @@ class CloudStorageViewSet(viewsets.ModelViewSet):
 
     @extend_schema(summary='Method returns a cloud storage status',
         responses={
-            '200': OpenApiResponse(description='Cloud Storage status'),
+            '200': OpenApiResponse(response=OpenApiTypes.STR, description='Cloud Storage status (AVAILABLE | NOT_FOUND | FORBIDDEN)'),
         }, tags=['cloud storages'], versions=['2.0'])
     @action(detail=True, methods=['GET'], url_path='status')
     def status(self, request, pk):

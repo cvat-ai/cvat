@@ -2,4 +2,4 @@
 #
 # SPDX-License-Identifier: MIT
 
-from .schema import OrganizationFilterExtension
+from .schema import *

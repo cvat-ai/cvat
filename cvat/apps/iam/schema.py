@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-from drf_spectacular.extensions import OpenApiFilterExtension
+from drf_spectacular.extensions import OpenApiFilterExtension, OpenApiAuthenticationExtension
 from drf_spectacular.plumbing import build_parameter_type
 from drf_spectacular.utils import OpenApiParameter
 
@@ -31,3 +31,14 @@ class OrganizationFilterExtension(OpenApiFilterExtension):
                 schema={'type': 'string'},
             )
         ]
+
+class SignatureAuthenticationScheme(OpenApiAuthenticationExtension):
+    target_class = 'cvat.apps.iam.authentication.SignatureAuthentication'
+    name = 'SignatureAuthentication'  # name used in the schema
+
+    def get_security_definition(self, auto_schema):
+        return {
+            'type': 'apiKey',
+            'in': 'query',
+            'name': 'sign',
+        }

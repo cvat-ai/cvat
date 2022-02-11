@@ -8,6 +8,7 @@ from cvat.apps.training.jobs import save_frame_prediction_to_cache_job, save_pre
 
 
 class PredictView(viewsets.ViewSet):
+    serializer_class = None
     def get_permissions(self):
         permissions = [IsAuthenticated]
 

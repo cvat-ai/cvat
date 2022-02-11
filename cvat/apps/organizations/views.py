@@ -47,7 +47,7 @@ from .serializers import (
 @extend_schema_view(destroy=extend_schema(
     summary='Method deletes an organization',
     responses={
-        '204': OpenApiResponse('The organization has been deleted'),
+        '204': OpenApiResponse(description='The organization has been deleted'),
     }, tags=['organizations'], versions=['2.0']))
 class OrganizationViewSet(viewsets.ModelViewSet):
     queryset = Organization.objects.all()
@@ -102,7 +102,7 @@ class MembershipFilter(filters.FilterSet):
 @extend_schema_view(destroy=extend_schema(
     summary='Method deletes a membership',
     responses={
-        '204': OpenApiResponse('The membership has been deleted'),
+        '204': OpenApiResponse(description='The membership has been deleted'),
     }, tags=['memberships'], versions=['2.0']))
 class MembershipViewSet(mixins.RetrieveModelMixin, mixins.DestroyModelMixin,
     mixins.ListModelMixin, mixins.UpdateModelMixin, viewsets.GenericViewSet):
@@ -152,7 +152,7 @@ class MembershipViewSet(mixins.RetrieveModelMixin, mixins.DestroyModelMixin,
 @extend_schema_view(destroy=extend_schema(
     summary='Method deletes an invitation',
     responses={
-        '204': OpenApiResponse('The invitation has been deleted'),
+        '204': OpenApiResponse(description='The invitation has been deleted'),
     }, tags=['invitations'], versions=['2.0']))
 class InvitationViewSet(viewsets.ModelViewSet):
     queryset = Invitation.objects.all()

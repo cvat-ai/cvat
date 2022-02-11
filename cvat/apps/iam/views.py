@@ -12,6 +12,7 @@ from rest_auth.registration.views import RegisterView
 from allauth.account import app_settings as allauth_settings
 from furl import furl
 
+from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiResponse, extend_schema, inline_serializer, extend_schema_view
 
 
@@ -88,7 +89,7 @@ class ContextMiddleware:
             'url': serializers.CharField(),
         }
     ),
-    responses={'200': OpenApiResponse(description='text URL')}, tags=['auth'], versions=['2.0']))
+    responses={'200': OpenApiResponse(response=OpenApiTypes.STR, description='text URL')}, tags=['auth'], versions=['2.0']))
 class SigningView(views.APIView):
 
     def post(self, request):
