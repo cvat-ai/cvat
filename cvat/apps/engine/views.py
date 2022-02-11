@@ -198,14 +198,10 @@ class ServerViewSet(viewsets.ViewSet):
     def plugins(request):
         response = {
             'GIT_INTEGRATION': apps.is_installed('cvat.apps.dataset_repo'),
-            'ANALYTICS':       False,
-            'MODELS':          False,
-            'PREDICT':         apps.is_installed('cvat.apps.training')
+            'ANALYTICS': strtobool(os.environ.get("CVAT_ANALYTICS", '0')),
+            'MODELS': strtobool(os.environ.get("CVAT_SERVERLESS", '0')),
+            'PREDICT':False # FIXME: it is unused anymore (for UI only)
         }
-        if strtobool(os.environ.get("CVAT_ANALYTICS", '0')):
-            response['ANALYTICS'] = True
-        if strtobool(os.environ.get("CVAT_SERVERLESS", '0')):
-            response['MODELS'] = True
         return Response(response)
 
 

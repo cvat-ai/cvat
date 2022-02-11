@@ -45,7 +45,6 @@
       "tasks": [
         4
       ],
-      "training_project": null,
       "updated_date": "2021-12-14T19:55:57.483506Z",
       "url": "http://localhost:8080/api/projects/2"
     },
@@ -98,7 +97,6 @@
       "tasks": [
         3
       ],
-      "training_project": null,
       "updated_date": "2021-12-14T19:48:33.103265Z",
       "url": "http://localhost:8080/api/projects/1"
     }
