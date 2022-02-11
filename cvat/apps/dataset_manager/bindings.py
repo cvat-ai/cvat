@@ -10,8 +10,12 @@ from attr import attrib, attrs
 from collections import namedtuple
 from types import SimpleNamespace
 from pathlib import Path
-from typing import (Any, Callable, DefaultDict, Dict, List, Literal, Mapping,
+from typing import (Any, Callable, DefaultDict, Dict, List, Mapping,
     NamedTuple, OrderedDict, Tuple, Union, Set)
+try:
+    from typing import Literal
+except ImportError:
+    from typing_extensions import Literal
 
 import datumaro.components.annotation as datum_annotation
 import datumaro.components.extractor as datum_extractor
