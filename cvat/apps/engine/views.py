@@ -934,6 +934,7 @@ class JobJsonLogicFilter:
             'task_name': 'segment__task__name',
             'project_name': 'segment__task__project__name',
             'updated_date': 'segment__task__updated_date',
+            'assignee': 'assignee__username',
         }.get(var, var)
 
 @method_decorator(name='retrieve', decorator=swagger_auto_schema(operation_summary='Method returns details of a job'))

@@ -142,11 +142,20 @@
     span[aria-label=down] {
         margin-right: $grid-unit-size;
     }
+
+    > button {
+        margin-right: $grid-unit-size;
+    }
+}
+
+.cvat-jobs-page-recent-filters-list {
+    max-width: $grid-unit-size * 64;
 }
 
 .cvat-jobs-page-predefined-filters-list,
 .cvat-jobs-page-recent-filters-list,
 .cvat-jobs-page-filters-builder {
+    box-shadow: $box-shadow-base;
     background: white;
     padding: $grid-unit-size;
     border-radius: 4px;

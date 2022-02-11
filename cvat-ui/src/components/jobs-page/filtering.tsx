@@ -9,7 +9,9 @@ import {
 import AntdConfig from 'react-awesome-query-builder/lib/config/antd';
 
 import 'react-awesome-query-builder/lib/css/styles.css';
-import { FilterFilled, FilterOutlined } from '@ant-design/icons';
+import {
+    CloseOutlined, DownOutlined, FilterFilled, FilterOutlined,
+} from '@ant-design/icons';
 import Dropdown from 'antd/lib/dropdown';
 import Space from 'antd/lib/space';
 import Button from 'antd/lib/button';
@@ -82,7 +84,7 @@ const config: Config = {
 
                     return {
                         values: users.map((user: any) => ({
-                            value: user.id.toString(), title: user.username,
+                            value: user.username, title: user.username,
                         })),
                         hasMore: false,
                     };
@@ -130,6 +132,11 @@ const config: Config = {
     },
 };
 
+const defaultTree = QbUtils.checkTree(
+    QbUtils.loadTree({ id: QbUtils.uuid(), type: 'group' }),
+    config as Config,
+) as ImmutableTree;
+
 function keepFilterInLocalStorage(filter: string): void {
     if (typeof filter !== 'string') {
         return;
@@ -164,9 +171,9 @@ function receiveRecentFilters(): Record<string, string> {
         .reduce((acc: Record<string, string>, val: string) => ({ ...acc, [val]: val }), {});
 }
 
-function receivePredefinedFilters(userID: number): Record<string, string> {
+function receivePredefinedFilters(username: number): Record<string, string> {
     return {
-        'Assigned to you': '{"and":[{"==":[{"var":"assignee"},"userID"]}]}'.replace('userID', `${userID}`),
+        'Assigned to you': '{"and":[{"==":[{"var":"assignee"},"username"]}]}'.replace('username', `${username}`),
         'Not completed': '{"!":{"or":[{"==":[{"var":"state"},"completed"]},{"==":[{"var":"stage"},"acceptance"]}]}}',
     };
 }
@@ -204,6 +211,7 @@ function FiltersModalComponent(props: Props): JSX.Element {
     const [predefinedFilters, setPredefinedFilters] = useState<Record<string, string>>({});
     const [appliedFilter, setAppliedFilter] = useState<typeof defaultAppliedFilter>(defaultAppliedFilter);
     const [visibilitySetup, setVisibilitySetup] = useState<typeof defaultVisibility>(defaultVisibility);
+    const [state, setState] = useState<ImmutableTree>(defaultTree);
 
     useEffect(() => {
         setRecentFilters(receiveRecentFilters());
@@ -216,7 +224,7 @@ function FiltersModalComponent(props: Props): JSX.Element {
 
     useEffect(() => {
         if (user) {
-            setPredefinedFilters(receivePredefinedFilters(user.id));
+            setPredefinedFilters(receivePredefinedFilters(user.username));
         }
     }, [user]);
 
@@ -231,6 +239,10 @@ function FiltersModalComponent(props: Props): JSX.Element {
             return filters[0];
         }
 
+        function isValidTree(tree: ImmutableTree): boolean {
+            return (QbUtils.queryString(tree, config) || '').trim().length > 0 && QbUtils.isValidTree(tree);
+        }
+
         if (!isMounted) {
             // do not request jobs before until on mount hook is done
             return;
@@ -240,22 +252,21 @@ function FiltersModalComponent(props: Props): JSX.Element {
             onApplyFilter(unite(appliedFilter.predefined));
         } else if (appliedFilter.recent?.length) {
             onApplyFilter(unite(appliedFilter.recent));
+            // todo: change to built
+            const tree = QbUtils.loadFromJsonLogic(JSON.parse(unite(appliedFilter.recent)), config);
+            if (isValidTree(tree)) {
+                setState(tree);
+            }
         } else if (appliedFilter.built) {
             onApplyFilter(appliedFilter.built);
         } else {
             onApplyFilter(null);
+            setState(defaultTree);
         }
     }, [appliedFilter]);
 
     // TODO: users list from the server
     // TODO: add sorting
-
-    const [state, setState] = useState<ImmutableTree>(
-        QbUtils.checkTree(
-            QbUtils.loadTree({ id: QbUtils.uuid(), type: 'group' }),
-            config as Config,
-        ) as ImmutableTree,
-    );
 
     const renderBuilder = (builderProps: any): JSX.Element => (
         <div className='query-builder-container'>
@@ -265,57 +276,51 @@ function FiltersModalComponent(props: Props): JSX.Element {
         </div>
     );
 
-    const closeButton = (
+    const closeButton = (onClick: () => void): JSX.Element => (
         <Button
             size='small'
-            onClick={() => setVisibilitySetup(defaultVisibility)}
+            onClick={onClick}
         >
             Close
         </Button>
     );
 
-    const closeButtonWithinSpace = (
+    const closeButtonWithinSpace = (onClick: () => void): JSX.Element => (
         <Space className='cvat-jobs-page-filters-space'>
-            { closeButton }
+            { closeButton(onClick) }
         </Space>
     );
 
     function renderDropdownList(
-        className: string,
         listKey: 'predefined' | 'recent',
         listContent: Record<string, string>,
-    ): JSX.Element {
-        return (
-            <div className={className}>
-                {Object.keys(listContent).map((key: string): JSX.Element => (
-                    <Checkbox
-                        checked={appliedFilter[listKey]?.includes(listContent[key])}
-                        onChange={(event: CheckboxChangeEvent) => {
-                            let updatedValue: string[] | null = appliedFilter[listKey] || [];
-                            if (event.target.checked) {
-                                updatedValue.push(listContent[key]);
-                            } else {
-                                updatedValue = updatedValue
-                                    .filter((appliedValue: string) => appliedValue !== listContent[key]);
-                            }
+    ): JSX.Element[] {
+        return Object.keys(listContent).map((key: string): JSX.Element => (
+            <Checkbox
+                checked={appliedFilter[listKey]?.includes(listContent[key])}
+                onChange={(event: CheckboxChangeEvent) => {
+                    let updatedValue: string[] | null = appliedFilter[listKey] || [];
+                    if (event.target.checked) {
+                        updatedValue.push(listContent[key]);
+                    } else {
+                        updatedValue = updatedValue
+                            .filter((appliedValue: string) => appliedValue !== listContent[key]);
+                    }
 
-                            if (!updatedValue.length) {
-                                updatedValue = null;
-                            }
+                    if (!updatedValue.length) {
+                        updatedValue = null;
+                    }
 
-                            setAppliedFilter({
-                                ...defaultAppliedFilter,
-                                [listKey]: updatedValue,
-                            });
-                        }}
-                        key={key}
-                    >
-                        {key}
-                    </Checkbox>
-                ))}
-                { closeButtonWithinSpace }
-            </div>
-        );
+                    setAppliedFilter({
+                        ...defaultAppliedFilter,
+                        [listKey]: updatedValue,
+                    });
+                }}
+                key={key}
+            >
+                {key}
+            </Checkbox>
+        ));
     }
 
     return (
@@ -325,31 +330,20 @@ function FiltersModalComponent(props: Props): JSX.Element {
                 destroyPopupOnHide
                 visible={visibilitySetup.predefined}
                 placement='bottomCenter'
-                overlay={renderDropdownList('cvat-jobs-page-predefined-filters-list', 'predefined', predefinedFilters)}
+                overlay={(
+                    <div className='cvat-jobs-page-predefined-filters-list'>
+                        {renderDropdownList('predefined', predefinedFilters)}
+                        {closeButtonWithinSpace(() => setVisibilitySetup(defaultVisibility))}
+                    </div>
+                )}
             >
-                <Button type='link' onClick={() => setVisibilitySetup({ ...defaultVisibility, predefined: true })}>
-                    Predefined
+                <Button type='default' onClick={() => setVisibilitySetup({ ...defaultVisibility, predefined: true })}>
+                    Quick filters
                     { appliedFilter.predefined ?
                         <FilterFilled /> :
                         <FilterOutlined />}
                 </Button>
             </Dropdown>
-            { Object.keys(recentFilters).length ? (
-                <Dropdown
-                    trigger={['click']}
-                    placement='bottomCenter'
-                    visible={visibilitySetup.recent}
-                    destroyPopupOnHide
-                    overlay={renderDropdownList('cvat-jobs-page-recent-filters-list', 'recent', recentFilters)}
-                >
-                    <Button type='link' onClick={() => setVisibilitySetup({ ...defaultVisibility, recent: true })}>
-                        Recent
-                        { appliedFilter.recent ?
-                            <FilterFilled /> :
-                            <FilterOutlined />}
-                    </Button>
-                </Dropdown>
-            ) : null}
             <Dropdown
                 trigger={['click']}
                 placement='bottomRight'
@@ -357,6 +351,32 @@ function FiltersModalComponent(props: Props): JSX.Element {
                 destroyPopupOnHide
                 overlay={(
                     <div className='cvat-jobs-page-filters-builder'>
+                        { Object.keys(recentFilters).length ? (
+                            <Dropdown
+                                trigger={['click']}
+                                placement='bottomLeft'
+                                visible={visibilitySetup.recent}
+                                destroyPopupOnHide
+                                overlay={(
+                                    <div className='cvat-jobs-page-recent-filters-list'>
+                                        {renderDropdownList('recent', recentFilters)}
+                                        {closeButtonWithinSpace(
+                                            () => setVisibilitySetup({ ...defaultVisibility, built: true }),
+                                        )}
+                                    </div>
+                                )}
+                            >
+                                <Button
+                                    size='small'
+                                    type='text'
+                                    onClick={() => setVisibilitySetup({ built: true, recent: true, predefined: false })}
+                                >
+                                    Recent
+                                    <DownOutlined />
+                                </Button>
+                            </Dropdown>
+                        ) : null}
+
                         <Query
                             {...config}
                             onChange={(tree: ImmutableTree) => {
@@ -384,22 +404,20 @@ function FiltersModalComponent(props: Props): JSX.Element {
                             >
                                 Apply
                             </Button>
-                            { closeButton }
+                            { closeButton(() => setVisibilitySetup(defaultVisibility)) }
                         </Space>
                     </div>
                 )}
             >
-                <Button type='link' onClick={() => setVisibilitySetup({ ...defaultVisibility, built: true })}>
-                    Setup
-                    { appliedFilter.built ?
+                <Button type='default' onClick={() => setVisibilitySetup({ ...defaultVisibility, built: true })}>
+                    Filter
+                    { appliedFilter.built || appliedFilter.recent ?
                         <FilterFilled /> :
                         <FilterOutlined />}
                 </Button>
             </Dropdown>
             { (appliedFilter.built || appliedFilter.predefined || appliedFilter.recent) ? (
-                <Button type='link' onClick={() => { setAppliedFilter({ ...defaultAppliedFilter }); }}>
-                    Reset filter
-                </Button>
+                <CloseOutlined onClick={() => { setAppliedFilter({ ...defaultAppliedFilter }); }} />
             ) : null}
         </div>
     );
