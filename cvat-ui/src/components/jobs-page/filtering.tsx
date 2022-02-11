@@ -89,10 +89,10 @@ const config: Config = {
                 },
             },
         },
-        last_updated: {
+        updated_date: {
             label: 'Last updated',
             type: 'datetime',
-            operators: ['between'],
+            operators: ['between', 'greater', 'greater_or_equal', 'less', 'less_or_equal'],
         },
         id: {
             label: 'ID',
@@ -131,6 +131,10 @@ const config: Config = {
 };
 
 function keepFilterInLocalStorage(filter: string): void {
+    if (typeof filter !== 'string') {
+        return;
+    }
+
     let savedItems: string[] = [];
     try {
         savedItems = JSON.parse(localStorage.getItem(LOCAL_STORAGE_FILTERING_KEYWORD) || '[]');
