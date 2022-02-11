@@ -101,6 +101,7 @@ class UploadMixin(object):
         'Cache-Control': 'no-store'
     }
     _file_id_regex = r'(?P<file_id>\b[0-9a-f]{8}\b-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-\b[0-9a-f]{12}\b)'
+    upload_url = r'data/'
 
     def _tus_response(self, status, data=None, extra_headers=None):
         response = Response(data, status)
@@ -126,33 +127,33 @@ class UploadMixin(object):
                     metadata[splited_metadata[0]] = ""
         return metadata
 
-    def upload_data(self, request):
+    def upload_data(self, request, data_type):
         tus_request = request.headers.get('Upload-Length', None) is not None or request.method == 'OPTIONS'
         bulk_file_upload = request.headers.get('Upload-Multiple', None) is not None
         start_upload = request.headers.get('Upload-Start', None) is not None
         finish_upload = request.headers.get('Upload-Finish', None) is not None
         one_request_upload = start_upload and finish_upload
         if one_request_upload or finish_upload:
-            return self.upload_finished(request)
+            return self.upload_finished(request, data_type)
         elif start_upload:
             return Response(status=status.HTTP_202_ACCEPTED)
         elif tus_request:
-            return self.init_tus_upload(request)
+            return self.init_tus_upload(request, data_type)
         elif bulk_file_upload:
-            return self.append(request)
+            return self.append(request, data_type)
         else: # backward compatibility case - no upload headers were found
-            return self.upload_finished(request)
+            return self.upload_finished(request, data_type)
 
-    def init_tus_upload(self, request):
+    def init_tus_upload(self, request, data_type):
         if request.method == 'OPTIONS':
             return self._tus_response(status=status.HTTP_204)
         else:
-            if not self.can_upload():
+            if not self.can_upload(data_type):
                 return self._tus_response(data='Adding more data is not allowed',
                     status=status.HTTP_400_BAD_REQUEST)
             metadata = self._get_metadata(request)
             filename = metadata.get('filename', '')
-            if not self.validate_filename(filename):
+            if not self.validate_filename(filename, data_type):
                 return self._tus_response(status=status.HTTP_400_BAD_REQUEST,
                     data="File name {} is not allowed".format(filename))
 
@@ -161,7 +162,7 @@ class UploadMixin(object):
             if message_id:
                 metadata["message_id"] = base64.b64decode(message_id)
 
-            file_exists = os.path.lexists(os.path.join(self.get_upload_dir(), filename))
+            file_exists = os.path.lexists(os.path.join(self.get_upload_dir(data_type), filename))
             if file_exists:
                 return self._tus_response(status=status.HTTP_409_CONFLICT,
                     data="File with same name already exists")
@@ -171,24 +172,24 @@ class UploadMixin(object):
                 return self._tus_response(status=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
                     data="File size exceeds max limit of {} bytes".format(self._tus_max_file_size))
 
-            tus_file = TusFile.create_file(metadata, file_size, self.get_upload_dir())
+            tus_file = TusFile.create_file(metadata, file_size, self.get_upload_dir(data_type))
 
             return self._tus_response(
                 status=status.HTTP_201_CREATED,
                 extra_headers={'Location': '{}{}'.format(request.build_absolute_uri(), tus_file.file_id)})
 
-    @action(detail=True, methods=['HEAD', 'PATCH'], url_path=r'data/'+_file_id_regex)
+    @action(detail=True, methods=['HEAD', 'PATCH'], url_path=upload_url+_file_id_regex)
     def append_tus_chunk(self, request, pk, file_id):
         self.get_object() # call check_object_permissions as well
         if request.method == 'HEAD':
-            tus_file = TusFile.get_tusfile(str(file_id), self.get_upload_dir())
+            tus_file = TusFile.get_tusfile(str(file_id), self.get_upload_dir('data'))
             if tus_file:
                 return self._tus_response(status=status.HTTP_200_OK, extra_headers={
                                'Upload-Offset': tus_file.offset,
                                'Upload-Length': tus_file.file_size})
             return self._tus_response(status=status.HTTP_404_NOT_FOUND)
         else:
-            tus_file = TusFile.get_tusfile(str(file_id), self.get_upload_dir())
+            tus_file = TusFile.get_tusfile(str(file_id), self.get_upload_dir('data'))
             chunk = TusChunk(request)
 
             if chunk.offset != tus_file.offset:
@@ -206,17 +207,17 @@ class UploadMixin(object):
             return self._tus_response(status=status.HTTP_204_NO_CONTENT,
                                     extra_headers={'Upload-Offset': tus_file.offset})
 
-    def validate_filename(self, filename):
-        upload_dir = self.get_upload_dir()
+    def validate_filename(self, filename, data_type):
+        upload_dir = self.get_upload_dir(data_type)
         file_path = os.path.join(upload_dir, filename)
         return os.path.commonprefix((os.path.realpath(file_path), upload_dir)) == upload_dir
 
-    def can_upload(self):
+    def can_upload(self, data_type):
         db_model = self.get_object()
         model_data = db_model.data
         return model_data.size == 0
 
-    def get_upload_dir(self):
+    def get_upload_dir(self, data_type):
         db_model = self.get_object()
         return db_model.data.get_upload_dirname()
 
@@ -227,18 +228,18 @@ class UploadMixin(object):
         data = {k: v for k, v in serializer.validated_data.items()}
         return data.get('client_files', None);
 
-    def append(self, request):
-        if not self.can_upload():
+    def append(self, request, data_type):
+        if not self.can_upload(data_type):
             return Response(data='Adding more data is not allowed',
                 status=status.HTTP_400_BAD_REQUEST)
         client_files = self.get_request_client_files(request)
         if client_files:
-            upload_dir = self.get_upload_dir()
+            upload_dir = self.get_upload_dir(data_type)
             for client_file in client_files:
                 with open(os.path.join(upload_dir, client_file['file'].name), 'ab+') as destination:
                     destination.write(client_file['file'].read())
         return Response(status=status.HTTP_200_OK)
 
     # override this to do stuff after upload
-    def upload_finished(self, request):
+    def upload_finished(self, request, data_type):
         raise NotImplementedError('You need to implement upload_finished in UploadMixin')

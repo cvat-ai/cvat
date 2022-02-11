@@ -560,6 +560,7 @@ class TaskViewSet(UploadMixin, viewsets.ModelViewSet):
     filterset_class = TaskFilter
     ordering_fields = ("id", "name", "owner", "status", "assignee", "subset")
     iam_organization_field = 'organization'
+    upload_url = r'data/'
 
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -688,7 +689,7 @@ class TaskViewSet(UploadMixin, viewsets.ModelViewSet):
             elif task_data.size != 0:
                 return Response(data='Adding more data is not supported',
                     status=status.HTTP_400_BAD_REQUEST)
-            return self.upload_data(request)
+            return self.upload_data(request, 'data')
 
         else:
             data_type = request.query_params.get('type', None)
