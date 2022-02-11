@@ -22,3 +22,6 @@ def delete_method(username, endpoint, **kwargs):
 
 def patch_method(username, endpoint, data, **kwargs):
     return requests.patch(get_api_url(endpoint, **kwargs), json=data, auth=(username, USER_PASS))
+
+def post_method(username, endpoint, data, **kwargs):
+    return requests.post(get_api_url(endpoint, **kwargs), json=data, auth=(username, USER_PASS))

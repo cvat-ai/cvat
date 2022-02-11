@@ -14,7 +14,7 @@ import message from 'antd/lib/message';
 import Upload, { RcFile } from 'antd/lib/upload';
 
 import {
-    DownloadOutlined, InboxOutlined, LoadingOutlined, QuestionCircleFilled,
+    UploadOutlined, InboxOutlined, LoadingOutlined, QuestionCircleOutlined,
 } from '@ant-design/icons';
 
 import CVATTooltip from 'components/common/cvat-tooltip';
@@ -74,7 +74,7 @@ function ImportDatasetModal(): JSX.Element {
                                     'Labels from project will be used'
                             }
                         >
-                            <QuestionCircleFilled className='cvat-modal-import-header-question-icon' />
+                            <QuestionCircleOutlined className='cvat-modal-import-header-question-icon' />
                         </CVATTooltip>
                     </>
                 )}
@@ -114,7 +114,7 @@ function ImportDatasetModal(): JSX.Element {
                                                 disabled={disabled}
                                                 className='cvat-modal-import-dataset-option-item'
                                             >
-                                                <DownloadOutlined />
+                                                <UploadOutlined />
                                                 <Text disabled={disabled}>{importer.name}</Text>
                                                 {pending && <LoadingOutlined style={{ marginLeft: 10 }} />}
                                             </Select.Option>
