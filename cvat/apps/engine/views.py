@@ -478,7 +478,7 @@ class DataChunkGetter:
                 raise ValidationError('The frame number should be in ' +
                     f'[{start}, {stop}] range')
 
-            buf, mime = frame_provider.get_frame(self.number, self.quality)
+            buf, (mime, _) = frame_provider.get_frame(self.number, self.quality)
             return HttpResponse(buf.getvalue(), content_type=mime)
 
         elif self.type == 'preview':
