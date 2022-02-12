@@ -17,6 +17,8 @@ from cvat.apps.engine.cloud_provider import get_cloud_storage_instance, Credenti
 from cvat.apps.engine.log import slogger
 from cvat.apps.engine.utils import parse_specific_attributes
 
+from drf_spectacular.utils import OpenApiExample, extend_schema_serializer
+
 class BasicUserSerializer(serializers.ModelSerializer):
     def validate(self, data):
         if hasattr(self, 'initial_data'):
@@ -849,7 +851,7 @@ class ManifestSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         return instance.filename if instance else instance
 
-class BaseCloudStorageSerializer(serializers.ModelSerializer):
+class CloudStorageReadSerializer(serializers.ModelSerializer):
     owner = BasicUserSerializer(required=False)
     manifests = ManifestSerializer(many=True, default=[])
     class Meta:
@@ -857,7 +859,70 @@ class BaseCloudStorageSerializer(serializers.ModelSerializer):
         exclude = ['credentials']
         read_only_fields = ('created_date', 'updated_date', 'owner', 'organization')
 
-class CloudStorageSerializer(serializers.ModelSerializer):
+@extend_schema_serializer(
+    examples=[
+        OpenApiExample(
+            'Create AWS S3 cloud storage with credentials',
+            description='',
+            value={
+                'provider_type': models.CloudProviderChoice.AWS_S3,
+                'resource': 'somebucket',
+                'display_name': 'Bucket',
+                'credentials_type': models.CredentialsTypeChoice.KEY_SECRET_KEY_PAIR,
+                'specific_attributes': 'region=eu-central-1',
+                'description': 'Some description',
+                'manifests': [
+                    'manifest.jsonl'
+                ],
+
+            },
+            request_only=True,
+        ),
+        OpenApiExample(
+            'Create AWS S3 cloud storage without credentials',
+            value={
+                'provider_type': models.CloudProviderChoice.AWS_S3,
+                'resource': 'somebucket',
+                'display_name': 'Bucket',
+                'credentials_type': models.CredentialsTypeChoice.ANONYMOUS_ACCESS,
+                'manifests': [
+                    'manifest.jsonl'
+                ],
+            },
+            request_only=True,
+        ),
+        OpenApiExample(
+            'Create Azure cloud storage',
+            value={
+                'provider_type': models.CloudProviderChoice.AZURE_CONTAINER,
+                'resource': 'sonecontainer',
+                'display_name': 'Container',
+                'credentials_type': models.CredentialsTypeChoice.ACCOUNT_NAME_TOKEN_PAIR,
+                'account_name': 'someaccount',
+                'session_token': 'xxx',
+                'manifests': [
+                    'manifest.jsonl'
+                ],
+            },
+            request_only=True,
+        ),
+        OpenApiExample(
+            'Create GCS',
+            value={
+                'provider_type': models.CloudProviderChoice.GOOGLE_CLOUD_STORAGE,
+                'resource': 'somebucket',
+                'display_name': 'Bucket',
+                'credentials_type': models.CredentialsTypeChoice.KEY_FILE_PATH,
+                'key_file': 'file',
+                'manifests': [
+                    'manifest.jsonl'
+                ],
+            },
+            request_only=True,
+        )
+    ]
+)
+class CloudStorageWriteSerializer(serializers.ModelSerializer):
     owner = BasicUserSerializer(required=False)
     session_token = serializers.CharField(max_length=440, allow_blank=True, required=False)
     key = serializers.CharField(max_length=20, allow_blank=True, required=False)
