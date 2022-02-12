@@ -156,7 +156,7 @@ REST_FRAMEWORK = {
     ],
     'DEFAULT_VERSIONING_CLASS':
         'rest_framework.versioning.AcceptHeaderVersioning',
-    'ALLOWED_VERSIONS': ('1.0', '2.0'),
+    'ALLOWED_VERSIONS': ('2.0'),
     'DEFAULT_VERSION': '2.0',
     'VERSION_PARAM': 'version',
     'DEFAULT_PAGINATION_CLASS':
