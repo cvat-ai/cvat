@@ -6,7 +6,7 @@ django-auth-ldap==2.2.0
 django-compressor==2.4
 django-rq==2.3.2
 EasyProcess==0.3
-Pillow==9.0.0
+Pillow==9.0.1
 numpy==1.22.0
 python-ldap==3.4.0
 pytz==2020.1
