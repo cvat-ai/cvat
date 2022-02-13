@@ -15,15 +15,18 @@ import Space from 'antd/lib/space';
 
 interface Props {
     sortingFields: string[];
+    visible: boolean;
+    onVisibleChange(visible: boolean): void;
     onApplySorting(sorting: string | null): void;
 }
 
 function SortingModalComponent(props: Props): JSX.Element {
-    const { sortingFields: sortingFieldsProp, onApplySorting } = props;
+    const {
+        sortingFields: sortingFieldsProp, visible, onApplySorting, onVisibleChange,
+    } = props;
     const [sortingFields, setSortingFields] = useState<string[]>(sortingFieldsProp);
     const [mounted, setMounted] = useState<boolean>(false);
     const [appliedSorting, setAppliedSorting] = useState<Record<string, string>>({});
-    const [visible, setVisible] = useState<boolean>(false);
 
     useEffect(() => {
         setMounted(true);
@@ -80,32 +83,34 @@ function SortingModalComponent(props: Props): JSX.Element {
                                 >
                                     {sortingField}
                                 </Checkbox>
-                                {index > 0 ? (
-                                    <CVATTooltip overlay='Increase priority'>
-                                        <ArrowUpOutlined onClick={(event: React.MouseEvent) => {
-                                            event.stopPropagation();
-                                            const copy = [...sortingFields];
-                                            copy.splice(index - 1, 0, ...copy.splice(index, 1));
-                                            setSortingFields(copy);
-                                        }}
-                                        />
-                                    </CVATTooltip>
-                                ) : null}
-                                {sortingField in appliedSorting ? (
-                                    <CVATTooltip overlay={appliedSorting[sortingField]?.startsWith('-') ? 'Descending sort' : 'Ascending sort'}>
-                                        { caretBlock }
-                                    </CVATTooltip>
-                                ) : null }
+                                <div>
+                                    {index > 0 ? (
+                                        <CVATTooltip overlay='Increase priority'>
+                                            <ArrowUpOutlined onClick={(event: React.MouseEvent) => {
+                                                event.stopPropagation();
+                                                const copy = [...sortingFields];
+                                                copy.splice(index - 1, 0, ...copy.splice(index, 1));
+                                                setSortingFields(copy);
+                                            }}
+                                            />
+                                        </CVATTooltip>
+                                    ) : null}
+                                    {sortingField in appliedSorting ? (
+                                        <CVATTooltip overlay={appliedSorting[sortingField]?.startsWith('-') ? 'Descending sort' : 'Ascending sort'}>
+                                            { caretBlock }
+                                        </CVATTooltip>
+                                    ) : null }
+                                </div>
                             </div>
                         );
                     })}
                     <Space align='end'>
-                        <Button size='small' onClick={() => setVisible(false)}>Close</Button>
+                        <Button size='small' onClick={() => onVisibleChange(false)}>Close</Button>
                     </Space>
                 </div>
             )}
         >
-            <Button type='default' onClick={() => setVisible(true)}>
+            <Button type='default' onClick={() => onVisibleChange(true)}>
                 Sort by
                 <OrderedListOutlined />
             </Button>

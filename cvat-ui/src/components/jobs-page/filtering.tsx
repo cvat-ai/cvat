@@ -20,6 +20,12 @@ import { CombinedState } from 'reducers/interfaces';
 import Checkbox, { CheckboxChangeEvent } from 'antd/lib/checkbox/Checkbox';
 
 interface ResourceFilterProps {
+    predefinedVisible: boolean;
+    recentVisible: boolean;
+    builderVisible: boolean;
+    onPredefinedVisibleChange(visible: boolean): void;
+    onBuilderVisibleChange(visible: boolean): void;
+    onRecentVisibleChange(visible: boolean): void;
     onApplyFilter(filter: string | null): void;
 }
 
@@ -79,25 +85,17 @@ export default function ResourceFilterHOC(
         built: null,
     };
 
-    const defaultVisibility: {
-        predefined: boolean;
-        recent: boolean;
-        built: boolean;
-    } = {
-        predefined: false,
-        recent: false,
-        built: false,
-    };
-
     function ResourceFilterComponent(props: ResourceFilterProps): JSX.Element {
-        const { onApplyFilter } = props;
+        const {
+            predefinedVisible, builderVisible, recentVisible,
+            onPredefinedVisibleChange, onBuilderVisibleChange, onRecentVisibleChange, onApplyFilter,
+        } = props;
 
         const user = useSelector((state: CombinedState) => state.auth.user);
         const [isMounted, setIsMounted] = useState<boolean>(false);
         const [recentFilters, setRecentFilters] = useState<Record<string, string>>({});
         const [predefinedFilters, setPredefinedFilters] = useState<Record<string, string>>({});
         const [appliedFilter, setAppliedFilter] = useState<typeof defaultAppliedFilter>(defaultAppliedFilter);
-        const [visibilitySetup, setVisibilitySetup] = useState<typeof defaultVisibility>(defaultVisibility);
         const [state, setState] = useState<ImmutableTree>(defaultTree);
 
         useEffect(() => {
@@ -217,16 +215,16 @@ export default function ResourceFilterHOC(
             <div className='cvat-jobs-page-filters'>
                 <Dropdown
                     destroyPopupOnHide
-                    visible={visibilitySetup.predefined}
+                    visible={predefinedVisible}
                     placement='bottomCenter'
                     overlay={(
                         <div className='cvat-jobs-page-predefined-filters-list'>
                             {renderDropdownList('predefined', predefinedFilters)}
-                            {closeButtonWithinSpace(() => setVisibilitySetup(defaultVisibility))}
+                            {closeButtonWithinSpace(() => onPredefinedVisibleChange(false))}
                         </div>
                     )}
                 >
-                    <Button type='default' onClick={() => setVisibilitySetup({ ...defaultVisibility, predefined: true })}>
+                    <Button type='default' onClick={() => onPredefinedVisibleChange(true)}>
                         Quick filters
                         { appliedFilter.predefined ?
                             <FilterFilled /> :
@@ -235,20 +233,20 @@ export default function ResourceFilterHOC(
                 </Dropdown>
                 <Dropdown
                     placement='bottomRight'
-                    visible={visibilitySetup.built}
+                    visible={builderVisible}
                     destroyPopupOnHide
                     overlay={(
                         <div className='cvat-jobs-page-filters-builder'>
                             { Object.keys(recentFilters).length ? (
                                 <Dropdown
                                     placement='bottomLeft'
-                                    visible={visibilitySetup.recent}
+                                    visible={recentVisible}
                                     destroyPopupOnHide
                                     overlay={(
                                         <div className='cvat-jobs-page-recent-filters-list'>
                                             {renderDropdownList('recent', recentFilters)}
                                             {closeButtonWithinSpace(
-                                                () => setVisibilitySetup({ ...defaultVisibility, built: true }),
+                                                () => onRecentVisibleChange(false),
                                             )}
                                         </div>
                                     )}
@@ -257,7 +255,7 @@ export default function ResourceFilterHOC(
                                         size='small'
                                         type='text'
                                         onClick={
-                                            () => setVisibilitySetup({ built: true, recent: true, predefined: false })
+                                            () => onRecentVisibleChange(true)
                                         }
                                     >
                                         Recent
@@ -283,7 +281,7 @@ export default function ResourceFilterHOC(
                                         const stringified = JSON.stringify(filter);
                                         keepFilterInLocalStorage(stringified);
                                         setRecentFilters(receiveRecentFilters());
-                                        setVisibilitySetup(defaultVisibility);
+                                        onBuilderVisibleChange(false);
                                         setAppliedFilter({
                                             predefined: null,
                                             recent: null,
@@ -293,12 +291,12 @@ export default function ResourceFilterHOC(
                                 >
                                     Apply
                                 </Button>
-                                { closeButton(() => setVisibilitySetup(defaultVisibility)) }
+                                { closeButton(() => onBuilderVisibleChange(false)) }
                             </Space>
                         </div>
                     )}
                 >
-                    <Button type='default' onClick={() => setVisibilitySetup({ ...defaultVisibility, built: true })}>
+                    <Button type='default' onClick={() => onBuilderVisibleChange(true)}>
                         Filter
                         { appliedFilter.built || appliedFilter.recent ?
                             <FilterFilled /> :
