@@ -37,7 +37,7 @@ function SortingModalComponent(props: Props): JSX.Element {
             const sortingString = sortingFields
                 .filter((sortingField: string) => sortingField in appliedSorting)
                 .map((sortingField: string) => appliedSorting[sortingField])
-                .join(',').toLowerCase() || null;
+                .join(',').toLowerCase().replace(/\s/g, '_') || null;
             onApplySorting(sortingString);
         }
     }, [appliedSorting, sortingFields]);

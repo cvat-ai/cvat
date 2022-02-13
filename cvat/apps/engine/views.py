@@ -883,6 +883,17 @@ class TaskViewSet(UploadMixin, viewsets.ModelViewSet):
             filename=request.query_params.get("filename", "").lower(),
         )
 
+def get_job_viewset_lookup_field(var):
+    return {
+        'dimension': 'segment__task__dimension',
+        'task_id': 'segment__task_id',
+        'project_id': 'segment__task__project_id',
+        'task_name': 'segment__task__name',
+        'project_name': 'segment__task__project__name',
+        'updated_date': 'segment__task__updated_date',
+        'assignee': 'assignee__username',
+    }.get(var, var)
+
 class JobJsonLogicFilter:
     @classmethod
     def _build_Q(cls, rules):
@@ -899,7 +910,7 @@ class JobJsonLogicFilter:
         elif op == 'var':
             return Q(**{args + '__isnull': False})
         elif op in ['==', '<', '>', '<=', '>='] and len(args) == 2:
-            var = cls._get_lookup_field(args[0]['var'])
+            var = get_job_viewset_lookup_field(args[0]['var'])
             q_var = var + {
                 '==': '',
                 '<': '__lt',
@@ -910,13 +921,13 @@ class JobJsonLogicFilter:
             return Q(**{q_var: args[1]})
         elif op == 'in':
             if isinstance(args[0], dict):
-                var = cls._get_lookup_field(args[0]['var'])
+                var = get_job_viewset_lookup_field(args[0]['var'])
                 return Q(**{var + '__in': args[1]})
             else:
-                var = cls._get_lookup_field(args[1]['var'])
+                var = get_job_viewset_lookup_field(args[1]['var'])
                 return Q(**{var + '__contains': args[0]})
         elif op == '<=' and len(args) == 3:
-            var = cls._get_lookup_field(args[1]['var'])
+            var = get_job_viewset_lookup_field(args[1]['var'])
             return Q(**{var + '__gte': args[0]}) & Q(**{var + '__lte': args[2]})
         else:
             raise NotImplementedError(f'{op} operation with {args} arguments is not implemented')
@@ -924,18 +935,6 @@ class JobJsonLogicFilter:
     @classmethod
     def filter(cls, queryset, rules):
         return queryset.filter(cls._build_Q(rules))
-
-    @classmethod
-    def _get_lookup_field(cls, var):
-        return {
-            'dimension': 'segment__task__dimension',
-            'task_id': 'segment__task_id',
-            'project_id': 'segment__task__project_id',
-            'task_name': 'segment__task__name',
-            'project_name': 'segment__task__project__name',
-            'updated_date': 'segment__task__updated_date',
-            'assignee': 'assignee__username',
-        }.get(var, var)
 
 @method_decorator(name='retrieve', decorator=swagger_auto_schema(operation_summary='Method returns details of a job'))
 @method_decorator(name='update', decorator=swagger_auto_schema(operation_summary='Method updates a job by id'))
@@ -954,6 +953,9 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             queryset = perm.filter(queryset)
 
         order_by = self.request.query_params.get('order_by', 'id').split(',')
+        order_by = list(map(
+            lambda x: get_job_viewset_lookup_field(x) if not x.startswith('-') else '-' + get_job_viewset_lookup_field(x[1:]), order_by
+        ))
         json_rules = self.request.query_params.get('filter')
         if json_rules:
             rules = json.loads(json_rules)
