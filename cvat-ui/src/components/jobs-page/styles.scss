@@ -205,7 +205,7 @@
 .cvat-jobs-page-sorting-list {
     width: $grid-unit-size * 20;
 
-    > div {
+    > div:not(:last-child) {
         display: flex;
         justify-content: space-between;
         align-items: center;
@@ -219,25 +219,21 @@
         > div {
             > span[role=img] {
                 &:not(:last-child) {
-                    margin-left: $grid-unit-size * 2;
+                    margin-right: $grid-unit-size;
                 }
 
-                &:hover {
-                    opacity: 1;
-                }
 
-                opacity: 0.8;
+            }
+
+            > span[disabled] {
+                opacity: 0.2;
+                pointer-events: none;
             }
         }
     }
 }
 
-.cvat-jobs-filters-close {
-    position: absolute;
-    top: $grid-unit-size;
-    right: $grid-unit-size;
-}
-
+.cvat-jobs-page-sorting-space,
 .cvat-jobs-page-filters-space {
     justify-content: right;
     align-items: center;

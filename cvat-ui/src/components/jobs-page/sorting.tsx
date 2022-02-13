@@ -50,23 +50,28 @@ function SortingModalComponent(props: Props): JSX.Element {
             overlay={(
                 <div className='cvat-jobs-page-sorting-list'>
                     {sortingFields.map((sortingField: string, index: number): JSX.Element => {
-                        const onClick = (event: React.MouseEvent): void => {
-                            event.stopPropagation();
-                            if (appliedSorting[sortingField].startsWith('-')) {
-                                setAppliedSorting({
-                                    ...appliedSorting, [sortingField]: sortingField,
-                                });
-                            } else {
-                                setAppliedSorting({
-                                    ...appliedSorting, [sortingField]: `-${sortingField}`,
-                                });
+                        const isActiveField = sortingField in appliedSorting;
+                        const isAscendingField = isActiveField && !appliedSorting[sortingField]?.startsWith('-');
+                        const isDescendingField = isActiveField && !isAscendingField;
+                        const onClick = (): void => {
+                            if (isDescendingField) {
+                                setAppliedSorting({ ...appliedSorting, [sortingField]: sortingField });
+                            } else if (isAscendingField) {
+                                setAppliedSorting({ ...appliedSorting, [sortingField]: `-${sortingField}` });
                             }
                         };
 
-                        const caretBlock = appliedSorting[sortingField]?.startsWith('-') ? (
-                            <SortDescendingOutlined onClick={onClick} />
-                        ) : (
-                            <SortAscendingOutlined onClick={onClick} />
+                        const ascentDescentBlockProps = { disabled: !isActiveField, onClick };
+                        const ascentDescentBlock = (
+                            <CVATTooltip overlay={appliedSorting[sortingField]?.startsWith('-') ? 'Descending sort' : 'Ascending sort'}>
+                                {
+                                    isDescendingField ? (
+                                        <SortDescendingOutlined {...ascentDescentBlockProps} />
+                                    ) : (
+                                        <SortAscendingOutlined {...ascentDescentBlockProps} />
+                                    )
+                                }
+                            </CVATTooltip>
                         );
 
                         return (
@@ -74,11 +79,19 @@ function SortingModalComponent(props: Props): JSX.Element {
                                 <Checkbox
                                     checked={sortingField in appliedSorting}
                                     onChange={(event: CheckboxChangeEvent) => {
+                                        const copy = [...sortingFields];
+                                        const latestEnabledSortingIdx = Math.max(-1,
+                                            ...Object.keys(appliedSorting)
+                                                .map((sorting: string) => sortingFields.indexOf(sorting)));
                                         if (event.target.checked) {
                                             setAppliedSorting({ ...appliedSorting, [sortingField]: sortingField });
+                                            copy.splice(latestEnabledSortingIdx + 1, 0, ...copy.splice(index, 1));
                                         } else {
                                             setAppliedSorting(omit(appliedSorting, sortingField));
+                                            copy.splice(latestEnabledSortingIdx, 0, ...copy.splice(index, 1));
                                         }
+
+                                        setSortingFields(copy);
                                     }}
                                 >
                                     {sortingField}
@@ -86,25 +99,22 @@ function SortingModalComponent(props: Props): JSX.Element {
                                 <div>
                                     {index > 0 ? (
                                         <CVATTooltip overlay='Increase priority'>
-                                            <ArrowUpOutlined onClick={(event: React.MouseEvent) => {
-                                                event.stopPropagation();
-                                                const copy = [...sortingFields];
-                                                copy.splice(index - 1, 0, ...copy.splice(index, 1));
-                                                setSortingFields(copy);
-                                            }}
+                                            <ArrowUpOutlined
+                                                disabled={!isActiveField}
+                                                onClick={() => {
+                                                    const copy = [...sortingFields];
+                                                    copy.splice(index - 1, 0, ...copy.splice(index, 1));
+                                                    setSortingFields(copy);
+                                                }}
                                             />
                                         </CVATTooltip>
                                     ) : null}
-                                    {sortingField in appliedSorting ? (
-                                        <CVATTooltip overlay={appliedSorting[sortingField]?.startsWith('-') ? 'Descending sort' : 'Ascending sort'}>
-                                            { caretBlock }
-                                        </CVATTooltip>
-                                    ) : null }
+                                    {ascentDescentBlock}
                                 </div>
                             </div>
                         );
                     })}
-                    <Space align='end'>
+                    <Space className='cvat-jobs-page-sorting-space'>
                         <Button size='small' onClick={() => onVisibleChange(false)}>Close</Button>
                     </Space>
                 </div>

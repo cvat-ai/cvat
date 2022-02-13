@@ -49,7 +49,7 @@ function TopBarComponent(props: Props): JSX.Element {
                         onVisibleChange={(visible: boolean) => (
                             setVisibility({ ...defaultVisibility, sorting: visible })
                         )}
-                        sortingFields={['id', 'assignee']}
+                        sortingFields={['id', 'assignee', 'stage', 'state']}
                         onApplySorting={onApplySorting}
                     />
                     <FilteringComponent
