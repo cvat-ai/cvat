@@ -118,4 +118,4 @@ export const predefinedFilterValues = {
     'Assigned to me': '{"and":[{"==":[{"var":"assignee"},"<username>"]}]}',
     'Not completed': '{"!":{"or":[{"==":[{"var":"state"},"completed"]},{"==":[{"var":"stage"},"acceptance"]}]}}',
 };
-export const defaultEnabledFilters = ['Assigned to me'];
+export const defaultEnabledFilters = ['Not completed'];
