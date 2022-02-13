@@ -261,10 +261,6 @@ function FiltersModalComponent(props: Props): JSX.Element {
         }
     }, [appliedFilter]);
 
-    // TODO: add sorting
-    // TODO: users list from the server
-    // TODO: enhance this component for other pages (projects, tasks)
-
     const renderBuilder = (builderProps: any): JSX.Element => (
         <div className='query-builder-container'>
             <div className='query-builder qb-lite'>
