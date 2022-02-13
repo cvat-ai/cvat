@@ -10,7 +10,7 @@ import AntdConfig from 'react-awesome-query-builder/lib/config/antd';
 
 import 'react-awesome-query-builder/lib/css/styles.css';
 import {
-    CloseOutlined, DownOutlined, FilterFilled, FilterOutlined,
+    DownOutlined, FilterFilled, FilterOutlined,
 } from '@ant-design/icons';
 import Dropdown from 'antd/lib/dropdown';
 import Space from 'antd/lib/space';
@@ -18,9 +18,6 @@ import Button from 'antd/lib/button';
 import { useSelector } from 'react-redux';
 import { CombinedState } from 'reducers/interfaces';
 import Checkbox, { CheckboxChangeEvent } from 'antd/lib/checkbox/Checkbox';
-import getCore from 'cvat-core-wrapper';
-
-const core = getCore();
 
 const LOCAL_STORAGE_FILTERING_KEYWORD = 'jobsPageRecentFilter';
 const config: Config = {
@@ -67,28 +64,28 @@ const config: Config = {
         },
         assignee: {
             label: 'Assignee',
-            type: 'select',
+            type: 'text', // todo: change to select
             valueSources: ['value'],
             fieldSettings: {
-                useAsyncSearch: true,
-                forceAsyncSearch: true,
+                // useAsyncSearch: true,
+                // forceAsyncSearch: true,
                 // async fetch does not work for now in this library for AntdConfig
                 // but that issue was solved, see https://github.com/ukrbublik/react-awesome-query-builder/issues/616
                 // waiting for a new release, alternative is to use material design, but it is not the best option too
-                asyncFetch: async (search: string | null) => {
-                    const users = await core.users.get({
-                        limit: 10,
-                        is_active: true,
-                        ...(search ? { search } : {}),
-                    });
+                // asyncFetch: async (search: string | null) => {
+                //     const users = await core.users.get({
+                //         limit: 10,
+                //         is_active: true,
+                //         ...(search ? { search } : {}),
+                //     });
 
-                    return {
-                        values: users.map((user: any) => ({
-                            value: user.username, title: user.username,
-                        })),
-                        hasMore: false,
-                    };
-                },
+                //     return {
+                //         values: users.map((user: any) => ({
+                //             value: user.username, title: user.username,
+                //         })),
+                //         hasMore: false,
+                //     };
+                // },
             },
         },
         updated_date: {
@@ -252,7 +249,6 @@ function FiltersModalComponent(props: Props): JSX.Element {
             onApplyFilter(unite(appliedFilter.predefined));
         } else if (appliedFilter.recent?.length) {
             onApplyFilter(unite(appliedFilter.recent));
-            // todo: change to built
             const tree = QbUtils.loadFromJsonLogic(JSON.parse(unite(appliedFilter.recent)), config);
             if (isValidTree(tree)) {
                 setState(tree);
@@ -265,8 +261,9 @@ function FiltersModalComponent(props: Props): JSX.Element {
         }
     }, [appliedFilter]);
 
-    // TODO: users list from the server
     // TODO: add sorting
+    // TODO: users list from the server
+    // TODO: enhance this component for other pages (projects, tasks)
 
     const renderBuilder = (builderProps: any): JSX.Element => (
         <div className='query-builder-container'>
@@ -326,7 +323,6 @@ function FiltersModalComponent(props: Props): JSX.Element {
     return (
         <div className='cvat-jobs-page-filters'>
             <Dropdown
-                trigger={['click']}
                 destroyPopupOnHide
                 visible={visibilitySetup.predefined}
                 placement='bottomCenter'
@@ -345,7 +341,6 @@ function FiltersModalComponent(props: Props): JSX.Element {
                 </Button>
             </Dropdown>
             <Dropdown
-                trigger={['click']}
                 placement='bottomRight'
                 visible={visibilitySetup.built}
                 destroyPopupOnHide
@@ -353,7 +348,6 @@ function FiltersModalComponent(props: Props): JSX.Element {
                     <div className='cvat-jobs-page-filters-builder'>
                         { Object.keys(recentFilters).length ? (
                             <Dropdown
-                                trigger={['click']}
                                 placement='bottomLeft'
                                 visible={visibilitySetup.recent}
                                 destroyPopupOnHide
@@ -369,7 +363,9 @@ function FiltersModalComponent(props: Props): JSX.Element {
                                 <Button
                                     size='small'
                                     type='text'
-                                    onClick={() => setVisibilitySetup({ built: true, recent: true, predefined: false })}
+                                    onClick={
+                                        () => setVisibilitySetup({ built: true, recent: true, predefined: false })
+                                    }
                                 >
                                     Recent
                                     <DownOutlined />
@@ -416,9 +412,14 @@ function FiltersModalComponent(props: Props): JSX.Element {
                         <FilterOutlined />}
                 </Button>
             </Dropdown>
-            { (appliedFilter.built || appliedFilter.predefined || appliedFilter.recent) ? (
-                <CloseOutlined onClick={() => { setAppliedFilter({ ...defaultAppliedFilter }); }} />
-            ) : null}
+            <Button
+                disabled={!(appliedFilter.built || appliedFilter.predefined || appliedFilter.recent)}
+                size='small'
+                type='link'
+                onClick={() => { setAppliedFilter({ ...defaultAppliedFilter }); }}
+            >
+                Clear filters
+            </Button>
         </div>
     );
 }

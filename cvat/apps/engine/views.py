@@ -943,21 +943,23 @@ class JobJsonLogicFilter:
     operation_summary='Methods does a partial update of chosen fields in a job'))
 class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     mixins.RetrieveModelMixin, mixins.UpdateModelMixin):
-    queryset = Job.objects.all().order_by('id')
+    queryset = Job.objects.all()
     iam_organization_field = 'segment__task__organization'
 
     def get_queryset(self):
         queryset = super().get_queryset()
+
         if self.action == 'list':
             perm = JobPermission.create_list(self.request)
             queryset = perm.filter(queryset)
 
+        order_by = self.request.query_params.get('order_by', 'id').split(',')
         json_rules = self.request.query_params.get('filter')
         if json_rules:
             rules = json.loads(json_rules)
             queryset = JobJsonLogicFilter.filter(queryset, rules)
 
-        return queryset
+        return queryset.order_by(*order_by)
 
     def get_serializer_class(self):
         if self.request.method in SAFE_METHODS:

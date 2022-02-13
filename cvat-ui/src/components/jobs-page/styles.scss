@@ -136,7 +136,6 @@
 
 .cvat-jobs-page-filters {
     display: flex;
-    justify-content: space-between;
     align-items: center;
 
     span[aria-label=down] {
@@ -145,6 +144,10 @@
 
     > button {
         margin-right: $grid-unit-size;
+
+        &:last-child {
+            margin-right: 0;
+        }
     }
 }
 
@@ -152,8 +155,6 @@
     max-width: $grid-unit-size * 64;
 }
 
-.cvat-jobs-page-predefined-filters-list,
-.cvat-jobs-page-recent-filters-list,
 .cvat-jobs-page-filters-builder {
     box-shadow: $box-shadow-base;
     background: white;
@@ -186,6 +187,17 @@
     }
 }
 
+.cvat-jobs-page-sorting-list,
+.cvat-jobs-page-predefined-filters-list,
+.cvat-jobs-page-recent-filters-list,
+.cvat-jobs-page-filters-builder {
+    box-shadow: $box-shadow-base;
+    background: white;
+    padding: $grid-unit-size;
+    border-radius: 4px;
+}
+
+.cvat-jobs-page-sorting-list,
 .cvat-jobs-page-predefined-filters-list,
 .cvat-jobs-page-recent-filters-list {
     display: flex;
@@ -211,4 +223,37 @@
     justify-content: right;
     align-items: center;
     display: flex;
+}
+
+.cvat-jobs-page-sorting-list {
+    width: $grid-unit-size * 16;
+    .ant-checkbox-wrapper {
+        > span:nth-child(2) {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+
+            span[role='img'] {
+                pointer-events: none;
+            }
+        }
+    }
+}
+
+.cvat-jobs-page-top-bar {
+    > div {
+        display: flex;
+        justify-content: space-between;
+
+        > div {
+            display: flex;
+            justify-content: end;
+            align-items: center;
+
+            > button {
+                margin-right: $grid-unit-size;
+            }
+        }
+    }
 }

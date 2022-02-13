@@ -65,6 +65,15 @@ function JobsPageComponent(): JSX.Element {
                         }),
                     );
                 }}
+                onUpdateSorting={(sorting: string | null) => {
+                    dispatch(
+                        getJobsAsync({
+                            ...query,
+                            order_by: sorting,
+                            page: 1,
+                        }),
+                    );
+                }}
             />
             { fetching ? (
                 <Spin size='large' className='cvat-spinner' />

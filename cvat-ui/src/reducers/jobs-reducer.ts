@@ -11,6 +11,7 @@ const defaultState: JobsState = {
     query: {
         page: 1,
         filter: null,
+        order_by: null,
     },
     current: [],
     previews: [],
