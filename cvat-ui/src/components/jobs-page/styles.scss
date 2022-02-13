@@ -156,10 +156,10 @@
 }
 
 .cvat-jobs-page-filters-builder {
-    box-shadow: $box-shadow-base;
     background: white;
     padding: $grid-unit-size;
     border-radius: 4px;
+    box-shadow: $box-shadow-base;
 
     // redefine default awesome react query builder styles below
     .query-builder {
@@ -195,6 +195,7 @@
     border-radius: 4px;
     display: flex;
     flex-direction: column;
+    box-shadow: $box-shadow-base;
 
     .ant-checkbox-wrapper {
         margin-bottom: $grid-unit-size;
@@ -221,8 +222,6 @@
                 &:not(:last-child) {
                     margin-right: $grid-unit-size;
                 }
-
-
             }
 
             > span[disabled] {
