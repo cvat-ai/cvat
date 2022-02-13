@@ -15,11 +15,11 @@ import Space from 'antd/lib/space';
 
 interface Props {
     sortingFields: string[];
-    onUpdateSorting(sorting: string | null): void;
+    onApplySorting(sorting: string | null): void;
 }
 
 function SortingModalComponent(props: Props): JSX.Element {
-    const { sortingFields: sortingFieldsProp, onUpdateSorting } = props;
+    const { sortingFields: sortingFieldsProp, onApplySorting } = props;
     const [sortingFields, setSortingFields] = useState<string[]>(sortingFieldsProp);
     const [mounted, setMounted] = useState<boolean>(false);
     const [appliedSorting, setAppliedSorting] = useState<Record<string, string>>({});
@@ -35,7 +35,7 @@ function SortingModalComponent(props: Props): JSX.Element {
                 .filter((sortingField: string) => sortingField in appliedSorting)
                 .map((sortingField: string) => appliedSorting[sortingField])
                 .join(',').toLowerCase() || null;
-            onUpdateSorting(sortingString);
+            onApplySorting(sortingString);
         }
     }, [appliedSorting, sortingFields]);
 
@@ -67,9 +67,8 @@ function SortingModalComponent(props: Props): JSX.Element {
                         );
 
                         return (
-                            <div>
+                            <div key={sortingField}>
                                 <Checkbox
-                                    key={sortingField}
                                     checked={sortingField in appliedSorting}
                                     onChange={(event: CheckboxChangeEvent) => {
                                         if (event.target.checked) {

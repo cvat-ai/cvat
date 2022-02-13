@@ -65,7 +65,7 @@ function JobsPageComponent(): JSX.Element {
                         }),
                     );
                 }}
-                onUpdateSorting={(sorting: string | null) => {
+                onApplySorting={(sorting: string | null) => {
                     dispatch(
                         getJobsAsync({
                             ...query,
