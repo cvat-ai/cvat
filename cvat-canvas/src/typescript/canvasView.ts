@@ -1302,7 +1302,9 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
                 if (model.imageDeleted) {
                     this.deletedImageOverlay.style.display = null;
-                    this.background.setAttribute('prevFilter', this.background.style.filter);
+                    if (!this.background.hasAttribute('prevFilter')) {
+                        this.background.setAttribute('prevFilter', this.background.style.filter);
+                    }
                     this.background.style.filter = 'saturate(0)';
                 } else {
                     if (this.background.hasAttribute('prevFilter')) {

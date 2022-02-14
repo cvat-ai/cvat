@@ -35,7 +35,6 @@ const defaultState: SettingsState = {
         textFontSize: 14,
         textPosition: 'auto',
         textContent: 'id,source,label,attributes,descriptions',
-        showDeletedFrames: false,
         toolsBlockerState: {
             algorithmsLocked: false,
             buttonVisible: false,
@@ -48,6 +47,7 @@ const defaultState: SettingsState = {
         resetZoom: false,
         rotateAll: false,
         smoothImage: true,
+        showDeletedFrames: false,
         grid: false,
         gridSize: 100,
         gridColor: GridColor.White,
@@ -357,8 +357,8 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
         case SettingsActionTypes.SWITCH_SHOWING_DELETED_FRAMES: {
             return {
                 ...state,
-                workspace: {
-                    ...state.workspace,
+                player: {
+                    ...state.player,
                     showDeletedFrames: action.payload.showDeletedFrames,
                 },
             };

@@ -116,12 +116,11 @@ function mapStateToProps(state: CombinedState): StateToProps {
             predictor,
         },
         settings: {
-            player: { frameSpeed, frameStep },
+            player: { frameSpeed, frameStep, showDeletedFrames },
             workspace: {
                 autoSave,
                 autoSaveInterval,
                 toolsBlockerState,
-                showDeletedFrames,
             },
         },
         shortcuts: { keyMap, normalizedKeyMap },

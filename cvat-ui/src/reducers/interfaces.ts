@@ -686,6 +686,7 @@ export interface PlayerSettingsState {
     resetZoom: boolean;
     rotateAll: boolean;
     smoothImage: boolean;
+    showDeletedFrames: boolean;
     grid: boolean;
     gridSize: number;
     gridColor: GridColor;
@@ -706,7 +707,6 @@ export interface WorkspaceSettingsState {
     defaultApproxPolyAccuracy: number;
     toolsBlockerState: ToolsBlockerState;
     textFontSize: number;
-    showDeletedFrames: boolean;
     textPosition: 'auto' | 'center';
     textContent: string;
 }

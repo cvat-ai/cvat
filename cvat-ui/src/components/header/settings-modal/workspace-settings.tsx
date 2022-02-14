@@ -23,7 +23,6 @@ interface Props {
     aamZoomMargin: number;
     showAllInterpolationTracks: boolean;
     showObjectsTextAlways: boolean;
-    showDeletedFrames: boolean;
     automaticBordering: boolean;
     intelligentPolygonCrop: boolean;
     defaultApproxPolyAccuracy: number;
@@ -36,7 +35,6 @@ interface Props {
     onChangeDefaultApproxPolyAccuracy(approxPolyAccuracy: number): void;
     onSwitchShowingInterpolatedTracks(enabled: boolean): void;
     onSwitchShowingObjectsTextAlways(enabled: boolean): void;
-    onSwitchShowingDeletedFrames(enabled: boolean): void;
     onSwitchAutomaticBordering(enabled: boolean): void;
     onSwitchIntelligentPolygonCrop(enabled: boolean): void;
     onChangeTextFontSize(fontSize: number): void;
@@ -51,7 +49,6 @@ function WorkspaceSettingsComponent(props: Props): JSX.Element {
         aamZoomMargin,
         showAllInterpolationTracks,
         showObjectsTextAlways,
-        showDeletedFrames,
         automaticBordering,
         intelligentPolygonCrop,
         defaultApproxPolyAccuracy,
@@ -65,7 +62,6 @@ function WorkspaceSettingsComponent(props: Props): JSX.Element {
         onSwitchShowingObjectsTextAlways,
         onSwitchAutomaticBordering,
         onSwitchIntelligentPolygonCrop,
-        onSwitchShowingDeletedFrames,
         onChangeDefaultApproxPolyAccuracy,
         onChangeTextFontSize,
         onChangeTextPosition,
@@ -126,22 +122,6 @@ function WorkspaceSettingsComponent(props: Props): JSX.Element {
                     </Row>
                     <Row>
                         <Text type='secondary'> Show hidden interpolated objects in the side panel</Text>
-                    </Row>
-                </Col>
-                <Col span={12} className='cvat-workspace-settings-show-deleted'>
-                    <Row>
-                        <Checkbox
-                            className='cvat-text-color'
-                            checked={showDeletedFrames}
-                            onChange={(event: CheckboxChangeEvent): void => {
-                                onSwitchShowingDeletedFrames(event.target.checked);
-                            }}
-                        >
-                            Show deleted frames
-                        </Checkbox>
-                    </Row>
-                    <Row>
-                        <Text type='secondary'>You will be able to restore deleted frame</Text>
                     </Row>
                 </Col>
             </Row>

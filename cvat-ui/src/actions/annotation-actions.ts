@@ -992,7 +992,8 @@ export function getJobAsync(tid: number, jid: number, initialFrame: number, init
             const filters = initialFilters;
             const {
                 settings: {
-                    workspace: { showAllInterpolationTracks, showDeletedFrames },
+                    workspace: { showAllInterpolationTracks },
+                    player: { showDeletedFrames },
                 },
             } = state;
 
@@ -1408,7 +1409,7 @@ export function searchAnnotationsAsync(sessionInstance: any, frameFrom: number, 
         try {
             const {
                 settings: {
-                    workspace: { showDeletedFrames },
+                    player: { showDeletedFrames },
                 },
             } = getState();
             const { filters } = receiveAnnotationsParameters();
@@ -1452,7 +1453,7 @@ export function searchEmptyFrameAsync(sessionInstance: any, frameFrom: number, f
         try {
             const {
                 settings: {
-                    workspace: { showDeletedFrames },
+                    player: { showDeletedFrames },
                 },
             } = getState();
             let frame: number;
@@ -1783,7 +1784,7 @@ export function deleteFrameAsync(): ThunkAction {
                 },
             },
             settings: {
-                workspace: { showDeletedFrames },
+                player: { showDeletedFrames },
             },
         } = state;
 
@@ -1795,16 +1796,16 @@ export function deleteFrameAsync(): ThunkAction {
             await jobInstance.frames.delete(frameData.number);
             const data = await jobInstance.frames.get(frameData.number);
 
+            dispatch({
+                type: AnnotationActionTypes.DELETE_FRAME_SUCCESS,
+                payload: { data },
+            });
+
             if (!showDeletedFrames) {
                 dispatch(searchNonDeletedFrameAsync(
                     frameData.number, frameData.stopFrame, frameData.startFrame,
                 ));
             }
-            dispatch({
-                type: AnnotationActionTypes.DELETE_FRAME_SUCCESS,
-                payload: { data: showDeletedFrames ? data : null },
-
-            });
         } catch (error) {
             dispatch({
                 type: AnnotationActionTypes.DELETE_FRAME_FAILED,

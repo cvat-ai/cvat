@@ -1040,6 +1040,9 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                     db_data.deleted_frames,
                 ))
                 serializer.save()
+                db_job.segment.task.save()
+                if db_job.segment.task.project:
+                    db_job.segment.task.project.save()
                 db_data.refresh_from_db()
 
         if hasattr(db_data, 'video'):

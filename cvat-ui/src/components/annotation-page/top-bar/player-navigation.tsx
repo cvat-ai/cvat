@@ -61,6 +61,7 @@ function PlayerNavigation(props: Props): JSX.Element {
         if (!playing) {
             modal.confirm({
                 content: 'Do you want to delete this frame?',
+                className: 'cvat-modal-delete-frame',
                 okText: 'Delete',
                 okType: 'danger',
                 onOk: () => onDeleteFrame(),

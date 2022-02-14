@@ -1265,7 +1265,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     ...state.player,
                     frame: {
                         ...state.player.frame,
-                        data: action.payload.data ? action.payload.data : state.player.frame.data,
+                        data: action.payload.data,
                         fetching: false,
                     },
                 },
