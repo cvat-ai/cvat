@@ -17,6 +17,9 @@ from cvat.apps.engine.models import Task as TaskModel
 from cvat.apps.engine.serializers import LabeledDataSerializer
 from cvat.apps.engine.models import ShapeType, SourceType
 
+from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiResponse, OpenApiParameter
+from drf_spectacular.types import OpenApiTypes
+
 class LambdaType(Enum):
     DETECTOR = "detector"
     INTERACTOR = "interactor"
@@ -228,7 +231,6 @@ class LambdaFunction:
 
         return base64.b64encode(image[0].getvalue()).decode('utf-8')
 
-
 class LambdaQueue:
     def _get_queue(self):
         QUEUE_NAME = "low"
@@ -285,7 +287,6 @@ class LambdaQueue:
                 code=status.HTTP_404_NOT_FOUND)
 
         return LambdaJob(job)
-
 
 class LambdaJob:
     def __init__(self, job):
@@ -552,10 +553,19 @@ def return_response(success_code=status.HTTP_200_OK):
         return func_wrapper
     return wrap_response
 
+@extend_schema_view(retrieve=extend_schema(
+    summary='Method returns the information about the function',
+    responses={
+        '200': OpenApiResponse(response=OpenApiTypes.OBJECT, description='Information about the function'),
+    },
+    tags=['lambda'], versions=['2.0']))
+@extend_schema_view(list=extend_schema(
+    summary='Method returns a list of functions', tags=['lambda'], versions=['2.0']))
 class FunctionViewSet(viewsets.ViewSet):
     lookup_value_regex = '[a-zA-Z0-9_.-]+'
     lookup_field = 'func_id'
     iam_organization_field = None
+    serializer_class = None
 
     @return_response()
     def list(self, request):
@@ -585,8 +595,24 @@ class FunctionViewSet(viewsets.ViewSet):
 
         return lambda_func.invoke(db_task, request.data)
 
+@extend_schema_view(retrieve=extend_schema(
+    summary='Method returns the status of the request',
+    parameters=[
+        # specify correct type
+        OpenApiParameter('id', location=OpenApiParameter.PATH, type=OpenApiTypes.INT,
+            description='Request id'),
+    ],
+    tags=['lambda'], versions=['2.0']))
+@extend_schema_view(list=extend_schema(
+    summary='Method returns a list of requests', tags=['lambda'], versions=['2.0']))
+#TODO
+@extend_schema_view(create=extend_schema(
+    summary='Method calls the function', tags=['lambda'], versions=['2.0']))
+@extend_schema_view(delete=extend_schema(
+    summary='Method cancels the request', tags=['lambda'], versions=['2.0']))
 class RequestViewSet(viewsets.ViewSet):
     iam_organization_field = None
+    serializer_class = None
 
     @return_response()
     def list(self, request):

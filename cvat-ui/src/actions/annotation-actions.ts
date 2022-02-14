@@ -733,20 +733,22 @@ export function changeFrameAsync(
                 return;
             }
 
-            // Start async requests
-            await job.logger.log(LogType.changeFrame, {
-                from: frame,
-                to: toFrame,
-            });
             const data = await job.frames.get(toFrame, fillBuffer, frameStep);
             const states = await job.annotations.get(toFrame, showAllInterpolationTracks, filters);
 
             if (!isAbleToChangeFrame()) {
-                // while doing async actions above, canvas can become used by user in another way
-                // so, we need additional check and if it is used, we do not update state
+                // while doing async actions above, canvas can become used by a user in another way
+                // so, we need an additional check and if it is used, we do not update state
                 dispatch(abortAction());
                 return;
             }
+
+            // commit the latest job frame to local storage
+            localStorage.setItem(`Job_${job.id}_frame`, `${toFrame}`);
+            await job.logger.log(LogType.changeFrame, {
+                from: frame,
+                to: toFrame,
+            });
 
             const [minZ, maxZ] = computeZRange(states);
             const currentTime = new Date().getTime();

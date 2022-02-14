@@ -566,7 +566,7 @@ class ProjectExporter(_ExporterBase, _ProjectBackupBase):
     def _write_manifest(self, zip_object):
         def serialize_project():
             project_serializer = ProjectSerializer(self._db_project)
-            for field in ('assignee', 'owner', 'tasks', 'training_project', 'url'):
+            for field in ('assignee', 'owner', 'tasks', 'url'):
                 project_serializer.fields.pop(field)
 
             project = self._prepare_project_meta(project_serializer.data)
