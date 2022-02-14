@@ -39,7 +39,7 @@ task or project and task specification and annotations with the following struct
 
 ### Backup API
 
-- endpoint: `/v1/tasks/{id}/backup` or `/v1/projects/{id}/backup`
+- endpoint: `/tasks/{id}/backup` or `/projects/{id}/backup`
 - method: `GET`
 - responses: 202, 201 with zip archive payload
 

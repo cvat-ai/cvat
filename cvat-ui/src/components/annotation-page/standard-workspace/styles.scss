@@ -260,6 +260,10 @@
     width: 100%;
 }
 
+.cvat-opencv-tracking-label-select {
+    @extend .cvat-opencv-tracker-select;
+}
+
 .cvat-opencv-tracker-content {
     margin-top: $grid-unit-size;
 }

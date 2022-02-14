@@ -13,7 +13,6 @@ from django.contrib.auth.models import User
 from django.core.files.storage import FileSystemStorage
 from django.db import models
 from django.db.models.fields import FloatField
-from django.utils.translation import gettext_lazy as _
 from cvat.apps.engine.utils import parse_specific_attributes
 from cvat.apps.organizations.models import Organization
 
@@ -44,6 +43,10 @@ class StatusChoice(str, Enum):
     @classmethod
     def choices(cls):
         return tuple((x.value, x.name) for x in cls)
+
+    @classmethod
+    def list(cls):
+        return list(map(lambda x: x.value, cls))
 
     def __str__(self):
         return self.value
@@ -258,19 +261,6 @@ class Image(models.Model):
     class Meta:
         default_permissions = ()
 
-
-class TrainingProject(models.Model):
-    class ProjectClass(models.TextChoices):
-        DETECTION = 'OD', _('Object Detection')
-
-    host = models.CharField(max_length=256)
-    username = models.CharField(max_length=256)
-    password = models.CharField(max_length=256)
-    training_id = models.CharField(max_length=64)
-    enabled = models.BooleanField(null=True)
-    project_class = models.CharField(max_length=2, choices=ProjectClass.choices, null=True, blank=True)
-
-
 class Project(models.Model):
 
     name = SafeCharField(max_length=256)
@@ -285,7 +275,6 @@ class Project(models.Model):
                               default=StatusChoice.ANNOTATION)
     organization = models.ForeignKey(Organization, null=True, default=None,
         blank=True, on_delete=models.SET_NULL, related_name="projects")
-    training_project = models.ForeignKey(TrainingProject, null=True, blank=True, on_delete=models.SET_NULL)
 
     def get_project_dirname(self):
         return os.path.join(settings.PROJECTS_ROOT, str(self.id))
@@ -352,13 +341,6 @@ class Task(models.Model):
 
     def __str__(self):
         return self.name
-
-
-class TrainingProjectImage(models.Model):
-    task = models.ForeignKey(Task, on_delete=models.CASCADE)
-    idx = models.PositiveIntegerField()
-    training_image_id = models.CharField(max_length=64)
-
 
 # Redefined a couple of operation for FileSystemStorage to avoid renaming
 # or other side effects.
@@ -463,12 +445,6 @@ class Label(models.Model):
     class Meta:
         default_permissions = ()
         unique_together = ('task', 'name')
-
-
-class TrainingProjectLabel(models.Model):
-    cvat_label = models.ForeignKey(Label, on_delete=models.CASCADE, related_name='training_project_label')
-    training_label_id = models.CharField(max_length=64)
-
 
 class AttributeType(str, Enum):
     CHECKBOX = 'checkbox'

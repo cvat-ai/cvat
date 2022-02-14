@@ -32,5 +32,10 @@
             "name": "cvat",
             "database": "${workspaceFolder:cvat}/db.sqlite3"
         }
-    ]
+    ],
+    "python.testing.pytestArgs": [
+        "tests"
+    ],
+    "python.testing.unittestEnabled": false,
+    "python.testing.pytestEnabled": true
 }

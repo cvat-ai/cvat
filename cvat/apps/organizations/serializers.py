@@ -85,7 +85,8 @@ class InvitationWriteSerializer(serializers.ModelSerializer):
                 f'with {membership_data["user"]["email"]} email. It is not '
                 f'a valid email in the system.')
 
-        membership, created = Membership.objects.get_or_create(**membership_data,
+        membership, created = Membership.objects.get_or_create(
+            defaults=membership_data,
             user=user, organization=organization)
         if not created:
             raise serializers.ValidationError('The user is a member of '

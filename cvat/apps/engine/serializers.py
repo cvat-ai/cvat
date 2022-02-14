@@ -17,6 +17,8 @@ from cvat.apps.engine.cloud_provider import get_cloud_storage_instance, Credenti
 from cvat.apps.engine.log import slogger
 from cvat.apps.engine.utils import parse_specific_attributes
 
+from drf_spectacular.utils import OpenApiExample, extend_schema_serializer
+
 class BasicUserSerializer(serializers.ModelSerializer):
     def validate(self, data):
         if hasattr(self, 'initial_data'):
@@ -560,14 +562,6 @@ class ProjectSearchSerializer(serializers.ModelSerializer):
         fields = ('id', 'name')
         read_only_fields = ('name',)
 
-
-class TrainingProjectSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = models.TrainingProject
-        fields = ('host', 'username', 'password', 'enabled', 'project_class')
-        write_once_fields = ('host', 'username', 'password', 'project_class')
-
-
 class ProjectSerializer(serializers.ModelSerializer):
     labels = LabelSerializer(many=True, source='label_set', partial=True, default=[])
     owner = BasicUserSerializer(required=False, read_only=True)
@@ -575,15 +569,13 @@ class ProjectSerializer(serializers.ModelSerializer):
     assignee = BasicUserSerializer(allow_null=True, required=False)
     assignee_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)
     task_subsets = serializers.ListField(child=serializers.CharField(), required=False)
-    training_project = TrainingProjectSerializer(required=False, allow_null=True)
     dimension = serializers.CharField(max_length=16, required=False)
 
     class Meta:
         model = models.Project
         fields = ('url', 'id', 'name', 'labels', 'tasks', 'owner', 'assignee',
             'owner_id', 'assignee_id', 'bug_tracker', 'task_subsets',
-            'created_date', 'updated_date', 'status', 'training_project',
-            'dimension', 'organization')
+            'created_date', 'updated_date', 'status', 'dimension', 'organization')
         read_only_fields = ('created_date', 'updated_date', 'status', 'owner',
             'assignee', 'task_subsets', 'dimension', 'organization', 'tasks')
 
@@ -598,17 +590,7 @@ class ProjectSerializer(serializers.ModelSerializer):
     # pylint: disable=no-self-use
     def create(self, validated_data):
         labels = validated_data.pop('label_set')
-        training_data = validated_data.pop('training_project', {})
-        if training_data.get('enabled'):
-            host = training_data.pop('host').strip('/')
-            username = training_data.pop('username').strip()
-            password = training_data.pop('password').strip()
-            tr_p = models.TrainingProject.objects.create(**training_data,
-                                                         host=host, username=username, password=password)
-            db_project = models.Project.objects.create(**validated_data,
-                                                       training_project=tr_p)
-        else:
-            db_project = models.Project.objects.create(**validated_data)
+        db_project = models.Project.objects.create(**validated_data)
         label_colors = list()
         for label in labels:
             if label.get('id', None):
@@ -872,7 +854,7 @@ class ManifestSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         return instance.filename if instance else instance
 
-class BaseCloudStorageSerializer(serializers.ModelSerializer):
+class CloudStorageReadSerializer(serializers.ModelSerializer):
     owner = BasicUserSerializer(required=False)
     manifests = ManifestSerializer(many=True, default=[])
     class Meta:
@@ -880,7 +862,70 @@ class BaseCloudStorageSerializer(serializers.ModelSerializer):
         exclude = ['credentials']
         read_only_fields = ('created_date', 'updated_date', 'owner', 'organization')
 
-class CloudStorageSerializer(serializers.ModelSerializer):
+@extend_schema_serializer(
+    examples=[
+        OpenApiExample(
+            'Create AWS S3 cloud storage with credentials',
+            description='',
+            value={
+                'provider_type': models.CloudProviderChoice.AWS_S3,
+                'resource': 'somebucket',
+                'display_name': 'Bucket',
+                'credentials_type': models.CredentialsTypeChoice.KEY_SECRET_KEY_PAIR,
+                'specific_attributes': 'region=eu-central-1',
+                'description': 'Some description',
+                'manifests': [
+                    'manifest.jsonl'
+                ],
+
+            },
+            request_only=True,
+        ),
+        OpenApiExample(
+            'Create AWS S3 cloud storage without credentials',
+            value={
+                'provider_type': models.CloudProviderChoice.AWS_S3,
+                'resource': 'somebucket',
+                'display_name': 'Bucket',
+                'credentials_type': models.CredentialsTypeChoice.ANONYMOUS_ACCESS,
+                'manifests': [
+                    'manifest.jsonl'
+                ],
+            },
+            request_only=True,
+        ),
+        OpenApiExample(
+            'Create Azure cloud storage',
+            value={
+                'provider_type': models.CloudProviderChoice.AZURE_CONTAINER,
+                'resource': 'sonecontainer',
+                'display_name': 'Container',
+                'credentials_type': models.CredentialsTypeChoice.ACCOUNT_NAME_TOKEN_PAIR,
+                'account_name': 'someaccount',
+                'session_token': 'xxx',
+                'manifests': [
+                    'manifest.jsonl'
+                ],
+            },
+            request_only=True,
+        ),
+        OpenApiExample(
+            'Create GCS',
+            value={
+                'provider_type': models.CloudProviderChoice.GOOGLE_CLOUD_STORAGE,
+                'resource': 'somebucket',
+                'display_name': 'Bucket',
+                'credentials_type': models.CredentialsTypeChoice.KEY_FILE_PATH,
+                'key_file': 'file',
+                'manifests': [
+                    'manifest.jsonl'
+                ],
+            },
+            request_only=True,
+        )
+    ]
+)
+class CloudStorageWriteSerializer(serializers.ModelSerializer):
     owner = BasicUserSerializer(required=False)
     session_token = serializers.CharField(max_length=440, allow_blank=True, required=False)
     key = serializers.CharField(max_length=20, allow_blank=True, required=False)
