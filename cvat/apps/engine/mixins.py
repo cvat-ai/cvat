@@ -26,6 +26,7 @@ class TusFile:
         self.offset = cache.get("tus-uploads/{}/offset".format(file_id))
 
     def init_file(self):
+        os.makedirs(self.upload_dir, exist_ok=True)
         file_path = os.path.join(self.upload_dir, self.file_id)
         with open(file_path, 'wb') as file:
             file.seek(self.file_size - 1)
@@ -101,7 +102,7 @@ class UploadMixin(object):
         'Cache-Control': 'no-store'
     }
     _file_id_regex = r'(?P<file_id>\b[0-9a-f]{8}\b-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-\b[0-9a-f]{12}\b)'
-    upload_url = r'data/'
+    upload_url = r'((data/)|(annotations/))'
 
     def _tus_response(self, status, data=None, extra_headers=None):
         response = Response(data, status)
@@ -126,6 +127,12 @@ class UploadMixin(object):
                 else:
                     metadata[splited_metadata[0]] = ""
         return metadata
+
+    def _get_chunk_data_type(self, request):
+        path_elements = request.path.split('/')
+        # When we use TUS chunk upload we consider path structure as <protocol>://<domain>/.../<data type>/<file id>
+        chunk_data_type = path_elements[-2]
+        return chunk_data_type
 
     def upload_data(self, request, data_type):
         tus_request = request.headers.get('Upload-Length', None) is not None or request.method == 'OPTIONS'
@@ -180,16 +187,16 @@ class UploadMixin(object):
 
     @action(detail=True, methods=['HEAD', 'PATCH'], url_path=upload_url+_file_id_regex)
     def append_tus_chunk(self, request, pk, file_id):
-        self.get_object() # call check_object_permissions as well
+        data_type = self._get_chunk_data_type(request)
         if request.method == 'HEAD':
-            tus_file = TusFile.get_tusfile(str(file_id), self.get_upload_dir('data'))
+            tus_file = TusFile.get_tusfile(str(file_id), self.get_upload_dir(data_type))
             if tus_file:
                 return self._tus_response(status=status.HTTP_200_OK, extra_headers={
                                'Upload-Offset': tus_file.offset,
                                'Upload-Length': tus_file.file_size})
             return self._tus_response(status=status.HTTP_404_NOT_FOUND)
         else:
-            tus_file = TusFile.get_tusfile(str(file_id), self.get_upload_dir('data'))
+            tus_file = TusFile.get_tusfile(str(file_id), self.get_upload_dir(data_type))
             chunk = TusChunk(request)
 
             if chunk.offset != tus_file.offset:

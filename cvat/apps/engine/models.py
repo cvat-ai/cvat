@@ -203,6 +203,11 @@ class Data(models.Model):
         represented_files = [{'file':f} for f in uploaded_files]
         return represented_files
 
+    def get_uploaded_annotations(self):
+        upload_dir = self.get_annotations_dirname()
+        uploaded_annotation_files = [os.path.join(upload_dir, file) for file in os.listdir(upload_dir) if os.path.isfile(os.path.join(upload_dir, file)) and file.endswith('.zip')]
+        return uploaded_annotation_files
+
 class Video(models.Model):
     data = models.OneToOneField(Data, on_delete=models.CASCADE, related_name="video", null=True)
     path = models.CharField(max_length=1024, default='')
@@ -314,6 +319,15 @@ class Task(models.Model):
 
     def get_task_artifacts_dirname(self):
         return os.path.join(self.get_task_dirname(), 'artifacts')
+
+    def get_tmp_dirname(self):
+        return os.path.join(self.get_task_dirname(), "tmp")
+
+    def get_tmp_file(self, filename):
+        tmp_dir = self.get_tmp_dirname()
+        if filename in os.listdir(tmp_dir) and os.path.isfile(os.path.join(tmp_dir, filename)):
+            return os.path.join(tmp_dir, filename)
+        return None
 
     def __str__(self):
         return self.name
