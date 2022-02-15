@@ -56,13 +56,7 @@ context('Delete frame from job.', () => {
         });
 
         it('Check open from deleted frame', () => {
-            cy.visit('/tasks');
-            cy.login();
-            cy.openSettings();
-            cy.get('.cvat-workspace-settings-show-deleted').within(() => {
-                cy.get('[type="checkbox"]').check();
-            });
-            cy.closeSettings();
+            cy.goToTaskList();
             cy.openTaskJob(taskName);
             cy.checkFrameNum(frame);
             cy.get('#cvat_canvas_deleted_frame_overlay').should('be.visible');
