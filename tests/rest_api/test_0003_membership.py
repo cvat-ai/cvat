@@ -21,16 +21,17 @@ class TestGetMemberships:
         assert response.status_code == HTTPStatus.FORBIDDEN
 
     def test_admin_can_see_all_memberships(self, memberships):
-        self._test_can_see_memberships('admin2', memberships, page_size='all')
+        self._test_can_see_memberships('admin2', memberships.raw, page_size='all')
 
     def test_non_admin_can_see_only_self_memberships(self, memberships):
         non_admins= ['business1', 'user1', 'dummy1','worker2']
-        for user in non_admins:
-            data = [m for m in memberships if m['user']['username'] == user]
-            self._test_can_see_memberships(user, data)
+        for username in non_admins:
+            data = [obj for obj in memberships
+                if obj['user']['username'] == username]
+            self._test_can_see_memberships(username, data)
 
     def test_all_members_can_see_other_members_membership(self, memberships):
-        data = [m for m in memberships if m['organization'] == 1]
+        data = [obj for obj in memberships if obj['organization'] == 1]
         for membership in data:
             self._test_can_see_memberships(membership['user']['username'],
                 data, org_id=1)

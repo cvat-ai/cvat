@@ -30,7 +30,7 @@ class TestGetOrganizations:
         response = get_method(user, f'organizations/{self._ORG}')
         if is_allow:
             assert response.status_code == HTTPStatus.OK
-            assert DeepDiff(organizations(self._ORG), response.json()) == {}
+            assert DeepDiff(organizations[self._ORG], response.json()) == {}
         else:
             assert response.status_code == HTTPStatus.NOT_FOUND
 
@@ -44,7 +44,7 @@ class TestPatchOrganizations:
 
     @pytest.fixture(scope='class')
     def expected_data(self, organizations, request_data):
-        data = organizations(self._ORG).copy()
+        data = organizations[self._ORG].copy()
         data.update(request_data)
         return data
 

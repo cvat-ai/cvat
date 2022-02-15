@@ -28,8 +28,6 @@ ALTER TABLE ONLY public.organizations_invitation DROP CONSTRAINT organizations_i
 ALTER TABLE ONLY public.organizations_invitation DROP CONSTRAINT organizations_invita_membership_id_d0265539_fk_organizat;
 ALTER TABLE ONLY public.dataset_repo_gitdata DROP CONSTRAINT git_gitdata_task_id_a6f2ea20_fk_engine_task_id;
 ALTER TABLE ONLY public.engine_video DROP CONSTRAINT engine_video_data_id_b37015e9_fk_engine_data_id;
-ALTER TABLE ONLY public.engine_trainingprojectimage DROP CONSTRAINT engine_trainingprojectimage_task_id_68b8b707_fk_engine_task_id;
-ALTER TABLE ONLY public.engine_trainingprojectlabel DROP CONSTRAINT engine_trainingproje_cvat_label_id_ec627ead_fk_engine_la;
 ALTER TABLE ONLY public.engine_trackedshapeattributeval DROP CONSTRAINT engine_trackedshapea_spec_id_a944a532_fk_engine_at;
 ALTER TABLE ONLY public.engine_trackedshapeattributeval DROP CONSTRAINT engine_trackedshapea_shape_id_361f0e2f_fk_engine_tr;
 ALTER TABLE ONLY public.engine_trackedshape DROP CONSTRAINT engine_trackedshape_track_id_a6dc58bd_fk_engine_labeledtrack_id;
@@ -43,7 +41,6 @@ ALTER TABLE ONLY public.engine_segment DROP CONSTRAINT engine_segment_task_id_37
 ALTER TABLE ONLY public.engine_remotefile DROP CONSTRAINT engine_remotefile_data_id_ff16acda_fk_engine_data_id;
 ALTER TABLE ONLY public.engine_relatedfile DROP CONSTRAINT engine_relatedfile_primary_image_id_928aa7d5_fk_engine_image_id;
 ALTER TABLE ONLY public.engine_relatedfile DROP CONSTRAINT engine_relatedfile_data_id_aa10f063_fk_engine_data_id;
-ALTER TABLE ONLY public.engine_project DROP CONSTRAINT engine_project_training_project_id_89feecf6_fk_engine_tr;
 ALTER TABLE ONLY public.engine_project DROP CONSTRAINT engine_project_owner_id_de2a8424_fk_auth_user_id;
 ALTER TABLE ONLY public.engine_project DROP CONSTRAINT engine_project_organization_id_21c08e6b_fk_organizat;
 ALTER TABLE ONLY public.engine_project DROP CONSTRAINT engine_project_assignee_id_77655de8_fk_auth_user_id;
@@ -101,8 +98,6 @@ DROP INDEX public.organizations_membership_user_id_a8e72055;
 DROP INDEX public.organizations_membership_organization_id_6889aa64;
 DROP INDEX public.organizations_invitation_owner_id_d8ffe9d9;
 DROP INDEX public.organizations_invitation_key_514623ce_like;
-DROP INDEX public.engine_trainingprojectlabel_cvat_label_id_ec627ead;
-DROP INDEX public.engine_trainingprojectimage_task_id_68b8b707;
 DROP INDEX public.engine_trackedshapeattributeval_spec_id_a944a532;
 DROP INDEX public.engine_trackedshapeattributeval_shape_id_361f0e2f;
 DROP INDEX public.engine_trackedshape_track_id_a6dc58bd;
@@ -116,7 +111,6 @@ DROP INDEX public.engine_segment_task_id_37d935cf;
 DROP INDEX public.engine_remotefile_data_id_ff16acda;
 DROP INDEX public.engine_relatedfile_primary_image_id_928aa7d5;
 DROP INDEX public.engine_relatedfile_data_id_aa10f063;
-DROP INDEX public.engine_project_training_project_id_89feecf6;
 DROP INDEX public.engine_project_owner_id_de2a8424;
 DROP INDEX public.engine_project_organization_id_21c08e6b;
 DROP INDEX public.engine_project_assignee_id_77655de8;
@@ -185,9 +179,6 @@ ALTER TABLE ONLY public.organizations_invitation DROP CONSTRAINT organizations_i
 ALTER TABLE ONLY public.dataset_repo_gitdata DROP CONSTRAINT git_gitdata_pkey;
 ALTER TABLE ONLY public.engine_video DROP CONSTRAINT engine_video_pkey;
 ALTER TABLE ONLY public.engine_video DROP CONSTRAINT engine_video_data_id_key;
-ALTER TABLE ONLY public.engine_trainingprojectlabel DROP CONSTRAINT engine_trainingprojectlabel_pkey;
-ALTER TABLE ONLY public.engine_trainingprojectimage DROP CONSTRAINT engine_trainingprojectimage_pkey;
-ALTER TABLE ONLY public.engine_trainingproject DROP CONSTRAINT engine_trainingproject_pkey;
 ALTER TABLE ONLY public.engine_trackedshapeattributeval DROP CONSTRAINT engine_trackedshapeattributeval_pkey;
 ALTER TABLE ONLY public.engine_trackedshape DROP CONSTRAINT engine_trackedshape_pkey;
 ALTER TABLE ONLY public.engine_task DROP CONSTRAINT engine_task_pkey;
@@ -252,9 +243,6 @@ ALTER TABLE public.socialaccount_socialaccount ALTER COLUMN id DROP DEFAULT;
 ALTER TABLE public.organizations_organization ALTER COLUMN id DROP DEFAULT;
 ALTER TABLE public.organizations_membership ALTER COLUMN id DROP DEFAULT;
 ALTER TABLE public.engine_video ALTER COLUMN id DROP DEFAULT;
-ALTER TABLE public.engine_trainingprojectlabel ALTER COLUMN id DROP DEFAULT;
-ALTER TABLE public.engine_trainingprojectimage ALTER COLUMN id DROP DEFAULT;
-ALTER TABLE public.engine_trainingproject ALTER COLUMN id DROP DEFAULT;
 ALTER TABLE public.engine_trackedshapeattributeval ALTER COLUMN id DROP DEFAULT;
 ALTER TABLE public.engine_trackedshape ALTER COLUMN id DROP DEFAULT;
 ALTER TABLE public.engine_task ALTER COLUMN id DROP DEFAULT;
@@ -308,12 +296,6 @@ DROP TABLE public.organizations_membership;
 DROP TABLE public.organizations_invitation;
 DROP SEQUENCE public.engine_video_id_seq;
 DROP TABLE public.engine_video;
-DROP SEQUENCE public.engine_trainingprojectlabel_id_seq;
-DROP TABLE public.engine_trainingprojectlabel;
-DROP SEQUENCE public.engine_trainingprojectimage_id_seq;
-DROP TABLE public.engine_trainingprojectimage;
-DROP SEQUENCE public.engine_trainingproject_id_seq;
-DROP TABLE public.engine_trainingproject;
 DROP SEQUENCE public.engine_trackedshapeattributeval_id_seq;
 DROP TABLE public.engine_trackedshapeattributeval;
 DROP SEQUENCE public.engine_trackedshape_id_seq;
@@ -1623,7 +1605,6 @@ CREATE TABLE public.engine_project (
     status character varying(32) NOT NULL,
     assignee_id integer,
     owner_id integer,
-    training_project_id integer,
     organization_id integer
 );
 
@@ -1918,117 +1899,6 @@ ALTER TABLE public.engine_trackedshapeattributeval_id_seq OWNER TO root;
 --
 
 ALTER SEQUENCE public.engine_trackedshapeattributeval_id_seq OWNED BY public.engine_trackedshapeattributeval.id;
-
-
---
--- Name: engine_trainingproject; Type: TABLE; Schema: public; Owner: root
---
-
-CREATE TABLE public.engine_trainingproject (
-    id integer NOT NULL,
-    host character varying(256) NOT NULL,
-    username character varying(256) NOT NULL,
-    password character varying(256) NOT NULL,
-    training_id character varying(64) NOT NULL,
-    enabled boolean,
-    project_class character varying(2)
-);
-
-
-ALTER TABLE public.engine_trainingproject OWNER TO root;
-
---
--- Name: engine_trainingproject_id_seq; Type: SEQUENCE; Schema: public; Owner: root
---
-
-CREATE SEQUENCE public.engine_trainingproject_id_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
-ALTER TABLE public.engine_trainingproject_id_seq OWNER TO root;
-
---
--- Name: engine_trainingproject_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: root
---
-
-ALTER SEQUENCE public.engine_trainingproject_id_seq OWNED BY public.engine_trainingproject.id;
-
-
---
--- Name: engine_trainingprojectimage; Type: TABLE; Schema: public; Owner: root
---
-
-CREATE TABLE public.engine_trainingprojectimage (
-    id integer NOT NULL,
-    idx integer NOT NULL,
-    training_image_id character varying(64) NOT NULL,
-    task_id integer NOT NULL,
-    CONSTRAINT engine_trainingprojectimage_idx_check CHECK ((idx >= 0))
-);
-
-
-ALTER TABLE public.engine_trainingprojectimage OWNER TO root;
-
---
--- Name: engine_trainingprojectimage_id_seq; Type: SEQUENCE; Schema: public; Owner: root
---
-
-CREATE SEQUENCE public.engine_trainingprojectimage_id_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
-ALTER TABLE public.engine_trainingprojectimage_id_seq OWNER TO root;
-
---
--- Name: engine_trainingprojectimage_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: root
---
-
-ALTER SEQUENCE public.engine_trainingprojectimage_id_seq OWNED BY public.engine_trainingprojectimage.id;
-
-
---
--- Name: engine_trainingprojectlabel; Type: TABLE; Schema: public; Owner: root
---
-
-CREATE TABLE public.engine_trainingprojectlabel (
-    id integer NOT NULL,
-    training_label_id character varying(64) NOT NULL,
-    cvat_label_id integer NOT NULL
-);
-
-
-ALTER TABLE public.engine_trainingprojectlabel OWNER TO root;
-
---
--- Name: engine_trainingprojectlabel_id_seq; Type: SEQUENCE; Schema: public; Owner: root
---
-
-CREATE SEQUENCE public.engine_trainingprojectlabel_id_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
-ALTER TABLE public.engine_trainingprojectlabel_id_seq OWNER TO root;
-
---
--- Name: engine_trainingprojectlabel_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: root
---
-
-ALTER SEQUENCE public.engine_trainingprojectlabel_id_seq OWNED BY public.engine_trainingprojectlabel.id;
 
 
 --
@@ -2579,27 +2449,6 @@ ALTER TABLE ONLY public.engine_trackedshapeattributeval ALTER COLUMN id SET DEFA
 
 
 --
--- Name: engine_trainingproject id; Type: DEFAULT; Schema: public; Owner: root
---
-
-ALTER TABLE ONLY public.engine_trainingproject ALTER COLUMN id SET DEFAULT nextval('public.engine_trainingproject_id_seq'::regclass);
-
-
---
--- Name: engine_trainingprojectimage id; Type: DEFAULT; Schema: public; Owner: root
---
-
-ALTER TABLE ONLY public.engine_trainingprojectimage ALTER COLUMN id SET DEFAULT nextval('public.engine_trainingprojectimage_id_seq'::regclass);
-
-
---
--- Name: engine_trainingprojectlabel id; Type: DEFAULT; Schema: public; Owner: root
---
-
-ALTER TABLE ONLY public.engine_trainingprojectlabel ALTER COLUMN id SET DEFAULT nextval('public.engine_trainingprojectlabel_id_seq'::regclass);
-
-
---
 -- Name: engine_video id; Type: DEFAULT; Schema: public; Owner: root
 --
 
@@ -2801,8 +2650,8 @@ COPY public.auth_user (id, password, last_login, is_superuser, username, first_n
 18	pbkdf2_sha256$260000$uOqP32bk2zHuvO0sdGBGmu$hMbzA1yBWcY5rIU670sZ3SHXRLUa7bCkbrMnrEDGSRM=	\N	t	admin2	Admin	Second	admin2@cvat.org	t	t	2021-12-14 18:38:46+00
 6	pbkdf2_sha256$260000$15iUjDNh5gPg5683u1HhOG$fF8hW6AR90o9SCsO/MomzdQFkgQsMUW3YQUlwwiC1vA=	2021-12-14 19:11:21.04874+00	f	worker1	Worker	First	worker1@cvat.org	f	t	2021-12-14 18:30:00+00
 2	pbkdf2_sha256$260000$Pf2xYWXBedoAJ504jyDD8e$8sJ244Ai0xhZrUTelapPNHlEg7CV0cCUaxbcxZtfaug=	2021-12-22 07:55:35.269206+00	f	user1	User	First	user1@cvat.org	f	t	2021-12-14 18:21:09+00
-1	pbkdf2_sha256$260000$DevmxlmLwciP1P6sZs2Qag$U9DFtjTWx96Sk95qY6UXVcvpdQEP2LcoFBftk5D2RKY=	2021-12-22 08:11:58.502575+00	t	admin1	Admin	First	admin1@cvat.org	t	t	2021-12-14 18:04:57+00
 10	pbkdf2_sha256$260000$X4F89IRqnBtojZuHidrwQG$j1+EpXfyvMesHdod4N+dNUfF4WKS2NWFfeGDec/43as=	2022-01-19 13:52:59.477881+00	f	business1	Business	First	business1@cvat.org	f	t	2021-12-14 18:33:06+00
+1	pbkdf2_sha256$260000$DevmxlmLwciP1P6sZs2Qag$U9DFtjTWx96Sk95qY6UXVcvpdQEP2LcoFBftk5D2RKY=	2022-02-11 14:54:28.083729+00	t	admin1	Admin	First	admin1@cvat.org	t	t	2021-12-14 18:04:57+00
 \.
 
 
@@ -3052,6 +2901,8 @@ COPY public.django_migrations (id, app, name, applied) FROM stdin;
 86	dataset_repo	0001_initial	2021-12-14 17:51:27.585687+00
 87	dataset_repo	0003_gitdata_lfs	2021-12-14 17:51:27.587237+00
 88	dataset_repo	0002_auto_20190123_1305	2021-12-14 17:51:27.588845+00
+89	engine	0049_auto_20220202_0710	2022-02-11 14:54:41.053611+00
+90	engine	0050_auto_20220211_1425	2022-02-11 14:54:41.126041+00
 \.
 
 
@@ -3065,6 +2916,7 @@ ic4rcr36vkoymwaw6p322bjqlryvq2jd	.eJxVjMsOwiAQRf-FtSEDFRhcuu83kBkeUjU0Ke3K-O_apA
 mnb97kue40xo05g2rwwkw6d34sxrnesw	.eJxVjDsOwjAQBe_iGllO8E-U9JzB2l3v4gBypDipEHfHkVJAOzPvvVWCbS1pa7ykKauLGtTplyHQk-su8gPqfdY013WZUO-JPmzTtznz63q0fwcFWunrgELAEtGgEzcCGTp7I4ZCdA5iN9KRFaA8YARvDXoL7GNgO5Jn9fkCIRs5Sw:1mxQKq:6A9lz-3mKMJukzqDk-DXfGIbDNeLeGul_TgZ7A6Xlf8	2021-12-29 09:12:28.010763+00
 po0rbd1yhywmc0i2jfam69r419a66aj8	.eJxVjMsOwiAQRf-FtSE8pB1cuvcbCMMMUjWQlHZl_HdD0oVu7znnvkWI-1bC3nkNC4mL0OL0u2FMT64D0CPWe5Op1W1dUA5FHrTLWyN-XQ_376DEXkY9QeKzIpWVn9gYhEhkI3lyYFg7jTMDg7WkAdF5mCFh9mRZZUhOi88X-eU4dg:1mzwj8:CWx3-u6eXmWLpwiFMK5_yWnoPY3yUSf1QCZY-UdJcF8	2022-01-05 08:11:58.507079+00
 v28l0efbrv9x06z97ilwcf7lwtuf4ctc	.eJxVjDsOwjAQRO_iGlm22fhDSc8ZrLV3gwPIluKkQtydREoBzRTz3sxbRFyXEtfOc5xIXIRW4vRbJsxPrjuhB9Z7k7nVZZ6S3BV50C5vjfh1Pdy_g4K9bGuLXqMDQqdDTtYN6AHIIoGGMIJlQwxB-VFn3gLPzjil3ABkAIBZfL7_vTer:1nABOV:0UAK9VV6D18QF1-189XQ2T9LrQUSdioGNoHdRUzzt7o	2022-02-02 13:52:59.489923+00
+wf6d6vzf4u74l08o0qgbqehei21hibea	.eJxVjDEOwjAMRe-SGUUkpHZgZO8ZIttxSAG1UtNOiLtDpQ6w_vfef5lE61LT2nROQzYX48zhd2OSh44byHcab5OVaVzmge2m2J02209Zn9fd_Tuo1Oq3DrGwD040Ro_-nJmJgkgsqAAIioCi0KGKMhU4Mgip6wjRF6JyMu8PBAI5Mw:1nIXJc:oovNJRods5cbviWOWush4H3jDdP8XklEignva_EnQ8Q	2022-02-25 14:54:28.092369+00
 \.
 
 
@@ -4036,9 +3888,9 @@ COPY public.engine_profile (id, rating, user_id) FROM stdin;
 -- Data for Name: engine_project; Type: TABLE DATA; Schema: public; Owner: root
 --
 
-COPY public.engine_project (id, name, bug_tracker, created_date, updated_date, status, assignee_id, owner_id, training_project_id, organization_id) FROM stdin;
-1	project1		2021-12-14 19:46:37.969497+00	2021-12-14 19:48:33.103265+00	annotation	\N	10	\N	\N
-2	project2		2021-12-14 19:52:37.278149+00	2021-12-14 19:55:57.483506+00	annotation	3	10	\N	2
+COPY public.engine_project (id, name, bug_tracker, created_date, updated_date, status, assignee_id, owner_id, organization_id) FROM stdin;
+1	project1		2021-12-14 19:46:37.969497+00	2021-12-14 19:48:33.103265+00	annotation	\N	10	\N
+2	project2		2021-12-14 19:52:37.278149+00	2021-12-14 19:55:57.483506+00	annotation	3	10	2
 \.
 
 
@@ -4105,30 +3957,6 @@ COPY public.engine_trackedshape (type, occluded, z_order, points, id, frame, out
 --
 
 COPY public.engine_trackedshapeattributeval (id, value, shape_id, spec_id) FROM stdin;
-\.
-
-
---
--- Data for Name: engine_trainingproject; Type: TABLE DATA; Schema: public; Owner: root
---
-
-COPY public.engine_trainingproject (id, host, username, password, training_id, enabled, project_class) FROM stdin;
-\.
-
-
---
--- Data for Name: engine_trainingprojectimage; Type: TABLE DATA; Schema: public; Owner: root
---
-
-COPY public.engine_trainingprojectimage (id, idx, training_image_id, task_id) FROM stdin;
-\.
-
-
---
--- Data for Name: engine_trainingprojectlabel; Type: TABLE DATA; Schema: public; Owner: root
---
-
-COPY public.engine_trainingprojectlabel (id, training_label_id, cvat_label_id) FROM stdin;
 \.
 
 
@@ -4257,7 +4085,7 @@ SELECT pg_catalog.setval('public.auth_permission_id_seq', 88, true);
 -- Name: auth_user_groups_id_seq; Type: SEQUENCE SET; Schema: public; Owner: root
 --
 
-SELECT pg_catalog.setval('public.auth_user_groups_id_seq', 43, true);
+SELECT pg_catalog.setval('public.auth_user_groups_id_seq', 44, true);
 
 
 --
@@ -4292,7 +4120,7 @@ SELECT pg_catalog.setval('public.django_content_type_id_seq', 48, true);
 -- Name: django_migrations_id_seq; Type: SEQUENCE SET; Schema: public; Owner: root
 --
 
-SELECT pg_catalog.setval('public.django_migrations_id_seq', 88, true);
+SELECT pg_catalog.setval('public.django_migrations_id_seq', 90, true);
 
 
 --
@@ -4482,27 +4310,6 @@ SELECT pg_catalog.setval('public.engine_trackedshape_id_seq', 1, false);
 --
 
 SELECT pg_catalog.setval('public.engine_trackedshapeattributeval_id_seq', 1, false);
-
-
---
--- Name: engine_trainingproject_id_seq; Type: SEQUENCE SET; Schema: public; Owner: root
---
-
-SELECT pg_catalog.setval('public.engine_trainingproject_id_seq', 1, false);
-
-
---
--- Name: engine_trainingprojectimage_id_seq; Type: SEQUENCE SET; Schema: public; Owner: root
---
-
-SELECT pg_catalog.setval('public.engine_trainingprojectimage_id_seq', 1, false);
-
-
---
--- Name: engine_trainingprojectlabel_id_seq; Type: SEQUENCE SET; Schema: public; Owner: root
---
-
-SELECT pg_catalog.setval('public.engine_trainingprojectlabel_id_seq', 1, false);
 
 
 --
@@ -5011,30 +4818,6 @@ ALTER TABLE ONLY public.engine_trackedshapeattributeval
 
 
 --
--- Name: engine_trainingproject engine_trainingproject_pkey; Type: CONSTRAINT; Schema: public; Owner: root
---
-
-ALTER TABLE ONLY public.engine_trainingproject
-    ADD CONSTRAINT engine_trainingproject_pkey PRIMARY KEY (id);
-
-
---
--- Name: engine_trainingprojectimage engine_trainingprojectimage_pkey; Type: CONSTRAINT; Schema: public; Owner: root
---
-
-ALTER TABLE ONLY public.engine_trainingprojectimage
-    ADD CONSTRAINT engine_trainingprojectimage_pkey PRIMARY KEY (id);
-
-
---
--- Name: engine_trainingprojectlabel engine_trainingprojectlabel_pkey; Type: CONSTRAINT; Schema: public; Owner: root
---
-
-ALTER TABLE ONLY public.engine_trainingprojectlabel
-    ADD CONSTRAINT engine_trainingprojectlabel_pkey PRIMARY KEY (id);
-
-
---
 -- Name: engine_video engine_video_data_id_key; Type: CONSTRAINT; Schema: public; Owner: root
 --
 
@@ -5527,13 +5310,6 @@ CREATE INDEX engine_project_owner_id_de2a8424 ON public.engine_project USING btr
 
 
 --
--- Name: engine_project_training_project_id_89feecf6; Type: INDEX; Schema: public; Owner: root
---
-
-CREATE INDEX engine_project_training_project_id_89feecf6 ON public.engine_project USING btree (training_project_id);
-
-
---
 -- Name: engine_relatedfile_data_id_aa10f063; Type: INDEX; Schema: public; Owner: root
 --
 
@@ -5622,20 +5398,6 @@ CREATE INDEX engine_trackedshapeattributeval_shape_id_361f0e2f ON public.engine_
 --
 
 CREATE INDEX engine_trackedshapeattributeval_spec_id_a944a532 ON public.engine_trackedshapeattributeval USING btree (spec_id);
-
-
---
--- Name: engine_trainingprojectimage_task_id_68b8b707; Type: INDEX; Schema: public; Owner: root
---
-
-CREATE INDEX engine_trainingprojectimage_task_id_68b8b707 ON public.engine_trainingprojectimage USING btree (task_id);
-
-
---
--- Name: engine_trainingprojectlabel_cvat_label_id_ec627ead; Type: INDEX; Schema: public; Owner: root
---
-
-CREATE INDEX engine_trainingprojectlabel_cvat_label_id_ec627ead ON public.engine_trainingprojectlabel USING btree (cvat_label_id);
 
 
 --
@@ -6084,14 +5846,6 @@ ALTER TABLE ONLY public.engine_project
 
 
 --
--- Name: engine_project engine_project_training_project_id_89feecf6_fk_engine_tr; Type: FK CONSTRAINT; Schema: public; Owner: root
---
-
-ALTER TABLE ONLY public.engine_project
-    ADD CONSTRAINT engine_project_training_project_id_89feecf6_fk_engine_tr FOREIGN KEY (training_project_id) REFERENCES public.engine_trainingproject(id) DEFERRABLE INITIALLY DEFERRED;
-
-
---
 -- Name: engine_relatedfile engine_relatedfile_data_id_aa10f063_fk_engine_data_id; Type: FK CONSTRAINT; Schema: public; Owner: root
 --
 
@@ -6193,22 +5947,6 @@ ALTER TABLE ONLY public.engine_trackedshapeattributeval
 
 ALTER TABLE ONLY public.engine_trackedshapeattributeval
     ADD CONSTRAINT engine_trackedshapea_spec_id_a944a532_fk_engine_at FOREIGN KEY (spec_id) REFERENCES public.engine_attributespec(id) DEFERRABLE INITIALLY DEFERRED;
-
-
---
--- Name: engine_trainingprojectlabel engine_trainingproje_cvat_label_id_ec627ead_fk_engine_la; Type: FK CONSTRAINT; Schema: public; Owner: root
---
-
-ALTER TABLE ONLY public.engine_trainingprojectlabel
-    ADD CONSTRAINT engine_trainingproje_cvat_label_id_ec627ead_fk_engine_la FOREIGN KEY (cvat_label_id) REFERENCES public.engine_label(id) DEFERRABLE INITIALLY DEFERRED;
-
-
---
--- Name: engine_trainingprojectimage engine_trainingprojectimage_task_id_68b8b707_fk_engine_task_id; Type: FK CONSTRAINT; Schema: public; Owner: root
---
-
-ALTER TABLE ONLY public.engine_trainingprojectimage
-    ADD CONSTRAINT engine_trainingprojectimage_task_id_68b8b707_fk_engine_task_id FOREIGN KEY (task_id) REFERENCES public.engine_task(id) DEFERRABLE INITIALLY DEFERRED;
 
 
 --

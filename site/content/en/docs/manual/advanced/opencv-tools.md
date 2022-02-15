@@ -37,8 +37,8 @@ displayed as a red square which is tied to the cursor.
   Increasing action threshold will affect the performance.
   During the drawing process you can remove the last point by clicking on it with the left mouse button.
 
-- You can also create a boundary manually (like when 
-  [creating a polygon](/docs/manual/advanced/annotation-with-polygons/manual-drawing/)) by temporarily disabling 
+- You can also create a boundary manually (like when
+  [creating a polygon](/docs/manual/advanced/annotation-with-polygons/manual-drawing/)) by temporarily disabling
   the automatic line creation. To do that, switch blocking on by pressing `Ctrl`.
 
 - In the process of drawing, you can select the number of points in the polygon using the switch.
@@ -69,3 +69,30 @@ It is useful in images with backgrounds and foregrounds that are both bright or 
 
   ![](/images/image222.jpg)
 
+### TrackerMIL
+
+Trackers are used to automatically annotate an object on video.
+The TrackerMIL model is not bound to labels and can be used for any object.
+
+- Before you start, select the `OpenCV tools` on the controls sidebar and go to the `Trackers` tab.
+  Then select a `Label` and `Tracker` for the object and click `Track`. Then annotate the desired objects with the
+  bounding box in the first frame.
+
+  ![Start tracking an object](/images/image242.jpg)
+
+- All annotated objects will be automatically tracked when you move to the next frame.
+  For tracking, use `Next` button on the top panel or the `F` button to move on to the next frame.
+
+  ![Annotation using a tracker](/images/tracker_mil_detrac.gif)
+
+- You can enable/disable tracking using `tracker switcher` on sidebar.
+
+  ![Tracker switcher](/images/tracker_switcher.jpg)
+
+- Trackable objects have indication on canvas with a model indication.
+
+  ![Tracker indication](/images/tracker_indication_detrac.jpg)
+
+- You can follow the tracking by the messages appearing at the top.
+
+  ![Tracker pop-up window](/images/tracker_pop-up_window.jpg)
