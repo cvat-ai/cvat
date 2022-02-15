@@ -52,9 +52,7 @@ context('Paste labels from one task to another.', { browser: '!firefox' }, () =>
 
         it('Pressing continue button should navigate to the latest opened frame', () => {
             cy.get('.cvat-notification-continue-job-button').click();
-            cy.get('.cvat-player-frame-selector')
-                .find('input[role="spinbutton"]')
-                .should('have.value', 2);
+            cy.checkFrameNum(2);
         });
     });
 });
