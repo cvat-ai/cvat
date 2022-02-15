@@ -43,9 +43,7 @@ context('Paste labels from one task to another.', { browser: '!firefox' }, () =>
     describe('Test "Continue frame N"', () => {
         it('Open job, go to the 3rd frame, close task, reopen, notification exists.', () => {
             cy.openTaskJob(task.name);
-            cy.get('.cvat-player-frame-selector')
-                .find('input[role="spinbutton"]')
-                .should('have.value', 0);
+            cy.checkFrameNum(0);
             cy.goCheckFrameNumber(2);
             cy.goToTaskList();
             cy.openTaskJob(task.name);
