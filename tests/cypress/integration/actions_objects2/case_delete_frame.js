@@ -43,7 +43,6 @@ context('Delete frame from job.', () => {
 
         it('Change deleted frame visability.', () => {
             cy.openSettings();
-            cy.contains('Workspace').click();
             cy.get('.cvat-workspace-settings-show-deleted').within(() => {
                 cy.get('[type="checkbox"]').should('not.be.checked').check();
             });
@@ -60,7 +59,6 @@ context('Delete frame from job.', () => {
             cy.visit('/tasks');
             cy.login();
             cy.openSettings();
-            cy.contains('Workspace').click();
             cy.get('.cvat-workspace-settings-show-deleted').within(() => {
                 cy.get('[type="checkbox"]').check();
             });
