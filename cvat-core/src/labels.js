@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2021 Intel Corporation
+// Copyright (C) 2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -43,7 +43,7 @@
                 Object.freeze({
                     /**
                      * @name id
-                     * @type {integer}
+                     * @type {number}
                      * @memberof module:API.cvat.classes.Attribute
                      * @readonly
                      * @instance
@@ -160,7 +160,7 @@
                 Object.freeze({
                     /**
                      * @name id
-                     * @type {integer}
+                     * @type {number}
                      * @memberof module:API.cvat.classes.Label
                      * @readonly
                      * @instance

@@ -5,7 +5,6 @@
 import {
     ActionCreator, AnyAction, Dispatch, Store,
 } from 'redux';
-import _ from 'lodash';
 
 import { ThunkAction } from 'utils/redux';
 import isAbleToChangeFrame from 'utils/is-able-to-change-frame';
@@ -985,7 +984,9 @@ export function closeJob(): ThunkAction {
     };
 }
 
-export function getJobAsync(tid: number, jid: number, initialFrame: number, initialFilters: object[]): ThunkAction {
+export function getJobAsync(
+    tid: number, jid: number, initialFrame: number | null, initialFilters: object[],
+): ThunkAction {
     return async (dispatch: ActionCreator<Dispatch>, getState): Promise<void> => {
         try {
             const state = getState();
@@ -1028,13 +1029,13 @@ export function getJobAsync(tid: number, jid: number, initialFrame: number, init
             }
 
             let frameNumber;
-            if (initialFrame < 0 && !showDeletedFrames) {
+            if (initialFrame === null && !showDeletedFrames) {
                 frameNumber = await job.frames.searchNonDeleted(job.startFrame, job.stopFrame);
                 if (frameNumber === null) {
                     frameNumber = job.startFrame;
                 }
             } else {
-                frameNumber = Math.max(Math.min(job.stopFrame, initialFrame), job.startFrame);
+                frameNumber = Math.max(Math.min(job.stopFrame, initialFrame || 0), job.startFrame);
             }
             const frameData = await job.frames.get(frameNumber);
             // call first getting of frame data before rendering interface
@@ -1414,24 +1415,13 @@ export function searchAnnotationsAsync(sessionInstance: any, frameFrom: number, 
             } = getState();
             const { filters } = receiveAnnotationsParameters();
 
-            let frame: number;
-            if (showDeletedFrames) {
-                frame = await sessionInstance.annotations.search(filters, frameFrom, frameTo);
-            } else {
-                let searchedFrame: number;
-                frame = frameFrom;
-                do {
-                    searchedFrame = await sessionInstance.annotations.search(filters, frameFrom, frameTo);
-                    if (searchedFrame === null) {
-                        return;
-                    }
-                    frame = await sessionInstance.frames.searchNonDeleted(searchedFrame, frameTo);
-                    if (frame === searchedFrame) {
-                        break;
-                    }
-                } while (_.inRange(frame, frameFrom, frameTo + Math.sign(frameTo - frameFrom)));
-                if (frame !== searchedFrame) {
-                    return;
+            let frame = await sessionInstance.annotations.search(filters, frameFrom, frameTo);
+            while (frame !== null) {
+                const isDeleted = (await sessionInstance.frames.get(frame)).deleted;
+                if (isDeleted && !showDeletedFrames) {
+                    frame = await sessionInstance.annotations.search(filters, frame + 1, frameTo);
+                } else {
+                    break;
                 }
             }
             if (frame !== null) {
@@ -1456,24 +1446,13 @@ export function searchEmptyFrameAsync(sessionInstance: any, frameFrom: number, f
                     player: { showDeletedFrames },
                 },
             } = getState();
-            let frame: number;
-            if (showDeletedFrames) {
-                frame = await sessionInstance.annotations.searchEmpty(frameFrom, frameTo);
-            } else {
-                let searchedFrame: number;
-                frame = frameFrom;
-                do {
-                    searchedFrame = await sessionInstance.annotations.searchEmpty(frame, frameTo);
-                    if (searchedFrame === null) {
-                        return;
-                    }
-                    frame = await sessionInstance.frames.searchNonDeleted(searchedFrame, frameTo);
-                    if (frame === searchedFrame) {
-                        break;
-                    }
-                } while (_.inRange(frame, frameFrom, frameTo + Math.sign(frameTo - frameFrom)));
-                if (frame !== searchedFrame) {
-                    return;
+            let frame = await sessionInstance.annotations.searchEmpty(frameFrom, frameTo);
+            while (frame !== null) {
+                const isDeleted = (await sessionInstance.frames.get(frame)).deleted;
+                if (isDeleted && !showDeletedFrames) {
+                    frame = await sessionInstance.annotations.searchEmpty(frame + 1, frameTo);
+                } else {
+                    break;
                 }
             }
             if (frame !== null) {

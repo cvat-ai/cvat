@@ -816,7 +816,7 @@
                 Object.freeze({
                     /**
                      * @name id
-                     * @type {integer}
+                     * @type {number}
                      * @memberof module:API.cvat.classes.Job
                      * @readonly
                      * @instance
@@ -902,7 +902,7 @@
                     },
                     /**
                      * @name startFrame
-                     * @type {integer}
+                     * @type {number}
                      * @memberof module:API.cvat.classes.Job
                      * @readonly
                      * @instance
@@ -912,7 +912,7 @@
                     },
                     /**
                      * @name stopFrame
-                     * @type {integer}
+                     * @type {number}
                      * @memberof module:API.cvat.classes.Job
                      * @readonly
                      * @instance
@@ -932,7 +932,7 @@
                     },
                     /**
                      * @name taskId
-                     * @type {integer}
+                     * @type {number}
                      * @memberof module:API.cvat.classes.Job
                      * @readonly
                      * @instance
@@ -962,7 +962,7 @@
                     },
                     /**
                      * @name dataChunkSize
-                     * @type {integer}
+                     * @type {number}
                      * @memberof module:API.cvat.classes.Job
                      * @readonly
                      * @instance
@@ -1242,7 +1242,7 @@
                 Object.freeze({
                     /**
                      * @name id
-                     * @type {integer}
+                     * @type {number}
                      * @memberof module:API.cvat.classes.Task
                      * @readonly
                      * @instance
@@ -1296,7 +1296,7 @@
                     },
                     /**
                      * @name size
-                     * @type {integer}
+                     * @type {number}
                      * @memberof module:API.cvat.classes.Task
                      * @readonly
                      * @instance
@@ -1405,7 +1405,7 @@
                     },
                     /**
                      * @name overlap
-                     * @type {integer}
+                     * @type {number}
                      * @memberof module:API.cvat.classes.Task
                      * @instance
                      * @throws {module:API.cvat.exceptions.ArgumentError}
@@ -1421,7 +1421,7 @@
                     },
                     /**
                      * @name segmentSize
-                     * @type {integer}
+                     * @type {number}
                      * @memberof module:API.cvat.classes.Task
                      * @instance
                      * @throws {module:API.cvat.exceptions.ArgumentError}
@@ -1437,7 +1437,7 @@
                     },
                     /**
                      * @name imageQuality
-                     * @type {integer}
+                     * @type {number}
                      * @memberof module:API.cvat.classes.Task
                      * @instance
                      * @throws {module:API.cvat.exceptions.ArgumentError}
@@ -1628,7 +1628,7 @@
                     /**
                      * The first frame of a video to annotation
                      * @name startFrame
-                     * @type {integer}
+                     * @type {number}
                      * @memberof module:API.cvat.classes.Task
                      * @instance
                      * @throws {module:API.cvat.exceptions.ArgumentError}
@@ -1645,7 +1645,7 @@
                     /**
                      * The last frame of a video to annotation
                      * @name stopFrame
-                     * @type {integer}
+                     * @type {number}
                      * @memberof module:API.cvat.classes.Task
                      * @instance
                      * @throws {module:API.cvat.exceptions.ArgumentError}
@@ -1693,23 +1693,6 @@
                     },
                     dataChunkType: {
                         get: () => data.data_compressed_chunk_type,
-                    },
-                    /**
-                    * List of deleted frames from the data
-                    * @name deletedFrames
-                    * @type {Array}
-                    * @memberof module:API.cvat.classes.Task
-                    * @instance
-                    * @throws {module:API.cvat.exceptions.ArgumentError}
-                    */
-                    deletedFrames: {
-                        get: () => data.deleted_frames,
-                        set: (frames) => {
-                            if (!(frames instanceof Array) || frames.reduce((prev, curr) => prev || typeof curr !== 'number', false)) {
-                                throw new ArgumentError(`frames should be array of numbers not ${typeof frames}`);
-                            }
-                            data.deletedFrames = frames;
-                        },
                     },
                     /**
                      * @name dimension
@@ -2236,7 +2219,6 @@
                 bugTracker: 'bug_tracker',
                 projectId: 'project_id',
                 assignee: 'assignee_id',
-                deletedFrames: 'deleted_frames',
             });
             if (taskData.assignee_id) {
                 taskData.assignee_id = taskData.assignee_id.id;
@@ -2410,8 +2392,8 @@
         }
 
         const jobs = this.jobs.filter((_job) => (
-            (frameFrom >= _job.startFrame && frameFrom <= _job.stopFrame) &&
-            (frameTo >= _job.startFrame && frameTo <= _job.stopFrame) &&
+            (frameFrom >= _job.startFrame && frameFrom <= _job.stopFrame) ||
+            (frameTo >= _job.startFrame && frameTo <= _job.stopFrame) ||
             (frameFrom < _job.startFrame && frameTo > _job.stopFrame)
         ));
 

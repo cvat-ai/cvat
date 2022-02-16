@@ -106,6 +106,7 @@ const defaultState: NotificationsState = {
             searchEmptyFrame: null,
             searchNonDeletedFrame: null,
             deleteFrame: null,
+            restoreFrame: null,
             savingLogs: null,
         },
         boundaries: {

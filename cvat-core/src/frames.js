@@ -46,7 +46,7 @@
                     },
                     /**
                      * @name width
-                     * @type {integer}
+                     * @type {number}
                      * @memberof module:API.cvat.classes.FrameData
                      * @readonly
                      * @instance
@@ -57,7 +57,7 @@
                     },
                     /**
                      * @name height
-                     * @type {integer}
+                     * @type {number}
                      * @memberof module:API.cvat.classes.FrameData
                      * @readonly
                      * @instance
@@ -68,7 +68,7 @@
                     },
                     /**
                      * @name jid
-                     * @type {integer}
+                     * @type {number}
                      * @memberof module:API.cvat.classes.FrameData
                      * @readonly
                      * @instance
@@ -79,7 +79,7 @@
                     },
                     /**
                      * @name number
-                     * @type {integer}
+                     * @type {number}
                      * @memberof module:API.cvat.classes.FrameData
                      * @readonly
                      * @instance
@@ -103,7 +103,7 @@
                     /**
                      * Start frame of the frame in the job
                      * @name startFrame
-                     * @type {integer}
+                     * @type {number}
                      * @memberof module:API.cvat.classes.FrameData
                      * @readonly
                      * @instance
@@ -115,7 +115,7 @@
                     /**
                      * Stop frame of the frame in the job
                      * @name stopFrame
-                     * @type {integer}
+                     * @type {number}
                      * @memberof module:API.cvat.classes.FrameData
                      * @readonly
                      * @instance
@@ -743,7 +743,7 @@
     async function deleteFrame(jobID, frame) {
         const { meta } = frameDataCache[jobID];
         if (meta.deleted_frames.includes(frame)) {
-            throw new ArgumentError('Frame should not be deleted');
+            return;
         }
         const deleteFrames = [...meta.deleted_frames, frame];
         const newMeta = await serverProxy.frames.saveMeta(jobID, {
@@ -755,7 +755,7 @@
     async function restoreFrame(jobID, frame) {
         const { meta } = frameDataCache[jobID];
         if (!meta.deleted_frames.includes(frame)) {
-            throw new ArgumentError('Frame should be from deleted frames');
+            return;
         }
         const deleteFrames = meta.deleted_frames.filter((e) => e !== frame);
         const newMeta = await serverProxy.frames.saveMeta(jobID, {

@@ -65,6 +65,7 @@ export interface Configuration {
     intelligentPolygonCrop?: boolean;
     forceFrameUpdate?: boolean;
     creationOpacity?: number;
+    canvasFilters?: string;
 }
 
 export interface DrawData {
@@ -700,6 +701,10 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         }
         if (typeof configuration.creationOpacity === 'number') {
             this.data.configuration.creationOpacity = configuration.creationOpacity;
+        }
+
+        if (typeof configuration.canvasFilters === 'string') {
+            this.data.configuration.canvasFilters = configuration.canvasFilters;
         }
 
         this.notify(UpdateReasons.CONFIG_UPDATED);

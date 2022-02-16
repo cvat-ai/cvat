@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2021 Intel Corporation
+// Copyright (C) 2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -86,7 +86,7 @@ const { Source } = require('./enums');
                     frame: {
                         /**
                          * @name frame
-                         * @type {integer}
+                         * @type {number}
                          * @memberof module:API.cvat.classes.ObjectState
                          * @readonly
                          * @instance
@@ -126,7 +126,7 @@ const { Source } = require('./enums');
                     clientID: {
                         /**
                          * @name clientID
-                         * @type {integer}
+                         * @type {number}
                          * @memberof module:API.cvat.classes.ObjectState
                          * @readonly
                          * @instance
@@ -136,7 +136,7 @@ const { Source } = require('./enums');
                     serverID: {
                         /**
                          * @name serverID
-                         * @type {integer}
+                         * @type {number}
                          * @memberof module:API.cvat.classes.ObjectState
                          * @readonly
                          * @instance

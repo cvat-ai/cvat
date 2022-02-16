@@ -62,8 +62,19 @@ Canvas itself handles:
     }
 
     interface Configuration {
-        displayAllText?: boolean;
-        undefinedAttrValue?: string;
+      smoothImage?: boolean;
+      autoborders?: boolean;
+      displayAllText?: boolean;
+      textFontSize?: number;
+      textPosition?: 'auto' | 'center';
+      textContent?: string;
+      undefinedAttrValue?: string;
+      showProjections?: boolean;
+      forceDisableEditing?: boolean;
+      intelligentPolygonCrop?: boolean;
+      forceFrameUpdate?: boolean;
+      creationOpacity?: number;
+      canvasFilters?: string;
     }
 
     interface DrawData {

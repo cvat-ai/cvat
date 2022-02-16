@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -36,7 +36,7 @@ class Comment {
             Object.freeze({
                 /**
                  * @name id
-                 * @type {integer}
+                 * @type {number}
                  * @memberof module:API.cvat.classes.Comment
                  * @readonly
                  * @instance

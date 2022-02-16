@@ -62,7 +62,7 @@ function mapDispatchToProps(dispatch: any, own: OwnProps): DispatchToProps {
     const jobID = +params.jid;
     const searchParams = new URLSearchParams(window.location.search);
     const initialFilters: object[] = [];
-    let initialFrame = -1;
+    let initialFrame = null;
 
     if (searchParams.has('frame')) {
         const searchFrame = +(searchParams.get('frame') as string);

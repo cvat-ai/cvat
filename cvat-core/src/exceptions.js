@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2020 Intel Corporation
+// Copyright (C) 2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -67,7 +67,7 @@
                     jobID: {
                         /**
                          * @name jobID
-                         * @type {integer}
+                         * @type {number}
                          * @memberof module:API.cvat.exceptions.Exception
                          * @readonly
                          * @instance
@@ -77,7 +77,7 @@
                     taskID: {
                         /**
                          * @name taskID
-                         * @type {integer}
+                         * @type {number}
                          * @memberof module:API.cvat.exceptions.Exception
                          * @readonly
                          * @instance
@@ -87,7 +87,7 @@
                     projID: {
                         /**
                          * @name projID
-                         * @type {integer}
+                         * @type {number}
                          * @memberof module:API.cvat.exceptions.Exception
                          * @readonly
                          * @instance
@@ -97,7 +97,7 @@
                     clientID: {
                         /**
                          * @name clientID
-                         * @type {integer}
+                         * @type {number}
                          * @memberof module:API.cvat.exceptions.Exception
                          * @readonly
                          * @instance
@@ -117,7 +117,7 @@
                     line: {
                         /**
                          * @name line
-                         * @type {integer}
+                         * @type {number}
                          * @memberof module:API.cvat.exceptions.Exception
                          * @readonly
                          * @instance
@@ -127,7 +127,7 @@
                     column: {
                         /**
                          * @name column
-                         * @type {integer}
+                         * @type {number}
                          * @memberof module:API.cvat.exceptions.Exception
                          * @readonly
                          * @instance

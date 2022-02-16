@@ -96,6 +96,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
     private innerObjectsFlags: {
         drawHidden: Record<number, boolean>;
     };
+    private canvasFilters: string;
 
     private set mode(value: Mode) {
         this.controller.mode = value;
@@ -526,9 +527,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
         // Transform grid
         this.gridPath.setAttribute('stroke-width', `${consts.BASE_GRID_WIDTH / this.geometry.scale}px`);
-
-        // Transform deleted frame overlay pattern
-        this.deletedImageOverlayPath.setAttribute('stroke-width', `${consts.BASE_DELETED_PATTERN_WIDTH / this.geometry.scale}px`);
 
         // Transform all shape points
         for (const element of [
@@ -1258,6 +1256,14 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 }
             }
 
+            if (typeof configuration.canvasFilters === 'string') {
+                this.canvasFilters = configuration.canvasFilters;
+
+                if (!model.imageDeleted) {
+                    this.background.style.filter = this.canvasFilters;
+                }
+            }
+
             this.activate(activeElement);
             this.editHandler.configurate(this.configuration);
             this.drawHandler.configurate(this.configuration);
@@ -1302,15 +1308,9 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
                 if (model.imageDeleted) {
                     this.deletedImageOverlay.style.display = null;
-                    if (!this.background.hasAttribute('prevFilter')) {
-                        this.background.setAttribute('prevFilter', this.background.style.filter);
-                    }
                     this.background.style.filter = 'saturate(0)';
                 } else {
-                    if (this.background.hasAttribute('prevFilter')) {
-                        this.background.style.filter = this.background.getAttribute('prevFilter');
-                        this.background.removeAttribute('prevFilter');
-                    }
+                    this.background.style.filter = this.canvasFilters;
                     this.deletedImageOverlay.style.display = 'none';
                 }
 
