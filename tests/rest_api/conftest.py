@@ -119,6 +119,44 @@ def users_by_name(users):
     return {user['username']: user for user in users}
 
 @pytest.fixture(scope='module')
+def assignee_id(data):
+    if data.get('assignee') is not None:
+        return data['assignee']['id']
+    return None
+
+def ownership(func):
+    def wrap(user_id, resource_id):
+        if resource_id is None:
+            return False
+        return func(user_id, resource_id)
+    return wrap
+
+@pytest.fixture(scope='module')
+def is_project_staff(projects):
+    @ownership
+    def check(user_id, pid):
+        return user_id == projects[pid]['owner']['id'] or \
+            user_id == assignee_id(projects[pid])
+    return check
+
+@pytest.fixture(scope='module')
+def is_task_staff(tasks, is_project_staff):
+    @ownership
+    def check(user_id, tid):
+        return user_id == tasks[tid]['owner']['id'] or \
+            user_id == assignee_id(tasks[tid]) or \
+            is_project_staff(user_id, tasks[tid]['project_id'])
+    return check
+
+@pytest.fixture(scope='module')
+def is_job_staff(jobs, is_task_staff):
+    @ownership
+    def check(user_id, jid):
+        return user_id == assignee_id(jobs[jid]) or \
+            is_task_staff(user_id, jobs[jid]['task_id'])
+    return check
+
+@pytest.fixture(scope='module')
 def find_users(test_db):
     def find(**kwargs):
         assert len(kwargs) > 0
@@ -158,3 +196,24 @@ def test_db(users, users_by_name, memberships):
                 membership_id=membership['id'])
 
     return data
+
+@pytest.fixture(scope='module')
+def org_staff(memberships):
+    def find(org_id):
+        if org_id in ['', None]:
+            return set()
+        else:
+            return set(m['user']['id'] for m in memberships
+                if m['role'] in ['maintainer', 'owner'] and m['user'] != None
+                    and m['organization'] == org_id)
+    return find
+
+@pytest.fixture(scope='module')
+def is_org_member(memberships):
+    def check(user_id, org_id):
+        if org_id in ['', None]:
+            return True
+        else:
+            return user_id in set(m['user']['id'] for m in memberships
+                if m['user'] != None and m['organization'] == org_id)
+    return check
