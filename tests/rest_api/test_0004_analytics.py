@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+import pytest
 from http import HTTPStatus
 from .utils.config import server_get
 
@@ -17,14 +18,14 @@ class TestGetAnalytics:
 
         assert response.status_code == HTTPStatus.FORBIDDEN
 
-    def test_admin_can_see(self):
-        self._test_can_see('admin2')
+    @pytest.mark.parametrize('privilege, is_allow', [
+        ('admin', True), ('business', True),
+        ('worker', False), ('user', False)
+    ])
+    def test_can_see(self, privilege, is_allow, find_users):
+        user = find_users(privilege=privilege)[0]['username']
 
-    def test_business_can_see(self):
-        self._test_can_see('business1')
-
-    def test_user_cannot_see_(self):
-        self._test_cannot_see('user1')
-
-    def test_worker_cannot_see_(self):
-        self._test_cannot_see('worker1')
+        if is_allow:
+            self._test_can_see(user)
+        else:
+            self._test_cannot_see(user)
