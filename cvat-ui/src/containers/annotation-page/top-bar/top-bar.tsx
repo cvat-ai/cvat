@@ -327,7 +327,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
         } = this.props;
 
         const newFrame = showDeletedFrames ? jobInstance.startFrame :
-            await jobInstance.frames.searchNonDeleted(jobInstance.startFrame, frameNumber);
+            await jobInstance.frames.search({ deleted: false }, jobInstance.startFrame, frameNumber);
         if (newFrame !== frameNumber && newFrame !== null) {
             if (playing) {
                 onSwitchPlay(false);
@@ -343,9 +343,9 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
 
         const frameFrom = Math.max(jobInstance.startFrame, frameNumber - frameStep);
         let newFrame = showDeletedFrames ? frameFrom :
-            await jobInstance.frames.searchNonDeleted(frameFrom, jobInstance.startFrame);
+            await jobInstance.frames.search({ deleted: false }, frameFrom, jobInstance.startFrame);
         if (newFrame === null) {
-            newFrame = await jobInstance.frames.searchNonDeleted(frameFrom, frameNumber);
+            newFrame = await jobInstance.frames.search({ deleted: false }, frameFrom, frameNumber);
         }
         if (newFrame !== frameNumber && newFrame !== null) {
             if (playing) {
@@ -364,7 +364,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
 
         const frameFrom = Math.max(jobInstance.startFrame, frameNumber - 1);
         const newFrame = showDeletedFrames ? frameFrom :
-            await jobInstance.frames.searchNonDeleted(frameFrom, jobInstance.startFrame);
+            await jobInstance.frames.search({ deleted: false }, frameFrom, jobInstance.startFrame);
         if (newFrame !== frameNumber && newFrame !== null) {
             if (playing) {
                 onSwitchPlay(false);
@@ -389,7 +389,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
 
         const frameFrom = Math.min(jobInstance.stopFrame, frameNumber + 1);
         const newFrame = showDeletedFrames ? frameFrom :
-            await jobInstance.frames.searchNonDeleted(frameFrom, jobInstance.stopFrame);
+            await jobInstance.frames.search({ deleted: false }, frameFrom, jobInstance.stopFrame);
         if (newFrame !== frameNumber && newFrame !== null) {
             if (playing) {
                 onSwitchPlay(false);
@@ -412,9 +412,9 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
 
         const frameFrom = Math.min(jobInstance.stopFrame, frameNumber + frameStep);
         let newFrame = showDeletedFrames ? frameFrom :
-            await jobInstance.frames.searchNonDeleted(frameFrom, jobInstance.stopFrame);
+            await jobInstance.frames.search({ deleted: false }, frameFrom, jobInstance.stopFrame);
         if (newFrame === null) {
-            newFrame = await jobInstance.frames.searchNonDeleted(frameFrom, frameNumber);
+            newFrame = await jobInstance.frames.search({ deleted: false }, frameFrom, frameNumber);
         }
         if (newFrame !== frameNumber && newFrame !== null) {
             if (playing) {
@@ -430,7 +430,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
         } = this.props;
 
         const newFrame = showDeletedFrames ? jobInstance.stopFrame :
-            await jobInstance.frames.searchNonDeleted(jobInstance.stopFrame, frameNumber);
+            await jobInstance.frames.search({ deleted: false }, jobInstance.stopFrame, frameNumber);
         if (newFrame !== frameNumber && frameNumber !== null) {
             if (playing) {
                 onSwitchPlay(false);

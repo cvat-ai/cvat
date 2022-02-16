@@ -199,10 +199,11 @@
                         const result = await PluginRegistry.apiWrapper.call(this, prototype.frames.preview);
                         return result;
                     },
-                    async searchNonDeleted(frameFrom, frameTo) {
+                    async search(filters, frameFrom, frameTo) {
                         const result = await PluginRegistry.apiWrapper.call(
                             this,
-                            prototype.frames.searchNonDeleted,
+                            prototype.frames.search,
+                            filters,
                             frameFrom,
                             frameTo,
                         );
@@ -558,7 +559,7 @@
              */
             /**
              * Find the nearest non-deleted frame
-             * @method searchNonDeleted
+             * @method search
              * @memberof Session.frames
              * @param {integer} from lower bound of a search
              * @param {integer} to upper bound of a search
@@ -1051,7 +1052,7 @@
                 restore: Object.getPrototypeOf(this).frames.restore.bind(this),
                 ranges: Object.getPrototypeOf(this).frames.ranges.bind(this),
                 preview: Object.getPrototypeOf(this).frames.preview.bind(this),
-                searchNonDeleted: Object.getPrototypeOf(this).frames.searchNonDeleted.bind(this),
+                search: Object.getPrototypeOf(this).frames.search.bind(this),
                 contextImage: Object.getPrototypeOf(this).frames.contextImage.bind(this),
             };
 
@@ -1769,7 +1770,7 @@
                 ranges: Object.getPrototypeOf(this).frames.ranges.bind(this),
                 preview: Object.getPrototypeOf(this).frames.preview.bind(this),
                 contextImage: Object.getPrototypeOf(this).frames.contextImage.bind(this),
-                searchNonDeleted: Object.getPrototypeOf(this).frames.searchNonDeleted.bind(this),
+                search: Object.getPrototypeOf(this).frames.search.bind(this),
             };
 
             this.logger = {
@@ -1992,7 +1993,11 @@
         return result;
     };
 
-    Job.prototype.frames.searchNonDeleted.implementation = async function (frameFrom, frameTo) {
+    Job.prototype.frames.search.implementation = async function (filters, frameFrom, frameTo) {
+        if (typeof filters !== 'object') {
+            throw new ArgumentError('Filters should be an object');
+        }
+
         if (!Number.isInteger(frameFrom) || !Number.isInteger(frameTo)) {
             throw new ArgumentError('The start and end frames both must be an integer');
         }
@@ -2004,9 +2009,10 @@
         if (frameTo < this.startFrame || frameTo > this.stopFrame) {
             throw new ArgumentError('The stop frame is out of the job');
         }
-
-        const result = await searchNonDeletedFrame(this.id, frameFrom, frameTo);
-        return result;
+        if (filters.deleted === false) {
+            return searchNonDeletedFrame(this.id, frameFrom, frameTo);
+        }
+        return null;
     };
 
     // TODO: Check filter for annotations
@@ -2378,7 +2384,11 @@
         await restoreFrame(job.id, frame);
     };
 
-    Task.prototype.frames.searchNonDeleted.implementation = async function (frameFrom, frameTo) {
+    Task.prototype.frames.search.implementation = async function (filters, frameFrom, frameTo) {
+        if (typeof filters !== 'object') {
+            throw new ArgumentError('Filters should be an object');
+        }
+
         if (!Number.isInteger(frameFrom) || !Number.isInteger(frameTo)) {
             throw new ArgumentError('The start and end frames both must be an integer');
         }
@@ -2397,12 +2407,14 @@
             (frameFrom < _job.startFrame && frameTo > _job.stopFrame)
         ));
 
-        for (const job of jobs) {
-            const result = await searchNonDeletedFrame(
-                job.id, Math.max(frameFrom, job.startFrame), Math.min(frameTo, job.stopFrame),
-            );
-            if (result !== null) {
-                return result;
+        if (filters.deleted === false) {
+            for (const job of jobs) {
+                const result = await searchNonDeletedFrame(
+                    job.id, Math.max(frameFrom, job.startFrame), Math.min(frameTo, job.stopFrame),
+                );
+                if (result !== null) {
+                    return result;
+                }
             }
         }
         return null;

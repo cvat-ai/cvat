@@ -1030,7 +1030,7 @@ export function getJobAsync(
 
             let frameNumber;
             if (initialFrame === null && !showDeletedFrames) {
-                frameNumber = await job.frames.searchNonDeleted(job.startFrame, job.stopFrame);
+                frameNumber = await job.frames.search({ deleted: false }, job.startFrame, job.stopFrame);
                 if (frameNumber === null) {
                     frameNumber = job.startFrame;
                 }
@@ -1481,9 +1481,9 @@ export function searchNonDeletedFrameAsync(frameFrom: number, frameTo: number, b
         } = state;
 
         try {
-            let frame = await jobInstance.frames.searchNonDeleted(frameFrom, frameTo);
+            let frame = await jobInstance.frames.search({ deleted: false }, frameFrom, frameTo);
             if (frame === null && backwardFrameTo !== undefined) {
-                frame = await jobInstance.frames.searchNonDeleted(frameFrom, backwardFrameTo);
+                frame = await jobInstance.frames.search({ deleted: false }, frameFrom, backwardFrameTo);
             }
             if (frame !== null) {
                 dispatch(changeFrameAsync(frame));
