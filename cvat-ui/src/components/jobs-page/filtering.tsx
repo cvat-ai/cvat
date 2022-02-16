@@ -18,6 +18,7 @@ import { useSelector } from 'react-redux';
 
 import { CombinedState } from 'reducers/interfaces';
 import Checkbox, { CheckboxChangeEvent } from 'antd/lib/checkbox/Checkbox';
+import Menu from 'antd/lib/menu';
 
 interface ResourceFilterProps {
     predefinedVisible: boolean;
@@ -77,7 +78,7 @@ export default function ResourceFilterHOC(
 
     const defaultAppliedFilter: {
         predefined: string[] | null;
-        recent: string[] | null;
+        recent: string | null;
         built: string | null;
     } = {
         predefined: null,
@@ -142,9 +143,9 @@ export default function ResourceFilterHOC(
 
             if (appliedFilter.predefined?.length) {
                 onApplyFilter(unite(appliedFilter.predefined));
-            } else if (appliedFilter.recent?.length) {
-                onApplyFilter(unite(appliedFilter.recent));
-                const tree = QbUtils.loadFromJsonLogic(JSON.parse(unite(appliedFilter.recent)), config);
+            } else if (appliedFilter.recent) {
+                onApplyFilter(appliedFilter.recent);
+                const tree = QbUtils.loadFromJsonLogic(JSON.parse(appliedFilter.recent), config);
                 if (isValidTree(tree)) {
                     setState(tree);
                 }
@@ -164,38 +165,6 @@ export default function ResourceFilterHOC(
             </div>
         );
 
-        function renderDropdownList(
-            listKey: 'predefined' | 'recent',
-            listContent: Record<string, string>,
-        ): JSX.Element[] {
-            return Object.keys(listContent).map((key: string): JSX.Element => (
-                <Checkbox
-                    checked={appliedFilter[listKey]?.includes(listContent[key])}
-                    onChange={(event: CheckboxChangeEvent) => {
-                        let updatedValue: string[] | null = appliedFilter[listKey] || [];
-                        if (event.target.checked) {
-                            updatedValue.push(listContent[key]);
-                        } else {
-                            updatedValue = updatedValue
-                                .filter((appliedValue: string) => appliedValue !== listContent[key]);
-                        }
-
-                        if (!updatedValue.length) {
-                            updatedValue = null;
-                        }
-
-                        setAppliedFilter({
-                            ...defaultAppliedFilter,
-                            [listKey]: updatedValue,
-                        });
-                    }}
-                    key={key}
-                >
-                    {key}
-                </Checkbox>
-            ));
-        }
-
         return (
             <div className='cvat-jobs-page-filters'>
                 <Dropdown
@@ -204,7 +173,34 @@ export default function ResourceFilterHOC(
                     placement='bottomLeft'
                     overlay={(
                         <div className='cvat-jobs-page-predefined-filters-list'>
-                            {renderDropdownList('predefined', predefinedFilters)}
+                            {Object.keys(predefinedFilters).map((key: string): JSX.Element => (
+                                <Checkbox
+                                    checked={appliedFilter.predefined?.includes(predefinedFilters[key])}
+                                    onChange={(event: CheckboxChangeEvent) => {
+                                        let updatedValue: string[] | null = appliedFilter.predefined || [];
+                                        if (event.target.checked) {
+                                            updatedValue.push(predefinedFilters[key]);
+                                        } else {
+                                            updatedValue = updatedValue
+                                                .filter((appliedValue: string) => (
+                                                    appliedValue !== predefinedFilters[key]
+                                                ));
+                                        }
+
+                                        if (!updatedValue.length) {
+                                            updatedValue = null;
+                                        }
+
+                                        setAppliedFilter({
+                                            ...defaultAppliedFilter,
+                                            predefined: updatedValue,
+                                        });
+                                    }}
+                                    key={key}
+                                >
+                                    {key}
+                                </Checkbox>
+                            )) }
                         </div>
                     )}
                 >
@@ -228,7 +224,21 @@ export default function ResourceFilterHOC(
                                     destroyPopupOnHide
                                     overlay={(
                                         <div className='cvat-jobs-page-recent-filters-list'>
-                                            {renderDropdownList('recent', recentFilters)}
+                                            <Menu>
+                                                {Object.keys(recentFilters).map((key: string): JSX.Element => (
+                                                    <Menu.Item
+                                                        key={key}
+                                                        onClick={() => {
+                                                            setAppliedFilter({
+                                                                ...defaultAppliedFilter,
+                                                                recent: key,
+                                                            });
+                                                        }}
+                                                    >
+                                                        {key}
+                                                    </Menu.Item>
+                                                ))}
+                                            </Menu>
                                         </div>
                                     )}
                                 >
@@ -261,6 +271,7 @@ export default function ResourceFilterHOC(
                                         setState(defaultTree);
                                         setAppliedFilter({
                                             ...appliedFilter,
+                                            recent: null,
                                             built: null,
                                         });
                                     }}

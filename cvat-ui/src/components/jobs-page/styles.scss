@@ -153,6 +153,16 @@
 
 .cvat-jobs-page-recent-filters-list {
     max-width: $grid-unit-size * 64;
+    .ant-menu {
+        border: none;
+
+        .ant-menu-item {
+            padding: $grid-unit-size;
+            margin: 0;
+            line-height: initial;
+            height: auto;
+        }
+    }
 }
 
 .cvat-jobs-page-filters-builder {
