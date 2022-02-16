@@ -1,3 +1,7 @@
+# Copyright (C) 2022 Intel Corporation
+#
+# SPDX-License-Identifier: MIT
+
 from rest_auth.registration.serializers import RegisterSerializer
 from rest_auth.serializers import PasswordResetSerializer
 from rest_framework import serializers
@@ -25,6 +29,6 @@ class PasswordResetSerializerEx(PasswordResetSerializer):
             if hasattr(settings, 'UI_PORT') and settings.UI_PORT:
                 domain += ':{}'.format(settings.UI_PORT)
         return {
-            'email_template_name': 'auth/password_reset_email.html',
+            'email_template_name': 'authentication/password_reset_email.html',
             'domain_override': domain
         }
