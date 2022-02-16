@@ -3203,8 +3203,7 @@ class TaskDataAPITestCase(APITestCase):
 
     def _test_api_v2_tasks_id_data_spec(self, user, spec, data, expected_compressed_type, expected_original_type, image_sizes,
                                         expected_storage_method=StorageMethodChoice.FILE_SYSTEM,
-                                        expected_uploaded_data_location=StorageChoice.LOCAL, dimension=DimensionType.DIM_2D,
-                                        expected_content_type=None):
+                                        expected_uploaded_data_location=StorageChoice.LOCAL, dimension=DimensionType.DIM_2D):
         # create task
         response = self._create_task(user, spec)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
@@ -3245,13 +3244,6 @@ class TaskDataAPITestCase(APITestCase):
             if dimension == DimensionType.DIM_2D:
                 preview = Image.open(io.BytesIO(b"".join(response.streaming_content)))
                 self.assertLessEqual(preview.size, image_sizes[0])
-
-        # check original frame content type
-        if expected_content_type:
-            response = self._get_original_frame(task_id, user, 0)
-            self.assertEqual(response.status_code, expected_status_code)
-            if expected_status_code == status.HTTP_200_OK:
-                self.assertEqual(response.headers['Content-Type'], expected_content_type)
 
         # check compressed chunk
         response = self._get_compressed_chunk(task_id, user, 0)
@@ -3352,8 +3344,7 @@ class TaskDataAPITestCase(APITestCase):
             "image_quality": 75,
         }
 
-        self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET, self.ChunkType.IMAGESET, image_sizes,
-                                             expected_content_type='image/jpeg')
+        self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET, self.ChunkType.IMAGESET, image_sizes)
 
         task_spec = {
             "name": "my task without copying #2",
@@ -3402,8 +3393,7 @@ class TaskDataAPITestCase(APITestCase):
             "image_quality": 43,
         }
 
-        self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.VIDEO, self.ChunkType.VIDEO, image_sizes,
-                                             expected_content_type='image/png')
+        self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.VIDEO, self.ChunkType.VIDEO, image_sizes)
 
         task_spec = {
             "name": "my video task without copying #5",
@@ -3493,7 +3483,7 @@ class TaskDataAPITestCase(APITestCase):
         image_sizes = self._image_sizes[task_data["server_files[0]"]]
 
         self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET, self.ChunkType.IMAGESET, image_sizes,
-                                             expected_uploaded_data_location=StorageChoice.LOCAL, expected_content_type='image/jpeg')
+                                             expected_uploaded_data_location=StorageChoice.LOCAL)
 
         task_spec.update([('name', 'my archive task #12')])
         task_data.update([('copy_data', True)])
@@ -3620,7 +3610,7 @@ class TaskDataAPITestCase(APITestCase):
 
         self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data,
             self.ChunkType.IMAGESET, self.ChunkType.IMAGESET,
-            image_sizes, StorageMethodChoice.CACHE, expected_content_type='image/jpeg')
+            image_sizes, StorageMethodChoice.CACHE)
 
         task_spec = {
             "name": "my pdf task #21",
@@ -3743,8 +3733,7 @@ class TaskDataAPITestCase(APITestCase):
         image_sizes = self._image_sizes["test_pointcloud_pcd.zip"]
         self._test_api_v2_tasks_id_data_spec(user, task_spec, task_data, self.ChunkType.IMAGESET,
                                              self.ChunkType.IMAGESET,
-                                             image_sizes, dimension=DimensionType.DIM_3D,
-                                             expected_content_type='image/x.point-cloud-data')
+                                             image_sizes, dimension=DimensionType.DIM_3D)
 
         task_spec = {
             "name": "my archive task #25",
