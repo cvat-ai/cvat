@@ -255,6 +255,19 @@ export default function ResourceFilterHOC(
                             />
                             <Space className='cvat-jobs-page-filters-space'>
                                 <Button
+                                    disabled={!QbUtils.queryString(state, config)}
+                                    size='small'
+                                    onClick={() => {
+                                        setState(defaultTree);
+                                        setAppliedFilter({
+                                            ...appliedFilter,
+                                            built: null,
+                                        });
+                                    }}
+                                >
+                                    Reset
+                                </Button>
+                                <Button
                                     size='small'
                                     type='primary'
                                     onClick={() => {
@@ -271,19 +284,6 @@ export default function ResourceFilterHOC(
                                     }}
                                 >
                                     Apply
-                                </Button>
-                                <Button
-                                    disabled={!QbUtils.queryString(state, config)}
-                                    size='small'
-                                    onClick={() => {
-                                        setState(defaultTree);
-                                        setAppliedFilter({
-                                            ...appliedFilter,
-                                            built: null,
-                                        });
-                                    }}
-                                >
-                                    Reset
                                 </Button>
                             </Space>
                         </div>
