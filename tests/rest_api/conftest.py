@@ -115,6 +115,12 @@ def annotations():
         return json.load(f)
 
 @pytest.fixture(scope='module')
+def cloud_storages():
+    with open(osp.join(ASSETS_DIR, 'cloudstorages.json')) as f:
+        return Container(json.load(f)['results'])
+
+
+@pytest.fixture(scope='module')
 def users_by_name(users):
     return {user['username']: user for user in users}
 

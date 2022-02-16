@@ -957,6 +957,23 @@ class CloudStorageWriteSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError('Account name for Azure container was not specified')
         return attrs
 
+    @staticmethod
+    def _manifests_validation(storage, manifests, is_testing):
+            if not is_testing:
+                # check manifest files availability
+                for manifest in manifests:
+                    file_status = storage.get_file_status(manifest.get('filename'))
+                    if file_status == Status.NOT_FOUND:
+                        raise serializers.ValidationError({
+                            'manifests': "The '{}' file does not exist on '{}' cloud storage" \
+                                .format(manifest.get('filename'), storage.name)
+                        })
+                    elif file_status == Status.FORBIDDEN:
+                        raise serializers.ValidationError({
+                            'manifests': "The '{}' file does not available on '{}' cloud storage. Access denied" \
+                                .format(manifest.get('filename'), storage.name)
+                        })
+
     def create(self, validated_data):
         provider_type = validated_data.get('provider_type')
         should_be_created = validated_data.pop('should_be_created', None)
@@ -991,22 +1008,11 @@ class CloudStorageWriteSerializer(serializers.ModelSerializer):
                 slogger.glob.warning("Failed with creating storage\n{}".format(str(ex)))
                 raise
 
+        is_testing = os.environ.get('TESTING', False)
         storage_status = storage.get_status()
-        if storage_status == Status.AVAILABLE:
+        if storage_status == Status.AVAILABLE or is_testing:
             manifests = validated_data.pop('manifests')
-            # check manifest files availability
-            for manifest in manifests:
-                file_status = storage.get_file_status(manifest.get('filename'))
-                if file_status == Status.NOT_FOUND:
-                    raise serializers.ValidationError({
-                        'manifests': "The '{}' file does not exist on '{}' cloud storage" \
-                            .format(manifest.get('filename'), storage.name)
-                    })
-                elif file_status == Status.FORBIDDEN:
-                    raise serializers.ValidationError({
-                        'manifests': "The '{}' file does not available on '{}' cloud storage. Access denied" \
-                            .format(manifest.get('filename'), storage.name)
-                    })
+            self._manifests_validation(storage, manifests, is_testing)
 
             db_storage = models.CloudStorage.objects.create(
                 credentials=credentials.convert_to_db(),
@@ -1080,8 +1086,9 @@ class CloudStorageWriteSerializer(serializers.ModelSerializer):
             'specific_attributes': parse_specific_attributes(instance.specific_attributes)
         }
         storage = get_cloud_storage_instance(cloud_provider=instance.provider_type, **details)
+        is_testing = os.environ.get('TESTING', False)
         storage_status = storage.get_status()
-        if storage_status == Status.AVAILABLE:
+        if storage_status == Status.AVAILABLE or is_testing:
             new_manifest_names = set(i.get('filename') for i in validated_data.get('manifests', []))
             previos_manifest_names = set(i.filename for i in instance.manifests.all())
             delta_to_delete = tuple(previos_manifest_names - new_manifest_names)
@@ -1090,18 +1097,7 @@ class CloudStorageWriteSerializer(serializers.ModelSerializer):
                 instance.manifests.filter(filename__in=delta_to_delete).delete()
             if delta_to_create:
                 # check manifest files existing
-                for manifest in delta_to_create:
-                    file_status = storage.get_file_status(manifest)
-                    if file_status == Status.NOT_FOUND:
-                        raise serializers.ValidationError({
-                            'manifests': "The '{}' file does not exist on '{}' cloud storage"
-                                .format(manifest, storage.name)
-                        })
-                    elif file_status == Status.FORBIDDEN:
-                        raise serializers.ValidationError({
-                            'manifests': "The '{}' file does not available on '{}' cloud storage. Access denied" \
-                                .format(manifest.get('filename'), storage.name)
-                        })
+                self._manifests_validation(storage, delta_to_create, is_testing)
                 manifest_instances = [models.Manifest(filename=f, cloud_storage=instance) for f in delta_to_create]
                 models.Manifest.objects.bulk_create(manifest_instances)
             if temporary_file:
