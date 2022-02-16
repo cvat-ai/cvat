@@ -2640,7 +2640,6 @@ COPY public.auth_user (id, password, last_login, is_superuser, username, first_n
 7	pbkdf2_sha256$260000$EtdCZTYNPHPX50kM67A7kA$JxuHkmB25RkeMszSV9Pd58E9AFdSu3Rx2UYSAKu/q4k=	\N	f	worker2	Worker	Second	worker2@cvat.org	f	t	2021-12-14 18:30:43+00
 8	pbkdf2_sha256$260000$PNnmu5EKgxZCY9HQgNLfta$JjsE9zrFYJ3ISUHANjjwnxuiGNRGIyVamqnqrkqR9fQ=	\N	f	worker3	Worker	Third	worker3@cvat.org	f	t	2021-12-14 18:31:25+00
 9	pbkdf2_sha256$260000$ipL3D6HSba1Cn7pzb5Q7bh$OFx/xO6Q3Q5sBGq3W3MBsmqFhVjkPmVVfaQdnJ8FAtg=	\N	f	worker4	Worker	Fourth	worker4@cvat.org	f	t	2021-12-14 18:32:01+00
-11	pbkdf2_sha256$260000$Zw76ANIvIsDngZGsTv2G8O$piTVoqHrpTskW8rI1FBT9rzM2dcpjhrcOfI3pDgtjbo=	\N	f	business2	Business	Second	business2@cvat.org	f	t	2021-12-14 18:34:01+00
 12	pbkdf2_sha256$260000$KcNRm6RwodBaGfWhh7ngqB$SsKUBx7vF1Ee0WBDwExd/JI39w1Ee0cBoox7lqNbhCk=	\N	f	business3	Business	Third	business3@cvat.org	f	t	2021-12-14 18:34:34+00
 13	pbkdf2_sha256$260000$BbdWU6TKtVfIAW00Dk4Qyb$mkqf3VrZULPrzfH5NFEeEYCnzBPLaBBsVgdeTCve4lA=	\N	f	business4	Business	Fourth	business4@cvat.org	f	t	2021-12-14 18:35:15+00
 14	pbkdf2_sha256$260000$47xWwGNsT3dvBc1qZDcLvC$fLC2y72acILlhGFiVp3nA/bnCxY/mRb7xOqOh7Es95k=	\N	f	dummy1	Dummy	First	dummy1@cvat.org	f	t	2021-12-14 18:36:00+00
@@ -2649,9 +2648,10 @@ COPY public.auth_user (id, password, last_login, is_superuser, username, first_n
 17	pbkdf2_sha256$260000$ZgcuAD4y4yevdl8uH9uDkv$D89cXpicXu+B4Vs+Nlew/sXYpZvO4kOO1IMoyYs1AvE=	\N	f	dummy4	Dummy	Fourth	dummy4@cvat.org	f	t	2021-12-14 18:37:41+00
 18	pbkdf2_sha256$260000$uOqP32bk2zHuvO0sdGBGmu$hMbzA1yBWcY5rIU670sZ3SHXRLUa7bCkbrMnrEDGSRM=	\N	t	admin2	Admin	Second	admin2@cvat.org	t	t	2021-12-14 18:38:46+00
 6	pbkdf2_sha256$260000$15iUjDNh5gPg5683u1HhOG$fF8hW6AR90o9SCsO/MomzdQFkgQsMUW3YQUlwwiC1vA=	2021-12-14 19:11:21.04874+00	f	worker1	Worker	First	worker1@cvat.org	f	t	2021-12-14 18:30:00+00
-2	pbkdf2_sha256$260000$Pf2xYWXBedoAJ504jyDD8e$8sJ244Ai0xhZrUTelapPNHlEg7CV0cCUaxbcxZtfaug=	2021-12-22 07:55:35.269206+00	f	user1	User	First	user1@cvat.org	f	t	2021-12-14 18:21:09+00
 10	pbkdf2_sha256$260000$X4F89IRqnBtojZuHidrwQG$j1+EpXfyvMesHdod4N+dNUfF4WKS2NWFfeGDec/43as=	2022-01-19 13:52:59.477881+00	f	business1	Business	First	business1@cvat.org	f	t	2021-12-14 18:33:06+00
 1	pbkdf2_sha256$260000$DevmxlmLwciP1P6sZs2Qag$U9DFtjTWx96Sk95qY6UXVcvpdQEP2LcoFBftk5D2RKY=	2022-02-11 14:54:28.083729+00	t	admin1	Admin	First	admin1@cvat.org	t	t	2021-12-14 18:04:57+00
+2	pbkdf2_sha256$260000$Pf2xYWXBedoAJ504jyDD8e$8sJ244Ai0xhZrUTelapPNHlEg7CV0cCUaxbcxZtfaug=	2022-02-16 15:50:21.599829+00	f	user1	User	First	user1@cvat.org	f	t	2021-12-14 18:21:09+00
+11	pbkdf2_sha256$260000$Zw76ANIvIsDngZGsTv2G8O$piTVoqHrpTskW8rI1FBT9rzM2dcpjhrcOfI3pDgtjbo=	2022-02-16 15:51:04.582822+00	f	business2	Business	Second	business2@cvat.org	f	t	2021-12-14 18:34:01+00
 \.
 
 
@@ -2692,6 +2692,7 @@ COPY public.auth_user_user_permissions (id, user_id, permission_id) FROM stdin;
 COPY public.authtoken_token (key, created, user_id) FROM stdin;
 a959159194c4b5238d95ef4e07919110fab346b0	2021-12-14 19:44:48.519942+00	10
 f952dc4730c58346882176f775ccaaf2a1c72416	2021-12-22 08:11:58.498742+00	1
+da40c93ec684e0d705be4b55ab98335b741e1a0a	2022-02-16 15:51:04.571866+00	11
 \.
 
 
@@ -2917,6 +2918,7 @@ mnb97kue40xo05g2rwwkw6d34sxrnesw	.eJxVjDsOwjAQBe_iGllO8E-U9JzB2l3v4gBypDipEHfHkV
 po0rbd1yhywmc0i2jfam69r419a66aj8	.eJxVjMsOwiAQRf-FtSE8pB1cuvcbCMMMUjWQlHZl_HdD0oVu7znnvkWI-1bC3nkNC4mL0OL0u2FMT64D0CPWe5Op1W1dUA5FHrTLWyN-XQ_376DEXkY9QeKzIpWVn9gYhEhkI3lyYFg7jTMDg7WkAdF5mCFh9mRZZUhOi88X-eU4dg:1mzwj8:CWx3-u6eXmWLpwiFMK5_yWnoPY3yUSf1QCZY-UdJcF8	2022-01-05 08:11:58.507079+00
 v28l0efbrv9x06z97ilwcf7lwtuf4ctc	.eJxVjDsOwjAQRO_iGlm22fhDSc8ZrLV3gwPIluKkQtydREoBzRTz3sxbRFyXEtfOc5xIXIRW4vRbJsxPrjuhB9Z7k7nVZZ6S3BV50C5vjfh1Pdy_g4K9bGuLXqMDQqdDTtYN6AHIIoGGMIJlQwxB-VFn3gLPzjil3ABkAIBZfL7_vTer:1nABOV:0UAK9VV6D18QF1-189XQ2T9LrQUSdioGNoHdRUzzt7o	2022-02-02 13:52:59.489923+00
 wf6d6vzf4u74l08o0qgbqehei21hibea	.eJxVjDEOwjAMRe-SGUUkpHZgZO8ZIttxSAG1UtNOiLtDpQ6w_vfef5lE61LT2nROQzYX48zhd2OSh44byHcab5OVaVzmge2m2J02209Zn9fd_Tuo1Oq3DrGwD040Ro_-nJmJgkgsqAAIioCi0KGKMhU4Mgip6wjRF6JyMu8PBAI5Mw:1nIXJc:oovNJRods5cbviWOWush4H3jDdP8XklEignva_EnQ8Q	2022-02-25 14:54:28.092369+00
+18cfjnkfi8mqyszzfzauhqrjwdbmq4de	.eJxVjDEOwjAMRe-SGUVx7VQOIztnqOwmpgXUSk07Ie4OlTrA-t97_-U62dah22pZujG7swNwp99RpX-UaSf5LtNt9v08rcuoflf8Qau_zrk8L4f7dzBIHb41gwRjpBAFWRsTNIpWtCcgzBSRDVqQpmgiSazJUFEot4kLWGD3_gAA-TgD:1nKMa8:kO5EI_Dv6NsyTPDlqSuXxoT6rZrIfN8lcv-lU57JzF4	2022-03-02 15:51:04.588742+00
 \.
 
 
@@ -3310,6 +3312,8 @@ COPY public.engine_clientfile (id, file, data_id) FROM stdin;
 --
 
 COPY public.engine_cloudstorage (id, provider_type, resource, display_name, created_date, updated_date, credentials, credentials_type, specific_attributes, description, owner_id, organization_id) FROM stdin;
+1	AWS_S3_BUCKET	dummybucket	Bucket 1	2022-02-16 15:50:54.927305+00	2022-02-16 15:50:54.936597+00		ANONYMOUS_ACCESS	region=eu-central-1		2	\N
+2	AWS_S3_BUCKET	dummybucket	Bucket 2	2022-02-16 15:51:33.88767+00	2022-02-16 15:51:33.900434+00	xxx xxx	KEY_SECRET_KEY_PAIR	region=eu-central-1		11	2
 \.
 
 
@@ -3855,6 +3859,8 @@ COPY public.engine_labeledtrackattributeval (id, value, spec_id, track_id) FROM 
 --
 
 COPY public.engine_manifest (id, filename, cloud_storage_id) FROM stdin;
+1	manifest.jsonl	1
+2	manifest.jsonl	2
 \.
 
 
@@ -4148,7 +4154,7 @@ SELECT pg_catalog.setval('public.engine_clientfile_id_seq', 359, true);
 -- Name: engine_cloudstorage_id_seq; Type: SEQUENCE SET; Schema: public; Owner: root
 --
 
-SELECT pg_catalog.setval('public.engine_cloudstorage_id_seq', 1, false);
+SELECT pg_catalog.setval('public.engine_cloudstorage_id_seq', 2, true);
 
 
 --
@@ -4246,7 +4252,7 @@ SELECT pg_catalog.setval('public.engine_labeledtrackattributeval_id_seq', 1, fal
 -- Name: engine_manifest_id_seq; Type: SEQUENCE SET; Schema: public; Owner: root
 --
 
-SELECT pg_catalog.setval('public.engine_manifest_id_seq', 1, false);
+SELECT pg_catalog.setval('public.engine_manifest_id_seq', 2, true);
 
 
 --

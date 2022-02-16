@@ -1,0 +1,51 @@
+{
+  "count": 2,
+  "next": null,
+  "previous": null,
+  "results": [
+    {
+      "created_date": "2022-02-16T15:51:33.887670Z",
+      "credentials_type": "KEY_SECRET_KEY_PAIR",
+      "description": "",
+      "display_name": "Bucket 2",
+      "id": 2,
+      "manifests": [
+        "manifest.jsonl"
+      ],
+      "organization": 2,
+      "owner": {
+        "first_name": "Business",
+        "id": 11,
+        "last_name": "Second",
+        "url": "http://localhost:8080/api/users/11",
+        "username": "business2"
+      },
+      "provider_type": "AWS_S3_BUCKET",
+      "resource": "dummybucket",
+      "specific_attributes": "region=eu-central-1",
+      "updated_date": "2022-02-16T15:51:33.900434Z"
+    },
+    {
+      "created_date": "2022-02-16T15:50:54.927305Z",
+      "credentials_type": "ANONYMOUS_ACCESS",
+      "description": "",
+      "display_name": "Bucket 1",
+      "id": 1,
+      "manifests": [
+        "manifest.jsonl"
+      ],
+      "organization": null,
+      "owner": {
+        "first_name": "User",
+        "id": 2,
+        "last_name": "First",
+        "url": "http://localhost:8080/api/users/2",
+        "username": "user1"
+      },
+      "provider_type": "AWS_S3_BUCKET",
+      "resource": "dummybucket",
+      "specific_attributes": "region=eu-central-1",
+      "updated_date": "2022-02-16T15:50:54.936597Z"
+    }
+  ]
+}
