@@ -225,23 +225,31 @@ export default function ResourceFilterHOC(
                                     overlay={(
                                         <div className='cvat-jobs-page-recent-filters-list'>
                                             <Menu selectable={false}>
-                                                {Object.keys(recentFilters).map((key: string): JSX.Element => (
-                                                    <Menu.Item
-                                                        key={key}
-                                                        onClick={() => {
-                                                            if (appliedFilter.recent === key) {
-                                                                setAppliedFilter(defaultAppliedFilter);
-                                                            } else {
-                                                                setAppliedFilter({
-                                                                    ...defaultAppliedFilter,
-                                                                    recent: key,
-                                                                });
-                                                            }
-                                                        }}
-                                                    >
-                                                        {key}
-                                                    </Menu.Item>
-                                                ))}
+                                                {Object.keys(recentFilters).map((key: string): JSX.Element | null => {
+                                                    const tree = QbUtils.loadFromJsonLogic(JSON.parse(key), config);
+
+                                                    if (!tree) {
+                                                        return null;
+                                                    }
+
+                                                    return (
+                                                        <Menu.Item
+                                                            key={key}
+                                                            onClick={() => {
+                                                                if (appliedFilter.recent === key) {
+                                                                    setAppliedFilter(defaultAppliedFilter);
+                                                                } else {
+                                                                    setAppliedFilter({
+                                                                        ...defaultAppliedFilter,
+                                                                        recent: key,
+                                                                    });
+                                                                }
+                                                            }}
+                                                        >
+                                                            {QbUtils.queryString(tree, config)}
+                                                        </Menu.Item>
+                                                    );
+                                                })}
                                             </Menu>
                                         </div>
                                     )}
