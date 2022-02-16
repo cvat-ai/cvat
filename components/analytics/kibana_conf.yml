@@ -13,6 +13,9 @@ http:
     analytics-auth:
       forwardauth:
         address: http://cvat:8080/analytics
+        authRequestHeaders:
+          - "Cookie"
+
     strip-prefix:
       stripprefix:
         prefixes:
