@@ -24,7 +24,7 @@ class TestGetUsers:
 
     def test_admin_can_see_all_others(self, users):
         exclude_paths = [f"root[{i}]['last_login']" for i in range(len(users))]
-        self._test_can_see('admin2', users, exclude_paths=exclude_paths,
+        self._test_can_see('admin2', users.raw, exclude_paths=exclude_paths,
             page_size="all")
 
     def test_everybody_can_see_self(self, users_by_name):
