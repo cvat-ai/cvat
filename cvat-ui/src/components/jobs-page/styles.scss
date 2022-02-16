@@ -189,8 +189,8 @@
                 button.ant-btn {
                     width: auto !important;
                     opacity: 1 !important;
-                    margin-right: 8px !important;
-                    padding: 0 8px !important;
+                    margin-right: $grid-unit-size !important;
+                    padding: 0 $grid-unit-size !important;
                 }
             }
         }

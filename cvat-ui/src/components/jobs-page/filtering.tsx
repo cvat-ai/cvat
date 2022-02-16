@@ -224,15 +224,19 @@ export default function ResourceFilterHOC(
                                     destroyPopupOnHide
                                     overlay={(
                                         <div className='cvat-jobs-page-recent-filters-list'>
-                                            <Menu>
+                                            <Menu selectable={false}>
                                                 {Object.keys(recentFilters).map((key: string): JSX.Element => (
                                                     <Menu.Item
                                                         key={key}
                                                         onClick={() => {
-                                                            setAppliedFilter({
-                                                                ...defaultAppliedFilter,
-                                                                recent: key,
-                                                            });
+                                                            if (appliedFilter.recent === key) {
+                                                                setAppliedFilter(defaultAppliedFilter);
+                                                            } else {
+                                                                setAppliedFilter({
+                                                                    ...defaultAppliedFilter,
+                                                                    recent: key,
+                                                                });
+                                                            }
                                                         }}
                                                     >
                                                         {key}
