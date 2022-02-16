@@ -46,7 +46,7 @@ function SortingModalComponent(props: Props): JSX.Element {
         <Dropdown
             destroyPopupOnHide
             visible={visible}
-            placement='bottomCenter'
+            placement='bottomLeft'
             overlay={(
                 <div className='cvat-jobs-page-sorting-list'>
                     {sortingFields.map((sortingField: string, index: number): JSX.Element => {

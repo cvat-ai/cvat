@@ -216,7 +216,7 @@ export default function ResourceFilterHOC(
                 <Dropdown
                     destroyPopupOnHide
                     visible={predefinedVisible}
-                    placement='bottomCenter'
+                    placement='bottomLeft'
                     overlay={(
                         <div className='cvat-jobs-page-predefined-filters-list'>
                             {renderDropdownList('predefined', predefinedFilters)}
