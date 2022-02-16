@@ -5,7 +5,7 @@
 from http import HTTPStatus
 from deepdiff import DeepDiff
 import pytest
-from .utils.config import get_method
+from .utils.config import get_method, patch_method
 
 def get_job_staff(job, tasks, projects):
     job_staff = []
@@ -22,14 +22,6 @@ def get_job_staff(job, tasks, projects):
 
     return job_staff
 
-def get_org_staff(org_id, memberships):
-    if org_id in ['', None]:
-        return set()
-    else:
-        return set(m['user']['id'] for m in memberships
-            if m['role'] in ['maintainer', 'owner'] and m['user'] != None
-                and m['organization'] == org_id)
-
 def filter_jobs(jobs, tasks, org):
     if org is None:
         kwargs = {}
@@ -44,13 +36,6 @@ def filter_jobs(jobs, tasks, org):
             if tasks[job['task_id']]['organization'] == org]
 
     return jobs, kwargs
-
-def is_org_member(memberships, user, org_id):
-    if org_id in ['', None]:
-        return True
-    else:
-        return user['id'] in set(m['user']['id'] for m in memberships
-            if m['user'] != None and m['organization'] == org_id)
 
 class TestGetJobs:
     def _test_get_job_200(self, user, jid, data, **kwargs):
@@ -74,11 +59,11 @@ class TestGetJobs:
     @pytest.mark.parametrize('org_id', ['', None, 1, 2])
     @pytest.mark.parametrize('groups', [['business'], ['user'], ['worker'], []])
     def test_non_admin_get_job(self, org_id, groups, users, jobs, tasks, projects,
-        memberships):
+        org_staff):
         # keep the reasonable amount of users and jobs
         users = [u for u in users if u['groups'] == groups][:4]
         jobs, kwargs = filter_jobs(jobs, tasks, org_id)
-        org_staff = get_org_staff(org_id, memberships)
+        org_staff = org_staff(org_id)
 
         for job in jobs[:8]:
             job_staff = get_job_staff(job, tasks, projects)
@@ -109,11 +94,10 @@ class TestListJobs:
     @pytest.mark.parametrize('org_id', ['', None, 1, 2])
     @pytest.mark.parametrize('groups', [['business'], ['user'], ['worker'], []])
     def test_non_admin_list_jobs(self, org_id, groups, users, jobs, tasks,
-        projects, memberships):
-        # keep the reasonable amount of users and jobs
+        projects, org_staff, is_org_member):
         users = [u for u in users if u['groups'] == groups][:2]
         jobs, kwargs = filter_jobs(jobs, tasks, org_id)
-        org_staff = get_org_staff(org_id, memberships)
+        org_staff = org_staff(org_id)
 
         for user in users:
             user_jobs = []
@@ -121,7 +105,7 @@ class TestListJobs:
                 job_staff = get_job_staff(job, tasks, projects)
                 if user['id'] in job_staff | org_staff:
                     user_jobs.append(job)
-            if is_org_member(memberships, user, org_id):
+            if is_org_member(user['id'], org_id):
                 self._test_list_jobs_200(user['username'], user_jobs, **kwargs)
             else:
                 self._test_list_jobs_403(user['username'], **kwargs)
@@ -138,33 +122,179 @@ class TestGetAnnotations:
         response = get_method(user, f'jobs/{jid}/annotations', **kwargs)
         assert response.status_code == HTTPStatus.FORBIDDEN
 
-    @pytest.mark.parametrize('org', [None, '', 1, 2])
-    def test_admin_get_job_annotations(self, jobs, tasks, annotations, org):
+    @pytest.mark.parametrize('org', [''])
+    @pytest.mark.parametrize('groups, job_staff, is_allow', [
+        (['admin'],    True, True), (['admin'],    False, True),
+        (['business'], True, True), (['business'], False, False),
+        (['worker'],   True, True), (['worker'],   False, False),
+        (['user'],     True, True), (['user'],     False, False)
+    ])
+    def test_user_get_job_annotations(self, org, groups, job_staff,
+            is_allow, users, jobs, tasks, annotations, is_job_staff):
+        users = [u for u in users if u['groups'] == groups]
         jobs, kwargs = filter_jobs(jobs, tasks, org)
 
-        # keep only the reasonable amount of jobs
-        for job in jobs[:8]:
-            jid = str(job['id'])
-            self._test_get_job_annotations_200('admin2', jid,
-                annotations['job'][jid], **kwargs)
-
-    @pytest.mark.parametrize('org_id', ['', None])
-    @pytest.mark.parametrize('groups', [['business'], ['user'], ['worker'], []])
-    def test_non_admin_get_job_annotations(self, org_id, groups, users, jobs, tasks,
-        projects, annotations, memberships):
-        users = [u for u in users if u['groups'] == groups][:4]
-        jobs, kwargs = filter_jobs(jobs, tasks, org_id)
-        org_staff = get_org_staff(org_id, memberships)
-
-        # keep only the reasonable amount of jobs
-        for job in jobs[:8]:
-            job_staff = get_job_staff(job, tasks, projects)
-            jid = str(job['id'])
-
+        job_id, username = None, None
+        for jid in [job['id'] for job in jobs]:
             for user in users:
-                if user['id'] in job_staff | org_staff:
-                    self._test_get_job_annotations_200(user['username'],
-                        jid, annotations['job'][jid], **kwargs)
-                else:
-                    self._test_get_job_annotations_403(user['username'],
-                        jid, **kwargs)
+                if job_staff == is_job_staff(user['id'], jid):
+                    job_id, username = jid, user['username']
+                    break
+
+        if is_allow:
+            self._test_get_job_annotations_200(username,
+                job_id, annotations['job'][str(job_id)], **kwargs)
+        else:
+            self._test_get_job_annotations_403(username, job_id, **kwargs)
+
+    @pytest.mark.parametrize('org', [1])
+    @pytest.mark.parametrize('role, job_staff, is_allow', [
+        ('owner',      True,  True), ('maintainer', True,  True),
+        ('supervisor', True,  True), ('owner',      True,  True),
+        ('owner',      False, True), ('maintainer', False, False),
+        ('supervisor', False, True), ('owner',      False, False),
+    ])
+    def test_members_get_job_annotations(self, org, role, job_staff, is_allow,
+            find_users, jobs, tasks, annotations, find_job_staff_user):
+        users = find_users(org=org, role=role)
+        jobs, kwargs = filter_jobs(jobs, tasks, org)
+        username, jid = find_job_staff_user(jobs, users, job_staff)
+
+        if is_allow:
+            self._test_get_job_annotations_200(username,
+                jid, annotations['job'][str(jid)], **kwargs)
+        else:
+            self._test_get_job_annotations_403(username, jid, **kwargs)
+
+    @pytest.mark.parametrize('org', [1])
+    @pytest.mark.parametrize('groups, is_allow', [
+        ('admin', True), ('business', False), ('worker', False), ('user', False)
+    ])
+    def test_non_members_get_job_annotations(self, org, groups, is_allow, users,
+            jobs, tasks, is_job_staff, is_org_member, annotations):
+        users = [user for user in users if user['groups'] == groups]
+        jobs, kwargs = filter_jobs(jobs, tasks, org)
+
+        job_id, username = None, None
+        for jid in [job['id'] for job in jobs]:
+            for user in users:
+                if not is_org_member(user['id'], org) and \
+                        not is_job_staff(jid, user['id']):
+                    job_id, username = jid, user['username']
+                    break
+
+        if is_allow:
+            self._test_get_job_annotations_200(username,
+                job_id, annotations['job'][str(job_id)], **kwargs)
+        else:
+            self._test_get_job_annotations_403(username, job_id, **kwargs)
+
+
+class TestPatchJobAnnotations:
+    _ORG = 2
+
+    def _test_check_respone(self, is_allow, response):
+        if is_allow:
+            assert response.status_code == HTTPStatus.OK
+        else:
+            assert response.status_code == HTTPStatus.FORBIDDEN
+
+    @pytest.fixture(scope='class')
+    def request_data(self, annotations):
+        def get_data(jid):
+            data = annotations['job'][str(jid)].copy()
+            data['shapes'][0].update({'points': [2, 3, 4, 5, 6, 7]})
+            return data
+        return get_data
+
+    @pytest.mark.parametrize('role, job_staff, is_allow', [
+        ('maintainer', False, True),  ('owner',  False, True),
+        ('supervisor', False, False), ('worker', False, False),
+        ('maintainer', True, True), ('owner',  True, True),
+        ('supervisor', True, True), ('worker', True, True)
+    ])
+    def test_member_update_job_annotations(self, role, job_staff, is_allow,
+            find_job_staff_user, find_users, request_data, jobs, tasks):
+        users = find_users(role=role, org=self._ORG)
+        jobs, _ = filter_jobs(jobs, tasks, self._ORG)
+        username, jid = find_job_staff_user(jobs, users, job_staff)
+
+        response = patch_method(username, f'jobs/{jid}/annotations',
+            request_data(jid), org_id=self._ORG, action='update')
+
+        self._test_check_respone(is_allow, response)
+
+
+    @pytest.mark.parametrize('groups, is_allow', [
+        ('admin', True), ('business', False), ('worker', False), ('user', False)
+    ])
+    def test_non_member_update_job_annotations(self, groups, is_allow, jobs, tasks,
+             find_job_staff_user, is_org_member, request_data, users):
+        users = [user for user in users if user['groups'] == groups and \
+            not is_org_member(user['id'], self._ORG)]
+        jobs, _ = filter_jobs(jobs, tasks, self._ORG)
+        username, jid = find_job_staff_user(jobs, users, False)
+
+        response = patch_method(username, f'jobs/{jid}/annotations',
+            request_data(jid), org_id=self._ORG, action='update')
+
+        self._test_check_respone(is_allow, response)
+
+    @pytest.mark.parametrize('org', [''])
+    @pytest.mark.parametrize('groups, job_staff, is_allow', [
+        (['admin'],    True, True), (['admin'],    False, True),
+        (['business'], True, True), (['business'], False, False),
+        (['worker'],   True, True), (['worker'],   False, False),
+        (['user'],     True, True), (['user'],     False, False)
+    ])
+    def test_user_update_job_annotations(self, org, groups, job_staff,
+            is_allow, users, jobs, tasks, request_data, find_job_staff_user):
+        users = [u for u in users if u['groups'] == groups]
+        jobs, _ = filter_jobs(jobs, tasks, org)
+        username, jid = find_job_staff_user(jobs, users, job_staff)
+
+        response = patch_method(username, f'jobs/{jid}/annotations',
+            request_data(jid), org_id=org, action='update')
+
+        self._test_check_respone(is_allow, response)
+
+class TestPatchJob:
+    _ORG = 2
+
+    @pytest.fixture(scope='class')
+    def find_task_staff_user(self, is_task_staff):
+        def find(jobs, users, is_staff):
+            for job in jobs:
+                for user in users:
+                    if is_staff == is_task_staff(user['id'], job['task_id']):
+                        return user, job['id']
+            return None, None
+        return find
+
+    @pytest.fixture(scope='class')
+    def new_assignee(self, jobs, tasks, assignee_id, org_staff):
+        def find_new_assignee(jid, user_id):
+            members = org_staff(tasks[jobs[jid]['task_id']]['organization'])
+            members -= {assignee_id(jobs[jid]), user_id}
+            return members.pop()
+        return find_new_assignee
+
+    @pytest.mark.parametrize('role, task_staff, is_allow', [
+        ('maintainer', False, True),  ('owner',  False, True),
+        ('supervisor', False, False), ('worker', False, False),
+        ('maintainer', True, True), ('owner',  True, True),
+        ('supervisor', True, True), ('worker', True, True)
+    ])
+    def test_member_update_job_assignee(self, role, task_staff, is_allow,
+            find_task_staff_user, find_users, jobs, tasks, new_assignee):
+        users = find_users(role=role, org=self._ORG)
+        jobs, _ = filter_jobs(jobs, tasks, self._ORG)
+        user, jid = find_task_staff_user(jobs, users, task_staff)
+
+        response = patch_method(user['username'], f'jobs/{jid}',
+            {'assignee': new_assignee(jid, user['id'])}, org_id=self._ORG)
+
+        if is_allow:
+            assert response.status_code == HTTPStatus.OK
+        else:
+            assert response.status_code == HTTPStatus.FORBIDDEN
