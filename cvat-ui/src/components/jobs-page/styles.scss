@@ -206,7 +206,7 @@
 .cvat-jobs-page-sorting-list {
     width: $grid-unit-size * 25;
 
-    > div:not(:last-child) {
+    > div {
         display: flex;
         justify-content: space-between;
         align-items: center;
@@ -232,7 +232,6 @@
     }
 }
 
-.cvat-jobs-page-sorting-space,
 .cvat-jobs-page-filters-space {
     justify-content: right;
     align-items: center;

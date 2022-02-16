@@ -11,7 +11,6 @@ import Checkbox, { CheckboxChangeEvent } from 'antd/lib/checkbox/Checkbox';
 import Dropdown from 'antd/lib/dropdown';
 import { omit } from 'lodash';
 import CVATTooltip from 'components/common/cvat-tooltip';
-import Space from 'antd/lib/space';
 
 interface Props {
     sortingFields: string[];
@@ -114,13 +113,10 @@ function SortingModalComponent(props: Props): JSX.Element {
                             </div>
                         );
                     })}
-                    <Space className='cvat-jobs-page-sorting-space'>
-                        <Button size='small' onClick={() => onVisibleChange(false)}>Close</Button>
-                    </Space>
                 </div>
             )}
         >
-            <Button type='default' onClick={() => onVisibleChange(true)}>
+            <Button type='default' onClick={() => onVisibleChange(!visible)}>
                 Sort by
                 <OrderedListOutlined />
             </Button>

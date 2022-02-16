@@ -164,21 +164,6 @@ export default function ResourceFilterHOC(
             </div>
         );
 
-        const closeButton = (onClick: () => void): JSX.Element => (
-            <Button
-                size='small'
-                onClick={onClick}
-            >
-                Close
-            </Button>
-        );
-
-        const closeButtonWithinSpace = (onClick: () => void): JSX.Element => (
-            <Space className='cvat-jobs-page-filters-space'>
-                { closeButton(onClick) }
-            </Space>
-        );
-
         function renderDropdownList(
             listKey: 'predefined' | 'recent',
             listContent: Record<string, string>,
@@ -220,11 +205,10 @@ export default function ResourceFilterHOC(
                     overlay={(
                         <div className='cvat-jobs-page-predefined-filters-list'>
                             {renderDropdownList('predefined', predefinedFilters)}
-                            {closeButtonWithinSpace(() => onPredefinedVisibleChange(false))}
                         </div>
                     )}
                 >
-                    <Button type='default' onClick={() => onPredefinedVisibleChange(true)}>
+                    <Button type='default' onClick={() => onPredefinedVisibleChange(!predefinedVisible)}>
                         Quick filters
                         { appliedFilter.predefined ?
                             <FilterFilled /> :
@@ -245,9 +229,6 @@ export default function ResourceFilterHOC(
                                     overlay={(
                                         <div className='cvat-jobs-page-recent-filters-list'>
                                             {renderDropdownList('recent', recentFilters)}
-                                            {closeButtonWithinSpace(
-                                                () => onRecentVisibleChange(false),
-                                            )}
                                         </div>
                                     )}
                                 >
@@ -255,7 +236,7 @@ export default function ResourceFilterHOC(
                                         size='small'
                                         type='text'
                                         onClick={
-                                            () => onRecentVisibleChange(true)
+                                            () => onRecentVisibleChange(!recentVisible)
                                         }
                                     >
                                         Recent
@@ -291,12 +272,24 @@ export default function ResourceFilterHOC(
                                 >
                                     Apply
                                 </Button>
-                                { closeButton(() => onBuilderVisibleChange(false)) }
+                                <Button
+                                    disabled={!QbUtils.queryString(state, config)}
+                                    size='small'
+                                    onClick={() => {
+                                        setState(defaultTree);
+                                        setAppliedFilter({
+                                            ...appliedFilter,
+                                            built: null,
+                                        });
+                                    }}
+                                >
+                                    Reset
+                                </Button>
                             </Space>
                         </div>
                     )}
                 >
-                    <Button type='default' onClick={() => onBuilderVisibleChange(true)}>
+                    <Button type='default' onClick={() => onBuilderVisibleChange(!builderVisible)}>
                         Filter
                         { appliedFilter.built || appliedFilter.recent ?
                             <FilterFilled /> :
