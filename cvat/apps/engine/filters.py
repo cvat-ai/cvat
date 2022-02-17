@@ -2,7 +2,6 @@
 #
 # SPDX-License-Identifier: MIT
 
-from django.forms import ValidationError
 from rest_framework import filters
 from functools import reduce
 import operator
