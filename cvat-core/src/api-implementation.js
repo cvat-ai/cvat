@@ -154,7 +154,7 @@ const config = require('./config');
             checkFilter(filter, {
                 page: isInteger,
                 filter: isString,
-                order_by: isString,
+                sort: isString,
                 taskID: isInteger,
                 jobID: isInteger,
             });

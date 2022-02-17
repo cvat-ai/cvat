@@ -7,10 +7,7 @@ import io
 import os
 import os.path as osp
 import pytz
-import json
 import shutil
-import operator
-from functools import reduce
 import traceback
 from datetime import datetime
 from distutils.util import strtobool
@@ -22,11 +19,9 @@ import django_rq
 from django.apps import apps
 from django.conf import settings
 from django.contrib.auth.models import User
-from django.db.models import Q
 from django.db import IntegrityError
 from django.http import HttpResponse, HttpResponseNotFound, HttpResponseBadRequest
 from django.utils import timezone
-from django_filters import rest_framework as filters
 
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import (
@@ -52,9 +47,9 @@ from cvat.apps.engine.frame_provider import FrameProvider
 from cvat.apps.engine.media_extractors import ImageListReader
 from cvat.apps.engine.mime_types import mimetypes
 from cvat.apps.engine.models import (
-    Job, StatusChoice, Task, Project, Issue, Data,
+    Job, Task, Project, Issue, Data,
     Comment, StorageMethodChoice, StorageChoice, Image,
-    CredentialsTypeChoice, CloudProviderChoice
+    CloudProviderChoice
 )
 from cvat.apps.engine.models import CloudStorage as CloudStorageModel
 from cvat.apps.engine.serializers import (
@@ -225,31 +220,8 @@ class ServerViewSet(viewsets.ViewSet):
         }
         return Response(response)
 
-
-class ProjectFilter(filters.FilterSet):
-    name = filters.CharFilter(field_name="name", lookup_expr="icontains")
-    owner = filters.CharFilter(field_name="owner__username", lookup_expr="icontains")
-    assignee = filters.CharFilter(field_name="assignee__username", lookup_expr="icontains")
-    status = filters.CharFilter(field_name="status", lookup_expr="icontains")
-
-    class Meta:
-        model = models.Project
-        fields = ("id", "name", "owner", "status")
-
 @extend_schema_view(list=extend_schema(
     summary='Returns a paginated list of projects according to query parameters (12 projects per page)',
-    parameters=[
-        OpenApiParameter('id', description='A unique number value identifying this project',
-            location=OpenApiParameter.QUERY, type=OpenApiTypes.NUMBER),
-        OpenApiParameter('name', description='Find all projects where name contains a parameter value',
-            location=OpenApiParameter.QUERY, type=OpenApiTypes.STR),
-        OpenApiParameter('owner', description='Find all project where owner name contains a parameter value',
-            location=OpenApiParameter.QUERY, type=OpenApiTypes.STR),
-        OpenApiParameter('status', description='Find all projects with a specific status',
-            location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, enum=StatusChoice.list()),
-        OpenApiParameter('names_only', description="Returns only names and id's of projects",
-            location=OpenApiParameter.QUERY, type=OpenApiTypes.BOOL)
-    ],
     responses={
         '200': PolymorphicProxySerializer(component_name='PolymorphicProject',
             serializers=[
@@ -281,18 +253,17 @@ class ProjectViewSet(viewsets.ModelViewSet):
         queryset=models.Label.objects.order_by('id')
     ))
 
-    search_fields = ("name", "owner__username", "assignee__username", "status")
-    filterset_class = ProjectFilter
-    ordering_fields = ("id", "name", "owner", "status", "assignee")
-    ordering = ("-id",)
+    search_fields = ('id', 'name', 'owner', 'assignee', 'status')
+    filter_fields = search_fields
+    ordering_fields = search_fields
+    ordering = "-id"
+    lookup_fields = {'owner': 'owner__username', 'assignee': 'assignee__username'}
     http_method_names = ('get', 'post', 'head', 'patch', 'delete')
     iam_organization_field = 'organization'
 
     def get_serializer_class(self):
         if self.request.path.endswith('tasks'):
             return TaskSerializer
-        if self.request.query_params and self.request.query_params.get("names_only") == "true":
-            return ProjectSearchSerializer
         else:
             return ProjectSerializer
 
@@ -554,35 +525,8 @@ class DataChunkGetter:
             return Response(data='unknown data type {}.'.format(self.type),
                 status=status.HTTP_400_BAD_REQUEST)
 
-class TaskFilter(filters.FilterSet):
-    project = filters.CharFilter(field_name="project__name", lookup_expr="icontains")
-    name = filters.CharFilter(field_name="name", lookup_expr="icontains")
-    owner = filters.CharFilter(field_name="owner__username", lookup_expr="icontains")
-    mode = filters.CharFilter(field_name="mode", lookup_expr="icontains")
-    status = filters.CharFilter(field_name="status", lookup_expr="icontains")
-    assignee = filters.CharFilter(field_name="assignee__username", lookup_expr="icontains")
-
-    class Meta:
-        model = Task
-        fields = ("id", "project_id", "project", "name", "owner", "mode", "status",
-            "assignee")
-
 @extend_schema_view(list=extend_schema(
     summary='Returns a paginated list of tasks according to query parameters (10 tasks per page)',
-    parameters=[
-        OpenApiParameter('id', description='A unique number value identifying this task',
-            location=OpenApiParameter.QUERY, type=OpenApiTypes.NUMBER),
-        OpenApiParameter('name', description='Find all tasks where name contains a parameter value',
-            location=OpenApiParameter.QUERY, type=OpenApiTypes.STR),
-        OpenApiParameter('owner', description='Find all tasks where owner name contains a parameter value',
-            location=OpenApiParameter.QUERY, type=OpenApiTypes.STR),
-        OpenApiParameter('mode', description='Find all tasks with a specific mode',
-            location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, enum=['annotation', 'interpolation']),
-        OpenApiParameter('status', description='Find all tasks with a specific status',
-            location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, enum=StatusChoice.list()),
-        OpenApiParameter('assignee', description='Find all tasks where assignee name contains a parameter value',
-            location=OpenApiParameter.QUERY, type=OpenApiTypes.STR)
-    ],
     responses={
         '200': TaskSerializer(many=True),
     }, tags=['tasks'], versions=['2.0']))
@@ -613,12 +557,14 @@ class TaskViewSet(UploadMixin, viewsets.ModelViewSet):
     queryset = Task.objects.prefetch_related(
             Prefetch('label_set', queryset=models.Label.objects.order_by('id')),
             "label_set__attributespec_set",
-            "segment_set__job_set",
-        ).order_by('-id')
+            "segment_set__job_set")
     serializer_class = TaskSerializer
-    search_fields = ("name", "owner__username", "mode", "status")
-    filterset_class = TaskFilter
-    ordering_fields = ("id", "name", "owner", "status", "assignee", "subset")
+
+    search_fields = ('id', 'project_name', 'project_id', 'name', 'owner', 'status', 'assignee', 'subset')
+    filter_fields = search_fields
+    ordering_fields = search_fields
+    ordering = "-id"
+    lookup_fields = {'project_name': 'project__name', 'owner': 'owner_username', 'assignee': 'assignee__username'}
     iam_organization_field = 'organization'
 
     def get_queryset(self):
@@ -960,59 +906,6 @@ class TaskViewSet(UploadMixin, viewsets.ModelViewSet):
             filename=request.query_params.get("filename", "").lower(),
         )
 
-def get_job_viewset_lookup_field(var):
-    return {
-        'dimension': 'segment__task__dimension',
-        'task_id': 'segment__task_id',
-        'project_id': 'segment__task__project_id',
-        'task_name': 'segment__task__name',
-        'project_name': 'segment__task__project__name',
-        'updated_date': 'segment__task__updated_date',
-        'assignee': 'assignee__username',
-    }.get(var, var)
-
-class JobJsonLogicFilter:
-    @classmethod
-    def _build_Q(cls, rules):
-        op, args = next(iter(rules.items()))
-        if op in ['or', 'and']:
-            return reduce({
-                'or': operator.or_,
-                'and': operator.and_
-            }[op], [cls._build_Q(arg) for arg in args])
-        elif op == '!':
-            return ~cls._build_Q(args)
-        elif op == '!!':
-            return cls._build_Q(args)
-        elif op == 'var':
-            return Q(**{args + '__isnull': False})
-        elif op in ['==', '<', '>', '<=', '>='] and len(args) == 2:
-            var = get_job_viewset_lookup_field(args[0]['var'])
-            q_var = var + {
-                '==': '',
-                '<': '__lt',
-                '<=': '__lte',
-                '>': '__gt',
-                '>=': '__gte'
-            }[op]
-            return Q(**{q_var: args[1]})
-        elif op == 'in':
-            if isinstance(args[0], dict):
-                var = get_job_viewset_lookup_field(args[0]['var'])
-                return Q(**{var + '__in': args[1]})
-            else:
-                var = get_job_viewset_lookup_field(args[1]['var'])
-                return Q(**{var + '__contains': args[0]})
-        elif op == '<=' and len(args) == 3:
-            var = get_job_viewset_lookup_field(args[1]['var'])
-            return Q(**{var + '__gte': args[0]}) & Q(**{var + '__lte': args[2]})
-        else:
-            raise NotImplementedError(f'{op} operation with {args} arguments is not implemented')
-
-    @classmethod
-    def filter(cls, queryset, rules):
-        return queryset.filter(cls._build_Q(rules))
-
 @extend_schema_view(retrieve=extend_schema(
     summary='Method returns details of a job',
     responses={
@@ -1037,6 +930,20 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     mixins.RetrieveModelMixin, mixins.UpdateModelMixin):
     queryset = Job.objects.all()
     iam_organization_field = 'segment__task__organization'
+    search_fields = ('id', 'task_id', 'project_id', 'task_name',
+        'project_name', 'updated_date', 'assignee', 'state', 'stage')
+    filter_fields = search_fields
+    ordering_fields = search_fields
+    ordering = "-id"
+    lookup_fields = {
+        'dimension': 'segment__task__dimension',
+        'task_id': 'segment__task_id',
+        'project_id': 'segment__task__project_id',
+        'task_name': 'segment__task__name',
+        'project_name': 'segment__task__project__name',
+        'updated_date': 'segment__task__updated_date',
+        'assignee': 'assignee__username'
+    }
 
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -1045,16 +952,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             perm = JobPermission.create_list(self.request)
             queryset = perm.filter(queryset)
 
-        order_by = self.request.query_params.get('order_by', 'id').split(',')
-        order_by = list(map(
-            lambda x: get_job_viewset_lookup_field(x) if not x.startswith('-') else '-' + get_job_viewset_lookup_field(x[1:]), order_by
-        ))
-        json_rules = self.request.query_params.get('filter')
-        if json_rules:
-            rules = json.loads(json_rules)
-            queryset = JobJsonLogicFilter.filter(queryset, rules)
-
-        return queryset.order_by(*order_by)
+        return queryset
 
     def get_serializer_class(self):
         if self.request.method in SAFE_METHODS:
@@ -1284,19 +1182,8 @@ class CommentViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(owner=self.request.user)
 
-class UserFilter(filters.FilterSet):
-    class Meta:
-        model = User
-        fields = ("id", "is_active")
-
 @extend_schema_view(list=extend_schema(
     summary='Method provides a paginated list of users registered on the server',
-    parameters=[
-        OpenApiParameter('id', description='A unique number value identifying this user',
-            location=OpenApiParameter.QUERY, type=OpenApiTypes.NUMBER),
-        OpenApiParameter('is_active', description='Returns only active users',
-            location=OpenApiParameter.QUERY, type=OpenApiTypes.BOOL),
-    ],
     responses={
         '200': PolymorphicProxySerializer(component_name='MetaUser',
             serializers=[
@@ -1326,11 +1213,15 @@ class UserFilter(filters.FilterSet):
     }, tags=['users'], versions=['2.0']))
 class UserViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     mixins.RetrieveModelMixin, mixins.UpdateModelMixin, mixins.DestroyModelMixin):
-    queryset = User.objects.prefetch_related('groups').all().order_by('id')
+    queryset = User.objects.prefetch_related('groups').all()
     http_method_names = ['get', 'post', 'head', 'patch', 'delete']
     search_fields = ('username', 'first_name', 'last_name')
-    filterset_class = UserFilter
     iam_organization_field = 'memberships__organization'
+
+    search_fields = ('id', 'is_active', 'username')
+    filter_fields = search_fields
+    ordering_fields = search_fields
+    ordering = "-id"
 
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -1368,29 +1259,6 @@ class UserViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         serializer = serializer_class(request.user, context={ "request": request })
         return Response(serializer.data)
 
-# TODO: it will be good to find a way to define description using drf_spectacular.
-# But now it will be enough to use an example
-# class RedefineDescriptionField(FieldInspector):
-#     # pylint: disable=no-self-use
-#     def process_result(self, result, method_name, obj, **kwargs):
-#         if isinstance(result, openapi.Schema):
-#             if hasattr(result, 'title') and result.title == 'Specific attributes':
-#                 result.description = 'structure like key1=value1&key2=value2\n' \
-#                     'supported: range=aws_range'
-#         return result
-
-class CloudStorageFilter(filters.FilterSet):
-    display_name = filters.CharFilter(field_name='display_name', lookup_expr='icontains')
-    provider_type = filters.CharFilter(field_name='provider_type', lookup_expr='icontains')
-    resource = filters.CharFilter(field_name='resource', lookup_expr='icontains')
-    credentials_type = filters.CharFilter(field_name='credentials_type', lookup_expr='icontains')
-    description = filters.CharFilter(field_name='description', lookup_expr='icontains')
-    owner = filters.CharFilter(field_name='owner__username', lookup_expr='icontains')
-
-    class Meta:
-        model = models.CloudStorage
-        fields = ('id', 'display_name', 'provider_type', 'resource', 'credentials_type', 'description', 'owner')
-
 @extend_schema_view(retrieve=extend_schema(
     summary='Method returns details of a specific cloud storage',
     responses={
@@ -1398,18 +1266,6 @@ class CloudStorageFilter(filters.FilterSet):
     }, tags=['cloud storages'], versions=['2.0']))
 @extend_schema_view(list=extend_schema(
     summary='Returns a paginated list of storages according to query parameters',
-    parameters=[
-        OpenApiParameter('provider_type', description='A supported provider of cloud storages',
-            location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, enum=CloudProviderChoice.list()),
-        OpenApiParameter('display_name', description='A display name of storage',
-            location=OpenApiParameter.QUERY, type=OpenApiTypes.STR),
-        OpenApiParameter('resource', description='A name of bucket or container',
-            location=OpenApiParameter.QUERY, type=OpenApiTypes.STR),
-        OpenApiParameter('owner', description='A resource owner',
-            location=OpenApiParameter.QUERY, type=OpenApiTypes.STR),
-        OpenApiParameter('credentials_type', description='A type of a granting access',
-            location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, enum=CredentialsTypeChoice.list()),
-    ],
     #FIXME
     #field_inspectors=[RedefineDescriptionField]
     responses={
@@ -1436,9 +1292,14 @@ class CloudStorageFilter(filters.FilterSet):
     }, tags=['cloud storages'], versions=['2.0']))
 class CloudStorageViewSet(viewsets.ModelViewSet):
     http_method_names = ['get', 'post', 'patch', 'delete']
-    queryset = CloudStorageModel.objects.all().prefetch_related('data').order_by('-id')
-    search_fields = ('provider_type', 'display_name', 'resource', 'credentials_type', 'owner__username', 'description')
-    filterset_class = CloudStorageFilter
+    queryset = CloudStorageModel.objects.all().prefetch_related('data')
+
+    search_fields = ('id', 'provider_type', 'display_name', 'resource',
+        'credentials_type', 'owner', 'description')
+    filter_fields = search_fields
+    ordering_fields = search_fields
+    ordering = "-id"
+    lookup_fields = {'owner': 'owner__username'}
     iam_organization_field = 'organization'
 
     def get_serializer_class(self):

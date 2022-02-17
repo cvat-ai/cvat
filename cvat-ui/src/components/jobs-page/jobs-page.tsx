@@ -69,7 +69,7 @@ function JobsPageComponent(): JSX.Element {
                     dispatch(
                         getJobsAsync({
                             ...query,
-                            order_by: sorting,
+                            sort: sorting,
                             page: 1,
                         }),
                     );
