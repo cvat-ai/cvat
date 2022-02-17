@@ -102,6 +102,7 @@ function SortingModalComponent(props: Props): JSX.Element {
     const [sortingFields, setSortingFields] = useState<string[]>(
         Array.from(new Set([...defaultFields, ANCHOR_KEYWORD, ...sortingFieldsProp])),
     );
+    const [appliedOrder, setAppliedOrder] = useState<string[]>([...defaultFields]);
     const [appliedSorting, setAppliedSorting] = useState<Record<string, string>>(
         defaultFields.reduce((acc: Record<string, string>, field: string) => ({
             ...acc, [field]: field,
@@ -111,18 +112,20 @@ function SortingModalComponent(props: Props): JSX.Element {
     useEffect(() => {
         const anchorIdx = sortingFields.indexOf(ANCHOR_KEYWORD);
         const appliedSortingCopy = { ...appliedSorting };
-        let updated = false;
+        const slicedSortingFields = sortingFields.slice(0, anchorIdx);
+        const updated = slicedSortingFields.length !== appliedOrder.length || slicedSortingFields
+            .some((field: string, index: number) => field !== appliedOrder[index]);
+
         sortingFields.forEach((field: string, index: number) => {
             if (index < anchorIdx && !(field in appliedSortingCopy)) {
                 appliedSortingCopy[field] = field;
-                updated = true;
             } else if (index >= anchorIdx && field in appliedSortingCopy) {
                 delete appliedSortingCopy[field];
-                updated = true;
             }
         });
 
         if (updated) {
+            setAppliedOrder(slicedSortingFields);
             setAppliedSorting(appliedSortingCopy);
         }
     }, [sortingFields]);
