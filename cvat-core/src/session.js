@@ -558,9 +558,13 @@
              * @throws {module:API.cvat.exceptions.ArgumentError}
              */
             /**
-             * Find the nearest non-deleted frame
+             * @typedef {Object} FrameSearchFilters
+             * @property {boolean} deleted if false will search for non-deleted frames
+            /**
+             * Find frame that match the condition
              * @method search
              * @memberof Session.frames
+             * @param {FrameSearchFilters} filters filters to search frame for
              * @param {integer} from lower bound of a search
              * @param {integer} to upper bound of a search
              * @returns {integer|null} a non-deleted frame according boundaries
