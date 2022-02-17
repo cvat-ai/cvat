@@ -237,8 +237,9 @@
 .cvat-sorting-anchor {
     width: 100%;
     pointer-events: none;
+
     &:first-child {
-        margin-top: $grid-unit-size * 4
+        margin-top: $grid-unit-size * 4;
     }
 
     &:last-child {
