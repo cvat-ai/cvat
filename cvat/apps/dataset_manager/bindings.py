@@ -413,7 +413,8 @@ class TaskData(InstanceLabelData):
     @property
     def shapes(self):
         for shape in self._annotation_ir.shapes:
-            yield self._export_labeled_shape(shape)
+            if shape["frame"] not in self._db_task.data.deleted_frames:
+                yield self._export_labeled_shape(shape)
 
     @property
     def tracks(self):
@@ -432,13 +433,14 @@ class TaskData(InstanceLabelData):
                 group=track["group"],
                 source=track["source"],
                 shapes=[self._export_tracked_shape(shape)
-                    for shape in tracked_shapes],
+                    for shape in tracked_shapes if shape["frame"] not in self._db_task.data.deleted_frames],
             )
 
     @property
     def tags(self):
         for tag in self._annotation_ir.tags:
-            yield self._export_tag(tag)
+            if tag["frame"] not in self._db_task.data.deleted_frames:
+                yield self._export_tag(tag)
 
     @property
     def meta(self):

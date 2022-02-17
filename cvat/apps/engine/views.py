@@ -1147,7 +1147,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         start_frame = db_job.segment.start_frame
         stop_frame = db_job.segment.stop_frame
         data_start_frame = db_data.start_frame + start_frame * db_data.get_frame_step()
-        data_stop_frame = db_data.stop_frame + stop_frame * db_data.get_frame_step()
+        data_stop_frame = db_data.start_frame + stop_frame * db_data.get_frame_step()
 
         if request.method == 'PATCH':
             serializer = DataMetaSerializer(instance=db_data, data=request.data)

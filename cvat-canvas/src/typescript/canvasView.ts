@@ -972,6 +972,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         this.innerObjectsFlags = {
             drawHidden: {},
         };
+        this.canvasFilters = '';
 
         // Create HTML elements
         this.loadingAnimation = window.document.createElementNS('http://www.w3.org/2000/svg', 'svg');
