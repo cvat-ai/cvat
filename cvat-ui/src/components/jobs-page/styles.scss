@@ -218,32 +218,35 @@
 }
 
 .cvat-jobs-page-sorting-list {
-    width: $grid-unit-size * 25;
+    width: $grid-unit-size * 24;
+}
 
-    > div {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: $grid-unit-size;
+.cvat-sorting-field {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: $grid-unit-size;
 
-        .ant-checkbox-wrapper {
-            margin-bottom: 0;
-            margin-left: 0;
-        }
-
-        > div {
-            > span[role=img] {
-                &:not(:last-child) {
-                    margin-right: $grid-unit-size;
-                }
-            }
-
-            > span[disabled] {
-                opacity: 0.2;
-                pointer-events: none;
-            }
-        }
+    .ant-radio-button-wrapper {
+        width: $grid-unit-size * 16;
+        user-select: none;
     }
+}
+
+.cvat-sorting-anchor {
+    width: 100%;
+    pointer-events: none;
+    &:first-child {
+        margin-top: $grid-unit-size * 4
+    }
+
+    &:last-child {
+        margin-bottom: $grid-unit-size * 4;
+    }
+}
+
+.cvat-sorting-dragged-item {
+    z-index: 10000;
 }
 
 .cvat-jobs-page-filters-space {

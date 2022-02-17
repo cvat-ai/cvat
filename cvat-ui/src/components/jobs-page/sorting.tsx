@@ -3,43 +3,142 @@
 // SPDX-License-Identifier: MIT
 
 import React, { useState, useEffect } from 'react';
+import { SortableContainer, SortableElement } from 'react-sortable-hoc';
 import {
-    ArrowUpOutlined, OrderedListOutlined, SortAscendingOutlined, SortDescendingOutlined,
+    OrderedListOutlined, SortAscendingOutlined, SortDescendingOutlined,
 } from '@ant-design/icons';
 import Button from 'antd/lib/button';
-import Checkbox, { CheckboxChangeEvent } from 'antd/lib/checkbox/Checkbox';
 import Dropdown from 'antd/lib/dropdown';
-import { omit } from 'lodash';
+import Radio from 'antd/lib/radio';
+
 import CVATTooltip from 'components/common/cvat-tooltip';
 
 interface Props {
     sortingFields: string[];
+    defaultFields: string[];
     visible: boolean;
     onVisibleChange(visible: boolean): void;
     onApplySorting(sorting: string | null): void;
 }
 
+const ANCHOR_KEYWORD = '__anchor__';
+
+const SortableItem = SortableElement(
+    ({
+        value, appliedSorting, setAppliedSorting, valueIndex, anchorIndex,
+    }: {
+        value: string;
+        valueIndex: number;
+        anchorIndex: number;
+        appliedSorting: Record<string, string>;
+        setAppliedSorting: (arg: Record<string, string>) => void;
+    }): JSX.Element => {
+        const isActiveField = value in appliedSorting;
+        const isAscendingField = isActiveField && !appliedSorting[value]?.startsWith('-');
+        const isDescendingField = isActiveField && !isAscendingField;
+        const onClick = (): void => {
+            if (isDescendingField) {
+                setAppliedSorting({ ...appliedSorting, [value]: value });
+            } else if (isAscendingField) {
+                setAppliedSorting({ ...appliedSorting, [value]: `-${value}` });
+            }
+        };
+
+        if (value === ANCHOR_KEYWORD) {
+            return (
+                <hr className='cvat-sorting-anchor' />
+            );
+        }
+
+        return (
+            <div className='cvat-sorting-field'>
+                <Radio.Button disabled={valueIndex > anchorIndex}>{value}</Radio.Button>
+                <div>
+                    <CVATTooltip overlay={appliedSorting[value]?.startsWith('-') ? 'Descending sort' : 'Ascending sort'}>
+                        <Button type='text' disabled={!isActiveField} onClick={onClick}>
+                            {
+                                isDescendingField ? (
+                                    <SortDescendingOutlined />
+                                ) : (
+                                    <SortAscendingOutlined />
+                                )
+                            }
+                        </Button>
+                    </CVATTooltip>
+                </div>
+            </div>
+        );
+    },
+);
+
+const SortableList = SortableContainer(
+    ({ items, appliedSorting, setAppliedSorting } :
+    {
+        items: string[];
+        appliedSorting: Record<string, string>;
+        setAppliedSorting: (arg: Record<string, string>) => void;
+    }) => (
+        <div className='cvat-jobs-page-sorting-list'>
+            { items.map((value: string, index: number) => (
+                <SortableItem
+                    key={`item-${value}`}
+                    appliedSorting={appliedSorting}
+                    setAppliedSorting={setAppliedSorting}
+                    index={index}
+                    value={value}
+                    valueIndex={index}
+                    anchorIndex={items.indexOf(ANCHOR_KEYWORD)}
+                />
+            )) }
+        </div>
+    ),
+);
+
 function SortingModalComponent(props: Props): JSX.Element {
     const {
-        sortingFields: sortingFieldsProp, visible, onApplySorting, onVisibleChange,
+        sortingFields: sortingFieldsProp,
+        defaultFields, visible, onApplySorting, onVisibleChange,
     } = props;
-    const [sortingFields, setSortingFields] = useState<string[]>(sortingFieldsProp);
-    const [mounted, setMounted] = useState<boolean>(false);
-    const [appliedSorting, setAppliedSorting] = useState<Record<string, string>>({});
+    const [sortingFields, setSortingFields] = useState<string[]>(
+        Array.from(new Set([...defaultFields, ANCHOR_KEYWORD, ...sortingFieldsProp])),
+    );
+    const [appliedSorting, setAppliedSorting] = useState<Record<string, string>>(
+        defaultFields.reduce((acc: Record<string, string>, field: string) => ({
+            ...acc, [field]: field,
+        }), {}),
+    );
 
     useEffect(() => {
-        setMounted(true);
-    }, []);
+        const anchorIdx = sortingFields.indexOf(ANCHOR_KEYWORD);
+        const appliedSortingCopy = { ...appliedSorting };
+        let updated = false;
+        sortingFields.forEach((field: string, index: number) => {
+            if (index < anchorIdx && !(field in appliedSortingCopy)) {
+                appliedSortingCopy[field] = field;
+                updated = true;
+            } else if (index >= anchorIdx && field in appliedSortingCopy) {
+                delete appliedSortingCopy[field];
+                updated = true;
+            }
+        });
 
-    useEffect(() => {
-        if (mounted) {
-            const sortingString = sortingFields
-                .filter((sortingField: string) => sortingField in appliedSorting)
-                .map((sortingField: string) => appliedSorting[sortingField])
-                .join(',').toLowerCase().replace(/\s/g, '_') || null;
-            onApplySorting(sortingString);
+        if (updated) {
+            setAppliedSorting(appliedSortingCopy);
         }
-    }, [appliedSorting, sortingFields]);
+    }, [sortingFields]);
+
+    useEffect(() => {
+        // this hook uses sortingFields to understand order
+        // but we do not specify this field in dependencies
+        // because we do not want the hook to be called after changing sortingField
+        // sortingField value is always relevant because if order changes, the hook before will be called first
+
+        const anchorIdx = sortingFields.indexOf(ANCHOR_KEYWORD);
+        const sortingString = sortingFields.slice(0, anchorIdx)
+            .map((field: string): string => appliedSorting[field])
+            .join(',').toLowerCase().replace(/\s/g, '_');
+        onApplySorting(sortingString || null);
+    }, [appliedSorting]);
 
     return (
         <Dropdown
@@ -47,73 +146,19 @@ function SortingModalComponent(props: Props): JSX.Element {
             visible={visible}
             placement='bottomLeft'
             overlay={(
-                <div className='cvat-jobs-page-sorting-list'>
-                    {sortingFields.map((sortingField: string, index: number): JSX.Element => {
-                        const isActiveField = sortingField in appliedSorting;
-                        const isAscendingField = isActiveField && !appliedSorting[sortingField]?.startsWith('-');
-                        const isDescendingField = isActiveField && !isAscendingField;
-                        const onClick = (): void => {
-                            if (isDescendingField) {
-                                setAppliedSorting({ ...appliedSorting, [sortingField]: sortingField });
-                            } else if (isAscendingField) {
-                                setAppliedSorting({ ...appliedSorting, [sortingField]: `-${sortingField}` });
-                            }
-                        };
-
-                        const ascentDescentBlockProps = { disabled: !isActiveField, onClick };
-                        const ascentDescentBlock = (
-                            <CVATTooltip overlay={appliedSorting[sortingField]?.startsWith('-') ? 'Descending sort' : 'Ascending sort'}>
-                                {
-                                    isDescendingField ? (
-                                        <SortDescendingOutlined {...ascentDescentBlockProps} />
-                                    ) : (
-                                        <SortAscendingOutlined {...ascentDescentBlockProps} />
-                                    )
-                                }
-                            </CVATTooltip>
-                        );
-
-                        return (
-                            <div key={sortingField}>
-                                <Checkbox
-                                    checked={sortingField in appliedSorting}
-                                    onChange={(event: CheckboxChangeEvent) => {
-                                        const copy = [...sortingFields];
-                                        const latestEnabledSortingIdx = Math.max(-1,
-                                            ...Object.keys(appliedSorting)
-                                                .map((sorting: string) => sortingFields.indexOf(sorting)));
-                                        if (event.target.checked) {
-                                            setAppliedSorting({ ...appliedSorting, [sortingField]: sortingField });
-                                            copy.splice(latestEnabledSortingIdx + 1, 0, ...copy.splice(index, 1));
-                                        } else {
-                                            setAppliedSorting(omit(appliedSorting, sortingField));
-                                            copy.splice(latestEnabledSortingIdx, 0, ...copy.splice(index, 1));
-                                        }
-
-                                        setSortingFields(copy);
-                                    }}
-                                >
-                                    {sortingField}
-                                </Checkbox>
-                                <div>
-                                    {index > 0 ? (
-                                        <CVATTooltip overlay='Increase priority'>
-                                            <ArrowUpOutlined
-                                                disabled={!isActiveField}
-                                                onClick={() => {
-                                                    const copy = [...sortingFields];
-                                                    copy.splice(index - 1, 0, ...copy.splice(index, 1));
-                                                    setSortingFields(copy);
-                                                }}
-                                            />
-                                        </CVATTooltip>
-                                    ) : null}
-                                    {ascentDescentBlock}
-                                </div>
-                            </div>
-                        );
-                    })}
-                </div>
+                <SortableList
+                    onSortEnd={({ oldIndex, newIndex }: { oldIndex: number, newIndex: number }) => {
+                        if (oldIndex !== newIndex) {
+                            const sortingFieldsCopy = [...sortingFields];
+                            sortingFieldsCopy.splice(newIndex, 0, ...sortingFieldsCopy.splice(oldIndex, 1));
+                            setSortingFields(sortingFieldsCopy);
+                        }
+                    }}
+                    helperClass='cvat-sorting-dragged-item'
+                    items={sortingFields}
+                    appliedSorting={appliedSorting}
+                    setAppliedSorting={setAppliedSorting}
+                />
             )}
         >
             <Button type='default' onClick={() => onVisibleChange(!visible)}>
