@@ -206,11 +206,6 @@ class Data(models.Model):
         represented_files = [{'file':f} for f in uploaded_files]
         return represented_files
 
-    def get_uploaded_annotations(self):
-        upload_dir = self.get_annotations_dirname()
-        uploaded_annotation_files = [os.path.join(upload_dir, file) for file in os.listdir(upload_dir) if os.path.isfile(os.path.join(upload_dir, file)) and file.endswith('.zip')]
-        return uploaded_annotation_files
-
 class Video(models.Model):
     data = models.OneToOneField(Data, on_delete=models.CASCADE, related_name="video", null=True)
     path = models.CharField(max_length=1024, default='')

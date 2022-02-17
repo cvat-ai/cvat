@@ -220,9 +220,7 @@ class UploadMixin(object):
         return os.path.commonprefix((os.path.realpath(file_path), upload_dir)) == upload_dir
 
     def can_upload(self, data_type):
-        db_model = self.get_object()
-        model_data = db_model.data
-        return model_data.size == 0
+        return True
 
     def get_upload_dir(self, data_type):
         db_model = self.get_object()

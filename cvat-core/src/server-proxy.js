@@ -59,7 +59,7 @@
                     filetype: file.type,
                 },
                 headers: {
-                    Authorization: `Token ${store.get('token')}`,
+                    Authorization: Axios.defaults.headers.common.Authorization,
                 },
                 chunkSize,
                 retryDelays: null,

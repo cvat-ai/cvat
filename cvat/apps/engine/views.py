@@ -1027,7 +1027,7 @@ class JobFilter(filters.FilterSet):
        '200': JobWriteSerializer,
    }, tags=['jobs'], versions=['2.0']))
 class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
-    mixins.RetrieveModelMixin, mixins.UpdateModelMixin):
+    mixins.RetrieveModelMixin, mixins.UpdateModelMixin, UploadMixin):
     queryset = Job.objects.all().order_by('id')
     filterset_class = JobFilter
     iam_organization_field = 'segment__task__organization'
@@ -1045,6 +1045,34 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             return JobReadSerializer
         else:
             return JobWriteSerializer
+
+    # UploadMixin method
+    def get_upload_dir(self, data_type):
+        db_job = self.get_object()
+        task = db_job.segment.task
+        return task.get_tmp_dirname()
+
+    # UploadMixin method
+    def upload_finished(self, request, data_type):
+        db_job = self.get_object()
+        task = db_job.segment.task
+        if data_type == 'annotations':
+            format_name = request.query_params.get("format", "")
+            filename = request.query_params.get("filename", "")
+            annotation_file = task.get_tmp_file(filename)
+            if not annotation_file:
+                return Response(data='No such file were uploaded',
+                        status=status.HTTP_400_BAD_REQUEST)
+            return _import_annotations(
+                        request=request,
+                        filename=annotation_file,
+                        rq_id="{}@/api/jobs/{}/annotations/upload".format(request.user, db_job.pk),
+                        rq_func=dm.task.import_job_annotations,
+                        pk=db_job.pk,
+                        format_name=format_name,
+                    )
+        return Response(data='Unknown data type upload was finished',
+                        status=status.HTTP_400_BAD_REQUEST)
 
     @extend_schema(methods=['GET'], summary='Method returns annotations for a specific job',
         responses={
@@ -1069,13 +1097,15 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         responses={
             '204': OpenApiResponse(description='The annotation has been deleted'),
         }, tags=['jobs'], versions=['2.0'])
-    @action(detail=True, methods=['GET', 'DELETE', 'PUT', 'PATCH'],
+    @action(detail=True, methods=['GET', 'DELETE', 'PUT', 'PATCH', 'POST', 'OPTIONS'], url_path=r'annotations/?$',
         serializer_class=LabeledDataSerializer)
     def annotations(self, request, pk):
         self.get_object() # force to call check_object_permissions
         if request.method == 'GET':
             data = dm.task.get_job_data(pk)
             return Response(data)
+        elif request.method == 'POST' or request.method == 'OPTIONS':
+            return self.upload_data(request, 'annotations')
         elif request.method == 'PUT':
             format_name = request.query_params.get("format", "")
             if format_name:
