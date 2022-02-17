@@ -20,7 +20,7 @@ class OrderingFilter(filters.OrderingFilter):
     ordering_param = 'sort'
     def get_ordering(self, request, queryset, view):
         ordering = []
-        lookup_fields = self._get_lookup_fields(request, view)
+        lookup_fields = self._get_lookup_fields(request, queryset, view)
         for term in super().get_ordering(request, queryset, view):
             flag = ''
             if term.startswith("-"):
@@ -30,9 +30,9 @@ class OrderingFilter(filters.OrderingFilter):
 
         return ordering
 
-    def _get_lookup_fields(self, request, view):
-        ordering_fields = getattr(view, 'ordering_fields', [])
-        lookup_fields = {field:field for field in ordering_fields}
+    def _get_lookup_fields(self, request, queryset, view):
+        ordering_fields = self.get_valid_fields(queryset, view, {'request': request})
+        lookup_fields = {field:field for field, _ in ordering_fields}
         lookup_fields.update(getattr(view, 'lookup_fields', {}))
 
         return lookup_fields
