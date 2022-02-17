@@ -35,6 +35,7 @@ export const getJobsAsync = (query: JobsQuery): ThunkAction => async (dispatch) 
         if (filteredQuery.page === null) delete filteredQuery.page;
         if (filteredQuery.filter === null) delete filteredQuery.filter;
         if (filteredQuery.sort === null) delete filteredQuery.sort;
+        if (filteredQuery.search === null) delete filteredQuery.search;
 
         dispatch(jobsActions.getJobs(filteredQuery));
         const jobs = await cvat.jobs.get(filteredQuery);

@@ -155,6 +155,7 @@ const config = require('./config');
                 page: isInteger,
                 filter: isString,
                 sort: isString,
+                search: isString,
                 taskID: isInteger,
                 jobID: isInteger,
             });

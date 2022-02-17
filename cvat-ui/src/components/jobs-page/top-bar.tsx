@@ -5,6 +5,7 @@
 import React, { useState } from 'react';
 import { Col, Row } from 'antd/lib/grid';
 import Text from 'antd/lib/typography/Text';
+import Input from 'antd/lib/input';
 
 import SortingComponent from './sorting';
 import ResourceFilterHOC from './filtering';
@@ -33,10 +34,11 @@ const defaultVisibility: {
 interface Props {
     onApplyFilter(filter: string | null): void;
     onApplySorting(sorting: string | null): void;
+    onApplySearch(search: string | null): void;
 }
 
 function TopBarComponent(props: Props): JSX.Element {
-    const { onApplyFilter, onApplySorting } = props;
+    const { onApplyFilter, onApplySorting, onApplySearch } = props;
     const [visibility, setVisibility] = useState<typeof defaultVisibility>(defaultVisibility);
 
     return (
@@ -44,6 +46,12 @@ function TopBarComponent(props: Props): JSX.Element {
             <Col md={22} lg={18} xl={16} xxl={16}>
                 <Text className='cvat-title'>Jobs</Text>
                 <div>
+                    <Input.Search
+                        enterButton
+                        onSearch={(phrase: string) => {
+                            onApplySearch(phrase);
+                        }}
+                    />
                     <SortingComponent
                         visible={visibility.sorting}
                         onVisibleChange={(visible: boolean) => (

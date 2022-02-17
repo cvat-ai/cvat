@@ -82,6 +82,7 @@ export interface Task {
 export interface JobsQuery {
     page: number;
     sort: string | null;
+    search: string | null;
     filter: string | null;
 }
 

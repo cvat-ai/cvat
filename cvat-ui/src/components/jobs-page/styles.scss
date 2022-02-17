@@ -266,7 +266,7 @@
             justify-content: flex-end;
             align-items: center;
 
-            > button {
+            > *:not(:last-child) {
                 margin-right: $grid-unit-size;
             }
         }
