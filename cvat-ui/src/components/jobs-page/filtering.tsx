@@ -219,7 +219,7 @@ export default function ResourceFilterHOC(
                         <div className='cvat-jobs-page-filters-builder'>
                             { Object.keys(recentFilters).length ? (
                                 <Dropdown
-                                    placement='bottomLeft'
+                                    placement='bottomRight'
                                     visible={recentVisible}
                                     destroyPopupOnHide
                                     overlay={(
