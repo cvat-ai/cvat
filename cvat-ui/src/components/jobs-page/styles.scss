@@ -230,6 +230,7 @@
     .ant-radio-button-wrapper {
         width: $grid-unit-size * 16;
         user-select: none;
+        cursor: move;
     }
 }
 
