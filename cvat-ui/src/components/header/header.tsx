@@ -422,7 +422,7 @@ function HeaderContainer(props: Props): JSX.Element {
                 >
                     Cloud Storages
                 </Button>
-                {isModelsPluginActive && (
+                {isModelsPluginActive ? (
                     <Button
                         className='cvat-header-button'
                         type='link'
@@ -435,8 +435,8 @@ function HeaderContainer(props: Props): JSX.Element {
                     >
                         Models
                     </Button>
-                )}
-                {isAnalyticsPluginActive && (
+                ) : null}
+                {isAnalyticsPluginActive ? (
                     <Button
                         className='cvat-header-button'
                         type='link'
@@ -450,7 +450,7 @@ function HeaderContainer(props: Props): JSX.Element {
                     >
                         Analytics
                     </Button>
-                )}
+                ) : null}
             </div>
             <div className='cvat-right-header'>
                 <CVATTooltip overlay='Click to open repository'>
