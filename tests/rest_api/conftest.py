@@ -120,7 +120,11 @@ def users_by_name(users):
 
 @pytest.fixture(scope='module')
 def jobs_by_org(tasks, jobs):
-    return {tasks[job['task_id']]['organization']: job for job in jobs}
+    data = {}
+    for job in jobs:
+        data.setdefault(tasks[job['task_id']]['organization'], []).append(job)
+    data[''] = data.pop(None, [])
+    return data
 
 @pytest.fixture(scope='module')
 def assignee_id():
