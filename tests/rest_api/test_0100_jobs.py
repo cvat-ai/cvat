@@ -193,9 +193,10 @@ class TestGetAnnotations:
 class TestPatchJobAnnotations:
     _ORG = 2
 
-    def _test_check_respone(self, is_allow, response):
+    def _test_check_respone(self, is_allow, response, data=None):
         if is_allow:
             assert response.status_code == HTTPStatus.OK
+            assert DeepDiff(data, response.json()) == {}
         else:
             assert response.status_code == HTTPStatus.FORBIDDEN
 
@@ -203,7 +204,8 @@ class TestPatchJobAnnotations:
     def request_data(self, annotations):
         def get_data(jid):
             data = annotations['job'][str(jid)].copy()
-            data['shapes'][0].update({'points': [2, 3, 4, 5, 6, 7]})
+            data['shapes'][0].update({'points': [2.0, 3.0, 4.0, 5.0, 6.0, 7.0]})
+            data['version'] += 1
             return data
         return get_data
 
@@ -219,10 +221,11 @@ class TestPatchJobAnnotations:
         jobs, _ = filter_jobs(jobs, tasks, self._ORG)
         username, jid = find_job_staff_user(jobs, users, job_staff)
 
+        data = request_data(jid)
         response = patch_method(username, f'jobs/{jid}/annotations',
-            request_data(jid), org_id=self._ORG, action='update')
+            data, org_id=self._ORG, action='update')
 
-        self._test_check_respone(is_allow, response)
+        self._test_check_respone(is_allow, response, data)
 
 
     @pytest.mark.parametrize('groups, is_allow', [
@@ -235,10 +238,11 @@ class TestPatchJobAnnotations:
         jobs, _ = filter_jobs(jobs, tasks, self._ORG)
         username, jid = find_job_staff_user(jobs, users, False)
 
-        response = patch_method(username, f'jobs/{jid}/annotations',
-            request_data(jid), org_id=self._ORG, action='update')
+        data = request_data(jid)
+        response = patch_method(username, f'jobs/{jid}/annotations', data,
+            org_id=self._ORG, action='update')
 
-        self._test_check_respone(is_allow, response)
+        self._test_check_respone(is_allow, response, data)
 
     @pytest.mark.parametrize('org', [''])
     @pytest.mark.parametrize('groups, job_staff, is_allow', [
@@ -253,10 +257,11 @@ class TestPatchJobAnnotations:
         jobs, _ = filter_jobs(jobs, tasks, org)
         username, jid = find_job_staff_user(jobs, users, job_staff)
 
-        response = patch_method(username, f'jobs/{jid}/annotations',
-            request_data(jid), org_id=org, action='update')
+        data = request_data(jid)
+        response = patch_method(username, f'jobs/{jid}/annotations', data,
+            org_id=org, action='update')
 
-        self._test_check_respone(is_allow, response)
+        self._test_check_respone(is_allow, response, data)
 
 class TestPatchJob:
     _ORG = 2
@@ -269,6 +274,16 @@ class TestPatchJob:
                     if is_staff == is_task_staff(user['id'], job['task_id']):
                         return user, job['id']
             return None, None
+        return find
+
+    @pytest.fixture(scope='class')
+    def expected_data(self, jobs, users):
+        keys = ['url', 'id', 'username', 'first_name', 'last_name']
+        def find(job_id, assignee_id):
+            data = jobs[job_id].copy()
+            data['assignee'].update(dict(filter(lambda a: a[0] in keys,
+                users[assignee_id].items())))
+            return data
         return find
 
     @pytest.fixture(scope='class')
@@ -285,16 +300,18 @@ class TestPatchJob:
         ('maintainer', True, True), ('owner',  True, True),
         ('supervisor', True, True), ('worker', True, True)
     ])
-    def test_member_update_job_assignee(self, role, task_staff, is_allow,
-            find_task_staff_user, find_users, jobs, tasks, new_assignee):
+    def test_member_update_job_assignee(self, role, task_staff, is_allow, jobs,
+            find_task_staff_user, find_users, tasks, new_assignee, expected_data):
         users = find_users(role=role, org=self._ORG)
         jobs, _ = filter_jobs(jobs, tasks, self._ORG)
         user, jid = find_task_staff_user(jobs, users, task_staff)
 
+        assignee = new_assignee(jid, user['id'])
         response = patch_method(user['username'], f'jobs/{jid}',
-            {'assignee': new_assignee(jid, user['id'])}, org_id=self._ORG)
+            {'assignee': assignee}, org_id=self._ORG)
 
         if is_allow:
             assert response.status_code == HTTPStatus.OK
+            assert DeepDiff(expected_data(jid, assignee), response.json()) == {}
         else:
             assert response.status_code == HTTPStatus.FORBIDDEN
