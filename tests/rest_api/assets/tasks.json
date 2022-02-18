@@ -124,7 +124,13 @@
         {
           "jobs": [
             {
-              "assignee": null,
+              "assignee": {
+                "first_name": "Worker",
+                "id": 6,
+                "last_name": "First",
+                "url": "http://localhost:8080/api/users/6",
+                "username": "worker1"
+              },
               "id": 3,
               "stage": "annotation",
               "state": "new",
@@ -278,7 +284,13 @@
         {
           "jobs": [
             {
-              "assignee": null,
+              "assignee": {
+                "first_name": "Admin",
+                "id": 1,
+                "last_name": "First",
+                "url": "http://localhost:8080/api/users/1",
+                "username": "admin1"
+              },
               "id": 1,
               "stage": "annotation",
               "state": "new",
