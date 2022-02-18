@@ -41,7 +41,7 @@ Cypress.Commands.add(
 Cypress.Commands.add('deleteProjects', (authResponse, projectsToDelete) => {
     const authKey = authResponse.body.key;
     cy.request({
-        url: '/api/v1/projects?page_size=all',
+        url: '/api/projects?page_size=all',
         headers: {
             Authorization: `Token ${authKey}`,
         },
@@ -53,7 +53,7 @@ Cypress.Commands.add('deleteProjects', (authResponse, projectsToDelete) => {
                 if (name === projectToDelete) {
                     cy.request({
                         method: 'DELETE',
-                        url: `/api/v1/projects/${id}`,
+                        url: `/api/projects/${id}`,
                         headers: {
                             Authorization: `Token ${authKey}`,
                         },
@@ -139,7 +139,7 @@ Cypress.Commands.add('backupProject', (projectName) => {
 });
 
 Cypress.Commands.add('restoreProject', (archiveWithBackup) => {
-    cy.intercept('POST', '/api/v1/projects/backup?**').as('restoreProject');
+    cy.intercept('POST', '/api/projects/backup?**').as('restoreProject');
     cy.get('.cvat-import-project').click().find('input[type=file]').attachFile(archiveWithBackup);
     cy.wait('@restoreProject', { timeout: 5000 }).its('response.statusCode').should('equal', 202);
     cy.wait('@restoreProject').its('response.statusCode').should('equal', 201);
@@ -152,8 +152,9 @@ Cypress.Commands.add('restoreProject', (archiveWithBackup) => {
 Cypress.Commands.add('getDownloadFileName', () => {
     cy.intercept('GET', '**=download').as('download');
     cy.wait('@download').then((download) => {
-        const filename = download.response.headers['content-disposition'].split('filename="b\'')[1].split('\'')[0];
-        return filename;
+        const filename = download.response.headers['content-disposition'].split(';')[1].split('filename=')[1];
+        // need to remove quotes
+        return filename.substring(1, filename.length - 1);
     });
 });
 

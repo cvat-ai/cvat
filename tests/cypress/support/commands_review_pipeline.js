@@ -23,7 +23,7 @@ Cypress.Commands.add('assignJobToUser', (jobID, user) => {
             .click();
     });
 
-    cy.intercept('PATCH', '/api/v1/jobs/**').as('patchJobAssignee');
+    cy.intercept('PATCH', '/api/jobs/**').as('patchJobAssignee');
     cy.get('.ant-select-dropdown')
         .should('be.visible')
         .not('.ant-select-dropdown-hidden')
@@ -146,7 +146,7 @@ Cypress.Commands.add('createIssueFromControlButton', (createIssueParams) => {
             .trigger('mousedown', createIssueParams.firstX, createIssueParams.firstY, { button: 0 })
             .trigger('mouseup');
     }
-    cy.intercept('POST', '/api/v1/issues?*').as('issues');
+    cy.intercept('POST', '/api/issues?*').as('issues');
     cy.get('.cvat-create-issue-dialog').within(() => {
         cy.get('#issue_description').type(createIssueParams.description);
         cy.get('[type="submit"]').click();
@@ -157,8 +157,8 @@ Cypress.Commands.add('createIssueFromControlButton', (createIssueParams) => {
 
 Cypress.Commands.add('resolveReopenIssue', (issueLabel, resolveText, reopen) => {
     cy.get(issueLabel).click();
-    cy.intercept('POST', '/api/v1/comments').as('postComment');
-    cy.intercept('PATCH', '/api/v1/issues/**').as('resolveReopenIssue');
+    cy.intercept('POST', '/api/comments').as('postComment');
+    cy.intercept('PATCH', '/api/issues/**').as('resolveReopenIssue');
     cy.get('.cvat-issue-dialog-input').type(resolveText);
     cy.get('.cvat-issue-dialog-footer').within(() => {
         cy.contains('button', 'Comment').click();
@@ -175,7 +175,7 @@ Cypress.Commands.add('resolveReopenIssue', (issueLabel, resolveText, reopen) => 
 
 Cypress.Commands.add('removeIssue', (issueLabel, submitRemove) => {
     cy.get(issueLabel).click();
-    cy.intercept('DELETE', '/api/v1/issues/**').as('removeIssue');
+    cy.intercept('DELETE', '/api/issues/**').as('removeIssue');
     cy.get('.cvat-issue-dialog-footer').within(() => {
         cy.contains('button', 'Remove').click();
     });
@@ -194,7 +194,7 @@ Cypress.Commands.add('submitReview', (decision, user) => {
     cy.get('.cvat-submit-review-dialog').within(() => {
         cy.contains(new RegExp(`^${decision}$`, 'g')).click();
         if (decision === 'Review next') {
-            cy.intercept('GET', `/api/v1/users?search=${user}&limit=10&is_active=true`).as('searchUsers');
+            cy.intercept('GET', `/api/users?search=${user}&limit=10&is_active=true`).as('searchUsers');
             cy.get('.cvat-user-search-field').within(() => {
                 cy.get('input[type="search"]').clear().type(`${user}`);
                 cy.wait('@searchUsers').its('response.statusCode').should('equal', 200);

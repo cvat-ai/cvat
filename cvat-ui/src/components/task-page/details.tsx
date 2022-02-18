@@ -5,7 +5,7 @@
 import React from 'react';
 import { Row, Col } from 'antd/lib/grid';
 import Tag from 'antd/lib/tag';
-import { CheckCircleOutlined, LoadingOutlined, WarningOutlined } from '@ant-design/icons';
+import { CheckCircleOutlined, ExclamationCircleOutlined, LoadingOutlined } from '@ant-design/icons';
 import Modal from 'antd/lib/modal';
 import notification from 'antd/lib/notification';
 import Text from 'antd/lib/typography/Text';
@@ -13,7 +13,7 @@ import Title from 'antd/lib/typography/Title';
 import moment from 'moment';
 import Paragraph from 'antd/lib/typography/Paragraph';
 import Select from 'antd/lib/select';
-import Checkbox from 'antd/lib/checkbox';
+import Checkbox, { CheckboxChangeEvent } from 'antd/lib/checkbox';
 import getCore from 'cvat-core-wrapper';
 import { getReposData, syncRepos, changeRepo } from 'utils/git-utils';
 import { ActiveInference } from 'reducers/interfaces';
@@ -48,13 +48,12 @@ interface State {
     repositoryStatus: string;
     format: string;
     lfs: boolean;
+    updatingRepository: boolean;
 }
 
 export default class DetailsComponent extends React.PureComponent<Props, State> {
     private mounted: boolean;
-
     private previewImageElement: HTMLImageElement;
-
     private previewWrapperRef: React.RefObject<HTMLDivElement>;
 
     constructor(props: Props) {
@@ -71,7 +70,7 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
             repository: '',
             format: '',
             repositoryStatus: '',
-            lfs: '',
+            lfs: false,
             updatingRepository: false,
         };
     }
@@ -157,12 +156,12 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
             .finally(() => this.setState({ updatingRepository: false }));
     };
 
-    private onChangeLFSValue = (value): void => {
+    private onChangeLFSValue = (event: CheckboxChangeEvent): void => {
         const { taskInstance } = this.props;
         const { lfs } = this.state;
         const old = lfs;
-        this.setState({ lfs: value.target.checked, updatingRepository: true });
-        changeRepo(taskInstance.id, 'lfs', value.target.checked)
+        this.setState({ lfs: event.target.checked, updatingRepository: true });
+        changeRepo(taskInstance.id, 'lfs', event.target.checked)
             .catch((error) => {
                 this.setState({ lfs: old });
                 notification.error({
@@ -328,7 +327,7 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
                                             });
                                     }}
                                 >
-                                    <WarningOutlined />
+                                    <ExclamationCircleOutlined />
                                     Synchronize
                                 </Tag>
                             )}

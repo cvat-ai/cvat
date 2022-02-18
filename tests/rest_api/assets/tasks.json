@@ -1,8 +1,116 @@
 {
-  "count": 4,
+  "count": 6,
   "next": null,
   "previous": null,
   "results": [
+    {
+      "assignee": null,
+      "bug_tracker": "",
+      "created_date": "2022-02-16T06:26:54.631217Z",
+      "data": 6,
+      "data_chunk_size": 72,
+      "data_compressed_chunk_type": "imageset",
+      "data_original_chunk_type": "imageset",
+      "dimension": "3d",
+      "id": 6,
+      "image_quality": 70,
+      "labels": [
+        {
+          "attributes": [],
+          "color": "#2080c0",
+          "id": 10,
+          "name": "car"
+        }
+      ],
+      "mode": "annotation",
+      "name": "task3",
+      "organization": null,
+      "overlap": 0,
+      "owner": {
+        "first_name": "User",
+        "id": 2,
+        "last_name": "First",
+        "url": "http://localhost:8080/api/users/2",
+        "username": "user1"
+      },
+      "project_id": null,
+      "segment_size": 1,
+      "segments": [
+        {
+          "jobs": [
+            {
+              "assignee": null,
+              "id": 8,
+              "stage": "annotation",
+              "state": "new",
+              "status": "annotation",
+              "url": "http://localhost:8080/api/jobs/8"
+            }
+          ],
+          "start_frame": 0,
+          "stop_frame": 0
+        }
+      ],
+      "size": 1,
+      "status": "annotation",
+      "subset": "",
+      "updated_date": "2022-02-16T06:26:54.836403Z",
+      "url": "http://localhost:8080/api/tasks/6"
+    },
+    {
+      "assignee": null,
+      "bug_tracker": "",
+      "created_date": "2022-02-16T06:25:48.168612Z",
+      "data": 5,
+      "data_chunk_size": 72,
+      "data_compressed_chunk_type": "imageset",
+      "data_original_chunk_type": "video",
+      "dimension": "2d",
+      "id": 5,
+      "image_quality": 70,
+      "labels": [
+        {
+          "attributes": [],
+          "color": "#2080c0",
+          "id": 9,
+          "name": "car"
+        }
+      ],
+      "mode": "interpolation",
+      "name": "task2",
+      "organization": null,
+      "overlap": 5,
+      "owner": {
+        "first_name": "User",
+        "id": 2,
+        "last_name": "First",
+        "url": "http://localhost:8080/api/users/2",
+        "username": "user1"
+      },
+      "project_id": null,
+      "segment_size": 25,
+      "segments": [
+        {
+          "jobs": [
+            {
+              "assignee": null,
+              "id": 7,
+              "stage": "annotation",
+              "state": "new",
+              "status": "annotation",
+              "url": "http://localhost:8080/api/jobs/7"
+            }
+          ],
+          "start_frame": 0,
+          "stop_frame": 24
+        }
+      ],
+      "size": 25,
+      "status": "annotation",
+      "subset": "",
+      "updated_date": "2022-02-16T06:25:48.889352Z",
+      "url": "http://localhost:8080/api/tasks/5"
+    },
     {
       "assignee": null,
       "bug_tracker": "",
@@ -36,7 +144,7 @@
         "first_name": "Business",
         "id": 10,
         "last_name": "First",
-        "url": "http://localhost:8080/api/v1/users/10",
+        "url": "http://localhost:8080/api/users/10",
         "username": "business1"
       },
       "project_id": 2,
@@ -49,14 +157,14 @@
                 "first_name": "Worker",
                 "id": 7,
                 "last_name": "Second",
-                "url": "http://localhost:8080/api/v1/users/7",
+                "url": "http://localhost:8080/api/users/7",
                 "username": "worker2"
               },
               "id": 6,
               "stage": "annotation",
               "state": "new",
               "status": "annotation",
-              "url": "http://localhost:8080/api/v1/jobs/6"
+              "url": "http://localhost:8080/api/jobs/6"
             }
           ],
           "start_frame": 0,
@@ -67,7 +175,7 @@
       "status": "annotation",
       "subset": "train",
       "updated_date": "2021-12-22T07:17:34.836384Z",
-      "url": "http://localhost:8080/api/v1/tasks/4"
+      "url": "http://localhost:8080/api/tasks/4"
     },
     {
       "assignee": null,
@@ -115,7 +223,7 @@
         "first_name": "Business",
         "id": 10,
         "last_name": "First",
-        "url": "http://localhost:8080/api/v1/users/10",
+        "url": "http://localhost:8080/api/users/10",
         "username": "business1"
       },
       "project_id": 1,
@@ -129,7 +237,7 @@
               "stage": "annotation",
               "state": "new",
               "status": "annotation",
-              "url": "http://localhost:8080/api/v1/jobs/3"
+              "url": "http://localhost:8080/api/jobs/3"
             }
           ],
           "start_frame": 0,
@@ -143,7 +251,7 @@
               "stage": "validation",
               "state": "new",
               "status": "validation",
-              "url": "http://localhost:8080/api/v1/jobs/4"
+              "url": "http://localhost:8080/api/jobs/4"
             }
           ],
           "start_frame": 50,
@@ -157,7 +265,7 @@
               "stage": "acceptance",
               "state": "new",
               "status": "validation",
-              "url": "http://localhost:8080/api/v1/jobs/5"
+              "url": "http://localhost:8080/api/jobs/5"
             }
           ],
           "start_frame": 100,
@@ -168,7 +276,7 @@
       "status": "annotation",
       "subset": "Train",
       "updated_date": "2021-12-22T07:19:33.854760Z",
-      "url": "http://localhost:8080/api/v1/tasks/3"
+      "url": "http://localhost:8080/api/tasks/3"
     },
     {
       "assignee": null,
@@ -203,7 +311,7 @@
         "first_name": "User",
         "id": 2,
         "last_name": "First",
-        "url": "http://localhost:8080/api/v1/users/2",
+        "url": "http://localhost:8080/api/users/2",
         "username": "user1"
       },
       "project_id": null,
@@ -216,14 +324,14 @@
                 "first_name": "Worker",
                 "id": 6,
                 "last_name": "First",
-                "url": "http://localhost:8080/api/v1/users/6",
+                "url": "http://localhost:8080/api/users/6",
                 "username": "worker1"
               },
               "id": 2,
               "stage": "annotation",
               "state": "new",
               "status": "annotation",
-              "url": "http://localhost:8080/api/v1/jobs/2"
+              "url": "http://localhost:8080/api/jobs/2"
             }
           ],
           "start_frame": 0,
@@ -234,7 +342,7 @@
       "status": "annotation",
       "subset": "",
       "updated_date": "2021-12-22T07:14:15.234748Z",
-      "url": "http://localhost:8080/api/v1/tasks/2"
+      "url": "http://localhost:8080/api/tasks/2"
     },
     {
       "assignee": null,
@@ -269,7 +377,7 @@
         "first_name": "User",
         "id": 2,
         "last_name": "First",
-        "url": "http://localhost:8080/api/v1/users/2",
+        "url": "http://localhost:8080/api/users/2",
         "username": "user1"
       },
       "project_id": null,
@@ -283,7 +391,7 @@
               "stage": "annotation",
               "state": "new",
               "status": "annotation",
-              "url": "http://localhost:8080/api/v1/jobs/1"
+              "url": "http://localhost:8080/api/jobs/1"
             }
           ],
           "start_frame": 0,
@@ -294,7 +402,7 @@
       "status": "annotation",
       "subset": "",
       "updated_date": "2021-12-22T07:15:22.942484Z",
-      "url": "http://localhost:8080/api/v1/tasks/1"
+      "url": "http://localhost:8080/api/tasks/1"
     }
   ]
 }

@@ -21,6 +21,7 @@ import shutil
 import subprocess
 import mimetypes
 from corsheaders.defaults import default_headers
+from distutils.util import strtobool
 
 mimetypes.add_type("application/wasm", ".wasm", True)
 
@@ -106,13 +107,12 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django_rq',
     'compressor',
-    'sendfile',
+    'django_sendfile',
     'dj_pagination',
-    'revproxy',
     'rest_framework',
     'rest_framework.authtoken',
     'django_filters',
-    'drf_yasg',
+    'drf_spectacular',
     'rest_auth',
     'django.contrib.sites',
     'allauth',
@@ -127,7 +127,7 @@ INSTALLED_APPS = [
     'cvat.apps.dataset_repo',
     'cvat.apps.restrictions',
     'cvat.apps.lambda_manager',
-    'cvat.apps.opencv'
+    'cvat.apps.opencv',
 ]
 
 SITE_ID = 1
@@ -138,6 +138,10 @@ REST_FRAMEWORK = {
         'rest_framework.parsers.FormParser',
         'rest_framework.parsers.MultiPartParser',
         'cvat.apps.engine.parsers.TusUploadParser',
+    ],
+    'DEFAULT_RENDERER_CLASSES': [
+        'cvat.apps.engine.renderers.CVATAPIRenderer',
+        'rest_framework.renderers.BrowsableAPIRenderer',
     ],
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
@@ -151,12 +155,10 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.BasicAuthentication'
     ],
     'DEFAULT_VERSIONING_CLASS':
-        # Don't try to use URLPathVersioning. It will give you /api/{version}
-        # in path and '/api/docs' will not collapse similar items (flat list
-        # of all possible methods isn't readable).
-        'rest_framework.versioning.NamespaceVersioning',
-    # Need to add 'api-docs' here as a workaround for include_docs_urls.
-    'ALLOWED_VERSIONS': ('v1', 'api-docs'),
+        'rest_framework.versioning.AcceptHeaderVersioning',
+    'ALLOWED_VERSIONS': ('2.0'),
+    'DEFAULT_VERSION': '2.0',
+    'VERSION_PARAM': 'version',
     'DEFAULT_PAGINATION_CLASS':
         'cvat.apps.engine.pagination.CustomPagination',
     'PAGE_SIZE': 10,
@@ -175,6 +177,7 @@ REST_FRAMEWORK = {
         'anon': '100/minute',
     },
     'DEFAULT_METADATA_CLASS': 'rest_framework.metadata.SimpleMetadata',
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
 
 REST_AUTH_REGISTER_SERIALIZERS = {
@@ -185,7 +188,7 @@ REST_AUTH_SERIALIZERS = {
     'PASSWORD_RESET_SERIALIZER': 'cvat.apps.iam.serializers.PasswordResetSerializerEx',
 }
 
-if os.getenv('DJANGO_LOG_VIEWER_HOST'):
+if strtobool(os.getenv('CVAT_ANALYTICS', '0')):
     INSTALLED_APPS += ['cvat.apps.log_viewer']
 
 MIDDLEWARE = [
@@ -420,11 +423,6 @@ LOGGING = {
             'handlers': [],
             'level': os.getenv('DJANGO_LOG_LEVEL', 'DEBUG'),
         },
-
-        'revproxy': {
-            'handlers': ['console', 'server_file'],
-            'level': os.getenv('DJANGO_LOG_LEVEL', 'DEBUG')
-        },
         'django': {
             'handlers': ['console', 'server_file'],
             'level': 'INFO',
@@ -454,13 +452,9 @@ RESTRICTIONS = {
     # this setting reduces task visibility to owner and assignee only
     'reduce_task_visibility': False,
 
-    # allow access to analytics component to users with the following roles
-    'analytics_access': (
-        'engine.role.observer',
-        'engine.role.annotator',
-        'engine.role.user',
-        'engine.role.admin',
-        ),
+    # allow access to analytics component to users with business role
+    # otherwise, only the administrator has access
+    'analytics_visibility': True,
 }
 
 # http://www.grantjenks.com/docs/diskcache/tutorial.html#djangocache
@@ -498,3 +492,45 @@ TUS_DEFAULT_CHUNK_SIZE = 104857600  # 100 mb
 # More about forwarded headers - https://doc.traefik.io/traefik/getting-started/faq/#what-are-the-forwarded-headers-when-proxying-http-requests
 # How django uses X-Forwarded-Proto - https://docs.djangoproject.com/en/2.2/ref/settings/#secure-proxy-ssl-header
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+# Django-sendfile requires to set SENDFILE_ROOT
+# https://github.com/moggers87/django-sendfile2
+SENDFILE_ROOT = BASE_DIR
+
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'CVAT REST API',
+    'DESCRIPTION': 'REST API for Computer Vision Annotation Tool (CVAT)',
+    # Statically set schema version. May also be an empty string. When used together with
+    # view versioning, will become '0.0.0 (v2)' for 'v2' versioned requests.
+    # Set VERSION to None if only the request version should be rendered.
+    'VERSION': None,
+    'CONTACT': {
+        'name': 'Nikita Manovich',
+        'url': 'https://github.com/nmanovic',
+        'email': 'nikita.manovich@intel.com',
+    },
+    'LICENSE': {
+        'name': 'MIT License',
+        'url': 'https://en.wikipedia.org/wiki/MIT_License',
+    },
+    'SERVE_PUBLIC': True,
+    'SCHEMA_COERCE_PATH_PK_SUFFIX': True,
+    'SCHEMA_PATH_PREFIX': '/api',
+    'SCHEMA_PATH_PREFIX_TRIM': False,
+    'SERVE_PERMISSIONS': ['rest_framework.permissions.IsAuthenticated'],
+    # https://swagger.io/docs/open-source-tools/swagger-ui/usage/configuration/
+    'SWAGGER_UI_SETTINGS': {
+        'deepLinking': True,
+        'displayOperationId': True,
+        'displayRequestDuration': True,
+        'filter': True,
+        'showExtensions': True,
+    },
+    'TOS': 'https://www.google.com/policies/terms/',
+    'EXTERNAL_DOCS': {
+        'description': 'CVAT documentation',
+        'url': 'https://openvinotoolkit.github.io/cvat/docs/',
+    },
+    # OTHER SETTINGS
+    # https://drf-spectacular.readthedocs.io/en/latest/settings.html
+}

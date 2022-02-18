@@ -150,10 +150,12 @@
 }
 
 .cvat-item-open-task-actions {
-    margin-right: 5px;
-    margin-top: 10px;
+    margin-right: $grid-unit-size;
+    margin-top: $grid-unit-size;
     display: flex;
     align-items: center;
+    padding: $grid-unit-size;
+    line-height: 14px;
 }
 
 .cvat-item-open-task-button {

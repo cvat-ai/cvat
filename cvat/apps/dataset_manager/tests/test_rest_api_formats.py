@@ -1,4 +1,4 @@
-# Copyright (C) 2021 Intel Corporation
+# Copyright (C) 2021-2022 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -122,16 +122,16 @@ class _DbTestBase(APITestCase):
         cls.admin = user_admin
         cls.user = user_dummy
 
-    def _put_api_v1_task_id_annotations(self, tid, data):
+    def _put_api_v2_task_id_annotations(self, tid, data):
         with ForceLogin(self.admin, self.client):
-            response = self.client.put("/api/v1/tasks/%s/annotations" % tid,
+            response = self.client.put("/api/tasks/%s/annotations" % tid,
                 data=data, format="json")
 
         return response
 
-    def _put_api_v1_job_id_annotations(self, jid, data):
+    def _put_api_v2_job_id_annotations(self, jid, data):
         with ForceLogin(self.admin, self.client):
-            response = self.client.put("/api/v1/jobs/%s/annotations" % jid,
+            response = self.client.put("/api/jobs/%s/annotations" % jid,
                 data=data, format="json")
 
         return response
@@ -150,22 +150,22 @@ class _DbTestBase(APITestCase):
 
     def _create_task(self, data, image_data):
         with ForceLogin(self.user, self.client):
-            response = self.client.post('/api/v1/tasks', data=data, format="json")
+            response = self.client.post('/api/tasks', data=data, format="json")
             assert response.status_code == status.HTTP_201_CREATED, response.status_code
             tid = response.data["id"]
 
-            response = self.client.post("/api/v1/tasks/%s/data" % tid,
+            response = self.client.post("/api/tasks/%s/data" % tid,
                 data=image_data)
             assert response.status_code == status.HTTP_202_ACCEPTED, response.status_code
 
-            response = self.client.get("/api/v1/tasks/%s" % tid)
+            response = self.client.get("/api/tasks/%s" % tid)
             task = response.data
 
         return task
 
     def _create_project(self, data):
         with ForceLogin(self.user, self.client):
-            response = self.client.post('/api/v1/projects', data=data, format="json")
+            response = self.client.post('/api/projects', data=data, format="json")
             assert response.status_code == status.HTTP_201_CREATED, response.status_code
             project = response.data
 
@@ -173,7 +173,7 @@ class _DbTestBase(APITestCase):
 
     def _get_jobs(self, task_id):
         with ForceLogin(self.admin, self.client):
-            response = self.client.get("/api/v1/tasks/{}/jobs".format(task_id))
+            response = self.client.get("/api/tasks/{}/jobs".format(task_id))
         return response.data
 
     def _get_request(self, path, user):
@@ -237,7 +237,7 @@ class _DbTestBase(APITestCase):
                                 "spec_id": spec_id,
                                 "value": value,
                             })
-        response = self._put_api_v1_task_id_annotations(task["id"], tmp_annotations)
+        response = self._put_api_v2_task_id_annotations(task["id"], tmp_annotations)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def _create_annotations_in_job(self, task, job_id,  name_ann, key_get_values):
@@ -274,7 +274,7 @@ class _DbTestBase(APITestCase):
                                 "spec_id": spec_id,
                                 "value": value,
                             })
-        response = self._put_api_v1_job_id_annotations(job_id, tmp_annotations)
+        response = self._put_api_v2_job_id_annotations(job_id, tmp_annotations)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def _download_file(self, url, data, user, file_name):
@@ -298,25 +298,25 @@ class _DbTestBase(APITestCase):
             raise FileNotFoundError(f"File '{file_name}' was not downloaded")
 
     def _generate_url_dump_tasks_annotations(self, task_id):
-        return f"/api/v1/tasks/{task_id}/annotations"
+        return f"/api/tasks/{task_id}/annotations"
 
     def _generate_url_upload_tasks_annotations(self, task_id, upload_format_name):
-        return f"/api/v1/tasks/{task_id}/annotations?format={upload_format_name}"
+        return f"/api/tasks/{task_id}/annotations?format={upload_format_name}"
 
     def _generate_url_dump_job_annotations(self, job_id):
-        return f"/api/v1/jobs/{job_id}/annotations"
+        return f"/api/jobs/{job_id}/annotations"
 
     def _generate_url_upload_job_annotations(self, job_id, upload_format_name):
-        return f"/api/v1/jobs/{job_id}/annotations?format={upload_format_name}"
+        return f"/api/jobs/{job_id}/annotations?format={upload_format_name}"
 
     def _generate_url_dump_task_dataset(self, task_id):
-        return f"/api/v1/tasks/{task_id}/dataset"
+        return f"/api/tasks/{task_id}/dataset"
 
     def _generate_url_dump_project_annotations(self, project_id, format_name):
-        return f"/api/v1/projects/{project_id}/annotations?format={format_name}"
+        return f"/api/projects/{project_id}/annotations?format={format_name}"
 
     def _generate_url_dump_project_dataset(self, project_id, format_name):
-        return f"/api/v1/projects/{project_id}/dataset?format={format_name}"
+        return f"/api/projects/{project_id}/dataset?format={format_name}"
 
     def _remove_annotations(self, url, user):
         response = self._delete_request(url, user)
@@ -324,13 +324,13 @@ class _DbTestBase(APITestCase):
         return response
 
     def _delete_project(self, project_id, user):
-        response = self._delete_request(f'/api/v1/projects/{project_id}', user)
+        response = self._delete_request(f'/api/projects/{project_id}', user)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         return response
 
 
 class TaskDumpUploadTest(_DbTestBase):
-    def test_api_v1_dump_and_upload_annotations_with_objects_type_is_shape(self):
+    def test_api_v2_dump_and_upload_annotations_with_objects_type_is_shape(self):
         test_name = self._testMethodName
         dump_formats = dm.views.get_export_formats()
         upload_formats = dm.views.get_import_formats()
@@ -435,7 +435,7 @@ class TaskDumpUploadTest(_DbTestBase):
                                 response = self._put_request_with_data(url, {}, user)
                                 self.assertEqual(response.status_code, edata['create code'])
 
-    def test_api_v1_dump_annotations_with_objects_type_is_track(self):
+    def test_api_v2_dump_annotations_with_objects_type_is_track(self):
         test_name = self._testMethodName
 
         dump_formats = dm.views.get_export_formats()
@@ -539,7 +539,7 @@ class TaskDumpUploadTest(_DbTestBase):
                                 response = self._put_request_with_data(url, {}, user)
                                 self.assertEqual(response.status_code, edata['create code'])
 
-    def test_api_v1_dump_tag_annotations(self):
+    def test_api_v2_dump_tag_annotations(self):
         dump_format_name = "CVAT for images 1.1"
         data = {
             "format": dump_format_name,
@@ -592,7 +592,7 @@ class TaskDumpUploadTest(_DbTestBase):
                                 f.write(content.getvalue())
                         self.assertEqual(osp.exists(file_zip_name), edata['file_exists'])
 
-    def test_api_v1_dump_and_upload_annotations_with_objects_are_different_images(self):
+    def test_api_v2_dump_and_upload_annotations_with_objects_are_different_images(self):
         test_name = self._testMethodName
         dump_format_name = "CVAT for images 1.1"
         upload_types = ["task", "job"]
@@ -628,11 +628,11 @@ class TaskDumpUploadTest(_DbTestBase):
                     with open(file_zip_name, 'rb') as binary_file:
                         self._upload_file(url_upload, binary_file, self.admin)
 
-                        response = self._get_request(f"/api/v1/tasks/{task_id}/annotations", self.admin)
+                        response = self._get_request(f"/api/tasks/{task_id}/annotations", self.admin)
                         self.assertEqual(len(response.data["shapes"]), 2)
                         self.assertEqual(len(response.data["tracks"]), 0)
 
-    def test_api_v1_dump_and_upload_annotations_with_objects_are_different_video(self):
+    def test_api_v2_dump_and_upload_annotations_with_objects_are_different_video(self):
         test_name = self._testMethodName
         dump_format_name = "CVAT for video 1.1"
         upload_types = ["task", "job"]
@@ -670,11 +670,11 @@ class TaskDumpUploadTest(_DbTestBase):
                         self._upload_file(url_upload, binary_file, self.admin)
                         self.assertEqual(osp.exists(file_zip_name), True)
 
-                        response = self._get_request(f"/api/v1/tasks/{task_id}/annotations", self.admin)
+                        response = self._get_request(f"/api/tasks/{task_id}/annotations", self.admin)
                         self.assertEqual(len(response.data["shapes"]), 0)
                         self.assertEqual(len(response.data["tracks"]), 2)
 
-    def test_api_v1_dump_and_upload_with_objects_type_is_track_and_outside_property(self):
+    def test_api_v2_dump_and_upload_with_objects_type_is_track_and_outside_property(self):
         test_name = self._testMethodName
         dump_format_name = "CVAT for video 1.1"
         video = self._generate_task_videos(1)
@@ -696,7 +696,7 @@ class TaskDumpUploadTest(_DbTestBase):
                 url = self._generate_url_upload_tasks_annotations(task_id, "CVAT 1.1")
                 self._upload_file(url, binary_file, self.admin)
 
-    def test_api_v1_dump_and_upload_with_objects_type_is_track_and_keyframe_property(self):
+    def test_api_v2_dump_and_upload_with_objects_type_is_track_and_keyframe_property(self):
         test_name = self._testMethodName
         dump_format_name = "CVAT for video 1.1"
 
@@ -720,7 +720,7 @@ class TaskDumpUploadTest(_DbTestBase):
                 url = self._generate_url_upload_tasks_annotations(task_id, "CVAT 1.1")
                 self._upload_file(url, binary_file, self.admin)
 
-    def test_api_v1_dump_upload_annotations_from_several_jobs(self):
+    def test_api_v2_dump_upload_annotations_from_several_jobs(self):
         test_name = self._testMethodName
         dump_format_name = "CVAT for images 1.1"
 
@@ -747,7 +747,7 @@ class TaskDumpUploadTest(_DbTestBase):
             with open(file_zip_name, 'rb') as binary_file:
                 self._upload_file(url, binary_file, self.admin)
 
-    def test_api_v1_dump_annotations_with_objects_type_is_shape_from_several_jobs(self):
+    def test_api_v2_dump_annotations_with_objects_type_is_shape_from_several_jobs(self):
         test_name = self._testMethodName
         dump_format_name = "CVAT for images 1.1"
         test_cases = ['all', 'first']
@@ -781,7 +781,7 @@ class TaskDumpUploadTest(_DbTestBase):
                 with open(file_zip_name, 'rb') as binary_file:
                     self._upload_file(url, binary_file, self.admin)
 
-    def test_api_v1_export_dataset(self):
+    def test_api_v2_export_dataset(self):
         test_name = self._testMethodName
         dump_formats = dm.views.get_export_formats()
 
@@ -837,7 +837,7 @@ class TaskDumpUploadTest(_DbTestBase):
                         self.assertEqual(response.status_code, edata['code'])
                         self.assertEqual(osp.exists(file_zip_name), edata['file_exists'])
 
-    def test_api_v1_dump_empty_frames(self):
+    def test_api_v2_dump_empty_frames(self):
         dump_formats = dm.views.get_export_formats()
         upload_formats = dm.views.get_import_formats()
 
@@ -889,7 +889,7 @@ class TaskDumpUploadTest(_DbTestBase):
                         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
                         self.assertIsNone(response.data)
 
-    def test_api_v1_rewriting_annotations(self):
+    def test_api_v2_rewriting_annotations(self):
         test_name = self._testMethodName
         dump_formats = dm.views.get_export_formats()
         with TestDir() as test_dir:
@@ -955,7 +955,7 @@ class TaskDumpUploadTest(_DbTestBase):
                     task_ann_data = task_ann.data
                     self.assertEqual(len(task_ann_data["shapes"]), len(task_ann_prev_data["shapes"]))
 
-    def test_api_v1_tasks_annotations_dump_and_upload_many_jobs_with_datumaro(self):
+    def test_api_v2_tasks_annotations_dump_and_upload_many_jobs_with_datumaro(self):
         test_name = self._testMethodName
         upload_format_name = "CVAT 1.1"
         include_images_params = (False, True)
@@ -995,7 +995,7 @@ class TaskDumpUploadTest(_DbTestBase):
                     data_from_task_after_upload = self._get_data_from_task(task_id, include_images)
                     compare_datasets(self, data_from_task_before_upload, data_from_task_after_upload)
 
-    def test_api_v1_tasks_annotations_dump_and_upload_with_datumaro(self):
+    def test_api_v2_tasks_annotations_dump_and_upload_with_datumaro(self):
         test_name = self._testMethodName
         # get formats
         dump_formats = dm.views.get_export_formats()
@@ -1072,7 +1072,7 @@ class TaskDumpUploadTest(_DbTestBase):
                         data_from_task_after_upload = self._get_data_from_task(task_id, include_images)
                         compare_datasets(self, data_from_task_before_upload, data_from_task_after_upload)
 
-    def test_api_v1_check_duplicated_polygon_points(self):
+    def test_api_v2_check_duplicated_polygon_points(self):
         test_name = self._testMethodName
         images = self._generate_task_images(10)
         task = self._create_task(tasks["main"], images)
@@ -1102,7 +1102,7 @@ class TaskDumpUploadTest(_DbTestBase):
                 polygon_points = [float(p) for p in polygon_points.split(";")]
                 self.assertEqual(polygon_points, annotation_points)
 
-    def test_api_v1_check_widerface_with_all_attributes(self):
+    def test_api_v2_check_widerface_with_all_attributes(self):
         test_name = self._testMethodName
         dump_format_name = "WiderFace 1.0"
         upload_format_name = "WiderFace 1.0"
@@ -1140,7 +1140,7 @@ class TaskDumpUploadTest(_DbTestBase):
                     data_from_task_after_upload = self._get_data_from_task(task_id, include_images)
                     compare_datasets(self, data_from_task_before_upload, data_from_task_after_upload)\
 
-    def test_api_v1_check_attribute_import_in_tracks(self):
+    def test_api_v2_check_attribute_import_in_tracks(self):
         test_name = self._testMethodName
         dump_format_name = "CVAT for video 1.1"
         upload_format_name = "CVAT 1.1"
@@ -1179,7 +1179,7 @@ class TaskDumpUploadTest(_DbTestBase):
                     compare_datasets(self, data_from_task_before_upload, data_from_task_after_upload)
 
 class ProjectDump(_DbTestBase):
-    def test_api_v1_export_dataset(self):
+    def test_api_v2_export_dataset(self):
         test_name = self._testMethodName
         dump_formats = dm.views.get_export_formats()
 
@@ -1231,7 +1231,7 @@ class ProjectDump(_DbTestBase):
                         self.assertEqual(response.status_code, edata['code'])
                         self.assertEqual(osp.exists(file_zip_name), edata['file_exists'])
 
-    def test_api_v1_export_annotatios(self):
+    def test_api_v2_export_annotatios(self):
         test_name = self._testMethodName
         dump_formats = dm.views.get_export_formats()
 

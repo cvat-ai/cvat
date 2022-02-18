@@ -55,7 +55,7 @@ const usersDummyData = {
     previous: null,
     results: [
         {
-            url: 'http://localhost:7000/api/v1/users/1',
+            url: 'http://localhost:7000/api/users/1',
             id: 1,
             username: 'admin',
             first_name: '',
@@ -69,7 +69,7 @@ const usersDummyData = {
             date_joined: '2019-05-13T15:33:17.833200+03:00',
         },
         {
-            url: 'http://localhost:7000/api/v1/users/2',
+            url: 'http://localhost:7000/api/users/2',
             id: 2,
             username: 'bsekache',
             first_name: '',
@@ -149,18 +149,18 @@ const projectsDummyData = {
     previous: null,
     results: [
         {
-            url: 'http://192.168.0.139:7000/api/v1/projects/6',
+            url: 'http://192.168.0.139:7000/api/projects/6',
             id: 6,
             name: 'Some empty project',
             labels: [],
             tasks: [],
             owner: {
-                url: 'http://localhost:7000/api/v1/users/2',
+                url: 'http://localhost:7000/api/users/2',
                 id: 2,
                 username: 'bsekache',
             },
             assignee: {
-                url: 'http://localhost:7000/api/v1/users/2',
+                url: 'http://localhost:7000/api/users/2',
                 id: 2,
                 username: 'bsekache',
             },
@@ -170,7 +170,7 @@ const projectsDummyData = {
             status: 'annotation',
         },
         {
-            url: 'http://192.168.0.139:7000/api/v1/projects/1',
+            url: 'http://192.168.0.139:7000/api/projects/1',
             id: 2,
             name: 'Test project with roads',
             labels: [
@@ -198,13 +198,13 @@ const projectsDummyData = {
             ],
             tasks: [
                 {
-                    url: 'http://192.168.0.139:7000/api/v1/tasks/2',
+                    url: 'http://192.168.0.139:7000/api/tasks/2',
                     id: 2,
                     name: 'road 1',
                     project_id: 1,
                     mode: 'interpolation',
                     owner: {
-                        url: 'http://localhost:7000/api/v1/users/1',
+                        url: 'http://localhost:7000/api/users/1',
                         id: 1,
                         username: 'admin',
                     },
@@ -239,7 +239,7 @@ const projectsDummyData = {
                             stop_frame: 99,
                             jobs: [
                                 {
-                                    url: 'http://192.168.0.139:7000/api/v1/jobs/1',
+                                    url: 'http://192.168.0.139:7000/api/jobs/1',
                                     id: 1,
                                     assignee: null,
                                     status: 'completed',
@@ -253,7 +253,7 @@ const projectsDummyData = {
                             stop_frame: 194,
                             jobs: [
                                 {
-                                    url: 'http://192.168.0.139:7000/api/v1/jobs/2',
+                                    url: 'http://192.168.0.139:7000/api/jobs/2',
                                     id: 2,
                                     assignee: null,
                                     status: 'completed',
@@ -267,7 +267,7 @@ const projectsDummyData = {
                             stop_frame: 289,
                             jobs: [
                                 {
-                                    url: 'http://192.168.0.139:7000/api/v1/jobs/3',
+                                    url: 'http://192.168.0.139:7000/api/jobs/3',
                                     id: 3,
                                     assignee: null,
                                     status: 'completed',
@@ -281,7 +281,7 @@ const projectsDummyData = {
                             stop_frame: 384,
                             jobs: [
                                 {
-                                    url: 'http://192.168.0.139:7000/api/v1/jobs/4',
+                                    url: 'http://192.168.0.139:7000/api/jobs/4',
                                     id: 4,
                                     assignee: null,
                                     status: 'completed',
@@ -295,7 +295,7 @@ const projectsDummyData = {
                             stop_frame: 431,
                             jobs: [
                                 {
-                                    url: 'http://192.168.0.139:7000/api/v1/jobs/5',
+                                    url: 'http://192.168.0.139:7000/api/jobs/5',
                                     id: 5,
                                     assignee: null,
                                     status: 'completed',
@@ -314,7 +314,7 @@ const projectsDummyData = {
                 },
             ],
             owner: {
-                url: 'http://localhost:7000/api/v1/users/1',
+                url: 'http://localhost:7000/api/users/1',
                 id: 1,
                 username: 'admin',
             },
@@ -333,13 +333,13 @@ const tasksDummyData = {
     previous: null,
     results: [
         {
-            url: 'http://localhost:7000/api/v1/tasks/102',
+            url: 'http://localhost:7000/api/tasks/102',
             id: 102,
             name: 'Test',
             size: 1,
             mode: 'annotation',
             owner: {
-                url: 'http://localhost:7000/api/v1/users/1',
+                url: 'http://localhost:7000/api/users/1',
                 id: 1,
                 username: 'admin',
             },
@@ -366,7 +366,7 @@ const tasksDummyData = {
                     stop_frame: 0,
                     jobs: [
                         {
-                            url: 'http://localhost:7000/api/v1/jobs/112',
+                            url: 'http://localhost:7000/api/jobs/112',
                             id: 112,
                             assignee: null,
                             status: 'annotation',
@@ -382,13 +382,13 @@ const tasksDummyData = {
             frame_filter: '',
         },
         {
-            url: 'http://localhost:7000/api/v1/tasks/100',
+            url: 'http://localhost:7000/api/tasks/100',
             id: 100,
             name: 'Image Task',
             size: 9,
             mode: 'annotation',
             owner: {
-                url: 'http://localhost:7000/api/v1/users/1',
+                url: 'http://localhost:7000/api/users/1',
                 id: 1,
                 username: 'admin',
             },
@@ -420,7 +420,7 @@ const tasksDummyData = {
                     stop_frame: 8,
                     jobs: [
                         {
-                            url: 'http://localhost:7000/api/v1/jobs/100',
+                            url: 'http://localhost:7000/api/jobs/100',
                             id: 100,
                             assignee: null,
                             status: 'annotation',
@@ -436,13 +436,13 @@ const tasksDummyData = {
             frame_filter: '',
         },
         {
-            url: 'http://localhost:7000/api/v1/tasks/10',
+            url: 'http://localhost:7000/api/tasks/10',
             id: 101,
             name: 'Video Task',
             size: 5002,
             mode: 'interpolation',
             owner: {
-                url: 'http://localhost:7000/api/v1/users/1',
+                url: 'http://localhost:7000/api/users/1',
                 id: 1,
                 username: 'admin',
             },
@@ -628,7 +628,7 @@ const tasksDummyData = {
                     stop_frame: 499,
                     jobs: [
                         {
-                            url: 'http://localhost:7000/api/v1/jobs/10',
+                            url: 'http://localhost:7000/api/jobs/10',
                             id: 101,
                             assignee: null,
                             status: 'annotation',
@@ -642,7 +642,7 @@ const tasksDummyData = {
                     stop_frame: 994,
                     jobs: [
                         {
-                            url: 'http://localhost:7000/api/v1/jobs/11',
+                            url: 'http://localhost:7000/api/jobs/11',
                             id: 102,
                             assignee: null,
                             status: 'annotation',
@@ -656,7 +656,7 @@ const tasksDummyData = {
                     stop_frame: 1489,
                     jobs: [
                         {
-                            url: 'http://localhost:7000/api/v1/jobs/12',
+                            url: 'http://localhost:7000/api/jobs/12',
                             id: 103,
                             assignee: null,
                             status: 'annotation',
@@ -670,7 +670,7 @@ const tasksDummyData = {
                     stop_frame: 1984,
                     jobs: [
                         {
-                            url: 'http://localhost:7000/api/v1/jobs/13',
+                            url: 'http://localhost:7000/api/jobs/13',
                             id: 104,
                             assignee: null,
                             status: 'annotation',
@@ -684,7 +684,7 @@ const tasksDummyData = {
                     stop_frame: 2479,
                     jobs: [
                         {
-                            url: 'http://localhost:7000/api/v1/jobs/14',
+                            url: 'http://localhost:7000/api/jobs/14',
                             id: 105,
                             assignee: null,
                             status: 'annotation',
@@ -698,7 +698,7 @@ const tasksDummyData = {
                     stop_frame: 2974,
                     jobs: [
                         {
-                            url: 'http://localhost:7000/api/v1/jobs/15',
+                            url: 'http://localhost:7000/api/jobs/15',
                             id: 106,
                             assignee: null,
                             status: 'annotation',
@@ -712,7 +712,7 @@ const tasksDummyData = {
                     stop_frame: 3469,
                     jobs: [
                         {
-                            url: 'http://localhost:7000/api/v1/jobs/16',
+                            url: 'http://localhost:7000/api/jobs/16',
                             id: 107,
                             assignee: null,
                             status: 'annotation',
@@ -726,7 +726,7 @@ const tasksDummyData = {
                     stop_frame: 3964,
                     jobs: [
                         {
-                            url: 'http://localhost:7000/api/v1/jobs/17',
+                            url: 'http://localhost:7000/api/jobs/17',
                             id: 108,
                             assignee: null,
                             status: 'annotation',
@@ -740,7 +740,7 @@ const tasksDummyData = {
                     stop_frame: 4459,
                     jobs: [
                         {
-                            url: 'http://localhost:7000/api/v1/jobs/18',
+                            url: 'http://localhost:7000/api/jobs/18',
                             id: 109,
                             assignee: null,
                             status: 'annotation',
@@ -754,7 +754,7 @@ const tasksDummyData = {
                     stop_frame: 4954,
                     jobs: [
                         {
-                            url: 'http://localhost:7000/api/v1/jobs/19',
+                            url: 'http://localhost:7000/api/jobs/19',
                             id: 110,
                             assignee: null,
                             status: 'annotation',
@@ -768,7 +768,7 @@ const tasksDummyData = {
                     stop_frame: 5001,
                     jobs: [
                         {
-                            url: 'http://localhost:7000/api/v1/jobs/20',
+                            url: 'http://localhost:7000/api/jobs/20',
                             id: 111,
                             assignee: null,
                             status: 'annotation',
@@ -784,13 +784,13 @@ const tasksDummyData = {
             frame_filter: '',
         },
         {
-            url: 'http://localhost:7000/api/v1/tasks/3',
+            url: 'http://localhost:7000/api/tasks/3',
             id: 3,
             name: 'Test Task',
             size: 5002,
             mode: 'interpolation',
             owner: {
-                url: 'http://localhost:7000/api/v1/users/2',
+                url: 'http://localhost:7000/api/users/2',
                 id: 2,
                 username: 'bsekache',
             },
@@ -976,7 +976,7 @@ const tasksDummyData = {
                     stop_frame: 4999,
                     jobs: [
                         {
-                            url: 'http://localhost:7000/api/v1/jobs/3',
+                            url: 'http://localhost:7000/api/jobs/3',
                             id: 3,
                             assignee: null,
                             status: 'annotation',
@@ -990,7 +990,7 @@ const tasksDummyData = {
                     stop_frame: 5001,
                     jobs: [
                         {
-                            url: 'http://localhost:7000/api/v1/jobs/4',
+                            url: 'http://localhost:7000/api/jobs/4',
                             id: 4,
                             assignee: null,
                             status: 'annotation',
@@ -1003,13 +1003,13 @@ const tasksDummyData = {
             image_quality: 50,
         },
         {
-            url: 'http://localhost:7000/api/v1/tasks/2',
+            url: 'http://localhost:7000/api/tasks/2',
             id: 2,
             name: 'Video',
             size: 75,
             mode: 'interpolation',
             owner: {
-                url: 'http://localhost:7000/api/v1/users/1',
+                url: 'http://localhost:7000/api/users/1',
                 id: 1,
                 username: 'admin',
             },
@@ -1196,7 +1196,7 @@ const tasksDummyData = {
                     stop_frame: 74,
                     jobs: [
                         {
-                            url: 'http://localhost:7000/api/v1/jobs/2',
+                            url: 'http://localhost:7000/api/jobs/2',
                             id: 2,
                             assignee: null,
                             status: 'annotation',
@@ -1209,13 +1209,13 @@ const tasksDummyData = {
             image_quality: 50,
         },
         {
-            url: 'http://localhost:7000/api/v1/tasks/1',
+            url: 'http://localhost:7000/api/tasks/1',
             id: 1,
             name: 'Labels Set',
             size: 9,
             mode: 'annotation',
             owner: {
-                url: 'http://localhost:7000/api/v1/users/1',
+                url: 'http://localhost:7000/api/users/1',
                 id: 1,
                 username: 'admin',
             },
@@ -1401,7 +1401,7 @@ const tasksDummyData = {
                     stop_frame: 8,
                     jobs: [
                         {
-                            url: 'http://localhost:7000/api/v1/jobs/1',
+                            url: 'http://localhost:7000/api/jobs/1',
                             id: 1,
                             assignee: null,
                             status: 'annotation',
@@ -2695,7 +2695,7 @@ const cloudStoragesDummyData = {
         {
             id: 3,
             owner: {
-                url: 'http://localhost:7000/api/v1/users/1',
+                url: 'http://localhost:7000/api/users/1',
                 id: 1,
                 username: 'maya',
                 first_name: '',
@@ -2716,7 +2716,7 @@ const cloudStoragesDummyData = {
         {
             id: 2,
             owner: {
-                url: 'http://localhost:7000/api/v1/users/1',
+                url: 'http://localhost:7000/api/users/1',
                 id: 1,
                 username: 'maya',
                 first_name: '',
@@ -2737,7 +2737,7 @@ const cloudStoragesDummyData = {
         {
             id: 1,
             owner: {
-                url: 'http://localhost:7000/api/v1/users/1',
+                url: 'http://localhost:7000/api/users/1',
                 id: 1,
                 username: 'maya',
                 first_name: '',
