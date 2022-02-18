@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 10.19
--- Dumped by pg_dump version 10.19
+-- Dumped from database version 10.20
+-- Dumped by pg_dump version 10.20
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -3723,12 +3723,12 @@ COPY public.engine_issue (id, frame, "position", created_date, updated_date, job
 --
 
 COPY public.engine_job (id, segment_id, assignee_id, status, stage, state) FROM stdin;
-3	3	\N	annotation	annotation	new
 5	5	\N	validation	acceptance	new
 2	2	6	annotation	annotation	new
-1	1	\N	annotation	annotation	new
 6	6	7	annotation	annotation	new
 4	4	\N	validation	validation	new
+1	1	1	annotation	annotation	new
+3	3	6	annotation	annotation	new
 \.
 
 
