@@ -119,6 +119,10 @@ def users_by_name(users):
     return {user['username']: user for user in users}
 
 @pytest.fixture(scope='module')
+def jobs_by_org(tasks, jobs):
+    return {tasks[job['task_id']]['organization']: job for job in jobs}
+
+@pytest.fixture(scope='module')
 def assignee_id():
     def get_id(data):
         if data.get('assignee') is not None:
