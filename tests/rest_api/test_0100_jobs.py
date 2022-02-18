@@ -209,52 +209,53 @@ class TestPatchJobAnnotations:
             return data
         return get_data
 
+    @pytest.mark.parametrize('org', [2])
     @pytest.mark.parametrize('role, job_staff, is_allow', [
         ('maintainer', False, True),  ('owner',  False, True),
         ('supervisor', False, False), ('worker', False, False),
         ('maintainer', True, True), ('owner',  True, True),
         ('supervisor', True, True), ('worker', True, True)
     ])
-    def test_member_update_job_annotations(self, role, job_staff, is_allow,
-            find_job_staff_user, find_users, request_data, jobs, tasks):
+    def test_member_update_job_annotations(self, org, role, job_staff, is_allow,
+            find_job_staff_user, find_users, request_data, jobs_by_org):
         users = find_users(role=role, org=self._ORG)
-        jobs, _ = filter_jobs(jobs, tasks, self._ORG)
+        jobs = jobs_by_org[org]
         username, jid = find_job_staff_user(jobs, users, job_staff)
 
         data = request_data(jid)
         response = patch_method(username, f'jobs/{jid}/annotations',
-            data, org_id=self._ORG, action='update')
+            data, org_id=org, action='update')
 
         self._test_check_respone(is_allow, response, data)
 
 
-    @pytest.mark.parametrize('groups, is_allow', [
+    @pytest.mark.parametrize('org', [2])
+    @pytest.mark.parametrize('privilege, is_allow', [
         ('admin', True), ('business', False), ('worker', False), ('user', False)
     ])
-    def test_non_member_update_job_annotations(self, groups, is_allow, jobs, tasks,
-             find_job_staff_user, is_org_member, request_data, users):
-        users = [user for user in users if user['groups'] == groups and \
-            not is_org_member(user['id'], self._ORG)]
-        jobs, _ = filter_jobs(jobs, tasks, self._ORG)
+    def test_non_member_update_job_annotations(self, org, privilege, is_allow,
+            find_job_staff_user, find_users, request_data, jobs_by_org):
+        users = find_users(privilege=privilege, exclude_orgs=org)
+        jobs = jobs_by_org[org]
         username, jid = find_job_staff_user(jobs, users, False)
 
         data = request_data(jid)
         response = patch_method(username, f'jobs/{jid}/annotations', data,
-            org_id=self._ORG, action='update')
+            org_id=org, action='update')
 
         self._test_check_respone(is_allow, response, data)
 
     @pytest.mark.parametrize('org', [''])
     @pytest.mark.parametrize('groups, job_staff, is_allow', [
-        (['admin'],    True, True), (['admin'],    False, True),
-        (['business'], True, True), (['business'], False, False),
-        (['worker'],   True, True), (['worker'],   False, False),
-        (['user'],     True, True), (['user'],     False, False)
+        ('admin',    True, True), ('admin',    False, True),
+        ('business', True, True), ('business', False, False),
+        ('worker',   True, True), ('worker',   False, False),
+        ('user',     True, True), ('user',     False, False)
     ])
-    def test_user_update_job_annotations(self, org, groups, job_staff,
-            is_allow, users, jobs, tasks, request_data, find_job_staff_user):
-        users = [u for u in users if u['groups'] == groups]
-        jobs, _ = filter_jobs(jobs, tasks, org)
+    def test_user_update_job_annotations(self, org, privilege, job_staff, is_allow,
+            find_job_staff_user, find_users, request_data, jobs_by_org):
+        users = find_users(privilege=privilege)
+        jobs = jobs_by_org[org]
         username, jid = find_job_staff_user(jobs, users, job_staff)
 
         data = request_data(jid)
