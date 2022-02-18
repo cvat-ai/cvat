@@ -2650,8 +2650,10 @@ COPY public.auth_user (id, password, last_login, is_superuser, username, first_n
 18	pbkdf2_sha256$260000$uOqP32bk2zHuvO0sdGBGmu$hMbzA1yBWcY5rIU670sZ3SHXRLUa7bCkbrMnrEDGSRM=	\N	t	admin2	Admin	Second	admin2@cvat.org	t	t	2021-12-14 18:38:46+00
 6	pbkdf2_sha256$260000$15iUjDNh5gPg5683u1HhOG$fF8hW6AR90o9SCsO/MomzdQFkgQsMUW3YQUlwwiC1vA=	2021-12-14 19:11:21.04874+00	f	worker1	Worker	First	worker1@cvat.org	f	t	2021-12-14 18:30:00+00
 10	pbkdf2_sha256$260000$X4F89IRqnBtojZuHidrwQG$j1+EpXfyvMesHdod4N+dNUfF4WKS2NWFfeGDec/43as=	2022-01-19 13:52:59.477881+00	f	business1	Business	First	business1@cvat.org	f	t	2021-12-14 18:33:06+00
-1	pbkdf2_sha256$260000$DevmxlmLwciP1P6sZs2Qag$U9DFtjTWx96Sk95qY6UXVcvpdQEP2LcoFBftk5D2RKY=	2022-02-11 14:54:28.083729+00	t	admin1	Admin	First	admin1@cvat.org	t	t	2021-12-14 18:04:57+00
 2	pbkdf2_sha256$260000$Pf2xYWXBedoAJ504jyDD8e$8sJ244Ai0xhZrUTelapPNHlEg7CV0cCUaxbcxZtfaug=	2022-02-16 06:24:53.910205+00	f	user1	User	First	user1@cvat.org	f	t	2021-12-14 18:21:09+00
+1	pbkdf2_sha256$260000$DevmxlmLwciP1P6sZs2Qag$U9DFtjTWx96Sk95qY6UXVcvpdQEP2LcoFBftk5D2RKY=	2022-02-18 14:05:56.443835+00	t	admin1	Admin	First	admin1@cvat.org	t	t	2021-12-14 18:04:57+00
+19	pbkdf2_sha256$260000$BfPYci1XsdjUXei5T3G2GL$G4b0ACA2XKAKonM+nKOrXsf+3xzWtAYgX1PmlpJSBBk=	\N	f	user5	User	Fifth	user5@cvat.org	f	t	2022-02-18 14:12:21+00
+20	pbkdf2_sha256$260000$6T8nu5FenelomY5vP7griA$NMg6uI7JvvSZtIzS83Y/hFO1uj8zi/EdMiYtf/Lk+r8=	\N	f	user6	User	Sixth	user6@cvat.org	f	t	2022-02-18 14:13:00+00
 \.
 
 
@@ -2674,6 +2676,8 @@ COPY public.auth_user_groups (id, user_id, group_id) FROM stdin;
 21	12	2
 23	13	2
 31	18	1
+46	19	3
+47	20	3
 \.
 
 
@@ -2750,6 +2754,11 @@ COPY public.django_admin_log (id, action_time, object_id, object_repr, action_fl
 39	2021-12-14 18:41:27.383994+00	18	admin2	2	[{"changed": {"fields": ["Staff status", "Superuser status"]}}]	4	1
 40	2021-12-14 18:41:37.492062+00	18	admin2	2	[{"changed": {"fields": ["password"]}}]	4	1
 41	2021-12-14 18:41:50.468234+00	1	admin1	2	[{"changed": {"fields": ["password"]}}]	4	1
+42	2022-02-18 14:06:11.647156+00	3	task1_in_project1	2	[{"changed": {"fields": ["Assignee"]}}]	22	1
+43	2022-02-18 14:12:21.265334+00	19	user5	1	[{"added": {}}]	4	1
+44	2022-02-18 14:12:46.794626+00	19	user5	2	[{"changed": {"fields": ["First name", "Last name", "Email address"]}}]	4	1
+45	2022-02-18 14:13:00.712381+00	20	user6	1	[{"added": {}}]	4	1
+46	2022-02-18 14:13:22.174328+00	20	user6	2	[{"changed": {"fields": ["First name", "Last name", "Email address"]}}]	4	1
 \.
 
 
@@ -2919,6 +2928,7 @@ po0rbd1yhywmc0i2jfam69r419a66aj8	.eJxVjMsOwiAQRf-FtSE8pB1cuvcbCMMMUjWQlHZl_HdD0o
 v28l0efbrv9x06z97ilwcf7lwtuf4ctc	.eJxVjDsOwjAQRO_iGlm22fhDSc8ZrLV3gwPIluKkQtydREoBzRTz3sxbRFyXEtfOc5xIXIRW4vRbJsxPrjuhB9Z7k7nVZZ6S3BV50C5vjfh1Pdy_g4K9bGuLXqMDQqdDTtYN6AHIIoGGMIJlQwxB-VFn3gLPzjil3ABkAIBZfL7_vTer:1nABOV:0UAK9VV6D18QF1-189XQ2T9LrQUSdioGNoHdRUzzt7o	2022-02-02 13:52:59.489923+00
 wf6d6vzf4u74l08o0qgbqehei21hibea	.eJxVjDEOwjAMRe-SGUUkpHZgZO8ZIttxSAG1UtNOiLtDpQ6w_vfef5lE61LT2nROQzYX48zhd2OSh44byHcab5OVaVzmge2m2J02209Zn9fd_Tuo1Oq3DrGwD040Ro_-nJmJgkgsqAAIioCi0KGKMhU4Mgip6wjRF6JyMu8PBAI5Mw:1nIXJc:oovNJRods5cbviWOWush4H3jDdP8XklEignva_EnQ8Q	2022-02-25 14:54:28.092369+00
 9rh2r15lb3xra3kdqjtll5n4zw7ebw95	.eJxVjDsOwjAQBe_iGln-xJ9Q0ucM1q69xgFkS3FSIe5OIqWA9s3Me7MA21rC1mkJc2JXptjld0OIT6oHSA-o98Zjq-syIz8UftLOp5bodTvdv4MCvey1tOiNIpGNATlq55IZvaABd4Ao1RCzARLWJ5dRA2kJGqxU1kfjPRL7fAHVPjfN:1nKDkD:rZM4YHHS9MckfKB5KrsvNBVMegYSRdlMqL3uDJRE0Cg	2022-03-02 06:24:53.914069+00
+clx3mysel8iqtskngb1z0mfc4mpve1bh	.eJxVjEEOwiAQRe_C2hCmUCgu3XsGMjCDVA1NSrsy3l1JutDtf-_9lwi4byXsjdcwkzgLEKffLWJ6cO2A7lhvi0xL3dY5yq7IgzZ5XYifl8P9OyjYSq-9niK4b6A1cfYZnCUEBGuzZxW1UsnYFBV7A9PAIxlMzmmj8pDdyOL9AfdKOC0:1nL3tU:X8_pQQpLefE1qxoMEXjsMqpjx0zcTC4yQBwVdFfg_90	2022-03-04 14:05:56.460617+00
 \.
 
 
@@ -3892,6 +3902,8 @@ COPY public.engine_profile (id, rating, user_id) FROM stdin;
 16	0	16
 17	0	17
 18	0	18
+19	0	19
+20	0	20
 \.
 
 
@@ -3900,8 +3912,8 @@ COPY public.engine_profile (id, rating, user_id) FROM stdin;
 --
 
 COPY public.engine_project (id, name, bug_tracker, created_date, updated_date, status, assignee_id, owner_id, organization_id) FROM stdin;
-1	project1		2021-12-14 19:46:37.969497+00	2021-12-14 19:48:33.103265+00	annotation	\N	10	\N
-2	project2		2021-12-14 19:52:37.278149+00	2021-12-14 19:55:57.483506+00	annotation	3	10	2
+1	project1		2021-12-14 19:46:37.969497+00	2022-02-18 14:14:05.766236+00	annotation	19	10	\N
+2	project2		2021-12-14 19:52:37.278149+00	2022-02-18 15:32:50.212691+00	annotation	3	10	2
 \.
 
 
@@ -3953,10 +3965,10 @@ COPY public.engine_serverfile (id, file, data_id) FROM stdin;
 COPY public.engine_task (id, name, mode, created_date, updated_date, status, bug_tracker, owner_id, overlap, assignee_id, segment_size, project_id, data_id, dimension, subset, organization_id) FROM stdin;
 2	task2	annotation	2021-12-14 18:50:29.458488+00	2021-12-22 07:14:15.234748+00	annotation		2	0	\N	23	\N	2	2d		1
 1	task1	annotation	2021-12-14 18:43:47.601289+00	2021-12-22 07:15:22.942484+00	annotation		2	0	\N	130	\N	1	2d		\N
-4	task1_in_project2	annotation	2021-12-14 19:55:57.475273+00	2021-12-22 07:17:34.836384+00	annotation		10	0	\N	58	2	4	2d	train	2
-3	task1_in_project1	annotation	2021-12-14 19:48:33.089778+00	2021-12-22 07:19:33.85476+00	annotation		10	0	\N	50	1	3	2d	Train	\N
 5	task2	interpolation	2022-02-16 06:25:48.168612+00	2022-02-16 06:25:48.889352+00	annotation		2	5	\N	25	\N	5	2d		\N
 6	task3	annotation	2022-02-16 06:26:54.631217+00	2022-02-16 06:26:54.836403+00	annotation		2	0	\N	1	\N	6	3d		\N
+3	task1_in_project1	annotation	2021-12-14 19:48:33.089778+00	2022-02-18 14:14:05.760832+00	annotation		10	0	20	50	1	3	2d	Train	\N
+4	task1_in_project2	annotation	2021-12-14 19:55:57.475273+00	2022-02-18 15:32:50.207769+00	annotation		10	0	19	58	2	4	2d	train	2
 \.
 
 
@@ -3999,6 +4011,7 @@ mFpVV2Yh39uUdU8IpigSxvuPegqi8sjxFi6P9Jdy6fBE8Ky9Juzi1KjeGDQsizSS	2021-12-14 19:5
 h43G28di7vfs4Jv5VrKZ26xvGAfm6Yc2FFv14z9EKhiuIEDQ22pEnzmSCab8MnK1	2021-12-14 19:55:13.745912+00	9	10
 5FjIXya6fTGvlRpauFvi2QN1wDOqo1V9REB5rJinDR8FZO9gr0qmtWpghsCte8Y1	2022-01-19 13:54:42.005381+00	10	10
 BrwoDmMNQQ1v9WXOukp9DwQVuqB3RDPjpUECCEq6QcAuG0Pi8k1IYtQ9uz9jg0Bv	2022-01-19 13:54:42.015131+00	11	10
+boDAHmIzYjGxSI1AM1HYPVKHZCAWZSIzBO7e0bVuOl2ZUwZ8rs5k9kWQaDaCr5i7	2022-02-18 15:32:40.411128+00	12	1
 \.
 
 
@@ -4018,6 +4031,7 @@ COPY public.organizations_membership (id, is_active, joined_date, role, organiza
 9	t	2021-12-14 19:55:13.745912+00	supervisor	2	3
 10	t	2022-01-19 13:54:42.005381+00	supervisor	2	4
 11	t	2022-01-19 13:54:42.015131+00	maintainer	2	5
+12	t	2022-02-18 15:32:40.411128+00	worker	2	19
 \.
 
 
@@ -4102,14 +4116,14 @@ SELECT pg_catalog.setval('public.auth_permission_id_seq', 88, true);
 -- Name: auth_user_groups_id_seq; Type: SEQUENCE SET; Schema: public; Owner: root
 --
 
-SELECT pg_catalog.setval('public.auth_user_groups_id_seq', 44, true);
+SELECT pg_catalog.setval('public.auth_user_groups_id_seq', 47, true);
 
 
 --
 -- Name: auth_user_id_seq; Type: SEQUENCE SET; Schema: public; Owner: root
 --
 
-SELECT pg_catalog.setval('public.auth_user_id_seq', 18, true);
+SELECT pg_catalog.setval('public.auth_user_id_seq', 20, true);
 
 
 --
@@ -4123,7 +4137,7 @@ SELECT pg_catalog.setval('public.auth_user_user_permissions_id_seq', 1, false);
 -- Name: django_admin_log_id_seq; Type: SEQUENCE SET; Schema: public; Owner: root
 --
 
-SELECT pg_catalog.setval('public.django_admin_log_id_seq', 41, true);
+SELECT pg_catalog.setval('public.django_admin_log_id_seq', 46, true);
 
 
 --
@@ -4270,7 +4284,7 @@ SELECT pg_catalog.setval('public.engine_manifest_id_seq', 1, false);
 -- Name: engine_profile_id_seq; Type: SEQUENCE SET; Schema: public; Owner: root
 --
 
-SELECT pg_catalog.setval('public.engine_profile_id_seq', 18, true);
+SELECT pg_catalog.setval('public.engine_profile_id_seq', 20, true);
 
 
 --
@@ -4340,7 +4354,7 @@ SELECT pg_catalog.setval('public.engine_video_id_seq', 1, true);
 -- Name: organizations_membership_id_seq; Type: SEQUENCE SET; Schema: public; Owner: root
 --
 
-SELECT pg_catalog.setval('public.organizations_membership_id_seq', 11, true);
+SELECT pg_catalog.setval('public.organizations_membership_id_seq', 12, true);
 
 
 --
