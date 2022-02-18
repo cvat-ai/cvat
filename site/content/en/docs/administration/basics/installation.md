@@ -511,24 +511,23 @@ If you stay in China, for installation you need to override the following source
 ### HTTPS is not working because of a certificate
 
 If you're having trouble with SSL connection, to find the cause,
-you'll need to get the logs from traefik by runing:
+you'll need to get the logs from traefik by running:
 
 ```bash
 docker logs traefik
 ```
 
-The logs will help you find out the probable error.
+The logs will help you find out the problem.
 
 If the error is related to a firewall, then:
-- Into firewall, open ports 80 and 443 for inbound connections from any (if you haven't already).
+- Open ports 80 and 443 for inbound connections from any.
 - Delete `acme.json`.
   The location should be something like: `/var/lib/docker/volumes/cvat_cvat_letsencrypt/_data/acme.json`.
 
-After `acme.json` is removed, make sure you are in the cvat repository clone with `yaml` files,
-and stop all cvat docker containers:
+After `acme.json` is removed, stop all cvat docker containers:
 
 ```bash
-docker-compose down
+docker-compose -f docker-compose.yml -f docker-compose.https.yml down
 ```
 
 Make sure variables set (with your values):
