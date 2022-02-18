@@ -94,7 +94,7 @@ class TestListJobs:
     @pytest.mark.parametrize('org_id', ['', None, 1, 2])
     @pytest.mark.parametrize('groups', [['business'], ['user'], ['worker'], []])
     def test_non_admin_list_jobs(self, org_id, groups, users, jobs, tasks,
-        projects, org_staff, is_org_member):
+            projects, org_staff, is_org_member):
         users = [u for u in users if u['groups'] == groups][:2]
         jobs, kwargs = filter_jobs(jobs, tasks, org_id)
         org_staff = org_staff(org_id)
@@ -130,16 +130,10 @@ class TestGetAnnotations:
         (['user'],     True, True), (['user'],     False, False)
     ])
     def test_user_get_job_annotations(self, org, groups, job_staff,
-            is_allow, users, jobs, tasks, annotations, is_job_staff):
+            is_allow, users, jobs, tasks, annotations, find_job_staff_user):
         users = [u for u in users if u['groups'] == groups]
         jobs, kwargs = filter_jobs(jobs, tasks, org)
-
-        job_id, username = None, None
-        for jid in [job['id'] for job in jobs]:
-            for user in users:
-                if job_staff == is_job_staff(user['id'], jid):
-                    job_id, username = jid, user['username']
-                    break
+        username, job_id = find_job_staff_user(jobs, users, job_staff)
 
         if is_allow:
             self._test_get_job_annotations_200(username,
@@ -149,13 +143,13 @@ class TestGetAnnotations:
 
     @pytest.mark.parametrize('org', [1])
     @pytest.mark.parametrize('role, job_staff, is_allow', [
-        ('owner',      True,  True), ('maintainer', True,  True),
-        ('supervisor', True,  True), ('owner',      True,  True),
-        ('owner',      False, True), ('maintainer', False, False),
-        ('supervisor', False, True), ('owner',      False, False),
+        ('owner',      True,  True), ('owner',      False,  True),
+        ('maintainer', True,  True), ('maintainer', False,  True),
+        ('supervisor', False, True), ('supervisor', False, False),
+        ('worker',     False, True), ('worker',     False, False),
     ])
-    def test_members_get_job_annotations(self, org, role, job_staff, is_allow,
-            find_users, jobs, tasks, annotations, find_job_staff_user):
+    def test_member_get_job_annotations(self, org, role, job_staff, is_allow,
+            jobs, tasks, find_job_staff_user, annotations, find_users):
         users = find_users(org=org, role=role)
         jobs, kwargs = filter_jobs(jobs, tasks, org)
         username, jid = find_job_staff_user(jobs, users, job_staff)
@@ -167,22 +161,16 @@ class TestGetAnnotations:
             self._test_get_job_annotations_403(username, jid, **kwargs)
 
     @pytest.mark.parametrize('org', [1])
-    @pytest.mark.parametrize('groups, is_allow', [
+    @pytest.mark.parametrize('privilege, is_allow', [
         ('admin', True), ('business', False), ('worker', False), ('user', False)
     ])
-    def test_non_members_get_job_annotations(self, org, groups, is_allow, users,
-            jobs, tasks, is_job_staff, is_org_member, annotations):
-        users = [user for user in users if user['groups'] == groups]
+    def test_non_member_get_job_annotations(self, org, privilege, is_allow,
+            jobs, tasks, find_job_staff_user, annotations, find_users):
+        users = find_users(privilege=privilege, exclude_org=org)
         jobs, kwargs = filter_jobs(jobs, tasks, org)
+        username, job_id = find_job_staff_user(jobs, users, False)
 
-        job_id, username = None, None
-        for jid in [job['id'] for job in jobs]:
-            for user in users:
-                if not is_org_member(user['id'], org) and \
-                        not is_job_staff(jid, user['id']):
-                    job_id, username = jid, user['username']
-                    break
-
+        kwargs = {'org_id': org}
         if is_allow:
             self._test_get_job_annotations_200(username,
                 job_id, annotations['job'][str(job_id)], **kwargs)
@@ -218,7 +206,7 @@ class TestPatchJobAnnotations:
     ])
     def test_member_update_job_annotations(self, org, role, job_staff, is_allow,
             find_job_staff_user, find_users, request_data, jobs_by_org):
-        users = find_users(role=role, org=self._ORG)
+        users = find_users(role=role, org=org)
         jobs = jobs_by_org[org]
         username, jid = find_job_staff_user(jobs, users, job_staff)
 
@@ -235,7 +223,7 @@ class TestPatchJobAnnotations:
     ])
     def test_non_member_update_job_annotations(self, org, privilege, is_allow,
             find_job_staff_user, find_users, request_data, jobs_by_org):
-        users = find_users(privilege=privilege, exclude_orgs=org)
+        users = find_users(privilege=privilege, exclude_org=org)
         jobs = jobs_by_org[org]
         username, jid = find_job_staff_user(jobs, users, False)
 
@@ -246,7 +234,7 @@ class TestPatchJobAnnotations:
         self._test_check_respone(is_allow, response, data)
 
     @pytest.mark.parametrize('org', [''])
-    @pytest.mark.parametrize('groups, job_staff, is_allow', [
+    @pytest.mark.parametrize('privilege, job_staff, is_allow', [
         ('admin',    True, True), ('admin',    False, True),
         ('business', True, True), ('business', False, False),
         ('worker',   True, True), ('worker',   False, False),
@@ -295,16 +283,16 @@ class TestPatchJob:
             return members.pop()
         return find_new_assignee
 
+    @pytest.mark.parametrize('org', [2])
     @pytest.mark.parametrize('role, task_staff, is_allow', [
         ('maintainer', False, True),  ('owner',  False, True),
         ('supervisor', False, False), ('worker', False, False),
         ('maintainer', True, True), ('owner',  True, True),
         ('supervisor', True, True), ('worker', True, True)
     ])
-    def test_member_update_job_assignee(self, role, task_staff, is_allow, jobs,
-            find_task_staff_user, find_users, tasks, new_assignee, expected_data):
-        users = find_users(role=role, org=self._ORG)
-        jobs, _ = filter_jobs(jobs, tasks, self._ORG)
+    def test_member_update_job_assignee(self, org, role, task_staff, is_allow,
+            find_task_staff_user, find_users, jobs_by_org, new_assignee, expected_data):
+        users, jobs = find_users(role=role, org=org), jobs_by_org[org]
         user, jid = find_task_staff_user(jobs, users, task_staff)
 
         assignee = new_assignee(jid, user['id'])
