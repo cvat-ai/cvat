@@ -135,10 +135,10 @@ class LabelSerializer(serializers.ModelSerializer):
                 db_attr.values = attr.get('values', db_attr.values)
                 db_attr.save()
 
-class JobCommitSerializer(serializers.ModelSerializer):
+class CommitSerializer(serializers.ModelSerializer):
     class Meta:
-        model = models.JobCommit
-        fields = ('id', 'version', 'owner', 'message', 'timestamp')
+        model = models.Commit
+        fields = ('id', 'owner', 'data', 'timestamp')
 
 class JobReadSerializer(serializers.ModelSerializer):
     task_id = serializers.ReadOnlyField(source="segment.task.id")
@@ -167,6 +167,14 @@ class JobWriteSerializer(serializers.ModelSerializer):
         serializer = JobReadSerializer(instance, context=self.context)
         return serializer.data
 
+    def create(self, validated_data):
+        instance = super().create(validated_data)
+        db_commit = models.JobCommit(job=instance,
+            owner=self.context['request'].user, data=validated_data)
+        db_commit.save()
+
+        return instance
+
     def update(self, instance, validated_data):
         state = validated_data.get('state')
         stage = validated_data.get('stage')
@@ -186,7 +194,13 @@ class JobWriteSerializer(serializers.ModelSerializer):
         if assignee is not None:
             validated_data['assignee'] = User.objects.get(id=assignee)
 
-        return super().update(instance, validated_data)
+        instance = super().update(instance, validated_data)
+        db_commit = models.JobCommit(job=instance,
+            owner=self.context['request'].user, data=validated_data)
+        db_commit.save()
+
+        return instance
+
 
     class Meta:
         model = models.Job
