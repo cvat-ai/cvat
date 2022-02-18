@@ -4,7 +4,7 @@
   "previous": null,
   "results": [
     {
-      "created_date": "2022-02-16T15:51:33.887670Z",
+      "created_date": "2022-02-18T10:38:47.047101Z",
       "credentials_type": "KEY_SECRET_KEY_PAIR",
       "description": "",
       "display_name": "Bucket 2",
@@ -23,10 +23,10 @@
       "provider_type": "AWS_S3_BUCKET",
       "resource": "dummybucket",
       "specific_attributes": "region=eu-central-1",
-      "updated_date": "2022-02-16T15:51:33.900434Z"
+      "updated_date": "2022-02-18T10:38:47.060712Z"
     },
     {
-      "created_date": "2022-02-16T15:50:54.927305Z",
+      "created_date": "2022-02-18T10:37:21.882750Z",
       "credentials_type": "ANONYMOUS_ACCESS",
       "description": "",
       "display_name": "Bucket 1",
@@ -45,7 +45,7 @@
       "provider_type": "AWS_S3_BUCKET",
       "resource": "dummybucket",
       "specific_attributes": "region=eu-central-1",
-      "updated_date": "2022-02-16T15:50:54.936597Z"
+      "updated_date": "2022-02-18T10:37:21.889408Z"
     }
   ]
 }

@@ -394,14 +394,14 @@ COMMENT ON SCHEMA public IS 'standard public schema';
 
 
 --
--- Name: plpgsql; Type: EXTENSION; Schema: -; Owner:
+-- Name: plpgsql; Type: EXTENSION; Schema: -; Owner: 
 --
 
 CREATE EXTENSION IF NOT EXISTS plpgsql WITH SCHEMA pg_catalog;
 
 
 --
--- Name: EXTENSION plpgsql; Type: COMMENT; Schema: -; Owner:
+-- Name: EXTENSION plpgsql; Type: COMMENT; Schema: -; Owner: 
 --
 
 COMMENT ON EXTENSION plpgsql IS 'PL/pgSQL procedural language';
@@ -2650,7 +2650,8 @@ COPY public.auth_user (id, password, last_login, is_superuser, username, first_n
 6	pbkdf2_sha256$260000$15iUjDNh5gPg5683u1HhOG$fF8hW6AR90o9SCsO/MomzdQFkgQsMUW3YQUlwwiC1vA=	2021-12-14 19:11:21.04874+00	f	worker1	Worker	First	worker1@cvat.org	f	t	2021-12-14 18:30:00+00
 10	pbkdf2_sha256$260000$X4F89IRqnBtojZuHidrwQG$j1+EpXfyvMesHdod4N+dNUfF4WKS2NWFfeGDec/43as=	2022-01-19 13:52:59.477881+00	f	business1	Business	First	business1@cvat.org	f	t	2021-12-14 18:33:06+00
 1	pbkdf2_sha256$260000$DevmxlmLwciP1P6sZs2Qag$U9DFtjTWx96Sk95qY6UXVcvpdQEP2LcoFBftk5D2RKY=	2022-02-11 14:54:28.083729+00	t	admin1	Admin	First	admin1@cvat.org	t	t	2021-12-14 18:04:57+00
-2	pbkdf2_sha256$260000$Pf2xYWXBedoAJ504jyDD8e$8sJ244Ai0xhZrUTelapPNHlEg7CV0cCUaxbcxZtfaug=	2022-02-16 06:24:53.910205+00	f	user1	User	First	user1@cvat.org	f	t	2021-12-14 18:21:09+00
+2	pbkdf2_sha256$260000$Pf2xYWXBedoAJ504jyDD8e$8sJ244Ai0xhZrUTelapPNHlEg7CV0cCUaxbcxZtfaug=	2022-02-18 10:36:56.937456+00	f	user1	User	First	user1@cvat.org	f	t	2021-12-14 18:21:09+00
+11	pbkdf2_sha256$260000$Zw76ANIvIsDngZGsTv2G8O$piTVoqHrpTskW8rI1FBT9rzM2dcpjhrcOfI3pDgtjbo=	2022-02-18 10:38:12.574696+00	f	business2	Business	Second	business2@cvat.org	f	t	2021-12-14 18:34:01+00
 \.
 
 
@@ -2691,7 +2692,7 @@ COPY public.auth_user_user_permissions (id, user_id, permission_id) FROM stdin;
 COPY public.authtoken_token (key, created, user_id) FROM stdin;
 a959159194c4b5238d95ef4e07919110fab346b0	2021-12-14 19:44:48.519942+00	10
 f952dc4730c58346882176f775ccaaf2a1c72416	2021-12-22 08:11:58.498742+00	1
-e28ce88d18614314476dec601b5c29b9093045f1	2022-02-16 06:24:53.902374+00	2
+b1acb0aa52462ffe7f83adcb60072aa0097378a3	2022-02-18 10:38:12.566172+00	11
 \.
 
 
@@ -2918,6 +2919,7 @@ po0rbd1yhywmc0i2jfam69r419a66aj8	.eJxVjMsOwiAQRf-FtSE8pB1cuvcbCMMMUjWQlHZl_HdD0o
 v28l0efbrv9x06z97ilwcf7lwtuf4ctc	.eJxVjDsOwjAQRO_iGlm22fhDSc8ZrLV3gwPIluKkQtydREoBzRTz3sxbRFyXEtfOc5xIXIRW4vRbJsxPrjuhB9Z7k7nVZZ6S3BV50C5vjfh1Pdy_g4K9bGuLXqMDQqdDTtYN6AHIIoGGMIJlQwxB-VFn3gLPzjil3ABkAIBZfL7_vTer:1nABOV:0UAK9VV6D18QF1-189XQ2T9LrQUSdioGNoHdRUzzt7o	2022-02-02 13:52:59.489923+00
 wf6d6vzf4u74l08o0qgbqehei21hibea	.eJxVjDEOwjAMRe-SGUUkpHZgZO8ZIttxSAG1UtNOiLtDpQ6w_vfef5lE61LT2nROQzYX48zhd2OSh44byHcab5OVaVzmge2m2J02209Zn9fd_Tuo1Oq3DrGwD040Ro_-nJmJgkgsqAAIioCi0KGKMhU4Mgip6wjRF6JyMu8PBAI5Mw:1nIXJc:oovNJRods5cbviWOWush4H3jDdP8XklEignva_EnQ8Q	2022-02-25 14:54:28.092369+00
 9rh2r15lb3xra3kdqjtll5n4zw7ebw95	.eJxVjDsOwjAQBe_iGln-xJ9Q0ucM1q69xgFkS3FSIe5OIqWA9s3Me7MA21rC1mkJc2JXptjld0OIT6oHSA-o98Zjq-syIz8UftLOp5bodTvdv4MCvey1tOiNIpGNATlq55IZvaABd4Ao1RCzARLWJ5dRA2kJGqxU1kfjPRL7fAHVPjfN:1nKDkD:rZM4YHHS9MckfKB5KrsvNBVMegYSRdlMqL3uDJRE0Cg	2022-03-02 06:24:53.914069+00
+q9hgm62se2ontnz886rtbe2gy6uqp6dn	.eJxVjMEOgjAQRP-lZ9N02wKtR-98Q7Nsdy1qIKFwMv67kHDQ48x7M2-VcFtL2iovaczqqgDU5bcckJ48HSQ_cLrPmuZpXcZBH4o-adX9nPl1O92_g4K17GtnYkvehDBAA9iwRBDumMR5CmC9EemIrbhd9J4iwh5sdGgsQhuz-nwB-1o3zw:1nL0eS:SKYb8QpGizWHNsF-rIGEOysZYR4bzgK6GtZxBoItUSg	2022-03-04 10:38:12.578316+00
 \.
 
 
@@ -3313,8 +3315,8 @@ COPY public.engine_clientfile (id, file, data_id) FROM stdin;
 --
 
 COPY public.engine_cloudstorage (id, provider_type, resource, display_name, created_date, updated_date, credentials, credentials_type, specific_attributes, description, owner_id, organization_id) FROM stdin;
-1	AWS_S3_BUCKET	dummybucket	Bucket 1	2022-02-16 15:50:54.927305+00	2022-02-16 15:50:54.936597+00		ANONYMOUS_ACCESS	region=eu-central-1		2	\N
-2	AWS_S3_BUCKET	dummybucket	Bucket 2	2022-02-16 15:51:33.88767+00	2022-02-16 15:51:33.900434+00	xxx xxx	KEY_SECRET_KEY_PAIR	region=eu-central-1		11	2
+1	AWS_S3_BUCKET	dummybucket	Bucket 1	2022-02-18 10:37:21.88275+00	2022-02-18 10:37:21.889408+00		ANONYMOUS_ACCESS	region=eu-central-1		2	\N
+2	AWS_S3_BUCKET	dummybucket	Bucket 2	2022-02-18 10:38:47.047101+00	2022-02-18 10:38:47.060712+00	xxx xxx	KEY_SECRET_KEY_PAIR	region=eu-central-1		11	2
 \.
 
 
