@@ -19,14 +19,21 @@ the server calling REST API directly (as it done by users).
 
 ## How to run?
 
-Please look at documentation for [pytest](https://docs.pytest.org/en/6.2.x/).
-Generally you have to install requirements and run the following command from
-the root directory of the cloned CVAT repository:
+1. Run docker containers using the commands below:
 
-```console
-pip3 install --user -r tests/rest_api/requirements.txt
-pytest tests/rest_api/
-```
+   ```console
+   export TESTING="True"
+   docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.testing.yml -f components/analytics/docker-compose.analytics.yml up -d --build
+   ```
+1. Restore DB and data volume using commands [below](#how-to-restore-db-and-data-volume).
+1. Please look at documentation for [pytest](https://docs.pytest.org/en/6.2.x/).
+   Generally, you have to install requirements and run the following command from
+   the root directory of the cloned CVAT repository:
+
+   ```console
+   pip3 install --user -r tests/rest_api/requirements.txt
+   pytest tests/rest_api/
+   ```
 
 ## How to upgrade testing assets?
 
