@@ -10,14 +10,13 @@ from .utils.config import get_method, patch_method, post_method
 
 class TestGetCloudStorage:
 
-    def _test_can_see(self, user, storage_id, data, exclude_paths='', **kwargs):
+    def _test_can_see(self, user, storage_id, data, **kwargs):
         response = get_method(user, f'cloudstorages/{storage_id}', **kwargs)
         response_data = response.json()
         response_data = response_data.get('results', response_data)
 
         assert response.status_code == HTTPStatus.OK
-        assert DeepDiff(data, response_data, ignore_order=True,
-            exclude_paths=exclude_paths) == {}
+        assert DeepDiff(data, response_data, ignore_order=True) == {}
 
     def _test_cannot_see(self, user, storage_id, **kwargs):
         response = get_method(user, f'cloudstorages/{storage_id}', **kwargs)
