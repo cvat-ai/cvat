@@ -1,5 +1,5 @@
 {
-  "count": 6,
+  "count": 7,
   "next": null,
   "previous": null,
   "results": [
@@ -121,7 +121,7 @@
       "project_id": 1,
       "stage": "annotation",
       "start_frame": 0,
-      "state": "new",
+      "state": "in progress",
       "status": "annotation",
       "stop_frame": 49,
       "task_id": 3,
@@ -251,6 +251,37 @@
       "stop_frame": 57,
       "task_id": 4,
       "url": "http://localhost:8080/api/jobs/6"
+    },
+    {
+      "assignee": null,
+      "bug_tracker": null,
+      "data_chunk_size": 72,
+      "data_compressed_chunk_type": "imageset",
+      "dimension": "2d",
+      "id": 7,
+      "labels": [
+        {
+          "attributes": [],
+          "color": "#6080c0",
+          "id": 9,
+          "name": "cat"
+        },
+        {
+          "attributes": [],
+          "color": "#406040",
+          "id": 10,
+          "name": "dog"
+        }
+      ],
+      "mode": "annotation",
+      "project_id": null,
+      "stage": "annotation",
+      "start_frame": 0,
+      "state": "in progress",
+      "status": "annotation",
+      "stop_frame": 10,
+      "task_id": 5,
+      "url": "http://localhost:8080/api/jobs/7"
     }
   ]
 }
