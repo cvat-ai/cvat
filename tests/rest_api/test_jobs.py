@@ -141,12 +141,12 @@ class TestGetAnnotations:
         else:
             self._test_get_job_annotations_403(username, job_id, **kwargs)
 
-    @pytest.mark.parametrize('org', [1])
+    @pytest.mark.parametrize('org', [2])
     @pytest.mark.parametrize('role, job_staff, is_allow', [
-        ('owner',      True,  True), ('owner',      False,  True),
-        ('maintainer', True,  True), ('maintainer', False,  True),
-        ('supervisor', False, True), ('supervisor', False, False),
-        ('worker',     False, True), ('worker',     False, False),
+        ('owner',      True, True), ('owner',      False,  True),
+        ('maintainer', True, True), ('maintainer', False,  True),
+        ('supervisor', True, True), ('supervisor', False, False),
+        ('worker',     True, True), ('worker',     False, False),
     ])
     def test_member_get_job_annotations(self, org, role, job_staff, is_allow,
             jobs, tasks, find_job_staff_user, annotations, find_users):
@@ -270,8 +270,8 @@ class TestPatchJob:
         keys = ['url', 'id', 'username', 'first_name', 'last_name']
         def find(job_id, assignee_id):
             data = jobs[job_id].copy()
-            data['assignee'].update(dict(filter(lambda a: a[0] in keys,
-                users[assignee_id].items())))
+            data['assignee'] = dict(filter(lambda a: a[0] in keys,
+                users[assignee_id].items()))
             return data
         return find
 
@@ -287,8 +287,8 @@ class TestPatchJob:
     @pytest.mark.parametrize('role, task_staff, is_allow', [
         ('maintainer', False, True),  ('owner',  False, True),
         ('supervisor', False, False), ('worker', False, False),
-        ('maintainer', True, True), ('owner',  True, True),
-        ('supervisor', True, True), ('worker', True, True)
+        ('maintainer', True, True),   ('owner',  True, True),
+        ('supervisor', True, True),   ('worker', True, True)
     ])
     def test_member_update_job_assignee(self, org, role, task_staff, is_allow,
             find_task_staff_user, find_users, jobs_by_org, new_assignee, expected_data):
