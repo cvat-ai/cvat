@@ -135,10 +135,11 @@ class LabelSerializer(serializers.ModelSerializer):
                 db_attr.values = attr.get('values', db_attr.values)
                 db_attr.save()
 
-class CommitSerializer(serializers.ModelSerializer):
+class JobCommitSerializer(serializers.ModelSerializer):
     class Meta:
-        model = models.Commit
-        fields = ('id', 'owner', 'data', 'timestamp')
+        model = models.JobCommit
+        fields = ('id', 'owner', 'data', 'timestamp', 'scope')
+
 
 class JobReadSerializer(serializers.ModelSerializer):
     task_id = serializers.ReadOnlyField(source="segment.task.id")
@@ -169,7 +170,7 @@ class JobWriteSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         instance = super().create(validated_data)
-        db_commit = models.JobCommit(job=instance,
+        db_commit = models.JobCommit(job=instance, scope='create',
             owner=self.context['request'].user, data=validated_data)
         db_commit.save()
 
@@ -195,7 +196,7 @@ class JobWriteSerializer(serializers.ModelSerializer):
             validated_data['assignee'] = User.objects.get(id=assignee)
 
         instance = super().update(instance, validated_data)
-        db_commit = models.JobCommit(job=instance,
+        db_commit = models.JobCommit(job=instance, scope='update',
             owner=self.context['request'].user, data=validated_data)
         db_commit.save()
 

@@ -12,6 +12,7 @@ from django.contrib.auth.models import User
 from django.core.files.storage import FileSystemStorage
 from django.db import models
 from django.db.models.fields import FloatField
+from django.core.serializers.json import DjangoJSONEncoder
 from cvat.apps.engine.utils import parse_specific_attributes
 from cvat.apps.organizations.models import Organization
 
@@ -491,10 +492,20 @@ class Annotation(models.Model):
         default_permissions = ()
 
 class Commit(models.Model):
+    class JSONEncoder(DjangoJSONEncoder):
+        def default(self, o):
+            if isinstance(o, User):
+                data = {'user': {'id': o.id, 'username': o.username}}
+                return self.encode(data)
+            else:
+                return super().default(o)
+
+
     id = models.BigAutoField(primary_key=True)
+    scope = models.CharField(max_length=32, default="")
     owner = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL)
     timestamp = models.DateTimeField(auto_now=True)
-    data = models.JSONField()
+    data = models.JSONField(default=dict, encoder=JSONEncoder)
 
     class Meta:
         abstract = True
