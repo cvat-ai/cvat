@@ -80,7 +80,7 @@ export default function AnnotationPageComponent(props: Props): JSX.Element {
                             <span>
                                 Press
                                 <Button
-                                    className='cvat-continue-job-button'
+                                    className='cvat-notification-continue-job-button'
                                     type='link'
                                     onClick={() => {
                                         changeFrame(parsedFrame);

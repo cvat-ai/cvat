@@ -788,6 +788,10 @@ class JobPermission(OpenPolicyAgentPermission):
                 project_id = request.data.get('project_id') or request.data.get('project')
                 if project_id != getattr(obj.project, 'id', None):
                     scopes.append(scope + ':project')
+            if 'stage' in request.data:
+                scopes.append(scope + ':stage')
+            if 'state' in request.data:
+                scopes.append(scope + ':state')
 
             if any(k in request.data for k in ('name', 'labels', 'bug_tracker', 'subset')):
                 scopes.append(scope + ':desc')
