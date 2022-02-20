@@ -396,6 +396,15 @@ class Job(models.Model):
         project = task.project
         return project.label_set if project else task.label_set
 
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        db_commit = JobCommit(job=self, scope='create',
+            owner=self.segment.task.owner, data={
+                'stage': self.stage, 'state': self.state, 'assignee': self.assignee
+            })
+        db_commit.save()
+
+
     class Meta:
         default_permissions = ()
 
@@ -496,7 +505,7 @@ class Commit(models.Model):
         def default(self, o):
             if isinstance(o, User):
                 data = {'user': {'id': o.id, 'username': o.username}}
-                return self.encode(data)
+                return data
             else:
                 return super().default(o)
 
