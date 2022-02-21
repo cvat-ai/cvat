@@ -686,42 +686,36 @@ class TaskViewSet(UploadMixin, viewsets.ModelViewSet):
         return Response(serializer.data)
 
     # UploadMixin method
-    def can_upload(self, data_type):
-        if data_type == 'data':
-            db_model = self.get_object()
-            model_data = db_model.data
-            return model_data.size == 0
-        return True
-
-    # UploadMixin method
     def get_upload_dir(self, data_type):
-        db_model = self.get_object()
+        print('on get upload dir', self._object)
         if data_type == 'annotations':
-            return db_model.get_tmp_dirname()
+            return self._object.get_tmp_dirname()
         elif data_type == 'data':
-            return db_model.data.get_upload_dirname()
+            return self._object.data.get_upload_dirname()
         return ""
 
     # UploadMixin method
     def upload_finished(self, request, data_type):
-        db_task = self.get_object() # call check_object_permissions as well
-        task_data = db_task.data
+        print('on upload finished', self._object)
         if data_type == 'annotations':
             format_name = request.query_params.get("format", "")
             filename = request.query_params.get("filename", "")
-            annotation_file = db_task.get_tmp_file(filename)
-            if not annotation_file:
-                return Response(data='No such file were uploaded',
-                        status=status.HTTP_400_BAD_REQUEST)
-            return _import_annotations(
+            tmp_dir = self._object.get_tmp_dirname()
+            if os.path.isfile(os.path.join(tmp_dir, filename)):
+                annotation_file = os.path.join(tmp_dir, filename)
+                return _import_annotations(
                         request=request,
                         filename=annotation_file,
-                        rq_id="{}@/api/tasks/{}/annotations/upload".format(request.user, db_task.pk),
+                        rq_id="{}@/api/tasks/{}/annotations/upload".format(request.user, self._object.pk),
                         rq_func=dm.task.import_task_annotations,
-                        pk=db_task.pk,
+                        pk=self._object.pk,
                         format_name=format_name,
                     )
+            else:
+                return Response(data='No such file were uploaded',
+                        status=status.HTTP_400_BAD_REQUEST)
         elif data_type == 'data':
+            task_data = self._object.data
             serializer = DataSerializer(task_data, data=request.data)
             serializer.is_valid(raise_exception=True)
             data = dict(serializer.validated_data.items())
@@ -730,27 +724,27 @@ class TaskViewSet(UploadMixin, viewsets.ModelViewSet):
             serializer.validated_data.update({'client_files': uploaded_files})
 
             db_data = serializer.save()
-            db_task.data = db_data
-            db_task.save()
+            self._object.data = db_data
+            self._object.save()
             data = {k: v for k, v in serializer.data.items()}
 
             data['use_zip_chunks'] = serializer.validated_data['use_zip_chunks']
             data['use_cache'] = serializer.validated_data['use_cache']
             data['copy_data'] = serializer.validated_data['copy_data']
             if data['use_cache']:
-                db_task.data.storage_method = StorageMethodChoice.CACHE
-                db_task.data.save(update_fields=['storage_method'])
+                self._object.data.storage_method = StorageMethodChoice.CACHE
+                self._object.data.save(update_fields=['storage_method'])
             if data['server_files'] and not data.get('copy_data'):
-                db_task.data.storage = StorageChoice.SHARE
-                db_task.data.save(update_fields=['storage'])
+                self._object.data.storage = StorageChoice.SHARE
+                self._object.data.save(update_fields=['storage'])
             if db_data.cloud_storage:
-                db_task.data.storage = StorageChoice.CLOUD_STORAGE
-                db_task.data.save(update_fields=['storage'])
+                self._object.data.storage = StorageChoice.CLOUD_STORAGE
+                self._object.data.save(update_fields=['storage'])
                 # if the value of stop_frame is 0, then inside the function we cannot know
                 # the value specified by the user or it's default value from the database
             if 'stop_frame' not in serializer.validated_data:
                 data['stop_frame'] = None
-            task.create(db_task.id, data)
+            task.create(self._object.id, data)
             return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
         return Response(data='Unknown data type upload was finished',
                         status=status.HTTP_400_BAD_REQUEST)
@@ -785,14 +779,14 @@ class TaskViewSet(UploadMixin, viewsets.ModelViewSet):
         }, tags=['tasks'], versions=['2.0'])
     @action(detail=True, methods=['OPTIONS', 'POST', 'GET'], url_path=r'data/?$')
     def data(self, request, pk):
-        db_task = self.get_object() # call check_object_permissions as well
+        self._object = self.get_object() # call check_object_permissions as well
         if request.method == 'POST' or request.method == 'OPTIONS':
-            task_data = db_task.data
+            task_data = self._object.data
             if not task_data:
                 task_data = Data.objects.create()
                 task_data.make_dirs()
-                db_task.data = task_data
-                db_task.save()
+                self._object.data = task_data
+                self._object.save()
             elif task_data.size != 0:
                 return Response(data='Adding more data is not supported',
                     status=status.HTTP_400_BAD_REQUEST)
@@ -804,10 +798,10 @@ class TaskViewSet(UploadMixin, viewsets.ModelViewSet):
             data_quality = request.query_params.get('quality', 'compressed')
 
             data_getter = DataChunkGetter(data_type, data_num, data_quality,
-                db_task.dimension)
+                self._object.dimension)
 
-            return data_getter(request, db_task.data.start_frame,
-                db_task.data.stop_frame, db_task.data)
+            return data_getter(request, self._object.data.start_frame,
+                self._object.data.stop_frame, self._object.data)
 
     @extend_schema(methods=['GET'], summary='Method allows to download task annotations',
         parameters=[
@@ -847,11 +841,11 @@ class TaskViewSet(UploadMixin, viewsets.ModelViewSet):
     @action(detail=True, methods=['GET', 'DELETE', 'PUT', 'PATCH', 'POST', 'OPTIONS'], url_path=r'annotations/?$',
         serializer_class=LabeledDataSerializer)
     def annotations(self, request, pk):
-        db_task = self.get_object() # force to call check_object_permissions
+        self._object = self.get_object() # force to call check_object_permissions
         if request.method == 'GET':
             format_name = request.query_params.get('format')
             if format_name:
-                return _export_annotations(db_instance=db_task,
+                return _export_annotations(db_instance=self._object,
                     rq_id="/api/tasks/{}/annotations/{}".format(pk, format_name),
                     request=request,
                     action=request.query_params.get("action", "").lower(),
@@ -1048,29 +1042,29 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
     # UploadMixin method
     def get_upload_dir(self, data_type):
-        db_job = self.get_object()
-        task = db_job.segment.task
+        task = self._object.segment.task
         return task.get_tmp_dirname()
 
     # UploadMixin method
     def upload_finished(self, request, data_type):
-        db_job = self.get_object()
-        task = db_job.segment.task
+        task = self._object.segment.task
         if data_type == 'annotations':
             format_name = request.query_params.get("format", "")
             filename = request.query_params.get("filename", "")
-            annotation_file = task.get_tmp_file(filename)
-            if not annotation_file:
-                return Response(data='No such file were uploaded',
-                        status=status.HTTP_400_BAD_REQUEST)
-            return _import_annotations(
+            tmp_dir = task.get_tmp_dirname()
+            if os.path.isfile(os.path.join(tmp_dir, filename)):
+                annotation_file = os.path.join(tmp_dir, filename)
+                return _import_annotations(
                         request=request,
                         filename=annotation_file,
-                        rq_id="{}@/api/jobs/{}/annotations/upload".format(request.user, db_job.pk),
+                        rq_id="{}@/api/jobs/{}/annotations/upload".format(request.user, self._object.pk),
                         rq_func=dm.task.import_job_annotations,
-                        pk=db_job.pk,
+                        pk=self._object.pk,
                         format_name=format_name,
                     )
+            else:
+                return Response(data='No such file were uploaded',
+                        status=status.HTTP_400_BAD_REQUEST)
         return Response(data='Unknown data type upload was finished',
                         status=status.HTTP_400_BAD_REQUEST)
 
@@ -1100,7 +1094,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     @action(detail=True, methods=['GET', 'DELETE', 'PUT', 'PATCH', 'POST', 'OPTIONS'], url_path=r'annotations/?$',
         serializer_class=LabeledDataSerializer)
     def annotations(self, request, pk):
-        self.get_object() # force to call check_object_permissions
+        self._object = self.get_object() # force to call check_object_permissions
         if request.method == 'GET':
             data = dm.task.get_job_data(pk)
             return Response(data)

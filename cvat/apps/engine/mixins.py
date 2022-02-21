@@ -155,9 +155,6 @@ class UploadMixin(object):
         if request.method == 'OPTIONS':
             return self._tus_response(status=status.HTTP_204)
         else:
-            if not self.can_upload(data_type):
-                return self._tus_response(data='Adding more data is not allowed',
-                    status=status.HTTP_400_BAD_REQUEST)
             metadata = self._get_metadata(request)
             filename = metadata.get('filename', '')
             if not self.validate_filename(filename, data_type):
@@ -187,6 +184,7 @@ class UploadMixin(object):
 
     @action(detail=True, methods=['HEAD', 'PATCH'], url_path=upload_url+_file_id_regex)
     def append_tus_chunk(self, request, pk, file_id):
+        self._object = self.get_object()
         data_type = self._get_chunk_data_type(request)
         if request.method == 'HEAD':
             tus_file = TusFile.get_tusfile(str(file_id), self.get_upload_dir(data_type))
@@ -219,24 +217,16 @@ class UploadMixin(object):
         file_path = os.path.join(upload_dir, filename)
         return os.path.commonprefix((os.path.realpath(file_path), upload_dir)) == upload_dir
 
-    def can_upload(self, data_type):
-        return True
-
     def get_upload_dir(self, data_type):
-        db_model = self.get_object()
-        return db_model.data.get_upload_dirname()
+        return self._object.data.get_upload_dirname()
 
     def get_request_client_files(self, request):
-        db_model = self.get_object()
-        serializer = DataSerializer(db_model, data=request.data)
+        serializer = DataSerializer(self._object, data=request.data)
         serializer.is_valid(raise_exception=True)
         data = {k: v for k, v in serializer.validated_data.items()}
         return data.get('client_files', None);
 
     def append(self, request, data_type):
-        if not self.can_upload(data_type):
-            return Response(data='Adding more data is not allowed',
-                status=status.HTTP_400_BAD_REQUEST)
         client_files = self.get_request_client_files(request)
         if client_files:
             upload_dir = self.get_upload_dir(data_type)

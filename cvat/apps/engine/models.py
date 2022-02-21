@@ -307,12 +307,6 @@ class Task(models.Model):
     def get_tmp_dirname(self):
         return os.path.join(self.get_task_dirname(), "tmp")
 
-    def get_tmp_file(self, filename):
-        tmp_dir = self.get_tmp_dirname()
-        if filename in os.listdir(tmp_dir) and os.path.isfile(os.path.join(tmp_dir, filename)):
-            return os.path.join(tmp_dir, filename)
-        return None
-
     def __str__(self):
         return self.name
 
