@@ -687,7 +687,6 @@ class TaskViewSet(UploadMixin, viewsets.ModelViewSet):
 
     # UploadMixin method
     def get_upload_dir(self, data_type):
-        print('on get upload dir', self._object)
         if data_type == 'annotations':
             return self._object.get_tmp_dirname()
         elif data_type == 'data':
@@ -696,7 +695,6 @@ class TaskViewSet(UploadMixin, viewsets.ModelViewSet):
 
     # UploadMixin method
     def upload_finished(self, request, data_type):
-        print('on upload finished', self._object)
         if data_type == 'annotations':
             format_name = request.query_params.get("format", "")
             filename = request.query_params.get("filename", "")
