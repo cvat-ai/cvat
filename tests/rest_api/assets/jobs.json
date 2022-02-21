@@ -1,5 +1,5 @@
 {
-  "count": 7,
+  "count": 9,
   "next": null,
   "previous": null,
   "results": [
@@ -78,13 +78,7 @@
       "url": "http://localhost:8080/api/jobs/2"
     },
     {
-      "assignee": {
-        "first_name": "Worker",
-        "id": 6,
-        "last_name": "First",
-        "url": "http://localhost:8080/api/users/6",
-        "username": "worker1"
-      },
+      "assignee": null,
       "bug_tracker": "",
       "data_chunk_size": 72,
       "data_compressed_chunk_type": "imageset",
@@ -253,7 +247,13 @@
       "url": "http://localhost:8080/api/jobs/6"
     },
     {
-      "assignee": null,
+      "assignee": {
+        "first_name": "Worker",
+        "id": 9,
+        "last_name": "Fourth",
+        "url": "http://localhost:8080/api/users/9",
+        "username": "worker4"
+      },
       "bug_tracker": null,
       "data_chunk_size": 72,
       "data_compressed_chunk_type": "imageset",
@@ -262,14 +262,64 @@
       "labels": [
         {
           "attributes": [],
-          "color": "#6080c0",
+          "color": "#2080c0",
           "id": 9,
+          "name": "car"
+        }
+      ],
+      "mode": "interpolation",
+      "project_id": null,
+      "stage": "annotation",
+      "start_frame": 0,
+      "state": "in progress",
+      "status": "annotation",
+      "stop_frame": 24,
+      "task_id": 5,
+      "url": "http://localhost:8080/api/jobs/7"
+    },
+    {
+      "assignee": null,
+      "bug_tracker": null,
+      "data_chunk_size": 72,
+      "data_compressed_chunk_type": "imageset",
+      "dimension": "3d",
+      "id": 8,
+      "labels": [
+        {
+          "attributes": [],
+          "color": "#2080c0",
+          "id": 10,
+          "name": "car"
+        }
+      ],
+      "mode": "annotation",
+      "project_id": null,
+      "stage": "annotation",
+      "start_frame": 0,
+      "state": "new",
+      "status": "annotation",
+      "stop_frame": 0,
+      "task_id": 6,
+      "url": "http://localhost:8080/api/jobs/8"
+    },
+    {
+      "assignee": null,
+      "bug_tracker": null,
+      "data_chunk_size": 72,
+      "data_compressed_chunk_type": "imageset",
+      "dimension": "2d",
+      "id": 9,
+      "labels": [
+        {
+          "attributes": [],
+          "color": "#6080c0",
+          "id": 11,
           "name": "cat"
         },
         {
           "attributes": [],
           "color": "#406040",
-          "id": 10,
+          "id": 12,
           "name": "dog"
         }
       ],
@@ -280,8 +330,8 @@
       "state": "in progress",
       "status": "annotation",
       "stop_frame": 10,
-      "task_id": 5,
-      "url": "http://localhost:8080/api/jobs/7"
+      "task_id": 7,
+      "url": "http://localhost:8080/api/jobs/9"
     }
   ]
 }
