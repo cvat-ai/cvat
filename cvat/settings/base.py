@@ -167,6 +167,7 @@ REST_FRAMEWORK = {
         'cvat.apps.engine.filters.JsonLogicFilter',
         'cvat.apps.iam.filters.OrganizationFilterBackend'),
 
+    'SEARCH_PARAM': 'search',
     # Disable default handling of the 'format' query parameter by REST framework
     'URL_FORMAT_OVERRIDE': 'scheme',
     'DEFAULT_THROTTLE_CLASSES': [

@@ -13,7 +13,16 @@ from django.utils.encoding import force_str
 from rest_framework.exceptions import ValidationError
 
 class SearchFilter(filters.SearchFilter):
-    pass
+
+    def get_search_fields(self, view, request):
+        search_fields = getattr(view, 'search_fields', [])
+        lookup_fields = {field:field for field in search_fields}
+        view_lookup_fields = getattr(view, 'lookup_fields', {})
+        keys_to_update = set(search_fields) & set(view_lookup_fields.keys())
+        for key in keys_to_update:
+            lookup_fields[key] = view_lookup_fields[key]
+
+        return lookup_fields.values()
 
 class OrderingFilter(filters.OrderingFilter):
     ordering_param = 'sort'

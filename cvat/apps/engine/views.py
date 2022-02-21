@@ -253,9 +253,11 @@ class ProjectViewSet(viewsets.ModelViewSet):
         queryset=models.Label.objects.order_by('id')
     ))
 
-    search_fields = ('id', 'name', 'owner', 'assignee', 'status')
-    filter_fields = search_fields
-    ordering_fields = search_fields
+    # NOTE: The search_fields attribute should be a list of names of text
+    # type fields on the model,such as CharField or TextField
+    search_fields = ('name', 'owner', 'assignee', 'status')
+    filter_fields = list(search_fields) + ['id']
+    ordering_fields = filter_fields
     ordering = "-id"
     lookup_fields = {'owner': 'owner__username', 'assignee': 'assignee__username'}
     http_method_names = ('get', 'post', 'head', 'patch', 'delete')
@@ -559,12 +561,11 @@ class TaskViewSet(UploadMixin, viewsets.ModelViewSet):
             "label_set__attributespec_set",
             "segment_set__job_set")
     serializer_class = TaskSerializer
-
-    search_fields = ('id', 'project_name', 'project_id', 'name', 'owner', 'status', 'assignee', 'subset')
-    filter_fields = search_fields
-    ordering_fields = search_fields
+    lookup_fields = {'project_name': 'project__name', 'owner': 'owner__username', 'assignee': 'assignee__username'}
+    search_fields = ('project_name', 'name', 'owner', 'status', 'assignee', 'subset')
+    filter_fields = list(search_fields) + ['id', 'project_id']
+    ordering_fields = filter_fields
     ordering = "-id"
-    lookup_fields = {'project_name': 'project__name', 'owner': 'owner_username', 'assignee': 'assignee__username'}
     iam_organization_field = 'organization'
 
     def get_queryset(self):
@@ -930,10 +931,9 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     mixins.RetrieveModelMixin, mixins.UpdateModelMixin):
     queryset = Job.objects.all()
     iam_organization_field = 'segment__task__organization'
-    search_fields = ('id', 'task_id', 'project_id', 'task_name',
-        'project_name', 'updated_date', 'assignee', 'state', 'stage')
-    filter_fields = search_fields
-    ordering_fields = search_fields
+    search_fields = ('task_name', 'project_name', 'assignee', 'state', 'stage')
+    filter_fields = list(search_fields) + ['id', 'task_id', 'project_id', 'updated_date']
+    ordering_fields = filter_fields
     ordering = "-id"
     lookup_fields = {
         'dimension': 'segment__task__dimension',
@@ -1218,9 +1218,8 @@ class UserViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     search_fields = ('username', 'first_name', 'last_name')
     iam_organization_field = 'memberships__organization'
 
-    search_fields = ('id', 'is_active', 'username')
-    filter_fields = search_fields
-    ordering_fields = search_fields
+    filter_fields = ('id', 'is_active', 'username')
+    ordering_fields = filter_fields
     ordering = "-id"
 
     def get_queryset(self):
@@ -1266,8 +1265,6 @@ class UserViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     }, tags=['cloud storages'], versions=['2.0']))
 @extend_schema_view(list=extend_schema(
     summary='Returns a paginated list of storages according to query parameters',
-    #FIXME
-    #field_inspectors=[RedefineDescriptionField]
     responses={
         '200': CloudStorageReadSerializer(many=True),
     }, tags=['cloud storages'], versions=['2.0']))
@@ -1278,15 +1275,11 @@ class UserViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     }, tags=['cloud storages'], versions=['2.0']))
 @extend_schema_view(partial_update=extend_schema(
     summary='Methods does a partial update of chosen fields in a cloud storage instance',
-    # FIXME
-    #field_inspectors=[RedefineDescriptionField]
     responses={
         '200': CloudStorageWriteSerializer,
     }, tags=['cloud storages'], versions=['2.0']))
 @extend_schema_view(create=extend_schema(
     summary='Method creates a cloud storage with a specified characteristics',
-    # FIXME
-    #field_inspectors=[RedefineDescriptionField],
     responses={
         '201': CloudStorageWriteSerializer,
     }, tags=['cloud storages'], versions=['2.0']))
@@ -1294,10 +1287,10 @@ class CloudStorageViewSet(viewsets.ModelViewSet):
     http_method_names = ['get', 'post', 'patch', 'delete']
     queryset = CloudStorageModel.objects.all().prefetch_related('data')
 
-    search_fields = ('id', 'provider_type', 'display_name', 'resource',
-        'credentials_type', 'owner', 'description')
-    filter_fields = search_fields
-    ordering_fields = search_fields
+    search_fields = ('provider_type', 'display_name', 'resource',
+                    'credentials_type', 'owner', 'description')
+    filter_fields = list(search_fields) + ['id']
+    ordering_fields = filter_fields
     ordering = "-id"
     lookup_fields = {'owner': 'owner__username'}
     iam_organization_field = 'organization'
