@@ -24,6 +24,41 @@ class SearchFilter(filters.SearchFilter):
 
         return lookup_fields.values()
 
+    def get_schema_fields(self, view):
+        assert coreapi is not None, 'coreapi must be installed to use `get_schema_fields()`'
+        assert coreschema is not None, 'coreschema must be installed to use `get_schema_fields()`'
+
+        search_fields = getattr(view, 'search_fields', [])
+        full_description = self.search_description + \
+            f' Avaliable search_fields: {search_fields}'
+
+        return [
+            coreapi.Field(
+                name=self.search_param,
+                required=False,
+                location='query',
+                schema=coreschema.String(
+                    title=force_str(self.search_title),
+                    description=force_str(full_description)
+                )
+            )
+        ]
+
+    def get_schema_operation_parameters(self, view):
+        search_fields = getattr(view, 'search_fields', [])
+        full_description = self.search_description + \
+            f' Avaliable search_fields: {search_fields}'
+
+        return [{
+            'name': self.search_param,
+            'required': False,
+            'in': 'query',
+            'description': force_str(full_description),
+            'schema': {
+                'type': 'string',
+            },
+        }]
+
 class OrderingFilter(filters.OrderingFilter):
     ordering_param = 'sort'
     def get_ordering(self, request, queryset, view):
@@ -44,6 +79,41 @@ class OrderingFilter(filters.OrderingFilter):
         lookup_fields.update(getattr(view, 'lookup_fields', {}))
 
         return lookup_fields
+
+    def get_schema_fields(self, view):
+        assert coreapi is not None, 'coreapi must be installed to use `get_schema_fields()`'
+        assert coreschema is not None, 'coreschema must be installed to use `get_schema_fields()`'
+
+        ordering_fields = getattr(view, 'ordering_fields', [])
+        full_description = self.ordering_description + \
+            f' Avaliable ordering_fields: {ordering_fields}'
+
+        return [
+            coreapi.Field(
+                name=self.ordering_param,
+                required=False,
+                location='query',
+                schema=coreschema.String(
+                    title=force_str(self.ordering_title),
+                    description=force_str(full_description)
+                )
+            )
+        ]
+
+    def get_schema_operation_parameters(self, view):
+        ordering_fields = getattr(view, 'ordering_fields', [])
+        full_description = self.ordering_description + \
+            f' Avaliable ordering_fields: {ordering_fields}'
+
+        return [{
+            'name': self.ordering_param,
+            'required': False,
+            'in': 'query',
+            'description': force_str(full_description),
+            'schema': {
+                'type': 'string',
+            },
+        }]
 
 class JsonLogicFilter(filters.BaseFilterBackend):
     filter_param = 'filter'
@@ -102,6 +172,11 @@ class JsonLogicFilter(filters.BaseFilterBackend):
     def get_schema_fields(self, view):
         assert coreapi is not None, 'coreapi must be installed to use `get_schema_fields()`'
         assert coreschema is not None, 'coreschema must be installed to use `get_schema_fields()`'
+
+        filter_fields = getattr(view, 'filter_fields', [])
+        full_description = self.filter_description + \
+            f' Avaliable filter_fields: {filter_fields}'
+
         return [
             coreapi.Field(
                 name=self.filter_param,
@@ -109,18 +184,21 @@ class JsonLogicFilter(filters.BaseFilterBackend):
                 location='query',
                 schema=coreschema.String(
                     title=force_str(self.filter_title),
-                    description=force_str(self.filter_description)
+                    description=force_str(full_description)
                 )
             )
         ]
 
     def get_schema_operation_parameters(self, view):
+        filter_fields = getattr(view, 'filter_fields', [])
+        full_description = self.filter_description + \
+            f' Avaliable filter_fields: {filter_fields}'
         return [
             {
                 'name': self.filter_param,
                 'required': False,
                 'in': 'query',
-                'description': force_str(self.filter_description),
+                'description': force_str(full_description),
                 'schema': {
                     'type': 'string',
                 },
