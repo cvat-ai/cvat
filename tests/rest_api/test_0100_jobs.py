@@ -132,7 +132,8 @@ class TestGetAnnotations:
         response = get_method(user, f'jobs/{jid}/annotations', **kwargs)
 
         assert response.status_code == HTTPStatus.OK
-        assert DeepDiff(data, response.json()) == {}
+        assert DeepDiff(data, response.json(),
+            exclude_paths="root['version']") == {}
 
     def _test_get_job_annotations_403(self, user, jid, **kwargs):
         response = get_method(user, f'jobs/{jid}/annotations', **kwargs)
