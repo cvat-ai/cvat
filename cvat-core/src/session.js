@@ -14,6 +14,7 @@
         getPreview,
         clear: clearFrames,
         searchNonDeletedFrame,
+        searchNonDeletedFrameWithOffset,
         getContextImage,
     } = require('./frames');
     const { ArgumentError, DataError } = require('./exceptions');
@@ -2014,6 +2015,9 @@
             throw new ArgumentError('The stop frame is out of the job');
         }
         if (filters.deleted === false) {
+            if (Number.isInteger(filters.offset)) {
+                return searchNonDeletedFrameWithOffset(this.id, frameFrom, frameTo, filters.offset);
+            }
             return searchNonDeletedFrame(this.id, frameFrom, frameTo);
         }
         return null;

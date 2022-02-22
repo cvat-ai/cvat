@@ -783,6 +783,30 @@
         return null;
     }
 
+    async function searchNonDeletedFrameWithOffset(jobID, frameFrom, frameTo, offset) {
+        let meta;
+        if (!frameDataCache[jobID]) {
+            meta = await serverProxy.frames.getMeta(jobID);
+        } else {
+            meta = frameDataCache[jobID].meta;
+        }
+        const sign = Math.sign(frameTo - frameFrom);
+        const predicate = sign > 0 ? (frame) => frame <= frameTo : (frame) => frame >= frameTo;
+        const update = sign > 0 ? (frame) => frame + 1 : (frame) => frame - 1;
+        let undeletedFrames = 0;
+        let lastUndeletedFrame = frameFrom;
+        for (let frame = frameFrom; predicate(frame); frame = update(frame)) {
+            if (!meta.deleted_frames.includes(frame)) {
+                lastUndeletedFrame = frame;
+                undeletedFrames++;
+                if (undeletedFrames === offset) {
+                    return frame;
+                }
+            }
+        }
+        return lastUndeletedFrame;
+    }
+
     function getRanges(jobID) {
         if (!(jobID in frameDataCache)) {
             return {
@@ -813,6 +837,7 @@
         getPreview,
         clear,
         searchNonDeletedFrame,
+        searchNonDeletedFrameWithOffset,
         getContextImage,
     };
 })();

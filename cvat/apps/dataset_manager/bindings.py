@@ -3,6 +3,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+import copy
 import sys
 import rq
 import os.path as osp
@@ -220,7 +221,7 @@ class TaskData(InstanceLabelData):
                 "width": db_image.width,
                 "height": db_image.height,
             } for db_image in self._db_task.data.images.all()
-            if db_image.id not in self._db_task.data.deleted_frames}
+            if self.rel_frame_id(db_image.frame) not in self._db_task.data.deleted_frames}
 
         self._frame_mapping = {
             self._get_filename(info["path"]): frame_number
@@ -418,7 +419,9 @@ class TaskData(InstanceLabelData):
 
     @property
     def tracks(self):
-        for idx, track in enumerate(self._annotation_ir.tracks):
+        for idx, _track in enumerate(self._annotation_ir.tracks):
+            track = copy.deepcopy(_track)
+            track["shapes"] = [shape for shape in track["shapes"] if shape["frame"] not in self._db_task.data.deleted_frames]
             tracked_shapes = TrackManager.get_interpolated_shapes(
                 track, 0, self._db_task.data.size)
             for tracked_shape in tracked_shapes:
@@ -427,6 +430,9 @@ class TaskData(InstanceLabelData):
                 tracked_shape["group"] = track["group"]
                 tracked_shape["source"] = track["source"]
                 tracked_shape["label_id"] = track["label_id"]
+                if tracked_shape["frame"] + 1 in self._db_task.data.deleted_frames \
+                    or tracked_shape["frame"] - 1 in self._db_task.data.deleted_frames:
+                    tracked_shape["keyframe"] = True
 
             yield TaskData.Track(
                 label=self._get_label_name(track["label_id"]),

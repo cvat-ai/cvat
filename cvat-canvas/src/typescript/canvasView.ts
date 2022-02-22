@@ -1055,7 +1055,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         this.deletedImageOverlayPath.setAttribute('d', 'M 1000 0 L 0 0 1000 0');
         this.deletedImageOverlayPath.setAttribute('fill', 'none');
         this.deletedImageOverlayPath.setAttribute('stroke-width', `${consts.BASE_DELETED_PATTERN_WIDTH}`);
-        this.deletedImageOverlayPath.setAttribute('opacity', '0.6');
+        this.deletedImageOverlayPath.setAttribute('opacity', '0.75');
         this.deletedImageOverlayPattern.setAttribute('id', 'cvat_canvas_deleted_frame_overlay_pattern');
         this.deletedImageOverlayPattern.setAttribute('width', '100');
         this.deletedImageOverlayPattern.setAttribute('height', '100');
@@ -1309,7 +1309,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
                 if (model.imageDeleted) {
                     this.deletedImageOverlay.style.display = null;
-                    this.background.style.filter = 'saturate(0)';
+                    this.background.style.filter = 'saturate(0) brightness(1.5) contrast(0.5)';
                 } else {
                     this.background.style.filter = this.canvasFilters;
                     this.deletedImageOverlay.style.display = 'none';
