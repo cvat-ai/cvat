@@ -399,7 +399,7 @@ function HeaderContainer(props: Props): JSX.Element {
                     Tasks
                 </Button>
                 <Button
-                    className='cvat-header-button'
+                    className={history.location.pathname.match(/\/jobs($|\?)/) ? 'cvat-header-button cvat-active-header-button' : 'cvat-header-button'}
                     type='link'
                     value='jobs'
                     href='/jobs?page=1'

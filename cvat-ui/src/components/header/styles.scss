@@ -44,7 +44,20 @@
     color: $text-color;
     padding: 0 $grid-unit-size;
     margin-right: $grid-unit-size;
+
 }
+
+.cvat-left-header {
+    .ant-btn.cvat-header-button {
+        opacity: 0.7;
+    }
+
+    .ant-btn.cvat-header-button.cvat-active-header-button {
+        font-weight: bold;
+        opacity: 1;
+    }
+}
+
 
 .cvat-header-menu-user-dropdown {
     display: flex;

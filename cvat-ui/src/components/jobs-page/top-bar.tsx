@@ -4,7 +4,6 @@
 
 import React, { useState } from 'react';
 import { Col, Row } from 'antd/lib/grid';
-import Text from 'antd/lib/typography/Text';
 import Input from 'antd/lib/input';
 
 import SortingComponent from './sorting';
@@ -44,7 +43,6 @@ function TopBarComponent(props: Props): JSX.Element {
     return (
         <Row className='cvat-jobs-page-top-bar' justify='center' align='middle'>
             <Col md={22} lg={18} xl={16} xxl={16}>
-                <Text className='cvat-title'>Jobs</Text>
                 <div>
                     <Input.Search
                         enterButton
