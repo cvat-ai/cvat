@@ -6,6 +6,7 @@ import React, { useState } from 'react';
 import { Col, Row } from 'antd/lib/grid';
 import Input from 'antd/lib/input';
 
+import { JobsQuery } from 'reducers/interfaces';
 import SortingComponent from './sorting';
 import ResourceFilterHOC from './filtering';
 import {
@@ -31,13 +32,16 @@ const defaultVisibility: {
 };
 
 interface Props {
+    query: JobsQuery;
     onApplyFilter(filter: string | null): void;
     onApplySorting(sorting: string | null): void;
     onApplySearch(search: string | null): void;
 }
 
 function TopBarComponent(props: Props): JSX.Element {
-    const { onApplyFilter, onApplySorting, onApplySearch } = props;
+    const {
+        query, onApplyFilter, onApplySorting, onApplySearch,
+    } = props;
     const [visibility, setVisibility] = useState<typeof defaultVisibility>(defaultVisibility);
 
     return (
@@ -49,31 +53,35 @@ function TopBarComponent(props: Props): JSX.Element {
                         onSearch={(phrase: string) => {
                             onApplySearch(phrase);
                         }}
+                        className='cvat-jobs-page-search-bar'
+                        placeholder='Search ..'
                     />
-                    <SortingComponent
-                        visible={visibility.sorting}
-                        onVisibleChange={(visible: boolean) => (
-                            setVisibility({ ...defaultVisibility, sorting: visible })
-                        )}
-                        defaultFields={['ID']}
-                        sortingFields={['ID', 'Assignee', 'Updated date', 'Stage', 'State', 'Task ID', 'Project ID', 'Task name', 'Project name']}
-                        onApplySorting={onApplySorting}
-                    />
-                    <FilteringComponent
-                        predefinedVisible={visibility.predefined}
-                        builderVisible={visibility.builder}
-                        recentVisible={visibility.recent}
-                        onPredefinedVisibleChange={(visible: boolean) => (
-                            setVisibility({ ...defaultVisibility, predefined: visible })
-                        )}
-                        onBuilderVisibleChange={(visible: boolean) => (
-                            setVisibility({ ...defaultVisibility, builder: visible })
-                        )}
-                        onRecentVisibleChange={(visible: boolean) => (
-                            setVisibility({ ...defaultVisibility, builder: visibility.builder, recent: visible })
-                        )}
-                        onApplyFilter={onApplyFilter}
-                    />
+                    <div>
+                        <SortingComponent
+                            visible={visibility.sorting}
+                            onVisibleChange={(visible: boolean) => (
+                                setVisibility({ ...defaultVisibility, sorting: visible })
+                            )}
+                            defaultFields={query.sort?.split(',') || ['ID']}
+                            sortingFields={['ID', 'Assignee', 'Updated date', 'Stage', 'State', 'Task ID', 'Project ID', 'Task name', 'Project name']}
+                            onApplySorting={onApplySorting}
+                        />
+                        <FilteringComponent
+                            predefinedVisible={visibility.predefined}
+                            builderVisible={visibility.builder}
+                            recentVisible={visibility.recent}
+                            onPredefinedVisibleChange={(visible: boolean) => (
+                                setVisibility({ ...defaultVisibility, predefined: visible })
+                            )}
+                            onBuilderVisibleChange={(visible: boolean) => (
+                                setVisibility({ ...defaultVisibility, builder: visible })
+                            )}
+                            onRecentVisibleChange={(visible: boolean) => (
+                                setVisibility({ ...defaultVisibility, builder: visibility.builder, recent: visible })
+                            )}
+                            onApplyFilter={onApplyFilter}
+                        />
+                    </div>
                 </div>
             </Col>
         </Row>

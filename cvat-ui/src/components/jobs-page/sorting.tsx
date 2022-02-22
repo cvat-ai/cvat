@@ -99,15 +99,21 @@ function SortingModalComponent(props: Props): JSX.Element {
         sortingFields: sortingFieldsProp,
         defaultFields, visible, onApplySorting, onVisibleChange,
     } = props;
+    const [appliedSorting, setAppliedSorting] = useState<Record<string, string>>(
+        defaultFields.reduce((acc: Record<string, string>, field: string) => {
+            const [isAscending, absField] = field.startsWith('-') ? [false, field.slice(1)] : [true, field];
+            const originalField = sortingFieldsProp.find((el: string) => el.toLowerCase() === absField.toLowerCase());
+            if (originalField) {
+                return { ...acc, [originalField]: isAscending ? originalField : `-${originalField}` };
+            }
+
+            return acc;
+        }, {}),
+    );
     const [sortingFields, setSortingFields] = useState<string[]>(
-        Array.from(new Set([...defaultFields, ANCHOR_KEYWORD, ...sortingFieldsProp])),
+        Array.from(new Set([...Object.keys(appliedSorting), ANCHOR_KEYWORD, ...sortingFieldsProp])),
     );
     const [appliedOrder, setAppliedOrder] = useState<string[]>([...defaultFields]);
-    const [appliedSorting, setAppliedSorting] = useState<Record<string, string>>(
-        defaultFields.reduce((acc: Record<string, string>, field: string) => ({
-            ...acc, [field]: field,
-        }), {}),
-    );
 
     useEffect(() => {
         const anchorIdx = sortingFields.indexOf(ANCHOR_KEYWORD);

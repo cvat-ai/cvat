@@ -56,6 +56,7 @@ function JobsPageComponent(): JSX.Element {
     return (
         <div className='cvat-jobs-page'>
             <TopBarComponent
+                query={query}
                 onApplySearch={(search: string | null) => {
                     dispatch(
                         getJobsAsync({

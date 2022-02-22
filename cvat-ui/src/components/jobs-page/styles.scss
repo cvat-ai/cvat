@@ -10,10 +10,6 @@
     height: 100%;
     width: 100%;
 
-    .cvat-jobs-page-top-bar {
-
-    }
-
     > div:nth-child(1) {
         div > {
             .cvat-title {
@@ -252,11 +248,20 @@
 
         > div {
             display: flex;
-            justify-content: flex-end;
+            justify-content: space-between;
             align-items: center;
+            width: 100%;
 
-            > *:not(:last-child) {
-                margin-right: $grid-unit-size;
+            .cvat-jobs-page-search-bar {
+                width: $grid-unit-size * 32;
+            }
+
+            > div {
+                > *:not(:last-child) {
+                    margin-right: $grid-unit-size;
+                }
+
+                display: flex;
             }
         }
     }
