@@ -1,8 +1,116 @@
 {
-  "count": 4,
+  "count": 6,
   "next": null,
   "previous": null,
   "results": [
+    {
+      "assignee": null,
+      "bug_tracker": "",
+      "created_date": "2022-02-16T06:26:54.631217Z",
+      "data": 6,
+      "data_chunk_size": 72,
+      "data_compressed_chunk_type": "imageset",
+      "data_original_chunk_type": "imageset",
+      "dimension": "3d",
+      "id": 6,
+      "image_quality": 70,
+      "labels": [
+        {
+          "attributes": [],
+          "color": "#2080c0",
+          "id": 10,
+          "name": "car"
+        }
+      ],
+      "mode": "annotation",
+      "name": "task3",
+      "organization": null,
+      "overlap": 0,
+      "owner": {
+        "first_name": "User",
+        "id": 2,
+        "last_name": "First",
+        "url": "http://localhost:8080/api/users/2",
+        "username": "user1"
+      },
+      "project_id": null,
+      "segment_size": 1,
+      "segments": [
+        {
+          "jobs": [
+            {
+              "assignee": null,
+              "id": 8,
+              "stage": "annotation",
+              "state": "new",
+              "status": "annotation",
+              "url": "http://localhost:8080/api/jobs/8"
+            }
+          ],
+          "start_frame": 0,
+          "stop_frame": 0
+        }
+      ],
+      "size": 1,
+      "status": "annotation",
+      "subset": "",
+      "updated_date": "2022-02-16T06:26:54.836403Z",
+      "url": "http://localhost:8080/api/tasks/6"
+    },
+    {
+      "assignee": null,
+      "bug_tracker": "",
+      "created_date": "2022-02-16T06:25:48.168612Z",
+      "data": 5,
+      "data_chunk_size": 72,
+      "data_compressed_chunk_type": "imageset",
+      "data_original_chunk_type": "video",
+      "dimension": "2d",
+      "id": 5,
+      "image_quality": 70,
+      "labels": [
+        {
+          "attributes": [],
+          "color": "#2080c0",
+          "id": 9,
+          "name": "car"
+        }
+      ],
+      "mode": "interpolation",
+      "name": "task2",
+      "organization": null,
+      "overlap": 5,
+      "owner": {
+        "first_name": "User",
+        "id": 2,
+        "last_name": "First",
+        "url": "http://localhost:8080/api/users/2",
+        "username": "user1"
+      },
+      "project_id": null,
+      "segment_size": 25,
+      "segments": [
+        {
+          "jobs": [
+            {
+              "assignee": null,
+              "id": 7,
+              "stage": "annotation",
+              "state": "new",
+              "status": "annotation",
+              "url": "http://localhost:8080/api/jobs/7"
+            }
+          ],
+          "start_frame": 0,
+          "stop_frame": 24
+        }
+      ],
+      "size": 25,
+      "status": "annotation",
+      "subset": "",
+      "updated_date": "2022-02-16T06:25:48.889352Z",
+      "url": "http://localhost:8080/api/tasks/5"
+    },
     {
       "assignee": null,
       "bug_tracker": "",

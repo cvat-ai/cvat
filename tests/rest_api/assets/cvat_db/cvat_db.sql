@@ -2649,9 +2649,9 @@ COPY public.auth_user (id, password, last_login, is_superuser, username, first_n
 17	pbkdf2_sha256$260000$ZgcuAD4y4yevdl8uH9uDkv$D89cXpicXu+B4Vs+Nlew/sXYpZvO4kOO1IMoyYs1AvE=	\N	f	dummy4	Dummy	Fourth	dummy4@cvat.org	f	t	2021-12-14 18:37:41+00
 18	pbkdf2_sha256$260000$uOqP32bk2zHuvO0sdGBGmu$hMbzA1yBWcY5rIU670sZ3SHXRLUa7bCkbrMnrEDGSRM=	\N	t	admin2	Admin	Second	admin2@cvat.org	t	t	2021-12-14 18:38:46+00
 6	pbkdf2_sha256$260000$15iUjDNh5gPg5683u1HhOG$fF8hW6AR90o9SCsO/MomzdQFkgQsMUW3YQUlwwiC1vA=	2021-12-14 19:11:21.04874+00	f	worker1	Worker	First	worker1@cvat.org	f	t	2021-12-14 18:30:00+00
-2	pbkdf2_sha256$260000$Pf2xYWXBedoAJ504jyDD8e$8sJ244Ai0xhZrUTelapPNHlEg7CV0cCUaxbcxZtfaug=	2021-12-22 07:55:35.269206+00	f	user1	User	First	user1@cvat.org	f	t	2021-12-14 18:21:09+00
 10	pbkdf2_sha256$260000$X4F89IRqnBtojZuHidrwQG$j1+EpXfyvMesHdod4N+dNUfF4WKS2NWFfeGDec/43as=	2022-01-19 13:52:59.477881+00	f	business1	Business	First	business1@cvat.org	f	t	2021-12-14 18:33:06+00
 1	pbkdf2_sha256$260000$DevmxlmLwciP1P6sZs2Qag$U9DFtjTWx96Sk95qY6UXVcvpdQEP2LcoFBftk5D2RKY=	2022-02-11 14:54:28.083729+00	t	admin1	Admin	First	admin1@cvat.org	t	t	2021-12-14 18:04:57+00
+2	pbkdf2_sha256$260000$Pf2xYWXBedoAJ504jyDD8e$8sJ244Ai0xhZrUTelapPNHlEg7CV0cCUaxbcxZtfaug=	2022-02-16 06:24:53.910205+00	f	user1	User	First	user1@cvat.org	f	t	2021-12-14 18:21:09+00
 \.
 
 
@@ -2692,6 +2692,7 @@ COPY public.auth_user_user_permissions (id, user_id, permission_id) FROM stdin;
 COPY public.authtoken_token (key, created, user_id) FROM stdin;
 a959159194c4b5238d95ef4e07919110fab346b0	2021-12-14 19:44:48.519942+00	10
 f952dc4730c58346882176f775ccaaf2a1c72416	2021-12-22 08:11:58.498742+00	1
+e28ce88d18614314476dec601b5c29b9093045f1	2022-02-16 06:24:53.902374+00	2
 \.
 
 
@@ -2917,6 +2918,7 @@ mnb97kue40xo05g2rwwkw6d34sxrnesw	.eJxVjDsOwjAQBe_iGllO8E-U9JzB2l3v4gBypDipEHfHkV
 po0rbd1yhywmc0i2jfam69r419a66aj8	.eJxVjMsOwiAQRf-FtSE8pB1cuvcbCMMMUjWQlHZl_HdD0oVu7znnvkWI-1bC3nkNC4mL0OL0u2FMT64D0CPWe5Op1W1dUA5FHrTLWyN-XQ_376DEXkY9QeKzIpWVn9gYhEhkI3lyYFg7jTMDg7WkAdF5mCFh9mRZZUhOi88X-eU4dg:1mzwj8:CWx3-u6eXmWLpwiFMK5_yWnoPY3yUSf1QCZY-UdJcF8	2022-01-05 08:11:58.507079+00
 v28l0efbrv9x06z97ilwcf7lwtuf4ctc	.eJxVjDsOwjAQRO_iGlm22fhDSc8ZrLV3gwPIluKkQtydREoBzRTz3sxbRFyXEtfOc5xIXIRW4vRbJsxPrjuhB9Z7k7nVZZ6S3BV50C5vjfh1Pdy_g4K9bGuLXqMDQqdDTtYN6AHIIoGGMIJlQwxB-VFn3gLPzjil3ABkAIBZfL7_vTer:1nABOV:0UAK9VV6D18QF1-189XQ2T9LrQUSdioGNoHdRUzzt7o	2022-02-02 13:52:59.489923+00
 wf6d6vzf4u74l08o0qgbqehei21hibea	.eJxVjDEOwjAMRe-SGUUkpHZgZO8ZIttxSAG1UtNOiLtDpQ6w_vfef5lE61LT2nROQzYX48zhd2OSh44byHcab5OVaVzmge2m2J02209Zn9fd_Tuo1Oq3DrGwD040Ro_-nJmJgkgsqAAIioCi0KGKMhU4Mgip6wjRF6JyMu8PBAI5Mw:1nIXJc:oovNJRods5cbviWOWush4H3jDdP8XklEignva_EnQ8Q	2022-02-25 14:54:28.092369+00
+9rh2r15lb3xra3kdqjtll5n4zw7ebw95	.eJxVjDsOwjAQBe_iGln-xJ9Q0ucM1q69xgFkS3FSIe5OIqWA9s3Me7MA21rC1mkJc2JXptjld0OIT6oHSA-o98Zjq-syIz8UftLOp5bodTvdv4MCvey1tOiNIpGNATlq55IZvaABd4Ao1RCzARLWJ5dRA2kJGqxU1kfjPRL7fAHVPjfN:1nKDkD:rZM4YHHS9MckfKB5KrsvNBVMegYSRdlMqL3uDJRE0Cg	2022-03-02 06:24:53.914069+00
 \.
 
 
@@ -3302,6 +3304,8 @@ COPY public.engine_clientfile (id, file, data_id) FROM stdin;
 357	/home/django/data/data/4/raw/138.png	4
 358	/home/django/data/data/4/raw/114.png	4
 359	/home/django/data/data/4/raw/134.png	4
+360	/home/django/data/data/5/raw/test_video_1.mp4	5
+361	/home/django/data/data/6/raw/test_pointcloud_pcd.zip	6
 \.
 
 
@@ -3336,6 +3340,8 @@ COPY public.engine_data (id, chunk_size, size, image_quality, start_frame, stop_
 2	72	23	70	0	22		imageset	imageset	cache	local	\N	lexicographical
 3	72	148	70	0	147		imageset	imageset	cache	local	\N	random
 4	72	58	70	0	57		imageset	imageset	cache	local	\N	lexicographical
+5	72	25	70	0	24		imageset	video	cache	local	\N	lexicographical
+6	72	1	70	0	0		imageset	imageset	cache	local	\N	lexicographical
 \.
 
 
@@ -3703,6 +3709,7 @@ COPY public.engine_image (id, path, frame, height, width, data_id) FROM stdin;
 357	97.png	55	647	433	4
 358	98.png	56	370	615	4
 359	99.png	57	545	343	4
+360	test_pointcloud_pcd/pointcloud/000001.pcd	0	1	100	6
 \.
 
 
@@ -3729,6 +3736,8 @@ COPY public.engine_job (id, segment_id, assignee_id, status, stage, state) FROM 
 1	1	\N	annotation	annotation	new
 6	6	7	annotation	annotation	new
 4	4	\N	validation	validation	new
+7	7	\N	annotation	annotation	new
+8	8	\N	annotation	annotation	new
 \.
 
 
@@ -3768,6 +3777,8 @@ COPY public.engine_label (id, name, task_id, color, project_id) FROM stdin;
 6	person	\N	#c06060	1
 7	cat	\N	#6080c0	2
 8	dog	\N	#406040	2
+9	car	5	#2080c0	\N
+10	car	6	#2080c0	\N
 \.
 
 
@@ -3899,6 +3910,7 @@ COPY public.engine_project (id, name, bug_tracker, created_date, updated_date, s
 --
 
 COPY public.engine_relatedfile (id, path, data_id, primary_image_id) FROM stdin;
+1	/home/django/data/data/6/raw/test_pointcloud_pcd/related_images/000001_pcd/000001.png	6	360
 \.
 
 
@@ -3921,6 +3933,8 @@ COPY public.engine_segment (id, start_frame, stop_frame, task_id) FROM stdin;
 4	50	99	3
 5	100	147	3
 6	0	57	4
+7	0	24	5
+8	0	0	6
 \.
 
 
@@ -3941,6 +3955,8 @@ COPY public.engine_task (id, name, mode, created_date, updated_date, status, bug
 1	task1	annotation	2021-12-14 18:43:47.601289+00	2021-12-22 07:15:22.942484+00	annotation		2	0	\N	130	\N	1	2d		\N
 4	task1_in_project2	annotation	2021-12-14 19:55:57.475273+00	2021-12-22 07:17:34.836384+00	annotation		10	0	\N	58	2	4	2d	train	2
 3	task1_in_project1	annotation	2021-12-14 19:48:33.089778+00	2021-12-22 07:19:33.85476+00	annotation		10	0	\N	50	1	3	2d	Train	\N
+5	task2	interpolation	2022-02-16 06:25:48.168612+00	2022-02-16 06:25:48.889352+00	annotation		2	5	\N	25	\N	5	2d		\N
+6	task3	annotation	2022-02-16 06:26:54.631217+00	2022-02-16 06:26:54.836403+00	annotation		2	0	\N	1	\N	6	3d		\N
 \.
 
 
@@ -3965,6 +3981,7 @@ COPY public.engine_trackedshapeattributeval (id, value, shape_id, spec_id) FROM 
 --
 
 COPY public.engine_video (id, path, height, width, data_id) FROM stdin;
+1	test_video_1.mp4	720	1280	5
 \.
 
 
@@ -4141,7 +4158,7 @@ SELECT pg_catalog.setval('public.engine_attributespec_id_seq', 1, true);
 -- Name: engine_clientfile_id_seq; Type: SEQUENCE SET; Schema: public; Owner: root
 --
 
-SELECT pg_catalog.setval('public.engine_clientfile_id_seq', 359, true);
+SELECT pg_catalog.setval('public.engine_clientfile_id_seq', 361, true);
 
 
 --
@@ -4162,14 +4179,14 @@ SELECT pg_catalog.setval('public.engine_comment_id_seq', 6, true);
 -- Name: engine_data_id_seq; Type: SEQUENCE SET; Schema: public; Owner: root
 --
 
-SELECT pg_catalog.setval('public.engine_data_id_seq', 4, true);
+SELECT pg_catalog.setval('public.engine_data_id_seq', 6, true);
 
 
 --
 -- Name: engine_image_id_seq; Type: SEQUENCE SET; Schema: public; Owner: root
 --
 
-SELECT pg_catalog.setval('public.engine_image_id_seq', 359, true);
+SELECT pg_catalog.setval('public.engine_image_id_seq', 360, true);
 
 
 --
@@ -4183,7 +4200,7 @@ SELECT pg_catalog.setval('public.engine_issue_id_seq', 4, true);
 -- Name: engine_job_id_seq; Type: SEQUENCE SET; Schema: public; Owner: root
 --
 
-SELECT pg_catalog.setval('public.engine_job_id_seq', 6, true);
+SELECT pg_catalog.setval('public.engine_job_id_seq', 8, true);
 
 
 --
@@ -4197,7 +4214,7 @@ SELECT pg_catalog.setval('public.engine_jobcommit_id_seq', 15, true);
 -- Name: engine_label_id_seq; Type: SEQUENCE SET; Schema: public; Owner: root
 --
 
-SELECT pg_catalog.setval('public.engine_label_id_seq', 8, true);
+SELECT pg_catalog.setval('public.engine_label_id_seq', 10, true);
 
 
 --
@@ -4267,7 +4284,7 @@ SELECT pg_catalog.setval('public.engine_project_id_seq', 2, true);
 -- Name: engine_relatedfile_id_seq; Type: SEQUENCE SET; Schema: public; Owner: root
 --
 
-SELECT pg_catalog.setval('public.engine_relatedfile_id_seq', 1, false);
+SELECT pg_catalog.setval('public.engine_relatedfile_id_seq', 1, true);
 
 
 --
@@ -4281,7 +4298,7 @@ SELECT pg_catalog.setval('public.engine_remotefile_id_seq', 1, false);
 -- Name: engine_segment_id_seq; Type: SEQUENCE SET; Schema: public; Owner: root
 --
 
-SELECT pg_catalog.setval('public.engine_segment_id_seq', 6, true);
+SELECT pg_catalog.setval('public.engine_segment_id_seq', 8, true);
 
 
 --
@@ -4295,7 +4312,7 @@ SELECT pg_catalog.setval('public.engine_serverfile_id_seq', 1, false);
 -- Name: engine_task_id_seq; Type: SEQUENCE SET; Schema: public; Owner: root
 --
 
-SELECT pg_catalog.setval('public.engine_task_id_seq', 4, true);
+SELECT pg_catalog.setval('public.engine_task_id_seq', 6, true);
 
 
 --
@@ -4316,7 +4333,7 @@ SELECT pg_catalog.setval('public.engine_trackedshapeattributeval_id_seq', 1, fal
 -- Name: engine_video_id_seq; Type: SEQUENCE SET; Schema: public; Owner: root
 --
 
-SELECT pg_catalog.setval('public.engine_video_id_seq', 1, false);
+SELECT pg_catalog.setval('public.engine_video_id_seq', 1, true);
 
 
 --
