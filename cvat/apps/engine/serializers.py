@@ -568,7 +568,7 @@ class ProjectSerializer(serializers.ModelSerializer):
     assignee = BasicUserSerializer(allow_null=True, required=False)
     assignee_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)
     task_subsets = serializers.ListField(child=serializers.CharField(), required=False)
-    dimension = serializers.CharField(max_length=16, required=False)
+    dimension = serializers.CharField(max_length=16, required=False, read_only=True)
 
     class Meta:
         model = models.Project

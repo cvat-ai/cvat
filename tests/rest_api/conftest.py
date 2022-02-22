@@ -31,7 +31,7 @@ def drop_test_db():
 def create_test_db():
     docker_cp(source=osp.join(ASSETS_DIR, 'cvat_db'), target='cvat_db:/')
     cvat_db_container('createdb test_db')
-    cvat_db_container('psql -U root -d test_db -f /cvat_db/cvat_db.sql')
+    cvat_db_container('psql -U root -q -d test_db -f /cvat_db/cvat_db.sql')
 
 @pytest.fixture(scope='session', autouse=True)
 def init_test_db():
@@ -119,6 +119,53 @@ def users_by_name(users):
     return {user['username']: user for user in users}
 
 @pytest.fixture(scope='module')
+def jobs_by_org(tasks, jobs):
+    data = {}
+    for job in jobs:
+        data.setdefault(tasks[job['task_id']]['organization'], []).append(job)
+    data[''] = data.pop(None, [])
+    return data
+
+@pytest.fixture(scope='module')
+def assignee_id():
+    def get_id(data):
+        if data.get('assignee') is not None:
+            return data['assignee']['id']
+    return get_id
+
+def ownership(func):
+    def wrap(user_id, resource_id):
+        if resource_id is None:
+            return False
+        return func(user_id, resource_id)
+    return wrap
+
+@pytest.fixture(scope='module')
+def is_project_staff(projects, assignee_id):
+    @ownership
+    def check(user_id, pid):
+        return user_id == projects[pid]['owner']['id'] or \
+            user_id == assignee_id(projects[pid])
+    return check
+
+@pytest.fixture(scope='module')
+def is_task_staff(tasks, is_project_staff, assignee_id):
+    @ownership
+    def check(user_id, tid):
+        return user_id == tasks[tid]['owner']['id'] or \
+            user_id == assignee_id(tasks[tid]) or \
+            is_project_staff(user_id, tasks[tid]['project_id'])
+    return check
+
+@pytest.fixture(scope='module')
+def is_job_staff(jobs, is_task_staff, assignee_id):
+    @ownership
+    def check(user_id, jid):
+        return user_id == assignee_id(jobs[jid]) or \
+            is_task_staff(user_id, jobs[jid]['task_id'])
+    return check
+
+@pytest.fixture(scope='module')
 def find_users(test_db):
     def find(**kwargs):
         assert len(kwargs) > 0
@@ -158,3 +205,34 @@ def test_db(users, users_by_name, memberships):
                 membership_id=membership['id'])
 
     return data
+
+@pytest.fixture(scope='module')
+def org_staff(memberships):
+    def find(org_id):
+        if org_id in ['', None]:
+            return set()
+        else:
+            return set(m['user']['id'] for m in memberships
+                if m['role'] in ['maintainer', 'owner'] and m['user'] != None
+                    and m['organization'] == org_id)
+    return find
+
+@pytest.fixture(scope='module')
+def is_org_member(memberships):
+    def check(user_id, org_id):
+        if org_id in ['', None]:
+            return True
+        else:
+            return user_id in set(m['user']['id'] for m in memberships
+                if m['user'] != None and m['organization'] == org_id)
+    return check
+
+@pytest.fixture(scope='module')
+def find_job_staff_user(is_job_staff):
+    def find(jobs, users, is_staff):
+        for job in jobs:
+            for user in users:
+                if is_staff == is_job_staff(user['id'], job['id']):
+                    return user['username'], job['id']
+        return None, None
+    return find
