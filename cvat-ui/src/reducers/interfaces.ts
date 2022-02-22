@@ -70,6 +70,7 @@ export interface TasksQuery {
     name: string | null;
     status: string | null;
     mode: string | null;
+    filter: string | null;
     projectId: number | null;
     [key: string]: string | number | null;
 }
