@@ -101,7 +101,8 @@ function SortingModalComponent(props: Props): JSX.Element {
     } = props;
     const [appliedSorting, setAppliedSorting] = useState<Record<string, string>>(
         defaultFields.reduce((acc: Record<string, string>, field: string) => {
-            const [isAscending, absField] = field.startsWith('-') ? [false, field.slice(1)] : [true, field];
+            const [isAscending, absField] = field.startsWith('-') ?
+                [false, field.slice(1).replace('_', ' ')] : [true, field.replace('_', ' ')];
             const originalField = sortingFieldsProp.find((el: string) => el.toLowerCase() === absField.toLowerCase());
             if (originalField) {
                 return { ...acc, [originalField]: isAscending ? originalField : `-${originalField}` };
