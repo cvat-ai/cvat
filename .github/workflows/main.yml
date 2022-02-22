@@ -75,11 +75,11 @@ jobs:
         env:
           API_ABOUT_PAGE: "localhost:8080/api/server/about"
         run: |
-          docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f components/serverless/docker-compose.serverless.yml up -d
+          docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f components/serverless/docker-compose.serverless.yml -f components/analytics/docker-compose.analytics.yml up -d
           /bin/bash -c 'while [[ "$(curl -s -o /dev/null -w ''%{http_code}'' ${API_ABOUT_PAGE})" != "401" ]]; do sleep 5; done'
           pip3 install --user -r tests/rest_api/requirements.txt
           pytest tests/rest_api/
-          docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f components/serverless/docker-compose.serverless.yml down -v
+          docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f components/serverless/docker-compose.serverless.yml -f components/analytics/docker-compose.analytics.yml down -v
       - name: Running unit tests
         env:
           HOST_COVERAGE_DATA_DIR: ${{ github.workspace }}
