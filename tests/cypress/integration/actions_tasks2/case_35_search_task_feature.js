@@ -31,12 +31,12 @@ context('Search task feature.', () => {
 
     // TODO: rework this test
     describe(`Testing case "${caseId}"`, () => {
-        it.skip('Tooltip task filter contain all the possible options.', () => {
+        it('Tooltip task filter contain all the possible options.', () => {
             cy.get('.cvat-search-field').trigger('mouseover');
             cy.get('.cvat-tasks-search-tooltip').should('be.visible');
         });
 
-        it.skip('Type to task search some filter and check result.', () => {
+        it('Type to task search some filter and check result.', () => {
             searchTask(`${taskName.substring(0, 3)}`, 'exist');
             searchTask('121212', 'not.exist');
             searchTask(`owner: ${Cypress.env('user')}`, 'exist');

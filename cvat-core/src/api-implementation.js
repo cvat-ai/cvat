@@ -20,9 +20,6 @@ const config = require('./config');
     } = require('./common');
 
     const {
-        TaskStatus,
-        TaskMode,
-        DimensionType,
         CloudStorageProviderType,
         CloudStorageCredentialsType,
     } = require('./enums');
@@ -190,32 +187,22 @@ const config = require('./config');
             checkFilter(filter, {
                 page: isInteger,
                 projectId: isInteger,
-                name: isString,
                 id: isInteger,
-                owner: isString,
-                assignee: isString,
                 search: isString,
+                filter: isString,
                 ordering: isString,
-                status: isEnum.bind(TaskStatus),
-                mode: isEnum.bind(TaskMode),
-                dimension: isEnum.bind(DimensionType),
             });
 
-            checkExclusiveFields(filter, ['id', 'search', 'projectId'], ['page']);
+            checkExclusiveFields(filter, ['id', 'projectId'], ['page']);
 
             const searchParams = {};
             for (const field of [
-                'name',
-                'owner',
-                'assignee',
+                'filter',
                 'search',
                 'ordering',
-                'status',
-                'mode',
                 'id',
                 'page',
                 'projectId',
-                'dimension',
             ]) {
                 if (Object.prototype.hasOwnProperty.call(filter, field)) {
                     searchParams[camelToSnake(field)] = filter[field];
@@ -234,17 +221,14 @@ const config = require('./config');
             checkFilter(filter, {
                 id: isInteger,
                 page: isInteger,
-                name: isString,
-                assignee: isString,
-                owner: isString,
                 search: isString,
-                status: isEnum.bind(TaskStatus),
+                filter: isString,
             });
 
-            checkExclusiveFields(filter, ['id', 'search'], ['page']);
+            checkExclusiveFields(filter, ['id'], ['page']);
 
             const searchParams = {};
-            for (const field of ['name', 'assignee', 'owner', 'search', 'status', 'id', 'page']) {
+            for (const field of ['filter', 'search', 'status', 'id', 'page']) {
                 if (Object.prototype.hasOwnProperty.call(filter, field)) {
                     searchParams[camelToSnake(field)] = filter[field];
                 }
