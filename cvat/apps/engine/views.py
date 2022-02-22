@@ -562,7 +562,7 @@ class TaskViewSet(UploadMixin, viewsets.ModelViewSet):
             "segment_set__job_set")
     serializer_class = TaskSerializer
     lookup_fields = {'project_name': 'project__name', 'owner': 'owner__username', 'assignee': 'assignee__username'}
-    search_fields = ('project_name', 'name', 'owner', 'status', 'assignee', 'subset')
+    search_fields = ('project_name', 'name', 'owner', 'status', 'assignee', 'subset', 'mode', 'dimension')
     filter_fields = list(search_fields) + ['id', 'project_id']
     ordering_fields = filter_fields
     ordering = "-id"
