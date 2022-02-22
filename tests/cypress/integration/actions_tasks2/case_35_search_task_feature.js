@@ -29,13 +29,14 @@ context('Search task feature.', () => {
         cy.assignTaskToUser('');
     });
 
+    // TODO: rework this test
     describe(`Testing case "${caseId}"`, () => {
-        it('Tooltip task filter contain all the possible options.', () => {
+        it.skip('Tooltip task filter contain all the possible options.', () => {
             cy.get('.cvat-search-field').trigger('mouseover');
             cy.get('.cvat-tasks-search-tooltip').should('be.visible');
         });
 
-        it('Type to task search some filter and check result.', () => {
+        it.skip('Type to task search some filter and check result.', () => {
             searchTask(`${taskName.substring(0, 3)}`, 'exist');
             searchTask('121212', 'not.exist');
             searchTask(`owner: ${Cypress.env('user')}`, 'exist');

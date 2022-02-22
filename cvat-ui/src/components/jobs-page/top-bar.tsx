@@ -53,6 +53,7 @@ function TopBarComponent(props: Props): JSX.Element {
                         onSearch={(phrase: string) => {
                             onApplySearch(phrase);
                         }}
+                        defaultValue={query.search || ''}
                         className='cvat-jobs-page-search-bar'
                         placeholder='Search ..'
                     />
