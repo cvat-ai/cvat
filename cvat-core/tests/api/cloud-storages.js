@@ -36,7 +36,7 @@ describe('Feature: get cloud storages', () => {
         expect(cloudStorage.id).toBe(1);
         expect(cloudStorage.providerType).toBe('AWS_S3_BUCKET');
         expect(cloudStorage.credentialsType).toBe('KEY_SECRET_KEY_PAIR');
-        expect(cloudStorage.resourceName).toBe('bucket');
+        expect(cloudStorage.resource).toBe('bucket');
         expect(cloudStorage.displayName).toBe('Demonstration bucket');
         expect(cloudStorage.manifests).toHaveLength(1);
         expect(cloudStorage.manifests[0]).toBe('manifest.jsonl');

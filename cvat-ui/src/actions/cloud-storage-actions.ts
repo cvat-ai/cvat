@@ -123,7 +123,7 @@ export function getCloudStoragesAsync(query: Partial<CloudStoragesQuery>): Thunk
         // Temporary hack to do not change UI currently for cloud storages
         // Will be redesigned in a different PR
         const filter = {
-            and: ['displayName', 'resourceName', 'description', 'owner', 'providerType', 'credentialsType'].reduce<object[]>((acc, filterField) => {
+            and: ['displayName', 'resource', 'description', 'owner', 'providerType', 'credentialsType'].reduce<object[]>((acc, filterField) => {
                 if (filterField in filteredQuery) {
                     acc.push({ '==': [{ var: camelToSnake(filterField) }, filteredQuery[filterField]] });
                     delete filteredQuery[filterField];

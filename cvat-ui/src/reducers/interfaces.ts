@@ -159,7 +159,7 @@ export interface CloudStoragesQuery {
     owner: string | null;
     displayName: string | null;
     description: string | null;
-    resourceName: string | null;
+    resource: string | null;
     providerType: string | null;
     credentialsType: string | null;
     [key: string]: string | number | null | undefined;
