@@ -73,10 +73,10 @@
                     xhr.withCredentials = true;
                 },
                 onProgress(bytesUploaded) {
-                    if (Number.isInteger(totalSentSize) && Number.isInteger(totalSize)) {
+                    if (onUpdate && Number.isInteger(totalSentSize) && Number.isInteger(totalSize)) {
                         const currentUploadedSize = totalSentSize + bytesUploaded;
                         const percentage = currentUploadedSize / totalSize;
-                        if (onUpdate) onUpdate(percentage);
+                        onUpdate(percentage);
                     }
                 },
                 onSuccess() {
@@ -1231,14 +1231,13 @@
 
             // Session is 'task' or 'job'
             async function uploadAnnotations(session, id, file, format) {
-                const { backendAPI } = config;
+                const { backendAPI, origin } = config;
                 const params = {
                     ...enableOrganization(),
                     format,
                     filename: file.name,
                 };
                 const chunkSize = config.uploadChunkSize * 1024 * 1024;
-
                 const uploadConfig = {
                     chunkSize,
                     endpoint: `${origin}${backendAPI}/${session}s/${id}/annotations/`,

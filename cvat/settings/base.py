@@ -534,3 +534,7 @@ SPECTACULAR_SETTINGS = {
     # OTHER SETTINGS
     # https://drf-spectacular.readthedocs.io/en/latest/settings.html
 }
+
+# Forwarded host - https://docs.djangoproject.com/en/4.0/ref/settings/#std:setting-USE_X_FORWARDED_HOST
+# is used in TUS uploads to provide correct upload endpoint
+USE_X_FORWARDED_HOST = True
