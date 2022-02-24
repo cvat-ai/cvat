@@ -14,7 +14,7 @@
       "is_active": true,
       "is_staff": true,
       "is_superuser": true,
-      "last_login": "2022-02-11T14:54:28.083729Z",
+      "last_login": "2022-02-21T10:37:08.947950Z",
       "last_name": "First",
       "url": "http://localhost:8080/api/users/1",
       "username": "admin1"
@@ -174,7 +174,7 @@
       "is_active": true,
       "is_staff": false,
       "is_superuser": false,
-      "last_login": null,
+      "last_login": "2022-02-21T10:29:16.518442Z",
       "last_name": "Second",
       "url": "http://localhost:8080/api/users/11",
       "username": "business2"
