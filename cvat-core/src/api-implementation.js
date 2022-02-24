@@ -11,18 +11,12 @@ const config = require('./config');
     const {
         isBoolean,
         isInteger,
-        isEnum,
         isString,
         checkFilter,
         checkExclusiveFields,
         camelToSnake,
         checkObjectType,
     } = require('./common');
-
-    const {
-        CloudStorageProviderType,
-        CloudStorageCredentialsType,
-    } = require('./enums');
 
     const User = require('./user');
     const { AnnotationFormats } = require('./annotation-formats');
@@ -251,28 +245,19 @@ const config = require('./config');
         cvat.cloudStorages.get.implementation = async (filter) => {
             checkFilter(filter, {
                 page: isInteger,
-                displayName: isString,
-                resourceName: isString,
-                description: isString,
+                filter: isString,
                 id: isInteger,
-                owner: isString,
                 search: isString,
-                providerType: isEnum.bind(CloudStorageProviderType),
-                credentialsType: isEnum.bind(CloudStorageCredentialsType),
             });
 
             checkExclusiveFields(filter, ['id', 'search'], ['page']);
 
             const searchParams = new URLSearchParams();
             for (const field of [
-                'displayName',
-                'credentialsType',
-                'providerType',
-                'owner',
+                'filter',
                 'search',
                 'id',
                 'page',
-                'description',
             ]) {
                 if (Object.prototype.hasOwnProperty.call(filter, field)) {
                     searchParams.set(camelToSnake(field), filter[field]);

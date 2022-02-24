@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2021 Intel Corporation
+// Copyright (C) 2019-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -54,16 +54,12 @@ describe('Feature: get projects', () => {
 
     test('get projects by filters', async () => {
         const result = await window.cvat.projects.get({
-            status: 'completed',
+            filter: '{"and":[{"==":[{"var":"status"},"completed"]}]}',
         });
-        expect(Array.isArray(result)).toBeTruthy();
-        expect(result).toHaveLength(1);
-        expect(result[0]).toBeInstanceOf(Project);
-        expect(result[0].id).toBe(2);
-        expect(result[0].status).toBe('completed');
+        expect(result).toBeInstanceOf(Array);
     });
 
-    test('get projects by invalid filters', async () => {
+    test('get projects by invalid query', async () => {
         expect(
             window.cvat.projects.get({
                 unknown: '5',
