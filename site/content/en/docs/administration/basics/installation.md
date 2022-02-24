@@ -433,9 +433,13 @@ Then, use the `docker-compose.https.yml` file to override the base `docker-compo
 docker-compose -f docker-compose.yml -f docker-compose.https.yml up -d
 ```
 
+> In firewall, ports 80 and 443 must be open for inbound connections from any
+
 Then, the CVAT instance will be available at your domain on ports 443 (HTTPS) and 80 (HTTP, redirects to 443).
 
-## Sources for users from China
+## Troubleshooting
+
+### Sources for users from China
 
 If you stay in China, for installation you need to override the following sources.
 
@@ -503,3 +507,38 @@ If you stay in China, for installation you need to override the following source
   ```bash
   curl https://dl-ssl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
   ```
+
+### HTTPS is not working because of a certificate
+
+If you're having trouble with SSL connection, to find the cause,
+you'll need to get the logs from traefik by running:
+
+```bash
+docker logs traefik
+```
+
+The logs will help you find out the problem.
+
+If the error is related to a firewall, then:
+- Open ports 80 and 443 for inbound connections from any.
+- Delete `acme.json`.
+  The location should be something like: `/var/lib/docker/volumes/cvat_cvat_letsencrypt/_data/acme.json`.
+
+After `acme.json` is removed, stop all cvat docker containers:
+
+```bash
+docker-compose -f docker-compose.yml -f docker-compose.https.yml down
+```
+
+Make sure variables set (with your values):
+
+```bash
+export CVAT_HOST=<YOUR_DOMAIN>
+export ACME_EMAIL=<YOUR_EMAIL>
+```
+
+and restart docker:
+
+```bash
+docker-compose -f docker-compose.yml -f docker-compose.https.yml up -d
+```

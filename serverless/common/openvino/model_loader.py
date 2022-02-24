@@ -1,4 +1,3 @@
-
 # Copyright (C) 2020 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
@@ -12,14 +11,6 @@ class ModelLoader:
         ie_core = IECore()
         network = ie_core.read_network(model, weights)
         self._network = network
-
-        # Check compatibility
-        supported_layers = ie_core.query_network(network, "CPU")
-        not_supported_layers = [l for l in network.layers.keys() if l not in supported_layers]
-        if len(not_supported_layers) != 0:
-            raise Exception(
-                "Following layers are not supported by the plugin for specified device {}:\n {}"
-                .format(ie_core.device, ", ".join(not_supported_layers)))
 
         # Initialize input blobs
         self._input_info_name = None
@@ -41,7 +32,8 @@ class ModelLoader:
         input_type = network.inputs[self._input_blob_name]
         self._input_layout = input_type if isinstance(input_type, list) else input_type.shape
 
-    def infer(self, image, preprocessing=True):
+
+    def _prepare_inputs(self, image, preprocessing):
         image = np.array(image)
         _, _, h, w = self._input_layout
         if preprocessing:
@@ -57,12 +49,19 @@ class ModelLoader:
         inputs = {self._input_blob_name: image}
         if self._input_info_name:
             inputs[self._input_info_name] = [h, w, 1]
+        return inputs
 
+    def infer(self, image, preprocessing=True):
+        inputs = self._prepare_inputs(image, preprocessing)
         results = self._net.infer(inputs)
         if len(results) == 1:
             return results[self._output_blob_name].copy()
         else:
             return results.copy()
+
+    def async_infer(self, image, preprocessing=True, request_id=0):
+        inputs = self._prepare_inputs(image, preprocessing)
+        return self._net.start_async(request_id=request_id, inputs=inputs)
 
     def input_size(self):
         return self._input_layout[2:]
