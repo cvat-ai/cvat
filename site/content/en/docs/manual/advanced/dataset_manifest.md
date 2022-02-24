@@ -99,7 +99,7 @@ utils/dataset_manifest/create.py --output-dir ~/manifest/ ~/manifest/images/
 
 ### Examples of generated `manifest.jsonl` files
 
-A maifest file contains some intuitive information and some specific like:
+A manifest file contains some intuitive information and some specific like:
 
 `pts` - time at which the frame should be shown to the user
 `checksum` - `md5` hash sum for the specific image/frame
