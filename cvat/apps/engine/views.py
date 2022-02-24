@@ -1099,6 +1099,16 @@ class IssueViewSet(viewsets.ModelViewSet):
     queryset = Issue.objects.all().order_by('-id')
     http_method_names = ['get', 'post', 'patch', 'delete', 'options']
     iam_organization_field = 'job__segment__task__organization'
+    search_fields = ('owner', 'assignee')
+    filter_fields = list(search_fields) + ['id', 'job_id', 'task_id', 'resolved']
+    lookup_fields = {
+        'owner': 'owner__username',
+        'assignee': 'assignee__username',
+        'job_id': 'job__id',
+        'task_id': 'job__segment__task__id',
+    }
+    ordering_fields = filter_fields
+    ordering = '-id'
 
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -1164,6 +1174,11 @@ class CommentViewSet(viewsets.ModelViewSet):
     queryset = Comment.objects.all().order_by('-id')
     http_method_names = ['get', 'post', 'patch', 'delete', 'options']
     iam_organization_field = 'issue__job__segment__task__organization'
+    search_fields = ('owner',)
+    filter_fields = list(search_fields) + ['id', 'issue_id']
+    ordering_fields = filter_fields
+    ordering = '-id'
+    lookup_fields = {'owner': 'owner__username', 'issue_id': 'issue__id'}
 
     def get_queryset(self):
         queryset = super().get_queryset()

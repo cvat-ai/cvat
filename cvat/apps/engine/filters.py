@@ -159,7 +159,12 @@ class JsonLogicFilter(filters.BaseFilterBackend):
     def filter_queryset(self, request, queryset, view):
         json_rules = request.query_params.get(self.filter_param)
         if json_rules:
-            rules = json.loads(json_rules)
+            try:
+                rules = json.loads(json_rules)
+                if not len(rules):
+                    raise ValidationError(f"filter shouldn't be empty")
+            except json.decoder.JSONDecodeError:
+                raise ValidationError(f'filter: Json syntax should be used')
             lookup_fields = self._get_lookup_fields(request, view)
             try:
                 q_object = self._build_Q(rules, lookup_fields)
