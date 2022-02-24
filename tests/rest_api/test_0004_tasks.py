@@ -130,7 +130,7 @@ class TestPostTasks:
         ('business', False, False),
         ('user', True, True),
     ])
-    def test_admin_can_create_task_in_project(self, project_id, groups, is_staff, is_allow, is_project_staff, find_users):
+    def test_users_to_create_task_in_project(self, project_id, groups, is_staff, is_allow, is_project_staff, find_users):
         users = find_users(privilege=groups)
         self._test_users_to_create_task_in_project(project_id, users, is_staff, is_allow, is_project_staff)
 
