@@ -264,10 +264,6 @@ const config = require('./config');
                 }
             }
 
-            if (Object.prototype.hasOwnProperty.call(filter, 'resourceName')) {
-                searchParams.set('resource', filter.resourceName);
-            }
-
             const cloudStoragesData = await serverProxy.cloudStorages.get(searchParams.toString());
             const cloudStorages = cloudStoragesData.map((cloudStorage) => new CloudStorage(cloudStorage));
             cloudStorages.count = cloudStoragesData.count;
