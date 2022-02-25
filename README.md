@@ -124,6 +124,10 @@ Prebuilt docker images for CVAT releases are available on Docker Hub:
 - [cvat_server](https://hub.docker.com/r/openvino/cvat_server)
 - [cvat_ui](https://hub.docker.com/r/openvino/cvat_ui)
 
+## REST API
+The current REST API version is `2.0-alpha`. We focus on its improvement and therefore
+REST API may be changed in the next release.
+
 ## LICENSE
 
 Code released under the [MIT License](https://opensource.org/licenses/MIT).
