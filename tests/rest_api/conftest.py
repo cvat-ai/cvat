@@ -235,3 +235,9 @@ def find_job_staff_user(is_job_staff):
                     return user['username'], job['id']
         return None, None
     return find
+
+@pytest.fixture(scope='module')
+def filter_jobs_with_shapes(annotations):
+    def find(jobs):
+        return list(filter(lambda j: annotations['job'][str(j['id'])]['shapes'], jobs))
+    return find

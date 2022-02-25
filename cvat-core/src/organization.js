@@ -1,4 +1,4 @@
-// Copyright (C) 2021 Intel Corporation
+// Copyright (C) 2021-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -360,7 +360,13 @@ Organization.prototype.deleteMembership.implementation = async function (members
 Organization.prototype.leave.implementation = async function (user) {
     checkObjectType('user', user, null, User);
     if (typeof this.id === 'number') {
-        const result = await serverProxy.organizations.members(this.slug, 1, 10, { user: user.id });
+        const result = await serverProxy.organizations.members(this.slug, 1, 10, {
+            filter: JSON.stringify({
+                and: [{
+                    '==': [{ var: 'user' }, user.id],
+                }],
+            }),
+        });
         const [membership] = result.results;
         if (!membership) {
             throw new ServerError(`Could not find membership for user ${user.username} in organization ${this.slug}`);
