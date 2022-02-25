@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 10.20
--- Dumped by pg_dump version 10.20
+-- Dumped from database version 10.19
+-- Dumped by pg_dump version 10.19
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -2651,7 +2651,9 @@ COPY public.auth_user (id, password, last_login, is_superuser, username, first_n
 10	pbkdf2_sha256$260000$X4F89IRqnBtojZuHidrwQG$j1+EpXfyvMesHdod4N+dNUfF4WKS2NWFfeGDec/43as=	2022-01-19 13:52:59.477881+00	f	business1	Business	First	business1@cvat.org	f	t	2021-12-14 18:33:06+00
 2	pbkdf2_sha256$260000$Pf2xYWXBedoAJ504jyDD8e$8sJ244Ai0xhZrUTelapPNHlEg7CV0cCUaxbcxZtfaug=	2022-02-16 06:24:53.910205+00	f	user1	User	First	user1@cvat.org	f	t	2021-12-14 18:21:09+00
 11	pbkdf2_sha256$260000$Zw76ANIvIsDngZGsTv2G8O$piTVoqHrpTskW8rI1FBT9rzM2dcpjhrcOfI3pDgtjbo=	2022-02-21 10:29:16.518442+00	f	business2	Business	Second	business2@cvat.org	f	t	2021-12-14 18:34:01+00
-1	pbkdf2_sha256$260000$DevmxlmLwciP1P6sZs2Qag$U9DFtjTWx96Sk95qY6UXVcvpdQEP2LcoFBftk5D2RKY=	2022-02-21 10:37:08.94795+00	t	admin1	Admin	First	admin1@cvat.org	t	t	2021-12-14 18:04:57+00
+19	pbkdf2_sha256$260000$sKpnXRfALvvS3bBUj8e2SD$wcq2zoyeXxa+gnn6007p6DGtNd+ND6H4pGOq9ekb9t0=	\N	f	user5	User	Fifth	user5@cvat.org	f	t	2022-02-24 20:45:07+00
+20	pbkdf2_sha256$260000$V3cCtaea9FrYFYQRGJfBGO$nZVdhgyq1iEcv3Ed4QDnMt18ULQViJn0snZDm9ZL2SA=	\N	f	user6	User	Sixth	user6@cvat.org	f	t	2022-02-24 20:45:19+00
+1	pbkdf2_sha256$260000$DevmxlmLwciP1P6sZs2Qag$U9DFtjTWx96Sk95qY6UXVcvpdQEP2LcoFBftk5D2RKY=	2022-02-24 21:25:06.462854+00	t	admin1	Admin	First	admin1@cvat.org	t	t	2021-12-14 18:04:57+00
 \.
 
 
@@ -2674,6 +2676,8 @@ COPY public.auth_user_groups (id, user_id, group_id) FROM stdin;
 21	12	2
 23	13	2
 31	18	1
+49	19	3
+50	20	3
 \.
 
 
@@ -2750,6 +2754,10 @@ COPY public.django_admin_log (id, action_time, object_id, object_repr, action_fl
 39	2021-12-14 18:41:27.383994+00	18	admin2	2	[{"changed": {"fields": ["Staff status", "Superuser status"]}}]	4	1
 40	2021-12-14 18:41:37.492062+00	18	admin2	2	[{"changed": {"fields": ["password"]}}]	4	1
 41	2021-12-14 18:41:50.468234+00	1	admin1	2	[{"changed": {"fields": ["password"]}}]	4	1
+42	2022-02-24 20:45:07.810075+00	19	user5	1	[{"added": {}}]	4	1
+43	2022-02-24 20:45:13.620976+00	19	user5	2	[{"changed": {"fields": ["First name", "Last name", "Email address"]}}]	4	1
+44	2022-02-24 20:45:19.301266+00	20	user6	1	[{"added": {}}]	4	1
+45	2022-02-24 20:45:25.772476+00	20	user6	2	[{"changed": {"fields": ["First name", "Last name", "Email address"]}}]	4	1
 \.
 
 
@@ -2921,6 +2929,8 @@ wf6d6vzf4u74l08o0qgbqehei21hibea	.eJxVjDEOwjAMRe-SGUUkpHZgZO8ZIttxSAG1UtNOiLtDpQ
 9rh2r15lb3xra3kdqjtll5n4zw7ebw95	.eJxVjDsOwjAQBe_iGln-xJ9Q0ucM1q69xgFkS3FSIe5OIqWA9s3Me7MA21rC1mkJc2JXptjld0OIT6oHSA-o98Zjq-syIz8UftLOp5bodTvdv4MCvey1tOiNIpGNATlq55IZvaABd4Ao1RCzARLWJ5dRA2kJGqxU1kfjPRL7fAHVPjfN:1nKDkD:rZM4YHHS9MckfKB5KrsvNBVMegYSRdlMqL3uDJRE0Cg	2022-03-02 06:24:53.914069+00
 khn67dfajnzkr0tlusuyyub011gt0aqb	.eJxVjMEOwiAQRP-FsyEsobL16N1vIAvLStVAUtqT8d9tkx70OPPezFsFWpcS1p7nMLG6KFCn3y5Seua6A35QvTedWl3mKepd0Qft-tY4v66H-3dQqJdt7UU4MedxGKwFh0RoCBFi4niOTsSAHQFA_JaYmI2nTBEdGRRrSX2-CY443A:1nM5q9:nf3N_nhzYu-XfEC1O2ICYP2Zt9XXPPVziSLrP5uHSVw	2022-03-07 10:22:45.432248+00
 5x9v6r58e4l9if78anupog0ittsq2w3j	.eJxVjMEOwiAQRP-FsyEsobL16N1vIAvLStVAUtqT8d9tkx70OPPezFsFWpcS1p7nMLG6KFCn3y5Seua6A35QvTedWl3mKepd0Qft-tY4v66H-3dQqJdt7UU4MedxGKwFh0RoCBFi4niOTsSAHQFA_JaYmI2nTBEdGRRrSX2-CY443A:1nM644:zfo0j_Zkrm04UxrDj8g_nnsXrpWtRzL4oRx3hAdqyqI	2022-03-07 10:37:08.963511+00
+gcz795933839j3g0t3rjgmikzkzlwse3	.eJxVjEEOwiAQRe_C2hCmUCgu3XsGMjCDVA1NSrsy3l1JutDtf-_9lwi4byXsjdcwkzgLEKffLWJ6cO2A7lhvi0xL3dY5yq7IgzZ5XYifl8P9OyjYSq-9niK4b6A1cfYZnCUEBGuzZxW1UsnYFBV7A9PAIxlMzmmj8pDdyOL9AfdKOC0:1nNKyv:kkKNWtjON5Uk-FR_FbwNa3oJ8t5PEd-rZ1y8BsRyays	2022-03-10 20:44:57.190131+00
+lqzut02cip3i7xxinmal28z3mo302vey	.eJxVjEEOwiAQRe_C2hCmUCgu3XsGMjCDVA1NSrsy3l1JutDtf-_9lwi4byXsjdcwkzgLEKffLWJ6cO2A7lhvi0xL3dY5yq7IgzZ5XYifl8P9OyjYSq-9niK4b6A1cfYZnCUEBGuzZxW1UsnYFBV7A9PAIxlMzmmj8pDdyOL9AfdKOC0:1nNLbm:bXtVicsOrZtQ_p4Qr9bOTAmHWYJMHD8_GCUbncB6nzQ	2022-03-10 21:25:06.476016+00
 \.
 
 
@@ -3935,6 +3945,8 @@ COPY public.engine_profile (id, rating, user_id) FROM stdin;
 16	0	16
 17	0	17
 18	0	18
+19	0	19
+20	0	20
 \.
 
 
@@ -3943,8 +3955,8 @@ COPY public.engine_profile (id, rating, user_id) FROM stdin;
 --
 
 COPY public.engine_project (id, name, bug_tracker, created_date, updated_date, status, assignee_id, owner_id, organization_id) FROM stdin;
-1	project1		2021-12-14 19:46:37.969497+00	2021-12-14 19:48:33.103265+00	annotation	\N	10	\N
-2	project2		2021-12-14 19:52:37.278149+00	2021-12-14 19:55:57.483506+00	annotation	3	10	2
+2	project2		2021-12-14 19:52:37.278149+00	2022-02-24 21:32:36.197153+00	annotation	3	10	2
+1	project1		2021-12-14 19:46:37.969497+00	2022-02-24 21:33:48.037024+00	annotation	20	10	\N
 \.
 
 
@@ -3997,11 +4009,11 @@ COPY public.engine_serverfile (id, file, data_id) FROM stdin;
 COPY public.engine_task (id, name, mode, created_date, updated_date, status, bug_tracker, owner_id, overlap, assignee_id, segment_size, project_id, data_id, dimension, subset, organization_id) FROM stdin;
 2	task2	annotation	2021-12-14 18:50:29.458488+00	2021-12-22 07:14:15.234748+00	annotation		2	0	\N	23	\N	2	2d		1
 1	task1	annotation	2021-12-14 18:43:47.601289+00	2021-12-22 07:15:22.942484+00	annotation		2	0	\N	130	\N	1	2d		\N
-4	task1_in_project2	annotation	2021-12-14 19:55:57.475273+00	2021-12-22 07:17:34.836384+00	annotation		10	0	\N	58	2	4	2d	train	2
 6	task3	annotation	2022-02-16 06:26:54.631217+00	2022-02-16 06:26:54.836403+00	annotation		2	0	\N	1	\N	6	3d		\N
-3	task1_in_project1	annotation	2021-12-14 19:48:33.089778+00	2022-02-21 10:37:27.697705+00	annotation		10	0	\N	50	1	3	2d	Train	\N
 5	task2	interpolation	2022-02-16 06:25:48.168612+00	2022-02-21 10:40:21.257604+00	annotation		2	5	\N	25	\N	5	2d		\N
 7	task_2_org2	annotation	2022-02-21 10:31:52.429478+00	2022-02-21 10:41:38.540427+00	annotation		11	0	7	11	\N	7	2d		2
+3	task1_in_project1	annotation	2021-12-14 19:48:33.089778+00	2022-02-24 21:25:10.697341+00	annotation		10	0	19	50	1	3	2d	Train	\N
+4	task1_in_project2	annotation	2021-12-14 19:55:57.475273+00	2022-02-24 21:32:36.190676+00	annotation		10	0	19	58	2	4	2d	train	2
 \.
 
 
@@ -4044,6 +4056,7 @@ mFpVV2Yh39uUdU8IpigSxvuPegqi8sjxFi6P9Jdy6fBE8Ky9Juzi1KjeGDQsizSS	2021-12-14 19:5
 h43G28di7vfs4Jv5VrKZ26xvGAfm6Yc2FFv14z9EKhiuIEDQ22pEnzmSCab8MnK1	2021-12-14 19:55:13.745912+00	9	10
 5FjIXya6fTGvlRpauFvi2QN1wDOqo1V9REB5rJinDR8FZO9gr0qmtWpghsCte8Y1	2022-01-19 13:54:42.005381+00	10	10
 BrwoDmMNQQ1v9WXOukp9DwQVuqB3RDPjpUECCEq6QcAuG0Pi8k1IYtQ9uz9jg0Bv	2022-01-19 13:54:42.015131+00	11	10
+Fi3WRUhFxTWpMiVpdwNR2CGyhgcIXSCUYgPCugPq72QUOgHz9NSMOGiKS3PfJ7Ql	2022-02-24 21:29:21.978055+00	12	1
 \.
 
 
@@ -4063,6 +4076,7 @@ COPY public.organizations_membership (id, is_active, joined_date, role, organiza
 9	t	2021-12-14 19:55:13.745912+00	supervisor	2	3
 10	t	2022-01-19 13:54:42.005381+00	supervisor	2	4
 11	t	2022-01-19 13:54:42.015131+00	maintainer	2	5
+12	t	2022-02-24 21:29:21.978055+00	worker	2	19
 \.
 
 
@@ -4147,14 +4161,14 @@ SELECT pg_catalog.setval('public.auth_permission_id_seq', 88, true);
 -- Name: auth_user_groups_id_seq; Type: SEQUENCE SET; Schema: public; Owner: root
 --
 
-SELECT pg_catalog.setval('public.auth_user_groups_id_seq', 47, true);
+SELECT pg_catalog.setval('public.auth_user_groups_id_seq', 51, true);
 
 
 --
 -- Name: auth_user_id_seq; Type: SEQUENCE SET; Schema: public; Owner: root
 --
 
-SELECT pg_catalog.setval('public.auth_user_id_seq', 18, true);
+SELECT pg_catalog.setval('public.auth_user_id_seq', 20, true);
 
 
 --
@@ -4168,7 +4182,7 @@ SELECT pg_catalog.setval('public.auth_user_user_permissions_id_seq', 1, false);
 -- Name: django_admin_log_id_seq; Type: SEQUENCE SET; Schema: public; Owner: root
 --
 
-SELECT pg_catalog.setval('public.django_admin_log_id_seq', 41, true);
+SELECT pg_catalog.setval('public.django_admin_log_id_seq', 45, true);
 
 
 --
@@ -4315,7 +4329,7 @@ SELECT pg_catalog.setval('public.engine_manifest_id_seq', 1, false);
 -- Name: engine_profile_id_seq; Type: SEQUENCE SET; Schema: public; Owner: root
 --
 
-SELECT pg_catalog.setval('public.engine_profile_id_seq', 18, true);
+SELECT pg_catalog.setval('public.engine_profile_id_seq', 20, true);
 
 
 --
@@ -4385,7 +4399,7 @@ SELECT pg_catalog.setval('public.engine_video_id_seq', 1, true);
 -- Name: organizations_membership_id_seq; Type: SEQUENCE SET; Schema: public; Owner: root
 --
 
-SELECT pg_catalog.setval('public.organizations_membership_id_seq', 11, true);
+SELECT pg_catalog.setval('public.organizations_membership_id_seq', 12, true);
 
 
 --

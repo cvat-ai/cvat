@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2021 Intel Corporation
+// Copyright (C) 2019-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -18,6 +18,8 @@ interface StateToProps {
     activeInference: ActiveInference | null;
     installedGit: boolean;
     projectSubsets: string[];
+    dumpers: any[];
+    user: any;
 }
 
 interface DispatchToProps {
@@ -30,6 +32,8 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
     const [taskProject] = state.projects.current.filter((project) => project.id === own.task.instance.projectId);
 
     return {
+        dumpers: state.formats.annotationFormats.dumpers,
+        user: state.auth.user,
         installedGit: list.GIT_INTEGRATION,
         activeInference: state.models.inferences[own.task.instance.id] || null,
         projectSubsets: taskProject ?
@@ -53,11 +57,13 @@ function mapDispatchToProps(dispatch: any, own: OwnProps): DispatchToProps {
 
 function TaskPageContainer(props: StateToProps & DispatchToProps & OwnProps): JSX.Element {
     const {
-        task, installedGit, activeInference, projectSubsets, cancelAutoAnnotation, onTaskUpdate,
+        task, installedGit, activeInference, projectSubsets, cancelAutoAnnotation, onTaskUpdate, dumpers, user,
     } = props;
 
     return (
         <DetailsComponent
+            dumpers={dumpers}
+            user={user}
             previewImage={task.preview}
             taskInstance={task.instance}
             installedGit={installedGit}

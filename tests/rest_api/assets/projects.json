@@ -45,11 +45,17 @@
       "tasks": [
         4
       ],
-      "updated_date": "2021-12-14T19:55:57.483506Z",
+      "updated_date": "2022-02-24T21:32:36.197153Z",
       "url": "http://localhost:8080/api/projects/2"
     },
     {
-      "assignee": null,
+      "assignee": {
+        "first_name": "User",
+        "id": 20,
+        "last_name": "Sixth",
+        "url": "http://localhost:8080/api/users/20",
+        "username": "user6"
+      },
       "bug_tracker": "",
       "created_date": "2021-12-14T19:46:37.969497Z",
       "dimension": "2d",
@@ -97,7 +103,7 @@
       "tasks": [
         3
       ],
-      "updated_date": "2021-12-14T19:48:33.103265Z",
+      "updated_date": "2022-02-24T21:33:48.037024Z",
       "url": "http://localhost:8080/api/projects/1"
     }
   ]
