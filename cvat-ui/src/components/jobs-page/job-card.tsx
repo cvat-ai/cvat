@@ -32,8 +32,14 @@ function JobCardComponent(props: Props): JSX.Element {
     const [expanded, setExpanded] = useState<boolean>(false);
     const history = useHistory();
     const height = useCardHeight();
-    const onClick = (): void => {
-        history.push(`/tasks/${job.taskId}/jobs/${job.id}`);
+    const onClick = (event: React.MouseEvent): void => {
+        const url = `/tasks/${job.taskId}/jobs/${job.id}`;
+        if (event.ctrlKey) {
+            // eslint-disable-next-line security/detect-non-literal-fs-filename
+            window.open(url, '_blank', 'noopener noreferrer');
+        } else {
+            history.push(url);
+        }
     };
 
     return (

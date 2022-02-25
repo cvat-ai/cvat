@@ -70,6 +70,7 @@ export interface TasksQuery {
     name: string | null;
     status: string | null;
     mode: string | null;
+    filter: string | null;
     projectId: number | null;
     [key: string]: string | number | null;
 }
@@ -81,10 +82,9 @@ export interface Task {
 
 export interface JobsQuery {
     page: number;
-    assignee: string | null;
-    stage: 'annotation' | 'validation' | 'acceptance' | null;
-    state: 'new' | 'in progress' | 'rejected' | 'completed' | null;
-    [index: string]: number | null | string | undefined;
+    sort: string | null;
+    search: string | null;
+    filter: string | null;
 }
 
 export interface JobsState {
@@ -159,7 +159,7 @@ export interface CloudStoragesQuery {
     owner: string | null;
     displayName: string | null;
     description: string | null;
-    resourceName: string | null;
+    resource: string | null;
     providerType: string | null;
     credentialsType: string | null;
     [key: string]: string | number | null | undefined;

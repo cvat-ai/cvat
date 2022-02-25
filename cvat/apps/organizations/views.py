@@ -5,7 +5,6 @@
 from rest_framework import mixins, viewsets
 from rest_framework.permissions import SAFE_METHODS
 from django.utils.crypto import get_random_string
-from django_filters import rest_framework as filters
 
 from drf_spectacular.utils import OpenApiResponse, extend_schema, extend_schema_view
 
@@ -17,7 +16,6 @@ from .serializers import (
     InvitationReadSerializer, InvitationWriteSerializer,
     MembershipReadSerializer, MembershipWriteSerializer,
     OrganizationReadSerializer, OrganizationWriteSerializer)
-
 
 @extend_schema_view(retrieve=extend_schema(
     summary='Method returns details of an organization',
@@ -51,7 +49,11 @@ from .serializers import (
     }, tags=['organizations'], versions=['2.0']))
 class OrganizationViewSet(viewsets.ModelViewSet):
     queryset = Organization.objects.all()
-    ordering = ['-id']
+    search_fields = ('name', 'owner')
+    filter_fields = list(search_fields) + ['id', 'slug']
+    lookup_fields = {'owner': 'owner__username'}
+    ordering_fields = filter_fields
+    ordering = '-id'
     http_method_names = ['get', 'post', 'patch', 'delete', 'head', 'options']
     pagination_class = None
     iam_organization_field = None
@@ -72,9 +74,6 @@ class OrganizationViewSet(viewsets.ModelViewSet):
         if not serializer.validated_data.get('name'):
             extra_kwargs.update({ 'name': serializer.validated_data['slug'] })
         serializer.save(**extra_kwargs)
-
-class MembershipFilter(filters.FilterSet):
-    user = filters.CharFilter(field_name="user__id")
 
     class Meta:
         model = Membership
@@ -107,9 +106,12 @@ class MembershipFilter(filters.FilterSet):
 class MembershipViewSet(mixins.RetrieveModelMixin, mixins.DestroyModelMixin,
     mixins.ListModelMixin, mixins.UpdateModelMixin, viewsets.GenericViewSet):
     queryset = Membership.objects.all()
-    ordering = ['-id']
+    ordering = '-id'
     http_method_names = ['get', 'patch', 'delete', 'head', 'options']
-    filterset_class = MembershipFilter
+    search_fields = ('user_name', 'role')
+    filter_fields = list(search_fields) + ['id', 'user']
+    ordering_fields = filter_fields
+    lookup_fields = {'user': 'user__id', 'user_name': 'user__username'}
     iam_organization_field = 'organization'
 
     def get_serializer_class(self):
@@ -156,9 +158,14 @@ class MembershipViewSet(mixins.RetrieveModelMixin, mixins.DestroyModelMixin,
     }, tags=['invitations'], versions=['2.0']))
 class InvitationViewSet(viewsets.ModelViewSet):
     queryset = Invitation.objects.all()
-    ordering = ['-created_date']
     http_method_names = ['get', 'post', 'patch', 'delete', 'head', 'options']
     iam_organization_field = 'membership__organization'
+
+    search_fields = ('owner',)
+    filter_fields = search_fields
+    ordering_fields = list(filter_fields) + ['created_date']
+    ordering = '-created_date'
+    lookup_fields = {'owner': 'owner__username'}
 
     def get_serializer_class(self):
         if self.request.method in SAFE_METHODS:

@@ -111,7 +111,6 @@ INSTALLED_APPS = [
     'dj_pagination',
     'rest_framework',
     'rest_framework.authtoken',
-    'django_filters',
     'drf_spectacular',
     'rest_auth',
     'django.contrib.sites',
@@ -163,11 +162,12 @@ REST_FRAMEWORK = {
         'cvat.apps.engine.pagination.CustomPagination',
     'PAGE_SIZE': 10,
     'DEFAULT_FILTER_BACKENDS': (
-        'rest_framework.filters.SearchFilter',
-        'django_filters.rest_framework.DjangoFilterBackend',
-        'rest_framework.filters.OrderingFilter',
+        'cvat.apps.engine.filters.SearchFilter',
+        'cvat.apps.engine.filters.OrderingFilter',
+        'cvat.apps.engine.filters.JsonLogicFilter',
         'cvat.apps.iam.filters.OrganizationFilterBackend'),
 
+    'SEARCH_PARAM': 'search',
     # Disable default handling of the 'format' query parameter by REST framework
     'URL_FORMAT_OVERRIDE': 'scheme',
     'DEFAULT_THROTTLE_CLASSES': [

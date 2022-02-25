@@ -32,11 +32,10 @@ export const getJobsAsync = (query: JobsQuery): ThunkAction => async (dispatch) 
     try {
         // Remove all keys with null values from the query
         const filteredQuery: Partial<JobsQuery> = { ...query };
-        for (const [key, value] of Object.entries(filteredQuery)) {
-            if (value === null) {
-                delete filteredQuery[key];
-            }
-        }
+        if (filteredQuery.page === null) delete filteredQuery.page;
+        if (filteredQuery.filter === null) delete filteredQuery.filter;
+        if (filteredQuery.sort === null) delete filteredQuery.sort;
+        if (filteredQuery.search === null) delete filteredQuery.search;
 
         dispatch(jobsActions.getJobs(filteredQuery));
         const jobs = await cvat.jobs.get(filteredQuery);

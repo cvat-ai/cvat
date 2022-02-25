@@ -13,7 +13,22 @@
     background: $header-color;
 }
 
+.ant-btn.cvat-header-button {
+    color: $text-color;
+    padding: 0 $grid-unit-size;
+    margin-right: $grid-unit-size;
+}
+
 .cvat-left-header {
+    .ant-btn.cvat-header-button {
+        opacity: 0.7;
+
+        &.cvat-active-header-button {
+            font-weight: bold;
+            opacity: 1;
+        }
+    }
+
     width: 50%;
     display: flex;
     justify-content: flex-start;
@@ -38,12 +53,6 @@
     > svg {
         transform: scale(0.7);
     }
-}
-
-.ant-btn.cvat-header-button {
-    color: $text-color;
-    padding: 0 $grid-unit-size;
-    margin-right: $grid-unit-size;
 }
 
 .cvat-header-menu-user-dropdown {

@@ -180,7 +180,7 @@ class FrameProvider:
         frame = self._convert_frame(frame, loader.reader_class, out_type)
         if loader.reader_class is VideoReader:
             return (frame, self.VIDEO_FRAME_MIME)
-        return (frame, mimetypes.guess_type(frame_name))
+        return (frame, mimetypes.guess_type(frame_name)[0])
 
     def get_frames(self, quality=Quality.ORIGINAL, out_type=Type.BUFFER):
         for idx in range(self._db_data.size):
