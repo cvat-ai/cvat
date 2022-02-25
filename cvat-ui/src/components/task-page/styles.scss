@@ -47,25 +47,35 @@
 
 .cvat-dataset-repository-url {
     > a {
-        margin-right: 10px;
+        margin-right: $grid-unit-size;
     }
 
-    > .ant-tag-red {
-        user-select: none;
-        opacity: 0.4;
+    > .ant-typography {
+        > .ant-tag {
+            margin-left: $grid-unit-size;
 
-        &:hover {
-            opacity: 0.8;
+            > span[role='img'] {
+                margin-right: $grid-unit-size;
+            }
         }
 
-        &:active {
-            opacity: 1;
+        > .ant-tag-red {
+            user-select: none;
+            opacity: 0.4;
+
+            &:hover {
+                opacity: 0.8;
+            }
+
+            &:active {
+                opacity: 1;
+            }
         }
     }
+}
 
-    > .ant-tag > span[role='img'] {
-        margin-right: 5px;
-    }
+.cvat-repository-format-select {
+    width: 100%;
 }
 
 .cvat-task-job-list {
