@@ -73,6 +73,7 @@ from cvat.apps.iam.permissions import (CloudStoragePermission,
     CommentPermission, IssuePermission, JobPermission, ProjectPermission,
     TaskPermission, UserPermission)
 
+@extend_schema(tags=['server'])
 class ServerViewSet(viewsets.ViewSet):
     serializer_class = None
     iam_organization_field = None
@@ -86,8 +87,7 @@ class ServerViewSet(viewsets.ViewSet):
     @extend_schema(summary='Method provides basic CVAT information',
         responses={
             '200': AboutSerializer,
-        },
-        tags=['server'], versions=['2.0'])
+        })
     @action(detail=False, methods=['GET'], serializer_class=AboutSerializer)
     def about(request):
         from cvat import __version__ as cvat_version
@@ -111,8 +111,7 @@ class ServerViewSet(viewsets.ViewSet):
         description='Sends logs to the ELK if it is connected',
         request=ExceptionSerializer, responses={
             '201': ExceptionSerializer,
-        },
-        tags=['server'], versions=['2.0'])
+        })
     @action(detail=False, methods=['POST'], serializer_class=ExceptionSerializer)
     def exception(request):
         serializer = ExceptionSerializer(data=request.data)
@@ -139,7 +138,7 @@ class ServerViewSet(viewsets.ViewSet):
         request=LogEventSerializer(many=True),
         responses={
             '201': LogEventSerializer(many=True),
-        }, tags=['server'], versions=['2.0'])
+        })
     @action(detail=False, methods=['POST'], serializer_class=LogEventSerializer)
     def logs(request):
         serializer = LogEventSerializer(many=True, data=request.data)
@@ -166,7 +165,7 @@ class ServerViewSet(viewsets.ViewSet):
         ],
         responses={
             '200' : FileInfoSerializer(many=True)
-        }, tags=['server'], versions=['2.0'])
+        })
     @action(detail=False, methods=['GET'], serializer_class=FileInfoSerializer)
     def share(request):
         param = request.query_params.get('directory', '/')
@@ -199,7 +198,7 @@ class ServerViewSet(viewsets.ViewSet):
         summary='Method provides the list of supported annotations formats',
         responses={
             '200': DatasetFormatsSerializer,
-        }, tags=['server'], versions=['2.0'])
+        })
     @action(detail=False, methods=['GET'], url_path='annotation/formats')
     def annotation_formats(request):
         data = dm.views.get_all_formats()
@@ -210,7 +209,7 @@ class ServerViewSet(viewsets.ViewSet):
         summary='Method provides allowed plugins',
         responses={
             '200': PluginsSerializer,
-        }, tags=['server'], versions=['2.0'])
+        })
     @action(detail=False, methods=['GET'], url_path='plugins', serializer_class=PluginsSerializer)
     def plugins(request):
         response = {
@@ -220,7 +219,6 @@ class ServerViewSet(viewsets.ViewSet):
             'PREDICT':False # FIXME: it is unused anymore (for UI only)
         }
         return Response(response)
-
 
 class ProjectFilter(filters.FilterSet):
     name = filters.CharFilter(field_name="name", lookup_expr="icontains")
@@ -232,46 +230,49 @@ class ProjectFilter(filters.FilterSet):
         model = models.Project
         fields = ("id", "name", "owner", "status")
 
-@extend_schema_view(list=extend_schema(
-    summary='Returns a paginated list of projects according to query parameters (12 projects per page)',
-    parameters=[
-        OpenApiParameter('id', description='A unique number value identifying this project',
-            location=OpenApiParameter.QUERY, type=OpenApiTypes.NUMBER),
-        OpenApiParameter('name', description='Find all projects where name contains a parameter value',
-            location=OpenApiParameter.QUERY, type=OpenApiTypes.STR),
-        OpenApiParameter('owner', description='Find all project where owner name contains a parameter value',
-            location=OpenApiParameter.QUERY, type=OpenApiTypes.STR),
-        OpenApiParameter('status', description='Find all projects with a specific status',
-            location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, enum=StatusChoice.list()),
-        OpenApiParameter('names_only', description="Returns only names and id's of projects",
-            location=OpenApiParameter.QUERY, type=OpenApiTypes.BOOL)
-    ],
-    responses={
-        '200': PolymorphicProxySerializer(component_name='PolymorphicProject',
-            serializers=[
-                ProjectSerializer, ProjectSearchSerializer,
-            ], resource_type_field_name='name', many=True),
-        }, tags=['projects'], versions=['2.0']))
-@extend_schema_view(create=extend_schema(
-    summary='Method creates a new project',
-    responses={
-        '201': ProjectSerializer,
-    }, tags=['projects'], versions=['2.0']))
-@extend_schema_view(retrieve=extend_schema(
-    summary='Method returns details of a specific project',
-    responses={
-        '200': ProjectSerializer,
-    }, tags=['projects'], versions=['2.0']))
-@extend_schema_view(destroy=extend_schema(
-    summary='Method deletes a specific project',
-    responses={
-        '204': OpenApiResponse(description='The project has been deleted'),
-    }, tags=['projects'], versions=['2.0']))
-@extend_schema_view(partial_update=extend_schema(
-    summary='Methods does a partial update of chosen fields in a project',
-    responses={
-        '200': ProjectSerializer,
-    }, tags=['projects'], versions=['2.0']))
+@extend_schema(tags=['projects'])
+@extend_schema_view(
+    list=extend_schema(
+        summary='Returns a paginated list of projects according to query parameters (12 projects per page)',
+        parameters=[
+            OpenApiParameter('id', description='A unique number value identifying this project',
+                location=OpenApiParameter.QUERY, type=OpenApiTypes.NUMBER),
+            OpenApiParameter('name', description='Find all projects where name contains a parameter value',
+                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR),
+            OpenApiParameter('owner', description='Find all project where owner name contains a parameter value',
+                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR),
+            OpenApiParameter('status', description='Find all projects with a specific status',
+                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, enum=StatusChoice.list()),
+            OpenApiParameter('names_only', description="Returns only names and id's of projects",
+                location=OpenApiParameter.QUERY, type=OpenApiTypes.BOOL)
+        ],
+        responses={
+            '200': PolymorphicProxySerializer(component_name='PolymorphicProject',
+                serializers=[
+                    ProjectSerializer, ProjectSearchSerializer,
+                ], resource_type_field_name='name', many=True),
+        }),
+    create=extend_schema(
+        summary='Method creates a new project',
+        responses={
+            '201': ProjectSerializer,
+        }),
+    retrieve=extend_schema(
+        summary='Method returns details of a specific project',
+        responses={
+            '200': ProjectSerializer,
+        }),
+    destroy=extend_schema(
+        summary='Method deletes a specific project',
+        responses={
+            '204': OpenApiResponse(description='The project has been deleted'),
+        }),
+    partial_update=extend_schema(
+        summary='Methods does a partial update of chosen fields in a project',
+        responses={
+            '200': ProjectSerializer,
+        })
+)
 class ProjectViewSet(viewsets.ModelViewSet):
     queryset = models.Project.objects.prefetch_related(Prefetch('label_set',
         queryset=models.Label.objects.order_by('id')
@@ -307,7 +308,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
         summary='Method returns information of the tasks of the project with the selected id',
         responses={
             '200': TaskSerializer(many=True),
-        }, tags=['projects'], versions=['2.0'])
+        })
     @action(detail=True, methods=['GET'], serializer_class=TaskSerializer)
     def tasks(self, request, pk):
         self.get_object() # force to call check_object_permissions
@@ -339,7 +340,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
             '201': OpenApiResponse(description='Output file is ready for downloading'),
             '202': OpenApiResponse(description='Exporting has been started'),
             '405': OpenApiResponse(description='Format is not available'),
-        }, tags=['projects'], versions=['2.0'])
+        })
     @extend_schema(methods=['POST'], summary='Import dataset in specific format as a project',
         parameters=[
             OpenApiParameter('format', description='Desired dataset format name\n'
@@ -350,7 +351,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
             '202': OpenApiResponse(description='Exporting has been started'),
             '400': OpenApiResponse(description='Failed to import dataset'),
             '405': OpenApiResponse(description='Format is not available'),
-        }, tags=['projects'], versions=['2.0'])
+        })
     @action(detail=True, methods=['GET', 'POST'], serializer_class=None,
         url_path='dataset')
     def dataset(self, request, pk):
@@ -419,7 +420,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
             '202': OpenApiResponse(description='Dump of annotations has been started'),
             '401': OpenApiResponse(description='Format is not specified'),
             '405': OpenApiResponse(description='Format is not available'),
-        }, tags=['projects'], versions=['2.0'])
+        })
     @action(detail=True, methods=['GET'],
         serializer_class=LabeledDataSerializer)
     def annotations(self, request, pk):
@@ -442,7 +443,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
             '200': OpenApiResponse(description='Download of file started'),
             '201': OpenApiResponse(description='Output backup file is ready for downloading'),
             '202': OpenApiResponse(description='Creating a backup file has been started'),
-        }, tags=['projects'], versions=['2.0'])
+        })
     @action(methods=['GET'], detail=True, url_path='backup')
     def export_backup(self, request, pk=None):
         db_project = self.get_object() # force to call check_object_permissions
@@ -452,7 +453,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
         responses={
             '201': OpenApiResponse(description='The project has been imported'), # or better specify {id: project_id}
             '202': OpenApiResponse(description='Importing a backup file has been started'),
-        }, tags=['projects'], versions=['2.0'])
+        })
     @action(detail=False, methods=['POST'], url_path='backup')
     def import_backup(self, request, pk=None):
         return backup.import_project(request)
@@ -563,48 +564,51 @@ class TaskFilter(filters.FilterSet):
         fields = ("id", "project_id", "project", "name", "owner", "mode", "status",
             "assignee")
 
-@extend_schema_view(list=extend_schema(
-    summary='Returns a paginated list of tasks according to query parameters (10 tasks per page)',
-    parameters=[
-        OpenApiParameter('id', description='A unique number value identifying this task',
-            location=OpenApiParameter.QUERY, type=OpenApiTypes.NUMBER),
-        OpenApiParameter('name', description='Find all tasks where name contains a parameter value',
-            location=OpenApiParameter.QUERY, type=OpenApiTypes.STR),
-        OpenApiParameter('owner', description='Find all tasks where owner name contains a parameter value',
-            location=OpenApiParameter.QUERY, type=OpenApiTypes.STR),
-        OpenApiParameter('mode', description='Find all tasks with a specific mode',
-            location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, enum=['annotation', 'interpolation']),
-        OpenApiParameter('status', description='Find all tasks with a specific status',
-            location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, enum=StatusChoice.list()),
-        OpenApiParameter('assignee', description='Find all tasks where assignee name contains a parameter value',
-            location=OpenApiParameter.QUERY, type=OpenApiTypes.STR)
-    ],
-    responses={
-        '200': TaskSerializer(many=True),
-    }, tags=['tasks'], versions=['2.0']))
-@extend_schema_view(create=extend_schema(
-    summary='Method creates a new task in a database without any attached images and videos',
-    responses={
-        '201': TaskSerializer,
-    }, tags=['tasks'], versions=['2.0']))
-@extend_schema_view(retrieve=extend_schema(
-    summary='Method returns details of a specific task',
-    responses=TaskSerializer, tags=['tasks'], versions=['2.0']))
-@extend_schema_view(update=extend_schema(
-    summary='Method updates a task by id',
-    responses={
-        '200': TaskSerializer,
-    }, tags=['tasks'], versions=['2.0']))
-@extend_schema_view(destroy=extend_schema(
-    summary='Method deletes a specific task, all attached jobs, annotations, and data',
-    responses={
-        '204': OpenApiResponse(description='The task has been deleted'),
-    }, tags=['tasks'], versions=['2.0']))
-@extend_schema_view(partial_update=extend_schema(
-    summary='Methods does a partial update of chosen fields in a task',
-    responses={
-        '200': TaskSerializer,
-    }, tags=['tasks'], versions=['2.0']))
+@extend_schema(tags=['tasks'])
+@extend_schema_view(
+    list=extend_schema(
+        summary='Returns a paginated list of tasks according to query parameters (10 tasks per page)',
+        parameters=[
+            OpenApiParameter('id', description='A unique number value identifying this task',
+                location=OpenApiParameter.QUERY, type=OpenApiTypes.NUMBER),
+            OpenApiParameter('name', description='Find all tasks where name contains a parameter value',
+                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR),
+            OpenApiParameter('owner', description='Find all tasks where owner name contains a parameter value',
+                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR),
+            OpenApiParameter('mode', description='Find all tasks with a specific mode',
+                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, enum=['annotation', 'interpolation']),
+            OpenApiParameter('status', description='Find all tasks with a specific status',
+                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, enum=StatusChoice.list()),
+            OpenApiParameter('assignee', description='Find all tasks where assignee name contains a parameter value',
+                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR)
+        ],
+        responses={
+            '200': TaskSerializer(many=True),
+        }),
+    create=extend_schema(
+        summary='Method creates a new task in a database without any attached images and videos',
+        responses={
+            '201': TaskSerializer,
+        }),
+    retrieve=extend_schema(
+        summary='Method returns details of a specific task',
+        responses=TaskSerializer),
+    update=extend_schema(
+        summary='Method updates a task by id',
+        responses={
+            '200': TaskSerializer,
+        }),
+    destroy=extend_schema(
+        summary='Method deletes a specific task, all attached jobs, annotations, and data',
+        responses={
+            '204': OpenApiResponse(description='The task has been deleted'),
+        }),
+    partial_update=extend_schema(
+        summary='Methods does a partial update of chosen fields in a task',
+        responses={
+            '200': TaskSerializer,
+        })
+)
 class TaskViewSet(UploadMixin, viewsets.ModelViewSet):
     queryset = Task.objects.prefetch_related(
             Prefetch('label_set', queryset=models.Label.objects.order_by('id')),
@@ -629,7 +633,7 @@ class TaskViewSet(UploadMixin, viewsets.ModelViewSet):
         responses={
             '201': OpenApiResponse(description='The task has been imported'), # or better specify {id: task_id}
             '202': OpenApiResponse(description='Importing a backup file has been started'),
-        }, tags=['tasks'], versions=['2.0'])
+        })
     @action(detail=False, methods=['POST'], url_path='backup')
     def import_backup(self, request, pk=None):
         return backup.import_task(request)
@@ -639,7 +643,7 @@ class TaskViewSet(UploadMixin, viewsets.ModelViewSet):
             '200': OpenApiResponse(description='Download of file started'),
             '201': OpenApiResponse(description='Output backup file is ready for downloading'),
             '202': OpenApiResponse(description='Creating a backup file has been started'),
-        }, tags=['tasks'], versions=['2.0'])
+        })
     @action(methods=['GET'], detail=True, url_path='backup')
     def export_backup(self, request, pk=None):
         db_task = self.get_object() # force to call check_object_permissions
@@ -675,7 +679,7 @@ class TaskViewSet(UploadMixin, viewsets.ModelViewSet):
     @extend_schema(summary='Method returns a list of jobs for a specific task',
         responses={
             '200': JobReadSerializer(many=True),
-        }, tags=['tasks'], versions=['2.0'])
+        })
     @action(detail=True, methods=['GET'], serializer_class=JobReadSerializer)
     def jobs(self, request, pk):
         self.get_object() # force to call check_object_permissions
@@ -732,7 +736,7 @@ class TaskViewSet(UploadMixin, viewsets.ModelViewSet):
         ],
         responses={
             '202': OpenApiResponse(description=''),
-        }, tags=['tasks'], versions=['2.0'])
+        })
     @extend_schema(methods=['GET'], summary='Method returns data for a specific task',
         parameters=[
             OpenApiParameter('type', location=OpenApiParameter.QUERY, required=True,
@@ -746,7 +750,7 @@ class TaskViewSet(UploadMixin, viewsets.ModelViewSet):
         ],
         responses={
             '200': OpenApiResponse(description='Data of a specific type'),
-        }, tags=['tasks'], versions=['2.0'])
+        })
     @action(detail=True, methods=['OPTIONS', 'POST', 'GET'], url_path=r'data/?$')
     def data(self, request, pk):
         db_task = self.get_object() # call check_object_permissions as well
@@ -788,7 +792,7 @@ class TaskViewSet(UploadMixin, viewsets.ModelViewSet):
             '201': OpenApiResponse(description='Annotations file is ready to download'),
             '202': OpenApiResponse(description='Dump of annotations has been started'),
             '405': OpenApiResponse(description='Format is not available'),
-        }, tags=['tasks'], versions=['2.0'])
+        })
     @extend_schema(methods=['PUT'], summary='Method allows to upload task annotations',
         parameters=[
             OpenApiParameter('format', location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, required=False,
@@ -798,16 +802,16 @@ class TaskViewSet(UploadMixin, viewsets.ModelViewSet):
             '201': OpenApiResponse(description='Uploading has finished'),
             '202': OpenApiResponse(description='Uploading has been started'),
             '405': OpenApiResponse(description='Format is not available'),
-        }, tags=['tasks'], versions=['2.0'])
+        })
     @extend_schema(methods=['PATCH'], summary='Method performs a partial update of annotations in a specific task',
         parameters=[
             OpenApiParameter('action', location=OpenApiParameter.QUERY, required=True,
                 type=OpenApiTypes.STR, enum=['create', 'update', 'delete']),
-        ], tags=['tasks'], versions=['2.0'])
+        ])
     @extend_schema(methods=['DELETE'], summary='Method deletes all annotations for a specific task',
         responses={
             '204': OpenApiResponse(description='The annotation has been deleted'),
-        }, tags=['tasks'], versions=['2.0'])
+        })
     @action(detail=True, methods=['GET', 'DELETE', 'PUT', 'PATCH'],
         serializer_class=LabeledDataSerializer)
     def annotations(self, request, pk):
@@ -863,7 +867,7 @@ class TaskViewSet(UploadMixin, viewsets.ModelViewSet):
         summary='When task is being created the method returns information about a status of the creation process',
         responses={
             '200': RqStatusSerializer,
-        }, tags=['tasks'], versions=['2.0'])
+        })
     @action(detail=True, methods=['GET'], serializer_class=RqStatusSerializer)
     def status(self, request, pk):
         self.get_object() # force to call check_object_permissions
@@ -896,7 +900,7 @@ class TaskViewSet(UploadMixin, viewsets.ModelViewSet):
     @extend_schema(summary='Method provides a meta information about media files which are related with the task',
         responses={
             '200': DataMetaSerializer,
-        }, tags=['tasks'], versions=['2.0'])
+        })
     @action(detail=True, methods=['GET'], serializer_class=DataMetaSerializer,
         url_path='data/meta')
     def data_info(request, pk):
@@ -940,7 +944,7 @@ class TaskViewSet(UploadMixin, viewsets.ModelViewSet):
             '201': OpenApiResponse(description='Output file is ready for downloading'),
             '202': OpenApiResponse(description='Exporting has been started'),
             '405': OpenApiResponse(description='Format is not available'),
-        }, tags=['tasks'], versions=['2.0'])
+        })
     @action(detail=True, methods=['GET'], serializer_class=None,
         url_path='dataset')
     def dataset_export(self, request, pk):
@@ -968,26 +972,29 @@ class JobFilter(filters.FilterSet):
         model = Job
         fields = ("assignee", )
 
-@extend_schema_view(retrieve=extend_schema(
-    summary='Method returns details of a job',
-    responses={
-        '200': JobReadSerializer,
-    }, tags=['jobs'], versions=['2.0']))
-@extend_schema_view(list=extend_schema(
-    summary='Method returns a paginated list of jobs according to query parameters',
-    responses={
-        '200': JobReadSerializer(many=True),
-    }, tags=['jobs'], versions=['2.0']))
-@extend_schema_view(update=extend_schema(
-    summary='Method updates a job by id',
-    responses={
-        '200': JobWriteSerializer,
-    }, tags=['jobs'], versions=['2.0']))
-@extend_schema_view(partial_update=extend_schema(
-   summary='Methods does a partial update of chosen fields in a job',
-   responses={
-       '200': JobWriteSerializer,
-   }, tags=['jobs'], versions=['2.0']))
+@extend_schema(tags=['jobs'])
+@extend_schema_view(
+    retrieve=extend_schema(
+        summary='Method returns details of a job',
+        responses={
+            '200': JobReadSerializer,
+        }),
+    list=extend_schema(
+        summary='Method returns a paginated list of jobs according to query parameters',
+        responses={
+            '200': JobReadSerializer(many=True),
+        }),
+    update=extend_schema(
+        summary='Method updates a job by id',
+        responses={
+            '200': JobWriteSerializer,
+        }),
+    partial_update=extend_schema(
+        summary='Methods does a partial update of chosen fields in a job',
+        responses={
+            '200': JobWriteSerializer,
+        })
+)
 class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     mixins.RetrieveModelMixin, mixins.UpdateModelMixin):
     queryset = Job.objects.all().order_by('id')
@@ -1011,13 +1018,13 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     @extend_schema(methods=['GET'], summary='Method returns annotations for a specific job',
         responses={
             '200': LabeledDataSerializer(many=True),
-        }, tags=['jobs'], versions=['2.0'])
+        })
     @extend_schema(methods=['PUT'], summary='Method performs an update of all annotations in a specific job',
         request=AnnotationFileSerializer, responses={
             '201': OpenApiResponse(description='Uploading has finished'),
             '202': OpenApiResponse(description='Uploading has been started'),
             '405': OpenApiResponse(description='Format is not available'),
-        }, tags=['jobs'], versions=['2.0'])
+        })
     @extend_schema(methods=['PATCH'], summary='Method performs a partial update of annotations in a specific job',
         parameters=[
             OpenApiParameter('action', location=OpenApiParameter.QUERY, type=OpenApiTypes.STR,
@@ -1026,11 +1033,11 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         responses={
             #TODO
             '200': OpenApiResponse(description=''),
-        }, tags=['jobs'], versions=['2.0'])
+        })
     @extend_schema(methods=['DELETE'], summary='Method deletes all annotations for a specific job',
         responses={
             '204': OpenApiResponse(description='The annotation has been deleted'),
-        }, tags=['jobs'], versions=['2.0'])
+        })
     @action(detail=True, methods=['GET', 'DELETE', 'PUT', 'PATCH'],
         serializer_class=LabeledDataSerializer)
     def annotations(self, request, pk):
@@ -1076,7 +1083,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         summary='Method returns list of issues for the job',
         responses={
             '200': IssueReadSerializer(many=True)
-        }, tags=['jobs'], versions=['2.0'])
+        })
     @action(detail=True, methods=['GET'], serializer_class=IssueReadSerializer)
     def issues(self, request, pk):
         db_job = self.get_object()
@@ -1099,7 +1106,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             ],
         responses={
             '200': OpenApiResponse(description='Data of a specific type'),
-        }, tags=['jobs'], versions=['2.0'])
+        })
     @action(detail=True, methods=['GET'])
     def data(self, request, pk):
         db_job = self.get_object() # call check_object_permissions as well
@@ -1113,36 +1120,39 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         return data_getter(request, db_job.segment.start_frame,
             db_job.segment.stop_frame, db_job.segment.task.data)
 
-@extend_schema_view(retrieve=extend_schema(
-    summary='Method returns details of an issue',
-    responses={
-        '200': IssueReadSerializer,
-    }, tags=['issues'], versions=['2.0']))
-@extend_schema_view(list=extend_schema(
-    summary='Method returns a paginated list of issues according to query parameters',
-    responses={
-        '200': IssueReadSerializer(many=True),
-    }, tags=['issues'], versions=['2.0']))
-@extend_schema_view(update=extend_schema(
-    summary='Method updates an issue by id',
-    responses={
-        '200': IssueWriteSerializer,
-    }, tags=['issues'], versions=['2.0']))
-@extend_schema_view(partial_update=extend_schema(
-   summary='Methods does a partial update of chosen fields in an issue',
-   responses={
-       '200': IssueWriteSerializer,
-    }, tags=['issues'], versions=['2.0']))
-@extend_schema_view(create=extend_schema(
-    summary='Method creates an issue',
-    responses={
-        '201': IssueWriteSerializer,
-    }, tags=['issues'], versions=['2.0']))
-@extend_schema_view(destroy=extend_schema(
-    summary='Method deletes an issue',
-    responses={
-        '204': OpenApiResponse(description='The issue has been deleted'),
-    }, tags=['issues'], versions=['2.0']))
+@extend_schema(tags=['issues'])
+@extend_schema_view(
+    retrieve=extend_schema(
+        summary='Method returns details of an issue',
+        responses={
+            '200': IssueReadSerializer,
+        }),
+    list=extend_schema(
+        summary='Method returns a paginated list of issues according to query parameters',
+        responses={
+            '200': IssueReadSerializer(many=True),
+        }),
+    update=extend_schema(
+        summary='Method updates an issue by id',
+        responses={
+            '200': IssueWriteSerializer,
+        }),
+    partial_update=extend_schema(
+        summary='Methods does a partial update of chosen fields in an issue',
+        responses={
+            '200': IssueWriteSerializer,
+        }),
+    create=extend_schema(
+        summary='Method creates an issue',
+        responses={
+            '201': IssueWriteSerializer,
+        }),
+    destroy=extend_schema(
+        summary='Method deletes an issue',
+        responses={
+            '204': OpenApiResponse(description='The issue has been deleted'),
+        })
+)
 class IssueViewSet(viewsets.ModelViewSet):
     queryset = Issue.objects.all().order_by('-id')
     http_method_names = ['get', 'post', 'patch', 'delete', 'options']
@@ -1168,7 +1178,7 @@ class IssueViewSet(viewsets.ModelViewSet):
     @extend_schema(summary='The action returns all comments of a specific issue',
         responses={
             '200': CommentReadSerializer(many=True),
-        }, tags=['issues'], versions=['2.0'])
+        })
     @action(detail=True, methods=['GET'], serializer_class=CommentReadSerializer)
     def comments(self, request, pk):
         db_issue = self.get_object()
@@ -1178,36 +1188,39 @@ class IssueViewSet(viewsets.ModelViewSet):
 
         return Response(serializer.data)
 
-@extend_schema_view(retrieve=extend_schema(
-    summary='Method returns details of a comment',
-    responses={
-        '200': CommentReadSerializer,
-    }, tags=['comments'], versions=['2.0']))
-@extend_schema_view(list=extend_schema(
-    summary='Method returns a paginated list of comments according to query parameters',
-    responses={
-        '200':CommentReadSerializer(many=True),
-    }, tags=['comments'], versions=['2.0']))
-@extend_schema_view(update=extend_schema(
-    summary='Method updates a comment by id',
-    responses={
-        '200': CommentWriteSerializer,
-    }, tags=['comments'], versions=['2.0']))
-@extend_schema_view(partial_update=extend_schema(
-   summary='Methods does a partial update of chosen fields in a comment',
-   responses={
-       '200': CommentWriteSerializer,
-   }, tags=['comments'], versions=['2.0']))
-@extend_schema_view(create=extend_schema(
-    summary='Method creates a comment',
-    responses={
-        '201': CommentWriteSerializer,
-    }, tags=['comments'], versions=['2.0']))
-@extend_schema_view(destroy=extend_schema(
-    summary='Method deletes a comment',
-    responses={
-        '204': OpenApiResponse(description='The comment has been deleted'),
-    }, tags=['comments'], versions=['2.0']))
+@extend_schema(tags=['comments'])
+@extend_schema_view(
+    retrieve=extend_schema(
+        summary='Method returns details of a comment',
+        responses={
+            '200': CommentReadSerializer,
+        }),
+    list=extend_schema(
+        summary='Method returns a paginated list of comments according to query parameters',
+        responses={
+            '200':CommentReadSerializer(many=True),
+        }),
+    update=extend_schema(
+        summary='Method updates a comment by id',
+        responses={
+            '200': CommentWriteSerializer,
+        }),
+    partial_update=extend_schema(
+        summary='Methods does a partial update of chosen fields in a comment',
+        responses={
+            '200': CommentWriteSerializer,
+        }),
+    create=extend_schema(
+        summary='Method creates a comment',
+        responses={
+            '201': CommentWriteSerializer,
+        }),
+    destroy=extend_schema(
+        summary='Method deletes a comment',
+        responses={
+            '204': OpenApiResponse(description='The comment has been deleted'),
+        })
+)
 class CommentViewSet(viewsets.ModelViewSet):
     queryset = Comment.objects.all().order_by('-id')
     http_method_names = ['get', 'post', 'patch', 'delete', 'options']
@@ -1235,41 +1248,44 @@ class UserFilter(filters.FilterSet):
         model = User
         fields = ("id", "is_active")
 
-@extend_schema_view(list=extend_schema(
-    summary='Method provides a paginated list of users registered on the server',
-    parameters=[
-        OpenApiParameter('id', description='A unique number value identifying this user',
-            location=OpenApiParameter.QUERY, type=OpenApiTypes.NUMBER),
-        OpenApiParameter('is_active', description='Returns only active users',
-            location=OpenApiParameter.QUERY, type=OpenApiTypes.BOOL),
-    ],
-    responses={
-        '200': PolymorphicProxySerializer(component_name='MetaUser',
-            serializers=[
-                UserSerializer, BasicUserSerializer,
-            ], resource_type_field_name='username'),
-    }, tags=['users'], versions=['2.0']))
-@extend_schema_view(retrieve=extend_schema(
-    summary='Method provides information of a specific user',
-    responses={
-        '200': PolymorphicProxySerializer(component_name='MetaUser',
-            serializers=[
-                UserSerializer, BasicUserSerializer,
-            ], resource_type_field_name='username'),
-    }, tags=['users'], versions=['2.0']))
-@extend_schema_view(partial_update=extend_schema(
-    summary='Method updates chosen fields of a user',
-    responses={
-        '200': PolymorphicProxySerializer(component_name='MetaUser',
-            serializers=[
-                UserSerializer, BasicUserSerializer,
-            ], resource_type_field_name='username'),
-    }, tags=['users'], versions=['2.0']))
-@extend_schema_view(destroy=extend_schema(
-    summary='Method deletes a specific user from the server',
-    responses={
-        '204': OpenApiResponse(description='The user has been deleted'),
-    }, tags=['users'], versions=['2.0']))
+@extend_schema(tags=['users'])
+@extend_schema_view(
+    list=extend_schema(
+        summary='Method provides a paginated list of users registered on the server',
+        parameters=[
+            OpenApiParameter('id', description='A unique number value identifying this user',
+                location=OpenApiParameter.QUERY, type=OpenApiTypes.NUMBER),
+            OpenApiParameter('is_active', description='Returns only active users',
+                location=OpenApiParameter.QUERY, type=OpenApiTypes.BOOL),
+        ],
+        responses={
+            '200': PolymorphicProxySerializer(component_name='MetaUser',
+                serializers=[
+                    UserSerializer, BasicUserSerializer,
+                ], resource_type_field_name='username'),
+        }),
+    retrieve=extend_schema(
+        summary='Method provides information of a specific user',
+        responses={
+            '200': PolymorphicProxySerializer(component_name='MetaUser',
+                serializers=[
+                    UserSerializer, BasicUserSerializer,
+                ], resource_type_field_name='username'),
+        }),
+    partial_update=extend_schema(
+        summary='Method updates chosen fields of a user',
+        responses={
+            '200': PolymorphicProxySerializer(component_name='MetaUser',
+                serializers=[
+                    UserSerializer, BasicUserSerializer,
+                ], resource_type_field_name='username'),
+        }),
+    destroy=extend_schema(
+        summary='Method deletes a specific user from the server',
+        responses={
+            '204': OpenApiResponse(description='The user has been deleted'),
+        })
+)
 class UserViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     mixins.RetrieveModelMixin, mixins.UpdateModelMixin, mixins.DestroyModelMixin):
     queryset = User.objects.prefetch_related('groups').all().order_by('id')
@@ -1304,7 +1320,7 @@ class UserViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 serializers=[
                     UserSerializer, BasicUserSerializer,
                 ], resource_type_field_name='username'),
-        }, tags=['users'], versions=['2.0'])
+        })
     @action(detail=False, methods=['GET'])
     def self(self, request):
         """
@@ -1337,49 +1353,52 @@ class CloudStorageFilter(filters.FilterSet):
         model = models.CloudStorage
         fields = ('id', 'display_name', 'provider_type', 'resource', 'credentials_type', 'description', 'owner')
 
-@extend_schema_view(retrieve=extend_schema(
-    summary='Method returns details of a specific cloud storage',
-    responses={
-        '200': CloudStorageReadSerializer,
-    }, tags=['cloud storages'], versions=['2.0']))
-@extend_schema_view(list=extend_schema(
-    summary='Returns a paginated list of storages according to query parameters',
-    parameters=[
-        OpenApiParameter('provider_type', description='A supported provider of cloud storages',
-            location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, enum=CloudProviderChoice.list()),
-        OpenApiParameter('display_name', description='A display name of storage',
-            location=OpenApiParameter.QUERY, type=OpenApiTypes.STR),
-        OpenApiParameter('resource', description='A name of bucket or container',
-            location=OpenApiParameter.QUERY, type=OpenApiTypes.STR),
-        OpenApiParameter('owner', description='A resource owner',
-            location=OpenApiParameter.QUERY, type=OpenApiTypes.STR),
-        OpenApiParameter('credentials_type', description='A type of a granting access',
-            location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, enum=CredentialsTypeChoice.list()),
-    ],
-    #FIXME
-    #field_inspectors=[RedefineDescriptionField]
-    responses={
-        '200': CloudStorageReadSerializer(many=True),
-    }, tags=['cloud storages'], versions=['2.0']))
-@extend_schema_view(destroy=extend_schema(
-    summary='Method deletes a specific cloud storage',
-    responses={
-        '204': OpenApiResponse(description='The cloud storage has been removed'),
-    }, tags=['cloud storages'], versions=['2.0']))
-@extend_schema_view(partial_update=extend_schema(
-    summary='Methods does a partial update of chosen fields in a cloud storage instance',
-    # FIXME
-    #field_inspectors=[RedefineDescriptionField]
-    responses={
-        '200': CloudStorageWriteSerializer,
-    }, tags=['cloud storages'], versions=['2.0']))
-@extend_schema_view(create=extend_schema(
-    summary='Method creates a cloud storage with a specified characteristics',
-    # FIXME
-    #field_inspectors=[RedefineDescriptionField],
-    responses={
-        '201': CloudStorageWriteSerializer,
-    }, tags=['cloud storages'], versions=['2.0']))
+@extend_schema(tags=['cloud storages'])
+@extend_schema_view(
+    retrieve=extend_schema(
+        summary='Method returns details of a specific cloud storage',
+        responses={
+            '200': CloudStorageReadSerializer,
+        }),
+    list=extend_schema(
+        summary='Returns a paginated list of storages according to query parameters',
+        parameters=[
+            OpenApiParameter('provider_type', description='A supported provider of cloud storages',
+                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, enum=CloudProviderChoice.list()),
+            OpenApiParameter('display_name', description='A display name of storage',
+                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR),
+            OpenApiParameter('resource', description='A name of bucket or container',
+                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR),
+            OpenApiParameter('owner', description='A resource owner',
+                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR),
+            OpenApiParameter('credentials_type', description='A type of a granting access',
+                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, enum=CredentialsTypeChoice.list()),
+        ],
+        #FIXME
+        #field_inspectors=[RedefineDescriptionField]
+        responses={
+            '200': CloudStorageReadSerializer(many=True),
+        }),
+    destroy=extend_schema(
+        summary='Method deletes a specific cloud storage',
+        responses={
+            '204': OpenApiResponse(description='The cloud storage has been removed'),
+        }),
+    partial_update=extend_schema(
+        summary='Methods does a partial update of chosen fields in a cloud storage instance',
+        # FIXME
+        #field_inspectors=[RedefineDescriptionField]
+        responses={
+            '200': CloudStorageWriteSerializer,
+        }),
+    create=extend_schema(
+        summary='Method creates a cloud storage with a specified characteristics',
+        # FIXME
+        #field_inspectors=[RedefineDescriptionField],
+        responses={
+            '201': CloudStorageWriteSerializer,
+        })
+)
 class CloudStorageViewSet(viewsets.ModelViewSet):
     http_method_names = ['get', 'post', 'patch', 'delete']
     queryset = CloudStorageModel.objects.all().prefetch_related('data').order_by('-id')
@@ -1441,7 +1460,7 @@ class CloudStorageViewSet(viewsets.ModelViewSet):
         ],
         responses={
             '200': OpenApiResponse(response=OpenApiTypes.OBJECT, description='A manifest content'),
-        }, tags=['cloud storages'], versions=['2.0'])
+        })
     @action(detail=True, methods=['GET'], url_path='content')
     def content(self, request, pk):
         storage = None
@@ -1501,7 +1520,7 @@ class CloudStorageViewSet(viewsets.ModelViewSet):
     @extend_schema(summary='Method returns a preview image from a cloud storage',
         responses={
             '200': OpenApiResponse(description='Cloud Storage preview'),
-        }, tags=['cloud storages'], versions=['2.0'])
+        })
     @action(detail=True, methods=['GET'], url_path='preview')
     def preview(self, request, pk):
         storage = None
@@ -1577,7 +1596,7 @@ class CloudStorageViewSet(viewsets.ModelViewSet):
     @extend_schema(summary='Method returns a cloud storage status',
         responses={
             '200': OpenApiResponse(response=OpenApiTypes.STR, description='Cloud Storage status (AVAILABLE | NOT_FOUND | FORBIDDEN)'),
-        }, tags=['cloud storages'], versions=['2.0'])
+        })
     @action(detail=True, methods=['GET'], url_path='status')
     def status(self, request, pk):
         try:

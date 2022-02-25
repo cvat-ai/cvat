@@ -630,14 +630,16 @@ def return_response(success_code=status.HTTP_200_OK):
         return func_wrapper
     return wrap_response
 
-@extend_schema_view(retrieve=extend_schema(
-    summary='Method returns the information about the function',
-    responses={
-        '200': OpenApiResponse(response=OpenApiTypes.OBJECT, description='Information about the function'),
-    },
-    tags=['lambda'], versions=['2.0']))
-@extend_schema_view(list=extend_schema(
-    summary='Method returns a list of functions', tags=['lambda'], versions=['2.0']))
+@extend_schema(tags=['lambda'])
+@extend_schema_view(
+    retrieve=extend_schema(
+        summary='Method returns the information about the function',
+        responses={
+            '200': OpenApiResponse(response=OpenApiTypes.OBJECT, description='Information about the function'),
+        }),
+    list=extend_schema(
+        summary='Method returns a list of functions')
+)
 class FunctionViewSet(viewsets.ViewSet):
     lookup_value_regex = '[a-zA-Z0-9_.-]+'
     lookup_field = 'func_id'
@@ -672,21 +674,23 @@ class FunctionViewSet(viewsets.ViewSet):
 
         return lambda_func.invoke(db_task, request.data)
 
-@extend_schema_view(retrieve=extend_schema(
-    summary='Method returns the status of the request',
-    parameters=[
-        # specify correct type
-        OpenApiParameter('id', location=OpenApiParameter.PATH, type=OpenApiTypes.INT,
-            description='Request id'),
-    ],
-    tags=['lambda'], versions=['2.0']))
-@extend_schema_view(list=extend_schema(
-    summary='Method returns a list of requests', tags=['lambda'], versions=['2.0']))
-#TODO
-@extend_schema_view(create=extend_schema(
-    summary='Method calls the function', tags=['lambda'], versions=['2.0']))
-@extend_schema_view(delete=extend_schema(
-    summary='Method cancels the request', tags=['lambda'], versions=['2.0']))
+@extend_schema(tags=['lambda'])
+@extend_schema_view(
+    retrieve=extend_schema(
+        summary='Method returns the status of the request',
+        parameters=[
+            # specify correct type
+            OpenApiParameter('id', location=OpenApiParameter.PATH, type=OpenApiTypes.INT,
+                description='Request id'),
+        ]),
+    list=extend_schema(
+        summary='Method returns a list of requests'),
+    #TODO
+    create=extend_schema(
+        summary='Method calls the function'),
+    delete=extend_schema(
+        summary='Method cancels the request')
+)
 class RequestViewSet(viewsets.ViewSet):
     iam_organization_field = None
     serializer_class = None
