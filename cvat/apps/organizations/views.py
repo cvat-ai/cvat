@@ -75,9 +75,6 @@ class OrganizationViewSet(viewsets.ModelViewSet):
             extra_kwargs.update({ 'name': serializer.validated_data['slug'] })
         serializer.save(**extra_kwargs)
 
-    class Meta:
-        model = Membership
-        fields = ("user", )
 @extend_schema_view(retrieve=extend_schema(
     summary='Method returns details of a membership',
     responses={
