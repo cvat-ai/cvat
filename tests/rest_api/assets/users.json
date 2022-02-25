@@ -1,5 +1,5 @@
 {
-  "count": 18,
+  "count": 20,
   "next": null,
   "previous": null,
   "results": [
@@ -14,7 +14,7 @@
       "is_active": true,
       "is_staff": true,
       "is_superuser": true,
-      "last_login": "2022-02-21T10:37:08.947950Z",
+      "last_login": "2022-02-24T21:25:06.462854Z",
       "last_name": "First",
       "url": "http://localhost:8080/api/users/1",
       "username": "admin1"
@@ -282,6 +282,38 @@
       "last_name": "Second",
       "url": "http://localhost:8080/api/users/18",
       "username": "admin2"
+    },
+    {
+      "date_joined": "2022-02-24T20:45:07Z",
+      "email": "user5@cvat.org",
+      "first_name": "User",
+      "groups": [
+        "user"
+      ],
+      "id": 19,
+      "is_active": true,
+      "is_staff": false,
+      "is_superuser": false,
+      "last_login": null,
+      "last_name": "Fifth",
+      "url": "http://localhost:8080/api/users/19",
+      "username": "user5"
+    },
+    {
+      "date_joined": "2022-02-24T20:45:19Z",
+      "email": "user6@cvat.org",
+      "first_name": "User",
+      "groups": [
+        "user"
+      ],
+      "id": 20,
+      "is_active": true,
+      "is_staff": false,
+      "is_superuser": false,
+      "last_login": null,
+      "last_name": "Sixth",
+      "url": "http://localhost:8080/api/users/20",
+      "username": "user6"
     }
   ]
 }
