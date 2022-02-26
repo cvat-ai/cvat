@@ -29,6 +29,7 @@ context('Search task feature.', () => {
         cy.assignTaskToUser('');
     });
 
+    // TODO: rework this test
     describe(`Testing case "${caseId}"`, () => {
         it('Tooltip task filter contain all the possible options.', () => {
             cy.get('.cvat-search-field').trigger('mouseover');

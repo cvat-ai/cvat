@@ -1,4 +1,4 @@
-// Copyright (C) 2021 Intel Corporation
+// Copyright (C) 2021-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -51,7 +51,7 @@ export default function SearchTooltip(props: Props): JSX.Element {
                     ) : null}
                     {instance === 'cloudstorage' ? (
                         <Paragraph>
-                            <Text strong>resourceName: mycvatbucket</Text>
+                            <Text strong>resource: mycvatbucket</Text>
                             <Text>
                                 all
                                 {instances}

@@ -1,8 +1,23 @@
 {
-  "count": 11,
+  "count": 12,
   "next": null,
   "previous": null,
   "results": [
+    {
+      "id": 12,
+      "invitation": "Fi3WRUhFxTWpMiVpdwNR2CGyhgcIXSCUYgPCugPq72QUOgHz9NSMOGiKS3PfJ7Ql",
+      "is_active": true,
+      "joined_date": "2022-02-24T21:29:21.978055Z",
+      "organization": 2,
+      "role": "worker",
+      "user": {
+        "first_name": "User",
+        "id": 19,
+        "last_name": "Fifth",
+        "url": "http://localhost:8080/api/users/19",
+        "username": "user5"
+      }
+    },
     {
       "id": 11,
       "invitation": "BrwoDmMNQQ1v9WXOukp9DwQVuqB3RDPjpUECCEq6QcAuG0Pi8k1IYtQ9uz9jg0Bv",

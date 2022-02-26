@@ -184,7 +184,13 @@
       "url": "http://localhost:8080/api/tasks/5"
     },
     {
-      "assignee": null,
+      "assignee": {
+        "first_name": "User",
+        "id": 19,
+        "last_name": "Fifth",
+        "url": "http://localhost:8080/api/users/19",
+        "username": "user5"
+      },
       "bug_tracker": "",
       "created_date": "2021-12-14T19:55:57.475273Z",
       "data": 4,
@@ -246,11 +252,17 @@
       "size": 58,
       "status": "annotation",
       "subset": "train",
-      "updated_date": "2021-12-22T07:17:34.836384Z",
+      "updated_date": "2022-02-24T21:32:36.190676Z",
       "url": "http://localhost:8080/api/tasks/4"
     },
     {
-      "assignee": null,
+      "assignee": {
+        "first_name": "User",
+        "id": 19,
+        "last_name": "Fifth",
+        "url": "http://localhost:8080/api/users/19",
+        "username": "user5"
+      },
       "bug_tracker": "",
       "created_date": "2021-12-14T19:48:33.089778Z",
       "data": 3,
@@ -347,7 +359,7 @@
       "size": 148,
       "status": "annotation",
       "subset": "Train",
-      "updated_date": "2022-02-21T10:37:27.697705Z",
+      "updated_date": "2022-02-24T21:25:10.697341Z",
       "url": "http://localhost:8080/api/tasks/3"
     },
     {

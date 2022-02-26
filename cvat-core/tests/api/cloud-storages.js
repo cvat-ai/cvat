@@ -1,4 +1,4 @@
-// Copyright (C) 2021 Intel Corporation
+// Copyright (C) 2021-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -36,7 +36,7 @@ describe('Feature: get cloud storages', () => {
         expect(cloudStorage.id).toBe(1);
         expect(cloudStorage.providerType).toBe('AWS_S3_BUCKET');
         expect(cloudStorage.credentialsType).toBe('KEY_SECRET_KEY_PAIR');
-        expect(cloudStorage.resourceName).toBe('bucket');
+        expect(cloudStorage.resource).toBe('bucket');
         expect(cloudStorage.displayName).toBe('Demonstration bucket');
         expect(cloudStorage.manifests).toHaveLength(1);
         expect(cloudStorage.manifests[0]).toBe('manifest.jsonl');
@@ -61,41 +61,18 @@ describe('Feature: get cloud storages', () => {
     });
 
     test('get cloud storages by filters', async () => {
-        const filters = [
-            new Map([
-                ['providerType', 'AWS_S3_BUCKET'],
-                ['resourceName', 'bucket'],
-                ['displayName', 'Demonstration bucket'],
-                ['credentialsType', 'KEY_SECRET_KEY_PAIR'],
-                ['description', 'It is first bucket'],
-            ]),
-            new Map([
-                ['providerType', 'AZURE_CONTAINER'],
-                ['resourceName', 'container'],
-                ['displayName', 'Demonstration container'],
-                ['credentialsType', 'ACCOUNT_NAME_TOKEN_PAIR'],
-            ]),
-            new Map([
-                ['providerType', 'GOOGLE_CLOUD_STORAGE'],
-                ['resourceName', 'gcsbucket'],
-                ['displayName', 'Demo GCS'],
-                ['credentialsType', 'KEY_FILE_PATH'],
-            ]),
-        ];
+        const filter = {
+            and: [
+                { '==': [{ var: 'display_name' }, 'Demonstration bucket'] },
+                { '==': [{ var: 'resource_name' }, 'bucket'] },
+                { '==': [{ var: 'description' }, 'It is first bucket'] },
+                { '==': [{ var: 'provider_type' }, 'AWS_S3_BUCKET'] },
+                { '==': [{ var: 'credentials_type' }, 'KEY_SECRET_KEY_PAIR'] },
+            ],
+        };
 
-        const ids = [1, 2, 3];
-
-        await Promise.all(filters.map(async (_, idx) => {
-            const result = await window.cvat.cloudStorages.get(Object.fromEntries(filters[idx]));
-            const [cloudStorage] = result;
-            expect(Array.isArray(result)).toBeTruthy();
-            expect(result).toHaveLength(1);
-            expect(cloudStorage).toBeInstanceOf(CloudStorage);
-            expect(cloudStorage.id).toBe(ids[idx]);
-            filters[idx].forEach((value, key) => {
-                expect(cloudStorage[key]).toBe(value);
-            });
-        }));
+        const result = await window.cvat.cloudStorages.get({ filter: JSON.stringify(filter) });
+        expect(result).toBeInstanceOf(Array);
     });
 
     test('get cloud storage by invalid filters', async () => {

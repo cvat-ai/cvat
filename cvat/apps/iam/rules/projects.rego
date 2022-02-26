@@ -129,14 +129,14 @@ allow {
 
 
 allow {
-    input.scope == utils.DELETE
+    { utils.DELETE, utils.UPDATE_ORG }[input.scope]
     utils.is_sandbox
     utils.has_perm(utils.WORKER)
     utils.is_resource_owner
 }
 
 allow {
-    input.scope == utils.DELETE
+    { utils.DELETE, utils.UPDATE_ORG }[input.scope]
     input.auth.organization.id == input.resource.organization.id
     utils.has_perm(utils.WORKER)
     organizations.is_member
@@ -144,7 +144,7 @@ allow {
 }
 
 allow {
-    input.scope == utils.DELETE
+    { utils.DELETE, utils.UPDATE_ORG }[input.scope]
     input.auth.organization.id == input.resource.organization.id
     utils.has_perm(utils.USER)
     organizations.is_staff
