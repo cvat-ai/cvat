@@ -272,7 +272,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         queryset = super().get_queryset()
         if self.action == 'list':
-            perm = ProjectPermission('list', self.request, self)
+            perm = ProjectPermission.create_scope_list(self.request)
             queryset = perm.filter(queryset)
         return queryset
 
@@ -571,7 +571,7 @@ class TaskViewSet(UploadMixin, viewsets.ModelViewSet):
     def get_queryset(self):
         queryset = super().get_queryset()
         if self.action == 'list':
-            perm = TaskPermission('list', self.request, self)
+            perm = TaskPermission.create_scope_list(self.request)
             queryset = perm.filter(queryset)
 
         return queryset
@@ -949,7 +949,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         queryset = super().get_queryset()
 
         if self.action == 'list':
-            perm = JobPermission.create_list(self.request)
+            perm = JobPermission.create_scope_list(self.request)
             queryset = perm.filter(queryset)
 
         return queryset
@@ -1113,7 +1113,7 @@ class IssueViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         queryset = super().get_queryset()
         if self.action == 'list':
-            perm = IssuePermission.create_list(self.request)
+            perm = IssuePermission.create_scope_list(self.request)
             queryset = perm.filter(queryset)
 
         return queryset
@@ -1183,7 +1183,7 @@ class CommentViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         queryset = super().get_queryset()
         if self.action == 'list':
-            perm = CommentPermission.create_list(self.request)
+            perm = CommentPermission.create_scope_list(self.request)
             queryset = perm.filter(queryset)
 
         return queryset
@@ -1240,7 +1240,7 @@ class UserViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     def get_queryset(self):
         queryset = super().get_queryset()
         if self.action == 'list':
-            perm = UserPermission(self.request, self)
+            perm = UserPermission.create_scope_list(self.request)
             queryset = perm.filter(queryset)
 
         return queryset
@@ -1319,7 +1319,7 @@ class CloudStorageViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         queryset = super().get_queryset()
         if self.action == 'list':
-            perm = CloudStoragePermission(self.request, self)
+            perm = CloudStoragePermission.create_scope_list(self.request)
             queryset = perm.filter(queryset)
 
         provider_type = self.request.query_params.get('provider_type', None)

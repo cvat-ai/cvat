@@ -443,12 +443,6 @@ LOCAL_LOAD_MAX_FILES_SIZE = 512 * 1024 * 1024  # 512 MB
 RESTRICTIONS = {
     'user_agreements': [],
 
-    # this setting limits the number of tasks for the user
-    'task_limit': None,
-
-    # this setting limits the number of projects for the user
-    'project_limit': None,
-
     # this setting reduces task visibility to owner and assignee only
     'reduce_task_visibility': False,
 
