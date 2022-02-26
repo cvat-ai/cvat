@@ -59,7 +59,7 @@ from cvat.apps.engine.serializers import (
     LogEventSerializer, ProjectSerializer, ProjectSearchSerializer,
     RqStatusSerializer, TaskSerializer, UserSerializer, PluginsSerializer, IssueReadSerializer,
     IssueWriteSerializer, CommentReadSerializer, CommentWriteSerializer, CloudStorageWriteSerializer,
-    CloudStorageReadSerializer, DatasetFileSerializer)
+    CloudStorageReadSerializer, DatasetFileSerializer, JobCommitSerializer)
 
 from utils.dataset_manifest import ImageManifestManager
 from cvat.apps.engine.utils import av_scan_paths
@@ -1064,6 +1064,20 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
         return data_getter(request, db_job.segment.start_frame,
             db_job.segment.stop_frame, db_job.segment.task.data)
+
+    @extend_schema(summary='The action returns the list of tracked '
+        'changes for the job', responses={
+            '200': JobCommitSerializer(many=True),
+        }, tags=['jobs'], versions=['2.0'])
+    @action(detail=True, methods=['GET'], serializer_class=JobCommitSerializer)
+    def commits(self, request, pk):
+        db_job = self.get_object()
+        queryset = db_job.commits
+        serializer = JobCommitSerializer(queryset,
+            context={'request': request}, many=True)
+
+        return Response(serializer.data)
+
 
 @extend_schema_view(retrieve=extend_schema(
     summary='Method returns details of an issue',
