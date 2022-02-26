@@ -5,9 +5,9 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## \[2.0.0] - Unreleased
+## \[2.0.0] - 2022-03-04
 ### Added
-- Handle attributes comming from nuclio detectors (<https://github.com/openvinotoolkit/cvat/pull/3917>)
+- Handle attributes coming from nuclio detectors (<https://github.com/openvinotoolkit/cvat/pull/3917>)
 - Add additional environment variables for Nuclio configuration (<https://github.com/openvinotoolkit/cvat/pull/3894>)
 - Add KITTI segmentation and detection format (<https://github.com/openvinotoolkit/cvat/pull/3757>)
 - Add LFW format (<https://github.com/openvinotoolkit/cvat/pull/3770>)
@@ -16,7 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Rotated bounding boxes (<https://github.com/openvinotoolkit/cvat/pull/3832>)
 - Player option: Smooth image when zoom-in, enabled by default (<https://github.com/openvinotoolkit/cvat/pull/3933>)
 - Google Cloud Storage support in UI (<https://github.com/openvinotoolkit/cvat/pull/3919>)
-- Add project tasks paginations (<https://github.com/openvinotoolkit/cvat/pull/3910>)
+- Add project tasks pagination (<https://github.com/openvinotoolkit/cvat/pull/3910>)
 - Add remove issue button (<https://github.com/openvinotoolkit/cvat/pull/3952>)
 - Data sorting option (<https://github.com/openvinotoolkit/cvat/pull/3937>)
 - Options to change font size & position of text labels on the canvas (<https://github.com/openvinotoolkit/cvat/pull/3972>)
@@ -39,7 +39,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Advanced filtration and sorting for a list of jobs (<https://github.com/openvinotoolkit/cvat/pull/4319>)
 
 ### Changed
-- Users don't have access to a task object anymore if they are assigneed only on some jobs of the task (<https://github.com/openvinotoolkit/cvat/pull/3788>)
+- Users don't have access to a task object anymore if they are assigned only on some jobs of the task (<https://github.com/openvinotoolkit/cvat/pull/3788>)
 - Different resources (tasks, projects) are not visible anymore for all CVAT instance users by default (<https://github.com/openvinotoolkit/cvat/pull/3788>)
 - API versioning scheme: using accept header versioning instead of namespace versioning (<https://github.com/openvinotoolkit/cvat/pull/4239>)
 - Replaced 'django_sendfile' with 'django_sendfile2' (<https://github.com/openvinotoolkit/cvat/pull/4267>)
