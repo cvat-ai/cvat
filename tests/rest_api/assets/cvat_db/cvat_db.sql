@@ -1226,12 +1226,11 @@ ALTER SEQUENCE public.engine_job_id_seq OWNED BY public.engine_job.id;
 
 CREATE TABLE public.engine_jobcommit (
     id bigint NOT NULL,
-    version integer NOT NULL,
     "timestamp" timestamp with time zone NOT NULL,
-    message character varying(4096) NOT NULL,
     owner_id integer,
     job_id integer NOT NULL,
-    CONSTRAINT engine_jobcommit_version_check CHECK ((version >= 0))
+    data jsonb NOT NULL,
+    scope character varying(32) NOT NULL
 );
 
 
@@ -2912,6 +2911,7 @@ COPY public.django_migrations (id, app, name, applied) FROM stdin;
 88	dataset_repo	0002_auto_20190123_1305	2021-12-14 17:51:27.588845+00
 89	engine	0049_auto_20220202_0710	2022-02-11 14:54:41.053611+00
 90	engine	0050_auto_20220211_1425	2022-02-11 14:54:41.126041+00
+91	engine	0051_auto_20220220_1824	2022-02-24 09:22:16.717995+00
 \.
 
 
@@ -3781,34 +3781,34 @@ COPY public.engine_job (id, segment_id, assignee_id, status, stage, state) FROM 
 -- Data for Name: engine_jobcommit; Type: TABLE DATA; Schema: public; Owner: root
 --
 
-COPY public.engine_jobcommit (id, version, "timestamp", message, owner_id, job_id) FROM stdin;
-1	1	2021-12-22 07:14:15.237479+00	Changes: tags - 0; shapes - 5; tracks - 0	\N	2
-2	2	2021-12-22 07:14:15.268804+00	Changes: tags - 0; shapes - 0; tracks - 0	\N	2
-3	3	2021-12-22 07:14:15.298016+00	Changes: tags - 0; shapes - 0; tracks - 0	\N	2
-4	1	2021-12-22 07:15:22.945367+00	Changes: tags - 0; shapes - 9; tracks - 0	\N	1
-5	2	2021-12-22 07:15:22.985309+00	Changes: tags - 0; shapes - 0; tracks - 0	\N	1
-6	3	2021-12-22 07:15:23.019102+00	Changes: tags - 0; shapes - 0; tracks - 0	\N	1
-7	1	2021-12-22 07:17:34.839155+00	Changes: tags - 0; shapes - 7; tracks - 0	\N	6
-8	2	2021-12-22 07:17:34.878804+00	Changes: tags - 0; shapes - 0; tracks - 0	\N	6
-9	3	2021-12-22 07:17:34.909805+00	Changes: tags - 0; shapes - 0; tracks - 0	\N	6
-10	1	2021-12-22 07:19:33.859315+00	Changes: tags - 0; shapes - 5; tracks - 0	\N	4
-11	2	2021-12-22 07:19:33.907033+00	Changes: tags - 0; shapes - 0; tracks - 0	\N	4
-12	3	2021-12-22 07:19:33.934873+00	Changes: tags - 0; shapes - 0; tracks - 0	\N	4
-13	4	2021-12-22 07:22:30.331021+00	Changes: tags - 0; shapes - 0; tracks - 0	\N	4
-14	5	2021-12-22 07:22:30.362857+00	Changes: tags - 0; shapes - 0; tracks - 0	\N	4
-15	6	2021-12-22 07:22:30.388715+00	Changes: tags - 0; shapes - 0; tracks - 0	\N	4
-16	1	2022-02-21 10:32:04.068136+00	Changes: tags - 0; shapes - 1; tracks - 0	\N	9
-17	2	2022-02-21 10:32:04.169838+00	Changes: tags - 0; shapes - 0; tracks - 0	\N	9
-18	3	2022-02-21 10:32:04.256121+00	Changes: tags - 0; shapes - 0; tracks - 0	\N	9
-19	1	2022-02-21 10:37:22.961448+00	Changes: tags - 0; shapes - 0; tracks - 0	\N	3
-20	2	2022-02-21 10:37:23.075321+00	Changes: tags - 0; shapes - 0; tracks - 0	\N	3
-21	3	2022-02-21 10:37:23.187161+00	Changes: tags - 0; shapes - 0; tracks - 0	\N	3
-22	4	2022-02-21 10:37:27.7082+00	Changes: tags - 0; shapes - 1; tracks - 0	\N	3
-23	5	2022-02-21 10:37:27.834371+00	Changes: tags - 0; shapes - 0; tracks - 0	\N	3
-24	6	2022-02-21 10:37:27.95231+00	Changes: tags - 0; shapes - 0; tracks - 0	\N	3
-25	1	2022-02-21 10:40:21.267763+00	Changes: tags - 0; shapes - 1; tracks - 0	\N	7
-26	2	2022-02-21 10:40:21.354689+00	Changes: tags - 0; shapes - 0; tracks - 0	\N	7
-27	3	2022-02-21 10:40:21.435822+00	Changes: tags - 0; shapes - 0; tracks - 0	\N	7
+COPY public.engine_jobcommit (id, "timestamp", owner_id, job_id, data, scope) FROM stdin;
+1	2021-12-22 07:14:15.237479+00	\N	2	{}	
+2	2021-12-22 07:14:15.268804+00	\N	2	{}	
+3	2021-12-22 07:14:15.298016+00	\N	2	{}	
+4	2021-12-22 07:15:22.945367+00	\N	1	{}	
+5	2021-12-22 07:15:22.985309+00	\N	1	{}	
+6	2021-12-22 07:15:23.019102+00	\N	1	{}	
+7	2021-12-22 07:17:34.839155+00	\N	6	{}	
+8	2021-12-22 07:17:34.878804+00	\N	6	{}	
+9	2021-12-22 07:17:34.909805+00	\N	6	{}	
+10	2021-12-22 07:19:33.859315+00	\N	4	{}	
+11	2021-12-22 07:19:33.907033+00	\N	4	{}	
+12	2021-12-22 07:19:33.934873+00	\N	4	{}	
+13	2021-12-22 07:22:30.331021+00	\N	4	{}	
+14	2021-12-22 07:22:30.362857+00	\N	4	{}	
+15	2021-12-22 07:22:30.388715+00	\N	4	{}	
+16	2022-02-21 10:32:04.068136+00	\N	9	{}	
+17	2022-02-21 10:32:04.169838+00	\N	9	{}	
+18	2022-02-21 10:32:04.256121+00	\N	9	{}	
+19	2022-02-21 10:37:22.961448+00	\N	3	{}	
+20	2022-02-21 10:37:23.075321+00	\N	3	{}	
+21	2022-02-21 10:37:23.187161+00	\N	3	{}	
+22	2022-02-21 10:37:27.7082+00	\N	3	{}	
+23	2022-02-21 10:37:27.834371+00	\N	3	{}	
+24	2022-02-21 10:37:27.95231+00	\N	3	{}	
+25	2022-02-21 10:40:21.267763+00	\N	7	{}	
+26	2022-02-21 10:40:21.354689+00	\N	7	{}	
+27	2022-02-21 10:40:21.435822+00	\N	7	{}	
 \.
 
 
@@ -4196,7 +4196,7 @@ SELECT pg_catalog.setval('public.django_content_type_id_seq', 48, true);
 -- Name: django_migrations_id_seq; Type: SEQUENCE SET; Schema: public; Owner: root
 --
 
-SELECT pg_catalog.setval('public.django_migrations_id_seq', 90, true);
+SELECT pg_catalog.setval('public.django_migrations_id_seq', 91, true);
 
 
 --

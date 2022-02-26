@@ -106,9 +106,9 @@ def _save_task_to_db(db_task):
         db_segment.stop_frame = stop_frame
         db_segment.save()
 
-        db_job = models.Job()
-        db_job.segment = db_segment
+        db_job = models.Job(segment=db_segment)
         db_job.save()
+
 
     db_task.data.save()
     db_task.save()

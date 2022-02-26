@@ -115,7 +115,8 @@ class TestGetAnnotations:
         response = get_method(user, f'jobs/{jid}/annotations', **kwargs)
 
         assert response.status_code == HTTPStatus.OK
-        assert DeepDiff(data, response.json()) == {}
+        assert DeepDiff(data, response.json(),
+            exclude_paths="root['version']") == {}
 
     def _test_get_job_annotations_403(self, user, jid, **kwargs):
         response = get_method(user, f'jobs/{jid}/annotations', **kwargs)
@@ -182,7 +183,8 @@ class TestPatchJobAnnotations:
     def _test_check_respone(self, is_allow, response, data=None):
         if is_allow:
             assert response.status_code == HTTPStatus.OK
-            assert DeepDiff(data, response.json()) == {}
+            assert DeepDiff(data, response.json(),
+                exclude_paths="root['version']") == {}
         else:
             assert response.status_code == HTTPStatus.FORBIDDEN
 
