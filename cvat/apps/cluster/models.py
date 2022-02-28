@@ -54,3 +54,6 @@ class Node(models.Model):
 
     class Meta:
         default_permissions = ()
+
+class Request(models.Model):
+    pass

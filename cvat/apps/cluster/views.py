@@ -65,3 +65,31 @@ class NodeViewSet(viewsets.ModelViewSet):
             extra_kwargs.update({ 'alias': url.netloc })
         serializer.save(**extra_kwargs)
 
+
+class RequestViewSet(viewsets.ModelViewSet):
+    queryset = Request.objects.all()
+    search_fields = ['alias', 'owner']
+    filter_fields = search_fields + ['id']
+    lookup_fields = {'owner': 'owner__username'}
+    ordering_fields = filter_fields
+    ordering = '-id'
+    http_method_names = ['get', 'post', 'patch', 'delete', 'head', 'options']
+    iam_organization_field = 'organization'
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        permission = ClusterPermission(self.request, self)
+        return permission.filter(queryset)
+
+    def get_serializer_class(self):
+        if self.request.method in SAFE_METHODS:
+            return RequestReadSerializer
+        else:
+            return RequestWriteSerializer
+
+    def perform_create(self, serializer):
+        extra_kwargs = { 'owner': self.request.user }
+        if not serializer.validated_data.get('alias'):
+            url = urlparse(serializer.validated_data['url'])
+            extra_kwargs.update({ 'alias': url.netloc })
+        serializer.save(**extra_kwargs)
