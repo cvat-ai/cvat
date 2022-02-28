@@ -37,7 +37,7 @@ from .serializers import NodeReadSerializer, NodeWriteSerializer
     responses={
         '204': OpenApiResponse(description='The node has been deleted'),
     }, tags=['nodes'], versions=['2.0']))
-class ClusterViewSet(viewsets.ModelViewSet):
+class NodeViewSet(viewsets.ModelViewSet):
     queryset = Node.objects.all()
     search_fields = ['alias', 'owner']
     filter_fields = search_fields + ['id']

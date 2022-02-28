@@ -392,6 +392,36 @@ class LambdaPermission(OpenPolicyAgentPermission):
     def get_resource(self):
         return None
 
+class NodePermission(OpenPolicyAgentPermission):
+    @classmethod
+    def create(cls, request, view, obj):
+        permissions = []
+        if view.basename == 'node':
+            for scope in cls.get_scopes(request, view, obj):
+                self = cls.create_base_perm(request, view, scope, obj)
+                permissions.append(self)
+
+        return permissions
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.url = settings.IAM_OPA_DATA_URL + '/cluster/allow'
+
+    @staticmethod
+    def get_scopes(request, view, obj):
+        return [{
+            ('node', 'list'): 'list',
+            ('node', 'retrieve'): 'view',
+            ('node', 'call'): 'call:online',
+            ('request', 'create'): 'call:offline',
+            ('request', 'list'): 'call:offline',
+            ('request', 'retrieve'): 'call:offline',
+            ('request', 'destroy'): 'call:offline',
+        }.get((view.basename, view.action), None)]
+
+    def get_resource(self):
+        return None
+
 class CloudStoragePermission(OpenPolicyAgentPermission):
     @classmethod
     def create(cls, request, view, obj):
