@@ -65,14 +65,9 @@ export interface TasksQuery {
     page: number;
     id: number | null;
     search: string | null;
-    owner: string | null;
-    assignee: string | null;
-    name: string | null;
-    status: string | null;
-    mode: string | null;
     filter: string | null;
+    sort: string | null;
     projectId: number | null;
-    [key: string]: string | number | null;
 }
 
 export interface Task {

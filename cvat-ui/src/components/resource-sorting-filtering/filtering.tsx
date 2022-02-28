@@ -137,7 +137,7 @@ export default function ResourceFilterHOC(
             }
 
             if (!isMounted) {
-                // do not request jobs before until on mount hook is done
+                // do not request resources until on mount hook is done
                 return;
             }
 
@@ -166,13 +166,13 @@ export default function ResourceFilterHOC(
         );
 
         return (
-            <div className='cvat-jobs-page-filters'>
+            <div className='cvat-resource-page-filters'>
                 <Dropdown
                     destroyPopupOnHide
                     visible={predefinedVisible}
                     placement='bottomLeft'
                     overlay={(
-                        <div className='cvat-jobs-page-predefined-filters-list'>
+                        <div className='cvat-resource-page-predefined-filters-list'>
                             {Object.keys(predefinedFilters).map((key: string): JSX.Element => (
                                 <Checkbox
                                     checked={appliedFilter.predefined?.includes(predefinedFilters[key])}
@@ -216,14 +216,14 @@ export default function ResourceFilterHOC(
                     visible={builderVisible}
                     destroyPopupOnHide
                     overlay={(
-                        <div className='cvat-jobs-page-filters-builder'>
+                        <div className='cvat-resource-page-filters-builder'>
                             { Object.keys(recentFilters).length ? (
                                 <Dropdown
                                     placement='bottomRight'
                                     visible={recentVisible}
                                     destroyPopupOnHide
                                     overlay={(
-                                        <div className='cvat-jobs-page-recent-filters-list'>
+                                        <div className='cvat-resource-page-recent-filters-list'>
                                             <Menu selectable={false}>
                                                 {Object.keys(recentFilters).map((key: string): JSX.Element | null => {
                                                     const tree = QbUtils.loadFromJsonLogic(JSON.parse(key), config);
@@ -275,7 +275,7 @@ export default function ResourceFilterHOC(
                                 value={state}
                                 renderBuilder={renderBuilder}
                             />
-                            <Space className='cvat-jobs-page-filters-space'>
+                            <Space className='cvat-resource-page-filters-space'>
                                 <Button
                                     disabled={!QbUtils.queryString(state, config)}
                                     size='small'

@@ -182,9 +182,9 @@ const config = require('./config');
                 page: isInteger,
                 projectId: isInteger,
                 id: isInteger,
+                sort: isString,
                 search: isString,
                 filter: isString,
-                ordering: isString,
             });
 
             checkExclusiveFields(filter, ['id', 'projectId'], ['page']);
@@ -193,7 +193,6 @@ const config = require('./config');
             for (const field of [
                 'filter',
                 'search',
-                'ordering',
                 'id',
                 'page',
                 'projectId',
@@ -216,6 +215,7 @@ const config = require('./config');
                 id: isInteger,
                 page: isInteger,
                 search: isString,
+                sort: isString,
                 filter: isString,
             });
 
@@ -246,6 +246,7 @@ const config = require('./config');
             checkFilter(filter, {
                 page: isInteger,
                 filter: isString,
+                sort: isString,
                 id: isInteger,
                 search: isString,
             });

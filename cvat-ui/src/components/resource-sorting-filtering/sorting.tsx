@@ -78,7 +78,7 @@ const SortableList = SortableContainer(
         appliedSorting: Record<string, string>;
         setAppliedSorting: (arg: Record<string, string>) => void;
     }) => (
-        <div className='cvat-jobs-page-sorting-list'>
+        <div className='cvat-resource-page-sorting-list'>
             { items.map((value: string, index: number) => (
                 <SortableItem
                     key={`item-${value}`}

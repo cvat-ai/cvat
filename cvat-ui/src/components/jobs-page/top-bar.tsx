@@ -7,8 +7,7 @@ import { Col, Row } from 'antd/lib/grid';
 import Input from 'antd/lib/input';
 
 import { JobsQuery } from 'reducers/interfaces';
-import SortingComponent from './sorting';
-import ResourceFilterHOC from './filtering';
+import { SortingComponent, ResourceFilterHOC } from 'components/resource-sorting-filtering';
 import {
     localStorageRecentKeyword, localStorageRecentCapacity,
     predefinedFilterValues, defaultEnabledFilters, config,

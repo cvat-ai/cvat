@@ -5,6 +5,19 @@
 @import '../../base.scss';
 @import '../../styles.scss';
 
+.cvat-tasks-page-control-buttons-wrapper {
+    display: flex;
+    flex-direction: column;
+    background: $background-color-1;
+    padding: $grid-unit-size;
+    border-radius: 4px;
+    box-shadow: $box-shadow-base;
+
+    > * {
+        margin-top: $grid-unit-size;
+    }
+}
+
 .cvat-tasks-page {
     padding-top: $grid-unit-size * 2;
     padding-bottom: $grid-unit-size;
@@ -12,14 +25,28 @@
     width: 100%;
 
     .cvat-tasks-page-top-bar {
-        > div:nth-child(1) {
-            > div:nth-child(1) {
-                > div:nth-child(1) {
-                    display: flex;
+        > div {
+            display: flex;
+            justify-content: space-between;
 
-                    > .cvat-title {
+            > .cvat-tasks-page-filters-wrapper {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                width: 100%;
+
+                > div {
+                    > *:not(:last-child) {
                         margin-right: $grid-unit-size;
                     }
+
+                    display: flex;
+                    margin-right: $grid-unit-size * 4;
+                }
+
+                .cvat-tasks-page-search-bar {
+                    width: $grid-unit-size * 32;
+                    padding-left: $grid-unit-size * 0.5;
                 }
             }
         }
@@ -47,27 +74,12 @@
     }
 }
 
-/* empty-tasks icon */
 .cvat-empty-tasks-list {
-    > div:nth-child(1) {
-        margin-top: 50px;
-    }
-
-    > div:nth-child(2) {
-        > div {
-            margin-top: 20px;
-
-            /* No tasks created yet */
-            > span {
-                font-size: 20px;
-                color: $text-color;
-            }
-        }
-    }
-
-    /* To get started with your annotation project .. */
-    > div:nth-child(3) {
-        margin-top: 10px;
+    .ant-empty {
+        top: 50%;
+        left: 50%;
+        position: absolute;
+        transform: translate(-50%, -50%);
     }
 }
 

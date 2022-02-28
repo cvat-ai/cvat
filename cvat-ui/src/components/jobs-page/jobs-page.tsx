@@ -9,7 +9,9 @@ import Spin from 'antd/lib/spin';
 import { Col, Row } from 'antd/lib/grid';
 import Pagination from 'antd/lib/pagination';
 import Empty from 'antd/lib/empty';
+import Text from 'antd/lib/typography/Text';
 
+import FeedbackComponent from 'components/feedback/feedback';
 import { CombinedState } from 'reducers/interfaces';
 import { getJobsAsync } from 'actions/jobs-actions';
 
@@ -51,7 +53,7 @@ function JobsPageComponent(): JSX.Element {
                 </Col>
             </Row>
         </>
-    ) : <Empty />;
+    ) : <Empty description={<Text>No data found</Text>} />;
 
     return (
         <div className='cvat-jobs-page'>
@@ -88,7 +90,7 @@ function JobsPageComponent(): JSX.Element {
             { fetching ? (
                 <Spin size='large' className='cvat-spinner' />
             ) : content }
-
+            <FeedbackComponent />
         </div>
     );
 }
