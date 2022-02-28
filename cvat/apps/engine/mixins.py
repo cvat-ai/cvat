@@ -11,8 +11,6 @@ from django.core.cache import cache
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from django.http.request import HttpRequest
-from django.utils.encoding import iri_to_uri
 
 from cvat.apps.engine.serializers import DataSerializer
 
