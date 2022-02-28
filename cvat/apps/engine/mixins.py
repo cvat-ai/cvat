@@ -11,6 +11,8 @@ from django.core.cache import cache
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from django.http.request import HttpRequest
+from django.utils.encoding import iri_to_uri
 
 from cvat.apps.engine.serializers import DataSerializer
 
@@ -178,9 +180,12 @@ class UploadMixin(object):
 
             tus_file = TusFile.create_file(metadata, file_size, self.get_upload_dir(data_type))
 
+            location = request.build_absolute_uri()
+            if 'HTTP_X_FORWARDED_HOST' not in request.META:
+                location = request.META.get('HTTP_ORIGIN') + request.META.get('PATH_INFO')
             return self._tus_response(
                 status=status.HTTP_201_CREATED,
-                extra_headers={'Location': '{}{}'.format(request.build_absolute_uri(), tus_file.file_id)})
+                extra_headers={'Location': '{}{}'.format(location, tus_file.file_id)})
 
     @action(detail=True, methods=['HEAD', 'PATCH'], url_path=upload_url+_file_id_regex)
     def append_tus_chunk(self, request, pk, file_id):
