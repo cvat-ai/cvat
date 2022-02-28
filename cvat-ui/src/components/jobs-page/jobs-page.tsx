@@ -53,7 +53,7 @@ function JobsPageComponent(): JSX.Element {
                 </Col>
             </Row>
         </>
-    ) : <Empty description={<Text>No data found</Text>} />;
+    ) : <Empty description={<Text>No results matched your search...</Text>} />;
 
     return (
         <div className='cvat-jobs-page'>

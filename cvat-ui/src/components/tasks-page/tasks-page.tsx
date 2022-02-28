@@ -113,7 +113,7 @@ function TasksPageComponent(props: Props): JSX.Element {
                 }}
                 query={query}
                 onImportTask={(file: File) => dispatch(importTaskAsync(file))}
-                taskImporting={importing}
+                importing={importing}
             />
             { fetching ? (
                 <div className='cvat-empty-tasks-list'>

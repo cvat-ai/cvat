@@ -30,12 +30,13 @@ export type JobsActions = ActionUnion<typeof jobsActions>;
 
 export const getJobsAsync = (query: JobsQuery): ThunkAction => async (dispatch) => {
     try {
-        // Remove all keys with null values from the query
-        const filteredQuery: Partial<JobsQuery> = { ...query };
-        if (filteredQuery.page === null) delete filteredQuery.page;
-        if (filteredQuery.filter === null) delete filteredQuery.filter;
-        if (filteredQuery.sort === null) delete filteredQuery.sort;
-        if (filteredQuery.search === null) delete filteredQuery.search;
+        // We remove all keys with null values from the query
+        const filteredQuery = { ...query };
+        for (const key of Object.keys(query)) {
+            if ((filteredQuery as { [index: string]: any })[key] === null) {
+                delete (filteredQuery as { [index: string]: any })[key];
+            }
+        }
 
         dispatch(jobsActions.getJobs(filteredQuery));
         const jobs = await cvat.jobs.get(filteredQuery);

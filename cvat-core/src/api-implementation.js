@@ -185,6 +185,7 @@ const config = require('./config');
                 sort: isString,
                 search: isString,
                 filter: isString,
+                ordering: isString,
             });
 
             checkExclusiveFields(filter, ['id', 'projectId'], ['page']);

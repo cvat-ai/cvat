@@ -39,7 +39,7 @@ function EmptyListComponent(props: Props): JSX.Element {
                         </Col>
                     </Row>
                 </>
-            ) : (<Text>No data found</Text>)}
+            ) : (<Text>No results matched your search</Text>)}
             />
         </div>
     );

@@ -27,11 +27,8 @@ export interface ProjectsQuery {
     page: number;
     id: number | null;
     search: string | null;
-    owner: string | null;
-    name: string | null;
-    status: string | null;
-    assignee: string | null;
-    [key: string]: string | boolean | number | null | undefined;
+    filter: string | null;
+    sort: string | null;
 }
 
 export interface Project {

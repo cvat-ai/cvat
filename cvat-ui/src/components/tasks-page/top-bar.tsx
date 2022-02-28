@@ -30,7 +30,7 @@ interface VisibleTopBarProps {
     onApplySorting(sorting: string | null): void;
     onApplySearch(search: string | null): void;
     query: TasksQuery;
-    taskImporting: boolean;
+    importing: boolean;
 }
 
 const defaultVisibility: {
@@ -47,9 +47,8 @@ const defaultVisibility: {
 
 export default function TopBarComponent(props: VisibleTopBarProps): JSX.Element {
     const {
-        query, onApplyFilter, onApplySorting, onApplySearch, onImportTask, taskImporting,
+        importing, query, onApplyFilter, onApplySorting, onApplySearch, onImportTask,
     } = props;
-
     const [visibility, setVisibility] = useState<typeof defaultVisibility>(defaultVisibility);
     const history = useHistory();
 
@@ -120,11 +119,11 @@ export default function TopBarComponent(props: VisibleTopBarProps): JSX.Element 
                                     <Button
                                         id='cvat-import-task-button'
                                         type='primary'
-                                        disabled={taskImporting}
+                                        disabled={importing}
                                         icon={<UploadOutlined />}
                                     >
                                         Create from backup
-                                        {taskImporting && <LoadingOutlined id='cvat-import-task-button-loading' />}
+                                        {importing && <LoadingOutlined id='cvat-import-task-button-loading' />}
                                     </Button>
                                 </Upload>
                             </div>

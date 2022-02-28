@@ -14,7 +14,19 @@
     box-shadow: $box-shadow-base;
 
     > * {
-        margin-top: $grid-unit-size;
+        &:not(:first-child) {
+            margin-top: $grid-unit-size;
+        }
+
+        width: 100%;
+
+        .ant-upload {
+            width: 100%;
+
+            button {
+                width: 100%;
+            }
+        }
     }
 }
 
