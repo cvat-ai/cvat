@@ -31,9 +31,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Support for working with ellipses (<https://github.com/openvinotoolkit/cvat/pull/4062>)
 - Add several flags to task creation CLI (<https://github.com/openvinotoolkit/cvat/pull/4119>)
 - Add YOLOv5 serverless function for automatic annotation (<https://github.com/openvinotoolkit/cvat/pull/4178>)
+- Add possibility to change git repository and git export format from already created task (<https://github.com/openvinotoolkit/cvat/pull/3886>)
 - Basic page with jobs list, basic filtration to this list (<https://github.com/openvinotoolkit/cvat/pull/4258>)
 - Added OpenCV.js TrackerMIL as tracking tool (<https://github.com/openvinotoolkit/cvat/pull/4200>)
 - Ability to continue working from the latest frame where an annotator was before (<https://github.com/openvinotoolkit/cvat/pull/4297>)
+- `GET /api/jobs/<id>/commits` was implemented (<https://github.com/openvinotoolkit/cvat/pull/4368>)
+- Advanced filtration and sorting for a list of jobs (<https://github.com/openvinotoolkit/cvat/pull/4319>)
 - Task annotations importing via chunk uploads (<https://github.com/openvinotoolkit/cvat/pull/4327>)
 
 ### Changed
@@ -79,6 +82,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Security
 - Updated ELK to 6.8.23 which uses log4j 2.17.1 (<https://github.com/openvinotoolkit/cvat/pull/4206>)
+- Added validation for URLs which used as remote data source (<https://github.com/openvinotoolkit/cvat/pull/4387>)
 
 ## \[1.7.0] - 2021-11-15
 

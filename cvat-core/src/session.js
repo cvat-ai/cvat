@@ -1891,7 +1891,7 @@
             return '';
         }
 
-        const frameData = await getPreview(this.taskId, this.jobID);
+        const frameData = await getPreview(this.taskId, this.id);
         return frameData;
     };
 

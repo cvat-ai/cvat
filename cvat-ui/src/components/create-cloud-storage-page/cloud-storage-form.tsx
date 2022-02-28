@@ -1,4 +1,4 @@
-// Copyright (C) 2021 Intel Corporation
+// Copyright (C) 2021-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -95,7 +95,7 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
             display_name: cloudStorage.displayName,
             description: cloudStorage.description,
             provider_type: cloudStorage.providerType,
-            resource: cloudStorage.resourceName,
+            resource: cloudStorage.resource,
             manifests: manifestNames,
         };
 

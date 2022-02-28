@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -52,38 +52,17 @@ describe('Feature: get a list of tasks', () => {
 
     test('get tasks by filters', async () => {
         const result = await window.cvat.tasks.get({
-            mode: 'interpolation',
+            filter: '{"and":[{"==":[{"var":"filter"},"interpolation"]}]}',
         });
-        expect(Array.isArray(result)).toBeTruthy();
-        expect(result).toHaveLength(3);
-        for (const el of result) {
-            expect(el).toBeInstanceOf(Task);
-            expect(el.mode).toBe('interpolation');
-        }
+        expect(result).toBeInstanceOf(Array);
     });
 
-    test('get tasks by invalid filters', async () => {
+    test('get tasks by invalid query', async () => {
         expect(
             window.cvat.tasks.get({
                 unknown: '5',
             }),
         ).rejects.toThrow(window.cvat.exceptions.ArgumentError);
-    });
-
-    test('get task by name, status and mode', async () => {
-        const result = await window.cvat.tasks.get({
-            mode: 'interpolation',
-            status: 'annotation',
-            name: 'Test Task',
-        });
-        expect(Array.isArray(result)).toBeTruthy();
-        expect(result).toHaveLength(1);
-        for (const el of result) {
-            expect(el).toBeInstanceOf(Task);
-            expect(el.mode).toBe('interpolation');
-            expect(el.status).toBe('annotation');
-            expect(el.name).toBe('Test Task');
-        }
     });
 });
 

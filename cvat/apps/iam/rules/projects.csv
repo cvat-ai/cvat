@@ -44,3 +44,7 @@ export:backup,Project,Sandbox,None,,GET,/projects/{id}/backup,Admin,N/A
 export:backup,Project,Sandbox,"Owner, Assignee",,GET,/projects/{id}/backup,None,N/A
 export:backup,Project,Organization,"Owner, Assignee",,GET,/projects/{id}/backup,None,Worker
 export:backup,Project,Organization,None,,GET,/projects/{id}/backup,User,Maintainer
+update:organization,"Project, Organization",Sandbox,"None, Assignee",,PATCH,/projects/{id},Admin,N/A
+update:organization,"Project, Organization",Sandbox,Owner,,PATCH,/projects/{id},Worker,N/A
+update:organization,"Project, Organization",Organization,"None, Assignee",,PATCH,/projects/{id},User,Maintainer
+update:organization,"Project, Organization",Organization,Owner,,PATCH,/projects/{id},Worker,Worker
