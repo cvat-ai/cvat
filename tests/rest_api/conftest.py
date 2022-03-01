@@ -11,6 +11,9 @@ from .utils.config import ASSETS_DIR
 def cvat_db_container(command):
     run(('docker exec cvat_db ' + command).split(), check=True) #nosec
 
+def cvat_container(command):
+    run(('docker exec cvat ' + command).split(), check=True) #nosec
+
 def docker_cp(source, target):
     run(' '.join(['docker container cp', source, target]).split(), check=True) #nosec
 
@@ -30,8 +33,10 @@ def drop_test_db():
 
 def create_test_db():
     docker_cp(source=osp.join(ASSETS_DIR, 'cvat_db'), target='cvat_db:/')
-    cvat_db_container('createdb test_db')
-    cvat_db_container('psql -U root -q -d test_db -f /cvat_db/cvat_db.sql')
+    docker_cp(source=osp.join(ASSETS_DIR, 'cvat_db/data.json'), target='cvat:data.json')
+    cvat_container('python manage.py loaddata /data.json')
+    cvat_db_container('createdb test_db -T cvat')
+    #cvat_db_container('psql -U root -q -d test_db -f /cvat_db/cvat_db.sql')
 
 @pytest.fixture(scope='session', autouse=True)
 def init_test_db():
