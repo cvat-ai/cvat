@@ -12,7 +12,7 @@
         "username": "worker2"
       },
       "bug_tracker": "",
-      "created_date": "2022-02-21T10:31:52.429478Z",
+      "created_date": "2022-02-21T10:31:52.429000Z",
       "data": 7,
       "data_chunk_size": 72,
       "data_compressed_chunk_type": "imageset",
@@ -66,13 +66,13 @@
       "size": 11,
       "status": "annotation",
       "subset": "",
-      "updated_date": "2022-02-21T10:41:38.540427Z",
+      "updated_date": "2022-02-21T10:41:38.540000Z",
       "url": "http://localhost:8080/api/tasks/7"
     },
     {
       "assignee": null,
       "bug_tracker": "",
-      "created_date": "2022-02-16T06:26:54.631217Z",
+      "created_date": "2022-02-16T06:26:54.631000Z",
       "data": 6,
       "data_chunk_size": 72,
       "data_compressed_chunk_type": "imageset",
@@ -120,13 +120,13 @@
       "size": 1,
       "status": "annotation",
       "subset": "",
-      "updated_date": "2022-02-16T06:26:54.836403Z",
+      "updated_date": "2022-02-16T06:26:54.836000Z",
       "url": "http://localhost:8080/api/tasks/6"
     },
     {
       "assignee": null,
       "bug_tracker": "",
-      "created_date": "2022-02-16T06:25:48.168612Z",
+      "created_date": "2022-02-16T06:25:48.168000Z",
       "data": 5,
       "data_chunk_size": 72,
       "data_compressed_chunk_type": "imageset",
@@ -180,7 +180,7 @@
       "size": 25,
       "status": "annotation",
       "subset": "",
-      "updated_date": "2022-02-21T10:40:21.257604Z",
+      "updated_date": "2022-02-21T10:40:21.257000Z",
       "url": "http://localhost:8080/api/tasks/5"
     },
     {
@@ -192,7 +192,7 @@
         "username": "user5"
       },
       "bug_tracker": "",
-      "created_date": "2021-12-14T19:55:57.475273Z",
+      "created_date": "2021-12-14T19:55:57.475000Z",
       "data": 4,
       "data_chunk_size": 72,
       "data_compressed_chunk_type": "imageset",
@@ -252,7 +252,7 @@
       "size": 58,
       "status": "annotation",
       "subset": "train",
-      "updated_date": "2022-02-24T21:32:36.190676Z",
+      "updated_date": "2022-02-24T21:32:36.190000Z",
       "url": "http://localhost:8080/api/tasks/4"
     },
     {
@@ -264,7 +264,7 @@
         "username": "user5"
       },
       "bug_tracker": "",
-      "created_date": "2021-12-14T19:48:33.089778Z",
+      "created_date": "2021-12-14T19:48:33.089000Z",
       "data": 3,
       "data_chunk_size": 72,
       "data_compressed_chunk_type": "imageset",
@@ -359,13 +359,13 @@
       "size": 148,
       "status": "annotation",
       "subset": "Train",
-      "updated_date": "2022-02-24T21:25:10.697341Z",
+      "updated_date": "2022-02-24T21:25:10.697000Z",
       "url": "http://localhost:8080/api/tasks/3"
     },
     {
       "assignee": null,
       "bug_tracker": "",
-      "created_date": "2021-12-14T18:50:29.458488Z",
+      "created_date": "2021-12-14T18:50:29.458000Z",
       "data": 2,
       "data_chunk_size": 72,
       "data_compressed_chunk_type": "imageset",
@@ -425,13 +425,13 @@
       "size": 23,
       "status": "annotation",
       "subset": "",
-      "updated_date": "2021-12-22T07:14:15.234748Z",
+      "updated_date": "2021-12-22T07:14:15.234000Z",
       "url": "http://localhost:8080/api/tasks/2"
     },
     {
       "assignee": null,
       "bug_tracker": "",
-      "created_date": "2021-12-14T18:43:47.601289Z",
+      "created_date": "2021-12-14T18:43:47.601000Z",
       "data": 1,
       "data_chunk_size": 72,
       "data_compressed_chunk_type": "imageset",
@@ -491,7 +491,7 @@
       "size": 130,
       "status": "annotation",
       "subset": "",
-      "updated_date": "2021-12-22T07:15:22.942484Z",
+      "updated_date": "2021-12-22T07:15:22.942000Z",
       "url": "http://localhost:8080/api/tasks/1"
     }
   ]

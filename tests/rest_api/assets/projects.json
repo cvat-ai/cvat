@@ -12,7 +12,7 @@
         "username": "user2"
       },
       "bug_tracker": "",
-      "created_date": "2021-12-14T19:52:37.278149Z",
+      "created_date": "2021-12-14T19:52:37.278000Z",
       "dimension": "2d",
       "id": 2,
       "labels": [
@@ -45,7 +45,7 @@
       "tasks": [
         4
       ],
-      "updated_date": "2022-02-24T21:32:36.197153Z",
+      "updated_date": "2022-02-24T21:32:36.197000Z",
       "url": "http://localhost:8080/api/projects/2"
     },
     {
@@ -57,7 +57,7 @@
         "username": "user6"
       },
       "bug_tracker": "",
-      "created_date": "2021-12-14T19:46:37.969497Z",
+      "created_date": "2021-12-14T19:46:37.969000Z",
       "dimension": "2d",
       "id": 1,
       "labels": [
@@ -103,7 +103,7 @@
       "tasks": [
         3
       ],
-      "updated_date": "2022-02-24T21:33:48.037024Z",
+      "updated_date": "2022-02-24T21:33:48.037000Z",
       "url": "http://localhost:8080/api/projects/1"
     }
   ]
