@@ -26,16 +26,29 @@
 }
 
 .cvat-cloud-storages-list-top-bar {
-    > div:first-child {
-        .cvat-title {
-            margin-right: $grid-unit-size;
-        }
-
+    > div {
         display: flex;
-    }
+        justify-content: space-between;
 
-    > div:last-child {
-        text-align: right;
+        > .cvat-cloudstorages-page-filters-wrapper {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+
+            > div {
+                > *:not(:last-child) {
+                    margin-right: $grid-unit-size;
+                }
+
+                display: flex;
+                margin-right: $grid-unit-size * 4;
+            }
+
+            .cvat-cloudstorages-page-tasks-search-bar {
+                width: $grid-unit-size * 32;
+            }
+        }
     }
 }
 

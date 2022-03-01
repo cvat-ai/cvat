@@ -148,13 +148,8 @@ export interface CloudStoragesQuery {
     page: number;
     id: number | null;
     search: string | null;
-    owner: string | null;
-    displayName: string | null;
-    description: string | null;
-    resource: string | null;
-    providerType: string | null;
-    credentialsType: string | null;
-    [key: string]: string | number | null | undefined;
+    sort: string | null;
+    filter: string | null;
 }
 
 interface CloudStorageAdditional {
