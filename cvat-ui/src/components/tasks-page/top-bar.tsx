@@ -99,7 +99,7 @@ export default function TopBarComponent(props: VisibleTopBarProps): JSX.Element 
                         overlay={(
                             <div className='cvat-tasks-page-control-buttons-wrapper'>
                                 <Button
-                                    id='cvat-create-task-button'
+                                    className='cvat-create-task-button'
                                     type='primary'
                                     onClick={(): void => history.push('/tasks/create')}
                                     icon={<PlusOutlined />}
@@ -117,13 +117,13 @@ export default function TopBarComponent(props: VisibleTopBarProps): JSX.Element 
                                     className='cvat-import-task'
                                 >
                                     <Button
-                                        id='cvat-import-task-button'
+                                        className='cvat-import-task-button'
                                         type='primary'
                                         disabled={importing}
                                         icon={<UploadOutlined />}
                                     >
                                         Create from backup
-                                        {importing && <LoadingOutlined id='cvat-import-task-button-loading' />}
+                                        {importing && <LoadingOutlined />}
                                     </Button>
                                 </Upload>
                             </div>

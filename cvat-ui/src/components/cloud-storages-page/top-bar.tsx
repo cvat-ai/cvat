@@ -1,4 +1,4 @@
-// Copyright (C) 2021 Intel Corporation
+// Copyright (C) 2021-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -9,7 +9,6 @@ import Button from 'antd/lib/button';
 import Text from 'antd/lib/typography/Text';
 import { PlusOutlined } from '@ant-design/icons';
 
-import SearchField from 'components/search-field/search-field';
 import { CloudStoragesQuery } from 'reducers/interfaces';
 
 interface Props {
@@ -25,7 +24,6 @@ export default function StoragesTopBar(props: Props): JSX.Element {
         <Row justify='space-between' align='middle' className='cvat-cloud-storages-list-top-bar'>
             <Col md={11} lg={9} xl={9} xxl={9}>
                 <Text className='cvat-title'>Cloud Storages</Text>
-                <SearchField instance='cloudstorage' onSearch={onSearch} query={query} />
             </Col>
             <Col md={{ span: 11 }} lg={{ span: 9 }} xl={{ span: 9 }} xxl={{ span: 9 }}>
                 <Button
