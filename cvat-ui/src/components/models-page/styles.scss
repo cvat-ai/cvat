@@ -27,25 +27,10 @@
 }
 
 .cvat-empty-models-list {
-    /* empty-models icon */
-    > div:nth-child(1) {
-        margin-top: 50px;
-    }
-
-    /* No models uploaded yet */
-    > div:nth-child(2) > div {
-        margin-top: 20px;
-
-        > span {
-            font-size: 20px;
-            color: $text-color;
-        }
-    }
-
-    /* To annotate your task automatically */
-    > div:nth-child(3) {
-        margin-top: 10px;
-    }
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
 }
 
 .cvat-models-list {
