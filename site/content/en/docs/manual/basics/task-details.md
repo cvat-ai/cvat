@@ -26,9 +26,9 @@ and the details of the task (specified when the task was created) and the jobs s
      - Repository link
      - Synchronization status with dataset repository.
        When you click on the status, the current annotation will be sent. It has several states:
-       - Synchronized task synchronized, that is, created a pool of requisites with an actual annotation file
-       - Merged pool quest with up-to-date annotation file
-       - Synchronize
+       - Synchronized - task synchronized, that is, created a pull of requisites with an actual annotation file.
+       - Merged - merged pull request with up-to-date annotation file.
+       - Synchronize - highlighted in red, there are sync issues.
      - Use a format drop-down list of formats in which the annotation can be synchronized.
      - Support for large file enabling the use of [LFS](https://git-lfs.github.com/).
 
