@@ -4,8 +4,34 @@
 
 from http import HTTPStatus
 import pytest
-from .utils.config import get_method, patch_method, delete_method
+from .utils.config import get_method, options_method, patch_method, delete_method
 from deepdiff import DeepDiff
+
+class TestMetadataOrganizations:
+    _ORG = 2
+
+    @pytest.mark.parametrize('privilege, role, is_member', [
+        ('admin',    None,         None),
+        ('user',     None,         False),
+        ('business', None,         False),
+        ('worker',   None,         False),
+        (None,       'owner',      True),
+        (None,       'maintainer', True),
+        (None,       'worker',     True),
+        (None,       'supervisor', True),
+    ])
+    def test_can_send_options_request(self, privilege, role, is_member,
+            find_users, organizations):
+        exclude_org = None if is_member else self._ORG
+        org = self._ORG if is_member else None
+        user = find_users(privilege=privilege, role=role, org=org,
+            exclude_org=exclude_org)[0]['username']
+
+        response = options_method(user, f'organizations')
+        assert response.status_code == HTTPStatus.OK
+
+        response = options_method(user, f'organizations/{self._ORG}')
+        assert response.status_code == HTTPStatus.OK
 
 class TestGetOrganizations:
     _ORG = 2

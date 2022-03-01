@@ -1045,8 +1045,14 @@ class PolicyEnforcer(BasePermission):
     # pylint: disable=no-self-use
     def check_permission(self, request, view, obj):
         permissions = []
-        for perm in OpenPolicyAgentPermission.__subclasses__():
-            permissions.extend(perm.create(request, view, obj))
+        # DRF can send OPTIONS request. Internally it will try to get
+        # information about serializers for PUT and POST requests (clone
+        # request and replace the http method). To avoid handling
+        # ('POST', 'metadata') and ('PUT', 'metadata') in every request,
+        # the condition below is enough.
+        if not self.is_metadata_request(request, view):
+            for perm in OpenPolicyAgentPermission.__subclasses__():
+                permissions.extend(perm.create(request, view, obj))
 
         return all(permissions)
 
@@ -1058,6 +1064,10 @@ class PolicyEnforcer(BasePermission):
 
     def has_object_permission(self, request, view, obj):
         return self.check_permission(request, view, obj)
+
+    @staticmethod
+    def is_metadata_request(request, view):
+        return request.method == 'OPTIONS' or view.action == 'metadata'
 
 class IsMemberInOrganization(BasePermission):
     message = 'You should be an active member in the organization.'
