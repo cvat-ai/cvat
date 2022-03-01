@@ -19,6 +19,6 @@ weight: 19
 
    ![](/images/image109.jpg)
 
-If synchronization fails, the `Synchronized` button will turn red:
+If synchronization fails, the `Synchronize` button will turn red:
 
    ![](/images/image106.jpg)
