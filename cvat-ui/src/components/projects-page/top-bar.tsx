@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useHistory } from 'react-router';
 import { Row, Col } from 'antd/lib/grid';
 import Button from 'antd/lib/button';
@@ -11,6 +11,7 @@ import Input from 'antd/lib/input';
 import { PlusOutlined, UploadOutlined, LoadingOutlined } from '@ant-design/icons';
 import Upload from 'antd/lib/upload';
 
+import { usePrevious } from 'utils/hooks';
 import { ProjectsQuery } from 'reducers/interfaces';
 import { SortingComponent, ResourceFilterHOC, defaultVisibility } from 'components/resource-sorting-filtering';
 
@@ -38,6 +39,13 @@ function TopBarComponent(props: Props): JSX.Element {
         importing, query, onApplyFilter, onApplySorting, onApplySearch, onImportProject,
     } = props;
     const [visibility, setVisibility] = useState<typeof defaultVisibility>(defaultVisibility);
+    const prevImporting = usePrevious<boolean>(importing);
+
+    useEffect(() => {
+        if (prevImporting && !importing) {
+            onApplyFilter(query.filter);
+        }
+    }, [importing]);
     const history = useHistory();
 
     return (
@@ -83,7 +91,6 @@ function TopBarComponent(props: Props): JSX.Element {
                 <div>
                     <Dropdown
                         trigger={['click']}
-                        destroyPopupOnHide
                         overlay={(
                             <div className='cvat-projects-page-control-buttons-wrapper'>
                                 <Button

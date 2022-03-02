@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useHistory } from 'react-router';
 import { Row, Col } from 'antd/lib/grid';
 import Dropdown from 'antd/lib/dropdown';
@@ -13,7 +13,7 @@ import Input from 'antd/lib/input';
 
 import { SortingComponent, ResourceFilterHOC, defaultVisibility } from 'components/resource-sorting-filtering';
 import { TasksQuery } from 'reducers/interfaces';
-
+import { usePrevious } from 'utils/hooks';
 import {
     localStorageRecentKeyword, localStorageRecentCapacity,
     predefinedFilterValues, defaultEnabledFilters, config,
@@ -39,6 +39,13 @@ export default function TopBarComponent(props: VisibleTopBarProps): JSX.Element 
     } = props;
     const [visibility, setVisibility] = useState<typeof defaultVisibility>(defaultVisibility);
     const history = useHistory();
+    const prevImporting = usePrevious<boolean>(importing);
+
+    useEffect(() => {
+        if (prevImporting && !importing) {
+            onApplyFilter(query.filter);
+        }
+    }, [importing]);
 
     return (
         <Row className='cvat-tasks-page-top-bar' justify='center' align='middle'>
@@ -83,7 +90,6 @@ export default function TopBarComponent(props: VisibleTopBarProps): JSX.Element 
                 <div>
                     <Dropdown
                         trigger={['click']}
-                        destroyPopupOnHide
                         overlay={(
                             <div className='cvat-tasks-page-control-buttons-wrapper'>
                                 <Button

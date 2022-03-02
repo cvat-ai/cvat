@@ -24,18 +24,11 @@ function JobsPageComponent(): JSX.Element {
     const fetching = useSelector((state: CombinedState) => state.jobs.fetching);
     const count = useSelector((state: CombinedState) => state.jobs.count);
 
-    const dimensions = {
-        md: 22,
-        lg: 18,
-        xl: 16,
-        xxl: 16,
-    };
-
     const content = count ? (
         <>
             <JobsContentComponent />
             <Row justify='space-around' about='middle'>
-                <Col {...dimensions}>
+                <Col md={22} lg={18} xl={16} xxl={16}>
                     <Pagination
                         className='cvat-jobs-page-pagination'
                         onChange={(page: number) => {
