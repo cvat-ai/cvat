@@ -197,6 +197,8 @@ const config = require('./config');
                 'id',
                 'page',
                 'projectId',
+                'sort',
+                'ordering',
             ]) {
                 if (Object.prototype.hasOwnProperty.call(filter, field)) {
                     searchParams[camelToSnake(field)] = filter[field];

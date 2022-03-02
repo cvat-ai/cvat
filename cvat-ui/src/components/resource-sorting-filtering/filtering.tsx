@@ -112,11 +112,12 @@ export default function ResourceFilterHOC(
                 }
 
                 setPredefinedFilters(result);
+                const appliedPredefined = defaultEnabledFilters
+                    .filter((filterKey: string) => filterKey in result)
+                    .map((filterKey: string) => result[filterKey]);
                 setAppliedFilter({
                     ...appliedFilter,
-                    predefined: defaultEnabledFilters
-                        .filter((filterKey: string) => filterKey in result)
-                        .map((filterKey: string) => result[filterKey]),
+                    predefined: appliedPredefined.length ? appliedPredefined : null,
                 });
             }
         }, [user]);
