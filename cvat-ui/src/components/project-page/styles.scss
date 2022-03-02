@@ -14,6 +14,8 @@
 }
 
 .cvat-project-page-tasks-bar {
+    margin: $grid-unit-size * 2 0;
+
     > div {
         display: flex;
         justify-content: space-between;
@@ -67,10 +69,6 @@
         margin-top: $grid-unit-size * 2;
         margin-bottom: $grid-unit-size * 2;
     }
-}
-
-.cvat-project-page-tasks-bar {
-    margin: $grid-unit-size * 2 0;
 }
 
 .ant-menu.cvat-project-actions-menu {
