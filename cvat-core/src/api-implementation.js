@@ -196,7 +196,6 @@ const config = require('./config');
                 'search',
                 'id',
                 'page',
-                'projectId',
                 'sort',
                 'ordering',
             ]) {
@@ -205,11 +204,14 @@ const config = require('./config');
                 }
             }
 
-            const tasksData = await serverProxy.tasks.get(searchParams);
+            let tasksData = null;
+            if (filter.projectId) {
+                tasksData = await serverProxy.projects.tasks(filter.projectId, searchParams);
+            } else {
+                tasksData = await serverProxy.tasks.get(searchParams);
+            }
             const tasks = tasksData.map((task) => new Task(task));
-
             tasks.count = tasksData.count;
-
             return tasks;
         };
 
@@ -225,7 +227,7 @@ const config = require('./config');
             checkExclusiveFields(filter, ['id'], ['page']);
 
             const searchParams = {};
-            for (const field of ['filter', 'search', 'status', 'id', 'page']) {
+            for (const field of ['filter', 'search', 'sort', 'id', 'page']) {
                 if (Object.prototype.hasOwnProperty.call(filter, field)) {
                     searchParams[camelToSnake(field)] = filter[field];
                 }

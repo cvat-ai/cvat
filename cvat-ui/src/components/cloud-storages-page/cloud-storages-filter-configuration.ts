@@ -6,49 +6,6 @@ import { Config } from 'react-awesome-query-builder';
 
 export const config: Partial<Config> = {
     fields: {
-        dimension: {
-            label: 'Dimension',
-            type: 'select',
-            operators: ['select_equals'],
-            valueSources: ['value'],
-            fieldSettings: {
-                listValues: [
-                    { value: '2d', title: '2D' },
-                    { value: '3d', title: '3D' },
-                ],
-            },
-        },
-        assignee: {
-            label: 'Assignee',
-            type: 'text', // todo: change to select
-            valueSources: ['value'],
-            fieldSettings: {
-                // useAsyncSearch: true,
-                // forceAsyncSearch: true,
-                // async fetch does not work for now in this library for AntdConfig
-                // but that issue was solved, see https://github.com/ukrbublik/react-awesome-query-builder/issues/616
-                // waiting for a new release, alternative is to use material design, but it is not the best option too
-                // asyncFetch: async (search: string | null) => {
-                //     const users = await core.users.get({
-                //         limit: 10,
-                //         is_active: true,
-                //         ...(search ? { search } : {}),
-                //     });
-
-                //     return {
-                //         values: users.map((user: any) => ({
-                //             value: user.username, title: user.username,
-                //         })),
-                //         hasMore: false,
-                //     };
-                // },
-            },
-        },
-        updated_date: {
-            label: 'Last updated',
-            type: 'datetime',
-            operators: ['between', 'greater', 'greater_or_equal', 'less', 'less_or_equal'],
-        },
         id: {
             label: 'ID',
             type: 'number',
@@ -56,11 +13,61 @@ export const config: Partial<Config> = {
             fieldSettings: { min: 0 },
             valueSources: ['value'],
         },
-        task_name: {
-            label: 'Task name',
+        provider_type: {
+            label: 'Provider type',
+            type: 'select',
+            operators: ['select_equals'],
+            valueSources: ['value'],
+            fieldSettings: {
+                listValues: [
+                    { value: 'AWS_S3_BUCKET', title: 'AWS S3' },
+                    { value: 'AZURE_CONTAINER', title: 'Azure' },
+                    { value: 'GOOGLE_CLOUD_STORAGE', title: 'Google cloud' },
+                ],
+            },
+        },
+        credentials_type: {
+            label: 'Credentials type',
+            type: 'select',
+            operators: ['select_equals'],
+            valueSources: ['value'],
+            fieldSettings: {
+                listValues: [
+                    { value: 'KEY_SECRET_KEY_PAIR', title: 'Key & secret key' },
+                    { value: 'ACCOUNT_NAME_TOKEN_PAIR', title: 'Account name & token' },
+                    { value: 'ANONYMOUS_ACCESS', title: 'Anonymous access' },
+                    { value: 'KEY_FILE_PATH', title: 'Key file' },
+                ],
+            },
+        },
+        resource: {
+            label: 'Resource name',
             type: 'text',
             valueSources: ['value'],
             operators: ['like'],
+        },
+        display_name: {
+            label: 'Display name',
+            type: 'text',
+            valueSources: ['value'],
+            operators: ['like'],
+        },
+        description: {
+            label: 'Description',
+            type: 'text',
+            valueSources: ['value'],
+            operators: ['like'],
+        },
+        owner: {
+            label: 'Owner',
+            type: 'text',
+            valueSources: ['value'],
+            operators: ['equal'],
+        },
+        updated_date: {
+            label: 'Last updated',
+            type: 'datetime',
+            operators: ['between', 'greater', 'greater_or_equal', 'less', 'less_or_equal'],
         },
     },
 };
@@ -68,6 +75,9 @@ export const config: Partial<Config> = {
 export const localStorageRecentCapacity = 10;
 export const localStorageRecentKeyword = 'recentlyAppliedTasksFilters';
 export const predefinedFilterValues = {
-    'Assigned to me': '{"and":[{"==":[{"var":"assignee"},"<username>"]}]}',
+    'Owned by me': '{"and":[{"==":[{"var":"owner"},"<username>"]}]}',
+    'AWS storages': '{"and":[{"==":[{"var":"provider_type"},"AWS_S3_BUCKET"]}]}',
+    'Azure storages': '{"and":[{"==":[{"var":"provider_type"},"AZURE_CONTAINER"]}]}',
+    'Google cloud storages': '{"and":[{"==":[{"var":"provider_type"},"GOOGLE_CLOUD_STORAGE"]}]}',
 };
 export const defaultEnabledFilters = [];

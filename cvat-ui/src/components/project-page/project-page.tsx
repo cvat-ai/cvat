@@ -23,7 +23,7 @@ import TaskItem from 'components/tasks-page/task-item';
 import MoveTaskModal from 'components/move-task-modal/move-task-modal';
 import ModelRunnerDialog from 'components/model-runner-modal/model-runner-dialog';
 import ImportDatasetModal from 'components/import-dataset-modal/import-dataset-modal';
-import { SortingComponent, ResourceFilterHOC } from 'components/resource-sorting-filtering';
+import { SortingComponent, ResourceFilterHOC, defaultVisibility } from 'components/resource-sorting-filtering';
 import DetailsComponent from './details';
 import ProjectTopBar from './top-bar';
 
@@ -40,18 +40,6 @@ const FilteringComponent = ResourceFilterHOC(
 interface ParamType {
     id: string;
 }
-
-const defaultVisibility: {
-    predefined: boolean;
-    recent: boolean;
-    builder: boolean;
-    sorting: boolean;
-} = {
-    predefined: false,
-    recent: false,
-    builder: false,
-    sorting: false,
-};
 
 export default function ProjectPageComponent(): JSX.Element {
     const id = +useParams<ParamType>().id;
@@ -164,8 +152,13 @@ export default function ProjectPageComponent(): JSX.Element {
                         <div className='cvat-project-page-tasks-filters-wrapper'>
                             <Input.Search
                                 enterButton
-                                onSearch={(phrase: string) => {
-                                    // onApplySearch(phrase);
+                                onSearch={(_search: string) => {
+                                    dispatch(getProjectTasksAsync({
+                                        ...tasksQuery,
+                                        page: 1,
+                                        projectId: id,
+                                        search: _search,
+                                    }));
                                 }}
                                 defaultValue={tasksQuery.search || ''}
                                 className='cvat-project-page-tasks-search-bar'
@@ -177,10 +170,15 @@ export default function ProjectPageComponent(): JSX.Element {
                                     onVisibleChange={(visible: boolean) => (
                                         setVisibility({ ...defaultVisibility, sorting: visible })
                                     )}
-                                    defaultFields={tasksQuery.sort?.split(',') || ['ID']}
-                                    sortingFields={['ID', 'Assignee', 'Updated date', 'Stage', 'State', 'Task ID', 'Project ID', 'Task name', 'Project name']}
-                                    onApplySorting={() => {
-                                        // todo
+                                    defaultFields={tasksQuery.sort?.split(',') || ['-ID']}
+                                    sortingFields={['ID', 'Owner', 'Status', 'Assignee', 'Updated date', 'Subset', 'Mode', 'Dimension', 'Name']}
+                                    onApplySorting={(sorting: string | null) => {
+                                        dispatch(getProjectTasksAsync({
+                                            ...tasksQuery,
+                                            page: 1,
+                                            projectId: id,
+                                            sort: sorting,
+                                        }));
                                     }}
                                 />
                                 <FilteringComponent
@@ -194,10 +192,19 @@ export default function ProjectPageComponent(): JSX.Element {
                                         setVisibility({ ...defaultVisibility, builder: visible })
                                     )}
                                     onRecentVisibleChange={(visible: boolean) => (
-                                        setVisibility({ ...defaultVisibility, builder: visibility.builder, recent: visible })
+                                        setVisibility({
+                                            ...defaultVisibility,
+                                            builder: visibility.builder,
+                                            recent: visible,
+                                        })
                                     )}
-                                    onApplyFilter={() => {
-                                        // todo
+                                    onApplyFilter={(filter: string | null) => {
+                                        dispatch(getProjectTasksAsync({
+                                            ...tasksQuery,
+                                            page: 1,
+                                            projectId: id,
+                                            filter,
+                                        }));
                                     }}
                                 />
                             </div>

@@ -10,7 +10,7 @@ import { PlusOutlined } from '@ant-design/icons';
 
 import { CloudStoragesQuery } from 'reducers/interfaces';
 import Input from 'antd/lib/input';
-import { SortingComponent, ResourceFilterHOC } from 'components/resource-sorting-filtering';
+import { SortingComponent, ResourceFilterHOC, defaultVisibility } from 'components/resource-sorting-filtering';
 
 import {
     localStorageRecentKeyword, localStorageRecentCapacity,
@@ -29,18 +29,6 @@ interface Props {
     query: CloudStoragesQuery;
 }
 
-const defaultVisibility: {
-    predefined: boolean;
-    recent: boolean;
-    builder: boolean;
-    sorting: boolean;
-} = {
-    predefined: false,
-    recent: false,
-    builder: false,
-    sorting: false,
-};
-
 export default function StoragesTopBar(props: Props): JSX.Element {
     const {
         query, onApplyFilter, onApplySorting, onApplySearch,
@@ -55,7 +43,7 @@ export default function StoragesTopBar(props: Props): JSX.Element {
                     <Input.Search
                         enterButton
                         onSearch={(phrase: string) => {
-                            // onApplySearch(phrase);
+                            onApplySearch(phrase);
                         }}
                         defaultValue={query.search || ''}
                         className='cvat-cloudstorages-page-tasks-search-bar'
@@ -67,10 +55,10 @@ export default function StoragesTopBar(props: Props): JSX.Element {
                             onVisibleChange={(visible: boolean) => (
                                 setVisibility({ ...defaultVisibility, sorting: visible })
                             )}
-                            defaultFields={query.sort?.split(',') || ['ID']}
-                            sortingFields={['ID', 'Assignee', 'Updated date', 'Stage', 'State', 'Task ID', 'Project ID', 'Task name', 'Project name']}
-                            onApplySorting={() => {
-                                // todo
+                            defaultFields={query.sort?.split(',') || ['-ID']}
+                            sortingFields={['ID', 'Provider type', 'Updated date', 'Display name', 'Resource', 'Credentials type', 'Owner', 'Description']}
+                            onApplySorting={(sorting: string | null) => {
+                                onApplySorting(sorting);
                             }}
                         />
                         <FilteringComponent
@@ -86,8 +74,8 @@ export default function StoragesTopBar(props: Props): JSX.Element {
                             onRecentVisibleChange={(visible: boolean) => (
                                 setVisibility({ ...defaultVisibility, builder: visibility.builder, recent: visible })
                             )}
-                            onApplyFilter={() => {
-                                // todo
+                            onApplyFilter={(filter: string | null) => {
+                                onApplyFilter(filter);
                             }}
                         />
                     </div>

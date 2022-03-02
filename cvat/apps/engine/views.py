@@ -256,7 +256,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
     # NOTE: The search_fields attribute should be a list of names of text
     # type fields on the model,such as CharField or TextField
     search_fields = ('name', 'owner', 'assignee', 'status')
-    filter_fields = list(search_fields) + ['id']
+    filter_fields = list(search_fields) + ['id', 'updated_date']
     ordering_fields = filter_fields
     ordering = "-id"
     lookup_fields = {'owner': 'owner__username', 'assignee': 'assignee__username'}

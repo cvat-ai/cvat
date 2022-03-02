@@ -12,7 +12,7 @@ import { PlusOutlined, UploadOutlined, LoadingOutlined } from '@ant-design/icons
 import Upload from 'antd/lib/upload';
 
 import { ProjectsQuery } from 'reducers/interfaces';
-import { SortingComponent, ResourceFilterHOC } from 'components/resource-sorting-filtering';
+import { SortingComponent, ResourceFilterHOC, defaultVisibility } from 'components/resource-sorting-filtering';
 
 import {
     localStorageRecentKeyword, localStorageRecentCapacity,
@@ -32,18 +32,6 @@ interface Props {
     query: ProjectsQuery;
     importing: boolean;
 }
-
-const defaultVisibility: {
-    predefined: boolean;
-    recent: boolean;
-    builder: boolean;
-    sorting: boolean;
-} = {
-    predefined: false,
-    recent: false,
-    builder: false,
-    sorting: false,
-};
 
 function TopBarComponent(props: Props): JSX.Element {
     const {
@@ -71,8 +59,8 @@ function TopBarComponent(props: Props): JSX.Element {
                             onVisibleChange={(visible: boolean) => (
                                 setVisibility({ ...defaultVisibility, sorting: visible })
                             )}
-                            defaultFields={query.sort?.split(',') || ['ID']}
-                            sortingFields={['ID', 'Assignee', 'Updated date', 'Stage', 'State', 'Task ID', 'Project ID', 'Task name', 'Project name']}
+                            defaultFields={query.sort?.split(',') || ['-ID']}
+                            sortingFields={['ID', 'Assignee', 'Owner', 'Status', 'Name', 'Updated date']}
                             onApplySorting={onApplySorting}
                         />
                         <FilteringComponent

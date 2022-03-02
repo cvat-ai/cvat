@@ -7,7 +7,7 @@ import { Col, Row } from 'antd/lib/grid';
 import Input from 'antd/lib/input';
 
 import { JobsQuery } from 'reducers/interfaces';
-import { SortingComponent, ResourceFilterHOC } from 'components/resource-sorting-filtering';
+import { SortingComponent, ResourceFilterHOC, defaultVisibility } from 'components/resource-sorting-filtering';
 import {
     localStorageRecentKeyword, localStorageRecentCapacity,
     predefinedFilterValues, defaultEnabledFilters, config,
@@ -17,18 +17,6 @@ const FilteringComponent = ResourceFilterHOC(
     config, localStorageRecentKeyword, localStorageRecentCapacity,
     predefinedFilterValues, defaultEnabledFilters,
 );
-
-const defaultVisibility: {
-    predefined: boolean;
-    recent: boolean;
-    builder: boolean;
-    sorting: boolean;
-} = {
-    predefined: false,
-    recent: false,
-    builder: false,
-    sorting: false,
-};
 
 interface Props {
     query: JobsQuery;

@@ -6,37 +6,6 @@ import { Config } from 'react-awesome-query-builder';
 
 export const config: Partial<Config> = {
     fields: {
-        assignee: {
-            label: 'Assignee',
-            type: 'text', // todo: change to select
-            valueSources: ['value'],
-            fieldSettings: {
-                // useAsyncSearch: true,
-                // forceAsyncSearch: true,
-                // async fetch does not work for now in this library for AntdConfig
-                // but that issue was solved, see https://github.com/ukrbublik/react-awesome-query-builder/issues/616
-                // waiting for a new release, alternative is to use material design, but it is not the best option too
-                // asyncFetch: async (search: string | null) => {
-                //     const users = await core.users.get({
-                //         limit: 10,
-                //         is_active: true,
-                //         ...(search ? { search } : {}),
-                //     });
-
-                //     return {
-                //         values: users.map((user: any) => ({
-                //             value: user.username, title: user.username,
-                //         })),
-                //         hasMore: false,
-                //     };
-                // },
-            },
-        },
-        updated_date: {
-            label: 'Last updated',
-            type: 'datetime',
-            operators: ['between', 'greater', 'greater_or_equal', 'less', 'less_or_equal'],
-        },
         id: {
             label: 'ID',
             type: 'number',
@@ -44,11 +13,41 @@ export const config: Partial<Config> = {
             fieldSettings: { min: 0 },
             valueSources: ['value'],
         },
-        project_name: {
-            label: 'Project name',
+        name: {
+            label: 'Name',
             type: 'text',
             valueSources: ['value'],
             operators: ['like'],
+        },
+        assignee: {
+            label: 'Assignee',
+            type: 'text',
+            valueSources: ['value'],
+            operators: ['equal'],
+        },
+        owner: {
+            label: 'Owner',
+            type: 'text',
+            valueSources: ['value'],
+            operators: ['equal'],
+        },
+        updated_date: {
+            label: 'Last updated',
+            type: 'datetime',
+            operators: ['between', 'greater', 'greater_or_equal', 'less', 'less_or_equal'],
+        },
+        status: {
+            label: 'Status',
+            type: 'select',
+            valueSources: ['value'],
+            operators: ['select_equals', 'select_any_in', 'select_not_any_in'],
+            fieldSettings: {
+                listValues: [
+                    { value: 'annotation', title: 'Annotation' },
+                    { value: 'validation', title: 'Validation' },
+                    { value: 'completed', title: 'Completed' },
+                ],
+            },
         },
     },
 };
@@ -57,5 +56,7 @@ export const localStorageRecentCapacity = 10;
 export const localStorageRecentKeyword = 'recentlyAppliedProjectsFilters';
 export const predefinedFilterValues = {
     'Assigned to me': '{"and":[{"==":[{"var":"assignee"},"<username>"]}]}',
+    'Owned by me': '{"and":[{"==":[{"var":"owner"},"<username>"]}]}',
+    'Not completed': '{"!":{"and":[{"==":[{"var":"status"},"completed"]}]}}',
 };
-export const defaultEnabledFilters = [];
+export const defaultEnabledFilters = ['Not completed'];

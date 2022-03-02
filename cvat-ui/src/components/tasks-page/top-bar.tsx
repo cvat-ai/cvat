@@ -11,7 +11,7 @@ import Button from 'antd/lib/button';
 import Upload from 'antd/lib/upload';
 import Input from 'antd/lib/input';
 
-import { SortingComponent, ResourceFilterHOC } from 'components/resource-sorting-filtering';
+import { SortingComponent, ResourceFilterHOC, defaultVisibility } from 'components/resource-sorting-filtering';
 import { TasksQuery } from 'reducers/interfaces';
 
 import {
@@ -32,18 +32,6 @@ interface VisibleTopBarProps {
     query: TasksQuery;
     importing: boolean;
 }
-
-const defaultVisibility: {
-    predefined: boolean;
-    recent: boolean;
-    builder: boolean;
-    sorting: boolean;
-} = {
-    predefined: false,
-    recent: false,
-    builder: false,
-    sorting: false,
-};
 
 export default function TopBarComponent(props: VisibleTopBarProps): JSX.Element {
     const {
