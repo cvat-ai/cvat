@@ -111,12 +111,18 @@ function SortingModalComponent(props: Props): JSX.Element {
             return acc;
         }, {}),
     );
+    const [isMounted, setIsMounted] = useState<boolean>(false);
     const [sortingFields, setSortingFields] = useState<string[]>(
         Array.from(new Set([...Object.keys(appliedSorting), ANCHOR_KEYWORD, ...sortingFieldsProp])),
     );
     const [appliedOrder, setAppliedOrder] = useState<string[]>([...defaultFields]);
 
     useEffect(() => {
+        setIsMounted(true);
+    }, []);
+
+    useEffect(() => {
+        if (!isMounted) return;
         const anchorIdx = sortingFields.indexOf(ANCHOR_KEYWORD);
         const appliedSortingCopy = { ...appliedSorting };
         const slicedSortingFields = sortingFields.slice(0, anchorIdx);
@@ -143,6 +149,7 @@ function SortingModalComponent(props: Props): JSX.Element {
         // because we do not want the hook to be called after changing sortingField
         // sortingField value is always relevant because if order changes, the hook before will be called first
 
+        if (!isMounted) return;
         const anchorIdx = sortingFields.indexOf(ANCHOR_KEYWORD);
         const sortingString = sortingFields.slice(0, anchorIdx)
             .map((field: string): string => appliedSorting[field])
