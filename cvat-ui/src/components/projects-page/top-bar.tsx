@@ -125,7 +125,7 @@ function TopBarComponent(props: Props): JSX.Element {
                             </div>
                         )}
                     >
-                        <Button type='primary' icon={<PlusOutlined />} />
+                        <Button type='primary' className='cvat-create-project-dropdown' icon={<PlusOutlined />} />
                     </Dropdown>
                 </div>
             </Col>

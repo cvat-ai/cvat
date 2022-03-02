@@ -123,7 +123,7 @@ export default function TopBarComponent(props: VisibleTopBarProps): JSX.Element 
                             </div>
                         )}
                     >
-                        <Button type='primary' icon={<PlusOutlined />} />
+                        <Button type='primary' className='cvat-create-task-dropdown' icon={<PlusOutlined />} />
                     </Dropdown>
                 </div>
             </Col>
