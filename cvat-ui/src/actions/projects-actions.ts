@@ -80,16 +80,19 @@ const projectActions = {
 export type ProjectActions = ActionUnion<typeof projectActions>;
 
 export function getProjectTasksAsync(tasksQuery: Partial<TasksQuery> = {}): ThunkAction<void> {
-    return (dispatch: ActionCreator<Dispatch>): void => {
+    return (dispatch: ActionCreator<Dispatch>, getState: () => CombinedState): void => {
         const store = getCVATStore();
         const state: CombinedState = store.getState();
-        dispatch(projectActions.updateProjectsGettingQuery({}, tasksQuery));
+        dispatch(projectActions.updateProjectsGettingQuery(
+            getState().projects.gettingQuery,
+            tasksQuery,
+        ));
         const query: Partial<TasksQuery> = {
             ...state.projects.tasksGettingQuery,
             ...tasksQuery,
         };
 
-        dispatch(getTasksAsync(query));
+        dispatch(getTasksAsync(query, false));
     };
 }
 

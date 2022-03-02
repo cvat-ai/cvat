@@ -20,6 +20,7 @@ export default function ProjectsPageComponent(): JSX.Element {
     const fetching = useSelector((state: CombinedState) => state.projects.fetching);
     const count = useSelector((state: CombinedState) => state.projects.current.length);
     const query = useSelector((state: CombinedState) => state.projects.gettingQuery);
+    const tasksQuery = useSelector((state: CombinedState) => state.projects.tasksGettingQuery);
     const importing = useSelector((state: CombinedState) => state.projects.restoring);
     const anySearch = Object.keys(query).some((value: string) => value !== 'page' && (query as any)[value] !== null);
 
@@ -34,7 +35,7 @@ export default function ProjectsPageComponent(): JSX.Element {
                             ...query,
                             search,
                             page: 1,
-                        }),
+                        }, { ...tasksQuery, page: 1 }),
                     );
                 }}
                 onApplyFilter={(filter: string | null) => {
@@ -43,7 +44,7 @@ export default function ProjectsPageComponent(): JSX.Element {
                             ...query,
                             filter,
                             page: 1,
-                        }),
+                        }, { ...tasksQuery, page: 1 }),
                     );
                 }}
                 onApplySorting={(sorting: string | null) => {
@@ -52,7 +53,7 @@ export default function ProjectsPageComponent(): JSX.Element {
                             ...query,
                             sort: sorting,
                             page: 1,
-                        }),
+                        }, { ...tasksQuery, page: 1 }),
                     );
                 }}
                 query={query}

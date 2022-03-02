@@ -56,7 +56,7 @@ export default (state: TasksState = defaultState, action: AnyAction): TasksState
                 hideEmpty: true,
                 count: 0,
                 current: [],
-                gettingQuery: { ...action.payload.query },
+                gettingQuery: action.payload.updateQuery ? { ...action.payload.query } : state.gettingQuery,
             };
         case TasksActionTypes.GET_TASKS_SUCCESS: {
             const combinedWithPreviews = action.payload.array.map(

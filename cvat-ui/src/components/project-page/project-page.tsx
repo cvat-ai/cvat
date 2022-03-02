@@ -3,9 +3,9 @@
 // SPDX-License-Identifier: MIT
 
 import './styles.scss';
-import React, { useEffect, useCallback, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { useHistory, useParams, useLocation } from 'react-router';
+import { useHistory, useParams } from 'react-router';
 import Spin from 'antd/lib/spin';
 import { Row, Col } from 'antd/lib/grid';
 import Result from 'antd/lib/result';
@@ -16,7 +16,7 @@ import { PlusOutlined } from '@ant-design/icons';
 import Empty from 'antd/lib/empty';
 import Input from 'antd/lib/input';
 
-import { CombinedState, Task, TasksQuery } from 'reducers/interfaces';
+import { CombinedState, Task } from 'reducers/interfaces';
 import { getProjectsAsync, getProjectTasksAsync } from 'actions/projects-actions';
 import { cancelInferenceAsync } from 'actions/models-actions';
 import TaskItem from 'components/tasks-page/task-item';
@@ -45,7 +45,6 @@ export default function ProjectPageComponent(): JSX.Element {
     const id = +useParams<ParamType>().id;
     const dispatch = useDispatch();
     const history = useHistory();
-    const { search } = useLocation();
     const projects = useSelector((state: CombinedState) => state.projects.current).map((project) => project.instance);
     const projectsFetching = useSelector((state: CombinedState) => state.projects.fetching);
     const deletes = useSelector((state: CombinedState) => state.projects.activities.deletes);
@@ -63,22 +62,10 @@ export default function ProjectPageComponent(): JSX.Element {
         if (!projectSubsets.includes(task.instance.subset)) projectSubsets.push(task.instance.subset);
     }
 
-    const onPageChange = useCallback(
-        (p: number) => {
-            dispatch(getProjectTasksAsync({
-                projectId: id,
-                page: p,
-            }));
-        },
-        [],
-    );
-
     useEffect(() => {
-        const searchParams: Partial<TasksQuery> = {};
-        for (const [param, value] of new URLSearchParams(search)) {
-            searchParams[param] = ['page'].includes(param) ? Number.parseInt(value, 10) : value;
+        if (!project) {
+            dispatch(getProjectsAsync({ id }, tasksQuery));
         }
-        dispatch(getProjectsAsync({ id }, searchParams));
     }, []);
 
     useEffect(() => {
@@ -128,7 +115,13 @@ export default function ProjectPageComponent(): JSX.Element {
                 <Col md={22} lg={18} xl={16} xxl={14}>
                     <Pagination
                         className='cvat-project-tasks-pagination'
-                        onChange={onPageChange}
+                        onChange={(page: number) => {
+                            dispatch(getProjectTasksAsync({
+                                ...tasksQuery,
+                                projectId: id,
+                                page,
+                            }));
+                        }}
                         showSizeChanger={false}
                         total={tasksCount}
                         pageSize={10}

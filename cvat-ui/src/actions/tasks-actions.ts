@@ -41,10 +41,11 @@ export enum TasksActionTypes {
     SWITCH_MOVE_TASK_MODAL_VISIBLE = 'SWITCH_MOVE_TASK_MODAL_VISIBLE',
 }
 
-function getTasks(query: TasksQuery): AnyAction {
+function getTasks(query: TasksQuery, updateQuery: boolean): AnyAction {
     const action = {
         type: TasksActionTypes.GET_TASKS,
         payload: {
+            updateQuery,
             query,
         },
     };
@@ -74,9 +75,9 @@ function getTasksFailed(error: any): AnyAction {
     return action;
 }
 
-export function getTasksAsync(query: TasksQuery): ThunkAction<Promise<void>, {}, {}, AnyAction> {
+export function getTasksAsync(query: TasksQuery, updateQuery = true): ThunkAction<Promise<void>, {}, {}, AnyAction> {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
-        dispatch(getTasks(query));
+        dispatch(getTasks(query, updateQuery));
 
         // We remove all keys with null values from the query
         const filteredQuery = { ...query };
