@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -25,11 +25,8 @@ const defaultState: TasksState = {
         page: 1,
         id: null,
         search: null,
-        owner: null,
-        assignee: null,
-        name: null,
-        status: null,
-        mode: null,
+        filter: null,
+        sort: null,
         projectId: null,
     },
     activities: {

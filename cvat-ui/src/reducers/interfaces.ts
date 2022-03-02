@@ -42,7 +42,7 @@ export interface ProjectsState {
     count: number;
     current: Project[];
     gettingQuery: ProjectsQuery;
-    tasksGettingQuery: TasksQuery;
+    tasksGettingQuery: TasksQuery & { ordering: string };
     activities: {
         creates: {
             id: null | number;
