@@ -101,10 +101,10 @@ Assets directory has two parts:
   - `restore.sh` --- simple bash script for creating copy of database and
   killing connection for `cvat` database.
   Script has two positional arguments:
-   ```
-   # create database <new> with template <existing>
-   sh restore.sh <existing> <new>
-   ```
+  ```
+  # create database <new> with template <existing>
+  sh restore.sh <existing> <new>
+  ```
 - `*.json` files --- these file contains all necessary data for getting
   expected results from HTTP responses
 
