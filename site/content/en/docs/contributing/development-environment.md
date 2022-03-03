@@ -65,15 +65,17 @@ description: 'Installing a development environment for different operating syste
   > If you have any problems with installing dependencies from
   > `cvat/requirements/*.txt`, you may need to reinstall your system python
   > In some cases after system update it can be configured incorrectly and cannot compile some native modules
-
-On Mac Homebrew will install FFMpeg 5.0 by default, which does not work, so you should install 4.X.
-You can install older 4.X FFMpeg using Homebrew like that:
-  ```
-    cd "$(brew --repo homebrew/core)"
-    git checkout addd616edc9134f057e33694c420f4900be59db8
-    brew unlink ffmpeg
-    HOMEBREW_NO_AUTO_UPDATE=1 brew install ffmpeg
-  ```
+  >
+  > Homebrew will install FFMpeg 5.0 by default, which does not work, so you should install 4.X.
+  > You can install older 4.X FFMpeg using Homebrew like that:
+  > ```
+  >  cd "$(brew --repo homebrew/core)"
+  >  git checkout addd616edc9134f057e33694c420f4900be59db8
+  >  brew unlink ffmpeg
+  >  HOMEBREW_NO_AUTO_UPDATE=1 brew install ffmpeg
+  >  git checkout master
+  > ```
+  > On Mac with Apple Silicon (M1) in order to install TensorFlow you will have to edit `cvat/requirements/base.txt`. Change `tensorflow` to `tensorflow-macos`
 
 - Create a super user for CVAT:
 
