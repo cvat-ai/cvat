@@ -793,6 +793,15 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
                 if (['polygon', 'polyline', 'points'].includes(state.shapeType)) {
                     if (e.altKey) {
+                        if (state.shapeType === 'points') {
+                            const selectedClientID = parseInt(
+                                ((e.target as HTMLElement).parentElement as HTMLElement).getAttribute('clientID'), 10,
+                            );
+
+                            if (state.clientID !== selectedClientID) {
+                                return;
+                            }
+                        }
                         const { points } = state;
                         this.onEditDone(state, points.slice(0, pointID * 2).concat(points.slice(pointID * 2 + 2)));
                     } else if (e.shiftKey) {
@@ -860,6 +869,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
         if (value) {
             const getGeometry = (): Geometry => this.geometry;
+            const getController = (): CanvasController => this.controller;
+            const getActiveElement = (): ActiveElement => this.activeElement;
             (shape as any).selectize(value, {
                 deepSelect: true,
                 pointSize: (2 * consts.BASE_POINT_SIZE) / this.geometry.scale,
@@ -875,7 +886,22 @@ export class CanvasViewImpl implements CanvasView, Listener {
                             'stroke-width': consts.POINTS_STROKE_WIDTH / getGeometry().scale,
                         });
 
-                    circle.on('mouseenter', (): void => {
+                    circle.on('mouseenter', (e: MouseEvent): void => {
+                        const activeElement = getActiveElement();
+                        if (activeElement !== null && e.altKey) {
+                            const [state] = getController().objects.filter(
+                                (_state: any): boolean => _state.clientID === activeElement.clientID,
+                            );
+                            if (state.shapeType === 'points') {
+                                const selectedClientID = parseInt(
+                                    ((e.target as HTMLElement).parentElement as HTMLElement).getAttribute('clientID'), 10,
+                                );
+                                if (state.clientID !== selectedClientID) {
+                                    return;
+                                }
+                            }
+                        }
+
                         circle.attr({
                             'stroke-width': consts.POINTS_SELECTED_STROKE_WIDTH / getGeometry().scale,
                         });
