@@ -257,7 +257,7 @@ def _download_data(urls, upload_dir):
         job.meta['status'] = '{} is being downloaded..'.format(url)
         job.save_meta()
 
-        response = requests.get(url, stream=True)
+        response = requests.get(url, stream=True, allow_redirects=True)
         if response.status_code == 200:
             response.raw.decode_content = True
             with open(os.path.join(upload_dir, name), 'wb') as output_file:
