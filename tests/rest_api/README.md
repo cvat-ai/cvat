@@ -89,7 +89,7 @@ docker exec cvat python manage.py loaddata /data.json
 cat assets/cvat_data.tar.bz2 | docker run --rm -i --volumes-from cvat ubuntu tar -xj --strip 3 -C /home/django/data
 ```
 
-## Assets directory structur
+## Assets directory structure
 
 Assets directory has two parts:
 
