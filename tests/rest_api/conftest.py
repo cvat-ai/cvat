@@ -8,6 +8,8 @@ import json
 import os.path as osp
 from .utils.config import ASSETS_DIR
 
+CVAT_DB_DIR = osp.join(ASSETS_DIR, 'cvat_db')
+
 def cvat_db_container(command):
     run(('docker exec cvat_db ' + command).split(), check=True) #nosec
 
@@ -19,20 +21,20 @@ def docker_cp(source, target):
 
 def restore_data_volume():
     command = 'docker run --rm --volumes-from cvat --mount ' \
-        f'type=bind,source={ASSETS_DIR},target=/mnt/ ubuntu tar ' \
+        f'type=bind,source={CVAT_DB_DIR},target=/mnt/ ubuntu tar ' \
         '--strip 3 -C /home/django/data -xjf /mnt/cvat_data.tar.bz2'
     run(command.split(), check=True) #nosec
 
 def drop_test_db():
-    cvat_db_container('sh /cvat_db/restore.sh test_db cvat')
+    cvat_db_container('sh restore.sh test_db cvat')
     cvat_db_container('rm -rf /cvat_db')
     cvat_db_container('dropdb test_db')
 
 def create_test_db():
-    docker_cp(source=osp.join(ASSETS_DIR, 'cvat_db'), target='cvat_db:/')
-    docker_cp(source=osp.join(ASSETS_DIR, 'cvat_db/data.json'), target='cvat:data.json')
+    docker_cp(source=osp.join(CVAT_DB_DIR, 'restore.sh'), target='cvat_db:restore.sh')
+    docker_cp(source=osp.join(CVAT_DB_DIR, 'data.json'), target='cvat:data.json')
     cvat_container('python manage.py loaddata /data.json')
-    cvat_db_container('sh cvat_db/restore.sh cvat test_db')
+    cvat_db_container('sh restore.sh cvat test_db')
 
 @pytest.fixture(scope='session', autouse=True)
 def init_test_db():
@@ -49,7 +51,7 @@ def init_test_db():
 
 @pytest.fixture(scope='function', autouse=True)
 def restore():
-    cvat_db_container('sh /cvat_db/restore.sh test_db cvat')
+    cvat_db_container('sh restore.sh test_db cvat')
 
 class Container:
     def __init__(self, data, key='id'):
