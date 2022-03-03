@@ -204,10 +204,15 @@ const config = require('./config');
 
             let tasksData = null;
             if (filter.projectId) {
-                tasksData = await serverProxy.projects.tasks(filter.projectId, searchParams);
-            } else {
-                tasksData = await serverProxy.tasks.get(searchParams);
+                if (searchParams.filter) {
+                    const parsed = JSON.parse(searchParams.filter);
+                    searchParams.filter = JSON.stringify({ and: [parsed, { '==': [{ var: 'project_id' }, 1] }] });
+                } else {
+                    searchParams.filter = JSON.stringify({ and: [{ '==': [{ var: 'project_id' }, 1] }] });
+                }
             }
+
+            tasksData = await serverProxy.tasks.get(searchParams);
             const tasks = tasksData.map((task) => new Task(task));
             tasks.count = tasksData.count;
             return tasks;
