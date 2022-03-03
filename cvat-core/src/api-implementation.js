@@ -206,9 +206,9 @@ const config = require('./config');
             if (filter.projectId) {
                 if (searchParams.filter) {
                     const parsed = JSON.parse(searchParams.filter);
-                    searchParams.filter = JSON.stringify({ and: [parsed, { '==': [{ var: 'project_id' }, 1] }] });
+                    searchParams.filter = JSON.stringify({ and: [parsed, { '==': [{ var: 'project_id' }, filter.projectId] }] });
                 } else {
-                    searchParams.filter = JSON.stringify({ and: [{ '==': [{ var: 'project_id' }, 1] }] });
+                    searchParams.filter = JSON.stringify({ and: [{ '==': [{ var: 'project_id' }, filter.projectId] }] });
                 }
             }
 
