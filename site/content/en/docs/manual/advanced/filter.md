@@ -62,8 +62,6 @@ The `Add rule` button adds a rule for objects display. A rule may use the follow
 
 `Starts with`; `Ends with` - filter by beginning or end.
 
-`Proximity search` - looks for text where two separate words are within a specified `near` range.
-
 Some properties support two types of values that you can choose:
 
 ![](/images/image205.jpg)
