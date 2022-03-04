@@ -72,6 +72,8 @@ from cvat.apps.iam.permissions import (CloudStoragePermission,
     CommentPermission, IssuePermission, JobPermission, ProjectPermission,
     TaskPermission, UserPermission)
 
+# file_id_regex = r'(?P<file_id>\b[0-9a-f]{8}\b-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-\b[0-9a-f]{12}\b)'
+
 class ServerViewSet(viewsets.ViewSet):
     serializer_class = None
     iam_organization_field = None
@@ -637,16 +639,16 @@ class TaskViewSet(UploadMixin, viewsets.ModelViewSet):
         return Response(serializer.data)
 
     # UploadMixin method
-    def get_upload_dir(self, data_type):
-        if data_type == 'annotations':
+    def get_upload_dir(self):
+        if 'annotations' in self.action:
             return self._object.get_tmp_dirname()
-        elif data_type == 'data':
+        elif 'data' in self.action:
             return self._object.data.get_upload_dirname()
         return ""
 
     # UploadMixin method
-    def upload_finished(self, request, data_type):
-        if data_type == 'annotations':
+    def upload_finished(self, request):
+        if self.action == 'annotations':
             format_name = request.query_params.get("format", "")
             filename = request.query_params.get("filename", "")
             tmp_dir = self._object.get_tmp_dirname()
@@ -663,7 +665,7 @@ class TaskViewSet(UploadMixin, viewsets.ModelViewSet):
             else:
                 return Response(data='No such file were uploaded',
                         status=status.HTTP_400_BAD_REQUEST)
-        elif data_type == 'data':
+        elif self.action == 'data':
             task_data = self._object.data
             serializer = DataSerializer(task_data, data=request.data)
             serializer.is_valid(raise_exception=True)
@@ -695,7 +697,7 @@ class TaskViewSet(UploadMixin, viewsets.ModelViewSet):
                 data['stop_frame'] = None
             task.create(self._object.id, data)
             return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
-        return Response(data='Unknown data type upload was finished',
+        return Response(data='Unknown upload was finished',
                         status=status.HTTP_400_BAD_REQUEST)
 
     @extend_schema(methods=['POST'],
@@ -739,7 +741,7 @@ class TaskViewSet(UploadMixin, viewsets.ModelViewSet):
             elif task_data.size != 0:
                 return Response(data='Adding more data is not supported',
                     status=status.HTTP_400_BAD_REQUEST)
-            return self.upload_data(request, 'data')
+            return self.upload_data(request)
 
         else:
             data_type = request.query_params.get('type', None)
@@ -751,6 +753,11 @@ class TaskViewSet(UploadMixin, viewsets.ModelViewSet):
 
             return data_getter(request, self._object.data.start_frame,
                 self._object.data.stop_frame, self._object.data)
+
+    @action(detail=True, methods=['HEAD', 'PATCH'], url_path='data/'+UploadMixin.file_id_regex)
+    def append_data_chunk(self, request, pk, file_id):
+        self._object = self.get_object()
+        return self.append_tus_chunk(request, file_id)
 
     @extend_schema(methods=['GET'], summary='Method allows to download task annotations',
         parameters=[
@@ -808,7 +815,7 @@ class TaskViewSet(UploadMixin, viewsets.ModelViewSet):
                 if serializer.is_valid(raise_exception=True):
                     return Response(serializer.data)
         elif request.method == 'POST' or request.method == 'OPTIONS':
-            return self.upload_data(request, 'annotations')
+            return self.upload_data(request)
         elif request.method == 'PUT':
             format_name = request.query_params.get('format')
             if format_name:
@@ -839,6 +846,11 @@ class TaskViewSet(UploadMixin, viewsets.ModelViewSet):
                 except (AttributeError, IntegrityError) as e:
                     return Response(data=str(e), status=status.HTTP_400_BAD_REQUEST)
                 return Response(data)
+
+    @action(detail=True, methods=['HEAD', 'PATCH'], url_path='annotations/'+UploadMixin.file_id_regex)
+    def append_annotations_chunk(self, request, pk, file_id):
+        self._object = self.get_object()
+        return self.append_tus_chunk(request, file_id)
 
     @extend_schema(
         summary='When task is being created the method returns information about a status of the creation process',
@@ -991,14 +1003,14 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             return JobWriteSerializer
 
     # UploadMixin method
-    def get_upload_dir(self, data_type):
+    def get_upload_dir(self):
         task = self._object.segment.task
         return task.get_tmp_dirname()
 
     # UploadMixin method
-    def upload_finished(self, request, data_type):
+    def upload_finished(self, request):
         task = self._object.segment.task
-        if data_type == 'annotations':
+        if self.action == 'annotations':
             format_name = request.query_params.get("format", "")
             filename = request.query_params.get("filename", "")
             tmp_dir = task.get_tmp_dirname()
@@ -1015,7 +1027,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             else:
                 return Response(data='No such file were uploaded',
                         status=status.HTTP_400_BAD_REQUEST)
-        return Response(data='Unknown data type upload was finished',
+        return Response(data='Unknown upload was finished',
                         status=status.HTTP_400_BAD_REQUEST)
 
     @extend_schema(methods=['GET'], summary='Method returns annotations for a specific job',
@@ -1049,7 +1061,7 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             data = dm.task.get_job_data(pk)
             return Response(data)
         elif request.method == 'POST' or request.method == 'OPTIONS':
-            return self.upload_data(request, 'annotations')
+            return self.upload_data(request)
         elif request.method == 'PUT':
             format_name = request.query_params.get('format', '')
             if format_name:
@@ -1083,6 +1095,11 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 except (AttributeError, IntegrityError) as e:
                     return Response(data=str(e), status=status.HTTP_400_BAD_REQUEST)
                 return Response(data)
+
+    @action(detail=True, methods=['HEAD', 'PATCH'], url_path='annotations/'+UploadMixin.file_id_regex)
+    def append_annotations_chunk(self, request, pk, file_id):
+        self._object = self.get_object()
+        return self.append_tus_chunk(request, file_id)
 
     @extend_schema(
         summary='Method returns list of issues for the job',
