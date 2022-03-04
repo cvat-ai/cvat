@@ -1,7 +1,6 @@
 # Copyright (C) 2021 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
-
 from subprocess import run, CalledProcessError
 import pytest
 import json
@@ -10,48 +9,35 @@ from .utils.config import ASSETS_DIR
 
 CVAT_DB_DIR = osp.join(ASSETS_DIR, 'cvat_db')
 
-def cvat_db_container(command):
-    run(('docker exec cvat_db ' + command).split(), check=True) #nosec
-
-def cvat_container(command):
-    run(('docker exec cvat ' + command).split(), check=True) #nosec
-
-def docker_cp(source, target):
-    run(' '.join(['docker container cp', source, target]).split(), check=True) #nosec
+def _run(command):
+    try:
+        run(command.split(), check=True) #nosec
+    except CalledProcessError:
+        pytest.exit(f'Command failed: {command}. Add `-s` option to see more details')
 
 def restore_data_volume():
-    command = 'docker run --rm --volumes-from cvat --mount ' \
-        f'type=bind,source={CVAT_DB_DIR},target=/mnt/ ubuntu tar ' \
-        '--strip 3 -C /home/django/data -xjf /mnt/cvat_data.tar.bz2'
-    run(command.split(), check=True) #nosec
-
-def drop_test_db():
-    cvat_db_container('sh restore.sh test_db cvat')
-    cvat_db_container('rm -rf /cvat_db')
-    cvat_db_container('dropdb test_db')
+    _run(f"docker container cp {osp.join(CVAT_DB_DIR, 'cvat_data.tar.bz2')} cvat:cvat_data.tar.bz2")
+    _run('docker exec cvat tar --strip 3 -C /home/django/data -xjf /cvat_data.tar.bz2')
 
 def create_test_db():
-    docker_cp(source=osp.join(CVAT_DB_DIR, 'restore.sh'), target='cvat_db:restore.sh')
-    docker_cp(source=osp.join(CVAT_DB_DIR, 'data.json'), target='cvat:data.json')
-    cvat_container('python manage.py loaddata /data.json')
-    cvat_db_container('sh restore.sh cvat test_db')
+    _run(f"docker container cp {osp.join(CVAT_DB_DIR, 'restore.sh')} cvat_db:restore.sh")
+    _run(f"docker container cp {osp.join(CVAT_DB_DIR, 'data.json')} cvat:data.json")
+    _run('docker exec cvat python manage.py loaddata /data.json')
+    _run('docker exec cvat_db sh restore.sh cvat test_db')
 
 @pytest.fixture(scope='session', autouse=True)
 def init_test_db():
-    try:
-        restore_data_volume()
-        create_test_db()
-    except CalledProcessError:
-        drop_test_db()
-        pytest.exit(f"Cannot to initialize test DB")
+    restore_data_volume()
+    create_test_db()
 
     yield
 
-    drop_test_db()
+    _run('docker exec cvat_db sh restore.sh test_db cvat')
+    _run('docker exec cvat_db dropdb test_db')
 
 @pytest.fixture(scope='function', autouse=True)
 def restore():
-    cvat_db_container('sh restore.sh test_db cvat')
+    _run('docker exec cvat_db sh restore.sh test_db cvat')
 
 class Container:
     def __init__(self, data, key='id'):
