@@ -101,21 +101,26 @@ class ObjectDetectionService(cvat_sdk.service.ObjectDetectionService):
             raise FileNotFoundError(f'TASK_ALGO_DIR={TASK_ALGO_DIR} is not a directory')
         self.template = parse_model_template(os.path.join(TASK_ALGO_DIR,
             'configs/ote/custom-object-detection/gen3_mobilenetV2_ATSS/template.yaml'))
+        self.cvat_api = cvat_sdk.api.create('http://localhost:8080', auth={
+            'username': 'admin', 'pass': 'nimda760'})
 
     @property
     def name(self):
-        return self.template['model_template_id']
+        return self.template.model_template_id
 
     @property
     def description(self):
         return {
-            key:self.template[key] for key in self.template
-                if key in {'summary', 'task_type', 'task_family',
-                    'framework', 'gigaflops', 'size'}
+            'summary': self.template.summary,
+            'task_type': self.template.task_type.value,
+            'task_family': self.template.task_family.value,
+            'framework': self.template.framework,
+            'gigaflops': self.template.gigaflops,
+            'size': self.template.size
         }
 
     def predict(self, experiment, frame):
-        image_path = cvat_sdk.dataset.get_image_path(frame)
+        image_path = self.cvat_api.dataset.get_image_path(frame)
 
         hyper_parameters = create(self.template.hyper_parameters.data)
         task_class = get_impl_class(self.template.entrypoints.base)
@@ -166,7 +171,7 @@ class ObjectDetectionService(cvat_sdk.service.ObjectDetectionService):
         pass
 
     def train(self, experiment, project, snapshot=None):
-        dataset_dir = cvat_sdk.dataset.get_path(project)
+        dataset_dir = self.cvat_api.dataset.get_path(project)
         if not os.path.isdir(dataset_dir):
             raise FileNotFoundError(f'dataset_dir={dataset_dir} is not a directory')
 
@@ -228,4 +233,4 @@ class ObjectDetectionService(cvat_sdk.service.ObjectDetectionService):
         self.task.evaluate(resultset)
         assert resultset.performance is not None
 
-app = cvat_sdk.service.register(ObjectDetectionService)
+cvat_sdk.service.run(ObjectDetectionService)

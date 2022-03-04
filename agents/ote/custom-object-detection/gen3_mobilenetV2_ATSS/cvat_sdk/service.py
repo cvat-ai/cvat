@@ -6,6 +6,7 @@ from concurrent.futures import ThreadPoolExecutor
 from typing import Optional, Dict, Any, List, Literal
 from fastapi import FastAPI, status
 from pydantic import BaseModel
+import uvicorn
 
 class Status(BaseModel):
     percent: float
@@ -95,7 +96,7 @@ class _ObjectDetectionServiceProxy(ObjectDetectionService):
         return self.service.status(experiment)
 
 
-def register(service_class):
+def run(service_class, **kwargs):
     app = FastAPI()
 
     if issubclass(service_class, ObjectDetectionService):
@@ -118,4 +119,4 @@ def register(service_class):
     else:
         raise NotImplementedError(f'{service_class.__name__} is not supported')
 
-    return app
+    uvicorn.run(app, host="0.0.0.0", **kwargs)
