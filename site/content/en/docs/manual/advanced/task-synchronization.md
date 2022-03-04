@@ -7,7 +7,8 @@ weight: 19
 > Notice: this feature works only if a git repository was specified when the task was created.
 
 1. At the end of the annotation process, a task is synchronized by clicking
-   `Synchronize` on the task page. If the synchronization is successful, the button will change to `Sychronized` in blue:
+   `Synchronize` on the task page. If the synchronization is successful,
+   the button will change to `Sychronized` in blue:
 
    ![](/images/image110.jpg)
 
