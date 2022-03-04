@@ -23,7 +23,7 @@ description: 'Installing a development environment for different operating syste
   MacOS 10.15
 
   ```bash
-  brew install git python pyenv redis curl openssl node
+  brew install git python pyenv redis curl openssl node sqlite3 geos
   ```
 
 - Install Chrome
@@ -65,6 +65,8 @@ description: 'Installing a development environment for different operating syste
   > If you have any problems with installing dependencies from
   > `cvat/requirements/*.txt`, you may need to reinstall your system python
   > In some cases after system update it can be configured incorrectly and cannot compile some native modules
+  >
+  > Make sure Homebrew lib path is in `DYLD_LIBRARY_PATH`. For Apple Silicon: `export DYLD_LIBRARY_PATH=/opt/homebrew/lib:$DYLD_LIBRARY_PATH`
   >
   > Homebrew will install FFMpeg 5.0 by default, which does not work, so you should install 4.X.
   > You can install older 4.X FFMpeg using Homebrew like that:
