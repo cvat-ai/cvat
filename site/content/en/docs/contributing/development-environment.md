@@ -77,7 +77,8 @@ description: 'Installing a development environment for different operating syste
   >  HOMEBREW_NO_AUTO_UPDATE=1 brew install ffmpeg
   >  git checkout master
   > ```
-  > On Mac with Apple Silicon (M1) in order to install TensorFlow you will have to edit `cvat/requirements/base.txt`. Change `tensorflow` to `tensorflow-macos`
+  > On Mac with Apple Silicon (M1) in order to install TensorFlow you will have to edit `cvat/requirements/base.txt`.
+  > Change `tensorflow` to `tensorflow-macos`
 
 - Create a super user for CVAT:
 
