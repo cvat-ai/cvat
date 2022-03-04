@@ -429,13 +429,25 @@ class TrackManager(ObjectManager):
 
     @staticmethod
     def get_interpolated_shapes(track, start_frame, end_frame):
-        def copy_shape(source, frame, points=None):
+        def copy_shape(source, frame, points=None, rotation=None):
             copied = deepcopy(source)
             copied["keyframe"] = False
             copied["frame"] = frame
+            if rotation is not None:
+                copied["rotation"] = rotation
             if points is not None:
                 copied["points"] = points
             return copied
+
+        def find_angle_diff(right_angle, left_angle):
+            angle_diff = right_angle - left_angle
+            angle_diff = ((angle_diff + 180) % 360) - 180
+            if abs(angle_diff) >= 180:
+                # if the main arc is bigger than 180, go another arc
+                # to find it, just substract absolute value from 360 and inverse sign
+                angle_diff = 360 - abs(angle_diff) * -1 if angle_diff > 0 else 1
+
+            return angle_diff
 
         def simple_interpolation(shape0, shape1):
             shapes = []
@@ -444,9 +456,12 @@ class TrackManager(ObjectManager):
 
             for frame in range(shape0["frame"] + 1, shape1["frame"]):
                 offset = (frame - shape0["frame"]) / distance
+                rotation = (shape0["rotation"] + find_angle_diff(
+                    shape1["rotation"], shape0["rotation"],
+                ) * offset + 360) % 360
                 points = shape0["points"] + diff * offset
 
-                shapes.append(copy_shape(shape0, frame, points.tolist()))
+                shapes.append(copy_shape(shape0, frame, points.tolist(), rotation))
 
             return shapes
 
@@ -681,6 +696,7 @@ class TrackManager(ObjectManager):
         def interpolate(shape0, shape1):
             is_same_type = shape0["type"] == shape1["type"]
             is_rectangle = shape0["type"] == ShapeType.RECTANGLE
+            is_ellipse = shape0["type"] == ShapeType.ELLIPSE
             is_cuboid = shape0["type"] == ShapeType.CUBOID
             is_polygon = shape0["type"] == ShapeType.POLYGON
             is_polyline = shape0["type"] == ShapeType.POLYLINE
@@ -690,7 +706,7 @@ class TrackManager(ObjectManager):
                 raise NotImplementedError()
 
             shapes = []
-            if is_rectangle or is_cuboid:
+            if is_rectangle or is_cuboid or is_ellipse:
                 shapes = simple_interpolation(shape0, shape1)
             elif is_points:
                 shapes = points_interpolation(shape0, shape1)

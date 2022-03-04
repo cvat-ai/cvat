@@ -38,33 +38,44 @@
         }
     }
 
-    > div > div > div > button {
+    .cvat-task-page-actions-button {
         display: flex;
         align-items: center;
+        line-height: 14px;
     }
 }
 
 .cvat-dataset-repository-url {
     > a {
-        margin-right: 10px;
+        margin-right: $grid-unit-size;
     }
 
-    > .ant-tag-red {
-        user-select: none;
-        opacity: 0.4;
+    > .ant-typography {
+        > .ant-tag {
+            margin-left: $grid-unit-size;
 
-        &:hover {
-            opacity: 0.8;
+            > span[role='img'] {
+                margin-right: $grid-unit-size;
+            }
         }
 
-        &:active {
-            opacity: 1;
+        > .ant-tag-red {
+            user-select: none;
+            opacity: 0.4;
+
+            &:hover {
+                opacity: 0.8;
+            }
+
+            &:active {
+                opacity: 1;
+            }
         }
     }
+}
 
-    > .ant-tag > span[role='img'] {
-        margin-right: 5px;
-    }
+.cvat-repository-format-select {
+    width: 100%;
 }
 
 .cvat-task-job-list {
@@ -117,13 +128,9 @@
     }
 }
 
-.cvat-job-item-status {
-    .cvat-job-annotation-color,
-    .cvat-job-validation-color,
-    .cvat-job-completed-color {
-        span {
-            margin-left: $grid-unit-size;
-        }
+.cvat-job-item-stage {
+    .ant-select {
+        margin-right: $grid-unit-size;
     }
 }
 
@@ -139,16 +146,4 @@
             padding-left: $grid-unit-size;
         }
     }
-}
-
-.cvat-job-completed-color {
-    color: $completed-progress-color;
-}
-
-.cvat-job-validation-color {
-    color: $inprogress-progress-color;
-}
-
-.cvat-job-annotation-color {
-    color: $pending-progress-color;
 }

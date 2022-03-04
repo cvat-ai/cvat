@@ -1,10 +1,10 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
 /// <reference types="cypress" />
 
-context("Some parts of the Redux state (issues) isn't reset after changing a task.", () => {
+context('Some parts of the Redux state (issues) is not reset after changing a task.', () => {
     const issueId = '2524_2633';
     const labelName = `Issue ${issueId}`;
     const taskName = {
@@ -41,7 +41,6 @@ context("Some parts of the Redux state (issues) isn't reset after changing a tas
     };
 
     before(() => {
-        cy.clearLocalStorageSnapshot();
         cy.imageGenerator(imagesFolder, imageFileName, width, height, color, posX, posY, labelName, imagesCount);
         cy.createZipArchive(directoryToArchive, archivePath);
         cy.visit('/');
@@ -52,42 +51,38 @@ context("Some parts of the Redux state (issues) isn't reset after changing a tas
     });
 
     beforeEach(() => {
-        cy.restoreLocalStorage();
-    });
-
-    afterEach(() => {
-        cy.saveLocalStorage();
+        Cypress.Cookies.preserveOnce('sessionid', 'csrftoken');
     });
 
     after(() => {
         cy.goToTaskList();
         cy.deleteTask(taskName.firstTaskName);
-        cy.reload();
-        cy.closeModalUnsupportedPlatform();
         cy.deleteTask(taskName.secondTaskName);
     });
 
     describe(`Testing "${labelName}"`, () => {
-        it('Open first task and request to review.', () => {
+        it('Create an issue. Check issue 2633.', () => {
             cy.openTaskJob(taskName.firstTaskName);
-            cy.interactMenu('Request a review');
-            cy.get('.cvat-request-review-dialog')
-                .should('exist')
-                .within(() => {
-                    cy.get('.cvat-user-search-field').click();
-                });
-            cy.get('.ant-select-dropdown').within(() => {
-                cy.contains(new RegExp(`^${Cypress.env('user')}`)).click();
-            });
-            cy.contains('.cvat-request-review-dialog', 'Reviewer:').within(() => {
-                cy.contains('[type="button"]', 'Submit').click();
-            });
-            cy.url().should('include', '/tasks');
-        });
+            cy.changeWorkspace('Review');
+            cy.createIssueFromControlButton(createIssueRectangle).then(() => {
+                const viewportHeight = Cypress.config('viewportHeight');
+                const viewportWidth = Cypress.config('viewportWidth');
+                function waitForResize() {
+                    return new Cypress.Promise((resolve) => {
+                        cy.window().then((win) => {
+                            win.addEventListener('resize', () => {
+                                resolve();
+                            }, { once: true });
+                        });
+                    });
+                }
 
-        it('Open job again and create an issue. Check issue 2633.', () => {
-            cy.openJob();
-            cy.createIssueFromControlButton(createIssueRectangle);
+                cy.viewport(viewportHeight + 50, viewportWidth + 50);
+                cy.wrap(waitForResize()).then(() => {
+                    cy.get('.cvat_canvas_issue_region').should('be.visible');
+                    cy.viewport(viewportHeight, viewportWidth);
+                });
+            });
             cy.createIssueFromControlButton(createIssuePoint); // Issue 2633
         });
 
@@ -95,6 +90,7 @@ context("Some parts of the Redux state (issues) isn't reset after changing a tas
             cy.goToTaskList();
             cy.openTaskJob(taskName.secondTaskName);
             cy.get('.cvat-hidden-issue-label').should('not.exist');
+            cy.get('.cvat_canvas_issue_region').should('not.exist');
         });
     });
 });

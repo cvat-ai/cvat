@@ -6,6 +6,7 @@ import React from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import {
     LeftOutlined, RightOutlined, EyeInvisibleFilled, EyeOutlined,
+    CheckCircleFilled, CheckCircleOutlined,
 } from '@ant-design/icons';
 import Alert from 'antd/lib/alert';
 import { Row, Col } from 'antd/lib/grid';
@@ -20,10 +21,9 @@ export default function LabelsListComponent(): JSX.Element {
     const frame = useSelector((state: CombinedState): number => state.annotation.player.frame.number);
     const frameIssues = useSelector((state: CombinedState): any[] => state.review.frameIssues);
     const issues = useSelector((state: CombinedState): any[] => state.review.issues);
-    const activeReview = useSelector((state: CombinedState): any => state.review.activeReview);
     const issuesHidden = useSelector((state: CombinedState): any => state.review.issuesHidden);
-    const combinedIssues = activeReview ? issues.concat(activeReview.issues) : issues;
-    const frames = combinedIssues.map((issue: any): number => issue.frame).sort((a: number, b: number) => +a - +b);
+    const issuesResolvedHidden = useSelector((state: CombinedState): any => state.review.issuesResolvedHidden);
+    const frames = issues.map((issue: any): number => issue.frame).sort((a: number, b: number) => +a - +b);
     const nearestLeft = frames.filter((_frame: number): boolean => _frame < frame).reverse()[0];
     const dinamicLeftProps: any = Number.isInteger(nearestLeft) ?
         {
@@ -62,8 +62,8 @@ export default function LabelsListComponent(): JSX.Element {
                             <RightOutlined className='cvat-issues-sidebar-next-frame' {...dinamicRightProps} />
                         </CVATTooltip>
                     </Col>
-                    <Col offset={3}>
-                        <CVATTooltip title='Show/hide all the issues'>
+                    <Col offset={2}>
+                        <CVATTooltip title='Show/hide all issues'>
                             {issuesHidden ? (
                                 <EyeInvisibleFilled
                                     className='cvat-issues-sidebar-hidden-issues'
@@ -77,12 +77,29 @@ export default function LabelsListComponent(): JSX.Element {
                             )}
                         </CVATTooltip>
                     </Col>
+                    <Col offset={2}>
+                        <CVATTooltip title='Show/hide resolved issues'>
+                            { issuesResolvedHidden ? (
+                                <CheckCircleFilled
+                                    className='cvat-issues-sidebar-hidden-resolved-status'
+                                    onClick={() => dispatch(reviewActions.switchIssuesHiddenResolvedFlag(false))}
+                                />
+                            ) : (
+                                <CheckCircleOutlined
+                                    className='cvat-issues-sidebar-hidden-resolved-status'
+                                    onClick={() => dispatch(reviewActions.switchIssuesHiddenResolvedFlag(true))}
+                                />
+
+                            )}
+                        </CVATTooltip>
+                    </Col>
                 </Row>
             </div>
             <div className='cvat-objects-sidebar-issues-list'>
                 {frameIssues.map(
                     (frameIssue: any): JSX.Element => (
                         <div
+                            key={frameIssue.id}
                             id={`cvat-objects-sidebar-issue-item-${frameIssue.id}`}
                             className='cvat-objects-sidebar-issue-item'
                             onMouseEnter={() => {
@@ -102,20 +119,10 @@ export default function LabelsListComponent(): JSX.Element {
                                 }
                             }}
                         >
-                            {frameIssue.resolver ? (
-                                <Alert
-                                    description={<span>{`By ${frameIssue.resolver.username}`}</span>}
-                                    message='Resolved'
-                                    type='success'
-                                    showIcon
-                                />
+                            {frameIssue.resolved ? (
+                                <Alert message='Resolved' type='success' showIcon />
                             ) : (
-                                <Alert
-                                    description={<span>{`By ${frameIssue.owner.username}`}</span>}
-                                    message='Opened'
-                                    type='warning'
-                                    showIcon
-                                />
+                                <Alert message='Opened' type='warning' showIcon />
                             )}
                         </div>
                     ),

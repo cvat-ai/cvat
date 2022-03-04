@@ -18,6 +18,7 @@
 
 .cvat-empty-cloud-storages-list-icon {
     font-size: $grid-unit-size * 14;
+    opacity: 0.5;
 }
 
 .cvat-cloud-storages-pagination {
@@ -44,9 +45,13 @@
 }
 
 .cvat-cloud-storage-item {
+    margin-bottom: $grid-unit-size;
+
     div.ant-typography {
         margin-bottom: 0;
     }
+
+    cursor: default;
 
     .cvat-cloud-storage-item-loading-preview,
     .cvat-cloud-storage-item-empty-preview {

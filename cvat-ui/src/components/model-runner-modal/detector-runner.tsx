@@ -1,25 +1,21 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import './styles.scss';
 import React, { useState } from 'react';
 import { Row, Col } from 'antd/lib/grid';
-import { CloseCircleOutlined, QuestionCircleOutlined } from '@ant-design/icons';
-import Select from 'antd/lib/select';
+import { DeleteOutlined, QuestionCircleOutlined } from '@ant-design/icons';
+import Select, { BaseOptionType } from 'antd/lib/select';
 import Checkbox, { CheckboxChangeEvent } from 'antd/lib/checkbox';
 import Tag from 'antd/lib/tag';
 import Text from 'antd/lib/typography/Text';
 import InputNumber from 'antd/lib/input-number';
 import Button from 'antd/lib/button';
 import notification from 'antd/lib/notification';
-// eslint-disable-next-line import/no-extraneous-dependencies
-import { OptionData, OptionGroupData } from 'rc-select/lib/interface';
 
 import { Model, StringObject } from 'reducers/interfaces';
-
 import CVATTooltip from 'components/common/cvat-tooltip';
-
 import { clamp } from 'utils/math';
 import consts from 'consts';
 import { DimensionType } from '../../reducers/interfaces';
@@ -27,13 +23,14 @@ import { DimensionType } from '../../reducers/interfaces';
 interface Props {
     withCleanup: boolean;
     models: Model[];
-    task: any;
-    runInference(task: any, model: Model, body: object): void;
+    labels: any[];
+    dimension: DimensionType;
+    runInference(model: Model, body: object): void;
 }
 
 function DetectorRunner(props: Props): JSX.Element {
     const {
-        task, models, withCleanup, runInference,
+        models, withCleanup, labels, dimension, runInference,
     } = props;
 
     const [modelID, setModelID] = useState<string | null>(null);
@@ -56,7 +53,7 @@ function DetectorRunner(props: Props): JSX.Element {
         model && (model.type === 'reid' || (model.type === 'detector' && !!Object.keys(mapping).length));
 
     const modelLabels = (isDetector ? model.labels : []).filter((_label: string): boolean => !(_label in mapping));
-    const taskLabels = isDetector && !!task ? task.labels.map((label: any): string => label.name) : [];
+    const taskLabels = isDetector ? labels.map((label: any): string => label.name) : [];
 
     if (model && model.type !== 'reid' && !model.labels.length) {
         notification.warning({
@@ -90,7 +87,7 @@ function DetectorRunner(props: Props): JSX.Element {
     function renderSelector(
         value: string,
         tooltip: string,
-        labels: string[],
+        labelsToRender: string[],
         onChange: (label: string) => void,
     ): JSX.Element {
         return (
@@ -100,7 +97,7 @@ function DetectorRunner(props: Props): JSX.Element {
                     onChange={onChange}
                     style={{ width: '100%' }}
                     showSearch
-                    filterOption={(input: string, option?: OptionData | OptionGroupData) => {
+                    filterOption={(input: string, option: BaseOptionType | undefined) => {
                         if (option) {
                             const { children } = option.props;
                             if (typeof children === 'string') {
@@ -111,7 +108,7 @@ function DetectorRunner(props: Props): JSX.Element {
                         return false;
                     }}
                 >
-                    {labels.map(
+                    {labelsToRender.map(
                         (label: string): JSX.Element => (
                             <Select.Option value={label} key={label}>
                                 {label}
@@ -129,12 +126,12 @@ function DetectorRunner(props: Props): JSX.Element {
                 <Col span={4}>Model:</Col>
                 <Col span={20}>
                     <Select
-                        placeholder={task.dimension === DimensionType.DIM_2D ? 'Select a model' : 'No models available'}
-                        disabled={task.dimension !== DimensionType.DIM_2D}
+                        placeholder={dimension === DimensionType.DIM_2D ? 'Select a model' : 'No models available'}
+                        disabled={dimension !== DimensionType.DIM_2D}
                         style={{ width: '100%' }}
                         onChange={(_modelID: string): void => {
                             const newmodel = models.filter((_model): boolean => _model.id === _modelID)[0];
-                            const newmapping = task.labels.reduce((acc: StringObject, label: any): StringObject => {
+                            const newmapping = labels.reduce((acc: StringObject, label: any): StringObject => {
                                 if (newmodel.labels.includes(label.name)) {
                                     acc[label.name] = label.name;
                                 }
@@ -159,7 +156,7 @@ function DetectorRunner(props: Props): JSX.Element {
             {isDetector &&
                 !!Object.keys(mapping).length &&
                 Object.keys(mapping).map((modelLabel: string) => {
-                    const label = task.labels.filter((_label: any): boolean => _label.name === mapping[modelLabel])[0];
+                    const label = labels.filter((_label: any): boolean => _label.name === mapping[modelLabel])[0];
                     const color = label ? label.color : consts.NEW_LABEL_COLOR;
                     return (
                         <Row key={modelLabel} justify='start' align='middle'>
@@ -171,7 +168,7 @@ function DetectorRunner(props: Props): JSX.Element {
                             </Col>
                             <Col offset={1}>
                                 <CVATTooltip title='Remove the mapped values'>
-                                    <CloseCircleOutlined
+                                    <DeleteOutlined
                                         className='cvat-danger-circle-icon'
                                         onClick={(): void => {
                                             const newmapping = { ...mapping };
@@ -188,12 +185,14 @@ function DetectorRunner(props: Props): JSX.Element {
                 <>
                     <Row justify='start' align='middle'>
                         <Col span={10}>
-                            {renderSelector(match.model || '', 'Model labels', modelLabels, (modelLabel: string) =>
-                                updateMatch(modelLabel, null))}
+                            {renderSelector(
+                                match.model || '', 'Model labels', modelLabels, (modelLabel: string) => updateMatch(modelLabel, null),
+                            )}
                         </Col>
                         <Col span={10} offset={1}>
-                            {renderSelector(match.task || '', 'Task labels', taskLabels, (taskLabel: string) =>
-                                updateMatch(null, taskLabel))}
+                            {renderSelector(
+                                match.task || '', 'Task labels', taskLabels, (taskLabel: string) => updateMatch(null, taskLabel),
+                            )}
                         </Col>
                         <Col span={1} offset={1}>
                             <CVATTooltip title='Specify a label mapping between model labels and task labels'>
@@ -262,16 +261,11 @@ function DetectorRunner(props: Props): JSX.Element {
                         disabled={!buttonEnabled}
                         type='primary'
                         onClick={() => {
-                            runInference(
-                                task,
-                                model,
-                                model.type === 'detector' ?
-                                    { mapping, cleanup } :
-                                    {
-                                        threshold,
-                                        max_distance: distance,
-                                    },
-                            );
+                            runInference(model, model.type === 'detector' ?
+                                { mapping, cleanup } : {
+                                    threshold,
+                                    max_distance: distance,
+                                });
                         }}
                     >
                         Annotate
@@ -282,14 +276,4 @@ function DetectorRunner(props: Props): JSX.Element {
     );
 }
 
-export default React.memo(
-    DetectorRunner,
-    (prevProps: Props, nextProps: Props): boolean =>
-        prevProps.task === nextProps.task &&
-        prevProps.runInference === nextProps.runInference &&
-        prevProps.models.length === nextProps.models.length &&
-        nextProps.models.reduce(
-            (acc: boolean, model: Model, index: number): boolean => acc && model.id === prevProps.models[index].id,
-            true,
-        ),
-);
+export default React.memo(DetectorRunner);

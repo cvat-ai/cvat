@@ -1,4 +1,4 @@
-// Copyright (C) 2021 Intel Corporation
+// Copyright (C) 2021-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -20,27 +20,17 @@ context('Export project dataset with 3D task.', { browser: '!firefox' }, () => {
         multiAttrParams: false,
     };
     let projectID = '';
+    let datasetArchiveName;
 
-    function getProjectID(projectName) {
-        cy.contains('.cvat-project-name', projectName)
-            .parents('.cvat-project-details')
-            .should('have.attr', 'cvat-project-id')
-            .then(($projectID) => {
-                projectID = $projectID;
-            });
-    }
-
-    function testCheckFile(file) {
-        cy.task('listFiles', 'cypress/fixtures').each((fileName) => {
-            if (fileName.match(file)) {
-               cy.readFile(`cypress/fixtures/${fileName}`).should('exist');
-            }
+    function getProjectID() {
+        cy.url().then((url) => {
+            projectID = Number(url.split('/').slice(-1)[0].split('?')[0]);
         });
     }
 
     before(() => {
         cy.openProject(projectName);
-        getProjectID(projectName);
+        getProjectID();
         cy.createAnnotationTask(
             task.name3d,
             task.label3d,
@@ -64,41 +54,60 @@ context('Export project dataset with 3D task.', { browser: '!firefox' }, () => {
         it('Export project with 3D task. Annotation.', () => {
             cy.goToProjectsList();
             const exportAnnotation3d = {
-                projectName: projectName,
+                projectName,
                 as: 'exportAnnotations3d',
                 type: 'annotations',
                 dumpType: 'Kitti Raw Format',
             };
             cy.exportProject(exportAnnotation3d);
-            const regex = new RegExp(`^project_${projectName.toLowerCase()}-.*-${exportAnnotation3d.dumpType.toLowerCase()}.*.zip$`);
-            testCheckFile(regex);
+            cy.waitForDownload();
         });
 
         it('Export project with 3D task. Dataset.', () => {
             cy.goToProjectsList();
             const exportDataset3d = {
-                projectName: projectName,
+                projectName,
                 as: 'exportDataset3d',
                 type: 'dataset',
                 dumpType: 'Sly Point Cloud Format',
             };
             cy.exportProject(exportDataset3d);
-            const regex = new RegExp(`^project_${projectName.toLowerCase()}-.*-${exportDataset3d.dumpType.toLowerCase()}.*.zip$`);
-            testCheckFile(regex);
+            cy.getDownloadFileName().then((file) => {
+                datasetArchiveName = file;
+                cy.verifyDownload(datasetArchiveName);
+            });
         });
 
         it('Export project with 3D task. Annotation. Rename a archive.', () => {
             cy.goToProjectsList();
             const exportAnnotations3dRenameArchive = {
-                projectName: projectName,
+                projectName,
                 as: 'exportAnnotations3dRenameArchive',
                 type: 'annotations',
-                dumpType: 'Kitti Raw Format',
+                dumpType: 'Datumaro 3D',
                 archiveCustomeName: 'export_project_3d_annotation',
             };
             cy.exportProject(exportAnnotations3dRenameArchive);
-            const regex = new RegExp(`^${exportAnnotations3dRenameArchive.archiveCustomeName}.zip$`);
-            testCheckFile(regex);
+            cy.waitForDownload();
+        });
+
+        // FIXME: Activate after implementation
+        it.skip('Import dataset.', () => {
+            cy.openProject(projectName);
+            cy.deleteTask(task.name3d);
+            cy.get('.cvat-tasks-list-item')
+                .should('have.length', 1)
+                .should('have.attr', 'style')
+                .and('contain', 'pointer-events: none; opacity: 0.5;');
+            cy.goToProjectsList();
+            const importDataset = {
+                projectName,
+                format: 'Sly Point Cloud Format',
+                archive: datasetArchiveName,
+            };
+            cy.importProject(importDataset);
+            cy.openProject(projectName);
+            cy.get('.cvat-tasks-list-item').should('have.length', 1);
         });
     });
 });

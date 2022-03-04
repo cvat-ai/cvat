@@ -1,6 +1,6 @@
 {
   "name": "cvat-core",
-  "version": "3.17.0",
+  "version": "4.2.1",
   "description": "Part of Computer Vision Tool which presents an interface for client-side integration",
   "main": "babel.config.js",
   "scripts": {
@@ -31,10 +31,11 @@
     "error-stack-parser": "^2.0.2",
     "form-data": "^2.5.0",
     "jest-config": "^26.6.3",
-    "json-logic-js": "^2.0.1",
     "js-cookie": "^2.2.0",
+    "json-logic-js": "^2.0.1",
     "platform": "^1.3.5",
     "quickhull": "^1.0.3",
-    "store": "^2.0.12"
+    "store": "^2.0.12",
+    "tus-js-client": "^2.3.0"
   }
 }

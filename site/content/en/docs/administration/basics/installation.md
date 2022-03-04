@@ -21,6 +21,8 @@ the instructions below for other systems.
 Probably you need to modify the instructions below in case you are behind a proxy
 server. Proxy is an advanced topic and it is not covered by the guide.
 
+For access from China, read [sources for users from China](#sources-for-users-from-china) section.
+
 ## Ubuntu 18.04 (x86_64/amd64)
 
 - Open a terminal window. If you don't know how to open a terminal window on
@@ -29,7 +31,7 @@ server. Proxy is an advanced topic and it is not covered by the guide.
 - Type commands below into the terminal window to install `docker`. More
   instructions can be found [here](https://docs.docker.com/install/linux/docker-ce/ubuntu/).
 
-  ```sh
+  ```bash
   sudo apt-get update
   sudo apt-get --no-install-recommends install -y \
     apt-transport-https \
@@ -49,7 +51,7 @@ server. Proxy is an advanced topic and it is not covered by the guide.
 - Perform [post-installation steps](https://docs.docker.com/install/linux/linux-postinstall/)
   to run docker without root permissions.
 
-  ```sh
+  ```bash
   sudo groupadd docker
   sudo usermod -aG docker $USER
   ```
@@ -74,11 +76,16 @@ server. Proxy is an advanced topic and it is not covered by the guide.
   git clone https://github.com/opencv/cvat
   cd cvat
   ```
+- To access CVAT over a network or through a different system, export `CVAT_HOST` environment variable
+
+  ```bash
+  export CVAT_HOST=your-ip-address
+  ```
 
 - Run docker containers. It will take some time to download the latest CVAT
   release and other required images like postgres, redis, etc. from DockerHub and create containers.
 
-  ```sh
+  ```bash
   docker-compose up -d
   ```
 
@@ -95,7 +102,7 @@ server. Proxy is an advanced topic and it is not covered by the guide.
   admin panel to assign correct groups to the user. Please use the command
   below:
 
-  ```sh
+  ```bash
   docker exec -it cvat bash -ic 'python3 ~/manage.py createsuperuser'
   ```
 
@@ -105,7 +112,7 @@ server. Proxy is an advanced topic and it is not covered by the guide.
 - Google Chrome is the only browser which is supported by CVAT. You need to
   install it as well. Type commands below in a terminal window:
 
-  ```sh
+  ```bash
   curl https://dl-ssl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
   sudo sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google-chrome.list'
   sudo apt-get update
@@ -143,7 +150,7 @@ server. Proxy is an advanced topic and it is not covered by the guide.
 - Clone _CVAT_ source code from the
   [GitHub repository](https://github.com/opencv/cvat).
 
-  ```sh
+  ```bash
   git clone https://github.com/opencv/cvat
   cd cvat
   ```
@@ -151,14 +158,14 @@ server. Proxy is an advanced topic and it is not covered by the guide.
 - Run docker containers. It will take some time to download the latest CVAT
   release and other required images like postgres, redis, etc. from DockerHub and create containers.
 
-  ```sh
+  ```bash
   docker-compose up -d
   ```
 
 - Alternative: if you want to build the images locally with unreleased changes
   run the following command. It will take some time to build CVAT images.
 
-  ```sh
+  ```bash
   docker-compose -f docker-compose.yml -f docker-compose.dev.yml build
   docker-compose up -d
   ```
@@ -168,13 +175,13 @@ server. Proxy is an advanced topic and it is not covered by the guide.
   admin panel to assign correct groups to other users. Please use the command
   below:
 
-  ```sh
+  ```bash
   winpty docker exec -it cvat bash -ic 'python3 ~/manage.py createsuperuser'
   ```
 
   If you don't have winpty installed or the above command does not work, you may also try the following:
 
-  ```sh
+  ```bash
   # enter docker image first
   docker exec -it cvat /bin/bash
   # then run
@@ -227,14 +234,14 @@ server. Proxy is an advanced topic and it is not covered by the guide.
 - Run docker containers. It will take some time to download the latest CVAT
   release and other required images like postgres, redis, etc. from DockerHub and create containers.
 
-  ```sh
+  ```bash
   docker-compose up -d
   ```
 
 - Alternative: if you want to build the images locally with unreleased changes
   run the following command. It will take some time to build CVAT images.
 
-  ```sh
+  ```bash
   docker-compose -f docker-compose.yml -f docker-compose.dev.yml build
   docker-compose up -d
   ```
@@ -244,7 +251,7 @@ server. Proxy is an advanced topic and it is not covered by the guide.
   admin panel to assign correct groups to other users. Please use the command
   below:
 
-  ```sh
+  ```bash
   docker exec -it cvat bash -ic 'python3 ~/manage.py createsuperuser'
   ```
 
@@ -288,7 +295,7 @@ dashboard might be very useful to see if the problem is with Traefik configurati
 
 You can enable the Traefik dashboard by uncommenting the following lines from `docker-compose.yml`
 
-```
+```yml
 services:
   traefik:
     # Uncomment to get Traefik dashboard
@@ -302,7 +309,7 @@ services:
 ```
 
 and if you are using `docker-compose.https.yml`, also uncomment these lines
-```
+```yml
 services:
   traefik:
     command:
@@ -343,7 +350,7 @@ docker-compose down
 If you want to access your instance of CVAT outside of your localhost (on another domain),
 you should specify the `CVAT_HOST` environment variable, like this:
 
-```
+```bash
 export CVAT_HOST=<YOUR_DOMAIN>
 ```
 
@@ -415,15 +422,123 @@ enabling you to use HTTPS protocol to access your website.
 To enable this, first set the the `CVAT_HOST` (the domain of your website) and `ACME_EMAIL`
 (contact email for Let's Encrypt) environment variables:
 
-```
+```bash
 export CVAT_HOST=<YOUR_DOMAIN>
 export ACME_EMAIL=<YOUR_EMAIL>
 ```
 
 Then, use the `docker-compose.https.yml` file to override the base `docker-compose.yml` file:
 
-```
+```bash
 docker-compose -f docker-compose.yml -f docker-compose.https.yml up -d
 ```
 
+> In firewall, ports 80 and 443 must be open for inbound connections from any
+
 Then, the CVAT instance will be available at your domain on ports 443 (HTTPS) and 80 (HTTP, redirects to 443).
+
+## Troubleshooting
+
+### Sources for users from China
+
+If you stay in China, for installation you need to override the following sources.
+
+- For use `apt update` using:
+
+  [Ubuntu mirroring help](https://mirrors.tuna.tsinghua.edu.cn/help/ubuntu/)
+
+  Pre-compiled packages:
+  ```bash
+  deb https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ focal main restricted universe multiverse
+  deb https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ focal-updates main restricted universe multiverse
+  deb https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ focal-backports main restricted universe multiverse
+  deb https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ focal-security main restricted universe multiverse
+  ```
+  Or source packages:
+  ```bash
+  deb-src https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ focal main restricted universe multiverse
+  deb-src https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ focal-updates main restricted universe multiverse
+  deb-src https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ focal-backports main restricted universe multiverse
+  deb-src https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ focal-security main restricted universe multiverse
+  ```
+
+- [Docker mirror station](https://www.daocloud.io/mirror)
+
+  Add registry mirrors into `daemon.json` file:
+  ```json
+  {
+      "registry-mirrors": [
+          "http://f1361db2.m.daocloud.io",
+          "https://docker.mirrors.ustc.edu.cn",
+          "https://hub-mirror.c.163.com",
+          "https://https://mirror.ccs.tencentyun.com",
+          "https://mirror.ccs.tencentyun.com",
+      ]
+  }
+  ```
+
+- For using `pip`:
+
+  [PyPI mirroring help](https://mirrors.tuna.tsinghua.edu.cn/help/pypi/)
+  ```bash
+  pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
+  ```
+
+- For using `npm`:
+
+  [npm mirroring help](https://npmmirror.com/)
+  ```bash
+  npm config set registry https://registry.npm.taobao.org/
+  ```
+
+- Instead of `git` using [`gitee`](https://gitee.com/):
+
+  [CVAT repository on gitee.com](https://gitee.com/monkeycc/cvat)
+
+- For replace acceleration source `docker.com` run:
+  ```bash
+  curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+  sudo add-apt-repository \
+    "deb [arch=amd64] https://download.docker.com/linux/ubuntu \
+    $(lsb_release -cs) \
+  ```
+
+- For replace acceleration source `google.com` run:
+  ```bash
+  curl https://dl-ssl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
+  ```
+
+### HTTPS is not working because of a certificate
+
+If you're having trouble with SSL connection, to find the cause,
+you'll need to get the logs from traefik by running:
+
+```bash
+docker logs traefik
+```
+
+The logs will help you find out the problem.
+
+If the error is related to a firewall, then:
+- Open ports 80 and 443 for inbound connections from any.
+- Delete `acme.json`.
+  The location should be something like: `/var/lib/docker/volumes/cvat_cvat_letsencrypt/_data/acme.json`.
+
+After `acme.json` is removed, stop all cvat docker containers:
+
+```bash
+docker-compose -f docker-compose.yml -f docker-compose.https.yml down
+```
+
+Make sure variables set (with your values):
+
+```bash
+export CVAT_HOST=<YOUR_DOMAIN>
+export ACME_EMAIL=<YOUR_EMAIL>
+```
+
+and restart docker:
+
+```bash
+docker-compose -f docker-compose.yml -f docker-compose.https.yml up -d
+```

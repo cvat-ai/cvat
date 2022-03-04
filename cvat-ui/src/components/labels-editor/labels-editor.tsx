@@ -1,19 +1,16 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import './styles.scss';
 import React from 'react';
 import Tabs from 'antd/lib/tabs';
-import Button from 'antd/lib/button';
 import Text from 'antd/lib/typography/Text';
 import ModalConfirm from 'antd/lib/modal/confirm';
-import copy from 'copy-to-clipboard';
 import {
-    CopyOutlined, EditOutlined, BuildOutlined, ExclamationCircleOutlined,
+    EditOutlined, BuildOutlined, ExclamationCircleOutlined,
 } from '@ant-design/icons';
 
-import CVATTooltip from 'components/common/cvat-tooltip';
 import RawViewer from './raw-viewer';
 import ConstructorViewer from './constructor-viewer';
 import ConstructorCreator from './constructor-creator';
@@ -159,8 +156,8 @@ export default class LabelsEditor extends React.PureComponent<LabelsEditorProps,
         if (typeof label.id !== 'undefined' && label.id >= 0) {
             ModalConfirm({
                 className: 'cvat-modal-delete-label',
-                title: `Do you want to delete "${label.name}" label?`,
                 icon: <ExclamationCircleOutlined />,
+                title: `Do you want to delete "${label.name}" label?`,
                 content: 'This action is irreversible. Annotation corresponding with this label will be deleted.',
                 type: 'warning',
                 okType: 'danger',
@@ -207,32 +204,6 @@ export default class LabelsEditor extends React.PureComponent<LabelsEditorProps,
                 defaultActiveKey='2'
                 type='card'
                 tabBarStyle={{ marginBottom: '0px' }}
-                tabBarExtraContent={(
-                    <CVATTooltip title='Copied to clipboard!' trigger='click'>
-                        <Button
-                            type='link'
-                            icon={<CopyOutlined />}
-                            onClick={(): void => {
-                                copy(
-                                    JSON.stringify(
-                                        savedLabels.concat(unsavedLabels).map((label): any => ({
-                                            ...label,
-                                            id: undefined,
-                                            attributes: label.attributes.map((attribute): any => ({
-                                                ...attribute,
-                                                id: undefined,
-                                            })),
-                                        })),
-                                        null,
-                                        4,
-                                    ),
-                                );
-                            }}
-                        >
-                            Copy
-                        </Button>
-                    </CVATTooltip>
-                )}
             >
                 <Tabs.TabPane
                     tab={(

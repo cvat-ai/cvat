@@ -137,6 +137,7 @@ Canvas itself handles:
         cancel(): void;
         configure(configuration: Configuration): void;
         isAbleToChangeFrame(): boolean;
+        destroy(): void;
 
         readonly geometry: Geometry;
     }
@@ -183,12 +184,14 @@ Standard JS events are used.
     - canvas.zoomstart
     - canvas.zoomstop
     - canvas.zoom
+    - canvas.reshape
     - canvas.fit
     - canvas.dragshape => {id: number}
     - canvas.roiselected => {points: number[]}
     - canvas.resizeshape => {id: number}
     - canvas.contextmenu => { mouseEvent: MouseEvent, objectState: ObjectState,  pointID: number }
     - canvas.error => { exception: Error }
+    - canvas.destroy
 ```
 
 ### WEB
@@ -239,6 +242,7 @@ canvas.draw({
 | bitmap()          | +    | +     | +     | +    | +     | +    | +    | +      | +           | +           | +        |
 | setZLayer()       | +    | +     | +     | +    | +     | +    | +    | +      | +           | +           | +        |
 | setupReviewROIs() | +    | +     | +     | +    | +     | +    | +    | +      | +           | +           | +        |
+| destroy()         | +    | +     | +     | +    | +     | +    | +    | +      | +           | +           | +        |
 
 <!--lint enable maximum-line-length-->
 

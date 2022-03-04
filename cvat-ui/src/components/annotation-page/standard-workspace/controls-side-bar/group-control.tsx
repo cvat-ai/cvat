@@ -52,7 +52,7 @@ function GroupControl(props: Props): JSX.Element {
 
     const title = [
         `Group shapes${
-            jobInstance && jobInstance.task.dimension === DimensionType.DIM_3D ? '' : '/tracks'
+            jobInstance && jobInstance.dimension === DimensionType.DIM_3D ? '' : '/tracks'
         } ${switchGroupShortcut}. `,
         `Select and press ${resetGroupShortcut} to reset a group.`,
     ].join(' ');

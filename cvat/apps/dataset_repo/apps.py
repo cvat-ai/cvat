@@ -6,4 +6,4 @@ from django.apps import AppConfig
 
 
 class GitConfig(AppConfig):
-    name = 'dataset_repo'
+    name = 'cvat.apps.dataset_repo'

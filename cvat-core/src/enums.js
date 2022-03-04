@@ -34,6 +34,40 @@
     });
 
     /**
+     * Job stages
+     * @enum {string}
+     * @name JobStage
+     * @memberof module:API.cvat.enums
+     * @property {string} ANNOTATION 'annotation'
+     * @property {string} VALIDATION 'validation'
+     * @property {string} ACCEPTANCE 'acceptance'
+     * @readonly
+     */
+    const JobStage = Object.freeze({
+        ANNOTATION: 'annotation',
+        VALIDATION: 'validation',
+        ACCEPTANCE: 'acceptance',
+    });
+
+    /**
+     * Job states
+     * @enum {string}
+     * @name JobState
+     * @memberof module:API.cvat.enums
+     * @property {string} NEW 'new'
+     * @property {string} IN_PROGRESS 'in progress'
+     * @property {string} COMPLETED 'completed'
+     * @property {string} REJECTED 'rejected'
+     * @readonly
+     */
+    const JobState = Object.freeze({
+        NEW: 'new',
+        IN_PROGRESS: 'in progress',
+        COMPLETED: 'completed',
+        REJECTED: 'rejected',
+    });
+
+    /**
      * Task dimension
      * @enum
      * @name DimensionType
@@ -45,22 +79,6 @@
     const DimensionType = Object.freeze({
         DIMENSION_2D: '2d',
         DIMENSION_3D: '3d',
-    });
-
-    /**
-     * Review statuses
-     * @enum {string}
-     * @name ReviewStatus
-     * @memberof module:API.cvat.enums
-     * @property {string} ACCEPTED 'accepted'
-     * @property {string} REJECTED 'rejected'
-     * @property {string} REVIEW_FURTHER 'review_further'
-     * @readonly
-     */
-    const ReviewStatus = Object.freeze({
-        ACCEPTED: 'accepted',
-        REJECTED: 'rejected',
-        REVIEW_FURTHER: 'review_further',
     });
 
     /**
@@ -150,6 +168,7 @@
         POLYGON: 'polygon',
         POLYLINE: 'polyline',
         POINTS: 'points',
+        ELLIPSE: 'ellipse',
         CUBOID: 'cuboid',
     });
 
@@ -340,11 +359,13 @@
      * @memberof module:API.cvat.enums
      * @property {string} AWS_S3 'AWS_S3_BUCKET'
      * @property {string} AZURE 'AZURE_CONTAINER'
+     * @property {string} GOOGLE_CLOUD_STORAGE 'GOOGLE_CLOUD_STORAGE'
      * @readonly
      */
     const CloudStorageProviderType = Object.freeze({
         AWS_S3_BUCKET: 'AWS_S3_BUCKET',
         AZURE_CONTAINER: 'AZURE_CONTAINER',
+        GOOGLE_CLOUD_STORAGE: 'GOOGLE_CLOUD_STORAGE',
     });
 
     /**
@@ -355,18 +376,57 @@
      * @property {string} KEY_SECRET_KEY_PAIR 'KEY_SECRET_KEY_PAIR'
      * @property {string} ACCOUNT_NAME_TOKEN_PAIR 'ACCOUNT_NAME_TOKEN_PAIR'
      * @property {string} ANONYMOUS_ACCESS 'ANONYMOUS_ACCESS'
+     * @property {string} KEY_FILE_PATH 'KEY_FILE_PATH'
      * @readonly
      */
     const CloudStorageCredentialsType = Object.freeze({
         KEY_SECRET_KEY_PAIR: 'KEY_SECRET_KEY_PAIR',
         ACCOUNT_NAME_TOKEN_PAIR: 'ACCOUNT_NAME_TOKEN_PAIR',
         ANONYMOUS_ACCESS: 'ANONYMOUS_ACCESS',
+        KEY_FILE_PATH: 'KEY_FILE_PATH',
+    });
+
+    /**
+     * Task statuses
+     * @enum {string}
+     * @name MembershipRole
+     * @memberof module:API.cvat.enums
+     * @property {string} WORKER 'worker'
+     * @property {string} SUPERVISOR 'supervisor'
+     * @property {string} MAINTAINER 'maintainer'
+     * @property {string} OWNER 'owner'
+     * @readonly
+     */
+    const MembershipRole = Object.freeze({
+        WORKER: 'worker',
+        SUPERVISOR: 'supervisor',
+        MAINTAINER: 'maintainer',
+        OWNER: 'owner',
+    });
+
+    /**
+     * Sorting methods
+     * @enum {string}
+     * @name SortingMethod
+     * @memberof module:API.cvat.enums
+     * @property {string} LEXICOGRAPHICAL 'lexicographical'
+     * @property {string} NATURAL 'natural'
+     * @property {string} PREDEFINED 'predefined'
+     * @property {string} RANDOM 'random'
+     * @readonly
+     */
+    const SortingMethod = Object.freeze({
+        LEXICOGRAPHICAL: 'lexicographical',
+        NATURAL: 'natural',
+        PREDEFINED: 'predefined',
+        RANDOM: 'random',
     });
 
     module.exports = {
         ShareFileType,
         TaskStatus,
-        ReviewStatus,
+        JobStage,
+        JobState,
         TaskMode,
         AttributeType,
         ObjectType,
@@ -380,5 +440,7 @@
         DimensionType,
         CloudStorageProviderType,
         CloudStorageCredentialsType,
+        MembershipRole,
+        SortingMethod,
     };
 })();

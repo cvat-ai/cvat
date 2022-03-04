@@ -1,4 +1,4 @@
-// Copyright (C) 2021 Intel Corporation
+// Copyright (C) 2021-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -9,7 +9,7 @@ import { taskName, labelName } from '../../support/const_canvas3d';
 context('Canvas 3D functionality. Dump/upload annotation. "Point Cloud" format', () => {
     const caseId = '91';
     const cuboidCreationParams = {
-        labelName: labelName,
+        labelName,
     };
     const dumpTypePC = 'Sly Point Cloud Format';
     let annotationPCArchiveName = '';
@@ -37,12 +37,9 @@ context('Canvas 3D functionality. Dump/upload annotation. "Point Cloud" format',
                 format: dumpTypePC,
             };
             cy.exportTask(exportAnnotation);
-            const regex = new RegExp(`^task_${taskName.toLowerCase()}-.*-${exportAnnotation.format.toLowerCase()}.*.zip$`);
-            cy.task('listFiles', 'cypress/fixtures').each((fileName) => {
-                if (fileName.match(regex)) {
-                    cy.readFile(`cypress/fixtures/${fileName}`).should('exist');
-                    annotationPCArchiveName = fileName;
-                }
+            cy.getDownloadFileName().then((file) => {
+                annotationPCArchiveName = file;
+                cy.verifyDownload(annotationPCArchiveName);
             });
         });
 
@@ -51,15 +48,12 @@ context('Canvas 3D functionality. Dump/upload annotation. "Point Cloud" format',
                 as: 'exportAnnotationsRenameArchive',
                 type: 'annotations',
                 format: dumpTypePC,
-                archiveCustomeName: 'task_export_3d_annotation_custome_name_pc_format'
+                archiveCustomeName: 'task_export_3d_annotation_custome_name_pc_format',
             };
             cy.exportTask(exportAnnotationRenameArchive);
-            const regex = new RegExp(`^${exportAnnotationRenameArchive.archiveCustomeName}.zip$`);
-            cy.task('listFiles', 'cypress/fixtures').each((fileName) => {
-                if (fileName.match(regex)) {
-                    cy.readFile(`cypress/fixtures/${fileName}`).should('exist');
-                    annotationPCArchiveCustomeName = fileName;
-                }
+            cy.getDownloadFileName().then((file) => {
+                annotationPCArchiveCustomeName = file;
+                cy.verifyDownload(annotationPCArchiveCustomeName);
             });
             cy.removeAnnotations();
             cy.saveJob('PUT');
@@ -68,24 +62,24 @@ context('Canvas 3D functionality. Dump/upload annotation. "Point Cloud" format',
 
         it('Upload "Point Cloud" format annotation to job.', () => {
             cy.interactMenu('Upload annotations');
-            cy.readFile('cypress/fixtures/' + annotationPCArchiveName, 'binary')
+            cy.readFile(`cypress/fixtures/${annotationPCArchiveName}`, 'binary')
                 .then(Cypress.Blob.binaryStringToBlob)
                 .then((fileContent) => {
                     cy.contains('.cvat-menu-load-submenu-item', dumpTypePC.split(' ')[0])
                         .should('be.visible')
                         .within(() => {
                             cy.get('.cvat-menu-load-submenu-item-button').click().get('input[type=file]').attachFile({
-                                fileContent: fileContent,
+                                fileContent,
                                 fileName: annotationPCArchiveName,
                             });
                         });
                 });
             confirmUpdate('.cvat-modal-content-load-job-annotation');
-            cy.intercept('GET', '/api/v1/jobs/**/annotations**').as('uploadAnnotationsGet');
+            cy.intercept('GET', '/api/jobs/**/annotations**').as('uploadAnnotationsGet');
             cy.wait('@uploadAnnotationsGet').its('response.statusCode').should('equal', 200);
             cy.get('#cvat-objects-sidebar-state-item-1').should('exist');
             cy.removeAnnotations();
-            cy.get('button').contains('Save').click({ force: true });
+            cy.get('button').contains('Save').click().trigger('mouseout');
             cy.get('#cvat-objects-sidebar-state-item-1').should('not.exist');
         });
 
@@ -96,7 +90,7 @@ context('Canvas 3D functionality. Dump/upload annotation. "Point Cloud" format',
                 .find('.cvat-menu-icon')
                 .trigger('mouseover');
             cy.contains('Upload annotations').trigger('mouseover');
-            cy.readFile('cypress/fixtures/' + annotationPCArchiveCustomeName, 'binary')
+            cy.readFile(`cypress/fixtures/${annotationPCArchiveCustomeName}`, 'binary')
                 .then(Cypress.Blob.binaryStringToBlob)
                 .then((fileContent) => {
                     cy.contains('.cvat-menu-load-submenu-item', dumpTypePC.split(' ')[0])
@@ -104,7 +98,7 @@ context('Canvas 3D functionality. Dump/upload annotation. "Point Cloud" format',
                         .within(() => {
                             cy.get('.cvat-menu-load-submenu-item-button').click().get('input[type=file]').attachFile({
                                 fileName: annotationPCArchiveCustomeName,
-                                fileContent: fileContent,
+                                fileContent,
                             });
                         });
                 });
@@ -114,7 +108,7 @@ context('Canvas 3D functionality. Dump/upload annotation. "Point Cloud" format',
             cy.openTaskJob(taskName);
             cy.get('#cvat-objects-sidebar-state-item-1').should('exist');
             cy.removeAnnotations();
-            cy.get('button').contains('Save').click({ force: true });
+            cy.get('button').contains('Save').click().trigger('mouseout');
         });
     });
 });

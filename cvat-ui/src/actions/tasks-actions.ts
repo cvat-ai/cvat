@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2021 Intel Corporation
+// Copyright (C) 2019-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -28,6 +28,9 @@ export enum TasksActionTypes {
     UPDATE_TASK = 'UPDATE_TASK',
     UPDATE_TASK_SUCCESS = 'UPDATE_TASK_SUCCESS',
     UPDATE_TASK_FAILED = 'UPDATE_TASK_FAILED',
+    UPDATE_JOB = 'UPDATE_JOB',
+    UPDATE_JOB_SUCCESS = 'UPDATE_JOB_SUCCESS',
+    UPDATE_JOB_FAILED = 'UPDATE_JOB_FAILED',
     HIDE_EMPTY_TASKS = 'HIDE_EMPTY_TASKS',
     EXPORT_TASK = 'EXPORT_TASK',
     EXPORT_TASK_SUCCESS = 'EXPORT_TASK_SUCCESS',
@@ -38,36 +41,34 @@ export enum TasksActionTypes {
     SWITCH_MOVE_TASK_MODAL_VISIBLE = 'SWITCH_MOVE_TASK_MODAL_VISIBLE',
 }
 
-function getTasks(): AnyAction {
+function getTasks(query: TasksQuery): AnyAction {
     const action = {
         type: TasksActionTypes.GET_TASKS,
-        payload: {},
+        payload: {
+            query,
+        },
     };
 
     return action;
 }
 
-export function getTasksSuccess(array: any[], previews: string[], count: number, query: TasksQuery): AnyAction {
+export function getTasksSuccess(array: any[], previews: string[], count: number): AnyAction {
     const action = {
         type: TasksActionTypes.GET_TASKS_SUCCESS,
         payload: {
             previews,
             array,
             count,
-            query,
         },
     };
 
     return action;
 }
 
-function getTasksFailed(error: any, query: TasksQuery): AnyAction {
+function getTasksFailed(error: any): AnyAction {
     const action = {
         type: TasksActionTypes.GET_TASKS_FAILED,
-        payload: {
-            error,
-            query,
-        },
+        payload: { error },
     };
 
     return action;
@@ -75,7 +76,7 @@ function getTasksFailed(error: any, query: TasksQuery): AnyAction {
 
 export function getTasksAsync(query: TasksQuery): ThunkAction<Promise<void>, {}, {}, AnyAction> {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
-        dispatch(getTasks());
+        dispatch(getTasks(query));
 
         // We need remove all keys with null values from query
         const filteredQuery = { ...query };
@@ -85,11 +86,28 @@ export function getTasksAsync(query: TasksQuery): ThunkAction<Promise<void>, {},
             }
         }
 
+        // Temporary hack to do not change UI currently for tasks
+        // Will be redesigned in a different PR
+        const filter = {
+            and: ['owner', 'assignee', 'name', 'status', 'mode', 'dimension'].reduce<object[]>((acc, filterField) => {
+                if (filterField in filteredQuery) {
+                    acc.push({ '==': [{ var: filterField }, filteredQuery[filterField]] });
+                    delete filteredQuery[filterField];
+                }
+
+                return acc;
+            }, []),
+        };
+
+        if (filter.and.length) {
+            filteredQuery.filter = JSON.stringify(filter);
+        }
+
         let result = null;
         try {
             result = await cvat.tasks.get(filteredQuery);
         } catch (error) {
-            dispatch(getTasksFailed(error, query));
+            dispatch(getTasksFailed(error));
             return;
         }
 
@@ -98,7 +116,7 @@ export function getTasksAsync(query: TasksQuery): ThunkAction<Promise<void>, {},
 
         dispatch(getInferenceStatusAsync());
 
-        dispatch(getTasksSuccess(array, await Promise.all(promises), result.count, query));
+        dispatch(getTasksSuccess(array, await Promise.all(promises), result.count));
     };
 }
 
@@ -248,7 +266,7 @@ export function exportTaskAsync(taskInstance: any): ThunkAction<Promise<void>, {
             downloadAnchor.click();
             dispatch(exportTaskSuccess(taskInstance.id));
         } catch (error) {
-            dispatch(exportTaskFailed(taskInstance.id, error));
+            dispatch(exportTaskFailed(taskInstance.id, error as Error));
         }
     };
 }
@@ -351,6 +369,7 @@ export function createTaskAsync(data: any): ThunkAction<Promise<void>, {}, {}, A
             image_quality: 70,
             use_zip_chunks: data.advanced.useZipChunks,
             use_cache: data.advanced.useCache,
+            sorting_method: data.advanced.sortingMethod,
         };
 
         if (data.projectId) {
@@ -411,8 +430,8 @@ export function createTaskAsync(data: any): ThunkAction<Promise<void>, {}, {}, A
 
         dispatch(createTask());
         try {
-            const savedTask = await taskInstance.save((status: string): void => {
-                dispatch(createTaskUpdateStatus(status));
+            const savedTask = await taskInstance.save((status: string, progress: number): void => {
+                dispatch(createTaskUpdateStatus(status + (progress !== null ? ` ${Math.floor(progress * 100)}%` : '')));
             });
             dispatch(createTaskSuccess(savedTask.id));
         } catch (error) {
@@ -439,6 +458,33 @@ export function updateTaskSuccess(task: any, taskID: number): AnyAction {
     return action;
 }
 
+function updateJob(): AnyAction {
+    const action = {
+        type: TasksActionTypes.UPDATE_JOB,
+        payload: { },
+    };
+
+    return action;
+}
+
+function updateJobSuccess(jobInstance: any): AnyAction {
+    const action = {
+        type: TasksActionTypes.UPDATE_JOB_SUCCESS,
+        payload: { jobInstance },
+    };
+
+    return action;
+}
+
+function updateJobFailed(jobID: number, error: any): AnyAction {
+    const action = {
+        type: TasksActionTypes.UPDATE_JOB_FAILED,
+        payload: { jobID, error },
+    };
+
+    return action;
+}
+
 function updateTaskFailed(error: any, task: any): AnyAction {
     const action = {
         type: TasksActionTypes.UPDATE_TASK_FAILED,
@@ -449,17 +495,11 @@ function updateTaskFailed(error: any, task: any): AnyAction {
 }
 
 export function updateTaskAsync(taskInstance: any): ThunkAction<Promise<void>, CombinedState, {}, AnyAction> {
-    return async (dispatch: ActionCreator<Dispatch>, getState: () => CombinedState): Promise<void> => {
+    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         try {
             dispatch(updateTask());
-            const currentUser = getState().auth.user;
-            await taskInstance.save();
-            const nextUser = getState().auth.user;
-            const userFetching = getState().auth.fetching;
-            if (!userFetching && nextUser && currentUser.username === nextUser.username) {
-                const [task] = await cvat.tasks.get({ id: taskInstance.id });
-                dispatch(updateTaskSuccess(task, taskInstance.id));
-            }
+            const task = await taskInstance.save();
+            dispatch(updateTaskSuccess(task, taskInstance.id));
         } catch (error) {
             // try abort all changes
             let task = null;
@@ -480,21 +520,11 @@ export function updateTaskAsync(taskInstance: any): ThunkAction<Promise<void>, C
 export function updateJobAsync(jobInstance: any): ThunkAction<Promise<void>, {}, {}, AnyAction> {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         try {
-            dispatch(updateTask());
-            await jobInstance.save();
-            const [task] = await cvat.tasks.get({ id: jobInstance.task.id });
-            dispatch(updateTaskSuccess(task, jobInstance.task.id));
+            dispatch(updateJob());
+            const newJob = await jobInstance.save();
+            dispatch(updateJobSuccess(newJob));
         } catch (error) {
-            // try abort all changes
-            let task = null;
-            try {
-                [task] = await cvat.tasks.get({ id: jobInstance.task.id });
-            } catch (fetchError) {
-                dispatch(updateTaskFailed(error, jobInstance.task));
-                return;
-            }
-
-            dispatch(updateTaskFailed(error, task));
+            dispatch(updateJobFailed(jobInstance.id, error));
         }
     };
 }

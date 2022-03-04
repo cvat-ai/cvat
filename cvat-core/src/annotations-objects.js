@@ -47,11 +47,26 @@
             }
         } else if (shapeType === ObjectShape.CUBOID) {
             if (points.length / 2 !== 8) {
-                throw new DataError(`Points must have exact 8 points, but got ${points.length / 2}`);
+                throw new DataError(`Cuboid must have 8 points, but got ${points.length / 2}`);
+            }
+        } else if (shapeType === ObjectShape.ELLIPSE) {
+            if (points.length / 2 !== 2) {
+                throw new DataError(`Ellipse must have 1 point, rx and ry but got ${points.toString()}`);
             }
         } else {
             throw new ArgumentError(`Unknown value of shapeType has been received ${shapeType}`);
         }
+    }
+
+    function findAngleDiff(rightAngle, leftAngle) {
+        let angleDiff = rightAngle - leftAngle;
+        angleDiff = ((angleDiff + 180) % 360) - 180;
+        if (Math.abs(angleDiff) >= 180) {
+            // if the main arc is bigger than 180, go another arc
+            // to find it, just substract absolute value from 360 and inverse sign
+            angleDiff = 360 - Math.abs(angleDiff) * Math.sign(angleDiff) * -1;
+        }
+        return angleDiff;
     }
 
     function checkShapeArea(shapeType, points) {
@@ -60,6 +75,12 @@
 
         if (shapeType === ObjectShape.POINTS) {
             return true;
+        }
+
+        if (shapeType === ObjectShape.ELLIPSE) {
+            const [cx, cy, rightX, topY] = points;
+            const [rx, ry] = [rightX - cx, cy - topY];
+            return rx * ry * Math.PI > MIN_SHAPE_AREA;
         }
 
         let xmin = Number.MAX_SAFE_INTEGER;
@@ -76,7 +97,6 @@
 
         if (shapeType === ObjectShape.POLYLINE) {
             const length = Math.max(xmax - xmin, ymax - ymin);
-
             return length >= MIN_SHAPE_LENGTH;
         }
 
@@ -84,30 +104,34 @@
         return area >= MIN_SHAPE_AREA;
     }
 
-    function fitPoints(shapeType, points, maxX, maxY) {
+    function rotatePoint(x, y, angle, cx = 0, cy = 0) {
+        const sin = Math.sin((angle * Math.PI) / 180);
+        const cos = Math.cos((angle * Math.PI) / 180);
+        const rotX = (x - cx) * cos - (y - cy) * sin + cx;
+        const rotY = (y - cy) * cos + (x - cx) * sin + cy;
+        return [rotX, rotY];
+    }
+
+    function fitPoints(shapeType, points, rotation, maxX, maxY) {
+        checkObjectType('rotation', rotation, 'number', null);
+        points.forEach((coordinate) => checkObjectType('coordinate', coordinate, 'number', null));
+
+        if (shapeType === ObjectShape.CUBOID || shapeType === ObjectShape.ELLIPSE || !!rotation) {
+            // cuboids and rotated bounding boxes cannot be fitted
+            return points;
+        }
+
         const fittedPoints = [];
 
         for (let i = 0; i < points.length - 1; i += 2) {
             const x = points[i];
             const y = points[i + 1];
-
-            checkObjectType('coordinate', x, 'number', null);
-            checkObjectType('coordinate', y, 'number', null);
-
-            fittedPoints.push(Math.clamp(x, 0, maxX), Math.clamp(y, 0, maxY));
+            const clampedX = Math.clamp(x, 0, maxX);
+            const clampedY = Math.clamp(y, 0, maxY);
+            fittedPoints.push(clampedX, clampedY);
         }
 
-        return shapeType === ObjectShape.CUBOID ? points : fittedPoints;
-    }
-
-    function checkOutside(points, width, height) {
-        let inside = false;
-        for (let i = 0; i < points.length - 1; i += 2) {
-            const [x, y] = points.slice(i);
-            inside = inside || (x >= 0 && x <= width && y >= 0 && y <= height);
-        }
-
-        return !inside;
+        return fittedPoints;
     }
 
     function validateAttributeValue(value, attr) {
@@ -345,13 +369,13 @@
                 checkNumberOfPoints(this.shapeType, data.points);
                 // cut points
                 const { width, height, filename } = this.frameMeta[frame];
-                fittedPoints = fitPoints(this.shapeType, data.points, width, height);
+                fittedPoints = fitPoints(this.shapeType, data.points, data.rotation, width, height);
                 let check = true;
                 if (filename && filename.slice(filename.length - 3) === 'pcd') {
                     check = false;
                 }
                 if (check) {
-                    if (!checkShapeArea(this.shapeType, fittedPoints) || checkOutside(fittedPoints, width, height)) {
+                    if (!checkShapeArea(this.shapeType, fittedPoints)) {
                         fittedPoints = [];
                     }
                 }
@@ -492,6 +516,7 @@
         constructor(data, clientID, color, injection) {
             super(data, clientID, color, injection);
             this.points = data.points;
+            this.rotation = data.rotation || 0;
             this.occluded = data.occluded;
             this.zOrder = data.z_order;
         }
@@ -504,6 +529,7 @@
                 occluded: this.occluded,
                 z_order: this.zOrder,
                 points: [...this.points],
+                rotation: this.rotation,
                 attributes: Object.keys(this.attributes).reduce((attributeAccumulator, attrId) => {
                     attributeAccumulator.push({
                         spec_id: attrId,
@@ -535,6 +561,7 @@
                 lock: this.lock,
                 zOrder: this.zOrder,
                 points: [...this.points],
+                rotation: this.rotation,
                 attributes: { ...this.attributes },
                 descriptions: [...this.descriptions],
                 label: this.label,
@@ -548,9 +575,11 @@
             };
         }
 
-        _savePoints(points, frame) {
+        _savePoints(points, rotation, frame) {
             const undoPoints = this.points;
+            const undoRotation = this.rotation;
             const redoPoints = points;
+            const redoRotation = rotation;
             const undoSource = this.source;
             const redoSource = Source.MANUAL;
 
@@ -559,11 +588,13 @@
                 () => {
                     this.points = undoPoints;
                     this.source = undoSource;
+                    this.rotation = undoRotation;
                     this.updated = Date.now();
                 },
                 () => {
                     this.points = redoPoints;
                     this.source = redoSource;
+                    this.rotation = redoRotation;
                     this.updated = Date.now();
                 },
                 [this.clientID],
@@ -572,6 +603,7 @@
 
             this.source = Source.MANUAL;
             this.points = points;
+            this.rotation = rotation;
         }
 
         _saveOccluded(occluded, frame) {
@@ -637,6 +669,7 @@
 
             const updated = data.updateFlags;
             const fittedPoints = this._validateStateBeforeSave(frame, data, updated);
+            const { rotation } = data;
 
             // Now when all fields are validated, we can apply them
             if (updated.label) {
@@ -652,7 +685,7 @@
             }
 
             if (updated.points && fittedPoints.length) {
-                this._savePoints(fittedPoints, frame);
+                this._savePoints(fittedPoints, rotation, frame);
             }
 
             if (updated.occluded) {
@@ -696,6 +729,7 @@
                     zOrder: value.z_order,
                     points: value.points,
                     outside: value.outside,
+                    rotation: value.rotation || 0,
                     attributes: value.attributes.reduce((attributeAccumulator, attr) => {
                         attributeAccumulator[attr.spec_id] = attr.value;
                         return attributeAccumulator;
@@ -736,6 +770,7 @@
                         occluded: this.shapes[frame].occluded,
                         z_order: this.shapes[frame].zOrder,
                         points: [...this.shapes[frame].points],
+                        rotation: this.shapes[frame].rotation,
                         outside: this.shapes[frame].outside,
                         attributes: Object.keys(this.shapes[frame].attributes).reduce(
                             (attributeAccumulator, attrId) => {
@@ -1009,22 +1044,21 @@
             );
         }
 
-        _savePoints(points, frame) {
+        _savePoints(points, rotation, frame) {
             const current = this.get(frame);
             const wasKeyframe = frame in this.shapes;
             const undoSource = this.source;
             const redoSource = Source.MANUAL;
             const undoShape = wasKeyframe ? this.shapes[frame] : undefined;
-            const redoShape = wasKeyframe ?
-                { ...this.shapes[frame], points } :
-                {
-                    frame,
-                    points,
-                    zOrder: current.zOrder,
-                    outside: current.outside,
-                    occluded: current.occluded,
-                    attributes: {},
-                };
+            const redoShape = wasKeyframe ? { ...this.shapes[frame], points, rotation } : {
+                frame,
+                points,
+                rotation,
+                zOrder: current.zOrder,
+                outside: current.outside,
+                occluded: current.occluded,
+                attributes: {},
+            };
 
             this.shapes[frame] = redoShape;
             this.source = Source.MANUAL;
@@ -1049,6 +1083,7 @@
                 {
                     frame,
                     outside,
+                    rotation: current.rotation,
                     zOrder: current.zOrder,
                     points: current.points,
                     occluded: current.occluded,
@@ -1078,6 +1113,7 @@
                 {
                     frame,
                     occluded,
+                    rotation: current.rotation,
                     zOrder: current.zOrder,
                     points: current.points,
                     outside: current.outside,
@@ -1107,6 +1143,7 @@
                 {
                     frame,
                     zOrder,
+                    rotation: current.rotation,
                     occluded: current.occluded,
                     points: current.points,
                     outside: current.outside,
@@ -1139,6 +1176,7 @@
             const redoShape = keyframe ?
                 {
                     frame,
+                    rotation: current.rotation,
                     zOrder: current.zOrder,
                     points: current.points,
                     outside: current.outside,
@@ -1172,6 +1210,7 @@
 
             const updated = data.updateFlags;
             const fittedPoints = this._validateStateBeforeSave(frame, data, updated);
+            const { rotation } = data;
 
             if (updated.label) {
                 this._saveLabel(data.label, frame);
@@ -1194,7 +1233,7 @@
             }
 
             if (updated.points && fittedPoints.length) {
-                this._savePoints(fittedPoints, frame);
+                this._savePoints(fittedPoints, rotation, frame);
             }
 
             if (updated.outside) {
@@ -1246,6 +1285,7 @@
             if (leftPosition) {
                 return {
                     points: [...leftPosition.points],
+                    rotation: leftPosition.rotation,
                     occluded: leftPosition.occluded,
                     outside: leftPosition.outside,
                     zOrder: leftPosition.zOrder,
@@ -1256,10 +1296,11 @@
             if (rightPosition) {
                 return {
                     points: [...rightPosition.points],
+                    rotation: rightPosition.rotation,
                     occluded: rightPosition.occluded,
-                    outside: true,
                     zOrder: rightPosition.zOrder,
                     keyframe: targetFrame in this.shapes,
+                    outside: true,
                 };
             }
 
@@ -1356,20 +1397,84 @@
             checkNumberOfPoints(this.shapeType, this.points);
         }
 
-        static distance(points, x, y) {
+        static distance(points, x, y, angle) {
             const [xtl, ytl, xbr, ybr] = points;
+            const cx = xtl + (xbr - xtl) / 2;
+            const cy = ytl + (ybr - ytl) / 2;
+            const [rotX, rotY] = rotatePoint(x, y, -angle, cx, cy);
 
-            if (!(x >= xtl && x <= xbr && y >= ytl && y <= ybr)) {
+            if (!(rotX >= xtl && rotX <= xbr && rotY >= ytl && rotY <= ybr)) {
                 // Cursor is outside of a box
                 return null;
             }
 
             // The shortest distance from point to an edge
-            return Math.min.apply(null, [x - xtl, y - ytl, xbr - x, ybr - y]);
+            return Math.min.apply(null, [rotX - xtl, rotY - ytl, xbr - rotX, ybr - rotY]);
         }
     }
 
-    class PolyShape extends Shape {}
+    class EllipseShape extends Shape {
+        constructor(data, clientID, color, injection) {
+            super(data, clientID, color, injection);
+            this.shapeType = ObjectShape.ELLIPSE;
+            this.pinned = false;
+            checkNumberOfPoints(this.shapeType, this.points);
+        }
+
+        static distance(points, x, y, angle) {
+            const [cx, cy, rightX, topY] = points;
+            const [rx, ry] = [rightX - cx, cy - topY];
+            const [rotX, rotY] = rotatePoint(x, y, -angle, cx, cy);
+            // https://math.stackexchange.com/questions/76457/check-if-a-point-is-within-an-ellipse
+            const pointWithinEllipse = (_x, _y) => (
+                ((_x - cx) ** 2) / rx ** 2) + (((_y - cy) ** 2) / ry ** 2
+            ) <= 1;
+
+            if (!pointWithinEllipse(rotX, rotY)) {
+                // Cursor is outside of an ellipse
+                return null;
+            }
+
+            if (Math.abs(x - cx) < Number.EPSILON && Math.abs(y - cy) < Number.EPSILON) {
+                // cursor is near to the center, just return minimum of height, width
+                return Math.min(rx, ry);
+            }
+
+            // ellipse equation is x^2/rx^2 + y^2/ry^2 = 1
+            // from this equation:
+            // x^2 = ((rx * ry)^2 - (y * rx)^2) / ry^2
+            // y^2 = ((rx * ry)^2 - (x * ry)^2) / rx^2
+
+            // we have one point inside the ellipse, let's build two lines (horizontal and vertical) through the point
+            // and find their interception with ellipse
+            const x2Equation = (_y) => (((rx * ry) ** 2) - ((_y * rx) ** 2)) / (ry ** 2);
+            const y2Equation = (_x) => (((rx * ry) ** 2) - ((_x * ry) ** 2)) / (rx ** 2);
+
+            // shift x,y to the ellipse coordinate system to compute equation correctly
+            // y axis is inverted
+            const [shiftedX, shiftedY] = [x - cx, cy - y];
+            const [x1, x2] = [Math.sqrt(x2Equation(shiftedY)), -Math.sqrt(x2Equation(shiftedY))];
+            const [y1, y2] = [Math.sqrt(y2Equation(shiftedX)), -Math.sqrt(y2Equation(shiftedX))];
+
+            // found two points on ellipse edge
+            const ellipseP1X = shiftedX >= 0 ? x1 : x2; // ellipseP1Y is shiftedY
+            const ellipseP2Y = shiftedY >= 0 ? y1 : y2; // ellipseP1X is shiftedX
+
+            // found diffs between two points on edges and target point
+            const diff1X = ellipseP1X - shiftedX;
+            const diff2Y = ellipseP2Y - shiftedY;
+
+            // return minimum, get absolute value because we need distance, not diff
+            return Math.min(Math.abs(diff1X), Math.abs(diff2Y));
+        }
+    }
+
+    class PolyShape extends Shape {
+        constructor(data, clientID, color, injection) {
+            super(data, clientID, color, injection);
+            this.rotation = 0; // is not supported
+        }
+    }
 
     class PolygonShape extends PolyShape {
         constructor(data, clientID, color, injection) {
@@ -1509,6 +1614,7 @@
     class CuboidShape extends Shape {
         constructor(data, clientID, color, injection) {
             super(data, clientID, color, injection);
+            this.rotation = 0;
             this.shapeType = ObjectShape.CUBOID;
             this.pinned = false;
             checkNumberOfPoints(this.shapeType, this.points);
@@ -1639,9 +1745,38 @@
 
         interpolatePosition(leftPosition, rightPosition, offset) {
             const positionOffset = leftPosition.points.map((point, index) => rightPosition.points[index] - point);
+            return {
+                points: leftPosition.points.map((point, index) => point + positionOffset[index] * offset),
+                rotation:
+                    (leftPosition.rotation + findAngleDiff(
+                        rightPosition.rotation, leftPosition.rotation,
+                    ) * offset + 360) % 360,
+                occluded: leftPosition.occluded,
+                outside: leftPosition.outside,
+                zOrder: leftPosition.zOrder,
+            };
+        }
+    }
+
+    class EllipseTrack extends Track {
+        constructor(data, clientID, color, injection) {
+            super(data, clientID, color, injection);
+            this.shapeType = ObjectShape.ELLIPSE;
+            this.pinned = false;
+            for (const shape of Object.values(this.shapes)) {
+                checkNumberOfPoints(this.shapeType, shape.points);
+            }
+        }
+
+        interpolatePosition(leftPosition, rightPosition, offset) {
+            const positionOffset = leftPosition.points.map((point, index) => rightPosition.points[index] - point);
 
             return {
                 points: leftPosition.points.map((point, index) => point + positionOffset[index] * offset),
+                rotation:
+                    (leftPosition.rotation + findAngleDiff(
+                        rightPosition.rotation, leftPosition.rotation,
+                    ) * offset + 360) % 360,
                 occluded: leftPosition.occluded,
                 outside: leftPosition.outside,
                 zOrder: leftPosition.zOrder,
@@ -1650,10 +1785,18 @@
     }
 
     class PolyTrack extends Track {
+        constructor(data, clientID, color, injection) {
+            super(data, clientID, color, injection);
+            for (const shape of Object.values(this.shapes)) {
+                shape.rotation = 0; // is not supported
+            }
+        }
+
         interpolatePosition(leftPosition, rightPosition, offset) {
             if (offset === 0) {
                 return {
                     points: [...leftPosition.points],
+                    rotation: leftPosition.rotation,
                     occluded: leftPosition.occluded,
                     outside: leftPosition.outside,
                     zOrder: leftPosition.zOrder,
@@ -1900,6 +2043,7 @@
 
             return {
                 points: toArray(reducedPoints),
+                rotation: leftPosition.rotation,
                 occluded: leftPosition.occluded,
                 outside: leftPosition.outside,
                 zOrder: leftPosition.zOrder,
@@ -1962,6 +2106,7 @@
                     points: leftPosition.points.map(
                         (value, index) => value + (rightPosition.points[index] - value) * offset,
                     ),
+                    rotation: leftPosition.rotation,
                     occluded: leftPosition.occluded,
                     outside: leftPosition.outside,
                     zOrder: leftPosition.zOrder,
@@ -1970,6 +2115,7 @@
 
             return {
                 points: [...leftPosition.points],
+                rotation: leftPosition.rotation,
                 occluded: leftPosition.occluded,
                 outside: leftPosition.outside,
                 zOrder: leftPosition.zOrder,
@@ -1984,6 +2130,7 @@
             this.pinned = false;
             for (const shape of Object.values(this.shapes)) {
                 checkNumberOfPoints(this.shapeType, shape.points);
+                shape.rotation = 0; // is not supported
             }
         }
 
@@ -1992,6 +2139,7 @@
 
             return {
                 points: leftPosition.points.map((point, index) => point + positionOffset[index] * offset),
+                rotation: leftPosition.rotation,
                 occluded: leftPosition.occluded,
                 outside: leftPosition.outside,
                 zOrder: leftPosition.zOrder,
@@ -2003,6 +2151,7 @@
     PolygonTrack.distance = PolygonShape.distance;
     PolylineTrack.distance = PolylineShape.distance;
     PointsTrack.distance = PointsShape.distance;
+    EllipseTrack.distance = EllipseShape.distance;
     CuboidTrack.distance = CuboidShape.distance;
 
     module.exports = {
@@ -2010,11 +2159,13 @@
         PolygonShape,
         PolylineShape,
         PointsShape,
+        EllipseShape,
         CuboidShape,
         RectangleTrack,
         PolygonTrack,
         PolylineTrack,
         PointsTrack,
+        EllipseTrack,
         CuboidTrack,
         Track,
         Shape,

@@ -114,6 +114,7 @@
 .cvat-draw-polygon-control,
 .cvat-draw-polyline-control,
 .cvat-draw-points-control,
+.cvat-draw-ellipse-control,
 .cvat-draw-cuboid-control,
 .cvat-setup-tag-control,
 .cvat-merge-control,
@@ -253,6 +254,18 @@
 .cvat-opencv-image-tool-active {
     color: #40a9ff;
     border-color: #40a9ff;
+}
+
+.cvat-opencv-tracker-select {
+    width: 100%;
+}
+
+.cvat-opencv-tracking-label-select {
+    @extend .cvat-opencv-tracker-select;
+}
+
+.cvat-opencv-tracker-content {
+    margin-top: $grid-unit-size;
 }
 
 .cvat-setup-tag-popover-content,

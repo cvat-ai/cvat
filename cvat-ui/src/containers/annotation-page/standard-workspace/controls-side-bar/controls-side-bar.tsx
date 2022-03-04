@@ -53,7 +53,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
 
     return {
         rotateAll,
-        canvasInstance,
+        canvasInstance: canvasInstance as Canvas,
         activeControl,
         labels,
         normalizedKeyMap,

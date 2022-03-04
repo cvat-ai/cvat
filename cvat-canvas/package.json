@@ -1,6 +1,6 @@
 {
   "name": "cvat-canvas",
-  "version": "2.8.0",
+  "version": "2.13.1",
   "description": "Part of Computer Vision Annotation Tool which presents its canvas library",
   "main": "src/canvas.ts",
   "scripts": {
@@ -15,8 +15,9 @@
     "not IE 11",
     "> 2%"
   ],
-  "devDependencies": {},
   "dependencies": {
+    "@types/polylabel": "^1.0.5",
+    "polylabel": "^1.1.0",
     "svg.draggable.js": "2.2.2",
     "svg.draw.js": "^2.0.4",
     "svg.js": "2.7.1",

@@ -1,4 +1,4 @@
-// Copyright (C) 2021 Intel Corporation
+// Copyright (C) 2021-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -20,7 +20,7 @@ const defaultState: CloudStoragesState = {
         owner: null,
         displayName: null,
         description: null,
-        resourceName: null,
+        resource: null,
         providerType: null,
         credentialsType: null,
         status: null,

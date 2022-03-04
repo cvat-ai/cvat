@@ -1,5 +1,5 @@
 
-# Copyright (C) 2020 Intel Corporation
+# Copyright (C) 2020-2022 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -27,7 +27,7 @@ from cvat.apps.dataset_manager.util import make_zip_archive
 from cvat.apps.engine.models import Task
 
 
-def generate_image_file(filename, size=(100, 50)):
+def generate_image_file(filename, size=(100, 100)):
     f = BytesIO()
     image = Image.new('RGB', size=size)
     image.save(f, 'jpeg')
@@ -69,38 +69,38 @@ class _DbTestBase(APITestCase):
 
         cls.user = admin
 
-    def _put_api_v1_task_id_annotations(self, tid, data):
+    def _put_api_v2_task_id_annotations(self, tid, data):
         with ForceLogin(self.user, self.client):
-            response = self.client.put("/api/v1/tasks/%s/annotations" % tid,
+            response = self.client.put("/api/tasks/%s/annotations" % tid,
                 data=data, format="json")
 
         return response
 
-    def _put_api_v1_job_id_annotations(self, jid, data):
+    def _put_api_v2_job_id_annotations(self, jid, data):
         with ForceLogin(self.user, self.client):
-            response = self.client.put("/api/v1/jobs/%s/annotations" % jid,
+            response = self.client.put("/api/jobs/%s/annotations" % jid,
                 data=data, format="json")
 
         return response
 
     def _create_task(self, data, image_data):
         with ForceLogin(self.user, self.client):
-            response = self.client.post('/api/v1/tasks', data=data, format="json")
+            response = self.client.post('/api/tasks', data=data, format="json")
             assert response.status_code == status.HTTP_201_CREATED, response.status_code
             tid = response.data["id"]
 
-            response = self.client.post("/api/v1/tasks/%s/data" % tid,
+            response = self.client.post("/api/tasks/%s/data" % tid,
                 data=image_data)
             assert response.status_code == status.HTTP_202_ACCEPTED, response.status_code
 
-            response = self.client.get("/api/v1/tasks/%s" % tid)
+            response = self.client.get("/api/tasks/%s" % tid)
             task = response.data
 
         return task
 
 class TaskExportTest(_DbTestBase):
     def _generate_custom_annotations(self, annotations, task):
-        self._put_api_v1_task_id_annotations(task["id"], annotations)
+        self._put_api_v2_task_id_annotations(task["id"], annotations)
         return annotations
 
     def _generate_annotations(self, task):
@@ -295,8 +295,11 @@ class TaskExportTest(_DbTestBase):
             'ICDAR Localization 1.0',
             'ICDAR Segmentation 1.0',
             'Kitti Raw Format 1.0',
-            'Sly Point Cloud Format 1.0'
-
+            'Sly Point Cloud Format 1.0',
+            'KITTI 1.0',
+            'LFW 1.0',
+            'Cityscapes 1.0',
+            'Open Images V6 1.0'
         })
 
     def test_import_formats_query(self):
@@ -323,8 +326,12 @@ class TaskExportTest(_DbTestBase):
             'ICDAR Segmentation 1.0',
             'Kitti Raw Format 1.0',
             'Sly Point Cloud Format 1.0',
+            'KITTI 1.0',
+            'LFW 1.0',
+            'Cityscapes 1.0',
+            'Open Images V6 1.0',
             'Datumaro 1.0',
-            'Datumaro 3D 1.0'
+            'Datumaro 3D 1.0',
         })
 
     def test_exports(self):
@@ -371,6 +378,9 @@ class TaskExportTest(_DbTestBase):
             ('ICDAR Recognition 1.0', 'icdar_word_recognition'),
             ('ICDAR Localization 1.0', 'icdar_text_localization'),
             ('ICDAR Segmentation 1.0', 'icdar_text_segmentation'),
+            # ('KITTI 1.0', 'kitti') format does not support empty annotations
+            ('LFW 1.0', 'lfw'),
+            # ('Cityscapes 1.0', 'cityscapes'), does not support, empty annotations
         ]:
             with self.subTest(format=format_name):
                 if not dm.formats.registry.EXPORT_FORMATS[format_name].ENABLED:
@@ -381,16 +391,6 @@ class TaskExportTest(_DbTestBase):
 
                 def check(file_path):
                     def load_dataset(src):
-                        if importer_name == 'datumaro_project':
-                            project = datumaro.components.project. \
-                                Project.load(src)
-
-                            # NOTE: can't import cvat.utils.cli
-                            # for whatever reason, so remove the dependency
-                            #
-                            project.config.remove('sources')
-
-                            return project.make_dataset()
                         return datumaro.components.dataset. \
                             Dataset.import_from(src, importer_name, env=dm_env)
 
@@ -497,7 +497,7 @@ class TaskExportTest(_DbTestBase):
                 },
             ]
         }
-        self._put_api_v1_job_id_annotations(
+        self._put_api_v2_job_id_annotations(
             task["segments"][2]["jobs"][0]["id"], annotations)
 
         task_ann = TaskAnnotation(task["id"])
@@ -602,7 +602,7 @@ class FrameMatchingTest(_DbTestBase):
 
 class TaskAnnotationsImportTest(_DbTestBase):
     def _generate_custom_annotations(self, annotations, task):
-        self._put_api_v1_task_id_annotations(task["id"], annotations)
+        self._put_api_v2_task_id_annotations(task["id"], annotations)
         return annotations
 
     def _generate_task_images(self, count, name="image", **image_params):
@@ -701,6 +701,10 @@ class TaskAnnotationsImportTest(_DbTestBase):
                         }
                     ]
                 },
+                {
+                    "name": "background",
+                    "attributes": [],
+                },
                 {"name": "person"}
             ]
 
@@ -784,17 +788,6 @@ class TaskAnnotationsImportTest(_DbTestBase):
                 "type": "rectangle",
                 "occluded": False,
             }]
-        elif annotation_format == "VGGFace2 1.0":
-            shapes = [{
-                "frame": 1,
-                "label_id": task["labels"][1]["id"],
-                "group": None,
-                "source": "manual",
-                "attributes": [],
-                "points": [2.0, 2.1, 40, 50.7],
-                "type": "rectangle",
-                "occluded": False
-            }]
         else:
             rectangle_shape_wo_attrs = {
                 "frame": 1,
@@ -802,7 +795,7 @@ class TaskAnnotationsImportTest(_DbTestBase):
                 "group": 0,
                 "source": "manual",
                 "attributes": [],
-                "points": [2.0, 2.1, 40, 50.7],
+                "points": [2.0, 2.1, 40, 10.7],
                 "type": "rectangle",
                 "occluded": False,
             }
@@ -822,7 +815,7 @@ class TaskAnnotationsImportTest(_DbTestBase):
                         "value": task["labels"][0]["attributes"][1]["default_value"]
                     }
                 ],
-                "points": [1.0, 2.1, 10.6, 53.22],
+                "points": [1.0, 2.1, 10.6, 13.22],
                 "type": "rectangle",
                 "occluded": False,
             }
@@ -837,7 +830,7 @@ class TaskAnnotationsImportTest(_DbTestBase):
                     {
                         "frame": 0,
                         "attributes": [],
-                        "points": [1.0, 2.1, 10.6, 53.22, 100, 300.222],
+                        "points": [1.0, 2.1, 10.6, 53.22, 30, 20.222],
                         "type": "polygon",
                         "occluded": False,
                         "outside": False
@@ -870,7 +863,7 @@ class TaskAnnotationsImportTest(_DbTestBase):
             }
 
             if annotation_format == "VGGFace2 1.0":
-                shapes = rectangle_shape_wo_attrs
+                shapes = [rectangle_shape_wo_attrs]
             elif annotation_format == "CVAT 1.1":
                 shapes = [rectangle_shape_wo_attrs,
                     rectangle_shape_with_attrs]
@@ -878,10 +871,10 @@ class TaskAnnotationsImportTest(_DbTestBase):
             elif annotation_format == "MOTS PNG 1.0":
                 tracks = [track_wo_attrs]
             else:
-                shapes = [rectangle_shape_wo_attrs,
+                shapes = [rectangle_shape_wo_attrs, \
                     rectangle_shape_with_attrs]
-                tags = tag_wo_attrs
-                tracks = track_wo_attrs
+                tags = [tag_wo_attrs]
+                tracks = [track_wo_attrs]
 
         annotations = {
             "version": 0,

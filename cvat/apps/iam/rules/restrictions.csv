@@ -1,0 +1,3 @@
+Scope,Resource,Context,Ownership,Limit,Method,URL,Privilege,Membership
+view:user-agreements,N/A,N/A,N/A,,POST,/restrictions/user-agreements,N/A,N/A
+view:terms-of-use,N/A,N/A,N/A,,GET,/restrictions/terms-of-use,N/A,N/A

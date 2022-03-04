@@ -30,6 +30,7 @@ const defaultState: TasksState = {
         name: null,
         status: null,
         mode: null,
+        projectId: null,
     },
     activities: {
         loads: {},
@@ -74,7 +75,6 @@ export default (state: TasksState = defaultState, action: AnyAction): TasksState
                 fetching: false,
                 count: action.payload.count,
                 current: combinedWithPreviews,
-                gettingQuery: { ...action.payload.query },
             };
         }
         case TasksActionTypes.GET_TASKS_FAILED:
@@ -313,6 +313,28 @@ export default (state: TasksState = defaultState, action: AnyAction): TasksState
                         return task;
                     },
                 ),
+            };
+        }
+        case TasksActionTypes.UPDATE_JOB: {
+            return {
+                ...state,
+                updating: true,
+            };
+        }
+        case TasksActionTypes.UPDATE_JOB_SUCCESS: {
+            const { jobInstance } = action.payload;
+            const idx = state.current.findIndex((task: Task) => task.instance.id === jobInstance.taskId);
+            const newCurrent = idx === -1 ?
+                state.current : [...(state.current.splice(idx, 1), state.current)];
+
+            return {
+                ...state,
+                current: newCurrent,
+                gettingQuery: state.gettingQuery.id === jobInstance.taskId ? {
+                    ...state.gettingQuery,
+                    id: null,
+                } : state.gettingQuery,
+                updating: false,
             };
         }
         case TasksActionTypes.HIDE_EMPTY_TASKS: {

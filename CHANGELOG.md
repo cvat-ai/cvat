@@ -5,6 +5,86 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## \[2.0.0] - 2022-03-04
+### Added
+- Handle attributes coming from nuclio detectors (<https://github.com/openvinotoolkit/cvat/pull/3917>)
+- Add additional environment variables for Nuclio configuration (<https://github.com/openvinotoolkit/cvat/pull/3894>)
+- Add KITTI segmentation and detection format (<https://github.com/openvinotoolkit/cvat/pull/3757>)
+- Add LFW format (<https://github.com/openvinotoolkit/cvat/pull/3770>)
+- Add Cityscapes format (<https://github.com/openvinotoolkit/cvat/pull/3758>)
+- Add Open Images V6 format (<https://github.com/openvinotoolkit/cvat/pull/3679>)
+- Rotated bounding boxes (<https://github.com/openvinotoolkit/cvat/pull/3832>)
+- Player option: Smooth image when zoom-in, enabled by default (<https://github.com/openvinotoolkit/cvat/pull/3933>)
+- Google Cloud Storage support in UI (<https://github.com/openvinotoolkit/cvat/pull/3919>)
+- Add project tasks pagination (<https://github.com/openvinotoolkit/cvat/pull/3910>)
+- Add remove issue button (<https://github.com/openvinotoolkit/cvat/pull/3952>)
+- Data sorting option (<https://github.com/openvinotoolkit/cvat/pull/3937>)
+- Options to change font size & position of text labels on the canvas (<https://github.com/openvinotoolkit/cvat/pull/3972>)
+- Add "tag" return type for automatic annotation in Nuclio (<https://github.com/openvinotoolkit/cvat/pull/3896>)
+- Helm chart: Make user-data-permission-fix optional (<https://github.com/openvinotoolkit/cvat/pull/3994>)
+- Advanced identity access management system, using open policy agent (<https://github.com/openvinotoolkit/cvat/pull/3788>)
+- Organizations to create "shared space" for different groups of users (<https://github.com/openvinotoolkit/cvat/pull/3788>)
+- Dataset importing to a project (<https://github.com/openvinotoolkit/cvat/pull/3790>)
+- User is able to customize information that text labels show (<https://github.com/openvinotoolkit/cvat/pull/4029>)
+- Support for uploading manifest with any name (<https://github.com/openvinotoolkit/cvat/pull/4041>)
+- Added information about OpenVINO toolkit to login page (<https://github.com/openvinotoolkit/cvat/pull/4077>)
+- Support for working with ellipses (<https://github.com/openvinotoolkit/cvat/pull/4062>)
+- Add several flags to task creation CLI (<https://github.com/openvinotoolkit/cvat/pull/4119>)
+- Add YOLOv5 serverless function for automatic annotation (<https://github.com/openvinotoolkit/cvat/pull/4178>)
+- Add possibility to change git repository and git export format from already created task (<https://github.com/openvinotoolkit/cvat/pull/3886>)
+- Basic page with jobs list, basic filtration to this list (<https://github.com/openvinotoolkit/cvat/pull/4258>)
+- Added OpenCV.js TrackerMIL as tracking tool (<https://github.com/openvinotoolkit/cvat/pull/4200>)
+- Ability to continue working from the latest frame where an annotator was before (<https://github.com/openvinotoolkit/cvat/pull/4297>)
+- `GET /api/jobs/<id>/commits` was implemented (<https://github.com/openvinotoolkit/cvat/pull/4368>)
+- Advanced filtration and sorting for a list of jobs (<https://github.com/openvinotoolkit/cvat/pull/4319>)
+
+### Changed
+- Users don't have access to a task object anymore if they are assigned only on some jobs of the task (<https://github.com/openvinotoolkit/cvat/pull/3788>)
+- Different resources (tasks, projects) are not visible anymore for all CVAT instance users by default (<https://github.com/openvinotoolkit/cvat/pull/3788>)
+- API versioning scheme: using accept header versioning instead of namespace versioning (<https://github.com/openvinotoolkit/cvat/pull/4239>)
+- Replaced 'django_sendfile' with 'django_sendfile2' (<https://github.com/openvinotoolkit/cvat/pull/4267>)
+- Use drf-spectacular instead of drf-yasg for swagger documentation (<https://github.com/openvinotoolkit/cvat/pull/4210>)
+
+### Deprecated
+- Job field "status" is not used in UI anymore, but it has not been removed from the database yet (<https://github.com/openvinotoolkit/cvat/pull/3788>)
+
+### Removed
+- Review rating, reviewer field from the job instance (use assignee field together with stage field instead) (<https://github.com/openvinotoolkit/cvat/pull/3788>)
+- Training django app (<https://github.com/openvinotoolkit/cvat/pull/4330>)
+- v1 api version support (<https://github.com/openvinotoolkit/cvat/pull/4332>)
+
+### Fixed
+- Fixed Interaction handler keyboard handlers (<https://github.com/openvinotoolkit/cvat/pull/3881>)
+- Points of invisible shapes are visible in autobordering (<https://github.com/openvinotoolkit/cvat/pull/3931>)
+- Order of the label attributes in the object item details(<https://github.com/openvinotoolkit/cvat/pull/3945>)
+- Order of labels in tasks and projects (<https://github.com/openvinotoolkit/cvat/pull/3987>)
+- Fixed task creating with large files via webpage (<https://github.com/openvinotoolkit/cvat/pull/3692>)
+- Added information to export CVAT_HOST when performing local installation for accessing over network (<https://github.com/openvinotoolkit/cvat/pull/4014>)
+- Fixed possible color collisions in the generated colormap (<https://github.com/openvinotoolkit/cvat/pull/4007>)
+- Original pdf file is deleted when using share (<https://github.com/openvinotoolkit/cvat/pull/3967>)
+- Order in an annotation file(<https://github.com/openvinotoolkit/cvat/pull/4087>)
+- Fixed task data upload progressbar (<https://github.com/openvinotoolkit/cvat/pull/4134>)
+- Email in org invitations is case sensitive (<https://github.com/openvinotoolkit/cvat/pull/4153>)
+- Caching for tasks and jobs can lead to an exception if its assignee user is removed (<https://github.com/openvinotoolkit/cvat/pull/4165>)
+- Added intelligent function when paste labels to another task (<https://github.com/openvinotoolkit/cvat/pull/4161>)
+- Uncaught TypeError: this.el.node.getScreenCTM() is null in Firefox (<https://github.com/openvinotoolkit/cvat/pull/4175>)
+- Bug: canvas is busy when start playing, start resizing a shape and do not release the mouse cursor (<https://github.com/openvinotoolkit/cvat/pull/4151>)
+- Bug: could not receive frame N. TypeError: Cannot read properties of undefined (reding "filename") (<https://github.com/openvinotoolkit/cvat/pull/4187>)
+- Cannot choose a dataset format for a linked repository if a task type is annotation (<https://github.com/openvinotoolkit/cvat/pull/4203>)
+- Fixed tus upload error over https (<https://github.com/openvinotoolkit/cvat/pull/4154>)
+- Issues disappear when rescale a browser (<https://github.com/openvinotoolkit/cvat/pull/4189>)
+- Auth token key is not returned when registering without email verification (<https://github.com/openvinotoolkit/cvat/pull/4092>)
+- Error in create project from backup for standard 3D annotation (<https://github.com/openvinotoolkit/cvat/pull/4160>)
+- Annotations search does not work correctly in some corner cases (when use complex properties with width, height) (<https://github.com/openvinotoolkit/cvat/pull/4198>)
+- Kibana requests are not proxied due to django-revproxy incompatibility with Django >3.2.x (<https://github.com/openvinotoolkit/cvat/issues/4085>)
+- Content type for getting frame with tasks/{id}/data/ endpoint (<https://github.com/openvinotoolkit/cvat/pull/4333>)
+- Bug: Permission error occured when accessing the comments of a specific issue (<https://github.com/openvinotoolkit/cvat/issues/4416>)
+
+
+### Security
+- Updated ELK to 6.8.23 which uses log4j 2.17.1 (<https://github.com/openvinotoolkit/cvat/pull/4206>)
+- Added validation for URLs which used as remote data source (<https://github.com/openvinotoolkit/cvat/pull/4387>)
+
 ## \[1.7.0] - 2021-11-15
 
 ### Added
@@ -13,13 +93,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - interactor: add HRNet interactive segmentation serverless function (<https://github.com/openvinotoolkit/cvat/pull/3740>)
 - Added GPU implementation for SiamMask, reworked tracking approach (<https://github.com/openvinotoolkit/cvat/pull/3571>)
 - Progress bar for manifest creating (<https://github.com/openvinotoolkit/cvat/pull/3712>)
+- IAM: Open Policy Agent integration (<https://github.com/openvinotoolkit/cvat/pull/3788>)
 - Add a tutorial on attaching cloud storage AWS-S3 (<https://github.com/openvinotoolkit/cvat/pull/3745>)
   and Azure Blob Container (<https://github.com/openvinotoolkit/cvat/pull/3778>)
 - The feature to remove annotations in a specified range of frames (<https://github.com/openvinotoolkit/cvat/pull/3617>)
+- Project backup/restore (<https://github.com/openvinotoolkit/cvat/pull/3852>)
 
 ### Changed
 
 - UI tracking has been reworked (<https://github.com/openvinotoolkit/cvat/pull/3571>)
+- Updated Django till 3.2.7 (automatic AppConfig discovery)
 - Manifest generation: Reduce creating time (<https://github.com/openvinotoolkit/cvat/pull/3712>)
 - Migration from NPM 6 to NPM 7 (<https://github.com/openvinotoolkit/cvat/pull/3773>)
 - Update Datumaro dependency to 0.2.0 (<https://github.com/openvinotoolkit/cvat/pull/3813>)

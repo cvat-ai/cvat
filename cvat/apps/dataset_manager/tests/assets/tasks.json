@@ -3,8 +3,6 @@
     "name": "main task",
     "overlap": 0,
     "segment_size": 100,
-    "owner_id": 1,
-    "assignee_id": 2,
     "labels": [
       {
         "name": "car",
@@ -54,12 +52,10 @@
       }
     ]
   },
-  "icdar_localization_and_recognition": {
+  "ICDAR Localization 1.0": {
     "name": "icdar localization/recogntion task",
     "overlap": 0,
     "segment_size": 100,
-    "owner_id": 1,
-    "assignee_id": 2,
     "labels": [
       {
         "name": "icdar",
@@ -74,12 +70,28 @@
       }
     ]
   },
-  "icdar_segmentation": {
+  "ICDAR Recognition 1.0": {
+    "name": "icdar localization/recogntion task",
+    "overlap": 0,
+    "segment_size": 100,
+    "labels": [
+      {
+        "name": "icdar",
+        "attributes": [
+          {
+            "name": "text",
+            "mutable": false,
+            "input_type": "text",
+            "values": ["word_1", "word_2", "word_3"]
+          }
+        ]
+      }
+    ]
+  },
+  "ICDAR Segmentation 1.0": {
     "name": "icdar segmentation task",
     "overlap": 0,
     "segment_size": 100,
-    "owner_id": 1,
-    "assignee_id": 2,
     "labels": [
       {
         "name": "icdar",
@@ -112,12 +124,10 @@
       }
     ]
   },
-  "market1501": {
+  "Market-1501 1.0": {
     "name": "market1501 task",
     "overlap": 0,
     "segment_size": 100,
-    "owner_id": 1,
-    "assignee_id": 2,
     "labels": [
       {
         "name": "market-1501",
@@ -144,12 +154,40 @@
       }
     ]
   },
+  "Cityscapes 1.0": {
+    "name": "cityscapes task",
+    "overlap": 0,
+    "segment_size": 100,
+    "labels": [
+      {
+        "name": "car",
+        "color": "#2080c0",
+        "attributes": [
+          {
+            "name": "is_crowd",
+            "mutable": false,
+            "input_type": "checkbox",
+            "default_value": "false",
+            "values": ["false", "true"]
+          }
+        ]
+      },
+      {
+        "name": "person",
+        "color": "#c06060",
+        "attributes": []
+      },
+      {
+        "name": "background",
+        "color": "#000000",
+        "attributes": []
+      }
+    ]
+  },
   "wrong_checkbox_value": {
     "name": "wrong checkbox value task",
     "overlap": 0,
     "segment_size": 100,
-    "owner_id": 1,
-    "assignee_id": 2,
     "labels": [
       {
         "name": "car",
@@ -203,7 +241,6 @@
     "name": "no attributes",
     "overlap": 0,
     "segment_size": 100,
-    "owner_id": 1,
     "labels": [
       {
         "name": "car",
@@ -216,7 +253,6 @@
     "name": "many jobs",
     "overlap": 0,
     "segment_size": 5,
-    "owner_id": 1,
     "labels": [
       {
         "name": "car",
@@ -229,7 +265,6 @@
     "name": "change overlap and segment size",
     "overlap": 3,
     "segment_size": 6,
-    "owner_id": 1,
     "labels": [
       {
         "name": "car",
@@ -242,8 +277,6 @@
     "name": "widerface task",
     "overlap": 0,
     "segment_size": 100,
-    "owner_id": 1,
-    "assignee_id": 2,
     "labels": [
       {
         "name": "face",
@@ -286,16 +319,12 @@
     "name": "First task in project",
     "project_id": 1,
     "overlap": 0,
-    "segment_size": 100,
-    "owner_id": 1,
-    "assignee_id": 2
+    "segment_size": 100
   },
   "task in project #2": {
     "name": "Second task in project",
     "project_id": 1,
     "overlap": 0,
-    "segment_size": 100,
-    "owner_id": 1,
-    "assignee_id": 2
+    "segment_size": 100
   }
 }

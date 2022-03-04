@@ -1,0 +1,337 @@
+{
+  "count": 9,
+  "next": null,
+  "previous": null,
+  "results": [
+    {
+      "assignee": null,
+      "bug_tracker": null,
+      "data_chunk_size": 72,
+      "data_compressed_chunk_type": "imageset",
+      "dimension": "2d",
+      "id": 9,
+      "labels": [
+        {
+          "attributes": [],
+          "color": "#6080c0",
+          "id": 11,
+          "name": "cat"
+        },
+        {
+          "attributes": [],
+          "color": "#406040",
+          "id": 12,
+          "name": "dog"
+        }
+      ],
+      "mode": "annotation",
+      "project_id": null,
+      "stage": "annotation",
+      "start_frame": 0,
+      "state": "in progress",
+      "status": "annotation",
+      "stop_frame": 10,
+      "task_id": 7,
+      "url": "http://localhost:8080/api/jobs/9"
+    },
+    {
+      "assignee": null,
+      "bug_tracker": null,
+      "data_chunk_size": 72,
+      "data_compressed_chunk_type": "imageset",
+      "dimension": "3d",
+      "id": 8,
+      "labels": [
+        {
+          "attributes": [],
+          "color": "#2080c0",
+          "id": 10,
+          "name": "car"
+        }
+      ],
+      "mode": "annotation",
+      "project_id": null,
+      "stage": "annotation",
+      "start_frame": 0,
+      "state": "new",
+      "status": "annotation",
+      "stop_frame": 0,
+      "task_id": 6,
+      "url": "http://localhost:8080/api/jobs/8"
+    },
+    {
+      "assignee": {
+        "first_name": "Worker",
+        "id": 9,
+        "last_name": "Fourth",
+        "url": "http://localhost:8080/api/users/9",
+        "username": "worker4"
+      },
+      "bug_tracker": null,
+      "data_chunk_size": 72,
+      "data_compressed_chunk_type": "imageset",
+      "dimension": "2d",
+      "id": 7,
+      "labels": [
+        {
+          "attributes": [],
+          "color": "#2080c0",
+          "id": 9,
+          "name": "car"
+        }
+      ],
+      "mode": "interpolation",
+      "project_id": null,
+      "stage": "annotation",
+      "start_frame": 0,
+      "state": "in progress",
+      "status": "annotation",
+      "stop_frame": 24,
+      "task_id": 5,
+      "url": "http://localhost:8080/api/jobs/7"
+    },
+    {
+      "assignee": {
+        "first_name": "Worker",
+        "id": 7,
+        "last_name": "Second",
+        "url": "http://localhost:8080/api/users/7",
+        "username": "worker2"
+      },
+      "bug_tracker": "",
+      "data_chunk_size": 72,
+      "data_compressed_chunk_type": "imageset",
+      "dimension": "2d",
+      "id": 6,
+      "labels": [
+        {
+          "attributes": [],
+          "color": "#6080c0",
+          "id": 7,
+          "name": "cat"
+        },
+        {
+          "attributes": [],
+          "color": "#406040",
+          "id": 8,
+          "name": "dog"
+        }
+      ],
+      "mode": "annotation",
+      "project_id": 2,
+      "stage": "annotation",
+      "start_frame": 0,
+      "state": "new",
+      "status": "annotation",
+      "stop_frame": 57,
+      "task_id": 4,
+      "url": "http://localhost:8080/api/jobs/6"
+    },
+    {
+      "assignee": null,
+      "bug_tracker": "",
+      "data_chunk_size": 72,
+      "data_compressed_chunk_type": "imageset",
+      "dimension": "2d",
+      "id": 5,
+      "labels": [
+        {
+          "attributes": [
+            {
+              "default_value": "mazda",
+              "id": 1,
+              "input_type": "select",
+              "mutable": false,
+              "name": "model",
+              "values": [
+                "mazda",
+                "volvo",
+                "bmw"
+              ]
+            }
+          ],
+          "color": "#2080c0",
+          "id": 5,
+          "name": "car"
+        },
+        {
+          "attributes": [],
+          "color": "#c06060",
+          "id": 6,
+          "name": "person"
+        }
+      ],
+      "mode": "annotation",
+      "project_id": 1,
+      "stage": "acceptance",
+      "start_frame": 100,
+      "state": "new",
+      "status": "validation",
+      "stop_frame": 147,
+      "task_id": 3,
+      "url": "http://localhost:8080/api/jobs/5"
+    },
+    {
+      "assignee": null,
+      "bug_tracker": "",
+      "data_chunk_size": 72,
+      "data_compressed_chunk_type": "imageset",
+      "dimension": "2d",
+      "id": 4,
+      "labels": [
+        {
+          "attributes": [
+            {
+              "default_value": "mazda",
+              "id": 1,
+              "input_type": "select",
+              "mutable": false,
+              "name": "model",
+              "values": [
+                "mazda",
+                "volvo",
+                "bmw"
+              ]
+            }
+          ],
+          "color": "#2080c0",
+          "id": 5,
+          "name": "car"
+        },
+        {
+          "attributes": [],
+          "color": "#c06060",
+          "id": 6,
+          "name": "person"
+        }
+      ],
+      "mode": "annotation",
+      "project_id": 1,
+      "stage": "validation",
+      "start_frame": 50,
+      "state": "new",
+      "status": "validation",
+      "stop_frame": 99,
+      "task_id": 3,
+      "url": "http://localhost:8080/api/jobs/4"
+    },
+    {
+      "assignee": null,
+      "bug_tracker": "",
+      "data_chunk_size": 72,
+      "data_compressed_chunk_type": "imageset",
+      "dimension": "2d",
+      "id": 3,
+      "labels": [
+        {
+          "attributes": [
+            {
+              "default_value": "mazda",
+              "id": 1,
+              "input_type": "select",
+              "mutable": false,
+              "name": "model",
+              "values": [
+                "mazda",
+                "volvo",
+                "bmw"
+              ]
+            }
+          ],
+          "color": "#2080c0",
+          "id": 5,
+          "name": "car"
+        },
+        {
+          "attributes": [],
+          "color": "#c06060",
+          "id": 6,
+          "name": "person"
+        }
+      ],
+      "mode": "annotation",
+      "project_id": 1,
+      "stage": "annotation",
+      "start_frame": 0,
+      "state": "in progress",
+      "status": "annotation",
+      "stop_frame": 49,
+      "task_id": 3,
+      "url": "http://localhost:8080/api/jobs/3"
+    },
+    {
+      "assignee": {
+        "first_name": "Worker",
+        "id": 6,
+        "last_name": "First",
+        "url": "http://localhost:8080/api/users/6",
+        "username": "worker1"
+      },
+      "bug_tracker": null,
+      "data_chunk_size": 72,
+      "data_compressed_chunk_type": "imageset",
+      "dimension": "2d",
+      "id": 2,
+      "labels": [
+        {
+          "attributes": [],
+          "color": "#2080c0",
+          "id": 3,
+          "name": "car"
+        },
+        {
+          "attributes": [],
+          "color": "#c06060",
+          "id": 4,
+          "name": "person"
+        }
+      ],
+      "mode": "annotation",
+      "project_id": null,
+      "stage": "annotation",
+      "start_frame": 0,
+      "state": "new",
+      "status": "annotation",
+      "stop_frame": 22,
+      "task_id": 2,
+      "url": "http://localhost:8080/api/jobs/2"
+    },
+    {
+      "assignee": {
+        "first_name": "Admin",
+        "id": 1,
+        "last_name": "First",
+        "url": "http://localhost:8080/api/users/1",
+        "username": "admin1"
+      },
+      "bug_tracker": null,
+      "data_chunk_size": 72,
+      "data_compressed_chunk_type": "imageset",
+      "dimension": "2d",
+      "id": 1,
+      "labels": [
+        {
+          "attributes": [],
+          "color": "#6080c0",
+          "id": 1,
+          "name": "cat"
+        },
+        {
+          "attributes": [],
+          "color": "#406040",
+          "id": 2,
+          "name": "dog"
+        }
+      ],
+      "mode": "annotation",
+      "project_id": null,
+      "stage": "annotation",
+      "start_frame": 0,
+      "state": "new",
+      "status": "annotation",
+      "stop_frame": 129,
+      "task_id": 1,
+      "url": "http://localhost:8080/api/jobs/1"
+    }
+  ]
+}

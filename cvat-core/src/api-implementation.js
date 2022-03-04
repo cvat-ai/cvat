@@ -1,6 +1,8 @@
-// Copyright (C) 2019-2021 Intel Corporation
+// Copyright (C) 2019-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
+
+const config = require('./config');
 
 (() => {
     const PluginRegistry = require('./plugins');
@@ -9,27 +11,20 @@
     const {
         isBoolean,
         isInteger,
-        isEnum,
         isString,
         checkFilter,
         checkExclusiveFields,
         camelToSnake,
+        checkObjectType,
     } = require('./common');
-
-    const {
-        TaskStatus,
-        TaskMode,
-        DimensionType,
-        CloudStorageProviderType,
-        CloudStorageCredentialsType,
-    } = require('./enums');
 
     const User = require('./user');
     const { AnnotationFormats } = require('./annotation-formats');
     const { ArgumentError } = require('./exceptions');
-    const { Task } = require('./session');
+    const { Task, Job } = require('./session');
     const { Project } = require('./project');
     const { CloudStorage } = require('./cloud-storage');
+    const Organization = require('./organization');
 
     function implementAPI(cvat) {
         cvat.plugins.list.implementation = PluginRegistry.list;
@@ -139,7 +134,7 @@
                         searchParams[key] = filter[key];
                     }
                 }
-                users = await serverProxy.users.get(new URLSearchParams(searchParams).toString());
+                users = await serverProxy.users.get(searchParams);
             }
 
             users = users.map((user) => new User(user));
@@ -148,72 +143,67 @@
 
         cvat.jobs.get.implementation = async (filter) => {
             checkFilter(filter, {
+                page: isInteger,
+                filter: isString,
+                sort: isString,
+                search: isString,
                 taskID: isInteger,
                 jobID: isInteger,
             });
 
             if ('taskID' in filter && 'jobID' in filter) {
-                throw new ArgumentError('Only one of fields "taskID" and "jobID" allowed simultaneously');
+                throw new ArgumentError('Filter fields "taskID" and "jobID" are not permitted to be used at the same time');
             }
 
-            if (!Object.keys(filter).length) {
-                throw new ArgumentError('Job filter must not be empty');
-            }
-
-            let tasks = [];
             if ('taskID' in filter) {
-                tasks = await serverProxy.tasks.getTasks(`id=${filter.taskID}`);
-            } else {
-                const job = await serverProxy.jobs.get(filter.jobID);
-                if (typeof job.task_id !== 'undefined') {
-                    tasks = await serverProxy.tasks.getTasks(`id=${job.task_id}`);
+                const [task] = await serverProxy.tasks.get({ id: filter.taskID });
+                if (task) {
+                    return new Task(task).jobs;
+                }
+
+                return [];
+            }
+
+            if ('jobID' in filter) {
+                const job = await serverProxy.jobs.get({ id: filter.jobID });
+                if (job) {
+                    return [new Job(job)];
                 }
             }
 
-            // If task was found by its id, then create task instance and get Job instance from it
-            if (tasks.length) {
-                const task = new Task(tasks[0]);
-                return filter.jobID ? task.jobs.filter((job) => job.id === filter.jobID) : task.jobs;
-            }
-
-            return tasks;
+            const jobsData = await serverProxy.jobs.get(filter);
+            const jobs = jobsData.results.map((jobData) => new Job(jobData));
+            jobs.count = jobsData.count;
+            return jobs;
         };
 
         cvat.tasks.get.implementation = async (filter) => {
             checkFilter(filter, {
                 page: isInteger,
                 projectId: isInteger,
-                name: isString,
                 id: isInteger,
-                owner: isString,
-                assignee: isString,
                 search: isString,
-                status: isEnum.bind(TaskStatus),
-                mode: isEnum.bind(TaskMode),
-                dimension: isEnum.bind(DimensionType),
+                filter: isString,
+                ordering: isString,
             });
 
-            checkExclusiveFields(filter, ['id', 'search', 'projectId'], ['page']);
+            checkExclusiveFields(filter, ['id', 'projectId'], ['page']);
 
-            const searchParams = new URLSearchParams();
+            const searchParams = {};
             for (const field of [
-                'name',
-                'owner',
-                'assignee',
+                'filter',
                 'search',
-                'status',
-                'mode',
+                'ordering',
                 'id',
                 'page',
                 'projectId',
-                'dimension',
             ]) {
                 if (Object.prototype.hasOwnProperty.call(filter, field)) {
-                    searchParams.set(field, filter[field]);
+                    searchParams[camelToSnake(field)] = filter[field];
                 }
             }
 
-            const tasksData = await serverProxy.tasks.getTasks(searchParams.toString());
+            const tasksData = await serverProxy.tasks.get(searchParams);
             const tasks = tasksData.map((task) => new Task(task));
 
             tasks.count = tasksData.count;
@@ -225,40 +215,22 @@
             checkFilter(filter, {
                 id: isInteger,
                 page: isInteger,
-                name: isString,
-                assignee: isString,
-                owner: isString,
                 search: isString,
-                status: isEnum.bind(TaskStatus),
-                withoutTasks: isBoolean,
+                filter: isString,
             });
 
-            checkExclusiveFields(filter, ['id', 'search'], ['page', 'withoutTasks']);
+            checkExclusiveFields(filter, ['id'], ['page']);
 
-            if (typeof filter.withoutTasks === 'undefined') {
-                if (typeof filter.id === 'undefined') {
-                    filter.withoutTasks = true;
-                } else {
-                    filter.withoutTasks = false;
-                }
-            }
-
-            const searchParams = new URLSearchParams();
-            for (const field of ['name', 'assignee', 'owner', 'search', 'status', 'id', 'page', 'withoutTasks']) {
+            const searchParams = {};
+            for (const field of ['filter', 'search', 'status', 'id', 'page']) {
                 if (Object.prototype.hasOwnProperty.call(filter, field)) {
-                    searchParams.set(camelToSnake(field), filter[field]);
+                    searchParams[camelToSnake(field)] = filter[field];
                 }
             }
 
-            const projectsData = await serverProxy.projects.get(searchParams.toString());
-            // prettier-ignore
+            const projectsData = await serverProxy.projects.get(searchParams);
             const projects = projectsData.map((project) => {
-                if (filter.withoutTasks) {
-                    project.task_ids = project.tasks;
-                    project.tasks = [];
-                } else {
-                    project.task_ids = project.tasks.map((task) => task.id);
-                }
+                project.task_ids = project.tasks;
                 return project;
             }).map((project) => new Project(project));
 
@@ -273,44 +245,44 @@
         cvat.cloudStorages.get.implementation = async (filter) => {
             checkFilter(filter, {
                 page: isInteger,
-                displayName: isString,
-                resourceName: isString,
-                description: isString,
+                filter: isString,
                 id: isInteger,
-                owner: isString,
                 search: isString,
-                providerType: isEnum.bind(CloudStorageProviderType),
-                credentialsType: isEnum.bind(CloudStorageCredentialsType),
             });
 
             checkExclusiveFields(filter, ['id', 'search'], ['page']);
 
             const searchParams = new URLSearchParams();
             for (const field of [
-                'displayName',
-                'credentialsType',
-                'providerType',
-                'owner',
+                'filter',
                 'search',
                 'id',
                 'page',
-                'description',
             ]) {
                 if (Object.prototype.hasOwnProperty.call(filter, field)) {
                     searchParams.set(camelToSnake(field), filter[field]);
                 }
             }
 
-            if (Object.prototype.hasOwnProperty.call(filter, 'resourceName')) {
-                searchParams.set('resource', filter.resourceName);
-            }
-
             const cloudStoragesData = await serverProxy.cloudStorages.get(searchParams.toString());
             const cloudStorages = cloudStoragesData.map((cloudStorage) => new CloudStorage(cloudStorage));
-
             cloudStorages.count = cloudStoragesData.count;
-
             return cloudStorages;
+        };
+
+        cvat.organizations.get.implementation = async () => {
+            const organizationsData = await serverProxy.organizations.get();
+            const organizations = organizationsData.map((organizationData) => new Organization(organizationData));
+            return organizations;
+        };
+
+        cvat.organizations.activate.implementation = (organization) => {
+            checkObjectType('organization', organization, null, Organization);
+            config.organizationID = organization.slug;
+        };
+
+        cvat.organizations.deactivate.implementation = async () => {
+            config.organizationID = null;
         };
 
         return cvat;

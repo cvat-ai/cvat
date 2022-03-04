@@ -67,8 +67,6 @@ There are two ways of working with labels (available only if the task is not rel
   The `Done` button applies the changes and the `Reset` button cancels the changes.
   ![](/images/image126.jpg)
 
-In `Raw` and `Constructor` mode, you can press the `Copy` button to copy the list of labels.
-
 ### Select files
 
 Press tab `My computer` to choose some files for annotation from your PC.
@@ -84,48 +82,59 @@ For more information on how to attach cloud storage, see [attach cloud storage](
 
 ### Data formats for a 3D task
 
-To create a 3D task, you need to use the following directory structures:
+To create a 3D task, you must prepare an archive with one of the following directory structures:
 {{< tabpane >}}
   {{< tab header="Velodyne" >}}
     VELODYNE FORMAT
     Structure:
-    velodyne_points/
-    data/
-    image_01.bin
-    IMAGE_00 # unknown dirname, Generally image_01.png can be under IMAGE_00, IMAGE_01, IMAGE_02, IMAGE_03, etc
-    data/
-    image_01.png
+      velodyne_points/
+        data/
+          image_01.bin
+          IMAGE_00 # unknown dirname,
+                   # generally image_01.png can be under IMAGE_00, IMAGE_01, IMAGE_02, IMAGE_03, etc
+      data/
+        image_01.png
   {{< /tab >}}
   {{< tab header="3D pointcloud" >}}
     3D POINTCLOUD DATA FORMAT
     Structure:
-    pointcloud/
-    00001.pcd
-    related_images/
-    00001_pcd/
-    image_01.png # or any other image
+      pointcloud/
+        00001.pcd
+      related_images/
+        00001_pcd/
+          image_01.png # or any other image
   {{< /tab >}}
   {{< tab header="3D Option 1" >}}
     3D, DEFAULT DATAFORMAT Option 1
     Structure:
-    data/
-    image.pcd
-    image.png
+      data/
+        image.pcd
+        image.png
   {{< /tab >}}
   {{< tab header="3D Option 2" >}}
     3D, DEFAULT DATAFORMAT Option 2
     Structure:
-    data/
-    image_1/
-    image_1.pcd
-    context_1.png # or any other name
-    context_2.jpg
+      data/
+        image_1/
+            image_1.pcd
+            context_1.png # or any other name
+            context_2.jpg
   {{< /tab >}}
 {{< /tabpane >}}
 
+> You can't mix 2D and 3D data in the same task.
+
 ## Advanced configuration
 
-![](/images/image128_use_cache.jpg)
+![](/images/image128.jpg)
+
+### Sorting method
+
+Option to sort the data. It is not relevant for videos.
+For example, the sequence `2.jpeg, 10.jpeg, 1.jpeg` after sorting will be:
+- `lexicographical`: 1.jpeg, 10.jpeg, 2.jpeg
+- `natural`: 1.jpeg, 2.jpeg, 10.jpeg
+- `predefined`: 2.jpeg, 10.jpeg, 1.jpeg
 
 ### Use zip chunks
 
@@ -144,7 +153,7 @@ Use this option to specify quality of uploaded images.
 The option helps to load high resolution datasets faster.
 Use the value from `5` (almost completely compressed images) to `100` (not compressed images).
 
-## Overlap Size
+### Overlap Size
 
 Use this option to make overlapped segments.
 The option makes tracks continuous from one segment into another.
@@ -214,6 +223,11 @@ Supported URL formats :
 - `git@github.com:project/repos[.git]`
 
 After the task is created, the synchronization status is displayed on the task page.
+
+If you specify a dataset repository, when you create a task, you will see a message
+about the need to grant access with the ssh key.
+This is the key you need to [add to your github account](https://github.com/settings/keys).
+For other git systems, you can learn about adding an ssh key in their documentation.
 
 ### Use LFS
 

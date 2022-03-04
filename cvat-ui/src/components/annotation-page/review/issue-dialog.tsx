@@ -1,9 +1,16 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, {
+    useState,
+    useEffect,
+    useRef,
+    useCallback,
+} from 'react';
 import ReactDOM from 'react-dom';
+import { useDispatch } from 'react-redux';
+import Modal from 'antd/lib/modal';
 import { Row, Col } from 'antd/lib/grid';
 import { CloseOutlined } from '@ant-design/icons';
 import Comment from 'antd/lib/comment';
@@ -13,6 +20,7 @@ import Button from 'antd/lib/button';
 import Input from 'antd/lib/input';
 import moment from 'moment';
 import CVATTooltip from 'components/common/cvat-tooltip';
+import { deleteIssueAsync } from 'actions/review-actions';
 
 interface Props {
     id: number;
@@ -21,6 +29,8 @@ interface Props {
     top: number;
     resolved: boolean;
     isFetching: boolean;
+    angle: number;
+    scale: number;
     collapse: () => void;
     resolve: () => void;
     reopen: () => void;
@@ -32,11 +42,14 @@ interface Props {
 export default function IssueDialog(props: Props): JSX.Element {
     const ref = useRef<HTMLDivElement>(null);
     const [currentText, setCurrentText] = useState<string>('');
+    const dispatch = useDispatch();
     const {
         comments,
         id,
         left,
         top,
+        scale,
+        angle,
         resolved,
         isFetching,
         collapse,
@@ -55,6 +68,22 @@ export default function IssueDialog(props: Props): JSX.Element {
         }
     }, [resolved]);
 
+    const onDeleteIssue = useCallback((): void => {
+        Modal.confirm({
+            title: `The issue${id >= 0 ? ` #${id}` : ''} will be deleted.`,
+            className: 'cvat-modal-confirm-remove-issue',
+            onOk: () => {
+                collapse();
+                dispatch(deleteIssueAsync(id));
+            },
+            okButtonProps: {
+                type: 'primary',
+                danger: true,
+            },
+            okText: 'Delete',
+        });
+    }, []);
+
     const lines = comments.map(
         (_comment: any): JSX.Element => {
             const created = _comment.createdDate ? moment(_comment.createdDate) : moment(moment.now());
@@ -64,7 +93,7 @@ export default function IssueDialog(props: Props): JSX.Element {
                 <Comment
                     avatar={null}
                     key={_comment.id}
-                    author={<Text strong>{_comment.author ? _comment.author.username : 'Unknown'}</Text>}
+                    author={<Text strong>{_comment.owner ? _comment.owner.username : 'Unknown'}</Text>}
                     content={<p>{_comment.message}</p>}
                     datetime={(
                         <CVATTooltip title={created.format('MMMM Do YYYY')}>
@@ -87,7 +116,7 @@ export default function IssueDialog(props: Props): JSX.Element {
     );
 
     return ReactDOM.createPortal(
-        <div style={{ top, left }} ref={ref} className='cvat-issue-dialog'>
+        <div style={{ top, left, transform: `scale(${scale}) rotate(${angle}deg)` }} ref={ref} className='cvat-issue-dialog'>
             <Row className='cvat-issue-dialog-header' justify='space-between'>
                 <Col>
                     <Title level={4}>{id >= 0 ? `Issue #${id}` : 'Issue'}</Title>
@@ -118,7 +147,12 @@ export default function IssueDialog(props: Props): JSX.Element {
                     />
                 </Col>
             </Row>
-            <Row className='cvat-issue-dialog-footer' justify='end'>
+            <Row className='cvat-issue-dialog-footer' justify='space-between'>
+                <Col>
+                    <Button type='link' danger onClick={onDeleteIssue}>
+                        Remove
+                    </Button>
+                </Col>
                 <Col>
                     {currentText.length ? (
                         <Button

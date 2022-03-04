@@ -175,7 +175,7 @@ function RightGroup(props: Props): JSX.Element {
                     value={workspace}
                 >
                     {Object.values(Workspace).map((ws) => {
-                        if (jobInstance.task.dimension === DimensionType.DIM_3D) {
+                        if (jobInstance.dimension === DimensionType.DIM_3D) {
                             if (ws === Workspace.STANDARD) {
                                 return null;
                             }

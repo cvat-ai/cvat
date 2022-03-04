@@ -56,11 +56,12 @@ they will need to be used in CVAT when adding cloud storage.
 #### Prepare dataset
 
 For example, let's take [The Oxford-IIIT Pet Dataset](https://www.robots.ox.ac.uk/~vgg/data/pets/):
+
 - Download the [archive with images](https://www.robots.ox.ac.uk/~vgg/data/pets/data/images.tar.gz).
 - Unpack the archive into the prepared folder
   and create a manifest file as described in [prepare manifest file section](/docs/manual/advanced/dataset_manifest/):
 
-  ```
+  ```bash
   python <cvat repository>/utils/dataset_manifest/create.py --output-dir <yourfolder> <yourfolder>
   ```
 
@@ -164,11 +165,72 @@ Prepare the dataset as in the point [prepare dataset](#prepare-dataset).
   to the files in the container. Click `select a file` and select manifest file, in order to upload file to the root
   of the container leave blank `upload to folder` field.
 
+Now you can [attach new cloud storage into CVAT](#attach-new-cloud-storage).
+
+## Using Google Cloud Storage
+
+### Create Google account
+
+First, create a Google account, go to [account login page](https://accounts.google.com/) and click `Create account`.
+After, go to the [Google Cloud page](https://cloud.google.com), click `Get started`, enter the required data
+and accept the terms of service (you'll need credit card information to register).
+
+### Create a bucket
+
+Your first project will be created automatically, you can see it on the [cloud resource manager page](https://console.cloud.google.com/cloud-resource-manager).
+To create a bucket, go to the [cloud storage page](https://console.cloud.google.com/storage/browser)
+and press `Create bucket`. Next, enter the name of the bucket, add labels if necessary, select the type of location
+for example region and the location nearest to you, select storage class, when selecting access control
+you can enable `Enforce public access prevention on this bucket` (if you plan to have anonymous access to your bucket,
+it should be disabled) you can select `Uniform` or `Fine-grained` access control, if you need protection of your
+object data select protect object data type. When all the information is entered click `Create` to create the bucket.
+
+![](/images/google_cloud_storage_tutorial1.jpg)
+
+### Upload
+
+Prepare the dataset as in the point [prepare dataset](#prepare-dataset).
+
+To upload files, you can simply drag and drop files and folders into a browser window
+or use the `upload folder` and/or `upload files`.
+
+### Access permissions
+
+To access Google Cloud Storage from CVAT you will need a `Project ID`
+you can find it by going to [cloud resource manager page](https://console.cloud.google.com/cloud-resource-manager)
+
+![](/images/google_cloud_storage_tutorial5.jpg)
+
+#### Create a service account and key file
+
+To access your bucket you need a key file and a service account. To create a service account,
+go to `IAM & Admin`/`Service Accounts` and press `Create Service Account`. Enter your account
+name and click `Create And Continue`. Select a role for example `Basic`/`Viewer`.
+Next, you can give access rights to the service account, to complete click `Done`.
+
+![](/images/google_cloud_storage_tutorial2.jpg)
+
+The account you created will appear in the service accounts list, open it and go to the `Keys` tab.
+To create a key, click `ADD` and select `Create new key`, next you need to choose the key type `JSON` and select `Create`.
+The key file will be downloaded automatically.
+
+![](/images/google_cloud_storage_tutorial3.jpg)
+
+[Learn more about creating keys](https://cloud.google.com/docs/authentication/getting-started).
+
+#### Anonymous access
+
+To configure anonymous access, open your bucket and go to the permissions tab click `ADD` to add new principals.
+In `new principals` field specify `allUsers`, select role for example `Cloud Storage Legacy`/`Storage Legacy Bucket Reader`
+and press `SAVE`.
+
+![](/images/google_cloud_storage_tutorial4.jpg)
+
 Now you can attach new cloud storage into CVAT.
 
 ## Attach new cloud storage
 
-After you upload the dataset and manifest file to AWS-S3 or Azure Blob Container
+After you upload the dataset and manifest file to AWS-S3, Azure Blob Container or Google Cloud Storage
 you will be able to attach a cloud storage. To do this, press the `Attach new cloud storage`
 button on the `Cloud storages` page and fill out the following form:
 
@@ -179,7 +241,7 @@ button on the `Cloud storages` page and fill out the following form:
   of an item on cloud storages page.
 - `Provider` - choose provider of the cloud storage:
 
-  - [AWS-S3](#using-aws-s3):
+  - [**AWS-S3**](#using-aws-s3):
 
     - [`Bucket`](https://docs.aws.amazon.com/AmazonS3/latest/userguide/UsingBucket) - cloud storage bucket name.
 
@@ -191,14 +253,14 @@ button on the `Cloud storages` page and fill out the following form:
         - `ACCESS KEY ID`
         - `SECRET ACCESS KEY ID`
 
-      - `Anonymous access` - For anonymous access, you need to enable public access to bucket.
+      - `Anonymous access` - for anonymous access, you need to enable public access to bucket.
 
     - `Region` - here you can choose a region from the list or add a new one. To get more information click
       on [`?`](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-regions-availability-zones.html#concepts-available-regions).
 
     </br>
 
-  - [Azure Blob Container](https://docs.microsoft.com/en-us/azure/storage/blobs/):
+  - [**Azure Blob Container**](https://docs.microsoft.com/en-us/azure/storage/blobs/):
 
     - `Container name` - name of the cloud storage container.
 
@@ -215,9 +277,39 @@ button on the `Cloud storages` page and fill out the following form:
           - `Account name` - storage account name.
 
     </br>
+
+  - [**Google Cloud**](https://cloud.google.com/docs):
+
+    - [`Bucket name`](https://cloud.google.com/storage/docs/creating-buckets) - cloud storage bucket name,
+      you can find the created bucket on the [storage browser page](https://console.cloud.google.com/storage/browser).
+
+    - `Authorization type`:
+
+      - [`Key file`](#create-a-service-account-and-key-file) - you can drag a key file to the area `attach a file`
+        or click on the area to select the key file through the explorer. If the environment variable
+        `GOOGLE_APPLICATION_CREDENTIALS` is specified for an environment with a deployed CVAT instance, then it will
+        be used if you do not attach the key file
+        ([more about `GOOGLE_APPLICATION_CREDENTIALS`](https://cloud.google.com/docs/authentication/getting-started#setting_the_environment_variable)).
+
+      - [`Anonymous access`](#anonymous-access) - for anonymous access, you need to enable public access to bucket.
+
+    - `Prefix` - used to filter data from the bucket.
+
+    - [`Project ID`](https://cloud.google.com/resource-manager/docs/creating-managing-projects) - you can find
+      the created project on the [cloud resource manager page](https://console.cloud.google.com/cloud-resource-manager),
+      note that the project name does not match the project ID.
+
+    - `Location` - here you can choose a region from the list or add a new one. To get more information click
+      on [`?`](https://cloud.google.com/storage/docs/locations#available-locations).
+
+    </br>
+
 - `Manifest` - the path to the manifest file on your cloud storage.
-  You can add multiple file manifests using the `Add manifest` button.
-  For more information click on [`?`](/docs/manual/advanced/dataset_manifest/).
+  You can add multiple manifest files using the `Add manifest` button.
+  You can find on how to prepare dataset manifest [`here`](/docs/manual/advanced/dataset_manifest/).
+  If you have data on the cloud storage and don't want to download content locally, you can mount your
+  cloud storage as a share point according to [`that guide`](/docs/administration/advanced/mounting_cloud_storages/)
+  and prepare manifest for the data.
 
 To publish the cloud storage, click `submit`, after which it will be available on
 the [Cloud storages page](/docs/manual/basics/cloud-storages/).
@@ -249,6 +341,7 @@ In the window that appears, select the created bucket and click export.
 ![](/images/aws-s3_tutorial_7.jpg)
 
 ### Prepare manifest file
+
 Now you need to prepare a manifest file. I used [AWS cli](https://aws.amazon.com/cli/) and
 [script for prepare manifest file](https://github.com/openvinotoolkit/cvat/tree/develop/utils/dataset_manifest).
 Perform the installation using the manual [aws-shell](https://github.com/awslabs/aws-shell),
@@ -256,7 +349,7 @@ I used `aws-cli 1.20.49` `Python 3.7.9` `Windows 10`.
 You can configure credentials by running `aws configure`.
 You will need to enter `Access Key ID` and `Secret Access Key` as well as region.
 
-```
+```bash
 aws configure
 Access Key ID: <your Access Key ID>
 Secret Access Key: <your Secret Access Key>
@@ -264,20 +357,20 @@ Secret Access Key: <your Secret Access Key>
 
 Copy the content of the bucket to a folder on your computer:
 
-```
+```bash
 aws s3 cp <s3://bucket-name> <yourfolder> --recursive
 ```
 
 After copying the files, you can create a manifest file as described in [preapair manifest file section](/docs/manual/advanced/dataset_manifest/):
 
-```
+```bash
 python <cvat repository>/utils/dataset_manifest/create.py --output-dir <yourfolder> <yourfolder>
 ```
 
 When the manifest file is ready, you can upload it to aws s3 bucket. If you gave full write permissions
 when you created the user, run:
 
-```
+```bash
 aws s3 cp <yourfolder>/manifest.jsonl <s3://bucket-name>
 ```
 

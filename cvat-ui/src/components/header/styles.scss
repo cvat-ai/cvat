@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -13,7 +13,22 @@
     background: $header-color;
 }
 
+.ant-btn.cvat-header-button {
+    color: $text-color;
+    padding: 0 $grid-unit-size;
+    margin-right: $grid-unit-size;
+}
+
 .cvat-left-header {
+    .ant-btn.cvat-header-button {
+        opacity: 0.7;
+
+        &.cvat-active-header-button {
+            font-weight: bold;
+            opacity: 1;
+        }
+    }
+
     width: 50%;
     display: flex;
     justify-content: flex-start;
@@ -25,6 +40,13 @@
     display: flex;
     justify-content: flex-end;
     align-items: center;
+
+    > a.ant-btn {
+        span[role='img'] {
+            font-size: 24px;
+            line-height: 24px;
+        }
+    }
 }
 
 .anticon.cvat-logo-icon {
@@ -33,34 +55,44 @@
     }
 }
 
-.ant-btn.cvat-header-button {
-    color: $text-color;
-    padding: 0 10px;
-    margin-right: 10px;
-}
-
-.ant-dropdown-trigger.cvat-header-menu-dropdown {
+.cvat-header-menu-user-dropdown {
     display: flex;
     align-items: center;
     border-left: 1px solid $border-color-1;
-    padding: 0 20px;
-}
 
-.anticon.cvat-header-account-icon {
-    > svg {
-        transform: scale(0.4);
-    }
-}
-
-.anticon.cvat-header-menu-icon {
-    margin-left: 16px;
-    margin-right: 0;
-}
-
-.cvat-header-menu {
-    > li {
-        span[role='img'] {
-            margin-right: $grid-unit-size;
+    .anticon.cvat-header-dropdown-icon {
+        &.anticon-caret-down {
+            font-size: 12px;
         }
+
+        font-size: 20px;
+        padding: $grid-unit-size;
     }
+
+    > div:nth-child(2) {
+        > div:nth-child(2) { /* org slug */
+            font-size: 10px;
+        }
+
+        max-width: $grid-unit-size * 15;
+        height: $grid-unit-size * 5;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        align-items: center;
+    }
+}
+
+.cvat-header-menu-active-organization-item {
+    ::after {
+        content: ' \2713';
+        float: right;
+        margin-left: $grid-unit-size;
+    }
+
+    font-weight: bold;
+}
+
+.cvat-modal-organization-selector {
+    width: 100%;
 }

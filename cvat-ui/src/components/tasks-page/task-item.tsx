@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -8,14 +8,13 @@ import { withRouter } from 'react-router-dom';
 import Text from 'antd/lib/typography/Text';
 import { Row, Col } from 'antd/lib/grid';
 import Button from 'antd/lib/button';
-import Icon from '@ant-design/icons';
+import { MoreOutlined } from '@ant-design/icons';
 import Dropdown from 'antd/lib/dropdown';
 import Progress from 'antd/lib/progress';
 import moment from 'moment';
 
 import ActionsMenuContainer from 'containers/actions-menu/actions-menu';
 import { ActiveInference } from 'reducers/interfaces';
-import { MenuIcon } from 'icons';
 import AutomaticAnnotationProgress from './automatic-annotation-progress';
 
 export interface TaskItemProps {
@@ -72,7 +71,7 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
         const { taskInstance, activeInference, cancelAutoAnnotation } = this.props;
         // Count number of jobs and performed jobs
         const numOfJobs = taskInstance.jobs.length;
-        const numOfCompleted = taskInstance.jobs.filter((job: any): boolean => job.status === 'completed').length;
+        const numOfCompleted = taskInstance.jobs.filter((job: any): boolean => job.stage === 'acceptance').length;
 
         // Progress appearance depends on number of jobs
         let progressColor = null;
@@ -159,12 +158,12 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
                     </Col>
                 </Row>
                 <Row justify='end'>
-                    <Col className='cvat-item-open-task-actions'>
-                        <Text className='cvat-text-color'>Actions</Text>
-                        <Dropdown overlay={<ActionsMenuContainer taskInstance={taskInstance} />}>
-                            <Icon className='cvat-menu-icon' component={MenuIcon} />
-                        </Dropdown>
-                    </Col>
+                    <Dropdown overlay={<ActionsMenuContainer taskInstance={taskInstance} />}>
+                        <Col className='cvat-item-open-task-actions'>
+                            <Text className='cvat-text-color'>Actions</Text>
+                            <MoreOutlined className='cvat-menu-icon' />
+                        </Col>
+                    </Dropdown>
                 </Row>
             </Col>
         );

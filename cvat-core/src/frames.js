@@ -1,4 +1,4 @@
-// Copyright (C) 2021 Intel Corporation
+// Copyright (C) 2021-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -23,6 +23,7 @@
             height,
             name,
             taskID,
+            jobID,
             frameNumber,
             startFrame,
             stopFrame,
@@ -67,6 +68,17 @@
                     },
                     tid: {
                         value: taskID,
+                        writable: false,
+                    },
+                    /**
+                     * @name jid
+                     * @type {integer}
+                     * @memberof module:API.cvat.classes.FrameData
+                     * @readonly
+                     * @instance
+                     */
+                    jid: {
+                        value: jobID,
                         writable: false,
                     },
                     /**
@@ -191,7 +203,7 @@
                 const taskDataCache = frameDataCache[this.tid];
                 const activeChunk = taskDataCache.activeChunkRequest;
                 activeChunk.request = serverProxy.frames
-                    .getData(this.tid, activeChunk.chunkNumber)
+                    .getData(this.tid, this.jid, activeChunk.chunkNumber)
                     .then((chunk) => {
                         frameDataCache[this.tid].activeChunkRequest.completed = true;
                         if (!taskDataCache.nextChunkRequest) {
@@ -366,7 +378,7 @@
     }
 
     class FrameBuffer {
-        constructor(size, chunkSize, stopFrame, taskID) {
+        constructor(size, chunkSize, stopFrame, taskID, jobID) {
             this._size = size;
             this._buffer = {};
             this._contextImage = {};
@@ -375,6 +387,7 @@
             this._stopFrame = stopFrame;
             this._activeFillBufferRequest = false;
             this._taskID = taskID;
+            this._jobID = jobID;
         }
 
         isContextImageAvailable(frame) {
@@ -411,6 +424,7 @@
                     const frameData = new FrameData({
                         ...frameMeta,
                         taskID: this._taskID,
+                        jobID: this._jobID,
                         frameNumber: requestedFrame,
                         startFrame: frameDataCache[this._taskID].startFrame,
                         stopFrame: frameDataCache[this._taskID].stopFrame,
@@ -463,31 +477,47 @@
 
             let bufferedFrames = new Set();
 
+            // if we send one request to get frame 1 with filling the buffer
+            // then quicky send one more request to get frame 1
+            // frame 1 will be already decoded and written to buffer
+            // the second request gets frame 1 from the buffer, removes it from there and returns
+            // after the first request finishes decoding it tries to get frame 1, but failed
+            // because frame 1 was already removed from the buffer by the second request
+            // to prevent this behavior we do not write decoded frames to buffer till the end of decoding all chunks
+            const buffersToBeCommited = [];
+            const commitBuffers = () => {
+                for (const buffer of buffersToBeCommited) {
+                    this._buffer = {
+                        ...this._buffer,
+                        ...buffer,
+                    };
+                }
+            };
+
             // Need to decode chunks in sequence
             // eslint-disable-next-line no-async-promise-executor
             return new Promise(async (resolve, reject) => {
-                for (const chunkIdx in this._requestedChunks) {
-                    if (Object.prototype.hasOwnProperty.call(this._requestedChunks, chunkIdx)) {
-                        try {
-                            const chunkFrames = await this.requestOneChunkFrames(chunkIdx);
-                            if (chunkIdx in this._requestedChunks) {
-                                bufferedFrames = new Set([...bufferedFrames, ...chunkFrames]);
-                                this._buffer = {
-                                    ...this._buffer,
-                                    ...this._requestedChunks[chunkIdx].buffer,
-                                };
-                                delete this._requestedChunks[chunkIdx];
-                                if (Object.keys(this._requestedChunks).length === 0) {
-                                    resolve(bufferedFrames);
-                                }
-                            } else {
-                                reject(chunkIdx);
-                                break;
+                for (const chunkIdx of Object.keys(this._requestedChunks)) {
+                    try {
+                        const chunkFrames = await this.requestOneChunkFrames(chunkIdx);
+                        if (chunkIdx in this._requestedChunks) {
+                            bufferedFrames = new Set([...bufferedFrames, ...chunkFrames]);
+
+                            buffersToBeCommited.push(this._requestedChunks[chunkIdx].buffer);
+                            delete this._requestedChunks[chunkIdx];
+                            if (Object.keys(this._requestedChunks).length === 0) {
+                                commitBuffers();
+                                resolve(bufferedFrames);
                             }
-                        } catch (error) {
-                            reject(error);
+                        } else {
+                            commitBuffers();
+                            reject(chunkIdx);
                             break;
                         }
+                    } catch (error) {
+                        commitBuffers();
+                        reject(error);
+                        break;
                     }
                 }
             });
@@ -508,9 +538,9 @@
             }
         }
 
-        async require(frameNumber, taskID, fillBuffer, frameStep) {
+        async require(frameNumber, taskID, jobID, fillBuffer, frameStep) {
             for (const frame in this._buffer) {
-                if (frame < frameNumber || frame >= frameNumber + this._size * frameStep) {
+                if (+frame < frameNumber || +frame >= frameNumber + this._size * frameStep) {
                     delete this._buffer[frame];
                 }
             }
@@ -520,6 +550,7 @@
             let frame = new FrameData({
                 ...frameMeta,
                 taskID,
+                jobID,
                 frameNumber,
                 startFrame: frameDataCache[taskID].startFrame,
                 stopFrame: frameDataCache[taskID].stopFrame,
@@ -548,7 +579,6 @@
             } else if (fillBuffer) {
                 this.clear();
                 await this.makeFillRequest(frameNumber, frameStep, fillBuffer ? null : 1);
-
                 frame = this._buffer[frameNumber];
             } else {
                 this.clear();
@@ -576,10 +606,10 @@
         }
     }
 
-    async function getImageContext(taskID, frame) {
+    async function getImageContext(jobID, frame) {
         return new Promise((resolve, reject) => {
             serverProxy.frames
-                .getImageContext(taskID, frame)
+                .getImageContext(jobID, frame)
                 .then((result) => {
                     if (isNode) {
                         // eslint-disable-next-line no-undef
@@ -598,20 +628,20 @@
         });
     }
 
-    async function getContextImage(taskID, frame) {
+    async function getContextImage(taskID, jobID, frame) {
         if (frameDataCache[taskID].frameBuffer.isContextImageAvailable(frame)) {
             return frameDataCache[taskID].frameBuffer.getContextImage(frame);
         }
-        const response = getImageContext(taskID, frame);
+        const response = getImageContext(jobID, frame);
         frameDataCache[taskID].frameBuffer.addContextImage(frame, response);
         return frameDataCache[taskID].frameBuffer.getContextImage(frame);
     }
 
-    async function getPreview(taskID) {
+    async function getPreview(taskID = null, jobID = null) {
         return new Promise((resolve, reject) => {
             // Just go to server and get preview (no any cache)
             serverProxy.frames
-                .getPreview(taskID)
+                .getPreview(taskID, jobID)
                 .then((result) => {
                     if (isNode) {
                         // eslint-disable-next-line no-undef
@@ -632,6 +662,7 @@
 
     async function getFrame(
         taskID,
+        jobID,
         chunkSize,
         chunkType,
         mode,
@@ -674,6 +705,7 @@
                     chunkSize,
                     stopFrame,
                     taskID,
+                    jobID,
                 ),
                 decodedBlocksCacheSize,
                 activeChunkRequest: null,
@@ -684,7 +716,7 @@
             frameDataCache[taskID].provider.setRenderSize(frameMeta.width, frameMeta.height);
         }
 
-        return frameDataCache[taskID].frameBuffer.require(frame, taskID, isPlaying, step);
+        return frameDataCache[taskID].frameBuffer.require(frame, taskID, jobID, isPlaying, step);
     }
 
     function getRanges(taskID) {

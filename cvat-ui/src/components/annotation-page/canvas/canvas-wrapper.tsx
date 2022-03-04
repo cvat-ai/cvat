@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -27,12 +27,11 @@ const MAX_DISTANCE_TO_OPEN_SHAPE = 50;
 
 interface Props {
     sidebarCollapsed: boolean;
-    canvasInstance: Canvas | Canvas3d;
+    canvasInstance: Canvas | Canvas3d | null;
     jobInstance: any;
     activatedStateID: number | null;
     activatedAttributeID: number | null;
     annotations: any[];
-    frameIssues: any[] | null;
     frameData: any;
     frameAngle: number;
     frameFetching: boolean;
@@ -57,8 +56,12 @@ interface Props {
     contrastLevel: number;
     saturationLevel: number;
     resetZoom: boolean;
+    smoothImage: boolean;
     aamZoomMargin: number;
     showObjectsTextAlways: boolean;
+    textFontSize: number;
+    textPosition: 'auto' | 'center';
+    textContent: string;
     showAllInterpolationTracks: boolean;
     workspace: Workspace;
     automaticBordering: boolean;
@@ -105,6 +108,10 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             workspace,
             showProjections,
             selectedOpacity,
+            smoothImage,
+            textFontSize,
+            textPosition,
+            textContent,
         } = this.props;
         const { canvasInstance } = this.props as { canvasInstance: Canvas };
 
@@ -114,6 +121,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         wrapper.appendChild(canvasInstance.html());
 
         canvasInstance.configure({
+            smoothImage,
             autoborders: automaticBordering,
             undefinedAttrValue: consts.UNDEFINED_ATTRIBUTE_VALUE,
             displayAllText: showObjectsTextAlways,
@@ -121,10 +129,12 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             intelligentPolygonCrop,
             showProjections,
             creationOpacity: selectedOpacity,
+            textFontSize,
+            textPosition,
+            textContent,
         });
 
         this.initialSetup();
-        this.updateIssueRegions();
         this.updateCanvas();
     }
 
@@ -136,7 +146,6 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             outlined,
             outlineColor,
             showBitmap,
-            frameIssues,
             frameData,
             frameAngle,
             annotations,
@@ -144,6 +153,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             activatedStateID,
             curZLayer,
             resetZoom,
+            smoothImage,
             grid,
             gridSize,
             gridOpacity,
@@ -154,6 +164,9 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             workspace,
             frameFetching,
             showObjectsTextAlways,
+            textFontSize,
+            textPosition,
+            textContent,
             showAllInterpolationTracks,
             automaticBordering,
             intelligentPolygonCrop,
@@ -167,7 +180,11 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             prevProps.automaticBordering !== automaticBordering ||
             prevProps.showProjections !== showProjections ||
             prevProps.intelligentPolygonCrop !== intelligentPolygonCrop ||
-            prevProps.selectedOpacity !== selectedOpacity
+            prevProps.selectedOpacity !== selectedOpacity ||
+            prevProps.smoothImage !== smoothImage ||
+            prevProps.textFontSize !== textFontSize ||
+            prevProps.textPosition !== textPosition ||
+            prevProps.textContent !== textContent
         ) {
             canvasInstance.configure({
                 undefinedAttrValue: consts.UNDEFINED_ATTRIBUTE_VALUE,
@@ -176,6 +193,10 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
                 showProjections,
                 intelligentPolygonCrop,
                 creationOpacity: selectedOpacity,
+                smoothImage,
+                textFontSize,
+                textPosition,
+                textContent,
             });
         }
 
@@ -232,10 +253,6 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             }
         }
 
-        if (prevProps.frameIssues !== frameIssues) {
-            this.updateIssueRegions();
-        }
-
         if (
             prevProps.annotations !== annotations ||
             prevProps.frameData !== frameData ||
@@ -284,12 +301,14 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             }
         }
 
-        const loadingAnimation = window.document.getElementById('cvat_canvas_loading_animation');
-        if (loadingAnimation && frameFetching !== prevProps.frameFetching) {
-            if (frameFetching) {
-                loadingAnimation.classList.remove('cvat_canvas_hidden');
-            } else {
-                loadingAnimation.classList.add('cvat_canvas_hidden');
+        if (frameFetching !== prevProps.frameFetching) {
+            const loadingAnimation = window.document.getElementById('cvat_canvas_loading_animation');
+            if (loadingAnimation) {
+                if (frameFetching) {
+                    loadingAnimation.classList.remove('cvat_canvas_hidden');
+                } else {
+                    loadingAnimation.classList.add('cvat_canvas_hidden');
+                }
             }
         }
 
@@ -365,9 +384,10 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         }
 
         state.objectType = state.objectType || activeObjectType;
-        state.label = state.label || jobInstance.task.labels.filter((label: any) => label.id === activeLabelID)[0];
+        state.label = state.label || jobInstance.labels.filter((label: any) => label.id === activeLabelID)[0];
         state.occluded = state.occluded || false;
         state.frame = frame;
+        state.rotation = state.rotation || 0;
         const objectState = new cvat.classes.ObjectState(state);
         onCreateAnnotations(jobInstance, frame, [objectState]);
     };
@@ -418,7 +438,9 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
 
     private fitCanvas = (): void => {
         const { canvasInstance } = this.props;
-        canvasInstance.fitCanvas();
+        if (canvasInstance) {
+            canvasInstance.fitCanvas();
+        }
     };
 
     private onCanvasMouseDown = (e: MouseEvent): void => {
@@ -525,8 +547,9 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
 
         onEditShape(false);
 
-        const { state, points } = event.detail;
+        const { state, points, rotation } = event.detail;
         state.points = points;
+        state.rotation = rotation;
         onUpdateAnnotations([state]);
     };
 
@@ -654,29 +677,12 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         }
     }
 
-    private updateIssueRegions(): void {
-        const { frameIssues } = this.props;
-        const { canvasInstance } = this.props as { canvasInstance: Canvas };
-        if (frameIssues === null) {
-            canvasInstance.setupIssueRegions({});
-        } else {
-            const regions = frameIssues.reduce((acc: Record<number, number[]>, issue: any): Record<
-            number,
-            number[]
-            > => {
-                acc[issue.id] = issue.position;
-                return acc;
-            }, {});
-            canvasInstance.setupIssueRegions(regions);
-        }
-    }
-
     private updateCanvas(): void {
         const {
             curZLayer, annotations, frameData, canvasInstance,
         } = this.props;
 
-        if (frameData !== null) {
+        if (frameData !== null && canvasInstance) {
             canvasInstance.setup(
                 frameData,
                 annotations.filter((e) => e.objectType !== ObjectType.TAG),

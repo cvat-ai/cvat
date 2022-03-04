@@ -1,11 +1,13 @@
 
-# Copyright (C) 2018-2020 Intel Corporation
+# Copyright (C) 2018-2022 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
-from django.urls import path
+from rest_framework import routers
+
 from . import views
 
-urlpatterns = [
-    path('<path:path>', views.LogViewerProxy.as_view())
-]
+router = routers.DefaultRouter(trailing_slash=False)
+router.register('analytics', views.LogViewerAccessViewSet, basename='analytics')
+
+urlpatterns = router.urls

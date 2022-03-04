@@ -1,17 +1,22 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
+import './styles.scss';
 import React from 'react';
 import { RouteComponentProps } from 'react-router';
 import { Link, withRouter } from 'react-router-dom';
 import Title from 'antd/lib/typography/Title';
 import Text from 'antd/lib/typography/Text';
 import { Row, Col } from 'antd/lib/grid';
-import { Layout } from 'antd';
+import Button from 'antd/lib/button';
+import Divider from 'antd/lib/divider';
+import Layout from 'antd/lib/layout';
 
 import FooterDrawer from 'components/login-page/intel-footer-drawer';
 
+import consts from 'consts';
+import { OpenVINOIcon } from 'icons';
 import LoginForm, { LoginData } from './login-form';
 
 interface LoginPageComponentProps {
@@ -22,11 +27,9 @@ interface LoginPageComponentProps {
 
 function LoginPageComponent(props: LoginPageComponentProps & RouteComponentProps): JSX.Element {
     const sizes = {
-        xs: { span: 14 },
-        sm: { span: 14 },
-        md: { span: 10 },
-        lg: { span: 4 },
-        xl: { span: 4 },
+        style: {
+            width: 400,
+        },
     };
 
     const { Content } = Layout;
@@ -36,7 +39,8 @@ function LoginPageComponent(props: LoginPageComponentProps & RouteComponentProps
     return (
         <Layout>
             <Content>
-                <Row justify='center' align='middle' style={{ height: '100%' }}>
+                <Row style={{ height: '33%' }} />
+                <Row justify='center' align='middle'>
                     <Col {...sizes}>
                         <Title level={2}> Login </Title>
                         <LoginForm
@@ -62,6 +66,25 @@ function LoginPageComponent(props: LoginPageComponentProps & RouteComponentProps
                                 </Col>
                             </Row>
                         )}
+
+                    </Col>
+                </Row>
+                <Row className='cvat-login-openvino-block' justify='center'>
+                    <Col {...sizes}>
+                        <Divider />
+                        <Text type='secondary'>
+                            Learn more about products of
+                            {/* It is important to keep the referer header here */}
+                            {/* eslint-disable-next-line react/jsx-no-target-blank */}
+                            <a target='_blank' rel='noopener' href={consts.OPENVINO_URL}> OpenVINO™ Toolkit </a>
+                        </Text>
+                        <Button
+                            href={consts.OPENVINO_URL}
+                            icon={<OpenVINOIcon />}
+                            block
+                            type='link'
+                            target='_blank'
+                        />
                     </Col>
                 </Row>
             </Content>

@@ -1,4 +1,4 @@
-// Copyright (C) 2021 Intel Corporation
+// Copyright (C) 2021-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -21,57 +21,60 @@ context('Rename a task.', () => {
     const archivePath = `cypress/fixtures/${archiveName}`;
     const imagesFolder = `cypress/fixtures/${imageFileName}`;
     const directoryToArchive = imagesFolder;
-    const newNaskName = taskName.replace('39', '3339');
+    const newTaskName = taskName.replace('39', '3339');
+    const newTaskNameSecondUser = newTaskName.replace('3339', '33339');
     const secondUserName = 'Case39';
     const secondUser = {
-        firstName: `Firtstnamerenametask`,
-        lastName: `Lastnamerenametask`,
+        firstName: 'Firtstnamerenametask',
+        lastName: 'Lastnamerenametask',
         emailAddr: `${secondUserName.toLowerCase()}@local.local`,
         password: 'Pass!UserCase39',
     };
 
-    function renameTask(taskName, newValue) {
+    function renameTask(myTaskName, newValue) {
         cy.get('.cvat-task-details-task-name').within(() => {
             cy.get('[aria-label="edit"]').click();
         });
-        cy.contains('.cvat-text-color', taskName).click().type(newValue);
+        cy.contains('.cvat-text-color', myTaskName).click().type(newValue);
     }
 
     before(() => {
-        cy.visit('auth/login');
-        cy.login();
         cy.imageGenerator(imagesFolder, imageFileName, width, height, color, posX, posY, labelName, imagesCount);
         cy.createZipArchive(directoryToArchive, archivePath);
+        cy.visit('auth/register');
+        cy.userRegistration(
+            secondUser.firstName,
+            secondUser.lastName,
+            secondUserName,
+            secondUser.emailAddr,
+            secondUser.password,
+        );
+        cy.logout(secondUserName);
+        cy.login();
         cy.createAnnotationTask(taskName, labelName, attrName, textDefaultValue, archiveName);
         cy.openTask(taskName);
     });
 
     after(() => {
-        cy.deletingRegisteredUsers([secondUserName]);
-        cy.login();
-        cy.deleteTask(newNaskName);
+        cy.logout(secondUserName);
+        cy.getAuthKey().then((authKey) => {
+            cy.deleteUsers(authKey, [secondUserName]);
+            cy.deleteTasks(authKey, [newTaskNameSecondUser]);
+        });
     });
 
     describe(`Testing "${labelName}". Issue 2572.`, () => {
-        it('Rename the task. Issue is not reproduce.', () => {
+        it('The admin tries to rename the task and assigns to the second user. Issue is not reproduce.', () => {
             renameTask(taskName, '{leftarrow}{leftarrow}33{Enter}');
-            cy.contains('.cvat-task-details-task-name', newNaskName).should('exist');
+            cy.contains('.cvat-task-details-task-name', newTaskName).should('exist');
+            cy.assignTaskToUser(secondUserName);
             cy.logout();
         });
-        it('Registration a second user. Rename the task. Status 403 appear.', () => {
-            cy.goToRegisterPage();
-            cy.userRegistration(
-                secondUser.firstName,
-                secondUser.lastName,
-                secondUserName,
-                secondUser.emailAddr,
-                secondUser.password,
-            );
-            cy.openTask(newNaskName);
-            renameTask(newNaskName, '{leftarrow}{leftarrow}3{Enter}');
-            cy.get('.cvat-notification-notice-update-task-failed').should('exist');
-            cy.closeNotification('.cvat-notification-notice-update-task-failed');
-            cy.logout(secondUserName);
+
+        it('The second user tries to rename the task. Success.', () => {
+            cy.login(secondUserName, secondUser.password);
+            cy.openTask(newTaskName);
+            cy.renameTask(newTaskName, newTaskNameSecondUser);
         });
     });
 });

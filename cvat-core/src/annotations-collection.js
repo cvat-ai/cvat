@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2021 Intel Corporation
+// Copyright (C) 2019-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -8,11 +8,13 @@
         PolygonShape,
         PolylineShape,
         PointsShape,
+        EllipseShape,
         CuboidShape,
         RectangleTrack,
         PolygonTrack,
         PolylineTrack,
         PointsTrack,
+        EllipseTrack,
         CuboidTrack,
         Track,
         Shape,
@@ -48,6 +50,9 @@
             case 'points':
                 shapeModel = new PointsShape(shapeData, clientID, color, injection);
                 break;
+            case 'ellipse':
+                shapeModel = new EllipseShape(shapeData, clientID, color, injection);
+                break;
             case 'cuboid':
                 shapeModel = new CuboidShape(shapeData, clientID, color, injection);
                 break;
@@ -76,6 +81,9 @@
                     break;
                 case 'points':
                     trackModel = new PointsTrack(trackData, clientID, color, injection);
+                    break;
+                case 'ellipse':
+                    trackModel = new EllipseTrack(trackData, clientID, color, injection);
                     break;
                 case 'cuboid':
                     trackModel = new CuboidTrack(trackData, clientID, color, injection);
@@ -235,7 +243,7 @@
                 const object = this.objects[state.clientID];
                 if (typeof object === 'undefined') {
                     throw new ArgumentError(
-                        'The object has not been saved yet. Call ObjectState.put([state]) before you can merge it',
+                        'The object is not in collection yet. Call ObjectState.put([state]) before you can merge it',
                     );
                 }
                 return object;
@@ -282,6 +290,7 @@
                         frame: object.frame,
                         points: [...object.points],
                         occluded: object.occluded,
+                        rotation: object.rotation,
                         zOrder: object.zOrder,
                         outside: false,
                         attributes: Object.keys(object.attributes).reduce((accumulator, attrID) => {
@@ -333,6 +342,7 @@
                             type: shapeType,
                             frame: +keyframe,
                             points: [...shape.points],
+                            rotation: shape.rotation,
                             occluded: shape.occluded,
                             outside: shape.outside,
                             zOrder: shape.zOrder,
@@ -442,6 +452,7 @@
             const position = {
                 type: objectState.shapeType,
                 points: [...objectState.points],
+                rotation: objectState.rotation,
                 occluded: objectState.occluded,
                 outside: objectState.outside,
                 zOrder: objectState.zOrder,
@@ -481,6 +492,12 @@
                 return shape;
             });
             prev.shapes.push(position);
+
+            // add extra keyframe if no other keyframes before outside
+            if (!prev.shapes.some((shape) => shape.frame === frame - 1)) {
+                prev.shapes.push(JSON.parse(JSON.stringify(position)));
+                prev.shapes[prev.shapes.length - 2].frame -= 1;
+            }
             prev.shapes[prev.shapes.length - 1].outside = true;
 
             let clientID = ++this.count;
@@ -606,6 +623,10 @@
                     shape: 0,
                     track: 0,
                 },
+                ellipse: {
+                    shape: 0,
+                    track: 0,
+                },
                 cuboid: {
                     shape: 0,
                     track: 0,
@@ -725,6 +746,7 @@
                 checkObjectType('object state', state, null, ObjectState);
                 checkObjectType('state client ID', state.clientID, 'undefined', null);
                 checkObjectType('state frame', state.frame, 'integer', null);
+                checkObjectType('state rotation', state.rotation || 0, 'number', null);
                 checkObjectType('state attributes', state.attributes, null, Object);
                 checkObjectType('state label', state.label, null, Label);
 
@@ -768,6 +790,7 @@
                             label_id: state.label.id,
                             occluded: state.occluded || false,
                             points: [...state.points],
+                            rotation: state.rotation || 0,
                             type: state.shapeType,
                             z_order: state.zOrder,
                             source: state.source,
@@ -787,6 +810,7 @@
                                     occluded: state.occluded || false,
                                     outside: false,
                                     points: [...state.points],
+                                    rotation: state.rotation || 0,
                                     type: state.shapeType,
                                     z_order: state.zOrder,
                                 },
@@ -844,7 +868,7 @@
                 if (typeof object === 'undefined') {
                     throw new ArgumentError('The object has not been saved yet. Call annotations.put([state]) before');
                 }
-                const distance = object.constructor.distance(state.points, x, y);
+                const distance = object.constructor.distance(state.points, x, y, state.rotation);
                 if (distance !== null && (minimumDistance === null || distance < minimumDistance)) {
                     minimumDistance = distance;
                     minimumState = state;
@@ -893,35 +917,14 @@
         search(filters, frameFrom, frameTo) {
             const sign = Math.sign(frameTo - frameFrom);
             const filtersStr = JSON.stringify(filters);
-            const containsDifficultProperties = filtersStr.match(/"var":"width"/) || filtersStr.match(/"var":"height"/);
+            const linearSearch = filtersStr.match(/"var":"width"/) || filtersStr.match(/"var":"height"/);
 
-            const deepSearch = (deepSearchFrom, deepSearchTo) => {
-                // deepSearchFrom is expected to be a frame that doesn't satisfy a filter
-                // deepSearchTo is expected to be a frame that satisfies a filter
-
-                let [prev, next] = [deepSearchFrom, deepSearchTo];
-                // half division method instead of linear search
-                while (!(Math.abs(prev - next) === 1)) {
-                    const middle = next + Math.floor((prev - next) / 2);
-                    const shapesData = this.tracks.map((track) => track.get(middle));
-                    const filtered = this.annotationsFilter.filter(shapesData, filters);
-                    if (filtered.length) {
-                        next = middle;
-                    } else {
-                        prev = middle;
-                    }
-                }
-
-                return next;
-            };
-
-            const keyframesMemory = {};
             const predicate = sign > 0 ? (frame) => frame <= frameTo : (frame) => frame >= frameTo;
             const update = sign > 0 ? (frame) => frame + 1 : (frame) => frame - 1;
             for (let frame = frameFrom; predicate(frame); frame = update(frame)) {
                 // First prepare all data for the frame
                 // Consider all shapes, tags, and not outside tracks that have keyframe here
-                // In particular consider first and last frame as keyframes for all frames
+                // In particular consider first and last frame as keyframes for all tracks
                 const statesData = [].concat(
                     (frame in this.shapes ? this.shapes[frame] : [])
                         .filter((shape) => !shape.removed)
@@ -931,7 +934,9 @@
                         .map((tag) => tag.get(frame)),
                 );
                 const tracks = Object.values(this.tracks)
-                    .filter((track) => frame in track.shapes || frame === frameFrom || frame === frameTo)
+                    .filter((track) => (
+                        frame in track.shapes || frame === frameFrom ||
+                        frame === frameTo || linearSearch))
                     .filter((track) => !track.removed);
                 statesData.push(...tracks.map((track) => track.get(frame)).filter((state) => !state.outside));
 
@@ -942,31 +947,6 @@
 
                 // Filtering
                 const filtered = this.annotationsFilter.filter(statesData, filters);
-
-                // Now we are checking whether we need deep search or not
-                // Deep search is needed in some difficult cases
-                // For example when filter contains fields which
-                // can be changed between keyframes (like: height and width of a shape)
-                // It's expected, that a track doesn't satisfy a filter on the previous keyframe
-                // At the same time it sutisfies the filter on the next keyframe
-                let withDeepSearch = false;
-                if (containsDifficultProperties) {
-                    for (const track of tracks) {
-                        const trackIsSatisfy = filtered.includes(track.clientID);
-                        if (!trackIsSatisfy) {
-                            keyframesMemory[track.clientID] = [filtered.includes(track.clientID), frame];
-                        } else if (keyframesMemory[track.clientID] && keyframesMemory[track.clientID][0] === false) {
-                            withDeepSearch = true;
-                        }
-                    }
-                }
-
-                if (withDeepSearch) {
-                    const reducer = sign > 0 ? Math.min : Math.max;
-                    const deepSearchFrom = reducer(...Object.values(keyframesMemory).map((value) => value[1]));
-                    return deepSearch(deepSearchFrom, frame);
-                }
-
                 if (filtered.length) {
                     return frame;
                 }

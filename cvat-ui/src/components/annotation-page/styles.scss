@@ -447,22 +447,12 @@ button.cvat-predictor-button {
     }
 }
 
-.cvat-request-review-dialog {
-    > .ant-modal-content > .ant-modal-body {
-        > div:nth-child(2) {
-            margin-top: $grid-unit-size * 2;
-        }
-
-        > div:nth-child(3) {
-            margin-top: $grid-unit-size * 2;
-        }
-    }
-}
-
 .cvat-submit-review-dialog {
-    > .ant-modal-content > .ant-modal-body {
-        > div:nth-child(2) > div:nth-child(2) {
-            .ant-col {
+    .ant-modal-body {
+        > div.ant-row:nth-child(2) {
+            > .ant-col {
+                width: 100%;
+
                 > div:nth-child(2) {
                     margin-top: $grid-unit-size * 2;
                     margin-bottom: $grid-unit-size * 2;
@@ -493,6 +483,29 @@ button.cvat-predictor-button {
                 background: rgba(216, 233, 250, 0.5);
                 border: 1px solid #d3e0ec;
             }
+        }
+    }
+}
+
+.cvat-submenu-current-job-state-item {
+    &::after {
+        content: ' \2713';
+        float: right;
+    }
+
+    font-weight: bold;
+}
+
+.cvat-notification-continue-job-button {
+    padding: 0;
+
+    > span {
+        &::before {
+            content: '\00a0';
+        }
+
+        &::after {
+            content: '\00a0';
         }
     }
 }

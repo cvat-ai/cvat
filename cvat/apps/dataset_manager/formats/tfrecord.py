@@ -32,9 +32,11 @@ def _export(dst_file, instance_data, save_images=False):
         make_zip_archive(temp_dir, dst_file)
 
 @importer(name='TFRecord', ext='ZIP', version='1.0', enabled=tf_available)
-def _import(src_file, instance_data):
+def _import(src_file, instance_data, load_data_callback=None):
     with TemporaryDirectory() as tmp_dir:
         Archive(src_file.name).extractall(tmp_dir)
 
         dataset = Dataset.import_from(tmp_dir, 'tf_detection_api', env=dm_env)
+        if load_data_callback is not None:
+            load_data_callback(dataset, instance_data)
         import_dm_annotations(dataset, instance_data)

@@ -35,6 +35,18 @@
             }
         }
 
+        .cvat-cloud-storage-form-item-key-file {
+            width: 100%;
+
+            :nth-child(1) {
+                flex-grow: 1;
+            }
+
+            :nth-child(2) {
+                max-width: 37 * $grid-unit-size;
+            }
+        }
+
         > div:not(first-child) {
             margin-top: $grid-unit-size;
         }
@@ -62,4 +74,10 @@
 .cvat-cloud-storage-help-button {
     padding-left: $grid-unit-size * 0.5;
     padding-right: 0;
+}
+
+.cvat-manifests-manager-form-item {
+    > .ant-form-item-control {
+        display: none;
+    }
 }

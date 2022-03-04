@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -44,8 +44,8 @@ context('Base actions on the project', () => {
     let projectID = '';
     const projectSubsetFieldValue = 'Test';
 
-    function getProjectID(projectName) {
-        cy.contains('.cvat-project-name', projectName)
+    function getProjectID(myProjectName) {
+        cy.contains('.cvat-project-name', myProjectName)
             .parents('.cvat-project-details')
             .should('have.attr', 'cvat-project-id')
             .then(($projectID) => {
@@ -58,10 +58,12 @@ context('Base actions on the project', () => {
     });
 
     after(() => {
-        cy.deletingRegisteredUsers([userName]);
+        cy.getAuthKey().then((authKey) => {
+            cy.deleteUsers(authKey, [userName]);
+        });
     });
 
-    describe(`Testing "Base actions on the project"`, () => {
+    describe('Testing "Base actions on the project"', () => {
         it('Add some labels to project.', () => {
             cy.addNewLabel(newLabelName1);
             cy.addNewLabel(newLabelName2);
@@ -120,12 +122,6 @@ context('Base actions on the project', () => {
             cy.goToRegisterPage();
             cy.userRegistration(firstName, lastName, userName, emailAddr, password);
             cy.goToProjectsList();
-            // tries to create project
-            const failProjectName = 'failProject';
-            cy.createProjects(failProjectName, labelName, attrName, textDefaultValue, null, 'fail');
-            cy.closeNotification('.cvat-notification-notice-create-project-failed');
-            cy.goToProjectsList();
-            cy.contains('.cvat-projects-project-item-title', failProjectName).should('not.exist');
             cy.logout(userName);
         });
         it('Login first user. Assign project to second user. Logout.', () => {

@@ -1,4 +1,4 @@
-// Copyright (C) 2021 Intel Corporation
+// Copyright (C) 2021-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -9,12 +9,19 @@
     const { ArgumentError } = require('./exceptions');
     const { CloudStorageCredentialsType, CloudStorageProviderType } = require('./enums');
 
+    function validateNotEmptyString(value) {
+        if (typeof value !== 'string') {
+            throw new ArgumentError(`Value must be a string. ${typeof value} was found`);
+        } else if (!value.trim().length) {
+            throw new ArgumentError('Value mustn\'t be empty string');
+        }
+    }
+
     /**
      * Class representing a cloud storage
      * @memberof module:API.cvat.classes
      */
     class CloudStorage {
-        // TODO: add storage availability status (avaliable/unavaliable)
         constructor(initialData) {
             const data = {
                 id: undefined,
@@ -27,6 +34,7 @@
                 key: undefined,
                 secret_key: undefined,
                 session_token: undefined,
+                key_file: undefined,
                 specific_attributes: undefined,
                 owner: undefined,
                 created_date: undefined,
@@ -65,11 +73,7 @@
                     displayName: {
                         get: () => data.display_name,
                         set: (value) => {
-                            if (typeof value !== 'string') {
-                                throw new ArgumentError(`Value must be string. ${typeof value} was found`);
-                            } else if (!value.trim().length) {
-                                throw new ArgumentError('Value must not be empty string');
-                            }
+                            validateNotEmptyString(value);
                             data.display_name = value;
                         },
                     },
@@ -101,15 +105,8 @@
                     accountName: {
                         get: () => data.account_name,
                         set: (value) => {
-                            if (typeof value === 'string') {
-                                if (value.trim().length) {
-                                    data.account_name = value;
-                                } else {
-                                    throw new ArgumentError('Value must not be empty');
-                                }
-                            } else {
-                                throw new ArgumentError(`Value must be a string. ${typeof value} was found`);
-                            }
+                            validateNotEmptyString(value);
+                            data.account_name = value;
                         },
                     },
                     /**
@@ -123,15 +120,8 @@
                     accessKey: {
                         get: () => data.key,
                         set: (value) => {
-                            if (typeof value === 'string') {
-                                if (value.trim().length) {
-                                    data.key = value;
-                                } else {
-                                    throw new ArgumentError('Value must not be empty');
-                                }
-                            } else {
-                                throw new ArgumentError(`Value must be a string. ${typeof value} was found`);
-                            }
+                            validateNotEmptyString(value);
+                            data.key = value;
                         },
                     },
                     /**
@@ -145,15 +135,8 @@
                     secretKey: {
                         get: () => data.secret_key,
                         set: (value) => {
-                            if (typeof value === 'string') {
-                                if (value.trim().length) {
-                                    data.secret_key = value;
-                                } else {
-                                    throw new ArgumentError('Value must not be empty');
-                                }
-                            } else {
-                                throw new ArgumentError(`Value must be a string. ${typeof value} was found`);
-                            }
+                            validateNotEmptyString(value);
+                            data.secret_key = value;
                         },
                     },
                     /**
@@ -167,33 +150,40 @@
                     token: {
                         get: () => data.session_token,
                         set: (value) => {
-                            if (typeof value === 'string') {
-                                if (value.trim().length) {
-                                    data.session_token = value;
-                                } else {
-                                    throw new ArgumentError('Value must not be empty');
-                                }
+                            validateNotEmptyString(value);
+                            data.session_token = value;
+                        },
+                    },
+                    /**
+                     * Key file
+                     * @name keyFile
+                     * @type {File}
+                     * @memberof module:API.cvat.classes.CloudStorage
+                     * @instance
+                     * @throws {module:API.cvat.exceptions.ArgumentError}
+                     */
+                    keyFile: {
+                        get: () => data.key_file,
+                        set: (file) => {
+                            if (file instanceof File) {
+                                data.key_file = file;
                             } else {
-                                throw new ArgumentError(`Value must be a string. ${typeof value} was found`);
+                                throw new ArgumentError(`Should be a file. ${typeof file} was found`);
                             }
                         },
                     },
                     /**
                      * Unique resource name
-                     * @name resourceName
+                     * @name resource
                      * @type {string}
                      * @memberof module:API.cvat.classes.CloudStorage
                      * @instance
                      * @throws {module:API.cvat.exceptions.ArgumentError}
                      */
-                    resourceName: {
+                    resource: {
                         get: () => data.resource,
                         set: (value) => {
-                            if (typeof value !== 'string') {
-                                throw new ArgumentError(`Value must be string. ${typeof value} was found`);
-                            } else if (!value.trim().length) {
-                                throw new ArgumentError('Value must not be empty');
-                            }
+                            validateNotEmptyString(value);
                             data.resource = value;
                         },
                     },
@@ -207,11 +197,8 @@
                     manifestPath: {
                         get: () => data.manifest_path,
                         set: (value) => {
-                            if (typeof value === 'string') {
-                                data.manifest_path = value;
-                            } else {
-                                throw new ArgumentError('Value must be a string');
-                            }
+                            validateNotEmptyString(value);
+                            data.manifest_path = value;
                         },
                     },
                     /**
@@ -410,7 +397,7 @@
     CloudStorage.prototype.save.implementation = async function () {
         function prepareOptionalFields(cloudStorageInstance) {
             const data = {};
-            if (cloudStorageInstance.description) {
+            if (cloudStorageInstance.description !== undefined) {
                 data.description = cloudStorageInstance.description;
             }
 
@@ -430,14 +417,18 @@
                 data.session_token = cloudStorageInstance.token;
             }
 
-            if (cloudStorageInstance.specificAttributes) {
+            if (cloudStorageInstance.keyFile) {
+                data.key_file = cloudStorageInstance.keyFile;
+            }
+
+            if (cloudStorageInstance.specificAttributes !== undefined) {
                 data.specific_attributes = cloudStorageInstance.specificAttributes;
             }
             return data;
         }
         // update
         if (typeof this.id !== 'undefined') {
-            // providr_type and recource should not change;
+            // provider_type and recource should not change;
             // send to the server only the values that have changed
             const initialData = {};
             if (this.displayName) {
@@ -465,7 +456,7 @@
             display_name: this.displayName,
             credentials_type: this.credentialsType,
             provider_type: this.providerType,
-            resource: this.resourceName,
+            resource: this.resource,
             manifests: this.manifests,
         };
 

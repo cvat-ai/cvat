@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -9,37 +9,29 @@ import { AuthActionTypes } from 'actions/auth-actions';
 import { ReviewState } from './interfaces';
 
 const defaultState: ReviewState = {
-    reviews: [], // saved on the server
-    issues: [], // saved on the server
+    issues: [],
     latestComments: [],
     frameIssues: [], // saved on the server and not saved on the server
-    activeReview: null, // not saved on the server
     newIssuePosition: null,
     issuesHidden: false,
+    issuesResolvedHidden: false,
     fetching: {
-        reviewId: null,
+        jobId: null,
         issueId: null,
     },
 };
-
-function computeFrameIssues(issues: any[], activeReview: any, frame: number): any[] {
-    const combinedIssues = activeReview ? issues.concat(activeReview.issues) : issues;
-    return combinedIssues.filter((issue: any): boolean => issue.frame === frame);
-}
 
 export default function (state: ReviewState = defaultState, action: any): ReviewState {
     switch (action.type) {
         case AnnotationActionTypes.GET_JOB_SUCCESS: {
             const {
-                reviews,
                 issues,
                 frameData: { number: frame },
             } = action.payload;
-            const frameIssues = computeFrameIssues(issues, state.activeReview, frame);
+            const frameIssues = issues.filter((issue: any): boolean => issue.frame === frame);
 
             return {
                 ...state,
-                reviews,
                 issues,
                 frameIssues,
             };
@@ -51,12 +43,12 @@ export default function (state: ReviewState = defaultState, action: any): Review
             };
         }
         case ReviewActionTypes.SUBMIT_REVIEW: {
-            const { reviewId } = action.payload;
+            const { jobId } = action.payload;
             return {
                 ...state,
                 fetching: {
                     ...state.fetching,
-                    reviewId,
+                    jobId,
                 },
             };
         }
@@ -65,7 +57,7 @@ export default function (state: ReviewState = defaultState, action: any): Review
                 ...state,
                 fetching: {
                     ...state.fetching,
-                    reviewId: null,
+                    jobId: null,
                 },
             };
         }
@@ -74,7 +66,7 @@ export default function (state: ReviewState = defaultState, action: any): Review
                 ...state,
                 fetching: {
                     ...state.fetching,
-                    reviewId: null,
+                    jobId: null,
                 },
             };
         }
@@ -82,17 +74,7 @@ export default function (state: ReviewState = defaultState, action: any): Review
             const { number: frame } = action.payload;
             return {
                 ...state,
-                frameIssues: computeFrameIssues(state.issues, state.activeReview, frame),
-            };
-        }
-        case ReviewActionTypes.INITIALIZE_REVIEW_SUCCESS: {
-            const { reviewInstance, frame } = action.payload;
-            const frameIssues = computeFrameIssues(state.issues, reviewInstance, frame);
-
-            return {
-                ...state,
-                activeReview: reviewInstance,
-                frameIssues,
+                frameIssues: state.issues.filter((issue: any): boolean => issue.frame === frame),
             };
         }
         case ReviewActionTypes.START_ISSUE: {
@@ -104,7 +86,8 @@ export default function (state: ReviewState = defaultState, action: any): Review
         }
         case ReviewActionTypes.FINISH_ISSUE_SUCCESS: {
             const { frame, issue } = action.payload;
-            const frameIssues = computeFrameIssues(state.issues, state.activeReview, frame);
+            const issues = [...state.issues, issue];
+            const frameIssues = issues.filter((_issue: any): boolean => _issue.frame === frame);
 
             return {
                 ...state,
@@ -121,6 +104,7 @@ export default function (state: ReviewState = defaultState, action: any): Review
                         ),
                     ).slice(-consts.LATEST_COMMENTS_SHOWN_QUICK_ISSUE),
                 frameIssues,
+                issues,
                 newIssuePosition: null,
             };
         }
@@ -173,6 +157,23 @@ export default function (state: ReviewState = defaultState, action: any): Review
             return {
                 ...state,
                 issuesHidden: hidden,
+            };
+        }
+        case ReviewActionTypes.SWITCH_RESOLVED_ISSUES_HIDDEN_FLAG: {
+            const { hidden } = action.payload;
+            return {
+                ...state,
+                issuesResolvedHidden: hidden,
+            };
+        }
+        case ReviewActionTypes.REMOVE_ISSUE_SUCCESS: {
+            const { issueId, frame } = action.payload;
+            const issues = state.issues.filter((issue: any) => issue.id !== issueId);
+            const frameIssues = issues.filter((issue: any): boolean => issue.frame === frame);
+            return {
+                ...state,
+                issues,
+                frameIssues,
             };
         }
         case AnnotationActionTypes.CLOSE_JOB:

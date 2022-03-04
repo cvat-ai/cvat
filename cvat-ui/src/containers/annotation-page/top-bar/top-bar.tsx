@@ -1,4 +1,4 @@
-// Copyright (C) 2021 Intel Corporation
+// Copyright (C) 2021-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -49,6 +49,7 @@ interface StateToProps {
     frameStep: number;
     frameSpeed: FrameSpeed;
     frameDelay: number;
+    frameFetching: boolean;
     playing: boolean;
     saving: boolean;
     canvasIsReady: boolean;
@@ -89,7 +90,9 @@ function mapStateToProps(state: CombinedState): StateToProps {
         annotation: {
             player: {
                 playing,
-                frame: { filename: frameFilename, number: frameNumber, delay: frameDelay },
+                frame: {
+                    filename: frameFilename, number: frameNumber, delay: frameDelay, fetching: frameFetching,
+                },
             },
             annotations: {
                 saving: { uploading: saving, statuses: savingStatuses, forceExit },
@@ -112,6 +115,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         frameStep,
         frameSpeed,
         frameDelay,
+        frameFetching,
         playing,
         canvasIsReady,
         saving,
@@ -214,8 +218,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
         const self = this;
         this.unblock = history.block((location: any) => {
             const { forceExit } = self.props;
-            const { task, id: jobID } = jobInstance;
-            const { id: taskID } = task;
+            const { id: jobID, taskId: taskID } = jobInstance;
 
             if (
                 jobInstance.annotations.hasUnsavedChanges() &&
@@ -485,13 +488,14 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
             frameSpeed,
             frameNumber,
             frameDelay,
+            frameFetching,
             playing,
             canvasIsReady,
             onSwitchPlay,
             onChangeFrame,
         } = this.props;
 
-        if (playing && canvasIsReady) {
+        if (playing && canvasIsReady && !frameFetching) {
             if (frameNumber < jobInstance.stopFrame) {
                 let framesSkipped = 0;
                 if (frameSpeed === FrameSpeed.Fast && frameNumber + 1 < jobInstance.stopFrame) {
@@ -506,7 +510,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
                     if (stillPlaying) {
                         if (isAbleToChangeFrame()) {
                             onChangeFrame(frameNumber + 1 + framesSkipped, stillPlaying, framesSkipped + 1);
-                        } else if (jobInstance.task.dimension === DimensionType.DIM_2D) {
+                        } else if (jobInstance.dimension === DimensionType.DIM_2D) {
                             onSwitchPlay(false);
                         } else {
                             setTimeout(() => this.play(), frameDelay);

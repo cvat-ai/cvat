@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -42,7 +42,7 @@ context('When clicking on the Logout button, get the user session closed.', () =
         it('Logout and login to task via GUI', () => {
             // logout from task
             cy.get('.cvat-right-header').within(() => {
-                cy.get('.cvat-header-menu-dropdown')
+                cy.get('.cvat-header-menu-user-dropdown')
                     .should('have.text', Cypress.env('user'))
                     .trigger('mouseover', { which: 1 });
             });
@@ -59,16 +59,16 @@ context('When clicking on the Logout button, get the user session closed.', () =
             // get token and login to task
             cy.request({
                 method: 'POST',
-                url: '/api/v1/auth/login',
+                url: '/api/auth/login',
                 body: {
                     username: Cypress.env('user'),
                     email: Cypress.env('email'),
                     password: Cypress.env('password'),
                 },
             }).then(async (response) => {
-                response = await response['headers']['set-cookie'];
-                const csrfToken = response[0].match(/csrftoken=\w+/)[0].replace('csrftoken=', '');
-                const sessionId = response[1].match(/sessionid=\w+/)[0].replace('sessionid=', '');
+                const cookies = await response.headers['set-cookie'];
+                const csrfToken = cookies[0].match(/csrftoken=\w+/)[0].replace('csrftoken=', '');
+                const sessionId = cookies[1].match(/sessionid=\w+/)[0].replace('sessionid=', '');
                 cy.visit(`/login-with-token/${sessionId}/${csrfToken}?next=/tasks/${taskId}`);
                 cy.contains('.cvat-task-details-task-name', `${taskName}`).should('be.visible');
             });

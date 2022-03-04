@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -18,7 +18,9 @@ context('Issue 1599 (Polish alphabet).', () => {
 
     after(() => {
         cy.logout(userName);
-        cy.deletingRegisteredUsers([userName]);
+        cy.getAuthKey().then((authKey) => {
+            cy.deleteUsers(authKey, [userName]);
+        });
     });
 
     describe('User registration using the Polish alphabet.', () => {

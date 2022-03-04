@@ -32,6 +32,9 @@ const defaultState: SettingsState = {
         showAllInterpolationTracks: false,
         intelligentPolygonCrop: true,
         defaultApproxPolyAccuracy: 9,
+        textFontSize: 14,
+        textPosition: 'auto',
+        textContent: 'id,source,label,attributes,descriptions',
         toolsBlockerState: {
             algorithmsLocked: false,
             buttonVisible: false,
@@ -43,6 +46,7 @@ const defaultState: SettingsState = {
         frameSpeed: FrameSpeed.Usual,
         resetZoom: false,
         rotateAll: false,
+        smoothImage: true,
         grid: false,
         gridSize: 100,
         gridColor: GridColor.White,
@@ -183,6 +187,43 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
                 },
             };
         }
+        case SettingsActionTypes.SWITCH_SMOOTH_IMAGE: {
+            return {
+                ...state,
+                player: {
+                    ...state.player,
+                    smoothImage: action.payload.smoothImage,
+                },
+            };
+        }
+        case SettingsActionTypes.SWITCH_TEXT_FONT_SIZE: {
+            return {
+                ...state,
+                workspace: {
+                    ...state.workspace,
+                    textFontSize: action.payload.fontSize,
+                },
+            };
+        }
+        case SettingsActionTypes.SWITCH_TEXT_POSITION: {
+            return {
+                ...state,
+                workspace: {
+                    ...state.workspace,
+                    textPosition: action.payload.position,
+                },
+            };
+        }
+        case SettingsActionTypes.SWITCH_TEXT_CONTENT: {
+            const { textContent } = action.payload;
+            return {
+                ...state,
+                workspace: {
+                    ...state.workspace,
+                    textContent,
+                },
+            };
+        }
         case SettingsActionTypes.CHANGE_BRIGHTNESS_LEVEL: {
             return {
                 ...state,
@@ -320,11 +361,11 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
                 ...state,
                 player: {
                     ...state.player,
-                    resetZoom: job && job.task.mode === 'annotation',
+                    resetZoom: job && job.mode === 'annotation',
                 },
                 shapes: {
                     ...defaultState.shapes,
-                    ...(job.task.dimension === DimensionType.DIM_3D ?
+                    ...(job.dimension === DimensionType.DIM_3D ?
                         {
                             opacity: 40,
                             selectedOpacity: 60,

@@ -124,7 +124,7 @@ Supported DL models are not bound to the label and can be used for any objects.
 - All annotated objects will be automatically tracked when you move to the next frame.
   For tracking, use `Next` button on the top panel or the `F` button to move on to the next frame.
 
-  ![Annotation using a tracker](/images/tracker_siammask_DETRAC.gif)
+  ![Annotation using a tracker](/images/tracker_mil_detrac.gif)
 
 - You can enable/disable tracking using `tracker switcher` on sidebar.
 
@@ -132,7 +132,7 @@ Supported DL models are not bound to the label and can be used for any objects.
 
 - Trackable objects have indication on canvas with a model indication.
 
-  ![Tracker indication](/images/tracker_indication.jpg)
+  ![Tracker indication](/images/tracker_indication_detrac.jpg)
 
 - You can monitoring the process by the messages appearing at the top.
   If you change one or more objects, before moving to the next frame, you will see a message that
@@ -146,3 +146,5 @@ Supported DL models are not bound to the label and can be used for any objects.
 Fast online Object Tracking and Segmentation. Tracker is able to track different objects in one server request.
 Trackable object will be tracked automatically if the previous frame was
 a latest keyframe for the object. Have tracker indication on canvas. `SiamMask` tracker supported CUDA.
+
+> If you plan to track simple non-overlapping objects consider using fast client-side [TrackerMIL from OpenCV](/docs/manual/advanced/opencv-tools/#trackermil).

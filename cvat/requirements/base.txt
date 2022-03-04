@@ -1,14 +1,14 @@
+attrs==21.2.0
 click==7.1.2
-Django==3.1.13
+Django==3.2.12
 django-appconf==1.0.4
 django-auth-ldap==2.2.0
-django-cacheops==5.0.1
 django-compressor==2.4
 django-rq==2.3.2
 EasyProcess==0.3
-Pillow==8.3.2
-numpy==1.19.5
-python-ldap==3.3.1
+Pillow==9.0.1
+numpy==1.22.0
+python-ldap==3.4.0
 pytz==2020.1
 pyunpack==0.2.1
 rcssmin==1.0.6
@@ -18,28 +18,26 @@ requests==2.26.0
 rq==1.5.1
 rq-scheduler==0.10.0
 sqlparse==0.4.2
-django-sendfile==0.3.11
+django-sendfile2==0.6.1
 dj-pagination==2.5.0
 python-logstash-async==2.2.0
-django-revproxy==0.10.0
 rules==2.2
-GitPython==3.1.8
+GitPython==3.1.27
 coreapi==2.3.3
-django-filter==2.3.0
+django-filter==2.4.0
 Markdown==3.2.2
-djangorestframework==3.11.2
+djangorestframework==3.12.4
 Pygments==2.7.4
-drf-yasg==1.17.1
+drf-spectacular==0.21.2
 Shapely==1.7.1
 pdf2image==1.14.0
 django-rest-auth[with_social]==0.9.5
-cython==0.29.21
 opencv-python-headless==4.4.0.42
 h5py==2.10.0
 django-cors-headers==3.5.0
 furl==2.1.0
 av==8.0.2 --no-binary=av
-tensorflow==2.4.1 # Optional requirement of Datumaro
+tensorflow==2.8.0 # Optional requirement of Datumaro
 # The package is used by pyunpack as a command line tool to support multiple
 # archives. Don't use as a python module because it has GPL license.
 patool==1.12
@@ -50,8 +48,8 @@ azure-storage-blob==12.8.1
 google-cloud-storage==1.42.0
 # --no-binary=datumaro: workaround for pip to install
 # opencv-headless instead of regular opencv, to actually run setup script
-# --no-binary=pycocotools: workaround for binary incompatibility on numpy 1.20
-# of pycocotools and tensorflow 2.4.1
-# when pycocotools is installed by wheel in python 3.8+
-datumaro==0.2.0 --no-binary=datumaro --no-binary=pycocotools
+datumaro==0.2.0 --no-binary=datumaro
 urllib3>=1.26.5 # not directly required, pinned by Snyk to avoid a vulnerability
+natsort==8.0.0
+mistune>=2.0.1 # not directly required, pinned by Snyk to avoid a vulnerability
+dnspython==2.2.0

@@ -34,13 +34,13 @@ description: 'Information about the installation of components needed for semi-a
   [docker-compose.serverless.yml](https://github.com/openvinotoolkit/cvat/blob/develop/components/serverless/docker-compose.serverless.yml).
   For example, using wget.
 
-  ```
+  ```bash
   wget https://github.com/nuclio/nuclio/releases/download/<version>/nuctl-<version>-linux-amd64
   ```
 
   After downloading the nuclio, give it a proper permission and do a softlink.
 
-  ```
+  ```bash
   sudo chmod +x nuctl-<version>-linux-amd64
   sudo ln -sf $(pwd)/nuctl-<version>-linux-amd64 /usr/local/bin/nuctl
   ```

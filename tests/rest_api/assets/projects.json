@@ -1,0 +1,110 @@
+{
+  "count": 2,
+  "next": null,
+  "previous": null,
+  "results": [
+    {
+      "assignee": {
+        "first_name": "User",
+        "id": 3,
+        "last_name": "Second",
+        "url": "http://localhost:8080/api/users/3",
+        "username": "user2"
+      },
+      "bug_tracker": "",
+      "created_date": "2021-12-14T19:52:37.278149Z",
+      "dimension": "2d",
+      "id": 2,
+      "labels": [
+        {
+          "attributes": [],
+          "color": "#6080c0",
+          "id": 7,
+          "name": "cat"
+        },
+        {
+          "attributes": [],
+          "color": "#406040",
+          "id": 8,
+          "name": "dog"
+        }
+      ],
+      "name": "project2",
+      "organization": 2,
+      "owner": {
+        "first_name": "Business",
+        "id": 10,
+        "last_name": "First",
+        "url": "http://localhost:8080/api/users/10",
+        "username": "business1"
+      },
+      "status": "annotation",
+      "task_subsets": [
+        "train"
+      ],
+      "tasks": [
+        4
+      ],
+      "updated_date": "2022-02-24T21:32:36.197153Z",
+      "url": "http://localhost:8080/api/projects/2"
+    },
+    {
+      "assignee": {
+        "first_name": "User",
+        "id": 20,
+        "last_name": "Sixth",
+        "url": "http://localhost:8080/api/users/20",
+        "username": "user6"
+      },
+      "bug_tracker": "",
+      "created_date": "2021-12-14T19:46:37.969497Z",
+      "dimension": "2d",
+      "id": 1,
+      "labels": [
+        {
+          "attributes": [
+            {
+              "default_value": "mazda",
+              "id": 1,
+              "input_type": "select",
+              "mutable": false,
+              "name": "model",
+              "values": [
+                "mazda",
+                "volvo",
+                "bmw"
+              ]
+            }
+          ],
+          "color": "#2080c0",
+          "id": 5,
+          "name": "car"
+        },
+        {
+          "attributes": [],
+          "color": "#c06060",
+          "id": 6,
+          "name": "person"
+        }
+      ],
+      "name": "project1",
+      "organization": null,
+      "owner": {
+        "first_name": "Business",
+        "id": 10,
+        "last_name": "First",
+        "url": "http://localhost:8080/api/users/10",
+        "username": "business1"
+      },
+      "status": "annotation",
+      "task_subsets": [
+        "Train"
+      ],
+      "tasks": [
+        3
+      ],
+      "updated_date": "2022-02-24T21:33:48.037024Z",
+      "url": "http://localhost:8080/api/projects/1"
+    }
+  ]
+}

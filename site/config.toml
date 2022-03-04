@@ -89,7 +89,7 @@ section = ["HTML", "print"]
 [params]
 intel_terms_of_use = "https://www.intel.com/content/www/us/en/legal/terms-of-use.html"
 intel_privacy_notice = "https://www.intel.com/content/www/us/en/privacy/intel-privacy-notice.html"
-cvat_terms_of_use = "https://cvat.org/api/v1/restrictions/terms-of-use"
+cvat_terms_of_use = "https://cvat.org/api/restrictions/terms-of-use"
 
 # First one is picked as the Twitter card image if not set on page.
 # images = ["images/project-illustration.png"]
@@ -134,7 +134,7 @@ algolia_docsearch = false
 offlineSearch = true
 
 # Enable syntax highlighting and copy buttons on code blocks with Prism
-prism_syntax_highlighting = false
+prism_syntax_highlighting = true
 
 # User interface configuration
 [params.ui]

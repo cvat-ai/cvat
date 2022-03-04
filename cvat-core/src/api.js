@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2021 Intel Corporation
+// Copyright (C) 2019-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -15,7 +15,6 @@ function build() {
     const Statistics = require('./statistics');
     const Comment = require('./comment');
     const Issue = require('./issue');
-    const Review = require('./review');
     const { Job, Task } = require('./session');
     const { Project } = require('./project');
     const implementProject = require('./project-implementation');
@@ -23,6 +22,7 @@ function build() {
     const MLModel = require('./ml-model');
     const { FrameData } = require('./frames');
     const { CloudStorage } = require('./cloud-storage');
+    const Organization = require('./organization');
 
     const enums = require('./enums');
 
@@ -697,6 +697,9 @@ function build() {
              * @property {string} proxy Axios proxy settings.
              * For more details please read <a href="https://github.com/axios/axios"> here </a>
              * @memberof module:API.cvat.config
+             * @property {string} origin ui URL origin
+             * @memberof module:API.cvat.config
+             * @property {number} uploadChunkSize max size of one data request in mb
              * @memberof module:API.cvat.config
              */
             get backendAPI() {
@@ -710,6 +713,18 @@ function build() {
             },
             set proxy(value) {
                 config.proxy = value;
+            },
+            get origin() {
+                return config.origin;
+            },
+            set origin(value) {
+                config.origin = value;
+            },
+            get uploadChunkSize() {
+                return config.uploadChunkSize;
+            },
+            set uploadChunkSize(value) {
+                config.uploadChunkSize = value;
             },
         },
         /**
@@ -758,7 +773,7 @@ function build() {
             /**
              * @typedef {Object} CloudStorageFilter
              * @property {string} displayName Check if displayName contains this value
-             * @property {string} resourceName Check if resourceName contains this value
+             * @property {string} resource Check if resource name contains this value
              * @property {module:API.cvat.enums.ProviderType} providerType Check if providerType equal this value
              * @property {integer} id Check if id equals this value
              * @property {integer} page Get specific page
@@ -785,6 +800,50 @@ function build() {
             },
         },
         /**
+         * This namespace could be used to get organizations list from the server
+         * @namespace organizations
+         * @memberof module:API.cvat
+         */
+        organizations: {
+            /**
+             * Method returns a list of organizations
+             * @method get
+             * @async
+             * @memberof module:API.cvat.organizations
+             * @returns {module:API.cvat.classes.Organization[]}
+             * @throws {module:API.cvat.exceptions.PluginError}
+             * @throws {module:API.cvat.exceptions.ServerError}
+             */
+            async get() {
+                const result = await PluginRegistry.apiWrapper(cvat.organizations.get);
+                return result;
+            },
+            /**
+             * Method activates organization context
+             * @method activate
+             * @async
+             * @param {module:API.cvat.classes.Organization}
+             * @memberof module:API.cvat.organizations
+             * @throws {module:API.cvat.exceptions.ArgumentError}
+             * @throws {module:API.cvat.exceptions.PluginError}
+             */
+            async activate(organization) {
+                const result = await PluginRegistry.apiWrapper(cvat.organizations.activate, organization);
+                return result;
+            },
+            /**
+             * Method deactivates organization context
+             * @method deactivate
+             * @async
+             * @memberof module:API.cvat.organizations
+             * @throws {module:API.cvat.exceptions.PluginError}
+             */
+            async deactivate() {
+                const result = await PluginRegistry.apiWrapper(cvat.organizations.deactivate);
+                return result;
+            },
+        },
+        /**
          * Namespace is used for access to classes
          * @namespace classes
          * @memberof module:API.cvat
@@ -802,9 +861,9 @@ function build() {
             MLModel,
             Comment,
             Issue,
-            Review,
             FrameData,
             CloudStorage,
+            Organization,
         },
     };
 
@@ -818,6 +877,7 @@ function build() {
     cvat.client = Object.freeze(cvat.client);
     cvat.enums = Object.freeze(cvat.enums);
     cvat.cloudStorages = Object.freeze(cvat.cloudStorages);
+    cvat.organizations = Object.freeze(cvat.organizations);
 
     const implementAPI = require('./api-implementation');
 

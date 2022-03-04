@@ -6,8 +6,8 @@
 from collections import OrderedDict
 from enum import Enum
 
-from django.conf import settings
 from django.db import transaction
+from django.db.models.query import Prefetch
 from django.utils import timezone
 
 from cvat.apps.engine import models, serializers
@@ -17,6 +17,7 @@ from cvat.apps.profiler import silk_profile
 from .annotation import AnnotationIR, AnnotationManager
 from .bindings import TaskData
 from .formats.registry import make_exporter, make_importer
+from .util import bulk_create
 
 
 class dotdict(OrderedDict):
@@ -38,21 +39,6 @@ class PatchAction(str, Enum):
 
     def __str__(self):
         return self.value
-
-def bulk_create(db_model, objects, flt_param):
-    if objects:
-        if flt_param:
-            if 'postgresql' in settings.DATABASES["default"]["ENGINE"]:
-                return db_model.objects.bulk_create(objects)
-            else:
-                ids = list(db_model.objects.filter(**flt_param).values_list('id', flat=True))
-                db_model.objects.bulk_create(objects)
-
-                return list(db_model.objects.exclude(id__in=ids).filter(**flt_param))
-        else:
-            return db_model.objects.bulk_create(objects)
-
-    return []
 
 def _merge_table_rows(rows, keys_for_merge, field_id):
     # It is necessary to keep a stable order of original rows
@@ -283,19 +269,6 @@ class JobAnnotation:
 
         self.ir_data.tags = tags
 
-    def _commit(self):
-        db_prev_commit = self.db_job.commits.last()
-        db_curr_commit = models.JobCommit()
-        if db_prev_commit:
-            db_curr_commit.version = db_prev_commit.version + 1
-        else:
-            db_curr_commit.version = 1
-        db_curr_commit.job = self.db_job
-        db_curr_commit.message = "Changes: tags - {}; shapes - {}; tracks - {}".format(
-            len(self.ir_data.tags), len(self.ir_data.shapes), len(self.ir_data.tracks))
-        db_curr_commit.save()
-        self.ir_data.version = db_curr_commit.version
-
     def _set_updated_date(self):
         db_task = self.db_job.segment.task
         db_task.updated_date = timezone.now()
@@ -316,17 +289,14 @@ class JobAnnotation:
 
     def create(self, data):
         self._create(data)
-        self._commit()
 
     def put(self, data):
         self._delete()
         self._create(data)
-        self._commit()
 
     def update(self, data):
         self._delete(data)
         self._create(data)
-        self._commit()
 
     def _delete(self, data=None):
         deleted_shapes = 0
@@ -361,7 +331,6 @@ class JobAnnotation:
 
     def delete(self, data=None):
         self._delete(data)
-        self._commit()
 
     @staticmethod
     def _extend_attributes(attributeval_set, default_attribute_values):
@@ -420,6 +389,7 @@ class JobAnnotation:
             'source',
             'occluded',
             'z_order',
+            'rotation',
             'points',
             'labeledshapeattributeval__spec_id',
             'labeledshapeattributeval__value',
@@ -461,6 +431,7 @@ class JobAnnotation:
             "trackedshape__type",
             "trackedshape__occluded",
             "trackedshape__z_order",
+            "trackedshape__rotation",
             "trackedshape__points",
             "trackedshape__id",
             "trackedshape__frame",
@@ -483,6 +454,7 @@ class JobAnnotation:
                     "trackedshape__occluded",
                     "trackedshape__z_order",
                     "trackedshape__points",
+                    "trackedshape__rotation",
                     "trackedshape__id",
                     "trackedshape__frame",
                     "trackedshape__outside",
@@ -524,8 +496,7 @@ class JobAnnotation:
         self.ir_data.tracks = serializer.data
 
     def _init_version_from_db(self):
-        db_commit = self.db_job.commits.last()
-        self.ir_data.version = db_commit.version if db_commit else 0
+        self.ir_data.version = 0 # FIXME: should be removed in the future
 
     def init_from_db(self):
         self._init_tags_from_db()
@@ -559,7 +530,9 @@ class JobAnnotation:
 
 class TaskAnnotation:
     def __init__(self, pk):
-        self.db_task = models.Task.objects.prefetch_related("data__images").get(id=pk)
+        self.db_task = models.Task.objects.prefetch_related(
+            Prefetch('data__images', queryset=models.Image.objects.order_by('frame'))
+        ).get(id=pk)
 
         # Postgres doesn't guarantee an order by default without explicit order_by
         self.db_jobs = models.Job.objects.select_related("segment").filter(segment__task_id=pk).order_by('id')

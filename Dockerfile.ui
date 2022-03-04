@@ -37,6 +37,5 @@ RUN npm run build:cvat-ui
 
 FROM nginx:mainline-alpine
 # Replace default.conf configuration to remove unnecessary rules
-RUN sed -i "s/}/application\/wasm wasm;\n}/g" /etc/nginx/mime.types
 COPY cvat-ui/react_nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=cvat-ui /tmp/cvat-ui/dist /usr/share/nginx/html/

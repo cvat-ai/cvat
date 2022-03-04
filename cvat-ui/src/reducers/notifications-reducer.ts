@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -17,7 +17,10 @@ import { BoundariesActionTypes } from 'actions/boundaries-actions';
 import { UserAgreementsActionTypes } from 'actions/useragreements-actions';
 import { ReviewActionTypes } from 'actions/review-actions';
 import { ExportActionTypes } from 'actions/export-actions';
+import { ImportActionTypes } from 'actions/import-actions';
 import { CloudStorageActionTypes } from 'actions/cloud-storage-actions';
+import { OrganizationActionsTypes } from 'actions/organization-actions';
+import { JobsActionTypes } from 'actions/jobs-actions';
 
 import getCore from 'cvat-core-wrapper';
 import { NotificationsState } from './interfaces';
@@ -41,6 +44,8 @@ const defaultState: NotificationsState = {
             updating: null,
             deleting: null,
             creating: null,
+            restoring: null,
+            backuping: null,
         },
         tasks: {
             fetching: null,
@@ -53,6 +58,10 @@ const defaultState: NotificationsState = {
             exporting: null,
             importing: null,
             moving: null,
+        },
+        jobs: {
+            updating: null,
+            fetching: null,
         },
         formats: {
             fetching: null,
@@ -106,19 +115,38 @@ const defaultState: NotificationsState = {
         review: {
             commentingIssue: null,
             finishingIssue: null,
-            initialization: null,
             reopeningIssue: null,
             resolvingIssue: null,
             submittingReview: null,
+            deletingIssue: null,
         },
         predictor: {
             prediction: null,
+        },
+        exporting: {
+            dataset: null,
+            annotation: null,
+        },
+        importing: {
+            dataset: null,
+            annotation: null,
         },
         cloudStorages: {
             creating: null,
             fetching: null,
             updating: null,
             deleting: null,
+        },
+        organizations: {
+            fetching: null,
+            creating: null,
+            updating: null,
+            activation: null,
+            deleting: null,
+            leaving: null,
+            inviting: null,
+            updatingMembership: null,
+            removingMembership: null,
         },
     },
     messages: {
@@ -135,6 +163,9 @@ const defaultState: NotificationsState = {
             registerDone: '',
             requestPasswordResetDone: '',
             resetPasswordDone: '',
+        },
+        projects: {
+            restoringDone: '',
         },
     },
 };
@@ -326,13 +357,32 @@ export default function (state = defaultState, action: AnyAction): Notifications
                 ...state,
                 errors: {
                     ...state.errors,
-                    tasks: {
-                        ...state.errors.tasks,
-                        exportingAsDataset: {
+                    exporting: {
+                        ...state.errors.exporting,
+                        dataset: {
                             message:
                                 'Could not export dataset for the ' +
                                 `<a href="/${instanceType}s/${instanceID}" target="_blank">` +
                                 `${instanceType} ${instanceID}</a>`,
+                            reason: action.payload.error.toString(),
+                        },
+                    },
+                },
+            };
+        }
+        case ImportActionTypes.IMPORT_DATASET_FAILED: {
+            const instanceID = action.payload.instance.id;
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    exporting: {
+                        ...state.errors.exporting,
+                        dataset: {
+                            message:
+                                'Could not import dataset to the ' +
+                                `<a href="/projects/${instanceID}" target="_blank">` +
+                                `project ${instanceID}</a>`,
                             reason: action.payload.error.toString(),
                         },
                     },
@@ -483,6 +533,23 @@ export default function (state = defaultState, action: AnyAction): Notifications
                 },
             };
         }
+        case TasksActionTypes.UPDATE_JOB_FAILED: {
+            const jobID = action.payload.jobInstance.id;
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    jobs: {
+                        ...state.errors.jobs,
+                        updating: {
+                            message: `Could not update job with ID #${jobID}`,
+                            reason: action.payload.error.toString(),
+                            className: 'cvat-notification-notice-update-job-failed',
+                        },
+                    },
+                },
+            };
+        }
         case ProjectsActionTypes.GET_PROJECTS_FAILED: {
             return {
                 ...state,
@@ -548,6 +615,51 @@ export default function (state = defaultState, action: AnyAction): Notifications
                             reason: action.payload.error.toString(),
                             className: 'cvat-notification-notice-delete-project-failed',
                         },
+                    },
+                },
+            };
+        }
+        case ProjectsActionTypes.BACKUP_PROJECT_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    projects: {
+                        ...state.errors.projects,
+                        backuping: {
+                            message: `Could not backup the project #${action.payload.projectId}`,
+                            reason: action.payload.error.toString(),
+                        },
+                    },
+                },
+            };
+        }
+        case ProjectsActionTypes.RESTORE_PROJECT_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    projects: {
+                        ...state.errors.projects,
+                        restoring: {
+                            message: 'Could not restore the project',
+                            reason: action.payload.error.toString(),
+                        },
+                    },
+                },
+            };
+        }
+        case ProjectsActionTypes.RESTORE_PROJECT_SUCCESS: {
+            const { projectID } = action.payload;
+            return {
+                ...state,
+                messages: {
+                    ...state.messages,
+                    projects: {
+                        ...state.messages.projects,
+                        restoringDone:
+                            `Project has been created succesfully.
+                             Click <a href="/projects/${projectID}">here</a> to open`,
                     },
                 },
             };
@@ -619,6 +731,10 @@ export default function (state = defaultState, action: AnyAction): Notifications
             };
         }
         case ModelsActionTypes.FETCH_META_FAILED: {
+            if (action.payload.error.toString().includes('status code 403')) {
+                return state;
+            }
+
             return {
                 ...state,
                 errors: {
@@ -891,7 +1007,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
 
             const {
                 id: jobID,
-                task: { id: taskID },
+                taskId: taskID,
             } = job;
 
             return {
@@ -1046,21 +1162,6 @@ export default function (state = defaultState, action: AnyAction): Notifications
                 },
             };
         }
-        case ReviewActionTypes.INITIALIZE_REVIEW_FAILED: {
-            return {
-                ...state,
-                errors: {
-                    ...state.errors,
-                    review: {
-                        ...state.errors.review,
-                        initialization: {
-                            message: 'Could not initialize review session',
-                            reason: action.payload.error.toString(),
-                        },
-                    },
-                },
-            };
-        }
         case ReviewActionTypes.FINISH_ISSUE_FAILED: {
             return {
                 ...state,
@@ -1129,7 +1230,22 @@ export default function (state = defaultState, action: AnyAction): Notifications
                     review: {
                         ...state.errors.review,
                         submittingReview: {
-                            message: 'Could not submit review session to the server',
+                            message: `Could not submit review for the job ${action.payload.jobId}`,
+                            reason: action.payload.error.toString(),
+                        },
+                    },
+                },
+            };
+        }
+        case ReviewActionTypes.REMOVE_ISSUE_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    review: {
+                        ...state.errors.review,
+                        deletingIssue: {
+                            message: 'Could not remove issue from the server',
                             reason: action.payload.error.toString(),
                         },
                     },
@@ -1241,9 +1357,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         ...state.errors.cloudStorages,
                         deleting: {
                             message:
-                                'Could not delete ' +
-                                `<a href="/cloudstorages/${cloudStorageID}" target="_blank">
-                                cloud storage ${cloudStorageID}</a>`,
+                                `Could not delete cloud storage ${cloudStorageID}`,
                             reason: action.payload.error.toString(),
                             className: 'cvat-notification-notice-delete-cloud-storage-failed',
                         },
@@ -1298,6 +1412,184 @@ export default function (state = defaultState, action: AnyAction): Notifications
                             message: `Could not fetch preview for cloud storage #${cloudStorageID}`,
                             reason: action.payload.error.toString(),
                             className: 'cvat-notification-notice-fetch-cloud-storage-preview-failed',
+                        },
+                    },
+                },
+            };
+        }
+        case OrganizationActionsTypes.GET_ORGANIZATIONS_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    organizations: {
+                        ...state.errors.organizations,
+                        fetching: {
+                            message: 'Could not fetch organizations list',
+                            reason: action.payload.error.toString(),
+                            className: 'cvat-notification-notice-fetch-organizations-failed',
+                        },
+                    },
+                },
+            };
+        }
+        case OrganizationActionsTypes.CREATE_ORGANIZATION_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    organizations: {
+                        ...state.errors.organizations,
+                        creating: {
+                            message: `Could not create organization ${action.payload.slug}`,
+                            reason: action.payload.error.toString(),
+                            className: 'cvat-notification-notice-create-organization-failed',
+                        },
+                    },
+                },
+            };
+        }
+        case OrganizationActionsTypes.UPDATE_ORGANIZATION_FAILED: {
+            const { slug } = action.payload;
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    organizations: {
+                        ...state.errors.organizations,
+                        updating: {
+                            message: `Could not update organization "${slug}"`,
+                            reason: action.payload.error.toString(),
+                            className: 'cvat-notification-notice-update-organization-failed',
+                        },
+                    },
+                },
+            };
+        }
+        case OrganizationActionsTypes.ACTIVATE_ORGANIZATION_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    organizations: {
+                        ...state.errors.organizations,
+                        activation: {
+                            message: `Could not activate organization ${action.payload.slug || ''}`,
+                            reason: action.payload.error.toString(),
+                            className: 'cvat-notification-notice-activate-organization-failed',
+                        },
+                    },
+                },
+            };
+        }
+        case OrganizationActionsTypes.REMOVE_ORGANIZATION_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    organizations: {
+                        ...state.errors.organizations,
+                        deleting: {
+                            message: `Could not remove organization ${action.payload.slug}`,
+                            reason: action.payload.error.toString(),
+                            className: 'cvat-notification-notice-remove-organization-failed',
+                        },
+                    },
+                },
+            };
+        }
+        case OrganizationActionsTypes.INVITE_ORGANIZATION_MEMBERS_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    organizations: {
+                        ...state.errors.organizations,
+                        inviting: {
+                            message: 'Could not invite organization members',
+                            reason: action.payload.error.toString(),
+                            className: 'cvat-notification-notice-invite-organization-members-failed',
+                        },
+                    },
+                },
+            };
+        }
+        case OrganizationActionsTypes.INVITE_ORGANIZATION_MEMBER_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    organizations: {
+                        ...state.errors.organizations,
+                        inviting: {
+                            message: `Could not invite this member "${action.payload.email}" to the organization`,
+                            reason: action.payload.error.toString(),
+                            className: 'cvat-notification-notice-invite-organization-member-failed',
+                        },
+                    },
+                },
+            };
+        }
+        case OrganizationActionsTypes.LEAVE_ORGANIZATION_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    organizations: {
+                        ...state.errors.organizations,
+                        leaving: {
+                            message: 'Could not leave the organization',
+                            reason: action.payload.error.toString(),
+                            className: 'cvat-notification-notice-leave-organization-failed',
+                        },
+                    },
+                },
+            };
+        }
+        case OrganizationActionsTypes.REMOVE_ORGANIZATION_MEMBER_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    organizations: {
+                        ...state.errors.organizations,
+                        removingMembership: {
+                            message: `Could not remove member "${action.payload.username}" from the organization`,
+                            reason: action.payload.error.toString(),
+                            className: 'cvat-notification-notice-remove-organization-member-failed',
+                        },
+                    },
+                },
+            };
+        }
+        case OrganizationActionsTypes.UPDATE_ORGANIZATION_MEMBER_FAILED: {
+            const { role, username } = action.payload;
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    organizations: {
+                        ...state.errors.organizations,
+                        updatingMembership: {
+                            message: `Could not assign role "${role}" to the user "${username}"`,
+                            reason: action.payload.error.toString(),
+                            className: 'cvat-notification-notice-update-organization-membership-failed',
+                        },
+                    },
+                },
+            };
+        }
+        case JobsActionTypes.GET_JOBS_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    jobs: {
+                        ...state.errors.jobs,
+                        fetching: {
+                            message: 'Could not fetch a list of jobs',
+                            reason: action.payload.error.toString(),
+                            className: 'cvat-notification-notice-update-organization-membership-failed',
                         },
                     },
                 },

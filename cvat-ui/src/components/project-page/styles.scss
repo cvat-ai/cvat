@@ -55,7 +55,21 @@
     }
 }
 
-.cvat-project-top-bar-actions > button {
+.cvat-project-page-actions-button {
     display: flex;
     align-items: center;
+    line-height: 14px;
+}
+
+.cvat-project-tasks-pagination {
+    display: flex;
+    justify-content: center;
+}
+
+.cvat-project-tasks-title-search {
+    display: flex;
+
+    > * {
+        margin-right: $grid-unit-size * 2;
+    }
 }

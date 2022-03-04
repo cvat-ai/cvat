@@ -1,10 +1,10 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import React, { RefObject } from 'react';
 import { Row, Col } from 'antd/lib/grid';
-import Icon, { CloseCircleOutlined, PlusOutlined } from '@ant-design/icons';
+import Icon, { DeleteOutlined, PlusCircleOutlined } from '@ant-design/icons';
 import Input from 'antd/lib/input';
 import Button from 'antd/lib/button';
 import Checkbox from 'antd/lib/checkbox';
@@ -205,13 +205,20 @@ export default class LabelForm extends React.Component<Props> {
         );
     }
 
-    private renderBooleanValueInput(fieldInstance: any, attr: Attribute | null): JSX.Element {
+    private renderBooleanValueInput(fieldInstance: any): JSX.Element {
         const { key } = fieldInstance;
-        const value = attr ? attr.values[0] : 'false';
 
         return (
             <CVATTooltip title='Specify a default value'>
-                <Form.Item name={[key, 'values']} fieldKey={[fieldInstance.fieldKey, 'values']} initialValue={value}>
+                <Form.Item
+                    rules={[
+                        {
+                            required: true,
+                            message: 'Please, specify a default value',
+                        }]}
+                    name={[key, 'values']}
+                    fieldKey={[fieldInstance.fieldKey, 'values']}
+                >
                     <Select className='cvat-attribute-values-input'>
                         <Select.Option value='false'>False</Select.Option>
                         <Select.Option value='true'>True</Select.Option>
@@ -322,7 +329,7 @@ export default class LabelForm extends React.Component<Props> {
                             this.removeAttribute(key);
                         }}
                     >
-                        <CloseCircleOutlined />
+                        <DeleteOutlined />
                     </Button>
                 </Form.Item>
             </CVATTooltip>
@@ -354,7 +361,7 @@ export default class LabelForm extends React.Component<Props> {
                                 if ([AttributeType.SELECT, AttributeType.RADIO].includes(type)) {
                                     element = this.renderAttributeValuesInput(fieldInstance, attr);
                                 } else if (type === AttributeType.CHECKBOX) {
-                                    element = this.renderBooleanValueInput(fieldInstance, attr);
+                                    element = this.renderBooleanValueInput(fieldInstance);
                                 } else if (type === AttributeType.NUMBER) {
                                     element = this.renderNumberRangeInput(fieldInstance, attr);
                                 } else {
@@ -410,7 +417,7 @@ export default class LabelForm extends React.Component<Props> {
             <Form.Item>
                 <Button type='ghost' onClick={this.addAttribute} className='cvat-new-attribute-button'>
                     Add an attribute
-                    <PlusOutlined />
+                    <PlusCircleOutlined />
                 </Button>
             </Form.Item>
         );
@@ -529,7 +536,7 @@ export default class LabelForm extends React.Component<Props> {
                     <Col span={3} offset={1}>
                         {this.renderChangeColorButton()}
                     </Col>
-                    <Col span={6} offset={1}>
+                    <Col offset={1}>
                         {this.renderNewAttributeButton()}
                     </Col>
                 </Row>

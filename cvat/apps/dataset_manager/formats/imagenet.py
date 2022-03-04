@@ -29,11 +29,13 @@ def _export(dst_file, instance_data, save_images=False):
         make_zip_archive(temp_dir, dst_file)
 
 @importer(name='ImageNet', ext='ZIP', version='1.0')
-def _import(src_file, instance_data):
+def _import(src_file, instance_data, load_data_callback=None):
     with TemporaryDirectory() as tmp_dir:
         zipfile.ZipFile(src_file).extractall(tmp_dir)
         if glob(osp.join(tmp_dir, '*.txt')):
             dataset = Dataset.import_from(tmp_dir, 'imagenet_txt', env=dm_env)
         else:
             dataset = Dataset.import_from(tmp_dir, 'imagenet', env=dm_env)
+            if load_data_callback is not None:
+                load_data_callback(dataset, instance_data)
         import_dm_annotations(dataset, instance_data)

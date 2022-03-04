@@ -8,28 +8,33 @@ jobs:
       - uses: actions/setup-node@v2
         with:
             node-version: '16.x'
+      - id: files
+        uses: jitterbit/get-changed-files@v1
+        continue-on-error: true
 
       - name: Run checks
+        env:
+          PR_FILES_AM: ${{ steps.files.outputs.added_modified }}
+          PR_FILES_RENAMED: ${{ steps.files.outputs.renamed }}
         run: |
-          URL="https://api.github.com/repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/files"
-          PR_FILES=$(curl -s -X GET -G $URL | jq -r '.[] | select(.status != "removed") | .filename')
-          for files in $PR_FILES; do
-            extension="${files##*.}"
-            if [[ $extension == 'css' || $extension == 'scss' ]]; then
-              changed_files_stylelint+=" ${files}"
-            fi
+          PR_FILES="$PR_FILES_AM $PR_FILES_RENAMED"
+          for FILE in $PR_FILES; do
+              EXTENSION="${FILE##*.}"
+              if [[ $EXTENSION == 'css' || $EXTENSION == 'scss' ]]; then
+                  CHANGED_FILES+=" $FILE"
+              fi
           done
 
-          if [[ ! -z ${changed_files_stylelint} ]]; then
+          if [[ ! -z $CHANGED_FILES ]]; then
             npm ci
             mkdir -p stylelint_report
 
-            echo "StyleLint version: "`npx stylelint --version`
-            echo "The files will be checked: "`echo ${changed_files_stylelint}`
-            npx stylelint --formatter json --output-file ./stylelint_report/stylelint_report.json ${changed_files_stylelint} || exit_code=`echo $?` || true
+            echo "StyleLint version: "$(npx stylelint --version)
+            echo "The files will be checked: "$(echo $CHANGED_FILES)
+            npx stylelint --formatter json --output-file ./stylelint_report/stylelint_report.json $CHANGED_FILES || EXIT_CODE=$(echo $?) || true
             pip install json2html
             python ./tests/json_to_html.py ./stylelint_report/stylelint_report.json
-            exit ${exit_code}
+            exit $EXIT_CODE
           else
             echo "No files with the \"css|scss\" extension found"
           fi

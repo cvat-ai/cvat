@@ -14,8 +14,8 @@ INSTALLED_APPS += [
 ALLOWED_HOSTS.append('testserver')
 
 # Django-sendfile:
-# https://github.com/johnsensible/django-sendfile
-SENDFILE_BACKEND = 'sendfile.backends.development'
+# https://github.com/moggers87/django-sendfile2
+SENDFILE_BACKEND = 'django_sendfile.backends.development'
 
 # Database
 # https://docs.djangoproject.com/en/2.0/ref/settings/#databases
@@ -42,3 +42,4 @@ ACCOUNT_EMAIL_CONFIRMATION_ANONYMOUS_REDIRECT_URL = '{}/auth/email-confirmation'
 
 CORS_ORIGIN_WHITELIST = [UI_URL]
 CORS_REPLACE_HTTPS_REFERER = True
+IAM_OPA_DATA_URL = 'http://localhost:8181/v1/data'

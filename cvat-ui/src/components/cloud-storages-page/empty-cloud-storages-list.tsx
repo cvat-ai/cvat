@@ -1,4 +1,4 @@
-// Copyright (C) 2021 Intel Corporation
+// Copyright (C) 2021-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -7,7 +7,7 @@ import React from 'react';
 import Empty from 'antd/lib/empty';
 import { Row, Col } from 'antd/lib/grid';
 import Text from 'antd/lib/typography/Text';
-import { CloudTwoTone } from '@ant-design/icons';
+import { CloudOutlined } from '@ant-design/icons';
 import { Link } from 'react-router-dom';
 
 interface Props {
@@ -45,7 +45,7 @@ export default function EmptyStoragesListComponent(props: Props): JSX.Element {
 
     return (
         <div className='cvat-empty-cloud-storages-list'>
-            <Empty description={description} image={<CloudTwoTone className='cvat-empty-cloud-storages-list-icon' />} />
+            <Empty description={description} image={<CloudOutlined className='cvat-empty-cloud-storages-list-icon' />} />
         </div>
     );
 }

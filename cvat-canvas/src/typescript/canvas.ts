@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2021 Intel Corporation
+// Copyright (C) 2019-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -29,7 +29,7 @@ const CanvasVersion = pjson.version;
 interface Canvas {
     html(): HTMLDivElement;
     setup(frameData: any, objectStates: any[], zLayer?: number): void;
-    setupIssueRegions(issueRegions: Record<number, number[]>): void;
+    setupIssueRegions(issueRegions: Record<number, { hidden: boolean; points: number[] }>): void;
     activate(clientID: number | null, attributeID?: number): void;
     rotate(rotationAngle: number): void;
     focus(clientID: number, padding?: number): void;
@@ -53,6 +53,7 @@ interface Canvas {
     cancel(): void;
     configure(configuration: Configuration): void;
     isAbleToChangeFrame(): boolean;
+    destroy(): void;
 
     readonly geometry: Geometry;
 }
@@ -76,7 +77,7 @@ class CanvasImpl implements Canvas {
         this.model.setup(frameData, objectStates, zLayer);
     }
 
-    public setupIssueRegions(issueRegions: Record<number, number[]>): void {
+    public setupIssueRegions(issueRegions: Record<number, { hidden: boolean; points: number[] }>): void {
         this.model.setupIssueRegions(issueRegions);
     }
 
@@ -162,6 +163,10 @@ class CanvasImpl implements Canvas {
 
     public get geometry(): Geometry {
         return this.model.geometry;
+    }
+
+    public destroy(): void {
+        this.model.destroy();
     }
 }
 

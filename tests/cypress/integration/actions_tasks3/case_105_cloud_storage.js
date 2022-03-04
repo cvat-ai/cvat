@@ -1,4 +1,4 @@
-// Copyright (C) 2021 Intel Corporation
+// Copyright (C) 2021-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -20,7 +20,9 @@ context('Cloud storage.', () => {
         manifest: 'manifest.jsonl',
         resource: 'container',
         display_name: 'Demonstration container',
-    }
+        prefix: 'GCS_prefix',
+        projectID: 'Some ID',
+    };
 
     before(() => {
         cy.visit('auth/login');
@@ -44,7 +46,7 @@ context('Cloud storage.', () => {
                 .should('have.attr', 'value', '')
                 .type(dummyData.manifest)
                 .should('have.attr', 'value', dummyData.manifest);
-            cy.get('[data-icon="minus-circle"]').should('be.visible').click();
+            cy.get('[data-icon="delete"]').should('be.visible').click();
             cy.get('[placeholder="manifest.jsonl"]').should('not.exist');
         });
 
@@ -82,7 +84,7 @@ context('Cloud storage.', () => {
                 .get('.cvat-cloud-storage-region-creator')
                 .should('be.visible')
                 .within(() => {
-                    cy.contains('button', 'Add region').click()
+                    cy.contains('button', 'Add region').click();
                 });
             cy.get('.cvat-incorrect-add-region-notification').should('exist');
             cy.closeNotification('.cvat-incorrect-add-region-notification');
@@ -109,6 +111,40 @@ context('Cloud storage.', () => {
                 .click();
             cy.get('#account_name').should('exist');
             cy.get('#SAS_token').should('not.exist');
+        });
+
+        it('Check "Google cloud storage" provider fields.', () => {
+            cy.contains('.cvat-cloud-storage-select-provider', 'Azure').click();
+            cy.contains('.cvat-cloud-storage-select-provider', 'Google').click();
+            cy.get('#resource')
+                .should('exist')
+                .should('have.attr', 'value', dummyData.resource);
+            cy.get('#credentials_type').should('exist').click();
+            cy.get('.ant-select-dropdown')
+                .not('.ant-select-dropdown-hidden')
+                .get('[title="Key file"]')
+                .should('be.visible')
+                .click();
+            cy.get('.cvat-cloud-storage-form-item-key-file').should('be.visible');
+            cy.get('[title="Key file"]').first().click();
+            cy.get('.ant-select-dropdown')
+                .not('.ant-select-dropdown-hidden')
+                .get('[title="Anonymous access"]')
+                .should('be.visible')
+                .click();
+            cy.get('.cvat-cloud-storage-form-item-key-file').should('not.exist');
+            cy.get('#prefix').should('exist').type(dummyData.prefix).should('have.value', dummyData.prefix);
+            cy.get('#project_id').should('exist').type(dummyData.projectID).should('have.value', dummyData.projectID);
+            cy.get('#location').should('exist').click();
+            cy.get('.ant-select-dropdown')
+                .not('.ant-select-dropdown-hidden')
+                .get('.cvat-cloud-storage-region-creator')
+                .should('be.visible')
+                .within(() => {
+                    cy.contains('button', 'Add region').click();
+                });
+            cy.get('.cvat-incorrect-add-region-notification').should('exist');
+            cy.closeNotification('.cvat-incorrect-add-region-notification');
             cy.get('.cvat-cloud-storage-reset-button').click();
             cy.get('.cvat-cloud-storage-form').should('not.exist');
         });

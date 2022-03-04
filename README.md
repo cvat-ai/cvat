@@ -70,6 +70,10 @@ For more information about supported formats look at the
 | [VGGFace2](https://github.com/ox-vgg/vgg_face2)                                                           | X      | X      |
 | [Market-1501](https://www.aitribune.com/dataset/2018051063)                                               | X      | X      |
 | [ICDAR13/15](https://rrc.cvc.uab.es/?ch=2)                                                                | X      | X      |
+| [Open Images V6](https://storage.googleapis.com/openimages/web/index.html)                                | X      | X      |
+| [Cityscapes](https://www.cityscapes-dataset.com/login/)                                                   | X      | X      |
+| [KITTI](http://www.cvlibs.net/datasets/kitti/)                                                            | X      | X      |
+| [LFW](http://vis-www.cs.umass.edu/lfw/)                                                                   | X      | X      |
 
 <!--lint enable maximum-line-length-->
 
@@ -86,6 +90,7 @@ For more information about supported formats look at the
 | [Object reidentification](/serverless/openvino/omz/intel/person-reidentification-retail-300/nuclio)     | reid       | OpenVINO   | X   |     |
 | [Semantic segmentation for ADAS](/serverless/openvino/omz/intel/semantic-segmentation-adas-0001/nuclio) | detector   | OpenVINO   | X   |     |
 | [Text detection v4](/serverless/openvino/omz/intel/text-detection-0004/nuclio)                          | detector   | OpenVINO   | X   |     |
+| [YOLO v5](/serverless/pytorch/ultralytics/yolov5/nuclio)                                                | detector   | PyTorch    | X   |     |
 | [SiamMask](/serverless/pytorch/foolwood/siammask/nuclio)                                                | tracker    | PyTorch    | X   | X   |
 | [f-BRS](/serverless/pytorch/saic-vul/fbrs/nuclio)                                                       | interactor | PyTorch    | X   |     |
 | [HRNet](/serverless/pytorch/saic-vul/hrnet/nuclio)                                                      | interactor | PyTorch    |     | X   |
@@ -93,6 +98,7 @@ For more information about supported formats look at the
 | [Faster RCNN](/serverless/tensorflow/faster_rcnn_inception_v2_coco/nuclio)                              | detector   | TensorFlow | X   | X   |
 | [Mask RCNN](/serverless/tensorflow/matterport/mask_rcnn/nuclio)                                         | detector   | TensorFlow | X   | X   |
 | [RetinaNet](serverless/pytorch/facebookresearch/detectron2/retinanet/nuclio)                            | detector   | PyTorch    | X   | X   |
+| [Face Detection](/serverless/openvino/omz/intel/face-detection-0205/nuclio)                             | detector   | OpenVINO   | X   |     |
 
 <!--lint enable maximum-line-length-->
 
@@ -132,6 +138,21 @@ additional licenses. Intel is not responsible for obtaining any
 such licenses, nor liable for any licensing fees due in
 connection with your use of FFmpeg.
 
+## Partners
+
+- [Onepanel](https://github.com/onepanelio/core) is an open source
+  vision AI platform that fully integrates CVAT with scalable data processing
+  and parallelized training pipelines.
+- [DataIsKey](https://dataiskey.eu/annotation-tool/) uses CVAT as their prime data labeling tool
+  to offer annotation services for projects of any size.
+- [Human Protocol](https://hmt.ai) uses CVAT as a way of adding annotation service to the human protocol.
+- [Cogito Tech LLC](https://bit.ly/3klT0h6), a Human-in-the-Loop Workforce Solutions Provider, used CVAT
+  in annotation of about 5,000 images for a brand operating in the fashion segment.
+- [FiftyOne](https://fiftyone.ai) is an open-source dataset curation and model analysis
+tool for visualizing, exploring, and improving computer vision datasets and models that is
+[tightly integrated](https://voxel51.com/docs/fiftyone/integrations/cvat.html) with CVAT
+for annotation and label refinement.
+
 ## Questions
 
 CVAT usage related questions or unclear concepts can be posted in our
@@ -156,14 +177,6 @@ Other ways to ask questions and get our support:
 - [Intel Software: Computer Vision Annotation Tool: A Universal Approach to Data Annotation](https://software.intel.com/en-us/articles/computer-vision-annotation-tool-a-universal-approach-to-data-annotation)
 - [VentureBeat: Intel open-sources CVAT, a toolkit for data labeling](https://venturebeat.com/2019/03/05/intel-open-sources-cvat-a-toolkit-for-data-labeling/)
 
-## Projects using CVAT
-
-- [Onepanel](https://github.com/onepanelio/core) is an open source
-  vision AI platform that fully integrates CVAT with scalable data processing
-  and parallelized training pipelines.
-- [DataIsKey](https://dataiskey.eu/annotation-tool/) uses CVAT as their prime data labeling tool
-  to offer annotation services for projects of any size.
-- [Human Protocol](https://hmt.ai) uses CVAT as a way of adding annotation service to the human protocol.
   <!-- prettier-ignore-start -->
   <!-- Badges -->
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2021 Intel Corporation
+// Copyright (C) 2021-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -11,7 +11,7 @@ context('Dump/Upload annotation.', { browser: '!firefox' }, () => {
     const createRectangleTrack2Points = {
         points: 'By 2 Points',
         type: 'Track',
-        labelName: labelName,
+        labelName,
         firstX: 250,
         firstY: 350,
         secondX: 350,
@@ -80,12 +80,9 @@ context('Dump/Upload annotation.', { browser: '!firefox' }, () => {
                 archiveCustomeName: 'task_export_annotation_custome_name',
             };
             cy.exportTask(exportAnnotationRenameArchive);
-            const regex = new RegExp(`^${exportAnnotationRenameArchive.archiveCustomeName}.zip$`);
-            cy.task('listFiles', 'cypress/fixtures').each((fileName) => {
-                if (fileName.match(regex)) {
-                    cy.readFile(`cypress/fixtures/${fileName}`).should('exist');
-                    annotationArchiveNameCustomeName = fileName;
-                }
+            cy.getDownloadFileName().then((file) => {
+                annotationArchiveNameCustomeName = file;
+                cy.verifyDownload(annotationArchiveNameCustomeName);
             });
         });
 
@@ -96,19 +93,14 @@ context('Dump/Upload annotation.', { browser: '!firefox' }, () => {
                 format: exportFormat,
             };
             cy.exportTask(exportAnnotation);
+            cy.getDownloadFileName().then((file) => {
+                annotationArchiveName = file;
+                cy.verifyDownload(annotationArchiveName);
+            });
             cy.removeAnnotations();
             cy.saveJob('PUT');
             cy.get('#cvat_canvas_shape_1').should('not.exist');
             cy.get('#cvat-objects-sidebar-state-item-1').should('not.exist');
-            const regex = new RegExp(
-                `^task_${taskName.toLowerCase()}-.*-${exportAnnotation.format.toLowerCase()}.*.zip$`,
-            );
-            cy.task('listFiles', 'cypress/fixtures').each((fileName) => {
-                if (fileName.match(regex)) {
-                    cy.readFile(`cypress/fixtures/${fileName}`).should('exist');
-                    annotationArchiveName = fileName;
-                }
-            });
         });
 
         it('Upload annotation to job.', () => {
@@ -125,7 +117,7 @@ context('Dump/Upload annotation.', { browser: '!firefox' }, () => {
                 cy.get('input[type=file]').attachFile(annotationArchiveName);
             });
             confirmUpdate('.cvat-modal-content-load-job-annotation');
-            cy.intercept('GET', '/api/v1/jobs/**/annotations**').as('uploadAnnotationsGet');
+            cy.intercept('GET', '/api/jobs/**/annotations**').as('uploadAnnotationsGet');
             cy.wait('@uploadAnnotationsGet').its('response.statusCode').should('equal', 200);
             cy.get('#cvat_canvas_shape_1').should('exist');
             cy.get('#cvat-objects-sidebar-state-item-1').should('exist');

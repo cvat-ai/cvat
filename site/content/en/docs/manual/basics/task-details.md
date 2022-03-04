@@ -12,19 +12,33 @@ and the details of the task (specified when the task was created) and the jobs s
 
 - The next actions are available on this page:
   1. Change the task’s title.
-  2. Open `Actions` menu.
-  3. Change issue tracker or open issue tracker if it is specified.
-  4. Change labels (available only if the task is not related to the project).
+  1. Open `Actions` menu.
+  1. Change issue tracker or open issue tracker if it is specified.
+  1. Change labels (available only if the task is not related to the project).
      You can add new labels or add attributes for the existing labels in the Raw mode or the Constructor mode.
      By clicking `Copy` you will copy the labels to the clipboard.
-  5. Assigned to — is used to assign a task to a person. Start typing an assignee’s name and/or
+  1. Assigned to — is used to assign a task to a person. Start typing an assignee’s name and/or
      choose the right person out of the dropdown list.
-- `Jobs` — is a list of all jobs for a particular task. Here you can find the next data:
+     In the list of users, you will only see the users of the [organization](/docs/manual/advanced/organization/)
+     where the task is created.
+
+  1. Dataset Repository
+     - Repository link
+     - Synchronization status with dataset repository.
+       When you click on the status, the current annotation will be sent. It has several states:
+       - Synchronized - task synchronized, that is, created a pull of requisites with an actual annotation file.
+       - Merged - merged pull request with up-to-date annotation file.
+       - Synchronize - highlighted in red, annotations are not synced.
+     - Use a format drop-down list of formats in which the annotation can be synchronized.
+     - Support for large file enabling the use of [LFS](https://git-lfs.github.com/).
+
+- **Jobs** — is a list of all jobs for a particular task. Here you can find the next data:
   - Jobs name with a hyperlink to it.
   - Frames — the frame interval.
-  - A status of the job. The status is specified by the user in the menu inside the job.
-    There are three types of status: annotation, validation or completed.
-    The status of the job is changes the progress bar of the task.
+  - A stage of the job. The stage is specified by a drop-down list.
+    There are three stages: `annotation`, `validation` or `acceptance`. This value affects the task progress bar.
+  - A state of the job. The state can be changed by an assigned user in the menu inside the job.
+    There are several possible states: `new`, `in progress`, `rejected`, `completed`.
   - Started on — start date of this job.
   - Duration — is the amount of time the job is being worked.
   - Assignee is the user who is working on the job.

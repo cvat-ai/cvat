@@ -37,7 +37,6 @@ polyline.cvat_shape_drawing_opacity {
 
 .cvat_canvas_text {
     font-weight: bold;
-    font-size: 1.2em;
     fill: white;
     cursor: default;
     font-family: Calibri, Candara, Segoe, 'Segoe UI', Optima, Arial, sans-serif;
@@ -47,7 +46,6 @@ polyline.cvat_shape_drawing_opacity {
 }
 
 .cvat_canvas_text_description {
-    font-size: 14px;
     fill: yellow;
     font-style: oblique 40deg;
 }
@@ -76,7 +74,6 @@ polyline.cvat_shape_drawing_opacity {
 }
 
 .cvat_canvas_issue_region {
-    display: none;
     stroke-width: 0;
 }
 
@@ -137,6 +134,10 @@ polyline.cvat_canvas_shape_splitting {
     stroke-dasharray: 5;
 }
 
+.svg_select_points_rot {
+    fill: white;
+}
+
 .cvat_canvas_shape .svg_select_points,
 .cvat_canvas_shape .cvat_canvas_cuboid_projections {
     stroke-dasharray: none;
@@ -166,8 +167,9 @@ polyline.cvat_canvas_shape_splitting {
 
 .cvat_canvas_removable_interaction_point {
     cursor:
-        url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHZpZXdCb3g9IjAgMCAxMCAxMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEgMUw5IDlNMSA5TDkgMSIgc3Ryb2tlPSJibGFjayIvPgo8L3N2Zz4K')
-        10 10,
+        url(
+            'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHZpZXdCb3g9IjAgMCAxMCAxMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEgMUw5IDlNMSA5TDkgMSIgc3Ryb2tlPSJibGFjayIvPgo8L3N2Zz4K'
+        ) 10 10,
         auto;
 }
 
@@ -224,6 +226,17 @@ polyline.cvat_canvas_shape_splitting {
     }
 }
 
+.cvat_canvas_pixelized {
+    image-rendering: optimizeSpeed;             /* Legal fallback */
+    image-rendering: -moz-crisp-edges;          /* Firefox        */
+    image-rendering: -o-crisp-edges;            /* Opera          */
+    image-rendering: -webkit-optimize-contrast; /* Safari         */
+    image-rendering: optimize-contrast;         /* CSS3 Proposed  */
+    image-rendering: crisp-edges;               /* CSS4 Proposed  */
+    image-rendering: pixelated;                 /* CSS4 Proposed  */
+    -ms-interpolation-mode: nearest-neighbor;   /* IE8+           */
+}
+
 #cvat_canvas_wrapper {
     width: calc(100% - 10px);
     height: calc(100% - 10px);
@@ -268,6 +281,8 @@ polyline.cvat_canvas_shape_splitting {
 }
 
 #cvat_canvas_bitmap {
+    @extend .cvat_canvas_pixelized;
+
     pointer-events: none;
     position: absolute;
     z-index: 4;

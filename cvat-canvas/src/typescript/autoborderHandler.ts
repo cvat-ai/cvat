@@ -237,7 +237,8 @@ export class AutoborderHandlerImpl implements AutoborderHandler {
 
         const currentClientID = this.currentShape.node.dataset.originClientId;
         const shapes = Array.from(this.frameContent.getElementsByClassName('cvat_canvas_shape')).filter(
-            (shape: HTMLElement): boolean => +shape.getAttribute('clientID') !== this.currentID,
+            (shape: HTMLElement): boolean => +shape.getAttribute('clientID') !== this.currentID &&
+                !shape.classList.contains('cvat_canvas_hidden'),
         );
         const transformedShapes = shapes
             .map((shape: HTMLElement): TransformedShape | null => {
@@ -252,6 +253,10 @@ export class AutoborderHandlerImpl implements AutoborderHandler {
                 let points = '';
                 if (shape.tagName === 'polyline' || shape.tagName === 'polygon') {
                     points = shape.getAttribute('points');
+                } else if (shape.tagName === 'ellipse') {
+                    const cx = +shape.getAttribute('cx');
+                    const cy = +shape.getAttribute('cy');
+                    points = `${cx},${cy}`;
                 } else if (shape.tagName === 'rect') {
                     const x = +shape.getAttribute('x');
                     const y = +shape.getAttribute('y');

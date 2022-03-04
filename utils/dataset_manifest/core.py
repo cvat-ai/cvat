@@ -1,16 +1,19 @@
-# Copyright (C) 2021 Intel Corporation
+# Copyright (C) 2021-2022 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
+from enum import Enum
 import av
 import json
 import os
-from abc import ABC, abstractmethod, abstractproperty
+
+from abc import ABC, abstractmethod, abstractproperty, abstractstaticmethod
 from contextlib import closing
 from tempfile import NamedTemporaryFile
-
 from PIL import Image
-from .utils import md5_hash, rotate_image
+from json.decoder import JSONDecodeError
+
+from .utils import SortingMethod, md5_hash, rotate_image, sort
 
 class VideoStreamReader:
     def __init__(self, source_path, chunk_size, force):
@@ -146,14 +149,14 @@ class DatasetImagesReader:
     def __init__(self,
                 sources,
                 meta=None,
-                is_sorted=True,
+                sorting_method=SortingMethod.PREDEFINED,
                 use_image_hash=False,
                 start = 0,
                 step = 1,
                 stop = None,
                 *args,
                 **kwargs):
-        self._sources = sources if is_sorted else sorted(sources)
+        self._sources = sort(sources, sorting_method)
         self._meta = meta
         self._data_dir = kwargs.get('data_dir', None)
         self._use_image_hash = use_image_hash
@@ -238,8 +241,19 @@ class Dataset3DImagesReader(DatasetImagesReader):
                 yield dict()
 
 class _Manifest:
+    class SupportedVersion(str, Enum):
+        V1 = '1.0'
+        V1_1 = '1.1'
+
+        @classmethod
+        def choices(cls):
+            return (x.value for x in cls)
+
+        def __str__(self):
+            return self.value
+
     FILE_NAME = 'manifest.jsonl'
-    VERSION = '1.1'
+    VERSION = SupportedVersion.V1_1
 
     def __init__(self, path, upload_dir=None):
         assert path, 'A path to manifest file not found'
@@ -310,7 +324,7 @@ class _Index:
 
     def __getitem__(self, number):
         assert 0 <= number < len(self), \
-            'A invalid index number: {}\nMax: {}'.format(number, len(self))
+            'Invalid index number: {}\nMax: {}'.format(number, len(self) - 1)
         return self._index[number]
 
     def __len__(self):
@@ -509,13 +523,6 @@ class VideoManifestManager(_ManifestManager):
     def get_subset(self, subset_names):
         raise NotImplementedError()
 
-#TODO: add generic manifest structure file validation
-class ManifestValidator:
-    def validate_base_info(self):
-        with open(self._manifest.path, 'r') as manifest_file:
-            assert self._manifest.VERSION != json.loads(manifest_file.readline())['version']
-            assert self._manifest.TYPE != json.loads(manifest_file.readline())['type']
-
 class VideoManifestValidator(VideoManifestManager):
     def __init__(self, source_path, manifest_path):
         self._source_path = source_path
@@ -601,11 +608,122 @@ class ImageManifestManager(_ManifestManager):
         return (f"{image['name']}{image['extension']}" for _, image in self)
 
     def get_subset(self, subset_names):
-        return ({
-            'name': f"{image['name']}",
-            'extension': f"{image['extension']}",
-            'width': image['width'],
-            'height': image['height'],
-            'meta': image['meta'],
-            'checksum': f"{image['checksum']}"
-        } for _, image in self if f"{image['name']}{image['extension']}" in subset_names)
+        index_list = []
+        subset = []
+        for _, image in self:
+            image_name = f"{image['name']}{image['extension']}"
+            if image_name in subset_names:
+                index_list.append(subset_names.index(image_name))
+                properties = {
+                    'name': f"{image['name']}",
+                    'extension': f"{image['extension']}",
+                    'width': image['width'],
+                    'height': image['height'],
+                }
+                for optional_field in {'meta', 'checksum'}:
+                    value = image.get(optional_field)
+                    if value:
+                        properties[optional_field] =  value
+                subset.append(properties)
+        return index_list, subset
+
+
+class _BaseManifestValidator(ABC):
+    def __init__(self, full_manifest_path):
+        self._manifest = _Manifest(full_manifest_path)
+
+    def validate(self):
+        try:
+            # we cannot use index in general because manifest may be e.g. in share point with ro mode
+            with open(self._manifest.path, 'r') as manifest:
+                for validator in self.validators:
+                    line = json.loads(manifest.readline().strip())
+                    validator(line)
+            return True
+        except (ValueError, KeyError, JSONDecodeError):
+            return False
+
+    @staticmethod
+    def _validate_version(_dict):
+        if not _dict['version'] in _Manifest.SupportedVersion.choices():
+            raise ValueError('Incorrect version field')
+
+    def _validate_type(self, _dict):
+        if not _dict['type'] == self.TYPE:
+            raise ValueError('Incorrect type field')
+
+    @abstractproperty
+    def validators(self):
+        pass
+
+    @abstractstaticmethod
+    def _validate_first_item(_dict):
+        pass
+
+class _VideoManifestStructureValidator(_BaseManifestValidator):
+    TYPE = 'video'
+
+    @property
+    def validators(self):
+        return (
+            self._validate_version,
+            self._validate_type,
+            self._validate_properties,
+            self._validate_first_item,
+        )
+
+    @staticmethod
+    def _validate_properties(_dict):
+        properties = _dict['properties']
+        if not isinstance(properties['name'], str):
+            raise ValueError('Incorrect name field')
+        if not isinstance(properties['resolution'], list):
+            raise ValueError('Incorrect resolution field')
+        if not isinstance(properties['length'], int) or properties['length'] == 0:
+            raise ValueError('Incorrect length field')
+
+    @staticmethod
+    def _validate_first_item(_dict):
+        if not isinstance(_dict['number'], int):
+            raise ValueError('Incorrect number field')
+        if not isinstance(_dict['pts'], int):
+            raise ValueError('Incorrect pts field')
+
+class _DatasetManifestStructureValidator(_BaseManifestValidator):
+    TYPE = 'images'
+
+    @property
+    def validators(self):
+        return (
+            self._validate_version,
+            self._validate_type,
+            self._validate_first_item,
+        )
+
+    @staticmethod
+    def _validate_first_item(_dict):
+        if not isinstance(_dict['name'], str):
+            raise ValueError('Incorrect name field')
+        if not isinstance(_dict['extension'], str):
+            raise ValueError('Incorrect extension field')
+        # FIXME
+        # Width and height are required for 2D data, but
+        # for 3D these parameters are not saved now.
+        # It is necessary to uncomment these restrictions when manual preparation for 3D data is implemented.
+
+        # if not isinstance(_dict['width'], int):
+        #     raise ValueError('Incorrect width field')
+        # if not isinstance(_dict['height'], int):
+        #     raise ValueError('Incorrect height field')
+
+def is_manifest(full_manifest_path):
+    return _is_video_manifest(full_manifest_path) or \
+        _is_dataset_manifest(full_manifest_path)
+
+def _is_video_manifest(full_manifest_path):
+    validator = _VideoManifestStructureValidator(full_manifest_path)
+    return validator.validate()
+
+def _is_dataset_manifest(full_manifest_path):
+    validator = _DatasetManifestStructureValidator(full_manifest_path)
+    return validator.validate()

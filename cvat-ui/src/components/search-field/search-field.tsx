@@ -14,16 +14,27 @@ interface Query {
 interface Props {
     query: Query;
     instance: 'task' | 'project' | 'cloudstorage';
+    skipFields?: string[];
     onSearch(query: object): void;
 }
 
 export default function SearchField(props: Props): JSX.Element {
-    const { onSearch, query, instance } = props;
-    function parse(_query: Query): string {
+    const {
+        onSearch,
+        query,
+        instance,
+        skipFields,
+    } = props;
+    const skip = ['page'];
+    if (typeof skipFields !== 'undefined') {
+        skip.push(...skipFields);
+    }
+
+    function parse(_query: Query, _skip: string[]): string {
         let searchString = '';
         for (const field of Object.keys(_query)) {
             const value = _query[field];
-            if (value !== null && typeof value !== 'undefined' && field !== 'page') {
+            if (value !== null && typeof value !== 'undefined' && !_skip.includes(field)) {
                 if (field === 'search') {
                     return _query[field] as string;
                 }
@@ -47,7 +58,7 @@ export default function SearchField(props: Props): JSX.Element {
             .replace(/\s*:+\s*/g, ':')
             .trim();
 
-        const fields = Object.keys(query).filter((key) => key !== 'page');
+        const fields = Object.keys(query).filter((key) => !skip.includes(key));
         for (const field of fields) {
             currentQuery[field] = null;
         }
@@ -82,7 +93,7 @@ export default function SearchField(props: Props): JSX.Element {
         <SearchTooltip instance={instance}>
             <Search
                 className='cvat-search-field'
-                defaultValue={parse(query)}
+                defaultValue={parse(query, skip)}
                 onSearch={handleSearch}
                 size='large'
                 placeholder='Search'

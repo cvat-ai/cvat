@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -15,16 +15,16 @@ context('Register user, change password, login with new password', () => {
     const newPassword = 'bYdOk8#eEd';
     const secondNewPassword = 'ndTh48@yVY';
 
-    function changePassword(userName, password, newPassword) {
+    function changePassword(myUserName, myPassword, myNewPassword) {
         cy.get('.cvat-right-header')
-            .find('.cvat-header-menu-dropdown')
-            .should('have.text', userName)
+            .find('.cvat-header-menu-user-dropdown')
+            .should('have.text', myUserName)
             .trigger('mouseover');
         cy.get('.cvat-header-menu-change-password').click();
         cy.get('.cvat-modal-change-password').within(() => {
-            cy.get('#oldPassword').type(password);
-            cy.get('#newPassword1').type(newPassword);
-            cy.get('#newPassword2').type(newPassword);
+            cy.get('#oldPassword').type(myPassword);
+            cy.get('#newPassword1').type(myNewPassword);
+            cy.get('#newPassword2').type(myNewPassword);
             cy.get('.change-password-form-button').click();
         });
     }
@@ -37,7 +37,9 @@ context('Register user, change password, login with new password', () => {
     after(() => {
         cy.get('.cvat-modal-change-password').find('[aria-label="Close"]').click();
         cy.logout(userName);
-        cy.deletingRegisteredUsers([userName]);
+        cy.getAuthKey().then((authKey) => {
+            cy.deleteUsers(authKey, [userName]);
+        });
     });
 
     describe(`Testing "Case ${caseId}"`, () => {
