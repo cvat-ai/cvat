@@ -72,8 +72,6 @@ from cvat.apps.iam.permissions import (CloudStoragePermission,
     CommentPermission, IssuePermission, JobPermission, ProjectPermission,
     TaskPermission, UserPermission)
 
-# file_id_regex = r'(?P<file_id>\b[0-9a-f]{8}\b-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-\b[0-9a-f]{12}\b)'
-
 class ServerViewSet(viewsets.ViewSet):
     serializer_class = None
     iam_organization_field = None
