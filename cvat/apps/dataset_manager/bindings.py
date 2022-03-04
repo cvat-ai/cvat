@@ -422,6 +422,8 @@ class TaskData(InstanceLabelData):
         for idx, _track in enumerate(self._annotation_ir.tracks):
             track = copy.deepcopy(_track)
             track["shapes"] = [shape for shape in track["shapes"] if shape["frame"] not in self._db_task.data.deleted_frames]
+            if not track["shapes"]:
+                continue
             tracked_shapes = TrackManager.get_interpolated_shapes(
                 track, 0, self._db_task.data.size)
             for tracked_shape in tracked_shapes:
@@ -880,7 +882,11 @@ class ProjectData(InstanceLabelData):
     def tracks(self):
         idx = 0
         for task in self._db_tasks.values():
-            for track in self._annotation_irs[task.id].tracks:
+            for _track in self._annotation_irs[task.id].tracks:
+                track = copy.deepcopy(_track)
+                track["shapes"] = [shape for shape in track["shapes"] if shape["frame"] not in task.data.deleted_frames]
+                if not track["shapes"]:
+                    continue
                 tracked_shapes = TrackManager.get_interpolated_shapes(
                     track, 0, task.data.size
                 )

@@ -1412,16 +1412,24 @@ export function searchAnnotationsAsync(sessionInstance: any, frameFrom: number, 
                 settings: {
                     player: { showDeletedFrames },
                 },
+                annotation: {
+                    job: {
+                        instance: jobInstance,
+                    },
+                },
             } = getState();
             const { filters } = receiveAnnotationsParameters();
 
+            const sign = Math.sign(frameTo - frameFrom);
             let frame = await sessionInstance.annotations.search(filters, frameFrom, frameTo);
             while (frame !== null) {
                 const isDeleted = (await sessionInstance.frames.get(frame)).deleted;
-                if (isDeleted && !showDeletedFrames) {
-                    frame = await sessionInstance.annotations.search(filters, frame + 1, frameTo);
-                } else {
+                if (!isDeleted || showDeletedFrames) {
                     break;
+                } else if (frame + sign >= jobInstance.startFrame && frame + sign <= jobInstance.stopFrame) {
+                    frame = await sessionInstance.annotations.search(filters, frame + sign, frameTo);
+                } else {
+                    frame = null;
                 }
             }
             if (frame !== null) {
@@ -1445,14 +1453,23 @@ export function searchEmptyFrameAsync(sessionInstance: any, frameFrom: number, f
                 settings: {
                     player: { showDeletedFrames },
                 },
+                annotation: {
+                    job: {
+                        instance: jobInstance,
+                    },
+                },
             } = getState();
+
+            const sign = Math.sign(frameTo - frameFrom);
             let frame = await sessionInstance.annotations.searchEmpty(frameFrom, frameTo);
             while (frame !== null) {
                 const isDeleted = (await sessionInstance.frames.get(frame)).deleted;
-                if (isDeleted && !showDeletedFrames) {
-                    frame = await sessionInstance.annotations.searchEmpty(frame + 1, frameTo);
-                } else {
+                if (!isDeleted || showDeletedFrames) {
                     break;
+                } else if (frame + sign >= jobInstance.startFrame && frame + sign <= jobInstance.stopFrame) {
+                    frame = await sessionInstance.annotations.searchEmpty(frame + sign, frameTo);
+                } else {
+                    frame = null;
                 }
             }
             if (frame !== null) {
