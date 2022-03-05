@@ -4,6 +4,127 @@
   "previous": null,
   "results": [
     {
+      "assignee": {
+        "first_name": "User",
+        "id": 20,
+        "last_name": "Sixth",
+        "url": "http://localhost:8080/api/users/20",
+        "username": "user6"
+      },
+      "bug_tracker": "",
+      "created_date": "2022-03-05T09:33:10.420000Z",
+      "data": 9,
+      "data_chunk_size": 72,
+      "data_compressed_chunk_type": "imageset",
+      "data_original_chunk_type": "imageset",
+      "dimension": "2d",
+      "id": 9,
+      "image_quality": 70,
+      "labels": [
+        {
+          "attributes": [
+            {
+              "default_value": "mazda",
+              "id": 1,
+              "input_type": "select",
+              "mutable": false,
+              "name": "model",
+              "values": [
+                "mazda",
+                "volvo",
+                "bmw"
+              ]
+            }
+          ],
+          "color": "#2080c0",
+          "id": 5,
+          "name": "car"
+        },
+        {
+          "attributes": [],
+          "color": "#c06060",
+          "id": 6,
+          "name": "person"
+        }
+      ],
+      "mode": "annotation",
+      "name": "task1_in_project1",
+      "organization": null,
+      "overlap": 0,
+      "owner": {
+        "first_name": "Business",
+        "id": 10,
+        "last_name": "First",
+        "url": "http://localhost:8080/api/users/10",
+        "username": "business1"
+      },
+      "project_id": 1,
+      "segment_size": 5,
+      "segments": [
+        {
+          "jobs": [
+            {
+              "assignee": null,
+              "id": 11,
+              "stage": "annotation",
+              "state": "in progress",
+              "status": "annotation",
+              "url": "http://localhost:8080/api/jobs/11"
+            }
+          ],
+          "start_frame": 0,
+          "stop_frame": 4
+        },
+        {
+          "jobs": [
+            {
+              "assignee": null,
+              "id": 12,
+              "stage": "validation",
+              "state": "new",
+              "status": "validation",
+              "url": "http://localhost:8080/api/jobs/12"
+            }
+          ],
+          "start_frame": 5,
+          "stop_frame": 9
+        },
+        {
+          "jobs": [
+            {
+              "assignee": null,
+              "id": 13,
+              "stage": "acceptance",
+              "state": "new",
+              "status": "validation",
+              "url": "http://localhost:8080/api/jobs/13"
+            }
+          ],
+          "start_frame": 10,
+          "stop_frame": 14
+        },
+        {
+          "jobs": [
+            {
+              "assignee": null,
+              "id": 14,
+              "stage": "annotation",
+              "state": "new",
+              "status": "annotation",
+              "url": "http://localhost:8080/api/jobs/14"
+            }
+          ],
+          "start_frame": 15,
+          "stop_frame": 19
+        }
+      ],
+      "size": 20,
+      "status": "annotation",
+      "subset": "",
+      "updated_date": "2022-03-05T09:47:49.667000Z",
+      "url": "http://localhost:8080/api/tasks/9"
+    },
+    {
       "assignee": null,
       "bug_tracker": "",
       "created_date": "2022-03-05T08:30:48.612000Z",
@@ -320,113 +441,6 @@
       "subset": "train",
       "updated_date": "2022-02-24T21:32:36.190000Z",
       "url": "http://localhost:8080/api/tasks/4"
-    },
-    {
-      "assignee": {
-        "first_name": "User",
-        "id": 19,
-        "last_name": "Fifth",
-        "url": "http://localhost:8080/api/users/19",
-        "username": "user5"
-      },
-      "bug_tracker": "",
-      "created_date": "2021-12-14T19:48:33.089000Z",
-      "data": 3,
-      "data_chunk_size": 72,
-      "data_compressed_chunk_type": "imageset",
-      "data_original_chunk_type": "imageset",
-      "dimension": "2d",
-      "id": 3,
-      "image_quality": 70,
-      "labels": [
-        {
-          "attributes": [
-            {
-              "default_value": "mazda",
-              "id": 1,
-              "input_type": "select",
-              "mutable": false,
-              "name": "model",
-              "values": [
-                "mazda",
-                "volvo",
-                "bmw"
-              ]
-            }
-          ],
-          "color": "#2080c0",
-          "id": 5,
-          "name": "car"
-        },
-        {
-          "attributes": [],
-          "color": "#c06060",
-          "id": 6,
-          "name": "person"
-        }
-      ],
-      "mode": "annotation",
-      "name": "task1_in_project1",
-      "organization": null,
-      "overlap": 0,
-      "owner": {
-        "first_name": "Business",
-        "id": 10,
-        "last_name": "First",
-        "url": "http://localhost:8080/api/users/10",
-        "username": "business1"
-      },
-      "project_id": 1,
-      "segment_size": 50,
-      "segments": [
-        {
-          "jobs": [
-            {
-              "assignee": null,
-              "id": 3,
-              "stage": "annotation",
-              "state": "in progress",
-              "status": "annotation",
-              "url": "http://localhost:8080/api/jobs/3"
-            }
-          ],
-          "start_frame": 0,
-          "stop_frame": 49
-        },
-        {
-          "jobs": [
-            {
-              "assignee": null,
-              "id": 4,
-              "stage": "validation",
-              "state": "new",
-              "status": "validation",
-              "url": "http://localhost:8080/api/jobs/4"
-            }
-          ],
-          "start_frame": 50,
-          "stop_frame": 99
-        },
-        {
-          "jobs": [
-            {
-              "assignee": null,
-              "id": 5,
-              "stage": "acceptance",
-              "state": "new",
-              "status": "validation",
-              "url": "http://localhost:8080/api/jobs/5"
-            }
-          ],
-          "start_frame": 100,
-          "stop_frame": 147
-        }
-      ],
-      "size": 148,
-      "status": "annotation",
-      "subset": "Train",
-      "updated_date": "2022-02-24T21:25:10.697000Z",
-      "url": "http://localhost:8080/api/tasks/3"
     },
     {
       "assignee": null,

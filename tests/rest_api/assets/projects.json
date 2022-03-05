@@ -97,13 +97,11 @@
         "username": "business1"
       },
       "status": "annotation",
-      "task_subsets": [
-        "Train"
-      ],
+      "task_subsets": [],
       "tasks": [
-        3
+        9
       ],
-      "updated_date": "2022-02-24T21:33:48.037000Z",
+      "updated_date": "2022-03-05T09:47:49.679000Z",
       "url": "http://localhost:8080/api/projects/1"
     }
   ]

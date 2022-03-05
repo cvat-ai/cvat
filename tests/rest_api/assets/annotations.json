@@ -125,169 +125,6 @@
       "tracks": [],
       "version": 0
     },
-    "3": {
-      "shapes": [
-        {
-          "attributes": [],
-          "frame": 0,
-          "group": 0,
-          "id": 28,
-          "label_id": 6,
-          "occluded": false,
-          "points": [
-            155.5,
-            634.4814453125,
-            222.17951945080313,
-            575.8846681922205,
-            214.09713958810244,
-            384.9384439359292,
-            160.55137299771377,
-            255.6203661327254,
-            96.90263157894879,
-            137.41556064073302,
-            284.8179633867294,
-            65.68443935926916,
-            354.52848970251944,
-            264.713043478263
-          ],
-          "rotation": 0.0,
-          "source": "manual",
-          "type": "polyline",
-          "z_order": 0
-        }
-      ],
-      "tags": [],
-      "tracks": [],
-      "version": 0
-    },
-    "4": {
-      "shapes": [
-        {
-          "attributes": [
-            {
-              "spec_id": 1,
-              "value": "mazda"
-            }
-          ],
-          "frame": 50,
-          "group": 0,
-          "id": 22,
-          "label_id": 5,
-          "occluded": false,
-          "points": [
-            103.4892578125,
-            60.298828125,
-            319.7179412841797,
-            185.8331298828125
-          ],
-          "rotation": 0.0,
-          "source": "manual",
-          "type": "rectangle",
-          "z_order": 0
-        },
-        {
-          "attributes": [
-            {
-              "spec_id": 1,
-              "value": "mazda"
-            }
-          ],
-          "frame": 51,
-          "group": 0,
-          "id": 23,
-          "label_id": 5,
-          "occluded": false,
-          "points": [
-            159.9375,
-            290.716796875,
-            415.7503967285156,
-            440.51097106933594
-          ],
-          "rotation": 0.0,
-          "source": "manual",
-          "type": "rectangle",
-          "z_order": 0
-        },
-        {
-          "attributes": [
-            {
-              "spec_id": 1,
-              "value": "mazda"
-            }
-          ],
-          "frame": 52,
-          "group": 0,
-          "id": 24,
-          "label_id": 5,
-          "occluded": false,
-          "points": [
-            85.9462890625,
-            138.1123046875,
-            166.75294494628906,
-            391.78382873535156
-          ],
-          "rotation": 0.0,
-          "source": "manual",
-          "type": "rectangle",
-          "z_order": 0
-        },
-        {
-          "attributes": [
-            {
-              "spec_id": 1,
-              "value": "mazda"
-            }
-          ],
-          "frame": 52,
-          "group": 0,
-          "id": 25,
-          "label_id": 5,
-          "occluded": false,
-          "points": [
-            45.03125,
-            638.294921875,
-            224.0333251953125,
-            770.2450256347656
-          ],
-          "rotation": 0.0,
-          "source": "manual",
-          "type": "rectangle",
-          "z_order": 0
-        },
-        {
-          "attributes": [
-            {
-              "spec_id": 1,
-              "value": "mazda"
-            }
-          ],
-          "frame": 53,
-          "group": 0,
-          "id": 26,
-          "label_id": 5,
-          "occluded": false,
-          "points": [
-            34.384765625,
-            283.845703125,
-            108.30784606933594,
-            382.30724334716797
-          ],
-          "rotation": 0.0,
-          "source": "manual",
-          "type": "rectangle",
-          "z_order": 0
-        }
-      ],
-      "tags": [],
-      "tracks": [],
-      "version": 0
-    },
-    "5": {
-      "shapes": [],
-      "tags": [],
-      "tracks": [],
-      "version": 0
-    },
     "6": {
       "shapes": [
         {
@@ -1388,6 +1225,49 @@
           "z_order": 0
         }
       ],
+      "tags": [],
+      "tracks": [],
+      "version": 0
+    },
+    "11": {
+      "shapes": [
+        {
+          "attributes": [],
+          "frame": 0,
+          "group": 0,
+          "id": 31,
+          "label_id": 6,
+          "occluded": false,
+          "points": [
+            65.6189987163034,
+            100.96585365853753,
+            142.12734274711147,
+            362.6243902439037
+          ],
+          "rotation": 0.0,
+          "source": "manual",
+          "type": "rectangle",
+          "z_order": 0
+        }
+      ],
+      "tags": [],
+      "tracks": [],
+      "version": 0
+    },
+    "12": {
+      "shapes": [],
+      "tags": [],
+      "tracks": [],
+      "version": 0
+    },
+    "13": {
+      "shapes": [],
+      "tags": [],
+      "tracks": [],
+      "version": 0
+    },
+    "14": {
+      "shapes": [],
       "tags": [],
       "tracks": [],
       "version": 0
