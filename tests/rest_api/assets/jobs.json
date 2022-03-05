@@ -4,6 +4,43 @@
   "previous": null,
   "results": [
     {
+      "assignee": {
+        "first_name": "Admin",
+        "id": 1,
+        "last_name": "First",
+        "url": "http://localhost:8080/api/users/1",
+        "username": "admin1"
+      },
+      "bug_tracker": null,
+      "data_chunk_size": 72,
+      "data_compressed_chunk_type": "imageset",
+      "dimension": "2d",
+      "id": 10,
+      "labels": [
+        {
+          "attributes": [],
+          "color": "#6080c0",
+          "id": 13,
+          "name": "cat"
+        },
+        {
+          "attributes": [],
+          "color": "#406040",
+          "id": 14,
+          "name": "dog"
+        }
+      ],
+      "mode": "annotation",
+      "project_id": null,
+      "stage": "annotation",
+      "start_frame": 0,
+      "state": "in progress",
+      "status": "annotation",
+      "stop_frame": 13,
+      "task_id": 8,
+      "url": "http://localhost:8080/api/jobs/10"
+    },
+    {
       "assignee": null,
       "bug_tracker": null,
       "data_chunk_size": 72,
@@ -295,43 +332,6 @@
       "stop_frame": 22,
       "task_id": 2,
       "url": "http://localhost:8080/api/jobs/2"
-    },
-    {
-      "assignee": {
-        "first_name": "Admin",
-        "id": 1,
-        "last_name": "First",
-        "url": "http://localhost:8080/api/users/1",
-        "username": "admin1"
-      },
-      "bug_tracker": null,
-      "data_chunk_size": 72,
-      "data_compressed_chunk_type": "imageset",
-      "dimension": "2d",
-      "id": 1,
-      "labels": [
-        {
-          "attributes": [],
-          "color": "#6080c0",
-          "id": 1,
-          "name": "cat"
-        },
-        {
-          "attributes": [],
-          "color": "#406040",
-          "id": 2,
-          "name": "dog"
-        }
-      ],
-      "mode": "annotation",
-      "project_id": null,
-      "stage": "annotation",
-      "start_frame": 0,
-      "state": "new",
-      "status": "annotation",
-      "stop_frame": 129,
-      "task_id": 1,
-      "url": "http://localhost:8080/api/jobs/1"
     }
   ]
 }
