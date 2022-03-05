@@ -40,12 +40,12 @@
       },
       "status": "annotation",
       "task_subsets": [
-        "train"
+        "Train"
       ],
       "tasks": [
-        4
+        11
       ],
-      "updated_date": "2022-02-24T21:32:36.197000Z",
+      "updated_date": "2022-03-05T10:32:23.813000Z",
       "url": "http://localhost:8080/api/projects/2"
     },
     {
