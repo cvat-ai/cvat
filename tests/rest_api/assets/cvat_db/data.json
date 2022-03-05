@@ -1413,7 +1413,7 @@
   "pk": 1,
   "fields": {
     "password": "pbkdf2_sha256$260000$DevmxlmLwciP1P6sZs2Qag$U9DFtjTWx96Sk95qY6UXVcvpdQEP2LcoFBftk5D2RKY=",
-    "last_login": "2022-02-24T21:25:06.462Z",
+    "last_login": "2022-03-05T08:31:48.316Z",
     "is_superuser": true,
     "username": "admin1",
     "first_name": "Admin",
@@ -1433,7 +1433,7 @@
   "pk": 2,
   "fields": {
     "password": "pbkdf2_sha256$260000$Pf2xYWXBedoAJ504jyDD8e$8sJ244Ai0xhZrUTelapPNHlEg7CV0cCUaxbcxZtfaug=",
-    "last_login": "2022-02-16T06:24:53.910Z",
+    "last_login": "2022-03-05T08:52:22.036Z",
     "is_superuser": false,
     "username": "user1",
     "first_name": "User",
@@ -2242,6 +2242,14 @@
 },
 {
   "model": "sessions.session",
+  "pk": "ocld274jbc8mzeqeyi5iythycgfynrlp",
+  "fields": {
+    "session_data": ".eJxVjMEOwiAQRP-FsyFb2gXx6N1vIMsCUjWQlPZk_Hdp0oOeZjJvZt7C0bZmt7W4uDmIi1Di9Jt54mcsOwgPKvcquZZ1mb3cK_KgTd5qiK_r0f07yNRyXxsYgBOkQGQIDRuOydqzniJrQypg0DR5rxE1jKOyI3Q7dGFGUgji8wXu9jdp:1nQQ9G:l5G4f5p4yzZj73AtaYnG-PRXHocNFGQ5Pvm95pLy8Qg",
+    "expire_date": "2022-03-19T08:52:22.049Z"
+  }
+},
+{
+  "model": "sessions.session",
   "pk": "po0rbd1yhywmc0i2jfam69r419a66aj8",
   "fields": {
     "session_data": ".eJxVjMsOwiAQRf-FtSE8pB1cuvcbCMMMUjWQlHZl_HdD0oVu7znnvkWI-1bC3nkNC4mL0OL0u2FMT64D0CPWe5Op1W1dUA5FHrTLWyN-XQ_376DEXkY9QeKzIpWVn9gYhEhkI3lyYFg7jTMDg7WkAdF5mCFh9mRZZUhOi88X-eU4dg:1mzwj8:CWx3-u6eXmWLpwiFMK5_yWnoPY3yUSf1QCZY-UdJcF8",
@@ -2274,10 +2282,10 @@
 },
 {
   "model": "authtoken.token",
-  "pk": "48372a6aac494a9932803913ec9088216778b57c",
+  "pk": "8143e1883fa9ac2a71713636e97b373d67af4ae2",
   "fields": {
-    "user": 1,
-    "created": "2022-02-21T10:37:08.935Z"
+    "user": 2,
+    "created": "2022-03-05T08:52:22.017Z"
   }
 },
 {
@@ -2286,14 +2294,6 @@
   "fields": {
     "user": 10,
     "created": "2021-12-14T19:44:48.519Z"
-  }
-},
-{
-  "model": "authtoken.token",
-  "pk": "e28ce88d18614314476dec601b5c29b9093045f1",
-  "fields": {
-    "user": 2,
-    "created": "2022-02-16T06:24:53.902Z"
   }
 },
 {
@@ -2558,24 +2558,6 @@
 },
 {
   "model": "engine.data",
-  "pk": 1,
-  "fields": {
-    "chunk_size": 72,
-    "size": 130,
-    "image_quality": 70,
-    "start_frame": 0,
-    "stop_frame": 129,
-    "frame_filter": "",
-    "compressed_chunk_type": "imageset",
-    "original_chunk_type": "imageset",
-    "storage_method": "cache",
-    "storage": "local",
-    "cloud_storage": null,
-    "sorting_method": "natural"
-  }
-},
-{
-  "model": "engine.data",
   "pk": 2,
   "fields": {
     "chunk_size": 72,
@@ -2683,6 +2665,24 @@
   }
 },
 {
+  "model": "engine.data",
+  "pk": 8,
+  "fields": {
+    "chunk_size": 72,
+    "size": 14,
+    "image_quality": 70,
+    "start_frame": 0,
+    "stop_frame": 13,
+    "frame_filter": "",
+    "compressed_chunk_type": "imageset",
+    "original_chunk_type": "imageset",
+    "storage_method": "cache",
+    "storage": "local",
+    "cloud_storage": null,
+    "sorting_method": "lexicographical"
+  }
+},
+{
   "model": "engine.video",
   "pk": 1,
   "fields": {
@@ -2690,1436 +2690,6 @@
     "path": "test_video_1.mp4",
     "width": 1280,
     "height": 720
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 1,
-  "fields": {
-    "data": 1,
-    "path": "14.png",
-    "frame": 0,
-    "width": 598,
-    "height": 694
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 2,
-  "fields": {
-    "data": 1,
-    "path": "15.png",
-    "frame": 1,
-    "width": 471,
-    "height": 917
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 3,
-  "fields": {
-    "data": 1,
-    "path": "16.png",
-    "frame": 2,
-    "width": 876,
-    "height": 672
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 4,
-  "fields": {
-    "data": 1,
-    "path": "17.png",
-    "frame": 3,
-    "width": 681,
-    "height": 683
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 5,
-  "fields": {
-    "data": 1,
-    "path": "18.png",
-    "frame": 4,
-    "width": 928,
-    "height": 619
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 6,
-  "fields": {
-    "data": 1,
-    "path": "19.png",
-    "frame": 5,
-    "width": 979,
-    "height": 637
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 7,
-  "fields": {
-    "data": 1,
-    "path": "20.png",
-    "frame": 6,
-    "width": 675,
-    "height": 512
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 8,
-  "fields": {
-    "data": 1,
-    "path": "21.png",
-    "frame": 7,
-    "width": 230,
-    "height": 294
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 9,
-  "fields": {
-    "data": 1,
-    "path": "22.png",
-    "frame": 8,
-    "width": 976,
-    "height": 957
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 10,
-  "fields": {
-    "data": 1,
-    "path": "23.png",
-    "frame": 9,
-    "width": 906,
-    "height": 568
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 11,
-  "fields": {
-    "data": 1,
-    "path": "24.png",
-    "frame": 10,
-    "width": 242,
-    "height": 453
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 12,
-  "fields": {
-    "data": 1,
-    "path": "25.png",
-    "frame": 11,
-    "width": 509,
-    "height": 883
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 13,
-  "fields": {
-    "data": 1,
-    "path": "26.png",
-    "frame": 12,
-    "width": 692,
-    "height": 637
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 14,
-  "fields": {
-    "data": 1,
-    "path": "27.png",
-    "frame": 13,
-    "width": 437,
-    "height": 532
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 15,
-  "fields": {
-    "data": 1,
-    "path": "28.png",
-    "frame": 14,
-    "width": 519,
-    "height": 868
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 16,
-  "fields": {
-    "data": 1,
-    "path": "29.png",
-    "frame": 15,
-    "width": 841,
-    "height": 581
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 17,
-  "fields": {
-    "data": 1,
-    "path": "30.png",
-    "frame": 16,
-    "width": 375,
-    "height": 740
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 18,
-  "fields": {
-    "data": 1,
-    "path": "31.png",
-    "frame": 17,
-    "width": 836,
-    "height": 886
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 19,
-  "fields": {
-    "data": 1,
-    "path": "32.png",
-    "frame": 18,
-    "width": 532,
-    "height": 804
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 20,
-  "fields": {
-    "data": 1,
-    "path": "33.png",
-    "frame": 19,
-    "width": 397,
-    "height": 928
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 21,
-  "fields": {
-    "data": 1,
-    "path": "34.png",
-    "frame": 20,
-    "width": 643,
-    "height": 626
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 22,
-  "fields": {
-    "data": 1,
-    "path": "35.png",
-    "frame": 21,
-    "width": 479,
-    "height": 231
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 23,
-  "fields": {
-    "data": 1,
-    "path": "36.png",
-    "frame": 22,
-    "width": 162,
-    "height": 120
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 24,
-  "fields": {
-    "data": 1,
-    "path": "37.png",
-    "frame": 23,
-    "width": 933,
-    "height": 433
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 25,
-  "fields": {
-    "data": 1,
-    "path": "38.png",
-    "frame": 24,
-    "width": 736,
-    "height": 205
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 26,
-  "fields": {
-    "data": 1,
-    "path": "39.png",
-    "frame": 25,
-    "width": 145,
-    "height": 389
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 27,
-  "fields": {
-    "data": 1,
-    "path": "40.png",
-    "frame": 26,
-    "width": 413,
-    "height": 107
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 28,
-  "fields": {
-    "data": 1,
-    "path": "41.png",
-    "frame": 27,
-    "width": 279,
-    "height": 153
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 29,
-  "fields": {
-    "data": 1,
-    "path": "42.png",
-    "frame": 28,
-    "width": 763,
-    "height": 1000
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 30,
-  "fields": {
-    "data": 1,
-    "path": "43.png",
-    "frame": 29,
-    "width": 775,
-    "height": 948
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 31,
-  "fields": {
-    "data": 1,
-    "path": "44.png",
-    "frame": 30,
-    "width": 835,
-    "height": 392
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 32,
-  "fields": {
-    "data": 1,
-    "path": "45.png",
-    "frame": 31,
-    "width": 295,
-    "height": 509
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 33,
-  "fields": {
-    "data": 1,
-    "path": "46.png",
-    "frame": 32,
-    "width": 629,
-    "height": 979
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 34,
-  "fields": {
-    "data": 1,
-    "path": "47.png",
-    "frame": 33,
-    "width": 368,
-    "height": 368
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 35,
-  "fields": {
-    "data": 1,
-    "path": "48.png",
-    "frame": 34,
-    "width": 620,
-    "height": 731
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 36,
-  "fields": {
-    "data": 1,
-    "path": "49.png",
-    "frame": 35,
-    "width": 100,
-    "height": 953
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 37,
-  "fields": {
-    "data": 1,
-    "path": "50.png",
-    "frame": 36,
-    "width": 543,
-    "height": 750
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 38,
-  "fields": {
-    "data": 1,
-    "path": "51.png",
-    "frame": 37,
-    "width": 519,
-    "height": 225
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 39,
-  "fields": {
-    "data": 1,
-    "path": "52.png",
-    "frame": 38,
-    "width": 226,
-    "height": 986
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 40,
-  "fields": {
-    "data": 1,
-    "path": "53.png",
-    "frame": 39,
-    "width": 752,
-    "height": 887
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 41,
-  "fields": {
-    "data": 1,
-    "path": "54.png",
-    "frame": 40,
-    "width": 722,
-    "height": 410
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 42,
-  "fields": {
-    "data": 1,
-    "path": "55.png",
-    "frame": 41,
-    "width": 412,
-    "height": 335
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 43,
-  "fields": {
-    "data": 1,
-    "path": "56.png",
-    "frame": 42,
-    "width": 623,
-    "height": 160
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 44,
-  "fields": {
-    "data": 1,
-    "path": "57.png",
-    "frame": 43,
-    "width": 982,
-    "height": 855
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 45,
-  "fields": {
-    "data": 1,
-    "path": "58.png",
-    "frame": 44,
-    "width": 104,
-    "height": 412
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 46,
-  "fields": {
-    "data": 1,
-    "path": "59.png",
-    "frame": 45,
-    "width": 526,
-    "height": 198
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 47,
-  "fields": {
-    "data": 1,
-    "path": "60.png",
-    "frame": 46,
-    "width": 865,
-    "height": 359
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 48,
-  "fields": {
-    "data": 1,
-    "path": "61.png",
-    "frame": 47,
-    "width": 253,
-    "height": 906
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 49,
-  "fields": {
-    "data": 1,
-    "path": "62.png",
-    "frame": 48,
-    "width": 274,
-    "height": 214
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 50,
-  "fields": {
-    "data": 1,
-    "path": "63.png",
-    "frame": 49,
-    "width": 957,
-    "height": 684
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 51,
-  "fields": {
-    "data": 1,
-    "path": "64.png",
-    "frame": 50,
-    "width": 463,
-    "height": 243
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 52,
-  "fields": {
-    "data": 1,
-    "path": "65.png",
-    "frame": 51,
-    "width": 311,
-    "height": 122
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 53,
-  "fields": {
-    "data": 1,
-    "path": "66.png",
-    "frame": 52,
-    "width": 675,
-    "height": 918
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 54,
-  "fields": {
-    "data": 1,
-    "path": "67.png",
-    "frame": 53,
-    "width": 145,
-    "height": 219
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 55,
-  "fields": {
-    "data": 1,
-    "path": "68.png",
-    "frame": 54,
-    "width": 701,
-    "height": 489
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 56,
-  "fields": {
-    "data": 1,
-    "path": "69.png",
-    "frame": 55,
-    "width": 990,
-    "height": 876
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 57,
-  "fields": {
-    "data": 1,
-    "path": "70.png",
-    "frame": 56,
-    "width": 215,
-    "height": 275
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 58,
-  "fields": {
-    "data": 1,
-    "path": "71.png",
-    "frame": 57,
-    "width": 142,
-    "height": 777
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 59,
-  "fields": {
-    "data": 1,
-    "path": "72.png",
-    "frame": 58,
-    "width": 499,
-    "height": 828
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 60,
-  "fields": {
-    "data": 1,
-    "path": "73.png",
-    "frame": 59,
-    "width": 391,
-    "height": 397
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 61,
-  "fields": {
-    "data": 1,
-    "path": "74.png",
-    "frame": 60,
-    "width": 728,
-    "height": 175
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 62,
-  "fields": {
-    "data": 1,
-    "path": "75.png",
-    "frame": 61,
-    "width": 518,
-    "height": 662
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 63,
-  "fields": {
-    "data": 1,
-    "path": "76.png",
-    "frame": 62,
-    "width": 800,
-    "height": 658
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 64,
-  "fields": {
-    "data": 1,
-    "path": "77.png",
-    "frame": 63,
-    "width": 862,
-    "height": 238
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 65,
-  "fields": {
-    "data": 1,
-    "path": "78.png",
-    "frame": 64,
-    "width": 330,
-    "height": 260
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 66,
-  "fields": {
-    "data": 1,
-    "path": "79.png",
-    "frame": 65,
-    "width": 357,
-    "height": 537
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 67,
-  "fields": {
-    "data": 1,
-    "path": "80.png",
-    "frame": 66,
-    "width": 630,
-    "height": 839
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 68,
-  "fields": {
-    "data": 1,
-    "path": "81.png",
-    "frame": 67,
-    "width": 429,
-    "height": 206
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 69,
-  "fields": {
-    "data": 1,
-    "path": "82.png",
-    "frame": 68,
-    "width": 340,
-    "height": 227
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 70,
-  "fields": {
-    "data": 1,
-    "path": "83.png",
-    "frame": 69,
-    "width": 580,
-    "height": 577
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 71,
-  "fields": {
-    "data": 1,
-    "path": "84.png",
-    "frame": 70,
-    "width": 845,
-    "height": 429
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 72,
-  "fields": {
-    "data": 1,
-    "path": "85.png",
-    "frame": 71,
-    "width": 413,
-    "height": 672
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 73,
-  "fields": {
-    "data": 1,
-    "path": "86.png",
-    "frame": 72,
-    "width": 405,
-    "height": 464
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 74,
-  "fields": {
-    "data": 1,
-    "path": "87.png",
-    "frame": 73,
-    "width": 923,
-    "height": 988
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 75,
-  "fields": {
-    "data": 1,
-    "path": "88.png",
-    "frame": 74,
-    "width": 921,
-    "height": 720
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 76,
-  "fields": {
-    "data": 1,
-    "path": "89.png",
-    "frame": 75,
-    "width": 489,
-    "height": 149
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 77,
-  "fields": {
-    "data": 1,
-    "path": "90.png",
-    "frame": 76,
-    "width": 934,
-    "height": 433
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 78,
-  "fields": {
-    "data": 1,
-    "path": "91.png",
-    "frame": 77,
-    "width": 299,
-    "height": 523
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 79,
-  "fields": {
-    "data": 1,
-    "path": "92.png",
-    "frame": 78,
-    "width": 327,
-    "height": 740
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 80,
-  "fields": {
-    "data": 1,
-    "path": "93.png",
-    "frame": 79,
-    "width": 425,
-    "height": 740
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 81,
-  "fields": {
-    "data": 1,
-    "path": "94.png",
-    "frame": 80,
-    "width": 651,
-    "height": 722
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 82,
-  "fields": {
-    "data": 1,
-    "path": "95.png",
-    "frame": 81,
-    "width": 996,
-    "height": 261
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 83,
-  "fields": {
-    "data": 1,
-    "path": "96.png",
-    "frame": 82,
-    "width": 815,
-    "height": 823
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 84,
-  "fields": {
-    "data": 1,
-    "path": "97.png",
-    "frame": 83,
-    "width": 433,
-    "height": 647
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 85,
-  "fields": {
-    "data": 1,
-    "path": "98.png",
-    "frame": 84,
-    "width": 615,
-    "height": 370
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 86,
-  "fields": {
-    "data": 1,
-    "path": "99.png",
-    "frame": 85,
-    "width": 343,
-    "height": 545
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 87,
-  "fields": {
-    "data": 1,
-    "path": "100.png",
-    "frame": 86,
-    "width": 281,
-    "height": 177
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 88,
-  "fields": {
-    "data": 1,
-    "path": "101.png",
-    "frame": 87,
-    "width": 323,
-    "height": 190
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 89,
-  "fields": {
-    "data": 1,
-    "path": "102.png",
-    "frame": 88,
-    "width": 958,
-    "height": 550
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 90,
-  "fields": {
-    "data": 1,
-    "path": "103.png",
-    "frame": 89,
-    "width": 224,
-    "height": 498
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 91,
-  "fields": {
-    "data": 1,
-    "path": "104.png",
-    "frame": 90,
-    "width": 903,
-    "height": 754
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 92,
-  "fields": {
-    "data": 1,
-    "path": "105.png",
-    "frame": 91,
-    "width": 896,
-    "height": 761
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 93,
-  "fields": {
-    "data": 1,
-    "path": "106.png",
-    "frame": 92,
-    "width": 151,
-    "height": 390
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 94,
-  "fields": {
-    "data": 1,
-    "path": "107.png",
-    "frame": 93,
-    "width": 289,
-    "height": 695
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 95,
-  "fields": {
-    "data": 1,
-    "path": "108.png",
-    "frame": 94,
-    "width": 373,
-    "height": 888
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 96,
-  "fields": {
-    "data": 1,
-    "path": "109.png",
-    "frame": 95,
-    "width": 160,
-    "height": 519
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 97,
-  "fields": {
-    "data": 1,
-    "path": "110.png",
-    "frame": 96,
-    "width": 978,
-    "height": 809
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 98,
-  "fields": {
-    "data": 1,
-    "path": "111.png",
-    "frame": 97,
-    "width": 926,
-    "height": 660
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 99,
-  "fields": {
-    "data": 1,
-    "path": "112.png",
-    "frame": 98,
-    "width": 985,
-    "height": 738
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 100,
-  "fields": {
-    "data": 1,
-    "path": "113.png",
-    "frame": 99,
-    "width": 145,
-    "height": 770
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 101,
-  "fields": {
-    "data": 1,
-    "path": "114.png",
-    "frame": 100,
-    "width": 450,
-    "height": 615
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 102,
-  "fields": {
-    "data": 1,
-    "path": "115.png",
-    "frame": 101,
-    "width": 220,
-    "height": 795
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 103,
-  "fields": {
-    "data": 1,
-    "path": "116.png",
-    "frame": 102,
-    "width": 134,
-    "height": 313
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 104,
-  "fields": {
-    "data": 1,
-    "path": "117.png",
-    "frame": 103,
-    "width": 828,
-    "height": 461
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 105,
-  "fields": {
-    "data": 1,
-    "path": "118.png",
-    "frame": 104,
-    "width": 940,
-    "height": 805
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 106,
-  "fields": {
-    "data": 1,
-    "path": "119.png",
-    "frame": 105,
-    "width": 693,
-    "height": 357
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 107,
-  "fields": {
-    "data": 1,
-    "path": "120.png",
-    "frame": 106,
-    "width": 254,
-    "height": 301
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 108,
-  "fields": {
-    "data": 1,
-    "path": "121.png",
-    "frame": 107,
-    "width": 918,
-    "height": 334
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 109,
-  "fields": {
-    "data": 1,
-    "path": "122.png",
-    "frame": 108,
-    "width": 619,
-    "height": 115
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 110,
-  "fields": {
-    "data": 1,
-    "path": "123.png",
-    "frame": 109,
-    "width": 599,
-    "height": 738
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 111,
-  "fields": {
-    "data": 1,
-    "path": "124.png",
-    "frame": 110,
-    "width": 306,
-    "height": 355
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 112,
-  "fields": {
-    "data": 1,
-    "path": "125.png",
-    "frame": 111,
-    "width": 838,
-    "height": 507
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 113,
-  "fields": {
-    "data": 1,
-    "path": "126.png",
-    "frame": 112,
-    "width": 885,
-    "height": 211
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 114,
-  "fields": {
-    "data": 1,
-    "path": "127.png",
-    "frame": 113,
-    "width": 553,
-    "height": 522
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 115,
-  "fields": {
-    "data": 1,
-    "path": "128.png",
-    "frame": 114,
-    "width": 424,
-    "height": 826
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 116,
-  "fields": {
-    "data": 1,
-    "path": "129.png",
-    "frame": 115,
-    "width": 264,
-    "height": 984
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 117,
-  "fields": {
-    "data": 1,
-    "path": "130.png",
-    "frame": 116,
-    "width": 698,
-    "height": 387
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 118,
-  "fields": {
-    "data": 1,
-    "path": "131.png",
-    "frame": 117,
-    "width": 781,
-    "height": 901
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 119,
-  "fields": {
-    "data": 1,
-    "path": "132.png",
-    "frame": 118,
-    "width": 144,
-    "height": 149
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 120,
-  "fields": {
-    "data": 1,
-    "path": "133.png",
-    "frame": 119,
-    "width": 989,
-    "height": 131
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 121,
-  "fields": {
-    "data": 1,
-    "path": "134.png",
-    "frame": 120,
-    "width": 661,
-    "height": 328
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 122,
-  "fields": {
-    "data": 1,
-    "path": "135.png",
-    "frame": 121,
-    "width": 333,
-    "height": 811
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 123,
-  "fields": {
-    "data": 1,
-    "path": "136.png",
-    "frame": 122,
-    "width": 292,
-    "height": 497
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 124,
-  "fields": {
-    "data": 1,
-    "path": "137.png",
-    "frame": 123,
-    "width": 886,
-    "height": 238
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 125,
-  "fields": {
-    "data": 1,
-    "path": "138.png",
-    "frame": 124,
-    "width": 759,
-    "height": 179
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 126,
-  "fields": {
-    "data": 1,
-    "path": "139.png",
-    "frame": 125,
-    "width": 769,
-    "height": 746
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 127,
-  "fields": {
-    "data": 1,
-    "path": "140.png",
-    "frame": 126,
-    "width": 749,
-    "height": 833
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 128,
-  "fields": {
-    "data": 1,
-    "path": "141.png",
-    "frame": 127,
-    "width": 623,
-    "height": 853
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 129,
-  "fields": {
-    "data": 1,
-    "path": "142.png",
-    "frame": 128,
-    "width": 925,
-    "height": 361
-  }
-},
-{
-  "model": "engine.image",
-  "pk": 130,
-  "fields": {
-    "data": 1,
-    "path": "143.png",
-    "frame": 129,
-    "width": 135,
-    "height": 740
   }
 },
 {
@@ -6774,6 +5344,160 @@
   }
 },
 {
+  "model": "engine.image",
+  "pk": 372,
+  "fields": {
+    "data": 8,
+    "path": "0.png",
+    "frame": 0,
+    "width": 836,
+    "height": 636
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 373,
+  "fields": {
+    "data": 8,
+    "path": "1.png",
+    "frame": 1,
+    "width": 396,
+    "height": 350
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 374,
+  "fields": {
+    "data": 8,
+    "path": "10.png",
+    "frame": 2,
+    "width": 177,
+    "height": 862
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 375,
+  "fields": {
+    "data": 8,
+    "path": "11.png",
+    "frame": 3,
+    "width": 318,
+    "height": 925
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 376,
+  "fields": {
+    "data": 8,
+    "path": "12.png",
+    "frame": 4,
+    "width": 734,
+    "height": 832
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 377,
+  "fields": {
+    "data": 8,
+    "path": "13.png",
+    "frame": 5,
+    "width": 925,
+    "height": 934
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 378,
+  "fields": {
+    "data": 8,
+    "path": "14.png",
+    "frame": 6,
+    "width": 851,
+    "height": 270
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 379,
+  "fields": {
+    "data": 8,
+    "path": "2.png",
+    "frame": 7,
+    "width": 776,
+    "height": 610
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 380,
+  "fields": {
+    "data": 8,
+    "path": "3.png",
+    "frame": 8,
+    "width": 293,
+    "height": 265
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 381,
+  "fields": {
+    "data": 8,
+    "path": "4.png",
+    "frame": 9,
+    "width": 333,
+    "height": 805
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 382,
+  "fields": {
+    "data": 8,
+    "path": "6.png",
+    "frame": 10,
+    "width": 403,
+    "height": 478
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 383,
+  "fields": {
+    "data": 8,
+    "path": "7.png",
+    "frame": 11,
+    "width": 585,
+    "height": 721
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 384,
+  "fields": {
+    "data": 8,
+    "path": "8.png",
+    "frame": 12,
+    "width": 639,
+    "height": 570
+  }
+},
+{
+  "model": "engine.image",
+  "pk": 385,
+  "fields": {
+    "data": 8,
+    "path": "9.png",
+    "frame": 13,
+    "width": 894,
+    "height": 278
+  }
+},
+{
   "model": "engine.project",
   "pk": 1,
   "fields": {
@@ -6799,27 +5523,6 @@
     "updated_date": "2022-02-24T21:32:36.197Z",
     "status": "annotation",
     "organization": 2
-  }
-},
-{
-  "model": "engine.task",
-  "pk": 1,
-  "fields": {
-    "project": null,
-    "name": "task1",
-    "mode": "annotation",
-    "owner": 2,
-    "assignee": null,
-    "bug_tracker": "",
-    "created_date": "2021-12-14T18:43:47.601Z",
-    "updated_date": "2021-12-22T07:15:22.942Z",
-    "overlap": 0,
-    "segment_size": 130,
-    "status": "annotation",
-    "data": 1,
-    "dimension": "2d",
-    "subset": "",
-    "organization": null
   }
 },
 {
@@ -6949,1043 +5652,24 @@
   }
 },
 {
-  "model": "engine.clientfile",
-  "pk": 1,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/59.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 2,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/65.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 3,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/90.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 4,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/69.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 5,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/19.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 6,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/91.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 7,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/120.png"
-  }
-},
-{
-  "model": "engine.clientfile",
+  "model": "engine.task",
   "pk": 8,
   "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/30.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 9,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/127.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 10,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/142.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 11,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/115.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 12,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/73.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 13,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/71.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 14,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/72.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 15,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/20.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 16,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/66.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 17,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/68.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 18,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/80.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 19,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/76.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 20,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/84.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 21,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/101.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 22,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/112.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 23,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/95.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 24,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/124.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 25,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/133.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 26,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/22.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 27,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/97.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 28,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/131.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 29,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/50.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 30,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/48.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 31,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/28.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 32,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/29.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 33,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/93.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 34,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/79.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 35,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/77.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 36,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/107.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 37,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/125.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 38,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/62.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 39,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/78.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 40,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/111.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 41,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/64.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 42,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/55.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 43,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/63.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 44,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/85.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 45,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/121.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 46,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/94.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 47,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/57.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 48,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/141.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 49,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/122.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 50,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/88.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 51,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/38.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 52,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/14.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 53,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/16.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 54,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/109.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 55,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/106.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 56,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/26.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 57,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/98.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 58,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/34.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 59,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/126.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 60,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/105.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 61,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/143.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 62,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/104.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 63,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/89.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 64,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/130.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 65,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/123.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 66,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/43.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 67,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/40.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 68,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/74.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 69,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/117.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 70,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/132.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 71,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/116.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 72,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/52.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 73,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/113.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 74,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/58.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 75,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/99.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 76,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/119.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 77,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/18.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 78,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/137.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 79,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/44.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 80,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/23.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 81,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/39.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 82,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/31.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 83,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/83.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 84,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/67.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 85,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/46.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 86,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/49.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 87,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/108.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 88,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/110.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 89,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/21.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 90,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/129.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 91,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/81.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 92,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/41.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 93,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/96.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 94,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/118.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 95,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/135.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 96,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/87.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 97,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/102.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 98,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/32.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 99,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/47.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 100,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/51.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 101,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/140.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 102,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/15.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 103,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/45.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 104,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/100.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 105,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/33.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 106,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/35.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 107,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/139.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 108,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/61.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 109,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/82.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 110,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/27.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 111,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/136.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 112,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/24.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 113,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/56.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 114,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/36.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 115,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/86.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 116,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/70.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 117,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/53.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 118,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/92.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 119,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/25.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 120,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/54.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 121,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/103.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 122,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/128.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 123,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/42.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 124,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/138.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 125,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/114.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 126,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/60.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 127,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/75.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 128,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/37.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 129,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/17.png"
-  }
-},
-{
-  "model": "engine.clientfile",
-  "pk": 130,
-  "fields": {
-    "data": 1,
-    "file": "/home/django/data/data/1/raw/134.png"
+    "project": null,
+    "name": "task1",
+    "mode": "annotation",
+    "owner": 2,
+    "assignee": null,
+    "bug_tracker": "",
+    "created_date": "2022-03-05T08:30:48.612Z",
+    "updated_date": "2022-03-05T08:52:34.908Z",
+    "overlap": 0,
+    "segment_size": 14,
+    "status": "annotation",
+    "data": 8,
+    "dimension": "2d",
+    "subset": "",
+    "organization": null
   }
 },
 {
@@ -9925,21 +7609,124 @@
   }
 },
 {
+  "model": "engine.clientfile",
+  "pk": 373,
+  "fields": {
+    "data": 8,
+    "file": "/home/django/data/data/8/raw/10.png"
+  }
+},
+{
+  "model": "engine.clientfile",
+  "pk": 374,
+  "fields": {
+    "data": 8,
+    "file": "/home/django/data/data/8/raw/3.png"
+  }
+},
+{
+  "model": "engine.clientfile",
+  "pk": 375,
+  "fields": {
+    "data": 8,
+    "file": "/home/django/data/data/8/raw/9.png"
+  }
+},
+{
+  "model": "engine.clientfile",
+  "pk": 376,
+  "fields": {
+    "data": 8,
+    "file": "/home/django/data/data/8/raw/6.png"
+  }
+},
+{
+  "model": "engine.clientfile",
+  "pk": 377,
+  "fields": {
+    "data": 8,
+    "file": "/home/django/data/data/8/raw/13.png"
+  }
+},
+{
+  "model": "engine.clientfile",
+  "pk": 378,
+  "fields": {
+    "data": 8,
+    "file": "/home/django/data/data/8/raw/0.png"
+  }
+},
+{
+  "model": "engine.clientfile",
+  "pk": 379,
+  "fields": {
+    "data": 8,
+    "file": "/home/django/data/data/8/raw/12.png"
+  }
+},
+{
+  "model": "engine.clientfile",
+  "pk": 380,
+  "fields": {
+    "data": 8,
+    "file": "/home/django/data/data/8/raw/8.png"
+  }
+},
+{
+  "model": "engine.clientfile",
+  "pk": 381,
+  "fields": {
+    "data": 8,
+    "file": "/home/django/data/data/8/raw/2.png"
+  }
+},
+{
+  "model": "engine.clientfile",
+  "pk": 382,
+  "fields": {
+    "data": 8,
+    "file": "/home/django/data/data/8/raw/7.png"
+  }
+},
+{
+  "model": "engine.clientfile",
+  "pk": 383,
+  "fields": {
+    "data": 8,
+    "file": "/home/django/data/data/8/raw/1.png"
+  }
+},
+{
+  "model": "engine.clientfile",
+  "pk": 384,
+  "fields": {
+    "data": 8,
+    "file": "/home/django/data/data/8/raw/4.png"
+  }
+},
+{
+  "model": "engine.clientfile",
+  "pk": 385,
+  "fields": {
+    "data": 8,
+    "file": "/home/django/data/data/8/raw/11.png"
+  }
+},
+{
+  "model": "engine.clientfile",
+  "pk": 386,
+  "fields": {
+    "data": 8,
+    "file": "/home/django/data/data/8/raw/14.png"
+  }
+},
+{
   "model": "engine.relatedfile",
   "pk": 1,
   "fields": {
     "data": 6,
     "path": "/home/django/data/data/6/raw/test_pointcloud_pcd/related_images/000001_pcd/000001.png",
     "primary_image": 360
-  }
-},
-{
-  "model": "engine.segment",
-  "pk": 1,
-  "fields": {
-    "task": 1,
-    "start_frame": 0,
-    "stop_frame": 129
   }
 },
 {
@@ -10015,14 +7802,12 @@
   }
 },
 {
-  "model": "engine.job",
-  "pk": 1,
+  "model": "engine.segment",
+  "pk": 10,
   "fields": {
-    "segment": 1,
-    "assignee": 1,
-    "status": "annotation",
-    "stage": "annotation",
-    "state": "new"
+    "task": 8,
+    "start_frame": 0,
+    "stop_frame": 13
   }
 },
 {
@@ -10114,23 +7899,14 @@
   }
 },
 {
-  "model": "engine.label",
-  "pk": 1,
+  "model": "engine.job",
+  "pk": 10,
   "fields": {
-    "task": 1,
-    "project": null,
-    "name": "cat",
-    "color": "#6080c0"
-  }
-},
-{
-  "model": "engine.label",
-  "pk": 2,
-  "fields": {
-    "task": 1,
-    "project": null,
-    "name": "dog",
-    "color": "#406040"
+    "segment": 10,
+    "assignee": 1,
+    "status": "annotation",
+    "stage": "annotation",
+    "state": "in progress"
   }
 },
 {
@@ -10234,6 +8010,26 @@
   }
 },
 {
+  "model": "engine.label",
+  "pk": 13,
+  "fields": {
+    "task": 8,
+    "project": null,
+    "name": "cat",
+    "color": "#6080c0"
+  }
+},
+{
+  "model": "engine.label",
+  "pk": 14,
+  "fields": {
+    "task": 8,
+    "project": null,
+    "name": "dog",
+    "color": "#406040"
+  }
+},
+{
   "model": "engine.attributespec",
   "pk": 1,
   "fields": {
@@ -10276,39 +8072,6 @@
     "timestamp": "2021-12-22T07:14:15.298Z",
     "data": {},
     "job": 2
-  }
-},
-{
-  "model": "engine.jobcommit",
-  "pk": 4,
-  "fields": {
-    "scope": "",
-    "owner": null,
-    "timestamp": "2021-12-22T07:15:22.945Z",
-    "data": {},
-    "job": 1
-  }
-},
-{
-  "model": "engine.jobcommit",
-  "pk": 5,
-  "fields": {
-    "scope": "",
-    "owner": null,
-    "timestamp": "2021-12-22T07:15:22.985Z",
-    "data": {},
-    "job": 1
-  }
-},
-{
-  "model": "engine.jobcommit",
-  "pk": 6,
-  "fields": {
-    "scope": "",
-    "owner": null,
-    "timestamp": "2021-12-22T07:15:23.019Z",
-    "data": {},
-    "job": 1
   }
 },
 {
@@ -10543,6 +8306,150 @@
   }
 },
 {
+  "model": "engine.jobcommit",
+  "pk": 28,
+  "fields": {
+    "scope": "create",
+    "owner": 2,
+    "timestamp": "2022-03-05T08:30:49.330Z",
+    "data": {
+      "stage": "annotation",
+      "state": "new",
+      "assignee": null
+    },
+    "job": 10
+  }
+},
+{
+  "model": "engine.jobcommit",
+  "pk": 29,
+  "fields": {
+    "scope": "create",
+    "owner": 2,
+    "timestamp": "2022-03-05T08:32:06.104Z",
+    "data": {
+      "stage": "annotation",
+      "state": "new",
+      "assignee": {
+        "user": {
+          "id": 1,
+          "username": "admin1"
+        }
+      }
+    },
+    "job": 10
+  }
+},
+{
+  "model": "engine.jobcommit",
+  "pk": 30,
+  "fields": {
+    "scope": "update",
+    "owner": 1,
+    "timestamp": "2022-03-05T08:32:06.111Z",
+    "data": {
+      "assignee": {
+        "user": {
+          "id": 1,
+          "username": "admin1"
+        }
+      }
+    },
+    "job": 10
+  }
+},
+{
+  "model": "engine.jobcommit",
+  "pk": 31,
+  "fields": {
+    "scope": "create",
+    "owner": 2,
+    "timestamp": "2022-03-05T08:32:06.133Z",
+    "data": {
+      "stage": "annotation",
+      "state": "new",
+      "assignee": {
+        "user": {
+          "id": 1,
+          "username": "admin1"
+        }
+      }
+    },
+    "job": 10
+  }
+},
+{
+  "model": "engine.jobcommit",
+  "pk": 32,
+  "fields": {
+    "scope": "update",
+    "owner": 1,
+    "timestamp": "2022-03-05T08:32:06.141Z",
+    "data": {
+      "assignee": {
+        "user": {
+          "id": 1,
+          "username": "admin1"
+        }
+      }
+    },
+    "job": 10
+  }
+},
+{
+  "model": "engine.jobcommit",
+  "pk": 33,
+  "fields": {
+    "scope": "create",
+    "owner": 2,
+    "timestamp": "2022-03-05T08:52:34.922Z",
+    "data": {
+      "stage": "annotation",
+      "state": "new",
+      "assignee": {
+        "user": {
+          "id": 1,
+          "username": "admin1"
+        }
+      }
+    },
+    "job": 10
+  }
+},
+{
+  "model": "engine.jobcommit",
+  "pk": 34,
+  "fields": {
+    "scope": "create",
+    "owner": 2,
+    "timestamp": "2022-03-05T08:52:35.283Z",
+    "data": {
+      "stage": "annotation",
+      "state": "in progress",
+      "assignee": {
+        "user": {
+          "id": 1,
+          "username": "admin1"
+        }
+      }
+    },
+    "job": 10
+  }
+},
+{
+  "model": "engine.jobcommit",
+  "pk": 35,
+  "fields": {
+    "scope": "update",
+    "owner": 2,
+    "timestamp": "2022-03-05T08:52:35.288Z",
+    "data": {
+      "state": "in progress"
+    },
+    "job": 10
+  }
+},
+{
   "model": "engine.labeledshape",
   "pk": 1,
   "fields": {
@@ -10619,150 +8526,6 @@
     "occluded": false,
     "z_order": 0,
     "points": "[148.94921875, 285.6865234375, 313.515094339622, 400.32830188679145, 217.36415094339463, 585.2339622641503, 64.81698113207494, 499.25283018867776]",
-    "rotation": 0.0
-  }
-},
-{
-  "model": "engine.labeledshape",
-  "pk": 6,
-  "fields": {
-    "job": 1,
-    "label": 1,
-    "frame": 0,
-    "group": 0,
-    "source": "manual",
-    "type": "rectangle",
-    "occluded": false,
-    "z_order": 0,
-    "points": "[139.595703125, 123.2666015625, 348.2578582763672, 246.5074462890625]",
-    "rotation": 0.0
-  }
-},
-{
-  "model": "engine.labeledshape",
-  "pk": 7,
-  "fields": {
-    "job": 1,
-    "label": 1,
-    "frame": 0,
-    "group": 0,
-    "source": "manual",
-    "type": "rectangle",
-    "occluded": false,
-    "z_order": 0,
-    "points": "[249.7421875, 432.9091796875, 470.0352020263672, 558.4607925415039]",
-    "rotation": 0.0
-  }
-},
-{
-  "model": "engine.labeledshape",
-  "pk": 8,
-  "fields": {
-    "job": 1,
-    "label": 1,
-    "frame": 0,
-    "group": 0,
-    "source": "manual",
-    "type": "rectangle",
-    "occluded": false,
-    "z_order": 0,
-    "points": "[416.810546875, 226.48046875, 560.8482818603516, 353.5725860595703]",
-    "rotation": 0.0
-  }
-},
-{
-  "model": "engine.labeledshape",
-  "pk": 9,
-  "fields": {
-    "job": 1,
-    "label": 1,
-    "frame": 1,
-    "group": 0,
-    "source": "manual",
-    "type": "rectangle",
-    "occluded": false,
-    "z_order": 0,
-    "points": "[0.0, 62.05859375, 471.0, 355.17291259765625]",
-    "rotation": 0.0
-  }
-},
-{
-  "model": "engine.labeledshape",
-  "pk": 10,
-  "fields": {
-    "job": 1,
-    "label": 1,
-    "frame": 1,
-    "group": 0,
-    "source": "manual",
-    "type": "rectangle",
-    "occluded": false,
-    "z_order": 0,
-    "points": "[0.0, 656.4296875, 471.0, 827.4130401611328]",
-    "rotation": 0.0
-  }
-},
-{
-  "model": "engine.labeledshape",
-  "pk": 11,
-  "fields": {
-    "job": 1,
-    "label": 1,
-    "frame": 2,
-    "group": 0,
-    "source": "manual",
-    "type": "rectangle",
-    "occluded": false,
-    "z_order": 0,
-    "points": "[241.830078125, 91.767578125, 876.0, 671.28369140625]",
-    "rotation": 0.0
-  }
-},
-{
-  "model": "engine.labeledshape",
-  "pk": 12,
-  "fields": {
-    "job": 1,
-    "label": 1,
-    "frame": 3,
-    "group": 0,
-    "source": "manual",
-    "type": "rectangle",
-    "occluded": false,
-    "z_order": 0,
-    "points": "[135.8037109375, 264.595703125, 470.1022644042969, 490.49359130859375]",
-    "rotation": 0.0
-  }
-},
-{
-  "model": "engine.labeledshape",
-  "pk": 13,
-  "fields": {
-    "job": 1,
-    "label": 1,
-    "frame": 5,
-    "group": 0,
-    "source": "manual",
-    "type": "rectangle",
-    "occluded": false,
-    "z_order": 0,
-    "points": "[0.0, 0.0, 183.3411865234375, 246.05125427246094]",
-    "rotation": 0.0
-  }
-},
-{
-  "model": "engine.labeledshape",
-  "pk": 14,
-  "fields": {
-    "job": 1,
-    "label": 1,
-    "frame": 5,
-    "group": 0,
-    "source": "manual",
-    "type": "rectangle",
-    "occluded": false,
-    "z_order": 0,
-    "points": "[780.04296875, 0.0, 979.0, 248.173095703125]",
     "rotation": 0.0
   }
 },
@@ -11003,6 +8766,22 @@
     "occluded": false,
     "z_order": 0,
     "points": "[364.0361328125, 528.87890625, 609.5286041189956, 586.544622425632, 835.2494279176244, 360.0000000000018, 543.6247139588122, 175.4691075514893, 326.9656750572103, 192.76887871853796, 244.58581235698148, 319.63386727689067]",
+    "rotation": 0.0
+  }
+},
+{
+  "model": "engine.labeledshape",
+  "pk": 30,
+  "fields": {
+    "job": 10,
+    "label": 13,
+    "frame": 0,
+    "group": 0,
+    "source": "manual",
+    "type": "polygon",
+    "occluded": false,
+    "z_order": 0,
+    "points": "[440.0439453125, 84.0791015625, 71.83311938382576, 249.81514762516053, 380.4441591784325, 526.585365853658, 677.6251604621302, 260.42875481386363, 629.4557124518615, 127.35044929396645]",
     "rotation": 0.0
   }
 },
