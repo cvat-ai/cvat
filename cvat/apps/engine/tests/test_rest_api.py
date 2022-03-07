@@ -4118,7 +4118,7 @@ class JobAnnotationAPITestCase(APITestCase):
     def _check_response(self, response, data):
         if not response.status_code in [
             status.HTTP_403_FORBIDDEN, status.HTTP_401_UNAUTHORIZED]:
-            compare_objects(self, data, response.data, ignore_keys=["id"])
+            compare_objects(self, data, response.data, ignore_keys=["id", "version"])
 
     def _run_api_v2_jobs_id_annotations(self, owner, assignee, annotator):
         task, jobs = self._create_task(owner, assignee)
@@ -4603,7 +4603,7 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
         if not response.status_code in [
             status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN]:
             try:
-                compare_objects(self, data, response.data, ignore_keys=["id"])
+                compare_objects(self, data, response.data, ignore_keys=["id", "version"])
             except AssertionError as e:
                 print("Objects are not equal: ", data, response.data)
                 print(e)

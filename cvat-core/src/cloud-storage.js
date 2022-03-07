@@ -1,4 +1,4 @@
-// Copyright (C) 2021 Intel Corporation
+// Copyright (C) 2021-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -174,13 +174,13 @@
                     },
                     /**
                      * Unique resource name
-                     * @name resourceName
+                     * @name resource
                      * @type {string}
                      * @memberof module:API.cvat.classes.CloudStorage
                      * @instance
                      * @throws {module:API.cvat.exceptions.ArgumentError}
                      */
-                    resourceName: {
+                    resource: {
                         get: () => data.resource,
                         set: (value) => {
                             validateNotEmptyString(value);
@@ -456,7 +456,7 @@
             display_name: this.displayName,
             credentials_type: this.credentialsType,
             provider_type: this.providerType,
-            resource: this.resourceName,
+            resource: this.resource,
             manifests: this.manifests,
         };
 

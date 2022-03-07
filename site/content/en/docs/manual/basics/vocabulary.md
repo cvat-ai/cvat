@@ -48,4 +48,16 @@ Can be used to reduce the annotation file and to facilitate editing polygons.
 **Trackable** object will be tracked automatically if the previous frame was
 a latest keyframe for the object. More details in the section [trackers](/docs/manual/advanced/ai-tools/#trackers).
 
-![](/images/tracker_indication.jpg)
+![](/images/tracker_indication_detrac.jpg)
+
+---
+
+**State** of the job. The state can be changed by an assigned user in [the menu inside the job](/docs/manual/basics/top-panel/).
+There are several possible states: `new`, `in progress`, `rejected`, `completed`.
+
+---
+
+**Stage** of the job. The stage is specified with the drop-down list on the [task page](/docs/manual/basics/tasks-page/).
+There are three stages: `annotation`, `validation` or `acceptance`. This value affects the task progress bar.
+
+---

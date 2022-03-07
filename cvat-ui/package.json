@@ -1,6 +1,6 @@
 {
   "name": "cvat-ui",
-  "version": "1.35.2",
+  "version": "1.36.0",
   "description": "CVAT single-page application",
   "main": "src/index.tsx",
   "scripts": {
@@ -19,7 +19,6 @@
   ],
   "author": "Intel",
   "license": "MIT",
-  "devDependencies": {},
   "dependencies": {
     "@ant-design/icons": "^4.6.3",
     "@types/lodash": "^4.14.172",
@@ -57,6 +56,7 @@
     "react-router": "^5.1.0",
     "react-router-dom": "^5.1.0",
     "react-share": "^4.4.0",
+    "react-sortable-hoc": "^2.0.0",
     "redux": "^4.1.1",
     "redux-devtools-extension": "^2.13.9",
     "redux-logger": "^3.0.6",

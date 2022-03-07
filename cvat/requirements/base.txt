@@ -22,7 +22,7 @@ django-sendfile2==0.6.1
 dj-pagination==2.5.0
 python-logstash-async==2.2.0
 rules==2.2
-GitPython==3.1.8
+GitPython==3.1.27
 coreapi==2.3.3
 django-filter==2.4.0
 Markdown==3.2.2
@@ -52,3 +52,4 @@ datumaro==0.2.0 --no-binary=datumaro
 urllib3>=1.26.5 # not directly required, pinned by Snyk to avoid a vulnerability
 natsort==8.0.0
 mistune>=2.0.1 # not directly required, pinned by Snyk to avoid a vulnerability
+dnspython==2.2.0

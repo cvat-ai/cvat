@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2021 Intel Corporation
+// Copyright (C) 2019-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -36,7 +36,7 @@
                 if (!(prop in fields)) {
                     throw new ArgumentError(`Unsupported filter property has been received: "${prop}"`);
                 } else if (!fields[prop](filter[prop])) {
-                    throw new ArgumentError(`Received filter property "${prop}" is not satisfied for checker`);
+                    throw new ArgumentError(`Received filter property "${prop}" does not satisfy API`);
                 }
             }
         }
