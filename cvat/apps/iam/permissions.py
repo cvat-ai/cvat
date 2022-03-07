@@ -1,4 +1,4 @@
-# Copyright (C) 2021 Intel Corporation
+# Copyright (C) 2022 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -989,7 +989,8 @@ class IssuePermission(OpenPolicyAgentPermission):
             'create': 'create@job',
             'destroy': 'delete',
             'partial_update': 'update',
-            'retrieve': 'view'
+            'retrieve': 'view',
+            'comments': 'view'
         }.get(view.action, None)]
 
     def get_resource(self):
