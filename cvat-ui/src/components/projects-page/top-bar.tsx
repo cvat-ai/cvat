@@ -39,7 +39,7 @@ function TopBarComponent(props: Props): JSX.Element {
         importing, query, onApplyFilter, onApplySorting, onApplySearch, onImportProject,
     } = props;
     const [visibility, setVisibility] = useState(defaultVisibility);
-    const prevImporting = usePrevious<boolean>(importing);
+    const prevImporting = usePrevious(importing);
 
     useEffect(() => {
         if (prevImporting && !importing) {

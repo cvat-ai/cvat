@@ -39,7 +39,7 @@ export default function TopBarComponent(props: VisibleTopBarProps): JSX.Element 
     } = props;
     const [visibility, setVisibility] = useState(defaultVisibility);
     const history = useHistory();
-    const prevImporting = usePrevious<boolean>(importing);
+    const prevImporting = usePrevious(importing);
 
     useEffect(() => {
         if (prevImporting && !importing) {
