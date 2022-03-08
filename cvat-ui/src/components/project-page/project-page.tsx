@@ -16,7 +16,7 @@ import { PlusOutlined } from '@ant-design/icons';
 import Empty from 'antd/lib/empty';
 import Input from 'antd/lib/input';
 
-import { CombinedState, Task } from 'reducers/interfaces';
+import { CombinedState, Task, Indexable } from 'reducers/interfaces';
 import { getProjectsAsync, getProjectTasksAsync } from 'actions/projects-actions';
 import { cancelInferenceAsync } from 'actions/models-actions';
 import TaskItem from 'components/tasks-page/task-item';
@@ -56,6 +56,19 @@ export default function ProjectPageComponent(): JSX.Element {
     const tasksFetching = useSelector((state: CombinedState) => state.tasks.fetching);
     const [visibility, setVisibility] = useState(defaultVisibility);
 
+    const queryParams = new URLSearchParams(history.location.search);
+    const updatedQuery = { ...tasksQuery };
+    for (const key of Object.keys(updatedQuery)) {
+        (updatedQuery as Indexable)[key] = queryParams.get(key) || (updatedQuery as Indexable)[key];
+        if (key === 'page') {
+            updatedQuery.page = +updatedQuery.page;
+        }
+    }
+
+    useEffect(() => {
+        dispatch(getProjectTasksAsync({ ...updatedQuery, projectId: id }));
+    }, []);
+
     const [project] = projects.filter((_project) => _project.id === id);
     const projectSubsets: Array<string> = [];
     for (const task of tasks) {
@@ -64,9 +77,22 @@ export default function ProjectPageComponent(): JSX.Element {
 
     useEffect(() => {
         if (!project) {
-            dispatch(getProjectsAsync({ id }, tasksQuery));
+            dispatch(getProjectsAsync({ id }, updatedQuery));
         }
     }, []);
+
+    useEffect(() => {
+        const search = new URLSearchParams({
+            ...(tasksQuery.filter ? { filter: tasksQuery.filter } : {}),
+            ...(tasksQuery.search ? { search: tasksQuery.search } : {}),
+            ...(tasksQuery.sort ? { sort: tasksQuery.sort } : {}),
+            ...(tasksQuery.page ? { page: `${tasksQuery.page}` } : {}),
+        });
+
+        history.replace({
+            search: search.toString(),
+        });
+    }, [tasksQuery]);
 
     useEffect(() => {
         if (project && id in deletes && deletes[id]) {
@@ -145,6 +171,7 @@ export default function ProjectPageComponent(): JSX.Element {
                         <div className='cvat-project-page-tasks-filters-wrapper'>
                             <Input.Search
                                 enterButton
+                                value={tasksQuery.search || ''}
                                 onSearch={(_search: string) => {
                                     dispatch(getProjectTasksAsync({
                                         ...tasksQuery,
@@ -175,6 +202,7 @@ export default function ProjectPageComponent(): JSX.Element {
                                     }}
                                 />
                                 <FilteringComponent
+                                    value={updatedQuery.filter}
                                     predefinedVisible={visibility.predefined}
                                     builderVisible={visibility.builder}
                                     recentVisible={visibility.recent}

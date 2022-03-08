@@ -5,6 +5,7 @@
 import './styles.scss';
 import { useDispatch } from 'react-redux';
 import React, { useEffect } from 'react';
+import { useHistory } from 'react-router';
 import Spin from 'antd/lib/spin';
 import Button from 'antd/lib/button';
 import message from 'antd/lib/message';
@@ -12,7 +13,7 @@ import Text from 'antd/lib/typography/Text';
 import { Col, Row } from 'antd/lib/grid';
 import Pagination from 'antd/lib/pagination';
 
-import { TasksQuery } from 'reducers/interfaces';
+import { TasksQuery, Indexable } from 'reducers/interfaces';
 import FeedbackComponent from 'components/feedback/feedback';
 import TaskListContainer from 'containers/tasks-page/tasks-list';
 import { getTasksAsync, hideEmptyTasks, importTaskAsync } from 'actions/tasks-actions';
@@ -32,7 +33,35 @@ function TasksPageComponent(props: Props): JSX.Element {
     const {
         query, fetching, importing, count, countInvisible,
     } = props;
+
     const dispatch = useDispatch();
+    const history = useHistory();
+
+    const queryParams = new URLSearchParams(history.location.search);
+    const updatedQuery = { ...query };
+    for (const key of Object.keys(updatedQuery)) {
+        (updatedQuery as Indexable)[key] = queryParams.get(key) || (updatedQuery as Indexable)[key];
+        if (key === 'page') {
+            updatedQuery.page = +updatedQuery.page;
+        }
+    }
+
+    useEffect(() => {
+        dispatch(getTasksAsync({ ...updatedQuery }));
+    }, []);
+
+    useEffect(() => {
+        const search = new URLSearchParams({
+            ...(query.filter ? { filter: query.filter } : {}),
+            ...(query.search ? { search: query.search } : {}),
+            ...(query.sort ? { sort: query.sort } : {}),
+            ...(query.page ? { page: `${query.page}` } : {}),
+        });
+
+        history.replace({
+            search: search.toString(),
+        });
+    }, [query]);
 
     useEffect(() => {
         if (countInvisible) {
@@ -111,7 +140,7 @@ function TasksPageComponent(props: Props): JSX.Element {
                         }),
                     );
                 }}
-                query={query}
+                query={updatedQuery}
                 onImportTask={(file: File) => dispatch(importTaskAsync(file))}
                 importing={importing}
             />

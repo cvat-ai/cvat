@@ -62,6 +62,7 @@ export default function StoragesTopBar(props: Props): JSX.Element {
                             }}
                         />
                         <FilteringComponent
+                            value={query.filter}
                             predefinedVisible={visibility.predefined}
                             builderVisible={visibility.builder}
                             recentVisible={visibility.recent}

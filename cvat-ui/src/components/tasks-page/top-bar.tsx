@@ -71,6 +71,7 @@ export default function TopBarComponent(props: VisibleTopBarProps): JSX.Element 
                             onApplySorting={onApplySorting}
                         />
                         <FilteringComponent
+                            value={query.filter}
                             predefinedVisible={visibility.predefined}
                             builderVisible={visibility.builder}
                             recentVisible={visibility.recent}

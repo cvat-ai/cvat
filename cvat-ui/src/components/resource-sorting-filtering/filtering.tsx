@@ -14,16 +14,17 @@ import {
 import Dropdown from 'antd/lib/dropdown';
 import Space from 'antd/lib/space';
 import Button from 'antd/lib/button';
-import { useSelector } from 'react-redux';
-
-import { CombinedState } from 'reducers/interfaces';
 import Checkbox, { CheckboxChangeEvent } from 'antd/lib/checkbox/Checkbox';
 import Menu from 'antd/lib/menu';
+import { useSelector } from 'react-redux';
+import { CombinedState } from 'reducers/interfaces';
+import { User } from 'components/task-page/user-selector';
 
 interface ResourceFilterProps {
     predefinedVisible: boolean;
     recentVisible: boolean;
     builderVisible: boolean;
+    value: string | null;
     onPredefinedVisibleChange(visible: boolean): void;
     onBuilderVisibleChange(visible: boolean): void;
     onRecentVisibleChange(visible: boolean): void;
@@ -86,22 +87,47 @@ export default function ResourceFilterHOC(
         built: null,
     };
 
+    function isValidTree(tree: ImmutableTree): boolean {
+        return (QbUtils.queryString(tree, config) || '').trim().length > 0 && QbUtils.isValidTree(tree);
+    }
+
+    function unite(filters: string[]): string {
+        if (filters.length > 1) {
+            return JSON.stringify({
+                and: filters.map((filter: string): JSON => JSON.parse(filter)),
+            });
+        }
+
+        return filters[0];
+    }
+
+    function getPredefinedFilters(user: User): Record<string, string> {
+        const result: Record<string, string> = {};
+        if (user) {
+            for (const key of Object.keys(predefinedFilterValues)) {
+                result[key] = predefinedFilterValues[key].replace('<username>', `${user.username}`);
+            }
+        }
+
+        return result;
+    }
+
     function ResourceFilterComponent(props: ResourceFilterProps): JSX.Element {
         const {
-            predefinedVisible, builderVisible, recentVisible,
+            predefinedVisible, builderVisible, recentVisible, value,
             onPredefinedVisibleChange, onBuilderVisibleChange, onRecentVisibleChange, onApplyFilter,
         } = props;
 
         const user = useSelector((state: CombinedState) => state.auth.user);
         const [isMounted, setIsMounted] = useState<boolean>(false);
         const [recentFilters, setRecentFilters] = useState<Record<string, string>>({});
-        const [predefinedFilters, setPredefinedFilters] = useState<Record<string, string>>({});
         const [appliedFilter, setAppliedFilter] = useState(defaultAppliedFilter);
         const [state, setState] = useState<ImmutableTree>(defaultTree);
 
         useEffect(() => {
             setRecentFilters(receiveRecentFilters());
             setIsMounted(true);
+
             const listener = (event: MouseEvent): void => {
                 const path: HTMLElement[] = event.composedPath()
                     .filter((el: EventTarget) => el instanceof HTMLElement) as HTMLElement[];
@@ -111,43 +137,34 @@ export default function ResourceFilterHOC(
                 }
             };
 
-            window.addEventListener('click', listener);
-            return () => window.removeEventListener('click', listener);
-        }, []);
-
-        useEffect(() => {
-            if (user) {
-                const result: Record<string, string> = {};
-                for (const key of Object.keys(predefinedFilterValues)) {
-                    result[key] = predefinedFilterValues[key].replace('<username>', `${user.username}`);
+            if (value) {
+                const tree = QbUtils.loadFromJsonLogic(JSON.parse(value), config);
+                if (isValidTree(tree)) {
+                    const filter = QbUtils.jsonLogicFormat(tree, config).logic;
+                    const stringified = JSON.stringify(filter);
+                    setAppliedFilter({
+                        predefined: null,
+                        recent: null,
+                        built: stringified,
+                    });
+                    setState(tree);
                 }
-
-                setPredefinedFilters(result);
+            } else if (defaultEnabledFilters) {
+                const predefinedFilters = getPredefinedFilters(user);
                 const appliedPredefined = defaultEnabledFilters
-                    .filter((filterKey: string) => filterKey in result)
-                    .map((filterKey: string) => result[filterKey]);
+                    .filter((filterKey: string) => filterKey in predefinedFilters)
+                    .map((filterKey: string) => predefinedFilters[filterKey]);
                 setAppliedFilter({
                     ...appliedFilter,
                     predefined: appliedPredefined.length ? appliedPredefined : null,
                 });
             }
-        }, [user]);
+
+            window.addEventListener('click', listener);
+            return () => window.removeEventListener('click', listener);
+        }, []);
 
         useEffect(() => {
-            function unite(filters: string[]): string {
-                if (filters.length > 1) {
-                    return JSON.stringify({
-                        and: filters.map((filter: string): JSON => JSON.parse(filter)),
-                    });
-                }
-
-                return filters[0];
-            }
-
-            function isValidTree(tree: ImmutableTree): boolean {
-                return (QbUtils.queryString(tree, config) || '').trim().length > 0 && QbUtils.isValidTree(tree);
-            }
-
             if (!isMounted) {
                 // do not request resources until on mount hook is done
                 return;
@@ -162,7 +179,9 @@ export default function ResourceFilterHOC(
                     setState(tree);
                 }
             } else if (appliedFilter.built) {
-                onApplyFilter(appliedFilter.built);
+                if (value !== appliedFilter.built) {
+                    onApplyFilter(appliedFilter.built);
+                }
             } else {
                 onApplyFilter(null);
                 setState(defaultTree);
@@ -177,6 +196,7 @@ export default function ResourceFilterHOC(
             </div>
         );
 
+        const predefinedFilters = getPredefinedFilters(user);
         return (
             <div className='cvat-resource-page-filters'>
                 <Dropdown

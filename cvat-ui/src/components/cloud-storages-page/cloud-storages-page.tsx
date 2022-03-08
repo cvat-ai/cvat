@@ -3,28 +3,51 @@
 // SPDX-License-Identifier: MIT
 
 import './styles.scss';
-import React, { useCallback } from 'react';
+import React, { useCallback, useEffect } from 'react';
+import { useHistory } from 'react-router';
 import { useDispatch, useSelector } from 'react-redux';
 import { Row, Col } from 'antd/lib/grid';
 import Spin from 'antd/lib/spin';
 
-import { CombinedState } from 'reducers/interfaces';
+import { CombinedState, Indexable } from 'reducers/interfaces';
 import { getCloudStoragesAsync } from 'actions/cloud-storage-actions';
+import { updateHistoryFromQuery } from 'components/resource-sorting-filtering';
 import CloudStoragesListComponent from './cloud-storages-list';
 import EmptyCloudStorageListComponent from './empty-cloud-storages-list';
 import TopBarComponent from './top-bar';
 
 export default function StoragesPageComponent(): JSX.Element {
     const dispatch = useDispatch();
+    const history = useHistory();
     const totalCount = useSelector((state: CombinedState) => state.cloudStorages.count);
     const fetching = useSelector((state: CombinedState) => state.cloudStorages.fetching);
     const current = useSelector((state: CombinedState) => state.cloudStorages.current);
     const query = useSelector((state: CombinedState) => state.cloudStorages.gettingQuery);
-    const anySearch = Object.keys(query).some((value: string) => value !== 'page' && (query as any)[value] !== null);
+
+    const queryParams = new URLSearchParams(history.location.search);
+    const updatedQuery = { ...query };
+    for (const key of Object.keys(updatedQuery)) {
+        (updatedQuery as Indexable)[key] = queryParams.get(key) || (updatedQuery as Indexable)[key];
+        if (key === 'page') {
+            updatedQuery.page = +updatedQuery.page;
+        }
+    }
+
+    useEffect(() => {
+        dispatch(getCloudStoragesAsync({ ...updatedQuery }));
+    }, []);
+
+    useEffect(() => {
+        history.replace({
+            search: updateHistoryFromQuery(query),
+        });
+    }, [query]);
 
     const onChangePage = useCallback(
         (page: number) => {
-            if (!fetching && page !== query.page) dispatch(getCloudStoragesAsync({ ...query, page }));
+            if (!fetching && page !== query.page) {
+                dispatch(getCloudStoragesAsync({ ...query, page }));
+            }
         },
         [query],
     );
@@ -36,6 +59,8 @@ export default function StoragesPageComponent(): JSX.Element {
         xxl: 16,
     };
 
+    const anySearch = Object.keys(query)
+        .some((value: string) => value !== 'page' && (query as any)[value] !== null);
     const content = current.length ? (
         <CloudStoragesListComponent
             totalCount={totalCount}
@@ -78,7 +103,7 @@ export default function StoragesPageComponent(): JSX.Element {
                             }),
                         );
                     }}
-                    query={query}
+                    query={updatedQuery}
                 />
                 { fetching ? (
                     <Row className='cvat-cloud-storages-page' justify='center' align='middle'>

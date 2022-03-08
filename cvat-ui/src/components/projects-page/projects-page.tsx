@@ -3,11 +3,12 @@
 // SPDX-License-Identifier: MIT
 
 import './styles.scss';
-import React from 'react';
+import React, { useEffect } from 'react';
+import { useHistory } from 'react-router';
 import { useDispatch, useSelector } from 'react-redux';
 import Spin from 'antd/lib/spin';
 
-import { CombinedState } from 'reducers/interfaces';
+import { CombinedState, Indexable } from 'reducers/interfaces';
 import { getProjectsAsync, restoreProjectAsync } from 'actions/projects-actions';
 import FeedbackComponent from 'components/feedback/feedback';
 import ImportDatasetModal from 'components/import-dataset-modal/import-dataset-modal';
@@ -17,12 +18,39 @@ import ProjectListComponent from './project-list';
 
 export default function ProjectsPageComponent(): JSX.Element {
     const dispatch = useDispatch();
+    const history = useHistory();
     const fetching = useSelector((state: CombinedState) => state.projects.fetching);
     const count = useSelector((state: CombinedState) => state.projects.current.length);
     const query = useSelector((state: CombinedState) => state.projects.gettingQuery);
     const tasksQuery = useSelector((state: CombinedState) => state.projects.tasksGettingQuery);
     const importing = useSelector((state: CombinedState) => state.projects.restoring);
     const anySearch = Object.keys(query).some((value: string) => value !== 'page' && (query as any)[value] !== null);
+
+    const queryParams = new URLSearchParams(history.location.search);
+    const updatedQuery = { ...query };
+    for (const key of Object.keys(updatedQuery)) {
+        (updatedQuery as Indexable)[key] = queryParams.get(key) || (updatedQuery as Indexable)[key];
+        if (key === 'page') {
+            updatedQuery.page = +updatedQuery.page;
+        }
+    }
+
+    useEffect(() => {
+        dispatch(getProjectsAsync({ ...updatedQuery }));
+    }, []);
+
+    useEffect(() => {
+        const search = new URLSearchParams({
+            ...(query.filter ? { filter: query.filter } : {}),
+            ...(query.search ? { search: query.search } : {}),
+            ...(query.sort ? { sort: query.sort } : {}),
+            ...(query.page ? { page: `${query.page}` } : {}),
+        });
+
+        history.replace({
+            search: search.toString(),
+        });
+    }, [query]);
 
     const content = count ? <ProjectListComponent /> : <EmptyListComponent notFound={anySearch} />;
 
@@ -56,7 +84,7 @@ export default function ProjectsPageComponent(): JSX.Element {
                         }, { ...tasksQuery, page: 1 }),
                     );
                 }}
-                query={query}
+                query={updatedQuery}
                 onImportProject={(file: File) => dispatch(restoreProjectAsync(file))}
                 importing={importing}
             />
