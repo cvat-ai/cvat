@@ -37,7 +37,7 @@ export default function TopBarComponent(props: VisibleTopBarProps): JSX.Element 
     const {
         importing, query, onApplyFilter, onApplySorting, onApplySearch, onImportTask,
     } = props;
-    const [visibility, setVisibility] = useState<typeof defaultVisibility>(defaultVisibility);
+    const [visibility, setVisibility] = useState(defaultVisibility);
     const history = useHistory();
     const prevImporting = usePrevious<boolean>(importing);
 
@@ -58,7 +58,7 @@ export default function TopBarComponent(props: VisibleTopBarProps): JSX.Element 
                         }}
                         defaultValue={query.search || ''}
                         className='cvat-tasks-page-search-bar'
-                        placeholder='Search ..'
+                        placeholder='Search ...'
                     />
                     <div>
                         <SortingComponent

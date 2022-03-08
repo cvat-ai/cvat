@@ -52,6 +52,16 @@
         .group.group-or-rule {
             background: none !important;
             border: none !important;
+
+            .group.group-or-rule {
+                &::before {
+                    left: -13px;
+                }
+
+                &::after {
+                    left: -13px;
+                }
+            }
         }
 
         .group--actions.group--actions--tr {
@@ -65,6 +75,7 @@
                     opacity: 1 !important;
                     margin-right: $grid-unit-size !important;
                     padding: 0 $grid-unit-size !important;
+                    border-left-color: #d9d9d9 !important;
                 }
             }
         }

@@ -96,12 +96,23 @@ export default function ResourceFilterHOC(
         const [isMounted, setIsMounted] = useState<boolean>(false);
         const [recentFilters, setRecentFilters] = useState<Record<string, string>>({});
         const [predefinedFilters, setPredefinedFilters] = useState<Record<string, string>>({});
-        const [appliedFilter, setAppliedFilter] = useState<typeof defaultAppliedFilter>(defaultAppliedFilter);
+        const [appliedFilter, setAppliedFilter] = useState(defaultAppliedFilter);
         const [state, setState] = useState<ImmutableTree>(defaultTree);
 
         useEffect(() => {
             setRecentFilters(receiveRecentFilters());
             setIsMounted(true);
+            const listener = (event: MouseEvent): void => {
+                const path: HTMLElement[] = event.composedPath()
+                    .filter((el: EventTarget) => el instanceof HTMLElement) as HTMLElement[];
+                if (path.some((el: HTMLElement) => el.id === 'root') && !path.some((el: HTMLElement) => el.classList.contains('ant-btn'))) {
+                    onBuilderVisibleChange(false);
+                    onRecentVisibleChange(false);
+                }
+            };
+
+            window.addEventListener('click', listener);
+            return () => window.removeEventListener('click', listener);
         }, []);
 
         useEffect(() => {

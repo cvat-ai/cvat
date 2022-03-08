@@ -5,7 +5,9 @@
 import { Dispatch, ActionCreator } from 'redux';
 
 import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
-import { ProjectsQuery, TasksQuery, CombinedState } from 'reducers/interfaces';
+import {
+    ProjectsQuery, TasksQuery, CombinedState, Indexable,
+} from 'reducers/interfaces';
 import { getTasksAsync } from 'actions/tasks-actions';
 import { getCVATStore } from 'cvat-store';
 import getCore from 'cvat-core-wrapper';
@@ -110,9 +112,9 @@ export function getProjectsAsync(
         };
 
         for (const key of Object.keys(filteredQuery)) {
-            const value = (filteredQuery as { [index: string]: any })[key];
+            const value = (filteredQuery as Indexable)[key];
             if (value === null || typeof value === 'undefined') {
-                delete (filteredQuery as { [index: string]: any })[key];
+                delete (filteredQuery as Indexable)[key];
             }
         }
 

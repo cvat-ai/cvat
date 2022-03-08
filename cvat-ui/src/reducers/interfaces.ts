@@ -775,3 +775,7 @@ export enum DimensionType {
     DIM_3D = '3d',
     DIM_2D = '2d',
 }
+
+export interface Indexable {
+    [index: string]: any;
+}

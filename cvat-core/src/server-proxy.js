@@ -425,23 +425,6 @@
                 return response.data.results;
             }
 
-            async function getProjectTasks(id, filter = {}) {
-                const { backendAPI, proxy } = config;
-
-                let response = null;
-                try {
-                    response = await Axios.get(`${backendAPI}/projects/${id}/tasks`, {
-                        params: filter,
-                        proxy,
-                    });
-                } catch (errorData) {
-                    throw generateError(errorData);
-                }
-
-                response.data.results.count = response.data.count;
-                return response.data.results;
-            }
-
             async function saveProject(id, projectData) {
                 const { backendAPI } = config;
 
@@ -1804,7 +1787,6 @@
                     projects: {
                         value: Object.freeze({
                             get: getProjects,
-                            tasks: getProjectTasks,
                             searchNames: searchProjectNames,
                             save: saveProject,
                             create: createProject,

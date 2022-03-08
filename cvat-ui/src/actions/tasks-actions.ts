@@ -4,7 +4,7 @@
 
 import { AnyAction, Dispatch, ActionCreator } from 'redux';
 import { ThunkAction } from 'redux-thunk';
-import { TasksQuery, CombinedState } from 'reducers/interfaces';
+import { TasksQuery, CombinedState, Indexable } from 'reducers/interfaces';
 import { getCVATStore } from 'cvat-store';
 import getCore from 'cvat-core-wrapper';
 import { getInferenceStatusAsync } from './models-actions';
@@ -82,8 +82,8 @@ export function getTasksAsync(query: TasksQuery, updateQuery = true): ThunkActio
         // We remove all keys with null values from the query
         const filteredQuery = { ...query };
         for (const key of Object.keys(query)) {
-            if ((filteredQuery as { [index: string]: any })[key] === null) {
-                delete (filteredQuery as { [index: string]: any })[key];
+            if ((filteredQuery as Indexable)[key] === null) {
+                delete (filteredQuery as Indexable)[key];
             }
         }
 

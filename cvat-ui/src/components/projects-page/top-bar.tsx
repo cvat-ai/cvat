@@ -38,7 +38,7 @@ function TopBarComponent(props: Props): JSX.Element {
     const {
         importing, query, onApplyFilter, onApplySorting, onApplySearch, onImportProject,
     } = props;
-    const [visibility, setVisibility] = useState<typeof defaultVisibility>(defaultVisibility);
+    const [visibility, setVisibility] = useState(defaultVisibility);
     const prevImporting = usePrevious<boolean>(importing);
 
     useEffect(() => {
@@ -59,7 +59,7 @@ function TopBarComponent(props: Props): JSX.Element {
                         }}
                         defaultValue={query.search || ''}
                         className='cvat-projects-page-search-bar'
-                        placeholder='Search ..'
+                        placeholder='Search ...'
                     />
                     <div>
                         <SortingComponent

@@ -29,7 +29,7 @@ function TopBarComponent(props: Props): JSX.Element {
     const {
         query, onApplyFilter, onApplySorting, onApplySearch,
     } = props;
-    const [visibility, setVisibility] = useState<typeof defaultVisibility>(defaultVisibility);
+    const [visibility, setVisibility] = useState(defaultVisibility);
 
     return (
         <Row className='cvat-jobs-page-top-bar' justify='center' align='middle'>
@@ -42,7 +42,7 @@ function TopBarComponent(props: Props): JSX.Element {
                         }}
                         defaultValue={query.search || ''}
                         className='cvat-jobs-page-search-bar'
-                        placeholder='Search ..'
+                        placeholder='Search ...'
                     />
                     <div>
                         <SortingComponent

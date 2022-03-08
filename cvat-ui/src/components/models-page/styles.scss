@@ -13,16 +13,7 @@
     width: 100%;
 
     > div:nth-child(1) {
-        margin-bottom: 10px;
-
-        > div:nth-child(1) {
-            display: flex;
-        }
-
-        > div:nth-child(2) {
-            display: flex;
-            justify-content: flex-end;
-        }
+        margin-bottom: $grid-unit-size;
     }
 }
 
@@ -43,8 +34,8 @@
     height: auto;
     border: 1px solid $border-color-1;
     border-radius: 3px;
-    margin-bottom: 15px;
-    padding: 15px;
+    margin-bottom: $grid-unit-size * 2;
+    padding: $grid-unit-size * 2;
     background: $background-color-1;
 
     &:hover {
@@ -67,8 +58,4 @@
         white-space: nowrap;
         overflow: hidden;
     }
-}
-
-#cvat-create-model-button {
-    padding: 0 30px;
 }

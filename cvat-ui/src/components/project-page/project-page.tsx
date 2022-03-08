@@ -54,7 +54,7 @@ export default function ProjectPageComponent(): JSX.Element {
     const tasksCount = useSelector((state: CombinedState) => state.tasks.count);
     const tasksQuery = useSelector((state: CombinedState) => state.projects.tasksGettingQuery);
     const tasksFetching = useSelector((state: CombinedState) => state.tasks.fetching);
-    const [visibility, setVisibility] = useState<typeof defaultVisibility>(defaultVisibility);
+    const [visibility, setVisibility] = useState(defaultVisibility);
 
     const [project] = projects.filter((_project) => _project.id === id);
     const projectSubsets: Array<string> = [];
@@ -155,7 +155,7 @@ export default function ProjectPageComponent(): JSX.Element {
                                 }}
                                 defaultValue={tasksQuery.search || ''}
                                 className='cvat-project-page-tasks-search-bar'
-                                placeholder='Search ..'
+                                placeholder='Search ...'
                             />
                             <div>
                                 <SortingComponent

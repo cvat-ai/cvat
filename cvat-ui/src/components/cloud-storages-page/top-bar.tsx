@@ -34,7 +34,7 @@ export default function StoragesTopBar(props: Props): JSX.Element {
         query, onApplyFilter, onApplySorting, onApplySearch,
     } = props;
     const history = useHistory();
-    const [visibility, setVisibility] = useState<typeof defaultVisibility>(defaultVisibility);
+    const [visibility, setVisibility] = useState(defaultVisibility);
 
     return (
         <Row justify='space-between' align='middle' className='cvat-cloud-storages-list-top-bar'>
@@ -47,7 +47,7 @@ export default function StoragesTopBar(props: Props): JSX.Element {
                         }}
                         defaultValue={query.search || ''}
                         className='cvat-cloudstorages-page-tasks-search-bar'
-                        placeholder='Search ..'
+                        placeholder='Search ...'
                     />
                     <div>
                         <SortingComponent

@@ -6,12 +6,7 @@ import './styles.scss';
 import SortingComponent from './sorting';
 import ResourceFilterHOC from './filtering';
 
-const defaultVisibility: {
-    predefined: boolean;
-    recent: boolean;
-    builder: boolean;
-    sorting: boolean;
-} = {
+const defaultVisibility = {
     predefined: false,
     recent: false,
     builder: false,

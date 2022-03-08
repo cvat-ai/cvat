@@ -4,7 +4,7 @@
 
 import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
 import getCore from 'cvat-core-wrapper';
-import { JobsQuery } from 'reducers/interfaces';
+import { Indexable, JobsQuery } from 'reducers/interfaces';
 
 const cvat = getCore();
 
@@ -33,8 +33,8 @@ export const getJobsAsync = (query: JobsQuery): ThunkAction => async (dispatch) 
         // We remove all keys with null values from the query
         const filteredQuery = { ...query };
         for (const key of Object.keys(query)) {
-            if ((filteredQuery as { [index: string]: any })[key] === null) {
-                delete (filteredQuery as { [index: string]: any })[key];
+            if ((filteredQuery as Indexable)[key] === null) {
+                delete (filteredQuery as Indexable)[key];
             }
         }
 

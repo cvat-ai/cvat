@@ -5,7 +5,7 @@
 import { Dispatch, ActionCreator } from 'redux';
 import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
 import getCore from 'cvat-core-wrapper';
-import { CloudStoragesQuery, CloudStorage } from 'reducers/interfaces';
+import { CloudStoragesQuery, CloudStorage, Indexable } from 'reducers/interfaces';
 
 const cvat = getCore();
 
@@ -108,8 +108,8 @@ export function getCloudStoragesAsync(query: Partial<CloudStoragesQuery>): Thunk
 
         const filteredQuery = { ...query };
         for (const key in filteredQuery) {
-            if ((filteredQuery as { [index: string]: any })[key] === null) {
-                delete (filteredQuery as { [index: string]: any })[key];
+            if ((filteredQuery as Indexable)[key] === null) {
+                delete (filteredQuery as Indexable)[key];
             }
         }
 
