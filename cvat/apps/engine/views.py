@@ -260,7 +260,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
     ordering_fields = filter_fields
     ordering = "-id"
     lookup_fields = {'owner': 'owner__username', 'assignee': 'assignee__username'}
-    http_method_names = ('get', 'post', 'head', 'patch', 'delete')
+    http_method_names = ('get', 'post', 'head', 'patch', 'delete', 'options')
     iam_organization_field = 'organization'
 
     def get_serializer_class(self):
@@ -1243,7 +1243,7 @@ class CommentViewSet(viewsets.ModelViewSet):
 class UserViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     mixins.RetrieveModelMixin, mixins.UpdateModelMixin, mixins.DestroyModelMixin):
     queryset = User.objects.prefetch_related('groups').all()
-    http_method_names = ['get', 'post', 'head', 'patch', 'delete']
+    http_method_names = ['get', 'post', 'head', 'patch', 'delete', 'options']
     search_fields = ('username', 'first_name', 'last_name')
     iam_organization_field = 'memberships__organization'
 
@@ -1313,7 +1313,7 @@ class UserViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         '201': CloudStorageWriteSerializer,
     }, tags=['cloud storages'], versions=['2.0']))
 class CloudStorageViewSet(viewsets.ModelViewSet):
-    http_method_names = ['get', 'post', 'patch', 'delete']
+    http_method_names = ['get', 'post', 'patch', 'delete', 'options']
     queryset = CloudStorageModel.objects.all().prefetch_related('data')
 
     search_fields = ('provider_type', 'display_name', 'resource',
