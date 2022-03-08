@@ -40,9 +40,9 @@ function TasksPageComponent(props: Props): JSX.Element {
     const queryParams = new URLSearchParams(history.location.search);
     const updatedQuery = { ...query };
     for (const key of Object.keys(updatedQuery)) {
-        (updatedQuery as Indexable)[key] = queryParams.get(key) || (updatedQuery as Indexable)[key];
+        (updatedQuery as Indexable)[key] = queryParams.get(key) || null;
         if (key === 'page') {
-            updatedQuery.page = +updatedQuery.page;
+            updatedQuery.page = updatedQuery.page ? +updatedQuery.page : 1;
         }
     }
 

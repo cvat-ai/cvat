@@ -59,9 +59,9 @@ export default function ProjectPageComponent(): JSX.Element {
     const queryParams = new URLSearchParams(history.location.search);
     const updatedQuery = { ...tasksQuery };
     for (const key of Object.keys(updatedQuery)) {
-        (updatedQuery as Indexable)[key] = queryParams.get(key) || (updatedQuery as Indexable)[key];
+        (updatedQuery as Indexable)[key] = queryParams.get(key) || null;
         if (key === 'page') {
-            updatedQuery.page = +updatedQuery.page;
+            updatedQuery.page = updatedQuery.page ? +updatedQuery.page : 1;
         }
     }
 
@@ -171,7 +171,6 @@ export default function ProjectPageComponent(): JSX.Element {
                         <div className='cvat-project-page-tasks-filters-wrapper'>
                             <Input.Search
                                 enterButton
-                                value={tasksQuery.search || ''}
                                 onSearch={(_search: string) => {
                                     dispatch(getProjectTasksAsync({
                                         ...tasksQuery,
