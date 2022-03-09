@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -34,6 +34,7 @@ interface Props {
     keyMap: KeyMap;
     normalizedKeyMap: Record<string, string>;
     labels: any[];
+    frameData: any;
 
     mergeObjects(enabled: boolean): void;
     groupObjects(enabled: boolean): void;
@@ -80,7 +81,10 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
         pasteShape,
         resetGroup,
         redrawShape,
+        frameData,
     } = props;
+
+    const controlsDisabled = !labels.length || frameData.deleted;
 
     const preventDefault = (event: KeyboardEvent | undefined): void => {
         if (event) {
@@ -111,7 +115,7 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
         },
     };
 
-    if (labels.length) {
+    if (!controlsDisabled) {
         handlers = {
             ...handlers,
             PASTE_SHAPE: (event: KeyboardEvent | undefined) => {
@@ -226,34 +230,34 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
             <ObservedDrawRectangleControl
                 canvasInstance={canvasInstance}
                 isDrawing={activeControl === ActiveControl.DRAW_RECTANGLE}
-                disabled={!labels.length}
+                disabled={controlsDisabled}
             />
             <ObservedDrawPolygonControl
                 canvasInstance={canvasInstance}
                 isDrawing={activeControl === ActiveControl.DRAW_POLYGON}
-                disabled={!labels.length}
+                disabled={controlsDisabled}
             />
             <ObservedDrawPolylineControl
                 canvasInstance={canvasInstance}
                 isDrawing={activeControl === ActiveControl.DRAW_POLYLINE}
-                disabled={!labels.length}
+                disabled={controlsDisabled}
             />
             <ObservedDrawPointsControl
                 canvasInstance={canvasInstance}
                 isDrawing={activeControl === ActiveControl.DRAW_POINTS}
-                disabled={!labels.length}
+                disabled={controlsDisabled}
             />
             <ObservedDrawEllipseControl
                 canvasInstance={canvasInstance}
                 isDrawing={activeControl === ActiveControl.DRAW_ELLIPSE}
-                disabled={!labels.length}
+                disabled={controlsDisabled}
             />
             <ObservedDrawCuboidControl
                 canvasInstance={canvasInstance}
                 isDrawing={activeControl === ActiveControl.DRAW_CUBOID}
-                disabled={!labels.length}
+                disabled={controlsDisabled}
             />
-            <ObservedSetupTagControl canvasInstance={canvasInstance} isDrawing={false} disabled={!labels.length} />
+            <ObservedSetupTagControl canvasInstance={canvasInstance} isDrawing={false} disabled={controlsDisabled} />
 
             <hr />
 
@@ -262,7 +266,7 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
                 canvasInstance={canvasInstance}
                 activeControl={activeControl}
                 mergeObjects={mergeObjects}
-                disabled={!labels.length}
+                disabled={controlsDisabled}
             />
             <ObservedGroupControl
                 switchGroupShortcut={normalizedKeyMap.SWITCH_GROUP_MODE}
@@ -270,14 +274,14 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
                 canvasInstance={canvasInstance}
                 activeControl={activeControl}
                 groupObjects={groupObjects}
-                disabled={!labels.length}
+                disabled={controlsDisabled}
             />
             <ObservedSplitControl
                 canvasInstance={canvasInstance}
                 switchSplitShortcut={normalizedKeyMap.SWITCH_SPLIT_MODE}
                 activeControl={activeControl}
                 splitTrack={splitTrack}
-                disabled={!labels.length}
+                disabled={controlsDisabled}
             />
 
             <ExtraControlsControl />

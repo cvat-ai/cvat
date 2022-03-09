@@ -419,11 +419,7 @@ class TaskData(InstanceLabelData):
 
     @property
     def tracks(self):
-        for idx, _track in enumerate(self._annotation_ir.tracks):
-            track = copy.deepcopy(_track)
-            track["shapes"] = [shape for shape in track["shapes"] if shape["frame"] not in self._db_task.data.deleted_frames]
-            if not track["shapes"]:
-                continue
+        for idx, track in enumerate(self._annotation_ir.tracks):
             tracked_shapes = TrackManager.get_interpolated_shapes(
                 track, 0, self._db_task.data.size)
             for tracked_shape in tracked_shapes:
@@ -432,9 +428,6 @@ class TaskData(InstanceLabelData):
                 tracked_shape["group"] = track["group"]
                 tracked_shape["source"] = track["source"]
                 tracked_shape["label_id"] = track["label_id"]
-                if tracked_shape["frame"] + 1 in self._db_task.data.deleted_frames \
-                    or tracked_shape["frame"] - 1 in self._db_task.data.deleted_frames:
-                    tracked_shape["keyframe"] = True
 
             yield TaskData.Track(
                 label=self._get_label_name(track["label_id"]),
@@ -882,11 +875,7 @@ class ProjectData(InstanceLabelData):
     def tracks(self):
         idx = 0
         for task in self._db_tasks.values():
-            for _track in self._annotation_irs[task.id].tracks:
-                track = copy.deepcopy(_track)
-                track["shapes"] = [shape for shape in track["shapes"] if shape["frame"] not in task.data.deleted_frames]
-                if not track["shapes"]:
-                    continue
+            for track in self._annotation_irs[task.id].tracks:
                 tracked_shapes = TrackManager.get_interpolated_shapes(
                     track, 0, task.data.size
                 )
@@ -901,7 +890,7 @@ class ProjectData(InstanceLabelData):
                     group=track["group"],
                     source=track["source"],
                     shapes=[self._export_tracked_shape(shape, task.id)
-                        for shape in tracked_shapes],
+                        for shape in tracked_shapes if shape["frame"] not in task.data.deleted_frames],
                     task_id=task.id
                 )
                 idx+=1

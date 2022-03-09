@@ -683,7 +683,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         if (frameData !== null && canvasInstance) {
             canvasInstance.setup(
                 frameData,
-                annotations.filter((e) => e.objectType !== ObjectType.TAG),
+                frameData.deleted ? [] : annotations.filter((e) => e.objectType !== ObjectType.TAG),
                 curZLayer,
             );
         }

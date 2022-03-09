@@ -1772,15 +1772,17 @@ export function deleteFrameAsync(): ThunkAction {
             annotation: {
                 player: {
                     frame: {
-                        data: frameData,
+                        data: frameData, number: frame,
                     },
                 },
+                annotations: { filters },
                 job: {
                     instance: jobInstance,
                 },
             },
             settings: {
                 player: { showDeletedFrames },
+                workspace: { showAllInterpolationTracks },
             },
         } = state;
 
@@ -1789,12 +1791,22 @@ export function deleteFrameAsync(): ThunkAction {
                 type: AnnotationActionTypes.DELETE_FRAME,
             });
 
-            await jobInstance.frames.delete(frameData.number);
-            const data = await jobInstance.frames.get(frameData.number);
+            await jobInstance.annotations.clear(false, frame, frame, false);
+            await jobInstance.actions.clear();
+            const history = await jobInstance.actions.get();
+            await jobInstance.annotations.save();
+            const states = await jobInstance.annotations.get(frame, showAllInterpolationTracks, filters);
+
+            await jobInstance.frames.delete(frame);
+            const data = await jobInstance.frames.get(frame);
 
             dispatch({
                 type: AnnotationActionTypes.DELETE_FRAME_SUCCESS,
-                payload: { data },
+                payload: {
+                    data,
+                    history,
+                    states,
+                },
             });
 
             if (!showDeletedFrames) {
@@ -1802,6 +1814,7 @@ export function deleteFrameAsync(): ThunkAction {
                     frameData.number, frameData.stopFrame, frameData.startFrame,
                 ));
             }
+            dispatch(saveAnnotationsAsync(jobInstance));
         } catch (error) {
             dispatch({
                 type: AnnotationActionTypes.DELETE_FRAME_FAILED,

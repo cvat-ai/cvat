@@ -824,7 +824,9 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
     }
 
     public render(): JSX.Element {
-        const { isActivated, canvasInstance, labels } = this.props;
+        const {
+            isActivated, canvasInstance, labels, frameData,
+        } = this.props;
         const { libraryInitialized, approxPolyAccuracy, mode } = this.state;
         const dynamcPopoverPros = isActivated ?
             {
@@ -845,7 +847,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
                 className: 'cvat-tools-control',
             };
 
-        return !labels.length ? (
+        return !labels.length || frameData.deleted ? (
             <Icon className='cvat-opencv-control cvat-disabled-canvas-control' component={OpenCVIcon} />
         ) : (
             <>
