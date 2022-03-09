@@ -790,6 +790,7 @@ class JobPermission(OpenPolicyAgentPermission):
             ('annotations', 'PUT'): 'update:annotations',
             ('data', 'GET'): 'view:data',
             ('issues', 'GET'): 'view',
+            ('commits', 'GET'): 'view:commits'
         }.get((view.action, request.method))
 
         scopes = []

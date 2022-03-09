@@ -139,20 +139,20 @@ filter = [] { # Django Q object to filter list of entries
 }
 
 allow {
-    { utils.VIEW, utils.VIEW_ANNOTATIONS, utils.VIEW_DATA }[input.scope]
+    { utils.VIEW, utils.VIEW_ANNOTATIONS, utils.VIEW_DATA, utils.VIEW_COMMITS }[input.scope]
     utils.is_sandbox
     is_job_staff
 }
 
 allow {
-    { utils.VIEW, utils.VIEW_ANNOTATIONS, utils.VIEW_DATA }[input.scope]
+    { utils.VIEW, utils.VIEW_ANNOTATIONS, utils.VIEW_DATA, utils.VIEW_COMMITS }[input.scope]
     input.auth.organization.id == input.resource.organization.id
     utils.has_perm(utils.USER)
     organizations.has_perm(organizations.MAINTAINER)
 }
 
 allow {
-    { utils.VIEW, utils.VIEW_ANNOTATIONS, utils.VIEW_DATA }[input.scope]
+    { utils.VIEW, utils.VIEW_ANNOTATIONS, utils.VIEW_DATA, utils.VIEW_COMMITS }[input.scope]
     input.auth.organization.id == input.resource.organization.id
     organizations.has_perm(organizations.WORKER)
     is_job_staff
