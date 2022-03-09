@@ -40,8 +40,8 @@ procedure to add them:
 1. Backup DB and data volume using commands below
 1. Don't forget to dump new objects into corresponding json files inside
    assets directory
-1. Commit cvat_data.tar.bz2 and data.json into git. Be sure that they are
-   small enough: ~200K-400K together.
+1. Commit cvat_data and data.json into git. Be sure that they are
+   small enough: ~1M together.
 
 It is recommended to use dummy and tiny images. You can generate them using
 Pillow library. See a sample code below:
@@ -64,7 +64,7 @@ To backup DB and data volume, please use commands below.
 
 ```console
 docker exec cvat python manage.py dumpdata --indent 2 > assets/cvat_db/data.json
-docker run --rm --volumes-from cvat ubuntu tar -cjv /home/django/data > assets/cvat_data.tar.bz2
+docker container cp cvat:/home/django/data assets/cvat_data/
 ```
 
 > Note: if you won't be use --indent options or will be use with other value
@@ -86,16 +86,17 @@ To restore DB and data volume, please use commands below.
 ```console
 docker container cp assets/cvat_db/data.json cvat:data.json
 docker exec cvat python manage.py loaddata /data.json
-cat assets/cvat_data.tar.bz2 | docker run --rm -i --volumes-from cvat ubuntu tar -xj --strip 3 -C /home/django/data
+docker container cp assets/cvat_data/data cvat:/home/django/data/
 ```
 
 ## Assets directory structure
 
 Assets directory has two parts:
 
+- `cvat_data` directory --- this directory contains all necessary data from
+  data volumes
 - `cvat_db` directory --- this directory contains all necessary files for
   successful restoring of test db
-  - `cvat_data.tar.bz2` --- archive with data volumes.
   - `data.json` --- file required for DB restoring.
     Contains all information about test db
   - `restore.sh` --- simple bash script for creating copy of database and
@@ -116,7 +117,7 @@ Assets directory has two parts:
    But in the case when a simple merge fails, you have to first merge
    the branches, then re-create the changes that you made.
 
-1. How to upgrade cvat_data.tar.bz2 and data.json?
+1. How to upgrade cvat_data and data.json?
 
    After every commit which changes the layout of DB and data directory it is
    possible to break these files. But failed tests should be a clear indicator
