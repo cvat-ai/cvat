@@ -13,6 +13,7 @@ import Empty from 'antd/lib/empty';
 import Text from 'antd/lib/typography/Text';
 
 import FeedbackComponent from 'components/feedback/feedback';
+import { updateHistoryFromQuery } from 'components/resource-sorting-filtering';
 import { CombinedState, Indexable } from 'reducers/interfaces';
 import { getJobsAsync } from 'actions/jobs-actions';
 
@@ -40,15 +41,8 @@ function JobsPageComponent(): JSX.Element {
     }, []);
 
     useEffect(() => {
-        const newQueryString = new URLSearchParams({
-            ...(query.filter ? { filter: query.filter } : {}),
-            ...(query.search ? { search: query.search } : {}),
-            ...(query.sort ? { sort: query.sort } : {}),
-            ...(query.page ? { page: `${query.page}` } : {}),
-        });
-
         history.replace({
-            search: newQueryString.toString(),
+            search: updateHistoryFromQuery(query),
         });
     }, [query]);
 

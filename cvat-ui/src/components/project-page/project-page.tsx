@@ -23,7 +23,9 @@ import TaskItem from 'components/tasks-page/task-item';
 import MoveTaskModal from 'components/move-task-modal/move-task-modal';
 import ModelRunnerDialog from 'components/model-runner-modal/model-runner-dialog';
 import ImportDatasetModal from 'components/import-dataset-modal/import-dataset-modal';
-import { SortingComponent, ResourceFilterHOC, defaultVisibility } from 'components/resource-sorting-filtering';
+import {
+    SortingComponent, ResourceFilterHOC, defaultVisibility, updateHistoryFromQuery,
+} from 'components/resource-sorting-filtering';
 import DetailsComponent from './details';
 import ProjectTopBar from './top-bar';
 
@@ -82,15 +84,8 @@ export default function ProjectPageComponent(): JSX.Element {
     }, []);
 
     useEffect(() => {
-        const search = new URLSearchParams({
-            ...(tasksQuery.filter ? { filter: tasksQuery.filter } : {}),
-            ...(tasksQuery.search ? { search: tasksQuery.search } : {}),
-            ...(tasksQuery.sort ? { sort: tasksQuery.sort } : {}),
-            ...(tasksQuery.page ? { page: `${tasksQuery.page}` } : {}),
-        });
-
         history.replace({
-            search: search.toString(),
+            search: updateHistoryFromQuery(tasksQuery),
         });
     }, [tasksQuery]);
 

@@ -15,6 +15,7 @@ import Pagination from 'antd/lib/pagination';
 
 import { TasksQuery, Indexable } from 'reducers/interfaces';
 import FeedbackComponent from 'components/feedback/feedback';
+import { updateHistoryFromQuery } from 'components/resource-sorting-filtering';
 import TaskListContainer from 'containers/tasks-page/tasks-list';
 import { getTasksAsync, hideEmptyTasks, importTaskAsync } from 'actions/tasks-actions';
 
@@ -51,15 +52,8 @@ function TasksPageComponent(props: Props): JSX.Element {
     }, []);
 
     useEffect(() => {
-        const search = new URLSearchParams({
-            ...(query.filter ? { filter: query.filter } : {}),
-            ...(query.search ? { search: query.search } : {}),
-            ...(query.sort ? { sort: query.sort } : {}),
-            ...(query.page ? { page: `${query.page}` } : {}),
-        });
-
         history.replace({
-            search: search.toString(),
+            search: updateHistoryFromQuery(query),
         });
     }, [query]);
 
