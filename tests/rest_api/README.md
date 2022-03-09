@@ -135,3 +135,60 @@ Assets directory has two parts:
    Since some tests change the database, these tests may be dependent on each
    other, so in current implementation we avoid such problem by restoring
    the database after each test function (see `conftest.py`)
+
+## Troubleshooting
+
+1. If your test session was exit with message:
+```
+_pytest.outcomes.Exit: Command failed: ... Add `-s` option to see more details.
+```
+Rerun tests to see error messages:
+```
+pytest ./tests/rest_api -s
+```
+
+1. If your tests was failed due to date field incompatibility and you have
+error message like this:
+```
+assert {'values_chan...34.908528Z'}}} == {}
+E                 Left contains 1 more item:
+E                 {'values_changed': {"root['results'][0]['updated_date']": {'new_value': '2022-03-05T08:52:34.908000Z',
+E                                                                            'old_value': '2022-03-05T08:52:34.908528Z'}}}
+E                 Use -v to get the full diff
+```
+Just dump JSON assets with:
+```
+python3 tests/rest_api/utils/dump_objests.py
+```
+
+1. If your test infrastructure has been corrupted and you have error message:
+```
+django.db.utils.OperationalError: FATAL:  database "cvat" does not exist
+```
+You should to create `cvat` database:
+```
+docker exec cvat_db createdb cvat
+docker exec cvat python manage.py migrate
+```
+
+1. Perform migrate when some relation does not exists. Example of error message:
+```
+django.db.utils.ProgrammingError: Problem installing fixture '/data.json': Could not load admin.LogEntry(pk=1): relation "django_admin_log" does not exist`
+```
+Solution:
+```
+docker exec cvat python manage.py migrate
+```
+
+1. If for some reason you need to recreate cvat database, but using `dropdb`
+you have error message:
+```
+ERROR:  database "cvat" is being accessed by other users
+DETAIL:  There are 1 other session(s) using the database.
+```
+In this case you should terminate all existent connections for cvat database,
+you can perform it with command:
+```
+docker exec cvat_db sh restore.sh cvat test_db
+```
+
