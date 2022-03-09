@@ -17,6 +17,12 @@ class ServerProxy:
         self.auth = auth
         self.server_addr = server_addr
 
+    def get_image_path(self, image_id: str) -> str:
+        return '/mnt/data.ssd1tb/datasets/cat_dog_in_coco_format'
+
+
+    def get_path(self, project: int) -> str:
+        return '/mnt/data.ssd1tb/datasets/cat_dog_in_coco_format'
 
 def create(server_addr, auth):
     return ServerProxy(server_addr, auth)

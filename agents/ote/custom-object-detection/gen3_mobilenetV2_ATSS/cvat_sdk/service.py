@@ -75,8 +75,9 @@ class _ObjectDetectionServiceProxy(ObjectDetectionService):
     def train(self, experiment: str, project: int,
         snapshot: Optional[str] = None) -> None:
 
-        self.futures[experiment] = self.executor.submit(self.service.train,
-            experiment, project, snapshot)
+#        self.futures[experiment] = self.executor.submit(self.service.train,
+#           experiment, project, snapshot)
+        self.service.train(experiment, project, snapshot)
 
     def cancel(self, experiment: str) -> None:
         future = self.futures.get(experiment)

@@ -120,7 +120,7 @@ class ObjectDetectionService(cvat_sdk.service.ObjectDetectionService):
         }
 
     def predict(self, experiment, frame):
-        image_path = self.cvat_api.dataset.get_image_path(frame)
+        image_path = self.cvat_api.get_image_path(frame)
 
         hyper_parameters = create(self.template.hyper_parameters.data)
         task_class = get_impl_class(self.template.entrypoints.base)
@@ -171,7 +171,7 @@ class ObjectDetectionService(cvat_sdk.service.ObjectDetectionService):
         pass
 
     def train(self, experiment, project, snapshot=None):
-        dataset_dir = self.cvat_api.dataset.get_path(project)
+        dataset_dir = self.cvat_api.get_path(project)
         if not os.path.isdir(dataset_dir):
             raise FileNotFoundError(f'dataset_dir={dataset_dir} is not a directory')
 
