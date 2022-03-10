@@ -36,7 +36,7 @@ export default function ResourceFilterHOC(
     localStorageRecentKeyword: string,
     localStorageRecentCapacity: number,
     predefinedFilterValues: Record<string, string>,
-    defaultEnabledFilters: string[],
+    localStorageLatestKeyword: string,
 ): React.FunctionComponent<ResourceFilterProps> {
     const config: Config = { ...AntdConfig, ...filtrationCfg };
     const defaultTree = QbUtils.checkTree(
@@ -137,27 +137,26 @@ export default function ResourceFilterHOC(
                 }
             };
 
-            if (value) {
-                const tree = QbUtils.loadFromJsonLogic(JSON.parse(value), config);
-                if (isValidTree(tree)) {
-                    const filter = QbUtils.jsonLogicFormat(tree, config).logic;
-                    const stringified = JSON.stringify(filter);
+            let tree = null;
+            try {
+                if (value) {
+                    tree = QbUtils.loadFromJsonLogic(JSON.parse(value), config);
+                } else {
+                    const item = localStorage.getItem(localStorageLatestKeyword);
+                    if (item) {
+                        tree = QbUtils.loadFromJsonLogic(JSON.parse(item), config);
+                    }
+                }
+
+                if (tree && isValidTree(tree)) {
                     setAppliedFilter({
-                        predefined: null,
-                        recent: null,
-                        built: stringified,
+                        ...appliedFilter,
+                        built: JSON.stringify(QbUtils.jsonLogicFormat(tree, config).logic),
                     });
                     setState(tree);
                 }
-            } else if (defaultEnabledFilters) {
-                const predefinedFilters = getPredefinedFilters(user);
-                const appliedPredefined = defaultEnabledFilters
-                    .filter((filterKey: string) => filterKey in predefinedFilters)
-                    .map((filterKey: string) => predefinedFilters[filterKey]);
-                setAppliedFilter({
-                    ...appliedFilter,
-                    predefined: appliedPredefined.length ? appliedPredefined : null,
-                });
+            } catch (_: any) {
+                // nothing to do
             }
 
             window.addEventListener('click', listener);
@@ -170,20 +169,30 @@ export default function ResourceFilterHOC(
                 return;
             }
 
+            function onApplyFilterWrapper(filter: string | null): void {
+                if (filter) {
+                    localStorage.setItem(localStorageLatestKeyword, filter);
+                } else {
+                    localStorage.removeItem(localStorageLatestKeyword);
+                }
+
+                onApplyFilter(filter);
+            }
+
             if (appliedFilter.predefined?.length) {
-                onApplyFilter(unite(appliedFilter.predefined));
+                onApplyFilterWrapper(unite(appliedFilter.predefined));
             } else if (appliedFilter.recent) {
-                onApplyFilter(appliedFilter.recent);
+                onApplyFilterWrapper(appliedFilter.recent);
                 const tree = QbUtils.loadFromJsonLogic(JSON.parse(appliedFilter.recent), config);
                 if (isValidTree(tree)) {
                     setState(tree);
                 }
             } else if (appliedFilter.built) {
                 if (value !== appliedFilter.built) {
-                    onApplyFilter(appliedFilter.built);
+                    onApplyFilterWrapper(appliedFilter.built);
                 }
             } else {
-                onApplyFilter(null);
+                onApplyFilterWrapper(null);
                 setState(defaultTree);
             }
         }, [appliedFilter]);

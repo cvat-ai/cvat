@@ -31,12 +31,12 @@ import ProjectTopBar from './top-bar';
 
 import {
     localStorageRecentKeyword, localStorageRecentCapacity,
-    predefinedFilterValues, defaultEnabledFilters, config,
+    predefinedFilterValues, config, localStorageLatestKeyword,
 } from './project-tasks-filter-configuration';
 
 const FilteringComponent = ResourceFilterHOC(
     config, localStorageRecentKeyword, localStorageRecentCapacity,
-    predefinedFilterValues, defaultEnabledFilters,
+    predefinedFilterValues, localStorageLatestKeyword,
 );
 
 interface ParamType {

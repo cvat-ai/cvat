@@ -10,12 +10,12 @@ import { JobsQuery } from 'reducers/interfaces';
 import { SortingComponent, ResourceFilterHOC, defaultVisibility } from 'components/resource-sorting-filtering';
 import {
     localStorageRecentKeyword, localStorageRecentCapacity,
-    predefinedFilterValues, defaultEnabledFilters, config,
+    predefinedFilterValues, config, localStorageLatestKeyword,
 } from './jobs-filter-configuration';
 
 const FilteringComponent = ResourceFilterHOC(
     config, localStorageRecentKeyword, localStorageRecentCapacity,
-    predefinedFilterValues, defaultEnabledFilters,
+    predefinedFilterValues, localStorageLatestKeyword,
 );
 
 interface Props {
