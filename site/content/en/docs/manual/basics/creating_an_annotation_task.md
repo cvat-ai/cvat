@@ -153,7 +153,7 @@ Use this option to specify quality of uploaded images.
 The option helps to load high resolution datasets faster.
 Use the value from `5` (almost completely compressed images) to `100` (not compressed images).
 
-## Overlap Size
+### Overlap Size
 
 Use this option to make overlapped segments.
 The option makes tracks continuous from one segment into another.
@@ -223,6 +223,11 @@ Supported URL formats :
 - `git@github.com:project/repos[.git]`
 
 After the task is created, the synchronization status is displayed on the task page.
+
+If you specify a dataset repository, when you create a task, you will see a message
+about the need to grant access with the ssh key.
+This is the key you need to [add to your github account](https://github.com/settings/keys).
+For other git systems, you can learn about adding an ssh key in their documentation.
 
 ### Use LFS
 

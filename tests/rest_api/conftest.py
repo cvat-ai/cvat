@@ -193,7 +193,6 @@ def find_users(test_db):
         return data
     return find
 
-
 @pytest.fixture(scope='module')
 def test_db(users, users_by_name, memberships):
     data = []
@@ -255,3 +254,4 @@ def filter_jobs_with_shapes(annotations):
 def filter_tasks_with_shapes(annotations):
     def find(tasks):
         return list(filter(lambda j: annotations['job'][str()]))
+    return find

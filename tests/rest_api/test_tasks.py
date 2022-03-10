@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 from http import HTTPStatus
+from deepdiff import DeepDiff
 import pytest
 from deepdiff import DeepDiff
 
@@ -182,3 +183,4 @@ class TestPatchTasks:
 
         self._test_check_respone(is_allow, response, data)
 
+        assert response.headers['Content-Type'] == content_type

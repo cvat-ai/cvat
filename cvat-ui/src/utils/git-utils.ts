@@ -1,4 +1,4 @@
-// Copyright (C) 2021 Intel Corporation
+// Copyright (C) 2019-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -39,6 +39,7 @@ interface ReposData {
         error: string | null;
     };
     format: string
+    lfs: boolean
 }
 
 function waitForClone(cloneResponse: any): Promise<void> {
@@ -157,6 +158,7 @@ export async function getReposData(tid: number): Promise<ReposData | null> {
             error: response.status.error,
         },
         format: response.format,
+        lfs: response.lfs,
     };
 }
 
@@ -188,6 +190,23 @@ export function syncRepos(tid: number): Promise<void> {
 
                 setTimeout(checkSync, 1000);
             })
+            .catch((error: any): void => {
+                reject(error);
+            });
+    });
+}
+
+export async function changeRepo(taskId: number, type: string, value: any): Promise<void> {
+    return new Promise((resolve, reject): void => {
+        core.server
+            .request(`${baseURL}/git/repository/${taskId}`, {
+                method: 'PATCH',
+                data: JSON.stringify({
+                    type,
+                    value,
+                }),
+            })
+            .then(resolve)
             .catch((error: any): void => {
                 reject(error);
             });

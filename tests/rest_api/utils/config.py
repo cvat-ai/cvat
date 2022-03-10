@@ -24,6 +24,9 @@ def get_api_url(endpoint, **kwargs):
 def get_method(username, endpoint, **kwargs):
     return requests.get(get_api_url(endpoint, **kwargs), auth=(username, USER_PASS))
 
+def options_method(username, endpoint, **kwargs):
+    return requests.options(get_api_url(endpoint, **kwargs), auth=(username, USER_PASS))
+
 def delete_method(username, endpoint, **kwargs):
     return requests.delete(get_api_url(endpoint, **kwargs), auth=(username, USER_PASS))
 

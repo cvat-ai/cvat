@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2021 Intel Corporation
+// Copyright (C) 2019-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -111,6 +111,23 @@ export function getProjectsAsync(
             if (filteredQuery[key] === null || typeof filteredQuery[key] === 'undefined') {
                 delete filteredQuery[key];
             }
+        }
+
+        // Temporary hack to do not change UI currently for projects
+        // Will be redesigned in a different PR
+        const filter = {
+            and: ['owner', 'assignee', 'name', 'status'].reduce<object[]>((acc, filterField) => {
+                if (filterField in filteredQuery) {
+                    acc.push({ '==': [{ var: filterField }, filteredQuery[filterField]] });
+                    delete filteredQuery[filterField];
+                }
+
+                return acc;
+            }, []),
+        };
+
+        if (filter.and.length) {
+            filteredQuery.filter = JSON.stringify(filter);
         }
 
         let result = null;

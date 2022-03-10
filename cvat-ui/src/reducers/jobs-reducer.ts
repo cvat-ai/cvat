@@ -10,9 +10,8 @@ const defaultState: JobsState = {
     count: 0,
     query: {
         page: 1,
-        state: null,
-        stage: null,
-        assignee: null,
+        filter: null,
+        sort: null,
     },
     current: [],
     previews: [],
