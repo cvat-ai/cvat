@@ -15,8 +15,8 @@ Thus, it is possible to mark corrupted frames that are not subject to annotation
    ![](/images/image245.jpg)
 
 1. After that you will be asked to confirm frame deleting.
-   **Important note:**  all annotaiton from that frame will be deleted, unsaved
-   annotations will be saved and frame will be unvisable in the annotation view (Until you make it visible in the settings).
+   **Important note:**  all annotaiton from that frame will be deleted, unsaved annotations
+   will be saved and frame will be unvisable in the annotation view (Until you make it visible in the settings).
    If there is some overlap in the task and the deleted frame falls within this interval,
    then this will cause this frame to become unavailable in another job as well.
 1. If you annotate interpolation task, you may need to make some correction in the annotation. Common ones are:
