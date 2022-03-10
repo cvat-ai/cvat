@@ -61,7 +61,7 @@ function PlayerNavigation(props: Props): JSX.Element {
         if (!playing) {
             modal.confirm({
                 title: 'Do you want to delete this frame?',
-                content: 'All annotations from this frame will be deleted. You will be able to restore frame (but not annotations) later.',
+                content: 'All annotations from this frame will be deleted and other unsaved annotations will be saved. You will be able to restore frame (but not annotations) later.',
                 className: 'cvat-modal-delete-frame',
                 okText: 'Delete',
                 okType: 'danger',

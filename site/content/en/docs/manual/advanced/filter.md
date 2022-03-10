@@ -1,7 +1,7 @@
 ---
 title: 'Filter'
 linkTitle: 'Filter'
-weight: 23
+weight: 24
 description: 'Guide to using the Filter feature in CVAT.'
 ---
 

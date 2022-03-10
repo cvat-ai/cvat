@@ -1,7 +1,7 @@
 ---
 title: 'Task synchronization with a repository'
 linkTitle: 'Task synchronization'
-weight: 19
+weight: 20
 ---
 
 > Notice: this feature works only if a git repository was specified when the task was created.

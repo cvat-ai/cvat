@@ -1,7 +1,7 @@
 ---
 title: 'Serverless tutorial'
 linkTitle: 'Serverless tutorial'
-weight: 31
+weight: 32
 ---
 
 ## Introduction
