@@ -5,9 +5,8 @@
 from http import HTTPStatus
 from deepdiff import DeepDiff
 import pytest
-from deepdiff import DeepDiff
 
-from .utils.config import get_method, post_method, patch_method
+from .utils.config import get_method, post_method
 
 class TestGetTasks:
     def _test_task_list_200(self, user, project_id, data, exclude_paths = '', **kwargs):
@@ -155,32 +154,4 @@ class TestGetData:
     def test_frame_content_type(self, content_type, task_id):
         response = get_method(self._USERNAME, f'tasks/{task_id}/data', type='frame', quality='original', number=0)
         assert response.status_code == HTTPStatus.OK
-        assert response.headers['Content-Type'] == content_type
-
-class TestPatchTasks:
-    def _test_check_respone(self, is_allow, response, data=None):
-        if is_allow:
-            assert response.status_code == HTTPStatus.OK
-            assert DeepDiff(data, response.json()) == {}
-        else:
-            assert response.status_code == HTTPStatus.FORBIDDEN
-
-
-    @pytest.mark.parametrize('org', [2])
-    @pytest.mark.parametrize('privilege, is_allow', [
-        ('admin', True), ('business', False), ('worker', False), ('user', False)
-    ])
-    def test_non_member_update_task_annotations(self, org, privilege, is_allow,
-            find_job_staff_user, find_users, request_data, tasks_by_org, filter_jobs_with_shapes):
-        users = find_users(privilege=privilege, exclude_org=org)
-        tasks = tasks_by_org[org]
-        filtered_jobs = filter_jobs_with_shapes(jobs)
-        username, jid = find_job_staff_user(filtered_jobs, users, False)
-
-        data = request_data(jid)
-        response = patch_method(username, f'jobs/{jid}/annotations', data,
-            org_id=org, action='update')
-
-        self._test_check_respone(is_allow, response, data)
-
         assert response.headers['Content-Type'] == content_type
