@@ -19,10 +19,10 @@ def restore_data_volume():
     _run(f"docker container cp {osp.join(ASSETS_DIR, 'cvat_data', 'data')} cvat:/home/django/data/")
 
 def create_test_db():
-    _run(f"docker container cp {osp.join(CVAT_DB_DIR, 'restore.sh')} cvat_db:restore.sh")
+    _run(f"docker container cp {osp.join(CVAT_DB_DIR, 'restore.sql')} cvat_db:restore.sql")
     _run(f"docker container cp {osp.join(CVAT_DB_DIR, 'data.json')} cvat:data.json")
     _run('docker exec cvat python manage.py loaddata /data.json')
-    _run('docker exec cvat_db sh restore.sh cvat test_db')
+    _run('docker exec cvat_db psql -U root -d postgres -v from=cvat -v to=test_db -f restore.sql')
 
 @pytest.fixture(scope='session', autouse=True)
 def init_test_db():
@@ -31,12 +31,12 @@ def init_test_db():
 
     yield
 
-    _run('docker exec cvat_db sh restore.sh test_db cvat')
+    _run('docker exec cvat_db psql -U root -d postgres -v from=test_db -v to=cvat -f restore.sql')
     _run('docker exec cvat_db dropdb test_db')
 
 @pytest.fixture(scope='function', autouse=True)
 def restore():
-    _run('docker exec cvat_db sh restore.sh test_db cvat')
+    _run('docker exec cvat_db psql -U root -d postgres -v from=test_db -v to=cvat -f restore.sql')
 
 class Container:
     def __init__(self, data, key='id'):
@@ -229,3 +229,4 @@ def filter_jobs_with_shapes(annotations):
     def find(jobs):
         return list(filter(lambda j: annotations['job'][str(j['id'])]['shapes'], jobs))
     return find
+
