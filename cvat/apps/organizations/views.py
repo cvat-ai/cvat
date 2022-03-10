@@ -1,4 +1,4 @@
-# Copyright (C) 2021 Intel Corporation
+# Copyright (C) 2022 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -55,7 +55,6 @@ class OrganizationViewSet(viewsets.ModelViewSet):
     ordering_fields = filter_fields
     ordering = '-id'
     http_method_names = ['get', 'post', 'patch', 'delete', 'head', 'options']
-    pagination_class = None
     iam_organization_field = None
 
     def get_queryset(self):
