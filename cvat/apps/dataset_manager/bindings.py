@@ -3,7 +3,6 @@
 #
 # SPDX-License-Identifier: MIT
 
-import copy
 import sys
 import rq
 import os.path as osp
