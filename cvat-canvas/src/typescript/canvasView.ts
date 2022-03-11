@@ -890,7 +890,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                             const [state] = getController().objects.filter(
                                 (_state: any): boolean => _state.clientID === activeElement.clientID,
                             );
-                            if (state.shapeType === 'points') {
+                            if (state?.shapeType === 'points') {
                                 const selectedClientID = +((e.target as HTMLElement).parentElement as HTMLElement).getAttribute('clientID');
                                 if (state.clientID !== selectedClientID) {
                                     return;
