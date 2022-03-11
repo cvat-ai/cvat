@@ -792,16 +792,14 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 );
 
                 if (['polygon', 'polyline', 'points'].includes(state.shapeType)) {
-                    if (e.altKey) {
-                        if (state.shapeType === 'points') {
-                            const selectedClientID = parseInt(
-                                ((e.target as HTMLElement).parentElement as HTMLElement).getAttribute('clientID'), 10,
-                            );
+                    if (state.shapeType === 'points' && (e.altKey || e.ctrlKey)) {
+                        const selectedClientID = +((e.target as HTMLElement).parentElement as HTMLElement).getAttribute('clientID');
 
-                            if (state.clientID !== selectedClientID) {
-                                return;
-                            }
+                        if (state.clientID !== selectedClientID) {
+                            return;
                         }
+                    }
+                    if (e.altKey) {
                         const { points } = state;
                         this.onEditDone(state, points.slice(0, pointID * 2).concat(points.slice(pointID * 2 + 2)));
                     } else if (e.shiftKey) {
@@ -888,14 +886,12 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
                     circle.on('mouseenter', (e: MouseEvent): void => {
                         const activeElement = getActiveElement();
-                        if (activeElement !== null && e.altKey) {
+                        if (activeElement !== null && (e.altKey || e.ctrlKey)) {
                             const [state] = getController().objects.filter(
                                 (_state: any): boolean => _state.clientID === activeElement.clientID,
                             );
                             if (state.shapeType === 'points') {
-                                const selectedClientID = parseInt(
-                                    ((e.target as HTMLElement).parentElement as HTMLElement).getAttribute('clientID'), 10,
-                                );
+                                const selectedClientID = +((e.target as HTMLElement).parentElement as HTMLElement).getAttribute('clientID');
                                 if (state.clientID !== selectedClientID) {
                                     return;
                                 }
