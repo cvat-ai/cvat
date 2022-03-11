@@ -15,13 +15,11 @@ import { SortingComponent, ResourceFilterHOC, defaultVisibility } from 'componen
 import { TasksQuery } from 'reducers/interfaces';
 import { usePrevious } from 'utils/hooks';
 import {
-    localStorageRecentKeyword, localStorageRecentCapacity,
-    predefinedFilterValues, config, localStorageLatestKeyword,
+    localStorageRecentKeyword, localStorageRecentCapacity, predefinedFilterValues, config,
 } from './tasks-filter-configuration';
 
 const FilteringComponent = ResourceFilterHOC(
-    config, localStorageRecentKeyword, localStorageRecentCapacity,
-    predefinedFilterValues, localStorageLatestKeyword,
+    config, localStorageRecentKeyword, localStorageRecentCapacity, predefinedFilterValues,
 );
 
 interface VisibleTopBarProps {

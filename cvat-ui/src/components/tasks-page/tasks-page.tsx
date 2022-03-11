@@ -4,7 +4,7 @@
 
 import './styles.scss';
 import { useDispatch } from 'react-redux';
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useHistory } from 'react-router';
 import Spin from 'antd/lib/spin';
 import Button from 'antd/lib/button';
@@ -37,6 +37,7 @@ function TasksPageComponent(props: Props): JSX.Element {
 
     const dispatch = useDispatch();
     const history = useHistory();
+    const [isMounted, setIsMounted] = useState(false);
 
     const queryParams = new URLSearchParams(history.location.search);
     const updatedQuery = { ...query };
@@ -49,12 +50,15 @@ function TasksPageComponent(props: Props): JSX.Element {
 
     useEffect(() => {
         dispatch(getTasksAsync({ ...updatedQuery }));
+        setIsMounted(true);
     }, []);
 
     useEffect(() => {
-        history.replace({
-            search: updateHistoryFromQuery(query),
-        });
+        if (isMounted) {
+            history.replace({
+                search: updateHistoryFromQuery(query),
+            });
+        }
     }, [query]);
 
     useEffect(() => {

@@ -30,13 +30,11 @@ import DetailsComponent from './details';
 import ProjectTopBar from './top-bar';
 
 import {
-    localStorageRecentKeyword, localStorageRecentCapacity,
-    predefinedFilterValues, config, localStorageLatestKeyword,
+    localStorageRecentKeyword, localStorageRecentCapacity, predefinedFilterValues, config,
 } from './project-tasks-filter-configuration';
 
 const FilteringComponent = ResourceFilterHOC(
-    config, localStorageRecentKeyword, localStorageRecentCapacity,
-    predefinedFilterValues, localStorageLatestKeyword,
+    config, localStorageRecentKeyword, localStorageRecentCapacity, predefinedFilterValues,
 );
 
 interface ParamType {
@@ -56,6 +54,7 @@ export default function ProjectPageComponent(): JSX.Element {
     const tasksCount = useSelector((state: CombinedState) => state.tasks.count);
     const tasksQuery = useSelector((state: CombinedState) => state.projects.tasksGettingQuery);
     const tasksFetching = useSelector((state: CombinedState) => state.tasks.fetching);
+    const [isMounted, setIsMounted] = useState(false);
     const [visibility, setVisibility] = useState(defaultVisibility);
 
     const queryParams = new URLSearchParams(history.location.search);
@@ -69,6 +68,7 @@ export default function ProjectPageComponent(): JSX.Element {
 
     useEffect(() => {
         dispatch(getProjectTasksAsync({ ...updatedQuery, projectId: id }));
+        setIsMounted(true);
     }, []);
 
     const [project] = projects.filter((_project) => _project.id === id);
@@ -84,9 +84,11 @@ export default function ProjectPageComponent(): JSX.Element {
     }, []);
 
     useEffect(() => {
-        history.replace({
-            search: updateHistoryFromQuery(tasksQuery),
-        });
+        if (isMounted) {
+            history.replace({
+                search: updateHistoryFromQuery(tasksQuery),
+            });
+        }
     }, [tasksQuery]);
 
     useEffect(() => {

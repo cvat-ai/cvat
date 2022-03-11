@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import './styles.scss';
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useHistory } from 'react-router';
 import { useDispatch, useSelector } from 'react-redux';
 import Spin from 'antd/lib/spin';
@@ -23,6 +23,7 @@ import JobsContentComponent from './jobs-content';
 function JobsPageComponent(): JSX.Element {
     const dispatch = useDispatch();
     const history = useHistory();
+    const [isMounted, setIsMounted] = useState(false);
     const query = useSelector((state: CombinedState) => state.jobs.query);
     const fetching = useSelector((state: CombinedState) => state.jobs.fetching);
     const count = useSelector((state: CombinedState) => state.jobs.count);
@@ -38,12 +39,15 @@ function JobsPageComponent(): JSX.Element {
 
     useEffect(() => {
         dispatch(getJobsAsync({ ...updatedQuery }));
+        setIsMounted(true);
     }, []);
 
     useEffect(() => {
-        history.replace({
-            search: updateHistoryFromQuery(query),
-        });
+        if (isMounted) {
+            history.replace({
+                search: updateHistoryFromQuery(query),
+            });
+        }
     }, [query]);
 
     const content = count ? (

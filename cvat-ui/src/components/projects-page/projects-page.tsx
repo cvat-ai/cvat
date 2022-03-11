@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import './styles.scss';
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useHistory } from 'react-router';
 import { useDispatch, useSelector } from 'react-redux';
 import Spin from 'antd/lib/spin';
@@ -25,6 +25,7 @@ export default function ProjectsPageComponent(): JSX.Element {
     const query = useSelector((state: CombinedState) => state.projects.gettingQuery);
     const tasksQuery = useSelector((state: CombinedState) => state.projects.tasksGettingQuery);
     const importing = useSelector((state: CombinedState) => state.projects.restoring);
+    const [isMounted, setIsMounted] = useState(false);
     const anySearch = Object.keys(query).some((value: string) => value !== 'page' && (query as any)[value] !== null);
 
     const queryParams = new URLSearchParams(history.location.search);
@@ -38,12 +39,15 @@ export default function ProjectsPageComponent(): JSX.Element {
 
     useEffect(() => {
         dispatch(getProjectsAsync({ ...updatedQuery }));
+        setIsMounted(true);
     }, []);
 
     useEffect(() => {
-        history.replace({
-            search: updateHistoryFromQuery(query),
-        });
+        if (isMounted) {
+            history.replace({
+                search: updateHistoryFromQuery(query),
+            });
+        }
     }, [query]);
 
     const content = count ? <ProjectListComponent /> : <EmptyListComponent notFound={anySearch} />;

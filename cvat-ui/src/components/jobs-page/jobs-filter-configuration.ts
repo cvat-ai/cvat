@@ -114,7 +114,6 @@ export const config: Partial<Config> = {
 
 export const localStorageRecentCapacity = 10;
 export const localStorageRecentKeyword = 'recentlyAppliedJobsFilters';
-export const localStorageLatestKeyword = 'latestAppliedJobsFilter';
 export const predefinedFilterValues = {
     'Assigned to me': '{"and":[{"==":[{"var":"assignee"},"<username>"]}]}',
     'Not completed': '{"!":{"or":[{"==":[{"var":"state"},"completed"]},{"==":[{"var":"stage"},"acceptance"]}]}}',

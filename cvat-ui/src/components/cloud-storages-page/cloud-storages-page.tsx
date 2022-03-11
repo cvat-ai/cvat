@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import './styles.scss';
-import React, { useCallback, useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useHistory } from 'react-router';
 import { useDispatch, useSelector } from 'react-redux';
 import { Row, Col } from 'antd/lib/grid';
@@ -19,6 +19,7 @@ import TopBarComponent from './top-bar';
 export default function StoragesPageComponent(): JSX.Element {
     const dispatch = useDispatch();
     const history = useHistory();
+    const [isMounted, setIsMounted] = useState(false);
     const totalCount = useSelector((state: CombinedState) => state.cloudStorages.count);
     const fetching = useSelector((state: CombinedState) => state.cloudStorages.fetching);
     const current = useSelector((state: CombinedState) => state.cloudStorages.current);
@@ -35,12 +36,16 @@ export default function StoragesPageComponent(): JSX.Element {
 
     useEffect(() => {
         dispatch(getCloudStoragesAsync({ ...updatedQuery }));
+        setIsMounted(true);
     }, []);
 
     useEffect(() => {
-        history.replace({
-            search: updateHistoryFromQuery(query),
-        });
+        if (isMounted) {
+            // do not update URL from previous query which might exist if we left page of SPA before and returned here
+            history.replace({
+                search: updateHistoryFromQuery(query),
+            });
+        }
     }, [query]);
 
     const onChangePage = useCallback(

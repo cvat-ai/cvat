@@ -36,7 +36,6 @@ export default function ResourceFilterHOC(
     localStorageRecentKeyword: string,
     localStorageRecentCapacity: number,
     predefinedFilterValues: Record<string, string>,
-    localStorageLatestKeyword: string,
 ): React.FunctionComponent<ResourceFilterProps> {
     const config: Config = { ...AntdConfig, ...filtrationCfg };
     const defaultTree = QbUtils.checkTree(
@@ -137,23 +136,16 @@ export default function ResourceFilterHOC(
                 }
             };
 
-            let tree = null;
             try {
                 if (value) {
-                    tree = QbUtils.loadFromJsonLogic(JSON.parse(value), config);
-                } else {
-                    const item = localStorage.getItem(localStorageLatestKeyword);
-                    if (item) {
-                        tree = QbUtils.loadFromJsonLogic(JSON.parse(item), config);
+                    const tree = QbUtils.loadFromJsonLogic(JSON.parse(value), config);
+                    if (tree && isValidTree(tree)) {
+                        setAppliedFilter({
+                            ...appliedFilter,
+                            built: JSON.stringify(QbUtils.jsonLogicFormat(tree, config).logic),
+                        });
+                        setState(tree);
                     }
-                }
-
-                if (tree && isValidTree(tree)) {
-                    setAppliedFilter({
-                        ...appliedFilter,
-                        built: JSON.stringify(QbUtils.jsonLogicFormat(tree, config).logic),
-                    });
-                    setState(tree);
                 }
             } catch (_: any) {
                 // nothing to do
@@ -169,30 +161,20 @@ export default function ResourceFilterHOC(
                 return;
             }
 
-            function onApplyFilterWrapper(filter: string | null): void {
-                if (filter) {
-                    localStorage.setItem(localStorageLatestKeyword, filter);
-                } else {
-                    localStorage.removeItem(localStorageLatestKeyword);
-                }
-
-                onApplyFilter(filter);
-            }
-
             if (appliedFilter.predefined?.length) {
-                onApplyFilterWrapper(unite(appliedFilter.predefined));
+                onApplyFilter(unite(appliedFilter.predefined));
             } else if (appliedFilter.recent) {
-                onApplyFilterWrapper(appliedFilter.recent);
+                onApplyFilter(appliedFilter.recent);
                 const tree = QbUtils.loadFromJsonLogic(JSON.parse(appliedFilter.recent), config);
                 if (isValidTree(tree)) {
                     setState(tree);
                 }
             } else if (appliedFilter.built) {
                 if (value !== appliedFilter.built) {
-                    onApplyFilterWrapper(appliedFilter.built);
+                    onApplyFilter(appliedFilter.built);
                 }
             } else {
-                onApplyFilterWrapper(null);
+                onApplyFilter(null);
                 setState(defaultTree);
             }
         }, [appliedFilter]);

@@ -14,12 +14,11 @@ import { SortingComponent, ResourceFilterHOC, defaultVisibility } from 'componen
 
 import {
     localStorageRecentKeyword, localStorageRecentCapacity,
-    predefinedFilterValues, config, localStorageLatestKeyword,
+    predefinedFilterValues, config,
 } from './cloud-storages-filter-configuration';
 
 const FilteringComponent = ResourceFilterHOC(
-    config, localStorageRecentKeyword, localStorageRecentCapacity,
-    predefinedFilterValues, localStorageLatestKeyword,
+    config, localStorageRecentKeyword, localStorageRecentCapacity, predefinedFilterValues,
 );
 
 interface Props {

@@ -16,13 +16,11 @@ import { ProjectsQuery } from 'reducers/interfaces';
 import { SortingComponent, ResourceFilterHOC, defaultVisibility } from 'components/resource-sorting-filtering';
 
 import {
-    localStorageRecentKeyword, localStorageRecentCapacity,
-    predefinedFilterValues, config, localStorageLatestKeyword,
+    localStorageRecentKeyword, localStorageRecentCapacity, predefinedFilterValues, config,
 } from './projects-filter-configuration';
 
 const FilteringComponent = ResourceFilterHOC(
-    config, localStorageRecentKeyword, localStorageRecentCapacity,
-    predefinedFilterValues, localStorageLatestKeyword,
+    config, localStorageRecentKeyword, localStorageRecentCapacity, predefinedFilterValues,
 );
 
 interface Props {

@@ -74,7 +74,7 @@ export const config: Partial<Config> = {
 
 export const localStorageRecentCapacity = 10;
 export const localStorageRecentKeyword = 'recentlyAppliedCloudStoragesFilters';
-export const localStorageLatestKeyword = 'latestAppliedCloudStoragesFilter';
+
 export const predefinedFilterValues = {
     'Owned by me': '{"and":[{"==":[{"var":"owner"},"<username>"]}]}',
     'AWS storages': '{"and":[{"==":[{"var":"provider_type"},"AWS_S3_BUCKET"]}]}',
