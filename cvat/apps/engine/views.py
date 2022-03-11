@@ -636,39 +636,67 @@ class TaskViewSet(UploadMixin, viewsets.ModelViewSet):
 
         return Response(serializer.data)
 
+    # UploadMixin method
+    def get_upload_dir(self):
+        if 'annotations' in self.action:
+            return self._object.get_tmp_dirname()
+        elif 'data' in self.action:
+            return self._object.data.get_upload_dirname()
+        return ""
+
+    # UploadMixin method
     def upload_finished(self, request):
-        db_task = self.get_object() # call check_object_permissions as well
-        task_data = db_task.data
-        serializer = DataSerializer(task_data, data=request.data)
-        serializer.is_valid(raise_exception=True)
-        data = dict(serializer.validated_data.items())
-        uploaded_files = task_data.get_uploaded_files()
-        uploaded_files.extend(data.get('client_files'))
-        serializer.validated_data.update({'client_files': uploaded_files})
+        if self.action == 'annotations':
+            format_name = request.query_params.get("format", "")
+            filename = request.query_params.get("filename", "")
+            tmp_dir = self._object.get_tmp_dirname()
+            if os.path.isfile(os.path.join(tmp_dir, filename)):
+                annotation_file = os.path.join(tmp_dir, filename)
+                return _import_annotations(
+                        request=request,
+                        filename=annotation_file,
+                        rq_id="{}@/api/tasks/{}/annotations/upload".format(request.user, self._object.pk),
+                        rq_func=dm.task.import_task_annotations,
+                        pk=self._object.pk,
+                        format_name=format_name,
+                    )
+            else:
+                return Response(data='No such file were uploaded',
+                        status=status.HTTP_400_BAD_REQUEST)
+        elif self.action == 'data':
+            task_data = self._object.data
+            serializer = DataSerializer(task_data, data=request.data)
+            serializer.is_valid(raise_exception=True)
+            data = dict(serializer.validated_data.items())
+            uploaded_files = task_data.get_uploaded_files()
+            uploaded_files.extend(data.get('client_files'))
+            serializer.validated_data.update({'client_files': uploaded_files})
 
-        db_data = serializer.save()
-        db_task.data = db_data
-        db_task.save()
-        data = {k: v for k, v in serializer.data.items()}
+            db_data = serializer.save()
+            self._object.data = db_data
+            self._object.save()
+            data = {k: v for k, v in serializer.data.items()}
 
-        data['use_zip_chunks'] = serializer.validated_data['use_zip_chunks']
-        data['use_cache'] = serializer.validated_data['use_cache']
-        data['copy_data'] = serializer.validated_data['copy_data']
-        if data['use_cache']:
-            db_task.data.storage_method = StorageMethodChoice.CACHE
-            db_task.data.save(update_fields=['storage_method'])
-        if data['server_files'] and not data.get('copy_data'):
-            db_task.data.storage = StorageChoice.SHARE
-            db_task.data.save(update_fields=['storage'])
-        if db_data.cloud_storage:
-            db_task.data.storage = StorageChoice.CLOUD_STORAGE
-            db_task.data.save(update_fields=['storage'])
-            # if the value of stop_frame is 0, then inside the function we cannot know
-            # the value specified by the user or it's default value from the database
-        if 'stop_frame' not in serializer.validated_data:
-            data['stop_frame'] = None
-        task.create(db_task.id, data)
-        return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
+            data['use_zip_chunks'] = serializer.validated_data['use_zip_chunks']
+            data['use_cache'] = serializer.validated_data['use_cache']
+            data['copy_data'] = serializer.validated_data['copy_data']
+            if data['use_cache']:
+                self._object.data.storage_method = StorageMethodChoice.CACHE
+                self._object.data.save(update_fields=['storage_method'])
+            if data['server_files'] and not data.get('copy_data'):
+                self._object.data.storage = StorageChoice.SHARE
+                self._object.data.save(update_fields=['storage'])
+            if db_data.cloud_storage:
+                self._object.data.storage = StorageChoice.CLOUD_STORAGE
+                self._object.data.save(update_fields=['storage'])
+                # if the value of stop_frame is 0, then inside the function we cannot know
+                # the value specified by the user or it's default value from the database
+            if 'stop_frame' not in serializer.validated_data:
+                data['stop_frame'] = None
+            task.create(self._object.id, data)
+            return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
+        return Response(data='Unknown upload was finished',
+                        status=status.HTTP_400_BAD_REQUEST)
 
     @extend_schema(methods=['POST'],
         summary='Method permanently attaches images or video to a task. Supports tus uploads, see more https://tus.io/',
@@ -700,14 +728,14 @@ class TaskViewSet(UploadMixin, viewsets.ModelViewSet):
         }, tags=['tasks'], versions=['2.0'])
     @action(detail=True, methods=['OPTIONS', 'POST', 'GET'], url_path=r'data/?$')
     def data(self, request, pk):
-        db_task = self.get_object() # call check_object_permissions as well
+        self._object = self.get_object() # call check_object_permissions as well
         if request.method == 'POST' or request.method == 'OPTIONS':
-            task_data = db_task.data
+            task_data = self._object.data
             if not task_data:
                 task_data = Data.objects.create()
                 task_data.make_dirs()
-                db_task.data = task_data
-                db_task.save()
+                self._object.data = task_data
+                self._object.save()
             elif task_data.size != 0:
                 return Response(data='Adding more data is not supported',
                     status=status.HTTP_400_BAD_REQUEST)
@@ -719,10 +747,15 @@ class TaskViewSet(UploadMixin, viewsets.ModelViewSet):
             data_quality = request.query_params.get('quality', 'compressed')
 
             data_getter = DataChunkGetter(data_type, data_num, data_quality,
-                db_task.dimension)
+                self._object.dimension)
 
-            return data_getter(request, db_task.data.start_frame,
-                db_task.data.stop_frame, db_task.data)
+            return data_getter(request, self._object.data.start_frame,
+                self._object.data.stop_frame, self._object.data)
+
+    @action(detail=True, methods=['HEAD', 'PATCH'], url_path='data/'+UploadMixin.file_id_regex)
+    def append_data_chunk(self, request, pk, file_id):
+        self._object = self.get_object()
+        return self.append_tus_chunk(request, file_id)
 
     @extend_schema(methods=['GET'], summary='Method allows to download task annotations',
         parameters=[
@@ -759,14 +792,14 @@ class TaskViewSet(UploadMixin, viewsets.ModelViewSet):
         responses={
             '204': OpenApiResponse(description='The annotation has been deleted'),
         }, tags=['tasks'], versions=['2.0'])
-    @action(detail=True, methods=['GET', 'DELETE', 'PUT', 'PATCH'],
+    @action(detail=True, methods=['GET', 'DELETE', 'PUT', 'PATCH', 'POST', 'OPTIONS'], url_path=r'annotations/?$',
         serializer_class=LabeledDataSerializer)
     def annotations(self, request, pk):
-        db_task = self.get_object() # force to call check_object_permissions
+        self._object = self.get_object() # force to call check_object_permissions
         if request.method == 'GET':
             format_name = request.query_params.get('format')
             if format_name:
-                return _export_annotations(db_instance=db_task,
+                return _export_annotations(db_instance=self._object,
                     rq_id="/api/tasks/{}/annotations/{}".format(pk, format_name),
                     request=request,
                     action=request.query_params.get("action", "").lower(),
@@ -779,6 +812,8 @@ class TaskViewSet(UploadMixin, viewsets.ModelViewSet):
                 serializer = LabeledDataSerializer(data=data)
                 if serializer.is_valid(raise_exception=True):
                     return Response(serializer.data)
+        elif request.method == 'POST' or request.method == 'OPTIONS':
+            return self.upload_data(request)
         elif request.method == 'PUT':
             format_name = request.query_params.get('format')
             if format_name:
@@ -809,6 +844,11 @@ class TaskViewSet(UploadMixin, viewsets.ModelViewSet):
                 except (AttributeError, IntegrityError) as e:
                     return Response(data=str(e), status=status.HTTP_400_BAD_REQUEST)
                 return Response(data)
+
+    @action(detail=True, methods=['HEAD', 'PATCH'], url_path='annotations/'+UploadMixin.file_id_regex)
+    def append_annotations_chunk(self, request, pk, file_id):
+        self._object = self.get_object()
+        return self.append_tus_chunk(request, file_id)
 
     @extend_schema(
         summary='When task is being created the method returns information about a status of the creation process',
@@ -928,7 +968,7 @@ class TaskViewSet(UploadMixin, viewsets.ModelViewSet):
        '200': JobWriteSerializer,
    }, tags=['jobs'], versions=['2.0']))
 class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
-    mixins.RetrieveModelMixin, mixins.UpdateModelMixin):
+    mixins.RetrieveModelMixin, mixins.UpdateModelMixin, UploadMixin):
     queryset = Job.objects.all()
     iam_organization_field = 'segment__task__organization'
     search_fields = ('task_name', 'project_name', 'assignee', 'state', 'stage')
@@ -960,6 +1000,34 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         else:
             return JobWriteSerializer
 
+    # UploadMixin method
+    def get_upload_dir(self):
+        task = self._object.segment.task
+        return task.get_tmp_dirname()
+
+    # UploadMixin method
+    def upload_finished(self, request):
+        task = self._object.segment.task
+        if self.action == 'annotations':
+            format_name = request.query_params.get("format", "")
+            filename = request.query_params.get("filename", "")
+            tmp_dir = task.get_tmp_dirname()
+            if os.path.isfile(os.path.join(tmp_dir, filename)):
+                annotation_file = os.path.join(tmp_dir, filename)
+                return _import_annotations(
+                        request=request,
+                        filename=annotation_file,
+                        rq_id="{}@/api/jobs/{}/annotations/upload".format(request.user, self._object.pk),
+                        rq_func=dm.task.import_job_annotations,
+                        pk=self._object.pk,
+                        format_name=format_name,
+                    )
+            else:
+                return Response(data='No such file were uploaded',
+                        status=status.HTTP_400_BAD_REQUEST)
+        return Response(data='Unknown upload was finished',
+                        status=status.HTTP_400_BAD_REQUEST)
+
     @extend_schema(methods=['GET'], summary='Method returns annotations for a specific job',
         responses={
             '200': LabeledDataSerializer(many=True),
@@ -983,13 +1051,15 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         responses={
             '204': OpenApiResponse(description='The annotation has been deleted'),
         }, tags=['jobs'], versions=['2.0'])
-    @action(detail=True, methods=['GET', 'DELETE', 'PUT', 'PATCH'],
+    @action(detail=True, methods=['GET', 'DELETE', 'PUT', 'PATCH', 'POST', 'OPTIONS'], url_path=r'annotations/?$',
         serializer_class=LabeledDataSerializer)
     def annotations(self, request, pk):
-        self.get_object() # force to call check_object_permissions
+        self._object = self.get_object() # force to call check_object_permissions
         if request.method == 'GET':
             data = dm.task.get_job_data(pk)
             return Response(data)
+        elif request.method == 'POST' or request.method == 'OPTIONS':
+            return self.upload_data(request)
         elif request.method == 'PUT':
             format_name = request.query_params.get('format', '')
             if format_name:
@@ -1023,6 +1093,11 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                 except (AttributeError, IntegrityError) as e:
                     return Response(data=str(e), status=status.HTTP_400_BAD_REQUEST)
                 return Response(data)
+
+    @action(detail=True, methods=['HEAD', 'PATCH'], url_path='annotations/'+UploadMixin.file_id_regex)
+    def append_annotations_chunk(self, request, pk, file_id):
+        self._object = self.get_object()
+        return self.append_tus_chunk(request, file_id)
 
     @extend_schema(
         summary='Method returns list of issues for the job',
@@ -1549,7 +1624,7 @@ def rq_handler(job, exc_type, exc_value, tb):
 
     return True
 
-def _import_annotations(request, rq_id, rq_func, pk, format_name):
+def _import_annotations(request, rq_id, rq_func, pk, format_name, filename=None):
     format_desc = {f.DISPLAY_NAME: f
         for f in dm.views.get_import_formats()}.get(format_name)
     if format_desc is None:
@@ -1562,31 +1637,35 @@ def _import_annotations(request, rq_id, rq_func, pk, format_name):
     rq_job = queue.fetch_job(rq_id)
 
     if not rq_job:
-        serializer = AnnotationFileSerializer(data=request.data)
-        if serializer.is_valid(raise_exception=True):
-            anno_file = serializer.validated_data['annotation_file']
-            fd, filename = mkstemp(prefix='cvat_{}'.format(pk))
-            with open(filename, 'wb+') as f:
-                for chunk in anno_file.chunks():
-                    f.write(chunk)
+        # If filename is specified we consider that file was uploaded via TUS, so it exists in filesystem
+        # Then we dont need to create temporary file
+        fd = None
+        if not filename:
+            serializer = AnnotationFileSerializer(data=request.data)
+            if serializer.is_valid(raise_exception=True):
+                anno_file = serializer.validated_data['annotation_file']
+                fd, filename = mkstemp(prefix='cvat_{}'.format(pk))
+                with open(filename, 'wb+') as f:
+                    for chunk in anno_file.chunks():
+                        f.write(chunk)
 
-            av_scan_paths(filename)
-            rq_job = queue.enqueue_call(
-                func=rq_func,
-                args=(pk, filename, format_name),
-                job_id=rq_id
-            )
-            rq_job.meta['tmp_file'] = filename
-            rq_job.meta['tmp_file_descriptor'] = fd
-            rq_job.save_meta()
+        av_scan_paths(filename)
+        rq_job = queue.enqueue_call(
+            func=rq_func,
+            args=(pk, filename, format_name),
+            job_id=rq_id
+        )
+        rq_job.meta['tmp_file'] = filename
+        rq_job.meta['tmp_file_descriptor'] = fd
+        rq_job.save_meta()
     else:
         if rq_job.is_finished:
-            os.close(rq_job.meta['tmp_file_descriptor'])
+            if rq_job.meta['tmp_file_descriptor']: os.close(rq_job.meta['tmp_file_descriptor'])
             os.remove(rq_job.meta['tmp_file'])
             rq_job.delete()
             return Response(status=status.HTTP_201_CREATED)
         elif rq_job.is_failed:
-            os.close(rq_job.meta['tmp_file_descriptor'])
+            if rq_job.meta['tmp_file_descriptor']: os.close(rq_job.meta['tmp_file_descriptor'])
             os.remove(rq_job.meta['tmp_file'])
             exc_info = str(rq_job.exc_info)
             rq_job.delete()

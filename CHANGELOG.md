@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## \[2.1.0] - Unreleased
 ### Added
+- Task annotations importing via chunk uploads (<https://github.com/openvinotoolkit/cvat/pull/4327>)
 - Advanced filtration and sorting for a list of tasks/projects/cloudstorages (<https://github.com/openvinotoolkit/cvat/pull/4403>)
 
 ### Changed
