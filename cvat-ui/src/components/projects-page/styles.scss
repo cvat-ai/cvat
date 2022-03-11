@@ -37,40 +37,66 @@
     }
 }
 
-/* empty-projects icon */
 .cvat-empty-projects-list {
-    > div:nth-child(1) {
-        margin-top: $grid-unit-size * 6;
+    .ant-empty {
+        top: 50%;
+        left: 50%;
+        position: absolute;
+        transform: translate(-50%, -50%);
     }
+}
 
-    > div:nth-child(2) {
-        > div {
-            margin-top: $grid-unit-size * 3;
+.cvat-projects-page-control-buttons-wrapper {
+    display: flex;
+    flex-direction: column;
+    background: $background-color-1;
+    padding: $grid-unit-size;
+    border-radius: 4px;
+    box-shadow: $box-shadow-base;
 
-            /* No projects created yet */
-            > span {
-                font-size: 20px;
-                color: $text-color;
+    > * {
+        &:not(:first-child) {
+            margin-top: $grid-unit-size;
+        }
+
+        width: 100%;
+
+        .ant-upload {
+            width: 100%;
+
+            button {
+                width: 100%;
             }
         }
-    }
-
-    /* To get started with your annotation project .. */
-    > div:nth-child(3) {
-        margin-top: $grid-unit-size;
     }
 }
 
 .cvat-projects-page-top-bar {
-    > div:nth-child(1) {
-        > div:nth-child(1) {
+    > div {
+        display: flex;
+        justify-content: space-between;
+
+        > .cvat-projects-page-filters-wrapper {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             width: 100%;
+
+            > div {
+                > *:not(:last-child) {
+                    margin-right: $grid-unit-size;
+                }
+
+                display: flex;
+                margin-right: $grid-unit-size * 4;
+            }
+
+            .cvat-projects-page-search-bar {
+                width: $grid-unit-size * 32;
+                padding-left: $grid-unit-size * 0.5;
+            }
         }
     }
-}
-
-.cvat-create-project-button {
-    padding: 0 $grid-unit-size * 4;
 }
 
 .cvat-projects-pagination {
@@ -152,14 +178,10 @@
     flex-wrap: wrap;
 }
 
-#cvat-export-project-loading {
+.cvat-export-project-loading {
     margin-left: 10;
 }
 
-#cvat-import-project-button {
-    padding: 0 30px;
-}
-
-#cvat-import-project-button-loading {
+.cvat-import-project-button-loading {
     margin-left: 10;
 }

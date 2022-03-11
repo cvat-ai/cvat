@@ -27,11 +27,8 @@ export interface ProjectsQuery {
     page: number;
     id: number | null;
     search: string | null;
-    owner: string | null;
-    name: string | null;
-    status: string | null;
-    assignee: string | null;
-    [key: string]: string | boolean | number | null | undefined;
+    filter: string | null;
+    sort: string | null;
 }
 
 export interface Project {
@@ -45,7 +42,7 @@ export interface ProjectsState {
     count: number;
     current: Project[];
     gettingQuery: ProjectsQuery;
-    tasksGettingQuery: TasksQuery;
+    tasksGettingQuery: TasksQuery & { ordering: string };
     activities: {
         creates: {
             id: null | number;
@@ -65,14 +62,9 @@ export interface TasksQuery {
     page: number;
     id: number | null;
     search: string | null;
-    owner: string | null;
-    assignee: string | null;
-    name: string | null;
-    status: string | null;
-    mode: string | null;
     filter: string | null;
+    sort: string | null;
     projectId: number | null;
-    [key: string]: string | number | null;
 }
 
 export interface Task {
@@ -156,13 +148,8 @@ export interface CloudStoragesQuery {
     page: number;
     id: number | null;
     search: string | null;
-    owner: string | null;
-    displayName: string | null;
-    description: string | null;
-    resource: string | null;
-    providerType: string | null;
-    credentialsType: string | null;
-    [key: string]: string | number | null | undefined;
+    sort: string | null;
+    filter: string | null;
 }
 
 interface CloudStorageAdditional {
@@ -787,4 +774,8 @@ export interface CombinedState {
 export enum DimensionType {
     DIM_3D = '3d',
     DIM_2D = '2d',
+}
+
+export interface Indexable {
+    [index: string]: any;
 }

@@ -5,7 +5,7 @@
 import { Dispatch, ActionCreator } from 'redux';
 import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
 import getCore from 'cvat-core-wrapper';
-import { CloudStoragesQuery, CloudStorage } from 'reducers/interfaces';
+import { CloudStoragesQuery, CloudStorage, Indexable } from 'reducers/interfaces';
 
 const cvat = getCore();
 
@@ -103,38 +103,14 @@ export type CloudStorageActions = ActionUnion<typeof cloudStoragesActions>;
 
 export function getCloudStoragesAsync(query: Partial<CloudStoragesQuery>): ThunkAction {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
-        function camelToSnake(str: string): string {
-            return (
-                str[0].toLowerCase() + str.slice(1, str.length)
-                    .replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`)
-            );
-        }
-
         dispatch(cloudStoragesActions.getCloudStorages());
         dispatch(cloudStoragesActions.updateCloudStoragesGettingQuery(query));
 
         const filteredQuery = { ...query };
         for (const key in filteredQuery) {
-            if (filteredQuery[key] === null) {
-                delete filteredQuery[key];
+            if ((filteredQuery as Indexable)[key] === null) {
+                delete (filteredQuery as Indexable)[key];
             }
-        }
-
-        // Temporary hack to do not change UI currently for cloud storages
-        // Will be redesigned in a different PR
-        const filter = {
-            and: ['displayName', 'resource', 'description', 'owner', 'providerType', 'credentialsType'].reduce<object[]>((acc, filterField) => {
-                if (filterField in filteredQuery) {
-                    acc.push({ '==': [{ var: camelToSnake(filterField) }, filteredQuery[filterField]] });
-                    delete filteredQuery[filterField];
-                }
-
-                return acc;
-            }, []),
-        };
-
-        if (filter.and.length) {
-            filteredQuery.filter = JSON.stringify(filter);
         }
 
         let result = null;

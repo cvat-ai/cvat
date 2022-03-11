@@ -256,7 +256,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
     # NOTE: The search_fields attribute should be a list of names of text
     # type fields on the model,such as CharField or TextField
     search_fields = ('name', 'owner', 'assignee', 'status')
-    filter_fields = list(search_fields) + ['id']
+    filter_fields = list(search_fields) + ['id', 'updated_date']
     ordering_fields = filter_fields
     ordering = "-id"
     lookup_fields = {'owner': 'owner__username', 'assignee': 'assignee__username'}
@@ -563,7 +563,7 @@ class TaskViewSet(UploadMixin, viewsets.ModelViewSet):
     serializer_class = TaskSerializer
     lookup_fields = {'project_name': 'project__name', 'owner': 'owner__username', 'assignee': 'assignee__username'}
     search_fields = ('project_name', 'name', 'owner', 'status', 'assignee', 'subset', 'mode', 'dimension')
-    filter_fields = list(search_fields) + ['id', 'project_id']
+    filter_fields = list(search_fields) + ['id', 'project_id', 'updated_date']
     ordering_fields = filter_fields
     ordering = "-id"
     iam_organization_field = 'organization'

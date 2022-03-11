@@ -33,6 +33,10 @@ view:data,Job,Sandbox,None,,GET,/jobs/{id}/data,Admin,N/A
 view:data,Job,Sandbox,"Project:owner, Project:assignee, Task:owner, Task:assignee, Assignee",,GET,/jobs/{id}/data,None,N/A
 view:data,Job,Organization,None,,GET,/jobs/{id}/data,User,Maintainer
 view:data,Job,Organization,"Project:owner, Project:assignee, Task:owner, Task:assignee, Assignee",,GET,/jobs/{id}/data,None,Worker
+view:commits,Job,Sandbox,None,,GET,/jobs/{id}/commits,Admin,N/A
+view:commits,Job,Sandbox,"Project:owner, Project:assignee, Task:owner, Task:assignee, Assignee",,GET,/jobs/{id}/commits,None,N/A
+view:commits,Job,Organization,None,,GET,/jobs/{id}/commits,User,Maintainer
+view:commits,Job,Organization,"Project:owner, Project:assignee, Task:owner, Task:assignee, Assignee",,GET,/jobs/{id}/commits,None,Worker
 import:annotations,Job,Sandbox,None,,PUT,/jobs/{id}/annotations?format=,Admin,N/A
 import:annotations,Job,Sandbox,"Project:owner, Project:assignee, Task:owner, Task:assignee, Assignee",,PUT,/jobs/{id}/annotations?format=,Worker,N/A
 import:annotations,Job,Organization,None,,PUT,/jobs/{id}/annotations?format=,User,Maintainer
