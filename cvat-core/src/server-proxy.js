@@ -1521,13 +1521,15 @@
                 }
             }
 
-            async function getCloudStorages(filter = '') {
+            async function getCloudStorages(filter = {}) {
                 const { backendAPI } = config;
 
                 let response = null;
                 try {
-                    response = await Axios.get(`${backendAPI}/cloudstorages?page_size=12&${filter}`, {
+                    response = await Axios.get(`${backendAPI}/cloudstorages`, {
                         proxy: config.proxy,
+                        params: filter,
+                        page_size: 12,
                     });
                 } catch (errorData) {
                     throw generateError(errorData);

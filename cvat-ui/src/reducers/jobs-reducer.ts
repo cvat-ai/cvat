@@ -12,6 +12,7 @@ const defaultState: JobsState = {
         page: 1,
         filter: null,
         sort: null,
+        search: null,
     },
     current: [],
     previews: [],
