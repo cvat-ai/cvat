@@ -1,58 +1,88 @@
 # FAQ
+
 ## What should be configured before installation?
+
 1. You should have configured connection to existed k8s cluster
 2. Helm must be installed
 3. You should download chart external dependencies, using following commands:
-```
-   helm repo add bitnami https://charts.bitnami.com/bitnami
-   helm repo update
-   helm dependency update
-```
+
+    ```shell
+    helm repo add bitnami <https://charts.bitnami.com/bitnami>
+    helm repo update
+    helm dependency update
+    ```
+
 4. (Optional) Install ingress of your choice (for example: <https://github.com/kubernetes/ingress-nginx>)
 5. (Optional) Create certificates for https (for example: <https://github.com/jetstack/cert-manager/>)
 6. (Optional) Create values.override.yaml and override there parameters you want
 7. Change postgresql password as described below
-8. Add ingress to values.override.yaml(example also below)
-7. Deploy cvat using command below
+8. Create a rules.tar.gz archive containing at least all rego files in /cvat/apps/iam/rules not containing test in their name
+9. Add ingress to values.override.yaml(example also below)
+10. Deploy cvat using command below
+
+> **Warning:** The k8s service name of Open Policy Agent is fixed to opa by default. This is done to be compatible with CVAT 2.0 but limits this helm chart to a single release. The OPA url currently can´t be set as an environment variable. As soon as this is possible you can set cvat.opa.composeCompatibleServiceName to false in your value.override.yaml and configure those as additional envs.
+
 ## How to deploy new version of chart to cluster?
+
 Execute following command:
 ```helm upgrade <release_name> --install ./helm-chart -f ./helm-chart/values.yaml  -f values.override.yaml(if exists) --namespace <desired namespace>```
+
 ## How to create superuser?
-```
+
+```shell
 HELM_RELEASE_NAMESPACE="<insert>" &&\
 HELM_RELEASE_NAME="<insert>" &&\
 BACKEND_POD_NAME=$(kubectl get pod --namespace $HELM_RELEASE_NAMESPACE -l tier=backend,app.kubernetes.io/instance=$HELM_RELEASE_NAME -o jsonpath='{.items[0].metadata.name}') &&\
 kubectl exec -it --namespace $HELM_RELEASE_NAMESPACE $BACKEND_POD_NAME -c cvat-backend-app-container -- python manage.py createsuperuser
 ```
+
 ## How to change embedded postgresql password?
+
 There are several passwords used here, for security reasons - better change them all.
-```
+
+```yaml
 postgresql:
   secret:
     password: cvat_postgresql
     postgres_password: cvat_postgresql_postgres
     replication_password: cvat_postgresql_replica
 ```
+
 Or, if you know how to work with k8s - you could create your own secret and use it here:
-```
+
+```yaml
 postgresql:
    global:
      postgresql:
        existingSecret: cvat-postgres-secret
 ```
-## How to describe ingress:
+
+## How to describe ingress
+
   Just set `ingress.enabled:` to `true`, then copy example, uncomment it and change values there
+
 ## How to understand what diff will be inflicted by 'helm upgrade'?
+
 You can use <https://github.com/databus23/helm-diff#install> for that
-## I want to use my own postgresql/redis with your chart.
+
+## I want to use my own postgresql/redis with your chart
+
 Just set `postgresql.enabled` or `redis.enabled` to `false`, as described below.
 Then - put your instance params to "external" field
-## I want to override some settings in values.yaml.
+
+## I want to override some settings in values.yaml
+
 Just create file `values.override.yaml` and place your changes here, using same structure as in `values.yaml`.
 Then reference it in helm update/install command using `-f` flag
+
 ## Why you used external charts to provide redis and postgres?
+
 Because they definitely know what they do better then we are, so we are getting more quality and less support
+
 ## What is kubernetes and how it is working?
+
 See <https://kubernetes.io/>
+
 ## What is helm and how it is working?
+
 See <https://helm.sh/>
