@@ -1,4 +1,4 @@
-// Copyright (C) 2021 Intel Corporation
+// Copyright (C) 2021-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -52,7 +52,7 @@ export const importDatasetAsync = (instance: any, format: string, file: File): T
         }
 
         dispatch(importActions.importDatasetSuccess());
-        dispatch(getProjectsAsync({ id: instance.id }));
+        dispatch(getProjectsAsync({ id: instance.id }, getState().projects.tasksGettingQuery));
     }
 );
 

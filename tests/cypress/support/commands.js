@@ -177,49 +177,55 @@ Cypress.Commands.add(
         expectedResult = 'success',
         projectSubsetFieldValue = 'Test',
     ) => {
-        cy.get('#cvat-create-task-button').click({ force: true });
-        cy.url().should('include', '/tasks/create');
-        cy.get('[id="name"]').type(taskName);
-        if (!forProject) {
-            cy.get('.cvat-constructor-viewer-new-item').click();
-            cy.get('[placeholder="Label name"]').type(labelName);
-            cy.get('.cvat-new-attribute-button').click();
-            cy.get('[placeholder="Name"]').type(attrName);
-            cy.get('.cvat-attribute-type-input').click();
-            cy.get('.cvat-attribute-type-input-text').click();
-            cy.get('[placeholder="Default value"]').type(textDefaultValue);
-            if (multiAttrParams) {
-                cy.updateAttributes(multiAttrParams);
+        cy.url().then(($url) => {
+            if (!$url.includes('projects')) {
+                cy.get('.cvat-create-task-dropdown').click();
             }
-            cy.contains('button', 'Done').click();
-        } else {
-            if (attachToProject) {
-                cy.get('.cvat-project-search-field').click();
-                cy.get('.ant-select-dropdown')
-                    .not('.ant-select-dropdown-hidden')
-                    .within(() => {
-                        cy.get(`.ant-select-item-option[title="${projectName}"]`).click();
-                    });
+
+            cy.get('.cvat-create-task-button').click({ force: true });
+            cy.url().should('include', '/tasks/create');
+            cy.get('[id="name"]').type(taskName);
+            if (!forProject) {
+                cy.get('.cvat-constructor-viewer-new-item').click();
+                cy.get('[placeholder="Label name"]').type(labelName);
+                cy.get('.cvat-new-attribute-button').click();
+                cy.get('[placeholder="Name"]').type(attrName);
+                cy.get('.cvat-attribute-type-input').click();
+                cy.get('.cvat-attribute-type-input-text').click();
+                cy.get('[placeholder="Default value"]').type(textDefaultValue);
+                if (multiAttrParams) {
+                    cy.updateAttributes(multiAttrParams);
+                }
+                cy.contains('button', 'Done').click();
+            } else {
+                if (attachToProject) {
+                    cy.get('.cvat-project-search-field').click();
+                    cy.get('.ant-select-dropdown')
+                        .not('.ant-select-dropdown-hidden')
+                        .within(() => {
+                            cy.get(`.ant-select-item-option[title="${projectName}"]`).click();
+                        });
+                }
+                cy.get('.cvat-project-search-field').within(() => {
+                    cy.get('[type="search"]').should('have.value', projectName);
+                });
+                cy.get('.cvat-project-subset-field').type(projectSubsetFieldValue);
+                cy.get('.cvat-constructor-viewer-new-item').should('not.exist');
             }
-            cy.get('.cvat-project-search-field').within(() => {
-                cy.get('[type="search"]').should('have.value', projectName);
-            });
-            cy.get('.cvat-project-subset-field').type(projectSubsetFieldValue);
-            cy.get('.cvat-constructor-viewer-new-item').should('not.exist');
-        }
-        cy.get('input[type="file"]').attachFile(image, { subjectType: 'drag-n-drop' });
-        if (advancedConfigurationParams) {
-            cy.advancedConfiguration(advancedConfigurationParams);
-        }
-        cy.contains('button', 'Submit').click();
-        if (expectedResult === 'success') {
-            cy.get('.cvat-notification-create-task-success').should('exist').find('[data-icon="close"]').click();
-        }
-        if (!forProject) {
-            cy.goToTaskList();
-        } else {
-            cy.goToProjectsList();
-        }
+            cy.get('input[type="file"]').attachFile(image, { subjectType: 'drag-n-drop' });
+            if (advancedConfigurationParams) {
+                cy.advancedConfiguration(advancedConfigurationParams);
+            }
+            cy.contains('button', 'Submit').click();
+            if (expectedResult === 'success') {
+                cy.get('.cvat-notification-create-task-success').should('exist').find('[data-icon="close"]').click();
+            }
+            if (!forProject) {
+                cy.goToTaskList();
+            } else {
+                cy.goToProjectsList();
+            }
+        });
     },
 );
 

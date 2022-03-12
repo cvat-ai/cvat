@@ -94,6 +94,7 @@ context('Export, import an annotation task.', { browser: '!firefox' }, () => {
 
         it('Import the task. Check id, labels, shape.', () => {
             cy.intercept('POST', '/api/tasks/backup?**').as('importTask');
+            cy.get('.cvat-create-task-dropdown').click();
             cy.get('.cvat-import-task').click().find('input[type=file]').attachFile(taskBackupArchiveFullName);
             cy.wait('@importTask', { timeout: 5000 }).its('response.statusCode').should('equal', 202);
             cy.wait('@importTask').its('response.statusCode').should('equal', 201);

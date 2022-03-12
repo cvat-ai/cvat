@@ -7,29 +7,14 @@ import { Col, Row } from 'antd/lib/grid';
 import Input from 'antd/lib/input';
 
 import { JobsQuery } from 'reducers/interfaces';
-import SortingComponent from './sorting';
-import ResourceFilterHOC from './filtering';
+import { SortingComponent, ResourceFilterHOC, defaultVisibility } from 'components/resource-sorting-filtering';
 import {
-    localStorageRecentKeyword, localStorageRecentCapacity,
-    predefinedFilterValues, defaultEnabledFilters, config,
+    localStorageRecentKeyword, localStorageRecentCapacity, predefinedFilterValues, config,
 } from './jobs-filter-configuration';
 
 const FilteringComponent = ResourceFilterHOC(
-    config, localStorageRecentKeyword, localStorageRecentCapacity,
-    predefinedFilterValues, defaultEnabledFilters,
+    config, localStorageRecentKeyword, localStorageRecentCapacity, predefinedFilterValues,
 );
-
-const defaultVisibility: {
-    predefined: boolean;
-    recent: boolean;
-    builder: boolean;
-    sorting: boolean;
-} = {
-    predefined: false,
-    recent: false,
-    builder: false,
-    sorting: false,
-};
 
 interface Props {
     query: JobsQuery;
@@ -42,7 +27,7 @@ function TopBarComponent(props: Props): JSX.Element {
     const {
         query, onApplyFilter, onApplySorting, onApplySearch,
     } = props;
-    const [visibility, setVisibility] = useState<typeof defaultVisibility>(defaultVisibility);
+    const [visibility, setVisibility] = useState(defaultVisibility);
 
     return (
         <Row className='cvat-jobs-page-top-bar' justify='center' align='middle'>
@@ -55,7 +40,7 @@ function TopBarComponent(props: Props): JSX.Element {
                         }}
                         defaultValue={query.search || ''}
                         className='cvat-jobs-page-search-bar'
-                        placeholder='Search ..'
+                        placeholder='Search ...'
                     />
                     <div>
                         <SortingComponent
@@ -63,11 +48,12 @@ function TopBarComponent(props: Props): JSX.Element {
                             onVisibleChange={(visible: boolean) => (
                                 setVisibility({ ...defaultVisibility, sorting: visible })
                             )}
-                            defaultFields={query.sort?.split(',') || ['ID']}
+                            defaultFields={query.sort?.split(',') || ['-ID']}
                             sortingFields={['ID', 'Assignee', 'Updated date', 'Stage', 'State', 'Task ID', 'Project ID', 'Task name', 'Project name']}
                             onApplySorting={onApplySorting}
                         />
                         <FilteringComponent
+                            value={query.filter}
                             predefinedVisible={visibility.predefined}
                             builderVisible={visibility.builder}
                             recentVisible={visibility.recent}
