@@ -11,6 +11,7 @@ RUN apt-get update && \
         apache2-dev \
         build-essential \
         curl \
+        libgeos-dev \
         libldap2-dev \
         libsasl2-dev \
         nasm \
@@ -76,6 +77,7 @@ RUN apt-get update && \
         apache2 \
         ca-certificates \
         libapache2-mod-xsendfile \
+        libgeos-dev \
         libgomp1 \
         libgl1 \
         supervisor \
