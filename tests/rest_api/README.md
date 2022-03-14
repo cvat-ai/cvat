@@ -160,12 +160,10 @@ Just dump JSON assets with:
 python3 tests/rest_api/utils/dump_objests.py
 ```
 
-1. If your test infrastructure has been corrupted and you have error message:
+1. If your test infrastructure has been corrupted and you have errors during db restoring.
+You should to create (or recreate) `cvat` database:
 ```
-django.db.utils.OperationalError: FATAL:  database "cvat" does not exist
-```
-You should to create `cvat` database:
-```
+docker exec cvat_db dropdb --if-exists cvat
 docker exec cvat_db createdb cvat
 docker exec cvat python manage.py migrate
 ```
