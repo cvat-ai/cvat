@@ -16,7 +16,8 @@ def _run(command):
         pytest.exit(f'Command failed: {command}. Add `-s` option to see more details')
 
 def restore_data_volume():
-    _run(f"docker container cp {osp.join(ASSETS_DIR, 'cvat_data', 'data')} cvat:/home/django/data/")
+    _run(f"docker container cp {osp.join(ASSETS_DIR, 'cvat_db', 'cvat_data.tar.bz2')} cvat:cvat_data.tar.bz2")
+    _run(f"docker exec -i cvat tar --strip 3 -xjf /cvat_data.tar.bz2 -C /home/django/data/")
 
 def create_test_db():
     _run(f"docker container cp {osp.join(CVAT_DB_DIR, 'restore.sql')} cvat_db:restore.sql")
