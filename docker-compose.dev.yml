@@ -15,7 +15,6 @@ services:
         socks_proxy:
         CLAM_AV:
         INSTALL_SOURCES:
-      dockerfile: Dockerfile
 
   cvat_ui:
     build:
