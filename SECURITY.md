@@ -13,7 +13,7 @@ be sure it can be reproduced in the supported version.
 ## Reporting a Vulnerability
 
 If you have information about a security issue or vulnerability in the product, please
-send an e-mail to secure@intel.com. Encrypt sensitive information using our PGP public key.
+send an e-mail to <secure@intel.com>. Encrypt sensitive information using our PGP public key.
 
 Please provide as much information as possible, including:
 
