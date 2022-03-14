@@ -1,4 +1,4 @@
-# Copyright (C) 2018-2021 Intel Corporation
+# Copyright (C) 2018-2022 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -223,18 +223,6 @@ class ServerViewSet(viewsets.ViewSet):
 @extend_schema_view(
     list=extend_schema(
         summary='Returns a paginated list of projects according to query parameters (12 projects per page)',
-        parameters=[
-            OpenApiParameter('id', description='A unique number value identifying this project',
-                location=OpenApiParameter.QUERY, type=OpenApiTypes.NUMBER),
-            OpenApiParameter('name', description='Find all projects where name contains a parameter value',
-                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR),
-            OpenApiParameter('owner', description='Find all project where owner name contains a parameter value',
-                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR),
-            OpenApiParameter('status', description='Find all projects with a specific status',
-                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, enum=StatusChoice.list()),
-            OpenApiParameter('names_only', description="Returns only names and id's of projects",
-                location=OpenApiParameter.QUERY, type=OpenApiTypes.BOOL)
-        ],
         responses={
             '200': PolymorphicProxySerializer(component_name='PolymorphicProject',
                 serializers=[
@@ -545,20 +533,6 @@ class DataChunkGetter:
 @extend_schema_view(
     list=extend_schema(
         summary='Returns a paginated list of tasks according to query parameters (10 tasks per page)',
-        parameters=[
-            OpenApiParameter('id', description='A unique number value identifying this task',
-                location=OpenApiParameter.QUERY, type=OpenApiTypes.NUMBER),
-            OpenApiParameter('name', description='Find all tasks where name contains a parameter value',
-                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR),
-            OpenApiParameter('owner', description='Find all tasks where owner name contains a parameter value',
-                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR),
-            OpenApiParameter('mode', description='Find all tasks with a specific mode',
-                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, enum=['annotation', 'interpolation']),
-            OpenApiParameter('status', description='Find all tasks with a specific status',
-                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, enum=StatusChoice.list()),
-            OpenApiParameter('assignee', description='Find all tasks where assignee name contains a parameter value',
-                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR)
-        ],
         responses={
             '200': TaskSerializer(many=True),
         }),
@@ -1329,12 +1303,6 @@ class CommentViewSet(viewsets.ModelViewSet):
 @extend_schema_view(
     list=extend_schema(
         summary='Method provides a paginated list of users registered on the server',
-        parameters=[
-            OpenApiParameter('id', description='A unique number value identifying this user',
-                location=OpenApiParameter.QUERY, type=OpenApiTypes.NUMBER),
-            OpenApiParameter('is_active', description='Returns only active users',
-                location=OpenApiParameter.QUERY, type=OpenApiTypes.BOOL),
-        ],
         responses={
             '200': PolymorphicProxySerializer(component_name='MetaUser',
                 serializers=[
@@ -1419,18 +1387,6 @@ class UserViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         }),
     list=extend_schema(
         summary='Returns a paginated list of storages according to query parameters',
-        parameters=[
-            OpenApiParameter('provider_type', description='A supported provider of cloud storages',
-                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, enum=CloudProviderChoice.list()),
-            OpenApiParameter('display_name', description='A display name of storage',
-                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR),
-            OpenApiParameter('resource', description='A name of bucket or container',
-                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR),
-            OpenApiParameter('owner', description='A resource owner',
-                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR),
-            OpenApiParameter('credentials_type', description='A type of a granting access',
-                location=OpenApiParameter.QUERY, type=OpenApiTypes.STR, enum=CredentialsTypeChoice.list()),
-        ],
         responses={
             '200': CloudStorageReadSerializer(many=True),
         }),
