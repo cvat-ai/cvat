@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2021 Intel Corporation
+// Copyright (C) 2019-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -36,7 +36,7 @@
                 if (!(prop in fields)) {
                     throw new ArgumentError(`Unsupported filter property has been received: "${prop}"`);
                 } else if (!fields[prop](filter[prop])) {
-                    throw new ArgumentError(`Received filter property "${prop}" is not satisfied for checker`);
+                    throw new ArgumentError(`Received filter property "${prop}" does not satisfy API`);
                 }
             }
         }
@@ -87,16 +87,6 @@
         return true;
     }
 
-    function camelToSnake(str) {
-        if (typeof str !== 'string') {
-            throw new ArgumentError('str is expected to be string');
-        }
-
-        return (
-            str[0].toLowerCase() + str.slice(1, str.length).replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`)
-        );
-    }
-
     class FieldUpdateTrigger {
         constructor() {
             let updatedFlags = {};
@@ -136,7 +126,6 @@
         checkFilter,
         checkObjectType,
         checkExclusiveFields,
-        camelToSnake,
         FieldUpdateTrigger,
     };
 })();

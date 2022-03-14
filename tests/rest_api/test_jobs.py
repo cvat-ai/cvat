@@ -110,13 +110,13 @@ class TestListJobs:
             else:
                 self._test_list_jobs_403(user['username'], **kwargs)
 
-
 class TestGetAnnotations:
     def _test_get_job_annotations_200(self, user, jid, data, **kwargs):
         response = get_method(user, f'jobs/{jid}/annotations', **kwargs)
 
         assert response.status_code == HTTPStatus.OK
-        assert DeepDiff(data, response.json()) == {}
+        assert DeepDiff(data, response.json(),
+            exclude_paths="root['version']") == {}
 
     def _test_get_job_annotations_403(self, user, jid, **kwargs):
         response = get_method(user, f'jobs/{jid}/annotations', **kwargs)
@@ -177,14 +177,14 @@ class TestGetAnnotations:
         else:
             self._test_get_job_annotations_403(username, job_id, **kwargs)
 
-
 class TestPatchJobAnnotations:
     _ORG = 2
 
     def _test_check_respone(self, is_allow, response, data=None):
         if is_allow:
             assert response.status_code == HTTPStatus.OK
-            assert DeepDiff(data, response.json()) == {}
+            assert DeepDiff(data, response.json(),
+                exclude_paths="root['version']") == {}
         else:
             assert response.status_code == HTTPStatus.FORBIDDEN
 
@@ -205,10 +205,11 @@ class TestPatchJobAnnotations:
         ('supervisor', True, True), ('worker', True, True)
     ])
     def test_member_update_job_annotations(self, org, role, job_staff, is_allow,
-            find_job_staff_user, find_users, request_data, jobs_by_org):
+            find_job_staff_user, find_users, request_data, jobs_by_org, filter_jobs_with_shapes):
         users = find_users(role=role, org=org)
         jobs = jobs_by_org[org]
-        username, jid = find_job_staff_user(jobs, users, job_staff)
+        filtered_jobs = filter_jobs_with_shapes(jobs)
+        username, jid = find_job_staff_user(filtered_jobs, users, job_staff)
 
         data = request_data(jid)
         response = patch_method(username, f'jobs/{jid}/annotations',
@@ -222,10 +223,11 @@ class TestPatchJobAnnotations:
         ('admin', True), ('business', False), ('worker', False), ('user', False)
     ])
     def test_non_member_update_job_annotations(self, org, privilege, is_allow,
-            find_job_staff_user, find_users, request_data, jobs_by_org):
+            find_job_staff_user, find_users, request_data, jobs_by_org, filter_jobs_with_shapes):
         users = find_users(privilege=privilege, exclude_org=org)
         jobs = jobs_by_org[org]
-        username, jid = find_job_staff_user(jobs, users, False)
+        filtered_jobs = filter_jobs_with_shapes(jobs)
+        username, jid = find_job_staff_user(filtered_jobs, users, False)
 
         data = request_data(jid)
         response = patch_method(username, f'jobs/{jid}/annotations', data,
@@ -241,10 +243,11 @@ class TestPatchJobAnnotations:
         ('user',     True, True), ('user',     False, False)
     ])
     def test_user_update_job_annotations(self, org, privilege, job_staff, is_allow,
-            find_job_staff_user, find_users, request_data, jobs_by_org):
+            find_job_staff_user, find_users, request_data, jobs_by_org, filter_jobs_with_shapes):
         users = find_users(privilege=privilege)
         jobs = jobs_by_org[org]
-        username, jid = find_job_staff_user(jobs, users, job_staff)
+        filtered_jobs = filter_jobs_with_shapes(jobs)
+        username, jid = find_job_staff_user(filtered_jobs, users, job_staff)
 
         data = request_data(jid)
         response = patch_method(username, f'jobs/{jid}/annotations', data,

@@ -1,11 +1,11 @@
-// Copyright (C) 2021 Intel Corporation
+// Copyright (C) 2021-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import { Dispatch, ActionCreator } from 'redux';
 import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
 import getCore from 'cvat-core-wrapper';
-import { CloudStoragesQuery, CloudStorage } from 'reducers/interfaces';
+import { CloudStoragesQuery, CloudStorage, Indexable } from 'reducers/interfaces';
 
 const cvat = getCore();
 
@@ -108,8 +108,8 @@ export function getCloudStoragesAsync(query: Partial<CloudStoragesQuery>): Thunk
 
         const filteredQuery = { ...query };
         for (const key in filteredQuery) {
-            if (filteredQuery[key] === null) {
-                delete filteredQuery[key];
+            if ((filteredQuery as Indexable)[key] === null) {
+                delete (filteredQuery as Indexable)[key];
             }
         }
 

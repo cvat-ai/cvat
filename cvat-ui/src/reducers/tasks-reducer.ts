@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -25,11 +25,8 @@ const defaultState: TasksState = {
         page: 1,
         id: null,
         search: null,
-        owner: null,
-        assignee: null,
-        name: null,
-        status: null,
-        mode: null,
+        filter: null,
+        sort: null,
         projectId: null,
     },
     activities: {
@@ -59,7 +56,7 @@ export default (state: TasksState = defaultState, action: AnyAction): TasksState
                 hideEmpty: true,
                 count: 0,
                 current: [],
-                gettingQuery: { ...action.payload.query },
+                gettingQuery: action.payload.updateQuery ? { ...action.payload.query } : state.gettingQuery,
             };
         case TasksActionTypes.GET_TASKS_SUCCESS: {
             const combinedWithPreviews = action.payload.array.map(
