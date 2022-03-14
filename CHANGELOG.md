@@ -12,7 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added ability to delete frames from a job (<https://github.com/openvinotoolkit/cvat/pull/4194>)
 
 ### Changed
-- TDB
+- Added missing geos dependency into Dockerfile (<https://github.com/openvinotoolkit/cvat/pull/4451>)
 
 ### Deprecated
 - TDB

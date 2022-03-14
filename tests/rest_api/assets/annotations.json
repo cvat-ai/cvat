@@ -167,7 +167,7 @@
       ],
       "tags": [],
       "tracks": [],
-      "version": 3
+      "version": 0
     },
     "2": {
       "shapes": [
@@ -292,7 +292,7 @@
       ],
       "tags": [],
       "tracks": [],
-      "version": 3
+      "version": 0
     },
     "3": {
       "shapes": [
@@ -327,7 +327,7 @@
       ],
       "tags": [],
       "tracks": [],
-      "version": 6
+      "version": 0
     },
     "4": {
       "shapes": [
@@ -449,7 +449,7 @@
       ],
       "tags": [],
       "tracks": [],
-      "version": 6
+      "version": 0
     },
     "5": {
       "shapes": [],
@@ -1460,7 +1460,7 @@
       ],
       "tags": [],
       "tracks": [],
-      "version": 3
+      "version": 0
     },
     "7": {
       "shapes": [
@@ -1493,7 +1493,7 @@
       ],
       "tags": [],
       "tracks": [],
-      "version": 3
+      "version": 0
     },
     "8": {
       "shapes": [],
@@ -1528,7 +1528,7 @@
       ],
       "tags": [],
       "tracks": [],
-      "version": 3
+      "version": 0
     }
   }
 }
