@@ -98,6 +98,7 @@ For more information about supported formats look at the
 | [Faster RCNN](/serverless/tensorflow/faster_rcnn_inception_v2_coco/nuclio)                              | detector   | TensorFlow | X   | X   |
 | [Mask RCNN](/serverless/tensorflow/matterport/mask_rcnn/nuclio)                                         | detector   | TensorFlow | X   | X   |
 | [RetinaNet](serverless/pytorch/facebookresearch/detectron2/retinanet/nuclio)                            | detector   | PyTorch    | X   | X   |
+| [Face Detection](/serverless/openvino/omz/intel/face-detection-0205/nuclio)                             | detector   | OpenVINO   | X   |     |
 
 <!--lint enable maximum-line-length-->
 
@@ -139,6 +140,13 @@ connection with your use of FFmpeg.
 
 ## Partners
 
+- [ATLANTIS](https://github.com/smhassanerfani/atlantis) is an open-source dataset for semantic segmentation 
+  of waterbody images, depevoped by [iWERS](http://ce.sc.edu/iwers/) group in the 
+  Department of Civil and Environmental Engineering at University of South Carolina, using CVAT.
+  For developing a semantic segmentation dataset using CVAT, please check
+  [ATLANTIS published article](https://www.sciencedirect.com/science/article/pii/S1364815222000391),
+  [ATLANTIS Development Kit](https://github.com/smhassanerfani/atlantis/tree/master/adk) 
+  and [annotation tutorial videos](https://www.youtube.com/playlist?list=PLIfLGY-zZChS5trt7Lc3MfNhab7OWl2BR).
 - [Onepanel](https://github.com/onepanelio/core) is an open source
   vision AI platform that fully integrates CVAT with scalable data processing
   and parallelized training pipelines.

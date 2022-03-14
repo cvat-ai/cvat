@@ -5,8 +5,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## \[2.0.0] - Unreleased
+## \[2.1.0] - Unreleased
 ### Added
+- Task annotations importing via chunk uploads (<https://github.com/openvinotoolkit/cvat/pull/4327>)
+- Advanced filtration and sorting for a list of tasks/projects/cloudstorages (<https://github.com/openvinotoolkit/cvat/pull/4403>)
+
+### Changed
+- TDB
+
+### Deprecated
+- TDB
+
+### Removed
+- TDB
+
+### Fixed
+- Permission error occured when accessing the JobCommits (<https://github.com/openvinotoolkit/cvat/issues/4434>)
+- job assignee can remove or update any issue created by the task owner (<https://github.com/openvinotoolkit/cvat/issues/4424>)
+- Bug: Incorrect point deletion with keyboard shortcut (<https://github.com/openvinotoolkit/cvat/pull/4420>)
+
+### Security
+- TDB
+
+## \[2.0.0] - 2022-03-04
+### Added
+- Handle attributes coming from nuclio detectors (<https://github.com/openvinotoolkit/cvat/pull/3917>)
 - Add additional environment variables for Nuclio configuration (<https://github.com/openvinotoolkit/cvat/pull/3894>)
 - Add KITTI segmentation and detection format (<https://github.com/openvinotoolkit/cvat/pull/3757>)
 - Add LFW format (<https://github.com/openvinotoolkit/cvat/pull/3770>)
@@ -15,7 +38,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Rotated bounding boxes (<https://github.com/openvinotoolkit/cvat/pull/3832>)
 - Player option: Smooth image when zoom-in, enabled by default (<https://github.com/openvinotoolkit/cvat/pull/3933>)
 - Google Cloud Storage support in UI (<https://github.com/openvinotoolkit/cvat/pull/3919>)
-- Add project tasks paginations (<https://github.com/openvinotoolkit/cvat/pull/3910>)
+- Add project tasks pagination (<https://github.com/openvinotoolkit/cvat/pull/3910>)
 - Add remove issue button (<https://github.com/openvinotoolkit/cvat/pull/3952>)
 - Data sorting option (<https://github.com/openvinotoolkit/cvat/pull/3937>)
 - Options to change font size & position of text labels on the canvas (<https://github.com/openvinotoolkit/cvat/pull/3972>)
@@ -30,17 +53,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Support for working with ellipses (<https://github.com/openvinotoolkit/cvat/pull/4062>)
 - Add several flags to task creation CLI (<https://github.com/openvinotoolkit/cvat/pull/4119>)
 - Add YOLOv5 serverless function for automatic annotation (<https://github.com/openvinotoolkit/cvat/pull/4178>)
+- Add possibility to change git repository and git export format from already created task (<https://github.com/openvinotoolkit/cvat/pull/3886>)
 - Basic page with jobs list, basic filtration to this list (<https://github.com/openvinotoolkit/cvat/pull/4258>)
 - Added OpenCV.js TrackerMIL as tracking tool (<https://github.com/openvinotoolkit/cvat/pull/4200>)
 - Ability to continue working from the latest frame where an annotator was before (<https://github.com/openvinotoolkit/cvat/pull/4297>)
-
+- `GET /api/jobs/<id>/commits` was implemented (<https://github.com/openvinotoolkit/cvat/pull/4368>)
+- Advanced filtration and sorting for a list of jobs (<https://github.com/openvinotoolkit/cvat/pull/4319>)
 
 ### Changed
-- Users don't have access to a task object anymore if they are assigneed only on some jobs of the task (<https://github.com/openvinotoolkit/cvat/pull/3788>)
+- Users don't have access to a task object anymore if they are assigned only on some jobs of the task (<https://github.com/openvinotoolkit/cvat/pull/3788>)
 - Different resources (tasks, projects) are not visible anymore for all CVAT instance users by default (<https://github.com/openvinotoolkit/cvat/pull/3788>)
 - API versioning scheme: using accept header versioning instead of namespace versioning (<https://github.com/openvinotoolkit/cvat/pull/4239>)
 - Replaced 'django_sendfile' with 'django_sendfile2' (<https://github.com/openvinotoolkit/cvat/pull/4267>)
 - Use drf-spectacular instead of drf-yasg for swagger documentation (<https://github.com/openvinotoolkit/cvat/pull/4210>)
+- Update development-environment manual to work under MacOS, supported Mac with Apple Silicon (<https://github.com/openvinotoolkit/cvat/pull/4414>)
 
 ### Deprecated
 - Job field "status" is not used in UI anymore, but it has not been removed from the database yet (<https://github.com/openvinotoolkit/cvat/pull/3788>)
@@ -75,9 +101,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Annotations search does not work correctly in some corner cases (when use complex properties with width, height) (<https://github.com/openvinotoolkit/cvat/pull/4198>)
 - Kibana requests are not proxied due to django-revproxy incompatibility with Django >3.2.x (<https://github.com/openvinotoolkit/cvat/issues/4085>)
 - Content type for getting frame with tasks/{id}/data/ endpoint (<https://github.com/openvinotoolkit/cvat/pull/4333>)
+- Bug: Permission error occured when accessing the comments of a specific issue (<https://github.com/openvinotoolkit/cvat/issues/4416>)
+
 
 ### Security
 - Updated ELK to 6.8.23 which uses log4j 2.17.1 (<https://github.com/openvinotoolkit/cvat/pull/4206>)
+- Added validation for URLs which used as remote data source (<https://github.com/openvinotoolkit/cvat/pull/4387>)
 
 ## \[1.7.0] - 2021-11-15
 

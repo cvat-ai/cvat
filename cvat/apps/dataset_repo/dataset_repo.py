@@ -223,10 +223,12 @@ class Git:
             if self._ssh_url() != self._rep.git.remote('get-url', '--all', 'origin'):
                 slogger.task[self._tid].info("Local repository URL is obsolete.")
                 # We need reinitialize repository if it's false
-                raise git.exc.GitError("Actual and saved repository URLs aren't match")
+                slogger.task[self._tid].info("Local repository initialization..")
+                shutil.rmtree(self._cwd, True)
+                self._clone()
         except git.exc.GitError:
             if wo_remote:
-                raise Exception('Local repository is failed')
+                slogger.task[self._tid].info("Local repository is failed")
             slogger.task[self._tid].info("Local repository initialization..")
             shutil.rmtree(self._cwd, True)
             self._clone()
@@ -418,6 +420,7 @@ def get(tid, user):
     response["url"] = {"value": None}
     response["status"] = {"value": None, "error": None}
     response["format"] = {"format": None}
+    response["lfs"] = {"lfs": None}
     db_task = Task.objects.get(pk = tid)
     if GitData.objects.filter(pk = db_task).exists():
         db_git = GitData.objects.select_for_update().get(pk = db_task)
@@ -430,6 +433,7 @@ def get(tid, user):
                 db_git.status = GitStatusChoice.SYNCING
                 response['status']['value'] = str(db_git.status)
                 response['format'] = str(db_git.format)
+                response["lfs"] = db_git.lfs
             else:
                 try:
                     _git = Git(db_git, db_task, user)
@@ -437,6 +441,7 @@ def get(tid, user):
                     db_git.status = _git.remote_status(db_task.updated_date)
                     response['status']['value'] = str(db_git.status)
                     response['format'] = str(db_git.format)
+                    response["lfs"] = db_git.lfs
                 except git.exc.GitCommandError as ex:
                     _have_no_access_exception(ex)
             db_git.save()

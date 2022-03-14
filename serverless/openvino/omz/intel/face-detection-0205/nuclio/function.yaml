@@ -1,0 +1,76 @@
+metadata:
+  name: openvino-omz-face-detection-0205
+  namespace: cvat
+  annotations:
+    name: Attributed face detection
+    type: detector
+    framework: openvino
+    spec: |
+      [
+        { "id": 0, "name": "face", "attributes": [
+          {
+            "name": "age",
+            "input_type": "number",
+            "values": ["0", "150", "1"]
+          },
+          {
+            "name": "gender",
+            "input_type": "select",
+            "values": ["female", "male"]
+          },
+          {
+            "name": "emotion",
+            "input_type": "select",
+            "values": ["neutral", "happy", "sad", "surprise", "anger"]
+          }]
+        }
+      ]
+
+spec:
+  description: Detection network finding faces and defining age, gender and emotion attributes
+  runtime: 'python:3.6'
+  handler: main:handler
+  eventTimeout: 30000s
+  env:
+    - name: NUCLIO_PYTHON_EXE_PATH
+      value: /opt/nuclio/common/openvino/python3
+
+  build:
+    image: cvat/openvino.omz.intel.face-detection-0205
+    baseImage: openvino/ubuntu18_dev:2021.1
+
+    directives:
+      preCopy:
+        - kind: USER
+          value: root
+        - kind: WORKDIR
+          value: /opt/nuclio
+        - kind: RUN
+          value: ln -s /usr/bin/pip3 /usr/bin/pip
+        - kind: RUN
+          value: /opt/intel/openvino/deployment_tools/open_model_zoo/tools/downloader/downloader.py --name face-detection-0205 -o /opt/nuclio/open_model_zoo
+        - kind: RUN
+          value: /opt/intel/openvino/deployment_tools/open_model_zoo/tools/downloader/downloader.py --name emotions-recognition-retail-0003 -o /opt/nuclio/open_model_zoo
+        - kind: RUN
+          value: /opt/intel/openvino/deployment_tools/open_model_zoo/tools/downloader/downloader.py --name age-gender-recognition-retail-0013 -o /opt/nuclio/open_model_zoo
+
+      postCopy:
+        - kind: RUN
+          value: apt update && DEBIAN_FRONTEND=noninteractive apt install --no-install-recommends -y python3-skimage
+        - kind: RUN
+          value: pip3 install "numpy<1.16.0" # workaround for skimage
+
+  triggers:
+    myHttpTrigger:
+      maxWorkers: 2
+      kind: 'http'
+      workerAvailabilityTimeoutMilliseconds: 10000
+      attributes:
+        maxRequestBodySize: 33554432 # 32MB
+
+  platform:
+    attributes:
+      restartPolicy:
+        name: always
+        maximumRetryCount: 3
+      mountMode: volume

@@ -40,6 +40,7 @@ VIEW_ANNOTATIONS := "view:annotations"
 UPDATE_ANNOTATIONS := "update:annotations"
 DELETE_ANNOTATIONS := "delete:annotations"
 VIEW_DATA := "view:data"
+VIEW_COMMITS := "view:commits"
 UPLOAD_DATA := "upload:data"
 IMPORT_ANNOTATIONS := "import:annotations"
 UPDATE_STATE := "update:state"
@@ -49,6 +50,7 @@ CREATE_IN_ISSUE := "create@issue"
 IMPORT_DATASET := "import:dataset"
 IMPORT_BACKUP := "import:backup"
 EXPORT_BACKUP := "export:backup"
+UPDATE_ORG := "update:organization"
 
 
 get_priority(privilege) = priority {

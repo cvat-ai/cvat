@@ -111,7 +111,6 @@ INSTALLED_APPS = [
     'dj_pagination',
     'rest_framework',
     'rest_framework.authtoken',
-    'django_filters',
     'drf_spectacular',
     'rest_auth',
     'django.contrib.sites',
@@ -163,11 +162,12 @@ REST_FRAMEWORK = {
         'cvat.apps.engine.pagination.CustomPagination',
     'PAGE_SIZE': 10,
     'DEFAULT_FILTER_BACKENDS': (
-        'rest_framework.filters.SearchFilter',
-        'django_filters.rest_framework.DjangoFilterBackend',
-        'rest_framework.filters.OrderingFilter',
+        'cvat.apps.engine.filters.SearchFilter',
+        'cvat.apps.engine.filters.OrderingFilter',
+        'cvat.apps.engine.filters.JsonLogicFilter',
         'cvat.apps.iam.filters.OrganizationFilterBackend'),
 
+    'SEARCH_PARAM': 'search',
     # Disable default handling of the 'format' query parameter by REST framework
     'URL_FORMAT_OVERRIDE': 'scheme',
     'DEFAULT_THROTTLE_CLASSES': [
@@ -443,12 +443,6 @@ LOCAL_LOAD_MAX_FILES_SIZE = 512 * 1024 * 1024  # 512 MB
 RESTRICTIONS = {
     'user_agreements': [],
 
-    # this setting limits the number of tasks for the user
-    'task_limit': None,
-
-    # this setting limits the number of projects for the user
-    'project_limit': None,
-
     # this setting reduces task visibility to owner and assignee only
     'reduce_task_visibility': False,
 
@@ -493,6 +487,10 @@ TUS_DEFAULT_CHUNK_SIZE = 104857600  # 100 mb
 # How django uses X-Forwarded-Proto - https://docs.djangoproject.com/en/2.2/ref/settings/#secure-proxy-ssl-header
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
+# Forwarded host - https://docs.djangoproject.com/en/4.0/ref/settings/#std:setting-USE_X_FORWARDED_HOST
+# Is used in TUS uploads to provide correct upload endpoint
+USE_X_FORWARDED_HOST = True
+
 # Django-sendfile requires to set SENDFILE_ROOT
 # https://github.com/moggers87/django-sendfile2
 SENDFILE_ROOT = BASE_DIR
@@ -534,3 +532,4 @@ SPECTACULAR_SETTINGS = {
     # OTHER SETTINGS
     # https://drf-spectacular.readthedocs.io/en/latest/settings.html
 }
+

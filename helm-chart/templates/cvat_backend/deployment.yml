@@ -93,6 +93,8 @@ spec:
             value: "{{ .Values.postgresql.external.dbname }}"
           - name: CVAT_POSTGRES_PASSWORD
             value: "{{ .Values.postgresql.external.password }}"
+          - name: CVAT_POSTGRES_PORT
+            value: "{{ .Values.postgresql.external.port }}"            
           {{- end }}
           {{- with .Values.cvat.backend.additionalEnv }}
           {{- toYaml . | nindent 10 }}

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2021 Intel Corporation
+// Copyright (C) 2019-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -773,7 +773,7 @@ function build() {
             /**
              * @typedef {Object} CloudStorageFilter
              * @property {string} displayName Check if displayName contains this value
-             * @property {string} resourceName Check if resourceName contains this value
+             * @property {string} resource Check if resource name contains this value
              * @property {module:API.cvat.enums.ProviderType} providerType Check if providerType equal this value
              * @property {integer} id Check if id equals this value
              * @property {integer} page Get specific page
