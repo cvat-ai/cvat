@@ -3740,6 +3740,27 @@
   }
 },
 {
+  "model": "engine.task",
+  "pk": 12,
+  "fields": {
+    "project": null,
+    "name": "task_without_data",
+    "mode": "",
+    "owner": 1,
+    "assignee": null,
+    "bug_tracker": "",
+    "created_date": "2022-03-14T13:24:05.852Z",
+    "updated_date": "2022-03-14T13:24:05.861Z",
+    "overlap": null,
+    "segment_size": 0,
+    "status": "annotation",
+    "data": null,
+    "dimension": "2d",
+    "subset": "",
+    "organization": null
+  }
+},
+{
   "model": "engine.clientfile",
   "pk": 131,
   "fields": {
@@ -4714,6 +4735,16 @@
     "project": null,
     "name": "dog",
     "color": "#406040"
+  }
+},
+{
+  "model": "engine.label",
+  "pk": 15,
+  "fields": {
+    "task": 12,
+    "project": null,
+    "name": "Car",
+    "color": "#2080c0"
   }
 },
 {
