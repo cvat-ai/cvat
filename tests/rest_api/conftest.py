@@ -230,4 +230,3 @@ def filter_jobs_with_shapes(annotations):
     def find(jobs):
         return list(filter(lambda j: annotations['job'][str(j['id'])]['shapes'], jobs))
     return find
-

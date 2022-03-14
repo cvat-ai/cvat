@@ -305,6 +305,9 @@ class Task(models.Model):
     def get_task_artifacts_dirname(self):
         return os.path.join(self.get_task_dirname(), 'artifacts')
 
+    def get_tmp_dirname(self):
+        return os.path.join(self.get_task_dirname(), "tmp")
+
     def __str__(self):
         return self.name
 

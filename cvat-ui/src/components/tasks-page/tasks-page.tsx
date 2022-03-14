@@ -1,167 +1,155 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import './styles.scss';
-import React from 'react';
-import { RouteComponentProps } from 'react-router';
-import { withRouter } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
+import React, { useEffect, useState } from 'react';
+import { useHistory } from 'react-router';
 import Spin from 'antd/lib/spin';
 import Button from 'antd/lib/button';
 import message from 'antd/lib/message';
 import Text from 'antd/lib/typography/Text';
+import { Col, Row } from 'antd/lib/grid';
+import Pagination from 'antd/lib/pagination';
 
-import { TasksQuery } from 'reducers/interfaces';
+import { TasksQuery, Indexable } from 'reducers/interfaces';
 import FeedbackComponent from 'components/feedback/feedback';
+import { updateHistoryFromQuery } from 'components/resource-sorting-filtering';
 import TaskListContainer from 'containers/tasks-page/tasks-list';
+import { getTasksAsync, hideEmptyTasks, importTaskAsync } from 'actions/tasks-actions';
+
 import TopBar from './top-bar';
 import EmptyListComponent from './empty-list';
 
-interface TasksPageProps {
-    tasksFetching: boolean;
-    gettingQuery: TasksQuery;
-    numberOfTasks: number;
-    numberOfVisibleTasks: number;
-    numberOfHiddenTasks: number;
-    onGetTasks: (gettingQuery: TasksQuery) => void;
-    hideEmptyTasks: (hideEmpty: boolean) => void;
-    onImportTask: (file: File) => void;
-    taskImporting: boolean;
+interface Props {
+    fetching: boolean;
+    importing: boolean;
+    query: TasksQuery;
+    count: number;
+    countInvisible: number;
 }
 
-function updateQuery(previousQuery: TasksQuery, searchString: string): TasksQuery {
-    const params = new URLSearchParams(searchString);
-    const query = { ...previousQuery };
-    for (const field of Object.keys(query)) {
-        if (params.has(field)) {
-            const value = params.get(field);
-            if (value) {
-                if (field === 'id' || field === 'page') {
-                    if (Number.isInteger(+value)) {
-                        query[field] = +value;
-                    }
-                } else {
-                    query[field] = value;
-                }
-            }
-        } else if (field === 'page') {
-            query[field] = 1;
-        } else {
-            query[field] = null;
+function TasksPageComponent(props: Props): JSX.Element {
+    const {
+        query, fetching, importing, count, countInvisible,
+    } = props;
+
+    const dispatch = useDispatch();
+    const history = useHistory();
+    const [isMounted, setIsMounted] = useState(false);
+
+    const queryParams = new URLSearchParams(history.location.search);
+    const updatedQuery = { ...query };
+    for (const key of Object.keys(updatedQuery)) {
+        (updatedQuery as Indexable)[key] = queryParams.get(key) || null;
+        if (key === 'page') {
+            updatedQuery.page = updatedQuery.page ? +updatedQuery.page : 1;
         }
     }
 
-    return query;
-}
+    useEffect(() => {
+        dispatch(getTasksAsync({ ...updatedQuery }));
+        setIsMounted(true);
+    }, []);
 
-class TasksPageComponent extends React.PureComponent<TasksPageProps & RouteComponentProps> {
-    public componentDidMount(): void {
-        const { gettingQuery, location, onGetTasks } = this.props;
-        const query = updateQuery(gettingQuery, location.search);
-        onGetTasks(query);
-    }
-
-    public componentDidUpdate(prevProps: TasksPageProps & RouteComponentProps): void {
-        const {
-            location,
-            gettingQuery,
-            tasksFetching,
-            numberOfHiddenTasks,
-            onGetTasks,
-            hideEmptyTasks,
-            taskImporting,
-        } = this.props;
-
-        if (
-            prevProps.location.search !== location.search ||
-            (prevProps.taskImporting === true && taskImporting === false)
-        ) {
-            // get new tasks if any query changes
-            const query = updateQuery(gettingQuery, location.search);
-            message.destroy();
-            onGetTasks(query);
-            return;
-        }
-
-        if (prevProps.tasksFetching && !tasksFetching) {
-            if (numberOfHiddenTasks) {
-                message.destroy();
-                message.info(
-                    <>
-                        <Text>Some tasks are temporary hidden since they are without any data</Text>
-                        <Button
-                            type='link'
-                            onClick={(): void => {
-                                hideEmptyTasks(false);
-                                message.destroy();
-                            }}
-                        >
-                            Show all
-                        </Button>
-                    </>,
-                    5,
-                );
-            }
-        }
-    }
-
-    private handlePagination = (page: number): void => {
-        const { gettingQuery } = this.props;
-
-        // modify query object
-        const query = { ...gettingQuery };
-        query.page = page;
-
-        // update url according to new query object
-        this.updateURL(query);
-    };
-
-    private updateURL = (gettingQuery: TasksQuery): void => {
-        const { history } = this.props;
-        let queryString = '?';
-        for (const field of Object.keys(gettingQuery)) {
-            if (gettingQuery[field] !== null) {
-                queryString += `${field}=${gettingQuery[field]}&`;
-            }
-        }
-
-        const oldQueryString = history.location.search;
-        if (oldQueryString !== queryString) {
-            history.push({
-                search: queryString.slice(0, -1),
+    useEffect(() => {
+        if (isMounted) {
+            history.replace({
+                search: updateHistoryFromQuery(query),
             });
-
-            // force update if any changes
-            this.forceUpdate();
         }
-    };
+    }, [query]);
 
-    public render(): JSX.Element {
-        const {
-            tasksFetching, gettingQuery, numberOfVisibleTasks, onImportTask, taskImporting,
-        } = this.props;
-
-        if (tasksFetching) {
-            return <Spin size='large' className='cvat-spinner' />;
+    useEffect(() => {
+        if (countInvisible) {
+            message.destroy();
+            message.info(
+                <>
+                    <Text>Some tasks are temporary hidden because they are not fully created yet</Text>
+                    <Button
+                        type='link'
+                        onClick={(): void => {
+                            dispatch(hideEmptyTasks(true));
+                            message.destroy();
+                        }}
+                    >
+                        Show all
+                    </Button>
+                </>,
+                5,
+            );
         }
+    }, [countInvisible]);
 
-        return (
-            <div className='cvat-tasks-page'>
-                <TopBar
-                    onSearch={this.updateURL}
-                    query={gettingQuery}
-                    onFileUpload={onImportTask}
-                    taskImporting={taskImporting}
-                />
-                {numberOfVisibleTasks ? (
-                    <TaskListContainer onSwitchPage={this.handlePagination} />
-                ) : (
-                    <EmptyListComponent />
-                )}
-                <FeedbackComponent />
-            </div>
-        );
-    }
+    const content = count ? (
+        <>
+            <TaskListContainer />
+            <Row justify='center' align='middle'>
+                <Col md={22} lg={18} xl={16} xxl={14}>
+                    <Pagination
+                        className='cvat-tasks-pagination'
+                        onChange={(page: number) => {
+                            dispatch(getTasksAsync({
+                                ...query,
+                                page,
+                            }));
+                        }}
+                        showSizeChanger={false}
+                        total={count}
+                        pageSize={10}
+                        current={query.page}
+                        showQuickJumper
+                    />
+                </Col>
+            </Row>
+        </>
+    ) : (
+        <EmptyListComponent query={query} />
+    );
+
+    return (
+        <div className='cvat-tasks-page'>
+            <TopBar
+                onApplySearch={(search: string | null) => {
+                    dispatch(
+                        getTasksAsync({
+                            ...query,
+                            search,
+                            page: 1,
+                        }),
+                    );
+                }}
+                onApplyFilter={(filter: string | null) => {
+                    dispatch(
+                        getTasksAsync({
+                            ...query,
+                            filter,
+                            page: 1,
+                        }),
+                    );
+                }}
+                onApplySorting={(sorting: string | null) => {
+                    dispatch(
+                        getTasksAsync({
+                            ...query,
+                            sort: sorting,
+                            page: 1,
+                        }),
+                    );
+                }}
+                query={updatedQuery}
+                onImportTask={(file: File) => dispatch(importTaskAsync(file))}
+                importing={importing}
+            />
+            { fetching ? (
+                <div className='cvat-empty-tasks-list'>
+                    <Spin size='large' className='cvat-spinner' />
+                </div>
+            ) : content }
+            <FeedbackComponent />
+        </div>
+    );
 }
 
-export default withRouter(TasksPageComponent);
+export default React.memo(TasksPageComponent);

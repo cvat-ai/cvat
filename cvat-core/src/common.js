@@ -87,16 +87,6 @@
         return true;
     }
 
-    function camelToSnake(str) {
-        if (typeof str !== 'string') {
-            throw new ArgumentError('str is expected to be string');
-        }
-
-        return (
-            str[0].toLowerCase() + str.slice(1, str.length).replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`)
-        );
-    }
-
     class FieldUpdateTrigger {
         constructor() {
             let updatedFlags = {};
@@ -136,7 +126,6 @@
         checkFilter,
         checkObjectType,
         checkExclusiveFields,
-        camelToSnake,
         FieldUpdateTrigger,
     };
 })();

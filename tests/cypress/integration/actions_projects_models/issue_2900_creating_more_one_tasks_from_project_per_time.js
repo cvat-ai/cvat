@@ -1,4 +1,4 @@
-// Copyright (C) 2021 Intel Corporation
+// Copyright (C) 2021-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -44,7 +44,7 @@ context('Create more than one task per time when create from project.', () => {
 
     describe(`Testing "Issue ${issueID}"`, () => {
         it('Create more than one task per time from project.', () => {
-            cy.get('#cvat-create-task-button').click();
+            cy.get('.cvat-create-task-button').click();
             createTask(taskName.firstTask);
             createTask(taskName.secondTask);
         });

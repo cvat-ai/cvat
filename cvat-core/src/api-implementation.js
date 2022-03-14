@@ -14,7 +14,6 @@ const config = require('./config');
         isString,
         checkFilter,
         checkExclusiveFields,
-        camelToSnake,
         checkObjectType,
     } = require('./common');
 
@@ -171,7 +170,14 @@ const config = require('./config');
                 }
             }
 
-            const jobsData = await serverProxy.jobs.get(filter);
+            const searchParams = {};
+            for (const key of Object.keys(filter)) {
+                if (['page', 'sort', 'search', 'filter'].includes(key)) {
+                    searchParams[key] = filter[key];
+                }
+            }
+
+            const jobsData = await serverProxy.jobs.get(searchParams);
             const jobs = jobsData.results.map((jobData) => new Job(jobData));
             jobs.count = jobsData.count;
             return jobs;
@@ -182,32 +188,33 @@ const config = require('./config');
                 page: isInteger,
                 projectId: isInteger,
                 id: isInteger,
+                sort: isString,
                 search: isString,
                 filter: isString,
                 ordering: isString,
             });
 
             checkExclusiveFields(filter, ['id', 'projectId'], ['page']);
-
             const searchParams = {};
-            for (const field of [
-                'filter',
-                'search',
-                'ordering',
-                'id',
-                'page',
-                'projectId',
-            ]) {
-                if (Object.prototype.hasOwnProperty.call(filter, field)) {
-                    searchParams[camelToSnake(field)] = filter[field];
+            for (const key of Object.keys(filter)) {
+                if (['page', 'id', 'sort', 'search', 'filter', 'ordering'].includes(key)) {
+                    searchParams[key] = filter[key];
                 }
             }
 
-            const tasksData = await serverProxy.tasks.get(searchParams);
+            let tasksData = null;
+            if (filter.projectId) {
+                if (searchParams.filter) {
+                    const parsed = JSON.parse(searchParams.filter);
+                    searchParams.filter = JSON.stringify({ and: [parsed, { '==': [{ var: 'project_id' }, filter.projectId] }] });
+                } else {
+                    searchParams.filter = JSON.stringify({ and: [{ '==': [{ var: 'project_id' }, filter.projectId] }] });
+                }
+            }
+
+            tasksData = await serverProxy.tasks.get(searchParams);
             const tasks = tasksData.map((task) => new Task(task));
-
             tasks.count = tasksData.count;
-
             return tasks;
         };
 
@@ -216,15 +223,15 @@ const config = require('./config');
                 id: isInteger,
                 page: isInteger,
                 search: isString,
+                sort: isString,
                 filter: isString,
             });
 
             checkExclusiveFields(filter, ['id'], ['page']);
-
             const searchParams = {};
-            for (const field of ['filter', 'search', 'status', 'id', 'page']) {
-                if (Object.prototype.hasOwnProperty.call(filter, field)) {
-                    searchParams[camelToSnake(field)] = filter[field];
+            for (const key of Object.keys(filter)) {
+                if (['id', 'page', 'search', 'sort', 'page'].includes(key)) {
+                    searchParams[key] = filter[key];
                 }
             }
 
@@ -246,25 +253,19 @@ const config = require('./config');
             checkFilter(filter, {
                 page: isInteger,
                 filter: isString,
+                sort: isString,
                 id: isInteger,
                 search: isString,
             });
 
             checkExclusiveFields(filter, ['id', 'search'], ['page']);
-
-            const searchParams = new URLSearchParams();
-            for (const field of [
-                'filter',
-                'search',
-                'id',
-                'page',
-            ]) {
-                if (Object.prototype.hasOwnProperty.call(filter, field)) {
-                    searchParams.set(camelToSnake(field), filter[field]);
+            const searchParams = {};
+            for (const key of Object.keys(filter)) {
+                if (['page', 'filter', 'sort', 'id', 'search'].includes(key)) {
+                    searchParams[key] = filter[key];
                 }
             }
-
-            const cloudStoragesData = await serverProxy.cloudStorages.get(searchParams.toString());
+            const cloudStoragesData = await serverProxy.cloudStorages.get(searchParams);
             const cloudStorages = cloudStoragesData.map((cloudStorage) => new CloudStorage(cloudStorage));
             cloudStorages.count = cloudStoragesData.count;
             return cloudStorages;
