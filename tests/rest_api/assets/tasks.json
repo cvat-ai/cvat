@@ -6,7 +6,7 @@
     {
       "assignee": null,
       "bug_tracker": "",
-      "created_date": "2022-03-14T13:24:05.852185Z",
+      "created_date": "2022-03-14T13:24:05.852000Z",
       "dimension": "2d",
       "id": 12,
       "labels": [
@@ -33,7 +33,7 @@
       "segments": [],
       "status": "annotation",
       "subset": "",
-      "updated_date": "2022-03-14T13:24:05.861306Z",
+      "updated_date": "2022-03-14T13:24:05.861000Z",
       "url": "http://localhost:8080/api/tasks/12"
     },
     {
