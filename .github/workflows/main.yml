@@ -74,13 +74,15 @@ jobs:
       - name: Setup MINIO for running REST API tests
         env:
           MINIO_HOST: "http://127.0.0.1:9000/"
-          MINIO_ACCESS_KEY: "minio"
-          MINIO_SECRET_KEY: "minio"
+          # Access key length should be at least 3, and secret key length at least 8 characters
+          MINIO_ACCESS_KEY: "minio_access_key"
+          MINIO_SECRET_KEY: "minio_secret_key"
           DATA_PATH: "tests/cypress/integration/actions_tasks/assets/case_65_manifest/"
           MINIO_ALIAS: "local_minio"
           PRIVATE_BUCKET: "${MINIO_ALIAS}/private"
           PUBLIC_BUCKET: "${MINIO_ALIAS}/public"
         run: |
+          docker-compose -f tests/rest_api/docker-compose.minio.yml up -d
           wget https://dl.min.io/client/mc/release/linux-amd64/mc
           chmod +x ./mc
           ./mc alias set ${MINIO_ALIAS} ${MINIO_HOST} ${MINIO_ACCESS_KEY} ${MINIO_ACCESS_KEY}
@@ -96,7 +98,7 @@ jobs:
           /bin/bash -c 'while [[ "$(curl -s -o /dev/null -w ''%{http_code}'' ${API_ABOUT_PAGE})" != "401" ]]; do sleep 5; done'
           pip3 install --user -r tests/rest_api/requirements.txt
           pytest tests/rest_api/
-          docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f components/serverless/docker-compose.serverless.yml -f components/analytics/docker-compose.analytics.yml down -v
+          docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f components/serverless/docker-compose.serverless.yml -f components/analytics/docker-compose.analytics.yml -f tests/rest_api/docker-compose.minio.yml down -v
       - name: Running unit tests
         env:
           HOST_COVERAGE_DATA_DIR: ${{ github.workspace }}

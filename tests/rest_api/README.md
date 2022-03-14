@@ -22,20 +22,24 @@ the server calling REST API directly (as it done by users).
 1. Setup MINIO storage
    ```console
    export MINIO_HOST="http://127.0.0.1:9000/"
-   export MINIO_ACCESS_KEY="minio"
-   export MINIO_SECRET_KEY="minio"
+   export MINIO_ACCESS_KEY="minio_access_key"
+   export MINIO_SECRET_KEY="minio_secret_key"
    export DATA_PATH="tests/cypress/integration/actions_tasks/assets/case_65_manifest/"
    export MINIO_ALIAS="local_minio"
    export PRIVATE_BUCKET="${MINIO_ALIAS}/private"
    export PUBLIC_BUCKET="${MINIO_ALIAS}/public"
 
-   wget https://dl.min.io/client/mc/release/linux-amd64/mc
-   chmod +x ./mc
-   ./mc alias set ${MINIO_ALIAS} ${MINIO_HOST} ${MINIO_ACCESS_KEY} ${MINIO_ACCESS_KEY}
-   ./mc mb ${PRIVATE_BUCKET} ${PUBLIC_BUCKET}
-   ./mc cp --recursive ${DATA_PATH} ${PRIVATE_BUCKET}
-   ./mc cp --recursive ${DATA_PATH} ${PUBLIC_BUCKET}
-   ./mc policy set public ${PUBLIC_BUCKET}
+   docker-compose -f tests/rest_api/docker-compose.minio.yml up -d
+   MC_DIR="/path/to/save"
+   MC_PATH="${MC_DIR}/mc"
+   wget -P ${MC_DIR} https://dl.min.io/client/mc/release/linux-amd64/mc
+   chmod +x ${MC_PATH}
+   alias mc=${MC_PATH}
+   mc alias set ${MINIO_ALIAS} ${MINIO_HOST} ${MINIO_ACCESS_KEY} ${MINIO_SECRET_KEY}
+   mc mb ${PRIVATE_BUCKET} ${PUBLIC_BUCKET}
+   mc cp --recursive ${DATA_PATH} ${PRIVATE_BUCKET}
+   mc cp --recursive ${DATA_PATH} ${PUBLIC_BUCKET}
+   mc policy set public ${PUBLIC_BUCKET}
    ```
 
 1. Run docker containers using the commands below:
