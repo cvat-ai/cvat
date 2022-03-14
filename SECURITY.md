@@ -24,4 +24,4 @@ Please provide as much information as possible, including:
   collaborate on resolving the issue.
   
 For more information on how Intel works to resolve security issues, see:
-[Vulnerability handling guidelines](https://www.intel.com/content/www/us/en/security-center/vulnerability-handling-guidelines.html)
+[Vulnerability handling guidelines](<https://www.intel.com/content/www/us/en/security-center/vulnerability-handling-guidelines.html>)
