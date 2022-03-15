@@ -127,6 +127,14 @@ def jobs_by_org(tasks, jobs):
     return data
 
 @pytest.fixture(scope='module')
+def tasks_by_org(tasks):
+    data = {}
+    for task in tasks:
+        data.setdefault(task['organization'], []).append(task)
+    data[''] = data.pop(None, [])
+    return data
+
+@pytest.fixture(scope='module')
 def assignee_id():
     def get_id(data):
         if data.get('assignee') is not None:
@@ -237,7 +245,23 @@ def find_job_staff_user(is_job_staff):
     return find
 
 @pytest.fixture(scope='module')
+def find_task_staff_user(is_task_staff):
+    def find(tasks, users, is_staff):
+        for task in tasks:
+            for user in users:
+                if is_staff == is_task_staff(user['id'], task['id']):
+                    return user['username'], task['id']
+        return None, None
+    return find
+
+@pytest.fixture(scope='module')
 def filter_jobs_with_shapes(annotations):
     def find(jobs):
         return list(filter(lambda j: annotations['job'][str(j['id'])]['shapes'], jobs))
+    return find
+
+@pytest.fixture(scope='module')
+def filter_tasks_with_shapes(annotations):
+    def find(tasks):
+        return list(filter(lambda t: annotations['task'][str(t['id'])]['shapes'], tasks))
     return find

@@ -4008,9 +4008,9 @@ COPY public.engine_serverfile (id, file, data_id) FROM stdin;
 
 COPY public.engine_task (id, name, mode, created_date, updated_date, status, bug_tracker, owner_id, overlap, assignee_id, segment_size, project_id, data_id, dimension, subset, organization_id) FROM stdin;
 2	task2	annotation	2021-12-14 18:50:29.458488+00	2021-12-22 07:14:15.234748+00	annotation		2	0	\N	23	\N	2	2d		1
-1	task1	annotation	2021-12-14 18:43:47.601289+00	2021-12-22 07:15:22.942484+00	annotation		2	0	\N	130	\N	1	2d		\N
+1	task1	annotation	2021-12-14 18:43:47.601289+00	2021-12-22 07:15:22.942484+00	annotation		2	0	1	130	\N	1	2d		\N
 6	task3	annotation	2022-02-16 06:26:54.631217+00	2022-02-16 06:26:54.836403+00	annotation		2	0	\N	1	\N	6	3d		\N
-5	task2	interpolation	2022-02-16 06:25:48.168612+00	2022-02-21 10:40:21.257604+00	annotation		2	5	\N	25	\N	5	2d		\N
+5	task2	interpolation	2022-02-16 06:25:48.168612+00	2022-02-21 10:40:21.257604+00	annotation		2	5	7	25	\N	5	2d		\N
 7	task_2_org2	annotation	2022-02-21 10:31:52.429478+00	2022-02-21 10:41:38.540427+00	annotation		11	0	7	11	\N	7	2d		2
 3	task1_in_project1	annotation	2021-12-14 19:48:33.089778+00	2022-02-24 21:25:10.697341+00	annotation		10	0	19	50	1	3	2d	Train	\N
 4	task1_in_project2	annotation	2021-12-14 19:55:57.475273+00	2022-02-24 21:32:36.190676+00	annotation		10	0	19	58	2	4	2d	train	2

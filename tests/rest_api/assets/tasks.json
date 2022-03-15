@@ -124,7 +124,13 @@
       "url": "http://localhost:8080/api/tasks/6"
     },
     {
-      "assignee": null,
+      "assignee": {
+        "first_name": "Worker",
+        "id": 7,
+        "last_name": "Second",
+        "url": "http://localhost:8080/api/users/7",
+        "username": "worker2"
+      },
       "bug_tracker": "",
       "created_date": "2022-02-16T06:25:48.168612Z",
       "data": 5,
@@ -429,7 +435,13 @@
       "url": "http://localhost:8080/api/tasks/2"
     },
     {
-      "assignee": null,
+      "assignee": {
+        "first_name": "Admin",
+        "id": 1,
+        "last_name": "First",
+        "url": "http://localhost:8080/api/users/1",
+        "username": "admin1"
+      },
       "bug_tracker": "",
       "created_date": "2021-12-14T18:43:47.601289Z",
       "data": 1,
