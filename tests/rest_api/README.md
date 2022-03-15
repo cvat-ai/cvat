@@ -84,8 +84,7 @@ python utils/dump_objects.py
 To restore DB and data volume, please use commands below.
 
 ```console
-docker container cp assets/cvat_db/data.json cvat:data.json
-docker exec cvat python manage.py loaddata /data.json
+cat assets/cvat_db/data.json | docker exec -i cvat python manage.py --format=json loaddata -
 cat assets/cvat_db/cvat_data.tar.bz2 | docker exec -i cvat tar --strip 3 -C /home/django/data/ -xj
 ```
 
@@ -98,12 +97,12 @@ Assets directory has two parts:
   - `cvat_data.tar.bz2` --- archieve with data volumes;
   - `data.json` --- file required for DB restoring.
     Contains all information about test db;
-  - `restore.sh` --- simple bash script for creating copy of database and
+  - `restore.sql` --- SQL script for creating copy of database and
   killing connection for `cvat` database.
-  Script has two positional arguments:
+  Script should be run with varialbe declaration:
   ```
   # create database <new> with template <existing>
-  sh restore.sh <existing> <new>
+  psql -U root -d postgres -v from=<existing> -v to=<new> restore.sql
   ```
 - `*.json` files --- these file contains all necessary data for getting
   expected results from HTTP responses
@@ -186,6 +185,6 @@ DETAIL:  There are 1 other session(s) using the database.
 In this case you should terminate all existent connections for cvat database,
 you can perform it with command:
 ```
-docker exec cvat_db sh restore.sh cvat test_db
+docker exec cvat_db psql -U root -d postgres -v from=cvat -v to=test_db -f restore.sql
 ```
 
