@@ -135,6 +135,7 @@ Assets directory has two parts:
    the database after each test function (see `conftest.py`)
 
 1. Which user should be selected to create new resources in test DB?
+
    If for your test it's no matter what user should send a request,
    then better to choose `admin1` user for creating new resource.
 
