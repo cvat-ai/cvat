@@ -1,23 +1,35 @@
 ---
-title: 'Projects'
-linkTitle: 'Projects'
+title: 'Projects page'
+linkTitle: 'Projects page'
 weight: 1
 description: 'Creating and exporting projects in CVAT.'
 ---
 
-### Create project
+## Projects page
+
+On this page you can create a new project, create a project from a backup, and also see the created projects.
+
+In the upper left corner there is a search bar, using which you can find the project by name, assignee etc.
+In the upper right corner there are
+[sorting and filtering tools](/docs/manual/advanced/filter/#sort-and-filter-projects-tasks-and-jobs).
+
+## Create a project
 
 At CVAT, you can create a project containing tasks of the same type.
 All tasks related to the project will inherit a list of labels.
 
 To create a project, go to the projects section by clicking on the `Projects` item in the top menu.
 On the projects page, you can see a list of projects, use a search,
-or create a new project by clicking `Create New Project`.
+or create a new project by clicking on the `+` button and select `Create New Project`.
 
 ![](/images/image190.jpg)
 
+> Note that the project will be created in the organization that you selected at the time of creation.
+> Read more about [organizations](/docs/manual/advanced/organization/).
+
 You can change: the name of the project, the list of labels
 (which will be used for tasks created as parts of this project) and a link to the issue.
+Learn more about [creating a label list](/docs/manual/basics/creating_an_annotation_task/#labels).
 
 ![](/images/image191.jpg)
 
@@ -40,8 +52,9 @@ Here you can do the following:
    You can also change the color for different labels. By clicking `Copy` you can copy the labels to the clipboard.
 1. Assigned to — is used to assign a project to a person.
    Start typing an assignee's name and/or choose the right person out of the dropdown list.
-1. `Tasks` — is a list of all tasks for a particular project, with the ability to search for tasks in the project.
+1. `Tasks` — is a list of all tasks for a particular project, with the ability to search,
+   sort and filter for tasks in the project.
    [Read more about search](/docs/manual/advanced/search/).
-
+   [Read more about sorting and filter](/docs/manual/advanced/filter/#sort-and-filter-projects-tasks-and-jobs)
 It is possible to choose a subset for tasks in the project. You can use the available options
 (`Train`, `Test`, `Validation`) or set your own.

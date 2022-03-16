@@ -27,6 +27,10 @@ Each button is responsible for a in menu `Actions` specific function:
   Some task labels can be matched with the target project labels.
 - `Delete` — delete task.
 
+In the upper left corner there is a search bar, using which you can find the task by designated assigner, task name etc.
+In the upper right corner there are
+[sorting and filtering tools](/docs/manual/advanced/filter/#sort-and-filter-projects-tasks-and-jobs).
+
 ---
 
 Push `Open` button to go to [task details](/docs/manual/basics/task-details/).
