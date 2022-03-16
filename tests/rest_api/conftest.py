@@ -1,54 +1,43 @@
 # Copyright (C) 2021 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
-
 from subprocess import run, CalledProcessError
 import pytest
 import json
 import os.path as osp
 from .utils.config import ASSETS_DIR
 
-def cvat_db_container(command):
-    run(('docker exec cvat_db ' + command).split(), check=True) #nosec
+CVAT_DB_DIR = osp.join(ASSETS_DIR, 'cvat_db')
 
-def docker_cp(source, target):
-    run(' '.join(['docker container cp', source, target]).split(), check=True) #nosec
+def _run(command):
+    try:
+        run(command.split(), check=True) #nosec
+    except CalledProcessError:
+        pytest.exit(f'Command failed: {command}. Add `-s` option to see more details')
 
 def restore_data_volume():
-    command = 'docker run --rm --volumes-from cvat --mount ' \
-        f'type=bind,source={ASSETS_DIR},target=/mnt/ ubuntu tar ' \
-        '--strip 3 -C /home/django/data -xjf /mnt/cvat_data.tar.bz2'
-    run(command.split(), check=True) #nosec
-
-def restore_cvat_db():
-    cvat_db_container('psql -U root -d postgres -f /cvat_db/restore_db.sql')
-
-def drop_test_db():
-    restore_cvat_db()
-    cvat_db_container('rm -rf /cvat_db')
-    cvat_db_container('dropdb test_db')
+    _run(f"docker container cp {osp.join(ASSETS_DIR, 'cvat_db', 'cvat_data.tar.bz2')} cvat:cvat_data.tar.bz2")
+    _run(f"docker exec -i cvat tar --strip 3 -xjf /cvat_data.tar.bz2 -C /home/django/data/")
 
 def create_test_db():
-    docker_cp(source=osp.join(ASSETS_DIR, 'cvat_db'), target='cvat_db:/')
-    cvat_db_container('createdb test_db')
-    cvat_db_container('psql -U root -q -d test_db -f /cvat_db/cvat_db.sql')
+    _run(f"docker container cp {osp.join(CVAT_DB_DIR, 'restore.sql')} cvat_db:restore.sql")
+    _run(f"docker container cp {osp.join(CVAT_DB_DIR, 'data.json')} cvat:data.json")
+    _run('docker exec cvat python manage.py loaddata /data.json')
+    _run('docker exec cvat_db psql -U root -d postgres -v from=cvat -v to=test_db -f restore.sql')
 
 @pytest.fixture(scope='session', autouse=True)
 def init_test_db():
-    try:
-        restore_data_volume()
-        create_test_db()
-    except CalledProcessError:
-        drop_test_db()
-        pytest.exit(f"Cannot to initialize test DB")
+    restore_data_volume()
+    create_test_db()
 
     yield
 
-    drop_test_db()
+    _run('docker exec cvat_db psql -U root -d postgres -v from=test_db -v to=cvat -f restore.sql')
+    _run('docker exec cvat_db dropdb test_db')
 
 @pytest.fixture(scope='function', autouse=True)
 def restore():
-    restore_cvat_db()
+    _run('docker exec cvat_db psql -U root -d postgres -v from=test_db -v to=cvat -f restore.sql')
 
 class Container:
     def __init__(self, data, key='id'):

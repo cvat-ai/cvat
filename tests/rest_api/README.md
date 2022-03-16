@@ -40,8 +40,8 @@ procedure to add them:
 1. Backup DB and data volume using commands below
 1. Don't forget to dump new objects into corresponding json files inside
    assets directory
-1. Commit cvat_data.tar.bz2 and cvat_db.sql into git. Be sure that they are
-   small enough: ~200K-400K together.
+1. Commit cvat_data.tar.bz2 and data.json into git. Be sure that they are
+   small enough: ~300K together.
 
 It is recommended to use dummy and tiny images. You can generate them using
 Pillow library. See a sample code below:
@@ -63,9 +63,12 @@ for i, color in enumerate(colormap):
 To backup DB and data volume, please use commands below.
 
 ```console
-docker exec cvat_db pg_dump -c -Fp -U root -d cvat > assets/cvat_db/cvat_db.sql
-docker run --rm --volumes-from cvat ubuntu tar -cjv /home/django/data > assets/cvat_data.tar.bz2
+docker exec cvat python manage.py dumpdata --indent 2 > assets/cvat_db/data.json
+docker exec cvat tar -cjv /home/django/data > assets/cvat_db/cvat_data.tar.bz2
 ```
+
+> Note: if you won't be use --indent options or will be use with other value
+> it potentially will lead to problems with merging of this file with other branch.
 
 ## How to update *.json files in the assets directory?
 
@@ -81,19 +84,38 @@ python utils/dump_objects.py
 To restore DB and data volume, please use commands below.
 
 ```console
-cat assets/cvat_db/cvat_db.sql | docker exec -i cvat_db psql -U root -d cvat
-cat assets/cvat_data.tar.bz2 | docker run --rm -i --volumes-from cvat ubuntu tar -xj --strip 3 -C /home/django/data
+cat assets/cvat_db/data.json | docker exec -i cvat python manage.py --format=json loaddata -
+cat assets/cvat_db/cvat_data.tar.bz2 | docker exec -i cvat tar --strip 3 -C /home/django/data/ -xj
 ```
+
+## Assets directory structure
+
+Assets directory has two parts:
+
+- `cvat_db` directory --- this directory contains all necessary files for
+  successful restoring of test db
+  - `cvat_data.tar.bz2` --- archieve with data volumes;
+  - `data.json` --- file required for DB restoring.
+    Contains all information about test db;
+  - `restore.sql` --- SQL script for creating copy of database and
+  killing connection for `cvat` database.
+  Script should be run with varialbe declaration:
+  ```
+  # create database <new> with template <existing>
+  psql -U root -d postgres -v from=<existing> -v to=<new> restore.sql
+  ```
+- `*.json` files --- these file contains all necessary data for getting
+  expected results from HTTP responses
 
 ## FAQ
 
 1. How to merge two DB dumps?
 
-   It can be critical if several developers add new tests in parallel. But if
-   you have json description of all objects together with cvat_db.sql, it will
-   be possible to recreate them manually.
+   In common case it should be easy just to merge two JSON files.
+   But in the case when a simple merge fails, you have to first merge
+   the branches, then re-create the changes that you made.
 
-1. How to upgrade cvat_data.tar.bz2 and cvat_db.sql?
+1. How to upgrade cvat_data.tar.bz2 and data.json?
 
    After every commit which changes the layout of DB and data directory it is
    possible to break these files. But failed tests should be a clear indicator
@@ -111,3 +133,63 @@ cat assets/cvat_data.tar.bz2 | docker run --rm -i --volumes-from cvat ubuntu tar
    Since some tests change the database, these tests may be dependent on each
    other, so in current implementation we avoid such problem by restoring
    the database after each test function (see `conftest.py`)
+
+1. Which user should be selected to create new resources in test DB?
+
+   If for your test it's no matter what user should send a request,
+   then better to choose `admin1` user for creating new resource.
+
+## Troubleshooting
+
+1. If your test session was exit with message:
+   ```
+   _pytest.outcomes.Exit: Command failed: ... Add `-s` option to see more details.
+   ```
+   Rerun tests to see error messages:
+   ```
+   pytest ./tests/rest_api -s
+   ```
+
+1. If your tests was failed due to date field incompatibility and you have
+error message like this:
+   ```
+   assert {'values_chan...34.908528Z'}}} == {}
+   E                 Left contains 1 more item:
+   E                 {'values_changed': {"root['results'][0]['updated_date']": {'new_value': '2022-03-05T08:52:34.908000Z',
+   E                                                                            'old_value': '2022-03-05T08:52:34.908528Z'}}}
+   E                 Use -v to get the full diff
+   ```
+   Just dump JSON assets with:
+   ```
+   python3 tests/rest_api/utils/dump_objests.py
+   ```
+
+1. If your test infrastructure has been corrupted and you have errors during db restoring.
+   You should to create (or recreate) `cvat` database:
+   ```
+   docker exec cvat_db dropdb --if-exists cvat
+   docker exec cvat_db createdb cvat
+   docker exec cvat python manage.py migrate
+   ```
+
+1. Perform migrate when some relation does not exists. Example of error message:
+   ```
+   django.db.utils.ProgrammingError: Problem installing fixture '/data.json': Could not load admin.LogEntry(pk=1): relation "django_admin_log" does not exist`
+   ```
+   Solution:
+   ```
+   docker exec cvat python manage.py migrate
+   ```
+
+1. If for some reason you need to recreate cvat database, but using `dropdb`
+you have error message:
+   ```
+   ERROR:  database "cvat" is being accessed by other users
+   DETAIL:  There are 1 other session(s) using the database.
+   ```
+   In this case you should terminate all existent connections for cvat database,
+   you can perform it with command:
+   ```
+   docker exec cvat_db psql -U root -d postgres -v from=cvat -v to=test_db -f restore.sql
+   ```
+

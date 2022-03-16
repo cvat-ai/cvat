@@ -25,4 +25,4 @@ def test_check_objects_integrity(path):
             resp_objs = response.json()
 
             assert DeepDiff(json_objs, resp_objs, ignore_order=True,
-                exclude_regex_paths=r"root\['results'\]\[d+\]\['last_login'\]") == {}
+                exclude_regex_paths=r"root\['results'\]\[\d+\]\['last_login'\]") == {}
