@@ -46,7 +46,7 @@
       "is_active": true,
       "is_staff": true,
       "is_superuser": true,
-      "last_login": null,
+      "last_login": "2022-03-05T09:37:01.636000Z",
       "last_name": "Second",
       "url": "http://localhost:8080/api/users/18",
       "username": "admin2"
@@ -150,7 +150,7 @@
       "is_active": true,
       "is_staff": false,
       "is_superuser": false,
-      "last_login": "2022-02-21T10:29:16.518442Z",
+      "last_login": "2022-02-21T10:29:16.518000Z",
       "last_name": "Second",
       "url": "http://localhost:8080/api/users/11",
       "username": "business2"
@@ -166,7 +166,7 @@
       "is_active": true,
       "is_staff": false,
       "is_superuser": false,
-      "last_login": "2022-01-19T13:52:59.477881Z",
+      "last_login": "2022-03-05T10:31:48.850000Z",
       "last_name": "First",
       "url": "http://localhost:8080/api/users/10",
       "username": "business1"
@@ -230,7 +230,7 @@
       "is_active": true,
       "is_staff": false,
       "is_superuser": false,
-      "last_login": "2021-12-14T19:11:21.048740Z",
+      "last_login": "2021-12-14T19:11:21.048000Z",
       "last_name": "First",
       "url": "http://localhost:8080/api/users/6",
       "username": "worker1"
@@ -294,7 +294,7 @@
       "is_active": true,
       "is_staff": false,
       "is_superuser": false,
-      "last_login": "2022-02-16T06:24:53.910205Z",
+      "last_login": "2022-03-05T08:52:22.036000Z",
       "last_name": "First",
       "url": "http://localhost:8080/api/users/2",
       "username": "user1"
@@ -310,7 +310,7 @@
       "is_active": true,
       "is_staff": true,
       "is_superuser": true,
-      "last_login": "2022-03-11T11:18:43.931009Z",
+      "last_login": "2022-03-05T09:34:33.293000Z",
       "last_name": "First",
       "url": "http://localhost:8080/api/users/1",
       "username": "admin1"
