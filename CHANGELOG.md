@@ -11,7 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Advanced filtration and sorting for a list of tasks/projects/cloudstorages (<https://github.com/openvinotoolkit/cvat/pull/4403>)
 
 ### Changed
-- TDB
+- Added missing geos dependency into Dockerfile (<https://github.com/openvinotoolkit/cvat/pull/4451>)
+- Improved helm chart readme (<https://github.com/openvinotoolkit/cvat/pull/4366>)
 
 ### Deprecated
 - TDB
