@@ -19,35 +19,13 @@ the server calling REST API directly (as it done by users).
 
 ## How to run?
 
-1. Setup MINIO storage
+1. Execute commands below for necessary preprocessing:
    ```console
-   export MINIO_HOST="http://127.0.0.1:9000/"
-   export MINIO_ACCESS_KEY="minio_access_key"
-   export MINIO_SECRET_KEY="minio_secret_key"
-   export DATA_PATH="tests/cypress/integration/actions_tasks/assets/case_65_manifest/"
-   export MINIO_ALIAS="local_minio"
-   export PRIVATE_BUCKET="${MINIO_ALIAS}/private"
-   export PUBLIC_BUCKET="${MINIO_ALIAS}/public"
-
-   docker-compose -f tests/rest_api/docker-compose.minio.yml up -d
-   MC_DIR="/path/to/save"
-   MC_PATH="${MC_DIR}/mc"
-   wget -P ${MC_DIR} https://dl.min.io/client/mc/release/linux-amd64/mc
-   chmod +x ${MC_PATH}
-   alias mc=${MC_PATH}
-   mc alias set ${MINIO_ALIAS} ${MINIO_HOST} ${MINIO_ACCESS_KEY} ${MINIO_SECRET_KEY}
-   mc mb ${PRIVATE_BUCKET} ${PUBLIC_BUCKET}
-   mc cp --recursive ${DATA_PATH} ${PRIVATE_BUCKET}
-   mc cp --recursive ${DATA_PATH} ${PUBLIC_BUCKET}
-   mc policy set public ${PUBLIC_BUCKET}
-   ```
-
-1. Run docker containers using the commands below:
-   ```console
-   docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f components/analytics/docker-compose.analytics.yml up -d --build
+   chmod +x tests/rest_api/setup
+   ./tests/rest_api/setup
    ```
 1. Restore DB and data volume using commands [below](#how-to-restore-db-and-data-volume).
-1. Please look at documentation for [pytest](https://docs.pytest.org/en/6.2.x/).
+1. After that please look at documentation for [pytest](https://docs.pytest.org/en/6.2.x/).
    Generally, you have to install requirements and run the following command from
    the root directory of the cloned CVAT repository:
 

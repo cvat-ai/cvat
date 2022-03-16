@@ -107,7 +107,7 @@ def get_cloud_storage_instance(cloud_provider, resource, credentials, specific_a
             access_key_id=credentials.key,
             secret_key=credentials.secret_key,
             session_token=credentials.session_token,
-            region=specific_attributes.get('region', 'us-east-2'),
+            region=specific_attributes.get('region'),
             endpoint_url=specific_attributes.get('endpoint_url'),
         )
     elif cloud_provider == CloudProviderChoice.AZURE_CONTAINER:
