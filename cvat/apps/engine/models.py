@@ -137,6 +137,8 @@ class AbstractArrayField(models.TextField):
     def from_db_value(self, value, expression, connection):
         if not value:
             return []
+        if value.startswith('[') and value.endswith(']'):
+            value = value[1:-1]
         return [self.converter(v) for v in value.split(self.separator)]
 
     def to_python(self, value):
