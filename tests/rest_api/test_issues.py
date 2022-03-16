@@ -2,11 +2,12 @@
 #
 # SPDX-License-Identifier: MIT
 
+import pytest
 from http import HTTPStatus
 from deepdiff import DeepDiff
-import pytest
+from copy import deepcopy
 
-from .utils.config import post_method
+from .utils.config import post_method, patch_method
 
 class TestPostIssues:
     def _test_check_response(self, user, data, is_allow, **kwargs):
@@ -77,3 +78,62 @@ class TestPostIssues:
         }
 
         self._test_check_response(username, data, is_allow, org_id=org)
+
+
+class TestPatchIssues:
+    def _test_check_response(self, user, issue_id, data, is_allow, **kwargs):
+        response = patch_method(user, f'issues/{issue_id}', data,
+            action='update', **kwargs)
+
+        if is_allow:
+            assert response.status_code == HTTPStatus.OK
+            assert DeepDiff(data, response.json(),
+                exclude_regex_paths="root\['updated_date|comments|id|owner'\]") == {}
+        else:
+            assert response.status_code == HTTPStatus.FORBIDDEN
+
+    @pytest.fixture(scope='class')
+    def request_data(self, issues):
+        def get_data(issue_id):
+            data = deepcopy(issues[issue_id])
+            data['resolved'] = not data['resolved']
+            data.pop('comments')
+            data.pop('updated_date')
+            data.pop('id')
+            data.pop('owner')
+            return data
+        return get_data
+
+    @pytest.mark.parametrize('org', [''])
+    @pytest.mark.parametrize('privilege, issue_staff, is_allow', [
+        ('admin',    True, True), ('admin',    False, True),
+        ('business', True, True), ('business', False, False),
+        ('worker',   True, True), ('worker',   False, False),
+        ('user',     True, True), ('user',     False, False)
+    ])
+    def test_user_update_issue(self, org, privilege, issue_staff, is_allow,
+        find_issue_staff_user, find_users, issues_by_org, request_data):
+        users = find_users(privilege=privilege)
+        issues = issues_by_org[org]
+        username, issue_id = find_issue_staff_user(issues, users, issue_staff)
+
+        data = request_data(issue_id)
+        self._test_check_response(username, issue_id, data, is_allow)
+
+    @pytest.mark.parametrize('org', [2])
+    @pytest.mark.parametrize('role, issue_staff, is_allow', [
+        ('maintainer', False, True),  ('owner',  False, True),
+        ('supervisor', False, False), ('worker', False, False),
+        ('maintainer', True, True),   ('owner',  True, True),
+        ('supervisor', True, True),   ('worker', True, True)
+    ])
+    def test_member_update_issue(self, org, role, issue_staff, is_allow,
+        find_issue_staff_user, find_users, issues_by_org, request_data):
+        users = find_users(role=role, org=org)
+        issues = issues_by_org[org]
+        username, issue_id = find_issue_staff_user(issues, users, issue_staff)
+
+        data = request_data(issue_id)
+        self._test_check_response(username, issue_id, data, is_allow, org_id=org)
+
+

@@ -115,6 +115,11 @@ def annotations():
         return json.load(f)
 
 @pytest.fixture(scope='module')
+def issues():
+    with open(osp.join(ASSETS_DIR, 'issues.json')) as f:
+        return Container(json.load(f)['results'])
+
+@pytest.fixture(scope='module')
 def users_by_name(users):
     return {user['username']: user for user in users}
 
@@ -131,6 +136,14 @@ def tasks_by_org(tasks):
     data = {}
     for task in tasks:
         data.setdefault(task['organization'], []).append(task)
+    data[''] = data.pop(None, [])
+    return data
+
+@pytest.fixture(scope='module')
+def issues_by_org(tasks, jobs, issues):
+    data = {}
+    for issue in issues:
+        data.setdefault(tasks[jobs[issue['job']]['task_id']]['organization'], []).append(issue)
     data[''] = data.pop(None, [])
     return data
 
@@ -173,6 +186,14 @@ def is_job_staff(jobs, is_task_staff, assignee_id):
             is_task_staff(user_id, jobs[jid]['task_id'])
     return check
 
+@pytest.fixture(scope='module')
+def is_issue_staff(issues, is_job_staff, assignee_id):
+    @ownership
+    def check(user_id, issue_id):
+        return user_id == issues[issue_id]['owner']['id'] or \
+            user_id == assignee_id(issues[issue_id]) or \
+            is_job_staff(user_id, issues[issue_id]['job'])
+    return check
 @pytest.fixture(scope='module')
 def find_users(test_db):
     def find(**kwargs):
@@ -251,6 +272,16 @@ def find_task_staff_user(is_task_staff):
             for user in users:
                 if is_staff == is_task_staff(user['id'], task['id']):
                     return user['username'], task['id']
+        return None, None
+    return find
+
+@pytest.fixture(scope='module')
+def find_issue_staff_user(is_issue_staff):
+    def find(issues, users, is_staff):
+        for issue in issues:
+            for user in users:
+                if is_staff == is_issue_staff(user['id'], issue['id']):
+                    return user['username'], issue['id']
         return None, None
     return find
 
