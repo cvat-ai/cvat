@@ -32,17 +32,17 @@ drf-spectacular==0.21.2
 Shapely==1.7.1
 pdf2image==1.14.0
 django-rest-auth[with_social]==0.9.5
-opencv-python-headless==4.4.0.42
-h5py==2.10.0
+opencv-python-headless==4.5.5.62
+h5py==3.6.0
 django-cors-headers==3.5.0
 furl==2.1.0
 av==8.0.2 --no-binary=av
-tensorflow==2.8.0 # Optional requirement of Datumaro
+tensorflow==2.8.0 # Optional requirement of Datumaro. Use tensorflow-macos==2.8.0 for Mac M1
 # The package is used by pyunpack as a command line tool to support multiple
 # archives. Don't use as a python module because it has GPL license.
 patool==1.12
 diskcache==5.0.2
-open3d==0.11.2
+open3d==0.14.1
 boto3==1.17.61
 azure-storage-blob==12.8.1
 google-cloud-storage==1.42.0

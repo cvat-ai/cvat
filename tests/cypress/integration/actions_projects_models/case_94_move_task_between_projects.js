@@ -1,4 +1,4 @@
-// Copyright (C) 2021 Intel Corporation
+// Copyright (C) 2021-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -95,8 +95,10 @@ context('Move a task between projects.', () => {
 
     afterEach(() => {
         cy.goToProjectsList();
+        cy.get('.cvat-spinner').should('not.exist');
         cy.openProject(firtsProject.name);
         cy.deleteProjectViaActions(firtsProject.name);
+        cy.get('.cvat-spinner').should('not.exist');
         cy.openProject(secondProject.name);
         cy.deleteProjectViaActions(secondProject.name);
     });

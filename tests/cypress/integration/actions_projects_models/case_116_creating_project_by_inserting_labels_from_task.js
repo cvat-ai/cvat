@@ -57,6 +57,7 @@ context('Creating a project by inserting labels from a task.', { browser: '!fire
 
         it('Creating a project with copying labels from the task.', () => {
             cy.goToProjectsList();
+            cy.get('.cvat-create-project-dropdown').click();
             cy.get('.cvat-create-project-button').click();
             cy.get('#name').type(projectName);
             cy.contains('[role="tab"]', 'Raw').click();

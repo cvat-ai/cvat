@@ -17,13 +17,8 @@ const defaultState: CloudStoragesState = {
         page: 1,
         id: null,
         search: null,
-        owner: null,
-        displayName: null,
-        description: null,
-        resource: null,
-        providerType: null,
-        credentialsType: null,
-        status: null,
+        sort: null,
+        filter: null,
     },
     activities: {
         creates: {

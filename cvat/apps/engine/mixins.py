@@ -9,7 +9,6 @@ import uuid
 from django.conf import settings
 from django.core.cache import cache
 from rest_framework import status
-from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from cvat.apps.engine.serializers import DataSerializer
@@ -26,6 +25,7 @@ class TusFile:
         self.offset = cache.get("tus-uploads/{}/offset".format(file_id))
 
     def init_file(self):
+        os.makedirs(self.upload_dir, exist_ok=True)
         file_path = os.path.join(self.upload_dir, self.file_id)
         with open(file_path, 'wb') as file:
             file.seek(self.file_size - 1)
@@ -100,7 +100,7 @@ class UploadMixin(object):
         'Access-Control-Allow-Headers': "Tus-Resumable,upload-length,upload-metadata,Location,Upload-Offset,content-type",
         'Cache-Control': 'no-store'
     }
-    _file_id_regex = r'(?P<file_id>\b[0-9a-f]{8}\b-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-\b[0-9a-f]{12}\b)'
+    file_id_regex = r'(?P<file_id>\b[0-9a-f]{8}\b-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-\b[0-9a-f]{12}\b)'
 
     def _tus_response(self, status, data=None, extra_headers=None):
         response = Response(data, status)
@@ -147,9 +147,6 @@ class UploadMixin(object):
         if request.method == 'OPTIONS':
             return self._tus_response(status=status.HTTP_204)
         else:
-            if not self.can_upload():
-                return self._tus_response(data='Adding more data is not allowed',
-                    status=status.HTTP_400_BAD_REQUEST)
             metadata = self._get_metadata(request)
             filename = metadata.get('filename', '')
             if not self.validate_filename(filename):
@@ -173,13 +170,14 @@ class UploadMixin(object):
 
             tus_file = TusFile.create_file(metadata, file_size, self.get_upload_dir())
 
+            location = request.build_absolute_uri()
+            if 'HTTP_X_FORWARDED_HOST' not in request.META:
+                location = request.META.get('HTTP_ORIGIN') + request.META.get('PATH_INFO')
             return self._tus_response(
                 status=status.HTTP_201_CREATED,
-                extra_headers={'Location': '{}{}'.format(request.build_absolute_uri(), tus_file.file_id)})
+                extra_headers={'Location': '{}{}'.format(location, tus_file.file_id)})
 
-    @action(detail=True, methods=['HEAD', 'PATCH'], url_path=r'data/'+_file_id_regex)
-    def append_tus_chunk(self, request, pk, file_id):
-        self.get_object() # call check_object_permissions as well
+    def append_tus_chunk(self, request, file_id):
         if request.method == 'HEAD':
             tus_file = TusFile.get_tusfile(str(file_id), self.get_upload_dir())
             if tus_file:
@@ -211,26 +209,16 @@ class UploadMixin(object):
         file_path = os.path.join(upload_dir, filename)
         return os.path.commonprefix((os.path.realpath(file_path), upload_dir)) == upload_dir
 
-    def can_upload(self):
-        db_model = self.get_object()
-        model_data = db_model.data
-        return model_data.size == 0
-
     def get_upload_dir(self):
-        db_model = self.get_object()
-        return db_model.data.get_upload_dirname()
+        return self._object.data.get_upload_dirname()
 
     def get_request_client_files(self, request):
-        db_model = self.get_object()
-        serializer = DataSerializer(db_model, data=request.data)
+        serializer = DataSerializer(self._object, data=request.data)
         serializer.is_valid(raise_exception=True)
         data = {k: v for k, v in serializer.validated_data.items()}
-        return data.get('client_files', None);
+        return data.get('client_files', None)
 
     def append(self, request):
-        if not self.can_upload():
-            return Response(data='Adding more data is not allowed',
-                status=status.HTTP_400_BAD_REQUEST)
         client_files = self.get_request_client_files(request)
         if client_files:
             upload_dir = self.get_upload_dir()

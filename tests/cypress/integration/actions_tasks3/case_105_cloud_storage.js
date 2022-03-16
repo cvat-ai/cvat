@@ -151,7 +151,8 @@ context('Cloud storage.', () => {
 
         it('Check select files from "Cloud Storage" when creating a task.', () => {
             cy.contains('.cvat-header-button', 'Tasks').click();
-            cy.get('#cvat-create-task-button').should('be.visible').click();
+            cy.get('.cvat-create-task-dropdown').click();
+            cy.get('.cvat-create-task-button').should('be.visible').click();
             cy.get('.cvat-create-task-content').should('be.visible').within(() => {
                 cy.contains('[role="tab"]', 'Cloud Storage').click();
                 cy.get('#cloudStorageSelect').should('exist');

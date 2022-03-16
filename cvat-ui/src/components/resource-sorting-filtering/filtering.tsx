@@ -14,16 +14,17 @@ import {
 import Dropdown from 'antd/lib/dropdown';
 import Space from 'antd/lib/space';
 import Button from 'antd/lib/button';
-import { useSelector } from 'react-redux';
-
-import { CombinedState } from 'reducers/interfaces';
 import Checkbox, { CheckboxChangeEvent } from 'antd/lib/checkbox/Checkbox';
 import Menu from 'antd/lib/menu';
+import { useSelector } from 'react-redux';
+import { CombinedState } from 'reducers/interfaces';
+import { User } from 'components/task-page/user-selector';
 
 interface ResourceFilterProps {
     predefinedVisible: boolean;
     recentVisible: boolean;
     builderVisible: boolean;
+    value: string | null;
     onPredefinedVisibleChange(visible: boolean): void;
     onBuilderVisibleChange(visible: boolean): void;
     onRecentVisibleChange(visible: boolean): void;
@@ -35,7 +36,6 @@ export default function ResourceFilterHOC(
     localStorageRecentKeyword: string,
     localStorageRecentCapacity: number,
     predefinedFilterValues: Record<string, string>,
-    defaultEnabledFilters: string[],
 ): React.FunctionComponent<ResourceFilterProps> {
     const config: Config = { ...AntdConfig, ...filtrationCfg };
     const defaultTree = QbUtils.checkTree(
@@ -86,58 +86,78 @@ export default function ResourceFilterHOC(
         built: null,
     };
 
+    function isValidTree(tree: ImmutableTree): boolean {
+        return (QbUtils.queryString(tree, config) || '').trim().length > 0 && QbUtils.isValidTree(tree);
+    }
+
+    function unite(filters: string[]): string {
+        if (filters.length > 1) {
+            return JSON.stringify({
+                and: filters.map((filter: string): JSON => JSON.parse(filter)),
+            });
+        }
+
+        return filters[0];
+    }
+
+    function getPredefinedFilters(user: User): Record<string, string> {
+        const result: Record<string, string> = {};
+        if (user) {
+            for (const key of Object.keys(predefinedFilterValues)) {
+                result[key] = predefinedFilterValues[key].replace('<username>', `${user.username}`);
+            }
+        }
+
+        return result;
+    }
+
     function ResourceFilterComponent(props: ResourceFilterProps): JSX.Element {
         const {
-            predefinedVisible, builderVisible, recentVisible,
+            predefinedVisible, builderVisible, recentVisible, value,
             onPredefinedVisibleChange, onBuilderVisibleChange, onRecentVisibleChange, onApplyFilter,
         } = props;
 
         const user = useSelector((state: CombinedState) => state.auth.user);
         const [isMounted, setIsMounted] = useState<boolean>(false);
         const [recentFilters, setRecentFilters] = useState<Record<string, string>>({});
-        const [predefinedFilters, setPredefinedFilters] = useState<Record<string, string>>({});
-        const [appliedFilter, setAppliedFilter] = useState<typeof defaultAppliedFilter>(defaultAppliedFilter);
+        const [appliedFilter, setAppliedFilter] = useState(defaultAppliedFilter);
         const [state, setState] = useState<ImmutableTree>(defaultTree);
 
         useEffect(() => {
             setRecentFilters(receiveRecentFilters());
             setIsMounted(true);
+
+            const listener = (event: MouseEvent): void => {
+                const path: HTMLElement[] = event.composedPath()
+                    .filter((el: EventTarget) => el instanceof HTMLElement) as HTMLElement[];
+                if (path.some((el: HTMLElement) => el.id === 'root') && !path.some((el: HTMLElement) => el.classList.contains('ant-btn'))) {
+                    onBuilderVisibleChange(false);
+                    onRecentVisibleChange(false);
+                }
+            };
+
+            try {
+                if (value) {
+                    const tree = QbUtils.loadFromJsonLogic(JSON.parse(value), config);
+                    if (tree && isValidTree(tree)) {
+                        setAppliedFilter({
+                            ...appliedFilter,
+                            built: JSON.stringify(QbUtils.jsonLogicFormat(tree, config).logic),
+                        });
+                        setState(tree);
+                    }
+                }
+            } catch (_: any) {
+                // nothing to do
+            }
+
+            window.addEventListener('click', listener);
+            return () => window.removeEventListener('click', listener);
         }, []);
 
         useEffect(() => {
-            if (user) {
-                const result: Record<string, string> = {};
-                for (const key of Object.keys(predefinedFilterValues)) {
-                    result[key] = predefinedFilterValues[key].replace('<username>', `${user.username}`);
-                }
-
-                setPredefinedFilters(result);
-                setAppliedFilter({
-                    ...appliedFilter,
-                    predefined: defaultEnabledFilters
-                        .filter((filterKey: string) => filterKey in result)
-                        .map((filterKey: string) => result[filterKey]),
-                });
-            }
-        }, [user]);
-
-        useEffect(() => {
-            function unite(filters: string[]): string {
-                if (filters.length > 1) {
-                    return JSON.stringify({
-                        and: filters.map((filter: string): JSON => JSON.parse(filter)),
-                    });
-                }
-
-                return filters[0];
-            }
-
-            function isValidTree(tree: ImmutableTree): boolean {
-                return (QbUtils.queryString(tree, config) || '').trim().length > 0 && QbUtils.isValidTree(tree);
-            }
-
             if (!isMounted) {
-                // do not request jobs before until on mount hook is done
+                // do not request resources until on mount hook is done
                 return;
             }
 
@@ -150,7 +170,9 @@ export default function ResourceFilterHOC(
                     setState(tree);
                 }
             } else if (appliedFilter.built) {
-                onApplyFilter(appliedFilter.built);
+                if (value !== appliedFilter.built) {
+                    onApplyFilter(appliedFilter.built);
+                }
             } else {
                 onApplyFilter(null);
                 setState(defaultTree);
@@ -165,14 +187,15 @@ export default function ResourceFilterHOC(
             </div>
         );
 
+        const predefinedFilters = getPredefinedFilters(user);
         return (
-            <div className='cvat-jobs-page-filters'>
+            <div className='cvat-resource-page-filters'>
                 <Dropdown
                     destroyPopupOnHide
                     visible={predefinedVisible}
                     placement='bottomLeft'
                     overlay={(
-                        <div className='cvat-jobs-page-predefined-filters-list'>
+                        <div className='cvat-resource-page-predefined-filters-list'>
                             {Object.keys(predefinedFilters).map((key: string): JSX.Element => (
                                 <Checkbox
                                     checked={appliedFilter.predefined?.includes(predefinedFilters[key])}
@@ -216,14 +239,14 @@ export default function ResourceFilterHOC(
                     visible={builderVisible}
                     destroyPopupOnHide
                     overlay={(
-                        <div className='cvat-jobs-page-filters-builder'>
+                        <div className='cvat-resource-page-filters-builder'>
                             { Object.keys(recentFilters).length ? (
                                 <Dropdown
                                     placement='bottomRight'
                                     visible={recentVisible}
                                     destroyPopupOnHide
                                     overlay={(
-                                        <div className='cvat-jobs-page-recent-filters-list'>
+                                        <div className='cvat-resource-page-recent-filters-list'>
                                             <Menu selectable={false}>
                                                 {Object.keys(recentFilters).map((key: string): JSX.Element | null => {
                                                     const tree = QbUtils.loadFromJsonLogic(JSON.parse(key), config);
@@ -275,7 +298,7 @@ export default function ResourceFilterHOC(
                                 value={state}
                                 renderBuilder={renderBuilder}
                             />
-                            <Space className='cvat-jobs-page-filters-space'>
+                            <Space className='cvat-resource-page-filters-space'>
                                 <Button
                                     disabled={!QbUtils.queryString(state, config)}
                                     size='small'

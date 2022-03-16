@@ -7,6 +7,39 @@
 .cvat-project-page {
     overflow-y: auto;
     height: 100%;
+
+    .cvat-spinner {
+        position: relative;
+    }
+}
+
+.cvat-project-page-tasks-bar {
+    margin: $grid-unit-size * 2 0;
+
+    > div {
+        display: flex;
+        justify-content: space-between;
+
+        > .cvat-project-page-tasks-filters-wrapper {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+
+            > div {
+                > *:not(:last-child) {
+                    margin-right: $grid-unit-size;
+                }
+
+                display: flex;
+                margin-right: $grid-unit-size * 4;
+            }
+
+            .cvat-project-page-tasks-search-bar {
+                width: $grid-unit-size * 32;
+            }
+        }
+    }
 }
 
 .cvat-project-details {
@@ -38,10 +71,6 @@
     }
 }
 
-.cvat-project-page-tasks-bar {
-    margin: $grid-unit-size * 2 0;
-}
-
 .ant-menu.cvat-project-actions-menu {
     box-shadow: 0 0 17px rgba(0, 0, 0, 0.2);
 
@@ -64,12 +93,4 @@
 .cvat-project-tasks-pagination {
     display: flex;
     justify-content: center;
-}
-
-.cvat-project-tasks-title-search {
-    display: flex;
-
-    > * {
-        margin-right: $grid-unit-size * 2;
-    }
 }
