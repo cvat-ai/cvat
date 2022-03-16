@@ -76,4 +76,4 @@ class TestPostIssues:
             "message": "lorem ipsum",
         }
 
-        self._test_check_response(username, data, is_allow)
+        self._test_check_response(username, data, is_allow, org_id=org)
