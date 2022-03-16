@@ -2563,7 +2563,8 @@
     "storage_method": "cache",
     "storage": "local",
     "cloud_storage": null,
-    "sorting_method": "lexicographical"
+    "sorting_method": "lexicographical",
+    "deleted_frames": "[]"
   }
 },
 {
@@ -2581,7 +2582,8 @@
     "storage_method": "cache",
     "storage": "local",
     "cloud_storage": null,
-    "sorting_method": "lexicographical"
+    "sorting_method": "lexicographical",
+    "deleted_frames": "[]"
   }
 },
 {
@@ -2599,7 +2601,8 @@
     "storage_method": "cache",
     "storage": "local",
     "cloud_storage": null,
-    "sorting_method": "lexicographical"
+    "sorting_method": "lexicographical",
+    "deleted_frames": "[]"
   }
 },
 {
@@ -2617,7 +2620,8 @@
     "storage_method": "cache",
     "storage": "local",
     "cloud_storage": null,
-    "sorting_method": "lexicographical"
+    "sorting_method": "lexicographical",
+    "deleted_frames": "[]"
   }
 },
 {
@@ -2635,7 +2639,8 @@
     "storage_method": "cache",
     "storage": "local",
     "cloud_storage": null,
-    "sorting_method": "lexicographical"
+    "sorting_method": "lexicographical",
+    "deleted_frames": "[]"
   }
 },
 {
@@ -2653,7 +2658,8 @@
     "storage_method": "cache",
     "storage": "local",
     "cloud_storage": null,
-    "sorting_method": "lexicographical"
+    "sorting_method": "lexicographical",
+    "deleted_frames": "[]"
   }
 },
 {
@@ -2671,7 +2677,8 @@
     "storage_method": "cache",
     "storage": "local",
     "cloud_storage": null,
-    "sorting_method": "lexicographical"
+    "sorting_method": "lexicographical",
+    "deleted_frames": "[]"
   }
 },
 {
