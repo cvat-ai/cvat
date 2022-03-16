@@ -18,7 +18,7 @@ class TestPostIssues:
             assert user == response.json()['owner']['username']
             assert data['message'] == response.json()['comments'][0]['message']
             assert DeepDiff(data, response.json(),
-                exclude_regex_paths="root\['created_date|updated_date|comments|id|owner|message'\]") == {}
+                exclude_regex_paths=r"root\['created_date|updated_date|comments|id|owner|message'\]") == {}
         else:
             assert response.status_code == HTTPStatus.FORBIDDEN
 
@@ -88,7 +88,7 @@ class TestPatchIssues:
         if is_allow:
             assert response.status_code == HTTPStatus.OK
             assert DeepDiff(data, response.json(),
-                exclude_regex_paths="root\['updated_date|comments|id|owner'\]") == {}
+                exclude_regex_paths=r"root\['updated_date|comments|id|owner'\]") == {}
         else:
             assert response.status_code == HTTPStatus.FORBIDDEN
 
@@ -105,33 +105,35 @@ class TestPatchIssues:
         return get_data
 
     @pytest.mark.parametrize('org', [''])
-    @pytest.mark.parametrize('privilege, issue_staff, is_allow', [
-        ('admin',    True, True), ('admin',    False, True),
-        ('business', True, True), ('business', False, False),
-        ('worker',   True, True), ('worker',   False, False),
-        ('user',     True, True), ('user',     False, False)
+    @pytest.mark.parametrize('privilege, issue_staff, issue_admin, is_allow', [
+        ('admin',    True,  None,  True), ('admin',    False, None,  True),
+        ('business', True,  None,  True), ('business', False, None,  False),
+        ('user',     True,  None,  True), ('user',     False, None,  False),
+        ('worker',   False, True,  True), ('worker',   True,  False, False),
+        ('worker',   False, False, False)
     ])
-    def test_user_update_issue(self, org, privilege, issue_staff, is_allow,
+    def test_user_update_issue(self, org, privilege, issue_staff, issue_admin, is_allow,
         find_issue_staff_user, find_users, issues_by_org, request_data):
         users = find_users(privilege=privilege)
         issues = issues_by_org[org]
-        username, issue_id = find_issue_staff_user(issues, users, issue_staff)
+        username, issue_id = find_issue_staff_user(issues, users, issue_staff, issue_admin)
 
         data = request_data(issue_id)
         self._test_check_response(username, issue_id, data, is_allow)
 
     @pytest.mark.parametrize('org', [2])
-    @pytest.mark.parametrize('role, issue_staff, is_allow', [
-        ('maintainer', False, True),  ('owner',  False, True),
-        ('supervisor', False, False), ('worker', False, False),
-        ('maintainer', True, True),   ('owner',  True, True),
-        ('supervisor', True, True),   ('worker', True, True)
+    @pytest.mark.parametrize('role, issue_staff, issue_admin, is_allow', [
+        ('maintainer', True,  None,  True), ('maintainer', False, None,  True),
+        ('supervisor', True,  None,  True), ('supervisor', False, None,  False),
+        ('owner',      True,  None,  True), ('owner',      False, None,  True),
+        ('worker',     False, True,  True), ('worker',     True,  False, False),
+        ('worker',     False, False, False)
     ])
-    def test_member_update_issue(self, org, role, issue_staff, is_allow,
+    def test_member_update_issue(self, org, role, issue_staff, issue_admin, is_allow,
         find_issue_staff_user, find_users, issues_by_org, request_data):
         users = find_users(role=role, org=org)
         issues = issues_by_org[org]
-        username, issue_id = find_issue_staff_user(issues, users, issue_staff)
+        username, issue_id = find_issue_staff_user(issues, users, issue_staff, issue_admin)
 
         data = request_data(issue_id)
         self._test_check_response(username, issue_id, data, is_allow, org_id=org)

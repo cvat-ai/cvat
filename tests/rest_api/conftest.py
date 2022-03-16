@@ -187,13 +187,21 @@ def is_job_staff(jobs, is_task_staff, assignee_id):
     return check
 
 @pytest.fixture(scope='module')
-def is_issue_staff(issues, is_job_staff, assignee_id):
+def is_issue_staff(issues, jobs, is_job_staff, assignee_id):
     @ownership
     def check(user_id, issue_id):
         return user_id == issues[issue_id]['owner']['id'] or \
             user_id == assignee_id(issues[issue_id]) or \
-            is_job_staff(user_id, issues[issue_id]['job'])
+            user_id == assignee_id(jobs[issues[issue_id]['job']])
     return check
+
+@pytest.fixture(scope='module')
+def is_issue_admin(issues, jobs, is_task_staff):
+    @ownership
+    def check(user_id, issue_id):
+        return is_task_staff(user_id, jobs[issues[issue_id]['job']]['task_id'])
+    return check
+
 @pytest.fixture(scope='module')
 def find_users(test_db):
     def find(**kwargs):
@@ -276,11 +284,13 @@ def find_task_staff_user(is_task_staff):
     return find
 
 @pytest.fixture(scope='module')
-def find_issue_staff_user(is_issue_staff):
-    def find(issues, users, is_staff):
+def find_issue_staff_user(is_issue_staff, is_issue_admin):
+    def find(issues, users, is_staff, is_admin):
         for issue in issues:
             for user in users:
-                if is_staff == is_issue_staff(user['id'], issue['id']):
+                i_admin, i_staff = is_issue_admin(user['id'], issue['id']), is_issue_staff(user['id'], issue['id'])
+                if (is_admin is None and (i_staff or i_admin) == is_staff) \
+                    or (is_admin == i_admin and is_staff == i_staff):
                     return user['username'], issue['id']
         return None, None
     return find
