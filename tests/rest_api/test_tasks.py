@@ -147,7 +147,7 @@ class TestGetData:
     _USERNAME = 'user1'
 
     @pytest.mark.parametrize('content_type, task_id', [
-        ('image/png',                1),
+        ('image/png',                8),
         ('image/png',                5),
         ('image/x.point-cloud-data', 6),
     ])

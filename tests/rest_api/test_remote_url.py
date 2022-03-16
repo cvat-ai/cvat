@@ -27,7 +27,7 @@ def _wait_until_task_is_created(username, task_id):
 
 
 class TestGetAnalytics:
-    task_id = 8
+    task_id = 12
     def _test_can_create(self, user, task_id, resources):
         response = _post_task_remote_data(user, task_id, resources)
         assert response.status_code == HTTPStatus.ACCEPTED
