@@ -176,7 +176,7 @@ def is_job_staff(jobs, is_task_staff, assignee_id):
     return check
 
 @pytest.fixture(scope='module')
-def is_issue_staff(issues, jobs, is_job_staff, assignee_id):
+def is_issue_staff(issues, jobs, assignee_id):
     @ownership
     def check(user_id, issue_id):
         return user_id == issues[issue_id]['owner']['id'] or \

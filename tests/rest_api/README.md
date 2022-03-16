@@ -84,7 +84,7 @@ python utils/dump_objects.py
 To restore DB and data volume, please use commands below.
 
 ```console
-cat assets/cvat_db/data.json | docker exec -i cvat python manage.py --format=json loaddata -
+cat assets/cvat_db/data.json | docker exec -i cvat python manage.py loaddata --format=json -
 cat assets/cvat_db/cvat_data.tar.bz2 | docker exec -i cvat tar --strip 3 -C /home/django/data/ -xj
 ```
 

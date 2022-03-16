@@ -88,7 +88,7 @@ class TestPatchIssues:
         if is_allow:
             assert response.status_code == HTTPStatus.OK
             assert DeepDiff(data, response.json(),
-                exclude_regex_paths=r"root\['updated_date|comments|id|owner'\]") == {}
+                exclude_regex_paths=r"root\['created_date|updated_date|comments|id|owner'\]") == {}
         else:
             assert response.status_code == HTTPStatus.FORBIDDEN
 
