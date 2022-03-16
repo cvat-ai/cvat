@@ -44,7 +44,7 @@ class TestGetCloudStorage:
     @pytest.mark.parametrize('org_id', [2])
     @pytest.mark.parametrize('storage_id', [2])
     @pytest.mark.parametrize('role, is_owner, is_allow', [
-        #('worker',       True,   True),
+        ('worker',       True,   True),
         ('supervisor',   False,  True),
         ('worker',       False,  False),
     ])
@@ -62,11 +62,11 @@ class TestGetCloudStorage:
 class TestPostCloudStorage:
     _SPEC = {
         'provider_type': 'AWS_S3_BUCKET',
-        'resource': 'somebucket',
+        'resource': 'test',
         'display_name': 'Bucket',
         'credentials_type': 'KEY_SECRET_KEY_PAIR',
-        'key': 'xxx', 'secret_key': 'xxx',
-        'specific_attributes': 'region=eu-central-1',
+        'key': 'minio_access_key', 'secret_key': 'minio_secret_key',
+        'specific_attributes': 'endpoint_url=http://minio:9000',
         'description': 'Some description',
         'manifests': [
             'manifest.jsonl'
@@ -123,8 +123,6 @@ class TestPostCloudStorage:
 class TestPatchCloudStorage:
     _SPEC = {
         'display_name': 'New display name',
-        'key': 'NEW_KEY',
-        'secret_key': 'NEW_SECRET_KEY',
         'description': 'New description',
         'manifests': [
             'manifest_1.jsonl',
@@ -136,8 +134,6 @@ class TestPatchCloudStorage:
             # unchanged fields
             'created_date', 'credentials_type', 'id', 'organization', 'owner',
             'provider_type', 'resource', 'specific_attributes', 'updated_date',
-            # credentials that server doesn't return
-            'key', 'secret_key',
     }]
 
     def _test_can_update(self, user, storage_id, spec, **kwargs):

@@ -4,7 +4,7 @@
   "previous": null,
   "results": [
     {
-      "created_date": "2022-02-18T10:38:47.047101Z",
+      "created_date": "2022-03-15T10:12:36.917328Z",
       "credentials_type": "KEY_SECRET_KEY_PAIR",
       "description": "",
       "display_name": "Bucket 2",
@@ -21,12 +21,12 @@
         "username": "business2"
       },
       "provider_type": "AWS_S3_BUCKET",
-      "resource": "dummybucket",
-      "specific_attributes": "region=eu-central-1",
-      "updated_date": "2022-02-18T10:38:47.060712Z"
+      "resource": "private",
+      "specific_attributes": "endpoint_url=http%3A%2F%2Fminio%3A9000",
+      "updated_date": "2022-03-15T10:12:36.919505Z"
     },
     {
-      "created_date": "2022-02-18T10:37:21.882750Z",
+      "created_date": "2022-03-15T10:11:54.624767Z",
       "credentials_type": "ANONYMOUS_ACCESS",
       "description": "",
       "display_name": "Bucket 1",
@@ -43,9 +43,9 @@
         "username": "user1"
       },
       "provider_type": "AWS_S3_BUCKET",
-      "resource": "dummybucket",
-      "specific_attributes": "region=eu-central-1",
-      "updated_date": "2022-02-18T10:37:21.889408Z"
+      "resource": "public",
+      "specific_attributes": "endpoint_url=http%3A%2F%2Fminio%3A9000",
+      "updated_date": "2022-03-15T10:11:54.634683Z"
     }
   ]
 }

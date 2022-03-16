@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 10.19
--- Dumped by pg_dump version 10.19
+-- Dumped from database version 10.20
+-- Dumped by pg_dump version 10.20
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -2648,11 +2648,11 @@ COPY public.auth_user (id, password, last_login, is_superuser, username, first_n
 18	pbkdf2_sha256$260000$uOqP32bk2zHuvO0sdGBGmu$hMbzA1yBWcY5rIU670sZ3SHXRLUa7bCkbrMnrEDGSRM=	\N	t	admin2	Admin	Second	admin2@cvat.org	t	t	2021-12-14 18:38:46+00
 6	pbkdf2_sha256$260000$15iUjDNh5gPg5683u1HhOG$fF8hW6AR90o9SCsO/MomzdQFkgQsMUW3YQUlwwiC1vA=	2021-12-14 19:11:21.04874+00	f	worker1	Worker	First	worker1@cvat.org	f	t	2021-12-14 18:30:00+00
 10	pbkdf2_sha256$260000$X4F89IRqnBtojZuHidrwQG$j1+EpXfyvMesHdod4N+dNUfF4WKS2NWFfeGDec/43as=	2022-01-19 13:52:59.477881+00	f	business1	Business	First	business1@cvat.org	f	t	2021-12-14 18:33:06+00
-2	pbkdf2_sha256$260000$Pf2xYWXBedoAJ504jyDD8e$8sJ244Ai0xhZrUTelapPNHlEg7CV0cCUaxbcxZtfaug=	2022-02-16 06:24:53.910205+00	f	user1	User	First	user1@cvat.org	f	t	2021-12-14 18:21:09+00
-11	pbkdf2_sha256$260000$Zw76ANIvIsDngZGsTv2G8O$piTVoqHrpTskW8rI1FBT9rzM2dcpjhrcOfI3pDgtjbo=	2022-02-21 10:29:16.518442+00	f	business2	Business	Second	business2@cvat.org	f	t	2021-12-14 18:34:01+00
 19	pbkdf2_sha256$260000$sKpnXRfALvvS3bBUj8e2SD$wcq2zoyeXxa+gnn6007p6DGtNd+ND6H4pGOq9ekb9t0=	\N	f	user5	User	Fifth	user5@cvat.org	f	t	2022-02-24 20:45:07+00
 20	pbkdf2_sha256$260000$V3cCtaea9FrYFYQRGJfBGO$nZVdhgyq1iEcv3Ed4QDnMt18ULQViJn0snZDm9ZL2SA=	\N	f	user6	User	Sixth	user6@cvat.org	f	t	2022-02-24 20:45:19+00
 1	pbkdf2_sha256$260000$DevmxlmLwciP1P6sZs2Qag$U9DFtjTWx96Sk95qY6UXVcvpdQEP2LcoFBftk5D2RKY=	2022-02-24 21:25:06.462854+00	t	admin1	Admin	First	admin1@cvat.org	t	t	2021-12-14 18:04:57+00
+2	pbkdf2_sha256$260000$Pf2xYWXBedoAJ504jyDD8e$8sJ244Ai0xhZrUTelapPNHlEg7CV0cCUaxbcxZtfaug=	2022-03-15 10:11:28.150018+00	f	user1	User	First	user1@cvat.org	f	t	2021-12-14 18:21:09+00
+11	pbkdf2_sha256$260000$Zw76ANIvIsDngZGsTv2G8O$piTVoqHrpTskW8rI1FBT9rzM2dcpjhrcOfI3pDgtjbo=	2022-03-15 10:11:59.705026+00	f	business2	Business	Second	business2@cvat.org	f	t	2021-12-14 18:34:01+00
 \.
 
 
@@ -2694,8 +2694,8 @@ COPY public.auth_user_user_permissions (id, user_id, permission_id) FROM stdin;
 
 COPY public.authtoken_token (key, created, user_id) FROM stdin;
 a959159194c4b5238d95ef4e07919110fab346b0	2021-12-14 19:44:48.519942+00	10
-e28ce88d18614314476dec601b5c29b9093045f1	2022-02-16 06:24:53.902374+00	2
 48372a6aac494a9932803913ec9088216778b57c	2022-02-21 10:37:08.935479+00	1
+25d0720474e1549a3d2f9ea03d663c37b7cfe67b	2022-03-15 10:11:59.697465+00	11
 \.
 
 
@@ -2931,6 +2931,7 @@ khn67dfajnzkr0tlusuyyub011gt0aqb	.eJxVjMEOwiAQRP-FsyEsobL16N1vIAvLStVAUtqT8d9tkx
 5x9v6r58e4l9if78anupog0ittsq2w3j	.eJxVjMEOwiAQRP-FsyEsobL16N1vIAvLStVAUtqT8d9tkx70OPPezFsFWpcS1p7nMLG6KFCn3y5Seua6A35QvTedWl3mKepd0Qft-tY4v66H-3dQqJdt7UU4MedxGKwFh0RoCBFi4niOTsSAHQFA_JaYmI2nTBEdGRRrSX2-CY443A:1nM644:zfo0j_Zkrm04UxrDj8g_nnsXrpWtRzL4oRx3hAdqyqI	2022-03-07 10:37:08.963511+00
 gcz795933839j3g0t3rjgmikzkzlwse3	.eJxVjEEOwiAQRe_C2hCmUCgu3XsGMjCDVA1NSrsy3l1JutDtf-_9lwi4byXsjdcwkzgLEKffLWJ6cO2A7lhvi0xL3dY5yq7IgzZ5XYifl8P9OyjYSq-9niK4b6A1cfYZnCUEBGuzZxW1UsnYFBV7A9PAIxlMzmmj8pDdyOL9AfdKOC0:1nNKyv:kkKNWtjON5Uk-FR_FbwNa3oJ8t5PEd-rZ1y8BsRyays	2022-03-10 20:44:57.190131+00
 lqzut02cip3i7xxinmal28z3mo302vey	.eJxVjEEOwiAQRe_C2hCmUCgu3XsGMjCDVA1NSrsy3l1JutDtf-_9lwi4byXsjdcwkzgLEKffLWJ6cO2A7lhvi0xL3dY5yq7IgzZ5XYifl8P9OyjYSq-9niK4b6A1cfYZnCUEBGuzZxW1UsnYFBV7A9PAIxlMzmmj8pDdyOL9AfdKOC0:1nNLbm:bXtVicsOrZtQ_p4Qr9bOTAmHWYJMHD8_GCUbncB6nzQ	2022-03-10 21:25:06.476016+00
+kb646qajtgsycnrrg43oi7he8ik36j2g	.eJxVjDsOgzAQRO_iOrLYXfAnZXrOgNb2EpNERsJQRbl7QKJIqpHmvZm3Gnhb87BVWYYpqasCUJffMnB8SjlIenC5zzrOZV2moA9Fn7Tqfk7yup3u30Hmmvc1Nh271sSAASyBgFgUsA6j9WgRXWMMeRIZkVpwTL5j6BrC0e3hnfp8Ac5RNiA:1nU49n:gJIK4eeb0lssS_D1Xk30hEejN1Yp5HHxSSkH8-XvOMI	2022-03-29 10:11:59.708494+00
 \.
 
 
@@ -3337,6 +3338,8 @@ COPY public.engine_clientfile (id, file, data_id) FROM stdin;
 --
 
 COPY public.engine_cloudstorage (id, provider_type, resource, display_name, created_date, updated_date, credentials, credentials_type, specific_attributes, description, owner_id, organization_id) FROM stdin;
+1	AWS_S3_BUCKET	public	Bucket 1	2022-03-15 10:11:54.624767+00	2022-03-15 10:11:54.634683+00		ANONYMOUS_ACCESS	endpoint_url=http%3A%2F%2Fminio%3A9000		2	\N
+2	AWS_S3_BUCKET	private	Bucket 2	2022-03-15 10:12:36.917328+00	2022-03-15 10:12:36.919505+00	minio_access_key minio_secret_key	KEY_SECRET_KEY_PAIR	endpoint_url=http%3A%2F%2Fminio%3A9000		11	2
 \.
 
 
@@ -3919,6 +3922,8 @@ COPY public.engine_labeledtrackattributeval (id, value, spec_id, track_id) FROM 
 --
 
 COPY public.engine_manifest (id, filename, cloud_storage_id) FROM stdin;
+1	manifest.jsonl	1
+2	manifest.jsonl	2
 \.
 
 
@@ -4224,7 +4229,7 @@ SELECT pg_catalog.setval('public.engine_clientfile_id_seq', 372, true);
 -- Name: engine_cloudstorage_id_seq; Type: SEQUENCE SET; Schema: public; Owner: root
 --
 
-SELECT pg_catalog.setval('public.engine_cloudstorage_id_seq', 1, false);
+SELECT pg_catalog.setval('public.engine_cloudstorage_id_seq', 2, true);
 
 
 --
@@ -4322,7 +4327,7 @@ SELECT pg_catalog.setval('public.engine_labeledtrackattributeval_id_seq', 1, fal
 -- Name: engine_manifest_id_seq; Type: SEQUENCE SET; Schema: public; Owner: root
 --
 
-SELECT pg_catalog.setval('public.engine_manifest_id_seq', 1, false);
+SELECT pg_catalog.setval('public.engine_manifest_id_seq', 2, true);
 
 
 --
