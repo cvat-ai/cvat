@@ -2652,7 +2652,7 @@ COPY public.auth_user (id, password, last_login, is_superuser, username, first_n
 11	pbkdf2_sha256$260000$Zw76ANIvIsDngZGsTv2G8O$piTVoqHrpTskW8rI1FBT9rzM2dcpjhrcOfI3pDgtjbo=	2022-02-21 10:29:16.518442+00	f	business2	Business	Second	business2@cvat.org	f	t	2021-12-14 18:34:01+00
 19	pbkdf2_sha256$260000$sKpnXRfALvvS3bBUj8e2SD$wcq2zoyeXxa+gnn6007p6DGtNd+ND6H4pGOq9ekb9t0=	\N	f	user5	User	Fifth	user5@cvat.org	f	t	2022-02-24 20:45:07+00
 20	pbkdf2_sha256$260000$V3cCtaea9FrYFYQRGJfBGO$nZVdhgyq1iEcv3Ed4QDnMt18ULQViJn0snZDm9ZL2SA=	\N	f	user6	User	Sixth	user6@cvat.org	f	t	2022-02-24 20:45:19+00
-1	pbkdf2_sha256$260000$DevmxlmLwciP1P6sZs2Qag$U9DFtjTWx96Sk95qY6UXVcvpdQEP2LcoFBftk5D2RKY=	2022-02-24 21:25:06.462854+00	t	admin1	Admin	First	admin1@cvat.org	t	t	2021-12-14 18:04:57+00
+1	pbkdf2_sha256$260000$DevmxlmLwciP1P6sZs2Qag$U9DFtjTWx96Sk95qY6UXVcvpdQEP2LcoFBftk5D2RKY=	2022-03-11 11:18:43.931009+00	t	admin1	Admin	First	admin1@cvat.org	t	t	2021-12-14 18:04:57+00
 \.
 
 
@@ -2931,6 +2931,9 @@ khn67dfajnzkr0tlusuyyub011gt0aqb	.eJxVjMEOwiAQRP-FsyEsobL16N1vIAvLStVAUtqT8d9tkx
 5x9v6r58e4l9if78anupog0ittsq2w3j	.eJxVjMEOwiAQRP-FsyEsobL16N1vIAvLStVAUtqT8d9tkx70OPPezFsFWpcS1p7nMLG6KFCn3y5Seua6A35QvTedWl3mKepd0Qft-tY4v66H-3dQqJdt7UU4MedxGKwFh0RoCBFi4niOTsSAHQFA_JaYmI2nTBEdGRRrSX2-CY443A:1nM644:zfo0j_Zkrm04UxrDj8g_nnsXrpWtRzL4oRx3hAdqyqI	2022-03-07 10:37:08.963511+00
 gcz795933839j3g0t3rjgmikzkzlwse3	.eJxVjEEOwiAQRe_C2hCmUCgu3XsGMjCDVA1NSrsy3l1JutDtf-_9lwi4byXsjdcwkzgLEKffLWJ6cO2A7lhvi0xL3dY5yq7IgzZ5XYifl8P9OyjYSq-9niK4b6A1cfYZnCUEBGuzZxW1UsnYFBV7A9PAIxlMzmmj8pDdyOL9AfdKOC0:1nNKyv:kkKNWtjON5Uk-FR_FbwNa3oJ8t5PEd-rZ1y8BsRyays	2022-03-10 20:44:57.190131+00
 lqzut02cip3i7xxinmal28z3mo302vey	.eJxVjEEOwiAQRe_C2hCmUCgu3XsGMjCDVA1NSrsy3l1JutDtf-_9lwi4byXsjdcwkzgLEKffLWJ6cO2A7lhvi0xL3dY5yq7IgzZ5XYifl8P9OyjYSq-9niK4b6A1cfYZnCUEBGuzZxW1UsnYFBV7A9PAIxlMzmmj8pDdyOL9AfdKOC0:1nNLbm:bXtVicsOrZtQ_p4Qr9bOTAmHWYJMHD8_GCUbncB6nzQ	2022-03-10 21:25:06.476016+00
+xblm24372p05jzd2y7r2a90t8bmu5yt0	.eJxVjMEOwiAQBf-FsyHAwgIevfsNBMoiVUOT0p6M_64kPej1zcx7sRD3rYa90xrmzM5MstPvluL0oDZAvsd2W_i0tG2dEx8KP2jn1yXT83K4fwc19jpqpXKWKAi0LpTAG0MGyVEELM6SSaScQAXSWCt8QYNWE3wNnTJ4YO8P2cs3MQ:1nSd5B:iomFwI9vXFK47JW2WNz7ScRFJVC5tZNRouIb1J9sqvk	2022-03-25 11:05:17.349187+00
+gj1nicgzqkp64oo2jn8d6ff6n3z8asnv	.eJxVjMEOwiAQBf-FsyHAwgIevfsNBMoiVUOT0p6M_64kPej1zcx7sRD3rYa90xrmzM5MstPvluL0oDZAvsd2W_i0tG2dEx8KP2jn1yXT83K4fwc19jpqpXKWKAi0LpTAG0MGyVEELM6SSaScQAXSWCt8QYNWE3wNnTJ4YO8P2cs3MQ:1nSd6u:nOqkuJ76JnlbYg11dLbQTg3LP5hk5kHXqnej8Io8XcI	2022-03-25 11:07:04.491318+00
+pj1l8oo5mrweox8avmbzmdv7kam6gdzp	.eJxVjMEOwiAQBf-FsyHAwgIevfsNBMoiVUOT0p6M_64kPej1zcx7sRD3rYa90xrmzM5MstPvluL0oDZAvsd2W_i0tG2dEx8KP2jn1yXT83K4fwc19jpqpXKWKAi0LpTAG0MGyVEELM6SSaScQAXSWCt8QYNWE3wNnTJ4YO8P2cs3MQ:1nSdIB:3RGvht_Mxap4ax-Njbawze8KDaixzUcSYQcnrHZOMwI	2022-03-25 11:18:43.949283+00
 \.
 
 
@@ -3829,6 +3832,7 @@ COPY public.engine_label (id, name, task_id, color, project_id) FROM stdin;
 10	car	6	#2080c0	\N
 11	cat	7	#6080c0	\N
 12	dog	7	#406040	\N
+13	Car	8	#2080c0	\N
 \.
 
 
@@ -4014,6 +4018,7 @@ COPY public.engine_task (id, name, mode, created_date, updated_date, status, bug
 7	task_2_org2	annotation	2022-02-21 10:31:52.429478+00	2022-02-21 10:41:38.540427+00	annotation		11	0	7	11	\N	7	2d		2
 3	task1_in_project1	annotation	2021-12-14 19:48:33.089778+00	2022-02-24 21:25:10.697341+00	annotation		10	0	19	50	1	3	2d	Train	\N
 4	task1_in_project2	annotation	2021-12-14 19:55:57.475273+00	2022-02-24 21:32:36.190676+00	annotation		10	0	19	58	2	4	2d	train	2
+8	task_without_data		2022-03-11 11:18:43.991247+00	2022-03-11 11:18:44.076719+00	annotation		1	\N	\N	0	\N	\N	2d		\N
 \.
 
 
@@ -4161,7 +4166,7 @@ SELECT pg_catalog.setval('public.auth_permission_id_seq', 88, true);
 -- Name: auth_user_groups_id_seq; Type: SEQUENCE SET; Schema: public; Owner: root
 --
 
-SELECT pg_catalog.setval('public.auth_user_groups_id_seq', 51, true);
+SELECT pg_catalog.setval('public.auth_user_groups_id_seq', 54, true);
 
 
 --
@@ -4273,7 +4278,7 @@ SELECT pg_catalog.setval('public.engine_jobcommit_id_seq', 27, true);
 -- Name: engine_label_id_seq; Type: SEQUENCE SET; Schema: public; Owner: root
 --
 
-SELECT pg_catalog.setval('public.engine_label_id_seq', 12, true);
+SELECT pg_catalog.setval('public.engine_label_id_seq', 13, true);
 
 
 --
@@ -4371,7 +4376,7 @@ SELECT pg_catalog.setval('public.engine_serverfile_id_seq', 1, false);
 -- Name: engine_task_id_seq; Type: SEQUENCE SET; Schema: public; Owner: root
 --
 
-SELECT pg_catalog.setval('public.engine_task_id_seq', 7, true);
+SELECT pg_catalog.setval('public.engine_task_id_seq', 8, true);
 
 
 --

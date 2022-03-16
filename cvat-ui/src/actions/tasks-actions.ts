@@ -4,7 +4,7 @@
 
 import { AnyAction, Dispatch, ActionCreator } from 'redux';
 import { ThunkAction } from 'redux-thunk';
-import { TasksQuery, CombinedState } from 'reducers/interfaces';
+import { TasksQuery, CombinedState, Indexable } from 'reducers/interfaces';
 import { getCVATStore } from 'cvat-store';
 import getCore from 'cvat-core-wrapper';
 import { getInferenceStatusAsync } from './models-actions';
@@ -41,10 +41,11 @@ export enum TasksActionTypes {
     SWITCH_MOVE_TASK_MODAL_VISIBLE = 'SWITCH_MOVE_TASK_MODAL_VISIBLE',
 }
 
-function getTasks(query: TasksQuery): AnyAction {
+function getTasks(query: TasksQuery, updateQuery: boolean): AnyAction {
     const action = {
         type: TasksActionTypes.GET_TASKS,
         payload: {
+            updateQuery,
             query,
         },
     };
@@ -74,33 +75,16 @@ function getTasksFailed(error: any): AnyAction {
     return action;
 }
 
-export function getTasksAsync(query: TasksQuery): ThunkAction<Promise<void>, {}, {}, AnyAction> {
+export function getTasksAsync(query: TasksQuery, updateQuery = true): ThunkAction<Promise<void>, {}, {}, AnyAction> {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
-        dispatch(getTasks(query));
+        dispatch(getTasks(query, updateQuery));
 
-        // We need remove all keys with null values from query
+        // We remove all keys with null values from the query
         const filteredQuery = { ...query };
-        for (const key in filteredQuery) {
-            if (filteredQuery[key] === null) {
-                delete filteredQuery[key];
+        for (const key of Object.keys(query)) {
+            if ((filteredQuery as Indexable)[key] === null) {
+                delete (filteredQuery as Indexable)[key];
             }
-        }
-
-        // Temporary hack to do not change UI currently for tasks
-        // Will be redesigned in a different PR
-        const filter = {
-            and: ['owner', 'assignee', 'name', 'status', 'mode', 'dimension'].reduce<object[]>((acc, filterField) => {
-                if (filterField in filteredQuery) {
-                    acc.push({ '==': [{ var: filterField }, filteredQuery[filterField]] });
-                    delete filteredQuery[filterField];
-                }
-
-                return acc;
-            }, []),
-        };
-
-        if (filter.and.length) {
-            filteredQuery.filter = JSON.stringify(filter);
         }
 
         let result = null;
@@ -115,7 +99,6 @@ export function getTasksAsync(query: TasksQuery): ThunkAction<Promise<void>, {},
         const promises = array.map((task): string => (task as any).frames.preview().catch(() => ''));
 
         dispatch(getInferenceStatusAsync());
-
         dispatch(getTasksSuccess(array, await Promise.all(promises), result.count));
     };
 }
