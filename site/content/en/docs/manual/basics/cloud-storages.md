@@ -20,7 +20,8 @@ Each button in the action menu is responsible for a specific function:
 This preview will appear when it is impossible to get a real preview (e.g. storage is empty or
 invalid credentials were used).
 
-In the upper left corner there is a search bar, using which you can find the cloud storage by designated display name, provider, etc.
+In the upper left corner there is a search bar,
+using which you can find the cloud storage by designated display name, provider, etc.
 In the upper right corner there are
 [sorting and filtering tools](/docs/manual/advanced/filter/#sort-and-filter-projects-tasks-and-jobs).
 

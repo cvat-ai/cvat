@@ -17,8 +17,8 @@ Each element contains:
 - preview
 - stage and state [see vocabulary section](/docs/manual/basics/vocabulary)
 - when hovering over an element, you can see:
-    - size
-    - assignee
+  - size
+  - assignee
 - menu to navigate to a task, project, or bug tracker.
 
 > To open the job in a new tab, click on the job by holding `Ctrl`.
