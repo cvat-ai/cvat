@@ -248,6 +248,9 @@ class Project(models.Model):
     def get_project_logs_dirname(self):
         return os.path.join(self.get_project_dirname(), 'logs')
 
+    def get_tmp_dirname(self):
+        return os.path.join(self.get_project_dirname(), "tmp")
+
     def get_client_log_path(self):
         return os.path.join(self.get_project_logs_dirname(), "client.log")
 
@@ -532,8 +535,6 @@ class FloatArrayField(models.TextField):
     def from_db_value(self, value, expression, connection):
         if not value:
             return value
-        if value.startswith('[') and value.endswith(']'):
-            value = value[1:-1]
         return [float(v) for v in value.split(self.separator)]
 
     def to_python(self, value):
