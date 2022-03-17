@@ -532,6 +532,8 @@ class FloatArrayField(models.TextField):
     def from_db_value(self, value, expression, connection):
         if not value:
             return value
+        if value.startswith('[') and value.endswith(']'):
+            value = value[1:-1]
         return [float(v) for v in value.split(self.separator)]
 
     def to_python(self, value):
