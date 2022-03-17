@@ -19,7 +19,7 @@ Thus, it is possible to mark corrupted frames that are not subject to annotation
    will be saved and the frame will be invisible in the annotation view (Until you make it visible in the settings).
    If there is some overlap in the task and the deleted frame falls within this interval,
    then this will cause this frame to become unavailable in another job as well.
-1. When you delete a frame in a job with tracks, you may need adjust some tracks. Common adjustments are:
+1. When you delete a frame in a job with tracks, you may need adjust some tracks manually. Common adjustments are:
    - Add keyframes at the edges of the deleted interval in order for the interpolation to look correct;
    - Move keyframe start or end keyframe to the correct side of the deleted interval.
 
