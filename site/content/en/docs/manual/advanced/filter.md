@@ -121,11 +121,14 @@ Once applied filter automatically appears in `Recent used` list. Maximum length 
 
 ---
 
-## Sort and filter projects, tasks, jobs and cloud storage
+## Sort and filter lists
 
-On the [projects](/docs/manual/advanced/projects/#projects-page), [tasks](/docs/manual/basics/tasks-page/),
-[jobs](/docs/manual/basics/jobs-page/), and [cloud storage](/docs/manual/basics/cloud-storages/) pages,
-you can use sorting and filters.
+On the [projects](/docs/manual/advanced/projects/#projects-page), task list on the project page,
+[tasks](/docs/manual/basics/tasks-page/), [jobs](/docs/manual/basics/jobs-page/),
+and [cloud storage](/docs/manual/basics/cloud-storages/) pages, you can use sorting and filters.
+
+> The applied filter and sorting will be displayed in the URL of your browser,
+> Thus, you can share the page with the filter applied.
 
 ### Sort by
 
@@ -179,9 +182,6 @@ you can create rules from [properties](#supported-properties-for-lists),
 [operators](#supported-operators-for-properties)
 and values and group rules into [groups](#groups).
 For more details, see the [filter section](#create-a-filter).
-
-> The applied filter will be displayed in the URL of your browser,
-> Thus, you can share the page with the filter applied.
 
 To clear all filters press `Clear filters`.
 
