@@ -4,6 +4,7 @@ services:
   minio:
     image: quay.io/minio/minio
     hostname: minio
+    restart: always
     command: server /data --console-address ":9001"
     expose:
       - "9000"
@@ -14,6 +15,11 @@ services:
     environment:
       MINIO_ROOT_USER: ${MINIO_ACCESS_KEY}
       MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
     networks:
       cvat:
         aliases:
