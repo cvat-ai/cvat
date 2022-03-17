@@ -15,15 +15,15 @@ Thus, it is possible to mark corrupted frames that are not subject to annotation
    ![](/images/image245.jpg)
 
 1. After that you will be asked to confirm frame deleting.
-   **Important note:**  all annotaiton from that frame will be deleted, unsaved annotations
-   will be saved and frame will be unvisable in the annotation view (Until you make it visible in the settings).
+   **Important note:**  all annotations from that frame will be deleted, unsaved annotations
+   will be saved and the frame will be invisible in the annotation view (Until you make it visible in the settings).
    If there is some overlap in the task and the deleted frame falls within this interval,
    then this will cause this frame to become unavailable in another job as well.
-1. If you annotate interpolation task, you may need to make some correction in the annotation. Common ones are:
+1. When you delete a frame in a job with tracks, you may need adjust some tracks. Common adjustments are:
    - Add keyframes at the edges of the deleted interval in order for the interpolation to look correct;
    - Move keyframe start or end keyframe to the correct side of the deleted interval.
 
-# Configurate deleted frames visability
+# Configurate deleted frames visability and navigation
 
 If you need to enable showing the deleted frames, you can enable it in the settings.
 
@@ -37,6 +37,12 @@ If you need to enable showing the deleted frames, you can enable it in the setti
 
 1. Then you will be able to navigate through deleted frames.
    But annotation tools will be unavailable. Deleted frames differ in the corresponding overlay.
+
+1. There are view ways to navigate through deleted frames without enabling this option:
+   - Go to the frame via direct navigation methods: navigation slider or frame input field,
+   - Go to the frame via direct link.
+
+1. Navigation with step will not count deleted frames.
 
 # Restore deleted frame
 

@@ -644,8 +644,8 @@ class TaskPermission(OpenPolicyAgentPermission):
             ('annotations', 'DELETE'): 'delete:annotations',
             ('annotations', 'PUT'): 'update:annotations',
             ('dataset_export', 'GET'): 'export:dataset',
-            ('data_info', 'GET'): 'view:data',
-            ('data_info', 'PATCH'): 'update:data',
+            ('metadata', 'GET'): 'view:metadata',
+            ('metadata', 'PATCH'): 'update:metadata',
             ('data', 'GET'): 'view:data',
             ('data', 'POST'): 'upload:data',
             ('append_tus_chunk', 'PATCH'): 'upload:data',
@@ -790,8 +790,8 @@ class JobPermission(OpenPolicyAgentPermission):
             ('annotations', 'DELETE'): 'delete:annotations',
             ('annotations', 'PUT'): 'update:annotations',
             ('data', 'GET'): 'view:data',
-            ('data_info','GET'): 'view:data',
-            ('data_info','PATCH'): 'update:data',
+            ('metadata','GET'): 'view:metadata',
+            ('metadata','PATCH'): 'update:metadata',
             ('issues', 'GET'): 'view',
             ('commits', 'GET'): 'view:commits'
         }.get((view.action, request.method))
