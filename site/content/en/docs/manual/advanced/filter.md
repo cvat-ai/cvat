@@ -44,7 +44,6 @@ The `Add rule` button adds a rule for objects display. A rule may use the follow
 | `ObjectID`   | number or field                                        | ID of the object in your client <br>(indicated on the objects sidebar) |
 | `Attributes` | some other fields including attributes with a <br>similar type or a specific attribute value | any fields specified by a label |
 
-
 - [Supported properties for projects list](/docs/manual/advanced/projects/#supported-properties-for-projects-list)
 
 - [Supported properties for tasks list](/docs/manual/basics/tasks-page/#supported-properties-for-tasks-list)
