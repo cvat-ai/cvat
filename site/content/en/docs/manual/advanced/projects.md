@@ -9,9 +9,30 @@ description: 'Creating and exporting projects in CVAT.'
 
 On this page you can create a new project, create a project from a backup, and also see the created projects.
 
-In the upper left corner there is a search bar, using which you can find the project by name, assignee etc.
-In the upper right corner there are
-[sorting and filtering tools](/docs/manual/advanced/filter/#sort-and-filter-projects-tasks-and-jobs).
+In the upper left corner there is a search bar, using which you can find the project by project name, assignee etc.
+In the upper right corner there are [sorting][sorting], [quick filters][quick-filters] and filter.
+
+## Filter
+
+> Applying filter disables the [quick filter][quick-filter].
+
+The filter works similarly to the filters for annotation,
+you can create rules from [properties](#supported-properties-for-projects-list),
+[operators][operators] and values and group rules into [groups][groups].
+For more details, see the [filter section][create-filter].
+Learn more about [date and time selection][data-and-time].
+
+For clear all filters press `Clear filters`.
+
+### Supported properties for projects list
+
+| Properties     | Supported values                             | Description                                 |
+| -------------- | -------------------------------------------- | ------------------------------------------- |
+| `Assignee`     | username                                     | Assignee is the user who is working on the project, task or job. <br>(is specified on task page) |
+| `Owner`        | username                                     | The user who owns the project, task, or job |
+| `Last updated` | last modified date and time (or value range) | The date can be entered in the `dd.MM.yyyy HH:mm` format <br>or by selecting the date in the window that appears <br>when you click on the input field |
+| `ID`           | number or range of job ID                    |                                             |
+| `Name`         | name                                         | On the tasks page - name of the task,<br> on the project page - name of the project |
 
 ## Create a project
 
@@ -58,3 +79,10 @@ Here you can do the following:
    [Read more about sorting and filter](/docs/manual/advanced/filter/#sort-and-filter-projects-tasks-and-jobs)
 It is possible to choose a subset for tasks in the project. You can use the available options
 (`Train`, `Test`, `Validation`) or set your own.
+
+[create-filter]: /docs/manual/advanced/filter/#create-a-filter
+[operators]: /docs/manual/advanced/filter/#supported-operators-for-properties
+[groups]: /docs/manual/advanced/filter/#groups
+[data-and-time]: /docs/manual/advanced/filter#date-and-time-selection
+[sorting]: /docs/manual/advanced/filter/#sort-by
+[quick-filters]: /docs/manual/advanced/filter/#quick-filters
