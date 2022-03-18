@@ -384,18 +384,18 @@ class ProjectViewSet(viewsets.ModelViewSet, UploadMixin):
             format_name = request.query_params.get("format", "")
             filename = request.query_params.get("filename", "")
             tmp_dir = self._object.get_tmp_dirname()
+            uploaded_file = None
             if os.path.isfile(os.path.join(tmp_dir, filename)):
-                annotation_file = os.path.join(tmp_dir, filename)
-                return _import_project_dataset(
-                    request=request,
-                    filename=annotation_file,
-                    rq_id=f"/api/project/{self._object.pk}/dataset_import",
-                    rq_func=dm.project.import_dataset_as_project,
-                    pk=self._object.pk,
-                    format_name=format_name,
-                )
-            else:
-                return Response(data='No such file were uploaded',
+                uploaded_file = os.path.join(tmp_dir, filename)
+            return _import_project_dataset(
+                request=request,
+                filename=uploaded_file,
+                rq_id=f"/api/project/{self._object.pk}/dataset_import",
+                rq_func=dm.project.import_dataset_as_project,
+                pk=self._object.pk,
+                format_name=format_name,
+            )
+        return Response(data='Unknown upload was finished',
                         status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=True, methods=['HEAD', 'PATCH'], url_path='dataset/'+UploadMixin.file_id_regex)
