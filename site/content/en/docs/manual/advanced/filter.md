@@ -112,7 +112,7 @@ On the [projects](/docs/manual/advanced/projects/#projects-page), task list on t
 and [cloud storage](/docs/manual/basics/cloud-storages/) pages, you can use sorting and filters.
 
 > The applied filter and sorting will be displayed in the URL of your browser,
-> Thus, you can share the page with the filter applied.
+> Thus, you can share the page with sorting and filter applied.
 
 ### Sort by
 
