@@ -45,13 +45,13 @@ The `Add rule` button adds a rule for objects display. A rule may use the follow
 | `Attributes` | some other fields including attributes with a <br>similar type or a specific attribute value | any fields specified by a label |
 
 
-- [Supported properties for projects list](/docs/manual/basics/projects/#supported-properties-for-projects-list)
+- [Supported properties for projects list](/docs/manual/advanced/projects/#supported-properties-for-projects-list)
 
 - [Supported properties for tasks list](/docs/manual/basics/tasks-page/#supported-properties-for-tasks-list)
 
 - [Supported properties for jobs list](/docs/manual/basics/jobs-page/#supported-properties-for-jobs-list)
 
-- [Supported properties for cloud storages list](/docs/manual/basics/jobs-page/#supported-properties-for-cloud-storages-list)
+- [Supported properties for cloud storages list](/docs/manual/basics/cloud-storages/#supported-properties-for-cloud-storages-list)
 
 ### Supported operators for properties
 
