@@ -101,11 +101,7 @@ jobs:
           done
           ./mc policy set public "${MINIO_ALIAS}/${PUBLIC_BUCKET}"
           pip3 install --user -r tests/rest_api/requirements.txt
-          docker ps
-          ./mc ls --recursive ${MINIO_ALIAS}
           pytest tests/rest_api/
-          docker ps
-          ./mc ls --recursive ${MINIO_ALIAS}
           docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f components/serverless/docker-compose.serverless.yml -f components/analytics/docker-compose.analytics.yml -f tests/rest_api/docker-compose.minio.yml down -v
       - name: Running unit tests
         env:
