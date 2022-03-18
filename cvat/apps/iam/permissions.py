@@ -644,8 +644,8 @@ class TaskPermission(OpenPolicyAgentPermission):
             ('annotations', 'DELETE'): 'delete:annotations',
             ('annotations', 'PUT'): 'update:annotations',
             ('dataset_export', 'GET'): 'export:dataset',
-            ('data_info', 'GET'): 'view:metadata',
-            ('data_info', 'PATCH'): 'update:metadata',
+            ('metadata', 'GET'): 'view:metadata',
+            ('metadata', 'PATCH'): 'update:metadata',
             ('data', 'GET'): 'view:data',
             ('data', 'POST'): 'upload:data',
             ('append_tus_chunk', 'PATCH'): 'upload:data',
@@ -790,8 +790,8 @@ class JobPermission(OpenPolicyAgentPermission):
             ('annotations', 'DELETE'): 'delete:annotations',
             ('annotations', 'PUT'): 'update:annotations',
             ('data', 'GET'): 'view:data',
-            ('data_info','GET'): 'view:metadata',
-            ('data_info','PATCH'): 'update:metadata',
+            ('metadata','GET'): 'view:metadata',
+            ('metadata','PATCH'): 'update:metadata',
             ('issues', 'GET'): 'view',
             ('commits', 'GET'): 'view:commits'
         }.get((view.action, request.method))
@@ -1042,7 +1042,7 @@ class PolicyEnforcer(BasePermission):
 
     @staticmethod
     def is_metadata_request(request, view):
-        return request.method == 'OPTIONS' or view.action == 'metadata'
+        return request.method == 'OPTIONS'
 
 class IsMemberInOrganization(BasePermission):
     message = 'You should be an active member in the organization.'
