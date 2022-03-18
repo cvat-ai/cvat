@@ -59,11 +59,10 @@ class TestPostIssues:
         ('supervisor', True, True), ('worker', True, True)
     ])
     def test_member_create_issue(self, org, role, job_staff, is_allow,
-            find_job_staff_user, find_users, jobs_by_org):
+            find_job_staff_user, find_users, jobs_by_org, jobs):
         users = find_users(role=role, org=org)
-        jobs = jobs_by_org[org]
-        username, jid = find_job_staff_user(jobs, users, job_staff)
-        job, = filter(lambda job: job['id'] == jid, jobs)
+        username, jid = find_job_staff_user(jobs_by_org[org], users, job_staff)
+        job = jobs[jid]
 
         data = {
             "assignee": None,
