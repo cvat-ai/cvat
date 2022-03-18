@@ -18,6 +18,7 @@
         CuboidTrack,
         Track,
         Shape,
+        Mask,
         Tag,
         objectStateFactory,
     } = require('./annotations-objects');
@@ -114,6 +115,7 @@
             this.history = data.history;
             this.shapes = {}; // key is a frame
             this.tags = {}; // key is a frame
+            this.masks = {}; // key is a frame
             this.tracks = [];
             this.objects = {}; // key is a client id
             this.count = 0;
@@ -135,6 +137,7 @@
                 tags: [],
                 shapes: [],
                 tracks: [],
+                masks: [],
             };
 
             for (const tag of data.tags) {
@@ -165,9 +168,20 @@
                 // In this case a corresponded message will be sent to the console
                 if (trackModel) {
                     this.tracks.push(trackModel);
-                    this.objects[clientID] = trackModel;
-
                     result.tracks.push(trackModel);
+                    this.objects[clientID] = trackModel;
+                }
+            }
+
+            for (const mask of data.masks) {
+                const clientID = ++this.count;
+                const color = colors[clientID % colors.length];
+                const maskModel = new Mask(mask, clientID, color, this.injection);
+                if (maskModel) {
+                    this.masks[maskModel.frame] = this.masks[maskModel.frame] || [];
+                    this.masks[maskModel.frame].push(maskModel);
+                    this.objects[clientID] = maskModel;
+                    result.masks.push(maskModel);
                 }
             }
 
@@ -178,19 +192,26 @@
             const data = {
                 tracks: this.tracks.filter((track) => !track.removed).map((track) => track.toJSON()),
                 shapes: Object.values(this.shapes)
-                    .reduce((accumulator, value) => {
-                        accumulator.push(...value);
+                    .reduce((accumulator, frameShapes) => {
+                        accumulator.push(...frameShapes);
                         return accumulator;
                     }, [])
                     .filter((shape) => !shape.removed)
                     .map((shape) => shape.toJSON()),
                 tags: Object.values(this.tags)
-                    .reduce((accumulator, value) => {
-                        accumulator.push(...value);
+                    .reduce((accumulator, frameTags) => {
+                        accumulator.push(...frameTags);
                         return accumulator;
                     }, [])
                     .filter((tag) => !tag.removed)
                     .map((tag) => tag.toJSON()),
+                masks: Object.values(this.masks)
+                    .reduce((accumulator, frameMasks) => {
+                        accumulator.push(...frameMasks);
+                        return accumulator;
+                    }, [])
+                    .filter((mask) => !mask.removed)
+                    .map((mask) => mask.toJSON()),
             };
 
             return data;
@@ -200,8 +221,9 @@
             const { tracks } = this;
             const shapes = this.shapes[frame] || [];
             const tags = this.tags[frame] || [];
+            const masks = this.masks[frame] || [];
 
-            const objects = [].concat(tracks, shapes, tags);
+            const objects = [].concat(tracks, shapes, tags, masks);
             const visible = {
                 models: [],
                 data: [],

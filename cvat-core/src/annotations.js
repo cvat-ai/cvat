@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2021 Intel Corporation
+// Copyright (C) 2019-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -28,24 +28,24 @@
         throw new ScriptingError(`Unknown session type was received ${sessionType}`);
     }
 
-    async function getAnnotationsFromServer(session) {
-        const sessionType = session instanceof Task ? 'task' : 'job';
-        const cache = getCache(sessionType);
+    async function getAnnotationsFromServer(annotatableInstance) {
+        const instanceType = annotatableInstance instanceof Task ? 'task' : 'job';
+        const cache = getCache(instanceType);
 
-        if (!cache.has(session)) {
-            const rawAnnotations = await serverProxy.annotations.getAnnotations(sessionType, session.id);
+        if (!cache.has(annotatableInstance)) {
+            const rawAnnotations = await serverProxy.annotations.getAnnotations(instanceType, annotatableInstance.id);
 
             // Get meta information about frames
-            const startFrame = sessionType === 'job' ? session.startFrame : 0;
-            const stopFrame = sessionType === 'job' ? session.stopFrame : session.size - 1;
+            const startFrame = instanceType === 'job' ? annotatableInstance.startFrame : 0;
+            const stopFrame = instanceType === 'job' ? annotatableInstance.stopFrame : annotatableInstance.size - 1;
             const frameMeta = {};
             for (let i = startFrame; i <= stopFrame; i++) {
-                frameMeta[i] = await session.frames.get(i);
+                frameMeta[i] = await annotatableInstance.frames.get(i);
             }
 
             const history = new AnnotationsHistory();
             const collection = new Collection({
-                labels: session.labels || session.task.labels,
+                labels: annotatableInstance.labels || annotatableInstance.task.labels,
                 history,
                 startFrame,
                 stopFrame,
@@ -54,9 +54,9 @@
             // eslint-disable-next-line no-unsanitized/method
             collection.import(rawAnnotations);
 
-            const saver = new AnnotationsSaver(rawAnnotations.version, collection, session);
+            const saver = new AnnotationsSaver(rawAnnotations.version, collection, annotatableInstance);
 
-            cache.set(session, {
+            cache.set(annotatableInstance, {
                 collection,
                 saver,
                 history,
@@ -64,44 +64,44 @@
         }
     }
 
-    async function closeSession(session) {
-        const sessionType = session instanceof Task ? 'task' : 'job';
-        const cache = getCache(sessionType);
+    async function clearCache(annotatableInstance) {
+        const instanceType = annotatableInstance instanceof Task ? 'task' : 'job';
+        const cache = getCache(instanceType);
 
-        if (cache.has(session)) {
-            cache.delete(session);
+        if (cache.has(annotatableInstance)) {
+            cache.delete(annotatableInstance);
         }
     }
 
-    async function getAnnotations(session, frame, allTracks, filters) {
-        const sessionType = session instanceof Task ? 'task' : 'job';
-        const cache = getCache(sessionType);
+    async function getAnnotations(annotatableInstance, frame, allTracks, filters) {
+        const instanceType = annotatableInstance instanceof Task ? 'task' : 'job';
+        const cache = getCache(instanceType);
 
-        if (cache.has(session)) {
-            return cache.get(session).collection.get(frame, allTracks, filters);
+        if (cache.has(annotatableInstance)) {
+            return cache.get(annotatableInstance).collection.get(frame, allTracks, filters);
         }
 
-        await getAnnotationsFromServer(session);
-        return cache.get(session).collection.get(frame, allTracks, filters);
+        await getAnnotationsFromServer(annotatableInstance);
+        return cache.get(annotatableInstance).collection.get(frame, allTracks, filters);
     }
 
-    async function saveAnnotations(session, onUpdate) {
-        const sessionType = session instanceof Task ? 'task' : 'job';
-        const cache = getCache(sessionType);
+    async function saveAnnotations(annotatableInstance, onUpdate) {
+        const instanceType = annotatableInstance instanceof Task ? 'task' : 'job';
+        const cache = getCache(instanceType);
 
-        if (cache.has(session)) {
-            await cache.get(session).saver.save(onUpdate);
+        if (cache.has(annotatableInstance)) {
+            await cache.get(annotatableInstance).saver.save(onUpdate);
         }
 
         // If a collection wasn't uploaded, than it wasn't changed, finally we shouldn't save it
     }
 
-    function searchAnnotations(session, filters, frameFrom, frameTo) {
-        const sessionType = session instanceof Task ? 'task' : 'job';
-        const cache = getCache(sessionType);
+    function searchAnnotations(annotatableInstance, filters, frameFrom, frameTo) {
+        const instanceType = annotatableInstance instanceof Task ? 'task' : 'job';
+        const cache = getCache(instanceType);
 
-        if (cache.has(session)) {
-            return cache.get(session).collection.search(filters, frameFrom, frameTo);
+        if (cache.has(annotatableInstance)) {
+            return cache.get(annotatableInstance).collection.search(filters, frameFrom, frameTo);
         }
 
         throw new DataError(
@@ -109,12 +109,12 @@
         );
     }
 
-    function searchEmptyFrame(session, frameFrom, frameTo) {
-        const sessionType = session instanceof Task ? 'task' : 'job';
-        const cache = getCache(sessionType);
+    function searchEmptyFrame(annotatableInstance, frameFrom, frameTo) {
+        const instanceType = annotatableInstance instanceof Task ? 'task' : 'job';
+        const cache = getCache(instanceType);
 
-        if (cache.has(session)) {
-            return cache.get(session).collection.searchEmpty(frameFrom, frameTo);
+        if (cache.has(annotatableInstance)) {
+            return cache.get(annotatableInstance).collection.searchEmpty(frameFrom, frameTo);
         }
 
         throw new DataError(
@@ -122,12 +122,12 @@
         );
     }
 
-    function mergeAnnotations(session, objectStates) {
-        const sessionType = session instanceof Task ? 'task' : 'job';
-        const cache = getCache(sessionType);
+    function mergeAnnotations(annotatableInstance, objectStates) {
+        const instanceType = annotatableInstance instanceof Task ? 'task' : 'job';
+        const cache = getCache(instanceType);
 
-        if (cache.has(session)) {
-            return cache.get(session).collection.merge(objectStates);
+        if (cache.has(annotatableInstance)) {
+            return cache.get(annotatableInstance).collection.merge(objectStates);
         }
 
         throw new DataError(
@@ -135,12 +135,12 @@
         );
     }
 
-    function splitAnnotations(session, objectState, frame) {
-        const sessionType = session instanceof Task ? 'task' : 'job';
-        const cache = getCache(sessionType);
+    function splitAnnotations(annotatableInstance, objectState, frame) {
+        const instanceType = annotatableInstance instanceof Task ? 'task' : 'job';
+        const cache = getCache(instanceType);
 
-        if (cache.has(session)) {
-            return cache.get(session).collection.split(objectState, frame);
+        if (cache.has(annotatableInstance)) {
+            return cache.get(annotatableInstance).collection.split(objectState, frame);
         }
 
         throw new DataError(
@@ -148,12 +148,12 @@
         );
     }
 
-    function groupAnnotations(session, objectStates, reset) {
-        const sessionType = session instanceof Task ? 'task' : 'job';
-        const cache = getCache(sessionType);
+    function groupAnnotations(annotatableInstance, objectStates, reset) {
+        const instanceType = annotatableInstance instanceof Task ? 'task' : 'job';
+        const cache = getCache(instanceType);
 
-        if (cache.has(session)) {
-            return cache.get(session).collection.group(objectStates, reset);
+        if (cache.has(annotatableInstance)) {
+            return cache.get(annotatableInstance).collection.group(objectStates, reset);
         }
 
         throw new DataError(
@@ -161,51 +161,38 @@
         );
     }
 
-    function hasUnsavedChanges(session) {
-        const sessionType = session instanceof Task ? 'task' : 'job';
-        const cache = getCache(sessionType);
+    function hasUnsavedChanges(annotatableInstance) {
+        const instanceType = annotatableInstance instanceof Task ? 'task' : 'job';
+        const cache = getCache(instanceType);
 
-        if (cache.has(session)) {
-            return cache.get(session).saver.hasUnsavedChanges();
+        if (cache.has(annotatableInstance)) {
+            return cache.get(annotatableInstance).saver.hasUnsavedChanges();
         }
 
         return false;
     }
 
-    async function clearAnnotations(session, reload, startframe, endframe, delTrackKeyframesOnly) {
+    async function clearAnnotations(annotatableInstance, reload, startframe, endframe, delTrackKeyframesOnly) {
         checkObjectType('reload', reload, 'boolean', null);
-        const sessionType = session instanceof Task ? 'task' : 'job';
-        const cache = getCache(sessionType);
+        const instanceType = annotatableInstance instanceof Task ? 'task' : 'job';
+        const cache = getCache(instanceType);
 
-        if (cache.has(session)) {
-            cache.get(session).collection.clear(startframe, endframe, delTrackKeyframesOnly);
+        if (cache.has(annotatableInstance)) {
+            cache.get(annotatableInstance).collection.clear(startframe, endframe, delTrackKeyframesOnly);
         }
 
         if (reload) {
-            cache.delete(session);
-            await getAnnotationsFromServer(session);
+            cache.delete(annotatableInstance);
+            await getAnnotationsFromServer(annotatableInstance);
         }
     }
 
-    function annotationsStatistics(session) {
-        const sessionType = session instanceof Task ? 'task' : 'job';
-        const cache = getCache(sessionType);
+    function annotationsStatistics(annotatableInstance) {
+        const instanceType = annotatableInstance instanceof Task ? 'task' : 'job';
+        const cache = getCache(instanceType);
 
-        if (cache.has(session)) {
-            return cache.get(session).collection.statistics();
-        }
-
-        throw new DataError(
-            'Collection has not been initialized yet. Call annotations.get() or annotations.clear(true) before',
-        );
-    }
-
-    function putAnnotations(session, objectStates) {
-        const sessionType = session instanceof Task ? 'task' : 'job';
-        const cache = getCache(sessionType);
-
-        if (cache.has(session)) {
-            return cache.get(session).collection.put(objectStates);
+        if (cache.has(annotatableInstance)) {
+            return cache.get(annotatableInstance).collection.statistics();
         }
 
         throw new DataError(
@@ -213,12 +200,12 @@
         );
     }
 
-    function selectObject(session, objectStates, x, y) {
-        const sessionType = session instanceof Task ? 'task' : 'job';
-        const cache = getCache(sessionType);
+    function putAnnotations(annotatableInstance, objectStates) {
+        const instanceType = annotatableInstance instanceof Task ? 'task' : 'job';
+        const cache = getCache(instanceType);
 
-        if (cache.has(session)) {
-            return cache.get(session).collection.select(objectStates, x, y);
+        if (cache.has(annotatableInstance)) {
+            return cache.get(annotatableInstance).collection.put(objectStates);
         }
 
         throw new DataError(
@@ -226,21 +213,34 @@
         );
     }
 
-    async function uploadAnnotations(session, file, loader) {
-        const sessionType = session instanceof Task ? 'task' : 'job';
+    function selectObject(annotatableInstance, objectStates, x, y) {
+        const instanceType = annotatableInstance instanceof Task ? 'task' : 'job';
+        const cache = getCache(instanceType);
+
+        if (cache.has(annotatableInstance)) {
+            return cache.get(annotatableInstance).collection.select(objectStates, x, y);
+        }
+
+        throw new DataError(
+            'Collection has not been initialized yet. Call annotations.get() or annotations.clear(true) before',
+        );
+    }
+
+    async function uploadAnnotations(annotatableInstance, file, loader) {
+        const instanceType = annotatableInstance instanceof Task ? 'task' : 'job';
         if (!(loader instanceof Loader)) {
             throw new ArgumentError('A loader must be instance of Loader class');
         }
-        await serverProxy.annotations.uploadAnnotations(sessionType, session.id, file, loader.name);
+        await serverProxy.annotations.uploadAnnotations(instanceType, annotatableInstance.id, file, loader.name);
     }
 
-    function importAnnotations(session, data) {
-        const sessionType = session instanceof Task ? 'task' : 'job';
-        const cache = getCache(sessionType);
+    function importAnnotations(annotatableInstance, data) {
+        const instanceType = annotatableInstance instanceof Task ? 'task' : 'job';
+        const cache = getCache(instanceType);
 
-        if (cache.has(session)) {
+        if (cache.has(annotatableInstance)) {
             // eslint-disable-next-line no-unsanitized/method
-            return cache.get(session).collection.import(data);
+            return cache.get(annotatableInstance).collection.import(data);
         }
 
         throw new DataError(
@@ -248,12 +248,12 @@
         );
     }
 
-    function exportAnnotations(session) {
-        const sessionType = session instanceof Task ? 'task' : 'job';
-        const cache = getCache(sessionType);
+    function exportAnnotations(annotatableInstance) {
+        const instanceType = annotatableInstance instanceof Task ? 'task' : 'job';
+        const cache = getCache(instanceType);
 
-        if (cache.has(session)) {
-            return cache.get(session).collection.export();
+        if (cache.has(annotatableInstance)) {
+            return cache.get(annotatableInstance).collection.export();
         }
 
         throw new DataError(
@@ -261,11 +261,14 @@
         );
     }
 
-    async function exportDataset(instance, format, name, saveImages = false) {
+    async function exportDataset(annotatableInstance, format, name, saveImages = false) {
         if (!(format instanceof String || typeof format === 'string')) {
             throw new ArgumentError('Format must be a string');
         }
-        if (!(instance instanceof Task || instance instanceof Project || instance instanceof Job)) {
+        if (!(annotatableInstance instanceof Task ||
+            annotatableInstance instanceof Project ||
+            annotatableInstance instanceof Job
+        )) {
             throw new ArgumentError('A dataset can only be created from a job, task or project');
         }
         if (typeof saveImages !== 'boolean') {
@@ -273,22 +276,22 @@
         }
 
         let result = null;
-        if (instance instanceof Task) {
-            result = await serverProxy.tasks.exportDataset(instance.id, format, name, saveImages);
-        } else if (instance instanceof Job) {
-            result = await serverProxy.tasks.exportDataset(instance.taskId, format, name, saveImages);
+        if (annotatableInstance instanceof Task) {
+            result = await serverProxy.tasks.exportDataset(annotatableInstance.id, format, name, saveImages);
+        } else if (annotatableInstance instanceof Job) {
+            result = await serverProxy.tasks.exportDataset(annotatableInstance.taskId, format, name, saveImages);
         } else {
-            result = await serverProxy.projects.exportDataset(instance.id, format, name, saveImages);
+            result = await serverProxy.projects.exportDataset(annotatableInstance.id, format, name, saveImages);
         }
 
         return result;
     }
 
-    function importDataset(instance, format, file, updateStatusCallback = () => {}) {
+    function importDataset(annotatableInstance, format, file, updateStatusCallback = () => {}) {
         if (!(typeof format === 'string')) {
             throw new ArgumentError('Format must be a string');
         }
-        if (!(instance instanceof Project)) {
+        if (!(annotatableInstance instanceof Project)) {
             throw new ArgumentError('Instance should be a Project instance');
         }
         if (!(typeof updateStatusCallback === 'function')) {
@@ -297,15 +300,15 @@
         if (!(['application/zip', 'application/x-zip-compressed'].includes(file.type))) {
             throw new ArgumentError('File should be file instance with ZIP extension');
         }
-        return serverProxy.projects.importDataset(instance.id, format, file, updateStatusCallback);
+        return serverProxy.projects.importDataset(annotatableInstance.id, format, file, updateStatusCallback);
     }
 
-    function undoActions(session, count) {
-        const sessionType = session instanceof Task ? 'task' : 'job';
-        const cache = getCache(sessionType);
+    function undoActions(annotatableInstance, count) {
+        const instanceType = annotatableInstance instanceof Task ? 'task' : 'job';
+        const cache = getCache(instanceType);
 
-        if (cache.has(session)) {
-            return cache.get(session).history.undo(count);
+        if (cache.has(annotatableInstance)) {
+            return cache.get(annotatableInstance).history.undo(count);
         }
 
         throw new DataError(
@@ -313,12 +316,12 @@
         );
     }
 
-    function redoActions(session, count) {
-        const sessionType = session instanceof Task ? 'task' : 'job';
-        const cache = getCache(sessionType);
+    function redoActions(annotatableInstance, count) {
+        const instanceType = annotatableInstance instanceof Task ? 'task' : 'job';
+        const cache = getCache(instanceType);
 
-        if (cache.has(session)) {
-            return cache.get(session).history.redo(count);
+        if (cache.has(annotatableInstance)) {
+            return cache.get(annotatableInstance).history.redo(count);
         }
 
         throw new DataError(
@@ -326,12 +329,12 @@
         );
     }
 
-    function freezeHistory(session, frozen) {
-        const sessionType = session instanceof Task ? 'task' : 'job';
-        const cache = getCache(sessionType);
+    function freezeHistory(annotatableInstance, frozen) {
+        const instanceType = annotatableInstance instanceof Task ? 'task' : 'job';
+        const cache = getCache(instanceType);
 
-        if (cache.has(session)) {
-            return cache.get(session).history.freeze(frozen);
+        if (cache.has(annotatableInstance)) {
+            return cache.get(annotatableInstance).history.freeze(frozen);
         }
 
         throw new DataError(
@@ -339,12 +342,12 @@
         );
     }
 
-    function clearActions(session) {
-        const sessionType = session instanceof Task ? 'task' : 'job';
-        const cache = getCache(sessionType);
+    function clearActions(annotatableInstance) {
+        const instanceType = annotatableInstance instanceof Task ? 'task' : 'job';
+        const cache = getCache(instanceType);
 
-        if (cache.has(session)) {
-            return cache.get(session).history.clear();
+        if (cache.has(annotatableInstance)) {
+            return cache.get(annotatableInstance).history.clear();
         }
 
         throw new DataError(
@@ -352,12 +355,12 @@
         );
     }
 
-    function getActions(session) {
-        const sessionType = session instanceof Task ? 'task' : 'job';
-        const cache = getCache(sessionType);
+    function getActions(annotatableInstance) {
+        const instanceType = annotatableInstance instanceof Task ? 'task' : 'job';
+        const cache = getCache(instanceType);
 
-        if (cache.has(session)) {
-            return cache.get(session).history.get();
+        if (cache.has(annotatableInstance)) {
+            return cache.get(annotatableInstance).history.get();
         }
 
         throw new DataError(
@@ -388,6 +391,6 @@
         freezeHistory,
         clearActions,
         getActions,
-        closeSession,
+        clearCache,
     };
 })();

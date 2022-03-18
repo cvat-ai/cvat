@@ -1820,7 +1820,7 @@
         freezeHistory,
         clearActions,
         getActions,
-        closeSession,
+        clearCache,
     } = require('./annotations');
 
     buildDuplicatedAPI(Job.prototype);
@@ -2088,17 +2088,17 @@
 
     Job.prototype.close.implementation = function closeTask() {
         clearFrames(this.taskId);
-        closeSession(this);
+        clearCache(this);
         return this;
     };
 
     Task.prototype.close.implementation = function closeTask() {
         clearFrames(this.id);
         for (const job of this.jobs) {
-            closeSession(job);
+            clearCache(job);
         }
 
-        closeSession(this);
+        clearCache(this);
         return this;
     };
 

@@ -141,12 +141,14 @@
      * @name ObjectType
      * @memberof module:API.cvat.enums
      * @property {string} TAG 'tag'
+     * @property {string} MASK 'mask'
      * @property {string} SHAPE 'shape'
      * @property {string} TRACK 'track'
      * @readonly
      */
     const ObjectType = Object.freeze({
         TAG: 'tag',
+        MASK: 'mask',
         SHAPE: 'shape',
         TRACK: 'track',
     });
@@ -161,6 +163,7 @@
      * @property {string} POLYLINE 'polyline'
      * @property {string} POINTS 'points'
      * @property {string} CUBOID 'cuboid'
+     * @property {string} MASK 'mask'
      * @readonly
      */
     const ObjectShape = Object.freeze({
@@ -170,6 +173,7 @@
         POINTS: 'points',
         ELLIPSE: 'ellipse',
         CUBOID: 'cuboid',
+        MASK: 'mask',
     });
 
     /**
