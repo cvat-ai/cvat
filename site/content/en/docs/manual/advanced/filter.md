@@ -119,9 +119,11 @@ and [cloud storage](/docs/manual/basics/cloud-storages/) pages, you can use sort
 You can sort by the following parameters:
 - Jobs list: ID, assignee, updated date, [stage][stage], [state][state], task ID, project ID,
 task name, project name.
-- Tasks list or tasks list on project page: ID, owner, status, assignee, updated date, [subset][subset], [mode][mode], [dimension][dimension], project ID, name, project name.
+- Tasks list or tasks list on project page: ID, owner, status, assignee, updated date, [subset][subset], [mode][mode],
+[dimension][dimension], project ID, name, project name.
 - Projects list: ID, assignee, owner, status, name, updated date.
-- Cloud storages list: ID, provider type, updated date, display name, [resource][resource], [credentials][credentials], owner, description.
+- Cloud storages list: ID, provider type, updated date, display name, [resource][resource], [credentials][credentials],
+owner, description.
 
 To apply sorting, drag the parameter to the top area above the horizontal bar.
 The parameters below the horizontal line will not be applied.
