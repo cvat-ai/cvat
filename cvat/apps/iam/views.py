@@ -79,6 +79,7 @@ class ContextMiddleware:
         return self.get_response(request)
 
 
+@extend_schema(tags=['auth'])
 @extend_schema_view(post=extend_schema(
     summary='This method signs URL for access to the server',
     description='Signed URL contains a token which authenticates a user on the server.'
@@ -89,7 +90,7 @@ class ContextMiddleware:
             'url': serializers.CharField(),
         }
     ),
-    responses={'200': OpenApiResponse(response=OpenApiTypes.STR, description='text URL')}, tags=['auth'], versions=['2.0']))
+    responses={'200': OpenApiResponse(response=OpenApiTypes.STR, description='text URL')}))
 class SigningView(views.APIView):
 
     def post(self, request):
