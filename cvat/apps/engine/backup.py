@@ -113,6 +113,7 @@ class _TaskBackupBase(_BackupBase):
             'storage_method',
             'storage',
             'sorting_method',
+            'use_zip_chunks',
         }
 
         self._prepare_meta(allowed_fields, data)
@@ -504,8 +505,9 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
         else:
             uploaded_files = _write_data(self._file)
 
-        data['use_zip_chunks'] = data.pop('chunk_type') == DataChoice.IMAGESET
+        use_zip_chunks = data.pop('use_zip_chunks', False) or data.pop('chunk_type') == DataChoice.IMAGESET
         data = data_serializer.data
+        data['use_zip_chunks'] = use_zip_chunks
         data['client_files'] = uploaded_files
         _create_thread(self._db_task.pk, data.copy(), True)
         db_data.start_frame = data['start_frame']
