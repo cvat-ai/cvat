@@ -1,4 +1,4 @@
-// Copyright (C) 2021 Intel Corporation
+// Copyright (C) 2021-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -18,7 +18,7 @@ context('Displaying attached files when creating a task.', () => {
     const archivePath = `cypress/fixtures/${archiveName}`;
     const imagesFolder = `cypress/fixtures/${imageFileName}`;
     const directoryToArchive = imagesFolder;
-    let imageListToAttach = [];
+    const imageListToAttach = [];
     for (let i = 1; i <= imagesCount; i++) {
         imageListToAttach.push(`${imageFileName}/${imageFileName}_${i}.png`);
     }
@@ -28,7 +28,8 @@ context('Displaying attached files when creating a task.', () => {
         cy.login();
         cy.imageGenerator(imagesFolder, imageFileName, width, height, color, posX, posY, labelName, imagesCount);
         cy.createZipArchive(directoryToArchive, archivePath);
-        cy.get('#cvat-create-task-button').click();
+        cy.get('.cvat-create-task-dropdown').click();
+        cy.get('.cvat-create-task-button').click();
     });
 
     describe(`Testing "${labelName}"`, () => {

@@ -487,6 +487,10 @@ TUS_DEFAULT_CHUNK_SIZE = 104857600  # 100 mb
 # How django uses X-Forwarded-Proto - https://docs.djangoproject.com/en/2.2/ref/settings/#secure-proxy-ssl-header
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
+# Forwarded host - https://docs.djangoproject.com/en/4.0/ref/settings/#std:setting-USE_X_FORWARDED_HOST
+# Is used in TUS uploads to provide correct upload endpoint
+USE_X_FORWARDED_HOST = True
+
 # Django-sendfile requires to set SENDFILE_ROOT
 # https://github.com/moggers87/django-sendfile2
 SENDFILE_ROOT = BASE_DIR
@@ -497,7 +501,7 @@ SPECTACULAR_SETTINGS = {
     # Statically set schema version. May also be an empty string. When used together with
     # view versioning, will become '0.0.0 (v2)' for 'v2' versioned requests.
     # Set VERSION to None if only the request version should be rendered.
-    'VERSION': None,
+    'VERSION': 'alpha',
     'CONTACT': {
         'name': 'Nikita Manovich',
         'url': 'https://github.com/nmanovic',
@@ -528,3 +532,4 @@ SPECTACULAR_SETTINGS = {
     # OTHER SETTINGS
     # https://drf-spectacular.readthedocs.io/en/latest/settings.html
 }
+

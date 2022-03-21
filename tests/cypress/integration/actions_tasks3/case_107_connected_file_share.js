@@ -1,4 +1,4 @@
-// Copyright (C) 2021 Intel Corporation
+// Copyright (C) 2021-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -12,7 +12,8 @@ context('Connected file share.', () => {
     const assetLocalPath = `cypress/integration/actions_tasks3/assets/case_${caseId}`;
 
     function createOpenTaskWithShare() {
-        cy.get('#cvat-create-task-button').should('be.visible').click();
+        cy.get('.cvat-create-task-dropdown').click();
+        cy.get('.cvat-create-task-button').should('be.visible').click();
         cy.get('#name').type(taskName);
         cy.addNewLabel(labelName);
         cy.contains('[role="tab"]', 'Connected file share').click();
@@ -76,7 +77,7 @@ context('Connected file share.', () => {
                     expect(fileRenameCommand.code).to.be.eq(0);
                 },
             );
-            cy.exec(`docker exec -i cvat /bin/bash -c "find ~/share -name "*.png" -type f"`).then(
+            cy.exec('docker exec -i cvat /bin/bash -c "find ~/share -name "*.png" -type f"').then(
                 (findFilesCommand) => {
                     // [image_case_107_2.png, image_case_107_3.png]
                     expect(findFilesCommand.stdout.split('\n').length).to.be.eq(2);
