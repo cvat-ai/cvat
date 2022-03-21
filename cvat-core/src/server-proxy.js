@@ -646,12 +646,12 @@
                     return new Promise((resolve, reject) => {
                         async function requestStatus() {
                             try {
-                                const response = await Axios.get(`${url}?action=import_status`, {
-                                    params,
+                                const response = await Axios.get(url, {
+                                    params: { ...params, action: 'import_status' },
                                     proxy: config.proxy,
                                 });
                                 if (response.status === 202) {
-                                    if (onUpdate && response.data.message !== '') {
+                                    if (onUpdate && response.data.message) {
                                         onUpdate(response.data.message, response.data.progress || 0);
                                     }
                                     setTimeout(requestStatus, 3000);
@@ -667,8 +667,7 @@
                         setTimeout(requestStatus, 2000);
                     });
                 } catch (errorData) {
-                    generateError(errorData);
-                    return null;
+                    throw generateError(errorData);
                 }
             }
 
@@ -1302,8 +1301,7 @@
                         setTimeout(requestStatus);
                     });
                 } catch (errorData) {
-                    generateError(errorData);
-                    return null;
+                    throw generateError(errorData);
                 }
             }
 
