@@ -80,17 +80,18 @@ jobs:
           MINIO_SECRET_KEY: "minio_secret_key"
           DATA_PATH: "tests/cypress/integration/actions_tasks/assets/case_65_manifest/"
           MINIO_ALIAS: "local_minio"
-          PRIVATE_BUCKET: "${MINIO_ALIAS}/private"
-          PUBLIC_BUCKET: "${MINIO_ALIAS}/public"
-          TEST_BUCKET: "${MINIO_ALIAS}/test"
+          PRIVATE_BUCKET: "private"
+          PUBLIC_BUCKET: "public"
+          TEST_BUCKET: "test"
         run: |
           docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f components/serverless/docker-compose.serverless.yml -f components/analytics/docker-compose.analytics.yml -f tests/rest_api/docker-compose.minio.yml up -d
           /bin/bash -c 'while [[ "$(curl -s -o /dev/null -w ''%{http_code}'' ${API_ABOUT_PAGE})" != "401" ]]; do sleep 5; done'
-          wget https://dl.min.io/client/mc/release/linux-amd64/mc
+          wget -q https://dl.min.io/client/mc/release/linux-amd64/mc && echo "The mc tool has been downloaded."
           chmod +x ./mc
+
           ./mc alias set ${MINIO_ALIAS} ${MINIO_HOST} ${MINIO_ACCESS_KEY} ${MINIO_SECRET_KEY}
-          ./mc mb ${PRIVATE_BUCKET} ${PUBLIC_BUCKET} ${TEST_BUCKET}
-          for BUCKET in ${PRIVATE_BUCKET} ${PUBLIC_BUCKET} ${TEST_BUCKET}
+          ./mc mb "${MINIO_ALIAS}/${PRIVATE_BUCKET}" "${MINIO_ALIAS}/${PUBLIC_BUCKET}" "${MINIO_ALIAS}/${TEST_BUCKET}"
+          for BUCKET in "${MINIO_ALIAS}/${PRIVATE_BUCKET}" "${MINIO_ALIAS}/${PUBLIC_BUCKET}" "${MINIO_ALIAS}/${TEST_BUCKET}"
           do
             ./mc cp --recursive ${DATA_PATH} ${BUCKET}
             for i in 1 2
@@ -98,7 +99,7 @@ jobs:
               ./mc cp "${DATA_PATH}manifest.jsonl" "${BUCKET}/manifest_${i}.jsonl"
             done
           done
-          ./mc policy set public ${PUBLIC_BUCKET}
+          ./mc policy set public "${MINIO_ALIAS}/${PUBLIC_BUCKET}"
           pip3 install --user -r tests/rest_api/requirements.txt
           pytest tests/rest_api/
           docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f components/serverless/docker-compose.serverless.yml -f components/analytics/docker-compose.analytics.yml -f tests/rest_api/docker-compose.minio.yml down -v
