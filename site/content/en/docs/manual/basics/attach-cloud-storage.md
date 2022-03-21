@@ -5,7 +5,8 @@ weight: 21
 description: 'Instructions on how to attach cloud storage using UI'
 ---
 
-In CVAT you can use AWS-S3 and Azure Blob Container cloud storages to store image datasets for your tasks.
+In CVAT you can use [AWS-S3](using-aws-s3), [Azure Blob Container](#using-azure-blob-container)
+and [Google cloud](#using-google-cloud-storage) storages to store image datasets for your tasks.
 
 ## Using AWS-S3
 
@@ -231,8 +232,8 @@ Now you can attach new cloud storage into CVAT.
 ## Attach new cloud storage
 
 After you upload the dataset and manifest file to AWS-S3, Azure Blob Container or Google Cloud Storage
-you will be able to attach a cloud storage. To do this, press the `Attach new cloud storage`
-button on the `Cloud storages` page and fill out the following form:
+you will be able to attach a cloud storage. To do this, press the `+` button on the `Cloud storages` page
+and fill out the following form:
 
 ![](/images/image228.jpg)
 

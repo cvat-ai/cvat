@@ -110,11 +110,11 @@
     },
     {
       "assignee": {
-        "first_name": "User",
-        "id": 20,
-        "last_name": "Sixth",
-        "url": "http://localhost:8080/api/users/20",
-        "username": "user6"
+        "first_name": "Admin",
+        "id": 1,
+        "last_name": "First",
+        "url": "http://localhost:8080/api/users/1",
+        "username": "admin1"
       },
       "bug_tracker": "",
       "created_date": "2022-03-05T09:33:10.420000Z",
@@ -169,7 +169,13 @@
         {
           "jobs": [
             {
-              "assignee": null,
+              "assignee": {
+                "first_name": "Worker",
+                "id": 9,
+                "last_name": "Fourth",
+                "url": "http://localhost:8080/api/users/9",
+                "username": "worker4"
+              },
               "id": 11,
               "stage": "annotation",
               "state": "in progress",
@@ -230,7 +236,13 @@
       "url": "http://localhost:8080/api/tasks/9"
     },
     {
-      "assignee": null,
+      "assignee": {
+        "first_name": "Worker",
+        "id": 9,
+        "last_name": "Fourth",
+        "url": "http://localhost:8080/api/users/9",
+        "username": "worker4"
+      },
       "bug_tracker": "",
       "created_date": "2022-03-05T08:30:48.612000Z",
       "data": 8,
@@ -416,7 +428,13 @@
       "url": "http://localhost:8080/api/tasks/6"
     },
     {
-      "assignee": null,
+      "assignee": {
+        "first_name": "Dummy",
+        "id": 15,
+        "last_name": "Second",
+        "url": "http://localhost:8080/api/users/15",
+        "username": "dummy2"
+      },
       "bug_tracker": "",
       "created_date": "2022-02-16T06:25:48.168000Z",
       "data": 5,
@@ -476,7 +494,13 @@
       "url": "http://localhost:8080/api/tasks/5"
     },
     {
-      "assignee": null,
+      "assignee": {
+        "first_name": "Worker",
+        "id": 7,
+        "last_name": "Second",
+        "url": "http://localhost:8080/api/users/7",
+        "username": "worker2"
+      },
       "bug_tracker": "",
       "created_date": "2021-12-14T18:50:29.458000Z",
       "data": 2,
