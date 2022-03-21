@@ -1042,7 +1042,8 @@ class PolicyEnforcer(BasePermission):
 
     @staticmethod
     def is_metadata_request(request, view):
-        return request.method == 'OPTIONS'
+        return request.method == 'OPTIONS' \
+            or (request.method == 'POST' and view.action == 'metadata' and len(request.data) == 0)
 
 class IsMemberInOrganization(BasePermission):
     message = 'You should be an active member in the organization.'
