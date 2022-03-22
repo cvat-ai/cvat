@@ -7,7 +7,7 @@
 Below some basic steps to install and run the agent without docker:
 
 1. Run all steps from the [Quick Start from OpenVINO™ Training Extensions][ote-quick-start]
-   for `mmdetection` task and `gen3_mobilenetV2_ATSS` template.
+   for `detection` task and `gen3_mobilenetV2_ATSS` template.
 1.
 
 

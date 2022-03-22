@@ -16,6 +16,7 @@ import importlib
 import os
 import shutil
 import json
+import cvat_sdk
 from ote_sdk.configuration.helper import create
 from ote_sdk.entities.inference_parameters import InferenceParameters
 from ote_sdk.entities.model import ModelEntity
@@ -31,10 +32,8 @@ from ote_sdk.entities.label_schema import LabelSchemaEntity
 from ote_sdk.serialization.label_mapper import LabelSchemaMapper
 from ote_sdk.entities.image import Image
 from ote_sdk.entities.annotation import AnnotationSceneEntity, AnnotationSceneKind
-import cvat_sdk
 
-
-TASK_ALGO_DIR = os.environ.get('TASK_ALGO_DIR')
+OTE_SDK_PATH = os.environ.get('OTE_SDK_PATH')
 
 def get_impl_class(impl_path):
     """Returns a class by its path in package."""
@@ -44,7 +43,6 @@ def get_impl_class(impl_path):
     task_impl_class = getattr(task_impl_module, task_impl_class_name)
 
     return task_impl_class
-
 
 class ObjectDetectionDataset(DatasetEntity):
     """Class for working with file-system based Object Detection dataset."""
@@ -94,15 +92,16 @@ class ObjectDetectionDataset(DatasetEntity):
 class ObjectDetectionService(cvat_sdk.service.ObjectDetectionService):
     def __init__(self):
         super().__init__()
-        if TASK_ALGO_DIR is None:
-            raise EnvironmentError('TASK_ALGO_DIR environment variable is not available, '
+        if OTE_SDK_PATH is None:
+            raise EnvironmentError('OTE_SDK_PATH environment variable is not available, '
                 'please read OTE manual')
-        if not os.path.isdir(TASK_ALGO_DIR):
-            raise FileNotFoundError(f'TASK_ALGO_DIR={TASK_ALGO_DIR} is not a directory')
+        if not os.path.isdir(OTE_SDK_PATH):
+            raise FileNotFoundError(f'OTE_SDK_PATH={OTE_SDK_PATH} is not a directory')
+        TASK_ALGO_DIR=os.path.join(OTE_SDK_PATH, '..', 'external', 'mmdetection')
         self.template = parse_model_template(os.path.join(TASK_ALGO_DIR,
             'configs/ote/custom-object-detection/gen3_mobilenetV2_ATSS/template.yaml'))
-        self.cvat_api = cvat_sdk.api.create('http://localhost:8080', auth={
-            'username': 'admin', 'pass': 'nimda760'})
+        self.cvat_api = cvat_sdk.api.login_with_basic_auth('http://localhost:8080',
+            auth={'username': 'admin', 'pass': 'nimda760'})
 
     @property
     def name(self):

@@ -1,11 +1,11 @@
 # Copyright 2022 nmanovic
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #     http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -24,5 +24,5 @@ class ServerProxy:
     def get_path(self, project: int) -> str:
         return '/mnt/data.ssd1tb/datasets/cat_dog_in_coco_format'
 
-def create(server_addr, auth):
+def login_with_basic_auth(server_addr, auth):
     return ServerProxy(server_addr, auth)
