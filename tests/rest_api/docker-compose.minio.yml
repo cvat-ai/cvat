@@ -24,3 +24,35 @@ services:
       cvat:
         aliases:
           - minio
+  mc:
+    image: minio/mc
+    depends_on:
+      - minio
+    environment:
+      MC_PATH: "/usr/bin/mc"
+      MINIO_HOST: "http://minio:9000"
+      MINIO_ACCESS_KEY:
+      MINIO_SECRET_KEY:
+      MINIO_ALIAS: "local_minio"
+      PRIVATE_BUCKET: "private"
+      PUBLIC_BUCKET: "public"
+      TEST_BUCKET: "test"
+    volumes:
+      - ./tests/cypress/integration/actions_tasks/assets/case_65_manifest/:/storage
+    networks:
+      - cvat
+    entrypoint: >
+      /bin/sh -c "
+      $${MC_PATH} config host add --quiet --api s3v4 $${MINIO_ALIAS} $${MINIO_HOST} $${MINIO_ACCESS_KEY} $${MINIO_SECRET_KEY};
+      $${MC_PATH} mb $${MINIO_ALIAS}/$${PRIVATE_BUCKET} $${MINIO_ALIAS}/$${PUBLIC_BUCKET} $${MINIO_ALIAS}/$${TEST_BUCKET};
+      for BUCKET in $${MINIO_ALIAS}/$${PRIVATE_BUCKET} $${MINIO_ALIAS}/$${PUBLIC_BUCKET} $${MINIO_ALIAS}/$${TEST_BUCKET};
+      do
+          $${MC_PATH} cp --recursive /storage/ $${BUCKET};
+          for i in 1 2;
+          do
+              $${MC_PATH} cp /storage/manifest.jsonl $${BUCKET}/manifest_$${i}.jsonl;
+          done;
+      done;
+      $${MC_PATH} policy set public $${MINIO_ALIAS}/$${PUBLIC_BUCKET};
+      exit 0;
+      "

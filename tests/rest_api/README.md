@@ -19,10 +19,11 @@ the server calling REST API directly (as it done by users).
 
 ## How to run?
 
-1. Execute commands below for necessary preprocessing:
+1. Execute commands below for run docker containers:
    ```console
-   chmod +x tests/rest_api/setup
-   ./tests/rest_api/setup
+   export MINIO_ACCESS_KEY="minio_access_key"
+   export MINIO_SECRET_KEY="minio_secret_key"
+   docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f components/analytics/docker-compose.analytics.yml -f tests/rest_api/docker-compose.minio.yml up -d --build
    ```
 1. After that please look at documentation for [pytest](https://docs.pytest.org/en/6.2.x/).
    Generally, you have to install requirements and run the following command from
