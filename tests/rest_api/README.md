@@ -19,7 +19,7 @@ the server calling REST API directly (as it done by users).
 
 ## How to run?
 
-1. Execute commands below for run docker containers:
+1. Execute commands below to run docker containers:
    ```console
    export MINIO_ACCESS_KEY="minio_access_key"
    export MINIO_SECRET_KEY="minio_secret_key"
