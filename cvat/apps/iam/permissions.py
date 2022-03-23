@@ -492,6 +492,8 @@ class ProjectPermission(OpenPolicyAgentPermission):
             ('retrieve', 'GET'): 'view',
             ('tasks', 'GET'): 'view',
             ('dataset', 'POST'): 'import:dataset',
+            ('append_dataset_chunk', 'HEAD'): 'import:dataset',
+            ('append_dataset_chunk', 'PATCH'): 'import:dataset',
             ('annotations', 'GET'): 'export:annotations',
             ('dataset', 'GET'): 'export:dataset',
             ('export_backup', 'GET'): 'export:backup',
