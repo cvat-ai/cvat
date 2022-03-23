@@ -96,7 +96,7 @@ class TestPostCloudStorage:
 
 
     @pytest.mark.parametrize('group, is_allow', [
-        ('user', True),
+        ('user', True), ('worker', False)
     ])
     def test_sandbox_user_create_cloud_storage(self, group, is_allow, users):
         org = ''
@@ -109,8 +109,8 @@ class TestPostCloudStorage:
 
     @pytest.mark.parametrize('org_id', [2])
     @pytest.mark.parametrize('role, is_allow', [
-        ('maintainer', True),
-        ('supervisor', False),
+        ('owner', True), ('maintainer', True),
+        ('worker', False), ('supervisor', False),
     ])
     def test_org_user_create_coud_storage(self, org_id, role, is_allow, find_users):
         username = find_users(role=role, org=org_id)[0]['username']
