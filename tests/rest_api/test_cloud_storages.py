@@ -96,7 +96,7 @@ class TestPostCloudStorage:
 
 
     @pytest.mark.parametrize('group, is_allow', [
-        ('user', True),
+        ('user', True), ('worker', False)
     ])
     def test_sandbox_user_create_cloud_storage(self, group, is_allow, users):
         org = ''
