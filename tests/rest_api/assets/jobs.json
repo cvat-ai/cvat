@@ -173,7 +173,13 @@
       "url": "http://localhost:8080/api/jobs/12"
     },
     {
-      "assignee": null,
+      "assignee": {
+        "first_name": "Worker",
+        "id": 9,
+        "last_name": "Fourth",
+        "url": "http://localhost:8080/api/users/9",
+        "username": "worker4"
+      },
       "bug_tracker": "",
       "data_chunk_size": 72,
       "data_compressed_chunk_type": "imageset",

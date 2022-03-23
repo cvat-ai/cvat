@@ -3600,7 +3600,7 @@
     "name": "task2",
     "mode": "annotation",
     "owner": 2,
-    "assignee": null,
+    "assignee": 7,
     "bug_tracker": "",
     "created_date": "2021-12-14T18:50:29.458Z",
     "updated_date": "2021-12-22T07:14:15.234Z",
@@ -3621,7 +3621,7 @@
     "name": "task2",
     "mode": "interpolation",
     "owner": 2,
-    "assignee": null,
+    "assignee": 15,
     "bug_tracker": "",
     "created_date": "2022-02-16T06:25:48.168Z",
     "updated_date": "2022-02-21T10:40:21.257Z",
@@ -3684,7 +3684,7 @@
     "name": "task1",
     "mode": "annotation",
     "owner": 2,
-    "assignee": null,
+    "assignee": 9,
     "bug_tracker": "",
     "created_date": "2022-03-05T08:30:48.612Z",
     "updated_date": "2022-03-05T08:52:34.908Z",
@@ -3705,7 +3705,7 @@
     "name": "task1_in_project1",
     "mode": "annotation",
     "owner": 10,
-    "assignee": 20,
+    "assignee": 1,
     "bug_tracker": "",
     "created_date": "2022-03-05T09:33:10.420Z",
     "updated_date": "2022-03-05T09:47:49.667Z",
@@ -4567,7 +4567,7 @@
   "pk": 11,
   "fields": {
     "segment": 11,
-    "assignee": null,
+    "assignee": 9,
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress"
@@ -5627,6 +5627,142 @@
   "fields": {
     "user": 20,
     "rating": 0.0
+  }
+},
+{
+  "model": "engine.issue",
+  "pk": 1,
+  "fields": {
+    "frame": 0,
+    "position": "[244.58581235698148, 319.63386727689067, 326.9656750572103, 192.76887871853796, 543.6247139588122, 175.4691075514893, 835.2494279176244, 360.0000000000018, 609.5286041189956, 586.544622425632, 364.0361328125, 528.87890625, 244.58581235698148, 319.63386727689067]",
+    "job": 7,
+    "owner": 2,
+    "assignee": null,
+    "created_date": "2022-03-16T11:04:39.444Z",
+    "updated_date": null,
+    "resolved": false
+  }
+},
+{
+  "model": "engine.issue",
+  "pk": 2,
+  "fields": {
+    "frame": 0,
+    "position": "[98.48046875, 696.72265625, 326.1220703125, 841.5859375]",
+    "job": 9,
+    "owner": 11,
+    "assignee": null,
+    "created_date": "2022-03-16T11:07:22.170Z",
+    "updated_date": null,
+    "resolved": false
+  }
+},
+{
+  "model": "engine.issue",
+  "pk": 3,
+  "fields": {
+    "frame": 5,
+    "position": "[108.1845703125, 235.0, 720.0087890625, 703.3505859375]",
+    "job": 16,
+    "owner": 11,
+    "assignee": null,
+    "created_date": "2022-03-16T11:08:18.367Z",
+    "updated_date": null,
+    "resolved": false
+  }
+},
+{
+  "model": "engine.issue",
+  "pk": 4,
+  "fields": {
+    "frame": 5,
+    "position": "[295.36328125, 243.6044921875, 932.23046875, 561.4921875]",
+    "job": 10,
+    "owner": 2,
+    "assignee": null,
+    "created_date": "2022-03-16T12:40:00.764Z",
+    "updated_date": null,
+    "resolved": false
+  }
+},
+{
+  "model": "engine.issue",
+  "pk": 5,
+  "fields": {
+    "frame": 0,
+    "position": "[65.6189987163034, 100.96585365853753, 142.12734274711147, 362.6243902439037]",
+    "job": 11,
+    "owner": 20,
+    "assignee": null,
+    "created_date": "2022-03-16T12:49:29.369Z",
+    "updated_date": null,
+    "resolved": false
+  }
+},
+{
+  "model": "engine.comment",
+  "pk": 1,
+  "fields": {
+    "issue": 1,
+    "owner": 2,
+    "message": "Why are we still here?",
+    "created_date": "2022-03-16T11:04:39.447Z",
+    "updated_date": "2022-03-16T11:04:39.447Z"
+  }
+},
+{
+  "model": "engine.comment",
+  "pk": 2,
+  "fields": {
+    "issue": 1,
+    "owner": 2,
+    "message": "Just to suffer?",
+    "created_date": "2022-03-16T11:04:49.821Z",
+    "updated_date": "2022-03-16T11:04:49.821Z"
+  }
+},
+{
+  "model": "engine.comment",
+  "pk": 3,
+  "fields": {
+    "issue": 2,
+    "owner": 11,
+    "message": "Something should be here",
+    "created_date": "2022-03-16T11:07:22.173Z",
+    "updated_date": "2022-03-16T11:07:22.173Z"
+  }
+},
+{
+  "model": "engine.comment",
+  "pk": 4,
+  "fields": {
+    "issue": 3,
+    "owner": 11,
+    "message": "Another one issue",
+    "created_date": "2022-03-16T11:08:18.370Z",
+    "updated_date": "2022-03-16T11:08:18.370Z"
+  }
+},
+{
+  "model": "engine.comment",
+  "pk": 5,
+  "fields": {
+    "issue": 4,
+    "owner": 2,
+    "message": "Issue with empty frame",
+    "created_date": "2022-03-16T12:40:00.767Z",
+    "updated_date": "2022-03-16T12:40:00.767Z"
+  }
+},
+{
+  "model": "engine.comment",
+  "pk": 6,
+  "fields": {
+    "issue": 5,
+    "owner": 20,
+    "message": "Wrong position",
+    "created_date": "2022-03-16T12:49:29.372Z",
+    "updated_date": "2022-03-16T12:49:29.372Z"
   }
 }
 ]

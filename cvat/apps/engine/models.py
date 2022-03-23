@@ -248,6 +248,9 @@ class Project(models.Model):
     def get_project_logs_dirname(self):
         return os.path.join(self.get_project_dirname(), 'logs')
 
+    def get_tmp_dirname(self):
+        return os.path.join(self.get_project_dirname(), "tmp")
+
     def get_client_log_path(self):
         return os.path.join(self.get_project_logs_dirname(), "client.log")
 

@@ -6,7 +6,7 @@ from http import HTTPStatus
 from deepdiff import DeepDiff
 import pytest
 
-from .utils.config import get_method, post_method
+from .utils.config import get_method, post_method, patch_method
 
 class TestGetTasks:
     def _test_task_list_200(self, user, project_id, data, exclude_paths = '', **kwargs):
@@ -155,3 +155,61 @@ class TestGetData:
         response = get_method(self._USERNAME, f'tasks/{task_id}/data', type='frame', quality='original', number=0)
         assert response.status_code == HTTPStatus.OK
         assert response.headers['Content-Type'] == content_type
+
+
+class TestPatchTaskAnnotations:
+    def _test_check_respone(self, is_allow, response, data=None):
+        if is_allow:
+            assert response.status_code == HTTPStatus.OK
+            assert DeepDiff(data, response.json(),
+                exclude_paths="root['version']") == {}
+        else:
+            assert response.status_code == HTTPStatus.FORBIDDEN
+
+    @pytest.fixture(scope='class')
+    def request_data(self, annotations):
+        def get_data(tid):
+            data = annotations['task'][str(tid)].copy()
+            data['shapes'][0].update({'points': [2.0, 3.0, 4.0, 5.0, 6.0, 7.0]})
+            data['version'] += 1
+            return data
+        return get_data
+
+    @pytest.mark.parametrize('org', [''])
+    @pytest.mark.parametrize('privilege, task_staff, is_allow', [
+        ('admin',    True, True), ('admin',    False, True),
+        ('business', True, True), ('business', False, False),
+        ('worker',   True, True), ('worker',   False, False),
+        ('user',     True, True), ('user',     False, False)
+    ])
+    def test_user_update_task_annotations(self, org, privilege, task_staff, is_allow,
+            find_task_staff_user, find_users, request_data, tasks_by_org, filter_tasks_with_shapes):
+        users = find_users(privilege=privilege)
+        tasks = tasks_by_org[org]
+        filtered_tasks = filter_tasks_with_shapes(tasks)
+        username, tid = find_task_staff_user(filtered_tasks, users, task_staff)
+
+        data = request_data(tid)
+        response = patch_method(username, f'tasks/{tid}/annotations', data,
+            org_id=org, action='update')
+
+        self._test_check_respone(is_allow, response, data)
+
+    @pytest.mark.parametrize('org', [2])
+    @pytest.mark.parametrize('role, task_staff, is_allow', [
+        ('maintainer', False, True),  ('owner',  False, True),
+        ('supervisor', False, False), ('worker', False, False),
+        ('maintainer', True, True),   ('owner',  True, True),
+        ('supervisor', True, True),   ('worker', True, True)
+    ])
+    def test_member_update_task_annotation(self, org, role, task_staff, is_allow,
+            find_task_staff_user, find_users, tasks_by_org, request_data):
+        users = find_users(role=role, org=org)
+        tasks = tasks_by_org[org]
+        username, tid = find_task_staff_user(tasks, users, task_staff)
+
+        data = request_data(tid)
+        response = patch_method(username, f'tasks/{tid}/annotations', data,
+            org_id=org, action='update')
+
+        self._test_check_respone(is_allow, response, data)
