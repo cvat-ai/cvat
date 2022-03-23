@@ -2,7 +2,6 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
-
 imagePullSecrets: []
 nameOverride: ""
 fullnameOverride: ""
@@ -31,8 +30,8 @@ cvat:
     #         - e2e-az1
     #         - e2e-az2
     envs:
-        ALLOWED_HOSTS: "*"
-        DJANGO_MODWSGI_EXTRA_ARGS: ""
+      ALLOWED_HOSTS: "*"
+      DJANGO_MODWSGI_EXTRA_ARGS: ""
     additionalEnv: []
     # Example:
     #  - name: volume-from-secret
@@ -56,8 +55,8 @@ cvat:
           protocol: TCP
           name: http
     defaultStorage:
-        enabled: true
-        size: 20Gi
+      enabled: true
+      size: 20Gi
   frontend:
     replicas: 1
     image: openvino/cvat_ui
@@ -110,7 +109,7 @@ postgresql:
     user: postgres
     password: postgres
     dbname: cvat
- # If not external following config will be applied by default
+  # If not external following config will be applied by default
   global:
     postgresql:
       existingSecret: cvat-postgres-secret
@@ -129,7 +128,7 @@ redis:
   #See https://github.com/bitnami/charts/blob/master/bitnami/redis/ for more info
   enabled: true
   external:
-      host: 127.0.0.1
+    host: 127.0.0.1
   usePassword: false
   cluster:
     enabled: false
@@ -146,21 +145,21 @@ ingress:
 #        nginx.ingress.kubernetes.io/proxy-body-size: "0"
 #        nginx.ingress.kubernetes.io/proxy-send-timeout: "120"
 #        nginx.ingress.kubernetes.io/proxy-read-timeout: "120"
-#        cert-manager.io/cluster-issuer: example.issuer.name
+#        cert-manager.io/cluster-issuer: <issuer_name>
 #    hosts:
-#        - host: cvat.example.com
+#        - host: <your domain>
 #          paths:
 #              - path: "/api/.*|git/.*|tensorflow/.*|auto_annotation/.*|analytics/.*|static/.*|admin|admin/.*|documentation/.*|dextr/.*|reid/.*"
 #                service:
-#                    name: cvt-test-backend-service
+#                    name: <release_name>-backend-service
 #                    port: 8080
 #              - path : "/"
 #                pathType: "Prefix"
 #                service:
-#                    name: cvt-test-frontend-service
+#                    name: <release_name>-frontend-service
 #                    port: 80
 #
 #    tls:
 #        - hosts:
-#              - cvat.example.com
+#              - <your domain>
 #          secretName: ingress-tls-cvat

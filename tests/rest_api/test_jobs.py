@@ -114,8 +114,11 @@ class TestGetAnnotations:
     def _test_get_job_annotations_200(self, user, jid, data, **kwargs):
         response = get_method(user, f'jobs/{jid}/annotations', **kwargs)
 
+        response_data = response.json()
+        response_data['shapes'] = sorted(response_data['shapes'], key=lambda a: a['id'])
+
         assert response.status_code == HTTPStatus.OK
-        assert DeepDiff(data, response.json(),
+        assert DeepDiff(data, response_data,
             exclude_paths="root['version']") == {}
 
     def _test_get_job_annotations_403(self, user, jid, **kwargs):
@@ -155,8 +158,9 @@ class TestGetAnnotations:
         username, jid = find_job_staff_user(jobs, users, job_staff)
 
         if is_allow:
-            self._test_get_job_annotations_200(username,
-                jid, annotations['job'][str(jid)], **kwargs)
+            data = annotations['job'][str(jid)]
+            data['shapes']  = sorted(data['shapes'], key=lambda a: a['id'])
+            self._test_get_job_annotations_200(username, jid, data, **kwargs)
         else:
             self._test_get_job_annotations_403(username, jid, **kwargs)
 
