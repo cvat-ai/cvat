@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Task annotations importing via chunk uploads (<https://github.com/openvinotoolkit/cvat/pull/4327>)
 - Advanced filtration and sorting for a list of tasks/projects/cloudstorages (<https://github.com/openvinotoolkit/cvat/pull/4403>)
 - Project dataset importing via chunk uploads (<https://github.com/openvinotoolkit/cvat/pull/4485>)
+- Support paginated list for job commits (<https://github.com/openvinotoolkit/cvat/pull/4482>)
 
 ### Changed
 - Added missing geos dependency into Dockerfile (<https://github.com/openvinotoolkit/cvat/pull/4451>)
