@@ -1814,7 +1814,6 @@ export function deleteFrameAsync(): ThunkAction {
                     frameData.number, frameData.stopFrame, frameData.startFrame,
                 ));
             }
-            dispatch(saveAnnotationsAsync(jobInstance));
         } catch (error) {
             dispatch({
                 type: AnnotationActionTypes.DELETE_FRAME_FAILED,
