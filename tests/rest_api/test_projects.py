@@ -32,7 +32,7 @@ class TestGetProjects:
         response = get_method(username, f'projects/{project_id}')
         assert response.status_code == HTTPStatus.FORBIDDEN
 
-    # [sandbox] Admin can see any project even he has no ownerships for this project (GET /projects/{id}).
+    # Admin can see any project even he has no ownerships for this project (GET /projects/{id}).
     # Admin is a owner of the project, or a membership of the project organization. Or not
     @pytest.mark.parametrize('is_owner, has_membership', [
         (True, False), (False, True), (False, False)
@@ -61,8 +61,46 @@ class TestGetProjects:
 
     # [sandbox] Non-admin user cannot see project if this user is not project owner or project assignee
     # [sandbox] (GET /projects/{id}).
-    def test_user_cannot_see_project(self, users, projects, find_users, is_project_staff, is_org_member):
-        users = find_users(exclude_privilege='admin')
+    def _test_user_cannot_see_project(self, users, projects, find_users, is_project_staff, is_org_member):
+        non_admins = find_users(exclude_privilege='admin')
 
-        user_not_in_project = self._find_by_owner(projects, users, is_project_staff, is_org_member, False, False)
+        user_not_in_project = self._find_by_owner(projects, non_admins, is_project_staff, is_org_member, False, False)
         self._test_response_403(*user_not_in_project)
+
+    # [organization] (Organization context) Member of organization that has role supervisor or worker
+    # [organization] cannot see project if this member it’s not project owner
+    # or project assignee (GET /projects/{id}).
+    @pytest.mark.parametrize('role', ('supervisor', 'worker'))
+    def _test_if_supervisor_or_worker_cannot_see_project(self, users, projects, find_users, is_project_staff, is_org_member, role):
+        non_admins = find_users(role=role, exclude_privilege='admin')
+        assert non_admins is not None
+
+        user_in_project = self._find_by_owner(projects, non_admins, is_project_staff, is_org_member, False, True)
+        self._test_response_403(*user_in_project)
+
+    # [organization] (Organization context) Member of organization that has role  maintainer or owner
+    # [organization]  can see any project even he has not any ownerships for this project
+    # or project assignee (GET /projects/{id}).
+    @pytest.mark.parametrize('role', ('maintainer', 'owner'))
+    def _test_if_maintainer_or_owner_can_see_project(self, users, projects, find_users, is_project_staff,
+                                                        is_org_member, role):
+        non_admins = find_users(role=role, exclude_privilege='admin')
+        assert non_admins is not None
+
+        user_not_in_project = self._find_by_owner(projects, non_admins, is_project_staff, is_org_member, False, True)
+        assert user_not_in_project is not None
+
+        self._test_response_200(*user_not_in_project)
+
+    # [organization] (Organization context) Member of organization that has role supervisor or worker can see
+    # project if this member it’s project owner or project assignee (GET /projects/{id})
+    @pytest.mark.parametrize('role', ('supervisor', 'worker'))
+    def test_if_org_member_supervisor_or_worker_can_see_project(self, users, projects, find_users, is_project_staff,
+                                                                is_org_member, role):
+        non_admins = find_users(role=role, exclude_privilege='admin')
+        assert non_admins is not None
+
+        user_in_project = self._find_by_owner(projects, non_admins, is_project_staff, is_org_member, True, True)
+        assert user_in_project is not None
+
+        self._test_response_200(*user_in_project)
