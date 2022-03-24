@@ -4,7 +4,7 @@ import json
 
 annotations = {}
 for obj in ['user', 'project', 'task', 'job', 'organization', 'membership',
-    'invitation', 'issue']:
+    'invitation', 'cloudstorage', 'issue']:
     response = get_method('admin1', f'{obj}s', page_size='all')
     with open(osp.join(ASSETS_DIR, f'{obj}s.json'), 'w') as f:
         json.dump(response.json(), f, indent=2, sort_keys=True)
