@@ -179,7 +179,7 @@ button.cvat-predictor-button {
 }
 
 .cvat-player-filename-wrapper {
-    max-width: 300px;
+    max-width: $grid-unit-size * 30;
     overflow: hidden;
     text-overflow: ellipsis;
     user-select: none;
