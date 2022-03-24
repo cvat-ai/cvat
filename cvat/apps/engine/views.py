@@ -1176,10 +1176,14 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     @action(detail=True, methods=['GET'], serializer_class=JobCommitSerializer)
     def commits(self, request, pk):
         db_job = self.get_object()
-        queryset = db_job.commits
-        serializer = JobCommitSerializer(queryset,
-            context={'request': request}, many=True)
+        queryset = db_job.commits.order_by('-id')
 
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = JobCommitSerializer(page, context={'request': request}, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = JobCommitSerializer(queryset, context={'request': request}, many=True)
         return Response(serializer.data)
 
 @extend_schema(tags=['issues'])
