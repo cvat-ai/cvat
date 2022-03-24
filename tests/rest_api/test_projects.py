@@ -2,15 +2,25 @@
 #
 # SPDX-License-Identifier: MIT
 
-from cgi import print_arguments
 from http import HTTPStatus
-from deepdiff import DeepDiff
 import pytest
 
 from .utils.config import get_method, post_method, patch_method
 
 
 class TestGetProjects:
+    def _find_by_owner(self, projects, users, is_project_staff, is_org_member, is_owner, has_membership):
+        for p in projects:
+            for u in users:
+                if is_owner:
+                    if is_project_staff(u['id'], p['id']):
+                        return u['username'], p['id']
+                elif has_membership:
+                    if is_org_member(u['id'], p['organization']):
+                        return u['username'], p['id']
+                else:
+                    if not is_project_staff(u['id'], p['id']):
+                        return u['username'], p['id']
 
     def _test_response_200(self, username, project_id):
         response = get_method(username, f'projects/{project_id}')
@@ -18,11 +28,41 @@ class TestGetProjects:
         project = response.json()
         assert project_id == project['id']
 
-    # [sandbox] Admin can see any project even he has no ownerships for this project (GET /projects/{id}).
-    def test_project_admin_accessibility(self, users, projects, find_users):
-        admins = find_users(privilege='admin')
-        assert len(admins)
+    def _test_response_403(self, username, project_id):
+        response = get_method(username, f'projects/{project_id}')
+        assert response.status_code == HTTPStatus.FORBIDDEN
 
-        for admin in admins:
-            for project in projects:
-                self._test_response_200(admin['username'], project['id'])
+    # [sandbox] Admin can see any project even he has no ownerships for this project (GET /projects/{id}).
+    # Admin is a owner of the project, or a membership of the project organization. Or not
+    @pytest.mark.parametrize('is_owner, has_membership', [
+        (True, False), (False, True), (False, False)
+    ])
+    def _test_project_admin_accessibility(self, users, projects, find_users, is_project_staff, is_org_member, is_owner, has_membership,):
+        admins = find_users(privilege='admin')
+
+        admin_project = self._find_by_owner(projects, admins, is_project_staff, is_org_member, is_owner, has_membership)
+        assert admin_project is not None
+        self._test_response_200(*admin_project)
+
+    # [sandbox] Project owner or project assignee can see project (GET /projects/{id}).
+    def _test_project_owner_accessibility(self, users, projects, find_users, is_project_staff):
+
+        for p in projects:
+            if p['owner'] is not None:
+                project_with_owner = p
+            if p['assignee'] is not None:
+                project_with_assignee = p
+
+        assert project_with_owner is not None
+        assert project_with_assignee is not None
+
+        self._test_response_200(project_with_owner['owner']['username'], project_with_owner['id'])
+        self._test_response_200(project_with_assignee['assignee']['username'], project_with_assignee['id'])
+
+    # [sandbox] Non-admin user cannot see project if this user is not project owner or project assignee
+    # [sandbox] (GET /projects/{id}).
+    def test_user_cannot_see_project(self, users, projects, find_users, is_project_staff, is_org_member):
+        users = find_users(exclude_privilege='admin')
+
+        user_not_in_project = self._find_by_owner(projects, users, is_project_staff, is_org_member, False, False)
+        self._test_response_403(*user_not_in_project)
