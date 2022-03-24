@@ -645,6 +645,8 @@ class TaskPermission(OpenPolicyAgentPermission):
             ('annotations', 'PATCH'): 'update:annotations',
             ('annotations', 'DELETE'): 'delete:annotations',
             ('annotations', 'PUT'): 'update:annotations',
+            ('annotations', 'POST'): 'import:annotations',
+            ('append_annotations_chunk', 'PATCH'): 'update:annotations',
             ('dataset_export', 'GET'): 'export:dataset',
             ('data', 'GET'): 'view:data',
             ('data_info', 'GET'): 'view:data',
@@ -790,6 +792,8 @@ class JobPermission(OpenPolicyAgentPermission):
             ('annotations', 'PATCH'): 'update:annotations',
             ('annotations', 'DELETE'): 'delete:annotations',
             ('annotations', 'PUT'): 'update:annotations',
+            ('annotations', 'POST'): 'import:annotations',
+            ('append_annotations_chunk', 'PATCH'): 'update:annotations',
             ('data', 'GET'): 'view:data',
             ('issues', 'GET'): 'view',
             ('commits', 'GET'): 'view:commits'
