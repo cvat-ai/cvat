@@ -91,7 +91,7 @@ class TestGetProjects:
         user_not_in_project = self._find_by_owner(projects, non_admins, is_project_staff, is_org_member, False, True)
         assert user_not_in_project is not None
 
-        self._test_response_200(*user_not_in_project)
+        self._test_response_200(*user_not_in_project, org_id=org_id)
 
     # [organization] (Organization context) Member of organization that has role supervisor or worker can see
     # project if this member it’s project owner or project assignee (GET /projects/{id})
