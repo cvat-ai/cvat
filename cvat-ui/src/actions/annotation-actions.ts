@@ -197,6 +197,7 @@ export enum AnnotationActionTypes {
     GET_CONTEXT_IMAGE_SUCCESS = 'GET_CONTEXT_IMAGE_SUCCESS',
     GET_CONTEXT_IMAGE_FAILED = 'GET_CONTEXT_IMAGE_FAILED',
     SWITCH_NAVIGATION_BLOCKED = 'SWITCH_NAVIGATION_BLOCKED',
+    UPDATE_BRUSH_TOOLS_CONFIG = 'UPDATE_BRUSH_TOOLS_CONFIG',
 }
 
 export function saveLogsAsync(): ThunkAction {
@@ -305,6 +306,15 @@ export function updateCanvasContextMenu(
             type,
             pointID,
         },
+    };
+}
+
+export function updateCanvasBrushTools(config: {
+    visible?: boolean, left?: number, top?: number
+}): AnyAction {
+    return {
+        type: AnnotationActionTypes.UPDATE_BRUSH_TOOLS_CONFIG,
+        payload: config,
     };
 }
 

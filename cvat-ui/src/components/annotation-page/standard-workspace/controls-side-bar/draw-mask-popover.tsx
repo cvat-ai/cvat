@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -15,20 +15,20 @@ interface Props {
     selectedLabelID: number;
     repeatShapeShortcut: string;
     onChangeLabel(value: string): void;
-    onSetup(labelID: number): void;
+    onDraw(labelID: number): void;
 }
 
-function SetupTagPopover(props: Props): JSX.Element {
+function DrawMaskPopover(props: Props): JSX.Element {
     const {
-        labels, selectedLabelID, repeatShapeShortcut, onChangeLabel, onSetup,
+        labels, selectedLabelID, repeatShapeShortcut, onChangeLabel, onDraw,
     } = props;
 
     return (
-        <div className='cvat-setup-tag-popover-content'>
+        <div className='cvat-draw-shape-popover-content'>
             <Row justify='start'>
                 <Col>
                     <Text className='cvat-text-color' strong>
-                        Setup tag
+                        Draw new mask
                     </Text>
                 </Col>
             </Row>
@@ -49,8 +49,8 @@ function SetupTagPopover(props: Props): JSX.Element {
             </Row>
             <Row justify='space-around'>
                 <Col span={24}>
-                    <CVATTooltip title={`Press ${repeatShapeShortcut} to add a tag again`}>
-                        <Button onClick={() => onSetup(selectedLabelID)}>Add a tag</Button>
+                    <CVATTooltip title={`Press ${repeatShapeShortcut} to draw a mask again`}>
+                        <Button onClick={() => onDraw(selectedLabelID)}>Draw a mask</Button>
                     </CVATTooltip>
                 </Col>
             </Row>
@@ -58,4 +58,4 @@ function SetupTagPopover(props: Props): JSX.Element {
     );
 }
 
-export default React.memo(SetupTagPopover);
+export default React.memo(DrawMaskPopover);

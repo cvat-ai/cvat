@@ -479,6 +479,7 @@ export enum ActiveControl {
     DRAW_POLYLINE = 'draw_polyline',
     DRAW_POINTS = 'draw_points',
     DRAW_ELLIPSE = 'draw_ellipse',
+    DRAW_MASK = 'draw_mask',
     DRAW_CUBOID = 'draw_cuboid',
     MERGE = 'merge',
     GROUP = 'group',
@@ -497,6 +498,7 @@ export enum ShapeType {
     POINTS = 'points',
     ELLIPSE = 'ellipse',
     CUBOID = 'cuboid',
+    MASK = 'mask',
 }
 
 export enum ObjectType {
@@ -549,6 +551,11 @@ export interface AnnotationState {
             type: ContextMenuType;
             pointID: number | null;
             clientID: number | null;
+        };
+        brushTools: {
+            visible: boolean;
+            top: number;
+            left: number;
         };
         instance: Canvas | Canvas3d | null;
         ready: boolean;

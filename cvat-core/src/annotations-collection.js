@@ -57,6 +57,8 @@
             case 'cuboid':
                 shapeModel = new CuboidShape(shapeData, clientID, color, injection);
                 break;
+            case 'mask':
+
             default:
                 throw new DataError(`An unexpected type of shape "${type}"`);
         }
@@ -137,7 +139,6 @@
                 tags: [],
                 shapes: [],
                 tracks: [],
-                masks: [],
             };
 
             for (const tag of data.tags) {
@@ -170,18 +171,6 @@
                     this.tracks.push(trackModel);
                     result.tracks.push(trackModel);
                     this.objects[clientID] = trackModel;
-                }
-            }
-
-            for (const mask of data.masks) {
-                const clientID = ++this.count;
-                const color = colors[clientID % colors.length];
-                const maskModel = new Mask(mask, clientID, color, this.injection);
-                if (maskModel) {
-                    this.masks[maskModel.frame] = this.masks[maskModel.frame] || [];
-                    this.masks[maskModel.frame].push(maskModel);
-                    this.objects[clientID] = maskModel;
-                    result.masks.push(maskModel);
                 }
             }
 

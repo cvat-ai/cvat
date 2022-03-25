@@ -148,7 +148,6 @@
      */
     const ObjectType = Object.freeze({
         TAG: 'tag',
-        MASK: 'mask',
         SHAPE: 'shape',
         TRACK: 'track',
     });

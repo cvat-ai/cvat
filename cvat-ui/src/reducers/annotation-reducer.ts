@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -38,6 +38,11 @@ const defaultState: AnnotationState = {
             type: ContextMenuType.CANVAS_SHAPE,
             pointID: null,
             clientID: null,
+        },
+        brushTools: {
+            visible: true,
+            top: 0,
+            left: 0,
         },
         instance: null,
         ready: false,
@@ -470,20 +475,20 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             const { payload } = action;
 
             let { activeControl } = state.canvas;
-            if (payload.activeShapeType === ShapeType.RECTANGLE) {
-                activeControl = ActiveControl.DRAW_RECTANGLE;
-            } else if (payload.activeShapeType === ShapeType.POLYGON) {
-                activeControl = ActiveControl.DRAW_POLYGON;
-            } else if (payload.activeShapeType === ShapeType.POLYLINE) {
-                activeControl = ActiveControl.DRAW_POLYLINE;
-            } else if (payload.activeShapeType === ShapeType.POINTS) {
-                activeControl = ActiveControl.DRAW_POINTS;
-            } else if (payload.activeShapeType === ShapeType.ELLIPSE) {
-                activeControl = ActiveControl.DRAW_ELLIPSE;
-            } else if (payload.activeShapeType === ShapeType.CUBOID) {
-                activeControl = ActiveControl.DRAW_CUBOID;
-            } else if (payload.activeObjectType === ObjectType.TAG) {
+            const controlMapping = {
+                [ShapeType.RECTANGLE]: ActiveControl.DRAW_RECTANGLE,
+                [ShapeType.POLYGON]: ActiveControl.DRAW_POLYGON,
+                [ShapeType.POLYLINE]: ActiveControl.DRAW_POLYLINE,
+                [ShapeType.POINTS]: ActiveControl.DRAW_POINTS,
+                [ShapeType.ELLIPSE]: ActiveControl.DRAW_ELLIPSE,
+                [ShapeType.CUBOID]: ActiveControl.DRAW_CUBOID,
+                [ShapeType.MASK]: ActiveControl.DRAW_MASK,
+            };
+
+            if (payload.activeObjectType === ObjectType.TAG) {
                 activeControl = ActiveControl.CURSOR;
+            } else {
+                activeControl = controlMapping[payload.activeShapeType as ShapeType];
             }
 
             return {
@@ -952,6 +957,18 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                         type,
                         pointID,
                         clientID: state.annotations.activatedStateID,
+                    },
+                },
+            };
+        }
+        case AnnotationActionTypes.UPDATE_BRUSH_TOOLS_CONFIG: {
+            return {
+                ...state,
+                canvas: {
+                    ...state.canvas,
+                    brushTools: {
+                        ...state.canvas.brushTools,
+                        ...action.payload,
                     },
                 },
             };

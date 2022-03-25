@@ -19,6 +19,7 @@ import getCore from 'cvat-core-wrapper';
 import consts from 'consts';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import ImageSetupsContent from './image-setups-content';
+import BrushTools from './brush-tools';
 import ContextImage from '../standard-workspace/context-image/context-image';
 
 const cvat = getCore();
@@ -826,6 +827,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
                 />
 
                 <ContextImage />
+                <BrushTools />
 
                 <Dropdown trigger={['click']} placement='topCenter' overlay={<ImageSetupsContent />}>
                     <UpOutlined className='cvat-canvas-image-setups-trigger' />

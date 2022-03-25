@@ -1,0 +1,45 @@
+// Copyright (C) 2022 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
+
+@import '../../../base.scss';
+
+.cvat-brush-tools-toolbox {
+    position: absolute;
+    margin: $grid-unit-size;
+    padding: 0 $grid-unit-size;
+    border-radius: 4px;
+    background: $background-color-2;
+    display: flex;
+    align-items: center;
+    z-index: 100;
+    box-shadow: $box-shadow-base;
+
+    > hr {
+        width: 1px;
+        height: $grid-unit-size * 4;
+        background: $border-color-1;
+    }
+
+    > * {
+        margin-right: $grid-unit-size;
+    }
+
+    .cvat-brush-tools-draggable-area {
+        font-size: 20px;
+    }
+
+    .cvat-brush-tools-brush,
+    .cvat-brush-tools-eraser {
+        > .anticon {
+            svg {
+                width: 1em;
+                height: 1em;
+            }
+        }
+    }
+
+    .cvat-brush-tools-active-tool {
+        background: $header-color;
+    }
+}

@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -23,6 +23,7 @@ import DrawPolylineControl, { Props as DrawPolylineControlProps } from './draw-p
 import DrawPointsControl, { Props as DrawPointsControlProps } from './draw-points-control';
 import DrawEllipseControl, { Props as DrawEllipseControlProps } from './draw-ellipse-control';
 import DrawCuboidControl, { Props as DrawCuboidControlProps } from './draw-cuboid-control';
+import DrawMaskControl, { Props as DrawMaskControlProps } from './draw-mask-control';
 import SetupTagControl, { Props as SetupTagControlProps } from './setup-tag-control';
 import MergeControl, { Props as MergeControlProps } from './merge-control';
 import GroupControl, { Props as GroupControlProps } from './group-control';
@@ -60,6 +61,7 @@ const ObservedDrawPolylineControl = ControlVisibilityObserver<DrawPolylineContro
 const ObservedDrawPointsControl = ControlVisibilityObserver<DrawPointsControlProps>(DrawPointsControl);
 const ObservedDrawEllipseControl = ControlVisibilityObserver<DrawEllipseControlProps>(DrawEllipseControl);
 const ObservedDrawCuboidControl = ControlVisibilityObserver<DrawCuboidControlProps>(DrawCuboidControl);
+const ObservedDrawMaskControl = ControlVisibilityObserver<DrawMaskControlProps>(DrawMaskControl);
 const ObservedSetupTagControl = ControlVisibilityObserver<SetupTagControlProps>(SetupTagControl);
 const ObservedMergeControl = ControlVisibilityObserver<MergeControlProps>(MergeControl);
 const ObservedGroupControl = ControlVisibilityObserver<GroupControlProps>(GroupControl);
@@ -251,6 +253,11 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
             <ObservedDrawCuboidControl
                 canvasInstance={canvasInstance}
                 isDrawing={activeControl === ActiveControl.DRAW_CUBOID}
+                disabled={!labels.length}
+            />
+            <ObservedDrawMaskControl
+                canvasInstance={canvasInstance}
+                isDrawing={activeControl === ActiveControl.DRAW_MASK}
                 disabled={!labels.length}
             />
             <ObservedSetupTagControl canvasInstance={canvasInstance} isDrawing={false} disabled={!labels.length} />
