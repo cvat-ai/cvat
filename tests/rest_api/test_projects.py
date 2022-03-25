@@ -27,8 +27,8 @@ class TestGetProjects:
                     if not is_project_staff(u['id'], p['id']) and not is_org_member(u['id'], p['organization']):
                         return u['username'], p['id']
 
-    def _test_response_200(self, username, project_id):
-        response = get_method(username, f'projects/{project_id}')
+    def _test_response_200(self, username, project_id, **kwargs):
+        response = get_method(username, f'projects/{project_id}', **kwargs)
         assert response.status_code == HTTPStatus.OK
         project = response.json()
         assert project_id == project['id']
