@@ -26,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Permission error occured when accessing the JobCommits (<https://github.com/openvinotoolkit/cvat/pull/4435>)
 - job assignee can remove or update any issue created by the task owner (<https://github.com/openvinotoolkit/cvat/pull/4436>)
 - Bug: Incorrect point deletion with keyboard shortcut (<https://github.com/openvinotoolkit/cvat/pull/4420>)
+- some AI Tools were not sending responses properly (<https://github.com/openvinotoolkit/cvat/issues/4432>)
 - Unable to upload annotations (<https://github.com/openvinotoolkit/cvat/pull/4513>)
 
 ### Security
