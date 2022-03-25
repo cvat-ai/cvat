@@ -103,7 +103,11 @@ ingress:
 ## Deployment
 Make sure you are using correct kubernetes context. You can check it with `kubectl config current-context`.
 
-> **Warning:** The k8s service name of Open Policy Agent is fixed to opa by default. This is done to be compatible with CVAT 2.0 but limits this helm chart to a single release per namespace. The OPA url currently can´t be set as an environment variable. As soon as this is possible you can set cvat.opa.composeCompatibleServiceName to false in your value.override.yaml and configure the opa url as additional env.
+> **Warning:** The k8s service name of Open Policy Agent is fixed to opa by default.
+This is done to be compatible with CVAT 2.0 but limits this helm chart to a single release per namespace.
+The OPA url currently can´t be set as an environment variable.
+As soon as this is possible you can set cvat.opa.composeCompatibleServiceName
+to false in your value.override.yaml and configure the opa url as additional env.
 
 Execute following command from repo root directory
 ### With overrides:
