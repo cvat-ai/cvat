@@ -1688,7 +1688,7 @@ def _import_annotations(request, rq_id, rq_func, pk, format_name, filename=None)
             serializer = AnnotationFileSerializer(data=request.data)
             if serializer.is_valid(raise_exception=True):
                 anno_file = serializer.validated_data['annotation_file']
-                fd, filename = mkstemp(prefix='cvat_{}'.format(pk))
+                fd, filename = mkstemp(prefix='cvat_{}'.format(pk), dir=settings.TMP_STORAGE_ROOT)
                 with open(filename, 'wb+') as f:
                     for chunk in anno_file.chunks():
                         f.write(chunk)
@@ -1811,7 +1811,7 @@ def _import_project_dataset(request, rq_id, rq_func, pk, format_name, filename=N
             serializer = DatasetFileSerializer(data=request.data)
             if serializer.is_valid(raise_exception=True):
                 dataset_file = serializer.validated_data['dataset_file']
-                fd, filename = mkstemp(prefix='cvat_{}'.format(pk))
+                fd, filename = mkstemp(prefix='cvat_{}'.format(pk), dir=settings.TMP_STORAGE_ROOT)
                 with open(filename, 'wb+') as f:
                     for chunk in dataset_file.chunks():
                         f.write(chunk)

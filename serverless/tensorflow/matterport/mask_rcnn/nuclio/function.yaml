@@ -101,7 +101,7 @@ spec:
     - name: MASK_RCNN_DIR
       value: /opt/nuclio/Mask_RCNN
   build:
-    image: cvat/tf.matterport.mask_rcnn
+    image: cvat.tf.matterport.mask_rcnn
     baseImage: tensorflow/tensorflow:1.13.1-py3
     directives:
       postCopy:
@@ -114,7 +114,7 @@ spec:
         - kind: RUN
           value: curl -L https://github.com/matterport/Mask_RCNN/releases/download/v2.0/mask_rcnn_coco.h5 -o Mask_RCNN/mask_rcnn_coco.h5
         - kind: RUN
-          value: pip3 install numpy cython pyyaml keras==2.1.0 scikit-image Pillow
+          value: pip3 install numpy cython pyyaml keras==2.1.0 scikit-image 'imageio<=2.9.0' Pillow
 
   triggers:
     myHttpTrigger:

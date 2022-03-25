@@ -1,0 +1,56 @@
+{{- $version := .Capabilities.KubeVersion.GitVersion -}}
+{{- if and .Values.ingress.enabled .Values.analytics.enabled -}}
+{{- $fullName := include "cvat.fullname" . -}}
+{{- if semverCompare ">=1.19-0" $version -}}
+apiVersion: networking.k8s.io/v1
+{{- else if semverCompare ">=1.14-0" $version -}}
+apiVersion: networking.k8s.io/v1beta1
+{{- else -}}
+apiVersion: extensions/v1beta1
+{{- end }}
+kind: Ingress
+metadata:
+  name: {{ $fullName }}-analytics
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "cvat.labels" . | nindent 4 }}
+  annotations:
+    traefik.ingress.kubernetes.io/router.middlewares: {{ $.Release.Namespace }}-stripprefix@kubernetescrd,
+      {{ $.Release.Namespace }}-forwardauth@kubernetescrd
+    {{- with .Values.analytics.ingress.annotations }}
+      {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+{{- if semverCompare ">=1.19-0" $version }}
+  ingressClassName: {{ .Values.ingress.className }}
+{{- end }}
+  rules:
+  {{- range .Values.ingress.hosts }}
+    - host: {{ .host | quote }}
+      http:
+        paths:
+          - path: {{ $.Values.analytics.ingress.path }}
+            {{- if $.Values.analytics.ingress.pathType }}
+            pathType: {{ $.Values.analytics.ingress.pathType }}
+            {{- end }}
+            {{- if semverCompare ">=1.19-0" $version }}
+            backend:
+              service:
+                {{- if $.Values.analytics.external.useExternal }}
+                name: {{ $.Values.analytics.ingress.service.name }}
+                {{- else }}
+                name: {{ $.Release.Name }}-{{ $.Values.analytics.ingress.service.name }}
+                {{- end }}
+                port:
+                  number: {{ $.Values.analytics.ingress.service.port }}
+            {{- else }}
+            backend:
+              {{- if $.Values.analytics.external.useExternal }}
+              serviceName: {{ $.Values.analytics.ingress.service.name }}
+              {{- else }}
+              serviceName:  {{ $.Release.Name }}-{{ $.Values.analytics.ingress.service.name }}
+              {{- end }}
+              servicePort: {{ $.Values.analytics.ingress.service.port }}
+            {{- end }}
+  {{- end }}
+{{- end }}

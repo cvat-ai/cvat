@@ -758,7 +758,7 @@ def _import(importer, request, rq_id, Serializer, file_field_name):
         serializer.is_valid(raise_exception=True)
         payload_file = serializer.validated_data[file_field_name]
         org_id = getattr(request.iam_context['organization'], 'id', None)
-        fd, filename = mkstemp(prefix='cvat_')
+        fd, filename = mkstemp(prefix='cvat_', dir=settings.TMP_STORAGE_ROOT)
         with open(filename, 'wb+') as f:
             for chunk in payload_file.chunks():
                 f.write(chunk)

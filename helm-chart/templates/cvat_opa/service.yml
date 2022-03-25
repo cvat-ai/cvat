@@ -1,22 +1,21 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ .Release.Name }}-backend-service
+  {{- if .Values.cvat.opa.composeCompatibleServiceName }}
+  name: opa
+  {{- else }}
+  name: {{ .Release.Name }}-opa-service
+  {{- end }}
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "cvat.labels" . | nindent 4 }}
     app: cvat-app
-    tier: backend
-  annotations:
-    {{- with .Values.cvat.backend.service.annotations }}
-    {{- toYaml . | nindent 4 }}
-    {{- end }}
+    tier: opa
 spec:
   selector:
     app: cvat-app
-    tier: backend
-    component: server
+    tier: opa
     {{- include "cvat.labels" . | nindent 4 }}
-  {{- with .Values.cvat.backend.service.spec }}
+  {{- with .Values.cvat.opa.service }}
   {{- toYaml . | nindent 2 }}
   {{- end }}

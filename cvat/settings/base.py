@@ -283,7 +283,8 @@ NUCLIO = {
     'SCHEME': os.getenv('CVAT_NUCLIO_SCHEME', 'http'),
     'HOST': os.getenv('CVAT_NUCLIO_HOST', 'localhost'),
     'PORT': os.getenv('CVAT_NUCLIO_PORT', 8070),
-    'DEFAULT_TIMEOUT': os.getenv('CVAT_NUCLIO_DEFAULT_TIMEOUT', 120)
+    'DEFAULT_TIMEOUT': os.getenv('CVAT_NUCLIO_DEFAULT_TIMEOUT', 120),
+    'FUNCTION_NAMESPACE': os.getenv('CVAT_NUCLIO_FUNCTION_NAMESPACE', 'default'),
 }
 
 RQ_SHOW_ADMIN_LINK = True
@@ -370,6 +371,9 @@ MIGRATIONS_LOGS_ROOT = os.path.join(LOGS_ROOT, 'migrations')
 os.makedirs(MIGRATIONS_LOGS_ROOT, exist_ok=True)
 
 CLOUD_STORAGE_ROOT = os.path.join(DATA_ROOT, 'storages')
+os.makedirs(CLOUD_STORAGE_ROOT, exist_ok=True)
+
+TMP_STORAGE_ROOT = os.path.join(BASE_DIR, 'tmp_storage')
 os.makedirs(CLOUD_STORAGE_ROOT, exist_ok=True)
 
 LOGGING = {
