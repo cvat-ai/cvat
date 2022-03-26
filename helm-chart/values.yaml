@@ -295,6 +295,10 @@ ingress:
           service:
             name: frontend-service
             port: 80
+  # tls:
+  #   - hosts:
+  #     - <your_domain>
+  #   secretName: ingress-tls-cvat
 
 traefik:
   logs:

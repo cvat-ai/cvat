@@ -1,71 +1,89 @@
-# FAQ
+# CVAT chart manual
 
-## What should be configured before installation?
+- [CVAT chart manual](#cvat-chart-manual)
+  - [Prerequisites](#prerequisites)
+    - [Installing dependencies](#installing-dependencies)
+    - [Optional steps](#optional-steps)
+  - [Configuration](#configuration)
+    - [Postgresql password?](#postgresql-password)
+    - [(Optional) Enable Auto annotation feature](#optional-enable-auto-annotation-feature)
+    - [(Optional) Enable Analytics](#optional-enable-analytics)
+  - [Deployment](#deployment)
+    - [With overrides:](#with-overrides)
+    - [Without overrides:](#without-overrides)
+  - [Post-deployment configuration](#post-deployment-configuration)
+    - [How to create superuser?](#how-to-create-superuser)
+  - [FAQ](#faq)
+    - [What is kubernetes and how it is working?](#what-is-kubernetes-and-how-it-is-working)
+    - [What is helm and how it is working?](#what-is-helm-and-how-it-is-working)
+    - [How to setup Minikube?](#how-to-setup-minikube)
+    - [How to understand what diff will be inflicted by 'helm upgrade'?](#how-to-understand-what-diff-will-be-inflicted-by-helm-upgrade)
+    - [I want to use my own postgresql/redis with your chart.](#i-want-to-use-my-own-postgresqlredis-with-your-chart)
+    - [I want to override some settings in values.yaml.](#i-want-to-override-some-settings-in-valuesyaml)
+    - [Why you used external charts to provide redis and postgres?](#why-you-used-external-charts-to-provide-redis-and-postgres)
 
-1. You should have configured connection to existed k8s cluster. If you do not already have a cluster,
-   you can create one by using [Minikube](https://github.com/kubernetes/minikube/)
-   which is a tool that lets you run Kubernetes locally.
-1. Helm must be installed
-1. You should download chart external dependencies, using following commands:
+## Prerequisites
+1. Installed and configured [kubernetes](https://kubernetes.io/) cluster. If you do not already have a cluster,
+   you can create one by using [Minikube](https://github.com/kubernetes/minikube/). [How to setup Minikube](#how-to-setup-minikube).
+1. Installed [kubectl](https://kubernetes.io/docs/tasks/tools/#kubectl)
+1. Installed [Helm](https://helm.sh/).
+1. Installed [dependencies](#installing-dependencies)
 
-   ```shell
-   helm dependency update
-   ```
+### Installing dependencies
+To install and/or update run:
+```shell
+helm dependency update
+```
 
-1. (Optional) Create values.override.yaml and override there parameters you want.
-   See the [note](#how_to_describe_ingress) about Minikube use.
-1. (Optional) Create certificates for https (for example: <https://github.com/jetstack/cert-manager/>).
+### Optional steps
+1. Ingress configuration for the Traefik ingress controller is enabled by default.
+
+   Note for Minikube use:
+   - because the Traefik creates its main service with `Loadbalanser` type,
+     which involve the assignment of externalIP by Cloud, what never happens on Minikube,
+     you need to explicitly set the externalIP address for the traefic service with:
+     ```yaml
+     traefik:
+       service:
+         externalIPs:
+           - "your minikube ip"
+     ```
+   - Also ensure that your CVAT ingress appears on your hosts file (/etc/hosts).
+     You can do this by running this command:
+     `cvat.local` is default domainname, you can override it via `values.override.yaml`.
+     ```shell
+     echo "$(minikube ip) cvat.local" | sudo tee -a /etc/hosts
+     ```
+1. Create certificates for https (for example: <https://github.com/jetstack/cert-manager/>).
    This step is not yet covered in this guide.
-1. Change postgresql password as described below
+
+## Configuration
+1. Create `values.override.yaml` file inside `helm-chart` directory.
+1. Fill `values.override.yaml` with new parameters for chart.
+1. Override [postgresql password](#postgresql-password)
 1. Create a rules.tar.gz archive containing all OPA rules inside this `helm-chart` directory.
    ```shell
    find ../cvat/apps/iam/rules -name "*.rego" -and ! -name '*test*' -exec basename {} \; | tar -czf rules.tar.gz -C ../cvat/apps/iam/rules/ -T -
    ```
-1. Deploy cvat using command below
 
-> **Warning:** The k8s service name of Open Policy Agent is fixed to opa by default.
-> This is done to be compatible with CVAT 2.0 but limits this helm chart to a single release.
-> The OPA url currently can´t be set as an environment variable.
-> As soon as this is possible you can set cvat.opa.composeCompatibleServiceName to false
-> in your value.override.yaml and configure those as additional envs.
-
-## How to deploy new version of chart to cluster?
-
-Execute following command:
-```helm upgrade <release_name> --install ./helm-chart -f ./helm-chart/values.yaml  -f values.override.yaml(if exists) --namespace <desired namespace>```
-
-## How to create superuser?
-
-```shell
-HELM_RELEASE_NAMESPACE="<insert>" &&\
-HELM_RELEASE_NAME="<insert>" &&\
-BACKEND_POD_NAME=$(kubectl get pod --namespace $HELM_RELEASE_NAMESPACE -l tier=backend,app.kubernetes.io/instance=$HELM_RELEASE_NAME -o jsonpath='{.items[0].metadata.name}') &&\
-kubectl exec -it --namespace $HELM_RELEASE_NAMESPACE $BACKEND_POD_NAME -c cvat-app-backend-server-container -- python manage.py createsuperuser
-```
-
-## How to change embedded postgresql password?
-
-There are several passwords used here, for security reasons - better change them all.
-
+### Postgresql password?
+Put below into your `values.override.yaml`
 ```yaml
 postgresql:
   secret:
-    password: cvat_postgresql
-    postgres_password: cvat_postgresql_postgres
-    replication_password: cvat_postgresql_replica
+    password: <insert_password>
+    postgres_password: <insert_postgres_password>
+    replication_password: <insert_replication_password>
 ```
-
-Or, if you know how to work with k8s - you could create your own secret and use it here:
-
+Or create your own secret and use it with:
 ```yaml
 postgresql:
    global:
      postgresql:
-       existingSecret: cvat-postgres-secret
+       existingSecret: <secret>
 ```
 
-
-## How to enable Auto annotation feature
+### (Optional) Enable Auto annotation feature
 
 Before starting, ensure that the following prerequisites are met:
 - The Nuclio [CLI (nuctl)](https://nuclio.io/docs/latest/reference/nuctl/nuctl/) is installed.
@@ -115,7 +133,7 @@ Before starting, ensure that the following prerequisites are met:
     nuctl deploy --project-name cvat --path serverless/tensorflow/faster_rcnn_inception_v2_coco/nuclio --registry docker.io/your_username
     ```
 
-## How to enable Analytics
+### (Optional) Enable Analytics
 
 1. Set `analytics.enabled: true` in your `values.override.yaml`
 1. Run `helm dependency update` in `helm-chart` directory
@@ -163,41 +181,52 @@ Before starting, ensure that the following prerequisites are met:
      ```shell
      helm upgrade <release_name> --namespace <desired namespace>  --install ./helm-chart -f ./helm-chart/values.yaml  -f values.override.yaml
      ```
-## How to describe ingress
 
-  Ingress configuration for the Traefik ingress controller is enabled by default.
-  Note for Minikube use: because the Traefik creates its main service with `Loadbalanser` type,
-  which involve the assignment of externalIP by Cloud, what never happens on Minikube,
-  you need to explicitly set the externalIP address for the traefic service with:
-   ```yaml
-  traefik:
-    service:
-      externalIPs:
-        - "your minikube ip"
-  ```
+## Deployment
+Make sure you are using correct kubernetes context. You can check it with `kubectl config current-context`.
 
-## How to understand what diff will be inflicted by 'helm upgrade'?
+> **Warning:** The k8s service name of Open Policy Agent is fixed to opa by default.
+> This is done to be compatible with CVAT 2.0 but limits this helm chart to a single release per namespace.
+> The OPA url currently can´t be set as an environment variable.
+> As soon as this is possible you can set cvat.opa.composeCompatibleServiceName
+> to false in your value.override.yaml and configure the opa url as additional env.
 
+Execute following command from repo root directory
+### With overrides:
+```helm upgrade -n <desired_namespace> <release_name> -i --create-namespace ./helm-chart -f ./helm-chart/values.yaml  -f ./helm-chart/values.override.yaml```
+
+### Without overrides:
+```helm upgrade -n <desired_namespace> <release_name> -i --create-namespace ./helm-chart -f ./helm-chart/values.yaml```
+
+## Post-deployment configuration
+
+1. Create [super user](#how-to-create-superuser)
+
+### How to create superuser?
+```sh
+HELM_RELEASE_NAMESPACE="<desired_namespace>" &&\
+HELM_RELEASE_NAME="<release_name>" &&\
+BACKEND_POD_NAME=$(kubectl get pod --namespace $HELM_RELEASE_NAMESPACE -l tier=backend,app.kubernetes.io/instance=$HELM_RELEASE_NAME -o jsonpath='{.items[0].metadata.name}') &&\
+kubectl exec -it --namespace $HELM_RELEASE_NAMESPACE $BACKEND_POD_NAME -c cvat-backend-app-container -- python manage.py createsuperuser
+```
+## FAQ
+
+### What is kubernetes and how it is working?
+See <https://kubernetes.io/>
+### What is helm and how it is working?
+See <https://helm.sh/>
+### How to setup Minikube
+1. Please follow the official Minikube installation [guide](https://minikube.sigs.k8s.io/docs/start/)
+1. ```shell
+   minikube start --addons registry,registry-aliases
+   ```
+### How to understand what diff will be inflicted by 'helm upgrade'?
 You can use <https://github.com/databus23/helm-diff#install> for that
-
-## I want to use my own postgresql/redis with your chart
-
+### I want to use my own postgresql/redis with your chart.
 Just set `postgresql.enabled` or `redis.enabled` to `false`, as described below.
 Then - put your instance params to "external" field
-
-## I want to override some settings in values.yaml
-
+### I want to override some settings in values.yaml.
 Just create file `values.override.yaml` and place your changes here, using same structure as in `values.yaml`.
 Then reference it in helm update/install command using `-f` flag
-
-## Why you used external charts to provide redis and postgres?
-
+### Why you used external charts to provide redis and postgres?
 Because they definitely know what they do better then we are, so we are getting more quality and less support
-
-## What is kubernetes and how it is working?
-
-See <https://kubernetes.io/>
-
-## What is helm and how it is working?
-
-See <https://helm.sh/>
