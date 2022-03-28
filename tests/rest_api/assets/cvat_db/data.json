@@ -1453,7 +1453,7 @@
   "pk": 3,
   "fields": {
     "password": "pbkdf2_sha256$260000$9YZSJ0xF4Kvjsm2Fwflciy$zRpcqAMLaJBbqTRS09NkZovOHtcdy6haZxu++AeoWFo=",
-    "last_login": null,
+    "last_login": "2022-03-28T13:05:05.561Z",
     "is_superuser": false,
     "username": "user2",
     "first_name": "User",
@@ -3603,7 +3603,21 @@
     "assignee": 3,
     "bug_tracker": "",
     "created_date": "2021-12-14T19:52:37.278Z",
-    "updated_date": "2022-03-05T10:32:23.813Z",
+    "updated_date": "2022-03-28T13:04:54.669Z",
+    "status": "annotation",
+    "organization": 2
+  }
+},
+{
+  "model": "engine.project",
+  "pk": 3,
+  "fields": {
+    "name": "project 3",
+    "owner": 3,
+    "assignee": 19,
+    "bug_tracker": "",
+    "created_date": "2022-03-28T13:05:24.659Z",
+    "updated_date": "2022-03-28T13:06:09.283Z",
     "status": "annotation",
     "organization": 2
   }
@@ -5646,56 +5660,6 @@
   }
 },
 {
-  "model": "engine.manifest",
-  "pk": 1,
-  "fields": {
-    "filename": "manifest.jsonl",
-    "cloud_storage": 1
-  }
-},
-{
-  "model": "engine.manifest",
-  "pk": 2,
-  "fields": {
-    "filename": "manifest.jsonl",
-    "cloud_storage": 2
-  }
-},
-{
-  "model": "engine.cloudstorage",
-  "pk": 1,
-  "fields": {
-    "provider_type": "AWS_S3_BUCKET",
-    "resource": "public",
-    "display_name": "Bucket 1",
-    "owner": 2,
-    "created_date": "2022-03-17T07:22:49.519Z",
-    "updated_date": "2022-03-17T07:22:49.529Z",
-    "credentials": "",
-    "credentials_type": "ANONYMOUS_ACCESS",
-    "specific_attributes": "endpoint_url=http%3A%2F%2Fminio%3A9000",
-    "description": "",
-    "organization": null
-  }
-},
-{
-  "model": "engine.cloudstorage",
-  "pk": 2,
-  "fields": {
-    "provider_type": "AWS_S3_BUCKET",
-    "resource": "private",
-    "display_name": "Bucket 2",
-    "owner": 11,
-    "created_date": "2022-03-17T07:23:59.305Z",
-    "updated_date": "2022-03-17T07:23:59.309Z",
-    "credentials": "minio_access_key minio_secret_key",
-    "credentials_type": "KEY_SECRET_KEY_PAIR",
-    "specific_attributes": "endpoint_url=http%3A%2F%2Fminio%3A9000",
-    "description": "",
-    "organization": 2
-  }
-},
-{
   "model": "engine.issue",
   "pk": 1,
   "fields": {
@@ -5829,6 +5793,56 @@
     "message": "Wrong position",
     "created_date": "2022-03-16T12:49:29.372Z",
     "updated_date": "2022-03-16T12:49:29.372Z"
+  }
+},
+{
+  "model": "engine.manifest",
+  "pk": 1,
+  "fields": {
+    "filename": "manifest.jsonl",
+    "cloud_storage": 1
+  }
+},
+{
+  "model": "engine.manifest",
+  "pk": 2,
+  "fields": {
+    "filename": "manifest.jsonl",
+    "cloud_storage": 2
+  }
+},
+{
+  "model": "engine.cloudstorage",
+  "pk": 1,
+  "fields": {
+    "provider_type": "AWS_S3_BUCKET",
+    "resource": "public",
+    "display_name": "Bucket 1",
+    "owner": 2,
+    "created_date": "2022-03-17T07:22:49.519Z",
+    "updated_date": "2022-03-17T07:22:49.529Z",
+    "credentials": "",
+    "credentials_type": "ANONYMOUS_ACCESS",
+    "specific_attributes": "endpoint_url=http%3A%2F%2Fminio%3A9000",
+    "description": "",
+    "organization": null
+  }
+},
+{
+  "model": "engine.cloudstorage",
+  "pk": 2,
+  "fields": {
+    "provider_type": "AWS_S3_BUCKET",
+    "resource": "private",
+    "display_name": "Bucket 2",
+    "owner": 11,
+    "created_date": "2022-03-17T07:23:59.305Z",
+    "updated_date": "2022-03-17T07:23:59.309Z",
+    "credentials": "minio_access_key minio_secret_key",
+    "credentials_type": "KEY_SECRET_KEY_PAIR",
+    "specific_attributes": "endpoint_url=http%3A%2F%2Fminio%3A9000",
+    "description": "",
+    "organization": 2
   }
 }
 ]
