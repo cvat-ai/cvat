@@ -173,7 +173,10 @@ class ImageListReader(IMediaReader):
                 properties = ValidateDimension.get_pcd_properties(f)
                 return int(properties["WIDTH"]),  int(properties["HEIGHT"])
         img = Image.open(self._source_path[i])
-        return img.width, img.height
+        try:
+            return img.width, img.height, img._getexif().get(274, 0)
+        except Exception:
+            return img.width, img.height, 0
 
     def reconcile(self, source_files, step=1, start=0, stop=None, dimension=DimensionType.DIM_2D, sorting_method=None):
         # FIXME
@@ -314,7 +317,10 @@ class ZipReader(ImageListReader):
                 properties = ValidateDimension.get_pcd_properties(f)
                 return int(properties["WIDTH"]),  int(properties["HEIGHT"])
         img = Image.open(io.BytesIO(self._zip_source.read(self._source_path[i])))
-        return img.width, img.height
+        try:
+            return img.width, img.height, img._getexif().get(274, 0)
+        except Exception:
+            return img.width, img.height, 0
 
     def get_image(self, i):
         if self._dimension == DimensionType.DIM_3D:

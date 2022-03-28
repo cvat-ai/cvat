@@ -490,7 +490,7 @@ def _create_thread(db_task, data, isBackupRestore=False, isDatasetImport=False):
     if db_data.chunk_size is None:
         if isinstance(compressed_chunk_writer, ZipCompressedChunkWriter):
             if not (db_data.storage == models.StorageChoice.CLOUD_STORAGE):
-                w, h = extractor.get_image_size(0)
+                w, h, _ = extractor.get_image_size(0)
             else:
                 img_properties = manifest[0]
                 w, h = img_properties['width'], img_properties['height']
@@ -593,7 +593,7 @@ def _create_thread(db_task, data, isBackupRestore=False, isDatasetImport=False):
                         if not chunk_path.endswith(f"{properties['name']}{properties['extension']}"):
                             raise Exception('Incorrect file mapping to manifest content')
                         if db_task.dimension == models.DimensionType.DIM_2D:
-                            resolution = (properties['width'], properties['height'])
+                            resolution = (properties['width'], properties['height'], extractor.get_image_size(frame_id)[2])
                         else:
                             resolution = extractor.get_image_size(frame_id)
                         img_sizes.append(resolution)
@@ -601,8 +601,8 @@ def _create_thread(db_task, data, isBackupRestore=False, isDatasetImport=False):
                     db_images.extend([
                         models.Image(data=db_data,
                             path=os.path.relpath(path, upload_dir),
-                            frame=frame, width=w, height=h)
-                        for (path, frame), (w, h) in zip(chunk_paths, img_sizes)
+                            frame=frame, width=w, height=h, orientation=o)
+                        for (path, frame), (w, h, o) in zip(chunk_paths, img_sizes)
                     ])
 
     if db_data.storage_method == models.StorageMethodChoice.FILE_SYSTEM or not settings.USE_CACHE:

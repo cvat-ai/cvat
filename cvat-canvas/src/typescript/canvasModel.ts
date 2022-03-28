@@ -13,6 +13,7 @@ export interface Size {
 export interface Image {
     renderWidth: number;
     renderHeight: number;
+    orientation: number;
     imageData: ImageData | CanvasImageSource;
 }
 
@@ -429,8 +430,10 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
                     height: frameData.height as number,
                     width: frameData.width as number,
                 };
-
-                this.data.image = data;
+                this.data.image = {
+                    ...data,
+                    orientation: frameData.orientation as number,
+                };
                 this.notify(UpdateReasons.IMAGE_CHANGED);
                 this.data.zLayer = zLayer;
                 this.data.objects = objectStates;

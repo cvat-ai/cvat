@@ -1277,6 +1277,16 @@ export class CanvasViewImpl implements CanvasView, Listener {
                         // Transformation matrix must not affect the putImageData() method.
                         // By this reason need to redraw the image to apply scale.
                         // https://www.w3.org/TR/2dcontext/#dom-context-2d-putimagedata
+                        switch (image.orientation) {
+                            case 2: ctx.transform(-1, 0, 0, 1, image.imageData.width, 0); break;
+                            case 3: ctx.transform(-1, 0, 0, -1, image.imageData.width, image.imageData.height); break;
+                            case 4: ctx.transform(1, 0, 0, -1, 0, image.imageData.height); break;
+                            case 5: ctx.transform(0, 1, 1, 0, 0, 0); break;
+                            case 6: ctx.transform(0, 1, -1, 0, image.imageData.height, 0); break;
+                            case 7: ctx.transform(0, -1, -1, 0, image.imageData.height, image.imageData.width); break;
+                            case 8: ctx.transform(0, -1, 1, 0, 0, image.imageData.width); break;
+                            default: break;
+                        }
                         ctx.drawImage(this.background, 0, 0);
                     } else {
                         ctx.drawImage(image.imageData, 0, 0);

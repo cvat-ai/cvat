@@ -931,6 +931,7 @@ class TaskViewSet(UploadMixin, viewsets.ModelViewSet):
         frame_meta = [{
             'width': item.width,
             'height': item.height,
+            'orientation': item.orientation,
             'name': item.path,
             'has_related_context': hasattr(item, 'related_files') and item.related_files.exists()
         } for item in media]
