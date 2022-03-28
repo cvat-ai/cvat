@@ -104,6 +104,11 @@ def annotations():
         return json.load(f)
 
 @pytest.fixture(scope='module')
+def cloud_storages():
+    with open(osp.join(ASSETS_DIR, 'cloudstorages.json')) as f:
+        return Container(json.load(f)['results'])
+
+@pytest.fixture(scope='module')
 def issues():
     with open(osp.join(ASSETS_DIR, 'issues.json')) as f:
         return Container(json.load(f)['results'])
