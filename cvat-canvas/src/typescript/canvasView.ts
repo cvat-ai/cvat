@@ -12,6 +12,7 @@ import 'svg.select.js';
 import { CanvasController } from './canvasController';
 import { Listener, Master } from './master';
 import { DrawHandler, DrawHandlerImpl } from './drawHandler';
+import { MasksDrawHandler, MasksDrawHandlerImpl } from './masksDrawHandler';
 import { EditHandler, EditHandlerImpl } from './editHandler';
 import { MergeHandler, MergeHandlerImpl } from './mergeHandler';
 import { SplitHandler, SplitHandlerImpl } from './splitHandler';
@@ -62,6 +63,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
     private text: SVGSVGElement;
     private adoptedText: SVG.Container;
     private background: HTMLCanvasElement;
+    private masksContent: HTMLCanvasElement;
     private bitmap: HTMLCanvasElement;
     private grid: SVGSVGElement;
     private content: SVGSVGElement;
@@ -79,6 +81,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
     private drawnIssueRegions: Record<number, SVG.Shape>;
     private geometry: Geometry;
     private drawHandler: DrawHandler;
+    private masksDrawHandler: MasksDrawHandler;
     private editHandler: EditHandler;
     private mergeHandler: MergeHandler;
     private splitHandler: SplitHandler;
@@ -506,6 +509,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
         // Transform handlers
         this.drawHandler.transform(this.geometry);
+        this.masksDrawHandler.transform(this.geometry);
         this.editHandler.transform(this.geometry);
         this.zoomHandler.transform(this.geometry);
         this.autoborderHandler.transform(this.geometry);
@@ -515,7 +519,13 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
     private transformCanvas(): void {
         // Transform canvas
-        for (const obj of [this.background, this.grid, this.content, this.bitmap, this.attachmentBoard]) {
+        for (const obj of [
+            this.background,
+            this.grid,
+            this.content,
+            this.bitmap,
+            this.attachmentBoard,
+        ]) {
             obj.style.transform = `scale(${this.geometry.scale}) rotate(${this.geometry.angle}deg)`;
         }
 
@@ -587,6 +597,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
         // Transform handlers
         this.drawHandler.transform(this.geometry);
+        this.masksDrawHandler.transform(this.geometry);
         this.editHandler.transform(this.geometry);
         this.zoomHandler.transform(this.geometry);
         this.autoborderHandler.transform(this.geometry);
@@ -595,7 +606,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
     }
 
     private resizeCanvas(): void {
-        for (const obj of [this.background, this.grid, this.bitmap]) {
+        for (const obj of [this.background, this.masksContent, this.grid, this.bitmap]) {
             obj.style.width = `${this.geometry.image.width}px`;
             obj.style.height = `${this.geometry.image.height}px`;
         }
@@ -994,6 +1005,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         this.text = window.document.createElementNS('http://www.w3.org/2000/svg', 'svg');
         this.adoptedText = SVG.adopt((this.text as any) as HTMLElement) as SVG.Container;
         this.background = window.document.createElement('canvas');
+        this.masksContent = window.document.createElement('canvas');
         this.bitmap = window.document.createElement('canvas');
         // window.document.createElementNS('http://www.w3.org/2000/svg', 'svg');
 
@@ -1059,6 +1071,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         // Setup content
         this.text.setAttribute('id', 'cvat_canvas_text_content');
         this.background.setAttribute('id', 'cvat_canvas_background');
+        this.masksContent.setAttribute('id', 'cvat_canvas_masks_content');
         this.content.setAttribute('id', 'cvat_canvas_content');
         this.bitmap.setAttribute('id', 'cvat_canvas_bitmap');
         this.bitmap.style.display = 'none';
@@ -1080,6 +1093,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         this.canvas.appendChild(this.loadingAnimation);
         this.canvas.appendChild(this.text);
         this.canvas.appendChild(this.background);
+        this.canvas.appendChild(this.masksContent);
         this.canvas.appendChild(this.bitmap);
         this.canvas.appendChild(this.grid);
         this.canvas.appendChild(this.content);
@@ -1094,6 +1108,10 @@ export class CanvasViewImpl implements CanvasView, Listener {
             this.autoborderHandler,
             this.geometry,
             this.configuration,
+        );
+        this.masksDrawHandler = new MasksDrawHandlerImpl(
+            this.onDrawDone.bind(this),
+            this.masksContent,
         );
         this.editHandler = new EditHandlerImpl(this.onEditDone.bind(this), this.adoptedContent, this.autoborderHandler);
         this.mergeHandler = new MergeHandlerImpl(
@@ -1126,12 +1144,12 @@ export class CanvasViewImpl implements CanvasView, Listener {
         );
 
         // Setup event handlers
-        this.content.addEventListener('dblclick', (e: MouseEvent): void => {
+        this.canvas.addEventListener('dblclick', (e: MouseEvent): void => {
             this.controller.fit();
             e.preventDefault();
         });
 
-        this.content.addEventListener('mousedown', (event): void => {
+        this.canvas.addEventListener('mousedown', (event): void => {
             if ([0, 1].includes(event.button)) {
                 if (
                     [Mode.IDLE, Mode.DRAG_CANVAS, Mode.MERGE, Mode.SPLIT]
@@ -1146,7 +1164,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         window.document.addEventListener('keydown', this.onShiftKeyDown);
         window.document.addEventListener('keyup', this.onShiftKeyUp);
 
-        this.content.addEventListener('wheel', (event): void => {
+        this.canvas.addEventListener('wheel', (event): void => {
             if (event.ctrlKey) return;
             const { offset } = this.controller.geometry;
             const point = translateToSVG(this.content, [event.clientX, event.clientY]);
@@ -1160,7 +1178,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             event.preventDefault();
         });
 
-        this.content.addEventListener('mousemove', (e): void => {
+        this.canvas.addEventListener('mousemove', (e): void => {
             this.controller.drag(e.clientX, e.clientY);
 
             if (this.mode !== Mode.IDLE) return;
@@ -1388,16 +1406,23 @@ export class CanvasViewImpl implements CanvasView, Listener {
             }
         } else if (reason === UpdateReasons.DRAW) {
             const data: DrawData = this.controller.drawData;
-            if (data.enabled && this.mode === Mode.IDLE) {
+            if (data.enabled && [Mode.IDLE, Mode.DRAW].includes(this.mode)) {
                 this.canvas.style.cursor = 'crosshair';
                 this.mode = Mode.DRAW;
                 if (typeof data.redraw === 'number') {
                     this.setupInnerFlags(data.redraw, 'drawHidden', true);
                 }
-                this.drawHandler.draw(data, this.geometry);
+                if (data.shapeType === 'mask') {
+                    this.content.style.pointerEvents = 'none';
+                    this.masksDrawHandler.draw(data, this.geometry);
+                } else {
+                    this.drawHandler.draw(data, this.geometry);
+                }
             } else {
+                this.content.style.pointerEvents = '';
                 this.canvas.style.cursor = '';
                 if (this.mode !== Mode.IDLE) {
+                    this.masksDrawHandler.draw(data, this.geometry);
                     this.drawHandler.draw(data, this.geometry);
                 }
             }

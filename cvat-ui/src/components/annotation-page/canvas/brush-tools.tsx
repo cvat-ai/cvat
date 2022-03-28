@@ -6,27 +6,40 @@ import './brush-toolbox-styles.scss';
 
 import React, { useEffect, useState } from 'react';
 import ReactDOM from 'react-dom';
-import { useDispatch, useSelector } from 'react-redux';
+import { useSelector } from 'react-redux';
 import Button from 'antd/lib/button';
-import Icon, { BgColorsOutlined, CheckOutlined, DragOutlined, PlusOutlined } from '@ant-design/icons';
+import Icon, {
+    BgColorsOutlined, CheckOutlined, DragOutlined, PlusOutlined,
+} from '@ant-design/icons';
 import InputNumber from 'antd/lib/input-number';
 import Select from 'antd/lib/select';
 
+import { Canvas } from 'cvat-canvas-wrapper';
+import { BrushIcon, EraserIcon } from 'icons';
 import CVATTooltip from 'components/common/cvat-tooltip';
-import { CombinedState } from 'reducers/interfaces';
-import { updateCanvasBrushTools } from 'actions/annotation-actions';
+import { CombinedState, ShapeType } from 'reducers/interfaces';
 import LabelSelector from 'components/label-selector/label-selector';
 import useDraggable from './draggable-hoc';
-import { BrushIcon, EraserIcon } from 'icons';
 
-function BrushTools(): React.ReactPortal | null {
+const DraggableArea = (
+    <div className='cvat-brush-tools-draggable-area'>
+        <DragOutlined />
+    </div>
+);
+
+function BrushTools(): React.ReactPortal {
     const defaultLabelID = useSelector((state: CombinedState) => state.annotation.drawing.activeLabelID);
     const config = useSelector((state: CombinedState) => state.annotation.canvas.brushTools);
+    const canvasInstance = useSelector((state: CombinedState) => state.annotation.canvas.instance);
     const { visible } = config;
     const labels = useSelector((state: CombinedState) => state.annotation.job.labels);
     const [activeLabelID, setActiveLabelID] = useState<null | number>(null);
     const [currentTool, setCurrentTool] = useState<'brush' | 'eraser' | 'fill'>('brush');
+    const [brushForm, setBrushForm] = useState<'circle' | 'square'>('circle');
     const [[top, left], setTopLeft] = useState([0, 0]);
+    const [brushSize, setBrushSize] = useState(10);
+    const [fillThreshold, setFillThreshild] = useState(10);
+    const [removeUnderlyingPixels, setRemoveUnderlyingPixels] = useState(false);
     const dragBar = useDraggable(
         (): number[] => {
             const [element] = window.document.getElementsByClassName('cvat-brush-tools-toolbox');
@@ -38,16 +51,31 @@ function BrushTools(): React.ReactPortal | null {
             return [0, 0];
         },
         (newTop, newLeft) => setTopLeft([newTop, newLeft]),
-        (
-            <div className='cvat-brush-tools-draggable-area'>
-                <DragOutlined />
-            </div>
-        ),
+        DraggableArea,
     );
 
     useEffect(() => {
         setActiveLabelID(defaultLabelID);
     }, [defaultLabelID]);
+
+    useEffect(() => {
+        const label = labels.find((_label: any) => _label.id === activeLabelID);
+        if (visible && label && canvasInstance instanceof Canvas) {
+            canvasInstance.draw({
+                enabled: true,
+                shapeType: ShapeType.MASK,
+                crosshair: false,
+                brushTool: {
+                    type: currentTool,
+                    size: brushSize,
+                    form: brushForm,
+                    color: label.color,
+                    fillThreshold,
+                    removeUnderlyingPixels,
+                },
+            });
+        }
+    }, [currentTool, brushSize, brushForm, removeUnderlyingPixels, visible, activeLabelID]);
 
     useEffect(() => {
         const canvasContainer = window.document.getElementsByClassName('cvat-canvas-container')[0];
@@ -57,12 +85,11 @@ function BrushTools(): React.ReactPortal | null {
         }
     }, []);
 
-    if (!visible) {
-        return null;
-    }
-
+    const MIN_BRUSH_SIZE = 1;
+    const MIN_FILL_THRESHOLD = 1;
+    const MAX_FILL_THRESHOLD = 255;
     return ReactDOM.createPortal((
-        <div className='cvat-brush-tools-toolbox' style={{ top, left }}>
+        <div className='cvat-brush-tools-toolbox' style={{ top, left, display: visible ? '' : 'none' }}>
             <Button type='text' className='cvat-brush-tools-finish' icon={<CheckOutlined />} />
             <Button type='text' className='cvat-brush-tools-continue' icon={<PlusOutlined />} />
             <hr />
@@ -84,21 +111,52 @@ function BrushTools(): React.ReactPortal | null {
                 icon={<BgColorsOutlined />}
                 onClick={() => setCurrentTool('fill')}
             />
-            <CVATTooltip title='Brush size'>
-                <InputNumber
-                    value={10}
-                    min={1}
-                    formatter={(val: number | undefined) => {
-                        if (val) return `${val}px`;
-                        return '';
-                    }}
-                    parser={(val: string | undefined): number => {
-                        if (val) return +val.replace('px', '');
-                        return 0;
-                    }}
-                />
-            </CVATTooltip>
-            <Select value='circle'>
+            { ['brush', 'eraser'].includes(currentTool) ? (
+                <CVATTooltip title='Brush size'>
+                    <InputNumber
+                        className='cvat-brush-tools-brush-size'
+                        value={brushSize}
+                        min={MIN_BRUSH_SIZE}
+                        formatter={(val: number | undefined) => {
+                            if (val) return `${val}px`;
+                            return '';
+                        }}
+                        parser={(val: string | undefined): number => {
+                            if (val) return +val.replace('px', '');
+                            return 0;
+                        }}
+                        onChange={(value: number) => {
+                            if (Number.isInteger(value) && value >= MIN_FILL_THRESHOLD) {
+                                setBrushSize(value);
+                            }
+                        }}
+                    />
+                </CVATTooltip>
+            ) : null}
+            { currentTool === 'fill' ? (
+                <CVATTooltip title='Tolerance'>
+                    <InputNumber
+                        className='cvat-brush-tools-fill-tolerance'
+                        value={brushSize}
+                        min={MIN_FILL_THRESHOLD}
+                        max={MAX_FILL_THRESHOLD}
+                        formatter={(val: number | undefined) => {
+                            if (val) return `${val}px`;
+                            return '';
+                        }}
+                        parser={(val: string | undefined): number => {
+                            if (val) return +val.replace('px', '');
+                            return 0;
+                        }}
+                        onChange={(value: number) => {
+                            if (Number.isInteger(value) && value >= MIN_FILL_THRESHOLD && value <= MAX_FILL_THRESHOLD) {
+                                setFillThreshild(value);
+                            }
+                        }}
+                    />
+                </CVATTooltip>
+            ) : null}
+            <Select value={brushForm} onChange={(value: 'circle' | 'square') => setBrushForm(value)}>
                 <Select.Option value='circle'>Circle</Select.Option>
                 <Select.Option value='square'>Square</Select.Option>
             </Select>
@@ -115,3 +173,5 @@ function BrushTools(): React.ReactPortal | null {
 }
 
 export default React.memo(BrushTools);
+
+// TODO: do we need top, left here?

@@ -67,6 +67,15 @@ export interface Configuration {
     creationOpacity?: number;
 }
 
+export interface BrushTool {
+    type: 'brush' | 'eraser' | 'fill';
+    color: string;
+    removeUnderlyingPixels?: boolean;
+    form?: 'circle' | 'square';
+    fillThreshold?: number;
+    size?: number;
+}
+
 export interface DrawData {
     enabled: boolean;
     shapeType?: string;
@@ -75,6 +84,7 @@ export interface DrawData {
     numberOfPoints?: number;
     initialState?: any;
     crosshair?: boolean;
+    brushTool?: BrushTool | null;
     redraw?: number;
 }
 
@@ -530,9 +540,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         }
 
         if (drawData.enabled) {
-            if (this.data.drawData.enabled) {
-                throw new Error('Drawing has been already started');
-            } else if (!drawData.shapeType && !drawData.initialState) {
+            if (!drawData.shapeType && !drawData.initialState) {
                 throw new Error('A shape type is not specified');
             } else if (typeof drawData.numberOfPoints !== 'undefined') {
                 if (drawData.shapeType === 'polygon' && drawData.numberOfPoints < 3) {

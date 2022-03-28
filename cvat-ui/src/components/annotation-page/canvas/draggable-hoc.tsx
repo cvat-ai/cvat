@@ -2,10 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useEffect } from 'react';
-import { useCallback } from 'react';
-import { useRef } from 'react';
-import { useLayoutEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 
 export default function useDraggable(
     getPosition: () => number[],
@@ -14,6 +11,7 @@ export default function useDraggable(
 ): JSX.Element {
     const ref = useRef<HTMLDivElement>(null);
     useEffect(() => {
+        if (!ref.current) return () => {};
         const click = [0, 0];
         const position = getPosition();
 
@@ -39,9 +37,7 @@ export default function useDraggable(
         };
 
         window.document.addEventListener('mouseup', mouseUpListener);
-        if (ref.current) {
-            ref.current.addEventListener('mousedown', mouseDownListener);
-        }
+        ref.current.addEventListener('mousedown', mouseDownListener);
 
         return () => {
             window.document.removeEventListener('mouseup', mouseUpListener);
@@ -49,7 +45,7 @@ export default function useDraggable(
                 ref.current.removeEventListener('mousedown', mouseDownListener);
             }
         };
-    }, []);
+    }, [ref.current]);
 
     return (
         <div ref={ref}>

@@ -40,7 +40,7 @@ const defaultState: AnnotationState = {
             clientID: null,
         },
         brushTools: {
-            visible: true,
+            visible: false,
             top: 0,
             left: 0,
         },
