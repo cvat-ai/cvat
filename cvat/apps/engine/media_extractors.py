@@ -90,11 +90,24 @@ class IMediaReader(ABC):
         else:
             preview = obj
         preview.thumbnail(PREVIEW_SIZE)
+        orientation = preview._getexif().get(274, 1) if preview._getexif() else 1
+        if orientation in [3, 4]:
+            preview = preview.rotate(180, expand=True)
+        elif orientation in [5, 8]:
+            preview = preview.rotate(90, expand=True)
+        elif orientation in [6, 7]:
+            preview = preview.rotate(270, expand=True)
+        if orientation in [2, 4, 5 ,7]:
+            preview = preview.transpose(Image.FLIP_LEFT_RIGHT)
 
         return preview.convert('RGB')
 
     @abstractmethod
     def get_image_size(self, i):
+        pass
+
+    @abstractmethod
+    def get_orientation(self, i):
         pass
 
     def __len__(self):
@@ -173,10 +186,17 @@ class ImageListReader(IMediaReader):
                 properties = ValidateDimension.get_pcd_properties(f)
                 return int(properties["WIDTH"]),  int(properties["HEIGHT"])
         img = Image.open(self._source_path[i])
+        return img.width, img.height
+
+    def get_orientation(self, i):
+        if self._dimension == DimensionType.DIM_3D:
+            raise NotImplementedError()
+        img = Image.open(self._source_path[i])
         try:
-            return img.width, img.height, img._getexif().get(274, 0)
+            return img._getexif().get(274, 1) if img._getexif() else 1
         except Exception:
-            return img.width, img.height, 0
+            return 1
+
 
     def reconcile(self, source_files, step=1, start=0, stop=None, dimension=DimensionType.DIM_2D, sorting_method=None):
         # FIXME
@@ -317,10 +337,16 @@ class ZipReader(ImageListReader):
                 properties = ValidateDimension.get_pcd_properties(f)
                 return int(properties["WIDTH"]),  int(properties["HEIGHT"])
         img = Image.open(io.BytesIO(self._zip_source.read(self._source_path[i])))
+        return img.width, img.height
+
+    def get_orientation(self, i):
+        if self._dimension == DimensionType.DIM_3D:
+            raise NotImplementedError()
+        img = Image.open(self._source_path[i])
         try:
-            return img.width, img.height, img._getexif().get(274, 0)
+            return img._getexif().get(274, 1) if img._getexif() else 1
         except Exception:
-            return img.width, img.height, 0
+            return 1
 
     def get_image(self, i):
         if self._dimension == DimensionType.DIM_3D:
@@ -434,10 +460,6 @@ class VideoReader(IMediaReader):
                 format ='bgr24'
             ).to_image()
         )
-
-    def get_image_size(self, i):
-        image = (next(iter(self)))[0]
-        return image.width, image.height
 
 class FragmentMediaReader:
     def __init__(self, chunk_number, chunk_size, start, stop, step=1):

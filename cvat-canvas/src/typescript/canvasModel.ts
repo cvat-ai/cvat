@@ -427,8 +427,10 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
                 }
 
                 this.data.imageSize = {
-                    height: frameData.height as number,
-                    width: frameData.width as number,
+                    height: frameData.orientation as number < 5 ?
+                        frameData.height as number : frameData.width as number,
+                    width: frameData.orientation as number < 5 ?
+                        frameData.width as number : frameData.height as number,
                 };
                 this.data.image = {
                     ...data,

@@ -490,7 +490,7 @@ def _create_thread(db_task, data, isBackupRestore=False, isDatasetImport=False):
     if db_data.chunk_size is None:
         if isinstance(compressed_chunk_writer, ZipCompressedChunkWriter):
             if not (db_data.storage == models.StorageChoice.CLOUD_STORAGE):
-                w, h, _ = extractor.get_image_size(0)
+                w, h = extractor.get_image_size(0)
             else:
                 img_properties = manifest[0]
                 w, h = img_properties['width'], img_properties['height']
@@ -584,7 +584,7 @@ def _create_thread(db_task, data, isBackupRestore=False, isDatasetImport=False):
                 counter = itertools.count()
                 for _, chunk_frames in itertools.groupby(extractor.frame_range, lambda x: next(counter) // db_data.chunk_size):
                     chunk_paths = [(extractor.get_path(i), i) for i in chunk_frames]
-                    img_sizes = []
+                    imgs_info = []
 
                     for chunk_path, frame_id in chunk_paths:
                         properties = manifest[manifest_index(frame_id)]
@@ -593,16 +593,19 @@ def _create_thread(db_task, data, isBackupRestore=False, isDatasetImport=False):
                         if not chunk_path.endswith(f"{properties['name']}{properties['extension']}"):
                             raise Exception('Incorrect file mapping to manifest content')
                         if db_task.dimension == models.DimensionType.DIM_2D:
-                            resolution = (properties['width'], properties['height'], extractor.get_image_size(frame_id)[2])
+                            resolution = (properties['width'], properties['height'])
+                            orientation = properties.get('orientation', 1)
                         else:
                             resolution = extractor.get_image_size(frame_id)
-                        img_sizes.append(resolution)
+                            orientation = 1
+
+                        imgs_info.append((resolution, orientation))
 
                     db_images.extend([
                         models.Image(data=db_data,
                             path=os.path.relpath(path, upload_dir),
                             frame=frame, width=w, height=h, orientation=o)
-                        for (path, frame), (w, h, o) in zip(chunk_paths, img_sizes)
+                        for (path, frame), ((w, h), o) in zip(chunk_paths, imgs_info)
                     ])
 
     if db_data.storage_method == models.StorageMethodChoice.FILE_SYSTEM or not settings.USE_CACHE:

@@ -1264,29 +1264,33 @@ export class CanvasViewImpl implements CanvasView, Listener {
             } else {
                 this.loadingAnimation.classList.add('cvat_canvas_hidden');
                 const ctx = this.background.getContext('2d');
-                this.background.setAttribute('width', `${image.renderWidth}px`);
-                this.background.setAttribute('height', `${image.renderHeight}px`);
+                const [width, height, renderWidth, renderHeight] = image.orientation < 5 ? [
+                    image.imageData.width as number, image.imageData.height as number,
+                    image.renderWidth, image.renderHeight,
+                ] : [
+                    image.imageData.height as number, image.imageData.width as number,
+                    image.renderHeight, image.renderWidth,
+                ];
+                this.background.setAttribute('width', `${renderWidth}px`);
+                this.background.setAttribute('height', `${renderHeight}px`);
 
                 if (ctx) {
+                    switch (image.orientation) {
+                        case 2: ctx.transform(-1, 0, 0, 1, width, 0); break;
+                        case 3: ctx.transform(-1, 0, 0, -1, width, height); break;
+                        case 4: ctx.transform(1, 0, 0, -1, 0, height); break;
+                        case 5: ctx.transform(0, 1, 1, 0, 0, 0); break;
+                        case 6: ctx.transform(0, 1, -1, 0, width, 0); break;
+                        case 7: ctx.transform(0, -1, -1, 0, width, height); break;
+                        case 8: ctx.transform(0, -1, 1, 0, 0, height); break;
+                        default: break;
+                    }
                     if (image.imageData instanceof ImageData) {
-                        ctx.scale(
-                            image.renderWidth / image.imageData.width,
-                            image.renderHeight / image.imageData.height,
-                        );
+                        ctx.scale(renderWidth / width, renderHeight / height);
                         ctx.putImageData(image.imageData, 0, 0);
                         // Transformation matrix must not affect the putImageData() method.
                         // By this reason need to redraw the image to apply scale.
                         // https://www.w3.org/TR/2dcontext/#dom-context-2d-putimagedata
-                        switch (image.orientation) {
-                            case 2: ctx.transform(-1, 0, 0, 1, image.imageData.width, 0); break;
-                            case 3: ctx.transform(-1, 0, 0, -1, image.imageData.width, image.imageData.height); break;
-                            case 4: ctx.transform(1, 0, 0, -1, 0, image.imageData.height); break;
-                            case 5: ctx.transform(0, 1, 1, 0, 0, 0); break;
-                            case 6: ctx.transform(0, 1, -1, 0, image.imageData.height, 0); break;
-                            case 7: ctx.transform(0, -1, -1, 0, image.imageData.height, image.imageData.width); break;
-                            case 8: ctx.transform(0, -1, 1, 0, 0, image.imageData.width); break;
-                            default: break;
-                        }
                         ctx.drawImage(this.background, 0, 0);
                     } else {
                         ctx.drawImage(image.imageData, 0, 0);
