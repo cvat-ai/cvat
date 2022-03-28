@@ -155,13 +155,14 @@ function DetectorRunner(props: Props): JSX.Element {
         rightLabel: string,
         removalTitle: string,
         onClick: () => void,
+        className = '',
     ): JSX.Element {
         return (
             <Row key={leftLabel} justify='start' align='middle'>
-                <Col span={10}>
+                <Col span={10} className={className}>
                     <Tag color={color}>{leftLabel}</Tag>
                 </Col>
-                <Col span={10} offset={1}>
+                <Col span={10} offset={1} className={className}>
                     <Tag color={color}>{rightLabel}</Tag>
                 </Col>
                 <Col offset={1}>
@@ -181,9 +182,10 @@ function DetectorRunner(props: Props): JSX.Element {
         tooltip: string,
         labelsToRender: string[],
         onChange: (label: string) => void,
+        className = '',
     ): JSX.Element {
         return (
-            <CVATTooltip title={tooltip}>
+            <CVATTooltip title={tooltip} className={className}>
                 <Select
                     value={value}
                     onChange={onChange}
@@ -296,6 +298,7 @@ function DetectorRunner(props: Props): JSX.Element {
                                                     .attributes[attributeLabel];
                                                 setMapping(newMapping);
                                             },
+                                            'cvat-run-model-label-attribute-block',
                                         )
                                     ))
                             }
@@ -308,6 +311,7 @@ function DetectorRunner(props: Props): JSX.Element {
                                             (modelAttrLabel: string) => updateAttrMatch(
                                                 modelLabel, modelAttrLabel, null,
                                             ),
+                                            'cvat-run-model-label-attribute-block',
                                         )}
                                     </Col>
                                     <Col span={10} offset={1}>
@@ -317,10 +321,11 @@ function DetectorRunner(props: Props): JSX.Element {
                                             (taskAttrLabel: string) => updateAttrMatch(
                                                 modelLabel, null, taskAttrLabel,
                                             ),
+                                            'cvat-run-model-label-attribute-block',
                                         )}
                                     </Col>
                                     <Col span={1} offset={1}>
-                                        <CVATTooltip title='Specify a label mapping between model labels and task labels'>
+                                        <CVATTooltip title='Specify an attribute mapping between model label and task label attributes'>
                                             <QuestionCircleOutlined className='cvat-info-circle-icon' />
                                         </CVATTooltip>
                                     </Col>
@@ -339,7 +344,7 @@ function DetectorRunner(props: Props): JSX.Element {
                             {renderSelector(match.task || '', 'Task labels', taskLabels, (taskLabel: string) => updateMatch(null, taskLabel))}
                         </Col>
                         <Col span={1} offset={1}>
-                            <CVATTooltip title='Specify an attribute mapping between model label and task label attributes'>
+                            <CVATTooltip title='Specify a label mapping between model labels and task labels'>
                                 <QuestionCircleOutlined className='cvat-info-circle-icon' />
                             </CVATTooltip>
                         </Col>
