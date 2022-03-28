@@ -17,7 +17,7 @@ spec:
       value: /opt/nuclio/SiamMask:/opt/nuclio/SiamMask/experiments/siammask_sharp
 
   build:
-    image: cvat/pth.foolwood.siammask
+    image: cvat.pth.foolwood.siammask
     baseImage: ubuntu:20.04
 
     directives:

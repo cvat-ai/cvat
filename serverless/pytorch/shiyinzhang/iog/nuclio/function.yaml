@@ -22,7 +22,7 @@ spec:
       value: /opt/nuclio/iog
 
   build:
-    image: cvat/pth.shiyinzhang.iog
+    image: cvat.pth.shiyinzhang.iog
     baseImage: continuumio/miniconda3
 
     directives:

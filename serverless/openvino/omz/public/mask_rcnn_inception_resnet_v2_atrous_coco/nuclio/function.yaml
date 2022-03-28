@@ -101,8 +101,18 @@ spec:
     - name: NUCLIO_PYTHON_EXE_PATH
       value: /opt/nuclio/common/openvino/python3
 
+  volumes:
+    - volume:
+        name: openvino-common
+        configMap:
+          name: "cvat-nuclio-openvino-common"
+          defaultMode: 0750
+      volumeMount:
+        name: openvino-common
+        mountPath: /opt/nuclio/common/openvino
+
   build:
-    image: cvat/openvino.omz.public.mask_rcnn_inception_resnet_v2_atrous_coco
+    image: cvat.openvino.omz.public.mask_rcnn_inception_resnet_v2_atrous_coco
     baseImage: openvino/ubuntu18_dev:2020.2
 
     directives:

@@ -1,0 +1,19 @@
+{{- if .Values.nuclio.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cvat-nuclio-openvino-common
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "cvat.labels" . | nindent 4 }}
+    app: cvat-app
+    tier: nuclio
+{{- if semverCompare ">=1.21-0" .Capabilities.KubeVersion.GitVersion }}
+immutable: true
+{{- end }}
+binaryData:
+  python3: |-
+    {{ .Files.Get "nuclio_func_common_files/python3" | b64enc }}
+  model_loader.py:
+    {{ .Files.Get "nuclio_func_common_files/model_loader.py" | b64enc }}
+{{- end}}

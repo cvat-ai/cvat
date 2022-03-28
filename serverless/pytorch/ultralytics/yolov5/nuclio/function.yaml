@@ -95,7 +95,7 @@ spec:
   handler: main:handler
   eventTimeout: 30s
   build:
-    image: cvat/ultralytics-yolov5
+    image: cvat.ultralytics-yolov5
     baseImage: ultralytics/yolov5:latest-cpu
 
     directives:

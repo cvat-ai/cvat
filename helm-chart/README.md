@@ -124,14 +124,14 @@ Before starting, ensure that the following prerequisites are met:
    nuctl --namespace <your cvat namespace> create project cvat
    ```
 1. Finaly deploy the fuction, i.e.:
-  - using minikube registry:
-    ```shell
-    nuctl deploy --project-name cvat --path serverless/tensorflow/faster_rcnn_inception_v2_coco/nuclio --registry $(minikube ip):5000 --run-registry registry.minikube
-    ```
-  - using Docker hub:
-    ```shell
-    nuctl deploy --project-name cvat --path serverless/tensorflow/faster_rcnn_inception_v2_coco/nuclio --registry docker.io/your_username
-    ```
+   - using minikube registry:
+     ```shell
+     nuctl deploy --project-name cvat --path serverless/tensorflow/faster_rcnn_inception_v2_coco/nuclio --registry $(minikube ip):5000 --run-registry registry.minikube
+     ```
+   - using Docker hub:
+     ```shell
+     nuctl deploy --project-name cvat --path serverless/tensorflow/faster_rcnn_inception_v2_coco/nuclio --registry docker.io/your_username
+     ```
 
 ### (Optional) Enable Analytics
 

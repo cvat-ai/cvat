@@ -21,7 +21,7 @@ spec:
       value: /opt/nuclio/hrnet
 
   build:
-    image: cvat/pth.saic-vul.hrnet
+    image: cvat-pth.saic-vul.hrnet
     baseImage: ubuntu:20.04
 
     directives:

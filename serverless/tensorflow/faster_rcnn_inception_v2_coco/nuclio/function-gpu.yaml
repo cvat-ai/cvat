@@ -96,7 +96,7 @@ spec:
   eventTimeout: 30s
 
   build:
-    image: cvat/tf.faster_rcnn_inception_v2_coco
+    image: cvat.tf.faster_rcnn_inception_v2_coco
     baseImage: tensorflow/tensorflow:2.1.1-gpu
 
     directives:
