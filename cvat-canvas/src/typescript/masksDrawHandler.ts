@@ -13,26 +13,42 @@ export interface MasksDrawHandler {
 }
 
 export class MasksDrawHandlerImpl implements MasksDrawHandler {
-    private onDrawDone: (data: object | null, duration?: number, continueDraw?: boolean) => void;
+    private onDrawDone: (
+        data: object | null,
+        duration?: number,
+        continueDraw?: boolean,
+        prevDrawData?: DrawData,
+    ) => void;
+    private onDrawAgain: (data: DrawData) => void;
     private isDrawing: boolean;
     private drawData: DrawData;
     private canvas: fabric.Canvas;
+    private startTimestamp: number;
     private drawnPaths: fabric.Path[];
 
     private release(): void {
+        this.canvas.getElement().parentElement.style.display = '';
         this.isDrawing = false;
+        this.drawnPaths = [];
+        this.onDrawDone(null);
     }
 
     public constructor(
-        onDrawDone: (data: object | null, duration?: number, continueDraw?: boolean) => void,
+        onDrawDone: (
+            data: object | null,
+            duration?: number,
+            continueDraw?: boolean,
+            prevDrawData?: DrawData,
+        ) => void,
+        onDrawAgain: (data: DrawData) => void,
         canvas: HTMLCanvasElement,
     ) {
         this.isDrawing = false;
         this.drawData = null;
         this.drawnPaths = [];
         this.onDrawDone = onDrawDone;
-        this.canvas = new fabric.Canvas(canvas);
-        this.canvas.getElement().parentElement.classList.add('cvat_masks_canvas_wrapper');
+        this.onDrawAgain = onDrawAgain;
+        this.canvas = new fabric.Canvas(canvas, { containerClass: 'cvat_masks_canvas_wrapper' });
         this.canvas.imageSmoothingEnabled = false;
         this.canvas.on('path:created', (opt) => {
             if (this.drawData.brushTool?.type === 'eraser') {
@@ -46,20 +62,7 @@ export class MasksDrawHandlerImpl implements MasksDrawHandler {
                 (opt as any).path.stroke = color.toRgba();
             }
             this.drawnPaths.push((opt as any).path);
-
-            let imageData = this.canvas.getContext('2d').getImageData(0, 0, 1920, 1080).data;
-            let alpha = [];
-            for (let i = 3; i < 8294400; i += 4) {
-                alpha.push(imageData[i]);
-            }
-
-            // todo: finish and save alpha channel to rle string, draw it back on canvas
-            console.log(alpha)
         });
-
-        this.canvas.on('mouse:up:before', (e) => {
-            console.log(e);
-        })
     }
 
     public transform(geometry: Geometry): void {
@@ -70,19 +73,19 @@ export class MasksDrawHandlerImpl implements MasksDrawHandler {
     }
 
     public draw(drawData: DrawData, geometry: Geometry): void {
-        this.drawData = drawData;
-        if (drawData.enabled) {
+        if (drawData.enabled && drawData.shapeType === 'mask') {
             if (!this.isDrawing) {
                 this.canvas.setHeight(geometry.image.height);
                 this.canvas.setWidth(geometry.image.width);
                 this.canvas.isDrawingMode = true;
+                this.canvas.getElement().parentElement.style.display = 'block';
                 this.isDrawing = true;
+                this.startTimestamp = Date.now();
             } else {
                 this.canvas.freeDrawingBrush = new fabric.PencilBrush(this.canvas);
-                this.canvas.freeDrawingBrush.strokeLineCap = drawData.brushTool.form;
                 this.canvas.freeDrawingBrush.width = drawData.brushTool.size;
                 this.canvas.freeDrawingBrush.strokeLineCap = drawData.brushTool.form === 'circle' ? 'round' : 'square';
-                this.canvas.freeDrawingBrush.strokeLineJoin = 'round';
+                this.canvas.freeDrawingBrush.strokeLineJoin = 'bevel';
                 if (drawData.brushTool.type === 'eraser') {
                     const color = fabric.Color.fromHex('#ffffff');
                     color.setAlpha(0.5);
@@ -93,8 +96,28 @@ export class MasksDrawHandlerImpl implements MasksDrawHandler {
                     this.canvas.freeDrawingBrush.color = color.toRgba();
                 }
             }
-        } else {
+            this.drawData = drawData;
+        } else if (this.isDrawing) {
+            // todo: make a smarter validation
+            if (this.drawnPaths.length) {
+                const imageData = this.canvas.getContext().getImageData(0, 0, 1920, 1080).data;
+                const alpha = [];
+                for (let i = 3; i < imageData.length; i += 4) {
+                    alpha.push(imageData[i] > 0 ? 128 : 0);
+                }
+
+                this.onDrawDone({
+                    shapeType: this.drawData.shapeType,
+                    points: alpha,
+                }, Date.now() - this.startTimestamp, drawData.continue, this.drawData);
+            }
+
             this.release();
+            if (drawData.continue) {
+                this.onDrawAgain(this.drawData);
+            } else {
+                this.drawData = drawData;
+            }
         }
     }
 

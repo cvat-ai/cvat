@@ -6,7 +6,7 @@ import './brush-toolbox-styles.scss';
 
 import React, { useEffect, useState } from 'react';
 import ReactDOM from 'react-dom';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import Button from 'antd/lib/button';
 import Icon, {
     BgColorsOutlined, CheckOutlined, DragOutlined, PlusOutlined,
@@ -17,8 +17,9 @@ import Select from 'antd/lib/select';
 import { Canvas } from 'cvat-canvas-wrapper';
 import { BrushIcon, EraserIcon } from 'icons';
 import CVATTooltip from 'components/common/cvat-tooltip';
-import { CombinedState, ShapeType } from 'reducers/interfaces';
+import { CombinedState, ObjectType, ShapeType } from 'reducers/interfaces';
 import LabelSelector from 'components/label-selector/label-selector';
+import { rememberObject, updateCanvasBrushTools } from 'actions/annotation-actions';
 import useDraggable from './draggable-hoc';
 
 const DraggableArea = (
@@ -28,17 +29,20 @@ const DraggableArea = (
 );
 
 function BrushTools(): React.ReactPortal {
+    const dispatch = useDispatch();
     const defaultLabelID = useSelector((state: CombinedState) => state.annotation.drawing.activeLabelID);
     const config = useSelector((state: CombinedState) => state.annotation.canvas.brushTools);
     const canvasInstance = useSelector((state: CombinedState) => state.annotation.canvas.instance);
-    const { visible } = config;
     const labels = useSelector((state: CombinedState) => state.annotation.job.labels);
+    const { visible } = config;
+
     const [activeLabelID, setActiveLabelID] = useState<null | number>(null);
     const [currentTool, setCurrentTool] = useState<'brush' | 'eraser' | 'fill'>('brush');
     const [brushForm, setBrushForm] = useState<'circle' | 'square'>('circle');
     const [[top, left], setTopLeft] = useState([0, 0]);
     const [brushSize, setBrushSize] = useState(10);
     const [fillThreshold, setFillThreshild] = useState(10);
+
     const [removeUnderlyingPixels, setRemoveUnderlyingPixels] = useState(false);
     const dragBar = useDraggable(
         (): number[] => {
@@ -85,13 +89,68 @@ function BrushTools(): React.ReactPortal {
         }
     }, []);
 
+    useEffect(() => {
+        const hideToolset = (): void => {
+            if (visible) {
+                dispatch(updateCanvasBrushTools({ visible: false }));
+            }
+        };
+
+        const showToolset = (e: Event): void => {
+            const evt = e as CustomEvent;
+            if (evt.detail.drawData.shapeType === ShapeType.MASK) {
+                dispatch(updateCanvasBrushTools({ visible: true }));
+            }
+        };
+
+        if (canvasInstance instanceof Canvas) {
+            canvasInstance.html().addEventListener('canvas.drawn', hideToolset);
+            canvasInstance.html().addEventListener('canvas.canceled', hideToolset);
+            canvasInstance.html().addEventListener('canvas.drawstart', showToolset);
+        }
+
+        return () => {
+            if (canvasInstance instanceof Canvas) {
+                canvasInstance.html().removeEventListener('canvas.drawn', hideToolset);
+                canvasInstance.html().removeEventListener('canvas.canceled', hideToolset);
+                canvasInstance.html().removeEventListener('canvas.drawstart', showToolset);
+            }
+        };
+    }, [visible]);
+
     const MIN_BRUSH_SIZE = 1;
     const MIN_FILL_THRESHOLD = 1;
     const MAX_FILL_THRESHOLD = 255;
     return ReactDOM.createPortal((
         <div className='cvat-brush-tools-toolbox' style={{ top, left, display: visible ? '' : 'none' }}>
-            <Button type='text' className='cvat-brush-tools-finish' icon={<CheckOutlined />} />
-            <Button type='text' className='cvat-brush-tools-continue' icon={<PlusOutlined />} />
+            <Button
+                type='text'
+                className='cvat-brush-tools-finish'
+                icon={<CheckOutlined />}
+                onClick={() => {
+                    if (canvasInstance) {
+                        canvasInstance.draw({ enabled: false });
+                    }
+                }}
+            />
+            <Button
+                type='text'
+                className='cvat-brush-tools-continue'
+                icon={<PlusOutlined />}
+                onClick={() => {
+                    if (canvasInstance) {
+                        canvasInstance.draw({ enabled: false, continue: true });
+
+                        dispatch(
+                            rememberObject({
+                                activeObjectType: ObjectType.SHAPE,
+                                activeShapeType: ShapeType.MASK,
+                                activeLabelID: Number.isInteger(activeLabelID) ? activeLabelID : undefined,
+                            }),
+                        );
+                    }
+                }}
+            />
             <hr />
             <Button
                 type='text'

@@ -8,10 +8,10 @@ import Menu from 'antd/lib/menu';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { MenuInfo } from 'rc-menu/lib/interface';
 
+import consts from 'consts';
+import { rotatePoint } from 'utils/math';
 import ObjectItemContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/object-item';
 import { Workspace } from 'reducers/interfaces';
-import { rotatePoint } from 'utils/math';
-import consts from 'consts';
 
 interface Props {
     readonly: boolean;
@@ -21,9 +21,9 @@ interface Props {
     visible: boolean;
     left: number;
     top: number;
+    latestComments: string[];
     onStartIssue(position: number[]): void;
     openIssue(position: number[], message: string): void;
-    latestComments: string[];
 }
 
 interface ReviewContextMenuProps {

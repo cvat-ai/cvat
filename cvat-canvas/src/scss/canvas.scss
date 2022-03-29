@@ -314,6 +314,11 @@ polyline.cvat_canvas_shape_splitting {
     height: 100%;
 }
 
+.cvat_masks_canvas_wrapper {
+    z-index: 3;
+    display: none;
+}
+
 #cvat_canvas_attachment_board {
     position: absolute;
     z-index: 4;

@@ -10,7 +10,7 @@ import { PlusCircleOutlined, UpOutlined } from '@ant-design/icons';
 
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 import {
-    ColorBy, GridColor, ObjectType, ContextMenuType, Workspace, ShapeType,
+    ColorBy, GridColor, ObjectType, Workspace,
 } from 'reducers/interfaces';
 import { LogType } from 'cvat-logger';
 import { Canvas } from 'cvat-canvas-wrapper';
@@ -85,7 +85,6 @@ interface Props {
     onGroupAnnotations(sessionInstance: any, frame: number, states: any[]): void;
     onSplitAnnotations(sessionInstance: any, frame: number, state: any): void;
     onActivateObject(activatedStateID: number | null): void;
-    onUpdateContextMenu(visible: boolean, left: number, top: number, type: ContextMenuType, pointID?: number): void;
     onAddZLayer(): void;
     onSwitchZLayer(cur: number): void;
     onChangeBrightnessLevel(level: number): void;
@@ -330,7 +329,6 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
 
         canvasInstance.html().removeEventListener('mousedown', this.onCanvasMouseDown);
         canvasInstance.html().removeEventListener('click', this.onCanvasClicked);
-        canvasInstance.html().removeEventListener('contextmenu', this.onCanvasContextMenu);
         canvasInstance.html().removeEventListener('canvas.editstart', this.onCanvasEditStart);
         canvasInstance.html().removeEventListener('canvas.edited', this.onCanvasEditDone);
         canvasInstance.html().removeEventListener('canvas.dragstart', this.onCanvasDragStart);
@@ -355,7 +353,6 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         canvasInstance.html().removeEventListener('canvas.regionselected', this.onCanvasPositionSelected);
         canvasInstance.html().removeEventListener('canvas.splitted', this.onCanvasTrackSplitted);
 
-        canvasInstance.html().removeEventListener('canvas.contextmenu', this.onCanvasPointContextMenu);
         canvasInstance.html().removeEventListener('canvas.error', this.onCanvasErrorOccurrence);
 
         window.removeEventListener('resize', this.fitCanvas);
@@ -455,19 +452,9 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
     };
 
     private onCanvasClicked = (): void => {
-        const { onUpdateContextMenu } = this.props;
         const { canvasInstance } = this.props as { canvasInstance: Canvas };
-        onUpdateContextMenu(false, 0, 0, ContextMenuType.CANVAS_SHAPE);
         if (!canvasInstance.html().contains(document.activeElement) && document.activeElement instanceof HTMLElement) {
             document.activeElement.blur();
-        }
-    };
-
-    private onCanvasContextMenu = (e: MouseEvent): void => {
-        const { activatedStateID, onUpdateContextMenu } = this.props;
-
-        if (e.target && !(e.target as HTMLElement).classList.contains('svg_select_points')) {
-            onUpdateContextMenu(activatedStateID !== null, e.clientX, e.clientY, ContextMenuType.CANVAS_SHAPE);
         }
     };
 
@@ -603,21 +590,6 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         }
     };
 
-    private onCanvasPointContextMenu = (e: any): void => {
-        const { activatedStateID, onUpdateContextMenu, annotations } = this.props;
-
-        const [state] = annotations.filter((el: any) => el.clientID === activatedStateID);
-        if (![ShapeType.CUBOID, ShapeType.RECTANGLE].includes(state.shapeType)) {
-            onUpdateContextMenu(
-                activatedStateID !== null,
-                e.detail.mouseEvent.clientX,
-                e.detail.mouseEvent.clientY,
-                ContextMenuType.CANVAS_SHAPE_POINT,
-                e.detail.pointID,
-            );
-        }
-    };
-
     private activateOnCanvas(): void {
         const {
             activatedStateID,
@@ -748,7 +720,6 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
 
         canvasInstance.html().addEventListener('mousedown', this.onCanvasMouseDown);
         canvasInstance.html().addEventListener('click', this.onCanvasClicked);
-        canvasInstance.html().addEventListener('contextmenu', this.onCanvasContextMenu);
         canvasInstance.html().addEventListener('canvas.editstart', this.onCanvasEditStart);
         canvasInstance.html().addEventListener('canvas.edited', this.onCanvasEditDone);
         canvasInstance.html().addEventListener('canvas.dragstart', this.onCanvasDragStart);
@@ -773,7 +744,6 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         canvasInstance.html().addEventListener('canvas.regionselected', this.onCanvasPositionSelected);
         canvasInstance.html().addEventListener('canvas.splitted', this.onCanvasTrackSplitted);
 
-        canvasInstance.html().addEventListener('canvas.contextmenu', this.onCanvasPointContextMenu);
         canvasInstance.html().addEventListener('canvas.error', this.onCanvasErrorOccurrence);
     }
 

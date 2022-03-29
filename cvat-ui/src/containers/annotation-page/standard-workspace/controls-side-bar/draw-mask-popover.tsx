@@ -38,12 +38,6 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
                     activeLabelID: labelID,
                 }),
             );
-
-            dispatch(
-                updateCanvasBrushTools({
-                    visible: true,
-                }),
-            );
         },
     };
 }

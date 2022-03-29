@@ -240,7 +240,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         }
     }
 
-    private onDrawDone(data: any | null, duration: number, continueDraw?: boolean): void {
+    private onDrawDone(data: any | null, duration: number, continueDraw?: boolean, prevDrawData?: DrawData): void {
         const hiddenBecauseOfDraw = Object.keys(this.innerObjectsFlags.drawHidden)
             .map((_clientID): number => +_clientID);
         if (hiddenBecauseOfDraw.length) {
@@ -282,19 +282,25 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
             this.canvas.dispatchEvent(event);
         } else if (!continueDraw) {
-            const event: CustomEvent = new CustomEvent('canvas.canceled', {
+            this.canvas.dispatchEvent(new CustomEvent('canvas.canceled', {
                 bubbles: false,
                 cancelable: true,
-            });
-
-            this.canvas.dispatchEvent(event);
+            }));
         }
 
-        if (!continueDraw) {
-            this.mode = Mode.IDLE;
-            this.controller.draw({
-                enabled: false,
-            });
+        if (continueDraw) {
+            this.canvas.dispatchEvent(
+                new CustomEvent('canvas.drawstart', {
+                    bubbles: false,
+                    cancelable: true,
+                    detail: {
+                        drawData: prevDrawData,
+                    },
+                }),
+            );
+        } else {
+            // when draw stops from inside canvas (for example if use predefined number of points)
+            this.controller.draw({ enabled: false });
         }
     }
 
@@ -1111,6 +1117,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         );
         this.masksDrawHandler = new MasksDrawHandlerImpl(
             this.onDrawDone.bind(this),
+            this.controller.draw.bind(this.controller),
             this.masksContent,
         );
         this.editHandler = new EditHandlerImpl(this.onEditDone.bind(this), this.adoptedContent, this.autoborderHandler);
@@ -1407,21 +1414,33 @@ export class CanvasViewImpl implements CanvasView, Listener {
         } else if (reason === UpdateReasons.DRAW) {
             const data: DrawData = this.controller.drawData;
             if (data.enabled && [Mode.IDLE, Mode.DRAW].includes(this.mode)) {
-                this.canvas.style.cursor = 'crosshair';
-                this.mode = Mode.DRAW;
-                if (typeof data.redraw === 'number') {
-                    this.setupInnerFlags(data.redraw, 'drawHidden', true);
+                if (this.mode === Mode.IDLE) {
+                    this.canvas.style.cursor = 'crosshair';
+                    this.mode = Mode.DRAW;
+                    this.canvas.dispatchEvent(
+                        new CustomEvent('canvas.drawstart', {
+                            bubbles: false,
+                            cancelable: true,
+                            detail: {
+                                drawData: data,
+                            },
+                        }),
+                    );
+
+                    if (typeof data.redraw === 'number') {
+                        this.setupInnerFlags(data.redraw, 'drawHidden', true);
+                    }
                 }
-                if (data.shapeType === 'mask') {
-                    this.content.style.pointerEvents = 'none';
-                    this.masksDrawHandler.draw(data, this.geometry);
-                } else {
+
+                if (data.shapeType !== 'mask') {
                     this.drawHandler.draw(data, this.geometry);
+                } else {
+                    this.masksDrawHandler.draw(data, this.geometry);
                 }
             } else {
-                this.content.style.pointerEvents = '';
                 this.canvas.style.cursor = '';
                 if (this.mode !== Mode.IDLE) {
+                    this.mode = Mode.IDLE;
                     this.masksDrawHandler.draw(data, this.geometry);
                     this.drawHandler.draw(data, this.geometry);
                 }

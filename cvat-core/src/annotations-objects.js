@@ -1311,45 +1311,27 @@
         }
     }
 
-    class Mask extends Drawn {
+    class MaskShape extends Shape {
         constructor(data, clientID, color, injection) {
             super(data, clientID, color, injection);
+            this._rle = null;
+            this.pinned = true;
             this.rle = data.rle;
             this.shapeType = ObjectShape.MASK;
-            this.occluded = data.occluded;
-            this.zOrder = data.z_order;
         }
 
-        // Method is used to export data to the server
-        toJSON() {
-            return {
-                type: this.shapeType,
-                clientID: this.clientID,
-                occluded: this.occluded,
-                z_order: this.zOrder,
-                points: [...this.points],
-                rotation: this.rotation,
-                attributes: Object.keys(this.attributes).reduce((attributeAccumulator, attrId) => {
-                    attributeAccumulator.push({
-                        spec_id: attrId,
-                        value: this.attributes[attrId],
-                    });
-
-                    return attributeAccumulator;
-                }, []),
-                id: this.serverID,
-                frame: this.frame,
-                label_id: this.label.id,
-                group: this.group,
-                source: this.source,
-            };
-        }
-
-        // Method is used to construct ObjectState objects
         get(frame) {
             if (frame !== this.frame) {
                 throw new ScriptingError('Got frame is not equal to the frame of the shape');
             }
+
+            this._rle = this.points.reduce((acc, val, idx, arr) => {
+                if (idx % 2) {
+                    return acc.concat(Array(arr[idx - 1]).fill(val));
+                }
+
+                return acc;
+            }, []);
 
             return {
                 objectType: ObjectType.SHAPE,
@@ -1359,7 +1341,7 @@
                 occluded: this.occluded,
                 lock: this.lock,
                 zOrder: this.zOrder,
-                points: [...this.points],
+                points: [...this._rle],
                 rotation: this.rotation,
                 attributes: { ...this.attributes },
                 descriptions: [...this.descriptions],
@@ -1374,101 +1356,10 @@
             };
         }
 
-        save(frame, data) {
-            if (frame !== this.frame) {
-                throw new ScriptingError('Got frame is not equal to the frame of the shape');
-            }
-
-            if (this.lock && data.lock) {
-                return objectStateFactory.call(this, frame, this.get(frame));
-            }
-
-            const updated = data.updateFlags;
-            const fittedPoints = this._validateStateBeforeSave(frame, data, updated);
-            const { rotation } = data;
-
-            // Now when all fields are validated, we can apply them
-            if (updated.label) {
-                this._saveLabel(data.label, frame);
-            }
-
-            if (updated.attributes) {
-                this._saveAttributes(data.attributes, frame);
-            }
-
-            if (updated.descriptions) {
-                this._saveDescriptions(data.descriptions);
-            }
-
-            if (updated.points && fittedPoints.length) {
-                this._savePoints(fittedPoints, rotation, frame);
-            }
-
-            if (updated.occluded) {
-                this._saveOccluded(data.occluded, frame);
-            }
-
-            if (updated.zOrder) {
-                this._saveZOrder(data.zOrder, frame);
-            }
-
-            if (updated.lock) {
-                this._saveLock(data.lock, frame);
-            }
-
-            if (updated.pinned) {
-                this._savePinned(data.pinned, frame);
-            }
-
-            if (updated.color) {
-                this._saveColor(data.color, frame);
-            }
-
-            if (updated.hidden) {
-                this._saveHidden(data.hidden, frame);
-            }
-
-            this.updateTimestamp(updated);
-            updated.reset();
-
-            return objectStateFactory.call(this, frame, this.get(frame));
-        }
-
-        _saveRLE(rle, frame) {
-            const undoPoints = this.points;
-            const undoRotation = this.rotation;
-            const redoPoints = points;
-            const redoRotation = rotation;
-            const undoSource = this.source;
-            const redoSource = Source.MANUAL;
-
-            this.history.do(
-                HistoryActions.CHANGED_POINTS,
-                () => {
-                    this.points = undoPoints;
-                    this.source = undoSource;
-                    this.rotation = undoRotation;
-                    this.updated = Date.now();
-                },
-                () => {
-                    this.points = redoPoints;
-                    this.source = redoSource;
-                    this.rotation = redoRotation;
-                    this.updated = Date.now();
-                },
-                [this.clientID],
-                frame,
-            );
-
-            this.source = Source.MANUAL;
-            this.points = points;
-            this.rotation = rotation;
+        _savePoints(points, rotation, frame) {
+            // TODO
         }
     }
-    // eslint-disable-next-line no-underscore-dangle
-    Mask.prototype._saveOccluded = Shape.prototype._saveOccluded;
-    // eslint-disable-next-line no-underscore-dangle
-    Mask.prototype._saveZOrder = Shape.prototype._saveZOrder;
 
     class Tag extends Annotation {
         // Method is used to export data to the server
@@ -2320,6 +2211,7 @@
         PointsShape,
         EllipseShape,
         CuboidShape,
+        MaskShape,
         RectangleTrack,
         PolygonTrack,
         PolylineTrack,
@@ -2328,7 +2220,6 @@
         CuboidTrack,
         Track,
         Shape,
-        Mask,
         Tag,
         objectStateFactory,
     };

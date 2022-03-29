@@ -78,6 +78,7 @@ export interface BrushTool {
 
 export interface DrawData {
     enabled: boolean;
+    continue?: boolean;
     shapeType?: string;
     rectDrawingMethod?: RectDrawingMethod;
     cuboidDrawingMethod?: CuboidDrawingMethod;

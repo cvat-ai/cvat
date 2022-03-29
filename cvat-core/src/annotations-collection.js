@@ -10,6 +10,7 @@
         PointsShape,
         EllipseShape,
         CuboidShape,
+        MaskShape,
         RectangleTrack,
         PolygonTrack,
         PolylineTrack,
@@ -18,7 +19,6 @@
         CuboidTrack,
         Track,
         Shape,
-        Mask,
         Tag,
         objectStateFactory,
     } = require('./annotations-objects');
@@ -58,7 +58,8 @@
                 shapeModel = new CuboidShape(shapeData, clientID, color, injection);
                 break;
             case 'mask':
-
+                shapeModel = new MaskShape(shapeData, clientID, color, injection);
+                break;
             default:
                 throw new DataError(`An unexpected type of shape "${type}"`);
         }
@@ -793,6 +794,19 @@
                     }
 
                     if (state.objectType === 'shape') {
+                        let points = [...state.points];
+                        if (state.shapeType === 'mask') {
+                            // convert to rle string
+                            points = points.reduce((acc, val, idx, arr) => {
+                                if (idx > 0 && arr[idx - 1] === val) {
+                                    acc[acc.length - 2] += 1;
+                                } else {
+                                    acc.push(1, val);
+                                }
+                                return acc;
+                            }, []);
+                        }
+
                         constructed.shapes.push({
                             attributes,
                             descriptions: state.descriptions,
@@ -800,7 +814,7 @@
                             group: 0,
                             label_id: state.label.id,
                             occluded: state.occluded || false,
-                            points: [...state.points],
+                            points,
                             rotation: state.rotation || 0,
                             type: state.shapeType,
                             z_order: state.zOrder,
