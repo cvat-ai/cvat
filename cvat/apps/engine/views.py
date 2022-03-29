@@ -930,8 +930,7 @@ class TaskViewSet(UploadMixin, viewsets.ModelViewSet):
         if request.method == 'PATCH':
             serializer = DataMetaSerializer(instance=db_task.data, data=request.data)
             if serializer.is_valid(raise_exception=True):
-                serializer.save()
-                db_task.data.refresh_from_db()
+                db_task.data = serializer.save()
 
         if hasattr(db_task.data, 'video'):
             media = [db_task.data.video]
@@ -1215,11 +1214,10 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                     lambda frame: frame < start_frame and frame > stop_frame,
                     db_data.deleted_frames,
                 ))
-                serializer.save()
+                db_data = serializer.save()
                 db_job.segment.task.save()
                 if db_job.segment.task.project:
                     db_job.segment.task.project.save()
-                db_data.refresh_from_db()
 
         if hasattr(db_data, 'video'):
             media = [db_data.video]
