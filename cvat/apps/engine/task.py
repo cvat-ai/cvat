@@ -626,9 +626,9 @@ def _create_thread(db_task, data, isBackupRestore=False, isDatasetImport=False):
                         path=os.path.relpath(data[1], upload_dir),
                         frame=data[2],
                         width=size[0],
-                        height=size[1])
-
-                    for data, size in zip(chunk_data, img_sizes)
+                        height=size[1],
+                        orientation=size[2],
+                    ) for data, size in zip(chunk_data, img_sizes)
                 ])
             else:
                 video_size = img_sizes[0]

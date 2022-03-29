@@ -566,6 +566,10 @@ class IChunkWriter(ABC):
     @staticmethod
     def _compress_image(image_path, quality):
         image = image_path.to_image() if isinstance(image_path, av.VideoFrame) else Image.open(image_path)
+        try:
+            orientation = image._getexif().get(274, 1) if image._getexif() else 1
+        except Exception:
+            orientation = 1
         # Ensure image data fits into 8bit per pixel before RGB conversion as PIL clips values on conversion
         if image.mode == "I":
             # Image mode is 32bit integer pixels.
@@ -580,7 +584,7 @@ class IChunkWriter(ABC):
         buf.seek(0)
         width, height = converted_image.size
         converted_image.close()
-        return width, height, buf
+        return width, height, orientation, buf
 
     @abstractmethod
     def save_as_chunk(self, images, chunk_path):
@@ -601,23 +605,23 @@ class ZipChunkWriter(IChunkWriter):
 
 class ZipCompressedChunkWriter(IChunkWriter):
     def save_as_chunk(self, images, chunk_path):
-        image_sizes = []
+        image_sizes_orientations = []
         with zipfile.ZipFile(chunk_path, 'x') as zip_chunk:
             for idx, (image, _, _) in enumerate(images):
                 if self._dimension == DimensionType.DIM_2D:
-                    w, h, image_buf = self._compress_image(image, self._image_quality)
+                    w, h, o, image_buf = self._compress_image(image, self._image_quality)
                     extension = "jpeg"
                 else:
                     image_buf = open(image, "rb") if isinstance(image, str) else image
                     properties = ValidateDimension.get_pcd_properties(image_buf)
-                    w, h = int(properties["WIDTH"]), int(properties["HEIGHT"])
+                    w, h, o = int(properties["WIDTH"]), int(properties["HEIGHT"]), 1
                     extension = "pcd"
                     image_buf.seek(0, 0)
                     image_buf = io.BytesIO(image_buf.read())
-                image_sizes.append((w, h))
+                image_sizes_orientations.append((w, h, o))
                 arcname = '{:06d}.{}'.format(idx, extension)
                 zip_chunk.writestr(arcname, image_buf.getvalue())
-        return image_sizes
+        return image_sizes_orientations
 
 class Mpeg4ChunkWriter(IChunkWriter):
     def __init__(self, quality=67):
