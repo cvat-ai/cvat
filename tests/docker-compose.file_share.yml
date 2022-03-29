@@ -1,9 +1,10 @@
 version: '3.3'
 
 services:
-  cvat:
-    environment:
-      CVAT_SHARE_URL: 'Mounted from asset for case 107 host directory'
+  cvat_server:
+    volumes:
+      - cvat_share:/home/django/share:rw
+  cvat_worker_default:
     volumes:
       - cvat_share:/home/django/share:rw
 

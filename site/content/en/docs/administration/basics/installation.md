@@ -364,9 +364,10 @@ docker-compose.override.yml for this purpose:
 version: '3.3'
 
 services:
-  cvat:
-    environment:
-      CVAT_SHARE_URL: 'Mounted from /mnt/share host directory'
+  cvat_server:
+    volumes:
+      - cvat_share:/home/django/share:ro
+  cvat_worker_default:
     volumes:
       - cvat_share:/home/django/share:ro
 
@@ -378,9 +379,7 @@ volumes:
       o: bind
 ```
 
-You can change the share device path to your actual share. For user convenience
-we have defined the environment variable \$CVAT_SHARE_URL. This variable
-contains a text (url for example) which is shown in the client-share browser.
+You can change the share device path to your actual share.
 
 You can [mount](/docs/administration/advanced/mounting_cloud_storages/)
 your cloud storage as a FUSE and use it later as a share.
