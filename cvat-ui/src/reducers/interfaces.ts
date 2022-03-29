@@ -258,7 +258,7 @@ export interface ShareState {
 export interface ModelAttribute {
     name: string;
     values: string[];
-    input_type: 'select'; // what is the correct type?
+    input_type: 'select' | 'number' | 'checkbox' | 'radio' | 'text';
 }
 
 export interface Model {

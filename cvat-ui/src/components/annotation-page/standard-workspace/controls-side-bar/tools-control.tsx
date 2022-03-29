@@ -28,7 +28,7 @@ import { Canvas, convertShapesForInteractor } from 'cvat-canvas-wrapper';
 import getCore from 'cvat-core-wrapper';
 import openCVWrapper from 'utils/opencv-wrapper/opencv-wrapper';
 import {
-    CombinedState, ActiveControl, Model, ObjectType, ShapeType, ToolsBlockerState,
+    CombinedState, ActiveControl, Model, ObjectType, ShapeType, ToolsBlockerState, ModelAttribute,
 } from 'reducers/interfaces';
 import {
     interactWithCanvas,
@@ -37,7 +37,7 @@ import {
     updateAnnotationsAsync,
     createAnnotationsAsync,
 } from 'actions/annotation-actions';
-import DetectorRunner from 'components/model-runner-modal/detector-runner';
+import DetectorRunner, { DetectorMappingModel } from 'components/model-runner-modal/detector-runner';
 import LabelSelector from 'components/label-selector/label-selector';
 import CVATTooltip from 'components/common/cvat-tooltip';
 
@@ -1022,32 +1022,93 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             });
         });
 
+        function checkAttributesCompatibility(
+            functionAttribute: ModelAttribute | undefined, // model
+            dbAttribute: any, // job
+            value: string,
+        ): boolean {
+            if (functionAttribute === undefined || dbAttribute === undefined) {
+                return false;
+            }
+
+            if (functionAttribute.input_type === dbAttribute.inputType) {
+                if (functionAttribute.input_type === 'number') {
+                    return !Number.isNaN(value);
+                }
+
+                if (functionAttribute.input_type === 'checkbox') {
+                    return ['true', 'false'].includes(value);
+                }
+
+                return ['select', 'radio', 'text'].includes(functionAttribute.input_type);
+            }
+
+            switch (functionAttribute.input_type) {
+                case 'number':
+                    return ['select', 'radio', 'text'].includes(dbAttribute.input_type) && !Number.isNaN(value);
+
+                case 'text':
+                    return ['select', 'radio'].includes(dbAttribute.input_type) && value.split(' ').length === 1;
+
+                case 'select':
+                    return ['text', 'radio'].includes(dbAttribute.input_type);
+
+                case 'radio':
+                    return ['text', 'select'].includes(dbAttribute.input_type);
+
+                case 'checkbox':
+                    return ['true', 'false'].includes(value);
+
+                default:
+                    return false;
+            }
+        }
+
         return (
             <DetectorRunner
                 withCleanup={false}
                 models={detectors}
                 labels={jobInstance.labels}
                 dimension={jobInstance.dimension}
-                runInference={async (model: Model, body: object) => {
+                runInference={async (model: Model, body: DetectorMappingModel) => {
                     try {
                         this.setState({ mode: 'detection', fetching: true });
                         const result = await core.lambda.call(jobInstance.taskId, model, { ...body, frame });
                         const states = result.map(
-                            (data: any): any => new core.classes.ObjectState({
-                                shapeType: data.type,
-                                label: jobInstance.labels.filter((label: any): boolean => label.name === data.label)[0],
-                                points: data.points,
-                                objectType: ObjectType.SHAPE,
-                                frame,
-                                occluded: false,
-                                source: 'auto',
-                                attributes: (data.attributes as { name: string, value: string }[])
-                                    .reduce((mapping, attr) => {
-                                        mapping[attrsMap[data.label][attr.name]] = attr.value;
-                                        return mapping;
-                                    }, {} as Record<number, string>),
-                                zOrder: curZOrder,
-                            }),
+                            (data: any): any => {
+                                const jobLabel = jobInstance.labels
+                                    .filter((jLabel: any): boolean => jLabel.name === data.label)[0];
+                                const modelLabel = Object.entries(body.mapping)
+                                    .filter(([, value]) => value === data.label)
+                                    .map(([key]) => key)[0];
+
+                                return new core.classes.ObjectState({
+                                    shapeType: data.type,
+                                    label: jobLabel,
+                                    points: data.points,
+                                    objectType: ObjectType.SHAPE,
+                                    frame,
+                                    occluded: false,
+                                    source: 'auto',
+                                    attributes: (data.attributes as { name: string, value: string }[])
+                                        .reduce((mapping, attr) => {
+                                            const modelAttr = Object.entries(body.attrMapping[modelLabel].attributes)
+                                                .find(([, value]) => value === attr.name)?.[0];
+                                            const areCompatible = checkAttributesCompatibility(
+                                                model.attributes[modelLabel].find((mAttr) => mAttr.name === modelAttr),
+                                                jobLabel.attributes.find((jobAttr: any) => jobAttr.name === attr.name),
+                                                attr.value,
+                                            );
+
+                                            if (areCompatible) {
+                                                mapping[attrsMap[data.label][attr.name]] = attr.value;
+                                            }
+
+                                            return mapping;
+                                        }, {} as Record<number, string>),
+                                    zOrder: curZOrder,
+                                });
+                            },
                         );
 
                         createAnnotations(jobInstance, frame, states);

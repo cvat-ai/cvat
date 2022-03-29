@@ -36,6 +36,12 @@ interface LabelAttributesModel {
 
 type LabelsModel = Record<string, LabelAttributesModel>;
 
+export interface DetectorMappingModel {
+    mapping: Record<string, string>;
+    attrMapping: LabelsModel;
+    cleanup: boolean;
+}
+
 interface Mapping {
     model: string | null;
     task: string | null;
@@ -410,15 +416,16 @@ function DetectorRunner(props: Props): JSX.Element {
                         disabled={!buttonEnabled}
                         type='primary'
                         onClick={() => {
+                            const detectorMappingModel: DetectorMappingModel = {
+                                mapping: Object.entries(mapping)
+                                    .reduce((acc, [key, { name }]) => ({ ...acc, [key]: name }), {}),
+                                attrMapping: mapping,
+                                cleanup,
+                            };
                             runInference(
                                 model,
                                 model.type === 'detector' ?
-                                    {
-                                        mapping: Object.entries(mapping)
-                                            .reduce((acc, [key, { name }]) => ({ ...acc, [key]: name }), {}),
-                                        attrMapping: mapping,
-                                        cleanup,
-                                    } :
+                                    detectorMappingModel :
                                     {
                                         threshold,
                                         max_distance: distance,
