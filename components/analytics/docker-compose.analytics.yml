@@ -23,6 +23,8 @@ services:
       args:
         ELK_VERSION: 6.8.23
     depends_on: ['elasticsearch']
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
     restart: always
 
   cvat_kibana_setup:

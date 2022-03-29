@@ -103,7 +103,7 @@ For access from China, read [sources for users from China](#sources-for-users-fr
   below:
 
   ```bash
-  docker exec -it cvat bash -ic 'python3 ~/manage.py createsuperuser'
+  docker exec -it cvat_server bash -ic 'python3 ~/manage.py createsuperuser'
   ```
 
   Choose a username and a password for your admin account. For more information
@@ -176,14 +176,14 @@ For access from China, read [sources for users from China](#sources-for-users-fr
   below:
 
   ```bash
-  winpty docker exec -it cvat bash -ic 'python3 ~/manage.py createsuperuser'
+  winpty docker exec -it cvat_server bash -ic 'python3 ~/manage.py createsuperuser'
   ```
 
   If you don't have winpty installed or the above command does not work, you may also try the following:
 
   ```bash
   # enter docker image first
-  docker exec -it cvat /bin/bash
+  docker exec -it cvat_server /bin/bash
   # then run
   python3 ~/manage.py createsuperuser
   ```
@@ -252,7 +252,7 @@ For access from China, read [sources for users from China](#sources-for-users-fr
   below:
 
   ```bash
-  docker exec -it cvat bash -ic 'python3 ~/manage.py createsuperuser'
+  docker exec -it cvat_server bash -ic 'python3 ~/manage.py createsuperuser'
   ```
 
   Choose a username and a password for your admin account. For more information

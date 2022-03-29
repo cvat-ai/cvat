@@ -16,13 +16,13 @@ def _run(command):
         pytest.exit(f'Command failed: {command}. Add `-s` option to see more details')
 
 def restore_data_volume():
-    _run(f"docker container cp {osp.join(ASSETS_DIR, 'cvat_db', 'cvat_data.tar.bz2')} cvat:cvat_data.tar.bz2")
-    _run(f"docker exec -i cvat tar --strip 3 -xjf /cvat_data.tar.bz2 -C /home/django/data/")
+    _run(f"docker container cp {osp.join(ASSETS_DIR, 'cvat_db', 'cvat_data.tar.bz2')} cvat_server:cvat_data.tar.bz2")
+    _run(f"docker exec -i cvat_server tar --strip 3 -xjf /cvat_data.tar.bz2 -C /home/django/data/")
 
 def create_test_db():
     _run(f"docker container cp {osp.join(CVAT_DB_DIR, 'restore.sql')} cvat_db:restore.sql")
-    _run(f"docker container cp {osp.join(CVAT_DB_DIR, 'data.json')} cvat:data.json")
-    _run('docker exec cvat python manage.py loaddata /data.json')
+    _run(f"docker container cp {osp.join(CVAT_DB_DIR, 'data.json')} cvat_server:data.json")
+    _run('docker exec cvat_server python manage.py loaddata /data.json')
     _run('docker exec cvat_db psql -U root -d postgres -v from=cvat -v to=test_db -f restore.sql')
 
 @pytest.fixture(scope='session', autouse=True)

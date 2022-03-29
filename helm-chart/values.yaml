@@ -219,7 +219,7 @@ analytics:
 # Ignored if analytics.enabled is false
 # See https://github.com/elastic/helm-charts/blob/main/logstash/values.yaml for details
 logstash:
-  image: "docker.io/tortugaone/cvat_logstash"
+  image: "your_logstash_image"
   imageTag: "latest"
   # For compatibility with compose config
   extraEnvs:
