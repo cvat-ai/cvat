@@ -1,4 +1,4 @@
-# Copyright (C) 2021 Intel Corporation
+# Copyright (C) 2022 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -281,8 +281,8 @@ class LambdaFunction:
                             item["attributes"].append(attr)
                     item['label'] = mapping[item['label']]
                     response_filtered.append(item)
-
-        return response_filtered
+            response = response_filtered
+        return response
 
     def _get_image(self, db_task, frame, quality):
         if quality is None or quality == "original":

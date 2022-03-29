@@ -99,6 +99,51 @@ cvat:
           targetPort: 80
           protocol: TCP
           name: http
+  opa:
+    replicas: 1
+    image: openpolicyagent/opa
+    tag: 0.34.2-rootless
+    labels: {}
+    #  test: test
+    annotations: {}
+    # test.io/test: test
+    resources: {}
+    affinity: {}
+    tolerations: []
+    # nodeAffinity:
+    #   requiredDuringSchedulingIgnoredDuringExecution:
+    #     nodeSelectorTerms:
+    #     - matchExpressions:
+    #       - key: kubernetes.io/e2e-az-name
+    #         operator: In
+    #         values:
+    #         - e2e-az1
+    #         - e2e-az2
+    additionalEnv: []
+    # Example:
+    #  - name: volume-from-secret
+    # - name: TEST
+    #  value: "test"
+    additionalVolumes: []
+    # Example(assumes that pvc was already created):
+    # - name: tmp
+    #   persistentVolumeClaim:
+    #       claimName: tmp
+    additionalVolumeMounts: []
+    # Example:
+    # -   mountPath: /tmp
+    #     name: tmp
+    #     subPath: test
+    composeCompatibleServiceName: true # Sets service name to opa in order to be docker-compose compatible. Necessary because changing IAM_OPA_DATA_URL via environment variables in current images. Hinders multiple deployment due to duplicate name
+    service:
+      type: ClusterIP
+      ports:
+        - port: 8181
+          targetPort: 8181
+          protocol: TCP
+          name: http
+    defaultStorage:
+        enabled: true
 
 postgresql:
   #See https://github.com/bitnami/charts/blob/master/bitnami/postgresql/ for more info
