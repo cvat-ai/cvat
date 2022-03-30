@@ -2,14 +2,17 @@
 #
 # SPDX-License-Identifier: MIT
 
+from ast import Or
 import os
 import tempfile
 import shutil
+from tkinter.font import NORMAL
 import zipfile
 import io
 import itertools
 import struct
 from abc import ABC, abstractmethod
+from enum import Enum
 from contextlib import closing
 
 import av
@@ -28,6 +31,9 @@ ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 from cvat.apps.engine.mime_types import mimetypes
 from utils.dataset_manifest import VideoManifestManager, ImageManifestManager
+
+ORIENTATION_EXIF_TAG = 274
+
 
 def get_mime(name):
     for type_name, type_def in MEDIA_TYPES.items():
@@ -85,19 +91,32 @@ class IMediaReader(ABC):
     @staticmethod
     def _get_preview(obj):
         PREVIEW_SIZE = (256, 256)
+        class ORIENTATION(Enum):
+            NORMAL_HORIZONTAL=1
+            MIRROR_HORIZONTAL=2
+            NORAMAL_180_ROTATED=3
+            MIRROR_VERTICAL=4
+            MIRROR_HORIZONTAL_270_ROTATED=5
+            NORAMAL_90_ROTATED=6
+            MIRROR_HORIZONTAL_90_ROTATED=7
+            NORAMAL_270_ROTATED=8
+
         if isinstance(obj, io.IOBase):
             preview = Image.open(obj)
         else:
             preview = obj
         preview.thumbnail(PREVIEW_SIZE)
-        orientation = preview._getexif().get(274, 1) if preview._getexif() else 1
-        if orientation in [3, 4]:
+        orientation = preview._getexif().get(ORIENTATION_EXIF_TAG, 1) if preview._getexif() else 1
+        if orientation in [ORIENTATION.NORAMAL_180_ROTATED, ORIENTATION.MIRROR_VERTICAL]:
             preview = preview.rotate(180, expand=True)
-        elif orientation in [5, 8]:
+        elif orientation in [ORIENTATION.MIRROR_HORIZONTAL_270_ROTATED, ORIENTATION.NORAMAL_270_ROTATED]:
             preview = preview.rotate(90, expand=True)
-        elif orientation in [6, 7]:
+        elif orientation in [ORIENTATION.NORAMAL_90_ROTATED, ORIENTATION.MIRROR_HORIZONTAL_90_ROTATED]:
             preview = preview.rotate(270, expand=True)
-        if orientation in [2, 4, 5 ,7]:
+        if orientation in [
+            ORIENTATION.MIRROR_HORIZONTAL, ORIENTATION.MIRROR_VERTICAL,
+            ORIENTATION.MIRROR_HORIZONTAL_270_ROTATED ,ORIENTATION.MIRROR_HORIZONTAL_90_ROTATED,
+        ]:
             preview = preview.transpose(Image.FLIP_LEFT_RIGHT)
 
         return preview.convert('RGB')
@@ -193,7 +212,7 @@ class ImageListReader(IMediaReader):
             raise NotImplementedError()
         img = Image.open(self._source_path[i])
         try:
-            return img._getexif().get(274, 1) if img._getexif() else 1
+            return img._getexif().get(ORIENTATION_EXIF_TAG, 1) if img._getexif() else 1
         except Exception:
             return 1
 
@@ -344,7 +363,7 @@ class ZipReader(ImageListReader):
             raise NotImplementedError()
         img = Image.open(self._source_path[i])
         try:
-            return img._getexif().get(274, 1) if img._getexif() else 1
+            return img._getexif().get(ORIENTATION_EXIF_TAG, 1) if img._getexif() else 1
         except Exception:
             return 1
 
@@ -567,7 +586,7 @@ class IChunkWriter(ABC):
     def _compress_image(image_path, quality):
         image = image_path.to_image() if isinstance(image_path, av.VideoFrame) else Image.open(image_path)
         try:
-            orientation = image._getexif().get(274, 1) if image._getexif() else 1
+            orientation = image._getexif().get(ORIENTATION_EXIF_TAG, 1) if image._getexif() else 1
         except Exception:
             orientation = 1
         # Ensure image data fits into 8bit per pixel before RGB conversion as PIL clips values on conversion
