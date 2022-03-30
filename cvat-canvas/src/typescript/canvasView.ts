@@ -1264,37 +1264,15 @@ export class CanvasViewImpl implements CanvasView, Listener {
             } else {
                 this.loadingAnimation.classList.add('cvat_canvas_hidden');
                 const ctx = this.background.getContext('2d');
-                const [width, height, renderWidth, renderHeight] = image.orientation < 5 ? [
-                    image.imageData.width as number, image.imageData.height as number,
-                    image.renderWidth, image.renderHeight,
-                ] : [
-                    image.imageData.height as number, image.imageData.width as number,
-                    image.renderHeight, image.renderWidth,
-                ];
-                this.background.setAttribute('width', `${renderWidth}px`);
-                this.background.setAttribute('height', `${renderHeight}px`);
+                this.background.setAttribute('width', `${image.renderWidth}px`);
+                this.background.setAttribute('height', `${image.renderHeight}px`);
 
                 if (ctx) {
-                    switch (image.orientation) {
-                        // 1 - normal nothing to do
-                        // 2 - horizontal mirrored
-                        case 2: ctx.transform(-1, 0, 0, 1, width, 0); break;
-                        // 3 - 180 cw rotated
-                        case 3: ctx.transform(-1, 0, 0, -1, width, height); break;
-                        // 4 - vertical mirrored
-                        case 4: ctx.transform(1, 0, 0, -1, 0, height); break;
-                        // 5 - horizontal mirrored and 270 cw rotated
-                        case 5: ctx.transform(0, 1, 1, 0, 0, 0); break;
-                        // 6 - 90 cw rotated
-                        case 6: ctx.transform(0, 1, -1, 0, width, 0); break;
-                        // 7 - horizontal mirrored and 90 cw rotated
-                        case 7: ctx.transform(0, -1, -1, 0, width, height); break;
-                        // 8 - 270 cw rotated
-                        case 8: ctx.transform(0, -1, 1, 0, 0, height); break;
-                        default: break;
-                    }
                     if (image.imageData instanceof ImageData) {
-                        ctx.scale(renderWidth / width, renderHeight / height);
+                        ctx.scale(
+                            image.renderWidth / image.imageData.width,
+                            image.renderHeight / image.imageData.height,
+                        );
                         ctx.putImageData(image.imageData, 0, 0);
                         // Transformation matrix must not affect the putImageData() method.
                         // By this reason need to redraw the image to apply scale.

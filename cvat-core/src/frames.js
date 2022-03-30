@@ -21,7 +21,6 @@
         constructor({
             width,
             height,
-            orientation,
             name,
             taskID,
             jobID,
@@ -65,17 +64,6 @@
                      */
                     height: {
                         value: height,
-                        writable: false,
-                    },
-                    /**
-                     * @name orientation
-                     * @type {integer}
-                     * @memberof module:API.cvat.classes.FrameData
-                     * @readonly
-                     * @instance
-                     */
-                    orientation: {
-                        value: orientation,
                         writable: false,
                     },
                     /**

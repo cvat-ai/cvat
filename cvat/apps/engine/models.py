@@ -223,7 +223,6 @@ class Image(models.Model):
     frame = models.PositiveIntegerField()
     width = models.PositiveIntegerField()
     height = models.PositiveIntegerField()
-    orientation = models.PositiveIntegerField(default=1)
 
     class Meta:
         default_permissions = ()

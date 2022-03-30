@@ -2,11 +2,9 @@
 #
 # SPDX-License-Identifier: MIT
 
-from ast import Or
 import os
 import tempfile
 import shutil
-from tkinter.font import NORMAL
 import zipfile
 import io
 import itertools
@@ -33,6 +31,17 @@ from cvat.apps.engine.mime_types import mimetypes
 from utils.dataset_manifest import VideoManifestManager, ImageManifestManager
 
 ORIENTATION_EXIF_TAG = 274
+
+
+class ORIENTATION(Enum):
+    NORMAL_HORIZONTAL=1
+    MIRROR_HORIZONTAL=2
+    NORAMAL_180_ROTATED=3
+    MIRROR_VERTICAL=4
+    MIRROR_HORIZONTAL_270_ROTATED=5
+    NORAMAL_90_ROTATED=6
+    MIRROR_HORIZONTAL_90_ROTATED=7
+    NORAMAL_270_ROTATED=8
 
 
 def get_mime(name):
@@ -68,6 +77,21 @@ def sort(images, sorting_method=SortingMethod.LEXICOGRAPHICAL, func=None):
     else:
         raise NotImplementedError()
 
+def rotate_within_exif(img: Image):
+    orientation = img.getexif().get(ORIENTATION_EXIF_TAG, 1)
+    if orientation in [ORIENTATION.NORAMAL_180_ROTATED, ORIENTATION.MIRROR_VERTICAL]:
+        img = img.rotate(180, expand=True)
+    elif orientation in [ORIENTATION.MIRROR_HORIZONTAL_270_ROTATED, ORIENTATION.NORAMAL_270_ROTATED]:
+        img = img.rotate(90, expand=True)
+    elif orientation in [ORIENTATION.NORAMAL_90_ROTATED, ORIENTATION.MIRROR_HORIZONTAL_90_ROTATED]:
+        img = img.rotate(270, expand=True)
+    if orientation in [
+        ORIENTATION.MIRROR_HORIZONTAL, ORIENTATION.MIRROR_VERTICAL,
+        ORIENTATION.MIRROR_HORIZONTAL_270_ROTATED ,ORIENTATION.MIRROR_HORIZONTAL_90_ROTATED,
+    ]:
+        img = img.transpose(Image.FLIP_LEFT_RIGHT)
+    return img
+
 class IMediaReader(ABC):
     def __init__(self, source_path, step, start, stop, dimension):
         self._source_path = source_path
@@ -91,42 +115,18 @@ class IMediaReader(ABC):
     @staticmethod
     def _get_preview(obj):
         PREVIEW_SIZE = (256, 256)
-        class ORIENTATION(Enum):
-            NORMAL_HORIZONTAL=1
-            MIRROR_HORIZONTAL=2
-            NORAMAL_180_ROTATED=3
-            MIRROR_VERTICAL=4
-            MIRROR_HORIZONTAL_270_ROTATED=5
-            NORAMAL_90_ROTATED=6
-            MIRROR_HORIZONTAL_90_ROTATED=7
-            NORAMAL_270_ROTATED=8
 
         if isinstance(obj, io.IOBase):
             preview = Image.open(obj)
         else:
             preview = obj
         preview.thumbnail(PREVIEW_SIZE)
-        orientation = preview._getexif().get(ORIENTATION_EXIF_TAG, 1) if preview._getexif() else 1
-        if orientation in [ORIENTATION.NORAMAL_180_ROTATED, ORIENTATION.MIRROR_VERTICAL]:
-            preview = preview.rotate(180, expand=True)
-        elif orientation in [ORIENTATION.MIRROR_HORIZONTAL_270_ROTATED, ORIENTATION.NORAMAL_270_ROTATED]:
-            preview = preview.rotate(90, expand=True)
-        elif orientation in [ORIENTATION.NORAMAL_90_ROTATED, ORIENTATION.MIRROR_HORIZONTAL_90_ROTATED]:
-            preview = preview.rotate(270, expand=True)
-        if orientation in [
-            ORIENTATION.MIRROR_HORIZONTAL, ORIENTATION.MIRROR_VERTICAL,
-            ORIENTATION.MIRROR_HORIZONTAL_270_ROTATED ,ORIENTATION.MIRROR_HORIZONTAL_90_ROTATED,
-        ]:
-            preview = preview.transpose(Image.FLIP_LEFT_RIGHT)
+        preview = rotate_within_exif(preview)
 
         return preview.convert('RGB')
 
     @abstractmethod
     def get_image_size(self, i):
-        pass
-
-    @abstractmethod
-    def get_orientation(self, i):
         pass
 
     def __len__(self):
@@ -206,16 +206,6 @@ class ImageListReader(IMediaReader):
                 return int(properties["WIDTH"]),  int(properties["HEIGHT"])
         img = Image.open(self._source_path[i])
         return img.width, img.height
-
-    def get_orientation(self, i):
-        if self._dimension == DimensionType.DIM_3D:
-            raise NotImplementedError()
-        img = Image.open(self._source_path[i])
-        try:
-            return img._getexif().get(ORIENTATION_EXIF_TAG, 1) if img._getexif() else 1
-        except Exception:
-            return 1
-
 
     def reconcile(self, source_files, step=1, start=0, stop=None, dimension=DimensionType.DIM_2D, sorting_method=None):
         # FIXME
@@ -357,15 +347,6 @@ class ZipReader(ImageListReader):
                 return int(properties["WIDTH"]),  int(properties["HEIGHT"])
         img = Image.open(io.BytesIO(self._zip_source.read(self._source_path[i])))
         return img.width, img.height
-
-    def get_orientation(self, i):
-        if self._dimension == DimensionType.DIM_3D:
-            raise NotImplementedError()
-        img = Image.open(self._source_path[i])
-        try:
-            return img._getexif().get(ORIENTATION_EXIF_TAG, 1) if img._getexif() else 1
-        except Exception:
-            return 1
 
     def get_image(self, i):
         if self._dimension == DimensionType.DIM_3D:
@@ -585,10 +566,7 @@ class IChunkWriter(ABC):
     @staticmethod
     def _compress_image(image_path, quality):
         image = image_path.to_image() if isinstance(image_path, av.VideoFrame) else Image.open(image_path)
-        try:
-            orientation = image._getexif().get(ORIENTATION_EXIF_TAG, 1) if image._getexif() else 1
-        except Exception:
-            orientation = 1
+        image = rotate_within_exif(image)
         # Ensure image data fits into 8bit per pixel before RGB conversion as PIL clips values on conversion
         if image.mode == "I":
             # Image mode is 32bit integer pixels.
@@ -603,7 +581,7 @@ class IChunkWriter(ABC):
         buf.seek(0)
         width, height = converted_image.size
         converted_image.close()
-        return width, height, orientation, buf
+        return width, height, buf
 
     @abstractmethod
     def save_as_chunk(self, images, chunk_path):
@@ -628,12 +606,12 @@ class ZipCompressedChunkWriter(IChunkWriter):
         with zipfile.ZipFile(chunk_path, 'x') as zip_chunk:
             for idx, (image, _, _) in enumerate(images):
                 if self._dimension == DimensionType.DIM_2D:
-                    w, h, o, image_buf = self._compress_image(image, self._image_quality)
+                    w, h, image_buf = self._compress_image(image, self._image_quality)
                     extension = "jpeg"
                 else:
                     image_buf = open(image, "rb") if isinstance(image, str) else image
                     properties = ValidateDimension.get_pcd_properties(image_buf)
-                    w, h, o = int(properties["WIDTH"]), int(properties["HEIGHT"]), 1
+                    w, h = int(properties["WIDTH"]), int(properties["HEIGHT"])
                     extension = "pcd"
                     image_buf.seek(0, 0)
                     image_buf = io.BytesIO(image_buf.read())

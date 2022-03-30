@@ -13,7 +13,6 @@ export interface Size {
 export interface Image {
     renderWidth: number;
     renderHeight: number;
-    orientation: number;
     imageData: ImageData | CanvasImageSource;
 }
 
@@ -427,15 +426,11 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
                 }
 
                 this.data.imageSize = {
-                    height: frameData.orientation as number < 5 ?
-                        frameData.height as number : frameData.width as number,
-                    width: frameData.orientation as number < 5 ?
-                        frameData.width as number : frameData.height as number,
+                    height: frameData.height as number,
+                    width: frameData.width as number,
                 };
-                this.data.image = {
-                    ...data,
-                    orientation: frameData.orientation as number,
-                };
+
+                this.data.image = data;
                 this.notify(UpdateReasons.IMAGE_CHANGED);
                 this.data.zLayer = zLayer;
                 this.data.objects = objectStates;

@@ -584,7 +584,7 @@ def _create_thread(db_task, data, isBackupRestore=False, isDatasetImport=False):
                 counter = itertools.count()
                 for _, chunk_frames in itertools.groupby(extractor.frame_range, lambda x: next(counter) // db_data.chunk_size):
                     chunk_paths = [(extractor.get_path(i), i) for i in chunk_frames]
-                    imgs_info = []
+                    img_sizes = []
 
                     for chunk_path, frame_id in chunk_paths:
                         properties = manifest[manifest_index(frame_id)]
@@ -594,18 +594,15 @@ def _create_thread(db_task, data, isBackupRestore=False, isDatasetImport=False):
                             raise Exception('Incorrect file mapping to manifest content')
                         if db_task.dimension == models.DimensionType.DIM_2D:
                             resolution = (properties['width'], properties['height'])
-                            orientation = properties.get('orientation', 1)
                         else:
                             resolution = extractor.get_image_size(frame_id)
-                            orientation = 1
-
-                        imgs_info.append((resolution, orientation))
+                        img_sizes.append(resolution)
 
                     db_images.extend([
                         models.Image(data=db_data,
                             path=os.path.relpath(path, upload_dir),
-                            frame=frame, width=w, height=h, orientation=o)
-                        for (path, frame), ((w, h), o) in zip(chunk_paths, imgs_info)
+                            frame=frame, width=w, height=h)
+                        for (path, frame), (w, h) in zip(chunk_paths, img_sizes)
                     ])
 
     if db_data.storage_method == models.StorageMethodChoice.FILE_SYSTEM or not settings.USE_CACHE:
@@ -626,9 +623,9 @@ def _create_thread(db_task, data, isBackupRestore=False, isDatasetImport=False):
                         path=os.path.relpath(data[1], upload_dir),
                         frame=data[2],
                         width=size[0],
-                        height=size[1],
-                        orientation=size[2],
-                    ) for data, size in zip(chunk_data, img_sizes)
+                        height=size[1])
+
+                    for data, size in zip(chunk_data, img_sizes)
                 ])
             else:
                 video_size = img_sizes[0]

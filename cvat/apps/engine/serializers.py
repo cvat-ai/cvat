@@ -672,7 +672,6 @@ class AboutSerializer(serializers.Serializer):
 class FrameMetaSerializer(serializers.Serializer):
     width = serializers.IntegerField()
     height = serializers.IntegerField()
-    orientation = serializers.IntegerField()
     name = serializers.CharField(max_length=1024)
     has_related_context = serializers.BooleanField()
 
