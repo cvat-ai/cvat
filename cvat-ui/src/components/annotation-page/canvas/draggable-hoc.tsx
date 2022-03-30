@@ -20,6 +20,7 @@ export default function useDraggable(
             const dx = event.clientX - click[1];
             onDrag(position[0] + dy, position[1] + dx);
             event.stopPropagation();
+            event.preventDefault();
         };
 
         const mouseDownListener = (event: MouseEvent): void => {
@@ -30,6 +31,7 @@ export default function useDraggable(
             click[1] = event.clientX;
             window.addEventListener('mousemove', mouseMoveListener);
             event.stopPropagation();
+            event.preventDefault();
         };
 
         const mouseUpListener = (): void => {

@@ -1269,6 +1269,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             this.activate(activeElement);
             this.editHandler.configurate(this.configuration);
             this.drawHandler.configurate(this.configuration);
+            this.masksDrawHandler.configurate(this.configuration);
             this.interactionHandler.configurate(this.configuration);
 
             // remove if exist and not enabled
@@ -1435,13 +1436,13 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 if (data.shapeType !== 'mask') {
                     this.drawHandler.draw(data, this.geometry);
                 } else {
-                    this.masksDrawHandler.draw(data, this.geometry);
+                    this.masksDrawHandler.draw(data);
                 }
             } else {
                 this.canvas.style.cursor = '';
                 if (this.mode !== Mode.IDLE) {
                     this.mode = Mode.IDLE;
-                    this.masksDrawHandler.draw(data, this.geometry);
+                    this.masksDrawHandler.draw(data);
                     this.drawHandler.draw(data, this.geometry);
                 }
             }

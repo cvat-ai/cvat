@@ -53,6 +53,8 @@ import SVGCVATGoogleCloudProvider from './assets/google-cloud.svg';
 import SVGOpenVINO from './assets/openvino.svg';
 import SVGBrushIcon from './assets/brush.svg';
 import SVGEraserIcon from './assets/eraser.svg';
+import SVGPolygonPlusIcon from './assets/polygon-plus.svg';
+import SVGPolygonMinusIcon from './assets/polygon-minus.svg';
 
 export const CVATLogo = React.memo((): JSX.Element => <SVGCVATLogo />);
 export const CursorIcon = React.memo((): JSX.Element => <SVGCursorIcon />);
@@ -103,3 +105,5 @@ export const GoogleCloudProvider = React.memo((): JSX.Element => <SVGCVATGoogleC
 export const OpenVINOIcon = React.memo((): JSX.Element => <SVGOpenVINO />);
 export const BrushIcon = React.memo((): JSX.Element => <SVGBrushIcon />);
 export const EraserIcon = React.memo((): JSX.Element => <SVGEraserIcon />);
+export const PolygonPlusIcon = React.memo((): JSX.Element => <SVGPolygonPlusIcon />);
+export const PolygonMinusIcon = React.memo((): JSX.Element => <SVGPolygonMinusIcon />);

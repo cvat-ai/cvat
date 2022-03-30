@@ -25,6 +25,14 @@
         margin-right: $grid-unit-size;
     }
 
+    > button {
+        font-size: 20px;
+
+        > span.anticon {
+            font-size: inherit;
+        }
+    }
+
     .cvat-brush-tools-draggable-area {
         font-size: 20px;
     }

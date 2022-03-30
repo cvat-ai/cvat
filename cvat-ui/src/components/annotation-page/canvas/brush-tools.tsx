@@ -9,13 +9,15 @@ import ReactDOM from 'react-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import Button from 'antd/lib/button';
 import Icon, {
-    BgColorsOutlined, CheckOutlined, DragOutlined, PlusOutlined,
+    BgColorsOutlined, CheckOutlined, DragOutlined, PlusOutlined, VerticalAlignBottomOutlined,
 } from '@ant-design/icons';
 import InputNumber from 'antd/lib/input-number';
 import Select from 'antd/lib/select';
 
 import { Canvas } from 'cvat-canvas-wrapper';
-import { BrushIcon, EraserIcon } from 'icons';
+import {
+    BrushIcon, EraserIcon, PolygonMinusIcon, PolygonPlusIcon,
+} from 'icons';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { CombinedState, ObjectType, ShapeType } from 'reducers/interfaces';
 import LabelSelector from 'components/label-selector/label-selector';
@@ -37,7 +39,7 @@ function BrushTools(): React.ReactPortal {
     const { visible } = config;
 
     const [activeLabelID, setActiveLabelID] = useState<null | number>(null);
-    const [currentTool, setCurrentTool] = useState<'brush' | 'eraser' | 'fill'>('brush');
+    const [currentTool, setCurrentTool] = useState<'brush' | 'eraser' | 'fill' | 'polygon-plus' | 'polygon-minus'>('brush');
     const [brushForm, setBrushForm] = useState<'circle' | 'square'>('circle');
     const [[top, left], setTopLeft] = useState([0, 0]);
     const [brushSize, setBrushSize] = useState(10);
@@ -145,7 +147,7 @@ function BrushTools(): React.ReactPortal {
                             rememberObject({
                                 activeObjectType: ObjectType.SHAPE,
                                 activeShapeType: ShapeType.MASK,
-                                activeLabelID: Number.isInteger(activeLabelID) ? activeLabelID : undefined,
+                                activeLabelID: typeof activeLabelID === 'number' ? activeLabelID : undefined,
                             }),
                         );
                     }
@@ -163,6 +165,18 @@ function BrushTools(): React.ReactPortal {
                 className={['cvat-brush-tools-eraser', ...(currentTool === 'eraser' ? ['cvat-brush-tools-active-tool'] : [])].join(' ')}
                 icon={<Icon component={EraserIcon} />}
                 onClick={() => setCurrentTool('eraser')}
+            />
+            <Button
+                type='text'
+                className={['cvat-brush-tools-polygon-plus', ...(currentTool === 'polygon-plus' ? ['cvat-brush-tools-active-tool'] : [])].join(' ')}
+                icon={<Icon component={PolygonPlusIcon} />}
+                onClick={() => setCurrentTool('polygon-plus')}
+            />
+            <Button
+                type='text'
+                className={['cvat-brush-tools-polygon-minus', ...(currentTool === 'polygon-minus' ? ['cvat-brush-tools-active-tool'] : [])].join(' ')}
+                icon={<Icon component={PolygonMinusIcon} />}
+                onClick={() => setCurrentTool('polygon-minus')}
             />
             <Button
                 type='text'
@@ -219,6 +233,12 @@ function BrushTools(): React.ReactPortal {
                 <Select.Option value='circle'>Circle</Select.Option>
                 <Select.Option value='square'>Square</Select.Option>
             </Select>
+            <Button
+                type='text'
+                className={['cvat-brush-tools-underlying-pixels', ...(removeUnderlyingPixels ? ['cvat-brush-tools-active-tool'] : [])].join(' ')}
+                icon={<VerticalAlignBottomOutlined />}
+                onClick={() => setRemoveUnderlyingPixels(!removeUnderlyingPixels)}
+            />
             <LabelSelector
                 labels={labels}
                 value={activeLabelID}

@@ -68,7 +68,7 @@ export interface Configuration {
 }
 
 export interface BrushTool {
-    type: 'brush' | 'eraser' | 'fill';
+    type: 'brush' | 'eraser' | 'fill' | 'polygon-plus' | 'polygon-minus';
     color: string;
     removeUnderlyingPixels?: boolean;
     form?: 'circle' | 'square';
