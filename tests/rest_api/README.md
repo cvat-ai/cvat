@@ -19,14 +19,20 @@ the server calling REST API directly (as it done by users).
 
 ## How to run?
 
-Please look at documentation for [pytest](https://docs.pytest.org/en/6.2.x/).
-Generally you have to install requirements and run the following command from
-the root directory of the cloned CVAT repository:
+1. Execute commands below to run docker containers:
+   ```console
+   export MINIO_ACCESS_KEY="minio_access_key"
+   export MINIO_SECRET_KEY="minio_secret_key"
+   docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f components/analytics/docker-compose.analytics.yml -f tests/rest_api/docker-compose.minio.yml up -d --build
+   ```
+1. After that please look at documentation for [pytest](https://docs.pytest.org/en/6.2.x/).
+   Generally, you have to install requirements and run the following command from
+   the root directory of the cloned CVAT repository:
 
-```console
-pip3 install --user -r tests/rest_api/requirements.txt
-pytest tests/rest_api/
-```
+   ```console
+   pip3 install --user -r tests/rest_api/requirements.txt
+   pytest tests/rest_api/
+   ```
 
 ## How to upgrade testing assets?
 
@@ -84,7 +90,7 @@ python utils/dump_objects.py
 To restore DB and data volume, please use commands below.
 
 ```console
-cat assets/cvat_db/data.json | docker exec -i cvat python manage.py --format=json loaddata -
+cat assets/cvat_db/data.json | docker exec -i cvat python manage.py loaddata --format=json -
 cat assets/cvat_db/cvat_data.tar.bz2 | docker exec -i cvat tar --strip 3 -C /home/django/data/ -xj
 ```
 
@@ -151,7 +157,7 @@ Assets directory has two parts:
    ```
 
 1. If your tests was failed due to date field incompatibility and you have
-error message like this:
+   error message like this:
    ```
    assert {'values_chan...34.908528Z'}}} == {}
    E                 Left contains 1 more item:
@@ -182,7 +188,7 @@ error message like this:
    ```
 
 1. If for some reason you need to recreate cvat database, but using `dropdb`
-you have error message:
+   you have error message:
    ```
    ERROR:  database "cvat" is being accessed by other users
    DETAIL:  There are 1 other session(s) using the database.

@@ -250,7 +250,7 @@ class ServerViewSet(viewsets.ViewSet):
             '200': ProjectSerializer,
         })
 )
-class ProjectViewSet(viewsets.ModelViewSet):
+class ProjectViewSet(viewsets.ModelViewSet, UploadMixin):
     queryset = models.Project.objects.prefetch_related(Prefetch('label_set',
         queryset=models.Label.objects.order_by('id')
     ))
@@ -330,21 +330,13 @@ class ProjectViewSet(viewsets.ModelViewSet):
             '400': OpenApiResponse(description='Failed to import dataset'),
             '405': OpenApiResponse(description='Format is not available'),
         })
-    @action(detail=True, methods=['GET', 'POST'], serializer_class=None,
-        url_path='dataset')
+    @action(detail=True, methods=['GET', 'POST', 'OPTIONS'], serializer_class=None,
+        url_path=r'dataset/?$')
     def dataset(self, request, pk):
-        db_project = self.get_object() # force to call check_object_permissions
+        self._object = self.get_object() # force to call check_object_permissions
 
-        if request.method == 'POST':
-            format_name = request.query_params.get("format", "")
-
-            return _import_project_dataset(
-                request=request,
-                rq_id=f"/api/project/{pk}/dataset_import",
-                rq_func=dm.project.import_dataset_as_project,
-                pk=pk,
-                format_name=format_name,
-            )
+        if request.method == 'POST' or request.method == 'OPTIONS':
+            return self.upload_data(request)
         else:
             action = request.query_params.get("action", "").lower()
             if action in ("import_status",):
@@ -353,12 +345,12 @@ class ProjectViewSet(viewsets.ModelViewSet):
                 if rq_job is None:
                     return Response(status=status.HTTP_404_NOT_FOUND)
                 elif rq_job.is_finished:
-                    os.close(rq_job.meta['tmp_file_descriptor'])
+                    if rq_job.meta['tmp_file_descriptor']: os.close(rq_job.meta['tmp_file_descriptor'])
                     os.remove(rq_job.meta['tmp_file'])
                     rq_job.delete()
                     return Response(status=status.HTTP_201_CREATED)
                 elif rq_job.is_failed:
-                    os.close(rq_job.meta['tmp_file_descriptor'])
+                    if rq_job.meta['tmp_file_descriptor']: os.close(rq_job.meta['tmp_file_descriptor'])
                     os.remove(rq_job.meta['tmp_file'])
                     rq_job.delete()
                     return Response(
@@ -373,7 +365,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
             else:
                 format_name = request.query_params.get("format", "")
                 return _export_annotations(
-                    db_instance=db_project,
+                    db_instance=self._object,
                     rq_id="/api/project/{}/dataset/{}".format(pk, format_name),
                     request=request,
                     action=action,
@@ -381,6 +373,35 @@ class ProjectViewSet(viewsets.ModelViewSet):
                     format_name=format_name,
                     filename=request.query_params.get("filename", "").lower(),
                 )
+
+    def get_upload_dir(self):
+        if 'dataset' in self.action:
+            return self._object.get_tmp_dirname()
+        return ""
+
+    def upload_finished(self, request):
+        if self.action == 'dataset':
+            format_name = request.query_params.get("format", "")
+            filename = request.query_params.get("filename", "")
+            tmp_dir = self._object.get_tmp_dirname()
+            uploaded_file = None
+            if os.path.isfile(os.path.join(tmp_dir, filename)):
+                uploaded_file = os.path.join(tmp_dir, filename)
+            return _import_project_dataset(
+                request=request,
+                filename=uploaded_file,
+                rq_id=f"/api/project/{self._object.pk}/dataset_import",
+                rq_func=dm.project.import_dataset_as_project,
+                pk=self._object.pk,
+                format_name=format_name,
+            )
+        return Response(data='Unknown upload was finished',
+                        status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=True, methods=['HEAD', 'PATCH'], url_path='dataset/'+UploadMixin.file_id_regex)
+    def append_dataset_chunk(self, request, pk, file_id):
+        self._object = self.get_object()
+        return self.append_tus_chunk(request, file_id)
 
     @extend_schema(summary='Method allows to download project annotations',
         parameters=[
@@ -1155,10 +1176,14 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     @action(detail=True, methods=['GET'], serializer_class=JobCommitSerializer)
     def commits(self, request, pk):
         db_job = self.get_object()
-        queryset = db_job.commits
-        serializer = JobCommitSerializer(queryset,
-            context={'request': request}, many=True)
+        queryset = db_job.commits.order_by('-id')
 
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = JobCommitSerializer(page, context={'request': request}, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = JobCommitSerializer(queryset, context={'request': request}, many=True)
         return Response(serializer.data)
 
 @extend_schema(tags=['issues'])
@@ -1768,7 +1793,7 @@ def _export_annotations(db_instance, rq_id, request, format_name, action, callba
         result_ttl=ttl, failure_ttl=ttl)
     return Response(status=status.HTTP_202_ACCEPTED)
 
-def _import_project_dataset(request, rq_id, rq_func, pk, format_name):
+def _import_project_dataset(request, rq_id, rq_func, pk, format_name, filename=None):
     format_desc = {f.DISPLAY_NAME: f
         for f in dm.views.get_import_formats()}.get(format_name)
     if format_desc is None:
@@ -1781,19 +1806,21 @@ def _import_project_dataset(request, rq_id, rq_func, pk, format_name):
     rq_job = queue.fetch_job(rq_id)
 
     if not rq_job:
-        serializer = DatasetFileSerializer(data=request.data)
-        if serializer.is_valid(raise_exception=True):
-            dataset_file = serializer.validated_data['dataset_file']
-            fd, filename = mkstemp(prefix='cvat_{}'.format(pk))
-            with open(filename, 'wb+') as f:
-                for chunk in dataset_file.chunks():
-                    f.write(chunk)
+        fd = None
+        if not filename:
+            serializer = DatasetFileSerializer(data=request.data)
+            if serializer.is_valid(raise_exception=True):
+                dataset_file = serializer.validated_data['dataset_file']
+                fd, filename = mkstemp(prefix='cvat_{}'.format(pk))
+                with open(filename, 'wb+') as f:
+                    for chunk in dataset_file.chunks():
+                        f.write(chunk)
 
-            rq_job = queue.enqueue_call(
-                func=rq_func,
-                args=(pk, filename, format_name),
-                job_id=rq_id,
-                meta={
+        rq_job = queue.enqueue_call(
+            func=rq_func,
+            args=(pk, filename, format_name),
+            job_id=rq_id,
+            meta={
                     'tmp_file': filename,
                     'tmp_file_descriptor': fd,
                 },
