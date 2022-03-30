@@ -979,7 +979,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             };
         }
         case AnnotationActionTypes.FETCH_ANNOTATIONS_SUCCESS: {
-            const { activatedStateID } = state.annotations;
+            const { activatedStateID, states: oldStates, history: oldHistory } = state.annotations;
             const {
                 states, history, minZ, maxZ,
             } = action.payload;
@@ -989,8 +989,8 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 annotations: {
                     ...state.annotations,
                     activatedStateID: updateActivatedStateID(states, activatedStateID),
-                    states,
-                    history,
+                    states: states || oldStates,
+                    history: history || oldHistory,
                     zLayer: {
                         min: minZ,
                         max: maxZ,

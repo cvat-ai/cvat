@@ -1791,11 +1791,16 @@ export function deleteFrameAsync(): ThunkAction {
                 type: AnnotationActionTypes.DELETE_FRAME,
             });
 
-            await jobInstance.annotations.clear(false, frame, frame, false);
-            await jobInstance.actions.clear();
-            const history = await jobInstance.actions.get();
-            await jobInstance.annotations.save();
-            const states = await jobInstance.annotations.get(frame, showAllInterpolationTracks, filters);
+            let history; let
+                states;
+            const frameStates = await jobInstance.annotations.get(frame, false, []);
+            if (frameStates.length) {
+                await jobInstance.annotations.clear(false, frame, frame, false);
+                await jobInstance.actions.clear();
+                history = await jobInstance.actions.get();
+                await jobInstance.annotations.save();
+                states = await jobInstance.annotations.get(frame, showAllInterpolationTracks, filters);
+            }
 
             await jobInstance.frames.delete(frame);
             const data = await jobInstance.frames.get(frame);
