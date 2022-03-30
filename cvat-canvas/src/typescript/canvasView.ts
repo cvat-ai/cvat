@@ -1276,12 +1276,20 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
                 if (ctx) {
                     switch (image.orientation) {
+                        // 1 - normal nothing to do
+                        // 2 - horizontal mirrored
                         case 2: ctx.transform(-1, 0, 0, 1, width, 0); break;
+                        // 3 - 180 cw rotated
                         case 3: ctx.transform(-1, 0, 0, -1, width, height); break;
+                        // 4 - vertical mirrored
                         case 4: ctx.transform(1, 0, 0, -1, 0, height); break;
+                        // 5 - horizontal mirrored and 270 cw rotated
                         case 5: ctx.transform(0, 1, 1, 0, 0, 0); break;
+                        // 6 - 90 cw rotated
                         case 6: ctx.transform(0, 1, -1, 0, width, 0); break;
+                        // 7 - horizontal mirrored and 90 cw rotated
                         case 7: ctx.transform(0, -1, -1, 0, width, height); break;
+                        // 8 - 270 cw rotated
                         case 8: ctx.transform(0, -1, 1, 0, 0, height); break;
                         default: break;
                     }
