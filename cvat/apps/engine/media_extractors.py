@@ -468,6 +468,10 @@ class VideoReader(IMediaReader):
             ).to_image()
         )
 
+    def get_image_size(self, i):
+        image = (next(iter(self)))[0]
+        return image.width, image.height
+
 class FragmentMediaReader:
     def __init__(self, chunk_number, chunk_size, start, stop, step=1):
         self._start = start
