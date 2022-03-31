@@ -1,130 +1,164 @@
 # Copyright (C) 2018-2021 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
-import http.client
 
-from django.http import HttpResponseBadRequest, JsonResponse, HttpResponse
-from rules.contrib.views import permission_required, objectgetter
-
-from cvat.apps.iam.decorators import login_required
-from cvat.apps.engine.log import slogger
-from cvat.apps.engine import models
-from cvat.apps.dataset_repo.models import GitData
 import contextlib
-
-import cvat.apps.dataset_repo.dataset_repo as CVATGit
 import django_rq
-import json
+import cvat.apps.dataset_repo.dataset_repo as CVATGit
 
-@login_required
-def check_process(request, rq_id):
-    try:
-        queue = django_rq.get_queue('default')
-        rq_job = queue.fetch_job(rq_id)
+from rest_framework import viewsets
+from rest_framework.decorators import action
+from rest_framework.response import Response
+from django.http import HttpResponseBadRequest, JsonResponse
+from drf_spectacular.utils import OpenApiResponse, extend_schema, extend_schema_view
+from cvat.apps.engine.log import slogger
+from cvat.apps.iam.permissions import DatasetRepoPermission
+from cvat.apps.dataset_repo.models import GitData
+from cvat.apps.dataset_repo.serializers import DatasetRepoSerializer, RqStatusSerializer
 
-        if rq_job is not None:
-            if rq_job.is_queued or rq_job.is_started:
-                return JsonResponse({"status": rq_job.get_status()})
-            elif rq_job.is_finished:
-                return JsonResponse({"status": rq_job.get_status()})
-            else:
-                return JsonResponse({"status": rq_job.get_status(), "stderr": rq_job.exc_info})
-        else:
-            return JsonResponse({"status": "unknown"})
-    except Exception as ex:
-        slogger.glob.error("error occurred during checking repository request with rq id {}".format(rq_id), exc_info=True)
-        return HttpResponseBadRequest(str(ex))
+@extend_schema_view(tags=['datasetrepo'])
+@extend_schema_view(
+    retrieve=extend_schema(
+        summary='Method returns details of an dataset repository',
+        responses={
+            '200': OpenApiResponse(description=''),
+        }),
+    list=extend_schema(
+        summary='Methods returns details about all dataset repositories',
+        responses={
+            '200': DatasetRepoSerializer(many=True),
+        }),
+    partial_update=extend_schema(
+        summary='Methods does a partial update of chosen fields in a dataset repository'),
+    create=extend_schema(
+        summary='Method create a dataset repository, attach it to specified task and clone',
+        responses={
+            '201': OpenApiResponse(description=''),
+        }),
+)
+class DatasetRepoViewSet(viewsets.ModelViewSet):
+    http_method_names = ['get', 'post', 'patch']
+    queryset = GitData.objects.all().order_by('-task__id')
+    serializer_class = DatasetRepoSerializer
+    search_fields = ('path', 'format', 'status',)
+    filter_fields = list(search_fields) + ['tid']
+    ordering_fields = filter_fields
+    ordering = "-tid"
+    iam_organization_field = 'task__organization'
+    lookup_field = 'task_id'
+    lookup_fields = {
+        'tid': 'task__id',
+    }
 
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        if self.action == 'list':
+            perm = DatasetRepoPermission.create_scope_list(self.request)
+            queryset = perm.filter(queryset)
 
-@login_required
-@permission_required(perm=['engine.task.create'],
-    fn=objectgetter(models.Task, 'tid'), raise_exception=True)
-def create(request, tid):
-    try:
-        slogger.task[tid].info("create repository request")
-        body = json.loads(request.body.decode('utf-8'))
-        path = body["path"]
-        export_format = body["format"]
-        lfs = body["lfs"]
-        rq_id = "git.create.{}".format(tid)
-        queue = django_rq.get_queue("default")
+        return queryset
 
-        queue.enqueue_call(func = CVATGit.initial_create, args = (tid, path, export_format, lfs, request.user), job_id = rq_id)
-        return JsonResponse({ "rq_id": rq_id })
-    except Exception as ex:
-        slogger.glob.error("error occurred during initial cloning repository request with rq id {}".format(rq_id), exc_info=True)
-        return HttpResponseBadRequest(str(ex))
-
-
-@login_required
-def push_repository(request, tid):
-    try:
-        slogger.task[tid].info("push repository request")
-
-        rq_id = "git.push.{}".format(tid)
-        queue = django_rq.get_queue('default')
-        queue.enqueue_call(func = CVATGit.push, args = (tid, request.user, request.scheme, request.get_host()), job_id = rq_id)
-
-        return JsonResponse({ "rq_id": rq_id })
-    except Exception as ex:
-        with contextlib.suppress(Exception):
-            slogger.task[tid].error("error occurred during pushing repository request",
-                exc_info=True)
-
-        return HttpResponseBadRequest(str(ex))
-
-
-@login_required
-def get_repository(request, tid):
-    try:
-        slogger.task[tid].info("get repository request")
-        return JsonResponse(CVATGit.get(tid, request.user))
-    except Exception as ex:
-        with contextlib.suppress(Exception):
-            slogger.task[tid].error("error occurred during getting repository info request",
-                exc_info=True)
-
-        return HttpResponseBadRequest(str(ex))
-
-@login_required
-@permission_required(perm=['engine.task.access'],
-                     fn=objectgetter(models.Task, 'tid'), raise_exception=True)
-def update_git_repo(request, tid):
-    try:
-        body = json.loads(request.body.decode('utf-8'))
-        req_type = body["type"]
-        value = body["value"]
-        git_data_obj = GitData.objects.filter(task_id=tid)[0]
-        if req_type == "url":
-            git_data_obj.url = value
-            git_data_obj.save(update_fields=["url"])
-        elif req_type == "lfs":
-            git_data_obj.lfs = bool(value)
-            git_data_obj.save(update_fields=["lfs"])
-        elif req_type == "format":
-            git_data_obj.format = value
-            git_data_obj.save(update_fields=["format"])
-            slogger.task[tid].info("get repository request")
-        return HttpResponse(
-            status=http.HTTPStatus.OK,
-        )
-    except Exception as ex:
+    @extend_schema(summary='Method returns a status of rq_job',
+        responses={
+            '200': RqStatusSerializer,
+    })
+    @action(detail=False, methods=['GET'], url_path=r'(?P<rq_id>[a-z0-9.]+)/status')
+    def status(self, request, rq_id):
         try:
-            slogger.task[tid].error("error occurred during changing repository request", exc_info=True)
-        except Exception:
-            pass
-        return HttpResponseBadRequest(str(ex))
+            queue = django_rq.get_queue('default')
+            rq_job = queue.fetch_job(rq_id)
+
+            if rq_job is not None:
+                data = {'status': rq_job.get_status()}
+                if not any((rq_job.is_queued, rq_job.is_started, rq_job.is_finished)):
+                    data['stderr'] = rq_job.exc_info
+            else:
+                data = {'status': 'unknown'}
+            serializer = RqStatusSerializer(data=data)
+            if serializer.is_valid(raise_exception=True):
+                return Response(serializer.data)
+        except Exception as ex:
+            slogger.glob.error("error occurred during checking repository request with rq id {}".format(rq_id), exc_info=True)
+            return HttpResponseBadRequest(str(ex))
+
+    def create(self, request, *args, **kwargs):
+        rq_id = None
+        try:
+            serializer = self.get_serializer(data=request.data, context={'request': request})
+            serializer.is_valid(raise_exception=True)
+            tid = int(serializer.validated_data.pop('task_id'))
+            slogger.task[tid].info("create repository request")
+            rq_id = "git.create.{}".format(tid)
+            queue = django_rq.get_queue("default")
+
+            queue.enqueue_call(func = CVATGit.initial_create, args = (
+                tid,
+                serializer.validated_data['path'],
+                serializer.validated_data['format'],
+                serializer.validated_data['lfs'], request.user), job_id = rq_id)
+            return JsonResponse({ "rq_id": rq_id })
+        except Exception as ex:
+            slogger.glob.error(
+                f'error occurred during initial cloning repository request with rq id {rq_id}', exc_info=True)
+            return HttpResponseBadRequest(str(ex))
 
 
-@login_required
-def get_meta_info(request):
-    try:
-        db_git_records = GitData.objects.all()
-        response = {}
-        for db_git in db_git_records:
-            response[db_git.task_id] = db_git.status
+    @extend_schema(summary='Method push commit to origin repository',
+        responses={
+            '200': OpenApiResponse(description=''),
+    })
+    @action(detail=True, methods=['GET'], url_path='push')
+    def push(self, request, task_id):
+        try:
+            slogger.task[task_id].info("push repository request")
+            rq_id = "git.push.{}".format(task_id)
+            queue = django_rq.get_queue('default')
+            queue.enqueue_call(func = CVATGit.push, args = (task_id, request.user, request.scheme, request.get_host()), job_id = rq_id)
 
-        return JsonResponse(response, safe = False)
-    except Exception as ex:
-        slogger.glob.exception("error occurred during get meta request", exc_info = True)
-        return HttpResponseBadRequest(str(ex))
+            return JsonResponse({ "rq_id": rq_id })
+        except Exception as ex:
+            with contextlib.suppress(Exception):
+                slogger.task[task_id].error("error occurred during pushing repository request",
+                    exc_info=True)
+
+            return HttpResponseBadRequest(str(ex))
+
+    def retrieve(self, request, *args, **kwargs):
+        try:
+            instance = self.get_object()
+            tid = instance.task_id
+            slogger.task[tid].info("get repository request")
+            return JsonResponse(CVATGit.get(tid, request.user))
+        except Exception as ex:
+            with contextlib.suppress(Exception):
+                slogger.task[kwargs[self.lookup_field]].error("error occurred during getting repository info request",
+                    exc_info=True)
+
+            return HttpResponseBadRequest(str(ex))
+
+    def update(self, request, *args, **kwargs):
+        try:
+            return super().update(request, *args, **kwargs)
+        except Exception as ex:
+            with contextlib.suppress(Exception):
+                slogger.task[kwargs[self.lookup_field]].error("error occurred during changing repository request", exc_info=True)
+
+            return HttpResponseBadRequest(str(ex))
+
+    # TODO:
+    @extend_schema(summary='Method provides a meta information about all created repositories',
+    responses={
+        '200': OpenApiResponse(description=''),
+    })
+    @action(detail=False, methods=['GET'], url_path='metadata')
+    def metadata(self, request):
+        try:
+            db_git_records = GitData.objects.all()
+            response = {}
+            for db_git in db_git_records:
+                response[db_git.task_id] = db_git.status
+
+            return JsonResponse(response, safe = False)
+        except Exception as ex:
+            slogger.glob.exception("error occurred during get meta request", exc_info = True)
+            return HttpResponseBadRequest(str(ex))

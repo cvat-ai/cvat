@@ -2,16 +2,13 @@
 #
 # SPDX-License-Identifier: MIT
 
-
-from django.urls import path
+from django.urls import path, include
+from rest_framework import routers
 from . import views
 
+router = routers.DefaultRouter(trailing_slash=False)
+router.register('datasetrepo', views.DatasetRepoViewSet, basename='datasetrepo')
 
 urlpatterns = [
-    path('create/<int:tid>', views.create),
-    path('get/<int:tid>', views.get_repository),
-    path('push/<int:tid>', views.push_repository),
-    path('check/<str:rq_id>', views.check_process),
-    path('meta/get', views.get_meta_info),
-    path('<int:tid>', views.update_git_repo)
+    path('api/', include(router.urls)),
 ]

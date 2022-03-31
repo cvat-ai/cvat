@@ -5,7 +5,7 @@
 import getCore from 'cvat-core-wrapper';
 
 const core = getCore();
-const baseURL = core.config.backendAPI.slice(0, -7);
+const baseURL = core.config.backendAPI;
 
 interface GitPlugin {
     name: string;
@@ -46,7 +46,7 @@ function waitForClone(cloneResponse: any): Promise<void> {
     return new Promise((resolve, reject): void => {
         async function checkCallback(): Promise<void> {
             core.server
-                .request(`${baseURL}/git/repository/check/${cloneResponse.rq_id}`, {
+                .request(`${baseURL}/datasetrepo/${cloneResponse.rq_id}/status`, {
                     method: 'GET',
                 })
                 .then((response: any): void => {
@@ -88,7 +88,7 @@ async function cloneRepository(this: any, plugin: GitPlugin, createdTask: any): 
             }
 
             core.server
-                .request(`${baseURL}/git/repository/create/${createdTask.id}`, {
+                .request(`${baseURL}/datasetrepo`, {
                     method: 'POST',
                     headers: {
                         'Content-type': 'application/json',
@@ -97,7 +97,7 @@ async function cloneRepository(this: any, plugin: GitPlugin, createdTask: any): 
                         path: plugin.data.repos,
                         lfs: plugin.data.lfs,
                         format: plugin.data.format,
-                        tid: createdTask.id,
+                        task_id: createdTask.id,
                     }),
                 })
                 .then(waitForClone)
@@ -143,7 +143,7 @@ export function registerGitPlugin(): void {
 }
 
 export async function getReposData(tid: number): Promise<ReposData | null> {
-    const response = await core.server.request(`${baseURL}/git/repository/get/${tid}`, {
+    const response = await core.server.request(`${baseURL}/datasetrepo/${tid}`, {
         method: 'GET',
     });
 
@@ -165,13 +165,13 @@ export async function getReposData(tid: number): Promise<ReposData | null> {
 export function syncRepos(tid: number): Promise<void> {
     return new Promise((resolve, reject): void => {
         core.server
-            .request(`${baseURL}/git/repository/push/${tid}`, {
+            .request(`${baseURL}/datasetrepo/${tid}/push`, {
                 method: 'GET',
             })
             .then((syncResponse: any): void => {
                 async function checkSync(): Promise<void> {
                     const id = syncResponse.rq_id;
-                    const response = await core.server.request(`${baseURL}/git/repository/check/${id}`, {
+                    const response = await core.server.request(`${baseURL}/datasetrepo/${id}/status`, {
                         method: 'GET',
                     });
 
@@ -199,12 +199,11 @@ export function syncRepos(tid: number): Promise<void> {
 export async function changeRepo(taskId: number, type: string, value: any): Promise<void> {
     return new Promise((resolve, reject): void => {
         core.server
-            .request(`${baseURL}/git/repository/${taskId}`, {
+            .request(`${baseURL}/datasetrepo/${taskId}`, {
                 method: 'PATCH',
-                data: JSON.stringify({
-                    type,
-                    value,
-                }),
+                data: {
+                    [type]: value,
+                },
             })
             .then(resolve)
             .catch((error: any): void => {

@@ -695,6 +695,14 @@ class TaskPermission(OpenPolicyAgentPermission):
         return scopes
 
     @classmethod
+    def create_scope_view(cls, request, task_id):
+        try:
+            obj = Task.objects.get(id=task_id)
+        except Task.DoesNotExist as ex:
+            raise ValidationError(str(ex))
+        return cls(**cls.unpack_context(request), obj=obj, scope='view')
+
+    @classmethod
     def create_scope_view_data(cls, request, task_id):
         try:
             obj = Task.objects.get(id=task_id)
@@ -1054,3 +1062,54 @@ class IsMemberInOrganization(BasePermission):
             return membership is not None
 
         return True
+
+class DatasetRepoPermission(OpenPolicyAgentPermission):
+    @classmethod
+    def create(cls, request, view, obj):
+        permissions = []
+        if view.basename == 'datasetrepo':
+            for scope in cls.get_scopes(request, view, obj):
+                self = cls.create_base_perm(request, view, scope, obj)
+                permissions.append(self)
+
+            task_id = request.data.get('task')
+            if task_id:
+                perm = TaskPermission.create_scope_view(request, int(task_id))
+                permissions.append(perm)
+
+        return permissions
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.url = settings.IAM_OPA_DATA_URL + '/datasetrepo/allow'
+
+    @staticmethod
+    def get_scopes(request, view, obj):
+        return [{
+            'list': 'list',
+            'create': 'create@task',
+            'retrieve': 'view',
+            'partial_update': 'update',
+            'push': 'view',
+            'status': 'view',
+            'metadata': 'list:content'
+        }.get(view.action)]
+
+    def get_resource(self):
+        data = None
+        if self.scope.startswith('create'):
+            data = {
+                'id': None,
+                'organization': {
+                    'id': self.org_id
+                } if self.org_id != None else None,
+            }
+        elif self.obj:
+            data = {
+                'id': self.obj.task_id,
+                'organization': {
+                    'id': self.obj.task.organization.id
+                } if self.obj.task.organization else None
+            }
+
+        return data
