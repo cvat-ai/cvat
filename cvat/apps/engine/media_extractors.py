@@ -77,7 +77,7 @@ def sort(images, sorting_method=SortingMethod.LEXICOGRAPHICAL, func=None):
         raise NotImplementedError()
 
 def rotate_within_exif(img: Image):
-    orientation = img.getexif().get(ORIENTATION_EXIF_TAG, 1)
+    orientation = img.getexif().get(ORIENTATION_EXIF_TAG,  Orientation.NORMAL_HORIZONTAL)
     if orientation in [ORIENTATION.NORAMAL_180_ROTATED, ORIENTATION.MIRROR_VERTICAL]:
         img = img.rotate(180, expand=True)
     elif orientation in [ORIENTATION.MIRROR_HORIZONTAL_270_ROTATED, ORIENTATION.NORAMAL_270_ROTATED]:
