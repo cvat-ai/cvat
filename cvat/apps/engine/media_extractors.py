@@ -9,6 +9,7 @@ import zipfile
 import io
 import itertools
 import struct
+from enum import IntEnum
 from abc import ABC, abstractmethod
 from contextlib import closing
 
@@ -32,7 +33,7 @@ from utils.dataset_manifest import VideoManifestManager, ImageManifestManager
 ORIENTATION_EXIF_TAG = 274
 
 
-class ORIENTATION:
+class ORIENTATION(IntEnum):
     NORMAL_HORIZONTAL=1
     MIRROR_HORIZONTAL=2
     NORAMAL_180_ROTATED=3
@@ -76,8 +77,14 @@ def sort(images, sorting_method=SortingMethod.LEXICOGRAPHICAL, func=None):
     else:
         raise NotImplementedError()
 
+def image_size_within_orientation(img: Image):
+    orientation = img.getexif().get(ORIENTATION_EXIF_TAG, 1)
+    if orientation > 4:
+        return img.height, img.width
+    return img.width, img.height
+
 def rotate_within_exif(img: Image):
-    orientation = img.getexif().get(ORIENTATION_EXIF_TAG,  Orientation.NORMAL_HORIZONTAL)
+    orientation = img.getexif().get(ORIENTATION_EXIF_TAG,  ORIENTATION.NORMAL_HORIZONTAL)
     if orientation in [ORIENTATION.NORAMAL_180_ROTATED, ORIENTATION.MIRROR_VERTICAL]:
         img = img.rotate(180, expand=True)
     elif orientation in [ORIENTATION.MIRROR_HORIZONTAL_270_ROTATED, ORIENTATION.NORAMAL_270_ROTATED]:
@@ -204,11 +211,7 @@ class ImageListReader(IMediaReader):
                 properties = ValidateDimension.get_pcd_properties(f)
                 return int(properties["WIDTH"]),  int(properties["HEIGHT"])
         img = Image.open(self._source_path[i])
-        width, height = img.width, img.height
-        orientation = img.getexif().get(ORIENTATION_EXIF_TAG, 1)
-        if orientation > 4:
-            width, height = height, width
-        return width, height
+        return image_size_within_orientation(img)
 
     def reconcile(self, source_files, step=1, start=0, stop=None, dimension=DimensionType.DIM_2D, sorting_method=None):
         # FIXME
@@ -349,11 +352,7 @@ class ZipReader(ImageListReader):
                 properties = ValidateDimension.get_pcd_properties(f)
                 return int(properties["WIDTH"]),  int(properties["HEIGHT"])
         img = Image.open(io.BytesIO(self._zip_source.read(self._source_path[i])))
-        width, height = img.width, img.height
-        orientation = img.getexif().get(ORIENTATION_EXIF_TAG, 1)
-        if orientation > 4:
-            width, height = height, width
-        return width, height
+        return image_size_within_orientation(img)
 
     def get_image(self, i):
         if self._dimension == DimensionType.DIM_3D:
