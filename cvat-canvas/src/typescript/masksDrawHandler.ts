@@ -222,11 +222,21 @@ export class MasksDrawHandlerImpl implements MasksDrawHandler {
         } else if (this.isDrawing) {
             // todo: make a smarter validation
             if (this.drawnObjects.length) {
-                const imageData = this.canvas.getContext().getImageData(0, 0, 1920, 1080).data;
-                const alpha = [];
+                const { width, height } = this.geometry.image;
+                const imageData = this.canvas.getContext().getImageData(0, 0, width, height).data;
+                let alpha = [];
                 for (let i = 3; i < imageData.length; i += 4) {
                     alpha.push(imageData[i] > 0 ? 128 : 0);
                 }
+
+                alpha = alpha.reduce<number[]>((acc, val, idx, arr) => {
+                    if (idx > 0 && arr[idx - 1] === val) {
+                        acc[acc.length - 2] += 1;
+                    } else {
+                        acc.push(1, val);
+                    }
+                    return acc;
+                }, []);
 
                 this.onDrawDone({
                     shapeType: this.drawData.shapeType,

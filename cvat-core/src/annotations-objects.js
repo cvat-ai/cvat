@@ -1314,9 +1314,14 @@
     class MaskShape extends Shape {
         constructor(data, clientID, color, injection) {
             super(data, clientID, color, injection);
-            this._rle = null;
             this.pinned = true;
-            this.rle = data.rle;
+            this.points = this.points.reduce((acc, val, idx, arr) => {
+                if (idx % 2) {
+                    return acc.concat(Array(arr[idx - 1]).fill(val));
+                }
+
+                return acc;
+            }, []);
             this.shapeType = ObjectShape.MASK;
         }
 
@@ -1324,14 +1329,6 @@
             if (frame !== this.frame) {
                 throw new ScriptingError('Got frame is not equal to the frame of the shape');
             }
-
-            this._rle = this.points.reduce((acc, val, idx, arr) => {
-                if (idx % 2) {
-                    return acc.concat(Array(arr[idx - 1]).fill(val));
-                }
-
-                return acc;
-            }, []);
 
             return {
                 objectType: ObjectType.SHAPE,
@@ -1341,7 +1338,7 @@
                 occluded: this.occluded,
                 lock: this.lock,
                 zOrder: this.zOrder,
-                points: [...this._rle],
+                points: [...this.points],
                 rotation: this.rotation,
                 attributes: { ...this.attributes },
                 descriptions: [...this.descriptions],
@@ -1356,8 +1353,17 @@
             };
         }
 
-        _savePoints(points, rotation, frame) {
-            // TODO
+        static distance(points, x, y, angle, frameMeta = null) {
+            if (frameMeta === null) {
+                throw new ArgumentError('Frame meta must be provided for a mask to get distance');
+            }
+
+            const { width } = frameMeta;
+            const offset = Math.floor(y) * width + Math.floor(x);
+
+            // TODO: find a better approach
+            if (points[offset]) return 1;
+            return null;
         }
     }
 

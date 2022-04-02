@@ -794,19 +794,6 @@
                     }
 
                     if (state.objectType === 'shape') {
-                        let points = [...state.points];
-                        if (state.shapeType === 'mask') {
-                            // convert to rle string
-                            points = points.reduce((acc, val, idx, arr) => {
-                                if (idx > 0 && arr[idx - 1] === val) {
-                                    acc[acc.length - 2] += 1;
-                                } else {
-                                    acc.push(1, val);
-                                }
-                                return acc;
-                            }, []);
-                        }
-
                         constructed.shapes.push({
                             attributes,
                             descriptions: state.descriptions,
@@ -814,7 +801,7 @@
                             group: 0,
                             label_id: state.label.id,
                             occluded: state.occluded || false,
-                            points,
+                            points: [...state.points],
                             rotation: state.rotation || 0,
                             type: state.shapeType,
                             z_order: state.zOrder,
@@ -893,7 +880,11 @@
                 if (typeof object === 'undefined') {
                     throw new ArgumentError('The object has not been saved yet. Call annotations.put([state]) before');
                 }
-                const distance = object.constructor.distance(state.points, x, y, state.rotation);
+                const distance = object.constructor.distance(
+                    state.points, x, y,
+                    state.rotation,
+                    this.injection.frameMeta[state.frame],
+                );
                 if (distance !== null && (minimumDistance === null || distance < minimumDistance)) {
                     minimumDistance = distance;
                     minimumState = state;

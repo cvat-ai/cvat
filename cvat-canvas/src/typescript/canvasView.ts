@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import polylabel from 'polylabel';
+import { fabric } from 'fabric';
 import * as SVG from 'svg.js';
 
 import 'svg.draggable.js';
@@ -1814,26 +1815,30 @@ export class CanvasViewImpl implements CanvasView, Listener {
         const { displayAllText } = this.configuration;
         for (const state of states) {
             const points: number[] = state.points as number[];
-            const translatedPoints: number[] = this.translateToCanvas(points);
 
             // TODO: Use enums after typification cvat-core
-            if (state.shapeType === 'rectangle') {
-                this.svgShapes[state.clientID] = this.addRect(translatedPoints, state);
+            if (state.shapeType === 'mask') {
+                this.svgShapes[state.clientID] = this.addMask(points, state);
             } else {
-                const stringified = this.stringifyToCanvas(translatedPoints);
-
-                if (state.shapeType === 'polygon') {
-                    this.svgShapes[state.clientID] = this.addPolygon(stringified, state);
-                } else if (state.shapeType === 'polyline') {
-                    this.svgShapes[state.clientID] = this.addPolyline(stringified, state);
-                } else if (state.shapeType === 'points') {
-                    this.svgShapes[state.clientID] = this.addPoints(stringified, state);
-                } else if (state.shapeType === 'ellipse') {
-                    this.svgShapes[state.clientID] = this.addEllipse(stringified, state);
-                } else if (state.shapeType === 'cuboid') {
-                    this.svgShapes[state.clientID] = this.addCuboid(stringified, state);
+                const translatedPoints: number[] = this.translateToCanvas(points);
+                if (state.shapeType === 'rectangle') {
+                    this.svgShapes[state.clientID] = this.addRect(translatedPoints, state);
                 } else {
-                    continue;
+                    const stringified = this.stringifyToCanvas(translatedPoints);
+
+                    if (state.shapeType === 'polygon') {
+                        this.svgShapes[state.clientID] = this.addPolygon(stringified, state);
+                    } else if (state.shapeType === 'polyline') {
+                        this.svgShapes[state.clientID] = this.addPolyline(stringified, state);
+                    } else if (state.shapeType === 'points') {
+                        this.svgShapes[state.clientID] = this.addPoints(stringified, state);
+                    } else if (state.shapeType === 'ellipse') {
+                        this.svgShapes[state.clientID] = this.addEllipse(stringified, state);
+                    } else if (state.shapeType === 'cuboid') {
+                        this.svgShapes[state.clientID] = this.addCuboid(stringified, state);
+                    } else {
+                        continue;
+                    }
                 }
             }
 
@@ -2445,6 +2450,34 @@ export class CanvasViewImpl implements CanvasView, Listener {
         }
 
         return cube;
+    }
+
+    private addMask(points: number[], state: any): SVG.Image {
+        const color = fabric.Color.fromHex(state.color).getSource();
+
+        const data = new Uint8ClampedArray(points.map((alpha) => [color[0], color[1], color[2], alpha]).flat());
+        const { width, height } = this.geometry.image;
+
+        let canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+
+        let context = canvas.getContext('2d');
+        context.putImageData(new ImageData(data, width, height), 0, 0);
+        const dataURL = canvas.toDataURL('image/png');
+
+        // const imageData = new ImageData(data, this.geometry.image.width, this.geometry.image.height);
+        // const blob = new Blob([data]);
+        // const objectURL = URL.createObjectURL(blob);
+
+        const image = this.adoptedContent.image();
+        image.move(this.geometry.offset, this.geometry.offset);
+        image.load(dataURL);
+        image.loaded(() => {
+            URL.revokeObjectURL(dataURL);
+        });
+
+        return image;
     }
 
     private setupPoints(basicPolyline: SVG.PolyLine, state: any): any {
