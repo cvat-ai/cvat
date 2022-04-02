@@ -2454,24 +2454,34 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
     private addMask(points: number[], state: any): SVG.Image {
         const color = fabric.Color.fromHex(state.color).getSource();
+        const [left, top, right, bottom] = points.slice(-4);
+        const imageBitmap = [];
+        for (let i = 0; i < points.length - 4; i++) {
+            const alpha = points[i];
+            imageBitmap.push(color[0], color[1], color[2], alpha * 255);
+        }
 
-        const data = new Uint8ClampedArray(points.map((alpha) => [color[0], color[1], color[2], alpha]).flat());
-        const { width, height } = this.geometry.image;
-
-        let canvas = document.createElement('canvas');
-        canvas.width = width;
-        canvas.height = height;
-
-        let context = canvas.getContext('2d');
-        context.putImageData(new ImageData(data, width, height), 0, 0);
+        const canvas = document.createElement('canvas');
+        canvas.width = right - left;
+        canvas.height = bottom - top;
+        canvas.getContext('2d').putImageData(
+            new ImageData(
+                new Uint8ClampedArray(imageBitmap),
+                right - left,
+                bottom - top,
+            ), 0, 0,
+        );
         const dataURL = canvas.toDataURL('image/png');
 
-        // const imageData = new ImageData(data, this.geometry.image.width, this.geometry.image.height);
-        // const blob = new Blob([data]);
-        // const objectURL = URL.createObjectURL(blob);
-
-        const image = this.adoptedContent.image();
-        image.move(this.geometry.offset, this.geometry.offset);
+        const image = this.adoptedContent.image().attr({
+            clientID: state.clientID,
+            'color-rendering': 'optimizeQuality',
+            id: `cvat_canvas_shape_${state.clientID}`,
+            fill: state.color,
+            'shape-rendering': 'geometricprecision',
+            'data-z-order': state.zOrder,
+        }).addClass('cvat_canvas_shape');
+        image.move(this.geometry.offset + left, this.geometry.offset + top);
         image.load(dataURL);
         image.loaded(() => {
             URL.revokeObjectURL(dataURL);

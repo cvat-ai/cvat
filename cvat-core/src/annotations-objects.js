@@ -1314,14 +1314,23 @@
     class MaskShape extends Shape {
         constructor(data, clientID, color, injection) {
             super(data, clientID, color, injection);
+            [this.left, this.top, this.right, this.bottom] = this.points.splice(-4, 4);
             this.pinned = true;
-            this.points = this.points.reduce((acc, val, idx, arr) => {
-                if (idx % 2) {
-                    return acc.concat(Array(arr[idx - 1]).fill(val));
-                }
 
-                return acc;
-            }, []);
+            // decoding from rle representation and ignore the first 4 points
+            const width = this.right - this.left;
+            const height = this.bottom - this.top;
+
+            const decoded = Array(width * height).fill(0);
+            let decodedIdx = 0;
+            for (let rleCountIdx = 0; rleCountIdx < this.points.length; rleCountIdx += 2) {
+                const val = this.points[rleCountIdx + 1];
+                let count = this.points[rleCountIdx];
+                while (count--) {
+                    decoded[decodedIdx++] = val;
+                }
+            }
+            this.points = decoded;
             this.shapeType = ObjectShape.MASK;
         }
 
@@ -1338,7 +1347,7 @@
                 occluded: this.occluded,
                 lock: this.lock,
                 zOrder: this.zOrder,
-                points: [...this.points],
+                points: [...this.points, this.left, this.top, this.right, this.bottom],
                 rotation: this.rotation,
                 attributes: { ...this.attributes },
                 descriptions: [...this.descriptions],
@@ -1353,13 +1362,14 @@
             };
         }
 
-        static distance(points, x, y, angle, frameMeta = null) {
-            if (frameMeta === null) {
-                throw new ArgumentError('Frame meta must be provided for a mask to get distance');
+        static distance(points, x, y) {
+            const [left, top, right, bottom] = points.slice(-4);
+            const [width, height] = [right - left, bottom - top];
+            const [translatedX, translatedY] = [x - left, y - top];
+            if (translatedX < 0 || translatedX >= width || translatedY < 0 || translatedY >= height) {
+                return null;
             }
-
-            const { width } = frameMeta;
-            const offset = Math.floor(y) * width + Math.floor(x);
+            const offset = Math.floor(translatedY) * width + Math.floor(translatedX);
 
             // TODO: find a better approach
             if (points[offset]) return 1;

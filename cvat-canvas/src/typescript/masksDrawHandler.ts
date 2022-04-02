@@ -6,6 +6,7 @@ import { fabric } from 'fabric';
 
 import { Configuration, DrawData, Geometry } from './canvasModel';
 import consts from './consts';
+import { PropType } from './shared';
 
 export interface MasksDrawHandler {
     configurate(configuration: Configuration): void;
@@ -156,17 +157,20 @@ export class MasksDrawHandlerImpl implements MasksDrawHandler {
 
     public transform(geometry: Geometry): void {
         this.geometry = geometry;
-        this.canvas.setHeight(this.geometry.image.height);
-        this.canvas.setWidth(this.geometry.image.width);
-        this.canvas.setDimensions({ width: this.geometry.image.width, height: this.geometry.image.height });
+        const {
+            image: { width, height }, scale, angle, top, left,
+        } = geometry;
+        this.canvas.setHeight(height);
+        this.canvas.setWidth(width);
+        this.canvas.setDimensions({ width, height });
 
         const topCanvas = this.canvas.getElement().parentElement as HTMLDivElement;
-        topCanvas.style.top = `${geometry.top}px`;
-        topCanvas.style.left = `${geometry.left}px`;
-        topCanvas.style.transform = `scale(${geometry.scale}) rotate(${geometry.angle}deg)`;
+        topCanvas.style.top = `${top}px`;
+        topCanvas.style.left = `${left}px`;
+        topCanvas.style.transform = `scale(${scale}) rotate(${angle}deg)`;
 
         if (this.drawablePolygon) {
-            this.drawablePolygon.set('strokeWidth', consts.BASE_STROKE_WIDTH / this.geometry.scale);
+            this.drawablePolygon.set('strokeWidth', consts.BASE_STROKE_WIDTH / scale);
             this.canvas.renderAll();
         }
     }
@@ -222,11 +226,33 @@ export class MasksDrawHandlerImpl implements MasksDrawHandler {
         } else if (this.isDrawing) {
             // todo: make a smarter validation
             if (this.drawnObjects.length) {
+                type BoundingRect = ReturnType<PropType<fabric.Polygon, 'getBoundingRect'>>;
+                type TwoCornerBox = Pick<BoundingRect, 'top' | 'left'> & { right: number; bottom: number };
                 const { width, height } = this.geometry.image;
-                const imageData = this.canvas.getContext().getImageData(0, 0, width, height).data;
+                const wrappingBbox = this.drawnObjects
+                    .map((element: fabric.Path | fabric.Polygon) => element.getBoundingRect())
+                    .reduce((acc: TwoCornerBox, rect: BoundingRect) => {
+                        acc.top = Math.floor(Math.max(0, Math.min(rect.top, acc.top)));
+                        acc.left = Math.floor(Math.max(0, Math.min(rect.left, acc.left)));
+                        acc.bottom = Math.floor(Math.min(height - 1, Math.max(rect.top + rect.height, acc.bottom)));
+                        acc.right = Math.floor(Math.min(width - 1, Math.max(rect.left + rect.width, acc.right)));
+                        return acc;
+                    }, {
+                        left: Number.MAX_SAFE_INTEGER,
+                        top: Number.MAX_SAFE_INTEGER,
+                        right: Number.MIN_SAFE_INTEGER,
+                        bottom: Number.MIN_SAFE_INTEGER,
+                    });
+
+                const imageData = this.canvas.toCanvasElement()
+                    .getContext('2d').getImageData(
+                        wrappingBbox.left, wrappingBbox.top,
+                        wrappingBbox.right - wrappingBbox.left, wrappingBbox.bottom - wrappingBbox.top,
+                    ).data;
+
                 let alpha = [];
                 for (let i = 3; i < imageData.length; i += 4) {
-                    alpha.push(imageData[i] > 0 ? 128 : 0);
+                    alpha.push(imageData[i] > 0 ? 1 : 0);
                 }
 
                 alpha = alpha.reduce<number[]>((acc, val, idx, arr) => {
@@ -237,6 +263,8 @@ export class MasksDrawHandlerImpl implements MasksDrawHandler {
                     }
                     return acc;
                 }, []);
+
+                alpha.push(wrappingBbox.left, wrappingBbox.top, wrappingBbox.right, wrappingBbox.bottom);
 
                 this.onDrawDone({
                     shapeType: this.drawData.shapeType,
