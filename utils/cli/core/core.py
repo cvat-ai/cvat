@@ -116,11 +116,11 @@ class CLI():
             self.tasks_upload(task_id, annotation_format, annotation_path, **kwargs)
         if dataset_repository_url:
             response = self.session.post(
-                        self.api.git_create(task_id),
+                        self.datasetrepo,
                         json={
                             'path': dataset_repository_url,
                             'lfs': lfs,
-                            'tid': task_id})
+                            'task_id': task_id})
             response_json = response.json()
             rq_id = response_json['rq_id']
             log.info(f"Create RQ ID: {rq_id}")
@@ -133,7 +133,7 @@ class CLI():
                 sleep(git_completion_verification_period)
                 response = self.session.get(check_url)
                 response_json = response.json()
-                if response_json['status'] == 'failed' or response_json['status'] == 'unknown':
+                if response_json['status'] in {'failed', 'unknown'}:
                     log.error(f'Dataset repository creation request for task {task_id} failed'
                               f'with status {response_json["status"]}.')
                     break
@@ -280,11 +280,14 @@ class CVAT_API_V2():
             host = host.replace('https://', '')
         scheme = 'https' if https else 'http'
         self.base = '{}://{}/api/'.format(scheme, host)
-        self.git = f'{scheme}://{host}/git/repository/'
 
     @property
     def tasks(self):
         return self.base + 'tasks'
+
+    @property
+    def datasetrepo(self):
+        return self.base + 'datasetrepo'
 
     def tasks_page(self, page_id):
         return self.tasks + '?page={}'.format(page_id)
@@ -309,11 +312,8 @@ class CVAT_API_V2():
         return self.tasks_id(task_id) + '/annotations?format={}&filename={}' \
             .format(fileformat, name)
 
-    def git_create(self, task_id):
-        return self.git + f'create/{task_id}'
-
     def git_check(self, rq_id):
-        return self.git + f'check/{rq_id}'
+        return self.datasetrepo + f'/{rq_id}/status'
 
     @property
     def login(self):
