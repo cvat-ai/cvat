@@ -673,7 +673,7 @@ class CloudStorage(models.Model):
     updated_date = models.DateTimeField(auto_now=True)
     credentials = models.CharField(max_length=500)
     credentials_type = models.CharField(max_length=29, choices=CredentialsTypeChoice.choices())#auth_type
-    specific_attributes = models.CharField(max_length=128, blank=True)
+    specific_attributes = models.CharField(max_length=1024, blank=True)
     description = models.TextField(blank=True)
     organization = models.ForeignKey(Organization, null=True, default=None,
         blank=True, on_delete=models.SET_NULL, related_name="cloudstorages")

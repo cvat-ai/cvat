@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Added missing geos dependency into Dockerfile (<https://github.com/openvinotoolkit/cvat/pull/4451>)
 - Improved helm chart readme (<https://github.com/openvinotoolkit/cvat/pull/4366>)
+- Added helm chart support for CVAT 2.X and made ingress compatible with Kubernetes >=1.22 (<https://github.com/openvinotoolkit/cvat/pull/4448>)
 
 ### Deprecated
 - TDB
@@ -23,9 +24,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - TDB
 
 ### Fixed
-- Permission error occured when accessing the JobCommits (<https://github.com/openvinotoolkit/cvat/issues/4434>)
-- job assignee can remove or update any issue created by the task owner (<https://github.com/openvinotoolkit/cvat/issues/4424>)
+- Permission error occured when accessing the JobCommits (<https://github.com/openvinotoolkit/cvat/pull/4435>)
+- job assignee can remove or update any issue created by the task owner (<https://github.com/openvinotoolkit/cvat/pull/4436>)
 - Bug: Incorrect point deletion with keyboard shortcut (<https://github.com/openvinotoolkit/cvat/pull/4420>)
+- some AI Tools were not sending responses properly (<https://github.com/openvinotoolkit/cvat/issues/4432>)
+- Unable to upload annotations (<https://github.com/openvinotoolkit/cvat/pull/4513>)
+- Fix build dependencies for Siammask (<https://github.com/openvinotoolkit/cvat/pull/4486>)
 
 ### Security
 - TDB
