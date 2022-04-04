@@ -1067,7 +1067,7 @@ class DatasetRepoPermission(OpenPolicyAgentPermission):
     @classmethod
     def create(cls, request, view, obj):
         permissions = []
-        if view.basename == 'datasetrepo':
+        if view.basename == 'dataset-repositories':
             for scope in cls.get_scopes(request, view, obj):
                 self = cls.create_base_perm(request, view, scope, obj)
                 permissions.append(self)
@@ -1081,7 +1081,7 @@ class DatasetRepoPermission(OpenPolicyAgentPermission):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.url = settings.IAM_OPA_DATA_URL + '/datasetrepo/allow'
+        self.url = settings.IAM_OPA_DATA_URL + '/dataset-repositories/allow'
 
     @staticmethod
     def get_scopes(request, view, obj):

@@ -116,7 +116,7 @@ class CLI():
             self.tasks_upload(task_id, annotation_format, annotation_path, **kwargs)
         if dataset_repository_url:
             response = self.session.post(
-                        self.datasetrepo,
+                        self.datasetrepos,
                         json={
                             'path': dataset_repository_url,
                             'lfs': lfs,
@@ -286,8 +286,8 @@ class CVAT_API_V2():
         return self.base + 'tasks'
 
     @property
-    def datasetrepo(self):
-        return self.base + 'datasetrepo'
+    def datasetrepos(self):
+        return self.base + 'dataset-repositories'
 
     def tasks_page(self, page_id):
         return self.tasks + '?page={}'.format(page_id)
@@ -313,7 +313,7 @@ class CVAT_API_V2():
             .format(fileformat, name)
 
     def git_check(self, rq_id):
-        return self.datasetrepo + f'/{rq_id}/status'
+        return self.datasetrepos + f'/{rq_id}/status'
 
     @property
     def login(self):

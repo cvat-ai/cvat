@@ -6,22 +6,22 @@ import contextlib
 import django_rq
 import cvat.apps.dataset_repo.dataset_repo as CVATGit
 
-from rest_framework import viewsets
+from rest_framework import viewsets, status, serializers
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.http import HttpResponseBadRequest, JsonResponse
-from drf_spectacular.utils import OpenApiResponse, extend_schema, extend_schema_view
+from drf_spectacular.utils import OpenApiResponse, extend_schema, extend_schema_view, inline_serializer
 from cvat.apps.engine.log import slogger
 from cvat.apps.iam.permissions import DatasetRepoPermission
 from cvat.apps.dataset_repo.models import GitData
-from cvat.apps.dataset_repo.serializers import DatasetRepoSerializer, RqStatusSerializer
+from cvat.apps.dataset_repo.serializers import DatasetRepoSerializer, DatasetRepoGetSerializer, RqStatusSerializer
 
-@extend_schema_view(tags=['datasetrepo'])
+@extend_schema(tags=['dataset repositories'])
 @extend_schema_view(
     retrieve=extend_schema(
         summary='Method returns details of an dataset repository',
         responses={
-            '200': OpenApiResponse(description=''),
+            '200': DatasetRepoGetSerializer,
         }),
     list=extend_schema(
         summary='Methods returns details about all dataset repositories',
@@ -33,8 +33,12 @@ from cvat.apps.dataset_repo.serializers import DatasetRepoSerializer, RqStatusSe
     create=extend_schema(
         summary='Method create a dataset repository, attach it to specified task and clone',
         responses={
-            '201': OpenApiResponse(description=''),
-        }),
+            '202': inline_serializer(
+                name='Rq', fields={
+                    'rq_id': serializers.CharField(),
+                }),
+            }
+        ),
 )
 class DatasetRepoViewSet(viewsets.ModelViewSet):
     http_method_names = ['get', 'post', 'patch']
@@ -78,7 +82,7 @@ class DatasetRepoViewSet(viewsets.ModelViewSet):
             if serializer.is_valid(raise_exception=True):
                 return Response(serializer.data)
         except Exception as ex:
-            slogger.glob.error("error occurred during checking repository request with rq id {}".format(rq_id), exc_info=True)
+            slogger.glob.error("An error occurred during checking repository request with rq id {}".format(rq_id), exc_info=True)
             return HttpResponseBadRequest(str(ex))
 
     def create(self, request, *args, **kwargs):
@@ -96,29 +100,34 @@ class DatasetRepoViewSet(viewsets.ModelViewSet):
                 serializer.validated_data['path'],
                 serializer.validated_data['format'],
                 serializer.validated_data['lfs'], request.user), job_id = rq_id)
-            return JsonResponse({ "rq_id": rq_id })
+            return JsonResponse({ "rq_id": rq_id }, status=status.HTTP_202_ACCEPTED)
         except Exception as ex:
             slogger.glob.error(
-                f'error occurred during initial cloning repository request with rq id {rq_id}', exc_info=True)
+                f'An error occurred during initial cloning repository request with rq id {rq_id}', exc_info=True)
             return HttpResponseBadRequest(str(ex))
 
 
     @extend_schema(summary='Method push commit to origin repository',
         responses={
-            '200': OpenApiResponse(description=''),
-    })
+            '202': inline_serializer(
+                name='Rq', fields={
+                    'rq_id': serializers.CharField(),
+                }),
+        }
+    )
     @action(detail=True, methods=['GET'], url_path='push')
     def push(self, request, task_id):
+        self.get_object()
         try:
             slogger.task[task_id].info("push repository request")
             rq_id = "git.push.{}".format(task_id)
             queue = django_rq.get_queue('default')
             queue.enqueue_call(func = CVATGit.push, args = (task_id, request.user, request.scheme, request.get_host()), job_id = rq_id)
 
-            return JsonResponse({ "rq_id": rq_id })
+            return JsonResponse({ "rq_id": rq_id }, status=status.HTTP_202_ACCEPTED)
         except Exception as ex:
             with contextlib.suppress(Exception):
-                slogger.task[task_id].error("error occurred during pushing repository request",
+                slogger.task[task_id].error("An error occurred during pushing repository request",
                     exc_info=True)
 
             return HttpResponseBadRequest(str(ex))
@@ -141,24 +150,24 @@ class DatasetRepoViewSet(viewsets.ModelViewSet):
             return super().update(request, *args, **kwargs)
         except Exception as ex:
             with contextlib.suppress(Exception):
-                slogger.task[kwargs[self.lookup_field]].error("error occurred during changing repository request", exc_info=True)
+                slogger.task[kwargs[self.lookup_field]].error("An error occurred during changing repository request", exc_info=True)
 
             return HttpResponseBadRequest(str(ex))
 
-    # TODO:
     @extend_schema(summary='Method provides a meta information about all created repositories',
     responses={
-        '200': OpenApiResponse(description=''),
+        '200': OpenApiResponse(description='Method returns json object with mapping tasks id and dataset repository status'),
     })
     @action(detail=False, methods=['GET'], url_path='metadata')
     def metadata(self, request):
         try:
-            db_git_records = GitData.objects.all()
+            db_git_records = self.get_queryset()
             response = {}
             for db_git in db_git_records:
                 response[db_git.task_id] = db_git.status
 
             return JsonResponse(response, safe = False)
         except Exception as ex:
-            slogger.glob.exception("error occurred during get meta request", exc_info = True)
+            slogger.glob.exception("An error occurred during get meta request", exc_info = True)
+
             return HttpResponseBadRequest(str(ex))

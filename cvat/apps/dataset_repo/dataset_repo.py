@@ -15,6 +15,7 @@ import django_rq
 import git
 from django.db import transaction
 from django.utils import timezone
+from rest_framework.exceptions import ValidationError
 
 from cvat.apps.dataset_manager.formats.registry import format_for
 from cvat.apps.dataset_manager.task import export_task
@@ -29,7 +30,7 @@ def _have_no_access_exception(ex):
         keys = subprocess.run(['ssh-add -L'], shell = True,
             stdout = subprocess.PIPE).stdout.decode('utf-8').split('\n')
         keys = list(filter(len, list(map(lambda x: x.strip(), keys))))
-        raise Exception(
+        raise ValidationError(
             'Could not connect to the remote repository. ' +
             'Please make sure you have the correct access rights and the repository exists. ' +
             'Available public keys are: ' + str(keys)
@@ -98,7 +99,7 @@ class Git:
                 host = ssh_match.group(3)
                 repos = "{}{}".format(ssh_match.group(4), ssh_match.group(5))
             else:
-                raise Exception("Git repository URL does not satisfy pattern")
+                raise ValidationError("Git repository URL does not satisfy pattern")
 
             if not repos.endswith(".git"):
                 repos += ".git"
@@ -112,7 +113,7 @@ class Git:
     # Method creates the main branch if repostory doesn't have any branches
     def _create_master_branch(self):
         if len(self._rep.heads):
-            raise Exception("Some heads already exists")
+            raise ValidationError("Some heads already exists")
         readme_md_name = os.path.join(self._cwd, "README.md")
         with open(readme_md_name, "w"):
             pass
@@ -291,7 +292,7 @@ class Git:
                         break
             os.remove(dump_name)
         else:
-            raise Exception("Got unknown annotation file type")
+            raise ValidationError("Got unknown annotation file type")
 
         self._rep.git.add(self._annotation_file)
 
@@ -371,7 +372,7 @@ def initial_create(tid, git_path, export_format, lfs, user):
         path = path[1:]
         _split = os.path.splitext(path)
         if len(_split) < 2 or _split[1] not in [".xml", ".zip"]:
-            raise Exception("Only .xml and .zip formats are supported")
+            raise ValidationError("Only .xml and .zip formats are supported")
 
         format_name = format_for(export_format, db_task.mode)
 
@@ -416,39 +417,35 @@ def push(tid, user, scheme, host):
 
 @transaction.atomic
 def get(tid, user):
-    response = {}
-    response["url"] = {"value": None}
-    response["status"] = {"value": None, "error": None}
-    response["format"] = {"format": None}
-    response["lfs"] = {"lfs": None}
+    response = {
+        field: None for field in {'url', 'status', 'format', 'lfs', 'error'}
+    }
     db_task = Task.objects.get(pk = tid)
     if GitData.objects.filter(pk = db_task).exists():
         db_git = GitData.objects.select_for_update().get(pk = db_task)
-        response['url']['value'] = '{} [{}]'.format(db_git.url, db_git.path)
+        response['url'] = '{} [{}]'.format(db_git.url, db_git.path)
         try:
             rq_id = "git.push.{}".format(tid)
             queue = django_rq.get_queue('default')
             rq_job = queue.fetch_job(rq_id)
             if rq_job is not None and (rq_job.is_queued or rq_job.is_started):
                 db_git.status = GitStatusChoice.SYNCING
-                response['status']['value'] = str(db_git.status)
-                response['format'] = str(db_git.format)
-                response["lfs"] = db_git.lfs
+                response['status'] = str(db_git.status)
             else:
                 try:
                     _git = Git(db_git, db_task, user)
                     _git.init_repos(True)
                     db_git.status = _git.remote_status(db_task.updated_date)
-                    response['status']['value'] = str(db_git.status)
-                    response['format'] = str(db_git.format)
-                    response["lfs"] = db_git.lfs
+                    response['status'] = str(db_git.status)
                 except git.exc.GitCommandError as ex:
                     _have_no_access_exception(ex)
+            response['format'] = str(db_git.format)
+            response['lfs'] = db_git.lfs
             db_git.save()
         except Exception as ex:
             db_git.status = GitStatusChoice.NON_SYNCED
             db_git.save()
-            response['status']['error'] = str(ex)
+            response['error'] = str(ex)
 
     return response
 
