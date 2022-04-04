@@ -89,7 +89,7 @@ def rotate_within_exif(img: Image):
         img = img.rotate(180, expand=True)
     elif orientation in [ORIENTATION.NORMAL_270_ROTATED, ORIENTATION.MIRROR_HORIZONTAL_90_ROTATED]:
         img = img.rotate(90, expand=True)
-    elif orientation in [ORIENTATION.NORAMAL_90_ROTATED, ORIENTATION.MIRROR_HORIZONTAL_270_ROTATED]:
+    elif orientation in [ORIENTATION.NORMAL_90_ROTATED, ORIENTATION.MIRROR_HORIZONTAL_270_ROTATED]:
         img = img.rotate(270, expand=True)
     if orientation in [
         ORIENTATION.MIRROR_HORIZONTAL, ORIENTATION.MIRROR_VERTICAL,
