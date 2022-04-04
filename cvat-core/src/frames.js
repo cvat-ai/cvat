@@ -66,6 +66,14 @@
                         value: height,
                         writable: false,
                     },
+                    /**
+                     * task ID
+                     * @name tid
+                     * @type {integer}
+                     * @memberof module:API.cvat.classes.FrameData
+                     * @readonly
+                     * @instance
+                     */
                     tid: {
                         value: taskID,
                         writable: false,

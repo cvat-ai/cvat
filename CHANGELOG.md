@@ -30,6 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - some AI Tools were not sending responses properly (<https://github.com/openvinotoolkit/cvat/issues/4432>)
 - Unable to upload annotations (<https://github.com/openvinotoolkit/cvat/pull/4513>)
 - Fix build dependencies for Siammask (<https://github.com/openvinotoolkit/cvat/pull/4486>)
+- Bug: Exif orientation information handled incorrectly (<https://github.com/openvinotoolkit/cvat/pull/4529>)
 
 ### Security
 - TDB
