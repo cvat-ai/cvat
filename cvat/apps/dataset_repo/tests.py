@@ -55,11 +55,9 @@ class GitRemote:
         _ = (refspec, progress, *kwargs)
         return 0
 
-
 class FakeHexShaObject:
     def __init__(self, hexsha):
         self.hexsha = hexsha
-
 
 class GitRepo(git.Repo):
     def clone(self, path, progress=None, multi_options=None, **kwargs):
@@ -462,8 +460,8 @@ class GitDatasetRepoTest(APITestCase):
         self.add_file(task["repos_path"], "file.txt")
         push(tid, self.user, "", "")
         response = get(tid, self.user)
-        self.assertTrue(response["status"]["value"], "merged")
-        self.assertIsNone(response["status"]["error"])
+        self.assertTrue(response["status"], "merged")
+        self.assertIsNone(response["error"])
 
     @mock.patch('git.cmd.Git.execute', new=GitCmd.execute)
     @mock.patch('git.remote.Remote.pull', new=GitRemote.pull)
@@ -476,7 +474,7 @@ class GitDatasetRepoTest(APITestCase):
         initial_create(tid, GIT_URL, EXPORT_FORMAT, 1, self.user)
         response = get(tid, self.user)
 
-        self.assertTrue(response["status"]["value"], "not sync")
+        self.assertTrue(response["status"], "not sync")
 
 
     @mock.patch('git.cmd.Git.execute', new=GitCmd.execute)
