@@ -12,6 +12,7 @@ export interface MasksDrawHandler {
     configurate(configuration: Configuration): void;
     draw(drawData: DrawData): void;
     transform(geometry: Geometry): void;
+    setupStates(objectStates: any[]): void;
     cancel(): void;
 }
 
@@ -28,6 +29,8 @@ export class MasksDrawHandlerImpl implements MasksDrawHandler {
     private drawablePolygon: null | fabric.Polyline;
     private drawData: DrawData;
     private canvas: fabric.Canvas;
+    private canvasWrapper: HTMLDivElement;
+    private objectStates: any[];
     private startTimestamp: number;
     private geometry: Geometry;
     private drawnObjects: (fabric.Path | fabric.Polygon)[];
@@ -71,14 +74,17 @@ export class MasksDrawHandlerImpl implements MasksDrawHandler {
         ) => void,
         onDrawAgain: (data: DrawData) => void,
         canvas: HTMLCanvasElement,
+        canvasWrapper: HTMLDivElement,
     ) {
         this.isDrawing = false;
         this.drawData = null;
         this.drawnObjects = [];
+        this.objectStates = [];
         this.drawingOpacity = 0.5;
         this.onDrawDone = onDrawDone;
         this.onDrawAgain = onDrawAgain;
         this.canvas = new fabric.Canvas(canvas, { containerClass: 'cvat_masks_canvas_wrapper', fireRightClick: true, selection: false });
+        this.canvasWrapper = canvasWrapper;
         this.canvas.imageSmoothingEnabled = false;
         this.canvas.on('path:created', (opt) => {
             if (this.drawData.brushTool?.type === 'eraser') {
@@ -255,6 +261,41 @@ export class MasksDrawHandlerImpl implements MasksDrawHandler {
                     alpha.push(imageData[i] > 0 ? 1 : 0);
                 }
 
+                if (this.drawData.brushTool?.removeUnderlyingPixels) {
+                    for (const state of this.objectStates) {
+                        const [left, top, right, bottom] = state.points.slice(-4);
+                        const [stateWidth, stateHeight] = [Math.floor(right - left), Math.floor(bottom - top)];
+                        // todo: check box intersection to optimize
+                        const points = state.points.slice(0, -4);
+                        for (let i = 0; i < alpha.length - 4; i++) {
+                            if (!alpha[i]) continue;
+                            const x = (i % (wrappingBbox.right - wrappingBbox.left)) + wrappingBbox.left;
+                            const y = Math.trunc(i / (wrappingBbox.right - wrappingBbox.left)) + wrappingBbox.top;
+                            const translatedX = x - left;
+                            const translatedY = y - top;
+                            if (translatedX >= 0 && translatedX < stateWidth &&
+                                translatedY >= 0 && translatedY < stateHeight) {
+                                const j = translatedY * stateWidth + translatedX;
+                                points[j] = 0;
+                            }
+                        }
+
+                        points.push(left, top, right, bottom);
+
+                        const event: CustomEvent = new CustomEvent('canvas.edited', {
+                            bubbles: false,
+                            cancelable: true,
+                            detail: {
+                                state,
+                                points,
+                                rotation: 0,
+                            },
+                        });
+
+                        this.canvasWrapper.dispatchEvent(event);
+                    }
+                }
+
                 alpha = alpha.reduce<number[]>((acc, val, idx, arr) => {
                     if (idx > 0 && arr[idx - 1] === val) {
                         acc[acc.length - 2] += 1;
@@ -279,6 +320,10 @@ export class MasksDrawHandlerImpl implements MasksDrawHandler {
                 this.drawData = drawData;
             }
         }
+    }
+
+    public setupStates(objectStates: any[]): void {
+        this.objectStates = objectStates;
     }
 
     public cancel(): void {

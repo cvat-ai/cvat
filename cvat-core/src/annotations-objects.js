@@ -53,6 +53,16 @@
             if (points.length / 2 !== 2) {
                 throw new DataError(`Ellipse must have 1 point, rx and ry but got ${points.toString()}`);
             }
+        } else if (shapeType === ObjectShape.MASK) {
+            const [left, top, right, bottom] = points.slice(-4);
+            const [width, height] = [right - left, bottom - top];
+            if (width < 0 || !Number.isInteger(width) || height < 0 || !Number.isInteger(height)) {
+                throw new DataError(`Mask width, height must be positive integers, but got ${width}x${height}`);
+            }
+
+            if (points.length !== width * height + 4) {
+                throw new DataError(`Points array must have length ${width}x${height} + 4, got ${points.length}`);
+            }
         } else {
             throw new ArgumentError(`Unknown value of shapeType has been received ${shapeType}`);
         }
@@ -1360,6 +1370,50 @@
                 frame,
                 source: this.source,
             };
+        }
+
+        _savePoints(points, rotation, frame) {
+            const undoPoints = this.points;
+            const undoRotation = this.rotation;
+            const undoLeft = this.left;
+            const undoRight = this.right;
+            const undoTop = this.top;
+            const undoBottom = this.bottom;
+            const undoSource = this.source;
+
+            const redoPoints = points.slice(0, -4);
+            const redoRotation = rotation;
+            const [redoLeft, redoTop, redoRight, redoBottom] = points.slice(-4);
+            const redoSource = Source.MANUAL;
+
+            const undo = () => {
+                this.points = undoPoints;
+                this.source = undoSource;
+                this.rotation = undoRotation;
+                this.left = undoLeft;
+                this.top = undoTop;
+                this.right = undoRight;
+                this.bottom = undoBottom;
+                this.updated = Date.now();
+            };
+
+            const redo = () => {
+                this.points = redoPoints;
+                this.source = redoSource;
+                this.rotation = redoRotation;
+                this.left = redoLeft;
+                this.top = redoTop;
+                this.right = redoRight;
+                this.bottom = redoBottom;
+                this.updated = Date.now();
+            };
+
+            this.history.do(
+                HistoryActions.CHANGED_POINTS,
+                undo, redo, [this.clientID], frame,
+            );
+
+            redo();
         }
 
         static distance(points, x, y) {

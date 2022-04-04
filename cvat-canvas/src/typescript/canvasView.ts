@@ -684,6 +684,12 @@ export class CanvasViewImpl implements CanvasView, Listener {
     private setupObjects(states: any[]): void {
         const created = [];
         const updated = [];
+
+        const masks = Object.keys(this.drawnStates)
+            .filter((clientID: string) => this.drawnStates[+clientID].shapeType === 'mask')
+            .map((clientID: string): any => this.drawnStates[+clientID]);
+        this.deleteObjects(masks);
+
         for (const state of states) {
             if (!(state.clientID in this.drawnStates)) {
                 created.push(state);
@@ -1120,6 +1126,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             this.onDrawDone.bind(this),
             this.controller.draw.bind(this.controller),
             this.masksContent,
+            this.canvas,
         );
         this.editHandler = new EditHandlerImpl(this.onEditDone.bind(this), this.adoptedContent, this.autoborderHandler);
         this.mergeHandler = new MergeHandlerImpl(
@@ -1343,6 +1350,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 this.groupHandler.resetSelectedObjects();
             }
             this.setupObjects(this.controller.objects);
+            this.masksDrawHandler.setupStates(this.controller.objects);
             if (this.mode === Mode.MERGE) {
                 this.mergeHandler.repeatSelection();
             }
