@@ -66,7 +66,11 @@ class TusFile:
     @staticmethod
     def create_file(metadata, file_size, upload_dir):
         file_id = str(uuid.uuid4())
-        cache.add("tus-uploads/{}/filename".format(file_id), "{}".format(metadata.get("filename")), TusFile._tus_cache_timeout)
+        filename = metadata.get("filename")
+        if metadata.get('filename_format', None) == 'random_name':
+            _, extension = os.path.splitext(filename)
+            filename = f'{file_id}{extension}'
+        cache.add("tus-uploads/{}/filename".format(file_id), "{}".format(filename), TusFile._tus_cache_timeout)
         cache.add("tus-uploads/{}/file_size".format(file_id), file_size, TusFile._tus_cache_timeout)
         cache.add("tus-uploads/{}/offset".format(file_id), 0, TusFile._tus_cache_timeout)
         cache.add("tus-uploads/{}/metadata".format(file_id), metadata, TusFile._tus_cache_timeout)
@@ -175,7 +179,8 @@ class UploadMixin(object):
                 location = request.META.get('HTTP_ORIGIN') + request.META.get('PATH_INFO')
             return self._tus_response(
                 status=status.HTTP_201_CREATED,
-                extra_headers={'Location': '{}{}'.format(location, tus_file.file_id)})
+                extra_headers={'Location': '{}{}'.format(location, tus_file.file_id),
+                               'Upload-Filename': tus_file.filename})
 
     def append_tus_chunk(self, request, file_id):
         if request.method == 'HEAD':
@@ -202,7 +207,8 @@ class UploadMixin(object):
                 tus_file.clean()
 
             return self._tus_response(status=status.HTTP_204_NO_CONTENT,
-                                    extra_headers={'Upload-Offset': tus_file.offset})
+                                      extra_headers={'Upload-Offset': tus_file.offset,
+                                                     'Upload-Filename': tus_file.filename})
 
     def validate_filename(self, filename):
         upload_dir = self.get_upload_dir()

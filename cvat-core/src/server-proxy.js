@@ -48,15 +48,17 @@
     async function chunkUpload(file, uploadConfig) {
         const params = enableOrganization();
         const {
-            endpoint, chunkSize, totalSize, onUpdate,
+            endpoint, chunkSize, totalSize, onUpdate, metadata,
         } = uploadConfig;
-        let { totalSentSize } = uploadConfig;
+        const { totalSentSize } = uploadConfig;
+        const uploadResult = { totalSentSize };
         return new Promise((resolve, reject) => {
             const upload = new tus.Upload(file, {
                 endpoint,
                 metadata: {
                     filename: file.name,
                     filetype: file.type,
+                    ...metadata,
                 },
                 headers: {
                     Authorization: Axios.defaults.headers.common.Authorization,
@@ -79,9 +81,13 @@
                         onUpdate(percentage);
                     }
                 },
+                onAfterResponse(request, response) {
+                    const uploadFilename = response.getHeader('Upload-Filename');
+                    if (uploadFilename) uploadResult.filename = uploadFilename;
+                },
                 onSuccess() {
-                    if (totalSentSize) totalSentSize += file.size;
-                    resolve(totalSentSize);
+                    if (totalSentSize) uploadResult.totalSentSize += file.size;
+                    resolve(uploadResult);
                 },
             });
             upload.start();
@@ -706,19 +712,43 @@
                 const params = enableOrganization();
 
                 let taskData = new FormData();
-                taskData.append('task_file', file);
+                const uploadConfig = {
+                    chunkSize: config.uploadChunkSize * 1024 * 1024,
+                    endpoint: `${origin}${backendAPI}/tasks/backup/`,
+                    totalSentSize: 0,
+                    totalSize: file.size,
+                    metadata: {
+                        filename_format: 'random_name',
+                    },
+                };
+                const url = `${backendAPI}/tasks/backup`;
+
+                await Axios.post(url,
+                    new FormData(), {
+                        params,
+                        proxy: config.proxy,
+                        headers: { 'Upload-Start': true },
+                    });
+                const { filename } = await chunkUpload(file, uploadConfig);
+                params.filename = filename;
+                await Axios.post(url,
+                    new FormData(), {
+                        params,
+                        proxy: config.proxy,
+                        headers: { 'Upload-Finish': true },
+                    });
 
                 return new Promise((resolve, reject) => {
-                    async function request() {
+                    async function checkStatus() {
                         try {
-                            const response = await Axios.post(`${backendAPI}/tasks/backup`, taskData, {
+                            const response = await Axios.post(url, taskData, {
                                 proxy: config.proxy,
                                 params,
                             });
                             if (response.status === 202) {
                                 taskData = new FormData();
                                 taskData.append('rq_id', response.data.rq_id);
-                                setTimeout(request, 3000);
+                                setTimeout(checkStatus, 3000);
                             } else {
                                 // to be able to get the task after it was created, pass frozen params
                                 const importedTask = await getTasks({ id: response.data.id, ...params });
@@ -729,7 +759,7 @@
                         }
                     }
 
-                    setTimeout(request);
+                    setTimeout(checkStatus);
                 });
             }
 
