@@ -78,7 +78,7 @@ def sort(images, sorting_method=SortingMethod.LEXICOGRAPHICAL, func=None):
         raise NotImplementedError()
 
 def image_size_within_orientation(img: Image):
-    orientation = img.getexif().get(ORIENTATION_EXIF_TAG, 1)
+    orientation = img.getexif().get(ORIENTATION_EXIF_TAG, ORIENTATION.NORMAL_HORIZONTAL)
     if orientation > 4:
         return img.height, img.width
     return img.width, img.height
