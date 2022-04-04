@@ -1,0 +1,31 @@
+{{ $url := .Get "url" }}
+{{ $sep := .Get "sep" | default "," }}
+{{ if $csv := getCSV $sep $url }}
+  <table>
+    <thead>
+      <tr>
+      {{ range $i, $r := $csv }}
+        {{ if eq $i 0 }}
+          {{ range $index, $row := $r }}
+            <th>{{ $row }}</th>
+          {{ end }}
+        {{ end }}
+      {{ end }}
+      </tr>
+    </thead>
+    <tbody>
+      {{ range $i, $r := $csv }}
+        {{ if ne $i 0 }}
+          <tr>
+            {{ $l := sub (len $r) 1 }}
+            {{ range $n := (seq 0 $l) }}
+              <td>{{ index $r $n }}</td>
+            {{ end }}
+          </tr>
+        {{ end }}
+      {{ end }}
+    </tbody>
+  </table>
+{{ else }}
+  <h5 style="color: red">! URL "{{ $url }}" not found</h5>
+{{ end }}
