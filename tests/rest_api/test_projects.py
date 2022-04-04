@@ -5,7 +5,7 @@
 from http import HTTPStatus
 import pytest
 
-from .utils.config import get_method, post_method, patch_method
+from .utils.config import get_method, post_method
 
 
 class TestGetProjects:
@@ -27,6 +27,17 @@ class TestGetProjects:
                     if not is_project_staff(u['id'], p['id']) and not is_org_member(u['id'], p['organization']):
                         return u['username'], p['id'], None
 
+    def _find_project_by_user_org(self, user, projects, is_project_staff_flag, is_project_staff):
+        if is_project_staff_flag:
+            for p in projects:
+                if is_project_staff(user['id'], p['id']):
+                    return p['id']
+        else:
+            for p in projects:
+                if not is_project_staff(user['id'], p['id']):
+                    return p['id']
+
+
     def _test_response_200(self, username, project_id, **kwargs):
         response = get_method(username, f'projects/{project_id}', **kwargs)
         assert response.status_code == HTTPStatus.OK
@@ -38,7 +49,7 @@ class TestGetProjects:
         assert response.status_code == HTTPStatus.FORBIDDEN
 
     # [sandbox] Admin can see any project even he has no ownerships for this project (GET /projects/{id}).
-    def test_project_admin_accessibility(self, users, projects, find_users, is_project_staff, is_org_member, **kwargs):
+    def test_project_admin_accessibility(self, projects, find_users, is_project_staff, is_org_member, **kwargs):
         admins = find_users(privilege='admin')
 
         admin_project = self._find_by_owner(projects, admins, is_project_staff, is_org_member, False, False)
@@ -46,7 +57,7 @@ class TestGetProjects:
         self._test_response_200(*admin_project[:2])
 
     # [sandbox] Project owner or project assignee can see project (GET /projects/{id}).
-    def test_project_owner_accessibility(self, users, projects, find_users, is_project_staff):
+    def test_project_owner_accessibility(self, projects):
 
         for p in projects:
             if p['owner'] is not None:
@@ -62,7 +73,7 @@ class TestGetProjects:
 
     # [sandbox] Non-admin user cannot see project if this user is not project owner or project assignee
     # [sandbox] (GET /projects/{id}).
-    def test_user_cannot_see_project(self, users, projects, find_users, is_project_staff, is_org_member):
+    def test_user_cannot_see_project(self, projects, find_users, is_project_staff, is_org_member):
         non_admins = find_users(exclude_privilege='admin')
 
         user_not_in_project = self._find_by_owner(projects, non_admins, is_project_staff, is_org_member, False, False)
@@ -72,41 +83,47 @@ class TestGetProjects:
     # [organization] cannot see project if this member it’s not project owner
     # or project assignee (GET /projects/{id}).
     @pytest.mark.parametrize('role', ('supervisor', 'worker'))
-    @pytest.mark.parametrize('org, project_id', [({'id': 2, 'slug': 'org2'}, 2)])
-    def test_if_supervisor_or_worker_cannot_see_project(self, users, org, project_id, find_users, is_project_staff, role, **kwargs):
-        non_admins = find_users(role=role, exclude_privilege='admin', org=org['id'])
+    def test_if_supervisor_or_worker_cannot_see_project(self, projects, is_project_staff, is_org_member, find_users,
+                                                        role, **kwargs):
+        non_admins = find_users(role=role, exclude_privilege='admin')
         assert non_admins is not None
-        non_admin = non_admins[0]
 
-        self._test_response_403(non_admin['username'], project_id, org_id=org['id'])
+        project_id = self._find_project_by_user_org(non_admins[0], projects, False, is_project_staff)
+        assert project_id is not None
+
+        self._test_response_403(non_admins[0]['username'], project_id, **kwargs)
+
 
     # [organization] (Organization context) Member of organization that has role  maintainer or owner
     # [organization]  can see any project even he has not any ownerships for this project
     # or project assignee (GET /projects/{id}).
     @pytest.mark.parametrize('role', ('maintainer', 'owner'))
-    @pytest.mark.parametrize('org, project_id', [({'id': 2, 'slug': 'org2'}, 3)])
-    def test_if_maintainer_or_owner_can_see_project(self, users, projects, find_users, is_project_staff,
-                                                        role, org, project_id):
-        non_admins = find_users(role=role, exclude_privilege='admin', org=org['id'])
-        users = [u for u in non_admins if not is_project_staff(u['id'], project_id)]
-        assert len(users)
+    def test_if_maintainer_or_owner_can_see_project(self, find_users, projects, is_project_staff, role):
 
-        user_not_in_project = users[0]
-        self._test_response_200(user_not_in_project['username'], project_id, org=org['id'])
+        non_admins = find_users(role=role, exclude_privilege='admin')
+        assert non_admins is not None
+
+        project_id = self._find_project_by_user_org(non_admins[0], projects, False, is_project_staff)
+        assert project_id is not None
+
+        self._test_response_200(non_admins[0]['username'], project_id, org_id=non_admins[0]['org'])
 
     # [organization] (Organization context) Member of organization that has role supervisor or worker can see
     # project if this member it’s project owner or project assignee (GET /projects/{id})
     @pytest.mark.parametrize('role', ('supervisor', 'worker'))
-    @pytest.mark.parametrize('org, project_id', [({'id': 2, 'slug': 'org2'}, 3)])
-    def test_if_org_member_supervisor_or_worker_can_see_project(self, users, projects, find_users, is_project_staff,
-                                                                org, role, project_id):
-        non_admins = find_users(role=role, exclude_privilege='admin', org=org['id'])
-        users = [u for u in non_admins if is_project_staff(u['id'], project_id)]
-        assert len(users)
+    def test_if_org_member_supervisor_or_worker_can_see_project(self, projects, find_users, is_project_staff,role):
+        non_admins = find_users(role=role, exclude_privilege='admin')
+        assert len(non_admins)
 
-        user_in_project = users[0]
+        for u in non_admins:
+            project_id = self._find_project_by_user_org(u, projects, True, is_project_staff)
+            if project_id:
+                user_in_project = u
+                break
 
-        self._test_response_200(user_in_project['username'], project_id, org=org['id'])
+        assert project_id is not None
+
+        self._test_response_200(user_in_project['username'], project_id, org_id=user_in_project['org'])
 
 
 class TestPostProjects:
@@ -120,7 +137,7 @@ class TestPostProjects:
         assert response.status_code == HTTPStatus.FORBIDDEN
 
     # User with worker privilege cannot create a project (POST /projects/)
-    def test_if_worker_cannot_create_project(self, users, find_users, **kwargs):
+    def test_if_worker_cannot_create_project(self, find_users, **kwargs):
         workers = find_users(privilege='worker')
         assert len(workers)
 
@@ -132,7 +149,7 @@ class TestPostProjects:
 
     # User with admin, business or user privilege can create a project (POST /projects/)
     @pytest.mark.parametrize('privilege', ('admin', 'business', 'user'))
-    def test_is_user_can_create_project(self, users, find_users, privilege, **kwargs):
+    def test_is_user_can_create_project(self, find_users, privilege, **kwargs):
         privileged_users = find_users(privilege=privilege)
         assert len(privileged_users)
 
@@ -143,7 +160,7 @@ class TestPostProjects:
         self._test_create_project_201(username, spec, **kwargs)
 
     # User with user privilege cannot have more than three projects (POST /projects/).
-    def test_if_user_cannot_have_more_than_3_projects(self, users, projects, find_users,  **kwargs):
+    def test_if_user_cannot_have_more_than_3_projects(self, projects, find_users,  **kwargs):
         user_users = find_users(privilege='user')
         assert len(user_users)
 
@@ -168,7 +185,7 @@ class TestPostProjects:
 
     # User with admin or business role can have more than three projects (POST /projects).
     @pytest.mark.parametrize('privilege', ('admin', 'business'))
-    def test_if_user_can_have_more_than_3_projects(self, users, projects, find_users, privilege, **kwargs):
+    def test_if_user_can_have_more_than_3_projects(self, find_users, privilege, **kwargs):
         privileged_users = find_users(privilege=privilege)
         assert len(privileged_users)
 
@@ -182,33 +199,34 @@ class TestPostProjects:
 
     # [organization]  Member of organization that has role worker cannot create a project
     # (POST /projects/)
-    @pytest.mark.parametrize('org, project_id', [({'id': 2, 'slug': 'org2'}, 2)])
-    def test_if_org_worker_cannot_crate_project(self, users, find_users, org, project_id, **kwargs):
-        workers = find_users(org=org['id'], role='worker')
-        assert len(workers)
+    def test_if_org_worker_cannot_crate_project(self, find_users, **kwargs):
+        workers = find_users(role='worker')
 
-        worker = workers[0]
+        for w in workers:
+            if w['org']:
+                worker = w
+                break
 
         spec = {
             'name': f'test: worker {worker["username"]} creating a project for his organization',
-            'organization_id': org['id'],
-            'org': org['slug']
+            'organization_id': worker['org'],
         }
-        self._test_create_project_403(worker['username'], spec, org_id=org['id'])
+        self._test_create_project_403(worker['username'], spec, org_id=worker['org'])
 
     # [organization]  Member of organization that has role supervisor, maintainer or owner can create a project
     # (POST /projects/)
-    @pytest.mark.parametrize('org, project_id', [({'id': 2, 'slug': 'org2'}, 2)])
     @pytest.mark.parametrize('role', ('supervisor', 'maintainer', 'owner'))
-    def test_if_org_role_can_crate_project(self, users, find_users, org, project_id, role, **kwargs):
-        privileged_users = find_users(org=org['id'], role=role)
+    def test_if_org_role_can_crate_project(self, find_users, role, **kwargs):
+        privileged_users = find_users(role=role)
         assert len(privileged_users)
 
-        user = privileged_users[0]
+        for u in privileged_users:
+            if u['org']:
+                user = u
+                break
 
         spec = {
             'name': f'test: worker {user["username"]} creating a project for his organization',
-            'organization_id': org['id'],
-            'org': org['slug']
+            'organization_id': user['org'],
         }
-        self._test_create_project_201(user['username'], spec, org_id=org['id'])
+        self._test_create_project_201(user['username'], spec, org_id=user['org'])
