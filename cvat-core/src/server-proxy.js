@@ -75,7 +75,7 @@
                 onProgress(bytesUploaded) {
                     if (onUpdate && Number.isInteger(totalSentSize) && Number.isInteger(totalSize)) {
                         const currentUploadedSize = totalSentSize + bytesUploaded;
-                        const percentage = currentUploadedSize / totalSize;
+                        const percentage = Math.round(currentUploadedSize / totalSize);
                         onUpdate(percentage);
                     }
                 },
@@ -612,41 +612,63 @@
             }
 
             async function importDataset(id, format, file, onUpdate) {
-                const { backendAPI } = config;
+                const { backendAPI, origin } = config;
+                const params = {
+                    ...enableOrganization(),
+                    format,
+                    filename: file.name,
+                };
+                const uploadConfig = {
+                    chunkSize: config.uploadChunkSize * 1024 * 1024,
+                    endpoint: `${origin}${backendAPI}/projects/${id}/dataset/`,
+                    totalSentSize: 0,
+                    totalSize: file.size,
+                    onUpdate: (percentage) => {
+                        onUpdate('The dataset is being uploaded to the server', percentage);
+                    },
+                };
                 const url = `${backendAPI}/projects/${id}/dataset`;
 
-                const formData = new FormData();
-                formData.append('dataset_file', file);
-
-                return new Promise((resolve, reject) => {
-                    async function requestStatus() {
-                        try {
-                            const response = await Axios.get(`${url}?action=import_status`, {
-                                proxy: config.proxy,
-                            });
-                            if (response.status === 202) {
-                                if (onUpdate && response.data.message !== '') {
-                                    onUpdate(response.data.message, response.data.progress || 0);
+                try {
+                    await Axios.post(url,
+                        new FormData(), {
+                            params,
+                            proxy: config.proxy,
+                            headers: { 'Upload-Start': true },
+                        });
+                    await chunkUpload(file, uploadConfig);
+                    await Axios.post(url,
+                        new FormData(), {
+                            params,
+                            proxy: config.proxy,
+                            headers: { 'Upload-Finish': true },
+                        });
+                    return new Promise((resolve, reject) => {
+                        async function requestStatus() {
+                            try {
+                                const response = await Axios.get(url, {
+                                    params: { ...params, action: 'import_status' },
+                                    proxy: config.proxy,
+                                });
+                                if (response.status === 202) {
+                                    if (onUpdate && response.data.message) {
+                                        onUpdate(response.data.message, response.data.progress || 0);
+                                    }
+                                    setTimeout(requestStatus, 3000);
+                                } else if (response.status === 201) {
+                                    resolve();
+                                } else {
+                                    reject(generateError(response));
                                 }
-                                setTimeout(requestStatus, 3000);
-                            } else if (response.status === 201) {
-                                resolve();
-                            } else {
-                                reject(generateError(response));
+                            } catch (error) {
+                                reject(generateError(error));
                             }
-                        } catch (error) {
-                            reject(generateError(error));
                         }
-                    }
-
-                    Axios.post(`${url}?format=${format}`, formData, {
-                        proxy: config.proxy,
-                    }).then(() => {
                         setTimeout(requestStatus, 2000);
-                    }).catch((error) => {
-                        reject(generateError(error));
                     });
-                });
+                } catch (errorData) {
+                    throw generateError(errorData);
+                }
             }
 
             async function exportTask(id) {
@@ -1279,8 +1301,7 @@
                         setTimeout(requestStatus);
                     });
                 } catch (errorData) {
-                    generateError(errorData);
-                    return null;
+                    throw generateError(errorData);
                 }
             }
 

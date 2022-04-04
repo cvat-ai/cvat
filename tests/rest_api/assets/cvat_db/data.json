@@ -1433,7 +1433,7 @@
   "pk": 2,
   "fields": {
     "password": "pbkdf2_sha256$260000$Pf2xYWXBedoAJ504jyDD8e$8sJ244Ai0xhZrUTelapPNHlEg7CV0cCUaxbcxZtfaug=",
-    "last_login": "2022-03-05T08:52:22.036Z",
+    "last_login": "2022-03-17T07:22:09.327Z",
     "is_superuser": false,
     "username": "user1",
     "first_name": "User",
@@ -1613,7 +1613,7 @@
   "pk": 11,
   "fields": {
     "password": "pbkdf2_sha256$260000$Zw76ANIvIsDngZGsTv2G8O$piTVoqHrpTskW8rI1FBT9rzM2dcpjhrcOfI3pDgtjbo=",
-    "last_login": "2022-02-21T10:29:16.518Z",
+    "last_login": "2022-03-17T07:22:55.930Z",
     "is_superuser": false,
     "username": "business2",
     "first_name": "Business",
@@ -2202,6 +2202,14 @@
 },
 {
   "model": "sessions.session",
+  "pk": "dpaw6pntyqwr5l6qjv6zq3yoajp301be",
+  "fields": {
+    "session_data": ".eJxVjEsOwjAMBe-SNYrq_BxYsucMlWO7tIAaqWlXiLujSl3A9s3Me5uetnXst6ZLP4m5GABz-h0L8VPnnciD5nu1XOd1mYrdFXvQZm9V9HU93L-Dkdq41550gJRLCCmJyoBdJmKMmaEEjpwDqmh0wuhc8Q68cmJA7M4OMJjPFyYSODI:1nUkTH:BLJ2UbMcN1AmDEbuOLS5T_O-vbrAzEW_K8oRkQZYt4M",
+    "expire_date": "2022-03-31T07:22:55.934Z"
+  }
+},
+{
+  "model": "sessions.session",
   "pk": "gcz795933839j3g0t3rjgmikzkzlwse3",
   "fields": {
     "session_data": ".eJxVjEEOwiAQRe_C2hCmUCgu3XsGMjCDVA1NSrsy3l1JutDtf-_9lwi4byXsjdcwkzgLEKffLWJ6cO2A7lhvi0xL3dY5yq7IgzZ5XYifl8P9OyjYSq-9niK4b6A1cfYZnCUEBGuzZxW1UsnYFBV7A9PAIxlMzmmj8pDdyOL9AfdKOC0:1nNKyv:kkKNWtjON5Uk-FR_FbwNa3oJ8t5PEd-rZ1y8BsRyays",
@@ -2286,6 +2294,14 @@
   "fields": {
     "user": 10,
     "created": "2022-03-05T10:31:48.838Z"
+  }
+},
+{
+  "model": "authtoken.token",
+  "pk": "53da3ff9e514d84b56b5170059ff0f595c34157b",
+  "fields": {
+    "user": 11,
+    "created": "2022-03-17T07:22:55.921Z"
   }
 },
 {
@@ -5627,6 +5643,56 @@
   "fields": {
     "user": 20,
     "rating": 0.0
+  }
+},
+{
+  "model": "engine.manifest",
+  "pk": 1,
+  "fields": {
+    "filename": "manifest.jsonl",
+    "cloud_storage": 1
+  }
+},
+{
+  "model": "engine.manifest",
+  "pk": 2,
+  "fields": {
+    "filename": "manifest.jsonl",
+    "cloud_storage": 2
+  }
+},
+{
+  "model": "engine.cloudstorage",
+  "pk": 1,
+  "fields": {
+    "provider_type": "AWS_S3_BUCKET",
+    "resource": "public",
+    "display_name": "Bucket 1",
+    "owner": 2,
+    "created_date": "2022-03-17T07:22:49.519Z",
+    "updated_date": "2022-03-17T07:22:49.529Z",
+    "credentials": "",
+    "credentials_type": "ANONYMOUS_ACCESS",
+    "specific_attributes": "endpoint_url=http%3A%2F%2Fminio%3A9000",
+    "description": "",
+    "organization": null
+  }
+},
+{
+  "model": "engine.cloudstorage",
+  "pk": 2,
+  "fields": {
+    "provider_type": "AWS_S3_BUCKET",
+    "resource": "private",
+    "display_name": "Bucket 2",
+    "owner": 11,
+    "created_date": "2022-03-17T07:23:59.305Z",
+    "updated_date": "2022-03-17T07:23:59.309Z",
+    "credentials": "minio_access_key minio_secret_key",
+    "credentials_type": "KEY_SECRET_KEY_PAIR",
+    "specific_attributes": "endpoint_url=http%3A%2F%2Fminio%3A9000",
+    "description": "",
+    "organization": 2
   }
 },
 {
