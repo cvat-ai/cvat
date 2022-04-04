@@ -85,7 +85,7 @@ def image_size_within_orientation(img: Image):
 
 def rotate_within_exif(img: Image):
     orientation = img.getexif().get(ORIENTATION_EXIF_TAG,  ORIENTATION.NORMAL_HORIZONTAL)
-    if orientation in [ORIENTATION.NORAMAL_180_ROTATED, ORIENTATION.MIRROR_VERTICAL]:
+    if orientation in [ORIENTATION.NORMAL_180_ROTATED, ORIENTATION.MIRROR_VERTICAL]:
         img = img.rotate(180, expand=True)
     elif orientation in [ORIENTATION.NORAMAL_270_ROTATED, ORIENTATION.MIRROR_HORIZONTAL_90_ROTATED]:
         img = img.rotate(90, expand=True)
