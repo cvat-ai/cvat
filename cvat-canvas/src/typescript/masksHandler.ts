@@ -224,6 +224,7 @@ export class MasksHandlerImpl implements MasksHandler {
 
     public draw(drawData: DrawData): void {
         if (drawData.enabled && drawData.shapeType === 'mask') {
+            this.canvas.isDrawingMode = true;
             if (!this.isDrawing) {
                 // initialize new drawing process
                 this.canvas.getElement().parentElement.style.display = 'block';
@@ -234,23 +235,21 @@ export class MasksHandlerImpl implements MasksHandler {
                     this.isPolygonDrawing = true;
                     this.canvas.isDrawingMode = false;
                 }
-            } else {
-                this.canvas.isDrawingMode = true;
-                this.canvas.isDrawingMode = true;
+            } else if (this.isPolygonDrawing && this.drawablePolygon) {
+                this.keepDrawnPolygon();
+                this.isPolygonDrawing = false;
+            }
+
+            if (drawData.brushTool) {
                 this.canvas.freeDrawingBrush = new fabric.PencilBrush(this.canvas);
-                this.canvas.freeDrawingBrush.width = drawData.brushTool.size;
+                this.canvas.freeDrawingBrush.width = drawData.brushTool.size || 10;
                 this.canvas.freeDrawingBrush.strokeLineCap = drawData.brushTool.form === 'circle' ? 'round' : 'square';
-                this.canvas.freeDrawingBrush.strokeLineJoin = 'bevel';
                 let color = fabric.Color.fromHex(drawData.brushTool.color);
                 if (drawData.brushTool.type === 'eraser') {
                     color = fabric.Color.fromHex('#ffffff');
                 }
                 color.setAlpha(this.drawingOpacity);
                 this.canvas.freeDrawingBrush.color = color.toRgba();
-                if (this.isPolygonDrawing && this.drawablePolygon) {
-                    this.keepDrawnPolygon();
-                    this.isPolygonDrawing = false;
-                }
             }
             this.drawData = drawData;
         } else if (this.isDrawing) {
@@ -354,8 +353,56 @@ export class MasksHandlerImpl implements MasksHandler {
         if (editData.enabled && editData.state.shapeType === 'mask') {
             if (!this.isEditing) {
                 this.isEditing = true;
-                // add existing mask to canvas
+                this.canvas.isDrawingMode = true;
+                this.canvas.getElement().parentElement.style.display = 'block';
                 this.onEditStart(editData.state);
+
+                const color = fabric.Color.fromHex(editData.state.color).getSource();
+                const { points } = editData.state;
+                const [left, top, right, bottom] = points.slice(-4);
+                const imageBitmap = [];
+                for (let i = 0; i < points.length - 4; i++) {
+                    const alpha = points[i];
+                    imageBitmap.push(color[0], color[1], color[2], alpha * 255);
+                }
+
+                const canvas = document.createElement('canvas');
+                canvas.width = right - left;
+                canvas.height = bottom - top;
+                canvas.getContext('2d').putImageData(
+                    new ImageData(
+                        new Uint8ClampedArray(imageBitmap),
+                        right - left,
+                        bottom - top,
+                    ), 0, 0,
+                );
+                const dataURL = canvas.toDataURL('image/png');
+
+                fabric.Image.fromURL(dataURL, (image: fabric.Image) => {
+                    this.canvas.add(image);
+                    this.canvas.renderAll();
+                    URL.revokeObjectURL(dataURL);
+                }, { left, top });
+            } else if (['polygon-plus', 'polygon-minus'].includes(editData.brushTool?.type)) {
+                if (!this.isPolygonDrawing) {
+                    this.isPolygonDrawing = true;
+                    this.canvas.isDrawingMode = false;
+                }
+            } else if (this.isPolygonDrawing && this.drawablePolygon) {
+                this.keepDrawnPolygon();
+                this.isPolygonDrawing = false;
+            }
+
+            if (editData.brushTool) {
+                this.canvas.freeDrawingBrush = new fabric.PencilBrush(this.canvas);
+                this.canvas.freeDrawingBrush.width = editData.brushTool.size || 10;
+                this.canvas.freeDrawingBrush.strokeLineCap = editData.brushTool.form === 'circle' ? 'round' : 'square';
+                let color = fabric.Color.fromHex(editData.brushTool.color);
+                if (editData.brushTool.type === 'eraser') {
+                    color = fabric.Color.fromHex('#ffffff');
+                }
+                color.setAlpha(this.drawingOpacity);
+                this.canvas.freeDrawingBrush.color = color.toRgba();
             }
         } else if (!editData.enabled) {
             // todo: compute new shape
