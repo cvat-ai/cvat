@@ -1072,7 +1072,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         this.deletedImageOverlay.setAttribute('id', 'cvat_canvas_deleted_frame_overlay');
         this.deletedImageOverlay.setAttribute('version', '2');
         this.deletedImageOverlay.setAttribute('viewBox', '0 0 1024 1024');
-        this.deletedImageOverlayPath.setAttribute('d', 'M360 184h-8c4.4 0 8-3.6 8-8v8h304v-8c0 4.4 3.6 8 8 8h-8v72h72v-80c0-35.3-28.7-64-64-64H352c-35.3 0-64 28.7-64 64v80h72v-72zm504 72H160c-17.7 0-32 14.3-32 32v32c0 4.4 3.6 8 8 8h60.4l24.7 523c1.6 34.1 29.8 61 63.9 61h454c34.2 0 62.3-26.8 63.9-61l24.7-523H888c4.4 0 8-3.6 8-8v-32c0-17.7-14.3-32-32-32zM731.3 840H292.7l-24.2-512h487l-24.2 512z');
+        this.deletedImageOverlayPath.setAttribute('d', 'm 360,184 v 0 h 304 v 0 72 h 72 v -80 c 0,-35.3 -28.7,-64 -64,-64 H 352 c -35.3,0 -64,28.7 -64,64 v 80 h 72 z m 504,72 H 160 c -17.7,0 -32,14.3 -32,32 v 32 c 0,4.4 3.6,8 8,8 h 60.4 l 24.7,523 c 1.6,34.1 29.8,61 63.9,61 h 454 c 34.2,0 62.3,-26.8 63.9,-61 L 827.6,328 H 888 c 4.4,0 8,-3.6 8,-8 v -32 c 0,-17.7 -14.3,-32 -32,-32 z M 731.3,840 H 292.7 L 268.5,328 h 487 z');
         this.deletedImageOverlayPath.setAttribute('opacity', '0.75');
         deletedImageOverlayRect.setAttribute('width', '100%');
         deletedImageOverlayRect.setAttribute('height', '100%');
