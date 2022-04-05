@@ -27,7 +27,7 @@ from cvat.apps.engine.plugins import add_plugin
 
 def _have_no_access_exception(ex):
     if 'Permission denied' in ex.stderr or 'Could not read from remote repository' in ex.stderr:
-        keys = subprocess.run(['ssh-add -L'], shell = True,
+        keys = subprocess.run(['ssh-add', '-L'], #nosec
             stdout = subprocess.PIPE).stdout.decode('utf-8').split('\n')
         keys = list(filter(len, list(map(lambda x: x.strip(), keys))))
         raise ValidationError(
