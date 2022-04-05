@@ -278,7 +278,7 @@
       "is_active": true,
       "is_staff": false,
       "is_superuser": false,
-      "last_login": null,
+      "last_login": "2022-03-28T13:05:05.561000Z",
       "last_name": "Second",
       "url": "http://localhost:8080/api/users/3",
       "username": "user2"
