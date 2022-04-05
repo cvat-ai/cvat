@@ -13,7 +13,7 @@ import 'svg.select.js';
 import { CanvasController } from './canvasController';
 import { Listener, Master } from './master';
 import { DrawHandler, DrawHandlerImpl } from './drawHandler';
-import { MasksDrawHandler, MasksDrawHandlerImpl } from './masksDrawHandler';
+import { MasksHandler, MasksHandlerImpl } from './masksHandler';
 import { EditHandler, EditHandlerImpl } from './editHandler';
 import { MergeHandler, MergeHandlerImpl } from './mergeHandler';
 import { SplitHandler, SplitHandlerImpl } from './splitHandler';
@@ -82,7 +82,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
     private drawnIssueRegions: Record<number, SVG.Shape>;
     private geometry: Geometry;
     private drawHandler: DrawHandler;
-    private masksDrawHandler: MasksDrawHandler;
+    private masksHandler: MasksHandler;
     private editHandler: EditHandler;
     private mergeHandler: MergeHandler;
     private splitHandler: SplitHandler;
@@ -259,9 +259,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 });
 
                 this.canvas.dispatchEvent(event);
-
-                const [state] = this.controller.objects.filter((_state: any): boolean => _state.clientID === clientID);
-
+                const [state] = this.controller.objects
+                    .filter((_state: any): boolean => _state.clientID === clientID);
                 this.onEditDone(state, points);
                 return;
             }
@@ -305,7 +304,24 @@ export class CanvasViewImpl implements CanvasView, Listener {
         }
     }
 
-    private onEditDone(state: any, points: number[], rotation?: number): void {
+    private onEditStart = (state?: any): void => {
+        this.canvas.style.cursor = 'crosshair';
+        this.deactivate();
+        this.canvas.dispatchEvent(
+            new CustomEvent('canvas.editstart', {
+                bubbles: false,
+                cancelable: true,
+                detail: {
+                    state,
+                },
+            }),
+        );
+
+        this.mode = Mode.EDIT;
+    };
+
+    private onEditDone = (state: any, points: number[], rotation?: number): void => {
+        this.canvas.style.cursor = '';
         if (state && points) {
             const event: CustomEvent = new CustomEvent('canvas.edited', {
                 bubbles: false,
@@ -328,7 +344,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         }
 
         this.mode = Mode.IDLE;
-    }
+    };
 
     private onMergeDone(objects: any[] | null, duration?: number): void {
         if (objects) {
@@ -351,10 +367,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             this.canvas.dispatchEvent(event);
         }
 
-        this.controller.merge({
-            enabled: false,
-        });
-
+        this.controller.merge({ enabled: false });
         this.mode = Mode.IDLE;
     }
 
@@ -379,10 +392,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             this.canvas.dispatchEvent(event);
         }
 
-        this.controller.split({
-            enabled: false,
-        });
-
+        this.controller.split({ enabled: false });
         this.mode = Mode.IDLE;
     }
 
@@ -406,10 +416,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             this.canvas.dispatchEvent(event);
         }
 
-        this.controller.group({
-            enabled: false,
-        });
-
+        this.controller.group({ enabled: false });
         this.mode = Mode.IDLE;
     }
 
@@ -452,7 +459,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
             });
 
             this.canvas.dispatchEvent(event);
-
             e.preventDefault();
         }
     }
@@ -516,7 +522,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
         // Transform handlers
         this.drawHandler.transform(this.geometry);
-        this.masksDrawHandler.transform(this.geometry);
+        this.masksHandler.transform(this.geometry);
         this.editHandler.transform(this.geometry);
         this.zoomHandler.transform(this.geometry);
         this.autoborderHandler.transform(this.geometry);
@@ -604,7 +610,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
         // Transform handlers
         this.drawHandler.transform(this.geometry);
-        this.masksDrawHandler.transform(this.geometry);
+        this.masksHandler.transform(this.geometry);
         this.editHandler.transform(this.geometry);
         this.zoomHandler.transform(this.geometry);
         this.autoborderHandler.transform(this.geometry);
@@ -827,15 +833,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                         const { points } = state;
                         this.onEditDone(state, points.slice(0, pointID * 2).concat(points.slice(pointID * 2 + 2)));
                     } else if (e.shiftKey) {
-                        this.canvas.dispatchEvent(
-                            new CustomEvent('canvas.editstart', {
-                                bubbles: false,
-                                cancelable: true,
-                            }),
-                        );
-
-                        this.mode = Mode.EDIT;
-                        this.deactivate();
+                        this.onEditStart(state.shapeType);
                         this.editHandler.edit({
                             enabled: true,
                             state,
@@ -1122,13 +1120,15 @@ export class CanvasViewImpl implements CanvasView, Listener {
             this.geometry,
             this.configuration,
         );
-        this.masksDrawHandler = new MasksDrawHandlerImpl(
+        this.masksHandler = new MasksHandlerImpl(
             this.onDrawDone.bind(this),
             this.controller.draw.bind(this.controller),
+            this.canvas.dispatchEvent.bind(this.canvas),
+            this.onEditStart,
+            this.onEditDone,
             this.masksContent,
-            this.canvas,
         );
-        this.editHandler = new EditHandlerImpl(this.onEditDone.bind(this), this.adoptedContent, this.autoborderHandler);
+        this.editHandler = new EditHandlerImpl(this.onEditDone, this.adoptedContent, this.autoborderHandler);
         this.mergeHandler = new MergeHandlerImpl(
             this.onMergeDone.bind(this),
             this.onFindObject.bind(this),
@@ -1277,7 +1277,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             this.activate(activeElement);
             this.editHandler.configurate(this.configuration);
             this.drawHandler.configurate(this.configuration);
-            this.masksDrawHandler.configurate(this.configuration);
+            this.masksHandler.configurate(this.configuration);
             this.interactionHandler.configurate(this.configuration);
 
             // remove if exist and not enabled
@@ -1350,7 +1350,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 this.groupHandler.resetSelectedObjects();
             }
             this.setupObjects(this.controller.objects);
-            this.masksDrawHandler.setupStates(this.controller.objects);
+            this.masksHandler.setupStates(this.controller.objects);
             if (this.mode === Mode.MERGE) {
                 this.mergeHandler.repeatSelection();
             }
@@ -1445,15 +1445,23 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 if (data.shapeType !== 'mask') {
                     this.drawHandler.draw(data, this.geometry);
                 } else {
-                    this.masksDrawHandler.draw(data);
+                    this.masksHandler.draw(data);
                 }
-            } else {
+            } else if (this.mode !== Mode.IDLE) {
                 this.canvas.style.cursor = '';
-                if (this.mode !== Mode.IDLE) {
-                    this.mode = Mode.IDLE;
-                    this.masksDrawHandler.draw(data);
+                this.mode = Mode.IDLE;
+                if (this.masksHandler.enabled) {
+                    this.masksHandler.draw(data);
+                } else {
                     this.drawHandler.draw(data, this.geometry);
                 }
+            }
+        } else if (reason === UpdateReasons.EDIT) {
+            const data = this.controller.editData;
+            if (data.enabled && data.state.shapeType === 'mask') {
+                this.masksHandler.edit(data);
+            } else if (this.masksHandler.enabled) {
+                this.masksHandler.edit(data);
             }
         } else if (reason === UpdateReasons.INTERACT) {
             const data: InteractionData = this.controller.interactionData;
@@ -1508,7 +1516,11 @@ export class CanvasViewImpl implements CanvasView, Listener {
             }
         } else if (reason === UpdateReasons.CANCEL) {
             if (this.mode === Mode.DRAW) {
-                this.drawHandler.cancel();
+                if (this.masksHandler.enabled) {
+                    this.masksHandler.cancel();
+                } else {
+                    this.drawHandler.cancel();
+                }
             } else if (this.mode === Mode.INTERACT) {
                 this.interactionHandler.cancel();
             } else if (this.mode === Mode.MERGE) {
@@ -1520,7 +1532,11 @@ export class CanvasViewImpl implements CanvasView, Listener {
             } else if (this.mode === Mode.SELECT_REGION) {
                 this.regionSelector.cancel();
             } else if (this.mode === Mode.EDIT) {
-                this.editHandler.cancel();
+                if (this.masksHandler.enabled) {
+                    this.masksHandler.cancel();
+                } else {
+                    this.editHandler.cancel();
+                }
             } else if (this.mode === Mode.DRAG_CANVAS) {
                 this.canvas.dispatchEvent(
                     new CustomEvent('canvas.dragstop', {
@@ -1938,6 +1954,10 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 (shape as any).attr('projections', false);
             }
 
+            if (drawnState.shapeType === 'mask') {
+                (shape as any).off('mousedown');
+            }
+
             (shape as any).off('resizestart');
             (shape as any).off('resizing');
             (shape as any).off('resizedone');
@@ -2169,6 +2189,14 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     this.onEditDone(state, this.translateFromCanvas(points), rotation);
                 }
             });
+
+        if (state.shapeType === 'mask') {
+            (shape as any).on('mousedown', (e: MouseEvent) => {
+                if (e.shiftKey) {
+                    this.controller.edit({ enabled: true, state });
+                }
+            });
+        }
 
         this.canvas.dispatchEvent(
             new CustomEvent('canvas.activated', {

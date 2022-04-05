@@ -4,32 +4,41 @@
 
 import { fabric } from 'fabric';
 
-import { Configuration, DrawData, Geometry } from './canvasModel';
+import {
+    Configuration, DrawData, MasksEditData, Geometry,
+} from './canvasModel';
 import consts from './consts';
 import { PropType } from './shared';
 
-export interface MasksDrawHandler {
+export interface MasksHandler {
     configurate(configuration: Configuration): void;
     draw(drawData: DrawData): void;
+    edit(state: MasksEditData): void;
     transform(geometry: Geometry): void;
     setupStates(objectStates: any[]): void;
     cancel(): void;
+    enabled: boolean;
 }
 
-export class MasksDrawHandlerImpl implements MasksDrawHandler {
+export class MasksHandlerImpl implements MasksHandler {
     private onDrawDone: (
         data: object | null,
         duration?: number,
         continueDraw?: boolean,
         prevDrawData?: DrawData,
     ) => void;
-    private onDrawAgain: (data: DrawData) => void;
+    private onContinueDraw: (data: DrawData) => void;
+    private onEditStart: (state: any) => void;
+    private onEditDone: (state: any, points: number[]) => void;
+    private dispatchEvent: (event: Event) => void;
+
     private isDrawing: boolean;
+    private isEditing: boolean;
     private isPolygonDrawing: boolean;
     private drawablePolygon: null | fabric.Polyline;
-    private drawData: DrawData;
+    private drawData: DrawData | null;
+    private editData: MasksEditData | null;
     private canvas: fabric.Canvas;
-    private canvasWrapper: HTMLDivElement;
     private objectStates: any[];
     private startTimestamp: number;
     private geometry: Geometry;
@@ -52,7 +61,7 @@ export class MasksDrawHandlerImpl implements MasksDrawHandler {
         this.canvas.renderAll();
     }
 
-    private release(): void {
+    private releaseDraw(): void {
         this.canvas.clear();
         this.canvas.renderAll();
         this.canvas.getElement().parentElement.style.display = '';
@@ -65,6 +74,15 @@ export class MasksDrawHandlerImpl implements MasksDrawHandler {
         }
     }
 
+    private releaseEdit(): void {
+        this.canvas.clear();
+        this.canvas.renderAll();
+        this.canvas.getElement().parentElement.style.display = '';
+        this.isEditing = false;
+        this.drawnObjects = [];
+        this.onEditDone(null, null);
+    }
+
     public constructor(
         onDrawDone: (
             data: object | null,
@@ -72,19 +90,25 @@ export class MasksDrawHandlerImpl implements MasksDrawHandler {
             continueDraw?: boolean,
             prevDrawData?: DrawData,
         ) => void,
-        onDrawAgain: (data: DrawData) => void,
+        onContinueDraw: (data: DrawData) => void,
+        dispatchEvent: (event: Event) => void,
+        onEditStart: (state: any) => void,
+        onEditDone: (state: any, points: number[]) => void,
         canvas: HTMLCanvasElement,
-        canvasWrapper: HTMLDivElement,
     ) {
         this.isDrawing = false;
+        this.isEditing = false;
         this.drawData = null;
+        this.editData = null;
         this.drawnObjects = [];
         this.objectStates = [];
         this.drawingOpacity = 0.5;
         this.onDrawDone = onDrawDone;
-        this.onDrawAgain = onDrawAgain;
+        this.onContinueDraw = onContinueDraw;
+        this.onEditDone = onEditDone;
+        this.onEditStart = onEditStart;
+        this.dispatchEvent = dispatchEvent;
         this.canvas = new fabric.Canvas(canvas, { containerClass: 'cvat_masks_canvas_wrapper', fireRightClick: true, selection: false });
-        this.canvasWrapper = canvasWrapper;
         this.canvas.imageSmoothingEnabled = false;
         this.canvas.on('path:created', (opt) => {
             if (this.drawData.brushTool?.type === 'eraser') {
@@ -166,11 +190,11 @@ export class MasksDrawHandlerImpl implements MasksDrawHandler {
         const {
             image: { width, height }, scale, angle, top, left,
         } = geometry;
+
+        const topCanvas = this.canvas.getElement().parentElement as HTMLDivElement;
         this.canvas.setHeight(height);
         this.canvas.setWidth(width);
         this.canvas.setDimensions({ width, height });
-
-        const topCanvas = this.canvas.getElement().parentElement as HTMLDivElement;
         topCanvas.style.top = `${top}px`;
         topCanvas.style.left = `${left}px`;
         topCanvas.style.transform = `scale(${scale}) rotate(${angle}deg)`;
@@ -282,6 +306,7 @@ export class MasksDrawHandlerImpl implements MasksDrawHandler {
 
                         points.push(left, top, right, bottom);
 
+                        // todo: do not edit shapes here because it creates more history actions
                         const event: CustomEvent = new CustomEvent('canvas.edited', {
                             bubbles: false,
                             cancelable: true,
@@ -292,7 +317,7 @@ export class MasksDrawHandlerImpl implements MasksDrawHandler {
                             },
                         });
 
-                        this.canvasWrapper.dispatchEvent(event);
+                        this.dispatchEvent(event);
                     }
                 }
 
@@ -313,20 +338,49 @@ export class MasksDrawHandlerImpl implements MasksDrawHandler {
                 }, Date.now() - this.startTimestamp, drawData.continue, this.drawData);
             }
 
-            this.release();
+            this.releaseDraw();
             if (drawData.continue) {
-                this.onDrawAgain(this.drawData);
+                this.onContinueDraw(this.drawData);
             } else {
                 this.drawData = drawData;
             }
         }
     }
 
+    public edit(editData: MasksEditData): void {
+        // todo: disable some controls from brush toolbar
+        // todo: during drawing add other parts using xor global operator
+
+        if (editData.enabled && editData.state.shapeType === 'mask') {
+            if (!this.isEditing) {
+                this.isEditing = true;
+                // add existing mask to canvas
+                this.onEditStart(editData.state);
+            }
+        } else if (!editData.enabled) {
+            // todo: compute new shape
+            const points = [];
+            this.onEditDone(this.editData.state, points);
+            this.releaseDraw();
+        }
+        this.editData = editData;
+    }
+
     public setupStates(objectStates: any[]): void {
         this.objectStates = objectStates;
     }
 
+    get enabled(): boolean {
+        return this.isDrawing || this.isEditing;
+    }
+
     public cancel(): void {
-        this.release();
+        if (this.isDrawing) {
+            this.releaseDraw();
+        }
+
+        if (this.isEditing) {
+            this.releaseEdit();
+        }
     }
 }

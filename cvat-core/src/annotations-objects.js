@@ -1324,52 +1324,9 @@
     class MaskShape extends Shape {
         constructor(data, clientID, color, injection) {
             super(data, clientID, color, injection);
-            [this.left, this.top, this.right, this.bottom] = this.points.splice(-4, 4);
+            [this.points, [this.left, this.top, this.right, this.bottom]] = ObjectState.rle2Mask(this.points);
             this.pinned = true;
-
-            // decoding from rle representation and ignore the first 4 points
-            const width = this.right - this.left;
-            const height = this.bottom - this.top;
-
-            const decoded = Array(width * height).fill(0);
-            let decodedIdx = 0;
-            for (let rleCountIdx = 0; rleCountIdx < this.points.length; rleCountIdx += 2) {
-                const val = this.points[rleCountIdx + 1];
-                let count = this.points[rleCountIdx];
-                while (count--) {
-                    decoded[decodedIdx++] = val;
-                }
-            }
-            this.points = decoded;
             this.shapeType = ObjectShape.MASK;
-        }
-
-        get(frame) {
-            if (frame !== this.frame) {
-                throw new ScriptingError('Got frame is not equal to the frame of the shape');
-            }
-
-            return {
-                objectType: ObjectType.SHAPE,
-                shapeType: this.shapeType,
-                clientID: this.clientID,
-                serverID: this.serverID,
-                occluded: this.occluded,
-                lock: this.lock,
-                zOrder: this.zOrder,
-                points: [...this.points, this.left, this.top, this.right, this.bottom],
-                rotation: this.rotation,
-                attributes: { ...this.attributes },
-                descriptions: [...this.descriptions],
-                label: this.label,
-                group: this.groupObject,
-                color: this.color,
-                hidden: this.hidden,
-                updated: this.updated,
-                pinned: this.pinned,
-                frame,
-                source: this.source,
-            };
         }
 
         _savePoints(points, rotation, frame) {
@@ -1430,6 +1387,18 @@
             return null;
         }
     }
+
+    MaskShape.prototype.toJSON = function () {
+        const result = Shape.prototype.toJSON.call(this);
+        result.points = [...ObjectState.mask2Rle(this.points), this.left, this.top, this.right, this.bottom];
+        return result;
+    };
+
+    MaskShape.prototype.get = function (frame) {
+        const result = Shape.prototype.get.call(this, frame);
+        result.points = [...this.points, this.left, this.top, this.right, this.bottom];
+        return result;
+    };
 
     class Tag extends Annotation {
         // Method is used to export data to the server

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2021 Intel Corporation
+// Copyright (C) 2019-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -7,11 +7,11 @@ import 'svg.select.js';
 
 import consts from './consts';
 import { translateFromSVG, pointsToNumberArray } from './shared';
-import { EditData, Geometry, Configuration } from './canvasModel';
+import { PolyEditData, Geometry, Configuration } from './canvasModel';
 import { AutoborderHandler } from './autoborderHandler';
 
 export interface EditHandler {
-    edit(editData: EditData): void;
+    edit(editData: PolyEditData): void;
     transform(geometry: Geometry): void;
     configurate(configuration: Configuration): void;
     cancel(): void;
@@ -22,7 +22,7 @@ export class EditHandlerImpl implements EditHandler {
     private autoborderHandler: AutoborderHandler;
     private geometry: Geometry;
     private canvas: SVG.Container;
-    private editData: EditData;
+    private editData: PolyEditData;
     private editedShape: SVG.Shape;
     private editLine: SVG.PolyLine;
     private clones: SVG.Polygon[];

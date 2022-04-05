@@ -85,7 +85,7 @@ export interface DrawData {
     numberOfPoints?: number;
     initialState?: any;
     crosshair?: boolean;
-    brushTool?: BrushTool | null;
+    brushTool?: BrushTool;
     redraw?: number;
 }
 
@@ -112,10 +112,16 @@ export interface InteractionResult {
     button: number;
 }
 
-export interface EditData {
+export interface PolyEditData {
     enabled: boolean;
     state: any;
     pointID: number;
+}
+
+export interface MasksEditData {
+    enabled: boolean;
+    state?: any;
+    brushTool?: BrushTool;
 }
 
 export interface GroupData {
@@ -151,6 +157,7 @@ export enum UpdateReasons {
 
     INTERACT = 'interact',
     DRAW = 'draw',
+    EDIT = 'edit',
     MERGE = 'merge',
     SPLIT = 'split',
     GROUP = 'group',
@@ -190,6 +197,7 @@ export interface CanvasModel {
     readonly focusData: FocusData;
     readonly activeElement: ActiveElement;
     readonly drawData: DrawData;
+    readonly editData: MasksEditData;
     readonly interactionData: InteractionData;
     readonly mergeData: MergeData;
     readonly splitData: SplitData;
@@ -212,6 +220,7 @@ export interface CanvasModel {
     grid(stepX: number, stepY: number): void;
 
     draw(drawData: DrawData): void;
+    edit(editData: MasksEditData): void;
     group(groupData: GroupData): void;
     split(splitData: SplitData): void;
     merge(mergeData: MergeData): void;
@@ -250,6 +259,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         top: number;
         zLayer: number | null;
         drawData: DrawData;
+        editData: MasksEditData;
         interactionData: InteractionData;
         mergeData: MergeData;
         groupData: GroupData;
@@ -305,6 +315,9 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
             drawData: {
                 enabled: false,
                 initialState: null,
+            },
+            editData: {
+                enabled: false,
             },
             interactionData: {
                 enabled: false,
@@ -582,6 +595,33 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         this.notify(UpdateReasons.DRAW);
     }
 
+    public edit(editData: MasksEditData): void {
+        // TODO: update API in readme
+        // todo: add edit icon to the right sidebar and call this method from there
+
+        if (![Mode.IDLE, Mode.EDIT].includes(this.data.mode)) {
+            throw Error(`Canvas is busy. Action: ${this.data.mode}`);
+        }
+
+        if (editData.enabled && !editData.state) {
+            throw Error('State must be specified when call edit() editing process');
+        }
+
+        if (this.data.editData.enabled && editData.enabled &&
+            editData.state.clientID !== this.data.editData.state.clientID
+        ) {
+            throw Error('State cannot be updated during editing, need to finish current editing first');
+        }
+
+        if (editData.enabled) {
+            this.data.editData = { ...editData };
+        } else {
+            this.data.editData = { enabled: false };
+        }
+
+        this.notify(UpdateReasons.EDIT);
+    }
+
     public interact(interactionData: InteractionData): void {
         if (![Mode.IDLE, Mode.INTERACT].includes(this.data.mode)) {
             throw Error(`Canvas is busy. Action: ${this.data.mode}`);
@@ -792,6 +832,10 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
 
     public get drawData(): DrawData {
         return { ...this.data.drawData };
+    }
+
+    public get editData(): MasksEditData {
+        return { ...this.data.editData };
     }
 
     public get interactionData(): InteractionData {

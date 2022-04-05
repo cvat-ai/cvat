@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2021 Intel Corporation
+// Copyright (C) 2019-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -18,15 +18,15 @@
                     * @example
                     * {
                     *     label: {
-                    *         boxes: {
+                    *         box: {
                     *             tracks: 10,
                     *             shapes: 11,
                     *         },
-                    *         polygons: {
+                    *         polygon: {
                     *             tracks: 13,
                     *             shapes: 14,
                     *         },
-                    *         polylines: {
+                    *         polyline: {
                     *             tracks: 16,
                     *             shapes: 17,
                     *         },
@@ -38,14 +38,17 @@
                     *             tracks: 13,
                     *             shapes: 15,
                     *         },
-                    *         cuboids: {
+                    *         cuboid: {
                     *             tracks: 21,
                     *             shapes: 22,
                     *         },
+                    *         mask: {
+                    *             shapes: 22,
+                    *         },
                     *         tags: 66,
-                    *         manually: 186,
+                    *         manually: 208,
                     *         interpolated: 500,
-                    *         total: 608,
+                    *         total: 630,
                     *     }
                     * }
                     * @name label
@@ -61,15 +64,15 @@
                     * Total statistics (covers all labels) with a structure:
                     * @example
                     * {
-                    *     boxes: {
-                    *             tracks: 10,
-                    *             shapes: 11,
+                    *     box: {
+                    *         tracks: 10,
+                    *         shapes: 11,
                     *     },
-                    *     polygons: {
+                    *     polygon: {
                     *         tracks: 13,
                     *         shapes: 14,
                     *     },
-                    *     polylines: {
+                    *     polyline: {
                     *        tracks: 16,
                     *        shapes: 17,
                     *    },
@@ -81,9 +84,12 @@
                     *        tracks: 13,
                     *        shapes: 15,
                     *    },
-                    *    cuboids: {
+                    *    cuboid: {
                     *        tracks: 21,
                     *        shapes: 22,
+                    *    },
+                    *    mask: {
+                    *         shapes: 22,
                     *    },
                     *    tags: 66,
                     *    manually: 186,

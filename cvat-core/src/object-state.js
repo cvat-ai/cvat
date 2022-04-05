@@ -485,6 +485,55 @@ const { Source } = require('./enums');
             const result = await PluginRegistry.apiWrapper.call(this, ObjectState.prototype.delete, frame, force);
             return result;
         }
+
+        /**
+         * Method converts rle representation to mask representation
+         * @method rle2Mask
+         * @memberof module:API.cvat.classes.ObjectState
+         * @readonly
+         * @param {integer[]} rle
+         * @returns {integer[][]} array of two elements: the first is a mask, the second is two border points
+         * @throws {module:API.cvat.exceptions.PluginError}
+         * @throws {module:API.cvat.exceptions.ArgumentError}
+         */
+        static rle2Mask(rle) {
+            const [left, top, right, bottom] = rle.slice(-4);
+            const width = right - left;
+            const height = bottom - top;
+            const decoded = Array(width * height).fill(0);
+            const latestIdx = rle.length - 4;
+            let decodedIdx = 0;
+            for (let rleCountIdx = 0; rleCountIdx < latestIdx; rleCountIdx += 2) {
+                const val = rle[rleCountIdx + 1];
+                let count = rle[rleCountIdx];
+                while (count--) {
+                    decoded[decodedIdx++] = val;
+                }
+            }
+
+            return [decoded, [left, top, right, bottom]];
+        }
+
+        /**
+         * Method converts mask representation to rle representation
+         * @method mask2Rle
+         * @memberof module:API.cvat.classes.ObjectState
+         * @readonly
+         * @param {integer[]} mask
+         * @returns {integer[]}
+         * @throws {module:API.cvat.exceptions.PluginError}
+         * @throws {module:API.cvat.exceptions.ArgumentError}
+         */
+        static mask2Rle(mask) {
+            return mask.reduce((acc, val, idx, arr) => {
+                if (idx > 0 && arr[idx - 1] === val) {
+                    acc[acc.length - 2] += 1;
+                } else {
+                    acc.push(1, val);
+                }
+                return acc;
+            }, []);
+        }
     }
 
     // Updates element in collection which contains it

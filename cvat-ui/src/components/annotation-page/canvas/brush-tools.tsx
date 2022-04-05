@@ -14,7 +14,7 @@ import Icon, {
 import InputNumber from 'antd/lib/input-number';
 import Select from 'antd/lib/select';
 
-import { Canvas } from 'cvat-canvas-wrapper';
+import { Canvas, CanvasMode } from 'cvat-canvas-wrapper';
 import {
     BrushIcon, EraserIcon, PolygonMinusIcon, PolygonPlusIcon,
 } from 'icons';
@@ -38,7 +38,8 @@ function BrushTools(): React.ReactPortal {
     const labels = useSelector((state: CombinedState) => state.annotation.job.labels);
     const { visible } = config;
 
-    const [activeLabelID, setActiveLabelID] = useState<null | number>(null);
+    const [activeLabelID, setActiveLabelID] = useState<number | null>(null);
+    const [editableState, setEditableState] = useState<any | null>(null);
     const [currentTool, setCurrentTool] = useState<'brush' | 'eraser' | 'fill' | 'polygon-plus' | 'polygon-minus'>('brush');
     const [brushForm, setBrushForm] = useState<'circle' | 'square'>('circle');
     const [[top, left], setTopLeft] = useState([0, 0]);
@@ -67,21 +68,36 @@ function BrushTools(): React.ReactPortal {
     useEffect(() => {
         const label = labels.find((_label: any) => _label.id === activeLabelID);
         if (visible && label && canvasInstance instanceof Canvas) {
-            canvasInstance.draw({
-                enabled: true,
-                shapeType: ShapeType.MASK,
-                crosshair: false,
-                brushTool: {
-                    type: currentTool,
-                    size: brushSize,
-                    form: brushForm,
-                    color: label.color,
-                    fillThreshold,
-                    removeUnderlyingPixels,
-                },
-            });
+            if (canvasInstance.mode() === CanvasMode.DRAW) {
+                canvasInstance.draw({
+                    enabled: true,
+                    shapeType: ShapeType.MASK,
+                    crosshair: false,
+                    brushTool: {
+                        type: currentTool,
+                        size: brushSize,
+                        form: brushForm,
+                        color: label.color,
+                        fillThreshold,
+                        removeUnderlyingPixels,
+                    },
+                });
+            } else if (canvasInstance.mode() === CanvasMode.EDIT && editableState) {
+                canvasInstance.edit({
+                    enabled: true,
+                    state: editableState,
+                    brushTool: {
+                        type: currentTool,
+                        size: brushSize,
+                        form: brushForm,
+                        color: label.color,
+                        fillThreshold,
+                        removeUnderlyingPixels,
+                    },
+                });
+            }
         }
-    }, [currentTool, brushSize, brushForm, removeUnderlyingPixels, visible, activeLabelID]);
+    }, [currentTool, brushSize, brushForm, removeUnderlyingPixels, visible, activeLabelID, editableState]);
 
     useEffect(() => {
         const canvasContainer = window.document.getElementsByClassName('cvat-canvas-container')[0];
@@ -100,22 +116,40 @@ function BrushTools(): React.ReactPortal {
 
         const showToolset = (e: Event): void => {
             const evt = e as CustomEvent;
-            if (evt.detail.drawData.shapeType === ShapeType.MASK) {
+            if (evt.detail?.state?.shapeType === ShapeType.MASK ||
+                evt.detail.drawData.shapeType === ShapeType.MASK) {
                 dispatch(updateCanvasBrushTools({ visible: true }));
+            }
+        };
+
+        const updateEditableState = (e: Event): void => {
+            const evt = e as CustomEvent;
+            if (evt.detail.state && evt.type === 'canvas.editstart') {
+                setEditableState(evt.detail.state);
+            } else if (editableState) {
+                setEditableState(null);
             }
         };
 
         if (canvasInstance instanceof Canvas) {
             canvasInstance.html().addEventListener('canvas.drawn', hideToolset);
             canvasInstance.html().addEventListener('canvas.canceled', hideToolset);
+            canvasInstance.html().addEventListener('canvas.canceled', updateEditableState);
             canvasInstance.html().addEventListener('canvas.drawstart', showToolset);
+            canvasInstance.html().addEventListener('canvas.editstart', showToolset);
+            canvasInstance.html().addEventListener('canvas.editstart', updateEditableState);
+            canvasInstance.html().addEventListener('canvas.editdone', updateEditableState);
         }
 
         return () => {
             if (canvasInstance instanceof Canvas) {
                 canvasInstance.html().removeEventListener('canvas.drawn', hideToolset);
                 canvasInstance.html().removeEventListener('canvas.canceled', hideToolset);
+                canvasInstance.html().removeEventListener('canvas.canceled', updateEditableState);
                 canvasInstance.html().removeEventListener('canvas.drawstart', showToolset);
+                canvasInstance.html().removeEventListener('canvas.editstart', showToolset);
+                canvasInstance.html().removeEventListener('canvas.editstart', updateEditableState);
+                canvasInstance.html().removeEventListener('canvas.editdone', updateEditableState);
             }
         };
     }, [visible]);

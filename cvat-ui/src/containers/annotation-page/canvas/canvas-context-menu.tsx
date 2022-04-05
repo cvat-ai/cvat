@@ -215,7 +215,7 @@ class CanvasContextMenuContainer extends React.PureComponent<Props, State> {
         const { objectStates, activatedStateID, onUpdateContextMenu } = this.props;
 
         const [state] = objectStates.filter((el: any) => el.clientID === activatedStateID);
-        if (![ShapeType.CUBOID, ShapeType.RECTANGLE].includes(state.shapeType)) {
+        if (![ShapeType.CUBOID, ShapeType.RECTANGLE, ShapeType.MASK].includes(state.shapeType)) {
             onUpdateContextMenu(
                 activatedStateID !== null,
                 e.detail.mouseEvent.clientX,

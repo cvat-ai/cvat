@@ -643,6 +643,9 @@
                     shape: 0,
                     track: 0,
                 },
+                mask: {
+                    shape: 0,
+                },
                 tags: 0,
                 manually: 0,
                 interpolated: 0,
