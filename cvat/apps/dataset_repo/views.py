@@ -9,7 +9,7 @@ import cvat.apps.dataset_repo.dataset_repo as CVATGit
 from rest_framework import viewsets, status, serializers
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from django.http import HttpResponseBadRequest, JsonResponse
+from django.http import Http404, HttpResponseBadRequest, JsonResponse
 from drf_spectacular.utils import OpenApiResponse, extend_schema, extend_schema_view, inline_serializer
 from cvat.apps.engine.log import slogger
 from cvat.apps.iam.permissions import DatasetRepoPermission
@@ -56,7 +56,7 @@ class DatasetRepoViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        if self.action == 'list':
+        if self.action in {'list', 'metadata'}:
             perm = DatasetRepoPermission.create_scope_list(self.request)
             queryset = perm.filter(queryset)
 
@@ -134,7 +134,12 @@ class DatasetRepoViewSet(viewsets.ModelViewSet):
 
     def retrieve(self, request, *args, **kwargs):
         try:
-            instance = self.get_object()
+            try:
+                instance = self.get_object()
+            except Http404:
+                return JsonResponse({
+                    field: None for field in {'url', 'status', 'format', 'lfs', 'error'}
+                })
             tid = instance.task_id
             slogger.task[tid].info("get repository request")
             return JsonResponse(CVATGit.get(tid, request.user))

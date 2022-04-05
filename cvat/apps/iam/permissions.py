@@ -1067,7 +1067,7 @@ class DatasetRepoPermission(OpenPolicyAgentPermission):
     @classmethod
     def create(cls, request, view, obj):
         permissions = []
-        if view.basename == 'dataset-repositories':
+        if view.basename == 'datasetrepo':
             for scope in cls.get_scopes(request, view, obj):
                 self = cls.create_base_perm(request, view, scope, obj)
                 permissions.append(self)
@@ -1092,7 +1092,7 @@ class DatasetRepoPermission(OpenPolicyAgentPermission):
             'partial_update': 'update',
             'push': 'view',
             'status': 'view',
-            'metadata': 'list:content'
+            'metadata': 'list'
         }.get(view.action)]
 
     def get_resource(self):
@@ -1100,6 +1100,7 @@ class DatasetRepoPermission(OpenPolicyAgentPermission):
         if self.scope.startswith('create'):
             data = {
                 'id': None,
+                'owner': { 'id': self.user_id },
                 'organization': {
                     'id': self.org_id
                 } if self.org_id != None else None,
@@ -1107,6 +1108,7 @@ class DatasetRepoPermission(OpenPolicyAgentPermission):
         elif self.obj:
             data = {
                 'id': self.obj.task_id,
+                'owner': { 'id': getattr(self.obj.task, 'id', None) },
                 'organization': {
                     'id': self.obj.task.organization.id
                 } if self.obj.task.organization else None

@@ -1,0 +1,15 @@
+Scope,Resource,Context,Ownership,Limit,Method,URL,Privilege,Membership
+list,DatasetRepo,Sandbox,N/A,,GET,"/dataset-repositories",None,N/A
+list,DatasetRepo,Organization,N/A,,GET,"/dataset-repositories",None,Worker
+create@task,"DatasetRepo, Task",Sandbox,N/A,,POST,"/dataset-repositories",Admin,N/A
+create@task,"DatasetRepo, Task",Sandbox,"Task:owner",,POST,"/dataset-repositories",Worker,N/A
+create@task,"DatasetRepo, Task",Organization,N/A,,POST,"/dataset-repositories",User,Maintainer
+create@task,"DatasetRepo, Task",Organization,"Task:owner",,POST,"/dataset-repositories",Worker,Worker
+view,DatasetRepo,Sandbox,None,,GET,"/dataset-repositories/{task_id}, /dataset-repositories/{task_id}/push, /dataset-repositories/{rq_id}/status",Admin,N/A
+view,DatasetRepo,Sandbox,Owner,,GET,"/dataset-repositories/{task_id}, /dataset-repositories/{task_id}/push, /dataset-repositories/{rq_id}/status",None,N/A
+view,DatasetRepo,Organization,Owner,,GET,"/dataset-repositories/{task_id}, /dataset-repositories/{task_id}/push, /dataset-repositories/{rq_id}/status",None,Worker
+view,DatasetRepo,Organization,None,,GET,"/dataset-repositories/{task_id}",User,Supervisor
+update,DatasetRepo,Sandbox,None,,PATCH,"/dataset-repositories/{task_id}",Admin,N/A
+update,DatasetRepo,Sandbox,Owner,,PATCH,"/dataset-repositories/{task_id}",Worker,N/A
+update,DatasetRepo,Organization,Owner,,PATCH,"/dataset-repositories/{task_id}",Worker,Worker
+update,DatasetRepo,Organization,None,,PATCH,"/dataset-repositories/{task_id}",User,Maintainer

@@ -21,6 +21,7 @@ import data.organizations
 #     },
 #     "resource": {
 #         "id": <num>,
+#         "owner": { "id": <num> },
 #         "organization": { "id": <num> } or null,
 #     }
 # }
@@ -74,20 +75,20 @@ filter = [] { # Django Q object to filter list of entries
 }
 
 allow {
-    { utils.VIEW, utils.LIST_CONTENT }[input.scope]
+    input.scope == utils.VIEW
     utils.is_sandbox
     utils.is_resource_owner
 }
 
 allow {
-    { utils.VIEW, utils.LIST_CONTENT }[input.scope]
+    input.scope == utils.VIEW
     input.auth.organization.id == input.resource.organization.id
     organizations.is_member
     utils.is_resource_owner
 }
 
 allow {
-    { utils.VIEW, utils.LIST_CONTENT }[input.scope]
+    input.scope == utils.VIEW
     input.auth.organization.id == input.resource.organization.id
     utils.has_perm(utils.USER)
     organizations.has_perm(organizations.SUPERVISOR)
