@@ -691,11 +691,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
         const created = [];
         const updated = [];
 
-        const masks = Object.keys(this.drawnStates)
-            .filter((clientID: string) => this.drawnStates[+clientID].shapeType === 'mask')
-            .map((clientID: string): any => this.drawnStates[+clientID]);
-        this.deleteObjects(masks);
-
         for (const state of states) {
             if (!(state.clientID in this.drawnStates)) {
                 created.push(state);
@@ -955,11 +950,26 @@ export class CanvasViewImpl implements CanvasView, Listener {
             handler.nested.fill(shape.attr('fill'));
         }
 
-        const [rotationPoint] = window.document.getElementsByClassName('svg_select_points_rot');
-        if (rotationPoint && !rotationPoint.children.length) {
-            const title = document.createElementNS('http://www.w3.org/2000/svg', 'title');
-            title.textContent = 'Hold Shift to snap angle';
-            rotationPoint.appendChild(title);
+        if (value && shape.type === 'image') {
+            const [boundingRect] = window.document.getElementsByClassName('svg_select_boundingRect');
+            if (boundingRect) {
+                (boundingRect as SVGRectElement).style.opacity = '1';
+                boundingRect.setAttribute('fill', 'none');
+                boundingRect.setAttribute('stroke', 'black');
+                boundingRect.setAttribute('stroke-width', `${consts.BASE_STROKE_WIDTH / this.geometry.scale}px`);
+                if (shape.hasClass('cvat_canvas_shape_occluded')) {
+                    boundingRect.setAttribute('stroke-dasharray', '5');
+                }
+            }
+        }
+
+        if (value) {
+            const [rotationPoint] = window.document.getElementsByClassName('svg_select_points_rot');
+            if (rotationPoint && !rotationPoint.children.length) {
+                const title = document.createElementNS('http://www.w3.org/2000/svg', 'title');
+                title.textContent = 'Hold Shift to snap angle';
+                rotationPoint.appendChild(title);
+            }
         }
     }
 
@@ -1751,6 +1761,13 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 state.points.length !== drawnState.points.length ||
                 state.points.some((p: number, id: number): boolean => p !== drawnState.points[id])
             ) {
+                if (state.shapeType === 'mask') {
+                    // if masks points were updated, draw from scratch
+                    this.deleteObjects([this.drawnStates[+clientID]]);
+                    this.addObjects([state]);
+                    return;
+                }
+
                 const translatedPoints: number[] = this.translateToCanvas(state.points);
 
                 if (state.shapeType === 'rectangle') {
