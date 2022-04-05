@@ -1,31 +1,41 @@
 {{ $url := .Get "url" }}
 {{ $sep := .Get "sep" | default "," }}
+{{ $details := .Get "details" | default "true" }}
 {{ if $csv := getCSV $sep $url }}
-  <table>
-    <thead>
-      <tr>
-      {{ range $i, $r := $csv }}
-        {{ if eq $i 0 }}
-          {{ range $index, $row := $r }}
-            <th>{{ $row }}</th>
-          {{ end }}
-        {{ end }}
-      {{ end }}
-      </tr>
-    </thead>
-    <tbody>
-      {{ range $i, $r := $csv }}
-        {{ if ne $i 0 }}
-          <tr>
-            {{ $l := sub (len $r) 1 }}
-            {{ range $n := (seq 0 $l) }}
-              <td>{{ index $r $n }}</td>
+  {{ if eq $details "true" }}
+    <details style="max-width: 100%">
+      <summary><i class="fas fa-table"></i> <b>{{ index ($f := split $url "/") (sub (len $f) 1) }}</b></summary>
+      <div class="td-content"><br>
+  {{ end }}
+        <table>
+          <thead>
+            <tr>
+            {{ range $i, $r := $csv }}
+              {{ if eq $i 0 }}
+                {{ range $index, $row := $r }}
+                  <th>{{ $row }}</th>
+                {{ end }}
+              {{ end }}
             {{ end }}
-          </tr>
-        {{ end }}
-      {{ end }}
-    </tbody>
-  </table>
+            </tr>
+          </thead>
+          <tbody>
+            {{ range $i, $r := $csv }}
+              {{ if ne $i 0 }}
+                <tr>
+                  {{ $l := sub (len $r) 1 }}
+                  {{ range $n := (seq 0 $l) }}
+                    <td>{{ index $r $n }}</td>
+                  {{ end }}
+                </tr>
+              {{ end }}
+            {{ end }}
+          </tbody>
+        </table>
+  {{ if eq $details "true" }}
+      </div>
+    </details><br>
+  {{ end }}
 {{ else }}
   <h5 style="color: red">! URL "{{ $url }}" not found</h5>
 {{ end }}

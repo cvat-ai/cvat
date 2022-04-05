@@ -9,7 +9,8 @@ description: 'This guide explains how to use IAM system roles to configure user 
 
 ### Open Policy Agent
 
-CVAT system roles are based on the OPA microservice having [REST API](https://www.openpolicyagent.org/docs/latest/rest-api/).
+CVAT system roles are based on the [Open Policy Agent](https://www.openpolicyagent.org/)(OPA) microservice having [REST API](https://www.openpolicyagent.org/docs/latest/rest-api/).
+Thus, CVAT sends HTTP requests (Query) to OPA that replies with "allow" or "deny" in the simplest case (Decision).
 OPA is the Policy Decision Point (PDP), and it makes decisions, and CVAT is the Policy Enforcement Point (PEP),
 and enforces these decisions by providing information about requested resources or responding with an error.
 
@@ -25,7 +26,6 @@ For example, the {{< repolink text="users.csv" path="/cvat/apps/iam/rules/users.
 for working with information about users. Every line in the file is a primitive rule which tells us who has rights
 to perform a specific action.
 
-**Users**
 {{< get-csv url="../../cvat/cvat/apps/iam/rules/users.csv" >}}
 
 All CSV files which describe permissions have the same set of columns:
@@ -72,51 +72,50 @@ All CSV files which describe permissions have the same set of columns:
 If somebody needs to change the default behavior,
 it is possible to modify the policies defined in `.rego` files and restart the OPA microservice.
 
-<details style="max-width: 100%">
-<summary>Rules for other resources</summary>
-<div class="td-content"><br>
+### Example of changing rules
 
-**Analytics**
-{{< get-csv url="../../cvat/cvat/apps/iam/rules/analytics.csv" >}}
+By default, CVAT has a system of rules described in the organisation section.
+But you can change them by editing the csv files in the cvat repository.
 
-**Authorization**
-{{< get-csv url="../../cvat/cvat/apps/iam/rules/auth.csv" >}}
+#### Example 1
 
-**Cloud storages**
+For example, if you want users with the supervisor role to be able to update in organizations
+cloud storage edit cloudstorages.csv
+
 {{< get-csv url="../../cvat/cvat/apps/iam/rules/cloudstorages.csv" >}}
 
-**Comments**
-{{< get-csv url="../../cvat/cvat/apps/iam/rules/comments.csv" >}}
+#### Example 2
 
-**Invitations**
+If you want to disable the ability to register new users on your server, edit auth.csv
+
+{{< get-csv url="../../cvat/cvat/apps/iam/rules/auth.csv" >}}
+
+#### Example 3
+
+Prohibit invitations to the organization for everyone except the creator of the organization edit Invitations
+
 {{< get-csv url="../../cvat/cvat/apps/iam/rules/invitations.csv" >}}
 
-**Issues**
+### Rules for other resources
+
+{{< get-csv url="../../cvat/cvat/apps/iam/rules/analytics.csv" >}}
+
+{{< get-csv url="../../cvat/cvat/apps/iam/rules/comments.csv" >}}
+
 {{< get-csv url="../../cvat/cvat/apps/iam/rules/issues.csv" >}}
 
-**Jobs**
 {{< get-csv url="../../cvat/cvat/apps/iam/rules/jobs.csv" >}}
 
-**Lambda**
 {{< get-csv url="../../cvat/cvat/apps/iam/rules/lambda.csv" >}}
 
-**Memberships**
 {{< get-csv url="../../cvat/cvat/apps/iam/rules/memberships.csv" >}}
 
-**Organizations**
 {{< get-csv url="../../cvat/cvat/apps/iam/rules/organizations.csv" >}}
 
-**Projects**
 {{< get-csv url="../../cvat/cvat/apps/iam/rules/projects.csv" >}}
 
-**Restrictions**
 {{< get-csv url="../../cvat/cvat/apps/iam/rules/restrictions.csv" >}}
 
-**Server**
 {{< get-csv url="../../cvat/cvat/apps/iam/rules/server.csv" >}}
 
-**Tasks**
 {{< get-csv url="../../cvat/cvat/apps/iam/rules/tasks.csv" >}}
-
-</div>
-</details>
