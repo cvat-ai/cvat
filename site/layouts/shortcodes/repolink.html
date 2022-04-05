@@ -1,10 +1,8 @@
 {{ $text := .Get "text" | default "this is GitHub" }}
 {{ $path := .Get "path" | default "/" }}
 {{ $icon := .Get "icon" | default "false" }}
+{{ $repolink := .Site.Params.github_repo }}
 {{ $ver := .Site.Params.version_menu }}
-{{ if eq $ver "Latest version" }}
-    {{ $ver := "develop"}}
-    {{ $repolink := .Site.Params.github_repo }}
-    <a href="{{ $repolink }}{{ if eq (substr $path -1) "/" }}/tree/{{ else }}/blob/{{ end }}{{ $ver }}{{ $path }}">{{ $text }}
-    {{if eq $icon "true" }}<i class="fab fa-github"></i>{{ end }}</a>
-{{ end }}
+<a href="{{ $repolink }}{{ if eq (substr $path -1) "/" }}/tree/{{ else }}/blob/{{ end }}
+{{ if eq $ver "Latest version" }}develop{{ else }}{{ $ver }}{{ end }}{{ $path }}">{{ $text }}
+{{ if eq $icon "true" }}<i class="fab fa-github"></i>{{ end }}</a>
