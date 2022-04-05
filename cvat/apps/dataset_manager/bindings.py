@@ -1338,7 +1338,9 @@ def convert_cvat_anno_to_dm(cvat_frame_anno, label_attrs, map_label, format_name
                 "group": anno_group,
                 "attributes": anno_attr,
             }), cvat_frame_anno.height, cvat_frame_anno.width)
-        elif shape_obj.type == ShapeType.POLYLINE:
+        elif shape_obj.type == ShapeType.MASK:
+            anno = datum_annotation.RleMask()
+        # elif shape_obj.type == ShapeType.POLYLINE:
             anno = datum_annotation.PolyLine(anno_points,
                 label=anno_label, attributes=anno_attr, group=anno_group,
                 z_order=shape_obj.z_order)

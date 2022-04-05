@@ -124,7 +124,7 @@ function BrushTools(): React.ReactPortal {
 
         const updateEditableState = (e: Event): void => {
             const evt = e as CustomEvent;
-            if (evt.detail.state && evt.type === 'canvas.editstart') {
+            if (evt.type === 'canvas.editstart' && evt.detail.state) {
                 setEditableState(evt.detail.state);
             } else if (editableState) {
                 setEditableState(null);

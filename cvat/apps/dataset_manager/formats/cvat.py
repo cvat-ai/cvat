@@ -516,6 +516,11 @@ def create_xml_dumper(file_object):
             self.xmlgen.startElement("points", points)
             self._level += 1
 
+        def open_mask(self, points):
+            self._indent()
+            self.xmlgen.startElement("mask", points)
+            self._level += 1
+
         def open_cuboid(self, cuboid):
             self._indent()
             self.xmlgen.startElement("cuboid", cuboid)
@@ -556,6 +561,11 @@ def create_xml_dumper(file_object):
             self._level -= 1
             self._indent()
             self.xmlgen.endElement("points")
+
+        def close_mask(self):
+            self._level -= 1
+            self._indent()
+            self.xmlgen.endElement("mask")
 
         def close_cuboid(self):
             self._level -= 1
@@ -641,6 +651,14 @@ def dump_as_cvat_annotation(dumper, annotations):
                     dump_data.update(OrderedDict([
                         ("rotation", "{:.2f}".format(shape.rotation))
                     ]))
+            elif shape.type == "mask":
+                dump_data.update(OrderedDict([
+                    ("rle", f"{list(int (v) for v in shape.points[:-4])}"[1:-1]),
+                    ("left", f"{int(shape.points[-4])}"),
+                    ("top", f"{int(shape.points[-3])}"),
+                    ("width", f"{int(shape.points[-2] - shape.points[-4])}"),
+                    ("height", f"{int(shape.points[-1] - shape.points[-3])}"),
+                ]))
             elif shape.type == "cuboid":
                 dump_data.update(OrderedDict([
                     ("xtl1", "{:.2f}".format(shape.points[0])),
@@ -684,6 +702,8 @@ def dump_as_cvat_annotation(dumper, annotations):
                 dumper.open_polyline(dump_data)
             elif shape.type == "points":
                 dumper.open_points(dump_data)
+            elif shape.type == "mask":
+                dumper.open_mask(dump_data)
             elif shape.type == "cuboid":
                 dumper.open_cuboid(dump_data)
             else:
@@ -705,6 +725,8 @@ def dump_as_cvat_annotation(dumper, annotations):
                 dumper.close_polyline()
             elif shape.type == "points":
                 dumper.close_points()
+            elif shape.type == "mask":
+                dumper.close_mask()
             elif shape.type == "cuboid":
                 dumper.close_cuboid()
             else:
@@ -784,6 +806,14 @@ def dump_as_cvat_interpolation(dumper, annotations):
                     dump_data.update(OrderedDict([
                         ("rotation", "{:.2f}".format(shape.rotation))
                     ]))
+            elif shape.type == "mask":
+                dump_data.update(OrderedDict([
+                    ("rle", f"{list(int (v) for v in shape.points[:-4])}"[1:-1]),
+                    ("left", f"{int(shape.points[-4])}"),
+                    ("top", f"{int(shape.points[-3])}"),
+                    ("width", f"{int(shape.points[-2] - shape.points[-4])}"),
+                    ("height", f"{int(shape.points[-1] - shape.points[-3])}"),
+                ]))
             elif shape.type == "cuboid":
                 dump_data.update(OrderedDict([
                     ("xtl1", "{:.2f}".format(shape.points[0])),
@@ -821,6 +851,8 @@ def dump_as_cvat_interpolation(dumper, annotations):
                 dumper.open_polyline(dump_data)
             elif shape.type == "points":
                 dumper.open_points(dump_data)
+            elif shape.type == 'mask':
+                dumper.open_mask(dump_data)
             elif shape.type == "cuboid":
                 dumper.open_cuboid(dump_data)
             else:
@@ -842,6 +874,8 @@ def dump_as_cvat_interpolation(dumper, annotations):
                 dumper.close_polyline()
             elif shape.type == "points":
                 dumper.close_points()
+            elif shape.type == 'mask':
+                dumper.close_mask()
             elif shape.type == "cuboid":
                 dumper.close_cuboid()
             else:
@@ -898,7 +932,7 @@ def dump_as_cvat_interpolation(dumper, annotations):
     dumper.close_root()
 
 def load_anno(file_object, annotations):
-    supported_shapes = ('box', 'ellipse', 'polygon', 'polyline', 'points', 'cuboid')
+    supported_shapes = ('box', 'ellipse', 'polygon', 'polyline', 'points', 'cuboid', 'mask')
     context = ElementTree.iterparse(file_object, events=("start", "end"))
     context = iter(context)
     next(context)
@@ -973,6 +1007,12 @@ def load_anno(file_object, annotations):
                     shape['points'].append(el.attrib['cy'])
                     shape['points'].append("{:.2f}".format(float(el.attrib['cx']) + float(el.attrib['rx'])))
                     shape['points'].append("{:.2f}".format(float(el.attrib['cy']) - float(el.attrib['ry'])))
+                elif el.tag == 'mask':
+                    shape['points'] = el.attrib['rle'].split(',')
+                    shape['points'].append(el.attrib['left'])
+                    shape['points'].append(el.attrib['top'])
+                    shape['points'].append("{}".format(int(el.attrib['left']) + int(el.attrib['width'])))
+                    shape['points'].append("{}".format(int(el.attrib['top']) + int(el.attrib['height'])))
                 elif el.tag == 'cuboid':
                     shape['points'].append(el.attrib['xtl1'])
                     shape['points'].append(el.attrib['ytl1'])

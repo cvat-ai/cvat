@@ -321,11 +321,16 @@ export class MasksHandlerImpl implements MasksHandler {
                 }
 
                 alpha = alpha.reduce<number[]>((acc, val, idx, arr) => {
-                    if (idx > 0 && arr[idx - 1] === val) {
-                        acc[acc.length - 2] += 1;
+                    if (idx > 0) {
+                        if (arr[idx - 1] === val) {
+                            acc[acc.length - 1] += 1;
+                        } else {
+                            acc.push(1);
+                        }
                     } else {
-                        acc.push(1, val);
+                        acc.push(val > 0 ? 0 : 1);
                     }
+
                     return acc;
                 }, []);
 

@@ -503,12 +503,15 @@ const { Source } = require('./enums');
             const decoded = Array(width * height).fill(0);
             const latestIdx = rle.length - 4;
             let decodedIdx = 0;
-            for (let rleCountIdx = 0; rleCountIdx < latestIdx; rleCountIdx += 2) {
-                const val = rle[rleCountIdx + 1];
+            let value = 0;
+            for (let rleCountIdx = 0; rleCountIdx < latestIdx; rleCountIdx += 1) {
                 let count = rle[rleCountIdx];
-                while (count--) {
-                    decoded[decodedIdx++] = val;
+                while (count > 0) {
+                    decoded[decodedIdx] = value;
+                    decodedIdx++;
+                    count--;
                 }
+                value = Math.abs(value - 1);
             }
 
             return [decoded, [left, top, right, bottom]];
@@ -526,11 +529,16 @@ const { Source } = require('./enums');
          */
         static mask2Rle(mask) {
             return mask.reduce((acc, val, idx, arr) => {
-                if (idx > 0 && arr[idx - 1] === val) {
-                    acc[acc.length - 2] += 1;
+                if (idx > 0) {
+                    if (arr[idx - 1] === val) {
+                        acc[acc.length - 1] += 1;
+                    } else {
+                        acc.push(1);
+                    }
                 } else {
-                    acc.push(1, val);
+                    acc.push(val > 0 ? 0 : 1);
                 }
+
                 return acc;
             }, []);
         }
