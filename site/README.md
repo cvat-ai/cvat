@@ -82,15 +82,14 @@ Push the commit to project repo. For example, run:
 
 #### Get CSV
 
-You can put a `CSV` spreadsheet in the documentation. To do this, use the shortcode:
+You can insert a `CSV` spreadsheet in the documentation. To do this, use the shortcode:
 
-```go
 {{< get-csv url="<ur_or_path_to_csv_file>" sep="<sep>" >}}
-```
 
 You need to set the url of the csv file or the path in the repository
-(note that the root in this case will be the `site` folder in the repository,
-so if you want to insert the table from the directory above use `.. /..`).
+(note that the root in this case will be the `site` folder,
+so if you want to insert the table from the directory above use `.. /..`
+depending on the location of the file in which the shortcode is used).
 You can also set the separator (the default is `,`).
 
 #### Repolink
@@ -98,9 +97,7 @@ You can also set the separator (the default is `,`).
 You can add a link to a file or folder in the repository
 that will be bound to the documentation version using the repolink shortcode:
 
-``` go
 {{< repolink text="<text>" path="<path_into_repository>" icon="<true>" >}}
-```
 
 You must specify the text that will be displayed in the documentation, you can specify the path inside the repository
 (if you do not specify the path the link will lead to the root of the repository).
