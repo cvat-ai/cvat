@@ -41,7 +41,10 @@ def git_checkout(tagname, cwd):
     images_dir = os.path.join(cwd, 'site', 'content', 'en', 'images')
     shutil.rmtree(images_dir)
     repo.git.checkout(tagname, '--', 'site/content/en/images')
-    repo.git.checkout(tagname, '--', 'cvat/apps/iam/rules')
+    if version.parse(tagname) > version.parse("2.0.0"):
+        iam_rules_dir = os.path.join(cwd, 'cvat', 'apps', 'iam', 'rules')
+        shutil.rmtree(iam_rules_dir)
+        repo.git.checkout(tagname, '--', 'cvat/apps/iam/rules')
 
 def change_version_menu_toml(filename, version):
     data = toml.load(filename)
