@@ -47,7 +47,7 @@ services:
 
   cvat_opa:
     container_name: reb_cvat_opa
-    image: rebotics/opa:0.34.2-rootless
+    image: rebotics/cvat_opa:0.34.2-rootless
     restart: unless-stopped
     networks:
       reb_cvat:

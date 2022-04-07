@@ -8,5 +8,5 @@ if [ -z $VERSION ]; then
 fi
 
 OPA_VERSION=0.34.2  # fixed, rarely changes
-docker build -f rebotics/Dockerfile.opa --build-arg OPA_VERSION=${OPA_VERSION} -t rebotics/opa:${OPA_VERSION} .
+docker build -f rebotics/Dockerfile.opa --build-arg OPA_VERSION=${OPA_VERSION} -t rebotics/cvat_opa:${OPA_VERSION} .
 docker build -f rebotics/Dockerfile -t rebotics/cvat:${VERSION} .
