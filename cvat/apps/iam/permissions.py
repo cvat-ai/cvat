@@ -76,7 +76,7 @@ class OpenPolicyAgentPermission(metaclass=ABCMeta):
 
     def __bool__(self):
         r = requests.post(self.url, json=self.payload)
-        return r.json()['result']
+        return r.json()['result']  # 500 = missing rules
 
     def filter(self, queryset):
         url = self.url.replace('/allow', '/filter')

@@ -1,0 +1,67 @@
+version: '3.3'
+
+services:
+  cvat_db:
+    container_name: reb_cvat_db
+    image: postgres:10-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_DB: cvat
+      POSTGRES_HOST_AUTH_METHOD: trust
+    volumes:
+      - reb_cvat_db:/var/lib/postgresql/data
+    networks:
+      - reb_cvat
+
+  cvat_redis:
+    container_name: reb_cvat_redis
+    image: redis:4.0-alpine
+    restart: unless-stopped
+    networks:
+      - reb_cvat
+
+  cvat:
+    container_name: reb_cvat
+    image: rebotics/cvat:latest
+    restart: unless-stopped
+    depends_on:
+      - cvat_redis
+      - cvat_db
+      - cvat_opa
+    environment:
+      DJANGO_MODWSGI_EXTRA_ARGS: ''
+      ALLOWED_HOSTS: '*'
+      CVAT_REDIS_HOST: 'reb_cvat_redis'
+      CVAT_POSTGRES_HOST: 'reb_cvat_db'
+      ADAPTIVE_AUTO_ANNOTATION: 'false'
+      no_proxy: elasticsearch,kibana,logstash,nuclio,opa,${no_proxy}
+    volumes:
+      - reb_cvat_data:/home/django/data
+      - reb_cvat_keys:/home/django/keys
+      - reb_cvat_logs:/home/django/logs
+    ports:
+      - "8080:8080"
+    networks:
+      - reb_cvat
+
+  cvat_opa:
+    container_name: reb_cvat_opa
+    image: rebotics/opa:0.34.2-rootless
+    restart: unless-stopped
+    networks:
+      reb_cvat:
+        aliases:
+          - opa
+    ports:
+      - '8181:8181'
+    command: run --server --addr :8181 --set=decision_logs.console=true /rules
+
+volumes:
+  reb_cvat_db:
+  reb_cvat_data:
+  reb_cvat_keys:
+  reb_cvat_logs:
+
+networks:
+  reb_cvat:

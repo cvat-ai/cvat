@@ -33,19 +33,20 @@ BASE_DIR = str(Path(__file__).parents[2])
 ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 INTERNAL_IPS = ['127.0.0.1']
 
-try:
-    sys.path.append(BASE_DIR)
-    from keys.secret_key import SECRET_KEY # pylint: disable=unused-import
-except ImportError:
-
-    from django.utils.crypto import get_random_string
-    keys_dir = os.path.join(BASE_DIR, 'keys')
-    if not os.path.isdir(keys_dir):
-        os.mkdir(keys_dir)
-    with open(os.path.join(keys_dir, 'secret_key.py'), 'w') as f:
-        chars = 'abcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*(-_=+)'
-        f.write("SECRET_KEY = '{}'\n".format(get_random_string(50, chars)))
-    from keys.secret_key import SECRET_KEY
+SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', None)
+if not SECRET_KEY:
+    try:
+        sys.path.append(BASE_DIR)
+        from keys.secret_key import SECRET_KEY # pylint: disable=unused-import
+    except ImportError:
+        from django.utils.crypto import get_random_string
+        keys_dir = os.path.join(BASE_DIR, 'keys')
+        if not os.path.isdir(keys_dir):
+            os.mkdir(keys_dir)
+        with open(os.path.join(keys_dir, 'secret_key.py'), 'w') as f:
+            chars = 'abcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*(-_=+)'
+            f.write("SECRET_KEY = '{}'\n".format(get_random_string(50, chars)))
+        from keys.secret_key import SECRET_KEY
 
 
 def generate_ssh_keys():
@@ -240,7 +241,10 @@ IAM_DEFAULT_ROLES = ['user']
 IAM_ADMIN_ROLE = 'admin'
 # Index in the list below corresponds to the priority (0 has highest priority)
 IAM_ROLES = [IAM_ADMIN_ROLE, 'business', 'user', 'worker']
-IAM_OPA_DATA_URL = 'http://opa:8181/v1/data'
+IAM_OPA_PROTOCOL = os.getenv('CVAT_OPA_PROTOCOL', 'http')
+IAM_OPA_HOST = os.getenv('CVAT_OPA_HOST', 'opa')
+IAM_OPA_PORT = os.getenv('CVAT_OPA_PORT', 8181)
+IAM_OPA_DATA_URL = '{}://{}:{}/v1/data'.format(IAM_OPA_PROTOCOL, IAM_OPA_HOST, IAM_OPA_PORT)
 LOGIN_URL = 'rest_login'
 LOGIN_REDIRECT_URL = '/'
 
