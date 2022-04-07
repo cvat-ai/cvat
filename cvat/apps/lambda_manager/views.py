@@ -170,6 +170,7 @@ class LambdaFunction:
                 })
             quality = data.get("quality")
             mapping = data.get("mapping", {})
+            attr_mapping = data.get("attrMapping", {})
             mapping_by_default = {}
             task_attributes = {}
             for db_label in (db_task.project.label_set if db_task.project_id else db_task.label_set).prefetch_related("attributespec_set").all():
@@ -177,7 +178,7 @@ class LambdaFunction:
                 task_attributes[db_label.name] = {}
                 for attribute in db_label.attributespec_set.all():
                     task_attributes[db_label.name][attribute.name] = {
-                        'input_rype': attribute.input_type,
+                        'input_type': attribute.input_type,
                         'values': attribute.values.split('\n')
                     }
             if not mapping:
@@ -189,12 +190,19 @@ class LambdaFunction:
                 mapping = {k:v for k,v in mapping.items() if v in mapping_by_default}
             supported_attrs = {}
             for func_label, func_attrs in self.func_attributes.items():
-                if func_label in mapping:
-                    supported_attrs[func_label] = {}
-                    task_attr_names = [task_attr for task_attr in task_attributes[mapping[func_label]]]
-                    for attr in func_attrs:
-                        if attr['name'] in task_attr_names:
-                            supported_attrs[func_label].update({attr["name"] : attr})
+                if func_label not in mapping:
+                    continue
+
+                mapped_label = mapping[func_label]
+                mapped_attributes = attr_mapping[func_label].get("attributes")
+                supported_attrs[func_label] = { }
+                task_attr_names = [task_attr for task_attr in task_attributes[mapped_label]]
+
+                for attr in func_attrs:
+                    mapped_attr = mapped_attributes.get(attr["name"])
+                    if mapped_attr in task_attr_names:
+                        supported_attrs[func_label].update({ attr["name"]: task_attributes[mapped_label][mapped_attr] })
+
             if self.kind == LambdaType.DETECTOR:
                 payload.update({
                     "image": self._get_image(db_task, data["frame"], quality)
@@ -259,29 +267,44 @@ class LambdaFunction:
                     return db_attr_type == "text" or \
                            (db_attr_type in ["select", "radio"] and len(value.split(" ")) == 1)
                 elif func_attr_type == "select":
-                    return db_attr["input_type"] in ["radio", "text"]
+                    return db_attr_type in ["radio", "text"]
                 elif func_attr_type == "radio":
-                    return db_attr["input_type"] in ["select", "text"]
+                    return db_attr_type in ["select", "text"]
                 elif func_attr_type == "checkbox":
                     return value in ["true", "false"]
                 else:
                     return False
         if self.kind == LambdaType.DETECTOR:
             for item in response:
-                if item['label'] in mapping:
-                    attributes = deepcopy(item.get("attributes", []))
-                    item["attributes"] = []
-                    for attr in attributes:
-                        db_attr = supported_attrs.get(item['label'], {}).get(attr["name"])
-                        func_attr = [func_attr for func_attr in self.func_attributes.get(item['label'], []) if func_attr['name'] == attr["name"]]
-                        # Skip current attribute if it was not declared as supportd in function config
-                        if not func_attr:
-                            continue
-                        if attr["name"] in supported_attrs.get(item['label'], {}) and check_attr_value(attr["value"], func_attr[0], db_attr):
-                            item["attributes"].append(attr)
-                    item['label'] = mapping[item['label']]
-                    response_filtered.append(item)
-            response = response_filtered
+                item_label = item['label']
+
+                if item_label not in mapping:
+                    continue
+
+                attributes = deepcopy(item.get("attributes", []))
+                item["attributes"] = []
+                supported_label = supported_attrs.get(item_label, {})
+                mapped_attributes = attr_mapping[item_label]['attributes']
+
+                for attr in attributes:
+                    if attr['name'] not in mapped_attributes:
+                        continue
+
+                    func_attr = [func_attr for func_attr in self.func_attributes.get(item_label, []) if func_attr['name'] == attr["name"]]
+                    # Skip current attribute if it was not declared as supported in function config
+                    if not func_attr:
+                        continue
+
+                    db_attr = supported_label.get(attr["name"])
+
+                    if check_attr_value(attr["value"], func_attr[0], db_attr):
+                        attr["name"] = mapped_attributes[attr['name']]
+                        item["attributes"].append(attr)
+
+                item['label'] = mapping[item['label']]
+                response_filtered.append(item)
+                response = response_filtered
+
         return response
 
     def _get_image(self, db_task, frame, quality):
