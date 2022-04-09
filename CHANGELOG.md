@@ -5,6 +5,36 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## \[2.1.0] - 2022-04-08
+### Added
+- Task annotations importing via chunk uploads (<https://github.com/openvinotoolkit/cvat/pull/4327>)
+- Advanced filtration and sorting for a list of tasks/projects/cloudstorages (<https://github.com/openvinotoolkit/cvat/pull/4403>)
+- Project dataset importing via chunk uploads (<https://github.com/openvinotoolkit/cvat/pull/4485>)
+- Support paginated list for job commits (<https://github.com/openvinotoolkit/cvat/pull/4482>)
+
+### Changed
+- Added missing geos dependency into Dockerfile (<https://github.com/openvinotoolkit/cvat/pull/4451>)
+- Improved helm chart readme (<https://github.com/openvinotoolkit/cvat/pull/4366>)
+- Added helm chart support for CVAT 2.X and made ingress compatible with Kubernetes >=1.22 (<https://github.com/openvinotoolkit/cvat/pull/4448>)
+
+### Deprecated
+- TDB
+
+### Removed
+- TDB
+
+### Fixed
+- Permission error occured when accessing the JobCommits (<https://github.com/openvinotoolkit/cvat/pull/4435>)
+- job assignee can remove or update any issue created by the task owner (<https://github.com/openvinotoolkit/cvat/pull/4436>)
+- Bug: Incorrect point deletion with keyboard shortcut (<https://github.com/openvinotoolkit/cvat/pull/4420>)
+- some AI Tools were not sending responses properly (<https://github.com/openvinotoolkit/cvat/issues/4432>)
+- Unable to upload annotations (<https://github.com/openvinotoolkit/cvat/pull/4513>)
+- Fix build dependencies for Siammask (<https://github.com/openvinotoolkit/cvat/pull/4486>)
+- Bug: Exif orientation information handled incorrectly (<https://github.com/openvinotoolkit/cvat/pull/4529>)
+
+### Security
+- TDB
+
 ## \[2.0.0] - 2022-03-04
 ### Added
 - Handle attributes coming from nuclio detectors (<https://github.com/openvinotoolkit/cvat/pull/3917>)
@@ -44,6 +74,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - API versioning scheme: using accept header versioning instead of namespace versioning (<https://github.com/openvinotoolkit/cvat/pull/4239>)
 - Replaced 'django_sendfile' with 'django_sendfile2' (<https://github.com/openvinotoolkit/cvat/pull/4267>)
 - Use drf-spectacular instead of drf-yasg for swagger documentation (<https://github.com/openvinotoolkit/cvat/pull/4210>)
+- Update development-environment manual to work under MacOS, supported Mac with Apple Silicon (<https://github.com/openvinotoolkit/cvat/pull/4414>)
 
 ### Deprecated
 - Job field "status" is not used in UI anymore, but it has not been removed from the database yet (<https://github.com/openvinotoolkit/cvat/pull/3788>)

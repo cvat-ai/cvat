@@ -1,6 +1,9 @@
+{{- $version := .Capabilities.KubeVersion.GitVersion -}}
 {{- if .Values.ingress.enabled -}}
 {{- $fullName := include "cvat.fullname" . -}}
-{{- if semverCompare ">=1.14-0" .Capabilities.KubeVersion.GitVersion -}}
+{{- if semverCompare ">=1.19-0" $version -}}
+apiVersion: networking.k8s.io/v1
+{{- else if semverCompare ">=1.14-0" $version -}}
 apiVersion: networking.k8s.io/v1beta1
 {{- else -}}
 apiVersion: extensions/v1beta1
@@ -16,6 +19,9 @@ metadata:
     {{- toYaml . | nindent 4 }}
   {{- end }}
 spec:
+{{- if semverCompare ">=1.19-0" $version }}
+  ingressClassName: nginx
+{{- end }}
 {{- if .Values.ingress.tls }}
   tls:
   {{- range .Values.ingress.tls }}
@@ -36,9 +42,17 @@ spec:
             {{- if .pathType }}
             pathType: {{ .pathType }}
             {{- end }}
+            {{- if semverCompare ">=1.19-0" $version }}
+            backend:
+              service:
+                name: {{ .service.name }}
+                port:
+                  number: {{ .service.port }}
+            {{- else }}
             backend:
               serviceName: {{ .service.name }}
               servicePort: {{ .service.port }}
+            {{- end }}
         {{- end }}
   {{- end }}
 {{- end }}

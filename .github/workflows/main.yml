@@ -74,12 +74,15 @@ jobs:
       - name: Running REST API tests
         env:
           API_ABOUT_PAGE: "localhost:8080/api/server/about"
+          # Access key length should be at least 3, and secret key length at least 8 characters
+          MINIO_ACCESS_KEY: "minio_access_key"
+          MINIO_SECRET_KEY: "minio_secret_key"
         run: |
-          docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f components/serverless/docker-compose.serverless.yml -f components/analytics/docker-compose.analytics.yml up -d
+          docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f components/serverless/docker-compose.serverless.yml -f components/analytics/docker-compose.analytics.yml -f tests/rest_api/docker-compose.minio.yml up -d
           /bin/bash -c 'while [[ "$(curl -s -o /dev/null -w ''%{http_code}'' ${API_ABOUT_PAGE})" != "401" ]]; do sleep 5; done'
           pip3 install --user -r tests/rest_api/requirements.txt
           pytest tests/rest_api/
-          docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f components/serverless/docker-compose.serverless.yml -f components/analytics/docker-compose.analytics.yml down -v
+          docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f components/serverless/docker-compose.serverless.yml -f components/analytics/docker-compose.analytics.yml -f tests/rest_api/docker-compose.minio.yml down -v
       - name: Running unit tests
         env:
           HOST_COVERAGE_DATA_DIR: ${{ github.workspace }}

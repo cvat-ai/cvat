@@ -5,7 +5,9 @@
 import { Dispatch, ActionCreator } from 'redux';
 
 import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
-import { ProjectsQuery, TasksQuery, CombinedState } from 'reducers/interfaces';
+import {
+    ProjectsQuery, TasksQuery, CombinedState, Indexable,
+} from 'reducers/interfaces';
 import { getTasksAsync } from 'actions/tasks-actions';
 import { getCVATStore } from 'cvat-store';
 import getCore from 'cvat-core-wrapper';
@@ -80,17 +82,19 @@ const projectActions = {
 export type ProjectActions = ActionUnion<typeof projectActions>;
 
 export function getProjectTasksAsync(tasksQuery: Partial<TasksQuery> = {}): ThunkAction<void> {
-    return (dispatch: ActionCreator<Dispatch>): void => {
+    return (dispatch: ActionCreator<Dispatch>, getState: () => CombinedState): void => {
         const store = getCVATStore();
         const state: CombinedState = store.getState();
-        dispatch(projectActions.updateProjectsGettingQuery({}, tasksQuery));
+        dispatch(projectActions.updateProjectsGettingQuery(
+            getState().projects.gettingQuery,
+            tasksQuery,
+        ));
         const query: Partial<TasksQuery> = {
             ...state.projects.tasksGettingQuery,
-            page: 1,
             ...tasksQuery,
         };
 
-        dispatch(getTasksAsync(query));
+        dispatch(getTasksAsync(query, false));
     };
 }
 
@@ -107,27 +111,11 @@ export function getProjectsAsync(
             ...query,
         };
 
-        for (const key in filteredQuery) {
-            if (filteredQuery[key] === null || typeof filteredQuery[key] === 'undefined') {
-                delete filteredQuery[key];
+        for (const key of Object.keys(filteredQuery)) {
+            const value = (filteredQuery as Indexable)[key];
+            if (value === null || typeof value === 'undefined') {
+                delete (filteredQuery as Indexable)[key];
             }
-        }
-
-        // Temporary hack to do not change UI currently for projects
-        // Will be redesigned in a different PR
-        const filter = {
-            and: ['owner', 'assignee', 'name', 'status'].reduce<object[]>((acc, filterField) => {
-                if (filterField in filteredQuery) {
-                    acc.push({ '==': [{ var: filterField }, filteredQuery[filterField]] });
-                    delete filteredQuery[filterField];
-                }
-
-                return acc;
-            }, []),
-        };
-
-        if (filter.and.length) {
-            filteredQuery.filter = JSON.stringify(filter);
         }
 
         let result = null;

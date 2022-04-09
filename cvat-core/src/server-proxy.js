@@ -45,6 +45,49 @@
         });
     }
 
+    async function chunkUpload(file, uploadConfig) {
+        const params = enableOrganization();
+        const {
+            endpoint, chunkSize, totalSize, onUpdate,
+        } = uploadConfig;
+        let { totalSentSize } = uploadConfig;
+        return new Promise((resolve, reject) => {
+            const upload = new tus.Upload(file, {
+                endpoint,
+                metadata: {
+                    filename: file.name,
+                    filetype: file.type,
+                },
+                headers: {
+                    Authorization: Axios.defaults.headers.common.Authorization,
+                },
+                chunkSize,
+                retryDelays: null,
+                onError(error) {
+                    reject(error);
+                },
+                onBeforeRequest(req) {
+                    const xhr = req.getUnderlyingObject();
+                    const { org } = params;
+                    req.setHeader('X-Organization', org);
+                    xhr.withCredentials = true;
+                },
+                onProgress(bytesUploaded) {
+                    if (onUpdate && Number.isInteger(totalSentSize) && Number.isInteger(totalSize)) {
+                        const currentUploadedSize = totalSentSize + bytesUploaded;
+                        const percentage = Math.round(currentUploadedSize / totalSize);
+                        onUpdate(percentage);
+                    }
+                },
+                onSuccess() {
+                    if (totalSentSize) totalSentSize += file.size;
+                    resolve(totalSentSize);
+                },
+            });
+            upload.start();
+        });
+    }
+
     function generateError(errorData) {
         if (errorData.response) {
             const message = `${errorData.message}. ${JSON.stringify(errorData.response.data) || ''}.`;
@@ -569,41 +612,63 @@
             }
 
             async function importDataset(id, format, file, onUpdate) {
-                const { backendAPI } = config;
+                const { backendAPI, origin } = config;
+                const params = {
+                    ...enableOrganization(),
+                    format,
+                    filename: file.name,
+                };
+                const uploadConfig = {
+                    chunkSize: config.uploadChunkSize * 1024 * 1024,
+                    endpoint: `${origin}${backendAPI}/projects/${id}/dataset/`,
+                    totalSentSize: 0,
+                    totalSize: file.size,
+                    onUpdate: (percentage) => {
+                        onUpdate('The dataset is being uploaded to the server', percentage);
+                    },
+                };
                 const url = `${backendAPI}/projects/${id}/dataset`;
 
-                const formData = new FormData();
-                formData.append('dataset_file', file);
-
-                return new Promise((resolve, reject) => {
-                    async function requestStatus() {
-                        try {
-                            const response = await Axios.get(`${url}?action=import_status`, {
-                                proxy: config.proxy,
-                            });
-                            if (response.status === 202) {
-                                if (onUpdate && response.data.message !== '') {
-                                    onUpdate(response.data.message, response.data.progress || 0);
+                try {
+                    await Axios.post(url,
+                        new FormData(), {
+                            params,
+                            proxy: config.proxy,
+                            headers: { 'Upload-Start': true },
+                        });
+                    await chunkUpload(file, uploadConfig);
+                    await Axios.post(url,
+                        new FormData(), {
+                            params,
+                            proxy: config.proxy,
+                            headers: { 'Upload-Finish': true },
+                        });
+                    return new Promise((resolve, reject) => {
+                        async function requestStatus() {
+                            try {
+                                const response = await Axios.get(url, {
+                                    params: { ...params, action: 'import_status' },
+                                    proxy: config.proxy,
+                                });
+                                if (response.status === 202) {
+                                    if (onUpdate && response.data.message) {
+                                        onUpdate(response.data.message, response.data.progress || 0);
+                                    }
+                                    setTimeout(requestStatus, 3000);
+                                } else if (response.status === 201) {
+                                    resolve();
+                                } else {
+                                    reject(generateError(response));
                                 }
-                                setTimeout(requestStatus, 3000);
-                            } else if (response.status === 201) {
-                                resolve();
-                            } else {
-                                reject(generateError(response));
+                            } catch (error) {
+                                reject(generateError(error));
                             }
-                        } catch (error) {
-                            reject(generateError(error));
                         }
-                    }
-
-                    Axios.post(`${url}?format=${format}`, formData, {
-                        proxy: config.proxy,
-                    }).then(() => {
                         setTimeout(requestStatus, 2000);
-                    }).catch((error) => {
-                        reject(generateError(error));
                     });
-                });
+                } catch (errorData) {
+                    throw generateError(errorData);
+                }
             }
 
             async function exportTask(id) {
@@ -816,42 +881,6 @@
 
                 onUpdate('The data are being uploaded to the server..', null);
 
-                async function chunkUpload(taskId, file) {
-                    return new Promise((resolve, reject) => {
-                        const upload = new tus.Upload(file, {
-                            endpoint: `${origin}${backendAPI}/tasks/${taskId}/data/`,
-                            metadata: {
-                                filename: file.name,
-                                filetype: file.type,
-                            },
-                            headers: {
-                                Authorization: `Token ${store.get('token')}`,
-                            },
-                            chunkSize,
-                            retryDelays: null,
-                            onError(error) {
-                                reject(error);
-                            },
-                            onBeforeRequest(req) {
-                                const xhr = req.getUnderlyingObject();
-                                const { org } = params;
-                                req.setHeader('X-Organization', org);
-                                xhr.withCredentials = true;
-                            },
-                            onProgress(bytesUploaded) {
-                                const currentUploadedSize = totalSentSize + bytesUploaded;
-                                const percentage = currentUploadedSize / totalSize;
-                                onUpdate('The data are being uploaded to the server', percentage);
-                            },
-                            onSuccess() {
-                                totalSentSize += file.size;
-                                resolve();
-                            },
-                        });
-                        upload.start();
-                    });
-                }
-
                 async function bulkUpload(taskId, files) {
                     const fileBulks = files.reduce((fileGroups, file) => {
                         const lastBulk = fileGroups[fileGroups.length - 1];
@@ -891,8 +920,17 @@
                             proxy: config.proxy,
                             headers: { 'Upload-Start': true },
                         });
+                    const uploadConfig = {
+                        endpoint: `${origin}${backendAPI}/tasks/${response.data.id}/data/`,
+                        onUpdate: (percentage) => {
+                            onUpdate('The data are being uploaded to the server', percentage);
+                        },
+                        chunkSize,
+                        totalSize,
+                        totalSentSize,
+                    };
                     for (const file of chunkFiles) {
-                        await chunkUpload(response.data.id, file);
+                        uploadConfig.totalSentSize += await chunkUpload(file, uploadConfig);
                     }
                     if (bulkFiles.length > 0) {
                         await bulkUpload(response.data.id, bulkFiles);
@@ -1215,38 +1253,56 @@
 
             // Session is 'task' or 'job'
             async function uploadAnnotations(session, id, file, format) {
-                const { backendAPI } = config;
+                const { backendAPI, origin } = config;
                 const params = {
                     ...enableOrganization(),
                     format,
+                    filename: file.name,
                 };
-                let annotationData = new FormData();
-                annotationData.append('annotation_file', file);
-
-                return new Promise((resolve, reject) => {
-                    async function request() {
-                        try {
-                            const response = await Axios.put(
-                                `${backendAPI}/${session}s/${id}/annotations`,
-                                annotationData,
-                                {
-                                    params,
-                                    proxy: config.proxy,
-                                },
-                            );
-                            if (response.status === 202) {
-                                annotationData = new FormData();
-                                setTimeout(request, 3000);
-                            } else {
-                                resolve();
+                const chunkSize = config.uploadChunkSize * 1024 * 1024;
+                const uploadConfig = {
+                    chunkSize,
+                    endpoint: `${origin}${backendAPI}/${session}s/${id}/annotations/`,
+                };
+                try {
+                    await Axios.post(`${backendAPI}/${session}s/${id}/annotations`,
+                        new FormData(), {
+                            params,
+                            proxy: config.proxy,
+                            headers: { 'Upload-Start': true },
+                        });
+                    await chunkUpload(file, uploadConfig);
+                    await Axios.post(`${backendAPI}/${session}s/${id}/annotations`,
+                        new FormData(), {
+                            params,
+                            proxy: config.proxy,
+                            headers: { 'Upload-Finish': true },
+                        });
+                    return new Promise((resolve, reject) => {
+                        async function requestStatus() {
+                            try {
+                                const response = await Axios.put(
+                                    `${backendAPI}/${session}s/${id}/annotations`,
+                                    new FormData(),
+                                    {
+                                        params,
+                                        proxy: config.proxy,
+                                    },
+                                );
+                                if (response.status === 202) {
+                                    setTimeout(requestStatus, 3000);
+                                } else {
+                                    resolve();
+                                }
+                            } catch (errorData) {
+                                reject(generateError(errorData));
                             }
-                        } catch (errorData) {
-                            reject(generateError(errorData));
                         }
-                    }
-
-                    setTimeout(request);
-                });
+                        setTimeout(requestStatus);
+                    });
+                } catch (errorData) {
+                    throw generateError(errorData);
+                }
             }
 
             // Session is 'task' or 'job'
@@ -1521,13 +1577,15 @@
                 }
             }
 
-            async function getCloudStorages(filter = '') {
+            async function getCloudStorages(filter = {}) {
                 const { backendAPI } = config;
 
                 let response = null;
                 try {
-                    response = await Axios.get(`${backendAPI}/cloudstorages?page_size=12&${filter}`, {
+                    response = await Axios.get(`${backendAPI}/cloudstorages`, {
                         proxy: config.proxy,
+                        params: filter,
+                        page_size: 12,
                     });
                 } catch (errorData) {
                     throw generateError(errorData);

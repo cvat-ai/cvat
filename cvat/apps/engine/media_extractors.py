@@ -9,6 +9,7 @@ import zipfile
 import io
 import itertools
 import struct
+from enum import IntEnum
 from abc import ABC, abstractmethod
 from contextlib import closing
 
@@ -28,6 +29,20 @@ ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 from cvat.apps.engine.mime_types import mimetypes
 from utils.dataset_manifest import VideoManifestManager, ImageManifestManager
+
+ORIENTATION_EXIF_TAG = 274
+
+
+class ORIENTATION(IntEnum):
+    NORMAL_HORIZONTAL=1
+    MIRROR_HORIZONTAL=2
+    NORMAL_180_ROTATED=3
+    MIRROR_VERTICAL=4
+    MIRROR_HORIZONTAL_270_ROTATED=5
+    NORMAL_90_ROTATED=6
+    MIRROR_HORIZONTAL_90_ROTATED=7
+    NORMAL_270_ROTATED=8
+
 
 def get_mime(name):
     for type_name, type_def in MEDIA_TYPES.items():
@@ -62,6 +77,27 @@ def sort(images, sorting_method=SortingMethod.LEXICOGRAPHICAL, func=None):
     else:
         raise NotImplementedError()
 
+def image_size_within_orientation(img: Image):
+    orientation = img.getexif().get(ORIENTATION_EXIF_TAG, ORIENTATION.NORMAL_HORIZONTAL)
+    if orientation > 4:
+        return img.height, img.width
+    return img.width, img.height
+
+def rotate_within_exif(img: Image):
+    orientation = img.getexif().get(ORIENTATION_EXIF_TAG,  ORIENTATION.NORMAL_HORIZONTAL)
+    if orientation in [ORIENTATION.NORMAL_180_ROTATED, ORIENTATION.MIRROR_VERTICAL]:
+        img = img.rotate(180, expand=True)
+    elif orientation in [ORIENTATION.NORMAL_270_ROTATED, ORIENTATION.MIRROR_HORIZONTAL_90_ROTATED]:
+        img = img.rotate(90, expand=True)
+    elif orientation in [ORIENTATION.NORMAL_90_ROTATED, ORIENTATION.MIRROR_HORIZONTAL_270_ROTATED]:
+        img = img.rotate(270, expand=True)
+    if orientation in [
+        ORIENTATION.MIRROR_HORIZONTAL, ORIENTATION.MIRROR_VERTICAL,
+        ORIENTATION.MIRROR_HORIZONTAL_270_ROTATED ,ORIENTATION.MIRROR_HORIZONTAL_90_ROTATED,
+    ]:
+        img = img.transpose(Image.FLIP_LEFT_RIGHT)
+    return img
+
 class IMediaReader(ABC):
     def __init__(self, source_path, step, start, stop, dimension):
         self._source_path = source_path
@@ -85,11 +121,13 @@ class IMediaReader(ABC):
     @staticmethod
     def _get_preview(obj):
         PREVIEW_SIZE = (256, 256)
+
         if isinstance(obj, io.IOBase):
             preview = Image.open(obj)
         else:
             preview = obj
         preview.thumbnail(PREVIEW_SIZE)
+        preview = rotate_within_exif(preview)
 
         return preview.convert('RGB')
 
@@ -173,7 +211,7 @@ class ImageListReader(IMediaReader):
                 properties = ValidateDimension.get_pcd_properties(f)
                 return int(properties["WIDTH"]),  int(properties["HEIGHT"])
         img = Image.open(self._source_path[i])
-        return img.width, img.height
+        return image_size_within_orientation(img)
 
     def reconcile(self, source_files, step=1, start=0, stop=None, dimension=DimensionType.DIM_2D, sorting_method=None):
         # FIXME
@@ -314,7 +352,7 @@ class ZipReader(ImageListReader):
                 properties = ValidateDimension.get_pcd_properties(f)
                 return int(properties["WIDTH"]),  int(properties["HEIGHT"])
         img = Image.open(io.BytesIO(self._zip_source.read(self._source_path[i])))
-        return img.width, img.height
+        return image_size_within_orientation(img)
 
     def get_image(self, i):
         if self._dimension == DimensionType.DIM_3D:
@@ -538,6 +576,7 @@ class IChunkWriter(ABC):
     @staticmethod
     def _compress_image(image_path, quality):
         image = image_path.to_image() if isinstance(image_path, av.VideoFrame) else Image.open(image_path)
+        image = rotate_within_exif(image)
         # Ensure image data fits into 8bit per pixel before RGB conversion as PIL clips values on conversion
         if image.mode == "I":
             # Image mode is 32bit integer pixels.

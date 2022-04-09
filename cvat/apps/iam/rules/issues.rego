@@ -95,11 +95,15 @@ is_job_staff {
 }
 
 is_issue_admin {
-    is_job_staff
+    is_task_staff
 }
 
 is_issue_admin {
     is_issue_owner
+}
+
+is_issue_staff {
+    is_job_staff
 }
 
 is_issue_staff {
@@ -234,7 +238,7 @@ allow {
 allow {
     { utils.UPDATE, utils.DELETE }[input.scope]
     input.auth.organization.id == input.resource.organization.id
-    is_issue_admin
     utils.has_perm(utils.WORKER)
     organizations.is_member
+    is_issue_admin
 }
