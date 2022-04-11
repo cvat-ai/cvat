@@ -27,7 +27,7 @@ from cvat.apps.engine.models import Label, Project, ShapeType, Task
 from cvat.apps.dataset_manager.formats.utils import get_label_color
 
 from .annotation import AnnotationIR, AnnotationManager, TrackManager
-from .formats.transformations import EllipsesToMasks
+from .formats.transformations import EllipsesToMasks, CVATRleToCOCORle
 
 CVAT_INTERNAL_ATTRIBUTES = {'occluded', 'outside', 'keyframe', 'track_id', 'rotation'}
 
@@ -1362,8 +1362,15 @@ def convert_cvat_anno_to_dm(cvat_frame_anno, label_attrs, map_label, format_name
                 "attributes": anno_attr,
             }), cvat_frame_anno.height, cvat_frame_anno.width)
         elif shape_obj.type == ShapeType.MASK:
-            anno = datum_annotation.RleMask()
-        # elif shape_obj.type == ShapeType.POLYLINE:
+            anno = CVATRleToCOCORle.convert_mask(SimpleNamespace(**{
+                "points": shape_obj.points,
+                "label": anno_label,
+                "z_order": shape_obj.z_order,
+                "rotation": shape_obj.rotation,
+                "group": anno_group,
+                "attributes": anno_attr,
+            }), cvat_frame_anno.height, cvat_frame_anno.width)
+        elif shape_obj.type == ShapeType.POLYLINE:
             anno = datum_annotation.PolyLine(anno_points,
                 label=anno_label, attributes=anno_attr, group=anno_group,
                 z_order=shape_obj.z_order)

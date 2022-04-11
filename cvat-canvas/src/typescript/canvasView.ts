@@ -955,7 +955,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             if (boundingRect) {
                 (boundingRect as SVGRectElement).style.opacity = '1';
                 boundingRect.setAttribute('fill', 'none');
-                boundingRect.setAttribute('stroke', 'black');
+                boundingRect.setAttribute('stroke', shape.attr('stroke'));
                 boundingRect.setAttribute('stroke-width', `${consts.BASE_STROKE_WIDTH / this.geometry.scale}px`);
                 if (shape.hasClass('cvat_canvas_shape_occluded')) {
                     boundingRect.setAttribute('stroke-dasharray', '5');
