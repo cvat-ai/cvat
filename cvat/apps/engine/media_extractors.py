@@ -471,6 +471,10 @@ class VideoReader(IMediaReader):
         image = (next(iter(self)))[0]
         return image.width, image.height
 
+    def get_framerate(self):
+        container = self._get_av_container()
+        return container.streams.video[0].framerate
+
 class FragmentMediaReader:
     def __init__(self, chunk_number, chunk_size, start, stop, step=1):
         self._start = start

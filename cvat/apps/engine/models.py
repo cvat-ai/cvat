@@ -212,6 +212,7 @@ class Video(models.Model):
     path = models.CharField(max_length=1024, default='')
     width = models.PositiveIntegerField()
     height = models.PositiveIntegerField()
+    fps = models.FloatField(default=None)
 
     class Meta:
         default_permissions = ()

@@ -501,6 +501,10 @@ def _create_thread(db_task, data, isBackupRestore=False, isDatasetImport=False):
 
     video_path = ""
     video_size = (0, 0)
+    video_framerate = 0
+
+    if isinstance(extractor, MEDIA_TYPES['video']['extractor']):
+        video_framerate = extractor.get_framerate()
 
     def _update_status(msg):
         job.meta['status'] = msg
@@ -650,7 +654,7 @@ def _create_thread(db_task, data, isBackupRestore=False, isDatasetImport=False):
         models.Video.objects.create(
             data=db_data,
             path=os.path.relpath(video_path, upload_dir),
-            width=video_size[0], height=video_size[1])
+            width=video_size[0], height=video_size[1], fps=video_framerate)
 
     if db_data.stop_frame == 0:
         db_data.stop_frame = db_data.start_frame + (db_data.size - 1) * db_data.get_frame_step()
