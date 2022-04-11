@@ -19,7 +19,7 @@ docker-compose pull
 ```
 
 This will make sure that the latest CVAT images are downloaded to the local machine. If this is not done
-CVAT will not be updated as docker-compose will uses the locally stored CVAT images. Once this step has been completed
+CVAT will not be updated as docker-compose will use the locally stored CVAT images. Once this step has been completed
 CVAT can be rebuilt as usual.
 
 ```bash
