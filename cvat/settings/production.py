@@ -1,6 +1,7 @@
 # Copyright (C) 2018 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
+import os
 
 from .base import *
 
@@ -32,3 +33,6 @@ DATABASES = {
         'PORT': os.getenv('CVAT_POSTGRES_PORT', 5432),
     }
 }
+
+# Reb overrides
+from cvat.rebotics.settings.production import *

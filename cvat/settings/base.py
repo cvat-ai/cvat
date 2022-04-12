@@ -532,3 +532,6 @@ SPECTACULAR_SETTINGS = {
     # OTHER SETTINGS
     # https://drf-spectacular.readthedocs.io/en/latest/settings.html
 }
+
+# Reb overrides
+from cvat.rebotics.settings.base import *
