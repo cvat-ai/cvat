@@ -48,6 +48,10 @@ RUN python3 -m pip install --no-cache-dir -U pip==22.0.2 setuptools==60.6.0 whee
 COPY cvat/requirements/ /tmp/requirements/
 RUN DATUMARO_HEADLESS=1 python3 -m pip install --no-cache-dir -r /tmp/requirements/${DJANGO_CONFIGURATION}.txt
 
+# Install rebotics requirements
+COPY rebotics/requirements.txt /tmp/requirements/rebotics.txt
+RUN python3 -m pip install --no-cache-dir -r /tmp/requirements/rebotics.txt
+
 FROM node:lts-slim AS cvat-ui
 
 ARG http_proxy
@@ -126,12 +130,16 @@ RUN apt-get update && \
         git-lfs \
         poppler-utils \
         ssh \
-        curl \
-        nginx && \
+        curl && \
     ln -fs /usr/share/zoneinfo/${TZ} /etc/localtime && \
     dpkg-reconfigure -f noninteractive tzdata && \
     rm -rf /var/lib/apt/lists/* && \
     echo 'application/wasm wasm' >> /etc/mime.types
+
+# Install rebotics requirements
+RUN apt-get update && \
+    apt-get --no-install-recommends install -yq nginx && \
+    rm -rf /var/lib/apt/lists/*
 
 # Add a non-root user
 ENV USER=${USER}
