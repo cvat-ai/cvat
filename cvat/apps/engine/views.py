@@ -22,6 +22,7 @@ from django.contrib.auth.models import User
 from django.db import IntegrityError
 from django.http import HttpResponse, HttpResponseNotFound, HttpResponseBadRequest
 from django.utils import timezone
+from django.core.files.base import File
 
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import (
@@ -637,7 +638,8 @@ class TaskViewSet(UploadMixin, viewsets.ModelViewSet):
         return Response(serializer.data)
 
     def upload_finished(self, request):
-        db_task = self.get_object() # call check_object_permissions as well
+        # SAVING FILES: check if anything required here to change.
+        db_task: Task = self.get_object() # call check_object_permissions as well
         task_data = db_task.data
         serializer = DataSerializer(task_data, data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -646,7 +648,7 @@ class TaskViewSet(UploadMixin, viewsets.ModelViewSet):
         uploaded_files.extend(data.get('client_files'))
         serializer.validated_data.update({'client_files': uploaded_files})
 
-        db_data = serializer.save()
+        db_data: Data = serializer.save()
         db_task.data = db_data
         db_task.save()
         data = {k: v for k, v in serializer.data.items()}
@@ -663,11 +665,24 @@ class TaskViewSet(UploadMixin, viewsets.ModelViewSet):
         if db_data.cloud_storage:
             db_task.data.storage = StorageChoice.CLOUD_STORAGE
             db_task.data.save(update_fields=['storage'])
-            # if the value of stop_frame is 0, then inside the function we cannot know
-            # the value specified by the user or it's default value from the database
+        # if the value of stop_frame is 0, then inside the function we cannot know
+        # the value specified by the user or it's default value from the database
         if 'stop_frame' not in serializer.validated_data:
             data['stop_frame'] = None
         task.create(db_task.id, data)
+
+        # TODO: do this asynchronously.
+        # TODO: add some retries and catch exceptions
+        db_files = db_data.client_files.all()
+        for db_file in db_files:
+            path = db_file.file.path
+            name = path.rsplit('/', 1)[-1]
+            with open(path, 'rb') as f:
+                file = File(f, name=name)
+                db_file.file = file
+                db_file.save()
+            os.remove(path)
+
         return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
 
     @extend_schema(methods=['POST'],

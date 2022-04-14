@@ -85,6 +85,7 @@ class TusChunk:
 # This upload mixin is implemented using tus
 # tus is open protocol for file uploads (see more https://tus.io/)
 class UploadMixin(object):
+    # SAVING FILES: This one, who really uploads the files
     _tus_api_version = '1.0.0'
     _tus_api_version_supported = ['1.0.0']
     _tus_api_extensions = []
@@ -177,6 +178,7 @@ class UploadMixin(object):
                 status=status.HTTP_201_CREATED,
                 extra_headers={'Location': '{}{}'.format(request.build_absolute_uri(), tus_file.file_id)})
 
+    # SAVING FILES: this appends chunks to single file uploads.
     @action(detail=True, methods=['HEAD', 'PATCH'], url_path=r'data/'+_file_id_regex)
     def append_tus_chunk(self, request, pk, file_id):
         self.get_object() # call check_object_permissions as well
@@ -227,6 +229,7 @@ class UploadMixin(object):
         data = {k: v for k, v in serializer.validated_data.items()}
         return data.get('client_files', None);
 
+    # SAVING FILES: this appends chunks to multiple file at once.
     def append(self, request):
         if not self.can_upload():
             return Response(data='Adding more data is not allowed',
