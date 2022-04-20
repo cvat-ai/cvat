@@ -5,6 +5,7 @@
 import json
 import logging
 import os
+from typing import Callable
 import requests
 from io import BytesIO
 import mimetypes
@@ -181,40 +182,68 @@ class CLI():
 class CVAT_API_V1():
     """ Build parameterized API URLs """
 
-    def __init__(self, host, https=False):
+    def __init__(self, host, https=False, org_slug=None):
         if host.startswith('https://'):
             https = True
         if host.startswith('http://') or host.startswith('https://'):
             host = host.replace('http://', '')
             host = host.replace('https://', '')
         scheme = 'https' if https else 'http'
-        self.base = '{}://{}/api/v1/'.format(scheme, host)
+        self.base = '{}://{}/api/'.format(scheme, host)
+        self.git = f'{scheme}://{host}/git/repository/'
+        self.org_slug = org_slug
+
+    def organisation(func: Callable):
+        def add_organisation(self, *args, **kwargs):
+            temp_url = func(self, *args, **kwargs) #pylint: disable=not-callable
+            if self.org_slug and 'org=' not in temp_url:
+                if "?" in temp_url:
+                    return temp_url + f'&org={self.org_slug}'
+                else:
+                    return temp_url + f'?org={self.org_slug}'
+            return temp_url
+        return add_organisation
 
     @property
-    def tasks(self):
+    def tasks_base(self):
         return self.base + 'tasks'
 
+    def tasks_id_base(self, task_id):
+        return self.tasks_base + '/{}'.format(task_id)
+
+    @property
+    @organisation
+    def tasks(self):
+        return self.tasks_base
+
+    @organisation
     def tasks_page(self, page_id):
-        return self.tasks + '?page={}'.format(page_id)
+        return self.tasks_base + '?page={}'.format(page_id)
 
+    @organisation
     def tasks_id(self, task_id):
-        return self.tasks + '/{}'.format(task_id)
+        return self.tasks_id_base(task_id)
 
+    @organisation
     def tasks_id_data(self, task_id):
-        return self.tasks_id(task_id) + '/data'
+        return self.tasks_id_base(task_id) + '/data'
 
+    @organisation
     def tasks_id_frame_id(self, task_id, frame_id, quality):
-        return self.tasks_id(task_id) + '/data?type=frame&number={}&quality={}'.format(frame_id, quality)
+        return self.tasks_id_base(task_id) + '/data?type=frame&number={}&quality={}'.format(frame_id, quality)
 
+    @organisation
     def tasks_id_status(self, task_id):
-        return self.tasks_id(task_id) + '/status'
+        return self.tasks_id_base(task_id) + '/status'
 
+    @organisation
     def tasks_id_annotations_format(self, task_id, fileformat):
-        return self.tasks_id(task_id) + '/annotations?format={}' \
+        return self.tasks_id_base(task_id) + '/annotations?format={}' \
             .format(fileformat)
 
+    @organisation
     def tasks_id_annotations_filename(self, task_id, name, fileformat):
-        return self.tasks_id(task_id) + '/annotations?format={}&filename={}' \
+        return self.tasks_id_base(task_id) + '/annotations?format={}&filename={}' \
             .format(fileformat, name)
 
     @property

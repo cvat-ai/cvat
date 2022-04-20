@@ -92,7 +92,12 @@ parser.add_argument(
     default=logging.INFO,
     help='show debug output'
 )
-
+parser.add_argument(
+    '--org',
+    type=str,
+    default=None,
+    help="organisation for action (default: %(default)s)"
+)
 #######################################################################
 # Create
 #######################################################################
