@@ -177,6 +177,9 @@ class CLI():
         response.raise_for_status()
         if 'csrftoken' in response.cookies:
             self.session.headers['X-CSRFToken'] = response.cookies['csrftoken']
+        content = json.loads(response.text)
+        if 'key' in content:
+            self.session.headers['authorization'] = f'Token {content["key"]}'
 
 
 class CVAT_API_V1():
@@ -189,6 +192,7 @@ class CVAT_API_V1():
             host = host.replace('http://', '')
             host = host.replace('https://', '')
         scheme = 'https' if https else 'http'
+        # host = host.split(':')[0] if https else host
         self.base = '{}://{}/api/'.format(scheme, host)
         self.git = f'{scheme}://{host}/git/repository/'
         self.org_slug = org_slug
