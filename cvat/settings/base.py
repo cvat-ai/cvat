@@ -31,6 +31,10 @@ from pathlib import Path
 BASE_DIR = str(Path(__file__).parents[2])
 
 ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
+PUBLIC_DOMAIN_NAME = os.environ.get('PUBLIC_DOMAIN_NAME')
+if PUBLIC_DOMAIN_NAME:
+    ALLOWED_HOSTS += [PUBLIC_DOMAIN_NAME]
+
 INTERNAL_IPS = ['127.0.0.1']
 
 SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', None)
@@ -422,7 +426,6 @@ LOGGING = {
             'handlers': os.getenv('CVAT_SERVER_LOG_HANDLERS', 'console,server_file').split(','),
             'level': os.getenv('DJANGO_LOG_LEVEL', 'DEBUG'),
         },
-
         'cvat.client': {
             'handlers': os.getenv('CVAT_CLIENT_LOG_HANDLERS', '').split(','),
             'level': os.getenv('DJANGO_LOG_LEVEL', 'DEBUG'),
