@@ -5,7 +5,6 @@
 import json
 import logging
 import os
-from typing import Callable
 import requests
 from io import BytesIO
 import mimetypes
@@ -288,7 +287,7 @@ class CVAT_API_V2():
         self.git = f'{scheme}://{host}/git/repository/'
         self.org_slug = org_slug
 
-    def organisation(func: Callable):
+    def organisation(func):
         def add_organisation(self, *args, **kwargs):
             temp_url = func(self, *args, **kwargs) #pylint: disable=not-callable
             if self.org_slug and 'org=' not in temp_url:
