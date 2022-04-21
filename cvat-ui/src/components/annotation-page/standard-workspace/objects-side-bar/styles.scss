@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -6,8 +6,6 @@
 
 .cvat-objects-appearance-collapse.ant-collapse {
     width: 100%;
-    bottom: 0;
-    position: absolute;
     border-radius: 0;
 
     > .ant-collapse-item {
@@ -29,7 +27,7 @@
         > .ant-collapse-content {
             background: $background-color-2;
             border-bottom: none;
-            height: 230px;
+            padding-bottom: $grid-unit-size * 3;
 
             > .ant-collapse-content-box {
                 padding: 10px;
@@ -130,13 +128,8 @@
 .cvat-objects-sidebar-states-header {
     background: $objects-bar-tabs-color;
     padding: 5px;
-    height: 80px;
 
-    > div:nth-child(1) > div:nth-child(1) {
-        height: 32px;
-    }
-
-    > div:nth-child(2) {
+    > div:nth-child(1) {
         margin-top: $grid-unit-size;
 
         > div {
@@ -161,7 +154,7 @@
 
 .cvat-objects-sidebar-states-list {
     background-color: $background-color-2;
-    height: calc(100% - 80px);
+    height: calc(100% - 50px);
     overflow-y: auto;
 }
 
@@ -172,7 +165,8 @@
     padding: 3px 1px 1px 3px;
 }
 
-.cvat-objects-sidebar-state-item-color {
+.cvat-objects-sidebar-state-item-color,
+.cvat-objects-sidebar-label-item-color {
     border: 1px solid $object-item-border-color;
     width: 7px;
     opacity: 1;
@@ -293,12 +287,16 @@
 
 .cvat-objects-sidebar-label-active-item {
     background: $active-label-background-color;
+    border-top: 2px solid $object-item-border-color;
+    border-right: 2px solid $object-item-border-color;
+    border-bottom: 2px solid $object-item-border-color;
+    padding: 3px 1px 1px 3px;
 }
 
 .cvat-objects-sidebar-label-item {
     height: 2.5em;
     border-bottom: 1px solid $border-color-1;
-    padding: 5px;
+    padding: 5px 3px 3px 3px;
 
     span {
         @extend .cvat-object-sidebar-icon;
@@ -316,10 +314,39 @@
     }
 }
 
-.cvat-label-item-color-button {
-    width: 30px;
-    height: 20px;
-    border-radius: 5px;
+.cvat-label-item-color {
+    background: rgb(25, 184, 14);
+    height: 80%;
+    width: 90%;
+    border-radius: $grid-unit-size * 0.5;
+}
+
+.cvat-label-item-setup-shortcut-button {
+    border-color: $objects-bar-icons-color;
+}
+
+.cvat-label-item-setup-shortcut-popover {
+    margin-top: -$grid-unit-size;
+    margin-bottom: -$grid-unit-size;
+
+    > div {
+        padding-top: $grid-unit-size;
+        padding-bottom: $grid-unit-size;
+
+        > div {
+            display: flex;
+            justify-content: center;
+
+            > button {
+                width: $grid-unit-size * 15;
+                overflow-x: hidden;
+
+                span:first-child {
+                    margin-right: $grid-unit-size;
+                }
+            }
+        }
+    }
 }
 
 .cvat-objects-appearance-content {
@@ -364,5 +391,35 @@
 .cvat-states-ordering-selector {
     :first-child {
         margin-right: $grid-unit-size;
+    }
+}
+
+.cvat-objects-sidebar-label-item-disabled {
+    opacity: 0.5;
+}
+
+.cvat-workspace-settings-approx-poly-threshold {
+    .ant-slider-track {
+        background: linear-gradient(90deg, #1890ff 0%, #61c200 100%);
+    }
+}
+
+.cvat-approx-poly-threshold-wrapper {
+    @extend .cvat-workspace-settings-approx-poly-threshold;
+
+    width: $grid-unit-size * 32;
+    position: absolute;
+    background: $background-color-2;
+    top: 8px;
+    left: 50%;
+    border-radius: 6px;
+    border: 1px solid $border-color-3;
+    z-index: 100;
+    padding: $grid-unit-size * 0.5 $grid-unit-size * 2 $grid-unit-size * 0.5 $grid-unit-size * 0.5;
+
+    .ant-slider-mark {
+        position: static;
+        margin-top: 4px;
+        pointer-events: none;
     }
 }

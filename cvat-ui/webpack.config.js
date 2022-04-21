@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -12,7 +12,7 @@ const TsconfigPathsPlugin = require('tsconfig-paths-webpack-plugin');
 const Dotenv = require('dotenv-webpack');
 const CopyPlugin = require('copy-webpack-plugin');
 
-module.exports = {
+module.exports = (env) => ({
     target: 'web',
     mode: 'production',
     devtool: 'source-map',
@@ -21,15 +21,27 @@ module.exports = {
     },
     output: {
         path: path.resolve(__dirname, 'dist'),
-        filename: '[name].[contenthash].min.js',
+        filename: 'assets/[name].[contenthash].min.js',
         publicPath: '/',
     },
     devServer: {
         contentBase: path.join(__dirname, 'dist'),
         compress: false,
         inline: true,
+        host: process.env.CVAT_UI_HOST || 'localhost',
         port: 3000,
         historyApiFallback: true,
+        proxy: [
+            {
+                context: (param) =>
+                    param.match(
+                        /\/api\/.*|git\/.*|opencv\/.*|analytics\/.*|static\/.*|admin(?:\/(.*))?.*|documentation\/.*|django-rq(?:\/(.*))?/gm,
+                    ),
+                target: env && env.API_URL,
+                secure: false,
+                changeOrigin: true,
+            },
+        ],
     },
     resolve: {
         extensions: ['.tsx', '.ts', '.jsx', '.js', '.json'],
@@ -52,16 +64,7 @@ module.exports = {
                                 },
                             ],
                         ],
-                        presets: [
-                            [
-                                '@babel/preset-env',
-                                {
-                                    targets: '> 2.5%', // https://github.com/browserslist/browserslist
-                                },
-                            ],
-                            ['@babel/preset-react'],
-                            ['@babel/typescript'],
-                        ],
+                        presets: ['@babel/preset-env', '@babel/preset-react', '@babel/typescript'],
                         sourceType: 'unambiguous',
                     },
                 },
@@ -76,7 +79,12 @@ module.exports = {
                             importLoaders: 2,
                         },
                     },
-                    'postcss-loader',
+                    {
+                        loader: 'postcss-loader',
+                        options: {
+                            plugins: [require('postcss-preset-env')],
+                        },
+                    },
                     'sass-loader',
                 ],
             },
@@ -101,7 +109,7 @@ module.exports = {
                     loader: 'worker-loader',
                     options: {
                         publicPath: '/',
-                        name: '3rdparty/[name].[contenthash].js',
+                        name: 'assets/3rdparty/[name].[contenthash].js',
                     },
                 },
             },
@@ -112,7 +120,7 @@ module.exports = {
                     loader: 'worker-loader',
                     options: {
                         publicPath: '/',
-                        name: '[name].[contenthash].js',
+                        name: 'assets/[name].[contenthash].js',
                     },
                 },
             },
@@ -129,9 +137,9 @@ module.exports = {
         new CopyPlugin([
             {
                 from: '../cvat-data/src/js/3rdparty/avc.wasm',
-                to: '3rdparty/',
+                to: 'assets/3rdparty/',
             },
         ]),
     ],
     node: { fs: 'empty' },
-};
+});

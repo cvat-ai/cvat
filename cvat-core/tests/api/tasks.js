@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -52,38 +52,17 @@ describe('Feature: get a list of tasks', () => {
 
     test('get tasks by filters', async () => {
         const result = await window.cvat.tasks.get({
-            mode: 'interpolation',
+            filter: '{"and":[{"==":[{"var":"filter"},"interpolation"]}]}',
         });
-        expect(Array.isArray(result)).toBeTruthy();
-        expect(result).toHaveLength(3);
-        for (const el of result) {
-            expect(el).toBeInstanceOf(Task);
-            expect(el.mode).toBe('interpolation');
-        }
+        expect(result).toBeInstanceOf(Array);
     });
 
-    test('get tasks by invalid filters', async () => {
+    test('get tasks by invalid query', async () => {
         expect(
             window.cvat.tasks.get({
                 unknown: '5',
             }),
         ).rejects.toThrow(window.cvat.exceptions.ArgumentError);
-    });
-
-    test('get task by name, status and mode', async () => {
-        const result = await window.cvat.tasks.get({
-            mode: 'interpolation',
-            status: 'annotation',
-            name: 'Test Task',
-        });
-        expect(Array.isArray(result)).toBeTruthy();
-        expect(result).toHaveLength(1);
-        for (const el of result) {
-            expect(el).toBeInstanceOf(Task);
-            expect(el.mode).toBe('interpolation');
-            expect(el.status).toBe('annotation');
-            expect(el.name).toBe('Test Task');
-        }
     });
 });
 
@@ -95,6 +74,7 @@ describe('Feature: save a task', () => {
 
         result[0].bugTracker = 'newBugTracker';
         result[0].name = 'New Task Name';
+        result[0].projectId = 6;
 
         result[0].save();
 
@@ -104,6 +84,7 @@ describe('Feature: save a task', () => {
 
         expect(result[0].bugTracker).toBe('newBugTracker');
         expect(result[0].name).toBe('New Task Name');
+        expect(result[0].projectId).toBe(6);
     });
 
     test('save some new labels in a task', async () => {
@@ -113,7 +94,7 @@ describe('Feature: save a task', () => {
 
         const labelsLength = result[0].labels.length;
         const newLabel = new window.cvat.classes.Label({
-            name: "My boss's car",
+            name: 'My boss\'s car',
             attributes: [
                 {
                     default_value: 'false',
@@ -133,7 +114,7 @@ describe('Feature: save a task', () => {
         });
 
         expect(result[0].labels).toHaveLength(labelsLength + 1);
-        const appendedLabel = result[0].labels.filter((el) => el.name === "My boss's car");
+        const appendedLabel = result[0].labels.filter((el) => el.name === 'My boss\'s car');
         expect(appendedLabel).toHaveLength(1);
         expect(appendedLabel[0].attributes).toHaveLength(1);
         expect(appendedLabel[0].attributes[0].name).toBe('parked');
@@ -147,7 +128,7 @@ describe('Feature: save a task', () => {
             name: 'New Task',
             labels: [
                 {
-                    name: "My boss's car",
+                    name: 'My boss\'s car',
                     attributes: [
                         {
                             default_value: 'false',
@@ -194,5 +175,22 @@ describe('Feature: delete a task', () => {
 
         expect(Array.isArray(result)).toBeTruthy();
         expect(result).toHaveLength(0);
+    });
+});
+
+describe('Feature: delete a label', () => {
+    test('delete a label', async () => {
+        let result = await window.cvat.tasks.get({
+            id: 100,
+        });
+
+        const labelsLength = result[0].labels.length;
+        const deletedLabels = result[0].labels.filter((el) => el.name !== 'person');
+        result[0].labels = deletedLabels;
+        result[0].save();
+        result = await window.cvat.tasks.get({
+            id: 100,
+        });
+        expect(result[0].labels).toHaveLength(labelsLength - 1);
     });
 });

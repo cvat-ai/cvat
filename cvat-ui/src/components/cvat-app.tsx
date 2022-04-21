@@ -1,39 +1,60 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
-import 'antd/dist/antd.css';
+import React from 'react';
+import { Redirect, Route, Switch } from 'react-router';
+import { RouteComponentProps, withRouter } from 'react-router-dom';
 import { Col, Row } from 'antd/lib/grid';
 import Layout from 'antd/lib/layout';
 import Modal from 'antd/lib/modal';
 import notification from 'antd/lib/notification';
 import Spin from 'antd/lib/spin';
 import Text from 'antd/lib/typography/Text';
-import GlobalErrorBoundary from 'components/global-error-boundary/global-error-boundary';
-import Header from 'components/header/header';
+import 'antd/dist/antd.css';
+
+import LoginPageContainer from 'containers/login-page/login-page';
+import LoginWithTokenComponent from 'components/login-with-token/login-with-token';
+import RegisterPageContainer from 'containers/register-page/register-page';
 import ResetPasswordPageConfirmComponent from 'components/reset-password-confirm-page/reset-password-confirm-page';
 import ResetPasswordPageComponent from 'components/reset-password-page/reset-password-page';
-import ShorcutsDialog from 'components/shortcuts-dialog/shortcuts-dialog';
+
+import Header from 'components/header/header';
+import GlobalErrorBoundary from 'components/global-error-boundary/global-error-boundary';
+
+import ShortcutsDialog from 'components/shortcuts-dialog/shortcuts-dialog';
+import ExportDatasetModal from 'components/export-dataset/export-dataset-modal';
+import ModelsPageContainer from 'containers/models-page/models-page';
+
+import JobsPageComponent from 'components/jobs-page/jobs-page';
+
+import TasksPageContainer from 'containers/tasks-page/tasks-page';
+import CreateTaskPageContainer from 'containers/create-task-page/create-task-page';
+import TaskPageContainer from 'containers/task-page/task-page';
+
 import ProjectsPageComponent from 'components/projects-page/projects-page';
 import CreateProjectPageComponent from 'components/create-project-page/create-project-page';
 import ProjectPageComponent from 'components/project-page/project-page';
-import TasksPageContainer from 'containers/tasks-page/tasks-page';
-import LoginWithTokenComponent from 'components/login-with-token/login-with-token';
-import CreateTaskPageContainer from 'containers/create-task-page/create-task-page';
-import TaskPageContainer from 'containers/task-page/task-page';
-import ModelsPageContainer from 'containers/models-page/models-page';
+
+import CloudStoragesPageComponent from 'components/cloud-storages-page/cloud-storages-page';
+import CreateCloudStoragePageComponent from 'components/create-cloud-storage-page/create-cloud-storage-page';
+import UpdateCloudStoragePageComponent from 'components/update-cloud-storage-page/update-cloud-storage-page';
+
+import OrganizationPage from 'components/organization-page/organization-page';
+import CreateOrganizationComponent from 'components/create-organization-page/create-organization-page';
+
 import AnnotationPageContainer from 'containers/annotation-page/annotation-page';
-import LoginPageContainer from 'containers/login-page/login-page';
-import RegisterPageContainer from 'containers/register-page/register-page';
 import getCore from 'cvat-core-wrapper';
-import React from 'react';
-import { configure, ExtendedKeyMapOptions, GlobalHotKeys } from 'react-hotkeys';
-import { Redirect, Route, Switch } from 'react-router';
-import { RouteComponentProps, withRouter } from 'react-router-dom';
+import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 import { NotificationsState } from 'reducers/interfaces';
 import { customWaViewHit } from 'utils/enviroment';
-import showPlatformNotification, { platformInfo, stopNotifications } from 'utils/platform-checker';
+import showPlatformNotification, {
+    platformInfo,
+    stopNotifications,
+    showUnsupportedNotification,
+} from 'utils/platform-checker';
 import '../styles.scss';
+import EmailConfirmationPage from './email-confirmation-page/email-confirmed';
 
 interface CVATAppProps {
     loadFormats: () => void;
@@ -47,9 +68,12 @@ interface CVATAppProps {
     switchShortcutsDialog: () => void;
     switchSettingsDialog: () => void;
     loadAuthActions: () => void;
-    keyMap: Record<string, ExtendedKeyMapOptions>;
+    loadOrganizations: () => void;
+    keyMap: KeyMap;
     userInitialized: boolean;
     userFetching: boolean;
+    organizationsFetching: boolean;
+    organizationsInitialized: boolean;
     pluginsInitialized: boolean;
     pluginsFetching: boolean;
     modelsInitialized: boolean;
@@ -71,7 +95,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
     public componentDidMount(): void {
         const core = getCore();
         const { verifyAuthorized, history, location } = this.props;
-        configure({ ignoreRepeatedEventsWhenKeyHeldDown: false });
+        // configure({ ignoreRepeatedEventsWhenKeyHeldDown: false });
 
         // Logger configuration
         const userActivityCallback: (() => void)[] = [];
@@ -86,6 +110,50 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
         });
 
         verifyAuthorized();
+
+        const {
+            name, version, engine, os,
+        } = platformInfo();
+
+        if (showPlatformNotification()) {
+            stopNotifications(false);
+            Modal.warning({
+                title: 'Unsupported platform detected',
+                className: 'cvat-modal-unsupported-platform-warning',
+                content: (
+                    <>
+                        <Row>
+                            <Col>
+                                <Text>
+                                    {`The browser you are using is ${name} ${version} based on ${engine}.` +
+                                        ' CVAT was tested in the latest versions of Chrome and Firefox.' +
+                                        ' We recommend to use Chrome (or another Chromium based browser)'}
+                                </Text>
+                            </Col>
+                        </Row>
+                        <Row>
+                            <Col>
+                                <Text type='secondary'>{`The operating system is ${os}`}</Text>
+                            </Col>
+                        </Row>
+                    </>
+                ),
+                onOk: () => stopNotifications(true),
+            });
+        } else if (showUnsupportedNotification()) {
+            stopNotifications(false);
+            Modal.warning({
+                title: 'Unsupported features detected',
+                className: 'cvat-modal-unsupported-features-warning',
+                content: (
+                    <Text>
+                        {`${name} v${version} does not support API, which is used by CVAT. `}
+                        It is strongly recommended to update your browser.
+                    </Text>
+                ),
+                onOk: () => stopNotifications(true),
+            });
+        }
     }
 
     public componentDidUpdate(): void {
@@ -96,9 +164,12 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             loadUserAgreements,
             initPlugins,
             initModels,
+            loadOrganizations,
             loadAuthActions,
             userInitialized,
             userFetching,
+            organizationsFetching,
+            organizationsInitialized,
             formatsInitialized,
             formatsFetching,
             aboutInitialized,
@@ -128,12 +199,16 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             return;
         }
 
+        if (!authActionsInitialized && !authActionsFetching) {
+            loadAuthActions();
+        }
+
         if (user == null || !user.isVerified) {
             return;
         }
 
-        if (!authActionsInitialized && !authActionsFetching) {
-            loadAuthActions();
+        if (!organizationsInitialized && !organizationsFetching) {
+            loadOrganizations();
         }
 
         if (!formatsInitialized && !formatsFetching) {
@@ -234,6 +309,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             pluginsInitialized,
             formatsInitialized,
             modelsInitialized,
+            organizationsInitialized,
             switchShortcutsDialog,
             switchSettingsDialog,
             user,
@@ -248,6 +324,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                 formatsInitialized &&
                 pluginsInitialized &&
                 aboutInitialized &&
+                organizationsInitialized &&
                 (!isModelPluginActive || modelsInitialized));
 
         const subKeyMap = {
@@ -256,48 +333,17 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
         };
 
         const handlers = {
-            SWITCH_SHORTCUTS: (event: KeyboardEvent | undefined) => {
+            SWITCH_SHORTCUTS: (event: KeyboardEvent) => {
                 if (event) event.preventDefault();
 
                 switchShortcutsDialog();
             },
-            SWITCH_SETTINGS: (event: KeyboardEvent | undefined) => {
+            SWITCH_SETTINGS: (event: KeyboardEvent) => {
                 if (event) event.preventDefault();
 
                 switchSettingsDialog();
             },
         };
-
-        if (showPlatformNotification()) {
-            stopNotifications(false);
-            const {
-                name, version, engine, os,
-            } = platformInfo();
-
-            Modal.warning({
-                title: 'Unsupported platform detected',
-                className: 'cvat-modal-unsupported-platform-warning',
-                content: (
-                    <>
-                        <Row>
-                            <Col>
-                                <Text>
-                                    {`The browser you are using is ${name} ${version} based on ${engine}.` +
-                                        ' CVAT was tested in the latest versions of Chrome and Firefox.' +
-                                        ' We recommend to use Chrome (or another Chromium based browser)'}
-                                </Text>
-                            </Col>
-                        </Row>
-                        <Row>
-                            <Col>
-                                <Text type='secondary'>{`The operating system is ${os}`}</Text>
-                            </Col>
-                        </Row>
-                    </>
-                ),
-                onOk: () => stopNotifications(true),
-            });
-        }
 
         if (readyForRender) {
             if (user && user.isVerified) {
@@ -306,7 +352,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                         <Layout>
                             <Header />
                             <Layout.Content style={{ height: '100%' }}>
-                                <ShorcutsDialog />
+                                <ShortcutsDialog />
                                 <GlobalHotKeys keyMap={subKeyMap} handlers={handlers}>
                                     <Switch>
                                         <Route exact path='/projects' component={ProjectsPageComponent} />
@@ -316,6 +362,24 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                                         <Route exact path='/tasks/create' component={CreateTaskPageContainer} />
                                         <Route exact path='/tasks/:id' component={TaskPageContainer} />
                                         <Route exact path='/tasks/:tid/jobs/:jid' component={AnnotationPageContainer} />
+                                        <Route exact path='/jobs' component={JobsPageComponent} />
+                                        <Route exact path='/cloudstorages' component={CloudStoragesPageComponent} />
+                                        <Route
+                                            exact
+                                            path='/cloudstorages/create'
+                                            component={CreateCloudStoragePageComponent}
+                                        />
+                                        <Route
+                                            exact
+                                            path='/cloudstorages/update/:id'
+                                            component={UpdateCloudStoragePageComponent}
+                                        />
+                                        <Route
+                                            exact
+                                            path='/organizations/create'
+                                            component={CreateOrganizationComponent}
+                                        />
+                                        <Route exact path='/organization' component={OrganizationPage} />
                                         {isModelPluginActive && (
                                             <Route exact path='/models' component={ModelsPageContainer} />
                                         )}
@@ -326,7 +390,9 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                                     </Switch>
                                 </GlobalHotKeys>
                                 {/* eslint-disable-next-line */}
-                                <a id='downloadAnchor' style={{ display: 'none' }} download />
+                                <ExportDatasetModal />
+                                {/* eslint-disable-next-line */}
+                                <a id='downloadAnchor' target='_blank' style={{ display: 'none' }} download />
                             </Layout.Content>
                         </Layout>
                     </GlobalErrorBoundary>
@@ -349,6 +415,9 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                             path='/auth/password/reset/confirm'
                             component={ResetPasswordPageConfirmComponent}
                         />
+
+                        <Route exact path='/auth/email-confirmation' component={EmailConfirmationPage} />
+
                         <Redirect
                             to={location.pathname.length > 1 ? `/auth/login/?next=${location.pathname}` : '/auth/login'}
                         />

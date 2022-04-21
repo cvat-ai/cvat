@@ -1,0 +1,15 @@
+# Footer text
+[footer_intel_privacy_notice]
+other = "Privacy Policy"
+
+[footer_intel_terms_of_use]
+other = "Terms of Use"
+
+[footer_cvat_terms_of_use]
+other = "CVAT terms of Use"
+
+[footer_notices_and_disclaimers]
+other = "Notices and Disclaimers"
+
+[footer_human_rights_principles]
+other = "Human Rights Principles"

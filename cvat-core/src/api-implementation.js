@@ -1,22 +1,29 @@
-// Copyright (C) 2019-2020 Intel Corporation
+// Copyright (C) 2019-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
+
+const config = require('./config');
 
 (() => {
     const PluginRegistry = require('./plugins');
     const serverProxy = require('./server-proxy');
     const lambdaManager = require('./lambda-manager');
     const {
-        isBoolean, isInteger, isEnum, isString, checkFilter,
+        isBoolean,
+        isInteger,
+        isString,
+        checkFilter,
+        checkExclusiveFields,
+        checkObjectType,
     } = require('./common');
-
-    const { TaskStatus, TaskMode, DimensionType } = require('./enums');
 
     const User = require('./user');
     const { AnnotationFormats } = require('./annotation-formats');
     const { ArgumentError } = require('./exceptions');
-    const { Task } = require('./session');
+    const { Task, Job } = require('./session');
     const { Project } = require('./project');
+    const { CloudStorage } = require('./cloud-storage');
+    const Organization = require('./organization');
 
     function implementAPI(cvat) {
         cvat.plugins.list.implementation = PluginRegistry.list;
@@ -109,6 +116,7 @@
         cvat.users.get.implementation = async (filter) => {
             checkFilter(filter, {
                 id: isInteger,
+                is_active: isBoolean,
                 self: isBoolean,
                 search: isString,
                 limit: isInteger,
@@ -125,7 +133,7 @@
                         searchParams[key] = filter[key];
                     }
                 }
-                users = await serverProxy.users.get(new URLSearchParams(searchParams).toString());
+                users = await serverProxy.users.get(searchParams);
             }
 
             users = users.map((user) => new User(user));
@@ -134,82 +142,79 @@
 
         cvat.jobs.get.implementation = async (filter) => {
             checkFilter(filter, {
+                page: isInteger,
+                filter: isString,
+                sort: isString,
+                search: isString,
                 taskID: isInteger,
                 jobID: isInteger,
             });
 
             if ('taskID' in filter && 'jobID' in filter) {
-                throw new ArgumentError('Only one of fields "taskID" and "jobID" allowed simultaneously');
+                throw new ArgumentError('Filter fields "taskID" and "jobID" are not permitted to be used at the same time');
             }
 
-            if (!Object.keys(filter).length) {
-                throw new ArgumentError('Job filter must not be empty');
-            }
-
-            let tasks = [];
             if ('taskID' in filter) {
-                tasks = await serverProxy.tasks.getTasks(`id=${filter.taskID}`);
-            } else {
-                const job = await serverProxy.jobs.get(filter.jobID);
-                if (typeof job.task_id !== 'undefined') {
-                    tasks = await serverProxy.tasks.getTasks(`id=${job.task_id}`);
+                const [task] = await serverProxy.tasks.get({ id: filter.taskID });
+                if (task) {
+                    return new Task(task).jobs;
+                }
+
+                return [];
+            }
+
+            if ('jobID' in filter) {
+                const job = await serverProxy.jobs.get({ id: filter.jobID });
+                if (job) {
+                    return [new Job(job)];
                 }
             }
 
-            // If task was found by its id, then create task instance and get Job instance from it
-            if (tasks.length) {
-                const task = new Task(tasks[0]);
-                return filter.jobID ? task.jobs.filter((job) => job.id === filter.jobID) : task.jobs;
+            const searchParams = {};
+            for (const key of Object.keys(filter)) {
+                if (['page', 'sort', 'search', 'filter'].includes(key)) {
+                    searchParams[key] = filter[key];
+                }
             }
 
-            return tasks;
+            const jobsData = await serverProxy.jobs.get(searchParams);
+            const jobs = jobsData.results.map((jobData) => new Job(jobData));
+            jobs.count = jobsData.count;
+            return jobs;
         };
 
         cvat.tasks.get.implementation = async (filter) => {
             checkFilter(filter, {
                 page: isInteger,
                 projectId: isInteger,
-                name: isString,
                 id: isInteger,
-                owner: isString,
-                assignee: isString,
+                sort: isString,
                 search: isString,
-                status: isEnum.bind(TaskStatus),
-                mode: isEnum.bind(TaskMode),
-                dimension: isEnum.bind(DimensionType),
+                filter: isString,
+                ordering: isString,
             });
 
-            if ('search' in filter && Object.keys(filter).length > 1) {
-                if (!('page' in filter && Object.keys(filter).length === 2)) {
-                    throw new ArgumentError('Do not use the filter field "search" with others');
+            checkExclusiveFields(filter, ['id', 'projectId'], ['page']);
+            const searchParams = {};
+            for (const key of Object.keys(filter)) {
+                if (['page', 'id', 'sort', 'search', 'filter', 'ordering'].includes(key)) {
+                    searchParams[key] = filter[key];
                 }
             }
 
-            if ('id' in filter && Object.keys(filter).length > 1) {
-                if (!('page' in filter && Object.keys(filter).length === 2)) {
-                    throw new ArgumentError('Do not use the filter field "id" with others');
+            let tasksData = null;
+            if (filter.projectId) {
+                if (searchParams.filter) {
+                    const parsed = JSON.parse(searchParams.filter);
+                    searchParams.filter = JSON.stringify({ and: [parsed, { '==': [{ var: 'project_id' }, filter.projectId] }] });
+                } else {
+                    searchParams.filter = JSON.stringify({ and: [{ '==': [{ var: 'project_id' }, filter.projectId] }] });
                 }
             }
 
-            if (
-                'projectId' in filter
-                && (('page' in filter && Object.keys(filter).length > 2) || Object.keys(filter).length > 2)
-            ) {
-                throw new ArgumentError('Do not use the filter field "projectId" with other');
-            }
-
-            const searchParams = new URLSearchParams();
-            for (const field of ['name', 'owner', 'assignee', 'search', 'status', 'mode', 'id', 'page', 'projectId', 'dimension']) {
-                if (Object.prototype.hasOwnProperty.call(filter, field)) {
-                    searchParams.set(field, filter[field]);
-                }
-            }
-
-            const tasksData = await serverProxy.tasks.getTasks(searchParams.toString());
+            tasksData = await serverProxy.tasks.get(searchParams);
             const tasks = tasksData.map((task) => new Task(task));
-
             tasks.count = tasksData.count;
-
             return tasks;
         };
 
@@ -217,42 +222,69 @@
             checkFilter(filter, {
                 id: isInteger,
                 page: isInteger,
-                name: isString,
-                assignee: isString,
-                owner: isString,
                 search: isString,
-                status: isEnum.bind(TaskStatus),
+                sort: isString,
+                filter: isString,
             });
 
-            if ('search' in filter && Object.keys(filter).length > 1) {
-                if (!('page' in filter && Object.keys(filter).length === 2)) {
-                    throw new ArgumentError('Do not use the filter field "search" with others');
+            checkExclusiveFields(filter, ['id'], ['page']);
+            const searchParams = {};
+            for (const key of Object.keys(filter)) {
+                if (['id', 'page', 'search', 'sort', 'page'].includes(key)) {
+                    searchParams[key] = filter[key];
                 }
             }
 
-            if ('id' in filter && Object.keys(filter).length > 1) {
-                if (!('page' in filter && Object.keys(filter).length === 2)) {
-                    throw new ArgumentError('Do not use the filter field "id" with others');
-                }
-            }
-
-            const searchParams = new URLSearchParams();
-            for (const field of ['name', 'assignee', 'owner', 'search', 'status', 'id', 'page']) {
-                if (Object.prototype.hasOwnProperty.call(filter, field)) {
-                    searchParams.set(field, filter[field]);
-                }
-            }
-
-            const projectsData = await serverProxy.projects.get(searchParams.toString());
-            // prettier-ignore
-            const projects = projectsData.map((project) => new Project(project));
+            const projectsData = await serverProxy.projects.get(searchParams);
+            const projects = projectsData.map((project) => {
+                project.task_ids = project.tasks;
+                return project;
+            }).map((project) => new Project(project));
 
             projects.count = projectsData.count;
 
             return projects;
         };
 
-        cvat.projects.searchNames.implementation = async (search, limit) => serverProxy.projects.searchNames(search, limit);
+        cvat.projects.searchNames
+            .implementation = async (search, limit) => serverProxy.projects.searchNames(search, limit);
+
+        cvat.cloudStorages.get.implementation = async (filter) => {
+            checkFilter(filter, {
+                page: isInteger,
+                filter: isString,
+                sort: isString,
+                id: isInteger,
+                search: isString,
+            });
+
+            checkExclusiveFields(filter, ['id', 'search'], ['page']);
+            const searchParams = {};
+            for (const key of Object.keys(filter)) {
+                if (['page', 'filter', 'sort', 'id', 'search'].includes(key)) {
+                    searchParams[key] = filter[key];
+                }
+            }
+            const cloudStoragesData = await serverProxy.cloudStorages.get(searchParams);
+            const cloudStorages = cloudStoragesData.map((cloudStorage) => new CloudStorage(cloudStorage));
+            cloudStorages.count = cloudStoragesData.count;
+            return cloudStorages;
+        };
+
+        cvat.organizations.get.implementation = async () => {
+            const organizationsData = await serverProxy.organizations.get();
+            const organizations = organizationsData.map((organizationData) => new Organization(organizationData));
+            return organizations;
+        };
+
+        cvat.organizations.activate.implementation = (organization) => {
+            checkObjectType('organization', organization, null, Organization);
+            config.organizationID = organization.slug;
+        };
+
+        cvat.organizations.deactivate.implementation = async () => {
+            config.organizationID = null;
+        };
 
         return cvat;
     }

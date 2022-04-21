@@ -1,0 +1,142 @@
+// Copyright (C) 2022 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
+
+@import '../../base.scss';
+
+.cvat-jobs-page {
+    padding-top: $grid-unit-size * 2;
+    padding-bottom: $grid-unit-size;
+    height: 100%;
+    width: 100%;
+
+    > div:nth-child(1) {
+        div > {
+            .cvat-title {
+                color: $text-color;
+            }
+        }
+    }
+
+    > div:nth-child(2) {
+        &.ant-empty {
+            position: absolute;
+            top: 40%;
+            left: 50%;
+        }
+
+        padding-bottom: $grid-unit-size;
+        padding-top: $grid-unit-size;
+    }
+
+    .cvat-job-page-list-item {
+        width: 25%;
+        border-width: 4px;
+        display: flex;
+        flex-direction: column;
+
+        .ant-card-cover {
+            flex: 1;
+            height: 0;
+            margin: 0;
+        }
+
+        .ant-card-body {
+            padding: $grid-unit-size;
+
+            .ant-descriptions-item {
+                padding: 0;
+            }
+        }
+
+        &:hover {
+            .cvat-job-page-list-item-id {
+                opacity: 1;
+            }
+
+            .cvat-job-page-list-item-dimension {
+                opacity: 1;
+            }
+        }
+
+        .cvat-jobs-page-job-item-card-preview {
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            object-fit: cover;
+            cursor: pointer;
+        }
+
+        .cvat-job-page-list-item-dimension {
+            position: absolute;
+            top: 0;
+            right: 0;
+            margin: $grid-unit-size;
+            width: $grid-unit-size * 4;
+            background: white;
+            border-radius: 4px;
+            text-align: center;
+            opacity: 0.5;
+            padding: $grid-unit-size;
+        }
+
+        .cvat-job-page-list-item-id {
+            position: absolute;
+            top: 0;
+            left: 0;
+            margin: $grid-unit-size $grid-unit-size $grid-unit-size 0;
+            width: fit-content;
+            background: white;
+            border-radius: 0 4px 4px 0;
+            padding: $grid-unit-size;
+            opacity: 0.5;
+            transition: 0.15s all ease;
+            box-shadow: $box-shadow-base;
+        }
+    }
+
+    .cvat-jobs-page-pagination {
+        display: flex;
+        justify-content: center;
+    }
+
+    .cvat-jobs-page-list {
+        display: flex;
+        flex-wrap: wrap;
+    }
+
+    .cvat-job-card-more-button {
+        position: absolute;
+        bottom: $grid-unit-size * 2;
+        right: $grid-unit-size;
+        font-size: 16px;
+    }
+}
+
+.cvat-jobs-page-top-bar {
+    > div {
+        display: flex;
+        justify-content: space-between;
+
+        > div {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+
+            .cvat-jobs-page-search-bar {
+                width: $grid-unit-size * 32;
+                padding-left: $grid-unit-size * 0.5;
+            }
+
+            > div {
+                > *:not(:last-child) {
+                    margin-right: $grid-unit-size;
+                }
+
+                display: flex;
+            }
+        }
+    }
+}

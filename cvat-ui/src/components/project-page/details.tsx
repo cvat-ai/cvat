@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -10,7 +10,6 @@ import Title from 'antd/lib/typography/Title';
 import Text from 'antd/lib/typography/Text';
 
 import getCore from 'cvat-core-wrapper';
-import { Project } from 'reducers/interfaces';
 import { updateProjectAsync } from 'actions/projects-actions';
 import LabelsEditor from 'components/labels-editor/labels-editor';
 import BugTrackerEditor from 'components/task-page/bug-tracker-editor';
@@ -19,7 +18,7 @@ import UserSelector from 'components/task-page/user-selector';
 const core = getCore();
 
 interface DetailsComponentProps {
-    project: Project;
+    project: any;
 }
 
 export default function DetailsComponent(props: DetailsComponentProps): JSX.Element {
@@ -29,7 +28,7 @@ export default function DetailsComponent(props: DetailsComponentProps): JSX.Elem
     const [projectName, setProjectName] = useState(project.name);
 
     return (
-        <div className='cvat-project-details'>
+        <div cvat-project-id={project.id} className='cvat-project-details'>
             <Row>
                 <Col>
                     <Title
@@ -41,13 +40,13 @@ export default function DetailsComponent(props: DetailsComponentProps): JSX.Elem
                                 dispatch(updateProjectAsync(project));
                             },
                         }}
-                        className='cvat-text-color'
+                        className='cvat-text-color cvat-project-name'
                     >
                         {projectName}
                     </Title>
                 </Col>
             </Row>
-            <Row justify='space-between'>
+            <Row justify='space-between' className='cvat-project-description'>
                 <Col>
                     <Text type='secondary'>
                         {`Project #${project.id} created`}

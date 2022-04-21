@@ -1,0 +1,210 @@
+# Default values for cvat.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+cvat:
+  backend:
+    replicas: 1
+    image: openvino/cvat_server
+    tag: latest
+    permissionFix:
+      enabled: true
+    labels: {}
+    #  test: test
+    annotations: {}
+    # test.io/test: test
+    resources: {}
+    affinity: {}
+    tolerations: []
+    # nodeAffinity:
+    #   requiredDuringSchedulingIgnoredDuringExecution:
+    #     nodeSelectorTerms:
+    #     - matchExpressions:
+    #       - key: kubernetes.io/e2e-az-name
+    #         operator: In
+    #         values:
+    #         - e2e-az1
+    #         - e2e-az2
+    envs:
+      ALLOWED_HOSTS: "*"
+      DJANGO_MODWSGI_EXTRA_ARGS: ""
+    additionalEnv: []
+    # Example:
+    #  - name: volume-from-secret
+    # - name: TEST
+    #  value: "test"
+    additionalVolumes: []
+    # Example(assumes that pvc was already created):
+    # - name: tmp
+    #   persistentVolumeClaim:
+    #       claimName: tmp
+    additionalVolumeMounts: []
+    # Example:
+    # -   mountPath: /tmp
+    #     name: tmp
+    #     subPath: test
+    service:
+      type: ClusterIP
+      ports:
+        - port: 8080
+          targetPort: 8080
+          protocol: TCP
+          name: http
+    defaultStorage:
+      enabled: true
+      size: 20Gi
+  frontend:
+    replicas: 1
+    image: openvino/cvat_ui
+    tag: latest
+    labels: {}
+    #  test: test
+    annotations: {}
+    # test.io/test: test
+    resources: {}
+    affinity: {}
+    tolerations: []
+    # nodeAffinity:
+    #   requiredDuringSchedulingIgnoredDuringExecution:
+    #     nodeSelectorTerms:
+    #     - matchExpressions:
+    #       - key: kubernetes.io/e2e-az-name
+    #         operator: In
+    #         values:
+    #         - e2e-az1
+    #         - e2e-az2
+    additionalEnv: []
+    # Example:
+    #  - name: volume-from-secret
+    # - name: TEST
+    #  value: "test"
+    additionalVolumes: []
+    # Example(assumes that pvc was already created):
+    # - name: tmp
+    #   persistentVolumeClaim:
+    #       claimName: tmp
+    additionalVolumeMounts: []
+    # Example:
+    # -   mountPath: /tmp
+    #     name: tmp
+    #     subPath: test
+    service:
+      type: ClusterIP
+      ports:
+        - port: 80
+          targetPort: 80
+          protocol: TCP
+          name: http
+  opa:
+    replicas: 1
+    image: openpolicyagent/opa
+    tag: 0.34.2-rootless
+    labels: {}
+    #  test: test
+    annotations: {}
+    # test.io/test: test
+    resources: {}
+    affinity: {}
+    tolerations: []
+    # nodeAffinity:
+    #   requiredDuringSchedulingIgnoredDuringExecution:
+    #     nodeSelectorTerms:
+    #     - matchExpressions:
+    #       - key: kubernetes.io/e2e-az-name
+    #         operator: In
+    #         values:
+    #         - e2e-az1
+    #         - e2e-az2
+    additionalEnv: []
+    # Example:
+    #  - name: volume-from-secret
+    # - name: TEST
+    #  value: "test"
+    additionalVolumes: []
+    # Example(assumes that pvc was already created):
+    # - name: tmp
+    #   persistentVolumeClaim:
+    #       claimName: tmp
+    additionalVolumeMounts: []
+    # Example:
+    # -   mountPath: /tmp
+    #     name: tmp
+    #     subPath: test
+    composeCompatibleServiceName: true # Sets service name to opa in order to be docker-compose compatible. Necessary because changing IAM_OPA_DATA_URL via environment variables in current images. Hinders multiple deployment due to duplicate name
+    service:
+      type: ClusterIP
+      ports:
+        - port: 8181
+          targetPort: 8181
+          protocol: TCP
+          name: http
+    defaultStorage:
+        enabled: true
+
+postgresql:
+  #See https://github.com/bitnami/charts/blob/master/bitnami/postgresql/ for more info
+  enabled: true # false for external db
+  external:
+    host: 127.0.0.1
+    port: 5432
+    user: postgres
+    password: postgres
+    dbname: cvat
+  # If not external following config will be applied by default
+  global:
+    postgresql:
+      existingSecret: cvat-postgres-secret
+  secret:
+    create: true
+    name: postgres-secret
+    password: cvat_postgresql
+    postgres_password: cvat_postgresql_postgres
+    replication_password: cvat_postgresql_replica
+  postgresqlDatabase: cvat
+  postgresqlUsername: cvat
+  service:
+    port: 5432
+
+redis:
+  #See https://github.com/bitnami/charts/blob/master/bitnami/redis/ for more info
+  enabled: true
+  external:
+    host: 127.0.0.1
+  usePassword: false
+  cluster:
+    enabled: false
+
+ingress:
+  enabled: false
+# Example for nginx ingress and cert manager
+#    annotations:
+#        kubernetes.io/ingress.class: nginx
+#        kubernetes.io/tls-acme: "true"
+#        ingress.kubernetes.io/ssl-redirect: "true"
+#        nginx.ingress.kubernetes.io/use-regex: "true"
+#        nginx.ingress.kubernetes.io/secure-backends: "true"
+#        nginx.ingress.kubernetes.io/proxy-body-size: "0"
+#        nginx.ingress.kubernetes.io/proxy-send-timeout: "120"
+#        nginx.ingress.kubernetes.io/proxy-read-timeout: "120"
+#        cert-manager.io/cluster-issuer: <issuer_name>
+#    hosts:
+#        - host: <your domain>
+#          paths:
+#              - path: "/api/.*|git/.*|tensorflow/.*|auto_annotation/.*|analytics/.*|static/.*|admin|admin/.*|documentation/.*|dextr/.*|reid/.*"
+#                service:
+#                    name: <release_name>-backend-service
+#                    port: 8080
+#              - path : "/"
+#                pathType: "Prefix"
+#                service:
+#                    name: <release_name>-frontend-service
+#                    port: 80
+#
+#    tls:
+#        - hosts:
+#              - <your domain>
+#          secretName: ingress-tls-cvat

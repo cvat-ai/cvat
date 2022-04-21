@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -7,33 +7,33 @@ import Popover, { PopoverProps } from 'antd/lib/popover';
 
 export default function withVisibilityHandling(WrappedComponent: typeof Popover, popoverType: string) {
     return (props: PopoverProps): JSX.Element => {
-        const [initialized, setInitialized] = useState<boolean>(false);
         const [visible, setVisible] = useState<boolean>(false);
-        let { overlayClassName } = props;
-        if (typeof overlayClassName !== 'string') overlayClassName = '';
+        const { overlayClassName, ...rest } = props;
+        const overlayClassNames = typeof overlayClassName === 'string' ? overlayClassName.split(/\s+/) : [];
+        const popoverClassName = `cvat-${popoverType}-popover`;
+        overlayClassNames.push(popoverClassName);
 
-        overlayClassName += ` cvat-${popoverType}-popover`;
-        if (visible) {
-            overlayClassName += ` cvat-${popoverType}-popover-visible`;
-        }
-
-        const callback = (event: Event): void => {
-            if ((event as AnimationEvent).animationName === 'antZoomBigIn') {
-                setVisible(true);
-            }
-        };
-
+        const { overlayStyle } = props;
         return (
             <WrappedComponent
-                {...props}
-                overlayClassName={overlayClassName.trim()}
+                {...rest}
+                overlayStyle={{
+                    ...(typeof overlayStyle === 'object' ? overlayStyle : {}),
+                    animationDuration: '0s',
+                    animationDelay: '0s',
+                }}
+                trigger={visible ? 'click' : 'hover'}
+                overlayClassName={overlayClassNames.join(' ').trim()}
                 onVisibleChange={(_visible: boolean) => {
-                    if (!_visible) setVisible(false);
-                    if (!initialized) {
-                        const self = window.document.getElementsByClassName(`cvat-${popoverType}-popover`)[0];
-                        self?.addEventListener('animationend', callback);
-                        setInitialized(true);
+                    if (_visible) {
+                        const [element] = window.document.getElementsByClassName(popoverClassName);
+                        if (element) {
+                            element.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+                            (element as HTMLElement).style.pointerEvents = '';
+                            (element as HTMLElement).style.opacity = '';
+                        }
                     }
+                    setVisible(_visible);
                 }}
             />
         );

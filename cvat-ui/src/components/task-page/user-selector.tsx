@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -19,6 +19,7 @@ export interface User {
 
 interface Props {
     value: User | null;
+    username?: string;
     className?: string;
     onSelect: (user: User | null) => void;
 }
@@ -29,6 +30,7 @@ const searchUsers = debounce(
             .get({
                 search: searchValue,
                 limit: 10,
+                is_active: true,
             })
             .then((result: User[]) => {
                 if (result) {
@@ -43,14 +45,16 @@ const searchUsers = debounce(
 );
 
 export default function UserSelector(props: Props): JSX.Element {
-    const { value, className, onSelect } = props;
-    const [searchPhrase, setSearchPhrase] = useState('');
+    const {
+        value, className, username, onSelect,
+    } = props;
+    const [searchPhrase, setSearchPhrase] = useState(username || '');
     const [initialUsers, setInitialUsers] = useState<User[]>([]);
     const [users, setUsers] = useState<User[]>([]);
     const autocompleteRef = useRef<RefSelectProps | null>(null);
 
     useEffect(() => {
-        core.users.get({ limit: 10 }).then((result: User[]) => {
+        core.users.get({ limit: 10, is_active: true }).then((result: User[]) => {
             if (result) {
                 setInitialUsers(result);
             }
@@ -88,7 +92,6 @@ export default function UserSelector(props: Props): JSX.Element {
     };
 
     const handleSelect = (_value: SelectValue): void => {
-        setSearchPhrase(users.filter((user) => user.id === +_value)[0].username);
         const user = _value ? users.filter((_user) => _user.id === +_value)[0] : null;
         if ((user?.id || null) !== (value?.id || null)) {
             onSelect(user);
@@ -100,7 +103,9 @@ export default function UserSelector(props: Props): JSX.Element {
             if (!users.filter((user) => user.id === value.id).length) {
                 core.users.get({ id: value.id }).then((result: User[]) => {
                     const [user] = result;
-                    setUsers([...users, user]);
+                    if (user) {
+                        setUsers([...users, user]);
+                    }
                 });
             }
 

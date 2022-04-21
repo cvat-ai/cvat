@@ -46,5 +46,11 @@
 }
 
 .cvat-menu-icon {
-    transform: scale(0.5);
+    font-size: 16px;
+    margin-left: 8px;
+    align-self: center;
+}
+
+#cvat-export-task-loading {
+    margin-left: 10;
 }

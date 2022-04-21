@@ -1,23 +1,22 @@
-// Copyright (C) 2019-2020 Intel Corporation
+// Copyright (C) 2019-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
 (() => {
-    const store = require('store');
     const PluginRegistry = require('./plugins');
     const loggerStorage = require('./logger-storage');
     const serverProxy = require('./server-proxy');
     const {
-        getFrame, getRanges, getPreview, clear: clearFrames,
+        getFrame, getRanges, getPreview, clear: clearFrames, getContextImage,
     } = require('./frames');
-    const { ArgumentError } = require('./exceptions');
-    const { TaskStatus } = require('./enums');
+    const { ArgumentError, DataError } = require('./exceptions');
+    const { JobStage, JobState } = require('./enums');
     const { Label } = require('./labels');
     const User = require('./user');
     const Issue = require('./issue');
-    const Review = require('./review');
+    const { FieldUpdateTrigger, checkObjectType } = require('./common');
 
-    function buildDublicatedAPI(prototype) {
+    function buildDuplicatedAPI(prototype) {
         Object.defineProperties(prototype, {
             annotations: Object.freeze({
                 value: {
@@ -36,17 +35,11 @@
                         return result;
                     },
 
-                    async clear(reload = false) {
-                        const result = await PluginRegistry.apiWrapper.call(this, prototype.annotations.clear, reload);
-                        return result;
-                    },
-
-                    async dump(dumper, name = null) {
+                    async clear(
+                        reload = false, startframe = undefined, endframe = undefined, delTrackKeyframesOnly = true,
+                    ) {
                         const result = await PluginRegistry.apiWrapper.call(
-                            this,
-                            prototype.annotations.dump,
-                            dumper,
-                            name,
+                            this, prototype.annotations.clear, reload, startframe, endframe, delTrackKeyframesOnly,
                         );
                         return result;
                     },
@@ -147,11 +140,13 @@
                         return result;
                     },
 
-                    async exportDataset(format) {
+                    async exportDataset(format, saveImages, customName = '') {
                         const result = await PluginRegistry.apiWrapper.call(
                             this,
                             prototype.annotations.exportDataset,
                             format,
+                            saveImages,
+                            customName,
                         );
                         return result;
                     },
@@ -181,6 +176,14 @@
                     },
                     async preview() {
                         const result = await PluginRegistry.apiWrapper.call(this, prototype.frames.preview);
+                        return result;
+                    },
+                    async contextImage(frameId) {
+                        const result = await PluginRegistry.apiWrapper.call(
+                            this,
+                            prototype.frames.contextImage,
+                            frameId,
+                        );
                         return result;
                     },
                 },
@@ -249,6 +252,19 @@
                 },
                 writable: true,
             }),
+            predictor: Object.freeze({
+                value: {
+                    async status() {
+                        const result = await PluginRegistry.apiWrapper.call(this, prototype.predictor.status);
+                        return result;
+                    },
+                    async predict(frame) {
+                        const result = await PluginRegistry.apiWrapper.call(this, prototype.predictor.predict, frame);
+                        return result;
+                    },
+                },
+                writable: true,
+            }),
         });
     }
 
@@ -307,21 +323,6 @@
              * @async
              */
             /**
-             * Dump of annotations to a file.
-             * Method always dumps annotations for a whole task.
-             * @method dump
-             * @memberof Session.annotations
-             * @param {module:API.cvat.classes.Dumper} dumper - a dumper
-             * @param {string} [name = null] - a name of a file with annotations
-             * which will be used to dump
-             * @returns {string} URL which can be used in order to get a dump file
-             * @throws {module:API.cvat.exceptions.PluginError}
-             * @throws {module:API.cvat.exceptions.ServerError}
-             * @throws {module:API.cvat.exceptions.ArgumentError}
-             * @instance
-             * @async
-             */
-            /**
              * Collect short statistics about a task or a job.
              * @method statistics
              * @memberof Session.annotations
@@ -370,7 +371,7 @@
              * @param {integer} frame get objects from the frame
              * @param {boolean} allTracks show all tracks
              * even if they are outside and not keyframe
-             * @param {string[]} [filters = []]
+             * @param {any[]} [filters = []]
              * get only objects that satisfied to specific filters
              * @returns {module:API.cvat.classes.ObjectState[]}
              * @memberof Session.annotations
@@ -553,7 +554,7 @@
              * Create a log and add it to a log collection <br>
              * Durable logs will be added after "close" method is called for them <br>
              * The fields "task_id" and "job_id" automatically added when add logs
-             * throught a task or a job <br>
+             * through a task or a job <br>
              * Ignore rules exist for some logs (e.g. zoomImage, changeAttribute) <br>
              * Payload of ignored logs are shallowly combined to previous logs of the same type
              * @method log
@@ -656,6 +657,40 @@
              * @instance
              * @async
              */
+            /**
+             * @typedef {Object} PredictorStatus
+             * @property {string} message - message for a user to be displayed somewhere
+             * @property {number} projectScore - model accuracy
+             * @global
+             */
+            /**
+             * Namespace is used for an interaction with events
+             * @namespace predictor
+             * @memberof Session
+             */
+            /**
+             * Subscribe to updates of a ML model binded to the project
+             * @method status
+             * @memberof Session.predictor
+             * @throws {module:API.cvat.exceptions.PluginError}
+             * @throws {module:API.cvat.exceptions.ServerError}
+             * @returns {PredictorStatus}
+             * @instance
+             * @async
+             */
+            /**
+             * Get predictions from a ML model binded to the project
+             * @method predict
+             * @memberof Session.predictor
+             * @param {number} frame - number of frame to inference
+             * @throws {module:API.cvat.exceptions.PluginError}
+             * @throws {module:API.cvat.exceptions.ArgumentError}
+             * @throws {module:API.cvat.exceptions.ServerError}
+             * @throws {module:API.cvat.exceptions.DataError}
+             * @returns {object[] | null} annotations
+             * @instance
+             * @async
+             */
         }
     }
 
@@ -671,18 +706,21 @@
             const data = {
                 id: undefined,
                 assignee: null,
-                reviewer: null,
-                status: undefined,
+                stage: undefined,
+                state: undefined,
                 start_frame: undefined,
                 stop_frame: undefined,
-                task: undefined,
+                project_id: null,
+                task_id: undefined,
+                labels: undefined,
+                dimension: undefined,
+                data_compressed_chunk_type: undefined,
+                data_chunk_size: undefined,
+                bug_tracker: null,
+                mode: undefined,
             };
 
-            let updatedFields = {
-                assignee: false,
-                reviewer: false,
-                status: false,
-            };
+            const updateTrigger = new FieldUpdateTrigger();
 
             for (const property in data) {
                 if (Object.prototype.hasOwnProperty.call(data, property)) {
@@ -697,7 +735,19 @@
             }
 
             if (data.assignee) data.assignee = new User(data.assignee);
-            if (data.reviewer) data.reviewer = new User(data.reviewer);
+            if (Array.isArray(initialData.labels)) {
+                data.labels = initialData.labels.map((labelData) => {
+                    // can be already wrapped to the class
+                    // when create this job from Task constructor
+                    if (labelData instanceof Label) {
+                        return labelData;
+                    }
+
+                    return new Label(labelData);
+                });
+            } else {
+                throw new Error('Job labels must be an array');
+            }
 
             Object.defineProperties(
                 this,
@@ -726,42 +776,24 @@
                             if (assignee !== null && !(assignee instanceof User)) {
                                 throw new ArgumentError('Value must be a user instance');
                             }
-                            updatedFields.assignee = true;
+                            updateTrigger.update('assignee');
                             data.assignee = assignee;
                         },
                     },
                     /**
-                     * Instance of a user who is responsible for review
-                     * @name reviewer
-                     * @type {module:API.cvat.classes.User}
+                     * @name stage
+                     * @type {module:API.cvat.enums.JobStage}
                      * @memberof module:API.cvat.classes.Job
                      * @instance
                      * @throws {module:API.cvat.exceptions.ArgumentError}
                      */
-                    reviewer: {
-                        get: () => data.reviewer,
-                        set: (reviewer) => {
-                            if (reviewer !== null && !(reviewer instanceof User)) {
-                                throw new ArgumentError('Value must be a user instance');
-                            }
-                            updatedFields.reviewer = true;
-                            data.reviewer = reviewer;
-                        },
-                    },
-                    /**
-                     * @name status
-                     * @type {module:API.cvat.enums.TaskStatus}
-                     * @memberof module:API.cvat.classes.Job
-                     * @instance
-                     * @throws {module:API.cvat.exceptions.ArgumentError}
-                     */
-                    status: {
-                        get: () => data.status,
-                        set: (status) => {
-                            const type = TaskStatus;
+                    stage: {
+                        get: () => data.stage,
+                        set: (stage) => {
+                            const type = JobStage;
                             let valueInEnum = false;
                             for (const value in type) {
-                                if (type[value] === status) {
+                                if (type[value] === stage) {
                                     valueInEnum = true;
                                     break;
                                 }
@@ -769,12 +801,41 @@
 
                             if (!valueInEnum) {
                                 throw new ArgumentError(
-                                    'Value must be a value from the enumeration cvat.enums.TaskStatus',
+                                    'Value must be a value from the enumeration cvat.enums.JobStage',
                                 );
                             }
 
-                            updatedFields.status = true;
-                            data.status = status;
+                            updateTrigger.update('stage');
+                            data.stage = stage;
+                        },
+                    },
+                    /**
+                     * @name state
+                     * @type {module:API.cvat.enums.JobState}
+                     * @memberof module:API.cvat.classes.Job
+                     * @instance
+                     * @throws {module:API.cvat.exceptions.ArgumentError}
+                     */
+                    state: {
+                        get: () => data.state,
+                        set: (state) => {
+                            const type = JobState;
+                            let valueInEnum = false;
+                            for (const value in type) {
+                                if (type[value] === state) {
+                                    valueInEnum = true;
+                                    break;
+                                }
+                            }
+
+                            if (!valueInEnum) {
+                                throw new ArgumentError(
+                                    'Value must be a value from the enumeration cvat.enums.JobState',
+                                );
+                            }
+
+                            updateTrigger.update('state');
+                            data.state = state;
                         },
                     },
                     /**
@@ -798,20 +859,96 @@
                         get: () => data.stop_frame,
                     },
                     /**
-                     * @name task
-                     * @type {module:API.cvat.classes.Task}
+                     * @name projectId
+                     * @type {integer|null}
                      * @memberof module:API.cvat.classes.Job
                      * @readonly
                      * @instance
                      */
-                    task: {
-                        get: () => data.task,
+                    projectId: {
+                        get: () => data.project_id,
                     },
-                    __updatedFields: {
-                        get: () => updatedFields,
-                        set: (fields) => {
-                            updatedFields = fields;
+                    /**
+                     * @name taskId
+                     * @type {integer}
+                     * @memberof module:API.cvat.classes.Job
+                     * @readonly
+                     * @instance
+                     */
+                    taskId: {
+                        get: () => data.task_id,
+                    },
+                    /**
+                     * @name labels
+                     * @type {module:API.cvat.classes.Label[]}
+                     * @memberof module:API.cvat.classes.Job
+                     * @readonly
+                     * @instance
+                     */
+                    labels: {
+                        get: () => data.labels.filter((_label) => !_label.deleted),
+                    },
+                    /**
+                     * @name dimension
+                     * @type {module:API.cvat.enums.DimensionType}
+                     * @memberof module:API.cvat.classes.Task
+                     * @readonly
+                     * @instance
+                    */
+                    dimension: {
+                        get: () => data.dimension,
+                    },
+                    /**
+                     * @name dataChunkSize
+                     * @type {integer}
+                     * @memberof module:API.cvat.classes.Job
+                     * @readonly
+                     * @instance
+                     */
+                    dataChunkSize: {
+                        get: () => data.data_chunk_size,
+                        set: (chunkSize) => {
+                            if (typeof chunkSize !== 'number' || chunkSize < 1) {
+                                throw new ArgumentError(
+                                    `Chunk size value must be a positive number. But value ${chunkSize} has been got.`,
+                                );
+                            }
+
+                            data.data_chunk_size = chunkSize;
                         },
+                    },
+                    /**
+                     * @name dataChunkSize
+                     * @type {string}
+                     * @memberof module:API.cvat.classes.Job
+                     * @readonly
+                     * @instance
+                     */
+                    dataChunkType: {
+                        get: () => data.data_compressed_chunk_type,
+                    },
+                    /**
+                     * @name mode
+                     * @type {string}
+                     * @memberof module:API.cvat.classes.Job
+                     * @readonly
+                     * @instance
+                     */
+                    mode: {
+                        get: () => data.mode,
+                    },
+                    /**
+                     * @name bugTracker
+                     * @type {string|null}
+                     * @memberof module:API.cvat.classes.Job
+                     * @instance
+                     * @readonly
+                     */
+                    bugTracker: {
+                        get: () => data.bug_tracker,
+                    },
+                    _updateTrigger: {
+                        get: () => updateTrigger,
                     },
                 }),
             );
@@ -823,7 +960,6 @@
                 get: Object.getPrototypeOf(this).annotations.get.bind(this),
                 put: Object.getPrototypeOf(this).annotations.put.bind(this),
                 save: Object.getPrototypeOf(this).annotations.save.bind(this),
-                dump: Object.getPrototypeOf(this).annotations.dump.bind(this),
                 merge: Object.getPrototypeOf(this).annotations.merge.bind(this),
                 split: Object.getPrototypeOf(this).annotations.split.bind(this),
                 group: Object.getPrototypeOf(this).annotations.group.bind(this),
@@ -836,6 +972,7 @@
                 export: Object.getPrototypeOf(this).annotations.export.bind(this),
                 statistics: Object.getPrototypeOf(this).annotations.statistics.bind(this),
                 hasUnsavedChanges: Object.getPrototypeOf(this).annotations.hasUnsavedChanges.bind(this),
+                exportDataset: Object.getPrototypeOf(this).annotations.exportDataset.bind(this),
             };
 
             this.actions = {
@@ -850,15 +987,21 @@
                 get: Object.getPrototypeOf(this).frames.get.bind(this),
                 ranges: Object.getPrototypeOf(this).frames.ranges.bind(this),
                 preview: Object.getPrototypeOf(this).frames.preview.bind(this),
+                contextImage: Object.getPrototypeOf(this).frames.contextImage.bind(this),
             };
 
             this.logger = {
                 log: Object.getPrototypeOf(this).logger.log.bind(this),
             };
+
+            this.predictor = {
+                status: Object.getPrototypeOf(this).predictor.status.bind(this),
+                predict: Object.getPrototypeOf(this).predictor.predict.bind(this),
+            };
         }
 
         /**
-         * Method updates job data like status or assignee
+         * Method updates job data like state, stage or assignee
          * @method save
          * @memberof module:API.cvat.classes.Job
          * @readonly
@@ -876,7 +1019,7 @@
          * Method returns a list of issues for a job
          * @method issues
          * @memberof module:API.cvat.classes.Job
-         * @type {module:API.cvat.classes.Issue[]}
+         * @returns {module:API.cvat.classes.Issue[]}
          * @readonly
          * @instance
          * @async
@@ -889,44 +1032,36 @@
         }
 
         /**
-         * Method returns a list of reviews for a job
-         * @method reviews
-         * @type {module:API.cvat.classes.Review[]}
+         * Method adds a new issue to a job
+         * @method openIssue
          * @memberof module:API.cvat.classes.Job
+         * @returns {module:API.cvat.classes.Issue}
+         * @param {module:API.cvat.classes.Issue} issue
+         * @param {string} message
          * @readonly
          * @instance
          * @async
+         * @throws {module:API.cvat.exceptions.ArgumentError}
          * @throws {module:API.cvat.exceptions.ServerError}
          * @throws {module:API.cvat.exceptions.PluginError}
          */
-        async reviews() {
-            const result = await PluginRegistry.apiWrapper.call(this, Job.prototype.reviews);
+        async openIssue(issue, message) {
+            const result = await PluginRegistry.apiWrapper.call(this, Job.prototype.openIssue, issue, message);
             return result;
         }
 
         /**
-         * /**
-         * @typedef {Object} ReviewSummary
-         * @property {number} reviews Number of done reviews
-         * @property {number} average_estimated_quality
-         * @property {number} issues_unsolved
-         * @property {number} issues_resolved
-         * @property {string[]} assignees
-         * @property {string[]} reviewers
-         */
-        /**
-         * Method returns brief summary of within all reviews
-         * @method reviewsSummary
-         * @type {ReviewSummary}
+         * Method removes all job related data from the client (annotations, history, etc.)
+         * @method close
+         * @returns {module:API.cvat.classes.Job}
          * @memberof module:API.cvat.classes.Job
          * @readonly
-         * @instance
          * @async
-         * @throws {module:API.cvat.exceptions.ServerError}
+         * @instance
          * @throws {module:API.cvat.exceptions.PluginError}
          */
-        async reviewsSummary() {
-            const result = await PluginRegistry.apiWrapper.call(this, Job.prototype.reviewsSummary);
+        async close() {
+            const result = await PluginRegistry.apiWrapper.call(this, Job.prototype.close);
             return result;
         }
     }
@@ -939,7 +1074,7 @@
     class Task extends Session {
         /**
          * In a fact you need use the constructor only if you want to create a task
-         * @param {object} initialData - Object which is used for initalization
+         * @param {object} initialData - Object which is used for initialization
          * <br> It can contain keys:
          * <br> <li style="margin-left: 10px;"> name
          * <br> <li style="margin-left: 10px;"> assignee
@@ -953,7 +1088,7 @@
             const data = {
                 id: undefined,
                 name: undefined,
-                project_id: undefined,
+                project_id: null,
                 status: undefined,
                 size: undefined,
                 mode: undefined,
@@ -962,6 +1097,7 @@
                 created_date: undefined,
                 updated_date: undefined,
                 bug_tracker: undefined,
+                subset: undefined,
                 overlap: undefined,
                 segment_size: undefined,
                 image_quality: undefined,
@@ -975,14 +1111,11 @@
                 use_cache: undefined,
                 copy_data: undefined,
                 dimension: undefined,
+                cloud_storage_id: undefined,
+                sorting_method: undefined,
             };
 
-            let updatedFields = {
-                name: false,
-                assignee: false,
-                bug_tracker: false,
-                labels: false,
-            };
+            const updateTrigger = new FieldUpdateTrigger();
 
             for (const property in data) {
                 if (Object.prototype.hasOwnProperty.call(data, property) && property in initialData) {
@@ -1001,6 +1134,13 @@
                 remote_files: [],
             });
 
+            if (Array.isArray(initialData.labels)) {
+                for (const label of initialData.labels) {
+                    const classInstance = new Label(label);
+                    data.labels.push(classInstance);
+                }
+            }
+
             if (Array.isArray(initialData.segments)) {
                 for (const segment of initialData.segments) {
                     if (Array.isArray(segment.jobs)) {
@@ -1009,22 +1149,25 @@
                                 url: job.url,
                                 id: job.id,
                                 assignee: job.assignee,
-                                reviewer: job.reviewer,
-                                status: job.status,
+                                state: job.state,
+                                stage: job.stage,
                                 start_frame: segment.start_frame,
                                 stop_frame: segment.stop_frame,
-                                task: this,
+                                // following fields also returned when doing API request /jobs/<id>
+                                // here we know them from task and append to constructor
+                                task_id: data.id,
+                                project_id: data.project_id,
+                                labels: data.labels,
+                                bug_tracker: data.bug_tracker,
+                                mode: data.mode,
+                                dimension: data.dimension,
+                                data_compressed_chunk_type: data.data_compressed_chunk_type,
+                                data_chunk_size: data.data_chunk_size,
                             });
+
                             data.jobs.push(jobInstance);
                         }
                     }
-                }
-            }
-
-            if (Array.isArray(initialData.labels)) {
-                for (const label of initialData.labels) {
-                    const classInstance = new Label(label);
-                    data.labels.push(classInstance);
                 }
             }
 
@@ -1054,7 +1197,7 @@
                             if (!value.trim().length) {
                                 throw new ArgumentError('Value must not be empty');
                             }
-                            updatedFields.name = true;
+                            updateTrigger.update('name');
                             data.name = value;
                         },
                     },
@@ -1062,11 +1205,18 @@
                      * @name projectId
                      * @type {integer|null}
                      * @memberof module:API.cvat.classes.Task
-                     * @readonly
                      * @instance
                      */
                     projectId: {
                         get: () => data.project_id,
+                        set: (projectId) => {
+                            if (!Number.isInteger(projectId) || projectId <= 0) {
+                                throw new ArgumentError('Value must be a positive integer');
+                            }
+
+                            updateTrigger.update('projectId');
+                            data.project_id = projectId;
+                        },
                     },
                     /**
                      * @name status
@@ -1123,7 +1273,7 @@
                             if (assignee !== null && !(assignee instanceof User)) {
                                 throw new ArgumentError('Value must be a user instance');
                             }
-                            updatedFields.assignee = true;
+                            updateTrigger.update('assignee');
                             data.assignee = assignee;
                         },
                     },
@@ -1157,8 +1307,34 @@
                     bugTracker: {
                         get: () => data.bug_tracker,
                         set: (tracker) => {
-                            updatedFields.bug_tracker = true;
+                            if (typeof tracker !== 'string') {
+                                throw new ArgumentError(
+                                    `Subset value must be a string. But ${typeof tracker} has been got.`,
+                                );
+                            }
+
+                            updateTrigger.update('bugTracker');
                             data.bug_tracker = tracker;
+                        },
+                    },
+                    /**
+                     * @name subset
+                     * @type {string}
+                     * @memberof module:API.cvat.classes.Task
+                     * @instance
+                     * @throws {module:API.cvat.exception.ArgumentError}
+                     */
+                    subset: {
+                        get: () => data.subset,
+                        set: (subset) => {
+                            if (typeof subset !== 'string') {
+                                throw new ArgumentError(
+                                    `Subset value must be a string. But ${typeof subset} has been got.`,
+                                );
+                            }
+
+                            updateTrigger.update('subset');
+                            data.subset = subset;
                         },
                     },
                     /**
@@ -1258,7 +1434,6 @@
                         },
                     },
                     /**
-                     * After task has been created value can be appended only.
                      * @name labels
                      * @type {module:API.cvat.classes.Label[]}
                      * @memberof module:API.cvat.classes.Task
@@ -1266,7 +1441,7 @@
                      * @throws {module:API.cvat.exceptions.ArgumentError}
                      */
                     labels: {
-                        get: () => [...data.labels],
+                        get: () => data.labels.filter((_label) => !_label.deleted),
                         set: (labels) => {
                             if (!Array.isArray(labels)) {
                                 throw new ArgumentError('Value must be an array of Labels');
@@ -1280,8 +1455,14 @@
                                 }
                             }
 
-                            updatedFields.labels = true;
-                            data.labels = [...labels];
+                            const IDs = labels.map((_label) => _label.id);
+                            const deletedLabels = data.labels.filter((_label) => !IDs.includes(_label.id));
+                            deletedLabels.forEach((_label) => {
+                                _label.deleted = true;
+                            });
+
+                            updateTrigger.update('labels');
+                            data.labels = [...deletedLabels, ...labels];
                         },
                     },
                     /**
@@ -1295,7 +1476,7 @@
                         get: () => [...data.jobs],
                     },
                     /**
-                     * List of files from shared resource
+                     * List of files from shared resource or list of cloud storage files
                      * @name serverFiles
                      * @type {string[]}
                      * @memberof module:API.cvat.classes.Task
@@ -1447,21 +1628,40 @@
                     dataChunkType: {
                         get: () => data.data_compressed_chunk_type,
                     },
-                    __updatedFields: {
-                        get: () => updatedFields,
-                        set: (fields) => {
-                            updatedFields = fields;
-                        },
-                    },
+                    /**
+                     * @name dimension
+                     * @type {module:API.cvat.enums.DimensionType}
+                     * @memberof module:API.cvat.classes.Task
+                     * @readonly
+                     * @instance
+                    */
                     dimension: {
-                        /**
-                         * @name enabled
-                         * @type {string}
-                         * @memberof module:API.cvat.enums.DimensionType
-                         * @readonly
-                         * @instance
-                         */
                         get: () => data.dimension,
+                    },
+                    /**
+                     * @name cloudStorageId
+                     * @type {integer|null}
+                     * @memberof module:API.cvat.classes.Task
+                     * @instance
+                     */
+                    cloudStorageId: {
+                        get: () => data.cloud_storage_id,
+                    },
+                    sortingMethod: {
+                        /**
+                         * @name sortingMethod
+                         * @type {module:API.cvat.enums.SortingMethod}
+                         * @memberof module:API.cvat.classes.Task
+                         * @instance
+                         * @readonly
+                         */
+                        get: () => data.sorting_method,
+                    },
+                    _internalData: {
+                        get: () => data,
+                    },
+                    _updateTrigger: {
+                        get: () => updateTrigger,
                     },
                 }),
             );
@@ -1473,7 +1673,6 @@
                 get: Object.getPrototypeOf(this).annotations.get.bind(this),
                 put: Object.getPrototypeOf(this).annotations.put.bind(this),
                 save: Object.getPrototypeOf(this).annotations.save.bind(this),
-                dump: Object.getPrototypeOf(this).annotations.dump.bind(this),
                 merge: Object.getPrototypeOf(this).annotations.merge.bind(this),
                 split: Object.getPrototypeOf(this).annotations.split.bind(this),
                 group: Object.getPrototypeOf(this).annotations.group.bind(this),
@@ -1501,10 +1700,16 @@
                 get: Object.getPrototypeOf(this).frames.get.bind(this),
                 ranges: Object.getPrototypeOf(this).frames.ranges.bind(this),
                 preview: Object.getPrototypeOf(this).frames.preview.bind(this),
+                contextImage: Object.getPrototypeOf(this).frames.contextImage.bind(this),
             };
 
             this.logger = {
                 log: Object.getPrototypeOf(this).logger.log.bind(this),
+            };
+
+            this.predictor = {
+                status: Object.getPrototypeOf(this).predictor.status.bind(this),
+                predict: Object.getPrototypeOf(this).predictor.predict.bind(this),
             };
         }
 
@@ -1556,6 +1761,36 @@
             const result = await PluginRegistry.apiWrapper.call(this, Task.prototype.delete);
             return result;
         }
+
+        /**
+         * Method makes a backup of a task
+         * @method export
+         * @memberof module:API.cvat.classes.Task
+         * @readonly
+         * @instance
+         * @async
+         * @throws {module:API.cvat.exceptions.ServerError}
+         * @throws {module:API.cvat.exceptions.PluginError}
+         */
+        async export() {
+            const result = await PluginRegistry.apiWrapper.call(this, Task.prototype.export);
+            return result;
+        }
+
+        /**
+         * Method imports a task from a backup
+         * @method import
+         * @memberof module:API.cvat.classes.Task
+         * @readonly
+         * @instance
+         * @async
+         * @throws {module:API.cvat.exceptions.ServerError}
+         * @throws {module:API.cvat.exceptions.PluginError}
+         */
+        static async import(file) {
+            const result = await PluginRegistry.apiWrapper.call(this, Task.import, file);
+            return result;
+        }
     }
 
     module.exports = {
@@ -1577,7 +1812,6 @@
         selectObject,
         annotationsStatistics,
         uploadAnnotations,
-        dumpAnnotations,
         importAnnotations,
         exportAnnotations,
         exportDataset,
@@ -1589,79 +1823,37 @@
         closeSession,
     } = require('./annotations');
 
-    buildDublicatedAPI(Job.prototype);
-    buildDublicatedAPI(Task.prototype);
+    buildDuplicatedAPI(Job.prototype);
+    buildDuplicatedAPI(Task.prototype);
 
     Job.prototype.save.implementation = async function () {
         if (this.id) {
-            const jobData = {};
-
-            for (const [field, isUpdated] of Object.entries(this.__updatedFields)) {
-                if (isUpdated) {
-                    switch (field) {
-                    case 'status':
-                        jobData.status = this.status;
-                        break;
-                    case 'assignee':
-                        jobData.assignee_id = this.assignee ? this.assignee.id : null;
-                        break;
-                    case 'reviewer':
-                        jobData.reviewer_id = this.reviewer ? this.reviewer.id : null;
-                        break;
-                    default:
-                        break;
-                    }
-                }
+            const jobData = this._updateTrigger.getUpdated(this);
+            if (jobData.assignee) {
+                jobData.assignee = jobData.assignee.id;
             }
 
-            await serverProxy.jobs.save(this.id, jobData);
-
-            this.__updatedFields = {
-                status: false,
-                assignee: false,
-                reviewer: false,
-            };
-
-            return this;
+            const data = await serverProxy.jobs.save(this.id, jobData);
+            this._updateTrigger.reset();
+            return new Job(data);
         }
 
-        throw new ArgumentError('Can not save job without and id');
+        throw new ArgumentError('Could not save job without id');
     };
 
     Job.prototype.issues.implementation = async function () {
-        const result = await serverProxy.jobs.issues(this.id);
+        const result = await serverProxy.issues.get(this.id);
         return result.map((issue) => new Issue(issue));
     };
 
-    Job.prototype.reviews.implementation = async function () {
-        const result = await serverProxy.jobs.reviews.get(this.id);
-        const reviews = result.map((review) => new Review(review));
-
-        // try to get not finished review from the local storage
-        const data = store.get(`job-${this.id}-review`);
-        if (data) {
-            reviews.push(new Review(JSON.parse(data)));
-        }
-
-        return reviews;
-    };
-
-    Job.prototype.reviewsSummary.implementation = async function () {
-        const reviews = await serverProxy.jobs.reviews.get(this.id);
-        const issues = await serverProxy.jobs.issues(this.id);
-
-        const qualities = reviews.map((review) => review.estimated_quality);
-        const reviewers = reviews.filter((review) => review.reviewer).map((review) => review.reviewer.username);
-        const assignees = reviews.filter((review) => review.assignee).map((review) => review.assignee.username);
-
-        return {
-            reviews: reviews.length,
-            average_estimated_quality: qualities.reduce((acc, quality) => acc + quality, 0) / (qualities.length || 1),
-            issues_unsolved: issues.filter((issue) => !issue.resolved_date).length,
-            issues_resolved: issues.filter((issue) => issue.resolved_date).length,
-            assignees: Array.from(new Set(assignees.filter((assignee) => assignee !== null))),
-            reviewers: Array.from(new Set(reviewers.filter((reviewer) => reviewer !== null))),
-        };
+    Job.prototype.openIssue.implementation = async function (issue, message) {
+        checkObjectType('issue', issue, null, Issue);
+        checkObjectType('message', message, 'string');
+        const result = await serverProxy.issues.create({
+            ...issue.serialize(),
+            message,
+        });
+        return new Issue(result);
     };
 
     Job.prototype.frames.get.implementation = async function (frame, isPlaying, step) {
@@ -1674,28 +1866,39 @@
         }
 
         const frameData = await getFrame(
-            this.task.id,
-            this.task.dataChunkSize,
-            this.task.dataChunkType,
-            this.task.mode,
+            this.taskId,
+            this.id,
+            this.dataChunkSize,
+            this.dataChunkType,
+            this.mode,
             frame,
             this.startFrame,
             this.stopFrame,
             isPlaying,
             step,
+            this.dimension,
         );
         return frameData;
     };
 
     Job.prototype.frames.ranges.implementation = async function () {
-        const rangesData = await getRanges(this.task.id);
+        const rangesData = await getRanges(this.taskId);
         return rangesData;
+    };
+
+    Job.prototype.frames.preview.implementation = async function () {
+        if (this.id === null || this.taskId === null) {
+            return '';
+        }
+
+        const frameData = await getPreview(this.taskId, this.id);
+        return frameData;
     };
 
     // TODO: Check filter for annotations
     Job.prototype.annotations.get.implementation = async function (frame, allTracks, filters) {
-        if (!Array.isArray(filters) || filters.some((filter) => typeof filter !== 'string')) {
-            throw new ArgumentError('The filters argument must be an array of strings');
+        if (!Array.isArray(filters)) {
+            throw new ArgumentError('Filters must be an array');
         }
 
         if (!Number.isInteger(frame)) {
@@ -1711,8 +1914,8 @@
     };
 
     Job.prototype.annotations.search.implementation = function (filters, frameFrom, frameTo) {
-        if (!Array.isArray(filters) || filters.some((filter) => typeof filter !== 'string')) {
-            throw new ArgumentError('The filters argument must be an array of strings');
+        if (!Array.isArray(filters)) {
+            throw new ArgumentError('Filters must be an array');
         }
 
         if (!Number.isInteger(frameFrom) || !Number.isInteger(frameTo)) {
@@ -1773,8 +1976,10 @@
         return result;
     };
 
-    Job.prototype.annotations.clear.implementation = async function (reload) {
-        const result = await clearAnnotations(this, reload);
+    Job.prototype.annotations.clear.implementation = async function (
+        reload, startframe, endframe, delTrackKeyframesOnly,
+    ) {
+        const result = await clearAnnotations(this, reload, startframe, endframe, delTrackKeyframesOnly);
         return result;
     };
 
@@ -1808,13 +2013,8 @@
         return result;
     };
 
-    Job.prototype.annotations.dump.implementation = async function (dumper, name) {
-        const result = await dumpAnnotations(this, name, dumper);
-        return result;
-    };
-
-    Job.prototype.annotations.exportDataset.implementation = async function (format) {
-        const result = await exportDataset(this.task, format);
+    Job.prototype.annotations.exportDataset.implementation = async function (format, saveImages, customName) {
+        const result = await exportDataset(this, format, customName, saveImages);
         return result;
     };
 
@@ -1844,8 +2044,52 @@
     };
 
     Job.prototype.logger.log.implementation = async function (logType, payload, wait) {
-        const result = await this.task.logger.log(logType, { ...payload, job_id: this.id }, wait);
+        const result = await loggerStorage.log(logType, { ...payload, task_id: this.taskId, job_id: this.id }, wait);
         return result;
+    };
+
+    Job.prototype.predictor.status.implementation = async function () {
+        if (!Number.isInteger(this.projectId)) {
+            throw new DataError('The job must belong to a project to use the feature');
+        }
+
+        const result = await serverProxy.predictor.status(this.projectId);
+        return {
+            message: result.message,
+            progress: result.progress,
+            projectScore: result.score,
+            timeRemaining: result.time_remaining,
+            mediaAmount: result.media_amount,
+            annotationAmount: result.annotation_amount,
+        };
+    };
+
+    Job.prototype.predictor.predict.implementation = async function (frame) {
+        if (!Number.isInteger(frame) || frame < 0) {
+            throw new ArgumentError(`Frame must be a positive integer. Got: "${frame}"`);
+        }
+
+        if (frame < this.startFrame || frame > this.stopFrame) {
+            throw new ArgumentError(`The frame with number ${frame} is out of the job`);
+        }
+
+        if (!Number.isInteger(this.projectId)) {
+            throw new DataError('The job must belong to a project to use the feature');
+        }
+
+        const result = await serverProxy.predictor.predict(this.taskId, frame);
+        return result;
+    };
+
+    Job.prototype.frames.contextImage.implementation = async function (frameId) {
+        const result = await getContextImage(this.taskId, this.id, frameId);
+        return result;
+    };
+
+    Job.prototype.close.implementation = function closeTask() {
+        clearFrames(this.taskId);
+        closeSession(this);
+        return this;
     };
 
     Task.prototype.close.implementation = function closeTask() {
@@ -1862,39 +2106,22 @@
         // TODO: Add ability to change an owner and an assignee
         if (typeof this.id !== 'undefined') {
             // If the task has been already created, we update it
-            const taskData = {};
-
-            for (const [field, isUpdated] of Object.entries(this.__updatedFields)) {
-                if (isUpdated) {
-                    switch (field) {
-                    case 'assignee':
-                        taskData.assignee_id = this.assignee ? this.assignee.id : null;
-                        break;
-                    case 'name':
-                        taskData.name = this.name;
-                        break;
-                    case 'bug_tracker':
-                        taskData.bug_tracker = this.bugTracker;
-                        break;
-                    case 'labels':
-                        taskData.labels = [...this.labels.map((el) => el.toJSON())];
-                        break;
-                    default:
-                        break;
-                    }
-                }
+            const taskData = this._updateTrigger.getUpdated(this, {
+                bugTracker: 'bug_tracker',
+                projectId: 'project_id',
+                assignee: 'assignee_id',
+            });
+            if (taskData.assignee_id) {
+                taskData.assignee_id = taskData.assignee_id.id;
+            }
+            if (taskData.labels) {
+                taskData.labels = this._internalData.labels;
+                taskData.labels = taskData.labels.map((el) => el.toJSON());
             }
 
-            await serverProxy.tasks.saveTask(this.id, taskData);
-
-            this.updatedFields = {
-                assignee: false,
-                name: false,
-                bugTracker: false,
-                labels: false,
-            };
-
-            return this;
+            const data = await serverProxy.tasks.save(this.id, taskData);
+            this._updateTrigger.reset();
+            return new Task(data);
         }
 
         const taskSpec = {
@@ -1914,6 +2141,9 @@
         if (typeof this.projectId !== 'undefined') {
             taskSpec.project_id = this.projectId;
         }
+        if (typeof this.subset !== 'undefined') {
+            taskSpec.subset = this.subset;
+        }
 
         const taskDataSpec = {
             client_files: this.clientFiles,
@@ -1922,6 +2152,7 @@
             image_quality: this.imageQuality,
             use_zip_chunks: this.useZipChunks,
             use_cache: this.useCache,
+            sorting_method: this.sortingMethod,
         };
 
         if (typeof this.startFrame !== 'undefined') {
@@ -1939,13 +2170,27 @@
         if (typeof this.copyData !== 'undefined') {
             taskDataSpec.copy_data = this.copyData;
         }
+        if (typeof this.cloudStorageId !== 'undefined') {
+            taskDataSpec.cloud_storage_id = this.cloudStorageId;
+        }
 
-        const task = await serverProxy.tasks.createTask(taskSpec, taskDataSpec, onUpdate);
+        const task = await serverProxy.tasks.create(taskSpec, taskDataSpec, onUpdate);
         return new Task(task);
     };
 
     Task.prototype.delete.implementation = async function () {
-        const result = await serverProxy.tasks.deleteTask(this.id);
+        const result = await serverProxy.tasks.delete(this.id);
+        return result;
+    };
+
+    Task.prototype.export.implementation = async function () {
+        const result = await serverProxy.tasks.export(this.id);
+        return result;
+    };
+
+    Task.import.implementation = async function (file) {
+        // eslint-disable-next-line no-unsanitized/method
+        const result = await serverProxy.tasks.import(file);
         return result;
     };
 
@@ -1960,6 +2205,7 @@
 
         const result = await getFrame(
             this.id,
+            null,
             this.dataChunkSize,
             this.dataChunkType,
             this.mode,
@@ -1972,17 +2218,16 @@
         return result;
     };
 
-    Job.prototype.frames.preview.implementation = async function () {
-        const frameData = await getPreview(this.task.id);
-        return frameData;
-    };
-
     Task.prototype.frames.ranges.implementation = async function () {
         const rangesData = await getRanges(this.id);
         return rangesData;
     };
 
     Task.prototype.frames.preview.implementation = async function () {
+        if (this.id === null) {
+            return '';
+        }
+
         const frameData = await getPreview(this.id);
         return frameData;
     };
@@ -2093,11 +2338,6 @@
         return result;
     };
 
-    Task.prototype.annotations.dump.implementation = async function (dumper, name) {
-        const result = await dumpAnnotations(this, name, dumper);
-        return result;
-    };
-
     Task.prototype.annotations.import.implementation = function (data) {
         const result = importAnnotations(this, data);
         return result;
@@ -2108,8 +2348,8 @@
         return result;
     };
 
-    Task.prototype.annotations.exportDataset.implementation = async function (format) {
-        const result = await exportDataset(this, format);
+    Task.prototype.annotations.exportDataset.implementation = async function (format, saveImages, customName) {
+        const result = await exportDataset(this, format, customName, saveImages);
         return result;
     };
 
@@ -2140,6 +2380,39 @@
 
     Task.prototype.logger.log.implementation = async function (logType, payload, wait) {
         const result = await loggerStorage.log(logType, { ...payload, task_id: this.id }, wait);
+        return result;
+    };
+
+    Task.prototype.predictor.status.implementation = async function () {
+        if (!Number.isInteger(this.projectId)) {
+            throw new DataError('The task must belong to a project to use the feature');
+        }
+
+        const result = await serverProxy.predictor.status(this.projectId);
+        return {
+            message: result.message,
+            progress: result.progress,
+            projectScore: result.score,
+            timeRemaining: result.time_remaining,
+            mediaAmount: result.media_amount,
+            annotationAmount: result.annotation_amount,
+        };
+    };
+
+    Task.prototype.predictor.predict.implementation = async function (frame) {
+        if (!Number.isInteger(frame) || frame < 0) {
+            throw new ArgumentError(`Frame must be a positive integer. Got: "${frame}"`);
+        }
+
+        if (frame >= this.size) {
+            throw new ArgumentError(`The frame with number ${frame} is out of the task`);
+        }
+
+        if (!Number.isInteger(this.projectId)) {
+            throw new DataError('The task must belong to a project to use the feature');
+        }
+
+        const result = await serverProxy.predictor.predict(this.id, frame);
         return result;
     };
 })();

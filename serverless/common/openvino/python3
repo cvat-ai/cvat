@@ -1,0 +1,7 @@
+#!/bin/bash
+
+args=$@
+
+. /opt/intel/openvino/bin/setupvars.sh
+PYTHONPATH=/opt/nuclio/common/openvino:$PYTHONPATH
+/usr/bin/python3 $args

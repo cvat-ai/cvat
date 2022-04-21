@@ -1,12 +1,14 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2019-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import { Dispatch, ActionCreator } from 'redux';
 
 import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
-import { ProjectsQuery, CombinedState } from 'reducers/interfaces';
-import { getTasksSuccess, updateTaskSuccess } from 'actions/tasks-actions';
+import {
+    ProjectsQuery, TasksQuery, CombinedState, Indexable,
+} from 'reducers/interfaces';
+import { getTasksAsync } from 'actions/tasks-actions';
 import { getCVATStore } from 'cvat-store';
 import getCore from 'cvat-core-wrapper';
 
@@ -26,17 +28,23 @@ export enum ProjectsActionTypes {
     DELETE_PROJECT = 'DELETE_PROJECT',
     DELETE_PROJECT_SUCCESS = 'DELETE_PROJECT_SUCCESS',
     DELETE_PROJECT_FAILED = 'DELETE_PROJECT_FAILED',
+    BACKUP_PROJECT = 'BACKUP_PROJECT',
+    BACKUP_PROJECT_SUCCESS = 'BACKUP_PROJECT_SUCCESS',
+    BACKUP_PROJECT_FAILED = 'BACKUP_PROJECT_FAILED',
+    RESTORE_PROJECT = 'IMPORT_PROJECT',
+    RESTORE_PROJECT_SUCCESS = 'IMPORT_PROJECT_SUCCESS',
+    RESTORE_PROJECT_FAILED = 'IMPORT_PROJECT_FAILED',
 }
 
 // prettier-ignore
 const projectActions = {
     getProjects: () => createAction(ProjectsActionTypes.GET_PROJECTS),
-    getProjectsSuccess: (array: any[], count: number) => (
-        createAction(ProjectsActionTypes.GET_PROJECTS_SUCCESS, { array, count })
+    getProjectsSuccess: (array: any[], previews: string[], count: number) => (
+        createAction(ProjectsActionTypes.GET_PROJECTS_SUCCESS, { array, previews, count })
     ),
     getProjectsFailed: (error: any) => createAction(ProjectsActionTypes.GET_PROJECTS_FAILED, { error }),
-    updateProjectsGettingQuery: (query: Partial<ProjectsQuery>) => (
-        createAction(ProjectsActionTypes.UPDATE_PROJECTS_GETTING_QUERY, { query })
+    updateProjectsGettingQuery: (query: Partial<ProjectsQuery>, tasksQuery: Partial<TasksQuery> = {}) => (
+        createAction(ProjectsActionTypes.UPDATE_PROJECTS_GETTING_QUERY, { query, tasksQuery })
     ),
     createProject: () => createAction(ProjectsActionTypes.CREATE_PROJECT),
     createProjectSuccess: (projectId: number) => (
@@ -55,23 +63,58 @@ const projectActions = {
     deleteProjectFailed: (projectId: number, error: any) => (
         createAction(ProjectsActionTypes.DELETE_PROJECT_FAILED, { projectId, error })
     ),
+    backupProject: (projectId: number) => createAction(ProjectsActionTypes.BACKUP_PROJECT, { projectId }),
+    backupProjectSuccess: (projectID: number) => (
+        createAction(ProjectsActionTypes.BACKUP_PROJECT_SUCCESS, { projectID })
+    ),
+    backupProjectFailed: (projectID: number, error: any) => (
+        createAction(ProjectsActionTypes.BACKUP_PROJECT_FAILED, { projectId: projectID, error })
+    ),
+    restoreProject: () => createAction(ProjectsActionTypes.RESTORE_PROJECT),
+    restoreProjectSuccess: (projectID: number) => (
+        createAction(ProjectsActionTypes.RESTORE_PROJECT_SUCCESS, { projectID })
+    ),
+    restoreProjectFailed: (error: any) => (
+        createAction(ProjectsActionTypes.RESTORE_PROJECT_FAILED, { error })
+    ),
 };
 
 export type ProjectActions = ActionUnion<typeof projectActions>;
 
-export function getProjectsAsync(query: Partial<ProjectsQuery>): ThunkAction {
+export function getProjectTasksAsync(tasksQuery: Partial<TasksQuery> = {}): ThunkAction<void> {
+    return (dispatch: ActionCreator<Dispatch>, getState: () => CombinedState): void => {
+        const store = getCVATStore();
+        const state: CombinedState = store.getState();
+        dispatch(projectActions.updateProjectsGettingQuery(
+            getState().projects.gettingQuery,
+            tasksQuery,
+        ));
+        const query: Partial<TasksQuery> = {
+            ...state.projects.tasksGettingQuery,
+            ...tasksQuery,
+        };
+
+        dispatch(getTasksAsync(query, false));
+    };
+}
+
+export function getProjectsAsync(
+    query: Partial<ProjectsQuery>, tasksQuery: Partial<TasksQuery> = {},
+): ThunkAction {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         dispatch(projectActions.getProjects());
-        dispatch(projectActions.updateProjectsGettingQuery(query));
+        dispatch(projectActions.updateProjectsGettingQuery(query, tasksQuery));
 
         // Clear query object from null fields
         const filteredQuery: Partial<ProjectsQuery> = {
             page: 1,
             ...query,
         };
-        for (const key in filteredQuery) {
-            if (filteredQuery[key] === null || typeof filteredQuery[key] === 'undefined') {
-                delete filteredQuery[key];
+
+        for (const key of Object.keys(filteredQuery)) {
+            const value = (filteredQuery as Indexable)[key];
+            if (value === null || typeof value === 'undefined') {
+                delete (filteredQuery as Indexable)[key];
             }
         }
 
@@ -85,38 +128,15 @@ export function getProjectsAsync(query: Partial<ProjectsQuery>): ThunkAction {
 
         const array = Array.from(result);
 
-        const tasks: any[] = [];
-        const taskPreviewPromises: Promise<any>[] = [];
+        const previewPromises = array.map((project): string => (project as any).preview().catch(() => ''));
+        dispatch(projectActions.getProjectsSuccess(array, await Promise.all(previewPromises), result.count));
 
-        for (const project of array) {
-            taskPreviewPromises.push(
-                ...(project as any).tasks.map((task: any): string => {
-                    tasks.push(task);
-                    return (task as any).frames.preview().catch(() => '');
-                }),
-            );
-        }
-
-        const taskPreviews = await Promise.all(taskPreviewPromises);
-
-        dispatch(projectActions.getProjectsSuccess(array, result.count));
-
-        const store = getCVATStore();
-        const state: CombinedState = store.getState();
-
-        if (!state.tasks.fetching) {
-            dispatch(
-                getTasksSuccess(tasks, taskPreviews, tasks.length, {
-                    page: 1,
-                    assignee: null,
-                    id: null,
-                    mode: null,
-                    name: null,
-                    owner: null,
-                    search: null,
-                    status: null,
-                }),
-            );
+        // Appropriate tasks fetching proccess needs with retrieving only a single project
+        if (Object.keys(filteredQuery).includes('id') && typeof filteredQuery.id === 'number') {
+            dispatch(getProjectTasksAsync({
+                ...tasksQuery,
+                projectId: filteredQuery.id,
+            }));
         }
     };
 }
@@ -136,17 +156,14 @@ export function createProjectAsync(data: any): ThunkAction {
 }
 
 export function updateProjectAsync(projectInstance: any): ThunkAction {
-    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+    return async (dispatch, getState): Promise<void> => {
         try {
+            const state = getState();
             dispatch(projectActions.updateProject());
             await projectInstance.save();
             const [project] = await cvat.projects.get({ id: projectInstance.id });
-            // TODO: Check case when a project is not available anymore after update
-            // (assignee changes assignee and project is not public)
             dispatch(projectActions.updateProjectSuccess(project));
-            project.tasks.forEach((task: any) => {
-                dispatch(updateTaskSuccess(task, task.id));
-            });
+            dispatch(getProjectTasksAsync(state.projects.tasksGettingQuery));
         } catch (error) {
             let project = null;
             try {
@@ -168,6 +185,34 @@ export function deleteProjectAsync(projectInstance: any): ThunkAction {
             dispatch(projectActions.deleteProjectSuccess(projectInstance.id));
         } catch (error) {
             dispatch(projectActions.deleteProjectFailed(projectInstance.id, error));
+        }
+    };
+}
+
+export function restoreProjectAsync(file: File): ThunkAction {
+    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+        dispatch(projectActions.restoreProject());
+        try {
+            const projectInstance = await cvat.classes.Project.restore(file);
+            dispatch(projectActions.restoreProjectSuccess(projectInstance));
+        } catch (error) {
+            dispatch(projectActions.restoreProjectFailed(error));
+        }
+    };
+}
+
+export function backupProjectAsync(projectInstance: any): ThunkAction {
+    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+        dispatch(projectActions.backupProject(projectInstance.id));
+
+        try {
+            const url = await projectInstance.backup();
+            const downloadAnchor = window.document.getElementById('downloadAnchor') as HTMLAnchorElement;
+            downloadAnchor.href = url;
+            downloadAnchor.click();
+            dispatch(projectActions.backupProjectSuccess(projectInstance.id));
+        } catch (error) {
+            dispatch(projectActions.backupProjectFailed(projectInstance.id, error));
         }
     };
 }

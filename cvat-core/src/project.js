@@ -1,14 +1,13 @@
-// Copyright (C) 2019-2020 Intel Corporation
+// Copyright (C) 2019-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
 (() => {
     const PluginRegistry = require('./plugins');
-    const serverProxy = require('./server-proxy');
     const { ArgumentError } = require('./exceptions');
-    const { Task } = require('./session');
     const { Label } = require('./labels');
     const User = require('./user');
+    const { FieldUpdateTrigger } = require('./common');
 
     /**
      * Class representing a project
@@ -17,7 +16,7 @@
     class Project {
         /**
          * In a fact you need use the constructor only if you want to create a project
-         * @param {object} initialData - Object which is used for initalization
+         * @param {object} initialData - Object which is used for initialization
          * <br> It can contain keys:
          * <br> <li style="margin-left: 10px;"> name
          * <br> <li style="margin-left: 10px;"> labels
@@ -32,7 +31,13 @@
                 bug_tracker: undefined,
                 created_date: undefined,
                 updated_date: undefined,
+                task_subsets: undefined,
+                training_project: undefined,
+                task_ids: undefined,
+                dimension: undefined,
             };
+
+            const updateTrigger = new FieldUpdateTrigger();
 
             for (const property in data) {
                 if (Object.prototype.hasOwnProperty.call(data, property) && property in initialData) {
@@ -41,7 +46,6 @@
             }
 
             data.labels = [];
-            data.tasks = [];
 
             if (Array.isArray(initialData.labels)) {
                 for (const label of initialData.labels) {
@@ -50,11 +54,8 @@
                 }
             }
 
-            if (Array.isArray(initialData.tasks)) {
-                for (const task of initialData.tasks) {
-                    const taskInstance = new Task(task);
-                    data.tasks.push(taskInstance);
-                }
+            if (typeof initialData.training_project === 'object') {
+                data.training_project = { ...initialData.training_project };
             }
 
             Object.defineProperties(
@@ -84,8 +85,10 @@
                                 throw new ArgumentError('Value must not be empty');
                             }
                             data.name = value;
+                            updateTrigger.update('name');
                         },
                     },
+
                     /**
                      * @name status
                      * @type {module:API.cvat.enums.TaskStatus}
@@ -111,6 +114,7 @@
                                 throw new ArgumentError('Value must be a user instance');
                             }
                             data.assignee = assignee;
+                            updateTrigger.update('assignee');
                         },
                     },
                     /**
@@ -135,12 +139,13 @@
                         get: () => data.bug_tracker,
                         set: (tracker) => {
                             data.bug_tracker = tracker;
+                            updateTrigger.update('bugTracker');
                         },
                     },
                     /**
                      * @name createdDate
                      * @type {string}
-                     * @memberof module:API.cvat.classes.Task
+                     * @memberof module:API.cvat.classes.Project
                      * @readonly
                      * @instance
                      */
@@ -150,12 +155,23 @@
                     /**
                      * @name updatedDate
                      * @type {string}
-                     * @memberof module:API.cvat.classes.Task
+                     * @memberof module:API.cvat.classes.Project
                      * @readonly
                      * @instance
                      */
                     updatedDate: {
                         get: () => data.updated_date,
+                    },
+                    /**
+                     * Dimesion of the tasks in the project, if no task dimension is null
+                     * @name dimension
+                     * @type {string}
+                     * @memberof module:API.cvat.classes.Project
+                     * @readonly
+                     * @instance
+                     */
+                    dimension: {
+                        get: () => data.dimension,
                     },
                     /**
                      * After project has been created value can be appended only.
@@ -178,22 +194,85 @@
                                 );
                             }
 
-                            data.labels = [...labels];
+                            const IDs = labels.map((_label) => _label.id);
+                            const deletedLabels = data.labels.filter((_label) => !IDs.includes(_label.id));
+                            deletedLabels.forEach((_label) => {
+                                _label.deleted = true;
+                            });
+
+                            data.labels = [...deletedLabels, ...labels];
+                            updateTrigger.update('labels');
                         },
                     },
                     /**
-                     * Tasks linked with the project
-                     * @name tasks
-                     * @type {module:API.cvat.classes.Task[]}
+                     * Subsets array for related tasks
+                     * @name subsets
+                     * @type {string[]}
                      * @memberof module:API.cvat.classes.Project
                      * @readonly
                      * @instance
                      */
-                    tasks: {
-                        get: () => [...data.tasks],
+                    subsets: {
+                        get: () => [...data.task_subsets],
+                    },
+                    /**
+                     * Training project associated with this annotation project
+                     * This is a simple object which contains
+                     * keys like host, username, password, enabled, project_class
+                     * @name trainingProject
+                     * @type {object}
+                     * @memberof module:API.cvat.classes.Project
+                     * @readonly
+                     * @instance
+                     */
+                    trainingProject: {
+                        get: () => {
+                            if (typeof data.training_project === 'object') {
+                                return { ...data.training_project };
+                            }
+                            return data.training_project;
+                        },
+                        set: (updatedProject) => {
+                            if (typeof training === 'object') {
+                                data.training_project = { ...updatedProject };
+                            } else {
+                                data.training_project = updatedProject;
+                            }
+                            updateTrigger.update('trainingProject');
+                        },
+                    },
+                    _internalData: {
+                        get: () => data,
+                    },
+                    _updateTrigger: {
+                        get: () => updateTrigger,
                     },
                 }),
             );
+
+            // When we call a function, for example: project.annotations.get()
+            // In the method get we lose the project context
+            // So, we need return it
+            this.annotations = {
+                exportDataset: Object.getPrototypeOf(this).annotations.exportDataset.bind(this),
+                importDataset: Object.getPrototypeOf(this).annotations.importDataset.bind(this),
+            };
+        }
+
+        /**
+         * Get the first frame of the first task of a project for preview
+         * @method preview
+         * @memberof Project
+         * @returns {string} - jpeg encoded image
+         * @instance
+         * @async
+         * @throws {module:API.cvat.exceptions.PluginError}
+         * @throws {module:API.cvat.exceptions.ServerError}
+         * @throws {module:API.cvat.exceptions.ArgumentError}
+         */
+        async preview() {
+            const result = await PluginRegistry.apiWrapper.call(this, Project.prototype.preview);
+            return result;
         }
 
         /**
@@ -213,7 +292,7 @@
         }
 
         /**
-         * Method deletes a task from a server
+         * Method deletes a project from a server
          * @method delete
          * @memberof module:API.cvat.classes.Project
          * @readonly
@@ -226,40 +305,72 @@
             const result = await PluginRegistry.apiWrapper.call(this, Project.prototype.delete);
             return result;
         }
+
+        /**
+         * Method makes a backup of a project
+         * @method export
+         * @memberof module:API.cvat.classes.Project
+         * @readonly
+         * @instance
+         * @async
+         * @throws {module:API.cvat.exceptions.ServerError}
+         * @throws {module:API.cvat.exceptions.PluginError}
+         * @returns {string} URL to get result archive
+         */
+        async backup() {
+            const result = await PluginRegistry.apiWrapper.call(this, Project.prototype.backup);
+            return result;
+        }
+
+        /**
+         * Method restores a project from a backup
+         * @method restore
+         * @memberof module:API.cvat.classes.Project
+         * @readonly
+         * @instance
+         * @async
+         * @throws {module:API.cvat.exceptions.ServerError}
+         * @throws {module:API.cvat.exceptions.PluginError}
+         * @returns {number} ID of the imported project
+         */
+        static async restore(file) {
+            const result = await PluginRegistry.apiWrapper.call(this, Project.restore, file);
+            return result;
+        }
     }
+
+    Object.defineProperties(
+        Project.prototype,
+        Object.freeze({
+            annotations: Object.freeze({
+                value: {
+                    async exportDataset(format, saveImages, customName = '') {
+                        const result = await PluginRegistry.apiWrapper.call(
+                            this,
+                            Project.prototype.annotations.exportDataset,
+                            format,
+                            saveImages,
+                            customName,
+                        );
+                        return result;
+                    },
+                    async importDataset(format, file, updateStatusCallback = null) {
+                        const result = await PluginRegistry.apiWrapper.call(
+                            this,
+                            Project.prototype.annotations.importDataset,
+                            format,
+                            file,
+                            updateStatusCallback,
+                        );
+                        return result;
+                    },
+                },
+                writable: true,
+            }),
+        }),
+    );
 
     module.exports = {
         Project,
-    };
-
-    Project.prototype.save.implementation = async function () {
-        if (typeof this.id !== 'undefined') {
-            const projectData = {
-                name: this.name,
-                assignee_id: this.assignee ? this.assignee.id : null,
-                bug_tracker: this.bugTracker,
-                labels: [...this.labels.map((el) => el.toJSON())],
-            };
-
-            await serverProxy.projects.save(this.id, projectData);
-            return this;
-        }
-
-        const projectSpec = {
-            name: this.name,
-            labels: [...this.labels.map((el) => el.toJSON())],
-        };
-
-        if (this.bugTracker) {
-            projectSpec.bug_tracker = this.bugTracker;
-        }
-
-        const project = await serverProxy.projects.create(projectSpec);
-        return new Project(project);
-    };
-
-    Project.prototype.delete.implementation = async function () {
-        const result = await serverProxy.projects.delete(this.id);
-        return result;
     };
 })();

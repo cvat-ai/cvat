@@ -1,0 +1,24 @@
+{
+  "name": "cvat-canvas3d",
+  "version": "0.0.1",
+  "description": "Part of Computer Vision Annotation Tool which presents its canvas3D library",
+  "main": "src/canvas3d.ts",
+  "scripts": {
+    "build": "tsc && webpack --config ./webpack.config.js",
+    "server": "nodemon --watch config --exec 'webpack-dev-server --config ./webpack.config.js --mode=development --open'"
+  },
+  "author": "Intel",
+  "license": "MIT",
+  "browserslist": [
+    "Chrome >= 63",
+    "Firefox > 58",
+    "not IE 11",
+    "> 2%"
+  ],
+  "devDependencies": {},
+  "dependencies": {
+    "@types/three": "^0.125.3",
+    "camera-controls": "^1.25.3",
+    "three": "^0.126.1"
+  }
+}

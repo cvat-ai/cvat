@@ -8,15 +8,15 @@ def init_context(context):
     context.logger.info("Init context...  0%")
 
     model = ModelHandler()
-    setattr(context.user_data, 'model', model)
+    context.user_data.model = model
 
     context.logger.info("Init context...100%")
 
 def handler(context, event):
     context.logger.info("call handler")
     data = event.body
-    points = data["points"]
-    buf = io.BytesIO(base64.b64decode(data["image"].encode('utf-8')))
+    points = data["pos_points"]
+    buf = io.BytesIO(base64.b64decode(data["image"]))
     image = Image.open(buf)
 
     polygon = context.user_data.model.handle(image, points)

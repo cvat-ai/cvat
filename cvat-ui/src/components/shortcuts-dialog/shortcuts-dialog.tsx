@@ -1,17 +1,18 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
-import { shortcutsActions } from 'actions/shortcuts-actions';
 import Modal from 'antd/lib/modal';
 import Table from 'antd/lib/table';
 import React from 'react';
-import { getApplicationKeyMap } from 'react-hotkeys';
 import { connect } from 'react-redux';
+import { getApplicationKeyMap } from 'utils/mousetrap-react';
+import { shortcutsActions } from 'actions/shortcuts-actions';
 import { CombinedState } from 'reducers/interfaces';
 
 interface StateToProps {
     visible: boolean;
+    jobInstance: any;
 }
 
 interface DispatchToProps {
@@ -21,10 +22,14 @@ interface DispatchToProps {
 function mapStateToProps(state: CombinedState): StateToProps {
     const {
         shortcuts: { visibleShortcutsHelp: visible },
+        annotation: {
+            job: { instance: jobInstance },
+        },
     } = state;
 
     return {
         visible,
+        jobInstance,
     };
 }
 
@@ -36,20 +41,19 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
     };
 }
 
-function ShorcutsDialog(props: StateToProps & DispatchToProps): JSX.Element | null {
-    const { visible, switchShortcutsDialog } = props;
+function ShortcutsDialog(props: StateToProps & DispatchToProps): JSX.Element | null {
+    const { visible, switchShortcutsDialog, jobInstance } = props;
     const keyMap = getApplicationKeyMap();
 
-    const splitToRows = (data: string[]): JSX.Element[] =>
-        data.map(
-            (item: string, id: number): JSX.Element => (
-                // eslint-disable-next-line react/no-array-index-key
-                <span key={id}>
-                    {item}
-                    <br />
-                </span>
-            ),
-        );
+    const splitToRows = (data: string[]): JSX.Element[] => data.map(
+        (item: string, id: number): JSX.Element => (
+            // eslint-disable-next-line react/no-array-index-key
+            <span key={id}>
+                {item}
+                <br />
+            </span>
+        ),
+    );
 
     const columns = [
         {
@@ -76,13 +80,16 @@ function ShorcutsDialog(props: StateToProps & DispatchToProps): JSX.Element | nu
         },
     ];
 
-    const dataSource = Object.keys(keyMap).map((key: string, id: number) => ({
-        key: id,
-        name: keyMap[key].name || key,
-        description: keyMap[key].description || '',
-        shortcut: keyMap[key].sequences.map((value) => value.sequence),
-        action: keyMap[key].sequences.map((value) => value.action || 'keydown'),
-    }));
+    const dimensionType = jobInstance?.dimension;
+    const dataSource = Object.keys(keyMap)
+        .filter((key: string) => !dimensionType || keyMap[key].applicable.includes(dimensionType))
+        .map((key: string, id: number) => ({
+            key: id,
+            name: keyMap[key].name || key,
+            description: keyMap[key].description || '',
+            shortcut: keyMap[key].sequences,
+            action: [keyMap[key].action],
+        }));
 
     return (
         <Modal
@@ -93,10 +100,16 @@ function ShorcutsDialog(props: StateToProps & DispatchToProps): JSX.Element | nu
             onOk={switchShortcutsDialog}
             cancelButtonProps={{ style: { display: 'none' } }}
             zIndex={1001} /* default antd is 1000 */
+            className='cvat-shortcuts-modal-window'
         >
-            <Table dataSource={dataSource} columns={columns} size='small' />
+            <Table
+                dataSource={dataSource}
+                columns={columns}
+                size='small'
+                className='cvat-shortcuts-modal-window-table'
+            />
         </Modal>
     );
 }
 
-export default connect(mapStateToProps, mapDispatchToProps)(ShorcutsDialog);
+export default connect(mapStateToProps, mapDispatchToProps)(ShortcutsDialog);

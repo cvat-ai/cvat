@@ -1,6 +1,11 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
+
+import React from 'react';
+import ReactDOM from 'react-dom';
+import { connect, Provider } from 'react-redux';
+import { BrowserRouter } from 'react-router-dom';
 
 import { getAboutAsync } from 'actions/about-actions';
 import { authorizedAsync, loadAuthActionsAsync } from 'actions/auth-actions';
@@ -14,12 +19,9 @@ import CVATApplication from 'components/cvat-app';
 import LayoutGrid from 'components/layout-grid/layout-grid';
 import logger, { LogType } from 'cvat-logger';
 import createCVATStore, { getCVATStore } from 'cvat-store';
-import React from 'react';
-import ReactDOM from 'react-dom';
-import { ExtendedKeyMapOptions } from 'react-hotkeys';
-import { connect, Provider } from 'react-redux';
-import { BrowserRouter } from 'react-router-dom';
+import { KeyMap } from 'utils/mousetrap-react';
 import createRootReducer from 'reducers/root-reducer';
+import { getOrganizationsAsync } from 'actions/organization-actions';
 import { resetErrors, resetMessages } from './actions/notification-actions';
 import { CombinedState, NotificationsState } from './reducers/interfaces';
 
@@ -33,6 +35,8 @@ interface StateToProps {
     modelsFetching: boolean;
     userInitialized: boolean;
     userFetching: boolean;
+    organizationsFetching: boolean;
+    organizationsInitialized: boolean;
     aboutInitialized: boolean;
     aboutFetching: boolean;
     formatsInitialized: boolean;
@@ -45,7 +49,7 @@ interface StateToProps {
     allowResetPassword: boolean;
     notifications: NotificationsState;
     user: any;
-    keyMap: Record<string, ExtendedKeyMapOptions>;
+    keyMap: KeyMap;
     isModelPluginActive: boolean;
 }
 
@@ -61,6 +65,7 @@ interface DispatchToProps {
     loadUserAgreements: () => void;
     switchSettingsDialog: () => void;
     loadAuthActions: () => void;
+    loadOrganizations: () => void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -71,10 +76,13 @@ function mapStateToProps(state: CombinedState): StateToProps {
     const { shortcuts } = state;
     const { userAgreements } = state;
     const { models } = state;
+    const { organizations } = state;
 
     return {
         userInitialized: auth.initialized,
         userFetching: auth.fetching,
+        organizationsFetching: organizations.fetching,
+        organizationsInitialized: organizations.initialized,
         pluginsInitialized: plugins.initialized,
         pluginsFetching: plugins.fetching,
         modelsInitialized: models.initialized,
@@ -109,6 +117,7 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         switchShortcutsDialog: (): void => dispatch(shortcutsActions.switchShortcutsDialog()),
         switchSettingsDialog: (): void => dispatch(switchSettingsDialog()),
         loadAuthActions: (): void => dispatch(loadAuthActionsAsync()),
+        loadOrganizations: (): void => dispatch(getOrganizationsAsync()),
     };
 }
 

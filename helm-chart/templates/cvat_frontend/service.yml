@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-frontend-service
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "cvat.labels" . | nindent 4 }}
+    app: cvat-app
+    tier: frontend
+spec:
+  selector:
+    app: cvat-app
+    tier: frontend
+    {{- include "cvat.labels" . | nindent 4 }}
+  {{- with .Values.cvat.frontend.service }}
+  {{- toYaml . | nindent 2 }}
+  {{- end }}

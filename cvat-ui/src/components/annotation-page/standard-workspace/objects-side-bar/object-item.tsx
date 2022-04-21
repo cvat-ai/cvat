@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -22,11 +22,10 @@ interface Props {
     attrValues: Record<number, string>;
     color: string;
     colorBy: ColorBy;
-
     labels: any[];
     attributes: any[];
     collapsed: boolean;
-
+    jobInstance: any;
     activate(): void;
     copy(): void;
     propagate(): void;
@@ -40,7 +39,6 @@ interface Props {
     changeColor(color: string): void;
     collapse(): void;
     resetCuboidPerspective(): void;
-    activateTracking(): void;
 }
 
 function objectItemsAreEqual(prevProps: Props, nextProps: Props): boolean {
@@ -76,12 +74,10 @@ function ObjectItemComponent(props: Props): JSX.Element {
         labelID,
         color,
         colorBy,
-
         attributes,
         labels,
         collapsed,
         normalizedKeyMap,
-
         activate,
         copy,
         propagate,
@@ -95,7 +91,7 @@ function ObjectItemComponent(props: Props): JSX.Element {
         changeColor,
         collapse,
         resetCuboidPerspective,
-        activateTracking,
+        jobInstance,
     } = props;
 
     const type =
@@ -117,6 +113,7 @@ function ObjectItemComponent(props: Props): JSX.Element {
                 style={{ backgroundColor: `${color}88` }}
             >
                 <ItemBasics
+                    jobInstance={jobInstance}
                     readonly={readonly}
                     serverID={serverID}
                     clientID={clientID}
@@ -145,7 +142,6 @@ function ObjectItemComponent(props: Props): JSX.Element {
                     toBackground={toBackground}
                     toForeground={toForeground}
                     resetCuboidPerspective={resetCuboidPerspective}
-                    activateTracking={activateTracking}
                 />
                 <ObjectButtonsContainer readonly={readonly} clientID={clientID} />
                 {!!attributes.length && (

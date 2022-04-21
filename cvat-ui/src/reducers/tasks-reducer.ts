@@ -1,8 +1,9 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import { AnyAction } from 'redux';
+import { omit } from 'lodash';
 import { BoundariesActionTypes } from 'actions/boundaries-actions';
 import { TasksActionTypes } from 'actions/tasks-actions';
 import { AuthActionTypes } from 'actions/auth-actions';
@@ -14,21 +15,21 @@ const defaultState: TasksState = {
     fetching: false,
     updating: false,
     hideEmpty: false,
+    moveTask: {
+        modalVisible: false,
+        taskId: null,
+    },
     count: 0,
     current: [],
     gettingQuery: {
         page: 1,
         id: null,
         search: null,
-        owner: null,
-        assignee: null,
-        name: null,
-        status: null,
-        mode: null,
+        filter: null,
+        sort: null,
+        projectId: null,
     },
     activities: {
-        dumps: {},
-        exports: {},
         loads: {},
         deletes: {},
         creates: {
@@ -36,7 +37,9 @@ const defaultState: TasksState = {
             status: '',
             error: '',
         },
+        backups: {},
     },
+    importing: false,
 };
 
 export default (state: TasksState = defaultState, action: AnyAction): TasksState => {
@@ -53,7 +56,7 @@ export default (state: TasksState = defaultState, action: AnyAction): TasksState
                 hideEmpty: true,
                 count: 0,
                 current: [],
-                gettingQuery: { ...action.payload.query },
+                gettingQuery: action.payload.updateQuery ? { ...action.payload.query } : state.gettingQuery,
             };
         case TasksActionTypes.GET_TASKS_SUCCESS: {
             const combinedWithPreviews = action.payload.array.map(
@@ -69,7 +72,6 @@ export default (state: TasksState = defaultState, action: AnyAction): TasksState
                 fetching: false,
                 count: action.payload.count,
                 current: combinedWithPreviews,
-                gettingQuery: { ...action.payload.query },
             };
         }
         case TasksActionTypes.GET_TASKS_FAILED:
@@ -78,84 +80,6 @@ export default (state: TasksState = defaultState, action: AnyAction): TasksState
                 initialized: true,
                 fetching: false,
             };
-        case TasksActionTypes.DUMP_ANNOTATIONS: {
-            const { task } = action.payload;
-            const { dumper } = action.payload;
-            const { dumps } = state.activities;
-
-            dumps[task.id] =
-                task.id in dumps && !dumps[task.id].includes(dumper.name) ?
-                    [...dumps[task.id], dumper.name] :
-                    dumps[task.id] || [dumper.name];
-
-            return {
-                ...state,
-                activities: {
-                    ...state.activities,
-                    dumps: {
-                        ...dumps,
-                    },
-                },
-            };
-        }
-        case TasksActionTypes.DUMP_ANNOTATIONS_FAILED:
-        case TasksActionTypes.DUMP_ANNOTATIONS_SUCCESS: {
-            const { task } = action.payload;
-            const { dumper } = action.payload;
-            const { dumps } = state.activities;
-
-            dumps[task.id] = dumps[task.id].filter((dumperName: string): boolean => dumperName !== dumper.name);
-
-            return {
-                ...state,
-                activities: {
-                    ...state.activities,
-                    dumps: {
-                        ...dumps,
-                    },
-                },
-            };
-        }
-        case TasksActionTypes.EXPORT_DATASET: {
-            const { task } = action.payload;
-            const { exporter } = action.payload;
-            const { exports: activeExports } = state.activities;
-
-            activeExports[task.id] =
-                task.id in activeExports && !activeExports[task.id].includes(exporter.name) ?
-                    [...activeExports[task.id], exporter.name] :
-                    activeExports[task.id] || [exporter.name];
-
-            return {
-                ...state,
-                activities: {
-                    ...state.activities,
-                    exports: {
-                        ...activeExports,
-                    },
-                },
-            };
-        }
-        case TasksActionTypes.EXPORT_DATASET_FAILED:
-        case TasksActionTypes.EXPORT_DATASET_SUCCESS: {
-            const { task } = action.payload;
-            const { exporter } = action.payload;
-            const { exports: activeExports } = state.activities;
-
-            activeExports[task.id] = activeExports[task.id].filter(
-                (exporterName: string): boolean => exporterName !== exporter.name,
-            );
-
-            return {
-                ...state,
-                activities: {
-                    ...state.activities,
-                    exports: {
-                        ...activeExports,
-                    },
-                },
-            };
-        }
         case TasksActionTypes.LOAD_ANNOTATIONS: {
             const { task } = action.payload;
             const { loader } = action.payload;
@@ -236,6 +160,49 @@ export default (state: TasksState = defaultState, action: AnyAction): TasksState
                         ...deletes,
                     },
                 },
+            };
+        }
+        case TasksActionTypes.EXPORT_TASK: {
+            const { taskID } = action.payload;
+            const { backups } = state.activities;
+
+            return {
+                ...state,
+                activities: {
+                    ...state.activities,
+                    backups: {
+                        ...backups,
+                        ...Object.fromEntries([[taskID, true]]),
+                    },
+                },
+            };
+        }
+        case TasksActionTypes.EXPORT_TASK_FAILED:
+        case TasksActionTypes.EXPORT_TASK_SUCCESS: {
+            const { taskID } = action.payload;
+            const { backups } = state.activities;
+
+            delete backups[taskID];
+
+            return {
+                ...state,
+                activities: {
+                    ...state.activities,
+                    backups: omit(backups, [taskID]),
+                },
+            };
+        }
+        case TasksActionTypes.IMPORT_TASK: {
+            return {
+                ...state,
+                importing: true,
+            };
+        }
+        case TasksActionTypes.IMPORT_TASK_FAILED:
+        case TasksActionTypes.IMPORT_TASK_SUCCESS: {
+            return {
+                ...state,
+                importing: false,
             };
         }
         case TasksActionTypes.CREATE_TASK: {
@@ -345,10 +312,42 @@ export default (state: TasksState = defaultState, action: AnyAction): TasksState
                 ),
             };
         }
+        case TasksActionTypes.UPDATE_JOB: {
+            return {
+                ...state,
+                updating: true,
+            };
+        }
+        case TasksActionTypes.UPDATE_JOB_SUCCESS: {
+            const { jobInstance } = action.payload;
+            const idx = state.current.findIndex((task: Task) => task.instance.id === jobInstance.taskId);
+            const newCurrent = idx === -1 ?
+                state.current : [...(state.current.splice(idx, 1), state.current)];
+
+            return {
+                ...state,
+                current: newCurrent,
+                gettingQuery: state.gettingQuery.id === jobInstance.taskId ? {
+                    ...state.gettingQuery,
+                    id: null,
+                } : state.gettingQuery,
+                updating: false,
+            };
+        }
         case TasksActionTypes.HIDE_EMPTY_TASKS: {
             return {
                 ...state,
                 hideEmpty: action.payload.hideEmpty,
+            };
+        }
+        case TasksActionTypes.SWITCH_MOVE_TASK_MODAL_VISIBLE: {
+            return {
+                ...state,
+                moveTask: {
+                    ...state.moveTask,
+                    modalVisible: action.payload.visible,
+                    taskId: action.payload.taskId,
+                },
             };
         }
         case BoundariesActionTypes.RESET_AFTER_ERROR:

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2020 Intel Corporation
+// Copyright (C) 2021-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -19,7 +19,16 @@
      */
     class FrameData {
         constructor({
-            width, height, name, taskID, frameNumber, startFrame, stopFrame, decodeForward,
+            width,
+            height,
+            name,
+            taskID,
+            jobID,
+            frameNumber,
+            startFrame,
+            stopFrame,
+            decodeForward,
+            has_related_context: hasRelatedContext,
         }) {
             Object.defineProperties(
                 this,
@@ -57,8 +66,27 @@
                         value: height,
                         writable: false,
                     },
+                    /**
+                     * task ID
+                     * @name tid
+                     * @type {integer}
+                     * @memberof module:API.cvat.classes.FrameData
+                     * @readonly
+                     * @instance
+                     */
                     tid: {
                         value: taskID,
+                        writable: false,
+                    },
+                    /**
+                     * @name jid
+                     * @type {integer}
+                     * @memberof module:API.cvat.classes.FrameData
+                     * @readonly
+                     * @instance
+                     */
+                    jid: {
+                        value: jobID,
                         writable: false,
                     },
                     /**
@@ -70,6 +98,18 @@
                      */
                     number: {
                         value: frameNumber,
+                        writable: false,
+                    },
+                    /**
+                     * True if some context images are associated with this frame
+                     * @name hasRelatedContext
+                     * @type {boolean}
+                     * @memberof module:API.cvat.classes.FrameData
+                     * @readonly
+                     * @instance
+                     */
+                    hasRelatedContext: {
+                        value: hasRelatedContext,
                         writable: false,
                     },
                     startFrame: {
@@ -104,6 +144,14 @@
             const result = await PluginRegistry.apiWrapper.call(this, FrameData.prototype.data, onServerRequest);
             return result;
         }
+
+        get imageData() {
+            return this._data.imageData;
+        }
+
+        set imageData(imageData) {
+            this._data.imageData = imageData;
+        }
     }
 
     FrameData.prototype.data.implementation = async function (onServerRequest) {
@@ -130,8 +178,8 @@
 
             const onDecodeAll = async (frameNumber) => {
                 if (
-                    frameDataCache[this.tid].activeChunkRequest
-                    && chunkNumber === frameDataCache[this.tid].activeChunkRequest.chunkNumber
+                    frameDataCache[this.tid].activeChunkRequest &&
+                    chunkNumber === frameDataCache[this.tid].activeChunkRequest.chunkNumber
                 ) {
                     const callbackArray = frameDataCache[this.tid].activeChunkRequest.callbacks;
                     for (let i = callbackArray.length - 1; i >= 0; --i) {
@@ -149,8 +197,8 @@
 
             const rejectRequestAll = () => {
                 if (
-                    frameDataCache[this.tid].activeChunkRequest
-                    && chunkNumber === frameDataCache[this.tid].activeChunkRequest.chunkNumber
+                    frameDataCache[this.tid].activeChunkRequest &&
+                    chunkNumber === frameDataCache[this.tid].activeChunkRequest.chunkNumber
                 ) {
                     for (const r of frameDataCache[this.tid].activeChunkRequest.callbacks) {
                         r.reject(r.frameNumber);
@@ -163,7 +211,7 @@
                 const taskDataCache = frameDataCache[this.tid];
                 const activeChunk = taskDataCache.activeChunkRequest;
                 activeChunk.request = serverProxy.frames
-                    .getData(this.tid, activeChunk.chunkNumber)
+                    .getData(this.tid, this.jid, activeChunk.chunkNumber)
                     .then((chunk) => {
                         frameDataCache[this.tid].activeChunkRequest.completed = true;
                         if (!taskDataCache.nextChunkRequest) {
@@ -208,10 +256,10 @@
                             const activeRequest = frameDataCache[this.tid].activeChunkRequest;
                             if (!provider.isChunkCached(start, stop)) {
                                 if (
-                                    !activeRequest
-                                    || (activeRequest
-                                        && activeRequest.completed
-                                        && activeRequest.chunkNumber !== chunkNumber)
+                                    !activeRequest ||
+                                    (activeRequest &&
+                                        activeRequest.completed &&
+                                        activeRequest.chunkNumber !== chunkNumber)
                                 ) {
                                     if (activeRequest && activeRequest.rejectRequestAll) {
                                         activeRequest.rejectRequestAll();
@@ -277,16 +325,16 @@
                             }
                         } else {
                             if (
-                                this.number % chunkSize > chunkSize / 4
-                                && provider.decodedBlocksCacheSize > 1
-                                && this.decodeForward
-                                && !provider.isNextChunkExists(this.number)
+                                this.number % chunkSize > chunkSize / 4 &&
+                                provider.decodedBlocksCacheSize > 1 &&
+                                this.decodeForward &&
+                                !provider.isNextChunkExists(this.number)
                             ) {
                                 const nextChunkNumber = Math.floor(this.number / chunkSize) + 1;
                                 if (nextChunkNumber * chunkSize < this.stopFrame) {
                                     provider.setReadyToLoading(nextChunkNumber);
                                     const nextStart = nextChunkNumber * chunkSize;
-                                    const nextStop = (nextChunkNumber + 1) * chunkSize - 1;
+                                    const nextStop = Math.min(this.stopFrame, (nextChunkNumber + 1) * chunkSize - 1);
                                     if (!provider.isChunkCached(nextStart, nextStop)) {
                                         if (!frameDataCache[this.tid].activeChunkRequest) {
                                             frameDataCache[this.tid].activeChunkRequest = {
@@ -338,14 +386,28 @@
     }
 
     class FrameBuffer {
-        constructor(size, chunkSize, stopFrame, taskID) {
+        constructor(size, chunkSize, stopFrame, taskID, jobID) {
             this._size = size;
             this._buffer = {};
+            this._contextImage = {};
             this._requestedChunks = {};
             this._chunkSize = chunkSize;
             this._stopFrame = stopFrame;
             this._activeFillBufferRequest = false;
             this._taskID = taskID;
+            this._jobID = jobID;
+        }
+
+        isContextImageAvailable(frame) {
+            return frame in this._contextImage;
+        }
+
+        getContextImage(frame) {
+            return this._contextImage[frame] || null;
+        }
+
+        addContextImage(frame, data) {
+            this._contextImage[frame] = data;
         }
 
         getFreeBufferSize() {
@@ -370,6 +432,7 @@
                     const frameData = new FrameData({
                         ...frameMeta,
                         taskID: this._taskID,
+                        jobID: this._jobID,
                         frameNumber: requestedFrame,
                         startFrame: frameDataCache[this._taskID].startFrame,
                         stopFrame: frameDataCache[this._taskID].stopFrame,
@@ -380,8 +443,8 @@
                         .data()
                         .then(() => {
                             if (
-                                !(chunkIdx in this._requestedChunks)
-                                || !this._requestedChunks[chunkIdx].requestedFrames.has(requestedFrame)
+                                !(chunkIdx in this._requestedChunks) ||
+                                !this._requestedChunks[chunkIdx].requestedFrames.has(requestedFrame)
                             ) {
                                 reject(chunkIdx);
                             } else {
@@ -422,31 +485,47 @@
 
             let bufferedFrames = new Set();
 
+            // if we send one request to get frame 1 with filling the buffer
+            // then quicky send one more request to get frame 1
+            // frame 1 will be already decoded and written to buffer
+            // the second request gets frame 1 from the buffer, removes it from there and returns
+            // after the first request finishes decoding it tries to get frame 1, but failed
+            // because frame 1 was already removed from the buffer by the second request
+            // to prevent this behavior we do not write decoded frames to buffer till the end of decoding all chunks
+            const buffersToBeCommited = [];
+            const commitBuffers = () => {
+                for (const buffer of buffersToBeCommited) {
+                    this._buffer = {
+                        ...this._buffer,
+                        ...buffer,
+                    };
+                }
+            };
+
             // Need to decode chunks in sequence
             // eslint-disable-next-line no-async-promise-executor
             return new Promise(async (resolve, reject) => {
-                for (const chunkIdx in this._requestedChunks) {
-                    if (Object.prototype.hasOwnProperty.call(this._requestedChunks, chunkIdx)) {
-                        try {
-                            const chunkFrames = await this.requestOneChunkFrames(chunkIdx);
-                            if (chunkIdx in this._requestedChunks) {
-                                bufferedFrames = new Set([...bufferedFrames, ...chunkFrames]);
-                                this._buffer = {
-                                    ...this._buffer,
-                                    ...this._requestedChunks[chunkIdx].buffer,
-                                };
-                                delete this._requestedChunks[chunkIdx];
-                                if (Object.keys(this._requestedChunks).length === 0) {
-                                    resolve(bufferedFrames);
-                                }
-                            } else {
-                                reject(chunkIdx);
-                                break;
+                for (const chunkIdx of Object.keys(this._requestedChunks)) {
+                    try {
+                        const chunkFrames = await this.requestOneChunkFrames(chunkIdx);
+                        if (chunkIdx in this._requestedChunks) {
+                            bufferedFrames = new Set([...bufferedFrames, ...chunkFrames]);
+
+                            buffersToBeCommited.push(this._requestedChunks[chunkIdx].buffer);
+                            delete this._requestedChunks[chunkIdx];
+                            if (Object.keys(this._requestedChunks).length === 0) {
+                                commitBuffers();
+                                resolve(bufferedFrames);
                             }
-                        } catch (error) {
-                            reject(error);
+                        } else {
+                            commitBuffers();
+                            reject(chunkIdx);
                             break;
                         }
+                    } catch (error) {
+                        commitBuffers();
+                        reject(error);
+                        break;
                     }
                 }
             });
@@ -467,9 +546,9 @@
             }
         }
 
-        async require(frameNumber, taskID, fillBuffer, frameStep) {
+        async require(frameNumber, taskID, jobID, fillBuffer, frameStep) {
             for (const frame in this._buffer) {
-                if (frame < frameNumber || frame >= frameNumber + this._size * frameStep) {
+                if (+frame < frameNumber || +frame >= frameNumber + this._size * frameStep) {
                     delete this._buffer[frame];
                 }
             }
@@ -479,6 +558,7 @@
             let frame = new FrameData({
                 ...frameMeta,
                 taskID,
+                jobID,
                 frameNumber,
                 startFrame: frameDataCache[taskID].startFrame,
                 stopFrame: frameDataCache[taskID].stopFrame,
@@ -490,10 +570,10 @@
                 delete this._buffer[frameNumber];
                 const cachedFrames = this.cachedFrames();
                 if (
-                    fillBuffer
-                    && !this._activeFillBufferRequest
-                    && this._size > this._chunkSize
-                    && cachedFrames.length < (this._size * 3) / 4
+                    fillBuffer &&
+                    !this._activeFillBufferRequest &&
+                    this._size > this._chunkSize &&
+                    cachedFrames.length < (this._size * 3) / 4
                 ) {
                     const maxFrame = cachedFrames ? Math.max(...cachedFrames) : frameNumber;
                     if (maxFrame < this._stopFrame) {
@@ -507,7 +587,6 @@
             } else if (fillBuffer) {
                 this.clear();
                 await this.makeFillRequest(frameNumber, frameStep, fillBuffer ? null : 1);
-
                 frame = this._buffer[frameNumber];
             } else {
                 this.clear();
@@ -519,8 +598,8 @@
         clear() {
             for (const chunkIdx in this._requestedChunks) {
                 if (
-                    Object.prototype.hasOwnProperty.call(this._requestedChunks, chunkIdx)
-                    && this._requestedChunks[chunkIdx].reject
+                    Object.prototype.hasOwnProperty.call(this._requestedChunks, chunkIdx) &&
+                    this._requestedChunks[chunkIdx].reject
                 ) {
                     this._requestedChunks[chunkIdx].reject('not needed');
                 }
@@ -535,11 +614,10 @@
         }
     }
 
-    async function getPreview(taskID) {
+    async function getImageContext(jobID, frame) {
         return new Promise((resolve, reject) => {
-            // Just go to server and get preview (no any cache)
             serverProxy.frames
-                .getPreview(taskID)
+                .getImageContext(jobID, frame)
                 .then((result) => {
                     if (isNode) {
                         // eslint-disable-next-line no-undef
@@ -558,15 +636,59 @@
         });
     }
 
-    async function getFrame(taskID, chunkSize, chunkType, mode, frame, startFrame, stopFrame, isPlaying, step) {
+    async function getContextImage(taskID, jobID, frame) {
+        if (frameDataCache[taskID].frameBuffer.isContextImageAvailable(frame)) {
+            return frameDataCache[taskID].frameBuffer.getContextImage(frame);
+        }
+        const response = getImageContext(jobID, frame);
+        frameDataCache[taskID].frameBuffer.addContextImage(frame, response);
+        return frameDataCache[taskID].frameBuffer.getContextImage(frame);
+    }
+
+    async function getPreview(taskID = null, jobID = null) {
+        return new Promise((resolve, reject) => {
+            // Just go to server and get preview (no any cache)
+            serverProxy.frames
+                .getPreview(taskID, jobID)
+                .then((result) => {
+                    if (isNode) {
+                        // eslint-disable-next-line no-undef
+                        resolve(global.Buffer.from(result, 'binary').toString('base64'));
+                    } else if (isBrowser) {
+                        const reader = new FileReader();
+                        reader.onload = () => {
+                            resolve(reader.result);
+                        };
+                        reader.readAsDataURL(result);
+                    }
+                })
+                .catch((error) => {
+                    reject(error);
+                });
+        });
+    }
+
+    async function getFrame(
+        taskID,
+        jobID,
+        chunkSize,
+        chunkType,
+        mode,
+        frame,
+        startFrame,
+        stopFrame,
+        isPlaying,
+        step,
+        dimension,
+    ) {
         if (!(taskID in frameDataCache)) {
             const blockType = chunkType === 'video' ? cvatData.BlockType.MP4VIDEO : cvatData.BlockType.ARCHIVE;
 
             const meta = await serverProxy.frames.getMeta(taskID);
             const mean = meta.frames.reduce((a, b) => a + b.width * b.height, 0) / meta.frames.length;
             const stdDev = Math.sqrt(
-                meta.frames.map((x) => Math.pow(x.width * x.height - mean, 2)).reduce((a, b) => a + b)
-                    / meta.frames.length,
+                meta.frames.map((x) => (x.width * x.height - mean) ** 2).reduce((a, b) => a + b) /
+                    meta.frames.length,
             );
 
             // limit of decoded frames cache by 2GB
@@ -584,12 +706,14 @@
                     Math.max(decodedBlocksCacheSize, 9),
                     decodedBlocksCacheSize,
                     1,
+                    dimension,
                 ),
                 frameBuffer: new FrameBuffer(
                     Math.min(180, decodedBlocksCacheSize * chunkSize),
                     chunkSize,
                     stopFrame,
                     taskID,
+                    jobID,
                 ),
                 decodedBlocksCacheSize,
                 activeChunkRequest: null,
@@ -600,7 +724,7 @@
             frameDataCache[taskID].provider.setRenderSize(frameMeta.width, frameMeta.height);
         }
 
-        return frameDataCache[taskID].frameBuffer.require(frame, taskID, isPlaying, step);
+        return frameDataCache[taskID].frameBuffer.require(frame, taskID, jobID, isPlaying, step);
     }
 
     function getRanges(taskID) {
@@ -630,5 +754,6 @@
         getRanges,
         getPreview,
         clear,
+        getContextImage,
     };
 })();

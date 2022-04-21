@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2020 Intel Corporation
+// Copyright (C) 2019-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -34,9 +34,28 @@
         for (const prop in filter) {
             if (Object.prototype.hasOwnProperty.call(filter, prop)) {
                 if (!(prop in fields)) {
-                    throw new ArgumentError(`Unsupported filter property has been recieved: "${prop}"`);
+                    throw new ArgumentError(`Unsupported filter property has been received: "${prop}"`);
                 } else if (!fields[prop](filter[prop])) {
-                    throw new ArgumentError(`Received filter property "${prop}" is not satisfied for checker`);
+                    throw new ArgumentError(`Received filter property "${prop}" does not satisfy API`);
+                }
+            }
+        }
+    }
+
+    function checkExclusiveFields(obj, exclusive, ignore) {
+        const fields = {
+            exclusive: [],
+            other: [],
+        };
+        for (const field in Object.keys(obj)) {
+            if (!(field in ignore)) {
+                if (field in exclusive) {
+                    if (fields.other.length) {
+                        throw new ArgumentError(`Do not use the filter field "${field}" with others`);
+                    }
+                    fields.exclusive.push(field);
+                } else {
+                    fields.other.push(field);
                 }
             }
         }
@@ -56,8 +75,8 @@
             if (!(value instanceof instance)) {
                 if (value !== undefined) {
                     throw new ArgumentError(
-                        `"${name}" is expected to be ${instance.name}, but `
-                            + `"${value.constructor.name}" has been got`,
+                        `"${name}" is expected to be ${instance.name}, but ` +
+                            `"${value.constructor.name}" has been got`,
                     );
                 }
 
@@ -68,12 +87,36 @@
         return true;
     }
 
-    function negativeIDGenerator() {
-        const value = negativeIDGenerator.start;
-        negativeIDGenerator.start -= 1;
-        return value;
+    class FieldUpdateTrigger {
+        constructor() {
+            let updatedFlags = {};
+
+            Object.defineProperties(
+                this,
+                Object.freeze({
+                    reset: {
+                        value: () => {
+                            updatedFlags = {};
+                        },
+                    },
+                    update: {
+                        value: (name) => {
+                            updatedFlags[name] = true;
+                        },
+                    },
+                    getUpdated: {
+                        value: (data, propMap = {}) => {
+                            const result = {};
+                            for (const updatedField of Object.keys(updatedFlags)) {
+                                result[propMap[updatedField] || updatedField] = data[updatedField];
+                            }
+                            return result;
+                        },
+                    },
+                }),
+            );
+        }
     }
-    negativeIDGenerator.start = -1;
 
     module.exports = {
         isBoolean,
@@ -82,6 +125,7 @@
         isString,
         checkFilter,
         checkObjectType,
-        negativeIDGenerator,
+        checkExclusiveFields,
+        FieldUpdateTrigger,
     };
 })();

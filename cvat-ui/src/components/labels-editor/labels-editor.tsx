@@ -1,16 +1,15 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import './styles.scss';
 import React from 'react';
 import Tabs from 'antd/lib/tabs';
-import Button from 'antd/lib/button';
-import Tooltip from 'antd/lib/tooltip';
-import notification from 'antd/lib/notification';
 import Text from 'antd/lib/typography/Text';
-import copy from 'copy-to-clipboard';
-import { CopyOutlined, EditOutlined, BuildOutlined } from '@ant-design/icons';
+import ModalConfirm from 'antd/lib/modal/confirm';
+import {
+    EditOutlined, BuildOutlined, ExclamationCircleOutlined,
+} from '@ant-design/icons';
 
 import RawViewer from './raw-viewer';
 import ConstructorViewer from './constructor-viewer';
@@ -25,7 +24,7 @@ enum ConstructorMode {
     UPDATE = 'UPDATE',
 }
 
-interface LabelsEditortProps {
+interface LabelsEditorProps {
     labels: Label[];
     onSubmit: (labels: any[]) => void;
 }
@@ -37,8 +36,8 @@ interface LabelsEditorState {
     labelForUpdate: Label | null;
 }
 
-export default class LabelsEditor extends React.PureComponent<LabelsEditortProps, LabelsEditorState> {
-    public constructor(props: LabelsEditortProps) {
+export default class LabelsEditor extends React.PureComponent<LabelsEditorProps, LabelsEditorState> {
+    public constructor(props: LabelsEditorProps) {
         super(props);
 
         this.state = {
@@ -51,10 +50,10 @@ export default class LabelsEditor extends React.PureComponent<LabelsEditortProps
 
     public componentDidMount(): void {
         // just need performe the same code
-        this.componentDidUpdate((null as any) as LabelsEditortProps);
+        this.componentDidUpdate((null as any) as LabelsEditorProps);
     }
 
-    public componentDidUpdate(prevProps: LabelsEditortProps): void {
+    public componentDidUpdate(prevProps: LabelsEditorProps): void {
         function transformLabel(label: any): Label {
             return {
                 name: label.name,
@@ -144,20 +143,31 @@ export default class LabelsEditor extends React.PureComponent<LabelsEditortProps
     };
 
     private handleDelete = (label: Label): void => {
-        // the label is saved on the server, cannot delete it
+        const deleteLabel = (): void => {
+            const { unsavedLabels, savedLabels } = this.state;
+
+            const filteredUnsavedLabels = unsavedLabels.filter((_label: Label): boolean => _label.id !== label.id);
+            const filteredSavedLabels = savedLabels.filter((_label: Label): boolean => _label.id !== label.id);
+
+            this.setState({ savedLabels: filteredSavedLabels, unsavedLabels: filteredUnsavedLabels });
+            this.handleSubmit(filteredSavedLabels, filteredUnsavedLabels);
+        };
+
         if (typeof label.id !== 'undefined' && label.id >= 0) {
-            notification.error({
-                message: 'Could not delete the label',
-                description: 'It has been already saved on the server',
+            ModalConfirm({
+                className: 'cvat-modal-delete-label',
+                icon: <ExclamationCircleOutlined />,
+                title: `Do you want to delete "${label.name}" label?`,
+                content: 'This action is irreversible. Annotation corresponding with this label will be deleted.',
+                type: 'warning',
+                okType: 'danger',
+                onOk() {
+                    deleteLabel();
+                },
             });
+        } else {
+            deleteLabel();
         }
-
-        const { unsavedLabels, savedLabels } = this.state;
-
-        const filteredUnsavedLabels = unsavedLabels.filter((_label: Label): boolean => _label.id !== label.id);
-
-        this.setState({ unsavedLabels: filteredUnsavedLabels });
-        this.handleSubmit(savedLabels, filteredUnsavedLabels);
     };
 
     private handleSubmit(savedLabels: Label[], unsavedLabels: Label[]): void {
@@ -194,32 +204,6 @@ export default class LabelsEditor extends React.PureComponent<LabelsEditortProps
                 defaultActiveKey='2'
                 type='card'
                 tabBarStyle={{ marginBottom: '0px' }}
-                tabBarExtraContent={(
-                    <Tooltip title='Copied to clipboard!' trigger='click' mouseLeaveDelay={0}>
-                        <Button
-                            type='link'
-                            icon={<CopyOutlined />}
-                            onClick={(): void => {
-                                copy(
-                                    JSON.stringify(
-                                        savedLabels.concat(unsavedLabels).map((label): any => ({
-                                            ...label,
-                                            id: undefined,
-                                            attributes: label.attributes.map((attribute): any => ({
-                                                ...attribute,
-                                                id: undefined,
-                                            })),
-                                        })),
-                                        null,
-                                        4,
-                                    ),
-                                );
-                            }}
-                        >
-                            Copy
-                        </Button>
-                    </Tooltip>
-                )}
             >
                 <Tabs.TabPane
                     tab={(

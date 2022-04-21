@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -7,7 +7,10 @@ import { withRouter } from 'react-router-dom';
 import { RouteComponentProps } from 'react-router';
 
 import AnnotationPageComponent from 'components/annotation-page/annotation-page';
-import { getJobAsync, saveLogsAsync, closeJob as closeJobAction } from 'actions/annotation-actions';
+import {
+    getJobAsync, saveLogsAsync, changeFrameAsync,
+    closeJob as closeJobAction,
+} from 'actions/annotation-actions';
 
 import { CombinedState, Workspace } from 'reducers/interfaces';
 
@@ -18,12 +21,14 @@ type OwnProps = RouteComponentProps<{
 
 interface StateToProps {
     job: any | null | undefined;
+    frameNumber: number;
     fetching: boolean;
     workspace: Workspace;
 }
 
 interface DispatchToProps {
     getJob(): void;
+    changeFrame(frame: number): void;
     saveLogs(): void;
     closeJob(): void;
 }
@@ -35,6 +40,11 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
         annotation: {
             job: { requestedId, instance: job, fetching },
             workspace,
+            player: {
+                frame: {
+                    number: frameNumber,
+                },
+            },
         },
     } = state;
 
@@ -42,6 +52,7 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
         job: jobID === requestedId ? job : null,
         fetching,
         workspace,
+        frameNumber,
     };
 }
 
@@ -50,7 +61,7 @@ function mapDispatchToProps(dispatch: any, own: OwnProps): DispatchToProps {
     const taskID = +params.tid;
     const jobID = +params.jid;
     const searchParams = new URLSearchParams(window.location.search);
-    const initialFilters: string[] = [];
+    const initialFilters: object[] = [];
     let initialFrame = 0;
 
     if (searchParams.has('frame')) {
@@ -64,12 +75,14 @@ function mapDispatchToProps(dispatch: any, own: OwnProps): DispatchToProps {
         const serverID = searchParams.get('serverID');
         const type = searchParams.get('type');
         if (serverID && !Number.isNaN(+serverID)) {
-            initialFilters.push(`serverID==${serverID} & type=="${type}"`);
+            initialFilters.push({
+                and: [{ '==': [{ var: 'serverID' }, serverID] }, { '==': [{ var: 'type' }, type] }],
+            });
         }
     }
 
     if (searchParams.has('frame') || searchParams.has('object')) {
-        own.history.replace(own.history.location.state);
+        own.history.replace(own.history.location.pathname);
     }
 
     return {
@@ -81,6 +94,9 @@ function mapDispatchToProps(dispatch: any, own: OwnProps): DispatchToProps {
         },
         closeJob(): void {
             dispatch(closeJobAction());
+        },
+        changeFrame(frame: number): void {
+            dispatch(changeFrameAsync(frame));
         },
     };
 }

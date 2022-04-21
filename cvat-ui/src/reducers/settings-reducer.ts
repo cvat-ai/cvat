@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -9,7 +9,9 @@ import { AuthActionTypes } from 'actions/auth-actions';
 import { SettingsActionTypes } from 'actions/settings-actions';
 import { AnnotationActionTypes } from 'actions/annotation-actions';
 
-import { SettingsState, GridColor, FrameSpeed, ColorBy } from './interfaces';
+import {
+    SettingsState, GridColor, FrameSpeed, ColorBy, DimensionType,
+} from './interfaces';
 
 const defaultState: SettingsState = {
     shapes: {
@@ -28,6 +30,15 @@ const defaultState: SettingsState = {
         automaticBordering: false,
         showObjectsTextAlways: false,
         showAllInterpolationTracks: false,
+        intelligentPolygonCrop: true,
+        defaultApproxPolyAccuracy: 9,
+        textFontSize: 14,
+        textPosition: 'auto',
+        textContent: 'id,source,label,attributes,descriptions',
+        toolsBlockerState: {
+            algorithmsLocked: false,
+            buttonVisible: false,
+        },
     },
     player: {
         canvasBackgroundColor: '#ffffff',
@@ -35,6 +46,7 @@ const defaultState: SettingsState = {
         frameSpeed: FrameSpeed.Usual,
         resetZoom: false,
         rotateAll: false,
+        smoothImage: true,
         grid: false,
         gridSize: 100,
         gridColor: GridColor.White,
@@ -175,6 +187,43 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
                 },
             };
         }
+        case SettingsActionTypes.SWITCH_SMOOTH_IMAGE: {
+            return {
+                ...state,
+                player: {
+                    ...state.player,
+                    smoothImage: action.payload.smoothImage,
+                },
+            };
+        }
+        case SettingsActionTypes.SWITCH_TEXT_FONT_SIZE: {
+            return {
+                ...state,
+                workspace: {
+                    ...state.workspace,
+                    textFontSize: action.payload.fontSize,
+                },
+            };
+        }
+        case SettingsActionTypes.SWITCH_TEXT_POSITION: {
+            return {
+                ...state,
+                workspace: {
+                    ...state.workspace,
+                    textPosition: action.payload.position,
+                },
+            };
+        }
+        case SettingsActionTypes.SWITCH_TEXT_CONTENT: {
+            const { textContent } = action.payload;
+            return {
+                ...state,
+                workspace: {
+                    ...state.workspace,
+                    textContent,
+                },
+            };
+        }
         case SettingsActionTypes.CHANGE_BRIGHTNESS_LEVEL: {
             return {
                 ...state,
@@ -256,6 +305,15 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
                 },
             };
         }
+        case SettingsActionTypes.SWITCH_INTELLIGENT_POLYGON_CROP: {
+            return {
+                ...state,
+                workspace: {
+                    ...state.workspace,
+                    intelligentPolygonCrop: action.payload.intelligentPolygonCrop,
+                },
+            };
+        }
         case SettingsActionTypes.CHANGE_CANVAS_BACKGROUND_COLOR: {
             return {
                 ...state,
@@ -265,10 +323,34 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
                 },
             };
         }
+        case SettingsActionTypes.CHANGE_DEFAULT_APPROX_POLY_THRESHOLD: {
+            return {
+                ...state,
+                workspace: {
+                    ...state.workspace,
+                    defaultApproxPolyAccuracy: action.payload.approxPolyAccuracy,
+                },
+            };
+        }
+        case SettingsActionTypes.SWITCH_TOOLS_BLOCKER_STATE: {
+            return {
+                ...state,
+                workspace: {
+                    ...state.workspace,
+                    toolsBlockerState: { ...state.workspace.toolsBlockerState, ...action.payload.toolsBlockerState },
+                },
+            };
+        }
         case SettingsActionTypes.SWITCH_SETTINGS_DIALOG: {
             return {
                 ...state,
                 showDialog: typeof action.payload.show === 'undefined' ? !state.showDialog : action.payload.show,
+            };
+        }
+        case SettingsActionTypes.SET_SETTINGS: {
+            return {
+                ...state,
+                ...action.payload.settings,
             };
         }
         case BoundariesActionTypes.RESET_AFTER_ERROR:
@@ -276,10 +358,31 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
             const { job } = action.payload;
 
             return {
-                ...defaultState,
+                ...state,
                 player: {
-                    ...defaultState.player,
-                    resetZoom: job && job.task.mode === 'annotation',
+                    ...state.player,
+                    resetZoom: job && job.mode === 'annotation',
+                },
+                shapes: {
+                    ...defaultState.shapes,
+                    ...(job.dimension === DimensionType.DIM_3D ?
+                        {
+                            opacity: 40,
+                            selectedOpacity: 60,
+                        } :
+                        {}),
+                },
+            };
+        }
+        case AnnotationActionTypes.INTERACT_WITH_CANVAS: {
+            return {
+                ...state,
+                workspace: {
+                    ...state.workspace,
+                    toolsBlockerState: {
+                        buttonVisible: true,
+                        algorithmsLocked: false,
+                    },
                 },
             };
         }

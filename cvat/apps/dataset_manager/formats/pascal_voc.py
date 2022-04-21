@@ -6,39 +6,39 @@ import os
 import os.path as osp
 import shutil
 from glob import glob
-
 from tempfile import TemporaryDirectory
 
+from datumaro.components.dataset import Dataset
 from pyunpack import Archive
 
-from cvat.apps.dataset_manager.bindings import (CvatTaskDataExtractor,
-    import_dm_annotations)
+from cvat.apps.dataset_manager.bindings import (GetCVATDataExtractor,
+    ProjectData, import_dm_annotations)
 from cvat.apps.dataset_manager.util import make_zip_archive
-from datumaro.components.project import Dataset
 
 from .registry import dm_env, exporter, importer
 
 
 @exporter(name='PASCAL VOC', ext='ZIP', version='1.1')
-def _export(dst_file, task_data, save_images=False):
-    extractor = CvatTaskDataExtractor(task_data, include_images=save_images)
-    extractor = Dataset.from_extractors(extractor) # apply lazy transforms
+def _export(dst_file, instance_data, save_images=False):
+    dataset = Dataset.from_extractors(GetCVATDataExtractor(
+        instance_data, include_images=save_images), env=dm_env)
     with TemporaryDirectory() as temp_dir:
-        dm_env.converters.get('voc').convert(extractor,
-            save_dir=temp_dir, save_images=save_images, label_map='source')
+        dataset.export(temp_dir, 'voc', save_images=save_images,
+            label_map='source')
 
         make_zip_archive(temp_dir, dst_file)
 
 @importer(name='PASCAL VOC', ext='ZIP', version='1.1')
-def _import(src_file, task_data):
+def _import(src_file, instance_data, load_data_callback=None):
     with TemporaryDirectory() as tmp_dir:
         Archive(src_file.name).extractall(tmp_dir)
 
         # put label map from the task if not present
         labelmap_file = osp.join(tmp_dir, 'labelmap.txt')
         if not osp.isfile(labelmap_file):
-            labels = (label['name'] + ':::'
-                for _, label in task_data.meta['task']['labels'])
+            labels_meta = instance_data.meta['project']['labels'] \
+                if isinstance(instance_data, ProjectData) else instance_data.meta['task']['labels']
+            labels = (label['name'] + ':::' for _, label in labels_meta)
             with open(labelmap_file, 'w') as f:
                 f.write('\n'.join(labels))
 
@@ -56,7 +56,8 @@ def _import(src_file, task_data):
             for f in anno_files:
                 shutil.move(f, anno_dir)
 
-        dataset = dm_env.make_importer('voc')(tmp_dir).make_dataset()
-        masks_to_polygons = dm_env.transforms.get('masks_to_polygons')
-        dataset = dataset.transform(masks_to_polygons)
-        import_dm_annotations(dataset, task_data)
+        dataset = Dataset.import_from(tmp_dir, 'voc', env=dm_env)
+        dataset.transform('masks_to_polygons')
+        if load_data_callback is not None:
+            load_data_callback(dataset, instance_data)
+        import_dm_annotations(dataset, instance_data)

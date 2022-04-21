@@ -2,14 +2,19 @@
 # Sample commands to deploy nuclio functions on GPU
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+FUNCTIONS_DIR=${1:-$SCRIPT_DIR}
 
 nuctl create project cvat
 
-nuctl deploy --project-name cvat \
-    --path "$SCRIPT_DIR/tensorflow/faster_rcnn_inception_v2_coco/nuclio" \
-    --platform local --base-image tensorflow/tensorflow:2.1.1-gpu \
-    --desc "Faster RCNN from Tensorflow Object Detection GPU API" \
-    --image cvat/tf.faster_rcnn_inception_v2_coco_gpu \
-    --resource-limit nvidia.com/gpu=1
+shopt -s globstar
+
+for func_config in "$FUNCTIONS_DIR"/**/function-gpu.yaml
+do
+    func_root=$(dirname "$func_config")
+    echo "Deploying $(dirname "$func_root") function..."
+    nuctl deploy --project-name cvat --path "$func_root" \
+        --volume "$SCRIPT_DIR/common:/opt/nuclio/common" \
+        --file "$func_config" --platform local
+done
 
 nuctl get function

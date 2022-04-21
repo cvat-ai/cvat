@@ -3,32 +3,89 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
+import { connect } from 'react-redux';
 import { Row, Col } from 'antd/lib/grid';
 import { QuestionCircleOutlined } from '@ant-design/icons';
-import Tooltip from 'antd/lib/tooltip';
 import Table from 'antd/lib/table';
 import Modal from 'antd/lib/modal';
 import Spin from 'antd/lib/spin';
 import Text from 'antd/lib/typography/Text';
 
-interface Props {
+import CVATTooltip from 'components/common/cvat-tooltip';
+import { CombinedState, DimensionType } from 'reducers/interfaces';
+import { showStatistics } from 'actions/annotation-actions';
+
+interface StateToProps {
+    visible: boolean;
     collecting: boolean;
     data: any;
-    visible: boolean;
-    assignee: string;
-    reviewer: string;
-    startFrame: number;
-    stopFrame: number;
-    bugTracker: string;
     jobStatus: string;
     savingJobStatus: boolean;
+    bugTracker: string | null;
+    startFrame: number;
+    stopFrame: number;
+    dimension: DimensionType;
+    assignee: any | null;
+}
+
+interface DispatchToProps {
     closeStatistics(): void;
 }
 
-export default function StatisticsModalComponent(props: Props): JSX.Element {
+function mapStateToProps(state: CombinedState): StateToProps {
     const {
-        collecting, data, visible, assignee, reviewer, startFrame, stopFrame, bugTracker, closeStatistics,
+        annotation: {
+            statistics: { visible, collecting, data },
+            job: {
+                saving: savingJobStatus,
+                instance: {
+                    bugTracker,
+                    startFrame,
+                    stopFrame,
+                    assignee,
+                    dimension,
+                    status: jobStatus,
+                },
+            },
+        },
+    } = state;
+
+    return {
+        visible,
+        collecting,
+        data,
+        jobStatus,
+        savingJobStatus,
+        bugTracker,
+        startFrame,
+        stopFrame,
+        dimension,
+        assignee: assignee?.username || 'Nobody',
+    };
+}
+
+function mapDispatchToProps(dispatch: any): DispatchToProps {
+    return {
+        closeStatistics(): void {
+            dispatch(showStatistics(false));
+        },
+    };
+}
+
+function StatisticsModalComponent(props: StateToProps & DispatchToProps): JSX.Element {
+    const {
+        collecting,
+        data,
+        visible,
+        assignee,
+        startFrame,
+        stopFrame,
+        bugTracker,
+        closeStatistics,
+        dimension,
     } = props;
+
+    const is2D = dimension === DimensionType.DIM_2D;
 
     const baseProps = {
         cancelButtonProps: { style: { display: 'none' } },
@@ -54,6 +111,7 @@ export default function StatisticsModalComponent(props: Props): JSX.Element {
         polygon: `${data.label[key].polygon.shape} / ${data.label[key].polygon.track}`,
         polyline: `${data.label[key].polyline.shape} / ${data.label[key].polyline.track}`,
         points: `${data.label[key].points.shape} / ${data.label[key].points.track}`,
+        ellipse: `${data.label[key].ellipse.shape} / ${data.label[key].ellipse.track}`,
         cuboid: `${data.label[key].cuboid.shape} / ${data.label[key].cuboid.track}`,
         tags: data.label[key].tags,
         manually: data.label[key].manually,
@@ -68,6 +126,7 @@ export default function StatisticsModalComponent(props: Props): JSX.Element {
         polygon: `${data.total.polygon.shape} / ${data.total.polygon.track}`,
         polyline: `${data.total.polyline.shape} / ${data.total.polyline.track}`,
         points: `${data.total.points.shape} / ${data.total.points.track}`,
+        ellipse: `${data.total.ellipse.shape} / ${data.total.ellipse.track}`,
         cuboid: `${data.total.cuboid.shape} / ${data.total.cuboid.track}`,
         tags: data.total.tags,
         manually: data.total.manually,
@@ -76,12 +135,12 @@ export default function StatisticsModalComponent(props: Props): JSX.Element {
     });
 
     const makeShapesTracksTitle = (title: string): JSX.Element => (
-        <Tooltip title='Shapes / Tracks' mouseLeaveDelay={0}>
+        <CVATTooltip title={is2D ? 'Shapes / Tracks' : 'Shapes'}>
             <Text strong style={{ marginRight: 5 }}>
                 {title}
             </Text>
             <QuestionCircleOutlined className='cvat-info-circle-icon' />
-        </Tooltip>
+        </CVATTooltip>
     );
 
     const columns = [
@@ -111,6 +170,11 @@ export default function StatisticsModalComponent(props: Props): JSX.Element {
             key: 'points',
         },
         {
+            title: makeShapesTracksTitle('Ellipse'),
+            dataIndex: 'ellipse',
+            key: 'ellipse',
+        },
+        {
             title: makeShapesTracksTitle('Cuboids'),
             dataIndex: 'cuboid',
             key: 'cuboid',
@@ -137,6 +201,24 @@ export default function StatisticsModalComponent(props: Props): JSX.Element {
         },
     ];
 
+    const columns3D = [
+        {
+            title: <Text strong> Label </Text>,
+            dataIndex: 'label',
+            key: 'label',
+        },
+        {
+            title: makeShapesTracksTitle('Cuboids'),
+            dataIndex: 'cuboid',
+            key: 'cuboid',
+        },
+        {
+            title: <Text strong> Total </Text>,
+            dataIndex: 'total',
+            key: 'total',
+        },
+    ];
+
     return (
         <Modal {...baseProps}>
             <div className='cvat-job-info-modal-window'>
@@ -151,12 +233,6 @@ export default function StatisticsModalComponent(props: Props): JSX.Element {
                             Assignee
                         </Text>
                         <Text className='cvat-text'>{assignee}</Text>
-                    </Col>
-                    <Col span={4}>
-                        <Text strong className='cvat-text'>
-                            Reviewer
-                        </Text>
-                        <Text className='cvat-text'>{reviewer}</Text>
                     </Col>
                     <Col span={4}>
                         <Text strong className='cvat-text'>
@@ -190,10 +266,18 @@ export default function StatisticsModalComponent(props: Props): JSX.Element {
                 <Row justify='space-around' className='cvat-job-info-statistics'>
                     <Col span={24}>
                         <Text className='cvat-text'>Annotations statistics</Text>
-                        <Table scroll={{ y: 400 }} bordered pagination={false} columns={columns} dataSource={rows} />
+                        <Table
+                            scroll={{ y: 400 }}
+                            bordered
+                            pagination={false}
+                            columns={is2D ? columns : columns3D}
+                            dataSource={rows}
+                        />
                     </Col>
                 </Row>
             </div>
         </Modal>
     );
 }
+
+export default connect(mapStateToProps, mapDispatchToProps)(StatisticsModalComponent);

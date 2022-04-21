@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2021-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -10,6 +10,7 @@ import { MenuInfo } from 'rc-menu/lib/interface';
 
 import ObjectItemContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/object-item';
 import { Workspace } from 'reducers/interfaces';
+import { rotatePoint } from 'utils/math';
 import consts from 'consts';
 
 interface Props {
@@ -61,7 +62,10 @@ function ReviewContextMenu({
                 >
                     {latestComments.map(
                         (comment: string, id: number): JSX.Element => (
-                            <Menu.Item className='cvat-context-menu-item' key={`${id}`}>
+                            <Menu.Item
+                                className='cvat-context-menu-item cvat-quick-issue-from-latest-item'
+                                key={`${id}`}
+                            >
                                 {comment}
                             </Menu.Item>
                         ),
@@ -103,7 +107,29 @@ export default function CanvasContextMenu(props: Props): JSX.Element | null {
                     );
                     if (param.key === ReviewContextMenuKeys.OPEN_ISSUE) {
                         if (state) {
-                            onStartIssue(state.points);
+                            let { points } = state;
+                            if (['ellipse', 'rectangle'].includes(state.shapeType)) {
+                                const [cx, cy] = state.shapeType === 'ellipse' ? state.points : [
+                                    (state.points[0] + state.points[2]) / 2,
+                                    (state.points[1] + state.points[3]) / 2,
+                                ];
+                                const [rx, ry] = [state.points[2] - cx, cy - state.points[3]];
+                                points = state.shapeType === 'ellipse' ? [
+                                    state.points[0] - rx,
+                                    state.points[1] - ry,
+                                    state.points[0] + rx,
+                                    state.points[1] + ry,
+                                ] : state.points;
+
+                                points = [
+                                    [points[0], points[1]],
+                                    [points[2], points[1]],
+                                    [points[2], points[3]],
+                                    [points[0], points[3]],
+                                ].map(([x, y]: number[]) => rotatePoint(x, y, state.rotation, cx, cy)).flat();
+                            }
+
+                            onStartIssue(points);
                         }
                     } else if (param.key === ReviewContextMenuKeys.QUICK_ISSUE_POSITION) {
                         if (state) {

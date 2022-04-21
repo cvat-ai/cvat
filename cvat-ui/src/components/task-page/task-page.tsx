@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -13,6 +13,7 @@ import Result from 'antd/lib/result';
 import DetailsContainer from 'containers/task-page/details';
 import JobListContainer from 'containers/task-page/job-list';
 import ModelRunnerModal from 'components/model-runner-modal/model-runner-dialog';
+import MoveTaskModal from 'components/move-task-modal/move-task-modal';
 import { Task } from 'reducers/interfaces';
 import TopBarComponent from './top-bar';
 
@@ -51,9 +52,9 @@ class TaskPageComponent extends React.PureComponent<Props> {
     }
 
     public render(): JSX.Element {
-        const { task, updating } = this.props;
+        const { task, updating, fetching } = this.props;
 
-        if (task === null) {
+        if (task === null || fetching) {
             return <Spin size='large' className='cvat-spinner' />;
         }
 
@@ -70,6 +71,7 @@ class TaskPageComponent extends React.PureComponent<Props> {
 
         return (
             <>
+                { updating ? <Spin size='large' className='cvat-spinner' /> : null }
                 <Row
                     style={{ display: updating ? 'none' : undefined }}
                     justify='center'
@@ -83,7 +85,7 @@ class TaskPageComponent extends React.PureComponent<Props> {
                     </Col>
                 </Row>
                 <ModelRunnerModal />
-                {updating && <Spin size='large' className='cvat-spinner' />}
+                <MoveTaskModal />
             </>
         );
     }

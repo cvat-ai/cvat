@@ -1,14 +1,16 @@
-# Copyright (C) 2018 Intel Corporation
+# Copyright (C) 2018-2021 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
+import http.client
 
-from django.http import HttpResponseBadRequest, JsonResponse
+from django.http import HttpResponseBadRequest, JsonResponse, HttpResponse
 from rules.contrib.views import permission_required, objectgetter
 
-from cvat.apps.authentication.decorators import login_required
+from cvat.apps.iam.decorators import login_required
 from cvat.apps.engine.log import slogger
 from cvat.apps.engine import models
 from cvat.apps.dataset_repo.models import GitData
+import contextlib
 
 import cvat.apps.dataset_repo.dataset_repo as CVATGit
 import django_rq
@@ -30,7 +32,7 @@ def check_process(request, rq_id):
         else:
             return JsonResponse({"status": "unknown"})
     except Exception as ex:
-        slogger.glob.error("error occured during checking repository request with rq id {}".format(rq_id), exc_info=True)
+        slogger.glob.error("error occurred during checking repository request with rq id {}".format(rq_id), exc_info=True)
         return HttpResponseBadRequest(str(ex))
 
 
@@ -40,23 +42,21 @@ def check_process(request, rq_id):
 def create(request, tid):
     try:
         slogger.task[tid].info("create repository request")
-
         body = json.loads(request.body.decode('utf-8'))
         path = body["path"]
+        export_format = body["format"]
         lfs = body["lfs"]
         rq_id = "git.create.{}".format(tid)
         queue = django_rq.get_queue("default")
 
-        queue.enqueue_call(func = CVATGit.initial_create, args = (tid, path, lfs, request.user), job_id = rq_id)
+        queue.enqueue_call(func = CVATGit.initial_create, args = (tid, path, export_format, lfs, request.user), job_id = rq_id)
         return JsonResponse({ "rq_id": rq_id })
     except Exception as ex:
-        slogger.glob.error("error occured during initial cloning repository request with rq id {}".format(rq_id), exc_info=True)
+        slogger.glob.error("error occurred during initial cloning repository request with rq id {}".format(rq_id), exc_info=True)
         return HttpResponseBadRequest(str(ex))
 
 
 @login_required
-@permission_required(perm=['engine.task.access'],
-    fn=objectgetter(models.Task, 'tid'), raise_exception=True)
 def push_repository(request, tid):
     try:
         slogger.task[tid].info("push repository request")
@@ -67,23 +67,50 @@ def push_repository(request, tid):
 
         return JsonResponse({ "rq_id": rq_id })
     except Exception as ex:
-        try:
-            slogger.task[tid].error("error occured during pushing repository request", exc_info=True)
-        except Exception:
-            pass
+        with contextlib.suppress(Exception):
+            slogger.task[tid].error("error occurred during pushing repository request",
+                exc_info=True)
+
         return HttpResponseBadRequest(str(ex))
 
 
 @login_required
-@permission_required(perm=['engine.task.access'],
-    fn=objectgetter(models.Task, 'tid'), raise_exception=True)
 def get_repository(request, tid):
     try:
         slogger.task[tid].info("get repository request")
         return JsonResponse(CVATGit.get(tid, request.user))
     except Exception as ex:
+        with contextlib.suppress(Exception):
+            slogger.task[tid].error("error occurred during getting repository info request",
+                exc_info=True)
+
+        return HttpResponseBadRequest(str(ex))
+
+@login_required
+@permission_required(perm=['engine.task.access'],
+                     fn=objectgetter(models.Task, 'tid'), raise_exception=True)
+def update_git_repo(request, tid):
+    try:
+        body = json.loads(request.body.decode('utf-8'))
+        req_type = body["type"]
+        value = body["value"]
+        git_data_obj = GitData.objects.filter(task_id=tid)[0]
+        if req_type == "url":
+            git_data_obj.url = value
+            git_data_obj.save(update_fields=["url"])
+        elif req_type == "lfs":
+            git_data_obj.lfs = bool(value)
+            git_data_obj.save(update_fields=["lfs"])
+        elif req_type == "format":
+            git_data_obj.format = value
+            git_data_obj.save(update_fields=["format"])
+            slogger.task[tid].info("get repository request")
+        return HttpResponse(
+            status=http.HTTPStatus.OK,
+        )
+    except Exception as ex:
         try:
-            slogger.task[tid].error("error occured during getting repository info request", exc_info=True)
+            slogger.task[tid].error("error occurred during changing repository request", exc_info=True)
         except Exception:
             pass
         return HttpResponseBadRequest(str(ex))
@@ -99,5 +126,5 @@ def get_meta_info(request):
 
         return JsonResponse(response, safe = False)
     except Exception as ex:
-        slogger.glob.exception("error occured during get meta request", exc_info = True)
+        slogger.glob.exception("error occurred during get meta request", exc_info = True)
         return HttpResponseBadRequest(str(ex))

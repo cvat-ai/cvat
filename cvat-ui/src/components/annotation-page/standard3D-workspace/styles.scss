@@ -1,0 +1,163 @@
+// Copyright (C) 2020-2021 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
+
+@import 'base.scss';
+
+.cvat-canvas-container-overflow {
+    overflow: hidden;
+    width: 100%;
+    height: 100%;
+}
+
+.cvat-canvas3d-perspective {
+    height: 100%;
+    width: 100%;
+    position: relative;
+    padding: $grid-unit-size * 0.5;
+}
+
+.cvat-canvas3d-orthographic-views {
+    height: 50%;
+    position: relative;
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+}
+
+.cvat-canvas3d-perspective-arrow-directions {
+    position: absolute;
+    padding: $grid-unit-size;
+    bottom: 0;
+    right: 0;
+}
+
+.cvat-canvas3d-perspective-arrow-directions-icons-up {
+    margin-left: $grid-unit-size * 5.25;
+}
+
+.cvat-canvas3d-perspective-arrow-directions-icons-bottom {
+    margin: $grid-unit-size * 0.5;
+}
+
+.cvat-canvas3d-perspective-arrow-directions-icons-color {
+    color: black;
+}
+
+.cvat-canvas3d-perspective-directions {
+    padding: $grid-unit-size;
+    position: absolute;
+    bottom: 0;
+    left: 0;
+}
+
+.cvat-canvas3d-perspective-directions-icon {
+    margin: $grid-unit-size * 0.5 $grid-unit-size * 0.25;
+    width: $grid-unit-size * 4;
+}
+
+.cvat-canvas3d-orthographic-view {
+    width: 100%;
+    height: 100%;
+    padding-top: $grid-unit-size * 0.5;
+    padding-bottom: $grid-unit-size * 0.5;
+}
+
+.cvat-canvas3d-topview {
+    padding-left: $grid-unit-size * 0.5;
+    padding-right: $grid-unit-size * 0.5;
+}
+
+.cvat-canvas3d-sideview {
+    padding-right: $grid-unit-size * 0.5;
+}
+
+.cvat-canvas3d-frontview {
+    padding-right: $grid-unit-size * 0.5;
+}
+
+.cvat-canvas3d-fullsize {
+    position: relative;
+    width: 100%;
+    height: 100%;
+}
+
+.cvat-canvas3d-view-slider {
+    position: absolute;
+    margin-left: auto;
+    width: $grid-unit-size * 10;
+    margin-right: auto;
+    right: 0;
+    top: 0;
+    left: 0;
+    background-color: grey;
+    height: $grid-unit-size * 0.5;
+}
+
+.cvat-canvas3d-header {
+    height: $grid-unit-size * 4;
+    width: 100%;
+    background-color: $background-color-2;
+    text-align: center;
+    vertical-align: middle;
+}
+
+.cvat-resizable {
+    position: relative;
+}
+
+.cvat-resizable-handle-horizontal {
+    position: absolute;
+    margin-left: auto;
+    width: 100%;
+    margin-right: auto;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    background-color: grey;
+    height: $grid-unit-size * 0.5;
+    cursor: ns-resize;
+}
+
+.cvat-resizable-handle-vertical-side {
+    position: absolute;
+    width: $grid-unit-size * 0.5;
+    margin-right: auto;
+    top: $grid-unit-size * 4.5;
+    right: 0;
+    bottom: 0;
+    background-color: grey;
+    height: 100%;
+    cursor: ew-resize;
+}
+
+.cvat-resizable-handle-vertical-top {
+    position: absolute;
+    width: $grid-unit-size * 0.5;
+    margin-right: auto;
+    top: $grid-unit-size * 4.5;
+    right: 0;
+    bottom: 0;
+    background-color: grey;
+    height: 100%;
+    cursor: ew-resize;
+}
+
+#cvat_canvas_loading_animation {
+    z-index: 1;
+    position: absolute;
+    width: 100%;
+    height: 100%;
+}
+
+#cvat_canvas_loading_circle {
+    fill-opacity: 0;
+    stroke: #09c;
+    stroke-width: 3px;
+    stroke-dasharray: 50;
+    animation: loadingAnimation 1s linear infinite;
+}
+
+.cvat_canvas_hidden {
+    display: none;
+}

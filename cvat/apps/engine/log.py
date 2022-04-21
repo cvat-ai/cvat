@@ -1,10 +1,11 @@
-# Copyright (C) 2018 Intel Corporation
+# Copyright (C) 2018-2021 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
 import logging
+import sys
 from cvat.settings.base import LOGGING
-from .models import Job, Task, Project
+from .models import Job, Task, Project, CloudStorage
 
 def _get_project(pid):
     try:
@@ -23,6 +24,23 @@ def _get_job(jid):
         return Job.objects.select_related("segment__task").get(id=jid)
     except Exception:
         raise Exception('{} key must be a job identifier'.format(jid))
+
+def _get_storage(storage_id):
+    try:
+        return CloudStorage.objects.get(pk=storage_id)
+    except Exception:
+        raise Exception('{} key must be a cloud storage identifier'.format(storage_id))
+
+def get_logger(logger_name, log_file):
+    logger = logging.getLogger(name=logger_name)
+    logger.setLevel(logging.INFO)
+    file_handler = logging.FileHandler(log_file)
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    file_handler.setFormatter(formatter)
+    logger.addHandler(file_handler)
+    logger.addHandler(logging.StreamHandler(sys.stdout))
+    logger.addHandler(logging.StreamHandler(sys.stderr))
+    return logger
 
 class ProjectLoggerStorage:
     def __init__(self):
@@ -78,6 +96,27 @@ class JobLoggerStorage:
     def _get_task_logger(self, jid):
         job = _get_job(jid)
         return slogger.task[job.segment.task.id]
+
+class CloudSourceLoggerStorage:
+    def __init__(self):
+        self._storage = dict()
+
+    def __getitem__(self, sid):
+        """Get ceratain storage object for some cloud storage."""
+        if sid not in self._storage:
+            self._storage[sid] = self._create_cloud_storage_logger(sid)
+        return self._storage[sid]
+
+    def _create_cloud_storage_logger(self, sid):
+        cloud_storage = _get_storage(sid)
+
+        logger = logging.getLogger('cvat.server.cloud_storage_{}'.format(sid))
+        server_file = logging.FileHandler(filename=cloud_storage.get_log_path())
+        formatter = logging.Formatter(LOGGING['formatters']['standard']['format'])
+        server_file.setFormatter(formatter)
+        logger.addHandler(server_file)
+
+        return logger
 
 class ProjectClientLoggerStorage:
     def __init__(self):
@@ -144,5 +183,6 @@ slogger = dotdict({
     'project': ProjectLoggerStorage(),
     'task': TaskLoggerStorage(),
     'job': JobLoggerStorage(),
+    'cloud_storage': CloudSourceLoggerStorage(),
     'glob': logging.getLogger('cvat.server'),
 })

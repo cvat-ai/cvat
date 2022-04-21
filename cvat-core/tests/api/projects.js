@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2020 Intel Corporation
+// Copyright (C) 2019-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -11,7 +11,6 @@ jest.mock('../../src/server-proxy', () => {
 // Initialize api
 window.cvat = require('../../src/api');
 
-const { Task } = require('../../src/session');
 const { Project } = require('../../src/project');
 
 describe('Feature: get projects', () => {
@@ -33,8 +32,8 @@ describe('Feature: get projects', () => {
         expect(result).toHaveLength(1);
         expect(result[0]).toBeInstanceOf(Project);
         expect(result[0].id).toBe(2);
-        expect(result[0].tasks).toHaveLength(1);
-        expect(result[0].tasks[0]).toBeInstanceOf(Task);
+        // eslint-disable-next-line no-underscore-dangle
+        expect(result[0]._internalData.task_ids).toHaveLength(1);
     });
 
     test('get a project by an unknown id', async () => {
@@ -55,16 +54,12 @@ describe('Feature: get projects', () => {
 
     test('get projects by filters', async () => {
         const result = await window.cvat.projects.get({
-            status: 'completed',
+            filter: '{"and":[{"==":[{"var":"status"},"completed"]}]}',
         });
-        expect(Array.isArray(result)).toBeTruthy();
-        expect(result).toHaveLength(1);
-        expect(result[0]).toBeInstanceOf(Project);
-        expect(result[0].id).toBe(2);
-        expect(result[0].status).toBe('completed');
+        expect(result).toBeInstanceOf(Array);
     });
 
-    test('get projects by invalid filters', async () => {
+    test('get projects by invalid query', async () => {
         expect(
             window.cvat.projects.get({
                 unknown: '5',
@@ -99,7 +94,7 @@ describe('Feature: save a project', () => {
 
         const labelsLength = result[0].labels.length;
         const newLabel = new window.cvat.classes.Label({
-            name: "My boss's car",
+            name: 'My boss\'s car',
             attributes: [
                 {
                     default_value: 'false',
@@ -119,7 +114,7 @@ describe('Feature: save a project', () => {
         });
 
         expect(result[0].labels).toHaveLength(labelsLength + 1);
-        const appendedLabel = result[0].labels.filter((el) => el.name === "My boss's car");
+        const appendedLabel = result[0].labels.filter((el) => el.name === 'My boss\'s car');
         expect(appendedLabel).toHaveLength(1);
         expect(appendedLabel[0].attributes).toHaveLength(1);
         expect(appendedLabel[0].attributes[0].name).toBe('parked');
@@ -166,5 +161,22 @@ describe('Feature: delete a project', () => {
 
         expect(Array.isArray(result)).toBeTruthy();
         expect(result).toHaveLength(0);
+    });
+});
+
+describe('Feature: delete a label', () => {
+    test('delete a label', async () => {
+        let result = await window.cvat.projects.get({
+            id: 2,
+        });
+
+        const labelsLength = result[0].labels.length;
+        const deletedLabels = result[0].labels.filter((el) => el.name !== 'bicycle');
+        result[0].labels = deletedLabels;
+        result[0].save();
+        result = await window.cvat.projects.get({
+            id: 2,
+        });
+        expect(result[0].labels).toHaveLength(labelsLength - 1);
     });
 });

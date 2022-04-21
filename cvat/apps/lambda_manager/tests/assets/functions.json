@@ -1,0 +1,201 @@
+{
+  "positive": {
+    "test-openvino-omz-public-yolo-v3-tf": {
+      "metadata": {
+        "name": "test-openvino-omz-public-yolo-v3-tf",
+        "annotations": {
+          "framework": "openvino",
+          "name": "YOLO v3",
+          "spec": "[\n  { \"id\": 0, \"name\": \"person\" },                              \n  { \"id\": 1, \"name\": \"bicycle\" },                              \n  { \"id\": 2, \"name\": \"car\" }                              \n]\n",
+          "type": "detector"
+        }
+      },
+      "spec": {
+        "description": "YOLO v3 via Intel OpenVINO"
+      },
+      "status": {
+        "state": "ready",
+        "httpPort": 49155
+      }
+    },
+    "test-openvino-omz-intel-person-reidentification-retail-0300": {
+      "metadata": {
+        "name": "test-openvino-omz-intel-person-reidentification-retail-0300",
+        "annotations": {
+          "framework": "openvino",
+          "name": "Person reidentification",
+          "spec": "",
+          "type": "reid"
+        }
+      },
+      "spec": {
+        "description": "Person reidentification model for a general scenario"
+      },
+      "status": {
+        "state": "ready",
+        "httpPort": 49156
+      }
+    },
+    "test-openvino-omz-intel-person-reidentification-retail-1234": {
+      "metadata": {
+        "name": "test-openvino-omz-intel-person-reidentification-retail-1234",
+        "annotations": {
+          "framework": "openvino",
+          "name": "Person reidentification",
+          "spec": "",
+          "type": "reid"
+        }
+      },
+      "spec": {
+        "description": "Person reidentification model for a general scenario"
+      },
+      "status": {
+        "state": "ready",
+        "httpPort": 49156
+      }
+    },
+    "test-openvino-dextr": {
+      "metadata": {
+        "name": "test-openvino-dextr",
+        "annotations": {
+          "framework": "openvino",
+          "name": "DEXTR",
+          "spec": "",
+          "type": "interactor"
+        }
+      },
+      "spec": {
+        "description": "Deep Extreme Cut"
+      },
+      "status": {
+        "state": "ready",
+        "httpPort": 49157
+      }
+    },
+    "test-pth-foolwood-siammask": {
+      "metadata": {
+        "name": "test-pth-foolwood-siammask",
+        "annotations": {
+          "framework": "pytorch",
+          "name": "SiamMask",
+          "spec": "",
+          "type": "tracker"
+        }
+      },
+      "spec": {
+        "description": "Fast Online Object Tracking and Segmentation"
+      },
+      "status": {
+        "state": "ready",
+        "httpPort": 49158
+      }
+    },
+    "test-model-has-non-type": {
+      "metadata": {
+        "name": "test-model-has-non-type",
+        "annotations": {
+          "framework": "openvino",
+          "name": "Non type",
+          "spec": "[\n  { \"id\": 0, \"name\": \"person\" },                              \n  { \"id\": 1, \"name\": \"bicycle\" },                              \n  { \"id\": 2, \"name\": \"car\" }                              \n]\n"
+        }
+      },
+      "spec": {
+        "description": "Test non type"
+      },
+      "status": {
+        "state": "ready",
+        "httpPort": 49160
+      }
+    },
+    "test-model-has-wrong-type": {
+      "metadata": {
+        "name": "test-model-has-wrong-type",
+        "annotations": {
+          "framework": "openvino",
+          "name": "Non type",
+          "spec": "[\n  { \"id\": 0, \"name\": \"person\" },                              \n  { \"id\": 1, \"name\": \"bicycle\" },                              \n  { \"id\": 2, \"name\": \"car\" }                              \n]\n",
+          "type": "car-bicycle-person-detector"
+        }
+      },
+      "spec": {
+        "description": "Test wrong type"
+      },
+      "status": {
+        "state": "ready",
+        "httpPort": 49161
+      }
+    },
+    "test-model-has-unknown-type": {
+      "metadata": {
+        "name": "test-model-has-unknown-type",
+        "annotations": {
+          "framework": "openvino",
+          "name": "Non type",
+          "spec": "[\n  { \"id\": 0, \"name\": \"person\" },                              \n  { \"id\": 1, \"name\": \"bicycle\" },                              \n  { \"id\": 2, \"name\": \"car\" }                              \n]\n",
+          "type": "unknown"
+        }
+      },
+      "spec": {
+        "description": "Test unknown type"
+      },
+      "status": {
+        "state": "ready",
+        "httpPort": 49162
+      }
+    },
+    "test-model-has-state-building": {
+      "metadata": {
+        "name": "test-model-has-state-building",
+        "annotations": {
+          "framework": "openvino",
+          "name": "State is building",
+          "spec": "[\n  { \"id\": 0, \"name\": \"person\" },                              \n  { \"id\": 1, \"name\": \"bicycle\" },                              \n  { \"id\": 2, \"name\": \"car\" }                              \n]\n",
+          "type": "detector"
+        }
+      },
+      "spec": {
+        "description": "Test state building"
+      },
+      "status": {
+        "state": "building"
+      }
+    },
+    "test-model-has-state-error": {
+      "metadata": {
+        "name": "test-model-has-state-building",
+        "annotations": {
+          "framework": "openvino",
+          "name": "State is error",
+          "spec": "[\n  { \"id\": 0, \"name\": \"person\" },                              \n  { \"id\": 1, \"name\": \"bicycle\" },                              \n  { \"id\": 2, \"name\": \"car\" }                              \n]\n",
+          "type": "detector"
+        }
+      },
+      "spec": {
+        "description": "Test state error"
+      },
+      "status": {
+        "state": "error"
+      }
+    }
+  },
+  "negative": {
+    "test-model-has-non-unique-labels": {
+      "metadata": {
+        "name": "test-model-has-non-unique-labels",
+        "annotations": {
+          "framework": "openvino",
+          "name": "Non-unique labels",
+          "spec": "[\n  { \"id\": 0, \"name\": \"person\" },                              \n  { \"id\": 1, \"name\": \"bicycle\" },                              \n  { \"id\": 2, \"name\": \"car\" },                              \n  { \"id\": 3, \"name\": \"car\" }                              \n]\n",
+          "type": "detector"
+        }
+      },
+      "spec": {
+        "description": "Test non-unique labels"
+      },
+      "status": {
+        "state": "ready",
+        "httpPort": 49159
+      }
+    }
+  }
+}

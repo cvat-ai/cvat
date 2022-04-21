@@ -1,8 +1,10 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
-import { ActionUnion, createAction, ThunkAction, ThunkDispatch } from 'utils/redux';
+import {
+    ActionUnion, createAction, ThunkAction, ThunkDispatch,
+} from 'utils/redux';
 import getCore from 'cvat-core-wrapper';
 import { LogType } from 'cvat-logger';
 import { computeZRange } from './annotation-actions';
@@ -23,16 +25,15 @@ export const boundariesActions = {
         minZ: number,
         maxZ: number,
         colors: string[],
-    ) =>
-        createAction(BoundariesActionTypes.RESET_AFTER_ERROR, {
-            job,
-            states,
-            frameNumber,
-            frameData,
-            minZ,
-            maxZ,
-            colors,
-        }),
+    ) => createAction(BoundariesActionTypes.RESET_AFTER_ERROR, {
+        job,
+        states,
+        frameNumber,
+        frameData,
+        minZ,
+        maxZ,
+        colors,
+    }),
     throwResetError: () => createAction(BoundariesActionTypes.THROW_RESET_ERROR),
 };
 

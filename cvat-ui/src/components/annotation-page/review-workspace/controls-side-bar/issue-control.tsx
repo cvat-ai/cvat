@@ -1,14 +1,14 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
 import Icon from '@ant-design/icons';
-import Tooltip from 'antd/lib/tooltip';
 
 import { ActiveControl } from 'reducers/interfaces';
 import { Canvas } from 'cvat-canvas-wrapper';
 import { RectangleIcon } from 'icons';
+import CVATTooltip from 'components/common/cvat-tooltip';
 
 interface Props {
     canvasInstance: Canvas;
@@ -16,11 +16,11 @@ interface Props {
     selectIssuePosition(enabled: boolean): void;
 }
 
-function ResizeControl(props: Props): JSX.Element {
+function CreateIssueControl(props: Props): JSX.Element {
     const { activeControl, canvasInstance, selectIssuePosition } = props;
 
     return (
-        <Tooltip title='Open an issue' placement='right' mouseLeaveDelay={0}>
+        <CVATTooltip title='Open an issue' placement='right'>
             <Icon
                 component={RectangleIcon}
                 className={
@@ -39,8 +39,8 @@ function ResizeControl(props: Props): JSX.Element {
                     }
                 }}
             />
-        </Tooltip>
+        </CVATTooltip>
     );
 }
 
-export default React.memo(ResizeControl);
+export default React.memo(CreateIssueControl);

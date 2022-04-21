@@ -5,6 +5,7 @@ branch = true
 source =
     cvat/apps/
     utils/cli/
+    utils/dataset_manifest
 
 omit =
     cvat/settings/*

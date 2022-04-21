@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2019-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -19,11 +19,12 @@ interface Props {
     error: string;
     taskId: number | null;
     installedGit: boolean;
+    dumpers: []
 }
 
 export default function CreateTaskPage(props: Props): JSX.Element {
     const {
-        error, status, taskId, onCreate, installedGit,
+        error, status, taskId, onCreate, installedGit, dumpers,
     } = props;
 
     const location = useLocation();
@@ -52,6 +53,7 @@ export default function CreateTaskPage(props: Props): JSX.Element {
                 Modal.error({
                     width: 800,
                     title: 'Could not clone the repository',
+                    className: 'cvat-create-task-clone-repository-fail',
                     content: (
                         <>
                             <Paragraph>
@@ -78,6 +80,7 @@ export default function CreateTaskPage(props: Props): JSX.Element {
                     status={status}
                     onCreate={onCreate}
                     installedGit={installedGit}
+                    dumpers={dumpers}
                 />
             </Col>
         </Row>

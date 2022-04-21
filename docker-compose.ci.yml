@@ -1,3 +1,8 @@
+#
+# Copyright (C) 2018-2020 Intel Corporation
+#
+# SPDX-License-Identifier: MIT
+#
 version: '3.3'
 
 services:
@@ -9,8 +14,6 @@ services:
       dockerfile: Dockerfile.ci
     depends_on:
       - cvat
-      - cvat_ui
-      - cvat_proxy
     environment:
       COVERALLS_SERVICE_NAME:
       CONTAINER_COVERAGE_DATA_DIR:

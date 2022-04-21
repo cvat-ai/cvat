@@ -1,8 +1,9 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import { AnyAction } from 'redux';
+import { omit } from 'lodash';
 import { ProjectsActionTypes } from 'actions/projects-actions';
 import { BoundariesActionTypes } from 'actions/boundaries-actions';
 import { AuthActionTypes } from 'actions/auth-actions';
@@ -18,9 +19,17 @@ const defaultState: ProjectsState = {
         page: 1,
         id: null,
         search: null,
-        owner: null,
-        name: null,
-        status: null,
+        filter: null,
+        sort: null,
+    },
+    tasksGettingQuery: {
+        page: 1,
+        id: null,
+        search: null,
+        filter: null,
+        sort: null,
+        projectId: null,
+        ordering: 'subset',
     },
     activities: {
         deletes: {},
@@ -28,7 +37,9 @@ const defaultState: ProjectsState = {
             id: null,
             error: '',
         },
+        backups: {},
     },
+    restoring: false,
 };
 
 export default (state: ProjectsState = defaultState, action: AnyAction): ProjectsState => {
@@ -40,6 +51,10 @@ export default (state: ProjectsState = defaultState, action: AnyAction): Project
                     ...defaultState.gettingQuery,
                     ...action.payload.query,
                 },
+                tasksGettingQuery: {
+                    ...defaultState.tasksGettingQuery,
+                    ...action.payload.tasksQuery,
+                },
             };
         case ProjectsActionTypes.GET_PROJECTS:
             return {
@@ -50,12 +65,19 @@ export default (state: ProjectsState = defaultState, action: AnyAction): Project
                 current: [],
             };
         case ProjectsActionTypes.GET_PROJECTS_SUCCESS: {
+            const combinedWithPreviews = action.payload.array.map(
+                (project: any, index: number): Project => ({
+                    instance: project,
+                    preview: action.payload.previews[index],
+                }),
+            );
+
             return {
                 ...state,
                 initialized: true,
                 fetching: false,
                 count: action.payload.count,
-                current: action.payload.array,
+                current: combinedWithPreviews,
             };
         }
         case ProjectsActionTypes.GET_PROJECTS_FAILED: {
@@ -110,13 +132,13 @@ export default (state: ProjectsState = defaultState, action: AnyAction): Project
             return {
                 ...state,
                 current: state.current.map(
-                    (project): Project => {
-                        if (project.id === action.payload.project.id) {
-                            return action.payload.project;
-                        }
-
-                        return project;
-                    },
+                    (project): Project => ({
+                        ...project,
+                        instance:
+                            project.instance.id === action.payload.project.id ?
+                                action.payload.project :
+                                project.instance,
+                    }),
                 ),
             };
         }
@@ -124,13 +146,13 @@ export default (state: ProjectsState = defaultState, action: AnyAction): Project
             return {
                 ...state,
                 current: state.current.map(
-                    (project): Project => {
-                        if (project.id === action.payload.project.id) {
-                            return action.payload.project;
-                        }
-
-                        return project;
-                    },
+                    (project): Project => ({
+                        ...project,
+                        instance:
+                            project.instance.id === action.payload.project.id ?
+                                action.payload.project :
+                                project.instance,
+                    }),
                 ),
             };
         }
@@ -182,6 +204,48 @@ export default (state: ProjectsState = defaultState, action: AnyAction): Project
                 },
             };
         }
+        case ProjectsActionTypes.BACKUP_PROJECT: {
+            const { projectId } = action.payload;
+            const { backups } = state.activities;
+
+            return {
+                ...state,
+                activities: {
+                    ...state.activities,
+                    backups: {
+                        ...backups,
+                        ...Object.fromEntries([[projectId, true]]),
+                    },
+                },
+            };
+        }
+        case ProjectsActionTypes.BACKUP_PROJECT_FAILED:
+        case ProjectsActionTypes.BACKUP_PROJECT_SUCCESS: {
+            const { projectID } = action.payload;
+            const { backups } = state.activities;
+
+            return {
+                ...state,
+                activities: {
+                    ...state.activities,
+                    backups: omit(backups, [projectID]),
+                },
+            };
+        }
+        case ProjectsActionTypes.RESTORE_PROJECT: {
+            return {
+                ...state,
+                restoring: true,
+            };
+        }
+        case ProjectsActionTypes.RESTORE_PROJECT_FAILED:
+        case ProjectsActionTypes.RESTORE_PROJECT_SUCCESS: {
+            return {
+                ...state,
+                restoring: false,
+            };
+        }
+
         case BoundariesActionTypes.RESET_AFTER_ERROR:
         case AuthActionTypes.LOGOUT_SUCCESS: {
             return { ...defaultState };

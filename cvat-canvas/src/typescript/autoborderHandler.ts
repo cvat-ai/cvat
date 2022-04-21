@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -28,14 +28,14 @@ export class AutoborderHandlerImpl implements AutoborderHandler {
     private auxiliaryGroupID: number | null;
     private auxiliaryClicks: number[];
     private listeners: Record<
-        number,
-        Record<
-            number,
-            {
-                click: (event: MouseEvent) => void;
-                dblclick: (event: MouseEvent) => void;
-            }
-        >
+    number,
+    Record<
+    number,
+    {
+        click: (event: MouseEvent) => void;
+        dblclick: (event: MouseEvent) => void;
+    }
+    >
     >;
 
     public constructor(frameContent: SVGSVGElement) {
@@ -172,12 +172,11 @@ export class AutoborderHandlerImpl implements AutoborderHandler {
                             } else {
                                 // sign defines bypass direction
                                 const landmarks = this.auxiliaryClicks;
-                                const sign =
-                                    Math.sign(landmarks[2] - landmarks[0]) *
+                                const sign = Math.sign(landmarks[2] - landmarks[0]) *
                                     Math.sign(landmarks[1] - landmarks[0]) *
                                     Math.sign(landmarks[2] - landmarks[1]);
 
-                                // go via a polygon and get vertexes
+                                // go via a polygon and get vertices
                                 // the first vertex has been already drawn
                                 const way = [];
                                 for (let i = landmarks[0] + sign; ; i += sign) {
@@ -199,10 +198,10 @@ export class AutoborderHandlerImpl implements AutoborderHandler {
 
                                 // remove the latest cursor position from drawing array
                                 for (const wayPoint of way) {
-                                    const [_x, _y] = wayPoint
+                                    const [pX, pY] = wayPoint
                                         .split(',')
                                         .map((coordinate: string): number => +coordinate);
-                                    this.addPointToCurrentShape(_x, _y);
+                                    this.addPointToCurrentShape(pX, pY);
                                 }
 
                                 this.resetAuxiliaryShape();
@@ -238,7 +237,8 @@ export class AutoborderHandlerImpl implements AutoborderHandler {
 
         const currentClientID = this.currentShape.node.dataset.originClientId;
         const shapes = Array.from(this.frameContent.getElementsByClassName('cvat_canvas_shape')).filter(
-            (shape: HTMLElement): boolean => +shape.getAttribute('clientID') !== this.currentID,
+            (shape: HTMLElement): boolean => +shape.getAttribute('clientID') !== this.currentID &&
+                !shape.classList.contains('cvat_canvas_hidden'),
         );
         const transformedShapes = shapes
             .map((shape: HTMLElement): TransformedShape | null => {
@@ -253,6 +253,10 @@ export class AutoborderHandlerImpl implements AutoborderHandler {
                 let points = '';
                 if (shape.tagName === 'polyline' || shape.tagName === 'polygon') {
                     points = shape.getAttribute('points');
+                } else if (shape.tagName === 'ellipse') {
+                    const cx = +shape.getAttribute('cx');
+                    const cy = +shape.getAttribute('cy');
+                    points = `${cx},${cy}`;
                 } else if (shape.tagName === 'rect') {
                     const x = +shape.getAttribute('x');
                     const y = +shape.getAttribute('y');

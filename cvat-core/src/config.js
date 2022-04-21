@@ -1,8 +1,11 @@
-// Copyright (C) 2019-2020 Intel Corporation
+// Copyright (C) 2019-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
 module.exports = {
-    backendAPI: 'http://localhost:7000/api/v1',
+    backendAPI: '/api',
     proxy: false,
+    organizationID: null,
+    origin: '',
+    uploadChunkSize: 100,
 };

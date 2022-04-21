@@ -5,9 +5,9 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "type": "chrome",
+            "type": "pwa-chrome",
             "request": "launch",
-            "preLaunchTask": "ui.js: server",
+            "preLaunchTask": "npm: start - cvat-ui",
             "name": "ui.js: debug",
             "url": "http://localhost:3000",
             "webRoot": "${workspaceFolder}/cvat-ui",
@@ -42,8 +42,11 @@
             "request": "launch",
             "stopOnEntry": false,
             "justMyCode": false,
-            "pythonPath": "${command:python.interpreterPath}",
+            "python": "${command:python.interpreterPath}",
             "program": "${workspaceRoot}/manage.py",
+            "env": {
+                "CVAT_SERVERLESS": "1"
+            },
             "args": [
                 "runserver",
                 "--noreload",
@@ -56,13 +59,13 @@
         },
         {
             "name": "server: chrome",
-            "type": "chrome",
+            "type": "pwa-chrome",
             "request": "launch",
             "url": "http://localhost:7000/",
-            "disableNetworkCache":true,
+            "disableNetworkCache": true,
             "trace": true,
             "showAsyncStacks": true,
-            "pathMapping":{
+            "pathMapping": {
                 "/static/engine/": "${workspaceFolder}/cvat/apps/engine/static/engine/",
                 "/static/dashboard/": "${workspaceFolder}/cvat/apps/dashboard/static/dashboard/",
             }
@@ -73,7 +76,7 @@
             "request": "launch",
             "stopOnEntry": false,
             "justMyCode": false,
-            "pythonPath": "${command:python.interpreterPath}",
+            "python": "${command:python.interpreterPath}",
             "program": "${workspaceRoot}/manage.py",
             "args": [
                 "rqworker",
@@ -92,7 +95,7 @@
             "request": "launch",
             "stopOnEntry": false,
             "justMyCode": false,
-            "pythonPath": "${command:python.interpreterPath}",
+            "python": "${command:python.interpreterPath}",
             "program": "${workspaceRoot}/manage.py",
             "args": [
                 "rqscheduler",
@@ -108,7 +111,7 @@
             "request": "launch",
             "justMyCode": false,
             "stopOnEntry": false,
-            "pythonPath":"${command:python.interpreterPath}",
+            "python": "${command:python.interpreterPath}",
             "program": "${workspaceRoot}/manage.py",
             "args": [
                 "rqworker",
@@ -127,7 +130,7 @@
             "request": "launch",
             "justMyCode": false,
             "stopOnEntry": false,
-            "pythonPath": "${command:python.interpreterPath}",
+            "python": "${command:python.interpreterPath}",
             "program": "${workspaceRoot}/manage.py",
             "args": [
                 "update_git_states"
@@ -143,7 +146,7 @@
             "request": "launch",
             "justMyCode": false,
             "stopOnEntry": false,
-            "pythonPath": "${command:python.interpreterPath}",
+            "python": "${command:python.interpreterPath}",
             "program": "${workspaceRoot}/manage.py",
             "args": [
                 "migrate"
@@ -159,7 +162,7 @@
             "request": "launch",
             "justMyCode": false,
             "stopOnEntry": false,
-            "pythonPath": "${command:python.interpreterPath}",
+            "python": "${command:python.interpreterPath}",
             "program": "${workspaceRoot}/manage.py",
             "args": [
                 "test",
@@ -190,10 +193,10 @@
             "type": "node",
             "request": "launch",
             "name": "jest debug",
-            "program": "${workspaceFolder}/cvat-core/node_modules/.bin/jest",
+            "program": "${workspaceFolder}/node_modules/.bin/jest",
             "args": [
-              "--config",
-              "${workspaceFolder}/cvat-core/jest.config.js"
+                "--config",
+                "${workspaceFolder}/cvat-core/jest.config.js"
             ],
             "console": "integratedTerminal",
             "internalConsoleOptions": "neverOpen",
@@ -204,7 +207,6 @@
         {
             "name": "server: debug",
             "configurations": [
-                "server: chrome",
                 "server: django",
                 "server: RQ - default",
                 "server: RQ - low",

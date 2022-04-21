@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -14,7 +14,7 @@ interface Props {
     menuKey: string;
     loaders: any[];
     loadActivity: string | null;
-    onFileUpload(file: File): void;
+    onFileUpload(format: string, file: File): void;
     taskDimension: DimensionType;
 }
 
@@ -36,18 +36,24 @@ export default function LoadSubmenu(props: Props): JSX.Element {
                             .join(', '); // add '.' to each extension in a list
                         const pending = loadActivity === loader.name;
                         const disabled = !loader.enabled || !!loadActivity;
+                        const format = loader.name;
                         return (
-                            <Menu.Item key={loader.name} disabled={disabled} className='cvat-menu-load-submenu-item'>
+                            <Menu.Item key={format} disabled={disabled} className='cvat-menu-load-submenu-item'>
                                 <Upload
                                     accept={accept}
                                     multiple={false}
                                     showUploadList={false}
                                     beforeUpload={(file: File): boolean => {
-                                        onFileUpload(file);
+                                        onFileUpload(format, file);
                                         return false;
                                     }}
                                 >
-                                    <Button block type='link' disabled={disabled}>
+                                    <Button
+                                        block
+                                        type='link'
+                                        disabled={disabled}
+                                        className='cvat-menu-load-submenu-item-button'
+                                    >
                                         <UploadOutlined />
                                         <Text>{loader.name}</Text>
                                         {pending && <LoadingOutlined style={{ marginLeft: 10 }} />}

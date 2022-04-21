@@ -1,8 +1,8 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
-import React, { MutableRefObject } from 'react';
+import React from 'react';
 import copy from 'copy-to-clipboard';
 import { connect } from 'react-redux';
 
@@ -22,8 +22,9 @@ import {
     ActiveControl, CombinedState, ColorBy, ShapeType,
 } from 'reducers/interfaces';
 import ObjectStateItemComponent from 'components/annotation-page/standard-workspace/objects-side-bar/object-item';
-import { ToolsControlComponent } from 'components/annotation-page/standard-workspace/controls-side-bar/tools-control';
 import { shift } from 'utils/math';
+import { Canvas } from 'cvat-canvas-wrapper';
+import { Canvas3d } from 'cvat-canvas3d-wrapper';
 
 interface OwnProps {
     readonly: boolean;
@@ -46,7 +47,7 @@ interface StateToProps {
     minZLayer: number;
     maxZLayer: number;
     normalizedKeyMap: Record<string, string>;
-    aiToolsRef: MutableRefObject<ToolsControlComponent>;
+    canvasInstance: Canvas | Canvas3d;
 }
 
 interface DispatchToProps {
@@ -72,8 +73,7 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
             player: {
                 frame: { number: frameNumber },
             },
-            canvas: { ready, activeControl },
-            aiToolsRef,
+            canvas: { instance: canvasInstance, ready, activeControl },
         },
         settings: {
             shapes: { colorBy },
@@ -102,7 +102,7 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
         minZLayer,
         maxZLayer,
         normalizedKeyMap,
-        aiToolsRef,
+        canvasInstance,
     };
 }
 
@@ -222,11 +222,14 @@ class ObjectItemContainer extends React.PureComponent<Props> {
 
     private activate = (): void => {
         const {
-            objectState, ready, activeControl, activateObject,
+            objectState, ready, activeControl, activateObject, canvasInstance,
         } = this.props;
 
         if (ready && activeControl === ActiveControl.CURSOR) {
             activateObject(objectState.clientID);
+            if (canvasInstance instanceof Canvas3d) {
+                canvasInstance.activate(objectState.clientID);
+            }
         }
     };
 
@@ -234,13 +237,6 @@ class ObjectItemContainer extends React.PureComponent<Props> {
         const { collapseOrExpand, objectState, collapsed } = this.props;
 
         collapseOrExpand([objectState], !collapsed);
-    };
-
-    private activateTracking = (): void => {
-        const { objectState, readonly, aiToolsRef } = this.props;
-        if (!readonly && aiToolsRef.current && aiToolsRef.current.trackingAvailable()) {
-            aiToolsRef.current.trackState(objectState);
-        }
     };
 
     private changeColor = (color: string): void => {
@@ -343,6 +339,7 @@ class ObjectItemContainer extends React.PureComponent<Props> {
             colorBy,
             normalizedKeyMap,
             readonly,
+            jobInstance,
         } = this.props;
 
         let stateColor = '';
@@ -356,6 +353,7 @@ class ObjectItemContainer extends React.PureComponent<Props> {
 
         return (
             <ObjectStateItemComponent
+                jobInstance={jobInstance}
                 readonly={readonly}
                 activated={activated}
                 objectType={objectState.objectType}
@@ -383,7 +381,6 @@ class ObjectItemContainer extends React.PureComponent<Props> {
                 changeLabel={this.changeLabel}
                 changeAttribute={this.changeAttribute}
                 collapse={this.collapse}
-                activateTracking={this.activateTracking}
                 resetCuboidPerspective={() => this.resetCuboidPerspective()}
             />
         );

@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -7,19 +7,17 @@ import { RouteComponentProps } from 'react-router';
 import { withRouter } from 'react-router-dom';
 import { Row, Col } from 'antd/lib/grid';
 import { LoadingOutlined, QuestionCircleOutlined, CopyOutlined } from '@ant-design/icons';
+import { ColumnFilterItem } from 'antd/lib/table/interface';
 import Table from 'antd/lib/table';
 import Button from 'antd/lib/button';
-import Tooltip from 'antd/lib/tooltip';
+import Select from 'antd/lib/select';
 import Text from 'antd/lib/typography/Text';
 import moment from 'moment';
 import copy from 'copy-to-clipboard';
 
-import getCore from 'cvat-core-wrapper';
+import { JobStage } from 'reducers/interfaces';
+import CVATTooltip from 'components/common/cvat-tooltip';
 import UserSelector, { User } from './user-selector';
-
-const core = getCore();
-
-const baseURL = core.config.backendAPI.slice(0, -7);
 
 interface Props {
     taskInstance: any;
@@ -32,9 +30,12 @@ function ReviewSummaryComponent({ jobInstance }: { jobInstance: any }): JSX.Elem
     useEffect(() => {
         setError(null);
         jobInstance
-            .reviewsSummary()
-            .then((_summary: Record<string, any>) => {
-                setSummary(_summary);
+            .issues(jobInstance.id)
+            .then((issues: any[]) => {
+                setSummary({
+                    issues_unsolved: issues.filter((issue) => !issue.resolved_date).length,
+                    issues_resolved: issues.filter((issue) => issue.resolved_date).length,
+                });
             })
             .catch((_error: any) => {
                 // eslint-disable-next-line
@@ -65,18 +66,6 @@ function ReviewSummaryComponent({ jobInstance }: { jobInstance: any }): JSX.Elem
             <tbody>
                 <tr>
                     <td>
-                        <Text strong>Reviews</Text>
-                    </td>
-                    <td>{summary.reviews}</td>
-                </tr>
-                <tr>
-                    <td>
-                        <Text strong>Average quality</Text>
-                    </td>
-                    <td>{Number.parseFloat(summary.average_estimated_quality).toFixed(2)}</td>
-                </tr>
-                <tr>
-                    <td>
                         <Text strong>Unsolved issues</Text>
                     </td>
                     <td>{summary.issues_unsolved}</td>
@@ -100,6 +89,46 @@ function JobListComponent(props: Props & RouteComponentProps): JSX.Element {
     } = props;
 
     const { jobs, id: taskId } = taskInstance;
+
+    function sorter(path: string) {
+        return (obj1: any, obj2: any): number => {
+            let currentObj1 = obj1;
+            let currentObj2 = obj2;
+            let field1: string | null = null;
+            let field2: string | null = null;
+            for (const pathSegment of path.split('.')) {
+                field1 = currentObj1 && pathSegment in currentObj1 ? currentObj1[pathSegment] : null;
+                field2 = currentObj2 && pathSegment in currentObj2 ? currentObj2[pathSegment] : null;
+                currentObj1 = currentObj1 && pathSegment in currentObj1 ? currentObj1[pathSegment] : null;
+                currentObj2 = currentObj2 && pathSegment in currentObj2 ? currentObj2[pathSegment] : null;
+            }
+
+            if (field1 && field2) {
+                return field1.localeCompare(field2);
+            }
+
+            if (field1 === null) {
+                return 1;
+            }
+
+            return -1;
+        };
+    }
+
+    function collectUsers(path: string): ColumnFilterItem[] {
+        return Array.from<string | null>(
+            new Set(
+                jobs.map((job: any) => {
+                    if (job[path] === null) {
+                        return null;
+                    }
+
+                    return job[path].username;
+                }),
+            ),
+        ).map((value: string | null) => ({ text: value || 'Is Empty', value: value || false }));
+    }
+
     const columns = [
         {
             title: 'Job',
@@ -124,33 +153,64 @@ function JobListComponent(props: Props & RouteComponentProps): JSX.Element {
             title: 'Frames',
             dataIndex: 'frames',
             key: 'frames',
-            className: 'cvat-text-color',
+            className: 'cvat-text-color cvat-job-item-frames',
         },
         {
-            title: 'Status',
-            dataIndex: 'status',
-            key: 'status',
-            className: 'cvat-job-item-status',
+            title: 'Stage',
+            dataIndex: 'stage',
+            key: 'stage',
+            className: 'cvat-job-item-stage',
             render: (jobInstance: any): JSX.Element => {
-                const { status } = jobInstance;
-                let progressColor = null;
-                if (status === 'completed') {
-                    progressColor = 'cvat-job-completed-color';
-                } else if (status === 'validation') {
-                    progressColor = 'cvat-job-validation-color';
-                } else {
-                    progressColor = 'cvat-job-annotation-color';
-                }
+                const { stage } = jobInstance;
 
                 return (
-                    <Text strong className={progressColor}>
-                        {status}
-                        <Tooltip title={<ReviewSummaryComponent jobInstance={jobInstance} />}>
+                    <div>
+                        <Select
+                            value={stage}
+                            onChange={(newValue: string) => {
+                                jobInstance.stage = newValue;
+                                onJobUpdate(jobInstance);
+                            }}
+                        >
+                            <Select.Option value={JobStage.ANNOTATION}>{JobStage.ANNOTATION}</Select.Option>
+                            <Select.Option value={JobStage.REVIEW}>{JobStage.REVIEW}</Select.Option>
+                            <Select.Option value={JobStage.ACCEPTANCE}>{JobStage.ACCEPTANCE}</Select.Option>
+                        </Select>
+                        <CVATTooltip title={<ReviewSummaryComponent jobInstance={jobInstance} />}>
                             <QuestionCircleOutlined />
-                        </Tooltip>
+                        </CVATTooltip>
+                    </div>
+                );
+            },
+            sorter: sorter('stage.stage'),
+            filters: [
+                { text: 'annotation', value: 'annotation' },
+                { text: 'validation', value: 'validation' },
+                { text: 'acceptance', value: 'acceptance' },
+            ],
+            onFilter: (value: string | number | boolean, record: any) => record.stage.stage === value,
+        },
+        {
+            title: 'State',
+            dataIndex: 'state',
+            key: 'state',
+            className: 'cvat-job-item-state',
+            render: (jobInstance: any): JSX.Element => {
+                const { state } = jobInstance;
+                return (
+                    <Text type='secondary'>
+                        {state}
                     </Text>
                 );
             },
+            sorter: sorter('state.state'),
+            filters: [
+                { text: 'new', value: 'new' },
+                { text: 'in progress', value: 'in progress' },
+                { text: 'completed', value: 'completed' },
+                { text: 'rejected', value: 'rejected' },
+            ],
+            onFilter: (value: string | number | boolean, record: any) => record.state.state === value,
         },
         {
             title: 'Started on',
@@ -168,53 +228,43 @@ function JobListComponent(props: Props & RouteComponentProps): JSX.Element {
             title: 'Assignee',
             dataIndex: 'assignee',
             key: 'assignee',
+            className: 'cvat-job-item-assignee',
             render: (jobInstance: any): JSX.Element => (
                 <UserSelector
                     className='cvat-job-assignee-selector'
                     value={jobInstance.assignee}
                     onSelect={(value: User | null): void => {
-                        // eslint-disable-next-line
                         jobInstance.assignee = value;
                         onJobUpdate(jobInstance);
                     }}
                 />
             ),
-        },
-        {
-            title: 'Reviewer',
-            dataIndex: 'reviewer',
-            key: 'reviewer',
-            render: (jobInstance: any): JSX.Element => (
-                <UserSelector
-                    className='cvat-job-reviewer-selector'
-                    value={jobInstance.reviewer}
-                    onSelect={(value: User | null): void => {
-                        // eslint-disable-next-line
-                        jobInstance.reviewer = value;
-                        onJobUpdate(jobInstance);
-                    }}
-                />
-            ),
+            sorter: sorter('assignee.assignee.username'),
+            filters: collectUsers('assignee'),
+            onFilter: (value: string | number | boolean, record: any) => (
+                record.assignee.assignee?.username || false
+            ) === value,
         },
     ];
 
     let completed = 0;
     const data = jobs.reduce((acc: any[], job: any) => {
-        if (job.status === 'completed') {
+        if (job.stage === 'acceptance') {
             completed++;
         }
 
         const created = moment(props.taskInstance.createdDate);
 
+        const now = moment(moment.now());
         acc.push({
             key: job.id,
             job: job.id,
             frames: `${job.startFrame}-${job.stopFrame}`,
-            status: job,
+            state: job,
+            stage: job,
             started: `${created.format('MMMM Do YYYY HH:MM')}`,
-            duration: `${moment.duration(moment(moment.now()).diff(created)).humanize()}`,
+            duration: `${moment.duration(now.diff(created)).humanize()}`,
             assignee: job,
-            reviewer: job,
         });
 
         return acc;
@@ -225,15 +275,16 @@ function JobListComponent(props: Props & RouteComponentProps): JSX.Element {
             <Row justify='space-between' align='middle'>
                 <Col>
                     <Text className='cvat-text-color cvat-jobs-header'> Jobs </Text>
-                    <Tooltip trigger='click' title='Copied to clipboard!' mouseLeaveDelay={0}>
+                    <CVATTooltip trigger='click' title='Copied to clipboard!'>
                         <Button
                             type='link'
                             onClick={(): void => {
                                 let serialized = '';
                                 const [latestJob] = [...taskInstance.jobs].reverse();
                                 for (const job of taskInstance.jobs) {
+                                    const baseURL = window.location.origin;
                                     serialized += `Job #${job.id}`.padEnd(`${latestJob.id}`.length + 6, ' ');
-                                    serialized += `: ${baseURL}/?id=${job.id}`.padEnd(
+                                    serialized += `: ${baseURL}/tasks/${taskInstance.id}/jobs/${job.id}`.padEnd(
                                         `${latestJob.id}`.length + baseURL.length + 8,
                                         ' ',
                                     );
@@ -246,10 +297,6 @@ function JobListComponent(props: Props & RouteComponentProps): JSX.Element {
                                         serialized += `\t assigned to "${job.assignee.username}"`;
                                     }
 
-                                    if (job.reviewer) {
-                                        serialized += `\t reviewed by "${job.reviewer.username}"`;
-                                    }
-
                                     serialized += '\n';
                                 }
                                 copy(serialized);
@@ -258,13 +305,19 @@ function JobListComponent(props: Props & RouteComponentProps): JSX.Element {
                             <CopyOutlined />
                             Copy
                         </Button>
-                    </Tooltip>
+                    </CVATTooltip>
                 </Col>
                 <Col>
                     <Text className='cvat-text-color'>{`${completed} of ${data.length} jobs`}</Text>
                 </Col>
             </Row>
-            <Table className='cvat-task-jobs-table' rowClassName={() => 'cvat-task-jobs-table-row'} columns={columns} dataSource={data} size='small' />
+            <Table
+                className='cvat-task-jobs-table'
+                rowClassName={() => 'cvat-task-jobs-table-row'}
+                columns={columns}
+                dataSource={data}
+                size='small'
+            />
         </div>
     );
 }

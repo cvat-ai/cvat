@@ -1,0 +1,74 @@
+metadata:
+  name: pth.shiyinzhang.iog
+  namespace: cvat
+  annotations:
+    name: IOG
+    type: interactor
+    spec:
+    framework: pytorch
+    min_pos_points: 1
+    min_neg_points: 0
+    startswith_box: true
+    animated_gif: https://raw.githubusercontent.com/openvinotoolkit/cvat/0fbb19ae3846a017853d52e187f0ce149adced7d/site/content/en/images/iog_example.gif
+    help_message: The interactor allows to get a mask of an object using its wrapping boundig box, positive, and negative points inside it
+
+spec:
+  description: Interactive Object Segmentation with Inside-Outside Guidance
+  runtime: 'python:3.6'
+  handler: main:handler
+  eventTimeout: 30s
+  env:
+    - name: PYTHONPATH
+      value: /opt/nuclio/iog
+
+  build:
+    image: cvat/pth.shiyinzhang.iog
+    baseImage: continuumio/miniconda3
+
+    directives:
+      preCopy:
+        - kind: WORKDIR
+          value: /opt/nuclio
+        - kind: RUN
+          value: conda create -y -n iog python=3.6
+        - kind: SHELL
+          value: '["conda", "run", "-n", "iog", "/bin/bash", "-c"]'
+        - kind: RUN
+          value: conda install -y -c anaconda curl
+        - kind: RUN
+          value: conda install -y pytorch=0.4 torchvision=0.2 -c pytorch
+        - kind: RUN
+          value: conda install -y -c conda-forge pycocotools opencv scipy
+        - kind: RUN
+          value: git clone https://github.com/shiyinzhang/Inside-Outside-Guidance.git iog
+        - kind: WORKDIR
+          value: /opt/nuclio/iog
+        - kind: ENV
+          value: fileid=1Lm1hhMhhjjnNwO4Pf7SC6tXLayH2iH0l
+        - kind: ENV
+          value: filename=IOG_PASCAL_SBD.pth
+        - kind: RUN
+          value: curl -c ./cookie -s -L "https://drive.google.com/uc?export=download&id=${fileid}"
+        - kind: RUN
+          value: echo "/download/ {print \$NF}" > confirm_code.awk
+        - kind: RUN
+          value: curl -Lb ./cookie "https://drive.google.com/uc?export=download&confirm=`awk -f confirm_code.awk ./cookie`&id=${fileid}" -o ${filename}
+        - kind: WORKDIR
+          value: /opt/nuclio
+        - kind: ENTRYPOINT
+          value: '["conda", "run", "-n", "iog"]'
+
+  triggers:
+    myHttpTrigger:
+      maxWorkers: 2
+      kind: 'http'
+      workerAvailabilityTimeoutMilliseconds: 10000
+      attributes:
+        maxRequestBodySize: 33554432 # 32MB
+
+  platform:
+    attributes:
+      restartPolicy:
+        name: always
+        maximumRetryCount: 3
+      mountMode: volume

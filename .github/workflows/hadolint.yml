@@ -1,0 +1,53 @@
+name: Linter
+on: pull_request
+jobs:
+  HadoLint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - id: files
+        uses: jitterbit/get-changed-files@v1
+        continue-on-error: true
+
+      - name: Run checks
+        env:
+          HADOLINT: "${{ github.workspace }}/hadolint"
+          HADOLINT_VER: "2.1.0"
+          VERIFICATION_LEVEL: "error"
+          PR_FILES_AM: ${{ steps.files.outputs.added_modified }}
+          PR_FILES_RENAMED: ${{ steps.files.outputs.renamed }}
+        run: |
+          PR_FILES="$PR_FILES_AM $PR_FILES_RENAMED"
+          for FILE in $PR_FILES; do
+              if [[ $FILE =~ 'Dockerfile' ]]; then
+                  CHANGED_FILES+=" $FILE"
+              fi
+          done
+
+          if [[ ! -z $CHANGED_FILES ]]; then
+            curl -sL -o $HADOLINT "https://github.com/hadolint/hadolint/releases/download/v$HADOLINT_VER/hadolint-Linux-x86_64" && chmod 700 $HADOLINT
+            echo "HadoLint version: "$($HADOLINT --version)
+            echo "The files will be checked: "$(echo $CHANGED_FILES)
+            mkdir -p hadolint_report
+
+            $HADOLINT --no-fail --format json $CHANGED_FILES > ./hadolint_report/hadolint_report.json
+            GET_VERIFICATION_LEVEL=$(cat ./hadolint_report/hadolint_report.json | jq -r '.[] | .level')
+            for LINE in $GET_VERIFICATION_LEVEL; do
+              if [[ $LINE =~ $VERIFICATION_LEVEL ]]; then
+                pip install json2html
+                python ./tests/json_to_html.py ./hadolint_report/hadolint_report.json
+                exit 1
+              else
+                exit 0
+              fi
+            done
+          else
+            echo "No files with the \"Dockerfile*\" name found"
+          fi
+
+      - name: Upload artifacts
+        if: failure()
+        uses: actions/upload-artifact@v2
+        with:
+          name: hadolint_report
+          path: hadolint_report

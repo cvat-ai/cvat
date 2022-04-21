@@ -1,30 +1,29 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { CombinedState } from 'reducers/interfaces';
 import {
     LeftOutlined, RightOutlined, EyeInvisibleFilled, EyeOutlined,
+    CheckCircleFilled, CheckCircleOutlined,
 } from '@ant-design/icons';
-import Tooltip from 'antd/lib/tooltip';
 import Alert from 'antd/lib/alert';
 import { Row, Col } from 'antd/lib/grid';
 
 import { changeFrameAsync } from 'actions/annotation-actions';
 import { reviewActions } from 'actions/review-actions';
+import CVATTooltip from 'components/common/cvat-tooltip';
+import { CombinedState } from 'reducers/interfaces';
 
 export default function LabelsListComponent(): JSX.Element {
     const dispatch = useDispatch();
-    const tabContentHeight = useSelector((state: CombinedState) => state.annotation.tabContentHeight);
     const frame = useSelector((state: CombinedState): number => state.annotation.player.frame.number);
     const frameIssues = useSelector((state: CombinedState): any[] => state.review.frameIssues);
     const issues = useSelector((state: CombinedState): any[] => state.review.issues);
-    const activeReview = useSelector((state: CombinedState): any => state.review.activeReview);
     const issuesHidden = useSelector((state: CombinedState): any => state.review.issuesHidden);
-    const combinedIssues = activeReview ? issues.concat(activeReview.issues) : issues;
-    const frames = combinedIssues.map((issue: any): number => issue.frame).sort((a: number, b: number) => +a - +b);
+    const issuesResolvedHidden = useSelector((state: CombinedState): any => state.review.issuesResolvedHidden);
+    const frames = issues.map((issue: any): number => issue.frame).sort((a: number, b: number) => +a - +b);
     const nearestLeft = frames.filter((_frame: number): boolean => _frame < frame).reverse()[0];
     const dinamicLeftProps: any = Number.isInteger(nearestLeft) ?
         {
@@ -50,21 +49,21 @@ export default function LabelsListComponent(): JSX.Element {
         };
 
     return (
-        <div style={{ height: tabContentHeight }}>
+        <>
             <div className='cvat-objects-sidebar-issues-list-header'>
                 <Row justify='start' align='middle'>
                     <Col>
-                        <Tooltip title='Find the previous frame with issues'>
+                        <CVATTooltip title='Find the previous frame with issues'>
                             <LeftOutlined className='cvat-issues-sidebar-previous-frame' {...dinamicLeftProps} />
-                        </Tooltip>
+                        </CVATTooltip>
                     </Col>
                     <Col offset={1}>
-                        <Tooltip title='Find the next frame with issues'>
+                        <CVATTooltip title='Find the next frame with issues'>
                             <RightOutlined className='cvat-issues-sidebar-next-frame' {...dinamicRightProps} />
-                        </Tooltip>
+                        </CVATTooltip>
                     </Col>
-                    <Col offset={3}>
-                        <Tooltip title='Show/hide all the issues'>
+                    <Col offset={2}>
+                        <CVATTooltip title='Show/hide all issues'>
                             {issuesHidden ? (
                                 <EyeInvisibleFilled
                                     className='cvat-issues-sidebar-hidden-issues'
@@ -76,7 +75,23 @@ export default function LabelsListComponent(): JSX.Element {
                                     onClick={() => dispatch(reviewActions.switchIssuesHiddenFlag(true))}
                                 />
                             )}
-                        </Tooltip>
+                        </CVATTooltip>
+                    </Col>
+                    <Col offset={2}>
+                        <CVATTooltip title='Show/hide resolved issues'>
+                            { issuesResolvedHidden ? (
+                                <CheckCircleFilled
+                                    className='cvat-issues-sidebar-hidden-resolved-status'
+                                    onClick={() => dispatch(reviewActions.switchIssuesHiddenResolvedFlag(false))}
+                                />
+                            ) : (
+                                <CheckCircleOutlined
+                                    className='cvat-issues-sidebar-hidden-resolved-status'
+                                    onClick={() => dispatch(reviewActions.switchIssuesHiddenResolvedFlag(true))}
+                                />
+
+                            )}
+                        </CVATTooltip>
                     </Col>
                 </Row>
             </div>
@@ -84,6 +99,8 @@ export default function LabelsListComponent(): JSX.Element {
                 {frameIssues.map(
                     (frameIssue: any): JSX.Element => (
                         <div
+                            key={frameIssue.id}
+                            id={`cvat-objects-sidebar-issue-item-${frameIssue.id}`}
                             className='cvat-objects-sidebar-issue-item'
                             onMouseEnter={() => {
                                 const element = window.document.getElementById(
@@ -102,25 +119,15 @@ export default function LabelsListComponent(): JSX.Element {
                                 }
                             }}
                         >
-                            {frameIssue.resolver ? (
-                                <Alert
-                                    description={<span>{`By ${frameIssue.resolver.username}`}</span>}
-                                    message='Resolved'
-                                    type='success'
-                                    showIcon
-                                />
+                            {frameIssue.resolved ? (
+                                <Alert message='Resolved' type='success' showIcon />
                             ) : (
-                                <Alert
-                                    description={<span>{`By ${frameIssue.owner.username}`}</span>}
-                                    message='Opened'
-                                    type='warning'
-                                    showIcon
-                                />
+                                <Alert message='Opened' type='warning' showIcon />
                             )}
                         </div>
                     ),
                 )}
             </div>
-        </div>
+        </>
     );
 }

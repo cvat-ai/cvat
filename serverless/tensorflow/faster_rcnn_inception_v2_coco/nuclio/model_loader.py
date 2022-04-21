@@ -15,9 +15,10 @@ class ModelLoader:
                 serialized_graph = fid.read()
                 od_graph_def.ParseFromString(serialized_graph)
                 tf.import_graph_def(od_graph_def, name='')
-
-            config = tf.ConfigProto()
-            config.gpu_options.allow_growth = True
+            gpu_fraction = 0.333
+            gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=gpu_fraction,
+                                        allow_growth=True)
+            config = tf.ConfigProto(gpu_options=gpu_options)
             self.session = tf.Session(graph=detection_graph, config=config)
 
             self.image_tensor = detection_graph.get_tensor_by_name('image_tensor:0')

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2020 Intel Corporation
+// Copyright (C) 2019-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -25,8 +25,10 @@ const { Source } = require('./enums');
             const data = {
                 label: null,
                 attributes: {},
+                descriptions: [],
 
                 points: null,
+                rotation: null,
                 outside: null,
                 occluded: null,
                 keyframe: null,
@@ -55,6 +57,7 @@ const { Source } = require('./enums');
                 value: function reset() {
                     this.label = false;
                     this.attributes = false;
+                    this.descriptions = false;
 
                     this.points = false;
                     this.outside = false;
@@ -70,6 +73,7 @@ const { Source } = require('./enums');
                     return reset;
                 },
                 writable: false,
+                enumerable: false,
             });
 
             Object.defineProperties(
@@ -193,10 +197,32 @@ const { Source } = require('./enums');
                                 data.points = [...points];
                             } else {
                                 throw new ArgumentError(
-                                    'Points are expected to be an array '
-                                        + `but got ${
+                                    'Points are expected to be an array ' +
+                                        `but got ${
                                             typeof points === 'object' ? points.constructor.name : typeof points
                                         }`,
+                                );
+                            }
+                        },
+                    },
+                    rotation: {
+                        /**
+                         * @name rotation
+                         * @type {number} angle measured by degrees
+                         * @memberof module:API.cvat.classes.ObjectState
+                         * @throws {module:API.cvat.exceptions.ArgumentError}
+                         * @instance
+                         */
+                        get: () => data.rotation,
+                        set: (rotation) => {
+                            if (typeof rotation === 'number') {
+                                data.updateFlags.points = true;
+                                data.rotation = rotation;
+                            } else {
+                                throw new ArgumentError(
+                                    `Rotation is expected to be a number, but got ${
+                                        typeof rotation === 'object' ? rotation.constructor.name : typeof points
+                                    }`,
                                 );
                             }
                         },
@@ -338,11 +364,11 @@ const { Source } = require('./enums');
                         set: (attributes) => {
                             if (typeof attributes !== 'object') {
                                 throw new ArgumentError(
-                                    'Attributes are expected to be an object '
-                                        + `but got ${
-                                            typeof attributes === 'object'
-                                                ? attributes.constructor.name
-                                                : typeof attributes
+                                    'Attributes are expected to be an object ' +
+                                        `but got ${
+                                            typeof attributes === 'object' ?
+                                                attributes.constructor.name :
+                                                typeof attributes
                                         }`,
                                 );
                             }
@@ -351,6 +377,30 @@ const { Source } = require('./enums');
                                 data.updateFlags.attributes = true;
                                 data.attributes[attrID] = attributes[attrID];
                             }
+                        },
+                    },
+                    descriptions: {
+                        /**
+                         * Additional text information displayed on canvas
+                         * @name descripttions
+                         * @type {string[]}
+                         * @memberof module:API.cvat.classes.ObjectState
+                         * @throws {module:API.cvat.exceptions.ArgumentError}
+                         * @instance
+                         */
+                        get: () => [...data.descriptions],
+                        set: (descriptions) => {
+                            if (
+                                !Array.isArray(descriptions) ||
+                                descriptions.some((description) => typeof description !== 'string')
+                            ) {
+                                throw new ArgumentError(
+                                    `Descriptions are expected to be an array of strings but got ${data.descriptions}`,
+                                );
+                            }
+
+                            data.updateFlags.descriptions = true;
+                            data.descriptions = [...descriptions];
                         },
                     },
                 }),
@@ -383,8 +433,17 @@ const { Source } = require('./enums');
             if (typeof serialized.color === 'string') {
                 this.color = serialized.color;
             }
+            if (typeof serialized.rotation === 'number') {
+                this.rotation = serialized.rotation;
+            }
             if (Array.isArray(serialized.points)) {
                 this.points = serialized.points;
+            }
+            if (
+                Array.isArray(serialized.descriptions) &&
+                serialized.descriptions.every((desc) => typeof desc === 'string')
+            ) {
+                this.descriptions = serialized.descriptions;
             }
             if (typeof serialized.attributes === 'object') {
                 this.attributes = serialized.attributes;
@@ -429,7 +488,7 @@ const { Source } = require('./enums');
     }
 
     // Updates element in collection which contains it
-    ObjectState.prototype.save.implementation = async function () {
+    ObjectState.prototype.save.implementation = function () {
         if (this.__internal && this.__internal.save) {
             return this.__internal.save();
         }
@@ -438,7 +497,7 @@ const { Source } = require('./enums');
     };
 
     // Delete element from a collection which contains it
-    ObjectState.prototype.delete.implementation = async function (frame, force) {
+    ObjectState.prototype.delete.implementation = function (frame, force) {
         if (this.__internal && this.__internal.delete) {
             if (!Number.isInteger(+frame) || +frame < 0) {
                 throw new ArgumentError('Frame argument must be a non negative integer');

@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -15,73 +15,84 @@ import CreateIssueDialog from './create-issue-dialog';
 import HiddenIssueLabel from './hidden-issue-label';
 import IssueDialog from './issue-dialog';
 
-const scaleHandler = (canvasInstance: Canvas): void => {
-    const { geometry } = canvasInstance;
-    const createDialogs = window.document.getElementsByClassName('cvat-create-issue-dialog');
-    const hiddenIssues = window.document.getElementsByClassName('cvat-hidden-issue-label');
-    const issues = window.document.getElementsByClassName('cvat-issue-dialog');
-    for (const element of [...Array.from(createDialogs), ...Array.from(hiddenIssues), ...Array.from(issues)]) {
-        (element as HTMLSpanElement).style.transform = `scale(${1 / geometry.scale}) rotate(${-geometry.angle}deg)`;
-    }
-};
-
 export default function IssueAggregatorComponent(): JSX.Element | null {
     const dispatch = useDispatch();
     const [expandedIssue, setExpandedIssue] = useState<number | null>(null);
     const frameIssues = useSelector((state: CombinedState): any[] => state.review.frameIssues);
-    const canvasInstance = useSelector((state: CombinedState): Canvas => state.annotation.canvas.instance);
+    const issuesHidden = useSelector((state: CombinedState): boolean => state.review.issuesHidden);
+    const issuesResolvedHidden = useSelector((state: CombinedState): boolean => state.review.issuesResolvedHidden);
+    const canvasInstance = useSelector((state: CombinedState) => state.annotation.canvas.instance);
     const canvasIsReady = useSelector((state: CombinedState): boolean => state.annotation.canvas.ready);
     const newIssuePosition = useSelector((state: CombinedState): number[] | null => state.review.newIssuePosition);
-    const issuesHidden = useSelector((state: CombinedState): any => state.review.issuesHidden);
     const issueFetching = useSelector((state: CombinedState): number | null => state.review.fetching.issueId);
+    const [geometry, setGeometry] = useState<Canvas['geometry'] | null>(null);
     const issueLabels: JSX.Element[] = [];
     const issueDialogs: JSX.Element[] = [];
 
     useEffect(() => {
-        scaleHandler(canvasInstance);
-    });
+        if (canvasInstance instanceof Canvas) {
+            const { geometry: updatedGeometry } = canvasInstance;
+            setGeometry(updatedGeometry);
 
-    useEffect(() => {
-        const regions = frameIssues.reduce((acc: Record<number, number[]>, issue: any): Record<number, number[]> => {
-            acc[issue.id] = issue.position;
-            return acc;
-        }, {});
+            const geometryListener = (): void => {
+                setGeometry(canvasInstance.geometry);
+            };
 
-        if (newIssuePosition) {
-            regions[0] = newIssuePosition;
+            canvasInstance.html().addEventListener('canvas.zoom', geometryListener);
+            canvasInstance.html().addEventListener('canvas.fit', geometryListener);
+            canvasInstance.html().addEventListener('canvas.reshape', geometryListener);
+
+            return () => {
+                canvasInstance.html().removeEventListener('canvas.zoom', geometryListener);
+                canvasInstance.html().removeEventListener('canvas.fit', geometryListener);
+                canvasInstance.html().addEventListener('canvas.reshape', geometryListener);
+            };
         }
 
-        canvasInstance.setupIssueRegions(regions);
+        return () => {};
+    }, [canvasInstance]);
 
-        if (newIssuePosition) {
-            setExpandedIssue(null);
-            const element = window.document.getElementById('cvat_canvas_issue_region_0');
-            if (element) {
-                element.style.display = 'block';
+    useEffect(() => {
+        if (canvasInstance instanceof Canvas) {
+            type IssueRegionSet = Record<number, { hidden: boolean; points: number[] }>;
+            const regions = !issuesHidden ? frameIssues
+                .filter((_issue: any) => !issuesResolvedHidden || !_issue.resolved)
+                .reduce((acc: IssueRegionSet, issue: any): IssueRegionSet => {
+                    acc[issue.id] = {
+                        points: issue.position,
+                        hidden: issue.resolved,
+                    };
+                    return acc;
+                }, {}) : {};
+
+            if (newIssuePosition) {
+                // regions[0] is always empty because key is an id of an issue (<0, >0 are possible)
+                regions[0] = {
+                    points: newIssuePosition,
+                    hidden: false,
+                };
+            }
+
+            canvasInstance.setupIssueRegions(regions);
+
+            if (newIssuePosition) {
+                setExpandedIssue(null);
+                const element = window.document.getElementById('cvat_canvas_issue_region_0');
+                if (element) {
+                    element.style.display = 'block';
+                }
             }
         }
-    }, [newIssuePosition]);
+    }, [newIssuePosition, frameIssues, issuesResolvedHidden, issuesHidden, canvasInstance]);
 
-    useEffect(() => {
-        const listener = (): void => scaleHandler(canvasInstance);
-
-        canvasInstance.html().addEventListener('canvas.zoom', listener);
-        canvasInstance.html().addEventListener('canvas.fit', listener);
-
-        return () => {
-            canvasInstance.html().removeEventListener('canvas.zoom', listener);
-            canvasInstance.html().removeEventListener('canvas.fit', listener);
-        };
-    }, []);
-
-    if (!canvasIsReady) {
+    if (!(canvasInstance instanceof Canvas) || !canvasIsReady || !geometry) {
         return null;
     }
 
-    const { geometry } = canvasInstance;
     for (const issue of frameIssues) {
         if (issuesHidden) break;
-        const issueResolved = !!issue.resolver;
+        const issueResolved = issue.resolved;
+        if (issuesResolvedHidden && issueResolved) continue;
         const offset = 15;
         const translated = issue.position.map((coord: number): number => coord + geometry.offset);
         const minX = Math.min(...translated.filter((_: number, idx: number): boolean => idx % 2 === 0)) + offset;
@@ -98,7 +109,7 @@ export default function IssueAggregatorComponent(): JSX.Element | null {
             if (issueResolved) {
                 const element = window.document.getElementById(`cvat_canvas_issue_region_${id}`);
                 if (element) {
-                    element.style.display = '';
+                    element.style.display = 'none';
                 }
             }
         };
@@ -110,6 +121,8 @@ export default function IssueAggregatorComponent(): JSX.Element | null {
                     id={issue.id}
                     top={minY}
                     left={minX}
+                    angle={-geometry.angle}
+                    scale={1 / geometry.scale}
                     isFetching={issueFetching !== null}
                     comments={issue.comments}
                     resolved={issueResolved}
@@ -137,6 +150,8 @@ export default function IssueAggregatorComponent(): JSX.Element | null {
                     id={issue.id}
                     top={minY}
                     left={minX}
+                    angle={-geometry.angle}
+                    scale={1 / geometry.scale}
                     resolved={issueResolved}
                     message={issue.comments[issue.comments.length - 1].message}
                     highlight={highlight}
@@ -159,7 +174,14 @@ export default function IssueAggregatorComponent(): JSX.Element | null {
 
     return (
         <>
-            {createLeft !== null && createTop !== null && <CreateIssueDialog top={createTop} left={createLeft} />}
+            {createLeft !== null && createTop !== null ? (
+                <CreateIssueDialog
+                    top={createTop}
+                    left={createLeft}
+                    angle={-geometry.angle}
+                    scale={1 / geometry.scale}
+                />
+            ) : null}
             {issueDialogs}
             {issueLabels}
         </>

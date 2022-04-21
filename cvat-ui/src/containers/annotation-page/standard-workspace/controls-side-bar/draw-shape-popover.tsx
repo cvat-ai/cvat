@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -22,6 +22,7 @@ interface DispatchToProps {
         objectType: ObjectType,
         points?: number,
         rectDrawingMethod?: RectDrawingMethod,
+        cuboidDrawingMethod?: CuboidDrawingMethod,
     ): void;
 }
 
@@ -30,6 +31,7 @@ interface StateToProps {
     canvasInstance: Canvas;
     shapeType: ShapeType;
     labels: any[];
+    jobInstance: any;
 }
 
 function mapDispatchToProps(dispatch: any): DispatchToProps {
@@ -40,8 +42,18 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
             objectType: ObjectType,
             points?: number,
             rectDrawingMethod?: RectDrawingMethod,
+            cuboidDrawingMethod?: CuboidDrawingMethod,
         ): void {
-            dispatch(rememberObject(objectType, labelID, shapeType, points, rectDrawingMethod));
+            dispatch(
+                rememberObject({
+                    activeObjectType: objectType,
+                    activeShapeType: shapeType,
+                    activeLabelID: labelID,
+                    activeNumOfPoints: points,
+                    activeRectDrawingMethod: rectDrawingMethod,
+                    activeCuboidDrawingMethod: cuboidDrawingMethod,
+                }),
+            );
         },
     };
 }
@@ -50,16 +62,17 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
     const {
         annotation: {
             canvas: { instance: canvasInstance },
-            job: { labels },
+            job: { labels, instance: jobInstance },
         },
         shortcuts: { normalizedKeyMap },
     } = state;
 
     return {
         ...own,
-        canvasInstance,
+        canvasInstance: canvasInstance as Canvas,
         labels,
         normalizedKeyMap,
+        jobInstance,
     };
 }
 
@@ -79,7 +92,7 @@ class DrawShapePopoverContainer extends React.PureComponent<Props, State> {
         super(props);
 
         const { shapeType } = props;
-        const defaultLabelID = props.labels[0].id;
+        const defaultLabelID = props.labels.length ? props.labels[0].id : null;
         const defaultRectDrawingMethod = RectDrawingMethod.CLASSIC;
         const defaultCuboidDrawingMethod = CuboidDrawingMethod.CLASSIC;
         this.state = {
@@ -90,11 +103,9 @@ class DrawShapePopoverContainer extends React.PureComponent<Props, State> {
 
         if (shapeType === ShapeType.POLYGON) {
             this.minimumPoints = 3;
-        }
-        if (shapeType === ShapeType.POLYLINE) {
+        } else if (shapeType === ShapeType.POLYLINE) {
             this.minimumPoints = 2;
-        }
-        if (shapeType === ShapeType.POINTS) {
+        } else if (shapeType === ShapeType.POINTS) {
             this.minimumPoints = 1;
         }
     }
@@ -113,10 +124,10 @@ class DrawShapePopoverContainer extends React.PureComponent<Props, State> {
             cuboidDrawingMethod,
             numberOfPoints,
             shapeType,
-            crosshair: [ShapeType.RECTANGLE, ShapeType.CUBOID].includes(shapeType),
+            crosshair: [ShapeType.RECTANGLE, ShapeType.CUBOID, ShapeType.ELLIPSE].includes(shapeType),
         });
 
-        onDrawStart(shapeType, selectedLabelID, objectType, numberOfPoints, rectDrawingMethod);
+        onDrawStart(shapeType, selectedLabelID, objectType, numberOfPoints, rectDrawingMethod, cuboidDrawingMethod);
     }
 
     private onChangeRectDrawingMethod = (event: RadioChangeEvent): void => {
@@ -156,10 +167,13 @@ class DrawShapePopoverContainer extends React.PureComponent<Props, State> {
             rectDrawingMethod, cuboidDrawingMethod, selectedLabelID, numberOfPoints,
         } = this.state;
 
-        const { normalizedKeyMap, labels, shapeType } = this.props;
+        const {
+            normalizedKeyMap, labels, shapeType, jobInstance,
+        } = this.props;
 
         return (
             <DrawShapePopoverComponent
+                jobInstance={jobInstance}
                 labels={labels}
                 shapeType={shapeType}
                 minimumPoints={this.minimumPoints}

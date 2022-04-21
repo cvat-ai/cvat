@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -7,13 +7,14 @@ import { Row, Col } from 'antd/lib/grid';
 import { MoreOutlined } from '@ant-design/icons';
 import Dropdown from 'antd/lib/dropdown';
 import Text from 'antd/lib/typography/Text';
-import Tooltip from 'antd/lib/tooltip';
 
 import { ObjectType, ShapeType, ColorBy } from 'reducers/interfaces';
+import CVATTooltip from 'components/common/cvat-tooltip';
 import LabelSelector from 'components/label-selector/label-selector';
 import ItemMenu from './object-item-menu';
 
 interface Props {
+    jobInstance: any;
     readonly: boolean;
     clientID: number;
     serverID: number | undefined;
@@ -42,7 +43,6 @@ interface Props {
     toBackground(): void;
     toForeground(): void;
     resetCuboidPerspective(): void;
-    activateTracking(): void;
 }
 
 function ItemTopComponent(props: Props): JSX.Element {
@@ -75,7 +75,7 @@ function ItemTopComponent(props: Props): JSX.Element {
         toBackground,
         toForeground,
         resetCuboidPerspective,
-        activateTracking,
+        jobInstance,
     } = props;
 
     const [menuVisible, setMenuVisible] = useState(false);
@@ -98,12 +98,16 @@ function ItemTopComponent(props: Props): JSX.Element {
             <Col span={10}>
                 <Text style={{ fontSize: 12 }}>{clientID}</Text>
                 <br />
-                <Text type='secondary' style={{ fontSize: 10 }}>
+                <Text
+                    type='secondary'
+                    style={{ fontSize: 10 }}
+                    className='cvat-objects-sidebar-state-item-object-type-text'
+                >
                     {type}
                 </Text>
             </Col>
             <Col span={12}>
-                <Tooltip title='Change current label' mouseLeaveDelay={0}>
+                <CVATTooltip title='Change current label'>
                     <LabelSelector
                         disabled={readonly}
                         size='small'
@@ -112,7 +116,7 @@ function ItemTopComponent(props: Props): JSX.Element {
                         onChange={changeLabel}
                         className='cvat-objects-sidebar-state-item-label-selector'
                     />
-                </Tooltip>
+                </CVATTooltip>
             </Col>
             <Col span={2}>
                 <Dropdown
@@ -120,6 +124,7 @@ function ItemTopComponent(props: Props): JSX.Element {
                     onVisibleChange={changeMenuVisible}
                     placement='bottomLeft'
                     overlay={ItemMenu({
+                        jobInstance,
                         readonly,
                         serverID,
                         locked,
@@ -145,7 +150,6 @@ function ItemTopComponent(props: Props): JSX.Element {
                         toForeground,
                         resetCuboidPerspective,
                         changeColorPickerVisible,
-                        activateTracking,
                     })}
                 >
                     <MoreOutlined />

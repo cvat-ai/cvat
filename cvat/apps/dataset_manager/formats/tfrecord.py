@@ -6,7 +6,7 @@ from tempfile import TemporaryDirectory
 
 from pyunpack import Archive
 
-from cvat.apps.dataset_manager.bindings import (CvatTaskDataExtractor,
+from cvat.apps.dataset_manager.bindings import (GetCVATDataExtractor,
     import_dm_annotations)
 from cvat.apps.dataset_manager.util import make_zip_archive
 from datumaro.components.project import Dataset
@@ -23,19 +23,20 @@ except ImportError:
 
 
 @exporter(name='TFRecord', ext='ZIP', version='1.0', enabled=tf_available)
-def _export(dst_file, task_data, save_images=False):
-    extractor = CvatTaskDataExtractor(task_data, include_images=save_images)
-    extractor = Dataset.from_extractors(extractor) # apply lazy transforms
+def _export(dst_file, instance_data, save_images=False):
+    dataset = Dataset.from_extractors(GetCVATDataExtractor(
+        instance_data, include_images=save_images), env=dm_env)
     with TemporaryDirectory() as temp_dir:
-        dm_env.converters.get('tf_detection_api').convert(extractor,
-            save_dir=temp_dir, save_images=save_images)
+        dataset.export(temp_dir, 'tf_detection_api', save_images=save_images)
 
         make_zip_archive(temp_dir, dst_file)
 
 @importer(name='TFRecord', ext='ZIP', version='1.0', enabled=tf_available)
-def _import(src_file, task_data):
+def _import(src_file, instance_data, load_data_callback=None):
     with TemporaryDirectory() as tmp_dir:
         Archive(src_file.name).extractall(tmp_dir)
 
-        dataset = dm_env.make_importer('tf_detection_api')(tmp_dir).make_dataset()
-        import_dm_annotations(dataset, task_data)
+        dataset = Dataset.import_from(tmp_dir, 'tf_detection_api', env=dm_env)
+        if load_data_callback is not None:
+            load_data_callback(dataset, instance_data)
+        import_dm_annotations(dataset, instance_data)

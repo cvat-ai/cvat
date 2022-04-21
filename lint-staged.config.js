@@ -12,25 +12,21 @@ function makePattern(extension) {
 
 module.exports = (stagedFiles) => {
     const eslintExtensions = ['ts', 'tsx', 'js'].map(makePattern);
-    const prettierExtensions = ['html', 'css', 'scss', 'json', 'yaml', 'yml', 'md']
-        .map(makePattern)
-        .concat(eslintExtensions);
-
-    const prettierFiles = micromatch(stagedFiles, prettierExtensions);
     const eslintFiles = micromatch(stagedFiles, eslintExtensions);
 
     const cvatData = containsInPath('/cvat-data/', eslintFiles);
     const cvatCore = containsInPath('/cvat-core/', eslintFiles);
     const cvatCanvas = containsInPath('/cvat-canvas/', eslintFiles);
+    const cvatCanvas3d = containsInPath('/cvat-canvas3d/', eslintFiles);
     const cvatUI = containsInPath('/cvat-ui/', eslintFiles);
 
     const mapping = {};
     const commands = [];
-    mapping['prettier --write '] = prettierFiles.join(' ');
     mapping['npm run precommit:cvat-ui -- '] = cvatUI.join(' ');
     mapping['npm run precommit:cvat-data -- '] = cvatData.join(' ');
     mapping['npm run precommit:cvat-core -- '] = cvatCore.join(' ');
     mapping['npm run precommit:cvat-canvas -- '] = cvatCanvas.join(' ');
+    mapping['npm run precommit:cvat-canvas3d -- '] = cvatCanvas3d.join(' ');
 
     for (const command of Object.keys(mapping)) {
         const files = mapping[command];

@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -43,7 +43,9 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
 }
 
 function ChangePasswordComponent(props: ChangePasswordPageComponentProps): JSX.Element {
-    const { fetching, onChangePassword, visible, onClose } = props;
+    const {
+        fetching, onChangePassword, visible, onClose,
+    } = props;
 
     return (
         <Modal

@@ -14,8 +14,8 @@ INSTALLED_APPS += [
 ALLOWED_HOSTS.append('testserver')
 
 # Django-sendfile:
-# https://github.com/johnsensible/django-sendfile
-SENDFILE_BACKEND = 'sendfile.backends.development'
+# https://github.com/moggers87/django-sendfile2
+SENDFILE_BACKEND = 'django_sendfile.backends.development'
 
 # Database
 # https://docs.djangoproject.com/en/2.0/ref/settings/#databases
@@ -38,7 +38,8 @@ UI_URL = '{}://{}'.format(UI_SCHEME, UI_HOST)
 if UI_PORT and UI_PORT != '80':
     UI_URL += ':{}'.format(UI_PORT)
 # set UI url to redirect to after successful e-mail confirmation
-ACCOUNT_EMAIL_CONFIRMATION_ANONYMOUS_REDIRECT_URL = '{}/auth/login'.format(UI_URL)
+ACCOUNT_EMAIL_CONFIRMATION_ANONYMOUS_REDIRECT_URL = '{}/auth/email-confirmation'.format(UI_URL)
 
 CORS_ORIGIN_WHITELIST = [UI_URL]
 CORS_REPLACE_HTTPS_REFERER = True
+IAM_OPA_DATA_URL = 'http://localhost:8181/v1/data'

@@ -1,0 +1,83 @@
+// Copyright (C) 2021 Intel Corporation
+//
+// SPDX-License-Identifier: MIT
+
+@import '../../base.scss';
+
+.cvat-update-cloud-storage-form-wrapper,
+.cvat-attach-cloud-storage-form-wrapper {
+    text-align: center;
+    padding-top: $grid-unit-size * 5;
+    overflow-y: auto;
+    height: 90%;
+    position: fixed;
+    width: 100%;
+
+    > div > span {
+        font-size: $grid-unit-size * 4;
+    }
+
+    .cvat-cloud-storage-form {
+        margin-top: $grid-unit-size * 2;
+        width: 100%;
+        height: auto;
+        border: 1px solid $border-color-1;
+        border-radius: $grid-unit-size * 0.5;
+        padding: $grid-unit-size * 2;
+        background: $background-color-1;
+        text-align: initial;
+
+        .cvat-cloud-storage-form-item {
+            justify-content: space-between;
+
+            > div:first-child {
+                text-align: left;
+            }
+        }
+
+        .cvat-cloud-storage-form-item-key-file {
+            width: 100%;
+
+            :nth-child(1) {
+                flex-grow: 1;
+            }
+
+            :nth-child(2) {
+                max-width: 37 * $grid-unit-size;
+            }
+        }
+
+        > div:not(first-child) {
+            margin-top: $grid-unit-size;
+        }
+
+        .cvat-attach-cloud-storage-reset-button,
+        .cvat-attach-cloud-storage-submit-button {
+            width: $grid-unit-size * 12;
+        }
+    }
+}
+
+.cvat-cloud-storage-region-creator {
+    display: flex;
+    padding: $grid-unit-size;
+
+    > * {
+        margin: 0 $grid-unit-size;
+    }
+
+    > button {
+        cursor: pointer;
+    }
+}
+
+.cvat-cloud-storage-help-button {
+    padding-left: $grid-unit-size * 0.5;
+    padding-right: 0;
+}
+
+.cvat-manifests-manager-form-item {
+    > .ant-form-item-control {
+        display: none;
+    }
+}

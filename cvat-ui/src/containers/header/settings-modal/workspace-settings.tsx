@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2021 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -12,6 +12,11 @@ import {
     switchShowingInterpolatedTracks,
     switchShowingObjectsTextAlways,
     switchAutomaticBordering,
+    switchIntelligentPolygonCrop,
+    changeDefaultApproxPolyAccuracy,
+    switchTextFontSize,
+    switchTextPosition,
+    switchTextContent,
 } from 'actions/settings-actions';
 
 import { CombinedState } from 'reducers/interfaces';
@@ -24,7 +29,12 @@ interface StateToProps {
     aamZoomMargin: number;
     showAllInterpolationTracks: boolean;
     showObjectsTextAlways: boolean;
+    defaultApproxPolyAccuracy: number;
     automaticBordering: boolean;
+    intelligentPolygonCrop: boolean;
+    textFontSize: number;
+    textPosition: 'auto' | 'center';
+    textContent: string;
 }
 
 interface DispatchToProps {
@@ -34,6 +44,11 @@ interface DispatchToProps {
     onSwitchShowingInterpolatedTracks(enabled: boolean): void;
     onSwitchShowingObjectsTextAlways(enabled: boolean): void;
     onSwitchAutomaticBordering(enabled: boolean): void;
+    onSwitchIntelligentPolygonCrop(enabled: boolean): void;
+    onChangeDefaultApproxPolyAccuracy(approxPolyAccuracy: number): void;
+    onChangeTextFontSize(fontSize: number): void;
+    onChangeTextPosition(position: 'auto' | 'center'): void;
+    onChangeTextContent(textContent: string[]): void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -45,6 +60,11 @@ function mapStateToProps(state: CombinedState): StateToProps {
         showAllInterpolationTracks,
         showObjectsTextAlways,
         automaticBordering,
+        intelligentPolygonCrop,
+        defaultApproxPolyAccuracy,
+        textFontSize,
+        textPosition,
+        textContent,
     } = workspace;
 
     return {
@@ -54,6 +74,11 @@ function mapStateToProps(state: CombinedState): StateToProps {
         showAllInterpolationTracks,
         showObjectsTextAlways,
         automaticBordering,
+        intelligentPolygonCrop,
+        defaultApproxPolyAccuracy,
+        textFontSize,
+        textPosition,
+        textContent,
     };
 }
 
@@ -76,6 +101,22 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         },
         onSwitchAutomaticBordering(enabled: boolean): void {
             dispatch(switchAutomaticBordering(enabled));
+        },
+        onSwitchIntelligentPolygonCrop(enabled: boolean): void {
+            dispatch(switchIntelligentPolygonCrop(enabled));
+        },
+        onChangeDefaultApproxPolyAccuracy(threshold: number): void {
+            dispatch(changeDefaultApproxPolyAccuracy(threshold));
+        },
+        onChangeTextFontSize(fontSize: number): void {
+            dispatch(switchTextFontSize(fontSize));
+        },
+        onChangeTextPosition(position: 'auto' | 'center'): void {
+            dispatch(switchTextPosition(position));
+        },
+        onChangeTextContent(textContent: string[]): void {
+            const serialized = textContent.join(',');
+            dispatch(switchTextContent(serialized));
         },
     };
 }
