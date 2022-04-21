@@ -655,8 +655,8 @@ class CloudStorage(models.Model):
     # restrictions:
     # AWS bucket name, Azure container name - 63, Google bucket name - 63 without dots and 222 with dots
     # https://cloud.google.com/storage/docs/naming-buckets#requirements
-    # AWS access key id - 20
-    # AWS secret access key - 40
+    # AWS access key id - 129
+    # AWS secret access key - 129
     # AWS temporary session tocken - None
     # The size of the security token that AWS STS API operations return is not fixed.
     # We strongly recommend that you make no assumptions about the maximum size.
