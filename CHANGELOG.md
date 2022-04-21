@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - CVAT-3D: support lidar data on the server side (<https://github.com/openvinotoolkit/cvat/pull/2534>)
+- CLI: Add support for organisation and auth tokens (<https://github.com/openvinotoolkit/cvat/pull/4583>)
 
 ### Changed
 
