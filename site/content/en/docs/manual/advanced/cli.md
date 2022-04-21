@@ -111,7 +111,8 @@ by using the [label constructor](/docs/manual/basics/creating_an_annotation_task
   cli.py --server-host example.com --auth user-1 create "task 1" \
   --labels labels.json local image1.jpg
   ```
-- Create a task named "task 1" on the server "example.com" in organisation with slug "org1" labels from the file "labels.json"
+- Create a task named "task 1" on the server "example.com" in organisation with slug "org1"
+  labels from the file "labels.json"
   and local image "image1.jpg", the task will be created as user "user-1":
   ```bash
   cli.py --server-host example.com --auth user-1 --org org1 create "task 1" \
