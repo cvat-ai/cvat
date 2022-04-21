@@ -282,7 +282,6 @@ class CVAT_API_V2():
             host = host.replace('http://', '')
             host = host.replace('https://', '')
         scheme = 'https' if https else 'http'
-        # host = host.split(':')[0] if https else host
         self.base = '{}://{}/api/'.format(scheme, host)
         self.git = f'{scheme}://{host}/git/repository/'
         self.org_slug = org_slug
