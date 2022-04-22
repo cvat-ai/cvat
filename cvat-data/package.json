@@ -19,6 +19,6 @@
   "devDependencies": {},
   "dependencies": {
     "async-mutex": "^0.3.2",
-    "jszip": "3.7.1"
+    "jszip": "3.8.0"
   }
 }
