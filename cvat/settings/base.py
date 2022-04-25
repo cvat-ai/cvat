@@ -15,6 +15,7 @@ https://docs.djangoproject.com/en/2.0/ref/settings/
 """
 
 import os
+import re
 import sys
 import fcntl
 import shutil
@@ -30,7 +31,7 @@ from pathlib import Path
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = str(Path(__file__).parents[2])
 
-ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
+ALLOWED_HOSTS = ['*cvat.rebotics.net', '*cvat.rebotics.cn'] + os.environ.get('ALLOWED_HOSTS', '').split(',')
 PUBLIC_DOMAIN_NAME = os.environ.get('PUBLIC_DOMAIN_NAME')
 if PUBLIC_DOMAIN_NAME:
     ALLOWED_HOSTS += [PUBLIC_DOMAIN_NAME]
@@ -101,6 +102,36 @@ try:
         generate_ssh_keys()
 except Exception as ex:
     print(str(ex))
+
+# Database
+# https://docs.djangoproject.com/en/2.0/ref/settings/#databases
+
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'HOST': os.getenv('CVAT_POSTGRES_HOST', 'cvat_db'),
+        'NAME': os.getenv('CVAT_POSTGRES_DBNAME', 'cvat'),
+        'USER': os.getenv('CVAT_POSTGRES_USER', 'root'),
+        'PASSWORD': os.getenv('CVAT_POSTGRES_PASSWORD', ''),
+        'PORT': int(os.getenv('CVAT_POSTGRES_PORT', 5432)),
+    }
+}
+DB_URL = os.getenv('DB_URL')
+if DB_URL:
+    match = re.match(r'^(?P<protocol>postgres(?:ql)?)://'
+                     r'(?:(?P<user>.+?)(?::(?P<password>.+?))?@)?'
+                     r'(?:(?P<host>.+?)(?::(?P<port>.+?))?)?'
+                     r'(?:/(?P<name>.+?))?'
+                     r'(?:\?(?P<params>.+?))?$', DB_URL)
+    if match:
+        for key in ('user', 'password', 'host', 'name'):
+            if match[key]:
+                DATABASES['default'][key.upper()] = match[key]
+        if match['port']:
+            DATABASES['default']['PORT'] = int(match['port'])
+    else:
+        raise ValueError("Url is not valid.")
+
 
 DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 INSTALLED_APPS = [
@@ -245,10 +276,14 @@ IAM_DEFAULT_ROLES = ['user']
 IAM_ADMIN_ROLE = 'admin'
 # Index in the list below corresponds to the priority (0 has highest priority)
 IAM_ROLES = [IAM_ADMIN_ROLE, 'business', 'user', 'worker']
-IAM_OPA_PROTOCOL = os.getenv('CVAT_OPA_PROTOCOL', 'http')
-IAM_OPA_HOST = os.getenv('CVAT_OPA_HOST', 'opa')
-IAM_OPA_PORT = os.getenv('CVAT_OPA_PORT', 8181)
-IAM_OPA_DATA_URL = '{}://{}:{}/v1/data'.format(IAM_OPA_PROTOCOL, IAM_OPA_HOST, IAM_OPA_PORT)
+OPA_URL = os.getenv('OPA_URL')
+if OPA_URL:
+    IAM_OPA_DATA_URL = OPA_URL + '/v1/data'
+else:
+    IAM_OPA_PROTOCOL = os.getenv('CVAT_OPA_PROTOCOL', 'http')
+    IAM_OPA_HOST = os.getenv('CVAT_OPA_HOST', 'opa')
+    IAM_OPA_PORT = int(os.getenv('CVAT_OPA_PORT', 8181))
+    IAM_OPA_DATA_URL = '{}://{}:{}/v1/data'.format(IAM_OPA_PROTOCOL, IAM_OPA_HOST, IAM_OPA_PORT)
 LOGIN_URL = 'rest_login'
 LOGIN_REDIRECT_URL = '/'
 
@@ -272,26 +307,38 @@ OLD_PASSWORD_FIELD_ENABLED = True
 # Django-RQ
 # https://github.com/rq/django-rq
 
-RQ_QUEUES = {
-    'default': {
-        'HOST': 'localhost',
-        'PORT': 6379,
-        'DB': 0,
-        'DEFAULT_TIMEOUT': '4h'
-    },
-    'low': {
-        'HOST': 'localhost',
-        'PORT': 6379,
-        'DB': 0,
-        'DEFAULT_TIMEOUT': '24h'
+REDIS_URL = os.getenv('REDIS_URL')
+if REDIS_URL:
+    RQ_QUEUES = {
+        'default': {
+            'URL': REDIS_URL,
+        },
+        'low': {
+            'URL': REDIS_URL,
+        }
     }
-}
+else:
+    RQ_QUEUES = {
+        'default': {
+            'HOST': os.getenv('CVAT_REDIS_HOST', 'cvat_redis'),
+            'PORT': int(os.getenv('CVAT_REDIS_PORT', 6379)),
+            'DB': int(os.getenv('CVAT_REDIS_DB', 0))
+        },
+        'low': {
+            'HOST': os.getenv('CVAT_REDIS_HOST', 'cvat_redis'),
+            'PORT': int(os.getenv('CVAT_REDIS_PORT', 6379)),
+            'DB': int(os.getenv('CVAT_REDIS_DB', 0)),
+        }
+    }
+RQ_QUEUES['default']['DEFAULT_TIMEOUT'] = '4h'
+RQ_QUEUES['default']['DEFAULT_TIMEOUT'] = '24h'
+
 
 NUCLIO = {
     'SCHEME': os.getenv('CVAT_NUCLIO_SCHEME', 'http'),
-    'HOST': os.getenv('CVAT_NUCLIO_HOST', 'localhost'),
-    'PORT': os.getenv('CVAT_NUCLIO_PORT', 8070),
-    'DEFAULT_TIMEOUT': os.getenv('CVAT_NUCLIO_DEFAULT_TIMEOUT', 120)
+    'HOST': os.getenv('CVAT_NUCLIO_HOST', 'nuclio'),
+    'PORT': int(os.getenv('CVAT_NUCLIO_PORT', 8070)),
+    'DEFAULT_TIMEOUT': int(os.getenv('CVAT_NUCLIO_DEFAULT_TIMEOUT', 120))
 }
 
 RQ_SHOW_ADMIN_LINK = True

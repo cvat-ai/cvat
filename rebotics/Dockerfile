@@ -203,6 +203,9 @@ RUN sed -i "s#\${HOME}#${HOME}#g" /etc/nginx/conf.d/default.conf && \
     ln -sf /dev/stderr /var/log/nginx/error.log && \
     chown -R ${USER} /var/lib/nginx /var/log/nginx
 
+# Set default value to avoid supervisor fail.
+ENV DJANGO_MODWSGI_EXTRA_ARGS=""
+
 # RUN all commands below as 'django' user
 USER ${USER}
 WORKDIR ${HOME}
