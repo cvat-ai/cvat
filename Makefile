@@ -11,3 +11,12 @@ down:
 
 shell:
 	docker exec -it -u root reb_cvat bash -i
+
+patch:
+	bump2version --allow-dirty --config-file ./.bumpversion patch
+
+minor:
+	bump2version --config-file ./.bumpversion minor
+
+major:
+	bump2version --config-file ./.bumpversion major
