@@ -1,0 +1,8 @@
+nuctl deploy --project-name cvat \
+ --path serverless/pytorch/beantech/ritm/nuclio \
+ --volume `pwd`/serverless/common:/opt/nuclio/common \
+ --platform local
+
+OR
+
+nuctl deploy --project-name cvat --path pytorch/saic-vul/hrnet/nuclio --file pytorch/saic-vul/hrnet/nuclio/function-gpu.yaml

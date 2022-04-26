@@ -1,27 +1,27 @@
 metadata:
-  name: pth-saic-vul-hrnet
+  name: clickseg
   namespace: cvat
   annotations:
-    name: HRNET
+    name: ClickSEG
     type: interactor
     spec:
     framework: pytorch
     min_pos_points: 1
     min_neg_points: 0
-    animated_gif: https://raw.githubusercontent.com/openvinotoolkit/cvat/develop/site/content/en/images/hrnet_example.gif
+    animated_gif:
     help_message: The interactor allows to get a mask for an object using positive points, and negative points
 
 spec:
-  description: HRNet18 for click based interactive segmentation
+  description: ClickSEG is codebase for click-based interactive segmentation
   runtime: 'python:3.8'
   handler: main:handler
   eventTimeout: 30s
   env:
     - name: PYTHONPATH
-      value: /opt/nuclio/hrnet
+      value: /opt/nuclio/clickseg
 
   build:
-    image: cvat/pth.saic-vul.hrnet
+    image: cvat/clickseg
     baseImage: ubuntu:20.04
 
     directives:
@@ -39,13 +39,17 @@ spec:
         - kind: WORKDIR
           value: /opt/nuclio
         - kind: RUN
-          value: git clone https://github.com/saic-vul/ritm_interactive_segmentation.git hrnet
+          value: git clone https://github.com/ciaomandi/ClickSEG clickseg
         - kind: WORKDIR
-          value: /opt/nuclio/hrnet
+          value: /opt/nuclio/clickseg
         - kind: RUN
           value: apt-get install -y --no-install-recommends wget
+        - kind: ENV
+          value: fileid=1DkFun_tiw7z7RpjDtwqV65k1e9jxnLkr
+        - kind: ENV
+          value: filename=seg_formerB3-S2.pth
         - kind: RUN
-          value: wget https://github.com/saic-vul/ritm_interactive_segmentation/releases/download/v1.0/coco_lvis_h18_itermask.pth
+          value: wget --load-cookies /tmp/cookies.txt "https://docs.google.com/uc?export=download&confirm=$(wget --quiet --save-cookies /tmp/cookies.txt --keep-session-cookies --no-check-certificate 'https://docs.google.com/uc?export=download&id=${fileid}' -O- | sed -rn 's/.*confirm=([0-9A-Za-z_]+).*/\1\n/p')&id=${fileid}" -O ${filename} && rm -rf /tmp/cookies.txt
         - kind: RUN
           value: pip3 install setuptools
         - kind: RUN
