@@ -151,18 +151,6 @@ RUN adduser --shell /bin/bash --disabled-password --gecos "" ${USER} && \
         echo export "GIT_SSH_COMMAND=\"ssh -o StrictHostKeyChecking=no -o ConnectTimeout=30 -o ProxyCommand='nc -X 5 -x ${socks_proxy} %h %p'\"" >> ${HOME}/.bashrc; \
     fi
 
-ARG CLAM_AV="no"
-RUN if [ "$CLAM_AV" = "yes" ]; then \
-        apt-get update && \
-        apt-get --no-install-recommends install -yq \
-            clamav \
-            libclamunrar9 && \
-        sed -i 's/ReceiveTimeout 30/ReceiveTimeout 300/g' /etc/clamav/freshclam.conf && \
-        freshclam && \
-        chown -R ${USER}:${USER} /var/lib/clamav && \
-        rm -rf /var/lib/apt/lists/*; \
-    fi
-
 ARG INSTALL_SOURCES='no'
 WORKDIR ${HOME}/sources
 RUN if [ "$INSTALL_SOURCES" = "yes" ]; then \
