@@ -7,6 +7,7 @@ import sys
 from cvat.settings.base import LOGGING
 from .models import Job, Task, Project, CloudStorage
 
+# TODO: here loggers live.
 def _get_project(pid):
     try:
         return Project.objects.get(pk=pid)
