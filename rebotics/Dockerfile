@@ -151,23 +151,6 @@ RUN adduser --shell /bin/bash --disabled-password --gecos "" ${USER} && \
         echo export "GIT_SSH_COMMAND=\"ssh -o StrictHostKeyChecking=no -o ConnectTimeout=30 -o ProxyCommand='nc -X 5 -x ${socks_proxy} %h %p'\"" >> ${HOME}/.bashrc; \
     fi
 
-ARG INSTALL_SOURCES='no'
-WORKDIR ${HOME}/sources
-RUN if [ "$INSTALL_SOURCES" = "yes" ]; then \
-        sed -Ei 's/^# deb-src /deb-src /' /etc/apt/sources.list && \
-        apt-get update && \
-        dpkg --get-selections | while read -r line; do        \
-            package=$(echo "$line" | awk '{print $1}');       \
-            mkdir "$package";                                 \
-            (                                                 \
-                cd "$package";                                \
-                apt-get -q --download-only source "$package"; \
-            )                                                 \
-            done &&                                           \
-        rm -rf /var/lib/apt/lists/*;                          \
-    fi
-COPY --from=build-image /tmp/openh264/openh264*.tar.gz /tmp/ffmpeg/ffmpeg*.tar.gz ${HOME}/sources/
-
 # Copy python virtual environment and FFmpeg binaries from build-image
 COPY --from=build-image /opt/venv /opt/venv
 ENV PATH="/opt/venv/bin:${PATH}"
@@ -190,9 +173,6 @@ RUN sed -i "s#\${HOME}#${HOME}#g" /etc/nginx/conf.d/default.conf && \
     ln -sf /dev/stdout /var/log/nginx/access.log && \
     ln -sf /dev/stderr /var/log/nginx/error.log && \
     chown -R ${USER} /var/lib/nginx /var/log/nginx
-
-# Set default value to avoid supervisor fail.
-ENV DJANGO_MODWSGI_EXTRA_ARGS=""
 
 # RUN all commands below as 'django' user
 USER ${USER}
