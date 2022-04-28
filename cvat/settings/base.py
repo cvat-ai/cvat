@@ -470,7 +470,7 @@ LOGGING = {
     },
     'loggers': {
         'cvat.server': {
-            'handlers': os.getenv('CVAT_SERVER_LOG_HANDLERS', 'console,server_file').split(','),
+            'handlers': os.getenv('CVAT_SERVER_LOG_HANDLERS', 'console').split(','),
             'level': os.getenv('DJANGO_LOG_LEVEL', 'DEBUG'),
         },
         'cvat.client': {
@@ -478,7 +478,7 @@ LOGGING = {
             'level': os.getenv('DJANGO_LOG_LEVEL', 'DEBUG'),
         },
         'django': {
-            'handlers': os.getenv('DJANGO_SERVER_LOG_HANDLERS', 'console,server_file').split(','),
+            'handlers': os.getenv('DJANGO_SERVER_LOG_HANDLERS', 'console').split(','),
             'level': 'INFO',
             'propagate': True
         }
