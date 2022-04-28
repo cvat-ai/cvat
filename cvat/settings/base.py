@@ -39,69 +39,8 @@ if PUBLIC_DOMAIN_NAME:
 INTERNAL_IPS = ['127.0.0.1']
 
 SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', None)
-if not SECRET_KEY:
-    try:
-        sys.path.append(BASE_DIR)
-        from keys.secret_key import SECRET_KEY # pylint: disable=unused-import
-    except ImportError:
-        from django.utils.crypto import get_random_string
-        keys_dir = os.path.join(BASE_DIR, 'keys')
-        if not os.path.isdir(keys_dir):
-            os.mkdir(keys_dir)
-        with open(os.path.join(keys_dir, 'secret_key.py'), 'w') as f:
-            chars = 'abcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*(-_=+)'
-            f.write("SECRET_KEY = '{}'\n".format(get_random_string(50, chars)))
-        from keys.secret_key import SECRET_KEY
-
-
-def generate_ssh_keys():
-    keys_dir = '{}/keys'.format(os.getcwd())
-    ssh_dir = '{}/.ssh'.format(os.getenv('HOME'))
-    pidfile = os.path.join(ssh_dir, 'ssh.pid')
-
-    def add_ssh_keys():
-        IGNORE_FILES = ('README.md', 'ssh.pid')
-        keys_to_add = [entry.name for entry in os.scandir(ssh_dir) if entry.name not in IGNORE_FILES]
-        keys_to_add = ' '.join(os.path.join(ssh_dir, f) for f in keys_to_add)
-        subprocess.run(['ssh-add {}'.format(keys_to_add)], # nosec
-            shell=True,
-            stderr = subprocess.PIPE,
-            # lets set the timeout if ssh-add requires a input passphrase for key
-            # otherwise the process will be freezed
-            timeout=30,
-            )
-
-    with open(pidfile, "w") as pid:
-        fcntl.flock(pid, fcntl.LOCK_EX)
-        try:
-            add_ssh_keys()
-            keys = subprocess.run(['ssh-add', '-l'], # nosec
-                stdout = subprocess.PIPE).stdout.decode('utf-8').split('\n')
-            if 'has no identities' in keys[0]:
-                print('SSH keys were not found')
-                volume_keys = os.listdir(keys_dir)
-                if not ('id_rsa' in volume_keys and 'id_rsa.pub' in volume_keys):
-                    print('New pair of keys are being generated')
-                    subprocess.run(['ssh-keygen -b 4096 -t rsa -f {}/id_rsa -q -N ""'.format(ssh_dir)], shell=True) # nosec
-                    shutil.copyfile('{}/id_rsa'.format(ssh_dir), '{}/id_rsa'.format(keys_dir))
-                    shutil.copymode('{}/id_rsa'.format(ssh_dir), '{}/id_rsa'.format(keys_dir))
-                    shutil.copyfile('{}/id_rsa.pub'.format(ssh_dir), '{}/id_rsa.pub'.format(keys_dir))
-                    shutil.copymode('{}/id_rsa.pub'.format(ssh_dir), '{}/id_rsa.pub'.format(keys_dir))
-                else:
-                    print('Copying them from keys volume')
-                    shutil.copyfile('{}/id_rsa'.format(keys_dir), '{}/id_rsa'.format(ssh_dir))
-                    shutil.copymode('{}/id_rsa'.format(keys_dir), '{}/id_rsa'.format(ssh_dir))
-                    shutil.copyfile('{}/id_rsa.pub'.format(keys_dir), '{}/id_rsa.pub'.format(ssh_dir))
-                    shutil.copymode('{}/id_rsa.pub'.format(keys_dir), '{}/id_rsa.pub'.format(ssh_dir))
-                subprocess.run(['ssh-add', '{}/id_rsa'.format(ssh_dir)]) # nosec
-        finally:
-            fcntl.flock(pid, fcntl.LOCK_UN)
-
-try:
-    if os.getenv("SSH_AUTH_SOCK", None):
-        generate_ssh_keys()
-except Exception as ex:
-    print(str(ex))
+if SECRET_KEY is None:
+    raise ValueError('Please, set DJANGO_SECRET_KEY env variable!')
 
 # Database
 # https://docs.djangoproject.com/en/2.0/ref/settings/#databases
@@ -470,20 +409,30 @@ LOGGING = {
     },
     'loggers': {
         'cvat.server': {
-            'handlers': os.getenv('CVAT_SERVER_LOG_HANDLERS', 'console').split(','),
+            'handlers': ['console'],
             'level': os.getenv('DJANGO_LOG_LEVEL', 'DEBUG'),
         },
         'cvat.client': {
-            'handlers': os.getenv('CVAT_CLIENT_LOG_HANDLERS', '').split(','),
+            'handlers': [],
             'level': os.getenv('DJANGO_LOG_LEVEL', 'DEBUG'),
         },
         'django': {
-            'handlers': os.getenv('DJANGO_SERVER_LOG_HANDLERS', 'console').split(','),
+            'handlers': ['console'],
             'level': 'INFO',
             'propagate': True
         }
     },
 }
+
+server_log_handlers = os.getenv('CVAT_SERVER_LOG_HANDLERS')
+client_log_handlers = os.getenv('CVAT_CLIENT_LOG_HANDLERS')
+django_log_handlers = os.getenv('DJANGO_SERVER_LOG_HANDLERS')
+if server_log_handlers:
+    LOGGING['loggers']['cvat.server']['handlers'] = server_log_handlers.split(',')
+if client_log_handlers:
+    LOGGING['loggers']['cvat.client']['handlers'] = client_log_handlers.split(',')
+if django_log_handlers:
+    LOGGING['loggers']['django']['handlers'] = django_log_handlers.split(',')
 
 if os.getenv('DJANGO_LOG_SERVER_HOST'):
     LOGGING['loggers']['cvat.server']['handlers'] += ['logstash']

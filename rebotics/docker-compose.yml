@@ -37,8 +37,6 @@ services:
       no_proxy: 'elasticsearch,kibana,logstash,nuclio,opa,${no_proxy}'
     volumes:
       - reb_cvat_data:/home/django/data
-      - reb_cvat_keys:/home/django/keys
-      - reb_cvat_logs:/home/django/logs
     ports:
       - "8080:8080"
     networks:
@@ -77,8 +75,6 @@ services:
 volumes:
   reb_cvat_db:
   reb_cvat_data:
-  reb_cvat_keys:
-  reb_cvat_logs:
 
 networks:
   reb_cvat:
