@@ -73,7 +73,7 @@ class CLI():
         return output
 
     def tasks_create(self, name, labels, resource_type, resources,
-                     annotation_path='', annotation_format='CVAT XML 1.1',
+                     annotation_path='', annotation_format='CVAT for images 1.1',
                      completion_verification_period=20,
                      git_completion_verification_period=2,
                      dataset_repository_url='',
@@ -119,6 +119,7 @@ class CLI():
                         self.api.git_create(task_id),
                         json={
                             'path': dataset_repository_url,
+                            'format': annotation_format,
                             'lfs': lfs,
                             'tid': task_id})
             response_json = response.json()
