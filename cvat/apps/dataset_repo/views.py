@@ -114,7 +114,7 @@ def update_git_repo(request, tid):
         try:
             slogger.task[tid].error("error occurred during changing repository request", exc_info=True)
         except Exception:
-            pass
+            slogger.glob.error("error occurred during changing repository request", exc_info=True)
         return HttpResponseBadRequest(str(ex))
 
 
