@@ -248,6 +248,9 @@ class Project(models.Model):
     def get_project_logs_dirname(self):
         return os.path.join(self.get_project_dirname(), 'logs')
 
+    def get_tmp_dirname(self):
+        return os.path.join(self.get_project_dirname(), "tmp")
+
     def get_client_log_path(self):
         return os.path.join(self.get_project_logs_dirname(), "client.log")
 
@@ -304,6 +307,9 @@ class Task(models.Model):
 
     def get_task_artifacts_dirname(self):
         return os.path.join(self.get_task_dirname(), 'artifacts')
+
+    def get_tmp_dirname(self):
+        return os.path.join(self.get_task_dirname(), "tmp")
 
     def __str__(self):
         return self.name
@@ -529,6 +535,8 @@ class FloatArrayField(models.TextField):
     def from_db_value(self, value, expression, connection):
         if not value:
             return value
+        if value.startswith('[') and value.endswith(']'):
+            value = value[1:-1]
         return [float(v) for v in value.split(self.separator)]
 
     def to_python(self, value):
@@ -665,7 +673,7 @@ class CloudStorage(models.Model):
     updated_date = models.DateTimeField(auto_now=True)
     credentials = models.CharField(max_length=500)
     credentials_type = models.CharField(max_length=29, choices=CredentialsTypeChoice.choices())#auth_type
-    specific_attributes = models.CharField(max_length=128, blank=True)
+    specific_attributes = models.CharField(max_length=1024, blank=True)
     description = models.TextField(blank=True)
     organization = models.ForeignKey(Organization, null=True, default=None,
         blank=True, on_delete=models.SET_NULL, related_name="cloudstorages")

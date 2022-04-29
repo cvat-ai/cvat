@@ -1,4 +1,4 @@
-# Copyright (C) 2021 Intel Corporation
+# Copyright (C) 2021-2022 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -17,36 +17,39 @@ from .serializers import (
     MembershipReadSerializer, MembershipWriteSerializer,
     OrganizationReadSerializer, OrganizationWriteSerializer)
 
-@extend_schema_view(retrieve=extend_schema(
-    summary='Method returns details of an organization',
-    responses={
-        '200': OrganizationReadSerializer,
-    }, tags=['organizations'], versions=['2.0']))
-@extend_schema_view(list=extend_schema(
-    summary='Method returns a paginated list of organizatins according to query parameters',
-    responses={
-        '200': OrganizationReadSerializer(many=True),
-    }, tags=['organizations'], versions=['2.0']))
-@extend_schema_view(update=extend_schema(
-    summary='Method updates an organization by id',
-    responses={
-        '200': OrganizationWriteSerializer,
-    }, tags=['organizations'], versions=['2.0']))
-@extend_schema_view(partial_update=extend_schema(
-   summary='Methods does a partial update of chosen fields in an organization',
-   responses={
-       '200': OrganizationWriteSerializer,
-   }, tags=['organizations'], versions=['2.0']))
-@extend_schema_view(create=extend_schema(
-    summary='Method creates an organization',
-    responses={
-        '201': OrganizationWriteSerializer,
-    }, tags=['organizations'], versions=['2.0']))
-@extend_schema_view(destroy=extend_schema(
-    summary='Method deletes an organization',
-    responses={
-        '204': OpenApiResponse(description='The organization has been deleted'),
-    }, tags=['organizations'], versions=['2.0']))
+@extend_schema(tags=['organizations'])
+@extend_schema_view(
+    retrieve=extend_schema(
+        summary='Method returns details of an organization',
+        responses={
+            '200': OrganizationReadSerializer,
+        }),
+    list=extend_schema(
+        summary='Method returns a paginated list of organizatins according to query parameters',
+        responses={
+            '200': OrganizationReadSerializer(many=True),
+        }),
+    update=extend_schema(
+        summary='Method updates an organization by id',
+        responses={
+            '200': OrganizationWriteSerializer,
+        }),
+    partial_update=extend_schema(
+        summary='Methods does a partial update of chosen fields in an organization',
+        responses={
+            '200': OrganizationWriteSerializer,
+        }),
+    create=extend_schema(
+        summary='Method creates an organization',
+        responses={
+            '201': OrganizationWriteSerializer,
+        }),
+    destroy=extend_schema(
+        summary='Method deletes an organization',
+        responses={
+            '204': OpenApiResponse(description='The organization has been deleted'),
+        })
+)
 class OrganizationViewSet(viewsets.ModelViewSet):
     queryset = Organization.objects.all()
     search_fields = ('name', 'owner')
@@ -78,31 +81,35 @@ class OrganizationViewSet(viewsets.ModelViewSet):
     class Meta:
         model = Membership
         fields = ("user", )
-@extend_schema_view(retrieve=extend_schema(
-    summary='Method returns details of a membership',
-    responses={
-        '200': MembershipReadSerializer,
-    }, tags=['memberships'], versions=['2.0']))
-@extend_schema_view(list=extend_schema(
-    summary='Method returns a paginated list of memberships according to query parameters',
-    responses={
-        '200': MembershipReadSerializer(many=True),
-    }, tags=['memberships'], versions=['2.0']))
-@extend_schema_view(update=extend_schema(
-    summary='Method updates a membership by id',
-    responses={
-        '200': MembershipWriteSerializer,
-    }, tags=['memberships'], versions=['2.0']))
-@extend_schema_view(partial_update=extend_schema(
-   summary='Methods does a partial update of chosen fields in a membership',
-   responses={
-       '200': MembershipWriteSerializer,
-   }, tags=['memberships'], versions=['2.0']))
-@extend_schema_view(destroy=extend_schema(
-    summary='Method deletes a membership',
-    responses={
-        '204': OpenApiResponse(description='The membership has been deleted'),
-    }, tags=['memberships'], versions=['2.0']))
+
+@extend_schema(tags=['memberships'])
+@extend_schema_view(
+    retrieve=extend_schema(
+        summary='Method returns details of a membership',
+        responses={
+            '200': MembershipReadSerializer,
+        }),
+    list=extend_schema(
+        summary='Method returns a paginated list of memberships according to query parameters',
+        responses={
+            '200': MembershipReadSerializer(many=True),
+        }),
+    update=extend_schema(
+        summary='Method updates a membership by id',
+        responses={
+            '200': MembershipWriteSerializer,
+        }),
+    partial_update=extend_schema(
+        summary='Methods does a partial update of chosen fields in a membership',
+        responses={
+            '200': MembershipWriteSerializer,
+        }),
+    destroy=extend_schema(
+        summary='Method deletes a membership',
+        responses={
+            '204': OpenApiResponse(description='The membership has been deleted'),
+        })
+)
 class MembershipViewSet(mixins.RetrieveModelMixin, mixins.DestroyModelMixin,
     mixins.ListModelMixin, mixins.UpdateModelMixin, viewsets.GenericViewSet):
     queryset = Membership.objects.all()
@@ -125,37 +132,39 @@ class MembershipViewSet(mixins.RetrieveModelMixin, mixins.DestroyModelMixin,
         permission = MembershipPermission.create_scope_list(self.request)
         return permission.filter(queryset)
 
-# TODO
-@extend_schema_view(retrieve=extend_schema(
-    summary='Method returns details of an invitation',
-    responses={
-        '200': InvitationReadSerializer,
-    }, tags=['invitations'], versions=['2.0']))
-@extend_schema_view(list=extend_schema(
-    summary='Method returns a paginated list of invitations according to query parameters',
-    responses={
-        '200': InvitationReadSerializer(many=True),
-    }, tags=['invitations'], versions=['2.0']))
-@extend_schema_view(update=extend_schema(
-    summary='Method updates an invitation by id',
-    responses={
-        '200': InvitationWriteSerializer,
-    }, tags=['invitations'], versions=['2.0']))
-@extend_schema_view(partial_update=extend_schema(
-   summary='Methods does a partial update of chosen fields in an invitation',
-   responses={
-       '200': InvitationWriteSerializer,
-   }, tags=['invitations'], versions=['2.0']))
-@extend_schema_view(create=extend_schema(
-    summary='Method creates an invitation',
-    responses={
-        '201': InvitationWriteSerializer,
-    }, tags=['invitations'], versions=['2.0']))
-@extend_schema_view(destroy=extend_schema(
-    summary='Method deletes an invitation',
-    responses={
-        '204': OpenApiResponse(description='The invitation has been deleted'),
-    }, tags=['invitations'], versions=['2.0']))
+@extend_schema(tags=['invitations'])
+@extend_schema_view(
+    retrieve=extend_schema(
+        summary='Method returns details of an invitation',
+        responses={
+            '200': InvitationReadSerializer,
+        }),
+    list=extend_schema(
+        summary='Method returns a paginated list of invitations according to query parameters',
+        responses={
+            '200': InvitationReadSerializer(many=True),
+        }),
+    update=extend_schema(
+        summary='Method updates an invitation by id',
+        responses={
+            '200': InvitationWriteSerializer,
+        }),
+    partial_update=extend_schema(
+        summary='Methods does a partial update of chosen fields in an invitation',
+        responses={
+            '200': InvitationWriteSerializer,
+        }),
+    create=extend_schema(
+        summary='Method creates an invitation',
+        responses={
+            '201': InvitationWriteSerializer,
+        }),
+    destroy=extend_schema(
+        summary='Method deletes an invitation',
+        responses={
+            '204': OpenApiResponse(description='The invitation has been deleted'),
+        })
+)
 class InvitationViewSet(viewsets.ModelViewSet):
     queryset = Invitation.objects.all()
     http_method_names = ['get', 'post', 'patch', 'delete', 'head', 'options']

@@ -1,4 +1,4 @@
-// Copyright (C) 2021 Intel Corporation
+// Copyright (C) 2021-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -44,7 +44,13 @@ async function searchCloudStorages(filter: Record<string, string>): Promise<Clou
 const { Option } = Select;
 
 const searchCloudStoragesWrapper = debounce((phrase, setList) => {
-    const filter = { displayName: phrase };
+    const filter = {
+        filter: JSON.stringify({
+            and: [{
+                '==': [{ var: 'display_name' }, phrase],
+            }],
+        }),
+    };
     searchCloudStorages(filter).then((list) => {
         setList(list);
     });

@@ -124,6 +124,10 @@ Prebuilt docker images for CVAT releases are available on Docker Hub:
 - [cvat_server](https://hub.docker.com/r/openvino/cvat_server)
 - [cvat_ui](https://hub.docker.com/r/openvino/cvat_ui)
 
+## REST API
+The current REST API version is `2.0-alpha`. We focus on its improvement and therefore
+REST API may be changed in the next release.
+
 ## LICENSE
 
 Code released under the [MIT License](https://opensource.org/licenses/MIT).
@@ -140,6 +144,13 @@ connection with your use of FFmpeg.
 
 ## Partners
 
+- [ATLANTIS](https://github.com/smhassanerfani/atlantis) is an open-source dataset for semantic segmentation 
+  of waterbody images, depevoped by [iWERS](http://ce.sc.edu/iwers/) group in the 
+  Department of Civil and Environmental Engineering at University of South Carolina, using CVAT.
+  For developing a semantic segmentation dataset using CVAT, please check
+  [ATLANTIS published article](https://www.sciencedirect.com/science/article/pii/S1364815222000391),
+  [ATLANTIS Development Kit](https://github.com/smhassanerfani/atlantis/tree/master/adk) 
+  and [annotation tutorial videos](https://www.youtube.com/playlist?list=PLIfLGY-zZChS5trt7Lc3MfNhab7OWl2BR).
 - [Onepanel](https://github.com/onepanelio/core) is an open source
   vision AI platform that fully integrates CVAT with scalable data processing
   and parallelized training pipelines.
