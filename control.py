@@ -21,7 +21,7 @@ def sys_call(command):
 
 @click.group()
 @click.option('--fake', is_flag=True)
-def main(fake):
+def main(fake=FAKE):
     global FAKE
     FAKE = fake
 
