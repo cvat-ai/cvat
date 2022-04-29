@@ -340,9 +340,11 @@ class CVAT_API_V2():
         return self.tasks_id_base(task_id) + '/annotations?format={}&filename={}' \
             .format(fileformat, name)
 
+    @organisation
     def git_create(self, task_id):
         return self.git + f'create/{task_id}'
 
+    @organisation
     def git_check(self, rq_id):
         return self.git + f'check/{rq_id}'
 
