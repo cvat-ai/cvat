@@ -137,7 +137,7 @@ task_create_parser.add_argument(
 )
 task_create_parser.add_argument(
     '--annotation_format',
-    default='CVAT 1.1',
+    default='CVAT for images 1.1',
     type=str,
     help='format of the annotation file being uploaded, e.g. CVAT 1.1'
 )
@@ -359,7 +359,7 @@ upload_parser.add_argument(
     '--format',
     dest='fileformat',
     type=str,
-    default='CVAT 1.1',
+    default='CVAT for images 1.1',
     help='annotation format (default: %(default)s)'
 )
 
