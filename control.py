@@ -15,7 +15,7 @@ ECR_NAME_MAP = {
 def sys_call(command):
     click.echo(f"{os.getcwd()}$ {command}")
     if not FAKE:
-        if os.system(command) != 0:
+        if os.system(command) != 0:  # nosec
             raise click.ClickException("Failed to run")
 
 
