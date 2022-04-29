@@ -4,6 +4,7 @@
 import http.client
 
 from django.http import HttpResponseBadRequest, JsonResponse, HttpResponse
+from django.views.decorators.csrf import csrf_exempt
 from rules.contrib.views import permission_required, objectgetter
 
 from cvat.apps.iam.decorators import login_required
@@ -37,6 +38,7 @@ def check_process(request, rq_id):
 
 
 @login_required
+@csrf_exempt
 @permission_required(perm=['engine.task.create'],
     fn=objectgetter(models.Task, 'tid'), raise_exception=True)
 def create(request, tid):
