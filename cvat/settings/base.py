@@ -16,10 +16,6 @@ https://docs.djangoproject.com/en/2.0/ref/settings/
 
 import os
 import re
-import sys
-import fcntl
-import shutil
-import subprocess
 import mimetypes
 from corsheaders.defaults import default_headers
 from distutils.util import strtobool
