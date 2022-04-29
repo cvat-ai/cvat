@@ -29,8 +29,8 @@ S3_PROFILE ?= aws_cf_s3
 ECR_TEMPLATE ?= 119987807155.dkr.ecr.us-west-2.amazonaws.com/{app_name}-repo-{environment}
 S3_TEMPLATE ?= s3://retechcfrepo/119987807155/rebotics/{environment}/services/{app_name}-info.zip
 
-deploy:
-	python3 control.py deploy \
+deploy_app:
+	python3 control.py deploy_app \
 	 	--aws-region "${AWS_REGION}" \
 		--ecr-profile "${ECR_PROFILE}" \
 		--s3-profile "${S3_PROFILE}" \
