@@ -15,10 +15,7 @@ https://docs.djangoproject.com/en/2.0/ref/settings/
 """
 
 import os
-import sys
-import fcntl
-import shutil
-import subprocess
+import re
 import mimetypes
 from corsheaders.defaults import default_headers
 from distutils.util import strtobool
@@ -30,72 +27,46 @@ from pathlib import Path
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = str(Path(__file__).parents[2])
 
-ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
+ALLOWED_HOSTS = ['*cvat.rebotics.net', '*cvat.rebotics.cn'] + os.environ.get('ALLOWED_HOSTS', '').split(',')
+PUBLIC_DOMAIN_NAME = os.environ.get('PUBLIC_DOMAIN_NAME')
+if PUBLIC_DOMAIN_NAME:
+    ALLOWED_HOSTS += [PUBLIC_DOMAIN_NAME]
+
 INTERNAL_IPS = ['127.0.0.1']
 
-try:
-    sys.path.append(BASE_DIR)
-    from keys.secret_key import SECRET_KEY # pylint: disable=unused-import
-except ImportError:
+SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', None)
+if SECRET_KEY is None:
+    raise ValueError('Please, set DJANGO_SECRET_KEY env variable!')
 
-    from django.utils.crypto import get_random_string
-    keys_dir = os.path.join(BASE_DIR, 'keys')
-    if not os.path.isdir(keys_dir):
-        os.mkdir(keys_dir)
-    with open(os.path.join(keys_dir, 'secret_key.py'), 'w') as f:
-        chars = 'abcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*(-_=+)'
-        f.write("SECRET_KEY = '{}'\n".format(get_random_string(50, chars)))
-    from keys.secret_key import SECRET_KEY
+# Database
+# https://docs.djangoproject.com/en/2.0/ref/settings/#databases
 
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'HOST': os.getenv('CVAT_POSTGRES_HOST', 'cvat_db'),
+        'NAME': os.getenv('CVAT_POSTGRES_DBNAME', 'cvat'),
+        'USER': os.getenv('CVAT_POSTGRES_USER', 'root'),
+        'PASSWORD': os.getenv('CVAT_POSTGRES_PASSWORD', ''),
+        'PORT': int(os.getenv('CVAT_POSTGRES_PORT', 5432)),
+    }
+}
+DB_URL = os.getenv('DB_URL')
+if DB_URL:
+    match = re.match(r'^(?P<protocol>postgres(?:ql)?)://'
+                     r'(?:(?P<user>.+?)(?::(?P<password>.+?))?@)?'
+                     r'(?:(?P<host>.+?)(?::(?P<port>.+?))?)?'
+                     r'(?:/(?P<name>.+?))?'
+                     r'(?:\?(?P<params>.+?))?$', DB_URL)
+    if match:
+        for key in ('user', 'password', 'host', 'name'):
+            if match[key]:
+                DATABASES['default'][key.upper()] = match[key]
+        if match['port']:
+            DATABASES['default']['PORT'] = int(match['port'])
+    else:
+        raise ValueError("Url is not valid.")
 
-def generate_ssh_keys():
-    keys_dir = '{}/keys'.format(os.getcwd())
-    ssh_dir = '{}/.ssh'.format(os.getenv('HOME'))
-    pidfile = os.path.join(ssh_dir, 'ssh.pid')
-
-    def add_ssh_keys():
-        IGNORE_FILES = ('README.md', 'ssh.pid')
-        keys_to_add = [entry.name for entry in os.scandir(ssh_dir) if entry.name not in IGNORE_FILES]
-        keys_to_add = ' '.join(os.path.join(ssh_dir, f) for f in keys_to_add)
-        subprocess.run(['ssh-add {}'.format(keys_to_add)], # nosec
-            shell=True,
-            stderr = subprocess.PIPE,
-            # lets set the timeout if ssh-add requires a input passphrase for key
-            # otherwise the process will be freezed
-            timeout=30,
-            )
-
-    with open(pidfile, "w") as pid:
-        fcntl.flock(pid, fcntl.LOCK_EX)
-        try:
-            add_ssh_keys()
-            keys = subprocess.run(['ssh-add', '-l'], # nosec
-                stdout = subprocess.PIPE).stdout.decode('utf-8').split('\n')
-            if 'has no identities' in keys[0]:
-                print('SSH keys were not found')
-                volume_keys = os.listdir(keys_dir)
-                if not ('id_rsa' in volume_keys and 'id_rsa.pub' in volume_keys):
-                    print('New pair of keys are being generated')
-                    subprocess.run(['ssh-keygen -b 4096 -t rsa -f {}/id_rsa -q -N ""'.format(ssh_dir)], shell=True) # nosec
-                    shutil.copyfile('{}/id_rsa'.format(ssh_dir), '{}/id_rsa'.format(keys_dir))
-                    shutil.copymode('{}/id_rsa'.format(ssh_dir), '{}/id_rsa'.format(keys_dir))
-                    shutil.copyfile('{}/id_rsa.pub'.format(ssh_dir), '{}/id_rsa.pub'.format(keys_dir))
-                    shutil.copymode('{}/id_rsa.pub'.format(ssh_dir), '{}/id_rsa.pub'.format(keys_dir))
-                else:
-                    print('Copying them from keys volume')
-                    shutil.copyfile('{}/id_rsa'.format(keys_dir), '{}/id_rsa'.format(ssh_dir))
-                    shutil.copymode('{}/id_rsa'.format(keys_dir), '{}/id_rsa'.format(ssh_dir))
-                    shutil.copyfile('{}/id_rsa.pub'.format(keys_dir), '{}/id_rsa.pub'.format(ssh_dir))
-                    shutil.copymode('{}/id_rsa.pub'.format(keys_dir), '{}/id_rsa.pub'.format(ssh_dir))
-                subprocess.run(['ssh-add', '{}/id_rsa'.format(ssh_dir)]) # nosec
-        finally:
-            fcntl.flock(pid, fcntl.LOCK_UN)
-
-try:
-    if os.getenv("SSH_AUTH_SOCK", None):
-        generate_ssh_keys()
-except Exception as ex:
-    print(str(ex))
 
 DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 INSTALLED_APPS = [
@@ -240,7 +211,14 @@ IAM_DEFAULT_ROLES = ['user']
 IAM_ADMIN_ROLE = 'admin'
 # Index in the list below corresponds to the priority (0 has highest priority)
 IAM_ROLES = [IAM_ADMIN_ROLE, 'business', 'user', 'worker']
-IAM_OPA_DATA_URL = 'http://opa:8181/v1/data'
+OPA_URL = os.getenv('OPA_URL')
+if OPA_URL:
+    IAM_OPA_DATA_URL = OPA_URL + '/v1/data'
+else:
+    IAM_OPA_PROTOCOL = os.getenv('CVAT_OPA_PROTOCOL', 'http')
+    IAM_OPA_HOST = os.getenv('CVAT_OPA_HOST', 'opa')
+    IAM_OPA_PORT = int(os.getenv('CVAT_OPA_PORT', 8181))
+    IAM_OPA_DATA_URL = '{}://{}:{}/v1/data'.format(IAM_OPA_PROTOCOL, IAM_OPA_HOST, IAM_OPA_PORT)
 LOGIN_URL = 'rest_login'
 LOGIN_REDIRECT_URL = '/'
 
@@ -264,26 +242,38 @@ OLD_PASSWORD_FIELD_ENABLED = True
 # Django-RQ
 # https://github.com/rq/django-rq
 
-RQ_QUEUES = {
-    'default': {
-        'HOST': 'localhost',
-        'PORT': 6379,
-        'DB': 0,
-        'DEFAULT_TIMEOUT': '4h'
-    },
-    'low': {
-        'HOST': 'localhost',
-        'PORT': 6379,
-        'DB': 0,
-        'DEFAULT_TIMEOUT': '24h'
+REDIS_URL = os.getenv('REDIS_URL')
+if REDIS_URL:
+    RQ_QUEUES = {
+        'default': {
+            'URL': REDIS_URL,
+        },
+        'low': {
+            'URL': REDIS_URL,
+        }
     }
-}
+else:
+    RQ_QUEUES = {
+        'default': {
+            'HOST': os.getenv('CVAT_REDIS_HOST', 'cvat_redis'),
+            'PORT': int(os.getenv('CVAT_REDIS_PORT', 6379)),
+            'DB': int(os.getenv('CVAT_REDIS_DB', 0))
+        },
+        'low': {
+            'HOST': os.getenv('CVAT_REDIS_HOST', 'cvat_redis'),
+            'PORT': int(os.getenv('CVAT_REDIS_PORT', 6379)),
+            'DB': int(os.getenv('CVAT_REDIS_DB', 0)),
+        }
+    }
+RQ_QUEUES['default']['DEFAULT_TIMEOUT'] = '4h'
+RQ_QUEUES['default']['DEFAULT_TIMEOUT'] = '24h'
+
 
 NUCLIO = {
     'SCHEME': os.getenv('CVAT_NUCLIO_SCHEME', 'http'),
-    'HOST': os.getenv('CVAT_NUCLIO_HOST', 'localhost'),
-    'PORT': os.getenv('CVAT_NUCLIO_PORT', 8070),
-    'DEFAULT_TIMEOUT': os.getenv('CVAT_NUCLIO_DEFAULT_TIMEOUT', 120)
+    'HOST': os.getenv('CVAT_NUCLIO_HOST', 'nuclio'),
+    'PORT': int(os.getenv('CVAT_NUCLIO_PORT', 8070)),
+    'DEFAULT_TIMEOUT': int(os.getenv('CVAT_NUCLIO_DEFAULT_TIMEOUT', 120))
 }
 
 RQ_SHOW_ADMIN_LINK = True
@@ -415,21 +405,30 @@ LOGGING = {
     },
     'loggers': {
         'cvat.server': {
-            'handlers': ['console', 'server_file'],
+            'handlers': ['console'],
             'level': os.getenv('DJANGO_LOG_LEVEL', 'DEBUG'),
         },
-
         'cvat.client': {
             'handlers': [],
             'level': os.getenv('DJANGO_LOG_LEVEL', 'DEBUG'),
         },
         'django': {
-            'handlers': ['console', 'server_file'],
+            'handlers': ['console'],
             'level': 'INFO',
             'propagate': True
         }
     },
 }
+
+server_log_handlers = os.getenv('CVAT_SERVER_LOG_HANDLERS')
+client_log_handlers = os.getenv('CVAT_CLIENT_LOG_HANDLERS')
+django_log_handlers = os.getenv('DJANGO_SERVER_LOG_HANDLERS')
+if server_log_handlers:
+    LOGGING['loggers']['cvat.server']['handlers'] = server_log_handlers.split(',')
+if client_log_handlers:
+    LOGGING['loggers']['cvat.client']['handlers'] = client_log_handlers.split(',')
+if django_log_handlers:
+    LOGGING['loggers']['django']['handlers'] = django_log_handlers.split(',')
 
 if os.getenv('DJANGO_LOG_SERVER_HOST'):
     LOGGING['loggers']['cvat.server']['handlers'] += ['logstash']

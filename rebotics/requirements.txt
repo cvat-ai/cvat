@@ -1,0 +1,1 @@
+django-storages==1.11.1

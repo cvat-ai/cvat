@@ -1,0 +1,14 @@
+[bumpversion]
+current_version = 1.24.0.1
+parse = 1.(?P<major>\d+).(?P<minor>\d+).(?P<patch>\d+)
+serialize = 1.{major}.{minor}.{patch}
+commit = True
+tag = True
+message = Bump version: {current_version} -> {new_version}
+tag-message = v{new_version}
+
+[bumpversion:file:cvat/VERSION]
+
+[bumpversion:file:cvat-ui/VERSION]
+search = {current_version}
+replace = {new_version}

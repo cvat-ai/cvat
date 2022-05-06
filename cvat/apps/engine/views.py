@@ -496,7 +496,7 @@ class DataChunkGetter:
 
         self.dimension = task_dim
 
-
+    # TODO: this one provides uploaded files to the client
     def __call__(self, request, start, stop, db_data):
         if not db_data:
             raise NotFound(detail='Cannot find requested data')
@@ -1562,7 +1562,7 @@ class CloudStorageViewSet(viewsets.ModelViewSet):
     def preview(self, request, pk):
         storage = None
         try:
-            db_storage = self.get_object()
+            db_storage: CloudStorageModel = self.get_object()
             if not os.path.exists(db_storage.get_preview_path()):
                 credentials = Credentials()
                 credentials.convert_from_db({
@@ -1659,6 +1659,7 @@ class CloudStorageViewSet(viewsets.ModelViewSet):
             msg = str(ex)
             return HttpResponseBadRequest(msg)
 
+# handles exceptions from rq.
 def rq_handler(job, exc_type, exc_value, tb):
     job.exc_info = "".join(
         traceback.format_exception_only(exc_type, exc_value))

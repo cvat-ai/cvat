@@ -40,6 +40,7 @@ def create(tid, data):
     q.enqueue_call(func=_create_thread, args=(tid, data),
         job_id="/api/tasks/{}".format(tid))
 
+# internal implementation of rq exception handler
 @transaction.atomic
 def rq_handler(job, exc_type, exc_value, traceback):
     split = job.id.split('/')
@@ -273,6 +274,7 @@ def _get_manifest_frame_indexer(start_frame=0, frame_step=1):
     return lambda frame_id: start_frame + frame_id * frame_step
 
 
+# dafuq?!
 @transaction.atomic
 def _create_thread(db_task, data, isBackupRestore=False, isDatasetImport=False):
     if isinstance(db_task, int):
