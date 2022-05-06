@@ -13,7 +13,7 @@ metadata:
 
 spec:
   description: HRNet18 for click based interactive segmentation
-  runtime: 'python:3.8'
+  runtime: 'python:3.6'
   handler: main:handler
   eventTimeout: 30s
   env:
@@ -61,11 +61,17 @@ spec:
 
   triggers:
     myHttpTrigger:
-      maxWorkers: 1
+      maxWorkers: 4
       kind: 'http'
       workerAvailabilityTimeoutMilliseconds: 10000
       attributes:
         maxRequestBodySize: 33554432 # 32MB
+        port: 8002
+        ingresses:
+          "8002":
+            paths:
+              - /
+            host: 172.28.0.87
 
   resources:
     limits:
@@ -77,3 +83,4 @@ spec:
         name: always
         maximumRetryCount: 3
       mountMode: volume
+      network: cvat_cvat

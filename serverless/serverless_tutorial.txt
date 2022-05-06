@@ -1,0 +1,22 @@
+// cvat build and verification
+
+$ sudo docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f components/serverless/docker-compose.serverless.yml up -d --build
+
+$ sudo docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f components/serverless/docker-compose.serverless.yml ps
+
+// nuclio setup (version 1.8.10)
+
+$ wget https://github.com/nuclio/nuclio/releases/download/1.8.1
+
+$ sudo chmod +x nuctl-1.8.10-linux-amd64
+
+$ sudo ln -sf $(pwd)/nuctl-1.8.10-linux-amd64 /usr/local/bin/nuctl
+
+$ sudo nuctl create project cvat
+
+// deploy dextr
+
+$ sudo nuctl deploy --project-name cvat \
+  --path serverless/openvino/dextr/nuclio \
+  --volume `pwd`/serverless/common:/opt/nuclio/common \
+  --platform local

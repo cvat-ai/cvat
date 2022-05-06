@@ -47,6 +47,12 @@ spec:
       workerAvailabilityTimeoutMilliseconds: 10000
       attributes:
         maxRequestBodySize: 33554432 # 32MB
+        port: 8001
+        ingresses:
+          "8001":
+            paths:
+              - /
+            host: 172.28.0.88
 
   platform:
     attributes:
@@ -54,3 +60,4 @@ spec:
         name: always
         maximumRetryCount: 3
       mountMode: volume
+      network: cvat_cvat
