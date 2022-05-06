@@ -1,0 +1,27 @@
+$ sudo nuctl -v deploy --project-name cvat \
+  --path serverless/pytorch/saic-vul/hrnet/nuclio \
+  --file serverless/pytorch/saic-vul/hrnet/nuclio/function-gpu.yaml
+  --volume `pwd`/serverless/common:/opt/nuclio/common \
+  --platform local
+
+// Add docker0 network adapter address to the UFW exceptions
+
+$ sudo ufw allow proto tcp from any to 172.17.0.1
+
+// GPU function example
+
+$ sudo nuctl deploy --project-name cvat \
+  --path serverless/tensorflow/matterport/mask_rcnn/nuclio \
+  --platform local --base-image tensorflow/tensorflow:1.15.5-gpu-py3 \
+  --desc "GPU based implementation of Mask RCNN on Python 3, Keras, and TensorFlow." \
+  --image cvat/tf.matterport.mask_rcnn_gpu \
+  --triggers '{"myHttpTrigger": {"maxWorkers": 1}}' \
+  --resource-limit nvidia.com/gpu=1
+
+// Function Test
+
+$ image=$(curl https://upload.wikimedia.org/wikipedia/en/7/7d/Lenna_%28test_image%29.png --output - | base64 | tr -d '\n')
+$ cat << EOF > /tmp/input.json
+{"image": "$image"}
+EOF
+$ cat /tmp/input.json | nuctl invoke openvino.omz.public.yolo-v3-tf -c 'application/json'

@@ -63,17 +63,17 @@ spec:
 
   triggers:
     myHttpTrigger:
-      maxWorkers: 2
+      maxWorkers: 4
       kind: 'http'
       workerAvailabilityTimeoutMilliseconds: 10000
       attributes:
         maxRequestBodySize: 33554432 # 32MB
-        port: 8000
+        port: 8002
         ingresses:
-          "8000":
+          "8002":
             paths:
               - /
-            host: 172.28.0.88
+            host: 172.28.0.87
 
   resources:
     limits:
