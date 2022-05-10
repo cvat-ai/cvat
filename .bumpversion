@@ -7,8 +7,6 @@ tag = True
 message = Bump version: {current_version} -> {new_version}
 tag-message = v{new_version}
 
-[bumpversion:file:cvat/VERSION]
-
-[bumpversion:file:cvat-ui/VERSION]
+[bumpversion:file:VERSION]
 search = {current_version}
 replace = {new_version}
