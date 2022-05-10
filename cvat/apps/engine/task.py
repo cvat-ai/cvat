@@ -47,9 +47,9 @@ def rq_handler(job, exc_type, exc_value, traceback):
     tid = split[split.index('tasks') + 1]
     try:
         tid = int(tid)
-        db_task = models.Task.objects.select_for_update().get(pk=tid)
-        with open(db_task.get_log_path(), "wt") as log_file:
-            print_exception(exc_type, exc_value, traceback, file=log_file)
+        # TODO: Why is select_for_update here?
+        models.Task.objects.select_for_update().get(pk=tid)  # to check task exists
+        print_exception(exc_type, exc_value, traceback)
     except (models.Task.DoesNotExist, ValueError):
         pass # skip exceptions in the code
 
