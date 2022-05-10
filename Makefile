@@ -21,6 +21,12 @@ minor:
 major:
 	bump2version --config-file ./.bumpversion major
 
+unpatch:
+	git tag -d v`cat ./VERSION`
+	git reset HEAD~1 --soft
+	git restore --staged ./.bumpversion ./VERSION
+	git checkout -- ./.bumpversion ./VERSION
+
 # Default deploy setup for CI
 ENVIRONMENT ?= r3dev
 AWS_REGION ?= us-west-2
@@ -39,3 +45,4 @@ deploy_app:
 		--environment "${ENVIRONMENT}" \
 		--application "${APPLICATION}" \
 		--version ${VERSION}
+
