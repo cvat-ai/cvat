@@ -1,0 +1,8 @@
+-r base.txt
+pylint
+pylint-django
+pylint-plugin-utils
+rope
+django-extensions
+Werkzeug
+snakeviz

@@ -1,0 +1,54 @@
+attrs
+click
+Django
+django-appconf
+django-auth-ldap
+django-compressor
+django-rq
+EasyProcess
+Pillow
+numpy
+python-ldap
+pytz
+pyunpack
+rcssmin
+redis
+rjsmin
+requests
+rq
+rq-scheduler
+sqlparse
+django-sendfile2
+dj-pagination
+python-logstash-async
+rules
+GitPython
+coreapi
+django-filter
+Markdown
+djangorestframework
+Pygments
+drf-spectacular
+Shapely
+pdf2image
+django-rest-auth[with_social]
+opencv-python-headless
+h5py
+django-cors-headers
+furl
+av --no-binary=av
+tensorflow # Optional requirement of Datumaro. Use tensorflow-macos==2.8.0 for Mac M1
+# The package is used by pyunpack as a command line tool to support multiple
+# archives. Don't use as a python module because it has GPL license.
+patool
+diskcache
+open3d
+boto3
+azure-storage-blob
+google-cloud-storage
+# --no-binary=datumaro: workaround for pip to install
+# opencv-headless instead of regular opencv, to actually run setup script
+datumaro --no-binary=datumaro
+urllib3>=1.26.5 # not directly required, pinned by Snyk to avoid a vulnerability
+natsort
+dnspython

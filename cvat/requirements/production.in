@@ -1,0 +1,3 @@
+-r base.txt
+psycopg2-binary
+mod-wsgi
