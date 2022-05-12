@@ -25,7 +25,7 @@ services:
       - "--entryPoints.web.http.redirections.entryPoint.to=websecure"
       - "--entryPoints.web.http.redirections.entryPoint.scheme=https"
       - "--entryPoints.websecure.address=:443"
-      - "--certificatesResolvers.lets-encrypt.acme.email=${ACME_EMAIL:?Please set the ACME_EMAIL env variable}"
+      - "--certificatesResolvers.lets-encrypt.acme.email=${ACME_EMAIL:-admin@smartvisionworks.com}"
       - "--certificatesResolvers.lets-encrypt.acme.tlsChallenge=true"
       - "--certificatesResolvers.lets-encrypt.acme.storage=/letsencrypt/acme.json"
       # Uncomment to get Traefik dashboard
