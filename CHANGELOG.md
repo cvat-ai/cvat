@@ -19,7 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - TDB
 
 ### Fixed
-- TDB
+- Revert Open3D to 0.11.2 to prevent depencency conflicts (<https://github.com/openvinotoolkit/cvat/pull/4639>)
 
 ### Security
 - TDB
