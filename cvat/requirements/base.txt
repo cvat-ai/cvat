@@ -42,7 +42,7 @@ tensorflow==2.8.0 # Optional requirement of Datumaro. Use tensorflow-macos==2.8.
 # archives. Don't use as a python module because it has GPL license.
 patool==1.12
 diskcache==5.0.2
-open3d==0.14.1
+open3d==0.11.2
 boto3==1.17.61
 azure-storage-blob==12.8.1
 google-cloud-storage==1.42.0
