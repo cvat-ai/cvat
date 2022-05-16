@@ -23,7 +23,7 @@ services:
 
   cvat:
     container_name: reb_cvat
-    image: rebotics/cvat:latest
+    image: retechlabs/rebotics-cvat:${VERSION:-latest}
     restart: unless-stopped
     depends_on:
       - cvat_redis
@@ -44,7 +44,7 @@ services:
 
   cvat_opa:
     container_name: reb_cvat_opa
-    image: rebotics/cvat_opa:0.34.2-rootless
+    image: retechlabs/rebotics-cvat-opa:${VERSION:-latest}
     restart: unless-stopped
     networks:
       reb_cvat:
@@ -52,7 +52,6 @@ services:
           - opa
     ports:
       - '8181:8181'
-    command: run --server --addr :8181 --set=decision_logs.console=true /rules
 
   cvat_minio:
     container_name: reb_cvat_minio
