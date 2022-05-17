@@ -50,8 +50,6 @@ services:
       reb_cvat:
         aliases:
           - opa
-    ports:
-      - '8181:8181'
 
   cvat_minio:
     container_name: reb_cvat_minio
@@ -64,8 +62,6 @@ services:
       MINIO_ROOT_PASSWORD: 'minio_admin'
     volumes:
       - ../.s3:/data
-    ports:
-      - '0.0.0.0:9007:9007'
     networks:
       reb_cvat:
         aliases:
