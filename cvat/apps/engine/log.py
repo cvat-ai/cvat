@@ -41,6 +41,7 @@ class LoggerStorage:
     def __getitem__(self, obj_id):
         if obj_id not in self._storage:
             self._storage[obj_id] = self._create_logger(obj_id)
+        return self._storage[obj_id]
 
     def _create_logger(self, obj_id):
         obj = self._get_object(obj_id)
