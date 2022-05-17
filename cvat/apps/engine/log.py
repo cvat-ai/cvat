@@ -4,7 +4,7 @@
 
 import logging
 import sys
-from cvat.settings.base import LOGGING
+from django.conf import settings
 from .models import Job, Task, Project, CloudStorage
 from django.db.models import Model
 
@@ -23,12 +23,13 @@ def get_logger(logger_name, log_file):
 
 
 def _get_stream_logger(name, stream=sys.stdout,
-                       log_format=LOGGING['formatters']['standard']['format']):
+                       log_format=settings.LOGGING['formatters']['standard']['format']):
     logger = logging.getLogger(name)
-    stream = logging.StreamHandler(stream)
-    formatter = logging.Formatter(log_format)
-    stream.setFormatter(formatter)
-    logger.addHandler(stream)
+    if stream is not None:
+        handler = logging.StreamHandler(stream)
+        formatter = logging.Formatter(log_format)
+        handler.setFormatter(formatter)
+        logger.addHandler(handler)
     return logger
 
 
@@ -89,16 +90,20 @@ class ProjectClientLoggerStorage(LoggerStorage):
     model = Project
 
     def _get_logger(self, project):
-        return _get_stream_logger('cvat.client.project_{}'.format(project.pk),
-                                  log_format=LOGGING['formatters']['client']['format'])
+        client_handlers = settings.LOGGING['loggers']['cvat.client']['handlers']
+        log_to = sys.stdout if 'console' in client_handlers else None
+        return _get_stream_logger('cvat.client.project_{}'.format(project.pk), stream=log_to,
+                                  log_format=settings.LOGGING['formatters']['client']['format'])
 
 
 class TaskClientLoggerStorage(LoggerStorage):
     model = Task
 
     def _get_logger(self, task):
-        return _get_stream_logger('cvat.client.task_{}'.format(task.pk),
-                                  log_format=LOGGING['formatters']['client']['format'])
+        client_handlers = settings.LOGGING['loggers']['cvat.client']['handlers']
+        log_to = sys.stdout if 'console' in client_handlers else None
+        return _get_stream_logger('cvat.client.task_{}'.format(task.pk), stream=log_to,
+                                  log_format=settings.LOGGING['formatters']['client']['format'])
 
 
 class JobClientLoggerStorage(LoggerStorage):
