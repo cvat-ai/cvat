@@ -11,6 +11,11 @@ ECR_NAME_MAP = {
     'retechlabs/rebotics-cvat-opa': 'opa',
 }
 
+NOTIFY_YES = 'yes'
+NOTIFY_NO = 'no'
+NOTIFY_ONLY = 'only'
+NOTIFY_CHOICES = (NOTIFY_YES, NOTIFY_NO, NOTIFY_ONLY)
+
 
 def sys_call(command):
     click.echo(f"{os.getcwd()}$ {command}")
@@ -40,37 +45,39 @@ def get_version(version_file):
     click.echo(version_file.read())
 
 
-def _deploy_app(environment, application, version, ecr_template, s3_template, s3_profile):
-    print(f"Sending {application}:{version} to ECR")
+def _deploy_app(environment, application, version, ecr_template, s3_template, s3_profile, notify_ecs):
     ecr_name = ECR_NAME_MAP[application]
     ecr_repo = ecr_template.format(
         app_name=ecr_name,
         environment=environment,
     )
 
-    sys_call(f"docker tag {application}:{version} {ecr_repo}:{version}")
-    sys_call(f"docker push {ecr_repo}:{version}")
+    if notify_ecs in (NOTIFY_YES, NOTIFY_NO):
+        print(f"Sending {application}:{version} to ECR")
+        sys_call(f"docker tag {application}:{version} {ecr_repo}:{version}")
+        sys_call(f"docker push {ecr_repo}:{version}")
 
-    ecs_notification = {
-        "tag": version,
-        "image": f"{ecr_repo}:{version}",
-        "repo": ecr_repo,
-    }
+    if notify_ecs in (NOTIFY_YES, NOTIFY_ONLY):
+        ecs_notification = {
+            "tag": version,
+            "image": f"{ecr_repo}:{version}",
+            "repo": ecr_repo,
+        }
 
-    with open('ecs_notification.image.json', 'w') as notif_file:
-        notif_file.write(json.dumps(ecs_notification))
+        with open('ecs_notification.image.json', 'w') as notif_file:
+            notif_file.write(json.dumps(ecs_notification))
 
-    try:
-        sys_call("zip ecs_notification.zip ecs_notification.image.json")
-        s3_notification_key = s3_template.format(
-            app_name=ecr_name,
-            environment=environment,
-        )
-        sys_call(f"aws --profile {s3_profile} s3 cp ecs_notification.zip {s3_notification_key}")
-    finally:
-        click.echo("Cleaning...")
-        sys_call(f"rm ecs_notification.image.json")
-        sys_call(f"rm ecs_notification.zip")
+        try:
+            sys_call("zip ecs_notification.zip ecs_notification.image.json")
+            s3_notification_key = s3_template.format(
+                app_name=ecr_name,
+                environment=environment,
+            )
+            sys_call(f"aws --profile {s3_profile} s3 cp ecs_notification.zip {s3_notification_key}")
+        finally:
+            click.echo("Cleaning...")
+            sys_call(f"rm ecs_notification.image.json")
+            sys_call(f"rm ecs_notification.zip")
 
 
 @main.command()
@@ -82,10 +89,11 @@ def _deploy_app(environment, application, version, ecr_template, s3_template, s3
 @click.option('--s3-profile', default='s3_aws_profile')
 @click.option('--ecr-template', default="ecr/{environment}/{app_name}")
 @click.option('--s3-template', default="s3://s3-template-{environment}-{retailer}-{app_name}")
+@click.option("--notify-ecs", type=click.Choice(NOTIFY_CHOICES), default=NOTIFY_YES)
 def deploy_app(version, environment, application,
                ecr_profile, s3_profile,
                ecr_template, s3_template,
-               aws_region):
+               aws_region, notify_ecs):
     click.echo("Logging in to ECR...")
     sys_call(f"eval $(aws ecr get-login --no-include-email --region {aws_region} --profile {ecr_profile})")
     click.echo('-' * 100)
@@ -95,7 +103,8 @@ def deploy_app(version, environment, application,
                 version=version,
                 ecr_template=ecr_template,
                 s3_template=s3_template,
-                s3_profile=s3_profile)
+                s3_profile=s3_profile,
+                notify_ecs=notify_ecs)
     click.echo("Done!")
 
 
