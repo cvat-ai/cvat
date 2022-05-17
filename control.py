@@ -53,11 +53,14 @@ def _deploy_app(environment, application, version, ecr_template, s3_template, s3
     )
 
     if notify_ecs in (NOTIFY_YES, NOTIFY_NO):
-        print(f"Sending {application}:{version} to ECR")
+        click.echo(f"Sending {application}:{version} to ECR")
         sys_call(f"docker tag {application}:{version} {ecr_repo}:{version}")
         sys_call(f"docker push {ecr_repo}:{version}")
+    else:
+        click.echo('Only notification mode, no images uploaded!')
 
     if notify_ecs in (NOTIFY_YES, NOTIFY_ONLY):
+        click.echo('Sending notification to ECS...')
         ecs_notification = {
             "tag": version,
             "image": f"{ecr_repo}:{version}",
@@ -78,6 +81,8 @@ def _deploy_app(environment, application, version, ecr_template, s3_template, s3
             click.echo("Cleaning...")
             sys_call(f"rm ecs_notification.image.json")
             sys_call(f"rm ecs_notification.zip")
+    else:
+        click.echo('ECS notification disabled, no notification will be sent.')
 
 
 @main.command()
