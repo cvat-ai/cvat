@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -14,6 +14,7 @@ const defaultState: PluginsState = {
         ANALYTICS: false,
         MODELS: false,
         PREDICT: false,
+        HEADER_AUTH_ENABLE: false,
     },
 };
 

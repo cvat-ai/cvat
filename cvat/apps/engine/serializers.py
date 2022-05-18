@@ -680,6 +680,7 @@ class PluginsSerializer(serializers.Serializer):
     ANALYTICS = serializers.BooleanField()
     MODELS = serializers.BooleanField()
     PREDICT = serializers.BooleanField()
+    HEADER_AUTH_ENABLE = serializers.BooleanField()
 
 class DataMetaSerializer(serializers.ModelSerializer):
     frames = FrameMetaSerializer(many=True, allow_null=True)

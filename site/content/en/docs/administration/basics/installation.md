@@ -437,6 +437,27 @@ docker-compose -f docker-compose.yml -f docker-compose.https.yml up -d
 
 Then, the CVAT instance will be available at your domain on ports 443 (HTTPS) and 80 (HTTP, redirects to 443).
 
+### Single Sign-On (SSO) support
+
+You can configure your CVAT instance with SSO support by using the `docker-compose.header-auth.yml`. The functionality is provided by [Datawiza](https://www.datawiza.com/) and you will need to follow the instruction [here](https://docs.datawiza.com/step-by-step/step1.html#what-is-datawiza-access-broker) to set it up correctly.
+
+Under the hood, it adds the Datawiza Access Broker as another component in the docker-compose file with the following high-level [architecture](https://docs.datawiza.com/architecture.html#configure-an-idp).
+
+There are mainly two places that you need to configure in order to make it work.
+
+- The Datawiza [management console](https://console.datawiza.com/).
+- The Identity Provider's management console.
+
+Depending on the Identity Provider (IdP) of your choice, there are different configuration needed on the Identity Provider side and you can follow the instruction [here](https://docs.datawiza.com/idp/google.html#add-new-application) and choose the one for your IdP.
+
+If you run into any difficulties, you can send email to support@datawiza.com for help, or join Datawiza's [Discord channel](https://discord.com/invite/Sn3nbc83Up) for a quick support.
+
+Once you have correctly configured your application as instructed, you should have a PROVISIONING_KEY and a PROVISIONING_SECRET. Put them in the `docker-compose.header-auth.yml`, and run:
+
+```bash
+docker-compose -f docker-compose.header-auth.yml up -d
+```
+
 ## Troubleshooting
 
 ### Sources for users from China

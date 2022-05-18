@@ -215,7 +215,8 @@ class ServerViewSet(viewsets.ViewSet):
             'GIT_INTEGRATION': apps.is_installed('cvat.apps.dataset_repo'),
             'ANALYTICS': strtobool(os.environ.get("CVAT_ANALYTICS", '0')),
             'MODELS': strtobool(os.environ.get("CVAT_SERVERLESS", '0')),
-            'PREDICT':False # FIXME: it is unused anymore (for UI only)
+            'PREDICT': False, # FIXME: it is unused anymore (for UI only)
+            'HEADER_AUTH_ENABLE': strtobool(os.environ.get("HEADER_AUTH_ENABLE", '0'))
         }
         return Response(response)
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -112,13 +112,20 @@ export const loginAsync = (username: string, password: string): ThunkAction => a
     }
 };
 
-export const logoutAsync = (): ThunkAction => async (dispatch) => {
+export const logoutAsync = (isHeaderAuthActive: boolean): ThunkAction => async (dispatch) => {
     dispatch(authActions.logout());
 
     try {
         await cvat.organizations.deactivate();
         await cvat.server.logout();
-        dispatch(authActions.logoutSuccess());
+
+        // Determine if user will be logged out through Datawiza Access Broker
+        // https://docs.datawiza.com/overview.html#what-is-datawiza-access-broker
+        if (isHeaderAuthActive) {
+            window.location.href = '/datawiza/ab-logout';
+        } else {
+            dispatch(authActions.logoutSuccess());
+        }
     } catch (error) {
         dispatch(authActions.logoutFailed(error));
     }

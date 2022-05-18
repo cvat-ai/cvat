@@ -203,6 +203,7 @@ export enum SupportedPlugins {
     ANALYTICS = 'ANALYTICS',
     MODELS = 'MODELS',
     PREDICT = 'PREDICT',
+    HEADER_AUTH_ENABLE = 'HEADER_AUTH_ENABLE',
 }
 
 export type PluginsList = {

@@ -180,6 +180,9 @@ REST_FRAMEWORK = {
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
 
+if os.getenv('HEADER_AUTH_ENABLE'):
+    REST_FRAMEWORK['DEFAULT_AUTHENTICATION_CLASSES'] += ['cvat.apps.iam.auth_header.HeaderAuthentication']
+
 REST_AUTH_REGISTER_SERIALIZERS = {
     'REGISTER_SERIALIZER': 'cvat.apps.restrictions.serializers.RestrictedRegisterSerializer',
 }
