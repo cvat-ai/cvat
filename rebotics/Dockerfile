@@ -175,6 +175,9 @@ RUN sed -i "s#\${HOME}#${HOME}#g" /etc/nginx/conf.d/default.conf && \
     chown -R ${USER} /var/lib/nginx /var/log/nginx
 RUN rm /etc/nginx/sites-enabled/default
 
+# Add version file
+COPY --chown=${USER} VERSION ${HOME}/cvat-ui/version
+
 # RUN all commands below as 'django' user
 USER ${USER}
 WORKDIR ${HOME}
