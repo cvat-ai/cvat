@@ -16,3 +16,8 @@ SENDFILE_BACKEND = 'django_sendfile.backends.xsendfile'
 
 # Security settings.
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+CSRF_TRUSTED_ORIGINS = [
+    'https://*cvat.rebotics.net',
+    'https://*cvat.rebotics.cn',
+]
