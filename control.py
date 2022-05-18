@@ -6,15 +6,24 @@ import click
 
 FAKE = False
 
+APPLICATION_CVAT = 'retechlabs/rebotics-cvat'
+APPLICATION_OPA = 'retechlabs/rebotics-cvat-opa'
+APPLICATION_CHOICES = (APPLICATION_CVAT, APPLICATION_OPA)
+
 ECR_NAME_MAP = {
-    'retechlabs/rebotics-cvat': 'cvat',
-    'retechlabs/rebotics-cvat-opa': 'opa',
+    APPLICATION_CVAT: 'cvat',
+    APPLICATION_OPA: 'opa',
 }
 
 NOTIFY_YES = 'yes'
 NOTIFY_NO = 'no'
 NOTIFY_ONLY = 'only'
 NOTIFY_CHOICES = (NOTIFY_YES, NOTIFY_NO, NOTIFY_ONLY)
+
+ECS_NOTIFICATION_PREFIX = {
+    APPLICATION_CVAT: '',
+    APPLICATION_OPA: 'opa_',
+}
 
 
 def sys_call(command):
@@ -46,26 +55,31 @@ def get_version(version_file):
 
 
 def _deploy_app(environment, application, version, ecr_template, s3_template, s3_profile, notify_ecs):
-    ecr_name = ECR_NAME_MAP[application]
-    ecr_repo = ecr_template.format(
-        app_name=ecr_name,
-        environment=environment,
-    )
+    ecs_notification = dict()
 
-    if notify_ecs in (NOTIFY_YES, NOTIFY_NO):
-        click.echo(f"Sending {application}:{version} to ECR")
-        sys_call(f"docker tag {application}:{version} {ecr_repo}:{version}")
-        sys_call(f"docker push {ecr_repo}:{version}")
-    else:
-        click.echo('Only notification mode, no images uploaded!')
+    for app in application.split(','):
+        ecr_name = ECR_NAME_MAP[app]
+        ecr_repo = ecr_template.format(
+            app_name=ecr_name,
+            environment=environment,
+        )
+
+        if notify_ecs in (NOTIFY_YES, NOTIFY_NO):
+            click.echo(f"Sending {app}:{version} to ECR")
+            # sys_call(f"docker tag {app}:{version} {ecr_repo}:{version}")
+            # sys_call(f"docker push {ecr_repo}:{version}")
+        else:
+            click.echo('Only notification mode, no images uploaded!')
+
+        prefix = ECS_NOTIFICATION_PREFIX[app]
+        ecs_notification.update({
+            prefix + "tag": version,
+            prefix + "image": f"{ecr_repo}:{version}",
+            prefix + "repo": ecr_repo,
+        })
 
     if notify_ecs in (NOTIFY_YES, NOTIFY_ONLY):
         click.echo('Sending notification to ECS...')
-        ecs_notification = {
-            "tag": version,
-            "image": f"{ecr_repo}:{version}",
-            "repo": ecr_repo,
-        }
 
         with open('ecs_notification.image.json', 'w') as notif_file:
             notif_file.write(json.dumps(ecs_notification))
@@ -73,7 +87,7 @@ def _deploy_app(environment, application, version, ecr_template, s3_template, s3
         try:
             sys_call("zip ecs_notification.zip ecs_notification.image.json")
             s3_notification_key = s3_template.format(
-                app_name=ecr_name,
+                app_name=ECR_NAME_MAP[APPLICATION_CVAT],
                 environment=environment,
             )
             sys_call(f"aws --profile {s3_profile} s3 cp ecs_notification.zip {s3_notification_key}")
