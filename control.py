@@ -66,8 +66,8 @@ def _deploy_app(environment, application, version, ecr_template, s3_template, s3
 
         if notify_ecs in (NOTIFY_YES, NOTIFY_NO):
             click.echo(f"Sending {app}:{version} to ECR")
-            # sys_call(f"docker tag {app}:{version} {ecr_repo}:{version}")
-            # sys_call(f"docker push {ecr_repo}:{version}")
+            sys_call(f"docker tag {app}:{version} {ecr_repo}:{version}")
+            sys_call(f"docker push {ecr_repo}:{version}")
         else:
             click.echo('Only notification mode, no images uploaded!')
 
