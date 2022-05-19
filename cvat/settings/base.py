@@ -496,10 +496,10 @@ USE_X_FORWARDED_HOST = True
 
 # For fixing CSRF error. Does not support wildcard - *.
 # Forwarded host could solve it, but it's not supported by aws.
-CSRF_TRUSTED_ORIGINS = [f'{env}-cvat.rebotics.{domain}' for env, domain in (
+CSRF_TRUSTED_ORIGINS = [f'{env}-cvat.rebotics.{tld}' for env, tld in (
     ('r3dev', 'net'),
     ('r3us', 'net'),
-    ('r3cn', 'cn')
+    ('r3cn', 'cn'),
 )]
 
 # Django-sendfile requires to set SENDFILE_ROOT
