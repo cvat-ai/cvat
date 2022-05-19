@@ -3,8 +3,9 @@ VERSION ?= latest
 build:
 	./build.sh ${VERSION}
 
+SERVICES ?= cvat cvat_opa
 up:
-	docker-compose -f rebotics/docker-compose.yml up
+	docker-compose -f rebotics/docker-compose.yml up ${SERVICES}
 
 down:
 	docker-compose -f rebotics/docker-compose.yml down
