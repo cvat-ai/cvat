@@ -3,9 +3,10 @@
 # SPDX-License-Identifier: MIT
 
 from .base import *
+import os
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = bool(int(os.getenv('DJANGO_DEBUG', 1)))
 
 INSTALLED_APPS += [
     'django_extensions',

@@ -4,7 +4,7 @@
 
 from .base import *
 
-DEBUG = False
+DEBUG = bool(int(os.getenv('DJANGO_DEBUG', 0)))
 
 INSTALLED_APPS += [
     'mod_wsgi.server',
@@ -16,8 +16,3 @@ SENDFILE_BACKEND = 'django_sendfile.backends.xsendfile'
 
 # Security settings.
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-
-CSRF_TRUSTED_ORIGINS = [
-    'https://*cvat.rebotics.net',
-    'https://*cvat.rebotics.cn',
-]
