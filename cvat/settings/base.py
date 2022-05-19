@@ -498,7 +498,7 @@ USE_X_FORWARDED_HOST = True
 # Forwarded host could solve it, but it's not supported by aws.
 CSRF_TRUSTED_ORIGINS = [f'{env}-cvat.rebotics.{domain}' for env, domain in (
     ('r3dev', 'net'),
-    ('r3cn', 'net'),
+    ('r3us', 'net'),
     ('r3cn', 'cn')
 )]
 
