@@ -13,6 +13,3 @@ INSTALLED_APPS += [
 # Django-sendfile:
 # https://github.com/moggers87/django-sendfile2
 SENDFILE_BACKEND = 'django_sendfile.backends.xsendfile'
-
-# Security settings.
-SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
