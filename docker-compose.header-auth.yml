@@ -15,7 +15,7 @@ services:
       # To obtain a valid provisioning key-secret pair, please
       # visit https://console.datawiza.com/
       # And follow the step-by-step instruction in
-      # https://docs.datawiza.com/step-by-step/step2.html#create-new-deployment-in-dcmc
+      # https://docs.datawiza.com/guides/cvat.html
       PROVISIONING_KEY: ${YOUR_PROVISIOING_KEY}
       PROVISIONING_SECRET: ${YOUR_PROVISIOING_SECRET}
     networks:
