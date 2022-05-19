@@ -56,6 +56,17 @@ def _import(src_file, instance_data, load_data_callback=None):
             for f in anno_files:
                 shutil.move(f, anno_dir)
 
+        # @update: add jpeg_dir @date: 2022/05/11
+        jpeg_dir = osp.join(tmp_dir, 'JPEGImages')
+        if not osp.isdir(jpeg_dir):
+            jpg_files = glob(osp.join(tmp_dir, '**', '*.jpg'), recursive=True)
+            jpeg_files = glob(osp.join(tmp_dir, '**', '*.jpeg'), recursive=True)
+            os.makedirs(jpeg_dir, exist_ok=True)
+            for f in jpg_files:
+                shutil.move(f, jpeg_dir)
+            for f in jpeg_files:
+                shutil.move(f, jpeg_dir)
+
         dataset = Dataset.import_from(tmp_dir, 'voc', env=dm_env)
         dataset.transform('masks_to_polygons')
         if load_data_callback is not None:

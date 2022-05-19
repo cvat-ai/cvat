@@ -1540,6 +1540,9 @@ def load_dataset_data(project_annotation, dataset: Dataset, project_data):
     else:
         for label in dataset.categories()[datum_annotation.AnnotationType.label].items:
             if not project_annotation.db_project.label_set.filter(name=label.name).exists():
+                # TODO: @update: background @date: 2022/05/09
+                if label.name == 'background':
+                    continue
                 raise CvatImportError(f'Target project does not have label with name "{label.name}"')
     for subset_id, subset in enumerate(dataset.subsets().values()):
         job = rq.get_current_job()
