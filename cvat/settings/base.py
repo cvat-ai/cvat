@@ -494,9 +494,9 @@ SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 # Is used in TUS uploads to provide correct upload endpoint
 USE_X_FORWARDED_HOST = True
 
-# For fixing CSRF 403 error. Does not support wildcard (*).
-# Forwarded host could fix the problem, but aws does not supply it.
-CSRF_TRUSTED_ORIGINS = [f'{env}-cvat.rebotics-{domain}' for env, domain in (
+# For fixing CSRF error. Does not support wildcard - *.
+# Forwarded host could solve it, but it's not supported by aws.
+CSRF_TRUSTED_ORIGINS = [f'{env}-cvat.rebotics.{domain}' for env, domain in (
     ('r3dev', 'net'),
     ('r3cn', 'net'),
     ('r3cn', 'cn')
