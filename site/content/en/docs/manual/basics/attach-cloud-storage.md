@@ -277,6 +277,9 @@ and fill out the following form:
           in this case, you only need the storage account name to gain anonymous access.
           - `Account name` - storage account name.
 
+        - [`Connection string`](https://docs.microsoft.com/en-us/azure/storage/common/storage-configure-connection-string) -
+          - `Connection String` - connection string.
+
     </br>
 
   - [**Google Cloud**](https://cloud.google.com/docs):
