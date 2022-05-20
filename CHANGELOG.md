@@ -19,7 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - TDB
 
 ### Fixed
-- TDB
+- Task creation progressbar bug (<https://github.com/cvat-ai/cvat/issues/12>)
 
 ### Security
 - TDB

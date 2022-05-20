@@ -75,7 +75,7 @@
                 onProgress(bytesUploaded) {
                     if (onUpdate && Number.isInteger(totalSentSize) && Number.isInteger(totalSize)) {
                         const currentUploadedSize = totalSentSize + bytesUploaded;
-                        const percentage = Math.round(currentUploadedSize / totalSize);
+                        const percentage = currentUploadedSize / totalSize;
                         onUpdate(percentage);
                     }
                 },
