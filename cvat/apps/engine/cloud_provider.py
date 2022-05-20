@@ -114,7 +114,8 @@ def get_cloud_storage_instance(cloud_provider, resource, credentials, specific_a
         instance = AzureBlobContainer(
             container=resource,
             account_name=credentials.account_name,
-            sas_token=credentials.session_token
+            sas_token=credentials.session_token,
+            connection_string=credentials.connection_string
         )
     elif cloud_provider == CloudProviderChoice.GOOGLE_CLOUD_STORAGE:
         instance = GoogleCloudStorage(
@@ -253,10 +254,12 @@ class AWS_S3(_CloudStorage):
 
 class AzureBlobContainer(_CloudStorage):
     MAX_CONCURRENCY = 3
-    def __init__(self, container, account_name, sas_token=None):
+    def __init__(self, container, account_name, sas_token=None, connection_string=None):
         super().__init__()
         self._account_name = account_name
-        if sas_token:
+        if connection_string:
+            self._blob_service_client = BlobServiceClient.from_connection_string(connection_string)
+        elif sas_token:
             self._blob_service_client = BlobServiceClient(account_url=self.account_url, credential=sas_token)
         else:
             self._blob_service_client = BlobServiceClient(account_url=self.account_url)
@@ -442,7 +445,7 @@ class GoogleCloudStorage(_CloudStorage):
         return blob.updated
 
 class Credentials:
-    __slots__ = ('key', 'secret_key', 'session_token', 'account_name', 'key_file_path', 'credentials_type')
+    __slots__ = ('key', 'secret_key', 'session_token', 'account_name', 'key_file_path', 'credentials_type', 'connection_string')
 
     def __init__(self, **credentials):
         self.key = credentials.get('key', '')
@@ -451,6 +454,7 @@ class Credentials:
         self.account_name = credentials.get('account_name', '')
         self.key_file_path = credentials.get('key_file_path', '')
         self.credentials_type = credentials.get('credentials_type', None)
+        self.connection_string = credentials.get('connection_string', None)
 
     def convert_to_db(self):
         converted_credentials = {
@@ -459,6 +463,7 @@ class Credentials:
             CredentialsTypeChoice.ACCOUNT_NAME_TOKEN_PAIR : " ".join([self.account_name, self.session_token]),
             CredentialsTypeChoice.KEY_FILE_PATH: self.key_file_path,
             CredentialsTypeChoice.ANONYMOUS_ACCESS: "" if not self.account_name else self.account_name,
+            CredentialsTypeChoice.CONNECTION_STRING: self.connection_string,
         }
         return converted_credentials[self.credentials_type]
 
@@ -473,6 +478,8 @@ class Credentials:
             self.account_name = credentials.get('value')
         elif self.credentials_type == CredentialsTypeChoice.KEY_FILE_PATH:
             self.key_file_path = credentials.get('value')
+        elif self.credentials_type == CredentialsTypeChoice.CONNECTION_STRING:
+            self.connection_string = credentials.get('value')
         else:
             raise NotImplementedError('Found {} not supported credentials type'.format(self.credentials_type))
 
@@ -496,6 +503,9 @@ class Credentials:
         elif self.credentials_type == CredentialsTypeChoice.KEY_FILE_PATH:
             self.reset(exclusion={'key_file_path'})
             self.key_file_path = credentials.get('key_file_path', self.key_file_path)
+        elif self.credentials_type == CredentialsTypeChoice.CONNECTION_STRING:
+            self.reset(exclusion={'connection_string'})
+            self.connection_string = credentials.get('connection_string', self.connection_string)
         else:
             raise NotImplementedError('Mapping credentials: unsupported credentials type')
 

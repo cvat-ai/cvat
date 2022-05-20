@@ -1436,7 +1436,7 @@ class CloudStorageViewSet(viewsets.ModelViewSet):
     queryset = CloudStorageModel.objects.all().prefetch_related('data')
 
     search_fields = ('provider_type', 'display_name', 'resource',
-                    'credentials_type', 'owner', 'description')
+                    'credentials_type', 'owner', 'description', 'connection_string')
     filter_fields = list(search_fields) + ['id']
     ordering_fields = filter_fields
     ordering = "-id"

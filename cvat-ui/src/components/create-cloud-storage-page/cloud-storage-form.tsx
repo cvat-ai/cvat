@@ -83,6 +83,7 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
     const [secretKeyVisibility, setSecretKeyVisibility] = useState(false);
     const [sessionTokenVisibility, setSessionTokenVisibility] = useState(false);
     const [accountNameVisibility, setAccountNameVisibility] = useState(false);
+    const [connectionStringVisibility, setConnectionStringVisibility] = useState(false);
 
     const [manifestNames, setManifestNames] = useState<string[]>([]);
 
@@ -416,6 +417,25 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
             );
         }
 
+        if (providerType === ProviderType.AZURE_CONTAINER && credentialsType === CredentialsType.CONNECTION_STRING) {
+            return (
+                <>
+                    <Form.Item
+                        label='Connection string'
+                        name='connection_string'
+                        rules={[{ required: true, message: 'Please, specify your connection string' }]}
+                        {...internalCommonProps}
+                    >
+                        <Input.Password
+                            maxLength={437}
+                            visibilityToggle={connectionStringVisibility}
+                            onChange={() => setConnectionStringVisibility(true)}
+                        />
+                    </Form.Item>
+                </>
+            );
+        }
+
         if (providerType === ProviderType.GOOGLE_CLOUD_STORAGE && credentialsType === CredentialsType.KEY_FILE_PATH) {
             return (
                 <Form.Item
@@ -543,6 +563,7 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
                             Account name and SAS token
                         </Select.Option>
                         <Select.Option value={CredentialsType.ANONYMOUS_ACCESS}>Anonymous access</Select.Option>
+                        <Select.Option value={CredentialsType.CONNECTION_STRING}>Connection string</Select.Option>
                     </Select>
                 </Form.Item>
 
