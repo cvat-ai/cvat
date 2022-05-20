@@ -7,27 +7,6 @@ import logging
 import os
 
 
-try:
-    import sentry_sdk
-    from sentry_sdk.integrations.django import DjangoIntegration
-
-    sentry_sdk.init(
-        dsn="https://acc5a0b8c5f14f379c6aaa5baba2dc76@o29828.ingest.sentry.io/6420408",
-        integrations=[DjangoIntegration()],
-
-        # Set traces_sample_rate to 1.0 to capture 100%
-        # of transactions for performance monitoring.
-        # We recommend adjusting this value in production.
-        traces_sample_rate=1.0,
-
-        # If you wish to associate users to errors (assuming you are using
-        # django.contrib.auth) you may enable sending PII data.
-        send_default_pii=True
-    )
-except Exception as exc:
-    print(exc)
-
-
 DEBUG = bool(int(os.getenv('DJANGO_DEBUG', 0)))
 
 INSTALLED_APPS += [
@@ -38,18 +17,23 @@ INSTALLED_APPS += [
 # https://github.com/moggers87/django-sendfile2
 SENDFILE_BACKEND = 'django_sendfile.backends.xsendfile'
 
+
+# Sentry setup.
 USE_SENTRY = bool(int(os.getenv('USE_SENTRY', 1)))
 if USE_SENTRY:
-    import sentry_sdk
-    from sentry_sdk.integrations.django import DjangoIntegration
+    try:
+        import sentry_sdk
+        from sentry_sdk.integrations.django import DjangoIntegration
 
-    logging.info('Initializing sentry...')
-    sentry_sdk.init(
-        dsn="https://acc5a0b8c5f14f379c6aaa5baba2dc76@o29828.ingest.sentry.io/6420408",
-        integrations=[DjangoIntegration()],
-        send_default_pii=True,
-        release=VERSION,
-        environment=ENVIRONMENT,
-    )
+        logging.info('Initializing sentry...')
+        sentry_sdk.init(
+            dsn="https://acc5a0b8c5f14f379c6aaa5baba2dc76@o29828.ingest.sentry.io/6420408",
+            integrations=[DjangoIntegration()],
+            send_default_pii=True,
+            release=VERSION,
+            environment=ENVIRONMENT,
+        )
+    except Exception as e:
+        print(e)
 else:
     logging.info('Sentry usage is disabled.')
