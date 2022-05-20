@@ -69,7 +69,7 @@ if DB_URL:
         raise ValueError("Url is not valid.")
 
 
-DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -560,3 +560,8 @@ except FileNotFoundError:
     VERSION = 'latest'
 
 ENVIRONMENT = os.getenv('ENVIRONMENT', 'local')
+
+VERSION_TRACKER_URL = os.getenv(
+    'VERSION_TRACKER_URL',
+    'https://versions.fyn.rocks/api/v1/track-version',
+)
