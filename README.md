@@ -144,12 +144,12 @@ connection with your use of FFmpeg.
 
 ## Partners
 
-- [ATLANTIS](https://github.com/smhassanerfani/atlantis) is an open-source dataset for semantic segmentation 
-  of waterbody images, depevoped by [iWERS](http://ce.sc.edu/iwers/) group in the 
+- [ATLANTIS](https://github.com/smhassanerfani/atlantis) is an open-source dataset for semantic segmentation
+  of waterbody images, depevoped by [iWERS](http://ce.sc.edu/iwers/) group in the
   Department of Civil and Environmental Engineering at University of South Carolina, using CVAT.
   For developing a semantic segmentation dataset using CVAT, please check
   [ATLANTIS published article](https://www.sciencedirect.com/science/article/pii/S1364815222000391),
-  [ATLANTIS Development Kit](https://github.com/smhassanerfani/atlantis/tree/master/adk) 
+  [ATLANTIS Development Kit](https://github.com/smhassanerfani/atlantis/tree/master/adk)
   and [annotation tutorial videos](https://www.youtube.com/playlist?list=PLIfLGY-zZChS5trt7Lc3MfNhab7OWl2BR).
 - [Onepanel](https://github.com/onepanelio/core) is an open source
   vision AI platform that fully integrates CVAT with scalable data processing
@@ -193,13 +193,18 @@ Other ways to ask questions and get our support:
 
 [docker-server-pulls-img]: https://img.shields.io/docker/pulls/openvino/cvat_server.svg?style=flat-square&label=server%20pulls
 [docker-server-image-url]: https://hub.docker.com/r/openvino/cvat_server
+
 [docker-ui-pulls-img]: https://img.shields.io/docker/pulls/openvino/cvat_ui.svg?style=flat-square&label=UI%20pulls
 [docker-ui-image-url]: https://hub.docker.com/r/openvino/cvat_ui
-[ci-img]: https://github.com/openvinotoolkit/cvat/workflows/CI/badge.svg?branch=develop
-[ci-url]: https://github.com/openvinotoolkit/cvat/actions
+
+[ci-img]: https://github.com/cvat-ai/cvat/workflows/CI/badge.svg?branch=develop
+[ci-url]: https://github.com/cvat-ai/cvat/actions
+
 [gitter-img]: https://badges.gitter.im/opencv-cvat/gitter.png
 [gitter-url]: https://gitter.im/opencv-cvat
-[coverage-img]: https://coveralls.io/repos/github/openvinotoolkit/cvat/badge.svg?branch=develop
-[coverage-url]: https://coveralls.io/github/openvinotoolkit/cvat?branch=develop
+
+[coverage-img]: https://coveralls.io/repos/github/cvat-ai/cvat/badge.svg?branch=develop
+[coverage-url]: https://coveralls.io/github/cvat-ai/cvat?branch=develop
+
 [doi-img]: https://zenodo.org/badge/139156354.svg
 [doi-url]: https://zenodo.org/badge/latestdoi/139156354
