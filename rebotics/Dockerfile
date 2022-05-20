@@ -165,7 +165,7 @@ COPY --chown=${USER} utils/ ${HOME}/utils
 COPY --chown=${USER} tests/ ${HOME}/tests
 
 # Install UI and setup nginx proxy
-COPY --from=cvat-ui --chown=${USER} /tmp/cvat-ui/dist ${HOME}/cvat-ui
+COPY --from=cvat-ui --chown=${USER} /tmp/cvat-ui/dist ${HOME}/static
 COPY --chown=${USER} rebotics/supervisord.conf ${HOME}/
 COPY rebotics/nginx_proxy.conf /etc/nginx/conf.d/default.conf
 RUN sed -i "s#\${HOME}#${HOME}#g" /etc/nginx/conf.d/default.conf && \
@@ -176,7 +176,7 @@ RUN sed -i "s#\${HOME}#${HOME}#g" /etc/nginx/conf.d/default.conf && \
 RUN rm /etc/nginx/sites-enabled/default
 
 # Add version file
-COPY --chown=${USER} VERSION ${HOME}/cvat-ui/version
+COPY --chown=${USER} VERSION ${HOME}/static/version
 
 # RUN all commands below as 'django' user
 USER ${USER}

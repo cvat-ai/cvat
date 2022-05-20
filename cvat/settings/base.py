@@ -327,7 +327,7 @@ CSRF_COOKIE_NAME = "csrftoken"
 # https://docs.djangoproject.com/en/2.0/howto/static-files/
 
 STATIC_URL = '/static/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+STATIC_ROOT = os.path.join(BASE_DIR, 'static', 'static')
 os.makedirs(STATIC_ROOT, exist_ok=True)
 
 DATA_ROOT = os.path.join(BASE_DIR, 'data')
@@ -406,6 +406,12 @@ LOGGING = {
             'message_type': 'django',
             'database_path': LOGSTASH_DB,
         }
+    },
+    'root': {
+        'level': 'INFO',
+        'handlers': [
+            'console',
+        ],
     },
     'loggers': {
         'cvat.server': {
@@ -544,3 +550,13 @@ SPECTACULAR_SETTINGS = {
     # https://drf-spectacular.readthedocs.io/en/latest/settings.html
 }
 
+# Rebotics info settings
+home = os.getenv('HOME')
+version_file = os.path.join(home, 'static', 'version')
+try:
+    with open(version_file, 'r') as f:
+        VERSION = f.read().strip()
+except FileNotFoundError:
+    VERSION = 'latest'
+
+ENVIRONMENT = os.getenv('ENVIRONMENT', 'local')
