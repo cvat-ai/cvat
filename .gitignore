@@ -38,6 +38,7 @@ yarn-error.log*
 /helm-chart/values.*.yaml
 /helm-chart/*.values.yaml
 /helm-chart/charts/*
+/helm-chart/rules.tar.gz
 
 #Ignore website temp files
 /site/public/

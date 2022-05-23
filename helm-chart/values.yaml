@@ -147,7 +147,7 @@ cvat:
 
 postgresql:
   #See https://github.com/bitnami/charts/blob/master/bitnami/postgresql/ for more info
-  enabled: true # false for external db
+  enabled: true
   external:
     host: 127.0.0.1
     port: 5432
@@ -171,7 +171,7 @@ postgresql:
 
 redis:
   #See https://github.com/bitnami/charts/blob/master/bitnami/redis/ for more info
-  enabled: true
+  enabled: true # false for external db
   external:
     host: 127.0.0.1
   usePassword: false
@@ -195,6 +195,7 @@ ingress:
 #        - host: <your domain>
 #          paths:
 #              - path: "/api/.*|git/.*|tensorflow/.*|auto_annotation/.*|analytics/.*|static/.*|admin|admin/.*|documentation/.*|dextr/.*|reid/.*"
+#                pathType: "ImplementationSpecific"
 #                service:
 #                    name: <release_name>-backend-service
 #                    port: 8080
