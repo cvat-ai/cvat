@@ -10,7 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - TDB
 
 ### Changed
-- TDB
+- remove hardcoded postgresql settings from helm chart
+- update .gitignore for helm chart
 
 ### Deprecated
 - TDB
