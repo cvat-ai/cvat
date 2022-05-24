@@ -19,7 +19,6 @@ from natsort import os_sorted
 from pyunpack import Archive
 from PIL import Image, ImageFile
 from random import shuffle
-import open3d as o3d
 from cvat.apps.engine.utils import rotate_image
 from cvat.apps.engine.models import DimensionType, SortingMethod
 
@@ -820,7 +819,6 @@ MEDIA_TYPES = {
     }
 }
 
-
 class ValidateDimension:
 
     def __init__(self, path=None):
@@ -854,6 +852,21 @@ class ValidateDimension:
 
     @staticmethod
     def convert_bin_to_pcd(path, delete_source=True):
+        def write_header(fileObj, width, height):
+            fileObj.writelines(f'{line}\n' for line in [
+                'VERSION 0.7',
+                'FIELDS x y z',
+                'SIZE 4 4 4',
+                'TYPE F F F',
+                'COUNT 1 1 1',
+                f'WIDTH {width}',
+                f'HEIGHT {height}',
+                'VIEWPOINT 0 0 0 1 0 0 0',
+                f'POINTS {width * height}',
+                'DATA binary',
+            ])
+
+
         list_pcd = []
         with open(path, "rb") as f:
             size_float = 4
@@ -863,10 +876,11 @@ class ValidateDimension:
                 list_pcd.append([x, y, z])
                 byte = f.read(size_float * 4)
         np_pcd = np.asarray(list_pcd)
-        pcd = o3d.geometry.PointCloud()
-        pcd.points = o3d.utility.Vector3dVector(np_pcd)
         pcd_filename = path.replace(".bin", ".pcd")
-        o3d.io.write_point_cloud(pcd_filename, pcd)
+        with open(pcd_filename, "w") as f:
+            write_header(f, np_pcd.shape[0], 1)
+        with open(pcd_filename, "ab") as f:
+            f.write(np_pcd.astype('float32').tobytes())
         if delete_source:
             os.remove(path)
         return pcd_filename

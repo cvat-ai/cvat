@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - Task creation progressbar bug (<https://github.com/cvat-ai/cvat/issues/12>)
+- Removed Python dependency ``open3d`` which brought different issues to the building process
 
 ### Security
 - TDB
