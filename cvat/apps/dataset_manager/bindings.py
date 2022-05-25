@@ -1552,6 +1552,7 @@ def load_dataset_data(project_annotation, dataset: Dataset, project_data):
             'name': subset.name,
             'owner': project_annotation.db_project.owner,
             'subset': subset.name,
+            'organization': project_annotation.db_project.organization,
         }
 
         subset_dataset = subset.as_dataset()
