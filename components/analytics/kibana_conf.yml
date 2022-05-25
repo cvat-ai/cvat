@@ -8,6 +8,15 @@ http:
       - strip-prefix
       service: kibana
       rule: Host(`{{ env "CVAT_HOST" }}`) && PathPrefix(`/analytics`)
+    kibana_https:
+      entryPoints:
+      - websecure
+      middlewares:
+      - analytics-auth
+      - strip-prefix
+      service: kibana
+      tls: {}
+      rule: Host(`{{ env "CVAT_HOST" }}`) && PathPrefix(`/analytics`)
 
   middlewares:
     analytics-auth:
