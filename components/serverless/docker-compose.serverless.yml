@@ -21,6 +21,3 @@ services:
   cvat:
     environment:
       CVAT_SERVERLESS: 1
-
-volumes:
-  cvat_events:
