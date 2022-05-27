@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - Revert Open3D to 0.11.2 to prevent depencency conflicts (<https://github.com/openvinotoolkit/cvat/pull/4639>)
+- Removed unnecessary volumes defined in docker-compose.serverless.yml (<https://github.com/openvinotoolkit/cvat/pull/4659>)
 
 ### Security
 - TDB
