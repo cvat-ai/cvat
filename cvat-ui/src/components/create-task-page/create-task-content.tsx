@@ -53,7 +53,7 @@ const defaultState = {
     advanced: {
         lfs: false,
         useZipChunks: true,
-        useCache: true,
+        useCache: false,
         sortingMethod: SortingMethod.LEXICOGRAPHICAL,
     },
     labels: [],
