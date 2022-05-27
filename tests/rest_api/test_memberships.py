@@ -42,6 +42,7 @@ class TestGetMemberships:
             self._test_cannot_see_memberships(user, org_id=1)
 
 
+@pytest.mark.usefixtures("restore")
 class TestPatchMemberships:
     _ORG = 2
 

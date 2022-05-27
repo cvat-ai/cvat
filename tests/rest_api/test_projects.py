@@ -110,6 +110,7 @@ class TestGetProjects:
 
         self._test_response_200(user_in_project['username'], project_id, org_id=user_in_project['org'])
 
+@pytest.mark.usefixtures("restore")
 class TestPostProjects:
     def _test_create_project_201(self, user, spec, **kwargs):
         response = post_method(user, '/projects', spec, **kwargs)

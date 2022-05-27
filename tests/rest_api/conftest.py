@@ -35,7 +35,7 @@ def init_test_db():
     _run('docker exec cvat_db psql -U root -d postgres -v from=test_db -v to=cvat -f restore.sql')
     _run('docker exec cvat_db dropdb test_db')
 
-@pytest.fixture(scope='function', autouse=True)
+@pytest.fixture(scope='function')
 def restore():
     _run('docker exec cvat_db psql -U root -d postgres -v from=test_db -v to=cvat -f restore.sql')
 

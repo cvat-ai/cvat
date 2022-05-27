@@ -59,6 +59,7 @@ class TestGetCloudStorage:
             self._test_cannot_see(username, storage_id, org_id=org_id)
 
 
+@pytest.mark.usefixtures("restore")
 class TestPostCloudStorage:
     _SPEC = {
         'provider_type': 'AWS_S3_BUCKET',
@@ -120,6 +121,7 @@ class TestPostCloudStorage:
         else:
             self._test_cannot_create(username, self._SPEC, org_id=org_id)
 
+@pytest.mark.usefixtures("restore")
 class TestPatchCloudStorage:
     _SPEC = {
         'display_name': 'New display name',

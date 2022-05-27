@@ -6,6 +6,7 @@ from http import HTTPStatus
 import pytest
 from .utils.config import post_method
 
+@pytest.mark.usefixtures("restore")
 class TestCreateInvitations:
     def _test_post_invitation_201(self, user, data, invitee, **kwargs):
         response = post_method(user, 'invitations', data, **kwargs)

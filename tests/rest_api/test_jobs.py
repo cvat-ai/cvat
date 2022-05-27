@@ -180,7 +180,7 @@ class TestGetAnnotations:
                 job_id, annotations['job'][str(job_id)], **kwargs)
         else:
             self._test_get_job_annotations_403(username, job_id, **kwargs)
-
+@pytest.mark.usefixtures("restore")
 class TestPatchJobAnnotations:
     _ORG = 2
 
@@ -259,6 +259,7 @@ class TestPatchJobAnnotations:
 
         self._test_check_respone(is_allow, response, data)
 
+@pytest.mark.usefixtures("restore")
 class TestPatchJob:
     _ORG = 2
 

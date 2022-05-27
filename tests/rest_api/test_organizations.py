@@ -60,6 +60,7 @@ class TestGetOrganizations:
         else:
             assert response.status_code == HTTPStatus.NOT_FOUND
 
+@pytest.mark.usefixtures("restore")
 class TestPatchOrganizations:
     _ORG = 2
 
@@ -100,6 +101,7 @@ class TestPatchOrganizations:
         else:
             assert response.status_code != HTTPStatus.OK
 
+@pytest.mark.usefixtures("restore")
 class TestDeleteOrganizations:
     _ORG = 2
 

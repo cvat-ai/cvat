@@ -93,6 +93,7 @@ class TestGetTasks:
         self._test_assigned_users_to_see_task_data(tasks, users, is_task_staff, org=org['slug'])
 
 
+@pytest.mark.usefixtures("restore")
 class TestPostTasks:
     def _test_create_task_201(self, user, spec, **kwargs):
         response = post_method(user, '/tasks', spec, **kwargs)
@@ -157,6 +158,7 @@ class TestGetData:
         assert response.headers['Content-Type'] == content_type
 
 
+@pytest.mark.usefixtures("restore")
 class TestPatchTaskAnnotations:
     def _test_check_respone(self, is_allow, response, data=None):
         if is_allow:
