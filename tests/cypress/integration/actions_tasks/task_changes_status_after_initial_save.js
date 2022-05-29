@@ -55,6 +55,7 @@ context('Delete a label from a task.', () => {
             cy.saveJob();
             cy.interactMenu('Open the task');
             cy.reload();
+            cy.closeModalUnsupportedPlatform(); // If the Firefox browser closes the modal window after reload
             cy.get('td.cvat-job-item-state').invoke('text').should('equal', 'in progress');
         });
     });
