@@ -324,7 +324,7 @@ class LambdaTestCase(APITestCase):
             "threshold": 55,
             "quality": "original",
             "mapping": {
-                "car": "car",
+                "car": { "name": "car" },
             },
         }
         response = self._post_request(LAMBDA_REQUESTS_PATH, self.admin, data_main_task)
@@ -364,7 +364,7 @@ class LambdaTestCase(APITestCase):
             "task": self.main_task["id"],
             "cleanup": True,
             "mapping": {
-                "car": "car",
+                "car": { "name": "car" },
             },
         }
         response = self._post_request(f'{LAMBDA_REQUESTS_PATH}', self.admin, data)
@@ -404,7 +404,7 @@ class LambdaTestCase(APITestCase):
                 "threshold": 55,
                 "quality": "original",
                 "mapping": {
-                    "car": "car",
+                    "car": { "name": "car" },
                 },
             }
             data_assigneed_to_user_task = {
@@ -414,7 +414,7 @@ class LambdaTestCase(APITestCase):
                 "quality": "compressed",
                 "max_distance": 70,
                 "mapping": {
-                    "car": "car",
+                    "car": { "name": "car" },
                 },
             }
 
@@ -442,7 +442,7 @@ class LambdaTestCase(APITestCase):
             "task": self.main_task["id"],
             "cleanup": True,
             "mapping": {
-                "car": "car",
+                "car": { "name": "car" },
             },
         }
 
@@ -461,7 +461,7 @@ class LambdaTestCase(APITestCase):
             "task": self.main_task["id"],
             "cleanup": True,
             "mapping": {
-                "car": "car",
+                "car": { "name": "car" },
             },
         }
         response = self._post_request(LAMBDA_REQUESTS_PATH, self.admin, data)
@@ -474,7 +474,7 @@ class LambdaTestCase(APITestCase):
             "task": self.main_task["id"],
             "cleanup": True,
             "mapping": {
-                "car": "car",
+                "car": { "name": "car" },
             },
         }
         response = self._post_request(LAMBDA_REQUESTS_PATH, self.admin, data)
@@ -488,7 +488,7 @@ class LambdaTestCase(APITestCase):
             "task": self.main_task["id"],
             "cleanup": True,
             "mapping": {
-                "car": "car",
+                "car": { "name": "car" },
             },
         }
         self._post_request(LAMBDA_REQUESTS_PATH, self.admin, data)
@@ -514,7 +514,7 @@ class LambdaTestCase(APITestCase):
             "function": id_function_detector,
             "task": self.main_task["id"],
             "mapping": {
-                "car": "car",
+                "car": { "name": "car" },
             },
         }
         response = self._post_request(LAMBDA_REQUESTS_PATH, self.admin, data)
@@ -540,7 +540,7 @@ class LambdaTestCase(APITestCase):
             "function": id_function_detector,
             "cleanup": True,
             "mapping": {
-                "car": "car",
+                "car": { "name": "car" },
             },
         }
         response = self._post_request(LAMBDA_REQUESTS_PATH, self.admin, data)
@@ -553,7 +553,7 @@ class LambdaTestCase(APITestCase):
             "task": 12345,
             "cleanup": True,
             "mapping": {
-                "car": "car",
+                "car": { "name": "car" },
             },
         }
         response = self._post_request(LAMBDA_REQUESTS_PATH, self.admin, data)
@@ -569,7 +569,7 @@ class LambdaTestCase(APITestCase):
                 "task": self.main_task["id"],
                 "cleanup": True,
                 "mapping": {
-                    "car": "car",
+                    "car": { "name": "car" },
                 },
             }
 
@@ -584,7 +584,7 @@ class LambdaTestCase(APITestCase):
             "cleanup": True,
             "threshold": 0.55,
             "mapping": {
-                "car": "car",
+                "car": { "name": "car" },
             },
         }
         data_assigneed_to_user_task = {
@@ -592,7 +592,7 @@ class LambdaTestCase(APITestCase):
             "frame": 0,
             "cleanup": True,
             "mapping": {
-                "car": "car",
+                "car": { "name": "car" },
             },
         }
 
@@ -612,7 +612,7 @@ class LambdaTestCase(APITestCase):
             "frame": 0,
             "cleanup": True,
             "mapping": {
-                "car": "car",
+                "car": { "name": "car" },
             },
         }
         response = self._post_request(f"{LAMBDA_FUNCTIONS_PATH}/{id_function_detector}", self.user, data)
@@ -753,7 +753,7 @@ class LambdaTestCase(APITestCase):
             "frame": 0,
             "cleanup": True,
             "mapping": {
-                "car": "car",
+                "car": { "name": "car" },
             },
         }
 
@@ -767,7 +767,7 @@ class LambdaTestCase(APITestCase):
             "frame": 0,
             "cleanup": True,
             "mapping": {
-                "car": "car",
+                "car": { "name": "car" },
             },
         }
 
@@ -781,7 +781,7 @@ class LambdaTestCase(APITestCase):
             "frame": 0,
             "cleanup": True,
             "mapping": {
-                "car": "car",
+                "car": { "name": "car" },
             },
         }
 
@@ -796,7 +796,7 @@ class LambdaTestCase(APITestCase):
             "frame": 0,
             "cleanup": True,
             "mapping": {
-                "car": "car",
+                "car": { "name": "car" },
             },
         }
 
@@ -814,7 +814,7 @@ class LambdaTestCase(APITestCase):
                 "cleanup": True,
                 "quality": quality,
                 "mapping": {
-                    "car": "car",
+                    "car": { "name": "car" },
                 },
             }
 
@@ -827,7 +827,7 @@ class LambdaTestCase(APITestCase):
             "cleanup": True,
             "quality": "test-error-quality",
             "mapping": {
-                "car": "car",
+                "car": { "name": "car" },
             },
         }
 
@@ -857,7 +857,7 @@ class LambdaTestCase(APITestCase):
             "task": self.main_task["id"],
             "frame": 0,
             "mapping": {
-                "car": "car",
+                "car": { "name": "car" },
             },
         }
         response = self._post_request(f"{LAMBDA_FUNCTIONS_PATH}/{id_function_detector}", self.admin, data)
@@ -879,7 +879,7 @@ class LambdaTestCase(APITestCase):
             "frame": 0,
             "cleanup": True,
             "mapping": {
-                "car": "car",
+                "car": { "name": "car" },
             },
         }
         response = self._post_request(f"{LAMBDA_FUNCTIONS_PATH}/{id_function_detector}", self.admin, data)
@@ -891,7 +891,7 @@ class LambdaTestCase(APITestCase):
             "task": self.main_task["id"],
             "cleanup": True,
             "mapping": {
-                "car": "car",
+                "car": { "name": "car" },
             },
         }
         response = self._post_request(f"{LAMBDA_FUNCTIONS_PATH}/{id_function_detector}", self.admin, data)
@@ -904,7 +904,7 @@ class LambdaTestCase(APITestCase):
             "frame": 0,
             "cleanup": True,
             "mapping": {
-                "car": "car",
+                "car": { "name": "car" },
             },
         }
         response = self._post_request(f"{LAMBDA_FUNCTIONS_PATH}/test-functions-wrong-id", self.admin, data)
@@ -917,7 +917,7 @@ class LambdaTestCase(APITestCase):
             "frame": 0,
             "cleanup": True,
             "mapping": {
-                "car": "car",
+                "car": { "name": "car" },
             },
         }
         response = self._post_request(f"{LAMBDA_FUNCTIONS_PATH}/{id_function_detector}", self.admin, data)
@@ -931,7 +931,7 @@ class LambdaTestCase(APITestCase):
             "frame": 12345,
             "cleanup": True,
             "mapping": {
-                "car": "car",
+                "car": { "name": "car" },
             },
         }
         response = self._post_request(f"{LAMBDA_FUNCTIONS_PATH}/{id_function_detector}", self.admin, data)
@@ -945,7 +945,7 @@ class LambdaTestCase(APITestCase):
             "frame": 0,
             "cleanup": True,
             "mapping": {
-                "car": "car",
+                "car": { "name": "car" },
             },
         }
         self._post_request(f"{LAMBDA_FUNCTIONS_PATH}/{id_function_detector}", self.admin, data)
@@ -959,7 +959,7 @@ class LambdaTestCase(APITestCase):
             "frame": 0,
             "cleanup": True,
             "mapping": {
-                "car": "car",
+                "car": { "name": "car" },
             },
         }
         response = self._post_request(f"{LAMBDA_FUNCTIONS_PATH}/{id_function_state_building}", self.admin, data)

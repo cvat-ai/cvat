@@ -1,9 +1,9 @@
-// Copyright (C) 2019-2021 Intel Corporation
+// Copyright (C) 2019-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
 /**
- * Class representing a machine learning model
+ * Class representing a serverless function
  * @memberof module:API.cvat.classes
  */
 class MLModel {
@@ -11,6 +11,7 @@ class MLModel {
         this._id = data.id;
         this._name = data.name;
         this._labels = data.labels;
+        this._attributes = data.attributes || [];
         this._framework = data.framework;
         this._description = data.description;
         this._type = data.type;
@@ -28,7 +29,7 @@ class MLModel {
     }
 
     /**
-     * @returns {string}
+     * @type {string}
      * @readonly
      */
     get id() {
@@ -36,7 +37,7 @@ class MLModel {
     }
 
     /**
-     * @returns {string}
+     * @type {string}
      * @readonly
      */
     get name() {
@@ -44,7 +45,8 @@ class MLModel {
     }
 
     /**
-     * @returns {string[]}
+     * @description labels supported by the model
+     * @type {string[]}
      * @readonly
      */
     get labels() {
@@ -56,7 +58,21 @@ class MLModel {
     }
 
     /**
-     * @returns {string}
+     * @typedef ModelAttribute
+     * @property {string} name
+     * @property {string[]} values
+     * @property {'select'|'number'|'checkbox'|'radio'|'text'} input_type
+     */
+    /**
+     * @type {Object<string, ModelAttribute>}
+     * @readonly
+     */
+    get attributes() {
+        return { ...this._attributes };
+    }
+
+    /**
+     * @type {string}
      * @readonly
      */
     get framework() {
@@ -64,7 +80,7 @@ class MLModel {
     }
 
     /**
-     * @returns {string}
+     * @type {string}
      * @readonly
      */
     get description() {
@@ -72,7 +88,7 @@ class MLModel {
     }
 
     /**
-     * @returns {module:API.cvat.enums.ModelType}
+     * @type {module:API.cvat.enums.ModelType}
      * @readonly
      */
     get type() {
@@ -80,7 +96,7 @@ class MLModel {
     }
 
     /**
-     * @returns {object}
+     * @type {object}
      * @readonly
      */
     get params() {
@@ -90,10 +106,9 @@ class MLModel {
     }
 
     /**
-     * @typedef {Object} MlModelTip
+     * @type {MlModelTip}
      * @property {string} message A short message for a user about the model
-     * @property {string} gif A gif URL to be shawn to a user as an example
-     * @returns {MlModelTip}
+     * @property {string} gif A gif URL to be shown to a user as an example
      * @readonly
      */
     get tip() {
@@ -101,14 +116,16 @@ class MLModel {
     }
 
     /**
-     * @callback onRequestStatusChange
+     * @typedef onRequestStatusChange
      * @param {string} event
      * @global
-     */
+    */
     /**
-     * @param {onRequestStatusChange} onRequestStatusChange Set canvas onChangeToolsBlockerState callback
+     * @param {onRequestStatusChange} onRequestStatusChange
+     * @instance
+     * @description Used to set a callback when the tool is blocked in UI
      * @returns {void}
-     */
+    */
     set onChangeToolsBlockerState(onChangeToolsBlockerState) {
         this._params.canvas.onChangeToolsBlockerState = onChangeToolsBlockerState;
     }

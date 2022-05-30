@@ -255,10 +255,17 @@ export interface ShareState {
     root: ShareItem;
 }
 
+export interface ModelAttribute {
+    name: string;
+    values: string[];
+    input_type: 'select' | 'number' | 'checkbox' | 'radio' | 'text';
+}
+
 export interface Model {
     id: string;
     name: string;
     labels: string[];
+    attributes: Record<string, ModelAttribute[]>;
     framework: string;
     description: string;
     type: string;

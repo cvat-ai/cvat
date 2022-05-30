@@ -95,6 +95,7 @@ def rotate_within_exif(img: Image):
         ORIENTATION.MIRROR_HORIZONTAL_270_ROTATED ,ORIENTATION.MIRROR_HORIZONTAL_90_ROTATED,
     ]:
         img = img.transpose(Image.FLIP_LEFT_RIGHT)
+
     return img
 
 class IMediaReader(ABC):
@@ -125,8 +126,8 @@ class IMediaReader(ABC):
             preview = Image.open(obj)
         else:
             preview = obj
-        preview.thumbnail(PREVIEW_SIZE)
         preview = rotate_within_exif(preview)
+        preview.thumbnail(PREVIEW_SIZE)
 
         return preview.convert('RGB')
 

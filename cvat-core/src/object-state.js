@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2021 Intel Corporation
+// Copyright (C) 2019-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -208,7 +208,8 @@ const { Source } = require('./enums');
                     rotation: {
                         /**
                          * @name rotation
-                         * @type {number} angle measured by degrees
+                         * @description angle measured by degrees
+                         * @type {number}
                          * @memberof module:API.cvat.classes.ObjectState
                          * @throws {module:API.cvat.exceptions.ArgumentError}
                          * @instance
