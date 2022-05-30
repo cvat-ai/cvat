@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -388,7 +388,7 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
 
     private renderCreateTaskMethod(): JSX.Element {
         return (
-            <Form.Item help='Using cache to store data. Hidden for good.' name='useCache' valuePropName='checked' hidden={true}>
+            <Form.Item help='Using cache to store data. Hidden for good.' name='useCache' valuePropName='checked' hidden>
                 <Checkbox>
                     <Text className='cvat-text-color'>Use cache</Text>
                 </Checkbox>
