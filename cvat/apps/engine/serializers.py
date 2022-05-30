@@ -356,6 +356,7 @@ class DataSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         files = self._pop_data(validated_data)
+        validated_data['use_cache'] = False  # Force that for good.
         db_data = models.Data.objects.create(**validated_data)
         db_data.make_dirs()
 
@@ -368,6 +369,7 @@ class DataSerializer(serializers.ModelSerializer):
         files = self._pop_data(validated_data)
         for key, value in validated_data.items():
             setattr(instance, key, value)
+        instance.use_cache = False  # Force that for good.
         self._create_files(instance, files)
         instance.save()
         return instance
