@@ -24,19 +24,19 @@ class ModelHandler:
         mask = output_layer[0, 0, :, :]
         width, height = mask.shape
 
-        for i in range(len(self.labels)):
+       for i in range(len(self.labels)):
             mask_by_label = np.zeros((width, height), dtype=np.uint8)
-
-            mask_by_label = ((mask == float(i)) * 255).astype(np.float32)
+            mask_by_label = ((mask == float(i)) * 255).astype(np.uint8)
             mask_by_label = cv2.resize(mask_by_label,
                 dsize=(image.width, image.height),
-                interpolation=cv2.INTER_CUBIC)
+                interpolation=cv2.INTER_NEAREST)
 
-            contours = find_contours(mask_by_label, 0.8)
-
+            #contours = find_contours(mask_by_label, 0.5)
+            contours, hierarchy  = cv2.findContours(mask_by_label, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            
             for contour in contours:
                 contour = np.flip(contour, axis=1)
-                contour = approximate_polygon(contour, tolerance=2.5)
+                #contour = approximate_polygon(contour, tolerance=2.5)
                 if len(contour) < 3:
                     continue
 
