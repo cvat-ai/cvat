@@ -749,19 +749,21 @@ def export(db_instance, request):
         result_ttl=ttl, failure_ttl=ttl)
     return Response(status=status.HTTP_202_ACCEPTED)
 
-def _import(importer, request, rq_id, Serializer, file_field_name):
+def _import(importer, request, rq_id, Serializer, file_field_name, filename=None):
     queue = django_rq.get_queue("default")
     rq_job = queue.fetch_job(rq_id)
 
     if not rq_job:
-        serializer = Serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        payload_file = serializer.validated_data[file_field_name]
         org_id = getattr(request.iam_context['organization'], 'id', None)
-        fd, filename = mkstemp(prefix='cvat_')
-        with open(filename, 'wb+') as f:
-            for chunk in payload_file.chunks():
-                f.write(chunk)
+        fd = None
+        if not filename:
+            serializer = Serializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            payload_file = serializer.validated_data[file_field_name]
+            fd, filename = mkstemp(prefix='cvat_')
+            with open(filename, 'wb+') as f:
+                for chunk in payload_file.chunks():
+                    f.write(chunk)
         rq_job = queue.enqueue_call(
             func=importer,
             args=(filename, request.user.id, org_id),
@@ -774,12 +776,12 @@ def _import(importer, request, rq_id, Serializer, file_field_name):
     else:
         if rq_job.is_finished:
             project_id = rq_job.return_value
-            os.close(rq_job.meta['tmp_file_descriptor'])
+            if rq_job.meta['tmp_file_descriptor']: os.close(rq_job.meta['tmp_file_descriptor'])
             os.remove(rq_job.meta['tmp_file'])
             rq_job.delete()
             return Response({'id': project_id}, status=status.HTTP_201_CREATED)
         elif rq_job.is_failed:
-            os.close(rq_job.meta['tmp_file_descriptor'])
+            if rq_job.meta['tmp_file_descriptor']: os.close(rq_job.meta['tmp_file_descriptor'])
             os.remove(rq_job.meta['tmp_file'])
             exc_info = str(rq_job.exc_info)
             rq_job.delete()
@@ -797,7 +799,10 @@ def _import(importer, request, rq_id, Serializer, file_field_name):
 
     return Response({'rq_id': rq_id}, status=status.HTTP_202_ACCEPTED)
 
-def import_project(request):
+def get_backup_dirname():
+    return settings.TMP_FILES_ROOT
+
+def import_project(request, filename=None):
     if 'rq_id' in request.data:
         rq_id = request.data['rq_id']
     else:
@@ -811,9 +816,10 @@ def import_project(request):
         rq_id=rq_id,
         Serializer=Serializer,
         file_field_name=file_field_name,
+        filename=filename
     )
 
-def import_task(request):
+def import_task(request, filename=None):
     if 'rq_id' in request.data:
         rq_id = request.data['rq_id']
     else:
@@ -827,4 +833,5 @@ def import_task(request):
         rq_id=rq_id,
         Serializer=Serializer,
         file_field_name=file_field_name,
+        filename=filename
     )

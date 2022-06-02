@@ -374,9 +374,16 @@ class ProjectViewSet(viewsets.ModelViewSet, UploadMixin):
                     filename=request.query_params.get("filename", "").lower(),
                 )
 
+    @action(detail=True, methods=['HEAD', 'PATCH'], url_path='dataset/'+UploadMixin.file_id_regex)
+    def append_dataset_chunk(self, request, pk, file_id):
+        self._object = self.get_object()
+        return self.append_tus_chunk(request, file_id)
+
     def get_upload_dir(self):
         if 'dataset' in self.action:
             return self._object.get_tmp_dirname()
+        elif 'backup' in self.action:
+            return backup.get_backup_dirname()
         return ""
 
     def upload_finished(self, request):
@@ -395,13 +402,18 @@ class ProjectViewSet(viewsets.ModelViewSet, UploadMixin):
                 pk=self._object.pk,
                 format_name=format_name,
             )
+        elif self.action == 'import_backup':
+            filename = request.query_params.get("filename", "")
+            if filename:
+                tmp_dir = backup.get_backup_dirname()
+                backup_file = os.path.join(tmp_dir, filename)
+                if os.path.isfile(backup_file):
+                    return backup.import_project(request, filename=backup_file)
+                return Response(data='No such file were uploaded',
+                        status=status.HTTP_400_BAD_REQUEST)
+            return backup.import_project(request)
         return Response(data='Unknown upload was finished',
                         status=status.HTTP_400_BAD_REQUEST)
-
-    @action(detail=True, methods=['HEAD', 'PATCH'], url_path='dataset/'+UploadMixin.file_id_regex)
-    def append_dataset_chunk(self, request, pk, file_id):
-        self._object = self.get_object()
-        return self.append_tus_chunk(request, file_id)
 
     @extend_schema(summary='Method allows to download project annotations',
         parameters=[
@@ -453,9 +465,13 @@ class ProjectViewSet(viewsets.ModelViewSet, UploadMixin):
             '201': OpenApiResponse(description='The project has been imported'), # or better specify {id: project_id}
             '202': OpenApiResponse(description='Importing a backup file has been started'),
         })
-    @action(detail=False, methods=['POST'], url_path='backup')
+    @action(detail=False, methods=['OPTIONS', 'POST'], url_path=r'backup/?$')
     def import_backup(self, request, pk=None):
-        return backup.import_project(request)
+        return self.upload_data(request)
+
+    @action(detail=False, methods=['HEAD', 'PATCH'], url_path='backup/'+UploadMixin.file_id_regex)
+    def append_backup_chunk(self, request, file_id):
+        return self.append_tus_chunk(request, file_id)
 
     @staticmethod
     def _get_rq_response(queue, job_id):
@@ -607,9 +623,13 @@ class TaskViewSet(UploadMixin, viewsets.ModelViewSet):
             '201': OpenApiResponse(description='The task has been imported'), # or better specify {id: task_id}
             '202': OpenApiResponse(description='Importing a backup file has been started'),
         })
-    @action(detail=False, methods=['POST'], url_path='backup')
+    @action(detail=False, methods=['OPTIONS', 'POST'], url_path=r'backup/?$')
     def import_backup(self, request, pk=None):
-        return backup.import_task(request)
+        return self.upload_data(request)
+
+    @action(detail=False, methods=['HEAD', 'PATCH'], url_path='backup/'+UploadMixin.file_id_regex)
+    def append_backup_chunk(self, request, file_id):
+        return self.append_tus_chunk(request, file_id)
 
     @extend_schema(summary='Method backup a specified task',
         responses={
@@ -668,6 +688,8 @@ class TaskViewSet(UploadMixin, viewsets.ModelViewSet):
             return self._object.get_tmp_dirname()
         elif 'data' in self.action:
             return self._object.data.get_upload_dirname()
+        elif 'backup' in self.action:
+            return backup.get_backup_dirname()
         return ""
 
     # UploadMixin method
@@ -721,6 +743,16 @@ class TaskViewSet(UploadMixin, viewsets.ModelViewSet):
                 data['stop_frame'] = None
             task.create(self._object.id, data)
             return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
+        elif self.action == 'import_backup':
+            filename = request.query_params.get("filename", "")
+            if filename:
+                tmp_dir = backup.get_backup_dirname()
+                backup_file = os.path.join(tmp_dir, filename)
+                if os.path.isfile(backup_file):
+                    return backup.import_task(request, filename=backup_file)
+                return Response(data='No such file were uploaded',
+                        status=status.HTTP_400_BAD_REQUEST)
+            return backup.import_task(request)
         return Response(data='Unknown upload was finished',
                         status=status.HTTP_400_BAD_REQUEST)
 

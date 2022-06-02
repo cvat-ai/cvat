@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## \[2.2.0] - Unreleased
 ### Added
 - Support of attributes returned by serverless functions (<https://github.com/cvat-ai/cvat/pull/4>) based on (<https://github.com/openvinotoolkit/cvat/pull/4506>)
+- Project/task backups uploading via chunk uploads (<https://github.com/cvat-ai/cvat/pull/9>)
+
 
 ### Changed
 - TDB

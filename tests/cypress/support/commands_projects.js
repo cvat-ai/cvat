@@ -140,9 +140,13 @@ Cypress.Commands.add('backupProject', (projectName) => {
 });
 
 Cypress.Commands.add('restoreProject', (archiveWithBackup) => {
-    cy.intercept('POST', '/api/projects/backup?**').as('restoreProject');
+    cy.intercept({ method: /PATCH|POST/, url: /\/api\/projects\/backup.*/ }).as('restoreProject');
     cy.get('.cvat-create-project-dropdown').click();
     cy.get('.cvat-import-project').click().find('input[type=file]').attachFile(archiveWithBackup);
+    cy.wait('@restoreProject').its('response.statusCode').should('equal', 202);
+    cy.wait('@restoreProject').its('response.statusCode').should('equal', 201);
+    cy.wait('@restoreProject').its('response.statusCode').should('equal', 204);
+    cy.wait('@restoreProject').its('response.statusCode').should('equal', 202);
     cy.wait('@restoreProject', { timeout: 5000 }).its('response.statusCode').should('equal', 202);
     cy.wait('@restoreProject').its('response.statusCode').should('equal', 201);
     cy.contains('Project has been created succesfully')
