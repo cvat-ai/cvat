@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Removed Python dependency ``open3d`` which brought different issues to the building process
 - Analytics not accessible when https is enabled (<https://github.com/cvat-ai/cvat/pull/20>)
 - Dataset import in an organization (<https://github.com/cvat-ai/cvat/pull/18>)
+- Updated minimist npm package to v1.2.6 (<https://github.com/cvat-ai/cvat/pull/34>)
 
 ### Security
 - TDB

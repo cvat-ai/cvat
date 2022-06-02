@@ -10,7 +10,7 @@ class TestCachePolicy:
 
     @staticmethod
     def _get_js_bundle_url(response):
-        match = re.search(r'<script type="text/javascript" src="(/assets/cvat-ui.\w+.min.js)"></script>', response)
+        match = re.search(r'<script.* src="(/assets/cvat-ui.\w+.min.js)".*></script>', response)
         if match:
             return match.group(1)
 

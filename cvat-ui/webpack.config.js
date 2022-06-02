@@ -46,6 +46,9 @@ module.exports = (env) => ({
     resolve: {
         extensions: ['.tsx', '.ts', '.jsx', '.js', '.json'],
         plugins: [new TsconfigPathsPlugin({ configFile: './tsconfig.json' })],
+        fallback: {
+            fs: false,
+        },
     },
     module: {
         rules: [
@@ -95,7 +98,7 @@ module.exports = (env) => ({
                     'babel-loader',
                     {
                         loader: 'react-svg-loader',
-                        query: {
+                        options: {
                             svgo: {
                                 plugins: [{ pretty: true }, { cleanupIDs: false }],
                             },
@@ -109,7 +112,8 @@ module.exports = (env) => ({
                     loader: 'worker-loader',
                     options: {
                         publicPath: '/',
-                        name: 'assets/3rdparty/[name].[contenthash].js',
+                        filename: 'assets/3rdparty/[name].[contenthash].js',
+                        esModule: false,
                     },
                 },
             },
@@ -120,7 +124,8 @@ module.exports = (env) => ({
                     loader: 'worker-loader',
                     options: {
                         publicPath: '/',
-                        name: 'assets/[name].[contenthash].js',
+                        filename: 'assets/[name].[contenthash].js',
+                        esModule: false,
                     },
                 },
             },
@@ -141,5 +146,4 @@ module.exports = (env) => ({
             },
         ]),
     ],
-    node: { fs: 'empty' },
 });

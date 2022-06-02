@@ -41,7 +41,8 @@ const cvatData = {
                     loader: 'worker-loader',
                     options: {
                         publicPath: '/',
-                        name: '[name].[contenthash].js',
+                        filename: '[name].[contenthash].js',
+                        esModule: false,
                     },
                 },
             },
@@ -51,7 +52,8 @@ const cvatData = {
                     loader: 'worker-loader',
                     options: {
                         publicPath: '/3rdparty/',
-                        name: '3rdparty/[name].[contenthash].js',
+                        filename: '3rdparty/[name].[contenthash].js',
+                        esModule: false,
                     },
                 },
             },

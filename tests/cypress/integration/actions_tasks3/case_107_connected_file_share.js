@@ -77,7 +77,7 @@ context('Connected file share.', () => {
                     expect(fileRenameCommand.code).to.be.eq(0);
                 },
             );
-            cy.exec('docker exec -i cvat /bin/bash -c "find ~/share -name "*.png" -type f"').then(
+            cy.exec('docker exec -i cvat /bin/bash -c "find ~/share -name *.png -type f"').then(
                 (findFilesCommand) => {
                     // [image_case_107_2.png, image_case_107_3.png]
                     expect(findFilesCommand.stdout.split('\n').length).to.be.eq(2);
