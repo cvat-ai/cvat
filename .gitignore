@@ -4,7 +4,7 @@
 /share/
 /static/
 /db.sqlite3
-/.env
+/.*env*
 /keys
 /logs
 /profiles

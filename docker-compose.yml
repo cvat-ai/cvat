@@ -52,6 +52,8 @@ services:
       - cvat_logs:/home/django/logs
     networks:
       - cvat
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
   cvat_ui:
     container_name: cvat_ui

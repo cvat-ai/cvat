@@ -75,66 +75,65 @@ class LambdaTestCase(APITestCase):
     def setUp(self):
         self.client = APIClient()
 
-        patcher = mock.patch('cvat.apps.lambda_manager.views.LambdaGateway._http', side_effect = self.__get_response_data_from_lambda_gateway_http)
-        self.addCleanup(patcher.stop)
-        patcher.start()
+        http_patcher = mock.patch('cvat.apps.lambda_manager.views.LambdaGateway._http', side_effect = self.__get_data_from_lambda_manager_http)
+        self.addCleanup(http_patcher.stop)
+        http_patcher.start()
+
+        invoke_patcher = mock.patch('cvat.apps.lambda_manager.views.LambdaGateway.invoke', side_effect = self.__invoke_function)
+        self.addCleanup(invoke_patcher.stop)
+        invoke_patcher.start()
 
         images_main_task = self._generate_task_images(3)
         images_assigneed_to_user_task = self._generate_task_images(3)
         self.main_task = self._create_task(tasks["main"], images_main_task)
         self.assigneed_to_user_task = self._create_task(tasks["assigneed_to_user"], images_assigneed_to_user_task)
 
-
-    def __get_response_data_from_lambda_gateway_http(self, *args, **kwargs):
+    def __get_data_from_lambda_manager_http(self, **kwargs):
         url = kwargs["url"]
-        # POST query for get annotations
-        if url == "/api/function_invocations":
-            data = []
-            id_function = kwargs["headers"]["x-nuclio-function-name"]
-            type_function = functions["positive"][id_function]["metadata"]["annotations"]["type"]
-            if type_function == "reid":
-                if id_function == id_function_reid_response_data:
-                    data = [0, 1]
-                else:
-                    data = []
-            elif type_function == "tracker":
-                data = {
-                    "shape": [12.34, 34.0, 35.01, 41.99],
-                    "state": {"key": "value"},
-                }
-            elif type_function == "interactor":
-                data = [
-                    [8, 12],
-                    [34, 56],
-                    [77, 77],
-                ]
-            elif type_function == "detector":
-                data = [
-                    {'confidence': '0.9959098', 'label': 'car', 'points': [3, 3, 15, 15], 'type': 'rectangle'},
-                    {'confidence': '0.89535173', 'label': 'car', 'points': [20, 25, 30, 35], 'type': 'rectangle'},
-                    {'confidence': '0.59464583', 'label': 'car', 'points': [12.17, 45.0, 69.80, 18.99], 'type': 'polygon'},
-                ]
-            return data
-        # GET query for get all functions
-        elif url == "/api/functions":
+        if url == "/api/functions":
             return functions["positive"]
-        # GET query for get function
         else:
-            id_function = url.split("/")[-1]
-            if id_function in functions["positive"]:
-                # raise 500 Internal_Server error
-                if id_function in [id_function_state_building, id_function_state_error]:
+            func_id = url.split("/")[-1]
+            if func_id in functions["positive"]:
+                if func_id in [id_function_state_building, id_function_state_error]:
                     r = requests.RequestException()
                     r.response = HttpResponseServerError()
-                    raise r
-                # return values
-                return functions["positive"][id_function]
-            # raise 404 Not Found error
+                    raise r # raise 500 Internal_Server error
+
+                return functions["positive"][func_id]
             else:
                 r = requests.HTTPError()
                 r.response = HttpResponseNotFound()
-                raise r
+                raise r # raise 404 Not Found error
 
+    def __invoke_function(self, func, payload):
+        data = []
+        func_id = func.id
+        type_function = functions["positive"][func_id]["metadata"]["annotations"]["type"]
+        if type_function == "reid":
+            if func_id == id_function_reid_response_data:
+                data = [0, 1]
+            else:
+                data = []
+        elif type_function == "tracker":
+            data = {
+                "shape": [12.34, 34.0, 35.01, 41.99],
+                "state": {"key": "value"},
+            }
+        elif type_function == "interactor":
+            data = [
+                [8, 12],
+                [34, 56],
+                [77, 77],
+            ]
+        elif type_function == "detector":
+            data = [
+                {'confidence': '0.9959098', 'label': 'car', 'points': [3, 3, 15, 15], 'type': 'rectangle'},
+                {'confidence': '0.89535173', 'label': 'car', 'points': [20, 25, 30, 35], 'type': 'rectangle'},
+                {'confidence': '0.59464583', 'label': 'car', 'points': [12.17, 45.0, 69.80, 18.99], 'type': 'polygon'},
+            ]
+
+        return data
 
     @classmethod
     def _create_db_users(cls):

@@ -12,7 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ### Changed
-- TDB
+- Bumped nuclio version to 1.8.14 (<https://github.com/cvat-ai/cvat/pull/29>)
 
 ### Deprecated
 - TDB

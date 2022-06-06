@@ -11,6 +11,7 @@ from copy import deepcopy
 import django_rq
 import requests
 import rq
+import os
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from rest_framework import status, viewsets
@@ -75,17 +76,18 @@ class LambdaGateway:
         return response
 
     def invoke(self, func, payload):
-        # NOTE: it is overhead to invoke a function using nuclio
-        # dashboard REST API. Better to call host.docker.internal:<port>
-        # Look at https://github.com/docker/for-linux/issues/264.
-        # host.docker.internal isn't supported by docker on Linux.
-        # There are many workarounds but let's try to use the
-        # simple solution.
-        return self._http(method="post", url='/api/function_invocations',
-            data=payload, headers={
-                'x-nuclio-function-name': func.id,
-                'x-nuclio-path': '/'
-            })
+        # Note: call the function directly without the nuclio dashboard
+        # host.docker.internal for Linux will work only with Docker 20.10+
+        NUCLIO_TIMEOUT = settings.NUCLIO['DEFAULT_TIMEOUT']
+        if os.path.exists('/.dockerenv'): # inside a docker container
+            url = f'http://host.docker.internal:{func.port}'
+        else:
+            url = f'http://localhost:{func.port}'
+        reply = requests.post(url, timeout=NUCLIO_TIMEOUT, json=payload)
+        reply.raise_for_status()
+        response = reply.json()
+
+        return response
 
 class LambdaFunction:
     def __init__(self, gateway, data):
