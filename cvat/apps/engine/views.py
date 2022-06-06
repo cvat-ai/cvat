@@ -22,6 +22,7 @@ from django.contrib.auth.models import User
 from django.db import IntegrityError
 from django.http import HttpResponse, HttpResponseNotFound, HttpResponseBadRequest
 from django.utils import timezone
+from django.core.files.base import File
 
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import (
@@ -698,7 +699,7 @@ class TaskViewSet(UploadMixin, viewsets.ModelViewSet):
             uploaded_files.extend(data.get('client_files'))
             serializer.validated_data.update({'client_files': uploaded_files})
 
-            db_data = serializer.save()
+            db_data: Data = serializer.save()
             self._object.data = db_data
             self._object.save()
             data = {k: v for k, v in serializer.data.items()}
@@ -720,6 +721,21 @@ class TaskViewSet(UploadMixin, viewsets.ModelViewSet):
             if 'stop_frame' not in serializer.validated_data:
                 data['stop_frame'] = None
             task.create(self._object.id, data)
+
+            # TODO: do this asynchronously.
+            # TODO: add some retries and catch exceptions
+            # this reuploads client files to django storage via standard FileField, using s3 storage underneath
+            # then updates path in db_data.
+            db_files = db_data.client_files.all()
+            for db_file in db_files:
+                path = db_file.file.path
+                name = path.rsplit('/', 1)[-1]
+                with open(path, 'rb') as f:
+                    file = File(f, name=name)
+                    db_file.file = file
+                    db_file.save()
+                os.remove(path)
+
             return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
         return Response(data='Unknown upload was finished',
                         status=status.HTTP_400_BAD_REQUEST)

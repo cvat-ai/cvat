@@ -572,3 +572,6 @@ VERSION_TRACKER_URL = os.getenv(
     'VERSION_TRACKER_URL',
     'https://versions.fyn.rocks/api/v1/track-version',
 )
+
+# Reb overrides
+from cvat.rebotics.settings.base import *

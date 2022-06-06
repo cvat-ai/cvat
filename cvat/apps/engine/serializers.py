@@ -19,6 +19,7 @@ from cvat.apps.engine.utils import parse_specific_attributes
 
 from drf_spectacular.utils import OpenApiExample, extend_schema_serializer
 
+
 class BasicUserSerializer(serializers.ModelSerializer):
     def validate(self, data):
         if hasattr(self, 'initial_data'):
@@ -36,6 +37,7 @@ class BasicUserSerializer(serializers.ModelSerializer):
         model = User
         fields = ('url', 'id', 'username', 'first_name', 'last_name')
 
+
 class UserSerializer(serializers.ModelSerializer):
     groups = serializers.SlugRelatedField(many=True,
         slug_field='name', queryset=Group.objects.all())
@@ -47,6 +49,7 @@ class UserSerializer(serializers.ModelSerializer):
             'date_joined')
         read_only_fields = ('last_login', 'date_joined')
         write_only_fields = ('password', )
+
 
 class AttributeSerializer(serializers.ModelSerializer):
     class Meta:
@@ -68,6 +71,7 @@ class AttributeSerializer(serializers.ModelSerializer):
             attribute = instance
 
         return attribute
+
 
 class LabelSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(required=False)
@@ -135,6 +139,7 @@ class LabelSerializer(serializers.ModelSerializer):
                 db_attr.values = attr.get('values', db_attr.values)
                 db_attr.save()
 
+
 class JobCommitSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.JobCommit
@@ -162,8 +167,10 @@ class JobReadSerializer(serializers.ModelSerializer):
             'start_frame', 'stop_frame', 'data_chunk_size', 'data_compressed_chunk_type')
         read_only_fields = fields
 
+
 class JobWriteSerializer(serializers.ModelSerializer):
     assignee = serializers.IntegerField(allow_null=True, required=False)
+
     def to_representation(self, instance):
         serializer = JobReadSerializer(instance, context=self.context)
         return serializer.data
@@ -233,10 +240,14 @@ class ClientFileSerializer(serializers.ModelSerializer):
         return {'file': data}
 
     # pylint: disable=no-self-use
+    # SAVING FILES: here we need to return url
     def to_representation(self, instance):
         if instance:
-            upload_dir = instance.data.get_upload_dirname()
-            return instance.file.path[len(upload_dir) + 1:]
+            if instance.file.path.startswith('/'):
+                upload_dir = instance.data.get_upload_dirname()
+                return instance.file.path[len(upload_dir) + 1:]
+            else:
+                return instance.url
         else:
             return instance
 
@@ -386,9 +397,10 @@ class DataSerializer(serializers.ModelSerializer):
         files = {'client_files': client_files, 'server_files': server_files, 'remote_files': remote_files}
         return files
 
-
     # pylint: disable=no-self-use
     def _create_files(self, instance, files):
+        # SAVING FILES: here are no files but already file paths
+        #  files are saved elsewhere
         if 'client_files' in files:
             client_objects = []
             for f in files['client_files']:
@@ -405,6 +417,7 @@ class DataSerializer(serializers.ModelSerializer):
             for f in files['remote_files']:
                 remote_file = models.RemoteFile(data=instance, **f)
                 remote_file.save()
+
 
 class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
     labels = LabelSerializer(many=True, source='label_set', partial=True, required=False)
@@ -577,6 +590,7 @@ class ProjectSearchSerializer(serializers.ModelSerializer):
         model = models.Project
         fields = ('id', 'name')
         read_only_fields = ('name',)
+
 
 class ProjectSerializer(serializers.ModelSerializer):
     labels = LabelSerializer(many=True, source='label_set', partial=True, default=[])

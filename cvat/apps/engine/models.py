@@ -329,11 +329,16 @@ def upload_path_handler(instance, filename):
     # relative path is required since Django 3.1.11
     return os.path.join(os.path.relpath(instance.data.get_upload_dirname(), settings.BASE_DIR), filename)
 
+def client_file_upload_path_handler(instance, filename):
+    return os.path.join('client-files', upload_path_handler(instance, filename))
+
+def related_file_upload_path_handler(instance, filename):
+    return os.path.join('related-files', upload_path_handler(instance, filename))
+
 # For client files which the user is uploaded
 class ClientFile(models.Model):
     data = models.ForeignKey(Data, on_delete=models.CASCADE, null=True, related_name='client_files')
-    file = models.FileField(upload_to=upload_path_handler,
-        max_length=1024, storage=MyFileSystemStorage())
+    file = models.FileField(upload_to=client_file_upload_path_handler, max_length=1024)
 
     class Meta:
         default_permissions = ()
@@ -358,8 +363,7 @@ class RemoteFile(models.Model):
 
 class RelatedFile(models.Model):
     data = models.ForeignKey(Data, on_delete=models.CASCADE, related_name="related_files", default=1, null=True)
-    path = models.FileField(upload_to=upload_path_handler,
-                            max_length=1024, storage=MyFileSystemStorage())
+    path = models.FileField(upload_to=related_file_upload_path_handler, max_length=1024)
     primary_image = models.ForeignKey(Image, on_delete=models.CASCADE, related_name="related_files", null=True)
 
     class Meta:

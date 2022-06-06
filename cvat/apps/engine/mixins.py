@@ -85,6 +85,7 @@ class TusChunk:
 # This upload mixin is implemented using tus
 # tus is open protocol for file uploads (see more https://tus.io/)
 class UploadMixin(object):
+    # SAVING FILES: This one, who really uploads the files
     _tus_api_version = '1.0.0'
     _tus_api_version_supported = ['1.0.0']
     _tus_api_extensions = []
