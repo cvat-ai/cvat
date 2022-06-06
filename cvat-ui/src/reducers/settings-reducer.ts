@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -47,6 +47,7 @@ const defaultState: SettingsState = {
         resetZoom: false,
         rotateAll: false,
         smoothImage: true,
+        showDeletedFrames: false,
         grid: false,
         gridSize: 100,
         gridColor: GridColor.White,
@@ -351,6 +352,15 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
             return {
                 ...state,
                 ...action.payload.settings,
+            };
+        }
+        case SettingsActionTypes.SWITCH_SHOWING_DELETED_FRAMES: {
+            return {
+                ...state,
+                player: {
+                    ...state.player,
+                    showDeletedFrames: action.payload.showDeletedFrames,
+                },
             };
         }
         case BoundariesActionTypes.RESET_AFTER_ERROR:

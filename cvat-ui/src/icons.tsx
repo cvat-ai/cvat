@@ -51,6 +51,7 @@ import SVGCVATAzureProvider from './assets/vscode-icons_file-type-azure.svg';
 import SVGCVATS3Provider from './assets/S3.svg';
 import SVGCVATGoogleCloudProvider from './assets/google-cloud.svg';
 import SVGOpenVINO from './assets/openvino.svg';
+import SVGRestoreIcon from './assets/restore-icon.svg';
 
 export const CVATLogo = React.memo((): JSX.Element => <SVGCVATLogo />);
 export const CursorIcon = React.memo((): JSX.Element => <SVGCursorIcon />);
@@ -99,3 +100,4 @@ export const AzureProvider = React.memo((): JSX.Element => <SVGCVATAzureProvider
 export const S3Provider = React.memo((): JSX.Element => <SVGCVATS3Provider />);
 export const GoogleCloudProvider = React.memo((): JSX.Element => <SVGCVATGoogleCloudProvider />);
 export const OpenVINOIcon = React.memo((): JSX.Element => <SVGOpenVINO />);
+export const RestoreIcon = React.memo((): JSX.Element => <SVGRestoreIcon />);

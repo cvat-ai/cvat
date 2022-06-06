@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import './styles.scss';
-import React from 'react';
+import React, { useCallback } from 'react';
 import { connect } from 'react-redux';
 import { useHistory, useLocation } from 'react-router';
 import { Row, Col } from 'antd/lib/grid';
@@ -169,7 +169,7 @@ function HeaderContainer(props: Props): JSX.Element {
     const history = useHistory();
     const location = useLocation();
 
-    function showAboutModal(): void {
+    const showAboutModal = useCallback((): void => {
         Modal.info({
             title: `${tool.name}`,
             content: (
@@ -222,7 +222,7 @@ function HeaderContainer(props: Props): JSX.Element {
                 },
             },
         });
-    }
+    }, [tool]);
 
     const resetOrganization = (): void => {
         localStorage.removeItem('currentOrganization');

@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -107,20 +107,22 @@ function WorkspaceSettingsComponent(props: Props): JSX.Element {
                     <Text type='secondary'> minutes </Text>
                 </Col>
             </Row>
-            <Row className='cvat-workspace-settings-show-interpolated'>
-                <Col span={24}>
-                    <Checkbox
-                        className='cvat-text-color'
-                        checked={showAllInterpolationTracks}
-                        onChange={(event: CheckboxChangeEvent): void => {
-                            onSwitchShowingInterpolatedTracks(event.target.checked);
-                        }}
-                    >
-                        Show all interpolation tracks
-                    </Checkbox>
-                </Col>
-                <Col span={24}>
-                    <Text type='secondary'> Show hidden interpolated objects in the side panel </Text>
+            <Row>
+                <Col span={12} className='cvat-workspace-settings-show-interpolated'>
+                    <Row>
+                        <Checkbox
+                            className='cvat-text-color'
+                            checked={showAllInterpolationTracks}
+                            onChange={(event: CheckboxChangeEvent): void => {
+                                onSwitchShowingInterpolatedTracks(event.target.checked);
+                            }}
+                        >
+                            Show all interpolation tracks
+                        </Checkbox>
+                    </Row>
+                    <Row>
+                        <Text type='secondary'> Show hidden interpolated objects in the side panel</Text>
+                    </Row>
                 </Col>
             </Row>
             <Row className='cvat-workspace-settings-show-text-always'>

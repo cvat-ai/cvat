@@ -285,8 +285,33 @@ class ServerProxy {
             return 'DUMMY_IMAGE';
         }
 
-        async function getMeta(tid) {
-            return JSON.parse(JSON.stringify(frameMetaDummyData[tid]));
+        async function getMeta(session, jid) {
+            if (session !== 'job') {
+                throw new Error('not implemented test');
+            }
+
+            return JSON.parse(JSON.stringify(frameMetaDummyData[jid]));
+        }
+
+        async function saveMeta(session, jid, meta) {
+            if (session !== 'job') {
+                throw new Error('not implemented test');
+            }
+            const object = frameMetaDummyData[jid];
+            for (const prop in meta) {
+                if (
+                    Object.prototype.hasOwnProperty.call(meta, prop) &&
+                    Object.prototype.hasOwnProperty.call(object, prop)
+                ) {
+                    if (prop === 'labels') {
+                        object[prop] = meta[prop].filter((label) => !label.deleted);
+                    } else {
+                        object[prop] = meta[prop];
+                    }
+                }
+            }
+
+            return getMeta(jid);
         }
 
         async function getAnnotations(session, id) {
@@ -442,6 +467,7 @@ class ServerProxy {
                     value: Object.freeze({
                         getData,
                         getMeta,
+                        saveMeta,
                         getPreview,
                     }),
                     writable: false,

@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2020 Intel Corporation
+// Copyright (C) 2019-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -36,12 +36,12 @@ class AnnotationHistory {
         this._redo = [];
     }
 
-    undo(count) {
+    async undo(count) {
         const affectedObjects = [];
         for (let i = 0; i < count; i++) {
             const action = this._undo.pop();
             if (action) {
-                action.undo();
+                await action.undo();
                 this._redo.push(action);
                 affectedObjects.push(...action.clientIDs);
             } else {
@@ -52,12 +52,12 @@ class AnnotationHistory {
         return affectedObjects;
     }
 
-    redo(count) {
+    async redo(count) {
         const affectedObjects = [];
         for (let i = 0; i < count; i++) {
             const action = this._redo.pop();
             if (action) {
-                action.redo();
+                await action.redo();
                 this._undo.push(action);
                 affectedObjects.push(...action.clientIDs);
             } else {

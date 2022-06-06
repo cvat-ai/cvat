@@ -1,4 +1,4 @@
-// Copyright (C) 2021 Intel Corporation
+// Copyright (C) 2021-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -12,6 +12,7 @@ export interface Canvas3dController {
     readonly selected: any;
     readonly focused: FocusData;
     readonly groupData: GroupData;
+    readonly imageIsDeleted: boolean;
     mode: Mode;
     group(groupData: GroupData): void;
 }
@@ -45,6 +46,10 @@ export class Canvas3dControllerImpl implements Canvas3dController {
 
     public get focused(): any {
         return this.model.data.focusData;
+    }
+
+    public get imageIsDeleted(): any {
+        return this.model.imageIsDeleted;
     }
 
     public get groupData(): GroupData {

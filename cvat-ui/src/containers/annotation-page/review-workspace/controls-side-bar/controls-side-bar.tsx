@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -16,6 +16,7 @@ interface StateToProps {
     activeControl: ActiveControl;
     keyMap: KeyMap;
     normalizedKeyMap: Record<string, string>;
+    frameIsDeleted: boolean;
 }
 
 interface DispatchToProps {
@@ -27,6 +28,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
     const {
         annotation: {
             canvas: { instance: canvasInstance, activeControl },
+            player: { frame: { data: { deleted: frameIsDeleted } } },
         },
         settings: {
             player: { rotateAll },
@@ -40,6 +42,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         activeControl,
         normalizedKeyMap,
         keyMap,
+        frameIsDeleted,
     };
 }
 

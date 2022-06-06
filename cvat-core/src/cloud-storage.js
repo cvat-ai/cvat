@@ -54,7 +54,7 @@
                 Object.freeze({
                     /**
                      * @name id
-                     * @type {integer}
+                     * @type {number}
                      * @memberof module:API.cvat.classes.CloudStorage
                      * @readonly
                      * @instance

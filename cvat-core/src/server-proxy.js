@@ -1234,12 +1234,27 @@
                 return response;
             }
 
-            async function getMeta(tid) {
+            async function getMeta(session, jid) {
                 const { backendAPI } = config;
 
                 let response = null;
                 try {
-                    response = await Axios.get(`${backendAPI}/tasks/${tid}/data/meta`, {
+                    response = await Axios.get(`${backendAPI}/${session}s/${jid}/data/meta`, {
+                        proxy: config.proxy,
+                    });
+                } catch (errorData) {
+                    throw generateError(errorData);
+                }
+
+                return response.data;
+            }
+
+            async function saveMeta(session, jid, meta) {
+                const { backendAPI } = config;
+
+                let response = null;
+                try {
+                    response = await Axios.patch(`${backendAPI}/${session}s/${jid}/data/meta`, meta, {
                         proxy: config.proxy,
                     });
                 } catch (errorData) {
@@ -1932,6 +1947,7 @@
                         value: Object.freeze({
                             getData,
                             getMeta,
+                            saveMeta,
                             getPreview,
                             getImageContext,
                         }),

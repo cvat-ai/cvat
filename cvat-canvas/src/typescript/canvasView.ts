@@ -515,7 +515,9 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
     private transformCanvas(): void {
         // Transform canvas
-        for (const obj of [this.background, this.grid, this.content, this.bitmap, this.attachmentBoard]) {
+        for (const obj of [
+            this.background, this.grid, this.content, this.bitmap, this.attachmentBoard,
+        ]) {
             obj.style.transform = `scale(${this.geometry.scale}) rotate(${this.geometry.angle}deg)`;
         }
 
@@ -1009,11 +1011,13 @@ export class CanvasViewImpl implements CanvasView, Listener {
         this.canvas = window.document.createElement('div');
 
         const loadingCircle: SVGCircleElement = window.document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+
         const gridDefs: SVGDefsElement = window.document.createElementNS('http://www.w3.org/2000/svg', 'defs');
         const gridRect: SVGRectElement = window.document.createElementNS('http://www.w3.org/2000/svg', 'rect');
 
         // Setup defs
         const contentDefs = this.adoptedContent.defs();
+
         this.issueRegionPattern_1 = contentDefs
             .pattern(consts.BASE_PATTERN_SIZE, consts.BASE_PATTERN_SIZE, (add): void => {
                 add.line(0, 0, 0, 10).stroke('red');
@@ -1241,6 +1245,10 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 }
             }
 
+            if (typeof configuration.CSSImageFilter === 'string') {
+                this.background.style.filter = configuration.CSSImageFilter;
+            }
+
             this.activate(activeElement);
             this.editHandler.configurate(this.configuration);
             this.drawHandler.configurate(this.configuration);
@@ -1282,6 +1290,28 @@ export class CanvasViewImpl implements CanvasView, Listener {
                         ctx.drawImage(image.imageData, 0, 0);
                     }
                 }
+
+                if (model.imageIsDeleted) {
+                    let { width, height } = this.background;
+                    if (image.imageData instanceof ImageData) {
+                        width = image.imageData.width;
+                        height = image.imageData.height;
+                    }
+
+                    this.background.classList.add('cvat_canvas_removed_image');
+                    const canvasContext = this.background.getContext('2d');
+                    const fontSize = width / 10;
+                    canvasContext.font = `bold ${fontSize}px serif`;
+                    canvasContext.textAlign = 'center';
+                    canvasContext.lineWidth = fontSize / 20;
+                    canvasContext.strokeStyle = 'white';
+                    canvasContext.strokeText('IMAGE REMOVED', width / 2, height / 2);
+                    canvasContext.fillStyle = 'black';
+                    canvasContext.fillText('IMAGE REMOVED', width / 2, height / 2);
+                } else if (this.background.classList.contains('cvat_canvas_removed_image')) {
+                    this.background.classList.remove('cvat_canvas_removed_image');
+                }
+
                 this.moveCanvas();
                 this.resizeCanvas();
                 this.transformCanvas();

@@ -411,6 +411,8 @@ export interface NotificationsState {
             redo: null | ErrorState;
             search: null | ErrorState;
             searchEmptyFrame: null | ErrorState;
+            deleteFrame: null | ErrorState;
+            restoreFrame: null | ErrorState;
             savingLogs: null | ErrorState;
         };
         boundaries: {
@@ -677,6 +679,7 @@ export interface PlayerSettingsState {
     resetZoom: boolean;
     rotateAll: boolean;
     smoothImage: boolean;
+    showDeletedFrames: boolean;
     grid: boolean;
     gridSize: number;
     gridColor: GridColor;

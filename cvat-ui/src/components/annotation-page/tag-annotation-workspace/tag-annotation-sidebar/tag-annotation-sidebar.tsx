@@ -1,4 +1,4 @@
-// Copyright (C) 2020-2021 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -40,6 +40,7 @@ interface StateToProps {
     frameNumber: number;
     keyMap: KeyMap;
     normalizedKeyMap: Record<string, string>;
+    frameData: any;
 }
 
 interface DispatchToProps {
@@ -53,7 +54,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
     const {
         annotation: {
             player: {
-                frame: { number: frameNumber },
+                frame: { number: frameNumber, data: frameData },
             },
             annotations: { states },
             job: { instance: jobInstance, labels },
@@ -70,6 +71,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         frameNumber,
         keyMap,
         normalizedKeyMap,
+        frameData,
     };
 }
 
@@ -102,6 +104,7 @@ function TagAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.Elemen
         onRememberObject,
         createAnnotations,
         keyMap,
+        frameData,
     } = props;
 
     const preventDefault = (event: KeyboardEvent | undefined): void => {
@@ -110,6 +113,7 @@ function TagAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.Elemen
         }
     };
 
+    const controlsDisabled = !labels.length || frameData.deleted;
     const defaultLabelID = labels.length ? labels[0].id : null;
 
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -199,7 +203,7 @@ function TagAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.Elemen
         },
     };
 
-    return !labels.length ? (
+    return controlsDisabled ? (
         <Layout.Sider {...siderProps}>
             {/* eslint-disable-next-line */}
             <span
@@ -215,7 +219,7 @@ function TagAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.Elemen
             </span>
             <Row justify='center' className='labels-tag-annotation-sidebar-not-found-wrapper'>
                 <Col>
-                    <Text strong>No labels are available.</Text>
+                    <Text strong>Can&apos;t place tag on this frame.</Text>
                 </Col>
             </Row>
         </Layout.Sider>

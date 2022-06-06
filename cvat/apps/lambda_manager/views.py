@@ -473,6 +473,8 @@ class LambdaJob:
         results = Results(db_task.id)
 
         for frame in range(db_task.data.size):
+            if frame in db_task.data.deleted_frames:
+                continue
             annotations = function.invoke(db_task, data={
                 "frame": frame, "quality": quality, "mapping": mapping,
                 "threshold": threshold })

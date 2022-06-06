@@ -54,7 +54,7 @@ from cvat.apps.engine.models import (
 from cvat.apps.engine.models import CloudStorage as CloudStorageModel
 from cvat.apps.engine.serializers import (
     AboutSerializer, AnnotationFileSerializer, BasicUserSerializer,
-    DataMetaSerializer, DataSerializer, ExceptionSerializer,
+    DataMetaReadSerializer, DataMetaWriteSerializer, DataSerializer, ExceptionSerializer,
     FileInfoSerializer, JobReadSerializer, JobWriteSerializer, LabeledDataSerializer,
     LogEventSerializer, ProjectSerializer, ProjectSearchSerializer,
     RqStatusSerializer, TaskSerializer, UserSerializer, PluginsSerializer, IssueReadSerializer,
@@ -941,19 +941,28 @@ class TaskViewSet(UploadMixin, viewsets.ModelViewSet):
 
         return response
 
-    @staticmethod
     @extend_schema(summary='Method provides a meta information about media files which are related with the task',
         responses={
-            '200': DataMetaSerializer,
+            '200': DataMetaReadSerializer,
         })
-    @action(detail=True, methods=['GET'], serializer_class=DataMetaSerializer,
+    @extend_schema(methods=['PATCH'], summary='Method performs an update of data meta fields (deleted frames)',
+        responses={
+            '200': DataMetaReadSerializer,
+        })
+    @action(detail=True, methods=['GET', 'PATCH'], serializer_class=DataMetaReadSerializer,
         url_path='data/meta')
-    def data_info(request, pk):
+    def metadata(self, request, pk):
+        self.get_object() #force to call check_object_permissions
         db_task = models.Task.objects.prefetch_related(
             Prefetch('data', queryset=models.Data.objects.select_related('video').prefetch_related(
                 Prefetch('images', queryset=models.Image.objects.prefetch_related('related_files').order_by('frame'))
             ))
         ).get(pk=pk)
+
+        if request.method == 'PATCH':
+            serializer = DataMetaWriteSerializer(instance=db_task.data, data=request.data)
+            if serializer.is_valid(raise_exception=True):
+                db_task.data = serializer.save()
 
         if hasattr(db_task.data, 'video'):
             media = [db_task.data.video]
@@ -970,7 +979,7 @@ class TaskViewSet(UploadMixin, viewsets.ModelViewSet):
         db_data = db_task.data
         db_data.frames = frame_meta
 
-        serializer = DataMetaSerializer(db_data)
+        serializer = DataMetaReadSerializer(db_data)
         return Response(serializer.data)
 
     @extend_schema(summary='Export task as a dataset in a specific format',
@@ -1200,6 +1209,76 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
         return data_getter(request, db_job.segment.start_frame,
             db_job.segment.stop_frame, db_job.segment.task.data)
+
+    @extend_schema(summary='Method provides a meta information about media files which are related with the job',
+        responses={
+            '200': DataMetaReadSerializer,
+        })
+    @extend_schema(methods=['PATCH'], summary='Method performs an update of data meta fields (deleted frames)',
+        responses={
+            '200': DataMetaReadSerializer,
+        }, tags=['tasks'], versions=['2.0'])
+    @action(detail=True, methods=['GET', 'PATCH'], serializer_class=DataMetaReadSerializer,
+        url_path='data/meta')
+    def metadata(self, request, pk):
+        self.get_object() #force to call check_object_permissions
+        db_job = models.Job.objects.prefetch_related(
+            'segment',
+            'segment__task',
+            Prefetch('segment__task__data', queryset=models.Data.objects.select_related('video').prefetch_related(
+                Prefetch('images', queryset=models.Image.objects.prefetch_related('related_files').order_by('frame'))
+            ))
+        ).get(pk=pk)
+
+        db_data = db_job.segment.task.data
+        start_frame = db_job.segment.start_frame
+        stop_frame = db_job.segment.stop_frame
+        data_start_frame = db_data.start_frame + start_frame * db_data.get_frame_step()
+        data_stop_frame = db_data.start_frame + stop_frame * db_data.get_frame_step()
+
+        if request.method == 'PATCH':
+            serializer = DataMetaWriteSerializer(instance=db_data, data=request.data)
+            if serializer.is_valid(raise_exception=True):
+                serializer.validated_data['deleted_frames'] = list(filter(
+                    lambda frame: frame >= start_frame and frame <= stop_frame,
+                    serializer.validated_data['deleted_frames']
+                )) + list(filter(
+                    lambda frame: frame < start_frame and frame > stop_frame,
+                    db_data.deleted_frames,
+                ))
+                db_data = serializer.save()
+                db_job.segment.task.save()
+                if db_job.segment.task.project:
+                    db_job.segment.task.project.save()
+
+        if hasattr(db_data, 'video'):
+            media = [db_data.video]
+        else:
+            media = list(db_data.images.filter(
+                frame__gte=data_start_frame,
+                frame__lte=data_stop_frame,
+            ).all())
+
+        # Filter data with segment size
+        # Should data.size also be cropped by segment size?
+        db_data.deleted_frames = filter(
+            lambda frame: frame >= start_frame and frame <= stop_frame,
+            db_data.deleted_frames,
+        )
+        db_data.start_frame = data_start_frame
+        db_data.stop_frame = data_stop_frame
+
+        frame_meta = [{
+            'width': item.width,
+            'height': item.height,
+            'name': item.path,
+            'has_related_context': hasattr(item, 'related_files') and item.related_files.exists()
+        } for item in media]
+
+        db_data.frames = frame_meta
+
+        serializer = DataMetaReadSerializer(db_data)
+        return Response(serializer.data)
 
     @extend_schema(summary='The action returns the list of tracked '
         'changes for the job', responses={

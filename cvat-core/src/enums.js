@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2021 Intel Corporation
+// Copyright (C) 2019-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -278,6 +278,8 @@
      * @property {string} GROUPED_OBJECTS Grouped objects
      * @property {string} CREATED_OBJECTS Created objects
      * @property {string} REMOVED_OBJECT Removed object
+     * @property {string} REMOVED_FRAME Removed frame
+     * @property {string} RESTORED_FRAME Restored frame
      * @readonly
      */
     const HistoryActions = Object.freeze({
@@ -298,6 +300,8 @@
         GROUPED_OBJECTS: 'Grouped objects',
         CREATED_OBJECTS: 'Created objects',
         REMOVED_OBJECT: 'Removed object',
+        REMOVED_FRAME: 'Removed frame',
+        RESTORED_FRAME: 'Restored frame',
     });
 
     /**

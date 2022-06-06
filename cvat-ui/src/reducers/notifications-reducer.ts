@@ -104,6 +104,8 @@ const defaultState: NotificationsState = {
             redo: null,
             search: null,
             searchEmptyFrame: null,
+            deleteFrame: null,
+            restoreFrame: null,
             savingLogs: null,
         },
         boundaries: {
@@ -1293,6 +1295,36 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         ...state.errors.predictor,
                         prediction: {
                             message: 'Could not fetch prediction data',
+                            reason: action.payload.error,
+                        },
+                    },
+                },
+            };
+        }
+        case AnnotationActionTypes.DELETE_FRAME_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    annotation: {
+                        ...state.errors.annotation,
+                        deleteFrame: {
+                            message: 'Could not delete frame',
+                            reason: action.payload.error,
+                        },
+                    },
+                },
+            };
+        }
+        case AnnotationActionTypes.RESTORE_FRAME_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    annotation: {
+                        ...state.errors.annotation,
+                        restoreFrame: {
+                            message: 'Could not restore frame',
                             reason: action.payload.error,
                         },
                     },

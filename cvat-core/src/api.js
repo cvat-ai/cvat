@@ -280,8 +280,8 @@ function build() {
              * @property {string} name Check if name contains this value
              * @property {module:API.cvat.enums.ProjectStatus} status
              * Check if status contains this value
-             * @property {integer} id Check if id equals this value
-             * @property {integer} page Get specific page
+             * @property {number} id Check if id equals this value
+             * @property {number} page Get specific page
              * (default REST API returns 20 projects per request.
              * In order to get more, it is need to specify next page)
              * @property {string} owner Check if owner user contains this value
@@ -336,11 +336,11 @@ function build() {
              * Check if status contains this value
              * @property {module:API.cvat.enums.TaskMode} mode
              * Check if mode contains this value
-             * @property {integer} id Check if id equals this value
-             * @property {integer} page Get specific page
+             * @property {number} id Check if id equals this value
+             * @property {number} page Get specific page
              * (default REST API returns 20 tasks per request.
              * In order to get more, it is need to specify next page)
-             * @property {integer} projectId Check if project_id field contains this value
+             * @property {number} projectId Check if project_id field contains this value
              * @property {string} owner Check if owner user contains this value
              * @property {string} assignee Check if assigneed contains this value
              * @property {string} search Combined search of contains among all fields
@@ -371,8 +371,8 @@ function build() {
             /**
              * @typedef {Object} JobFilter
              * Only one of fields is allowed simultaneously
-             * @property {integer} taskID filter all jobs of specific task
-             * @property {integer} jobID filter job with a specific id
+             * @property {number} taskID filter all jobs of specific task
+             * @property {number} jobID filter job with a specific id
              * @global
              */
 
@@ -775,8 +775,8 @@ function build() {
              * @property {string} displayName Check if displayName contains this value
              * @property {string} resource Check if resource name contains this value
              * @property {module:API.cvat.enums.ProviderType} providerType Check if providerType equal this value
-             * @property {integer} id Check if id equals this value
-             * @property {integer} page Get specific page
+             * @property {number} id Check if id equals this value
+             * @property {number} page Get specific page
              * (default REST API returns 20 clouds storages per request.
              * In order to get more, it is need to specify next page)
              * @property {string} owner Check if an owner name contains this value

@@ -1,7 +1,7 @@
 ---
 title: 'Shortcuts'
 linkTitle: 'Shortcuts'
-weight: 22
+weight: 23
 description: 'List of available mouse and keyboard shortcuts.'
 ---
 

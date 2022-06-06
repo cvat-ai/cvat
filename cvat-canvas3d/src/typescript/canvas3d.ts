@@ -1,4 +1,4 @@
-// Copyright (C) 2021 Intel Corporation
+// Copyright (C) 2021-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -112,5 +112,5 @@ class Canvas3dImpl implements Canvas3d {
 }
 
 export {
-    Canvas3dImpl as Canvas3d, Canvas3dVersion, ViewType, MouseInteraction, CameraAction, ViewsDOM,
+    Canvas3dImpl as Canvas3d, Canvas3dVersion, ViewType, MouseInteraction, CameraAction, ViewsDOM, Mode as CanvasMode,
 };

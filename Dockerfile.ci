@@ -30,6 +30,7 @@ RUN gem install coveralls-lcov
 COPY utils ${HOME}/utils
 COPY cvat-core ${HOME}/cvat-core
 COPY cvat-data ${HOME}/cvat-data
+COPY package*.json ${HOME}/
 COPY tests ${HOME}/tests
 
 COPY .coveragerc .

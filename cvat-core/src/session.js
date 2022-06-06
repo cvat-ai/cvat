@@ -7,10 +7,21 @@
     const loggerStorage = require('./logger-storage');
     const serverProxy = require('./server-proxy');
     const {
-        getFrame, getRanges, getPreview, clear: clearFrames, getContextImage,
+        getFrame,
+        deleteFrame,
+        restoreFrame,
+        getRanges,
+        getPreview,
+        clear: clearFrames,
+        findNotDeletedFrame,
+        getContextImage,
+        patchMeta,
+        getDeletedFrames,
     } = require('./frames');
     const { ArgumentError, DataError } = require('./exceptions');
-    const { JobStage, JobState } = require('./enums');
+    const {
+        JobStage, JobState, HistoryActions,
+    } = require('./enums');
     const { Label } = require('./labels');
     const User = require('./user');
     const Issue = require('./issue');
@@ -170,12 +181,42 @@
                         );
                         return result;
                     },
+                    async delete(frame) {
+                        await PluginRegistry.apiWrapper.call(
+                            this,
+                            prototype.frames.delete,
+                            frame,
+                        );
+                    },
+                    async restore(frame) {
+                        await PluginRegistry.apiWrapper.call(
+                            this,
+                            prototype.frames.restore,
+                            frame,
+                        );
+                    },
+                    async save() {
+                        await PluginRegistry.apiWrapper.call(
+                            this,
+                            prototype.frames.save,
+                        );
+                    },
                     async ranges() {
                         const result = await PluginRegistry.apiWrapper.call(this, prototype.frames.ranges);
                         return result;
                     },
                     async preview() {
                         const result = await PluginRegistry.apiWrapper.call(this, prototype.frames.preview);
+                        return result;
+                    },
+                    async search(filters, frameFrom, frameTo) {
+                        const result = await PluginRegistry.apiWrapper.call(
+                            this,
+                            prototype.frames.search,
+                            filters,
+                            frameFrom,
+                            frameTo,
+                        );
                         return result;
                     },
                     async contextImage(frameId) {
@@ -368,7 +409,7 @@
              * <b> If you have double quotes in your query string,
              * please escape them using back slash: \" </b>
              * @method get
-             * @param {integer} frame get objects from the frame
+             * @param {number} frame get objects from the frame
              * @param {boolean} allTracks show all tracks
              * even if they are outside and not keyframe
              * @param {any[]} [filters = []]
@@ -386,9 +427,9 @@
              * @method search
              * @memberof Session.annotations
              * @param {ObjectFilter} [filter = []] filter
-             * @param {integer} from lower bound of a search
-             * @param {integer} to upper bound of a search
-             * @returns {integer|null} a frame that contains objects according to the filter
+             * @param {number} from lower bound of a search
+             * @param {number} to upper bound of a search
+             * @returns {number|null} a frame that contains objects according to the filter
              * @throws {module:API.cvat.exceptions.PluginError}
              * @throws {module:API.cvat.exceptions.ArgumentError}
              * @instance
@@ -398,9 +439,9 @@
              * Find the nearest empty frame without any annotations
              * @method searchEmpty
              * @memberof Session.annotations
-             * @param {integer} from lower bound of a search
-             * @param {integer} to upper bound of a search
-             * @returns {integer|null} a frame that contains objects according to the filter
+             * @param {number} from lower bound of a search
+             * @param {number} to upper bound of a search
+             * @returns {number|null} a empty frame according boundaries
              * @throws {module:API.cvat.exceptions.PluginError}
              * @throws {module:API.cvat.exceptions.ArgumentError}
              * @instance
@@ -444,7 +485,7 @@
              * @method split
              * @memberof Session.annotations
              * @param {module:API.cvat.classes.ObjectState} objectState
-             * @param {integer} frame
+             * @param {number} frame
              * @throws {module:API.cvat.exceptions.ArgumentError}
              * @throws {module:API.cvat.exceptions.PluginError}
              * @instance
@@ -457,7 +498,7 @@
              * @memberof Session.annotations
              * @param {module:API.cvat.classes.ObjectState[]} objectStates
              * @param {boolean} reset pass "true" to reset group value (set it to 0)
-             * @returns {integer} an ID of created group
+             * @returns {number} an ID of created group
              * @throws {module:API.cvat.exceptions.ArgumentError}
              * @throws {module:API.cvat.exceptions.PluginError}
              * @instance
@@ -517,7 +558,7 @@
              * Get frame by its number
              * @method get
              * @memberof Session.frames
-             * @param {integer} frame number of frame which you want to get
+             * @param {number} frame number of frame which you want to get
              * @returns {module:API.cvat.classes.FrameData}
              * @instance
              * @async
@@ -525,6 +566,51 @@
              * @throws {module:API.cvat.exceptions.ServerError}
              * @throws {module:API.cvat.exceptions.DataError}
              * @throws {module:API.cvat.exceptions.ArgumentError}
+             */
+            /**
+             * @typedef {Object} FrameSearchFilters
+             * @property {boolean} notDeleted if true will search for non-deleted frames
+             * @property {number} offset defines frame step during search
+            /**
+             * Find frame that match the condition
+             * @method search
+             * @memberof Session.frames
+             * @param {FrameSearchFilters} filters filters to search frame for
+             * @param {number} from lower bound of a search
+             * @param {number} to upper bound of a search
+             * @returns {number|null} a non-deleted frame according boundaries
+             * @throws {module:API.cvat.exceptions.PluginError}
+             * @throws {module:API.cvat.exceptions.ArgumentError}
+             * @instance
+             * @async
+             */
+            /**
+             * Delete frame from the job
+             * @method delete
+             * @memberof Session.frames
+             * @param {number} frame number of frame which you want to delete
+             * @throws {module:API.cvat.exceptions.ArgumentError}
+             * @throws {module:API.cvat.exceptions.PluginError}
+             * @instance
+             * @async
+             */
+            /**
+             * Restore frame from the job
+             * @method delete
+             * @memberof Session.frames
+             * @param {number} frame number of frame which you want to restore
+             * @throws {module:API.cvat.exceptions.ArgumentError}
+             * @throws {module:API.cvat.exceptions.PluginError}
+             * @instance
+             * @async
+             */
+            /**
+             * Save any changes in frames if some of them were deleted/restored
+             * @method save
+             * @memberof Session.frames
+             * @throws {module:API.cvat.exceptions.PluginError}
+             * @instance
+             * @async
              */
             /**
              * Get the first frame of a task for preview
@@ -754,7 +840,7 @@
                 Object.freeze({
                     /**
                      * @name id
-                     * @type {integer}
+                     * @type {number}
                      * @memberof module:API.cvat.classes.Job
                      * @readonly
                      * @instance
@@ -840,7 +926,7 @@
                     },
                     /**
                      * @name startFrame
-                     * @type {integer}
+                     * @type {number}
                      * @memberof module:API.cvat.classes.Job
                      * @readonly
                      * @instance
@@ -850,7 +936,7 @@
                     },
                     /**
                      * @name stopFrame
-                     * @type {integer}
+                     * @type {number}
                      * @memberof module:API.cvat.classes.Job
                      * @readonly
                      * @instance
@@ -860,7 +946,7 @@
                     },
                     /**
                      * @name projectId
-                     * @type {integer|null}
+                     * @type {number|null}
                      * @memberof module:API.cvat.classes.Job
                      * @readonly
                      * @instance
@@ -870,7 +956,7 @@
                     },
                     /**
                      * @name taskId
-                     * @type {integer}
+                     * @type {number}
                      * @memberof module:API.cvat.classes.Job
                      * @readonly
                      * @instance
@@ -900,7 +986,7 @@
                     },
                     /**
                      * @name dataChunkSize
-                     * @type {integer}
+                     * @type {number}
                      * @memberof module:API.cvat.classes.Job
                      * @readonly
                      * @instance
@@ -985,8 +1071,12 @@
 
             this.frames = {
                 get: Object.getPrototypeOf(this).frames.get.bind(this),
+                delete: Object.getPrototypeOf(this).frames.delete.bind(this),
+                restore: Object.getPrototypeOf(this).frames.restore.bind(this),
+                save: Object.getPrototypeOf(this).frames.save.bind(this),
                 ranges: Object.getPrototypeOf(this).frames.ranges.bind(this),
                 preview: Object.getPrototypeOf(this).frames.preview.bind(this),
+                search: Object.getPrototypeOf(this).frames.search.bind(this),
                 contextImage: Object.getPrototypeOf(this).frames.contextImage.bind(this),
             };
 
@@ -1107,6 +1197,7 @@
                 data_chunk_size: undefined,
                 data_compressed_chunk_type: undefined,
                 data_original_chunk_type: undefined,
+                deleted_frames: undefined,
                 use_zip_chunks: undefined,
                 use_cache: undefined,
                 copy_data: undefined,
@@ -1176,7 +1267,7 @@
                 Object.freeze({
                     /**
                      * @name id
-                     * @type {integer}
+                     * @type {number}
                      * @memberof module:API.cvat.classes.Task
                      * @readonly
                      * @instance
@@ -1203,7 +1294,7 @@
                     },
                     /**
                      * @name projectId
-                     * @type {integer|null}
+                     * @type {number|null}
                      * @memberof module:API.cvat.classes.Task
                      * @instance
                      */
@@ -1230,7 +1321,7 @@
                     },
                     /**
                      * @name size
-                     * @type {integer}
+                     * @type {number}
                      * @memberof module:API.cvat.classes.Task
                      * @readonly
                      * @instance
@@ -1339,7 +1430,7 @@
                     },
                     /**
                      * @name overlap
-                     * @type {integer}
+                     * @type {number}
                      * @memberof module:API.cvat.classes.Task
                      * @instance
                      * @throws {module:API.cvat.exceptions.ArgumentError}
@@ -1355,7 +1446,7 @@
                     },
                     /**
                      * @name segmentSize
-                     * @type {integer}
+                     * @type {number}
                      * @memberof module:API.cvat.classes.Task
                      * @instance
                      * @throws {module:API.cvat.exceptions.ArgumentError}
@@ -1371,7 +1462,7 @@
                     },
                     /**
                      * @name imageQuality
-                     * @type {integer}
+                     * @type {number}
                      * @memberof module:API.cvat.classes.Task
                      * @instance
                      * @throws {module:API.cvat.exceptions.ArgumentError}
@@ -1562,7 +1653,7 @@
                     /**
                      * The first frame of a video to annotation
                      * @name startFrame
-                     * @type {integer}
+                     * @type {number}
                      * @memberof module:API.cvat.classes.Task
                      * @instance
                      * @throws {module:API.cvat.exceptions.ArgumentError}
@@ -1579,7 +1670,7 @@
                     /**
                      * The last frame of a video to annotation
                      * @name stopFrame
-                     * @type {integer}
+                     * @type {number}
                      * @memberof module:API.cvat.classes.Task
                      * @instance
                      * @throws {module:API.cvat.exceptions.ArgumentError}
@@ -1698,9 +1789,13 @@
 
             this.frames = {
                 get: Object.getPrototypeOf(this).frames.get.bind(this),
+                delete: Object.getPrototypeOf(this).frames.delete.bind(this),
+                restore: Object.getPrototypeOf(this).frames.restore.bind(this),
+                save: Object.getPrototypeOf(this).frames.save.bind(this),
                 ranges: Object.getPrototypeOf(this).frames.ranges.bind(this),
                 preview: Object.getPrototypeOf(this).frames.preview.bind(this),
                 contextImage: Object.getPrototypeOf(this).frames.contextImage.bind(this),
+                search: Object.getPrototypeOf(this).frames.search.bind(this),
             };
 
             this.logger = {
@@ -1821,6 +1916,7 @@
         clearActions,
         getActions,
         closeSession,
+        getHistory,
     } = require('./annotations');
 
     buildDuplicatedAPI(Job.prototype);
@@ -1866,7 +1962,6 @@
         }
 
         const frameData = await getFrame(
-            this.taskId,
             this.id,
             this.dataChunkSize,
             this.dataChunkType,
@@ -1881,8 +1976,62 @@
         return frameData;
     };
 
+    // must be called with task/job context
+    async function deleteFrameWrapper(jobID, frame) {
+        const history = getHistory(this);
+        const redo = async () => {
+            deleteFrame(jobID, frame);
+        };
+
+        await redo();
+        history.do(HistoryActions.REMOVED_FRAME, async () => {
+            restoreFrame(jobID, frame);
+        }, redo, [], frame);
+    }
+
+    async function restoreFrameWrapper(jobID, frame) {
+        const history = getHistory(this);
+        const redo = async () => {
+            restoreFrame(jobID, frame);
+        };
+
+        await redo();
+        history.do(HistoryActions.RESTORED_FRAME, async () => {
+            deleteFrame(jobID, frame);
+        }, redo, [], frame);
+    }
+
+    Job.prototype.frames.delete.implementation = async function (frame) {
+        if (!Number.isInteger(frame)) {
+            throw new Error(`Frame must be an integer. Got: "${frame}"`);
+        }
+
+        if (frame < this.startFrame || frame > this.stopFrame) {
+            throw new Error('The frame is out of the job');
+        }
+
+        await deleteFrameWrapper.call(this, this.id, frame);
+    };
+
+    Job.prototype.frames.restore.implementation = async function (frame) {
+        if (!Number.isInteger(frame)) {
+            throw new Error(`Frame must be an integer. Got: "${frame}"`);
+        }
+
+        if (frame < this.startFrame || frame > this.stopFrame) {
+            throw new Error('The frame is out of the job');
+        }
+
+        await restoreFrameWrapper.call(this, this.id, frame);
+    };
+
+    Job.prototype.frames.save.implementation = async function () {
+        const result = await patchMeta(this.id);
+        return result;
+    };
+
     Job.prototype.frames.ranges.implementation = async function () {
-        const rangesData = await getRanges(this.taskId);
+        const rangesData = await getRanges(this.id);
         return rangesData;
     };
 
@@ -1893,6 +2042,33 @@
 
         const frameData = await getPreview(this.taskId, this.id);
         return frameData;
+    };
+
+    Job.prototype.frames.contextImage.implementation = async function (frameId) {
+        const result = await getContextImage(this.id, frameId);
+        return result;
+    };
+
+    Job.prototype.frames.search.implementation = async function (filters, frameFrom, frameTo) {
+        if (typeof filters !== 'object') {
+            throw new ArgumentError('Filters should be an object');
+        }
+
+        if (!Number.isInteger(frameFrom) || !Number.isInteger(frameTo)) {
+            throw new ArgumentError('The start and end frames both must be an integer');
+        }
+
+        if (frameFrom < this.startFrame || frameFrom > this.stopFrame) {
+            throw new ArgumentError('The start frame is out of the job');
+        }
+
+        if (frameTo < this.startFrame || frameTo > this.stopFrame) {
+            throw new ArgumentError('The stop frame is out of the job');
+        }
+        if (filters.notDeleted) {
+            return findNotDeletedFrame(this.id, frameFrom, frameTo, filters.offset || 1);
+        }
+        return null;
     };
 
     // TODO: Check filter for annotations
@@ -1910,6 +2086,11 @@
         }
 
         const annotationsData = await getAnnotations(this, frame, allTracks, filters);
+        const deletedFrames = await getDeletedFrames('job', this.id);
+        if (frame in deletedFrames) {
+            return [];
+        }
+
         return annotationsData;
     };
 
@@ -2018,13 +2199,13 @@
         return result;
     };
 
-    Job.prototype.actions.undo.implementation = function (count) {
-        const result = undoActions(this, count);
+    Job.prototype.actions.undo.implementation = async function (count) {
+        const result = await undoActions(this, count);
         return result;
     };
 
-    Job.prototype.actions.redo.implementation = function (count) {
-        const result = redoActions(this, count);
+    Job.prototype.actions.redo.implementation = async function (count) {
+        const result = await redoActions(this, count);
         return result;
     };
 
@@ -2081,20 +2262,15 @@
         return result;
     };
 
-    Job.prototype.frames.contextImage.implementation = async function (frameId) {
-        const result = await getContextImage(this.taskId, this.id, frameId);
-        return result;
-    };
-
     Job.prototype.close.implementation = function closeTask() {
-        clearFrames(this.taskId);
+        clearFrames(this.id);
         closeSession(this);
         return this;
     };
 
     Task.prototype.close.implementation = function closeTask() {
-        clearFrames(this.id);
         for (const job of this.jobs) {
+            clearFrames(job.id);
             closeSession(job);
         }
 
@@ -2203,15 +2379,16 @@
             throw new ArgumentError(`The frame with number ${frame} is out of the task`);
         }
 
+        const job = this.jobs.filter((_job) => _job.startFrame <= frame && _job.stopFrame >= frame)[0];
+
         const result = await getFrame(
-            this.id,
-            null,
+            job.id,
             this.dataChunkSize,
             this.dataChunkType,
             this.mode,
             frame,
-            0,
-            this.size - 1,
+            job.startFrame,
+            job.stopFrame,
             isPlaying,
             step,
         );
@@ -2219,7 +2396,15 @@
     };
 
     Task.prototype.frames.ranges.implementation = async function () {
-        const rangesData = await getRanges(this.id);
+        const rangesData = {
+            decoded: [],
+            buffered: [],
+        };
+        for (const job of this.jobs) {
+            const { decoded, buffered } = await getRanges(job.id);
+            rangesData.decoded.push(decoded);
+            rangesData.buffered.push(buffered);
+        }
         return rangesData;
     };
 
@@ -2230,6 +2415,76 @@
 
         const frameData = await getPreview(this.id);
         return frameData;
+    };
+
+    Task.prototype.frames.delete.implementation = async function (frame) {
+        if (!Number.isInteger(frame)) {
+            throw new Error(`Frame must be an integer. Got: "${frame}"`);
+        }
+
+        if (frame < 0 || frame >= this.size) {
+            throw new Error('The frame is out of the task');
+        }
+
+        const job = this.jobs.filter((_job) => _job.startFrame <= frame && _job.stopFrame >= frame)[0];
+        if (job) {
+            await deleteFrameWrapper.call(this, job.id, frame);
+        }
+    };
+
+    Task.prototype.frames.restore.implementation = async function (frame) {
+        if (!Number.isInteger(frame)) {
+            throw new Error(`Frame must be an integer. Got: "${frame}"`);
+        }
+
+        if (frame < 0 || frame >= this.size) {
+            throw new Error('The frame is out of the task');
+        }
+
+        const job = this.jobs.filter((_job) => _job.startFrame <= frame && _job.stopFrame >= frame)[0];
+        if (job) {
+            await restoreFrameWrapper.call(this, job.id, frame);
+        }
+    };
+
+    Task.prototype.frames.save.implementation = async function () {
+        return Promise.all(this.jobs.map((job) => patchMeta(job.id)));
+    };
+
+    Task.prototype.frames.search.implementation = async function (filters, frameFrom, frameTo) {
+        if (typeof filters !== 'object') {
+            throw new ArgumentError('Filters should be an object');
+        }
+
+        if (!Number.isInteger(frameFrom) || !Number.isInteger(frameTo)) {
+            throw new ArgumentError('The start and end frames both must be an integer');
+        }
+
+        if (frameFrom < 0 || frameFrom > this.size) {
+            throw new ArgumentError('The start frame is out of the task');
+        }
+
+        if (frameTo < 0 || frameTo > this.size) {
+            throw new ArgumentError('The stop frame is out of the task');
+        }
+
+        const jobs = this.jobs.filter((_job) => (
+            (frameFrom >= _job.startFrame && frameFrom <= _job.stopFrame) ||
+            (frameTo >= _job.startFrame && frameTo <= _job.stopFrame) ||
+            (frameFrom < _job.startFrame && frameTo > _job.stopFrame)
+        ));
+
+        if (filters.notDeleted) {
+            for (const job of jobs) {
+                const result = await findNotDeletedFrame(
+                    job.id, Math.max(frameFrom, job.startFrame), Math.min(frameTo, job.stopFrame), 1,
+                );
+
+                if (result !== null) return result;
+            }
+        }
+
+        return null;
     };
 
     // TODO: Check filter for annotations
@@ -2247,6 +2502,11 @@
         }
 
         const result = await getAnnotations(this, frame, allTracks, filters);
+        const deletedFrames = await getDeletedFrames('task', this.id);
+        if (frame in deletedFrames) {
+            return [];
+        }
+
         return result;
     };
 

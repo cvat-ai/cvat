@@ -246,11 +246,10 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
             contrastLevel !== prevProps.contrastLevel ||
             saturationLevel !== prevProps.saturationLevel
         ) {
-            const backgroundElement = window.document.getElementById('cvat_canvas_background');
-            if (backgroundElement) {
-                const filter = `brightness(${brightnessLevel}) contrast(${contrastLevel}) saturate(${saturationLevel})`;
-                backgroundElement.style.filter = filter;
-            }
+            canvasInstance.configure({
+                CSSImageFilter:
+                    `brightness(${brightnessLevel}) contrast(${contrastLevel}) saturate(${saturationLevel})`,
+            });
         }
 
         if (
@@ -685,7 +684,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         if (frameData !== null && canvasInstance) {
             canvasInstance.setup(
                 frameData,
-                annotations.filter((e) => e.objectType !== ObjectType.TAG),
+                frameData.deleted ? [] : annotations.filter((e) => e.objectType !== ObjectType.TAG),
                 curZLayer,
             );
         }
@@ -720,13 +719,10 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         }
         canvasInstance.grid(gridSize, gridSize);
 
-        // Filters
-        const backgroundElement = window.document.getElementById('cvat_canvas_background');
-        if (backgroundElement) {
-            const filter = `brightness(${brightnessLevel}) contrast(${contrastLevel}) saturate(${saturationLevel})`;
-            backgroundElement.style.filter = filter;
-        }
-
+        canvasInstance.configure({
+            CSSImageFilter:
+                `brightness(${brightnessLevel}) contrast(${contrastLevel}) saturate(${saturationLevel})`,
+        });
         const canvasWrapperElement = window.document
             .getElementsByClassName('cvat-canvas-container')
             .item(0) as HTMLElement | null;

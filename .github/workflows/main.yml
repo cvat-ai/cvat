@@ -136,7 +136,7 @@ jobs:
           -c 'coverage run -a manage.py test cvat/apps utils/cli -k 'tasks_id' -k 'lambda' -k 'share' && mv .coverage ${CONTAINER_COVERAGE_DATA_DIR}'
 
           docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.ci.yml run cvat_ci /bin/bash \
-          -c 'cd cvat-data && npm ci && cd ../cvat-core && npm ci && npm run test && mv ./reports/coverage/lcov.info ${CONTAINER_COVERAGE_DATA_DIR} && chmod a+rwx ${CONTAINER_COVERAGE_DATA_DIR}/lcov.info'
+          -c 'cd cvat-data && npm ci --ignore-scripts && cd ../cvat-core && npm ci --ignore-scripts && npm run test && mv ./reports/coverage/lcov.info ${CONTAINER_COVERAGE_DATA_DIR} && chmod a+rwx ${CONTAINER_COVERAGE_DATA_DIR}/lcov.info'
       - name: Uploading code coverage results as an artifact
         if: github.ref == 'refs/heads/develop'
         uses: actions/upload-artifact@v2

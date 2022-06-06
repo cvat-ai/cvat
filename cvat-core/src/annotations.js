@@ -1,4 +1,4 @@
-// Copyright (C) 2019-2021 Intel Corporation
+// Copyright (C) 2019-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -12,6 +12,7 @@
     const { Task, Job } = require('./session');
     const { Loader } = require('./annotation-formats');
     const { ScriptingError, DataError, ArgumentError } = require('./exceptions');
+    const { getDeletedFrames } = require('./frames');
 
     const jobCache = new WeakMap();
     const taskCache = new WeakMap();
@@ -42,6 +43,7 @@
             for (let i = startFrame; i <= stopFrame; i++) {
                 frameMeta[i] = await session.frames.get(i);
             }
+            frameMeta.deleted_frames = await getDeletedFrames(sessionType, session.id);
 
             const history = new AnnotationsHistory();
             const collection = new Collection({
@@ -51,16 +53,11 @@
                 stopFrame,
                 frameMeta,
             });
+
             // eslint-disable-next-line no-unsanitized/method
             collection.import(rawAnnotations);
-
             const saver = new AnnotationsSaver(rawAnnotations.version, collection, session);
-
-            cache.set(session, {
-                collection,
-                saver,
-                history,
-            });
+            cache.set(session, { collection, saver, history });
         }
     }
 
@@ -300,7 +297,20 @@
         return serverProxy.projects.importDataset(instance.id, format, file, updateStatusCallback);
     }
 
-    function undoActions(session, count) {
+    function getHistory(session) {
+        const sessionType = session instanceof Task ? 'task' : 'job';
+        const cache = getCache(sessionType);
+
+        if (cache.has(session)) {
+            return cache.get(session).history;
+        }
+
+        throw new DataError(
+            'Collection has not been initialized yet. Call annotations.get() or annotations.clear(true) before',
+        );
+    }
+
+    async function undoActions(session, count) {
         const sessionType = session instanceof Task ? 'task' : 'job';
         const cache = getCache(sessionType);
 
@@ -313,7 +323,7 @@
         );
     }
 
-    function redoActions(session, count) {
+    async function redoActions(session, count) {
         const sessionType = session instanceof Task ? 'task' : 'job';
         const cache = getCache(sessionType);
 
@@ -386,6 +396,7 @@
         undoActions,
         redoActions,
         freezeHistory,
+        getHistory,
         clearActions,
         getActions,
         closeSession,

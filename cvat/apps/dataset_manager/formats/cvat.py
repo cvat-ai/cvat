@@ -1034,6 +1034,9 @@ def dump_media_files(task_data: TaskData, img_dir: str, project_data: ProjectDat
         frame_provider.Quality.ORIGINAL,
         frame_provider.Type.BUFFER)
     for frame_id, (frame_data, _) in enumerate(frames):
+        if (project_data is not None and (task_data.db_task.id, frame_id) in project_data.deleted_frames) \
+            or frame_id in task_data.deleted_frames:
+            continue
         frame_name = task_data.frame_info[frame_id]['path'] if project_data is None \
             else project_data.frame_info[(task_data.db_task.id, frame_id)]['path']
         img_path = osp.join(img_dir, frame_name + ext)

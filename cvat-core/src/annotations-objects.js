@@ -1,4 +1,4 @@
-// Copyright (C) 2021 Intel Corporation
+// Copyright (C) 2019-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -23,6 +23,7 @@
         objectState.__internal = {
             save: this.save.bind(this, frame, objectState),
             delete: this.delete.bind(this),
+            context: this,
         };
 
         return objectState;
@@ -834,6 +835,10 @@
             let last = Number.MIN_SAFE_INTEGER;
 
             for (const frame of frames) {
+                if (frame in this.frameMeta.deleted_frames) {
+                    continue;
+                }
+
                 if (frame < first) {
                     first = frame;
                 }

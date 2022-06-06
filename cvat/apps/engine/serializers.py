@@ -1,4 +1,4 @@
-# Copyright (C) 2019-2021 Intel Corporation
+# Copyright (C) 2019-2022 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -404,6 +404,7 @@ class DataSerializer(serializers.ModelSerializer):
                 remote_file = models.RemoteFile(data=instance, **f)
                 remote_file.save()
 
+
 class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
     labels = LabelSerializer(many=True, source='label_set', partial=True, required=False)
     segments = SegmentSerializer(many=True, source='segment_set', read_only=True)
@@ -681,9 +682,10 @@ class PluginsSerializer(serializers.Serializer):
     MODELS = serializers.BooleanField()
     PREDICT = serializers.BooleanField()
 
-class DataMetaSerializer(serializers.ModelSerializer):
+class DataMetaReadSerializer(serializers.ModelSerializer):
     frames = FrameMetaSerializer(many=True, allow_null=True)
     image_quality = serializers.IntegerField(min_value=0, max_value=100)
+    deleted_frames = serializers.ListField(child=serializers.IntegerField(min_value=0))
 
     class Meta:
         model = models.Data
@@ -695,16 +697,16 @@ class DataMetaSerializer(serializers.ModelSerializer):
             'stop_frame',
             'frame_filter',
             'frames',
+            'deleted_frames',
         )
-        read_only_fields = (
-            'chunk_size',
-            'size',
-            'image_quality',
-            'start_frame',
-            'stop_frame',
-            'frame_filter',
-            'frames',
-        )
+        read_only_fields = fields
+
+class DataMetaWriteSerializer(serializers.ModelSerializer):
+    deleted_frames = serializers.ListField(child=serializers.IntegerField(min_value=0))
+
+    class Meta:
+        model = models.Data
+        fields = ('deleted_frames',)
 
 class AttributeValSerializer(serializers.Serializer):
     spec_id = serializers.IntegerField()

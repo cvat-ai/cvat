@@ -157,7 +157,6 @@ class TestGetData:
         assert response.status_code == HTTPStatus.OK
         assert response.headers['Content-Type'] == content_type
 
-
 @pytest.mark.usefixtures("restore")
 class TestPatchTaskAnnotations:
     def _test_check_respone(self, is_allow, response, data=None):

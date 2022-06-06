@@ -63,6 +63,7 @@ interface StateToProps {
     curZOrder: number;
     defaultApproxPolyAccuracy: number;
     toolsBlockerState: ToolsBlockerState;
+    frameIsDeleted: boolean;
 }
 
 interface DispatchToProps {
@@ -78,29 +79,42 @@ const core = getCore();
 const CustomPopover = withVisibilityHandling(Popover, 'tools-control');
 
 function mapStateToProps(state: CombinedState): StateToProps {
-    const { annotation } = state;
-    const { settings } = state;
-    const { number: frame } = annotation.player.frame;
-    const { instance: jobInstance } = annotation.job;
-    const { instance: canvasInstance, activeControl } = annotation.canvas;
-    const { models } = state;
-    const { interactors, detectors, trackers } = models;
-    const { toolsBlockerState } = state.settings.workspace;
+    const {
+        annotation: {
+            job: { instance: jobInstance, labels },
+            canvas: { instance: canvasInstance, activeControl },
+            player: {
+                frame: { number: frame, data: { deleted: frameIsDeleted } },
+            },
+            annotations: {
+                zLayer: { cur: curZOrder },
+                states,
+            },
+            drawing: { activeLabelID },
+        },
+        models: {
+            interactors, detectors, trackers,
+        },
+        settings: {
+            workspace: { toolsBlockerState, defaultApproxPolyAccuracy },
+        },
+    } = state;
 
     return {
         interactors,
         detectors,
         trackers,
         isActivated: activeControl === ActiveControl.AI_TOOLS,
-        activeLabelID: annotation.drawing.activeLabelID,
-        labels: annotation.job.labels,
-        states: annotation.annotations.states,
+        activeLabelID,
+        labels,
+        states,
         canvasInstance: canvasInstance as Canvas,
         jobInstance,
         frame,
-        curZOrder: annotation.annotations.zLayer.cur,
-        defaultApproxPolyAccuracy: settings.workspace.defaultApproxPolyAccuracy,
+        curZOrder,
+        defaultApproxPolyAccuracy,
         toolsBlockerState,
+        frameIsDeleted,
     };
 }
 
@@ -1161,7 +1175,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
     public render(): JSX.Element | null {
         const {
-            interactors, detectors, trackers, isActivated, canvasInstance, labels,
+            interactors, detectors, trackers, isActivated, canvasInstance, labels, frameIsDeleted,
         } = this.props;
         const {
             fetching, approxPolyAccuracy, pointsRecieved, mode, portals,
@@ -1188,7 +1202,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                 className: 'cvat-tools-control',
             };
 
-        const showAnyContent = !!labels.length;
+        const showAnyContent = labels.length && !frameIsDeleted;
         const showInteractionContent = isActivated && mode === 'interaction' && pointsRecieved;
         const showDetectionContent = fetching && mode === 'detection';
 

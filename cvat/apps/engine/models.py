@@ -1,4 +1,4 @@
-# Copyright (C) 2018-2019 Intel Corporation
+# Copyright (C) 2018-2022 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -6,6 +6,7 @@ import os
 import re
 import shutil
 from enum import Enum
+from typing import Optional
 
 from django.conf import settings
 from django.contrib.auth.models import User
@@ -124,6 +125,41 @@ class SortingMethod(str, Enum):
     def __str__(self):
         return self.value
 
+class AbstractArrayField(models.TextField):
+    separator = ","
+    converter = lambda x: x
+
+    def __init__(self, *args, store_sorted:Optional[bool]=False, unique_values:Optional[bool]=False, **kwargs):
+        self._store_sorted = store_sorted
+        self._unique_values = unique_values
+        super().__init__(*args,**{'default': '', **kwargs})
+
+    def from_db_value(self, value, expression, connection):
+        if not value:
+            return []
+        if value.startswith('[') and value.endswith(']'):
+            value = value[1:-1]
+        return [self.converter(v) for v in value.split(self.separator)]
+
+    def to_python(self, value):
+        if isinstance(value, list):
+            return value
+
+        return self.from_db_value(value, None, None)
+
+    def get_prep_value(self, value):
+        if self._unique_values:
+            value = list(dict.fromkeys(value))
+        if self._store_sorted:
+            value = sorted(value)
+        return self.separator.join(map(str, value))
+
+class FloatArrayField(AbstractArrayField):
+    converter = float
+
+class IntArrayField(AbstractArrayField):
+    converter = int
+
 class Data(models.Model):
     chunk_size = models.PositiveIntegerField(null=True)
     size = models.PositiveIntegerField(default=0)
@@ -139,6 +175,7 @@ class Data(models.Model):
     storage = models.CharField(max_length=15, choices=StorageChoice.choices(), default=StorageChoice.LOCAL)
     cloud_storage = models.ForeignKey('CloudStorage', on_delete=models.SET_NULL, null=True, related_name='data')
     sorting_method = models.CharField(max_length=15, choices=SortingMethod.choices(), default=SortingMethod.LEXICOGRAPHICAL)
+    deleted_frames = IntArrayField(store_sorted=True, unique_values=True)
 
     class Meta:
         default_permissions = ()
@@ -528,25 +565,6 @@ class Commit(models.Model):
 
 class JobCommit(Commit):
     job = models.ForeignKey(Job, on_delete=models.CASCADE, related_name="commits")
-
-class FloatArrayField(models.TextField):
-    separator = ","
-
-    def from_db_value(self, value, expression, connection):
-        if not value:
-            return value
-        if value.startswith('[') and value.endswith(']'):
-            value = value[1:-1]
-        return [float(v) for v in value.split(self.separator)]
-
-    def to_python(self, value):
-        if isinstance(value, list):
-            return value
-
-        return self.from_db_value(value, None, None)
-
-    def get_prep_value(self, value):
-        return self.separator.join(map(str, value))
 
 class Shape(models.Model):
     type = models.CharField(max_length=16, choices=ShapeType.choices())

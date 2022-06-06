@@ -11,6 +11,12 @@
 .cvat-issue-control {
     font-size: 40px;
 
+    &.cvat-disabled-canvas-control {
+        &::after {
+            opacity: 0.3;
+        }
+    }
+
     &::after {
         content: '\FE56';
         font-size: 32px;
