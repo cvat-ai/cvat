@@ -639,8 +639,10 @@ class TaskViewSet(UploadMixin, viewsets.ModelViewSet):
             db_project.save()
             assert instance.organization == db_project.organization
 
-    def perform_destroy(self, instance):
+    def perform_destroy(self, instance: Task):
         task_dirname = instance.get_task_dirname()
+        # To avoid integrity error
+        instance.segment_set.all().delete()
         super().perform_destroy(instance)
         shutil.rmtree(task_dirname, ignore_errors=True)
         if instance.data and not instance.data.tasks.all():
