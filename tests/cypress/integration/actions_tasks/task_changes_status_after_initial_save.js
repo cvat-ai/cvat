@@ -60,7 +60,6 @@ context('Delete a label from a task.', () => {
                 cy.wait('@searchUsers');
             });
             cy.reload();
-            cy.closeModalUnsupportedPlatform(); // If the Firefox browser closes the modal window after reload
             cy.get('td.cvat-job-item-state').invoke('text').should('equal', 'in progress');
         });
     });

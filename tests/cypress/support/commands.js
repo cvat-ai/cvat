@@ -36,7 +36,6 @@ Cypress.Commands.add('logout', (username = Cypress.env('user')) => {
     cy.get('span[aria-label="logout"]').click();
     cy.url().should('include', '/auth/login');
     cy.visit('/auth/login'); // clear query parameter "next"
-    cy.closeModalUnsupportedPlatform();
 });
 
 Cypress.Commands.add('userRegistration', (firstName, lastName, userName, emailAddr, password) => {
@@ -830,7 +829,7 @@ Cypress.Commands.add('getObjectIdNumberByLabelName', (labelName) => {
 });
 
 Cypress.Commands.add('closeModalUnsupportedPlatform', () => {
-    if (Cypress.browser.family !== 'chromium') {
+    if (Cypress.browser.family !== 'chromium' && !window.localStorage.getItem('platformNotiticationShown')) {
         cy.get('.cvat-modal-unsupported-platform-warning').within(() => {
             cy.contains('button', 'OK').click();
         });
@@ -899,4 +898,14 @@ Cypress.Commands.add('deleteFrame', (action = 'delete') => {
     }
     cy.saveJob('PATCH', 200);
     cy.wait('@patchMeta').its('response.statusCode').should('equal', 200);
+});
+
+Cypress.Commands.overwrite('visit', (orig, url, options) => {
+    orig(url, options);
+    cy.closeModalUnsupportedPlatform();
+});
+
+Cypress.Commands.overwrite('reload', (orig, options) => {
+    orig(options);
+    cy.closeModalUnsupportedPlatform();
 });

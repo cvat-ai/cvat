@@ -1,4 +1,4 @@
-// Copyright (C) 2021 Intel Corporation
+// Copyright (C) 2021-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -45,7 +45,6 @@ context('Settings. Default number of points in polygon approximation.', () => {
                     cy.closeNotification('.cvat-notification-notice-save-settings-success');
                     cy.closeSettings();
                     cy.reload();
-                    cy.closeModalUnsupportedPlatform(); // If the Firefox browser closes the modal window after reload
                     testCheckSliderAttrValuenow(sliderAttrValueNow);
                     cy.contains('strong', 'less').click();
                     testCheckSliderAttrValuenow(sliderAttrValuemin);
