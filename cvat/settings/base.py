@@ -573,5 +573,25 @@ VERSION_TRACKER_URL = os.getenv(
     'https://versions.fyn.rocks/api/v1/track-version',
 )
 
-# Reb overrides
-from cvat.rebotics.settings.base import *
+# Media storage settings
+DEFAULT_FILE_STORAGE = 'cvat.rebotics.storage.CustomAWSMediaStorage'
+
+# AWS s3 storage settings for media storage.
+AWS_S3_SIGNATURE_VERSION = 's3v4'
+AWS_DEFAULT_ACL = 'private'
+AWS_LOCATION = 'cvat-media'
+AWS_S3_FILE_OVERWRITE = False
+AWS_QUERYSTRING_AUTH = True
+AWS_QUERYSTRING_EXPIRE = 604800
+AWS_S3_OBJECT_PARAMETERS = {
+    'CacheControl': 'max-age=3600',
+}
+
+AWS_S3_ADDRESSING_STYLE = os.getenv('AWS_S3_ADRESSING_STYLE', 'virtual')
+AWS_S3_ACCESS_KEY_ID = os.getenv('AWS_S3_ACCESS_KEY_ID')
+AWS_S3_SECRET_ACCESS_KEY = os.getenv('AWS_S3_SECRET_ACCESS_KEY')
+AWS_STORAGE_BUCKET_NAME = os.getenv('AWS_STORAGE_BUCKET_NAME')
+AWS_S3_REGION_NAME = os.getenv('AWS_S3_REGION_NAME')
+if not AWS_S3_REGION_NAME:  # treat empty string as None
+    AWS_S3_REGION_NAME = None
+AWS_S3_ENDPOINT_URL = os.getenv('AWS_S3_ENDPOINT_URL')

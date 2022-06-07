@@ -37,6 +37,3 @@ if USE_SENTRY:
         print(e)
 else:
     logging.info('Sentry usage is disabled.')
-
-# Reb overrides
-from cvat.rebotics.settings.production import *
