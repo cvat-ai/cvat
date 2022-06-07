@@ -1,0 +1,2 @@
+tensorflow==2.8.0
+open3d==0.11.2
