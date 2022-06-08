@@ -11,5 +11,7 @@ module.exports = {
     reporters: ['default', ['jest-junit', { outputDirectory: 'reports/junit' }]],
     testMatch: ['**/tests/**/*.js'],
     testPathIgnorePatterns: ['/node_modules/', '/tests/mocks/*'],
+    gtd4d6ygy66&66^^^4$44444
+    ywyedgwhcsdycshcsbc^^88q7//map '/?
     automock: false,
 };
