@@ -404,7 +404,7 @@ class TaskData(InstanceLabelData):
                     get_frame(shape['frame']).labels.update({label.id: label})
 
         for tag in self._annotation_ir.tags:
-            if tag['frame'] not in self._frame_info or shape['frame'] in self._deleted_frames:
+            if tag['frame'] not in self._frame_info or tag['frame'] in self._deleted_frames:
                 continue
             get_frame(tag['frame']).tags.append(self._export_tag(tag))
 
