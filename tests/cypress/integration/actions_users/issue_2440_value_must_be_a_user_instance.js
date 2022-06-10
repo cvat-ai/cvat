@@ -1,4 +1,4 @@
-// Copyright (C) 2020 Intel Corporation
+// Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
@@ -23,7 +23,7 @@ context('Value must be a user instance.', () => {
                 .within(() => {
                     cy.get(`.ant-select-item-option[title="${Cypress.env('user')}"]`).click();
                 });
-            cy.get('.cvat-spinner').should('exist');
+            cy.get('.cvat-spinner').should('not.exist');
         });
         it('Assign the task to the same user again', () => {
             cy.get('.cvat-task-details-user-block').within(() => {

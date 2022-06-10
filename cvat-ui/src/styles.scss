@@ -17,6 +17,17 @@ hr {
     transform: translate(-50%, -50%);
 }
 
+.cvat-spinner-container {
+    position: absolute;
+    background: $background-color-1;
+    opacity: 0.5;
+    width: 100%;
+    height: 100%;
+    z-index: 2;
+    top: 0;
+    left: 0;
+}
+
 .cvat-not-found {
     margin: 10% 25%;
 }

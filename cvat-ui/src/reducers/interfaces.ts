@@ -116,6 +116,9 @@ export interface TasksState {
         backups: {
             [tid: number]: boolean;
         };
+        jobUpdates: {
+            [jid: number]: boolean,
+        };
     };
 }
 

@@ -49,8 +49,8 @@ context('Filtering, sorting jobs.', () => {
             cy.get('.cvat-task-jobs-table')
                 .contains('a', `Job #${$job}`)
                 .parents('.cvat-task-jobs-table-row').within(() => {
-                    cy.get('.cvat-job-item-stage').invoke('text').should('equal', stage);
-                    cy.get('.cvat-job-item-state').invoke('text').should('equal', state);
+                    cy.get('.cvat-job-item-stage .ant-select-selection-item').should('have.text', stage);
+                    cy.get('.cvat-job-item-state').should('have.text', state);
                     cy.get('.cvat-job-item-assignee')
                         .find('[type="search"]')
                         .invoke('val')

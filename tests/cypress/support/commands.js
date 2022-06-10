@@ -698,6 +698,7 @@ Cypress.Commands.add('addNewLabel', (newLabelName, additionalAttrs, labelColor) 
         }
     }
     cy.contains('button', 'Done').click();
+    cy.get('.cvat-spinner').should('not.exist');
     cy.get('.cvat-constructor-viewer').should('be.visible');
     cy.contains('.cvat-constructor-viewer-item', new RegExp(`^${newLabelName}$`)).should('exist');
 });
