@@ -52,6 +52,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Unable to upload annotations (<https://github.com/openvinotoolkit/cvat/pull/4513>)
 - Fix build dependencies for Siammask (<https://github.com/openvinotoolkit/cvat/pull/4486>)
 - Bug: Exif orientation information handled incorrectly (<https://github.com/openvinotoolkit/cvat/pull/4529>)
+- Fixed build of retinanet function image (<https://github.com/cvat-ai/cvat/pull/54>)
 
 ## \[2.0.0] - 2022-03-04
 ### Added
