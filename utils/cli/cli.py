@@ -12,7 +12,11 @@ log = logging.getLogger(__name__)
 
 def config_log(level):
     log = logging.getLogger('core')
-    log.addHandler(logging.StreamHandler(sys.stdout))
+    formatter = logging.Formatter('[%(asctime)s] %(levelname)s: %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S', style='%')
+    handler = logging.StreamHandler(sys.stdout)
+    handler.setFormatter(formatter)
+    log.addHandler(handler)
     log.setLevel(level)
     if level <= logging.DEBUG:
         HTTPConnection.debuglevel = 1

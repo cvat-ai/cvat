@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Support of attributes returned by serverless functions (<https://github.com/cvat-ai/cvat/pull/4>) based on (<https://github.com/openvinotoolkit/cvat/pull/4506>)
 - Project/task backups uploading via chunk uploads (<https://github.com/cvat-ai/cvat/pull/9>)
 - Fixed UX bug when jobs pagination is reset after changing a job (<https://github.com/cvat-ai/cvat/pull/42>)
+- Progressbars in CLI for file uploading and downloading (<https://github.com/cvat-ai/cvat/pull/46>)
 
 ### Changed
 - Bumped nuclio version to 1.8.14 (<https://github.com/cvat-ai/cvat/pull/29>)

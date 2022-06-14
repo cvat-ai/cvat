@@ -21,9 +21,11 @@ RUN apt-get update && \
         && \
     rm -rf /var/lib/apt/lists/*;
 
-COPY cvat/requirements/ /tmp/requirements/
+COPY cvat/requirements/ /tmp/cvat/requirements/
+COPY utils/cli/requirements/ /tmp/utils/cli/requirements/
 
-RUN DATUMARO_HEADLESS=1 python3 -m pip install --no-cache-dir -r /tmp/requirements/${DJANGO_CONFIGURATION}.txt && \
+RUN DATUMARO_HEADLESS=1 python3 -m pip install --no-cache-dir -r /tmp/cvat/requirements/${DJANGO_CONFIGURATION}.txt && \
+    python3 -m pip install --no-cache-dir -r /tmp/utils/cli/requirements/testing.txt && \
     python3 -m pip install --no-cache-dir coveralls
 RUN gem install coveralls-lcov
 

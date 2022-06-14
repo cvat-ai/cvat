@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+from contextlib import closing
 import io
 import logging
 import os
@@ -11,11 +12,13 @@ import unittest
 from django.conf import settings
 from PIL import Image
 from rest_framework.test import APITestCase, RequestsClient
+from datumaro.util.scope import scoped, on_exit_do
 
 import cvat.apps.engine.log as log
 from cvat.apps.engine.tests.test_rest_api import (create_db_users,
     generate_image_file)
 from utils.cli.core import CLI, CVAT_API_V2, ResourceType
+from tqdm import tqdm
 
 
 class TestCLI(APITestCase):
@@ -26,7 +29,7 @@ class TestCLI(APITestCase):
         self.api = CVAT_API_V2('testserver')
         self.cli = CLI(self.client, self.api, self.credentials)
         self.taskname = 'test_task'
-        self.cli.tasks_create(self.taskname,
+        self.task_id = self.cli.tasks_create(self.taskname,
                               [{'name' : 'car'}, {'name': 'person'}],
                               ResourceType.LOCAL,
                               [self.img_file])
@@ -66,24 +69,53 @@ class TestCLI(APITestCase):
         self.cli.tasks_list(False)
         self.assertRegex(self.mock_stdout.getvalue(), '.*Task ID {} deleted.*'.format(1))
 
+    @scoped
     def test_tasks_dump(self):
-        path = os.path.join(settings.SHARE_ROOT, 'test_cli.xml')
-        self.cli.tasks_dump(1, 'CVAT for images 1.1', path)
-        self.assertTrue(os.path.exists(path))
-        os.remove(path)
+        path = os.path.join(settings.SHARE_ROOT, 'test_cli.zip')
+        on_exit_do(os.remove, path)
 
+        with closing(io.StringIO()) as pbar_out:
+            pbar = tqdm(file=pbar_out, mininterval=0)
+            self.cli.tasks_dump(self.task_id, 'CVAT for images 1.1', path, pbar=pbar)
+
+            pbar_out = pbar_out.getvalue().strip('\r').split('\r')
+
+        self.assertTrue(os.path.exists(path))
+        self.assertRegex(pbar_out[-1], '100%')
+
+    @scoped
+    def test_tasks_export(self):
+        path = os.path.join(settings.SHARE_ROOT, 'test_cli.zip')
+        on_exit_do(os.remove, path)
+
+        with closing(io.StringIO()) as pbar_out:
+            pbar = tqdm(file=pbar_out, mininterval=0)
+            self.cli.tasks_export(self.task_id, path, pbar=pbar)
+
+            pbar_out = pbar_out.getvalue().strip('\r').split('\r')
+
+        self.assertTrue(os.path.exists(path))
+        self.assertRegex(pbar_out[-1], '100%')
+
+    @scoped
     def test_tasks_frame_original(self):
         path = os.path.join(settings.SHARE_ROOT, 'task_1_frame_000000.jpg')
-        self.cli.tasks_frame(1, [0], outdir=settings.SHARE_ROOT, quality='original')
-        self.assertTrue(os.path.exists(path))
-        os.remove(path)
+        on_exit_do(os.remove, path)
 
+        self.cli.tasks_frame(self.task_id, [0],
+            outdir=settings.SHARE_ROOT, quality='original')
+        self.assertTrue(os.path.exists(path))
+
+    @scoped
     def test_tasks_frame(self):
         path = os.path.join(settings.SHARE_ROOT, 'task_1_frame_000000.jpg')
-        self.cli.tasks_frame(1, [0], outdir=settings.SHARE_ROOT, quality='compressed')
-        self.assertTrue(os.path.exists(path))
-        os.remove(path)
+        on_exit_do(os.remove, path)
 
+        self.cli.tasks_frame(self.task_id, [0],
+            outdir=settings.SHARE_ROOT, quality='compressed')
+        self.assertTrue(os.path.exists(path))
+
+    @scoped
     def test_tasks_upload(self):
         test_image = Image.open(self.img_file)
         width, height = test_image.size
@@ -136,9 +168,17 @@ class TestCLI(APITestCase):
             ]
             }"""
         content = generate_coco_anno() % (height, width)
+
         path = os.path.join(settings.SHARE_ROOT, 'test_cli.json')
         with open(path, "wb") as coco:
             coco.write(content)
-        self.cli.tasks_upload(1, 'COCO 1.0', path)
+        on_exit_do(os.remove, path)
+
+        with closing(io.StringIO()) as pbar_out:
+            pbar = tqdm(file=pbar_out, mininterval=0)
+            self.cli.tasks_upload(self.task_id, 'COCO 1.0', path, pbar=pbar)
+
+            pbar_out = pbar_out.getvalue().strip('\r').split('\r')
+
         self.assertRegex(self.mock_stdout.getvalue(), '.*{}.*'.format("annotation file"))
-        os.remove(path)
+        self.assertRegex(pbar_out[-1], '100%')
