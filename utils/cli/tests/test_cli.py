@@ -12,6 +12,7 @@ from django.conf import settings
 from PIL import Image
 from rest_framework.test import APITestCase, RequestsClient
 
+import cvat.apps.engine.log as log
 from cvat.apps.engine.tests.test_rest_api import (create_db_users,
     generate_image_file)
 from utils.cli.core import CLI, CVAT_API_V2, ResourceType
@@ -34,6 +35,10 @@ class TestCLI(APITestCase):
         log = logging.getLogger('utils.cli.core')
         log.setLevel(logging.INFO)
         log.addHandler(logging.StreamHandler(sys.stdout))
+
+    def tearDown(self):
+        super().tearDown()
+        log.close_all() # Release logging resources correctly
 
     @classmethod
     def setUpClass(cls):

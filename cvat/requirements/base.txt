@@ -1,4 +1,4 @@
-attrs==21.2.0
+attrs==21.4.0
 click==7.1.2
 Django==3.2.13
 django-appconf==1.0.4
