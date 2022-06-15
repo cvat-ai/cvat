@@ -2,12 +2,13 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Row, Col } from 'antd/lib/grid';
 import Upload from 'antd/lib/upload';
 import Button from 'antd/lib/button';
+import notification from 'antd/lib/notification';
+import { RcFile } from 'antd/lib/upload/interface';
 import Icon, { PictureOutlined } from '@ant-design/icons';
 
 import {
     EllipseIcon, PointIcon, PolygonIcon, RectangleIcon,
 } from 'icons';
-import { RcFile } from 'antd/lib/upload/interface';
 
 function SkeletonConfigurator(): JSX.Element {
     const [activeTool, setActiveTool] = useState<'point' | 'join' | 'delete'>('point');
@@ -40,6 +41,11 @@ function SkeletonConfigurator(): JSX.Element {
                     <Upload.Dragger
                         showUploadList={false}
                         beforeUpload={(file: RcFile) => {
+                            if (!file.type.startsWith('image/')) {
+                                notification.error({
+                                    message: `File must be an image. Got mime type: ${file.type}`,
+                                });
+                            }
                             const url = URL.createObjectURL(file);
                             const img = new Image();
                             img.onload = () => {
