@@ -3,8 +3,8 @@
 # SPDX-License-Identifier: MIT
 
 from __future__ import annotations
-from contextlib import closing
-from typing import Optional, Tuple
+from contextlib import ExitStack, closing
+from typing import Dict, List, Optional, Sequence, Tuple
 
 import tqdm
 import json
@@ -21,8 +21,7 @@ from tusclient import client
 from tusclient import uploader
 from tusclient.request import TusRequest, TusUploadFailed
 
-from utils.cli.core.utils import StreamWithProgress
-
+from .utils import StreamWithProgress, expect_status
 from .definition import ResourceType
 log = logging.getLogger(__name__)
 
@@ -33,17 +32,47 @@ class CLI:
         self.session = session
         self.login(credentials)
 
-    def tasks_data(self, task_id, resource_type, resources, **kwargs):
+    def tasks_data(self, task_id: int, resource_type: ResourceType,
+            resources: Sequence[str], *, pbar: tqdm.tqdm = None, **kwargs) -> None:
         """ Add local, remote, or shared files to an existing task. """
         url = self.api.tasks_id_data(task_id)
         data = {}
-        files = None
+
         if resource_type == ResourceType.LOCAL:
-            files = {'client_files[{}]'.format(i): open(f, 'rb') for i, f in enumerate(resources)}
+            bulk_files: Dict[str, int] = {}
+            separate_files: Dict[str, int] = {}
+
+            MAX_REQUEST_SIZE = 100 * 2**20
+
+            for filename in resources:
+                filename = os.path.abspath(filename)
+                file_size = os.stat(filename).st_size
+                if MAX_REQUEST_SIZE < file_size:
+                    separate_files[filename] = file_size
+                else:
+                    bulk_files[filename] = file_size
+
+            total_size = sum(bulk_files.values()) + sum(separate_files.values())
+
+            # split files by requests
+            bulk_file_groups = []
+            current_group_size = 0
+            current_group = []
+            for filename, file_size in bulk_files.items():
+                if MAX_REQUEST_SIZE < current_group_size + file_size:
+                    bulk_file_groups.append((current_group, current_group_size))
+                    current_group_size = 0
+                    current_group = []
+
+                current_group.append(filename)
+                current_group_size += file_size
+            if current_group:
+                bulk_file_groups.append((current_group, current_group_size))
         elif resource_type == ResourceType.REMOTE:
             data = {'remote_files[{}]'.format(i): f for i, f in enumerate(resources)}
         elif resource_type == ResourceType.SHARE:
             data = {'server_files[{}]'.format(i): f for i, f in enumerate(resources)}
+
         data['image_quality'] = 70
 
         ## capture additional kwargs
@@ -54,8 +83,38 @@ class CLI:
         if kwargs.get('frame_step') is not None:
             data['frame_filter'] = f"step={kwargs.get('frame_step')}"
 
-        response = self.session.post(url, data=data, files=files)
-        response.raise_for_status()
+        if resource_type in [ResourceType.REMOTE, ResourceType.SHARE]:
+            response = self.session.post(url, data=data)
+            response.raise_for_status()
+        elif resource_type == ResourceType.LOCAL:
+            if pbar is None:
+                pbar = self._make_pbar("Uploading files...")
+
+            if pbar is not None:
+                pbar.reset(total_size)
+
+            self._tus_start_upload(url)
+
+            for group, group_size in bulk_file_groups:
+                with ExitStack() as es:
+                    group_files = {}
+                    for i, filename in enumerate(group):
+                        group_files[f'client_files[{i}]'] = (
+                            filename,
+                            es.enter_context(closing(open(filename, 'rb')))
+                        )
+                    response = self.session.post(url, data=data,
+                        files=group_files, headers={'Upload-Multiple': ''})
+                expect_status(200, response)
+
+                if pbar is not None:
+                    pbar.update(group_size)
+
+            for filename in separate_files:
+                self._upload_file_with_tus(url, filename,
+                    pbar=pbar, logger=log.debug)
+
+            self._tus_finish_upload(url, data=data)
 
     def tasks_list(self, use_json_output, **kwargs):
         """ List all tasks in either basic or JSON format. """
@@ -82,18 +141,20 @@ class CLI:
             response.raise_for_status()
         return output
 
-    def tasks_create(self, name, labels, resource_type, resources,
-                     annotation_path='', annotation_format='CVAT XML 1.1',
-                     completion_verification_period=20,
-                     git_completion_verification_period=2,
-                     dataset_repository_url='',
-                     lfs=False, **kwargs) -> int:
+    def tasks_create(self, name: str, labels: List[Dict[str, str]],
+            resource_type: ResourceType, resources: Sequence[str], *,
+            annotation_path='', annotation_format='CVAT XML 1.1',
+            completion_verification_period=20,
+            git_completion_verification_period=2,
+            dataset_repository_url='',
+            lfs=False, pbar: tqdm.tqdm = None, **kwargs) -> int:
         """
         Create a new task with the given name and labels JSON and
         add the files to it.
 
         Returns: id of the created task
         """
+
         url = self.api.tasks
         labels = [] if kwargs.get('project_id') is not None else labels
         data = {'name': name,
@@ -111,7 +172,7 @@ class CLI:
 
         task_id = response_json['id']
         assert isinstance(task_id, int)
-        self.tasks_data(task_id, resource_type, resources, **kwargs)
+        self.tasks_data(task_id, resource_type, resources, pbar=pbar, **kwargs)
 
         if annotation_path != '':
             url = self.api.tasks_id_status(task_id)
@@ -129,7 +190,7 @@ class CLI:
                                                             response_json['message'])
                 log.info(logger_string)
 
-            self.tasks_upload(task_id, annotation_format, annotation_path, **kwargs)
+            self.tasks_upload(task_id, annotation_format, annotation_path, pbar=pbar, **kwargs)
 
         if dataset_repository_url:
             response = self.session.post(
@@ -277,7 +338,7 @@ class CLI:
         return MyTusUploader(client=tus_client, session=cli.session, **kwargs)
 
     def _upload_file_data_with_tus(self, url, filename, *, params=None, pbar=None, logger=None):
-        CHUNK_SIZE = 2**20
+        CHUNK_SIZE = 10 * 2**20
 
         file_size = os.stat(filename).st_size
 
@@ -291,20 +352,20 @@ class CLI:
 
     def _upload_file_with_tus(self, url, filename, *, params=None, pbar=None, logger=None):
         # "CVAT-TUS" protocol has 2 extra messages
-        response = self.session.post(url, headers={'Upload-Start': ''}, params=params)
-        response.raise_for_status()
-        if response.status_code != 202:
-            raise Exception("Failed to upload file: "
-                f"unexpected status code received ({response.status_code})")
-
+        self._tus_start_upload(url, params=params)
         self._upload_file_data_with_tus(url=url, filename=filename,
             params=params, pbar=pbar, logger=logger)
+        return self._tus_finish_upload(url, params=params)
 
-        response = self.session.post(url, headers={'Upload-Finish': ''}, params=params)
-        response.raise_for_status()
-        if response.status_code != 202:
-            raise Exception("Failed to upload file: "
-                f"unexpected status code received ({response.status_code})")
+    def _tus_start_upload(self, url, *, params=None):
+        response = self.session.post(url, headers={'Upload-Start': ''}, params=params)
+        expect_status(202, response)
+        return response
+
+    def _tus_finish_upload(self, url, *, params=None, data=None):
+        response = self.session.post(url, headers={'Upload-Finish': ''}, params=params, data=data)
+        expect_status(202, response)
+        return response
 
     def tasks_upload(self, task_id, fileformat, filename, *,
             completion_check_period=2, pbar=None, **kwargs):
@@ -358,37 +419,32 @@ class CLI:
         """ Import a task from a backup file"""
 
         url = self.api.tasks_backup()
+        params = {
+            'filename': os.path.basename(filename)
+        }
 
         if pbar is None:
             pbar = self._make_pbar("Uploading...")
 
-        file_size = os.stat(filename).st_size
-
-        with open(filename, 'rb') as input_file:
-            input_stream = StreamWithProgress(input_file, pbar=pbar, length=file_size)
-
-            response = self.session.post(
-                    url,
-                    files={'task_file': input_stream}
-                )
-        response.raise_for_status()
+        response = self._upload_file_with_tus(url, filename,
+            params=params, pbar=pbar, logger=log.debug)
         response_json = response.json()
         rq_id = response_json['rq_id']
 
         # check task status
         while True:
             sleep(completion_check_period)
+
             response = self.session.post(
                 url,
                 data={'rq_id': rq_id}
             )
-            response.raise_for_status()
             if response.status_code == 201:
                 break
+            expect_status(202, response)
 
         task_id = response.json()['id']
-        logger_string = "Task has been imported sucessfully. Task ID: {}".format(task_id)
-        log.info(logger_string)
+        log.info(f"Task has been imported sucessfully. Task ID: {task_id}")
 
     def login(self, credentials):
         url = self.api.login
@@ -408,7 +464,7 @@ class CLI:
         to the requested name.
         """
 
-        CHUNK_SIZE = 2**20
+        CHUNK_SIZE = 10 * 2**20
 
         assert not osp.exists(output_path)
 

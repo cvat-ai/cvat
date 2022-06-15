@@ -5,6 +5,8 @@
 from __future__ import annotations
 
 import io
+
+import requests
 import tqdm
 
 
@@ -34,3 +36,9 @@ class StreamWithProgress:
 
     def tell(self):
         return self.stream.tell()
+
+def expect_status(code: int, response: requests.Response) -> None:
+    response.raise_for_status()
+    if response.status_code != code:
+        raise Exception("Failed to upload file: "
+            f"unexpected status code received ({response.status_code})")
