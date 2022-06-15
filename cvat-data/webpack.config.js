@@ -59,7 +59,7 @@ const cvatData = {
             },
         ],
     },
-    plugins: [new CopyPlugin(['./src/js/3rdparty/avc.wasm'])],
+    plugins: [new CopyPlugin({ patterns: ['./src/js/3rdparty/avc.wasm'] })],
 };
 
 module.exports = cvatData;

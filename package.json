@@ -33,7 +33,7 @@
     "babel-plugin-istanbul": "^6.0.0",
     "babel-register": "^6.26.0",
     "bundle-declarations-webpack-plugin": "^3.1.0",
-    "copy-webpack-plugin": "^5.1.2",
+    "copy-webpack-plugin": "^11.0.0",
     "coveralls": "^3.1.0",
     "css-loader": "^3.4.2",
     "eslint": "^7.11.0",
@@ -84,7 +84,7 @@
     "vfile-reporter-json": "^2.0.2",
     "webpack": "^5.72.1",
     "webpack-cli": "^4.9.2",
-    "webpack-dev-server": "^3.11.0",
+    "webpack-dev-server": "4.9",
     "worker-loader": "^3.0.8"
   },
   "scripts": {

@@ -25,12 +25,16 @@ module.exports = (env) => ({
         publicPath: '/',
     },
     devServer: {
-        contentBase: path.join(__dirname, 'dist'),
         compress: false,
-        inline: true,
         host: process.env.CVAT_UI_HOST || 'localhost',
+        client: {
+            overlay: false,
+        },
         port: 3000,
         historyApiFallback: true,
+        static: {
+            directory: path.join(__dirname, 'dist'),
+        },
         proxy: [
             {
                 context: (param) =>
@@ -139,11 +143,13 @@ module.exports = (env) => ({
         new Dotenv({
             systemvars: true,
         }),
-        new CopyPlugin([
-            {
-                from: '../cvat-data/src/js/3rdparty/avc.wasm',
-                to: 'assets/3rdparty/',
-            },
-        ]),
+        new CopyPlugin({
+            patterns: [
+                {
+                    from: '../cvat-data/src/js/3rdparty/avc.wasm',
+                    to: 'assets/3rdparty/',
+                },
+            ],
+        }),
     ],
 });
