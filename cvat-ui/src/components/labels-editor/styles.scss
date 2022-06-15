@@ -27,8 +27,8 @@ textarea.ant-input.cvat-raw-labels-viewer {
     border: 1px solid $border-color-2;
     box-shadow: none;
     border-top: none;
-    border-radius: 0 0 5px 5px;
-    padding: 5px;
+    border-radius: 0 0 $grid-unit-size $grid-unit-size;
+    padding: $grid-unit-size;
     display: flex;
     overflow-y: auto;
     min-height: 9em;
@@ -40,10 +40,10 @@ textarea.ant-input.cvat-raw-labels-viewer {
     height: fit-content;
     display: flex;
     align-items: center;
-    padding: 2px 10px;
+    padding: 2px $grid-unit-size;
     border-radius: 2px;
     margin: 2px;
-    margin-left: 8px;
+    margin-left: $grid-unit-size * 2;
     user-select: none;
     border: 1px solid $transparent-color;
     opacity: 0.6;
@@ -62,14 +62,15 @@ textarea.ant-input.cvat-raw-labels-viewer {
     }
 }
 
-.cvat-constructor-viewer-new-item {
+.cvat-constructor-viewer-new-item,
+.cvat-constructor-viewer-new-skeleton-item {
     height: fit-content;
     display: flex;
     align-items: center;
-    padding: 2px 10px;
+    padding: 2px $grid-unit-size;
     border-radius: 2px;
     margin: 2px;
-    margin-left: 8px;
+    margin-left: $grid-unit-size;
     user-select: none;
     opacity: 1;
 }
@@ -77,7 +78,7 @@ textarea.ant-input.cvat-raw-labels-viewer {
 .cvat-label-constructor-creator,
 .cvat-label-constructor-updater {
     > form:first-child {
-        margin-top: 10px;
+        margin-top: $grid-unit-size;
     }
 }
 
@@ -97,12 +98,63 @@ textarea.ant-input.cvat-raw-labels-viewer {
     width: 100%;
 
     .ant-badge-status-text {
-        margin-left: 15px;
+        margin-left: $grid-unit-size * 2;
     }
 }
 
 .cvat-change-task-label-color-badge .ant-badge-status-dot {
-    width: 15px;
-    height: 15px;
+    width: $grid-unit-size * 2;
+    height: $grid-unit-size * 2;
     border-radius: unset;
+}
+
+.cvat-skeleton-configurator {
+    width: 100%;
+    margin-top: $grid-unit-size;
+    margin-bottom: $grid-unit-size;
+    padding-top: $grid-unit-size;
+    padding-bottom: $grid-unit-size;
+}
+
+.cvat-skeleton-configurator-canvas {
+    width: 100%;
+    border: 1px solid $border-color-2;
+    border-radius: $grid-unit-size;
+    height: auto;
+}
+
+.cvat-skeleton-configurator-image-dragger {
+}
+
+.cvat-skeleton-configurator-shape-buttons,
+.cvat-skeleton-configurator-action-buttons {
+    margin-top: $grid-unit-size;
+}
+
+.cvat-skeleton-configurator-shape-buttons {
+    button.cvat-skeleton-configurator-point-button,
+    button.cvat-skeleton-configurator-rect-button,
+    button.cvat-skeleton-configurator-ellipse-button,
+    button.cvat-skeleton-configurator-polygon-button {
+        padding: 0;
+
+        > span {
+            transform: scale(0.6);
+            transition: all 0.5s;
+        }
+
+        &:hover {
+            &:not(:disabled) {
+                > span {
+                    transform: scale(0.7);
+                }
+            }
+        }
+    }
+}
+
+.cvat-skeleton-configurator-action-buttons {
+    > button {
+        width: 45%;
+    }
 }

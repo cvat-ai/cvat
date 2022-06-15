@@ -31,6 +31,7 @@ interface LabelsEditorProps {
 
 interface LabelsEditorState {
     constructorMode: ConstructorMode;
+    creatorType: 'basic' | 'skeleton';
     savedLabels: Label[];
     unsavedLabels: Label[];
     labelForUpdate: Label | null;
@@ -44,6 +45,7 @@ export default class LabelsEditor extends React.PureComponent<LabelsEditorProps,
             savedLabels: [],
             unsavedLabels: [],
             constructorMode: ConstructorMode.SHOW,
+            creatorType: 'basic',
             labelForUpdate: null,
         };
     }
@@ -196,7 +198,7 @@ export default class LabelsEditor extends React.PureComponent<LabelsEditorProps,
     public render(): JSX.Element {
         const { labels } = this.props;
         const {
-            savedLabels, unsavedLabels, constructorMode, labelForUpdate,
+            savedLabels, unsavedLabels, constructorMode, labelForUpdate, creatorType,
         } = this.state;
 
         return (
@@ -236,8 +238,9 @@ export default class LabelsEditor extends React.PureComponent<LabelsEditorProps,
                                 });
                             }}
                             onDelete={this.handleDelete}
-                            onCreate={(): void => {
+                            onCreate={(_creatorType: 'basic' | 'skeleton'): void => {
                                 this.setState({
+                                    creatorType: _creatorType,
                                     constructorMode: ConstructorMode.CREATE,
                                 });
                             }}
@@ -247,7 +250,11 @@ export default class LabelsEditor extends React.PureComponent<LabelsEditorProps,
                         <ConstructorUpdater label={labelForUpdate} onUpdate={this.handleUpdate} />
                     )}
                     {constructorMode === ConstructorMode.CREATE && (
-                        <ConstructorCreator labelNames={labels.map((l) => l.name)} onCreate={this.handleCreate} />
+                        <ConstructorCreator
+                            creatorType={creatorType}
+                            labelNames={labels.map((l) => l.name)}
+                            onCreate={this.handleCreate}
+                        />
                     )}
                 </Tabs.TabPane>
             </Tabs>
