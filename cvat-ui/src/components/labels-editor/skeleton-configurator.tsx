@@ -100,13 +100,28 @@ export default class SkeletonConfigurator extends React.PureComponent<{}, State>
                     circle.setAttribute('stroke-width', '0.1');
                 });
 
-                circle.addEventListener('click', (evt: Event) => evt.stopPropagation());
+                circle.addEventListener('click', (evt: Event) => {
+                    evt.stopPropagation();
+                    const { activeTool: currentActiveTool } = this.state;
+                    if (currentActiveTool === 'delete') {
+                        const nodeId = circle.getAttribute('data-node-id');
+                        // first remove all related edges
+                        for (const element of svg.children) {
+                            const dataType = element.getAttribute('data-type');
+                            const dataNodeFrom = element.getAttribute('data-node-from');
+                            const dataNodeTo = element.getAttribute('data-node-to');
+                            if (dataType === 'edge' && (dataNodeFrom === `${nodeId}` || dataNodeTo === `${nodeId}`)) {
+                                element.remove();
+                            }
+                        }
+                        // finally remove the element itself
+                        circle.remove();
+                    }
+                });
 
-                // todo: add text labels on this svg
-                // todo: add automatic labels for nodes (numeric)
+                // todo: add text labels on svg
                 // todo: add ability to setup label name
-
-                // todo: highlight points on hover
+                // todo: add joiners
             }
         }
     };
