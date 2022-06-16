@@ -123,7 +123,11 @@ textarea.ant-input.cvat-raw-labels-viewer {
     height: auto;
 }
 
-.cvat-skeleton-configurator-image-dragger {
+.cvat-skeleton-configurator-svg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 2;
 }
 
 .cvat-skeleton-configurator-shape-buttons,
@@ -131,11 +135,19 @@ textarea.ant-input.cvat-raw-labels-viewer {
     margin-top: $grid-unit-size;
 }
 
+.cvat-skeleton-configurator-svg-buttons {
+    width: 100%;
+    position: absolute;
+    bottom: 0;
+    margin-bottom: $grid-unit-size;
+}
+
 .cvat-skeleton-configurator-shape-buttons {
     button.cvat-skeleton-configurator-point-button,
     button.cvat-skeleton-configurator-rect-button,
     button.cvat-skeleton-configurator-ellipse-button,
     button.cvat-skeleton-configurator-polygon-button {
+        width: 100%;
         padding: 0;
 
         > span {
@@ -153,8 +165,13 @@ textarea.ant-input.cvat-raw-labels-viewer {
     }
 }
 
-.cvat-skeleton-configurator-action-buttons {
-    > button {
+.cvat-skeleton-configurator-action-buttons,
+.cvat-skeleton-configurator-svg-buttons {
+    > button, span {
         width: 45%;
+
+        button, .ant-upload {
+            width: 100%;
+        }
     }
 }
