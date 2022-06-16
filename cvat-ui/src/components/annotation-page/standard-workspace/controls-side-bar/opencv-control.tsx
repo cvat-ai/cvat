@@ -486,12 +486,13 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
                 switchNavigationBlocked(true);
                 for (const trackerID of Object.keys(trackingData)) {
                     const numOfObjects = trackingData[trackerID].length;
-                    const hideMessage = message.loading(
-                        `${trackerID}: ${numOfObjects} ${
+                    const hideMessage = message.loading({
+                        content: `${trackerID}: ${numOfObjects} ${
                             numOfObjects > 1 ? 'objects are' : 'object is'
                         } being tracked..`,
-                        0,
-                    );
+                        duration: 0,
+                        className: 'cvat-tracking-notice',
+                    });
                     const imageData = this.getCanvasImageData();
                     for (const shape of trackingData[trackerID]) {
                         const [objectState] = objectStates.filter(
