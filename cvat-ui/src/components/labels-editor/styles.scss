@@ -167,7 +167,7 @@ textarea.ant-input.cvat-raw-labels-viewer {
 
 .cvat-skeleton-configurator-action-buttons,
 .cvat-skeleton-configurator-svg-buttons {
-    > button, span {
+    > button, > span {
         width: 45%;
 
         button, .ant-upload {
