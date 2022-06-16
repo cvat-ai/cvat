@@ -19,6 +19,8 @@ export default class SkeletonConfigurator extends React.PureComponent<{}, State>
     private canvasRef: React.RefObject<HTMLCanvasElement>;
     private svgRef: React.RefObject<SVGSVGElement>;
     private canvasResizeObserver: ResizeObserver;
+    private nodeCounter: number;
+    private elementCounter: number;
 
     public constructor(props: {}) {
         super(props);
@@ -29,6 +31,8 @@ export default class SkeletonConfigurator extends React.PureComponent<{}, State>
 
         this.canvasRef = React.createRef<HTMLCanvasElement>();
         this.svgRef = React.createRef<SVGSVGElement>();
+        this.nodeCounter = 0;
+        this.elementCounter = 0;
         this.canvasResizeObserver = new ResizeObserver((entries: ResizeObserverEntry[]) => {
             const [canvasEntry] = entries;
             (canvasEntry.target as HTMLCanvasElement).style.height = `${canvasEntry.target.clientWidth}px`;
@@ -43,9 +47,17 @@ export default class SkeletonConfigurator extends React.PureComponent<{}, State>
     }
 
     public componentDidMount(): void {
-        const { canvasRef } = this;
-        if (canvasRef.current) {
-            this.canvasResizeObserver.observe(canvasRef.current);
+        const { canvasRef, svgRef } = this;
+        const canvas = canvasRef.current;
+        const svg = svgRef.current;
+
+        if (canvas) {
+            this.canvasResizeObserver.observe(canvas);
+        }
+
+        if (svg) {
+            svg.setAttribute('viewBox', '0 0 100 100');
+            svg.addEventListener('click', this.onSVGClick);
         }
     }
 
@@ -56,6 +68,48 @@ export default class SkeletonConfigurator extends React.PureComponent<{}, State>
     public componentWillUnmount(): void {
         this.canvasResizeObserver.disconnect();
     }
+
+    private onSVGClick = (event: MouseEvent): void => {
+        const { activeTool } = this.state;
+        const svg = this.svgRef.current;
+
+        if (activeTool === 'point' && svg) {
+            const circle = window.document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            let point = svg.createSVGPoint();
+            point.x = event.clientX;
+            point.y = event.clientY;
+            const ctm = svg.getScreenCTM();
+            if (ctm) {
+                point = point.matrixTransform(ctm.inverse());
+                circle.setAttribute('r', '1');
+                circle.setAttribute('stroke-width', '0.1');
+                circle.setAttribute('stroke', 'black');
+                circle.setAttribute('fill', 'grey');
+                circle.setAttribute('cx', `${point.x}`);
+                circle.setAttribute('cy', `${point.y}`);
+                circle.setAttribute('data-type', 'element node');
+                circle.setAttribute('data-element-id', `${++this.elementCounter}`);
+                circle.setAttribute('data-node-id', `${++this.nodeCounter}`);
+
+                svg.appendChild(circle);
+                circle.addEventListener('mouseover', () => {
+                    circle.setAttribute('stroke-width', '0.3');
+                });
+
+                circle.addEventListener('mouseout', () => {
+                    circle.setAttribute('stroke-width', '0.1');
+                });
+
+                circle.addEventListener('click', (evt: Event) => evt.stopPropagation());
+
+                // todo: add text labels on this svg
+                // todo: add automatic labels for nodes (numeric)
+                // todo: add ability to setup label name
+
+                // todo: highlight points on hover
+            }
+        }
+    };
 
     private setCanvasBackground(): void {
         const { canvasRef } = this;
