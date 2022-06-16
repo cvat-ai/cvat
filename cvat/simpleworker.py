@@ -6,14 +6,14 @@
 from rq import Worker
 
 
-class BaseDeathPenalty(object):
+class BaseDeathPenalty:
     def __init__(self, timeout, exception, **kwargs):
         pass
 
     def __enter__(self):
         pass
 
-    def __exit__(self, type, value, traceback):
+    def __exit__(self, exc_type, exc_value, traceback):
         pass
 
 

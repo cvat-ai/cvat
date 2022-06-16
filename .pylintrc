@@ -1,8 +1,5 @@
 [MASTER]
 
-# Specify a configuration file.
-#rcfile=
-
 # Python code to execute, usually for sys.path manipulation such as
 # pygtk.require().
 #init-hook=
@@ -23,7 +20,7 @@ persistent=yes
 load-plugins=pylint_django
 
 # Use multiple processes to speed up Pylint.
-jobs=1
+jobs=0
 
 # Allow loading of arbitrary C extensions. Extensions are imported into the
 # active Python interpreter and may run arbitrary code.
@@ -34,40 +31,12 @@ unsafe-load-any-extension=no
 # run arbitrary code
 extension-pkg-whitelist=
 
-# Allow optimization of some AST trees. This will activate a peephole AST
-# optimizer, which will apply various small optimizations. For instance, it can
-# be used to obtain the result of joining multiple strings with the addition
-# operator. Joining a lot of strings can lead to a maximum recursion error in
-# Pylint and this flag can prevent that. It has one side effect, the resulting
-# AST will be different than the one from reality. This option is deprecated
-# and it will be removed in Pylint 2.0.
-optimize-ast=no
-
 
 [MESSAGES CONTROL]
 
 # Only show warnings with the listed confidence levels. Leave empty to show
 # all. Valid levels: HIGH, INFERENCE, INFERENCE_FAILURE, UNDEFINED
 confidence=
-
-# Enable the message, report, category or checker with the given id(s). You can
-# either give multiple identifier separated by comma (,) or put this option
-# multiple time (only on the command line, not in the configuration file where
-# it should appear only once). See also the "--disable" option for examples.
-disable=all
-enable= E0001,E0100,E0101,E0102,E0103,E0104,E0105,E0106,E0107,E0110,
-        E0113,E0114,E0115,E0116,E0117,E0108,E0202,E0203,E0211,E0236,
-        E0238,E0239,E0240,E0241,E0301,E0302,E0601,E0603,E0604,E0701,
-        E0702,E0703,E0704,E0710,E0711,E0712,E1003,E1102,E1111,E0112,
-        E1120,E1121,E1123,E1124,E1125,E1126,E1127,E1132,E1200,E1201,
-        E1205,E1206,E1300,E1301,E1302,E1303,E1304,E1305,E1306,
-        C0123,C0200,C0303,C1001,
-        W0101,W0102,W0104,W0105,W0106,W0107,W0108,W0109,W0110,W0120,
-        W0122,W0124,W0150,W0199,W0221,W0222,W0233,W0404,W0410,W0601,
-        W0602,W0604,W0611,W0612,W0622,W0623,W0702,W0705,W0711,W1300,
-        W1301,W1302,W1303,,W1305,W1306,W1307
-        R0102,R0202,R0203
-
 
 # Disable the message, report, category or checker with the given id(s). You
 # can either give multiple identifiers separated by comma (,) or put this
@@ -78,7 +47,123 @@ enable= E0001,E0100,E0101,E0102,E0103,E0104,E0105,E0106,E0107,E0110,
 # --enable=similarities". If you want to run only the classes checker, but have
 # no Warning level messages displayed, use"--disable=all --enable=classes
 # --disable=W"
-#disable=old-octal-literal,basestring-builtin,no-absolute-import,old-division,coerce-method,long-suffix,reload-builtin,unichr-builtin,indexing-exception,raising-string,dict-iter-method,metaclass-assignment,filter-builtin-not-iterating,import-star-module-level,next-method-called,cmp-method,raw_input-builtin,old-raise-syntax,cmp-builtin,apply-builtin,getslice-method,input-builtin,backtick,coerce-builtin,range-builtin-not-iterating,xrange-builtin,using-cmp-argument,buffer-builtin,hex-method,execfile-builtin,unpacking-in-except,standarderror-builtin,round-builtin,nonzero-method,unicode-builtin,reduce-builtin,file-builtin,dict-view-method,old-ne-operator,print-statement,suppressed-message,oct-method,useless-suppression,delslice-method,long-builtin,setslice-method,zip-builtin-not-iterating,map-builtin-not-iterating,intern-builtin,parameter-unpacking
+disable=all
+
+# Enable the message, report, category or checker with the given id(s). You can
+# either give multiple identifier separated by comma (,) or put this option
+# multiple time (only on the command line, not in the configuration file where
+# it should appear only once). See also the "--disable" option for examples.
+enable=
+    C0121, # singleton-comparison
+    C0123, # unidiomatic-typecheck
+    C0200, # consider-using-enumerate
+    C0303, # trailing-whitespace
+    C0304, # missing-final-newline
+    C0325, # superfluous-parens
+
+    E0001, # syntax-error
+    E0100, # init-is-generator
+    E0101, # return-in-init
+    E0102, # function-redefined
+    E0103, # not-in-loop
+    E0104, # return-outside-function
+    E0105, # yield-outside-function
+    E0107, # nonexistent-operator
+    E0108, # duplicate-argument-name
+    E0110, # abstract-class-instantiated
+    E0112, # too-many-star-expressions
+    E0113, # invalid-star-assignment-target
+    E0114, # star-needs-assignment-target
+    E0115, # nonlocal-and-global
+    E0116, # continue-in-finally
+    E0117, # nonlocal-without-binding
+    E0202, # method-hidden
+    E0203, # access-member-before-definition
+    E0211, # no-method-argument
+    E0236, # invalid-slots-object
+    E0238, # invalid-slots
+    E0239, # inherit-non-class
+    E0240, # inconsistent-mro
+    E0241, # duplicate-bases
+    E0301, # non-iterator-returned
+    E0302, # unexpected-special-method-signature
+    E0601, # used-before-assignment
+    E0602, # undefined-variable
+    E0603, # undefined-all-variable
+    E0604, # invalid-all-object
+    E0701, # bad-except-order
+    E0702, # raising-bad-type
+    E0703, # bad-exception-context
+    E0704, # misplaced-bare-raise
+    E0710, # raising-non-exception
+    E0711, # notimplemented-raised
+    E0712, # catching-non-exception
+    E1003, # bad-super-call
+    E1102, # not-callable
+    E1111, # assignment-from-no-return
+    E1120, # no-value-for-parameter
+    E1121, # too-many-function-args
+    E1123, # unexpected-keyword-arg
+    E1124, # redundant-keyword-arg
+    E1125, # missing-kwoa
+    E1126, # invalid-sequence-index
+    E1127, # invalid-slice-index
+    E1132, # repeated-keyword
+    E1200, # logging-unsupported-format
+    E1201, # logging-format-truncated
+    E1205, # logging-too-many-args
+    E1206, # logging-too-few-args
+    E1300, # bad-format-character
+    E1301, # truncated-format-string
+    E1302, # mixed-format-string
+    E1303, # format-needs-mapping
+    E1304, # missing-format-string-key
+    E1305, # too-many-format-args
+    E1306, # too-few-format-args
+
+    R0202, # no-classmethod-decorator
+    R0203, # no-staticmethod-decorator
+    R0205, # useless-object-inheritance
+    R1703, # simplifiable-if-statement
+
+    W0101, # unreachable
+    W0102, # dangerous-default-value
+    W0104, # pointless-statement
+    W0105, # pointless-string-statement
+    W0106, # expression-not-assigned
+    W0107, # unnecessary-pass
+    W0108, # unnecessary-lambda
+    W0109, # duplicate-key
+    W0120, # useless-else-on-loop
+    W0122, # exec-used
+    W0124, # confusing-with-statement
+    W0150, # lost-exception
+    W0199, # assert-on-tuple
+    W0221, # arguments-differ
+    W0222, # signature-differs
+    W0233, # non-parent-init-called
+    W0301, # unnecessary-semicolon
+    W0311, # bad-indentation
+    W0404, # reimported
+    W0410, # misplaced-future
+    W0601, # global-variable-undefined
+    W0602, # global-variable-not-assigned
+    W0604, # global-at-module-level
+    W0611, # unused-import
+    W0612, # unused-variable
+    W0622, # redefined-builtin
+    W0702, # bare-except
+    W0705, # duplicate-except
+    W0711, # binary-op-exception
+    W1300, # bad-format-string-key
+    W1301, # unused-format-string-key
+    W1302, # bad-format-string
+    W1303, # missing-format-argument-key
+    W1305, # format-combined-specification
+    W1306, # missing-format-attribute
+    W1307, # invalid-format-index
+    W1401, # anomalous-backslash-in-string
+    W1402, # anomalous-unicode-escape-in-string
 
 
 [REPORTS]
@@ -95,7 +180,7 @@ output-format=text
 files-output=no
 
 # Tells whether to display a full report or only the messages
-reports=yes
+reports=no
 
 # Python expression which should return a note less than 10 (10 is the highest
 # note). You have access to the variables errors warning, statement which

@@ -2,13 +2,11 @@
 #
 # SPDX-License-Identifier: MIT
 
-from contextlib import closing
 import io
 import logging
 import os
-import sys
-import unittest
-from unittest.mock import MagicMock
+import unittest.mock as mock
+from contextlib import closing, redirect_stdout
 
 from django.conf import settings
 from PIL import Image
@@ -23,11 +21,14 @@ from tqdm import tqdm
 
 
 class TestCLI(APITestCase):
-    @unittest.mock.patch('sys.stdout', new_callable=io.StringIO)
-    def setUp(self, mock_stdout):
-        log = logging.getLogger('utils.cli.core')
+    def setUp(self):
+        self._stdout_handler = redirect_stdout(io.StringIO())
+        mock_stdout = self._stdout_handler.__enter__()
+        log = logging.getLogger("utils.cli")
+        log.propagate = False
         log.setLevel(logging.INFO)
-        log.addHandler(logging.StreamHandler(sys.stdout))
+        log.handlers.clear()
+        log.addHandler(logging.StreamHandler(mock_stdout))
         self.mock_stdout = mock_stdout
 
         self.client = RequestsClient()
@@ -50,7 +51,8 @@ class TestCLI(APITestCase):
 
     def tearDown(self):
         super().tearDown()
-        log.close_all() # Release logging resources correctly
+        self._stdout_handler.__exit__(None, None, None)
+        log.close_all()  # Release logging resources correctly
 
     @classmethod
     def setUpTestData(cls):
@@ -70,8 +72,16 @@ class TestCLI(APITestCase):
         self.assertRegex(pbar_out[-1], '100%')
 
 class TestTaskOperations(APITestCase):
-    @unittest.mock.patch('sys.stdout', new_callable=io.StringIO)
-    def setUp(self, mock_stdout):
+    def setUp(self):
+        self._stdout_handler = redirect_stdout(io.StringIO())
+        mock_stdout = self._stdout_handler.__enter__()
+        log = logging.getLogger("utils.cli")
+        log.propagate = False
+        log.setLevel(logging.INFO)
+        log.handlers.clear()
+        log.addHandler(logging.StreamHandler(mock_stdout))
+        self.mock_stdout = mock_stdout
+
         self.client = RequestsClient()
         self.credentials = ('admin', 'admin')
         self.api = CVAT_API_V2('testserver')
@@ -80,16 +90,12 @@ class TestTaskOperations(APITestCase):
         self.task_id = self.cli.tasks_create(self.taskname,
                               [{'name' : 'car'}, {'name': 'person'}],
                               ResourceType.LOCAL,
-                              [self.img_file], pbar=MagicMock())
-        # redirect logging to mocked stdout to test program output
-        self.mock_stdout = mock_stdout
-        log = logging.getLogger('utils.cli.core')
-        log.setLevel(logging.INFO)
-        log.addHandler(logging.StreamHandler(sys.stdout))
+                              [self.img_file], pbar=mock.MagicMock())
 
     def tearDown(self):
         super().tearDown()
-        log.close_all() # Release logging resources correctly
+        self._stdout_handler.__exit__(None, None, None)
+        log.close_all()  # Release logging resources correctly
 
     @classmethod
     def setUpClass(cls):
