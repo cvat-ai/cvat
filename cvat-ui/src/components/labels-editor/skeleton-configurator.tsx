@@ -180,10 +180,10 @@ function SkeletonConfigurator(): JSX.Element {
                                 const anchor = window.document.getElementById('downloadAnchor');
                                 if (anchor) {
                                     (anchor as HTMLAnchorElement).href = url;
-                                    // blob must be cloned after assigning it to href
-                                    // https://github.com/whatwg/html/issues/954
-                                    URL.revokeObjectURL(url);
                                     (anchor as HTMLAnchorElement).click();
+                                    setTimeout(() => {
+                                        URL.revokeObjectURL(url);
+                                    });
                                 }
                             }
                         }}
