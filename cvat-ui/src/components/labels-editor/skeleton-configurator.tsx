@@ -58,6 +58,7 @@ export default class SkeletonConfigurator extends React.PureComponent<{}, State>
         if (svg) {
             svg.setAttribute('viewBox', '0 0 100 100');
             svg.addEventListener('click', this.onSVGClick);
+            svg.addEventListener('mousemove', this.onSVGMouseMove);
         }
     }
 
@@ -66,8 +67,38 @@ export default class SkeletonConfigurator extends React.PureComponent<{}, State>
     }
 
     public componentWillUnmount(): void {
+        const { svgRef } = this;
+        const svg = svgRef.current;
+
+        if (svg) {
+            svg.removeEventListener('click', this.onSVGClick);
+            svg.addEventListener('mousemove', this.onSVGMouseMove);
+        }
+
         this.canvasResizeObserver.disconnect();
     }
+
+    private onSVGMouseMove = (event: MouseEvent): void => {
+        const { activeTool } = this.state;
+        const svg = this.svgRef.current;
+        if (activeTool === 'join' && svg) {
+            const line = this.findNotFinishedEdge();
+
+            if (line) {
+                let point = svg.createSVGPoint();
+                point.x = event.clientX;
+                point.y = event.clientY;
+                const ctm = svg.getScreenCTM();
+
+                if (ctm) {
+                    point = point.matrixTransform(ctm.inverse());
+                }
+
+                line.setAttribute('x2', `${point.x}`);
+                line.setAttribute('y2', `${point.y}`);
+            }
+        }
+    };
 
     private onSVGClick = (event: MouseEvent): void => {
         const { activeTool } = this.state;
@@ -81,6 +112,7 @@ export default class SkeletonConfigurator extends React.PureComponent<{}, State>
             const ctm = svg.getScreenCTM();
             if (ctm) {
                 const elementID = ++this.elementCounter;
+                const nodeID = ++this.nodeCounter;
                 point = point.matrixTransform(ctm.inverse());
                 circle.setAttribute('r', '1');
                 circle.setAttribute('stroke-width', '0.1');
@@ -90,7 +122,7 @@ export default class SkeletonConfigurator extends React.PureComponent<{}, State>
                 circle.setAttribute('cy', `${point.y}`);
                 circle.setAttribute('data-type', 'element node');
                 circle.setAttribute('data-element-id', `${elementID}`);
-                circle.setAttribute('data-node-id', `${++this.nodeCounter}`);
+                circle.setAttribute('data-node-id', `${nodeID}`);
                 svg.appendChild(circle);
 
                 const TEXT_MARGIN = 2;
@@ -132,10 +164,30 @@ export default class SkeletonConfigurator extends React.PureComponent<{}, State>
                         // finally remove the element itself and its labels
                         circle.remove();
                         text.remove();
+                    } else if (currentActiveTool === 'join') {
+                        let line = this.findNotFinishedEdge();
+                        if (!line) {
+                            line = window.document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                            line.setAttribute('data-type', 'edge');
+                            line.setAttribute('data-node-from', `${nodeID}`);
+                            line.setAttribute('stroke', 'black');
+                            line.setAttribute('stroke-width', '0.1');
+                            line.setAttribute('x1', `${point.x}`);
+                            line.setAttribute('y1', `${point.y}`);
+                            svg.prepend(line);
+                            return;
+                        }
+
+                        const dataNodeFrom = line.getAttribute('data-node-from');
+                        if (dataNodeFrom !== `${nodeID}`) {
+                            line.setAttribute('x2', `${point.x}`);
+                            line.setAttribute('y2', `${point.y}`);
+                            line.setAttribute('data-node-to', `${nodeID}`);
+                        }
                     }
                 });
 
-                // todo: add text labels on svg
+                // todo: add reset all button
                 // todo: add ability to setup label name
                 // todo: add joiners
             }
@@ -173,6 +225,27 @@ export default class SkeletonConfigurator extends React.PureComponent<{}, State>
             };
             img.src = url;
         }
+    }
+
+    private findNotFinishedEdge(): SVGLineElement | null {
+        const svg = this.svgRef.current;
+
+        if (svg) {
+            const line = Array.from(svg.children as any as SVGElement[]).find((element: SVGElement) => {
+                const type = element.getAttribute('data-type');
+                const nodeFrom = element.getAttribute('data-node-from');
+                const nodeTo = element.getAttribute('data-node-to');
+                if (type === 'edge' && nodeFrom && !nodeTo) {
+                    return true;
+                }
+
+                return false;
+            });
+
+            return line as SVGLineElement || null;
+        }
+
+        return null;
     }
 
     public render(): JSX.Element {
