@@ -80,6 +80,7 @@ export default class SkeletonConfigurator extends React.PureComponent<{}, State>
             point.y = event.clientY;
             const ctm = svg.getScreenCTM();
             if (ctm) {
+                const elementID = ++this.elementCounter;
                 point = point.matrixTransform(ctm.inverse());
                 circle.setAttribute('r', '1');
                 circle.setAttribute('stroke-width', '0.1');
@@ -88,16 +89,30 @@ export default class SkeletonConfigurator extends React.PureComponent<{}, State>
                 circle.setAttribute('cx', `${point.x}`);
                 circle.setAttribute('cy', `${point.y}`);
                 circle.setAttribute('data-type', 'element node');
-                circle.setAttribute('data-element-id', `${++this.elementCounter}`);
+                circle.setAttribute('data-element-id', `${elementID}`);
                 circle.setAttribute('data-node-id', `${++this.nodeCounter}`);
-
                 svg.appendChild(circle);
+
+                const TEXT_MARGIN = 2;
+                const text = window.document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                // eslint-disable-next-line
+                text.innerHTML = `${elementID}`
+                text.classList.add('cvat-skeleton-configurator-text-label');
+                text.setAttribute('x', `${point.x + TEXT_MARGIN}`);
+                text.setAttribute('y', `${point.y - TEXT_MARGIN}`);
+                text.setAttribute('stroke-width', '0.1');
+                text.setAttribute('stroke', 'black');
+                text.setAttribute('fill', 'white');
+                svg.appendChild(text);
+
                 circle.addEventListener('mouseover', () => {
                     circle.setAttribute('stroke-width', '0.3');
+                    text.setAttribute('fill', 'red');
                 });
 
                 circle.addEventListener('mouseout', () => {
                     circle.setAttribute('stroke-width', '0.1');
+                    text.setAttribute('fill', 'white');
                 });
 
                 circle.addEventListener('click', (evt: Event) => {
@@ -114,8 +129,9 @@ export default class SkeletonConfigurator extends React.PureComponent<{}, State>
                                 element.remove();
                             }
                         }
-                        // finally remove the element itself
+                        // finally remove the element itself and its labels
                         circle.remove();
+                        text.remove();
                     }
                 });
 
