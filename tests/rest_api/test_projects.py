@@ -2,11 +2,13 @@
 #
 # SPDX-License-Identifier: MIT
 
+import tempfile
 from http import HTTPStatus
 from itertools import groupby, product
+
 import pytest
 
-from .utils.config import get_method, post_method
+from .utils.config import get_method, post_files_method, post_method
 
 
 class TestGetProjects:
@@ -196,3 +198,47 @@ class TestPostProjects:
             'name': f'test: worker {user["username"]} creating a project for his organization',
         }
         self._test_create_project_201(user['username'], spec, org_id=user['org'])
+
+@pytest.mark.usefixtures("restore")
+@pytest.mark.usefixtures("restore_cvat_data")
+class TestImportExportDatasetProject:
+    def _test_export_project(self, username, project_id, format_name):
+        while True:
+            response = get_method(username, f'projects/{project_id}/dataset',
+                format=format_name)
+            response.raise_for_status()
+            if response.status_code == HTTPStatus.CREATED:
+                break
+
+        response = get_method(username, f'projects/{project_id}/dataset',
+            format=format_name, action='download')
+        assert response.status_code == HTTPStatus.OK
+
+        return response
+
+    def _test_import_project(self, username, project_id, format_name, data):
+        response = post_files_method(username, f'projects/{project_id}/dataset', data,
+            format=format_name)
+        assert response.status_code == HTTPStatus.ACCEPTED
+
+        while True:
+            response = get_method(username, f'projects/{project_id}/dataset', action='import_status')
+            response.raise_for_status()
+            if response.status_code == HTTPStatus.CREATED:
+                break
+
+    def test_can_import_dataset_in_org(self):
+        username = 'admin1'
+        project_id = 4
+
+        response = self._test_export_project(username, project_id, 'CVAT for images 1.1')
+
+        tmp_file = tempfile.NamedTemporaryFile(suffix='.zip')
+        tmp_file.write(response.content)
+        tmp_file.seek(0)
+
+        import_data = {
+            'dataset_file': tmp_file,
+        }
+
+        self._test_import_project(username, project_id, 'CVAT 1.1', import_data)

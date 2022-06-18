@@ -39,6 +39,10 @@ def init_test_db():
 def restore():
     _run('docker exec cvat_db psql -U root -d postgres -v from=test_db -v to=cvat -f restore.sql')
 
+@pytest.fixture(scope='function')
+def restore_cvat_data():
+    restore_data_volume()
+
 class Container:
     def __init__(self, data, key='id'):
         self.raw_data = data
@@ -243,7 +247,7 @@ def org_staff(memberships):
             return set()
         else:
             return set(m['user']['id'] for m in memberships
-                if m['role'] in ['maintainer', 'owner'] and m['user'] != None
+                if m['role'] in ['maintainer', 'owner'] and m['user'] is not None
                     and m['organization'] == org_id)
     return find
 
@@ -254,7 +258,7 @@ def is_org_member(memberships):
             return True
         else:
             return user_id in set(m['user']['id'] for m in memberships
-                if m['user'] != None and m['organization'] == org_id)
+                if m['user'] is not None and m['organization'] == org_id)
     return check
 
 @pytest.fixture(scope='module')
