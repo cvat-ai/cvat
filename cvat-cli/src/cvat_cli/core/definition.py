@@ -1,4 +1,4 @@
-# Copyright (C) 2021 Intel Corporation
+# Copyright (C) 2021-2022 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 import argparse
@@ -7,6 +7,7 @@ import json
 import logging
 import os
 from enum import Enum
+from ..version import VERSION
 
 
 def get_auth(s):
@@ -53,6 +54,8 @@ class ResourceType(Enum):
 parser = argparse.ArgumentParser(
     description='Perform common operations related to CVAT tasks.\n\n'
 )
+parser.add_argument("--version", action="version", version=VERSION)
+
 task_subparser = parser.add_subparsers(dest='action')
 
 #######################################################################

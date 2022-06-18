@@ -1,12 +1,13 @@
-#!/usr/bin/env python3
+# Copyright (C) 2020-2022 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
+
 import logging
 import requests
 import sys
 from http.client import HTTPConnection
-from core.core import CLI, CVAT_API_V2
-from core.definition import parser
+from cvat_cli.core.core import CLI, CVAT_API_V2
+from cvat_cli.core.definition import parser
 log = logging.getLogger(__name__)
 
 
@@ -45,6 +46,8 @@ def main():
                 requests.exceptions.RequestException) as e:
             log.critical(e)
 
+    return 0
+
 
 if __name__ == '__main__':
-    main()
+    sys.exit(main())
