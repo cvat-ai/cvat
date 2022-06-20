@@ -15,6 +15,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Bumped nuclio version to 1.8.14 (<https://github.com/cvat-ai/cvat/pull/29>)
+- Simplified running REST API tests. Extended CI-nightly workflow (<https://github.com/cvat-ai/cvat/pull/26>)
+
 
 ### Deprecated
 - TDB

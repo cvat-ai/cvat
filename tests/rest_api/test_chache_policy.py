@@ -4,7 +4,7 @@
 
 from http import HTTPStatus
 import re
-from .utils.config import server_get
+from rest_api.utils.config import server_get
 
 class TestCachePolicy:
 

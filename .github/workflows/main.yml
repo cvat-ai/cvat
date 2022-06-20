@@ -7,62 +7,51 @@ on:
   pull_request:
     types: [edited, ready_for_review, opened, synchronize, reopened]
 
+env:
+  API_ABOUT_PAGE: "localhost:8080/api/server/about"
+
 jobs:
-  Unit_testing:
-      if: |
-        github.event.pull_request.draft == false &&
-        !startsWith(github.event.pull_request.title, '[WIP]') &&
-        !startsWith(github.event.pull_request.title, '[Dependent]')
-      runs-on: ubuntu-latest
-      steps:
-      - uses: actions/checkout@v2
-
-      - uses: actions/setup-python@v2
-        with:
-          python-version: '3.8'
-
+  cache:
+    if: |
+      github.event.pull_request.draft == false &&
+      !startsWith(github.event.pull_request.title, '[WIP]') &&
+      !startsWith(github.event.pull_request.title, '[Dependent]')
+    runs-on: ubuntu-latest
+    outputs:
+      sha: ${{ steps.get-sha.outputs.sha}}
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      REPO: ${{ github.repository }}
+    steps:
       - name: Getting SHA from the default branch
         id: get-sha
         run: |
-          DEFAULT_BRANCH=$(curl -s \
-            --request GET \
-            --url https://api.github.com/repos/${{ github.repository }} \
-            --header 'authorization: Bearer ${{ secrets.GITHUB_TOKEN }}' | \
-            jq -r '.default_branch')
-
-          SHA=$(curl -s \
-            --request GET \
-            --url https://api.github.com/repos/${{ github.repository }}/git/ref/heads/${DEFAULT_BRANCH} \
-            --header 'authorization: token ${{ secrets.GITHUB_TOKEN }}' | \
-            jq -r '.object.sha')
+          DEFAULT_BRANCH=$(gh api /repos/$REPO | jq -r '.default_branch')
+          SHA=$(gh api /repos/$REPO/git/ref/heads/$DEFAULT_BRANCH | jq -r '.object.sha')
 
           echo ::set-output name=default_branch::${DEFAULT_BRANCH}
           echo ::set-output name=sha::${SHA}
 
       - name: Waiting a cache creation in the default branch
-        if: ${{ github.ref_name != 'develop' }}
+        env:
+          DEFAULT_BRANCH: ${{ steps.get-sha.outputs.default_branch }}
+          SHA: ${{ steps.get-sha.outputs.sha }}
         run: |
           SLEEP=45
           NUMBER_ATTEMPTS=10
           while [[ ${NUMBER_ATTEMPTS} -gt 0 ]]; do
-            RUN_status=$(curl -s \
-              --request GET \
-              --header 'authorization: Bearer ${{ secrets.GITHUB_TOKEN }}' \
-              --url https://api.github.com/repos/${{ github.repository }}/actions/workflows/cache.yml/runs | \
-              jq -r '.workflow_runs[]? |
-              select(
-                (.head_sha == "${{ steps.get-sha.outputs.sha }}")
-                and (.event == "push")
-                and (.name == "Cache")
-                and (.head_branch == "${{ steps.get-sha.outputs.default_branch }}")
-              ) | .status')
+
+            RUN_status=$(gh api /repos/${REPO}/actions/workflows/cache.yml/runs | \
+              jq -r ".workflow_runs[]? |
+              select((.head_sha == \"${SHA}\")) | .status")
+
             if [[ ${RUN_status} == "completed" ]]; then
-              echo "The cache creation on the '${{ steps.get-sha.outputs.default_branch }}' branch has finished. Status: ${RUN_status}"
+              echo "The cache creation on the ${DEFAULT_BRANCH} branch has finished. Status: ${RUN_status}"
               break
             else
               echo "The creation of the cache is not yet complete."
               echo "There are still attempts to check the cache: ${NUMBER_ATTEMPTS}"
-              echo "Status of caching in the '${{ steps.get-sha.outputs.default_branch }}' branch: ${RUN_status}"
+              echo "Status of caching in the ${DEFAULT_BRANCH} branch: ${RUN_status}"
               echo "sleep ${SLEEP}"
               sleep ${SLEEP}
               ((NUMBER_ATTEMPTS--))
@@ -73,20 +62,30 @@ jobs:
             echo "Probably the creation of the cache is not yet complete. Will continue working without the cache."
           fi
 
+  Unit_testing:
+      needs: cache
+      runs-on: ubuntu-latest
+      steps:
+      - uses: actions/checkout@v2
+
+      - uses: actions/setup-python@v2
+        with:
+          python-version: '3.8'
+
       - name: Getting CVAT server cache from the default branch
         uses: actions/cache@v2
         with:
           path: /tmp/cvat_cache_server
-          key: ${{ runner.os }}-build-server-${{ steps.get-sha.outputs.sha }}
+          key: ${{ runner.os }}-build-server-${{ needs.cache.outputs.sha }}
 
       - name: Getting CVAT UI cache from the default branch
         uses: actions/cache@v2
         with:
           path: /tmp/cvat_cache_ui
-          key: ${{ runner.os }}-build-ui-${{ steps.get-sha.outputs.sha }}
+          key: ${{ runner.os }}-build-ui-${{ needs.cache.outputs.sha }}
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v1.1.2
+        uses: docker/setup-buildx-action@master
 
       - name: Building CVAT server image
         uses: docker/build-push-action@v2
@@ -113,19 +112,10 @@ jobs:
           ./opa test cvat/apps/iam/rules
 
       - name: Running REST API tests
-        env:
-          API_ABOUT_PAGE: "localhost:8080/api/server/about"
-          # Access key length should be at least 3, and secret key length at least 8 characters
-          MINIO_ACCESS_KEY: "minio_access_key"
-          MINIO_SECRET_KEY: "minio_secret_key"
         run: |
-          docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f components/serverless/docker-compose.serverless.yml -f components/analytics/docker-compose.analytics.yml -f tests/rest_api/docker-compose.minio.yml up -d
-          /bin/bash -c 'while [[ "$(curl -s -o /dev/null -w ''%{http_code}'' ${API_ABOUT_PAGE})" != "401" ]]; do sleep 5; done'
-
           pip3 install --user -r tests/rest_api/requirements.txt
-          pytest tests/rest_api/ -k 'GET'
-
-          docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f components/serverless/docker-compose.serverless.yml -f components/analytics/docker-compose.analytics.yml -f tests/rest_api/docker-compose.minio.yml down -v
+          pytest tests/rest_api/ -k 'GET' -s
+          pytest tests/rest_api/ --stop-services
 
       - name: Running unit tests
         env:
@@ -137,6 +127,7 @@ jobs:
 
           docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.ci.yml run cvat_ci /bin/bash \
           -c 'cd cvat-data && npm ci --ignore-scripts && cd ../cvat-core && npm ci --ignore-scripts && npm run test && mv ./reports/coverage/lcov.info ${CONTAINER_COVERAGE_DATA_DIR} && chmod a+rwx ${CONTAINER_COVERAGE_DATA_DIR}/lcov.info'
+
       - name: Uploading code coverage results as an artifact
         if: github.ref == 'refs/heads/develop'
         uses: actions/upload-artifact@v2
@@ -147,10 +138,7 @@ jobs:
             ${{ github.workspace }}/lcov.info
 
   E2E_testing:
-    if: |
-      github.event.pull_request.draft == false &&
-      !startsWith(github.event.pull_request.title, '[WIP]') &&
-      !startsWith(github.event.pull_request.title, '[Dependent]')
+    needs: cache
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -159,76 +147,24 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: Getting SHA from the default branch
-        id: get-sha
-        run: |
-          DEFAULT_BRANCH=$(curl -s \
-            --request GET \
-            --url https://api.github.com/repos/${{ github.repository }} \
-            --header 'authorization: Bearer ${{ secrets.GITHUB_TOKEN }}' | \
-            jq -r '.default_branch')
-
-          SHA=$(curl -s \
-            --request GET \
-            --url https://api.github.com/repos/${{ github.repository }}/git/ref/heads/${DEFAULT_BRANCH} \
-            --header 'authorization: token ${{ secrets.GITHUB_TOKEN }}' | \
-            jq -r '.object.sha')
-
-          echo ::set-output name=default_branch::${DEFAULT_BRANCH}
-          echo ::set-output name=sha::${SHA}
-
-      - name: Waiting a cache creation in the default branch
-        run: |
-          URL_runs="https://api.github.com/repos/${{ github.repository }}/actions/workflows/cache.yml/runs"
-          SLEEP=45
-          NUMBER_ATTEMPTS=10
-          while [[ ${NUMBER_ATTEMPTS} -gt 0 ]]; do
-            RUN_status=$(curl -s \
-              --request GET \
-              --header 'authorization: Bearer ${{ secrets.GITHUB_TOKEN }}' \
-              --url https://api.github.com/repos/${{ github.repository }}/actions/workflows/cache.yml/runs | \
-              jq -r '.workflow_runs[]? |
-              select(
-                (.head_sha == "${{ steps.get-sha.outputs.sha }}")
-                and (.event == "push")
-                and (.name == "Cache")
-                and (.head_branch == "${{ steps.get-sha.outputs.default_branch }}")
-              ) | .status')
-            if [[ ${RUN_status} == "completed" ]]; then
-              echo "The cache creation on the '${{ steps.get-sha.outputs.default_branch }}' branch has finished. Status: ${RUN_status}"
-              break
-            else
-              echo "The creation of the cache is not yet complete."
-              echo "There are still attempts to check the cache: ${NUMBER_ATTEMPTS}"
-              echo "Status of caching in the '${{ steps.get-sha.outputs.default_branch }}' branch: ${RUN_status}"
-              echo "sleep ${SLEEP}"
-              sleep ${SLEEP}
-              ((NUMBER_ATTEMPTS--))
-            fi
-          done
-          if [[ ${NUMBER_ATTEMPTS} -eq 0 ]]; then
-            echo "Number of attempts expired!"
-            echo "Probably the creation of the cache is not yet complete. Will continue working without the cache."
-          fi
-
       - name: Getting CVAT server cache from the default branch
         uses: actions/cache@v2
         with:
           path: /tmp/cvat_cache_server
-          key: ${{ runner.os }}-build-server-${{ steps.get-sha.outputs.sha }}
+          key: ${{ runner.os }}-build-server-${{ needs.cache.outputs.sha }}
 
       - name: Getting CVAT UI cache from the default branch
         uses: actions/cache@v2
         with:
           path: /tmp/cvat_cache_ui
-          key: ${{ runner.os }}-build-ui-${{ steps.get-sha.outputs.sha }}
+          key: ${{ runner.os }}-build-ui-${{ needs.cache.outputs.sha }}
 
       - uses: actions/setup-node@v2
         with:
             node-version: '16.x'
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v1.1.2
+        uses: docker/setup-buildx-action@master
 
       - name: Building CVAT server image
         uses: docker/build-push-action@v2
@@ -260,35 +196,27 @@ jobs:
           DJANGO_SU_NAME: 'admin'
           DJANGO_SU_EMAIL: 'admin@localhost.company'
           DJANGO_SU_PASSWORD: '12qwaszx'
-          API_ABOUT_PAGE: "localhost:8080/api/server/about"
         run: |
-          docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f components/serverless/docker-compose.serverless.yml -f tests/docker-compose.file_share.yml up -d
-          /bin/bash -c 'while [[ $(curl -s -o /dev/null -w "%{http_code}" ${API_ABOUT_PAGE}) != "401" ]]; do sleep 5; done'
-          docker exec -i cvat /bin/bash -c "echo \"from django.contrib.auth.models import User; User.objects.create_superuser('${DJANGO_SU_NAME}', '${DJANGO_SU_EMAIL}', '${DJANGO_SU_PASSWORD}')\" | python3 ~/manage.py shell"
+          docker-compose \
+            -f docker-compose.yml \
+            -f docker-compose.dev.yml \
+            -f components/serverless/docker-compose.serverless.yml \
+            -f tests/docker-compose.file_share.yml up -d
+
+          /bin/bash -c \
+            'while [[ $(curl -s -o /dev/null -w "%{http_code}" ${{ env.API_ABOUT_PAGE }}) != "401" ]]; do sleep 5; done'
+
+          docker exec -i cvat \
+            /bin/bash -c \
+            "echo \"from django.contrib.auth.models import User; User.objects.create_superuser('${DJANGO_SU_NAME}', '${DJANGO_SU_EMAIL}', '${DJANGO_SU_PASSWORD}')\" | python3 ~/manage.py shell"
 
           cd ./tests
           npm ci
 
           if [ ${{ matrix.specs }} == 'canvas3d_functionality' ]; then
-            # Choosing 5 test files
-            selected_files=$(find ./cypress/integration |  grep -e 'case.*\|issue.*' | grep js | grep 3d | sort | head -5 | tr '\n' ',')
-
-            npx cypress run \
-              --headed \
-              --browser chrome \
-              --env coverage=false \
-              --config-file cypress_canvas3d.json \
-              --spec "${selected_files} cypress/integration/remove_users_tasks_projects_organizations.js"
+            npx cypress run --headed --browser chrome --config-file pr_cypress_canvas3d.json
           else
-            # Choosing 20 test files
-            find ./cypress/integration |  grep -e 'case.*\|issue.*' | grep js | sed '/.*3d.*/d' | sort > test_files
-            selected_files=$({ head -10; tail -10;} < test_files | tr '\n' ',')
-            rm test_files
-
-            npx cypress run \
-              --browser chrome \
-              --env coverage=false \
-              --spec "${selected_files} cypress/integration/remove_users_tasks_projects_organizations.js"
+            npx cypress run --browser chrome --config-file pr_cypress.json
           fi
 
       - name: Creating a log file from "cvat" container logs
@@ -323,30 +251,28 @@ jobs:
     needs: [Unit_testing, E2E_testing]
     steps:
       - uses: actions/checkout@v2
+
       - name: Getting SHA from the default branch
         id: get-sha
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
         run: |
-          DEFAULT_BRANCH=$(curl -s \
-            --request GET \
-            --url https://api.github.com/repos/${{ github.repository }} \
-            --header 'authorization: Bearer ${{ secrets.GITHUB_TOKEN }}' | \
-            jq -r '.default_branch')
-
-          SHA=$(curl -s \
-            --request GET \
-            --url https://api.github.com/repos/${{ github.repository }}/git/ref/heads/${DEFAULT_BRANCH} \
-            --header 'authorization: token ${{ secrets.GITHUB_TOKEN }}' | \
-            jq -r '.object.sha')
+          DEFAULT_BRANCH=$(gh api /repos/$REPO | jq -r '.default_branch')
+          SHA=$(gh api /repos/$REPO/git/ref/heads/$DEFAULT_BRANCH | jq -r '.object.sha')
 
           echo ::set-output name=default_branch::${DEFAULT_BRANCH}
           echo ::set-output name=sha::${SHA}
+
       - name: Getting CVAT server cache from the default branch
         uses: actions/cache@v2
         with:
           path: /tmp/cvat_cache_server
           key: ${{ runner.os }}-build-server-${{ steps.get-sha.outputs.sha }}
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v1.1.2
+
       - name: Building CVAT server image
         uses: docker/build-push-action@v2
         with:
@@ -355,10 +281,12 @@ jobs:
           cache-from: type=local,src=/tmp/cvat_cache_server
           tags: openvino/cvat_server:latest
           load: true
+
       - name: Downloading coverage results
         uses: actions/download-artifact@v2
         with:
           name: coverage_results
+
       - name: Combining coverage results
         run: |
           mkdir -p ./nyc_output_tmp
@@ -366,6 +294,7 @@ jobs:
           mkdir -p ./.nyc_output
           npm ci
           npx nyc merge ./nyc_output_tmp ./.nyc_output/out.json
+
       - name: Sending results to Coveralls
         env:
           HOST_COVERAGE_DATA_DIR: ${{ github.workspace }}
