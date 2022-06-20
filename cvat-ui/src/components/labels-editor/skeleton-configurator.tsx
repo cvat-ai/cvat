@@ -168,8 +168,14 @@ export default class SkeletonConfigurator extends React.PureComponent<{}, State>
         }
     }
 
-    public componentDidUpdate(): void {
-
+    public componentDidUpdate(prevProps: {}, prevState: State): void {
+        const { activeTool } = this.state;
+        if (prevState.activeTool === 'join' && activeTool !== 'join') {
+            const shape = this.findNotFinishedEdge();
+            if (shape) {
+                shape.remove();
+            }
+        }
     }
 
     public componentWillUnmount(): void {
@@ -356,7 +362,18 @@ export default class SkeletonConfigurator extends React.PureComponent<{}, State>
                         }
 
                         const dataNodeFrom = line.getAttribute('data-node-from');
-                        if (dataNodeFrom !== `${nodeID}`) {
+                        const dataNodeTo = nodeID;
+
+                        // if such edge already exists, remove the current one
+                        const edge1 = svg
+                            .querySelector(`[data-node-from="${dataNodeFrom}"][data-node-to="${dataNodeTo}"]`);
+                        const edge2 = svg
+                            .querySelector(`[data-node-from="${dataNodeTo}"][data-node-to="${dataNodeFrom}"]`);
+                        if (edge1 || edge2) {
+                            line.remove();
+                        }
+
+                        if (dataNodeFrom !== `${dataNodeTo}`) {
                             setAttributes(line, {
                                 x2: circle.getAttribute('cx'),
                                 y2: circle.getAttribute('cy'),
@@ -401,7 +418,7 @@ export default class SkeletonConfigurator extends React.PureComponent<{}, State>
                             y: +cy - TEXT_MARGIN,
                             stroke: 'black',
                             fill: 'white',
-                            'stroke-width': 0.2,
+                            'stroke-width': 0.1,
                             'data-for-element-id': elementID,
                         });
                         svg.appendChild(text);
