@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import ReactDOM from 'react-dom';
 import { Row, Col } from 'antd/lib/grid';
 import Upload from 'antd/lib/upload';
@@ -10,7 +10,9 @@ import Icon, { DeleteOutlined, EditOutlined, PictureOutlined } from '@ant-design
 import {
     EllipseIcon, PointIcon, PolygonIcon, RectangleIcon,
 } from 'icons';
-import { Menu } from 'antd';
+import consts from 'consts';
+import { Menu, Modal } from 'antd';
+import LabelForm from './label-form';
 
 interface State {
     activeTool: 'point' | 'join' | 'delete';
@@ -24,38 +26,76 @@ interface ContextMenuProps {
     container: SVGSVGElement;
     onRename(name: string): void;
     onDelete(): void;
+    onHideMenu(): void;
 }
 
-function ContextMenu(props: ContextMenuProps): React.ReactPortal {
+function ContextMenu(props: ContextMenuProps): React.ReactPortal | null {
     const {
-        container, elementID, onRename, onDelete,
+        container, elementID, onRename, onDelete, onHideMenu,
     } = props;
+    const [modalVisible, setModalVisible] = useState<boolean>(false);
+
     const element = container.querySelector(`[data-element-id="${elementID}"]`);
     let x = 0;
     let y = 0;
-    if (element) {
-        const cx = element.getAttribute('cx');
-        const cy = element.getAttribute('cy');
-        x = cx ? +cx : x;
-        y = cy ? +cy : y;
-        let point = container.createSVGPoint();
-        point.x = x;
-        point.y = y;
-        const ctm = container.getCTM();
+    if (!element) return null;
 
-        if (ctm) {
-            point = point.matrixTransform(ctm);
-            x = point.x;
-            y = point.y;
-        }
+    const elementLabel = element.getAttribute('data-element-label');
+    const cx = element.getAttribute('cx');
+    const cy = element.getAttribute('cy');
+    x = cx ? +cx : x;
+    y = cy ? +cy : y;
+    let point = container.createSVGPoint();
+    point.x = x;
+    point.y = y;
+    const ctm = container.getCTM();
+
+    if (ctm) {
+        point = point.matrixTransform(ctm);
+        x = point.x;
+        y = point.y;
     }
+
+    useEffect(() => {
+        if (modalVisible) {
+            Modal.confirm({
+                width: 700,
+                title: 'Setup the skeleton item',
+                closable: true,
+                onCancel: () => setModalVisible(false),
+                okButtonProps: { hidden: true },
+                cancelButtonProps: { hidden: true },
+                content: (
+                    <LabelForm
+                        label={{
+                            name: `${elementLabel !== null ? elementLabel : elementID}`,
+                            attributes: [],
+                            color: consts.NEW_LABEL_COLOR,
+                            id: 0,
+                        }}
+                        labelNames={[]}
+                        onSubmit={(data) => {
+                            setModalVisible(false);
+                            if (data) {
+                                // todo: handle outside of this component
+                                element.setAttribute('data-element-label', data.name);
+                                onRename(data.name);
+                            }
+                        }}
+                    />
+                ),
+            });
+        } else {
+            Modal.destroyAll();
+        }
+    }, [modalVisible]);
 
     return ReactDOM.createPortal(
         (
             <Menu
                 onClick={({ key }) => {
                     if (key === 'rename') {
-
+                        setModalVisible(true);
                     } else if (key === 'delete') {
                         (element as any).cvat.deleteElement();
                     }
@@ -186,24 +226,17 @@ export default class SkeletonConfigurator extends React.PureComponent<{}, State>
                 circle.setAttribute('cy', `${point.y}`);
                 circle.setAttribute('data-type', 'element node');
                 circle.setAttribute('data-element-id', `${elementID}`);
+                circle.setAttribute('data-element-label', `${elementID}`);
                 circle.setAttribute('data-node-id', `${nodeID}`);
                 svg.appendChild(circle);
 
-                const TEXT_MARGIN = 2;
-                const text = window.document.createElementNS('http://www.w3.org/2000/svg', 'text');
-                // eslint-disable-next-line
-                text.innerHTML = `${elementID}`
-                text.classList.add('cvat-skeleton-configurator-text-label');
-                text.setAttribute('x', `${point.x + TEXT_MARGIN}`);
-                text.setAttribute('y', `${point.y - TEXT_MARGIN}`);
-                text.setAttribute('stroke-width', '0.2');
-                text.setAttribute('stroke', 'black');
-                text.setAttribute('fill', 'white');
-                svg.appendChild(text);
-
                 circle.addEventListener('mouseover', () => {
                     circle.setAttribute('stroke-width', '0.3');
-                    text.setAttribute('fill', 'red');
+                    const text = svg.querySelector(`text[data-for-element-id="${elementID}"]`);
+                    if (text) {
+                        text.setAttribute('fill', 'red');
+                    }
+
                     this.setState({
                         contextMenuElement: elementID,
                     });
@@ -211,7 +244,10 @@ export default class SkeletonConfigurator extends React.PureComponent<{}, State>
 
                 circle.addEventListener('mouseout', () => {
                     circle.setAttribute('stroke-width', '0.1');
-                    text.setAttribute('fill', 'white');
+                    const text = svg.querySelector(`text[data-for-element-id="${elementID}"]`);
+                    if (text) {
+                        text.setAttribute('fill', 'white');
+                    }
                 });
 
                 circle.addEventListener('contextmenu', (e: MouseEvent) => {
@@ -248,7 +284,7 @@ export default class SkeletonConfigurator extends React.PureComponent<{}, State>
 
                         // finally remove the element itself and its labels
                         circle.remove();
-                        text.remove();
+                        this.setupTextLabels();
                     },
                 };
 
@@ -281,9 +317,49 @@ export default class SkeletonConfigurator extends React.PureComponent<{}, State>
                         }
                     }
                 });
+
+                this.setupTextLabels();
             }
         }
     };
+
+    private setupTextLabels(recreate = true): void {
+        const { svgRef } = this;
+        const svg = svgRef.current;
+
+        if (svg) {
+            const TEXT_MARGIN = 2;
+            const array = Array.from(svg.children);
+            array.forEach((el: Element) => {
+                if (el.tagName === 'text') {
+                    el.remove();
+                }
+            });
+
+            if (recreate) {
+                Array.from<SVGElement>(svg.children as any as SVGElement[]).forEach((element: SVGElement): void => {
+                    if (!(element instanceof SVGElement)) return;
+                    const cx = element.getAttribute('cx');
+                    const cy = element.getAttribute('cy');
+                    const elementID = element.getAttribute('data-element-id');
+                    const label = element.getAttribute('data-element-label');
+                    if (cx && cy && label && elementID) {
+                        const text = window.document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                        // eslint-disable-next-line
+                        text.innerHTML = `${label}`
+                        text.classList.add('cvat-skeleton-configurator-text-label');
+                        text.setAttribute('x', `${+cx + TEXT_MARGIN}`);
+                        text.setAttribute('y', `${+cy - TEXT_MARGIN}`);
+                        text.setAttribute('stroke-width', '0.2');
+                        text.setAttribute('stroke', 'black');
+                        text.setAttribute('fill', 'white');
+                        text.setAttribute('data-for-element-id', elementID);
+                        svg.appendChild(text);
+                    }
+                });
+            }
+        }
+    }
 
     private setCanvasBackground(): void {
         const { canvasRef } = this;
@@ -350,7 +426,8 @@ export default class SkeletonConfigurator extends React.PureComponent<{}, State>
                         elementID={contextMenuElement}
                         container={svgRef.current}
                         onDelete={() => {}}
-                        onRename={(name: string) => {}}
+                        onRename={(name: string) => { this.setupTextLabels(); this.setState({ contextMenuVisible: false }) }}
+                        onHideMenu={() => this.setState({ contextMenuVisible: false })}
                     />
                 ) : null}
                 <Col span={16} className='cvat-skeleton-canvas-wrapper'>
@@ -441,7 +518,9 @@ export default class SkeletonConfigurator extends React.PureComponent<{}, State>
                             type='default'
                             onClick={() => {
                                 if (svgRef.current) {
+                                    this.setupTextLabels(false);
                                     const text = svgRef.current.innerHTML;
+                                    this.setupTextLabels();
                                     const blob = new Blob([text], { type: 'image/svg+xml;charset=utf-8' });
                                     const url = URL.createObjectURL(blob);
                                     const anchor = window.document.getElementById('downloadAnchor');
@@ -472,6 +551,7 @@ export default class SkeletonConfigurator extends React.PureComponent<{}, State>
                                     if (isSVG && svgRef.current) {
                                         // eslint-disable-next-line
                                         svgRef.current.innerHTML = tmpSvg.innerHTML;
+                                        this.setupTextLabels();
                                     } else {
                                         notification.error({
                                             message: 'Wrong skeleton structure',
