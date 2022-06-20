@@ -14,6 +14,14 @@ import consts from 'consts';
 import { Menu, Modal } from 'antd';
 import LabelForm from './label-form';
 
+function setAttributes(element: Element, attrs: Record<string, string | number | null>): void {
+    for (const key of Object.keys(attrs)) {
+        if (attrs[key] !== null) {
+            element.setAttribute(key, `${attrs[key]}`);
+        }
+    }
+}
+
 interface State {
     activeTool: 'point' | 'join' | 'delete';
     contextMenuVisible: boolean;
@@ -76,7 +84,7 @@ function ContextMenu(props: ContextMenuProps): React.ReactPortal | null {
                             setModalVisible(false);
                             if (data) {
                                 // todo: handle outside of this component
-                                element.setAttribute('data-element-label', data.name);
+                                setAttributes(element, { 'data-element-label': data.name });
                                 onRename(data.name);
                             }
                         }}
@@ -197,8 +205,7 @@ export default class SkeletonConfigurator extends React.PureComponent<{}, State>
                     point = point.matrixTransform(ctm.inverse());
                 }
 
-                line.setAttribute('x2', `${point.x}`);
-                line.setAttribute('y2', `${point.y}`);
+                setAttributes(line, { x2: point.x, y2: point.y });
             }
         } else if (this.draggableElement && svg) {
             let point = svg.createSVGPoint();
@@ -209,8 +216,7 @@ export default class SkeletonConfigurator extends React.PureComponent<{}, State>
                 point = point.matrixTransform(ctm.inverse());
             }
 
-            this.draggableElement.setAttribute('cx', `${point.x}`);
-            this.draggableElement.setAttribute('cy', `${point.y}`);
+            setAttributes(this.draggableElement, { cx: point.x, cy: point.y });
             this.setupTextLabels();
             const nodeID = this.draggableElement.getAttribute('data-node-id');
             for (const element of svg.children) {
@@ -219,15 +225,12 @@ export default class SkeletonConfigurator extends React.PureComponent<{}, State>
                 const dataNodeTo = element.getAttribute('data-node-to');
                 if (dataType === 'edge' && (dataNodeFrom === `${nodeID}` || dataNodeTo === `${nodeID}`)) {
                     if (dataNodeFrom === nodeID) {
-                        element.setAttribute('x1', `${point.x}`);
-                        element.setAttribute('y1', `${point.y}`);
+                        setAttributes(element, { x1: point.x, y1: point.y });
                     } else {
-                        element.setAttribute('x2', `${point.x}`);
-                        element.setAttribute('y2', `${point.y}`);
+                        setAttributes(element, { x2: point.x, y2: point.y });
                     }
                 }
             }
-
         }
     };
 
@@ -252,16 +255,18 @@ export default class SkeletonConfigurator extends React.PureComponent<{}, State>
                 const elementID = ++this.elementCounter;
                 const nodeID = ++this.nodeCounter;
                 point = point.matrixTransform(ctm.inverse());
-                circle.setAttribute('r', '1.5');
-                circle.setAttribute('stroke-width', '0.1');
-                circle.setAttribute('stroke', 'black');
-                circle.setAttribute('fill', 'grey');
-                circle.setAttribute('cx', `${point.x}`);
-                circle.setAttribute('cy', `${point.y}`);
-                circle.setAttribute('data-type', 'element node');
-                circle.setAttribute('data-element-id', `${elementID}`);
-                circle.setAttribute('data-element-label', `${elementID}`);
-                circle.setAttribute('data-node-id', `${nodeID}`);
+                setAttributes(circle, {
+                    r: 1.5,
+                    stroke: 'black',
+                    fill: 'grey',
+                    cx: point.x,
+                    cy: point.y,
+                    'stroke-width': 0.1,
+                    'data-type': 'element node',
+                    'data-element-id': elementID,
+                    'data-element-label': elementID,
+                    'data-node-id': nodeID,
+                });
                 svg.appendChild(circle);
 
                 circle.addEventListener('mouseover', () => {
@@ -335,23 +340,28 @@ export default class SkeletonConfigurator extends React.PureComponent<{}, State>
                         let line = this.findNotFinishedEdge();
                         if (!line) {
                             line = window.document.createElementNS('http://www.w3.org/2000/svg', 'line');
-                            line.setAttribute('data-type', 'edge');
-                            line.setAttribute('data-node-from', `${nodeID}`);
-                            line.setAttribute('stroke', 'black');
-                            line.setAttribute('stroke-width', '0.1');
-                            line.setAttribute('x1', circle.getAttribute('cx') as string);
-                            line.setAttribute('y1', circle.getAttribute('cy') as string);
-                            line.setAttribute('x2', circle.getAttribute('cx') as string);
-                            line.setAttribute('y2', circle.getAttribute('cy') as string);
+                            setAttributes(line, {
+                                x1: circle.getAttribute('cx'),
+                                y1: circle.getAttribute('cy'),
+                                x2: circle.getAttribute('cx'),
+                                y2: circle.getAttribute('cy'),
+                                stroke: 'black',
+                                'data-type': 'edge',
+                                'data-node-from': nodeID,
+                                'stroke-width': '0.1',
+                            });
+
                             svg.prepend(line);
                             return;
                         }
 
                         const dataNodeFrom = line.getAttribute('data-node-from');
                         if (dataNodeFrom !== `${nodeID}`) {
-                            line.setAttribute('x2', circle.getAttribute('cx') as string);
-                            line.setAttribute('y2', circle.getAttribute('cy') as string);
-                            line.setAttribute('data-node-to', `${nodeID}`);
+                            setAttributes(line, {
+                                x2: circle.getAttribute('cx'),
+                                y2: circle.getAttribute('cy'),
+                                'data-node-to': nodeID,
+                            });
                         }
                     }
                 });
@@ -386,12 +396,14 @@ export default class SkeletonConfigurator extends React.PureComponent<{}, State>
                         // eslint-disable-next-line
                         text.innerHTML = `${label}`
                         text.classList.add('cvat-skeleton-configurator-text-label');
-                        text.setAttribute('x', `${+cx + TEXT_MARGIN}`);
-                        text.setAttribute('y', `${+cy - TEXT_MARGIN}`);
-                        text.setAttribute('stroke-width', '0.2');
-                        text.setAttribute('stroke', 'black');
-                        text.setAttribute('fill', 'white');
-                        text.setAttribute('data-for-element-id', elementID);
+                        setAttributes(text, {
+                            x: +cx + TEXT_MARGIN,
+                            y: +cy - TEXT_MARGIN,
+                            stroke: 'black',
+                            fill: 'white',
+                            'stroke-width': 0.2,
+                            'data-for-element-id': elementID,
+                        });
                         svg.appendChild(text);
                     }
                 });
