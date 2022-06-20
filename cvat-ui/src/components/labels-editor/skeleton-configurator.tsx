@@ -1,18 +1,73 @@
 import React from 'react';
+import ReactDOM from 'react-dom';
 import { Row, Col } from 'antd/lib/grid';
 import Upload from 'antd/lib/upload';
 import Button from 'antd/lib/button';
 import notification from 'antd/lib/notification';
 import { RcFile } from 'antd/lib/upload/interface';
-import Icon, { PictureOutlined } from '@ant-design/icons';
+import Icon, { DeleteOutlined, EditOutlined, PictureOutlined } from '@ant-design/icons';
 
 import {
     EllipseIcon, PointIcon, PolygonIcon, RectangleIcon,
 } from 'icons';
+import { Menu } from 'antd';
 
 interface State {
     activeTool: 'point' | 'join' | 'delete';
+    contextMenuVisible: boolean;
+    contextMenuElement: number | null;
     image: RcFile | null;
+}
+
+interface ContextMenuProps {
+    elementID: number;
+    container: SVGSVGElement;
+    onRename(name: string): void;
+    onDelete(): void;
+}
+
+function ContextMenu(props: ContextMenuProps): React.ReactPortal {
+    const {
+        container, elementID, onRename, onDelete,
+    } = props;
+    const element = container.querySelector(`[data-element-id="${elementID}"]`);
+    let x = 0;
+    let y = 0;
+    if (element) {
+        const cx = element.getAttribute('cx');
+        const cy = element.getAttribute('cy');
+        x = cx ? +cx : x;
+        y = cy ? +cy : y;
+        let point = container.createSVGPoint();
+        point.x = x;
+        point.y = y;
+        const ctm = container.getCTM();
+
+        if (ctm) {
+            point = point.matrixTransform(ctm);
+            x = point.x;
+            y = point.y;
+        }
+    }
+
+    return ReactDOM.createPortal(
+        (
+            <Menu
+                onClick={({ key }) => {
+                    if (key === 'rename') {
+
+                    } else if (key === 'delete') {
+                        (element as any).cvat.deleteElement();
+                    }
+                }}
+                className='cvat-skeleton-configurator-context-menu'
+                style={{ top: y, left: x }}
+            >
+                <Menu.Item icon={<EditOutlined />} key='rename'>Rename</Menu.Item>
+                <Menu.Item icon={<DeleteOutlined />} key='delete'>Delete</Menu.Item>
+            </Menu>
+        ), window.document.getElementsByClassName('cvat-skeleton-canvas-wrapper')[0],
+    );
 }
 
 export default class SkeletonConfigurator extends React.PureComponent<{}, State> {
@@ -26,6 +81,8 @@ export default class SkeletonConfigurator extends React.PureComponent<{}, State>
         super(props);
         this.state = {
             activeTool: 'point',
+            contextMenuVisible: false,
+            contextMenuElement: null,
             image: null,
         };
 
@@ -101,8 +158,15 @@ export default class SkeletonConfigurator extends React.PureComponent<{}, State>
     };
 
     private onSVGClick = (event: MouseEvent): void => {
-        const { activeTool } = this.state;
+        const { activeTool, contextMenuVisible } = this.state;
         const svg = this.svgRef.current;
+
+        if (contextMenuVisible) {
+            this.setState({
+                contextMenuVisible: false,
+            });
+            return;
+        }
 
         if (activeTool === 'point' && svg) {
             const circle = window.document.createElementNS('http://www.w3.org/2000/svg', 'circle');
@@ -140,6 +204,9 @@ export default class SkeletonConfigurator extends React.PureComponent<{}, State>
                 circle.addEventListener('mouseover', () => {
                     circle.setAttribute('stroke-width', '0.3');
                     text.setAttribute('fill', 'red');
+                    this.setState({
+                        contextMenuElement: elementID,
+                    });
                 });
 
                 circle.addEventListener('mouseout', () => {
@@ -147,26 +214,49 @@ export default class SkeletonConfigurator extends React.PureComponent<{}, State>
                     text.setAttribute('fill', 'white');
                 });
 
-                circle.addEventListener('click', (evt: Event) => {
-                    evt.stopPropagation();
-                    const { activeTool: currentActiveTool } = this.state;
-                    if (currentActiveTool === 'delete') {
-                        const nodeId = circle.getAttribute('data-node-id');
+                circle.addEventListener('contextmenu', (e: MouseEvent) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    this.setState({
+                        contextMenuVisible: true,
+                    });
+                });
+
+                (circle as any).cvat = {
+                    deleteElement: () => {
                         // first remove all related edges
                         for (const element of svg.children) {
                             const dataType = element.getAttribute('data-type');
                             const dataNodeFrom = element.getAttribute('data-node-from');
                             const dataNodeTo = element.getAttribute('data-node-to');
-                            if (dataType === 'edge' && (dataNodeFrom === `${nodeId}` || dataNodeTo === `${nodeId}`)) {
+                            if (dataType === 'edge' && (dataNodeFrom === `${nodeID}` || dataNodeTo === `${nodeID}`)) {
                                 setTimeout(() => {
                                     // use setTimeout to not change the array during iteration it
                                     element.remove();
                                 });
                             }
                         }
+
+                        // then close context menu if opened for the node
+                        const { contextMenuElement: currentContextMenuElement } = this.state;
+                        if (currentContextMenuElement === elementID) {
+                            this.setState({
+                                contextMenuElement: null,
+                                contextMenuVisible: false,
+                            });
+                        }
+
                         // finally remove the element itself and its labels
                         circle.remove();
                         text.remove();
+                    },
+                };
+
+                circle.addEventListener('click', (evt: Event) => {
+                    evt.stopPropagation();
+                    const { activeTool: currentActiveTool } = this.state;
+                    if (currentActiveTool === 'delete') {
+                        (circle as any).cvat.deleteElement();
                     } else if (currentActiveTool === 'join') {
                         let line = this.findNotFinishedEdge();
                         if (!line) {
@@ -251,11 +341,19 @@ export default class SkeletonConfigurator extends React.PureComponent<{}, State>
 
     public render(): JSX.Element {
         const { canvasRef, svgRef } = this;
-        const { activeTool } = this.state;
+        const { activeTool, contextMenuVisible, contextMenuElement } = this.state;
 
         return (
             <Row className='cvat-skeleton-configurator'>
-                <Col span={16}>
+                { svgRef.current && contextMenuVisible && contextMenuElement !== null ? (
+                    <ContextMenu
+                        elementID={contextMenuElement}
+                        container={svgRef.current}
+                        onDelete={() => {}}
+                        onRename={(name: string) => {}}
+                    />
+                ) : null}
+                <Col span={16} className='cvat-skeleton-canvas-wrapper'>
                     <canvas ref={canvasRef} className='cvat-skeleton-configurator-canvas' />
                     <svg width={100} height={100} ref={svgRef} className='cvat-skeleton-configurator-svg' />
                 </Col>
