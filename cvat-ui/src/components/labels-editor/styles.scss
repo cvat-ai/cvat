@@ -124,6 +124,7 @@ textarea.ant-input.cvat-raw-labels-viewer {
 }
 
 .cvat-skeleton-configurator-svg {
+    user-select: none;
     position: absolute;
     top: 0;
     left: 0;

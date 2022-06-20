@@ -13,6 +13,7 @@ import {
 import consts from 'consts';
 import { Menu, Modal } from 'antd';
 import LabelForm from './label-form';
+import { idGenerator, Label } from './common';
 
 function setAttributes(element: Element, attrs: Record<string, string | number | null>): void {
     for (const key of Object.keys(attrs)) {
@@ -31,6 +32,7 @@ interface State {
 
 interface ContextMenuProps {
     elementID: number;
+    labels: Record<number, Label>;
     container: SVGSVGElement;
     onRename(name: string): void;
     onDelete(): void;
@@ -39,14 +41,14 @@ interface ContextMenuProps {
 
 function ContextMenu(props: ContextMenuProps): React.ReactPortal | null {
     const {
-        container, elementID, onRename, onDelete, onHideMenu,
+        container, elementID, labels, onRename, onDelete, onHideMenu,
     } = props;
     const [modalVisible, setModalVisible] = useState<boolean>(false);
 
+    const elementLabel = labels[elementID];
     const element = container.querySelector(`[data-element-id="${elementID}"]`);
     if (!element) return null;
 
-    const elementLabel = element.getAttribute('data-element-label');
     const cx = element.getAttribute('cx');
     const cy = element.getAttribute('cy');
     let x = cx ? +cx : 0;
@@ -73,13 +75,9 @@ function ContextMenu(props: ContextMenuProps): React.ReactPortal | null {
                 cancelButtonProps: { hidden: true },
                 content: (
                     <LabelForm
-                        label={{
-                            name: `${elementLabel !== null ? elementLabel : elementID}`,
-                            attributes: [],
-                            color: consts.NEW_LABEL_COLOR,
-                            id: 0,
-                        }}
-                        labelNames={[]}
+                        label={elementLabel}
+                        labelNames={Object.values(labels).map((label: Label) => label.name)
+                            .filter((name: string) => name !== elementLabel.name)}
                         onSubmit={(data) => {
                             setModalVisible(false);
                             if (data) {
@@ -123,6 +121,7 @@ export default class SkeletonConfigurator extends React.PureComponent<{}, State>
     private nodeCounter: number;
     private elementCounter: number;
     private draggableElement: SVGElement | null;
+    private labels: Record<string, Label>;
 
     public constructor(props: {}) {
         super(props);
@@ -138,6 +137,7 @@ export default class SkeletonConfigurator extends React.PureComponent<{}, State>
         this.nodeCounter = 0;
         this.elementCounter = 0;
         this.draggableElement = null;
+        this.labels = {};
         this.canvasResizeObserver = new ResizeObserver((entries: ResizeObserverEntry[]) => {
             const [canvasEntry] = entries;
             (canvasEntry.target as HTMLCanvasElement).style.height = `${canvasEntry.target.clientWidth}px`;
@@ -260,6 +260,13 @@ export default class SkeletonConfigurator extends React.PureComponent<{}, State>
             if (ctm) {
                 const elementID = ++this.elementCounter;
                 const nodeID = ++this.nodeCounter;
+                this.labels[elementID] = {
+                    name: `${elementID}`,
+                    color: consts.NEW_LABEL_COLOR,
+                    attributes: [],
+                    id: idGenerator(),
+                };
+
                 point = point.matrixTransform(ctm.inverse());
                 setAttributes(circle, {
                     r: 1.5,
@@ -270,7 +277,7 @@ export default class SkeletonConfigurator extends React.PureComponent<{}, State>
                     'stroke-width': 0.1,
                     'data-type': 'element node',
                     'data-element-id': elementID,
-                    'data-element-label': elementID,
+                    'data-element-label': this.labels[elementID].name,
                     'data-node-id': nodeID,
                 });
                 svg.appendChild(circle);
@@ -491,6 +498,7 @@ export default class SkeletonConfigurator extends React.PureComponent<{}, State>
                 { svgRef.current && contextMenuVisible && contextMenuElement !== null ? (
                     <ContextMenu
                         elementID={contextMenuElement}
+                        labels={this.labels}
                         container={svgRef.current}
                         onDelete={() => {}}
                         onRename={(name: string) => { this.setupTextLabels(); this.setState({ contextMenuVisible: false }) }}
