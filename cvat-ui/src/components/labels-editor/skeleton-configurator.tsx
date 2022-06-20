@@ -132,7 +132,7 @@ export default class SkeletonConfigurator extends React.PureComponent<{}, State>
                 text.classList.add('cvat-skeleton-configurator-text-label');
                 text.setAttribute('x', `${point.x + TEXT_MARGIN}`);
                 text.setAttribute('y', `${point.y - TEXT_MARGIN}`);
-                text.setAttribute('stroke-width', '0.1');
+                text.setAttribute('stroke-width', '0.2');
                 text.setAttribute('stroke', 'black');
                 text.setAttribute('fill', 'white');
                 svg.appendChild(text);

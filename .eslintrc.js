@@ -24,10 +24,10 @@ module.exports = {
         'plugin:import/typescript',
     ],
     rules: {
-        'header/header': [2, 'line', [{
-            pattern: ' {1}Copyright \\(C\\) (?:20\\d{2}-)?2022 Intel Corporation',
-            template: ' Copyright (C) 2022 Intel Corporation'
-        }, '', ' SPDX-License-Identifier: MIT']],
+        // 'header/header': [2, 'line', [{
+        //     pattern: ' {1}Copyright \\(C\\) (?:20\\d{2}-)?2022 Intel Corporation',
+        //     template: ' Copyright (C) 2022 Intel Corporation'
+        // }, '', ' SPDX-License-Identifier: MIT']],
         'no-plusplus': 0,
         'no-continue': 0,
         'no-console': 0,
