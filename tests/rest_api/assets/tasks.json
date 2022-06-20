@@ -1,8 +1,68 @@
 {
-  "count": 8,
+  "count": 9,
   "next": null,
   "previous": null,
   "results": [
+    {
+      "assignee": null,
+      "bug_tracker": "",
+      "created_date": "2022-06-08T08:33:06.505000Z",
+      "data": 12,
+      "data_chunk_size": 72,
+      "data_compressed_chunk_type": "imageset",
+      "data_original_chunk_type": "imageset",
+      "dimension": "2d",
+      "id": 13,
+      "image_quality": 70,
+      "labels": [
+        {
+          "attributes": [],
+          "color": "#6080c0",
+          "id": 16,
+          "name": "cat"
+        },
+        {
+          "attributes": [],
+          "color": "#406040",
+          "id": 17,
+          "name": "dog"
+        }
+      ],
+      "mode": "annotation",
+      "name": "task1_in_project4",
+      "organization": 2,
+      "overlap": 0,
+      "owner": {
+        "first_name": "Admin",
+        "id": 1,
+        "last_name": "First",
+        "url": "http://localhost:8080/api/users/1",
+        "username": "admin1"
+      },
+      "project_id": 4,
+      "segment_size": 5,
+      "segments": [
+        {
+          "jobs": [
+            {
+              "assignee": null,
+              "id": 17,
+              "stage": "annotation",
+              "state": "in progress",
+              "status": "annotation",
+              "url": "http://localhost:8080/api/jobs/17"
+            }
+          ],
+          "start_frame": 0,
+          "stop_frame": 4
+        }
+      ],
+      "size": 5,
+      "status": "annotation",
+      "subset": "",
+      "updated_date": "2022-06-08T08:33:20.808000Z",
+      "url": "http://localhost:8080/api/tasks/13"
+    },
     {
       "assignee": null,
       "bug_tracker": "",

@@ -3,10 +3,34 @@
 # SPDX-License-Identifier: MIT
 
 from http import HTTPStatus
-from deepdiff import DeepDiff
-import pytest
+from io import BytesIO
+from time import sleep
 
-from .utils.config import get_method, post_method, patch_method
+import pytest
+from deepdiff import DeepDiff
+from PIL import Image
+
+from .utils.config import (get_method, patch_method, post_files_method,
+                           post_method)
+
+
+def generate_image_file(filename, size=(50, 50)):
+    f = BytesIO()
+    image = Image.new('RGB', size=size)
+    image.save(f, 'jpeg')
+    f.name = filename
+    f.seek(0)
+
+    return f
+
+def generate_image_files(count):
+    images = []
+    for i in range(count):
+        image = generate_image_file(f'{i}.jpeg')
+        images.append(image)
+
+    return images
+
 
 class TestGetTasks:
     def _test_task_list_200(self, user, project_id, data, exclude_paths = '', **kwargs):
@@ -103,6 +127,31 @@ class TestPostTasks:
         response = post_method(user, '/tasks', spec, **kwargs)
         assert response.status_code == HTTPStatus.FORBIDDEN
 
+    @staticmethod
+    def _wait_until_task_is_created(username, task_id):
+        url = f'tasks/{task_id}/status'
+
+        while True:
+            response = get_method(username, url)
+            response_json = response.json()
+            if response_json['state'] == 'Finished' or response_json['state'] == 'Failed':
+                return response
+            sleep(1)
+
+    def _test_create_task_with_images(self, username, spec, data, files):
+        response = post_method(username, '/tasks', spec)
+        assert response.status_code == HTTPStatus.CREATED
+        task_id = response.json()['id']
+
+        response = post_files_method(username, f'/tasks/{task_id}/data', data, files)
+        assert response.status_code == HTTPStatus.ACCEPTED
+
+        response = self._wait_until_task_is_created(username, task_id)
+        response_json = response.json()
+        assert response_json['state'] == 'Finished'
+
+        return task_id
+
     def _test_users_to_create_task_in_project(self, project_id, users, is_staff, is_allow, is_project_staff, **kwargs):
         if is_staff:
             users = [user for user in users if is_project_staff(user['id'], project_id) ]
@@ -143,6 +192,32 @@ class TestPostTasks:
     def test_worker_cannot_create_task_in_project_without_ownership(self, org, project_id, role, is_staff, is_allow, is_project_staff, find_users):
         users = find_users(org=org['id'], role=role)
         self._test_users_to_create_task_in_project(project_id, users, is_staff, is_allow, is_project_staff, org=org['slug'])
+
+    def test_can_create_task_with_defined_start_and_stop_frames(self):
+        username = 'admin1'
+        task_spec = {
+            'name': f'test {username} to create a task with defined start and stop frames',
+            "labels": [{
+                "name": "car",
+                "color": "#ff00ff"
+            }],
+        }
+
+        task_data = {
+            'image_quality': 75,
+            'start_frame': 2,
+            'stop_frame': 5
+        }
+        task_files = {
+            f'client_files[{i}]': image for i, image in enumerate(generate_image_files(7))
+        }
+
+        task_id = self._test_create_task_with_images(username, task_spec, task_data, task_files)
+
+        # check task size
+        response = get_method(username, f'tasks/{task_id}')
+        response_json = response.json()
+        assert response_json['size'] == 4
 
 class TestGetData:
     _USERNAME = 'user1'
@@ -214,3 +289,56 @@ class TestPatchTaskAnnotations:
             org_id=org, action='update')
 
         self._test_check_respone(is_allow, response, data)
+
+@pytest.mark.usefixtures("restore")
+class TestExportDatasetTask:
+    @staticmethod
+    def _wait_until_task_is_created(username, task_id):
+        url = f'tasks/{task_id}/status'
+
+        while True:
+            response = get_method(username, url)
+            response_json = response.json()
+            if response_json['state'] == 'Finished' or response_json['state'] == 'Failed':
+                return response
+            sleep(1)
+
+    def _test_create_task(self, username, spec, data, files):
+        response = post_method(username, '/tasks', spec)
+        assert response.status_code == HTTPStatus.CREATED
+        task_id = response.json()['id']
+
+        response = post_files_method(username, f'/tasks/{task_id}/data', data, files)
+        assert response.status_code == HTTPStatus.ACCEPTED
+
+        response = self._wait_until_task_is_created(username, task_id)
+        response_json = response.json()
+        assert response_json['state'] == 'Finished'
+
+        return task_id
+
+    def test_can_create_task_with_defined_start_and_stop_frames(self):
+        username = 'admin1'
+        task_spec = {
+            'name': f'test {username} to create a task with defined start and stop frames',
+            "labels": [{
+                "name": "car",
+                "color": "#ff00ff"
+            }],
+        }
+
+        task_data = {
+            'image_quality': 75,
+            'start_frame': 2,
+            'stop_frame': 5
+        }
+        task_files = {
+            f'client_files[{i}]': image for i, image in enumerate(generate_image_files(7))
+        }
+
+        task_id = self._test_create_task(username, task_spec, task_data, task_files)
+
+        # check task size
+        response = get_method(username, f'tasks/{task_id}')
+        response_json = response.json()
+        assert response_json['size'] == 4

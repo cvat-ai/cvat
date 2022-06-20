@@ -1,0 +1,4 @@
+-r base.txt
+
+# We depend on the server in the tests
+-r ../../cvat/requirements/testing.txt

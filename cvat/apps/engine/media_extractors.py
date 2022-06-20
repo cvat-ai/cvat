@@ -184,7 +184,7 @@ class ImageListReader(IMediaReader):
             source_path,
             step=self._step,
             start=self._start,
-            stop=self._stop,
+            stop=self._stop - 1,
             dimension=self._dimension,
             sorting_method=self._sorting_method
         )

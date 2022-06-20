@@ -16,7 +16,7 @@ from datumaro.util.scope import scoped, on_exit_do
 import cvat.apps.engine.log as log
 from cvat.apps.engine.tests.test_rest_api import (create_db_users,
     generate_image_file)
-from utils.cli.core import CLI, CVAT_API_V2, ResourceType
+from cvat_cli.core import CLI, CVAT_API_V2, ResourceType
 from tqdm import tqdm
 
 
@@ -24,7 +24,7 @@ class TestCLI(APITestCase):
     def setUp(self):
         self._stdout_handler = redirect_stdout(io.StringIO())
         mock_stdout = self._stdout_handler.__enter__()
-        log = logging.getLogger("utils.cli")
+        log = logging.getLogger("cvat_cli")
         log.propagate = False
         log.setLevel(logging.INFO)
         log.handlers.clear()
@@ -75,7 +75,7 @@ class TestTaskOperations(APITestCase):
     def setUp(self):
         self._stdout_handler = redirect_stdout(io.StringIO())
         mock_stdout = self._stdout_handler.__enter__()
-        log = logging.getLogger("utils.cli")
+        log = logging.getLogger("cvat_cli")
         log.propagate = False
         log.setLevel(logging.INFO)
         log.handlers.clear()

@@ -77,7 +77,7 @@ class TestGetJobs:
 
 class TestListJobs:
     def _test_list_jobs_200(self, user, data, **kwargs):
-        response = get_method(user, 'jobs', **kwargs, page_size=all)
+        response = get_method(user, 'jobs', **kwargs, page_size='all')
 
         assert response.status_code == HTTPStatus.OK
         assert DeepDiff(data, response.json()['results']) == {}
