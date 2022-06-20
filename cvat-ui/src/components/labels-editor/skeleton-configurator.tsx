@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import ReactDOM from 'react-dom';
 import { Row, Col } from 'antd/lib/grid';
 import Upload from 'antd/lib/upload';
@@ -23,6 +23,51 @@ function setAttributes(element: Element, attrs: Record<string, string | number |
     }
 }
 
+function toSVGCoord(svg: SVGSVGElement, coord: number[], raiseError = false): number[] {
+    const result = [];
+    const ctm = svg.getScreenCTM();
+
+    if (!ctm) {
+        if (raiseError) throw new Error('Screen CTM is null');
+        return coord;
+    }
+
+    const inversed = ctm.inverse();
+    if (!inversed) {
+        if (raiseError) throw new Error('Inversed screen CTM is null');
+        return coord;
+    }
+
+    for (let i = 0; i < coord.length; i += 2) {
+        let point = svg.createSVGPoint();
+        point.x = coord[i];
+        point.y = coord[i + 1];
+        point = point.matrixTransform(inversed);
+        result.push(point.x, point.y);
+    }
+
+    return result;
+}
+
+function fromSVGCoord(svg: SVGSVGElement, coord: number[], raiseError = false): number[] {
+    const result = [];
+    const ctm = svg.getCTM();
+    if (!ctm) {
+        if (raiseError) throw new Error('Inversed screen CTM is null');
+        return coord;
+    }
+
+    for (let i = 0; i < coord.length; i += 2) {
+        let point = svg.createSVGPoint();
+        point.x = coord[i];
+        point.y = coord[i + 1];
+        point = point.matrixTransform(ctm);
+        result.push(point.x, point.y);
+    }
+
+    return result;
+}
+
 interface State {
     activeTool: 'point' | 'join' | 'delete';
     contextMenuVisible: boolean;
@@ -34,83 +79,67 @@ interface ContextMenuProps {
     elementID: number;
     labels: Record<number, Label>;
     container: SVGSVGElement;
-    onRename(name: string): void;
-    onDelete(): void;
-    onHideMenu(): void;
+    onConfigureLabel(elementID: number, data: Label | null): void;
+    onDelete(element: SVGElement): void;
 }
 
-function ContextMenu(props: ContextMenuProps): React.ReactPortal | null {
+function ContextMenu(props: ContextMenuProps): JSX.Element {
     const {
-        container, elementID, labels, onRename, onDelete, onHideMenu,
+        container, elementID, labels, onConfigureLabel, onDelete,
     } = props;
     const [modalVisible, setModalVisible] = useState<boolean>(false);
 
     const elementLabel = labels[elementID];
     const element = container.querySelector(`[data-element-id="${elementID}"]`);
-    if (!element) return null;
+    const [portalContainer] = window.document.getElementsByClassName('cvat-skeleton-canvas-wrapper');
+    if (!element || !portalContainer) {
+        throw new Error('SVG container or portal container are not found');
+    }
 
     const cx = element.getAttribute('cx');
     const cy = element.getAttribute('cy');
-    let x = cx ? +cx : 0;
-    let y = cy ? +cy : 0;
-    let point = container.createSVGPoint();
-    point.x = x;
-    point.y = y;
-    const ctm = container.getCTM();
-
-    if (ctm) {
-        point = point.matrixTransform(ctm);
-        x = point.x;
-        y = point.y;
+    if (!cx || !cy) {
+        throw new Error('Circle attributes "cx", "cy" are not defined');
     }
 
-    useEffect(() => {
-        if (modalVisible) {
-            Modal.confirm({
-                width: 700,
-                title: 'Setup the skeleton item',
-                closable: true,
-                onCancel: () => setModalVisible(false),
-                okButtonProps: { hidden: true },
-                cancelButtonProps: { hidden: true },
-                content: (
-                    <LabelForm
-                        label={elementLabel}
-                        labelNames={Object.values(labels).map((label: Label) => label.name)
-                            .filter((name: string) => name !== elementLabel.name)}
-                        onSubmit={(data) => {
-                            setModalVisible(false);
-                            if (data) {
-                                // todo: handle outside of this component
-                                setAttributes(element, { 'data-element-label': data.name });
-                                onRename(data.name);
+    const [x, y] = fromSVGCoord(container, [+cx, +cy]);
+    return (
+        <>
+            <Modal
+                okButtonProps={{ hidden: true }}
+                cancelButtonProps={{ hidden: true }}
+                visible={modalVisible}
+                width={700}
+            >
+                <LabelForm
+                    label={elementLabel}
+                    labelNames={Object.values(labels).map((label: Label) => label.name)
+                        .filter((name: string) => name !== elementLabel.name)}
+                    onSubmit={(data) => {
+                        setModalVisible(false);
+                        onConfigureLabel(elementID, data);
+                    }}
+                />
+            </Modal>
+            { ReactDOM.createPortal(
+                (
+                    <Menu
+                        onClick={({ key }) => {
+                            if (key === 'configure_label') {
+                                setModalVisible(true);
+                            } else if (key === 'delete') {
+                                onDelete(element as SVGElement);
                             }
                         }}
-                    />
-                ),
-            });
-        } else {
-            Modal.destroyAll();
-        }
-    }, [modalVisible]);
-
-    return ReactDOM.createPortal(
-        (
-            <Menu
-                onClick={({ key }) => {
-                    if (key === 'rename') {
-                        setModalVisible(true);
-                    } else if (key === 'delete') {
-                        (element as any).cvat.deleteElement();
-                    }
-                }}
-                className='cvat-skeleton-configurator-context-menu'
-                style={{ top: y, left: x }}
-            >
-                <Menu.Item icon={<EditOutlined />} key='rename'>Rename</Menu.Item>
-                <Menu.Item icon={<DeleteOutlined />} key='delete'>Delete</Menu.Item>
-            </Menu>
-        ), window.document.getElementsByClassName('cvat-skeleton-canvas-wrapper')[0],
+                        className='cvat-skeleton-configurator-context-menu'
+                        style={{ top: y, left: x }}
+                    >
+                        <Menu.Item icon={<EditOutlined />} key='configure_label'>Configure</Menu.Item>
+                        <Menu.Item icon={<DeleteOutlined />} key='delete'>Delete</Menu.Item>
+                    </Menu>
+                ), portalContainer,
+            ) }
+        </>
     );
 }
 
@@ -168,7 +197,7 @@ export default class SkeletonConfigurator extends React.PureComponent<{}, State>
         }
     }
 
-    public componentDidUpdate(prevProps: {}, prevState: State): void {
+    public componentDidUpdate(_: {}, prevState: State): void {
         const { activeTool } = this.state;
         if (prevState.activeTool === 'join' && activeTool !== 'join') {
             const shape = this.findNotFinishedEdge();
@@ -184,7 +213,7 @@ export default class SkeletonConfigurator extends React.PureComponent<{}, State>
 
         if (svg) {
             svg.removeEventListener('click', this.onSVGClick);
-            svg.addEventListener('mousemove', this.onSVGMouseMove);
+            svg.removeEventListener('mousemove', this.onSVGMouseMove);
         }
 
         window.document.removeEventListener('mouseup', this.onDocumentMouseUp);
@@ -202,27 +231,12 @@ export default class SkeletonConfigurator extends React.PureComponent<{}, State>
             const line = this.findNotFinishedEdge();
 
             if (line) {
-                let point = svg.createSVGPoint();
-                point.x = event.clientX;
-                point.y = event.clientY;
-                const ctm = svg.getScreenCTM();
-
-                if (ctm) {
-                    point = point.matrixTransform(ctm.inverse());
-                }
-
-                setAttributes(line, { x2: point.x, y2: point.y });
+                const [x, y] = toSVGCoord(svg, [event.clientX, event.clientY]);
+                setAttributes(line, { x2: x, y2: y });
             }
         } else if (this.draggableElement && svg) {
-            let point = svg.createSVGPoint();
-            point.x = event.clientX;
-            point.y = event.clientY;
-            const ctm = svg.getScreenCTM();
-            if (ctm) {
-                point = point.matrixTransform(ctm.inverse());
-            }
-
-            setAttributes(this.draggableElement, { cx: point.x, cy: point.y });
+            const [x, y] = toSVGCoord(svg, [event.clientX, event.clientY]);
+            setAttributes(this.draggableElement, { cx: x, cy: y });
             this.setupTextLabels();
             const nodeID = this.draggableElement.getAttribute('data-node-id');
             for (const element of svg.children) {
@@ -231,9 +245,9 @@ export default class SkeletonConfigurator extends React.PureComponent<{}, State>
                 const dataNodeTo = element.getAttribute('data-node-to');
                 if (dataType === 'edge' && (dataNodeFrom === `${nodeID}` || dataNodeTo === `${nodeID}`)) {
                     if (dataNodeFrom === nodeID) {
-                        setAttributes(element, { x1: point.x, y1: point.y });
+                        setAttributes(element, { x1: x, y1: y });
                     } else {
-                        setAttributes(element, { x2: point.x, y2: point.y });
+                        setAttributes(element, { x2: x, y2: y });
                     }
                 }
             }
@@ -245,153 +259,155 @@ export default class SkeletonConfigurator extends React.PureComponent<{}, State>
         const svg = this.svgRef.current;
 
         if (contextMenuVisible) {
-            this.setState({
-                contextMenuVisible: false,
-            });
+            this.setState({ contextMenuVisible: false });
             return;
         }
 
         if (activeTool === 'point' && svg) {
-            const circle = window.document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-            let point = svg.createSVGPoint();
-            point.x = event.clientX;
-            point.y = event.clientY;
-            const ctm = svg.getScreenCTM();
-            if (ctm) {
-                const elementID = ++this.elementCounter;
-                const nodeID = ++this.nodeCounter;
-                this.labels[elementID] = {
-                    name: `${elementID}`,
-                    color: consts.NEW_LABEL_COLOR,
-                    attributes: [],
-                    id: idGenerator(),
-                };
-
-                point = point.matrixTransform(ctm.inverse());
-                setAttributes(circle, {
-                    r: 1.5,
-                    stroke: 'black',
-                    fill: 'grey',
-                    cx: point.x,
-                    cy: point.y,
-                    'stroke-width': 0.1,
-                    'data-type': 'element node',
-                    'data-element-id': elementID,
-                    'data-element-label': this.labels[elementID].name,
-                    'data-node-id': nodeID,
-                });
-                svg.appendChild(circle);
-
-                circle.addEventListener('mouseover', () => {
-                    circle.setAttribute('stroke-width', '0.3');
-                    const text = svg.querySelector(`text[data-for-element-id="${elementID}"]`);
-                    if (text) {
-                        text.setAttribute('fill', 'red');
-                    }
-
-                    this.setState({
-                        contextMenuElement: elementID,
-                    });
-                });
-
-                circle.addEventListener('mouseout', () => {
-                    circle.setAttribute('stroke-width', '0.1');
-                    const text = svg.querySelector(`text[data-for-element-id="${elementID}"]`);
-                    if (text) {
-                        text.setAttribute('fill', 'white');
-                    }
-                });
-
-                circle.addEventListener('mousedown', () => {
-                    this.draggableElement = circle;
-                });
-
-                circle.addEventListener('contextmenu', (e: MouseEvent) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    this.setState({
-                        contextMenuVisible: true,
-                    });
-                });
-
-                (circle as any).cvat = {
-                    deleteElement: () => {
-                        // first remove all related edges
-                        for (const element of svg.children) {
-                            const dataType = element.getAttribute('data-type');
-                            const dataNodeFrom = element.getAttribute('data-node-from');
-                            const dataNodeTo = element.getAttribute('data-node-to');
-                            if (dataType === 'edge' && (dataNodeFrom === `${nodeID}` || dataNodeTo === `${nodeID}`)) {
-                                setTimeout(() => {
-                                    // use setTimeout to not change the array during iteration it
-                                    element.remove();
-                                });
-                            }
-                        }
-
-                        // then close context menu if opened for the node
-                        const { contextMenuElement: currentContextMenuElement } = this.state;
-                        if (currentContextMenuElement === elementID) {
-                            this.setState({
-                                contextMenuElement: null,
-                                contextMenuVisible: false,
-                            });
-                        }
-
-                        // finally remove the element itself and its labels
-                        circle.remove();
-                        this.setupTextLabels();
-                    },
-                };
-
-                circle.addEventListener('click', (evt: Event) => {
-                    evt.stopPropagation();
-                    const { activeTool: currentActiveTool } = this.state;
-                    if (currentActiveTool === 'delete') {
-                        (circle as any).cvat.deleteElement();
-                    } else if (currentActiveTool === 'join') {
-                        let line = this.findNotFinishedEdge();
-                        if (!line) {
-                            line = window.document.createElementNS('http://www.w3.org/2000/svg', 'line');
-                            setAttributes(line, {
-                                x1: circle.getAttribute('cx'),
-                                y1: circle.getAttribute('cy'),
-                                x2: circle.getAttribute('cx'),
-                                y2: circle.getAttribute('cy'),
-                                stroke: 'black',
-                                'data-type': 'edge',
-                                'data-node-from': nodeID,
-                                'stroke-width': '0.1',
-                            });
-
-                            svg.prepend(line);
-                            return;
-                        }
-
-                        const dataNodeFrom = line.getAttribute('data-node-from');
-                        const dataNodeTo = nodeID;
-
-                        // if such edge already exists, remove the current one
-                        const edge1 = svg
-                            .querySelector(`[data-node-from="${dataNodeFrom}"][data-node-to="${dataNodeTo}"]`);
-                        const edge2 = svg
-                            .querySelector(`[data-node-from="${dataNodeTo}"][data-node-to="${dataNodeFrom}"]`);
-                        if (edge1 || edge2) {
-                            line.remove();
-                        }
-
-                        if (dataNodeFrom !== `${dataNodeTo}`) {
-                            setAttributes(line, {
-                                x2: circle.getAttribute('cx'),
-                                y2: circle.getAttribute('cy'),
-                                'data-node-to': nodeID,
-                            });
-                        }
-                    }
-                });
-
-                this.setupTextLabels();
+            let [x, y] = [0, 0];
+            try {
+                [x, y] = toSVGCoord(svg, [event.clientX, event.clientY], true);
+            } catch (_: any) {
+                return;
             }
+
+            const circle = window.document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            const elementID = ++this.elementCounter;
+            const nodeID = ++this.nodeCounter;
+            this.labels[elementID] = {
+                name: `${elementID}`,
+                color: consts.NEW_LABEL_COLOR,
+                attributes: [],
+                id: idGenerator(),
+            };
+
+            setAttributes(circle, {
+                r: 1.5,
+                stroke: 'black',
+                fill: 'grey',
+                cx: x,
+                cy: y,
+                'stroke-width': 0.1,
+                'data-type': 'element node',
+                'data-element-id': elementID,
+                'data-node-id': nodeID,
+            });
+            svg.appendChild(circle);
+
+            circle.addEventListener('mouseover', () => {
+                circle.setAttribute('stroke-width', '0.3');
+                const text = svg.querySelector(`text[data-for-element-id="${elementID}"]`);
+                if (text) {
+                    text.setAttribute('fill', 'red');
+                }
+
+                this.setState({
+                    contextMenuElement: elementID,
+                });
+            });
+
+            circle.addEventListener('mouseout', () => {
+                circle.setAttribute('stroke-width', '0.1');
+                const text = svg.querySelector(`text[data-for-element-id="${elementID}"]`);
+                if (text) {
+                    text.setAttribute('fill', 'white');
+                }
+            });
+
+            circle.addEventListener('mousedown', (e: MouseEvent) => {
+                if (e.button === 0) {
+                    this.draggableElement = circle;
+                }
+            });
+
+            circle.addEventListener('contextmenu', (e: MouseEvent) => {
+                e.preventDefault();
+                e.stopPropagation();
+                this.setState({
+                    contextMenuVisible: true,
+                });
+            });
+
+            (circle as any).cvat = {
+                deleteElement: () => {
+                    // first remove all related edges
+                    for (const element of svg.children) {
+                        const dataType = element.getAttribute('data-type');
+                        const dataNodeFrom = element.getAttribute('data-node-from');
+                        const dataNodeTo = element.getAttribute('data-node-to');
+                        if (dataType === 'edge' && (dataNodeFrom === `${nodeID}` || dataNodeTo === `${nodeID}`)) {
+                            setTimeout(() => {
+                                // use setTimeout to not change the array during iteration it
+                                element.remove();
+                            });
+                        }
+                    }
+
+                    // then close context menu if opened for the node
+                    const { contextMenuElement: currentContextMenuElement } = this.state;
+                    if (currentContextMenuElement === elementID) {
+                        this.setState({
+                            contextMenuElement: null,
+                            contextMenuVisible: false,
+                        });
+                    }
+
+                    // remove label instance for the element
+                    delete this.labels[elementID];
+
+                    // finally remove the element itself and its labels
+                    circle.remove();
+                    this.setupTextLabels();
+                },
+            };
+
+            circle.addEventListener('click', (evt: Event) => {
+                evt.stopPropagation();
+                const { activeTool: currentActiveTool } = this.state;
+                if (currentActiveTool === 'delete') {
+                    (circle as any).cvat.deleteElement();
+                } else if (currentActiveTool === 'join') {
+                    let line = this.findNotFinishedEdge();
+                    if (!line) {
+                        line = window.document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                        setAttributes(line, {
+                            x1: circle.getAttribute('cx'),
+                            y1: circle.getAttribute('cy'),
+                            x2: circle.getAttribute('cx'),
+                            y2: circle.getAttribute('cy'),
+                            stroke: 'black',
+                            'data-type': 'edge',
+                            'data-node-from': nodeID,
+                            'stroke-width': '0.1',
+                        });
+
+                        svg.prepend(line);
+                        return;
+                    }
+
+                    const dataNodeFrom = line.getAttribute('data-node-from');
+                    const dataNodeTo = nodeID;
+
+                    // if such edge already exists, remove the current one
+                    const edge1 = svg
+                        .querySelector(`[data-node-from="${dataNodeFrom}"][data-node-to="${dataNodeTo}"]`);
+                    const edge2 = svg
+                        .querySelector(`[data-node-from="${dataNodeTo}"][data-node-to="${dataNodeFrom}"]`);
+                    if (edge1 || edge2) {
+                        line.remove();
+                    }
+
+                    if (dataNodeFrom !== `${dataNodeTo}`) {
+                        setAttributes(line, {
+                            x2: circle.getAttribute('cx'),
+                            y2: circle.getAttribute('cy'),
+                            'data-node-to': nodeID,
+                        });
+                    }
+                }
+            });
+
+            this.setupTextLabels();
         }
     };
 
@@ -411,14 +427,15 @@ export default class SkeletonConfigurator extends React.PureComponent<{}, State>
             if (recreate) {
                 Array.from<SVGElement>(svg.children as any as SVGElement[]).forEach((element: SVGElement): void => {
                     if (!(element instanceof SVGElement)) return;
+                    const elementID = element.getAttribute('data-element-id');
                     const cx = element.getAttribute('cx');
                     const cy = element.getAttribute('cy');
-                    const elementID = element.getAttribute('data-element-id');
-                    const label = element.getAttribute('data-element-label');
-                    if (cx && cy && label && elementID) {
+
+                    if (cx && cy && elementID) {
+                        const label = this.labels[elementID];
                         const text = window.document.createElementNS('http://www.w3.org/2000/svg', 'text');
                         // eslint-disable-next-line
-                        text.innerHTML = `${label}`
+                        text.innerHTML = `${label.name}`
                         text.classList.add('cvat-skeleton-configurator-text-label');
                         setAttributes(text, {
                             x: +cx + TEXT_MARGIN,
@@ -500,9 +517,17 @@ export default class SkeletonConfigurator extends React.PureComponent<{}, State>
                         elementID={contextMenuElement}
                         labels={this.labels}
                         container={svgRef.current}
-                        onDelete={() => {}}
-                        onRename={(name: string) => { this.setupTextLabels(); this.setState({ contextMenuVisible: false }) }}
-                        onHideMenu={() => this.setState({ contextMenuVisible: false })}
+                        onDelete={(element) => {
+                            this.setState({ contextMenuVisible: false });
+                            (element as any).cvat.deleteElement();
+                        }}
+                        onConfigureLabel={(elementID: number, data: Label | null) => {
+                            this.setState({ contextMenuVisible: false });
+                            if (data) {
+                                this.labels[elementID] = data;
+                                this.setupTextLabels();
+                            }
+                        }}
                     />
                 ) : null}
                 <Col span={16} className='cvat-skeleton-canvas-wrapper'>
