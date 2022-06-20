@@ -97,3 +97,48 @@ export function equalArrayHead(arr1: string[], arr2: string[]): boolean {
 
     return true;
 }
+
+export function toSVGCoord(svg: SVGSVGElement, coord: number[], raiseError = false): number[] {
+    const result = [];
+    const ctm = svg.getScreenCTM();
+
+    if (!ctm) {
+        if (raiseError) throw new Error('Screen CTM is null');
+        return coord;
+    }
+
+    const inversed = ctm.inverse();
+    if (!inversed) {
+        if (raiseError) throw new Error('Inversed screen CTM is null');
+        return coord;
+    }
+
+    for (let i = 0; i < coord.length; i += 2) {
+        let point = svg.createSVGPoint();
+        point.x = coord[i];
+        point.y = coord[i + 1];
+        point = point.matrixTransform(inversed);
+        result.push(point.x, point.y);
+    }
+
+    return result;
+}
+
+export function fromSVGCoord(svg: SVGSVGElement, coord: number[], raiseError = false): number[] {
+    const result = [];
+    const ctm = svg.getCTM();
+    if (!ctm) {
+        if (raiseError) throw new Error('Inversed screen CTM is null');
+        return coord;
+    }
+
+    for (let i = 0; i < coord.length; i += 2) {
+        let point = svg.createSVGPoint();
+        point.x = coord[i];
+        point.y = coord[i + 1];
+        point = point.matrixTransform(ctm);
+        result.push(point.x, point.y);
+    }
+
+    return result;
+}

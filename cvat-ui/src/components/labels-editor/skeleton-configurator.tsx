@@ -1,19 +1,17 @@
-import React, { useState } from 'react';
-import ReactDOM from 'react-dom';
+import React from 'react';
 import { Row, Col } from 'antd/lib/grid';
 import Upload from 'antd/lib/upload';
 import Button from 'antd/lib/button';
 import notification from 'antd/lib/notification';
 import { RcFile } from 'antd/lib/upload/interface';
-import Icon, { DeleteOutlined, EditOutlined, PictureOutlined } from '@ant-design/icons';
+import Icon, { PictureOutlined } from '@ant-design/icons';
 
 import {
     EllipseIcon, PointIcon, PolygonIcon, RectangleIcon,
 } from 'icons';
 import consts from 'consts';
-import { Menu, Modal } from 'antd';
-import LabelForm from './label-form';
-import { idGenerator, Label } from './common';
+import { idGenerator, Label, toSVGCoord } from './common';
+import SkeletonElementContextMenu from './skeleton-element-context-menu';
 
 function setAttributes(element: Element, attrs: Record<string, string | number | null>): void {
     for (const key of Object.keys(attrs)) {
@@ -23,124 +21,11 @@ function setAttributes(element: Element, attrs: Record<string, string | number |
     }
 }
 
-function toSVGCoord(svg: SVGSVGElement, coord: number[], raiseError = false): number[] {
-    const result = [];
-    const ctm = svg.getScreenCTM();
-
-    if (!ctm) {
-        if (raiseError) throw new Error('Screen CTM is null');
-        return coord;
-    }
-
-    const inversed = ctm.inverse();
-    if (!inversed) {
-        if (raiseError) throw new Error('Inversed screen CTM is null');
-        return coord;
-    }
-
-    for (let i = 0; i < coord.length; i += 2) {
-        let point = svg.createSVGPoint();
-        point.x = coord[i];
-        point.y = coord[i + 1];
-        point = point.matrixTransform(inversed);
-        result.push(point.x, point.y);
-    }
-
-    return result;
-}
-
-function fromSVGCoord(svg: SVGSVGElement, coord: number[], raiseError = false): number[] {
-    const result = [];
-    const ctm = svg.getCTM();
-    if (!ctm) {
-        if (raiseError) throw new Error('Inversed screen CTM is null');
-        return coord;
-    }
-
-    for (let i = 0; i < coord.length; i += 2) {
-        let point = svg.createSVGPoint();
-        point.x = coord[i];
-        point.y = coord[i + 1];
-        point = point.matrixTransform(ctm);
-        result.push(point.x, point.y);
-    }
-
-    return result;
-}
-
 interface State {
     activeTool: 'point' | 'join' | 'delete';
     contextMenuVisible: boolean;
     contextMenuElement: number | null;
     image: RcFile | null;
-}
-
-interface ContextMenuProps {
-    elementID: number;
-    labels: Record<number, Label>;
-    container: SVGSVGElement;
-    onConfigureLabel(elementID: number, data: Label | null): void;
-    onDelete(element: SVGElement): void;
-}
-
-function ContextMenu(props: ContextMenuProps): JSX.Element {
-    const {
-        container, elementID, labels, onConfigureLabel, onDelete,
-    } = props;
-    const [modalVisible, setModalVisible] = useState<boolean>(false);
-
-    const elementLabel = labels[elementID];
-    const element = container.querySelector(`[data-element-id="${elementID}"]`);
-    const [portalContainer] = window.document.getElementsByClassName('cvat-skeleton-canvas-wrapper');
-    if (!element || !portalContainer) {
-        throw new Error('SVG container or portal container are not found');
-    }
-
-    const cx = element.getAttribute('cx');
-    const cy = element.getAttribute('cy');
-    if (!cx || !cy) {
-        throw new Error('Circle attributes "cx", "cy" are not defined');
-    }
-
-    const [x, y] = fromSVGCoord(container, [+cx, +cy]);
-    return (
-        <>
-            <Modal
-                okButtonProps={{ hidden: true }}
-                cancelButtonProps={{ hidden: true }}
-                visible={modalVisible}
-                width={700}
-            >
-                <LabelForm
-                    label={elementLabel}
-                    labelNames={Object.values(labels).map((label: Label) => label.name)
-                        .filter((name: string) => name !== elementLabel.name)}
-                    onSubmit={(data) => {
-                        setModalVisible(false);
-                        onConfigureLabel(elementID, data);
-                    }}
-                />
-            </Modal>
-            { ReactDOM.createPortal(
-                (
-                    <Menu
-                        onClick={({ key }) => {
-                            if (key === 'configure_label') {
-                                setModalVisible(true);
-                            } else if (key === 'delete') {
-                                onDelete(element as SVGElement);
-                            }
-                        }}
-                        className='cvat-skeleton-configurator-context-menu'
-                        style={{ top: y, left: x }}
-                    >
-                        <Menu.Item icon={<EditOutlined />} key='configure_label'>Configure</Menu.Item>
-                        <Menu.Item icon={<DeleteOutlined />} key='delete'>Delete</Menu.Item>
-                    </Menu>
-                ), portalContainer,
-            ) }
-        </>
-    );
 }
 
 export default class SkeletonConfigurator extends React.PureComponent<{}, State> {
@@ -513,7 +398,7 @@ export default class SkeletonConfigurator extends React.PureComponent<{}, State>
         return (
             <Row className='cvat-skeleton-configurator'>
                 { svgRef.current && contextMenuVisible && contextMenuElement !== null ? (
-                    <ContextMenu
+                    <SkeletonElementContextMenu
                         elementID={contextMenuElement}
                         labels={this.labels}
                         container={svgRef.current}
