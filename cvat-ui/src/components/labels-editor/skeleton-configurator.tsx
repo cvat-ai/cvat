@@ -36,15 +36,13 @@ function ContextMenu(props: ContextMenuProps): React.ReactPortal | null {
     const [modalVisible, setModalVisible] = useState<boolean>(false);
 
     const element = container.querySelector(`[data-element-id="${elementID}"]`);
-    let x = 0;
-    let y = 0;
     if (!element) return null;
 
     const elementLabel = element.getAttribute('data-element-label');
     const cx = element.getAttribute('cx');
     const cy = element.getAttribute('cy');
-    x = cx ? +cx : x;
-    y = cy ? +cy : y;
+    let x = cx ? +cx : 0;
+    let y = cy ? +cy : 0;
     let point = container.createSVGPoint();
     point.x = x;
     point.y = y;
@@ -116,6 +114,7 @@ export default class SkeletonConfigurator extends React.PureComponent<{}, State>
     private canvasResizeObserver: ResizeObserver;
     private nodeCounter: number;
     private elementCounter: number;
+    private draggableElement: SVGElement | null;
 
     public constructor(props: {}) {
         super(props);
@@ -130,6 +129,7 @@ export default class SkeletonConfigurator extends React.PureComponent<{}, State>
         this.svgRef = React.createRef<SVGSVGElement>();
         this.nodeCounter = 0;
         this.elementCounter = 0;
+        this.draggableElement = null;
         this.canvasResizeObserver = new ResizeObserver((entries: ResizeObserverEntry[]) => {
             const [canvasEntry] = entries;
             (canvasEntry.target as HTMLCanvasElement).style.height = `${canvasEntry.target.clientWidth}px`;
@@ -152,6 +152,7 @@ export default class SkeletonConfigurator extends React.PureComponent<{}, State>
             this.canvasResizeObserver.observe(canvas);
         }
 
+        window.document.addEventListener('mouseup', this.onDocumentMouseUp);
         if (svg) {
             svg.setAttribute('viewBox', '0 0 100 100');
             svg.addEventListener('click', this.onSVGClick);
@@ -172,8 +173,13 @@ export default class SkeletonConfigurator extends React.PureComponent<{}, State>
             svg.addEventListener('mousemove', this.onSVGMouseMove);
         }
 
+        window.document.removeEventListener('mouseup', this.onDocumentMouseUp);
         this.canvasResizeObserver.disconnect();
     }
+
+    private onDocumentMouseUp = (): void => {
+        this.draggableElement = null;
+    };
 
     private onSVGMouseMove = (event: MouseEvent): void => {
         const { activeTool } = this.state;
@@ -194,6 +200,34 @@ export default class SkeletonConfigurator extends React.PureComponent<{}, State>
                 line.setAttribute('x2', `${point.x}`);
                 line.setAttribute('y2', `${point.y}`);
             }
+        } else if (this.draggableElement && svg) {
+            let point = svg.createSVGPoint();
+            point.x = event.clientX;
+            point.y = event.clientY;
+            const ctm = svg.getScreenCTM();
+            if (ctm) {
+                point = point.matrixTransform(ctm.inverse());
+            }
+
+            this.draggableElement.setAttribute('cx', `${point.x}`);
+            this.draggableElement.setAttribute('cy', `${point.y}`);
+            this.setupTextLabels();
+            const nodeID = this.draggableElement.getAttribute('data-node-id');
+            for (const element of svg.children) {
+                const dataType = element.getAttribute('data-type');
+                const dataNodeFrom = element.getAttribute('data-node-from');
+                const dataNodeTo = element.getAttribute('data-node-to');
+                if (dataType === 'edge' && (dataNodeFrom === `${nodeID}` || dataNodeTo === `${nodeID}`)) {
+                    if (dataNodeFrom === nodeID) {
+                        element.setAttribute('x1', `${point.x}`);
+                        element.setAttribute('y1', `${point.y}`);
+                    } else {
+                        element.setAttribute('x2', `${point.x}`);
+                        element.setAttribute('y2', `${point.y}`);
+                    }
+                }
+            }
+
         }
     };
 
@@ -218,7 +252,7 @@ export default class SkeletonConfigurator extends React.PureComponent<{}, State>
                 const elementID = ++this.elementCounter;
                 const nodeID = ++this.nodeCounter;
                 point = point.matrixTransform(ctm.inverse());
-                circle.setAttribute('r', '1');
+                circle.setAttribute('r', '1.5');
                 circle.setAttribute('stroke-width', '0.1');
                 circle.setAttribute('stroke', 'black');
                 circle.setAttribute('fill', 'grey');
@@ -248,6 +282,10 @@ export default class SkeletonConfigurator extends React.PureComponent<{}, State>
                     if (text) {
                         text.setAttribute('fill', 'white');
                     }
+                });
+
+                circle.addEventListener('mousedown', () => {
+                    this.draggableElement = circle;
                 });
 
                 circle.addEventListener('contextmenu', (e: MouseEvent) => {
@@ -301,18 +339,18 @@ export default class SkeletonConfigurator extends React.PureComponent<{}, State>
                             line.setAttribute('data-node-from', `${nodeID}`);
                             line.setAttribute('stroke', 'black');
                             line.setAttribute('stroke-width', '0.1');
-                            line.setAttribute('x1', `${point.x}`);
-                            line.setAttribute('y1', `${point.y}`);
-                            line.setAttribute('x2', `${point.x}`);
-                            line.setAttribute('y2', `${point.y}`);
+                            line.setAttribute('x1', circle.getAttribute('cx') as string);
+                            line.setAttribute('y1', circle.getAttribute('cy') as string);
+                            line.setAttribute('x2', circle.getAttribute('cx') as string);
+                            line.setAttribute('y2', circle.getAttribute('cy') as string);
                             svg.prepend(line);
                             return;
                         }
 
                         const dataNodeFrom = line.getAttribute('data-node-from');
                         if (dataNodeFrom !== `${nodeID}`) {
-                            line.setAttribute('x2', `${point.x}`);
-                            line.setAttribute('y2', `${point.y}`);
+                            line.setAttribute('x2', circle.getAttribute('cx') as string);
+                            line.setAttribute('y2', circle.getAttribute('cy') as string);
                             line.setAttribute('data-node-to', `${nodeID}`);
                         }
                     }
