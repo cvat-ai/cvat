@@ -200,7 +200,8 @@ export default class SkeletonConfigurator extends React.PureComponent<{}, State>
             });
 
             circle.addEventListener('mousedown', (e: MouseEvent) => {
-                if (e.button === 0) {
+                const { activeTool: currentActiveTool } = this.state;
+                if (e.button === 0 && currentActiveTool === 'point') {
                     this.draggableElement = circle;
                 }
             });
