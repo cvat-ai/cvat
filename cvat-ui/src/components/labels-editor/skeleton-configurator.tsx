@@ -158,7 +158,10 @@ export default class SkeletonConfigurator extends React.PureComponent<{}, State>
                             const dataNodeFrom = element.getAttribute('data-node-from');
                             const dataNodeTo = element.getAttribute('data-node-to');
                             if (dataType === 'edge' && (dataNodeFrom === `${nodeId}` || dataNodeTo === `${nodeId}`)) {
-                                element.remove();
+                                setTimeout(() => {
+                                    // use setTimeout to not change the array during iteration it
+                                    element.remove();
+                                });
                             }
                         }
                         // finally remove the element itself and its labels
