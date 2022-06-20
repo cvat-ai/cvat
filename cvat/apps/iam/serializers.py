@@ -2,8 +2,8 @@
 #
 # SPDX-License-Identifier: MIT
 
-from rest_auth.registration.serializers import RegisterSerializer
-from rest_auth.serializers import PasswordResetSerializer
+from dj_rest_auth.registration.serializers import RegisterSerializer
+from dj_rest_auth.serializers import PasswordResetSerializer
 from rest_framework import serializers
 
 from django.conf import settings

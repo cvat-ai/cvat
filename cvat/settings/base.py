@@ -112,13 +112,13 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework.authtoken',
     'drf_spectacular',
-    'rest_auth',
+    'dj_rest_auth',
     'django.contrib.sites',
     'allauth',
     'allauth.account',
     'corsheaders',
     'allauth.socialaccount',
-    'rest_auth.registration',
+    'dj_rest_auth.registration',
     'cvat.apps.iam',
     'cvat.apps.dataset_manager',
     'cvat.apps.organizations',
@@ -505,7 +505,7 @@ SPECTACULAR_SETTINGS = {
     # Statically set schema version. May also be an empty string. When used together with
     # view versioning, will become '0.0.0 (v2)' for 'v2' versioned requests.
     # Set VERSION to None if only the request version should be rendered.
-    'VERSION': 'alpha',
+    'VERSION': 'alpha (2.0)',
     'CONTACT': {
         'name': 'Nikita Manovich',
         'url': 'https://github.com/nmanovic',
