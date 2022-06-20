@@ -174,6 +174,8 @@ export default class SkeletonConfigurator extends React.PureComponent<{}, State>
                             line.setAttribute('stroke-width', '0.1');
                             line.setAttribute('x1', `${point.x}`);
                             line.setAttribute('y1', `${point.y}`);
+                            line.setAttribute('x2', `${point.x}`);
+                            line.setAttribute('y2', `${point.y}`);
                             svg.prepend(line);
                             return;
                         }
@@ -186,10 +188,6 @@ export default class SkeletonConfigurator extends React.PureComponent<{}, State>
                         }
                     }
                 });
-
-                // todo: add reset all button
-                // todo: add ability to setup label name
-                // todo: add joiners
             }
         }
     };
