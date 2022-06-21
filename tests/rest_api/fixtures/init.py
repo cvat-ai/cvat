@@ -2,6 +2,7 @@ import os.path as osp
 import re
 from http import HTTPStatus
 from subprocess import PIPE, CalledProcessError, run
+from time import sleep
 
 import pytest
 import os
@@ -96,10 +97,11 @@ def delete_compose_files():
 
 
 def wait_for_server():
-    while True:
+    for _ in range(60):
         response = requests.get(get_api_url("users/self"))
         if response.status_code == HTTPStatus.UNAUTHORIZED:
             break
+        sleep(5)
 
 def restore_data_volumes():
     docker_cp(osp.join(CVAT_DB_DIR, "cvat_data.tar.bz2"), f"{PREFIX}_cvat_1:/tmp/cvat_data.tar.bz2")
