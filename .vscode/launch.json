@@ -177,6 +177,24 @@
             "console": "internalConsole"
         },
         {
+            "name": "Generate REST API Schema",
+            "type": "python",
+            "request": "launch",
+            "justMyCode": false,
+            "stopOnEntry": false,
+            "python": "${command:python.interpreterPath}",
+            "program": "${workspaceRoot}/manage.py",
+            "args": [
+                "spectacular",
+                "--file",
+                "schema.yml"
+            ],
+            "django": true,
+            "cwd": "${workspaceFolder}",
+            "env": {},
+            "console": "internalConsole"
+        },
+        {
             "name": "core.js: debug",
             "type": "node",
             "request": "launch",
