@@ -44,22 +44,18 @@ function ConstructorCreator(props: Props): JSX.Element {
                 label={null}
                 labelNames={labelNames}
                 onSubmit={(label: Label | null) => {
-                    if (creatorType === 'skeleton') {
-                        if (label) {
-                            setLabelConfiguration({ ...label });
-                            if (skeletonConfiguratorRef.current) {
-                                try {
-                                    setError(null);
-                                    skeletonConfiguratorRef.current.submit();
-                                } catch (_error: any) {
-                                    setError(_error.toString());
-                                }
+                    if (label && creatorType === 'skeleton') {
+                        setLabelConfiguration({ ...label });
+                        if (skeletonConfiguratorRef.current) {
+                            try {
+                                setError(null);
+                                skeletonConfiguratorRef.current.submit();
+                            } catch (_error: any) {
+                                setError(_error.toString());
                             }
                         }
                     } else {
                         onCreate(label);
-                        setLabelConfiguration(null);
-                        setError(null);
                     }
                 }}
             />
