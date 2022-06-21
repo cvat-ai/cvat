@@ -2,10 +2,11 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React from 'react';
+import React, { useCallback, useRef, useState } from 'react';
+import Alert from 'antd/lib/alert';
 
 import LabelForm from './label-form';
-import { Label } from './common';
+import { Label, SkeletonConfiguration } from './common';
 import SkeletonConfigurator from './skeleton-configurator';
 
 interface Props {
@@ -25,11 +26,50 @@ function compareProps(prevProps: Props, nextProps: Props): boolean {
 
 function ConstructorCreator(props: Props): JSX.Element {
     const { onCreate, labelNames, creatorType } = props;
+    const skeletonConfiguratorRef = useRef<SkeletonConfigurator>(null);
+    const [labelConfiguration, setLabelConfiguration] = useState<Label | null>(null);
+    const [error, setError] = useState<string | null>(null);
+    const onSubmitSkeletonConf = useCallback((data: SkeletonConfiguration) => {
+        if (labelConfiguration) {
+            onCreate({
+                ...labelConfiguration,
+                ...data,
+            });
+        }
+    }, [labelConfiguration]);
+
     return (
         <div className='cvat-label-constructor-creator'>
-            <LabelForm label={null} onSubmit={onCreate} labelNames={labelNames} />
+            <LabelForm
+                label={null}
+                labelNames={labelNames}
+                onSubmit={(label: Label | null) => {
+                    if (creatorType === 'skeleton') {
+                        if (label) {
+                            setLabelConfiguration({ ...label });
+                            if (skeletonConfiguratorRef.current) {
+                                try {
+                                    setError(null);
+                                    skeletonConfiguratorRef.current.submit();
+                                } catch (_error: any) {
+                                    setError(_error.toString());
+                                }
+                            }
+                        }
+                    } else {
+                        onCreate(label);
+                        setLabelConfiguration(null);
+                        setError(null);
+                    }
+                }}
+            />
             {
-                creatorType === 'skeleton' && <SkeletonConfigurator />
+                creatorType === 'skeleton' && (
+                    <>
+                        <SkeletonConfigurator onSubmit={onSubmitSkeletonConf} ref={skeletonConfiguratorRef} />
+                        { error !== null && <Alert type='error' message={error} /> }
+                    </>
+                )
             }
         </div>
     );

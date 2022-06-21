@@ -174,7 +174,7 @@ export default class LabelsEditor extends React.PureComponent<LabelsEditorProps,
 
     private handleSubmit(savedLabels: Label[], unsavedLabels: Label[]): void {
         function transformLabel(label: Label): any {
-            return {
+            const transformed: any = {
                 name: label.name,
                 id: label.id < 0 ? undefined : label.id,
                 color: label.color,
@@ -187,6 +187,20 @@ export default class LabelsEditor extends React.PureComponent<LabelsEditorProps,
                     values: [...attr.values],
                 })),
             };
+
+            if (label.type) {
+                transformed.type = {
+                    definitions: label.type.definitions.map((internalLabel: Label) => transformLabel(internalLabel)),
+                    elements: label.type.elements,
+                    edges: label.type.edges,
+                };
+            }
+
+            if (label.template) {
+                transformed.template = label.template;
+            }
+
+            return transformed;
         }
 
         const { onSubmit } = this.props;

@@ -10,11 +10,22 @@ export interface Attribute {
     values: string[];
 }
 
+export interface SkeletonConfiguration {
+    type: {
+        definitions: Label[],
+        elements: { label: string; element_id: number }[],
+        edges: { from: number, to: number }[],
+    },
+    template: string;
+}
+
 export interface Label {
     name: string;
     color: string;
     id: number;
     attributes: Attribute[];
+    type?: SkeletonConfiguration['type'],
+    template?: string;
 }
 
 let id = 0;

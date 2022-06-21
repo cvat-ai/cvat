@@ -10,7 +10,9 @@ import {
     EllipseIcon, PointIcon, PolygonIcon, RectangleIcon,
 } from 'icons';
 import consts from 'consts';
-import { idGenerator, Label, toSVGCoord } from './common';
+import {
+    idGenerator, Label, SkeletonConfiguration, toSVGCoord,
+} from './common';
 import SkeletonElementContextMenu from './skeleton-element-context-menu';
 
 function setAttributes(element: Element, attrs: Record<string, string | number | null>): void {
@@ -21,6 +23,10 @@ function setAttributes(element: Element, attrs: Record<string, string | number |
     }
 }
 
+interface Props {
+    onSubmit(configuration: SkeletonConfiguration): void;
+}
+
 interface State {
     activeTool: 'point' | 'join' | 'delete';
     contextMenuVisible: boolean;
@@ -28,7 +34,7 @@ interface State {
     image: RcFile | null;
 }
 
-export default class SkeletonConfigurator extends React.PureComponent<{}, State> {
+export default class SkeletonConfigurator extends React.PureComponent<Props, State> {
     private canvasRef: React.RefObject<HTMLCanvasElement>;
     private svgRef: React.RefObject<SVGSVGElement>;
     private canvasResizeObserver: ResizeObserver;
@@ -37,7 +43,7 @@ export default class SkeletonConfigurator extends React.PureComponent<{}, State>
     private draggableElement: SVGElement | null;
     private labels: Record<string, Label>;
 
-    public constructor(props: {}) {
+    public constructor(props: Props) {
         super(props);
         this.state = {
             activeTool: 'point',
@@ -390,6 +396,66 @@ export default class SkeletonConfigurator extends React.PureComponent<{}, State>
         }
 
         return null;
+    }
+
+    public submit(): void {
+        const { onSubmit } = this.props;
+        const svg = this.svgRef.current;
+
+        if (!svg) return;
+
+        const definitions = Object.values(this.labels);
+        const elements: SkeletonConfiguration['type']['elements'] = [];
+        const edges: SkeletonConfiguration['type']['edges'] = [];
+
+        Array.from(svg.children as any as SVGElement[]).forEach((child: SVGElement) => {
+            const dataType = child.getAttribute('data-type');
+            if (dataType && dataType.includes('element')) {
+                const elementID = child.getAttribute('data-element-id');
+                if (elementID) {
+                    const elementLabel = this.labels[elementID];
+                    if (elementLabel) {
+                        elements.push({ label: elementLabel.name, element_id: +elementID });
+                    }
+                }
+            } else if (dataType === 'edge') {
+                const dataNodeFrom = child.getAttribute('data-node-from');
+                const dataNodeTo = child.getAttribute('data-node-to');
+                if (dataNodeFrom && dataNodeTo && Number.isInteger(+dataNodeFrom) && Number.isInteger(+dataNodeTo)) {
+                    const node1 = svg.querySelector(`[data-node-from="${dataNodeFrom}"]`);
+                    const node2 = svg.querySelector(`[data-node-to="${dataNodeTo}"]`);
+                    if (node1 && node2) {
+                        edges.push({ from: +dataNodeFrom, to: +dataNodeTo });
+                    }
+                }
+            }
+        });
+
+        if (!definitions.length || !elements.length) {
+            throw new Error('At least one skeleton element is necessary');
+        }
+
+        if (elements.length !== definitions.length) {
+            throw new Error(
+                `Skeleton configurator state is not consistent. ${JSON.stringify(
+                    { definitions, elements, edges },
+                )}`,
+            );
+        }
+
+        try {
+            this.setupTextLabels(false);
+            onSubmit({
+                type: {
+                    definitions,
+                    elements,
+                    edges,
+                },
+                template: svg.innerHTML,
+            });
+        } finally {
+            this.setupTextLabels();
+        }
     }
 
     public render(): JSX.Element {
