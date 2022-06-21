@@ -49,25 +49,28 @@ class UserSerializer(serializers.ModelSerializer):
         write_only_fields = ('password', )
 
 class AttributeSerializer(serializers.ModelSerializer):
+    values = serializers.ListField(allow_empty=True,
+        child=serializers.CharField(max_length=200),
+    )
+
     class Meta:
         model = models.AttributeSpec
-        fields = ('id', 'name', 'mutable', 'input_type', 'default_value',
-            'values')
+        fields = ('id', 'name', 'mutable', 'input_type', 'default_value', 'values')
 
     # pylint: disable=no-self-use
     def to_internal_value(self, data):
         attribute = data.copy()
-        attribute['values'] = '\n'.join(map(lambda x: x.strip(), data.get('values', [])))
+        attribute['values'] = '\n'.join(data.get('values', []))
         return attribute
 
     def to_representation(self, instance):
         if instance:
-            attribute = super().to_representation(instance)
-            attribute['values'] = attribute['values'].split('\n')
+            rep = super().to_representation(instance)
+            rep['values'] = rep['values'].split('\n')
         else:
-            attribute = instance
+            rep = instance
 
-        return attribute
+        return rep
 
 class LabelSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(required=False)
