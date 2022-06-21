@@ -433,6 +433,7 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
             'data_original_chunk_type', 'size', 'image_quality', 'data',
             'organization')
         write_once_fields = ('overlap', 'segment_size', 'project_id')
+        extra_kwargs = { 'organization': { 'allow_null': True } }
 
     # pylint: disable=no-self-use
     def create(self, validated_data):
@@ -593,6 +594,7 @@ class ProjectSerializer(serializers.ModelSerializer):
             'created_date', 'updated_date', 'status', 'dimension', 'organization')
         read_only_fields = ('created_date', 'updated_date', 'status', 'owner',
             'assignee', 'task_subsets', 'dimension', 'organization', 'tasks')
+        extra_kwargs = { 'organization': { 'allow_null': True } }
 
     def to_representation(self, instance):
         response = super().to_representation(instance)
@@ -875,6 +877,7 @@ class CloudStorageReadSerializer(serializers.ModelSerializer):
         model = models.CloudStorage
         exclude = ['credentials']
         read_only_fields = ('created_date', 'updated_date', 'owner', 'organization')
+        extra_kwargs = { 'organization': { 'allow_null': True } }
 
 @extend_schema_serializer(
     examples=[
@@ -957,6 +960,7 @@ class CloudStorageWriteSerializer(serializers.ModelSerializer):
             'manifests', 'organization'
         )
         read_only_fields = ('created_date', 'updated_date', 'owner', 'organization')
+        extra_kwargs = { 'organization': { 'allow_null': True } }
 
     # pylint: disable=no-self-use
     def validate_specific_attributes(self, value):
