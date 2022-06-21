@@ -189,15 +189,16 @@ export default class LabelsEditor extends React.PureComponent<LabelsEditorProps,
             };
 
             if (label.type) {
-                transformed.type = {
-                    definitions: label.type.definitions.map((internalLabel: Label) => transformLabel(internalLabel)),
-                    elements: label.type.elements,
-                    edges: label.type.edges,
-                };
+                transformed.type = label.type;
             }
 
-            if (label.template) {
-                transformed.template = label.template;
+            if (label.structure) {
+                transformed.structure = {
+                    svg: label.structure.svg,
+                    sublabels: label.structure.sublabels.map((internalLabel: Label) => transformLabel(internalLabel)),
+                    elements: label.structure.elements,
+                    edges: label.structure.edges,
+                };
             }
 
             return transformed;

@@ -133,8 +133,8 @@
                 id: undefined,
                 name: undefined,
                 color: undefined,
-                template: undefined,
                 type: undefined,
+                structure: undefined,
                 deleted: false,
             };
 
@@ -155,11 +155,12 @@
                 }
             }
 
-            if (data.type) {
-                data.type = {
-                    definitions: data.type.definitions.map((internalLabel) => new Label(internalLabel)),
-                    elements: data.type.elements.map((element) => ({ ...element })),
-                    edges: data.type.edges.map((edge) => ({ ...edge })),
+            if (data.structure) {
+                data.structure = {
+                    svg: data.structure.svg,
+                    sublabels: data.structure.sublabels.map((internalLabel) => new Label(internalLabel)),
+                    elements: data.structure.elements.map((element) => ({ ...element })),
+                    edges: data.structure.edges.map((edge) => ({ ...edge })),
                 };
             }
 
@@ -218,26 +219,17 @@
                         get: () => [...data.attributes],
                     },
                     /**
-                     * @name template
-                     * @type {string | undefined}
-                     * @memberof module:API.cvat.classes.Label
-                     * @readonly
-                     * @instance
-                     */
-                    template: {
-                        get: () => data.template,
-                    },
-                    /**
-                     * @typedef {Object} LabelSkeletonType
-                     * @property {module:API.cvat.classes.Label[]} definitions A list of labels the skeleton includes
+                     * @typedef {Object} SkeletonStructure
+                     * @property {module:API.cvat.classes.Label[]} sublabels A list of labels the skeleton includes
                      * @property {Object[]} edges A list of edges the skeleton includes
                      * @property {Object[]} elements A list of elements the skeleton consists of
+                     * @property {Object[]} svg An SVG representation of the skeleton
                      * A type of a file
                      * @global
                      */
                     /**
                      * @name type
-                     * @type {LabelSkeletonType | undefined}
+                     * @type {string | undefined}
                      * @memberof module:API.cvat.classes.Label
                      * @readonly
                      * @instance
@@ -248,6 +240,21 @@
                                 return { ...data.type };
                             }
                             return data.type;
+                        },
+                    },
+                    /**
+                     * @name type
+                     * @type {SkeletonStructure | undefined}
+                     * @memberof module:API.cvat.classes.Label
+                     * @readonly
+                     * @instance
+                     */
+                    structure: {
+                        get: () => {
+                            if (data.structure instanceof Object) {
+                                return { ...data.structure };
+                            }
+                            return data.structure;
                         },
                     },
                     deleted: {
@@ -275,17 +282,15 @@
                 object.deleted = this.deleted;
             }
 
-            if (this.template) {
-                object.template = this.template;
-            }
-
             if (this.type) {
                 object.type = this.type;
-                object.type = {
-                    definitions: object.type.definitions.map((internalLabel) => internalLabel.toJSON()),
-                    elements: object.type.elements.map((element) => ({ ...element })),
-                    edges: object.type.edges.map((edge) => ({ ...edge })),
-                };
+            }
+
+            if (this.structure) {
+                object.svg = this.structure.svg;
+                object.sublabels = this.structure.sublabels.map((internalLabel) => internalLabel.toJSON());
+                object.elements = this.structure.elements.map((element) => ({ ...element }));
+                object.edges = this.structure.edges.map((edge) => ({ ...edge }));
             }
 
             return object;

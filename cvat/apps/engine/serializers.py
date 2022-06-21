@@ -69,16 +69,31 @@ class AttributeSerializer(serializers.ModelSerializer):
 
         return attribute
 
-class LabelSerializer(serializers.ModelSerializer):
+class SublabelSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(required=False)
-    attributes = AttributeSerializer(many=True, source='attributespec_set',
-        default=[])
+    name = serializers.CharField()
+    attributes = AttributeSerializer(many=True, source='attributespec_set', default=[])
     color = serializers.CharField(allow_blank=True, required=False)
-    deleted = serializers.BooleanField(required=False, help_text="Delete label if value is true from proper Task/Project object")
+    type = serializers.CharField(allow_blank=True, required=False)
 
     class Meta:
         model = models.Label
-        fields = ('id', 'name', 'color', 'attributes', 'deleted')
+        fields = ('id', 'name', 'color', 'attributes', 'type')
+
+class LabelSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(required=False)
+    attributes = AttributeSerializer(many=True, source='attributespec_set', default=[])
+    color = serializers.CharField(allow_blank=True, required=False)
+    deleted = serializers.BooleanField(required=False, help_text='Delete label if value is true from proper Task/Project object')
+    type = serializers.CharField(allow_blank=True, required=False)
+    sublabels = SublabelSerializer(many=True, required=False)
+    svg = serializers.CharField(allow_blank=True, required=False)
+    elements = serializers.JSONField(required=False)
+    edges = serializers.JSONField(required=False)
+
+    class Meta:
+        model = models.Label
+        fields = ('id', 'name', 'color', 'attributes', 'deleted', 'type', 'svg', 'elements', 'edges', 'sublabels')
 
     def validate(self, attrs):
         if attrs.get('deleted') == True and attrs.get('id') is None:
@@ -454,20 +469,29 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
 
         labels = validated_data.pop('label_set', [])
         db_task = models.Task.objects.create(**validated_data)
-        label_colors = list()
-        for label in labels:
-            attributes = label.pop('attributespec_set')
-            if label.get('id', None):
-                del label['id']
-            if not label.get('color', None):
-                label['color'] = get_label_color(label['name'], label_colors)
-            label_colors.append(label['color'])
-            db_label = models.Label.objects.create(task=db_task, **label)
-            for attr in attributes:
-                if attr.get('id', None):
-                    del attr['id']
-                models.AttributeSpec.objects.create(label=db_label, **attr)
 
+        def create_labels(labels, parent_label=None):
+            result = []
+            label_colors = list()
+            for label in labels:
+                attributes = label.pop('attributespec_set')
+                if label.get('id', None):
+                    del label['id']
+                if not label.get('color', None):
+                    label['color'] = get_label_color(label['name'], label_colors)
+                label_colors.append(label['color'])
+
+                sublabels = label.pop('sublabels') if 'sublabels' in label else []
+                db_label = models.Label.objects.create(task=db_task, parent_label=parent_label, **label)
+                create_labels(sublabels, parent_label=db_label)
+
+                for attr in attributes:
+                    if attr.get('id', None):
+                        del attr['id']
+                    models.AttributeSpec.objects.create(label=db_label, **attr)
+            return result
+
+        create_labels(labels)
         task_path = db_task.get_task_dirname()
         if os.path.isdir(task_path):
             shutil.rmtree(task_path)

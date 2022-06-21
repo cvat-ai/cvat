@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+from email.policy import default
 import os
 import re
 import shutil
@@ -40,6 +41,28 @@ class StatusChoice(str, Enum):
     ANNOTATION = 'annotation'
     VALIDATION = 'validation'
     COMPLETED = 'completed'
+
+    @classmethod
+    def choices(cls):
+        return tuple((x.value, x.name) for x in cls)
+
+    @classmethod
+    def list(cls):
+        return list(map(lambda x: x.value, cls))
+
+    def __str__(self):
+        return self.value
+
+class LabelTypeChoice(str, Enum):
+    BBOX = 'bbox'
+    ELLIPSE = 'ellipse'
+    POLYGON = 'polygon'
+    POLYLINE = 'polyline'
+    POINTS = 'points'
+    CUBOID = 'cuboid'
+    CUBOID_3D = 'cuboid_3d'
+    SKELETON = 'skeleton'
+    TAG = 'tag'
 
     @classmethod
     def choices(cls):
@@ -456,6 +479,11 @@ class Label(models.Model):
     project = models.ForeignKey(Project, null=True, blank=True, on_delete=models.CASCADE)
     name = SafeCharField(max_length=64)
     color = models.CharField(default='', max_length=8)
+    type = models.CharField(max_length=32, null=True, choices=LabelTypeChoice.choices(), default=None)
+    parent_label = models.ForeignKey('self', on_delete=models.CASCADE, null=True, related_name='sublabels')
+    svg = models.TextField(null=True, default=None)
+    elements = models.JSONField(null=True)
+    edges = models.JSONField(null=True)
 
     def __str__(self):
         return self.name

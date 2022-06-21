@@ -404,9 +404,9 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
 
         if (!svg) return;
 
-        const definitions = Object.values(this.labels);
-        const elements: SkeletonConfiguration['type']['elements'] = [];
-        const edges: SkeletonConfiguration['type']['edges'] = [];
+        const sublabels = Object.values(this.labels);
+        const elements: SkeletonConfiguration['structure']['elements'] = [];
+        const edges: SkeletonConfiguration['structure']['edges'] = [];
 
         Array.from(svg.children as any as SVGElement[]).forEach((child: SVGElement) => {
             const dataType = child.getAttribute('data-type');
@@ -431,14 +431,14 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
             }
         });
 
-        if (!definitions.length || !elements.length) {
+        if (!sublabels.length || !elements.length) {
             throw new Error('At least one skeleton element is necessary');
         }
 
-        if (elements.length !== definitions.length) {
+        if (elements.length !== sublabels.length) {
             throw new Error(
                 `Skeleton configurator state is not consistent. ${JSON.stringify(
-                    { definitions, elements, edges },
+                    { sublabels, elements, edges },
                 )}`,
             );
         }
@@ -446,12 +446,13 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
         try {
             this.setupTextLabels(false);
             onSubmit({
-                type: {
-                    definitions,
+                type: 'skeleton',
+                structure: {
+                    svg: svg.innerHTML,
+                    sublabels,
                     elements,
                     edges,
                 },
-                template: svg.innerHTML,
             });
         } finally {
             this.setupTextLabels();

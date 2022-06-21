@@ -11,12 +11,13 @@ export interface Attribute {
 }
 
 export interface SkeletonConfiguration {
-    type: {
-        definitions: Label[],
+    type: string;
+    structure: {
+        svg: string;
+        sublabels: Label[],
         elements: { label: string; element_id: number }[],
         edges: { from: number, to: number }[],
     },
-    template: string;
 }
 
 export interface Label {
@@ -24,8 +25,8 @@ export interface Label {
     color: string;
     id: number;
     attributes: Attribute[];
+    structure?: SkeletonConfiguration['structure'],
     type?: SkeletonConfiguration['type'],
-    template?: string;
 }
 
 let id = 0;
