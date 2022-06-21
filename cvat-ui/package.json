@@ -41,7 +41,7 @@
     "dotenv-webpack": "^1.8.0",
     "error-stack-parser": "^2.0.6",
     "lodash": "^4.17.21",
-    "moment": "^2.29.1",
+    "moment": "^2.29.2",
     "mousetrap": "^1.6.5",
     "platform": "^1.3.6",
     "prop-types": "^15.7.2",
