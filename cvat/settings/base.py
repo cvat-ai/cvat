@@ -535,5 +535,11 @@ SPECTACULAR_SETTINGS = {
     },
     # OTHER SETTINGS
     # https://drf-spectacular.readthedocs.io/en/latest/settings.html
+
+    # TODO: Our current implementation does not suppose this.
+    # Need to reconsider this later. It happens, for example,
+    # in TaskSerializer for data-originated fields - they can be empty.
+    # https://github.com/tfranzel/drf-spectacular/issues/54
+    'COMPONENT_NO_READ_ONLY_REQUIRED': True
 }
 
