@@ -8,16 +8,15 @@ import os
 import unittest.mock as mock
 from contextlib import closing, redirect_stdout
 
+import cvat.apps.engine.log as log
+from cvat.apps.engine.tests.test_rest_api import create_db_users, generate_image_file
+from datumaro.util.scope import on_exit_do, scoped
 from django.conf import settings
 from PIL import Image
 from rest_framework.test import APITestCase, RequestsClient
-from datumaro.util.scope import scoped, on_exit_do
-
-import cvat.apps.engine.log as log
-from cvat.apps.engine.tests.test_rest_api import (create_db_users,
-    generate_image_file)
-from cvat_cli.core import CLI, CVAT_API_V2, ResourceType
 from tqdm import tqdm
+
+from cvat_cli.core import CLI, CVAT_API_V2, ResourceType
 
 
 class TestCLI(APITestCase):
@@ -32,16 +31,16 @@ class TestCLI(APITestCase):
         self.mock_stdout = mock_stdout
 
         self.client = RequestsClient()
-        self.credentials = ('admin', 'admin')
-        self.api = CVAT_API_V2('testserver')
+        self.credentials = ("admin", "admin")
+        self.api = CVAT_API_V2("testserver")
         self.cli = CLI(self.client, self.api, self.credentials)
 
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.img_file = os.path.join(settings.SHARE_ROOT, 'test_cli.jpg')
+        cls.img_file = os.path.join(settings.SHARE_ROOT, "test_cli.jpg")
         _, data = generate_image_file(cls.img_file)
-        with open(cls.img_file, 'wb') as image:
+        with open(cls.img_file, "wb") as image:
             image.write(data.read())
 
     @classmethod
@@ -62,14 +61,19 @@ class TestCLI(APITestCase):
         with closing(io.StringIO()) as pbar_out:
             pbar = tqdm(file=pbar_out, mininterval=0)
 
-            task_id = self.cli.tasks_create('test_task',
-                [{'name' : 'car'}, {'name': 'person'}],
-                ResourceType.LOCAL, [self.img_file], pbar=pbar)
+            task_id = self.cli.tasks_create(
+                "test_task",
+                [{"name": "car"}, {"name": "person"}],
+                ResourceType.LOCAL,
+                [self.img_file],
+                pbar=pbar,
+            )
 
-            pbar_out = pbar_out.getvalue().strip('\r').split('\r')
+            pbar_out = pbar_out.getvalue().strip("\r").split("\r")
 
         self.assertEqual(1, task_id)
-        self.assertRegex(pbar_out[-1], '100%')
+        self.assertRegex(pbar_out[-1], "100%")
+
 
 class TestTaskOperations(APITestCase):
     def setUp(self):
@@ -83,14 +87,17 @@ class TestTaskOperations(APITestCase):
         self.mock_stdout = mock_stdout
 
         self.client = RequestsClient()
-        self.credentials = ('admin', 'admin')
-        self.api = CVAT_API_V2('testserver')
+        self.credentials = ("admin", "admin")
+        self.api = CVAT_API_V2("testserver")
         self.cli = CLI(self.client, self.api, self.credentials)
-        self.taskname = 'test_task'
-        self.task_id = self.cli.tasks_create(self.taskname,
-                              [{'name' : 'car'}, {'name': 'person'}],
-                              ResourceType.LOCAL,
-                              [self.img_file], pbar=mock.MagicMock())
+        self.taskname = "test_task"
+        self.task_id = self.cli.tasks_create(
+            self.taskname,
+            [{"name": "car"}, {"name": "person"}],
+            ResourceType.LOCAL,
+            [self.img_file],
+            pbar=mock.MagicMock(),
+        )
 
     def tearDown(self):
         super().tearDown()
@@ -100,9 +107,9 @@ class TestTaskOperations(APITestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.img_file = os.path.join(settings.SHARE_ROOT, 'test_cli.jpg')
+        cls.img_file = os.path.join(settings.SHARE_ROOT, "test_cli.jpg")
         _, data = generate_image_file(cls.img_file)
-        with open(cls.img_file, 'wb') as image:
+        with open(cls.img_file, "wb") as image:
             image.write(data.read())
 
     @classmethod
@@ -116,31 +123,31 @@ class TestTaskOperations(APITestCase):
 
     def test_tasks_list(self):
         self.cli.tasks_list(False)
-        self.assertRegex(self.mock_stdout.getvalue(), '.*{}.*'.format(self.taskname))
+        self.assertRegex(self.mock_stdout.getvalue(), ".*{}.*".format(self.taskname))
 
     def test_tasks_delete(self):
         self.cli.tasks_delete([1])
         self.cli.tasks_list(False)
-        self.assertRegex(self.mock_stdout.getvalue(), '.*Task ID {} deleted.*'.format(1))
+        self.assertRegex(self.mock_stdout.getvalue(), ".*Task ID {} deleted.*".format(1))
 
     @scoped
     def test_tasks_dump(self):
-        path = os.path.join(settings.SHARE_ROOT, 'test_cli.zip')
+        path = os.path.join(settings.SHARE_ROOT, "test_cli.zip")
 
         with closing(io.StringIO()) as pbar_out:
             pbar = tqdm(file=pbar_out, mininterval=0)
 
-            self.cli.tasks_dump(self.task_id, 'CVAT for images 1.1', path, pbar=pbar)
+            self.cli.tasks_dump(self.task_id, "CVAT for images 1.1", path, pbar=pbar)
             on_exit_do(os.remove, path)
 
-            pbar_out = pbar_out.getvalue().strip('\r').split('\r')
+            pbar_out = pbar_out.getvalue().strip("\r").split("\r")
 
         self.assertTrue(os.path.exists(path))
-        self.assertRegex(pbar_out[-1], '100%')
+        self.assertRegex(pbar_out[-1], "100%")
 
     @scoped
     def test_tasks_export(self):
-        path = os.path.join(settings.SHARE_ROOT, 'test_cli.zip')
+        path = os.path.join(settings.SHARE_ROOT, "test_cli.zip")
 
         with closing(io.StringIO()) as pbar_out:
             pbar = tqdm(file=pbar_out, mininterval=0)
@@ -148,57 +155,55 @@ class TestTaskOperations(APITestCase):
             self.cli.tasks_export(self.task_id, path, pbar=pbar)
             on_exit_do(os.remove, path)
 
-            pbar_out = pbar_out.getvalue().strip('\r').split('\r')
+            pbar_out = pbar_out.getvalue().strip("\r").split("\r")
 
         self.assertTrue(os.path.exists(path))
-        self.assertRegex(pbar_out[-1], '100%')
+        self.assertRegex(pbar_out[-1], "100%")
 
     @scoped
     def test_tasks_frame_original(self):
-        path = os.path.join(settings.SHARE_ROOT, 'task_1_frame_000000.jpg')
+        path = os.path.join(settings.SHARE_ROOT, "task_1_frame_000000.jpg")
 
-        self.cli.tasks_frame(self.task_id, [0],
-            outdir=settings.SHARE_ROOT, quality='original')
+        self.cli.tasks_frame(self.task_id, [0], outdir=settings.SHARE_ROOT, quality="original")
         on_exit_do(os.remove, path)
 
         self.assertTrue(os.path.exists(path))
 
     @scoped
     def test_tasks_frame(self):
-        path = os.path.join(settings.SHARE_ROOT, 'task_1_frame_000000.jpg')
+        path = os.path.join(settings.SHARE_ROOT, "task_1_frame_000000.jpg")
 
-        self.cli.tasks_frame(self.task_id, [0],
-            outdir=settings.SHARE_ROOT, quality='compressed')
+        self.cli.tasks_frame(self.task_id, [0], outdir=settings.SHARE_ROOT, quality="compressed")
         on_exit_do(os.remove, path)
 
         self.assertTrue(os.path.exists(path))
 
     @scoped
     def test_tasks_upload(self):
-        path = os.path.join(settings.SHARE_ROOT, 'test_cli.json')
+        path = os.path.join(settings.SHARE_ROOT, "test_cli.json")
         self._generate_coco_file(path)
         on_exit_do(os.remove, path)
 
         with closing(io.StringIO()) as pbar_out:
             pbar = tqdm(file=pbar_out, mininterval=0)
 
-            self.cli.tasks_upload(self.task_id, 'COCO 1.0', path, pbar=pbar)
+            self.cli.tasks_upload(self.task_id, "COCO 1.0", path, pbar=pbar)
 
-            pbar_out = pbar_out.getvalue().strip('\r').split('\r')
+            pbar_out = pbar_out.getvalue().strip("\r").split("\r")
 
-        self.assertRegex(self.mock_stdout.getvalue(), '.*{}.*'.format("annotation file"))
-        self.assertRegex(pbar_out[-1], '100%')
+        self.assertRegex(self.mock_stdout.getvalue(), ".*{}.*".format("annotation file"))
+        self.assertRegex(pbar_out[-1], "100%")
 
     @scoped
     def test_tasks_import(self):
-        anno_path = os.path.join(settings.SHARE_ROOT, 'test_cli.json')
+        anno_path = os.path.join(settings.SHARE_ROOT, "test_cli.json")
         self._generate_coco_file(anno_path)
         on_exit_do(os.remove, anno_path)
 
-        backup_path = os.path.join(settings.SHARE_ROOT, 'task_backup.zip')
+        backup_path = os.path.join(settings.SHARE_ROOT, "task_backup.zip")
         with closing(io.StringIO()) as pbar_out:
             pbar = tqdm(file=pbar_out, mininterval=0)
-            self.cli.tasks_upload(self.task_id, 'COCO 1.0', anno_path, pbar=pbar)
+            self.cli.tasks_upload(self.task_id, "COCO 1.0", anno_path, pbar=pbar)
             self.cli.tasks_export(self.task_id, backup_path, pbar=pbar)
             on_exit_do(os.remove, backup_path)
 
@@ -207,17 +212,18 @@ class TestTaskOperations(APITestCase):
 
             self.cli.tasks_import(backup_path, pbar=pbar)
 
-            pbar_out = pbar_out.getvalue().strip('\r').split('\r')
+            pbar_out = pbar_out.getvalue().strip("\r").split("\r")
 
-        self.assertRegex(self.mock_stdout.getvalue(), '.*{}.*'.format("exported sucessfully"))
-        self.assertRegex(pbar_out[-1], '100%')
+        self.assertRegex(self.mock_stdout.getvalue(), ".*{}.*".format("exported sucessfully"))
+        self.assertRegex(pbar_out[-1], "100%")
 
     def _generate_coco_file(self, path):
         test_image = Image.open(self.img_file)
         image_width, image_height = test_image.size
 
-        content = self._generate_coco_anno(os.path.basename(self.img_file),
-            image_width=image_width, image_height=image_height)
+        content = self._generate_coco_anno(
+            os.path.basename(self.img_file), image_width=image_width, image_height=image_height
+        )
         with open(path, "w") as coco:
             coco.write(content)
 
@@ -268,7 +274,7 @@ class TestTaskOperations(APITestCase):
         ]
         }
         """ % {
-            'image_path': image_path,
-            'image_height': image_height,
-            'image_width': image_width
+            "image_path": image_path,
+            "image_height": image_height,
+            "image_width": image_width,
         }
