@@ -726,7 +726,7 @@ class SkeletonShape extends Drawn {
         this.rotation = data.rotation || 0;
         this.occluded = data.occluded;
         this.zOrder = data.z_order;
-        this.elements = data.elments;
+        this.elements = data.elements.map((element) => shapeFactory(element, null, injection));
     }
 
     // Method is used to export data to the server
@@ -746,9 +746,7 @@ class SkeletonShape extends Drawn {
 
                 return attributeAccumulator;
             }, []),
-            elements: this.elements.map((element) => (
-                { ...element, points: [...element.points], attributes: { ...element.attributes } }
-            )),
+            elements: this.elements.map((element) => element.toJSON()),
             id: this.serverID,
             frame: this.frame,
             label_id: this.label.id,
@@ -771,10 +769,10 @@ class SkeletonShape extends Drawn {
             occluded: this.occluded,
             lock: this.lock,
             zOrder: this.zOrder,
-            points: [...this.points],
             rotation: this.rotation,
             attributes: { ...this.attributes },
             descriptions: [...this.descriptions],
+            elements: this.elements.map((element) => element.get(frame)),
             label: this.label,
             group: this.groupObject,
             color: this.color,
@@ -786,92 +784,94 @@ class SkeletonShape extends Drawn {
         };
     }
 
-    _savePoints(points, rotation, frame) {
-        const undoPoints = this.points;
-        const undoRotation = this.rotation;
-        const redoPoints = points;
-        const redoRotation = rotation;
-        const undoSource = this.source;
-        const redoSource = Source.MANUAL;
 
-        this.history.do(
-            HistoryActions.CHANGED_POINTS,
-            () => {
-                this.points = undoPoints;
-                this.source = undoSource;
-                this.rotation = undoRotation;
-                this.updated = Date.now();
-            },
-            () => {
-                this.points = redoPoints;
-                this.source = redoSource;
-                this.rotation = redoRotation;
-                this.updated = Date.now();
-            },
-            [this.clientID],
-            frame,
-        );
 
-        this.source = Source.MANUAL;
-        this.points = points;
-        this.rotation = rotation;
-    }
+    // _savePoints(points, rotation, frame) {
+    //     const undoPoints = this.points;
+    //     const undoRotation = this.rotation;
+    //     const redoPoints = points;
+    //     const redoRotation = rotation;
+    //     const undoSource = this.source;
+    //     const redoSource = Source.MANUAL;
 
-    _saveOccluded(occluded, frame) {
-        const undoOccluded = this.occluded;
-        const redoOccluded = occluded;
-        const undoSource = this.source;
-        const redoSource = Source.MANUAL;
+    //     this.history.do(
+    //         HistoryActions.CHANGED_POINTS,
+    //         () => {
+    //             this.points = undoPoints;
+    //             this.source = undoSource;
+    //             this.rotation = undoRotation;
+    //             this.updated = Date.now();
+    //         },
+    //         () => {
+    //             this.points = redoPoints;
+    //             this.source = redoSource;
+    //             this.rotation = redoRotation;
+    //             this.updated = Date.now();
+    //         },
+    //         [this.clientID],
+    //         frame,
+    //     );
 
-        this.history.do(
-            HistoryActions.CHANGED_OCCLUDED,
-            () => {
-                this.occluded = undoOccluded;
-                this.source = undoSource;
-                this.updated = Date.now();
-            },
-            () => {
-                this.occluded = redoOccluded;
-                this.source = redoSource;
-                this.updated = Date.now();
-            },
-            [this.clientID],
-            frame,
-        );
+    //     this.source = Source.MANUAL;
+    //     this.points = points;
+    //     this.rotation = rotation;
+    // }
 
-        this.source = Source.MANUAL;
-        this.occluded = occluded;
-    }
+    // _saveOccluded(occluded, frame) {
+    //     const undoOccluded = this.occluded;
+    //     const redoOccluded = occluded;
+    //     const undoSource = this.source;
+    //     const redoSource = Source.MANUAL;
 
-    _saveZOrder(zOrder, frame) {
-        const undoZOrder = this.zOrder;
-        const redoZOrder = zOrder;
-        const undoSource = this.source;
-        const redoSource = Source.MANUAL;
+    //     this.history.do(
+    //         HistoryActions.CHANGED_OCCLUDED,
+    //         () => {
+    //             this.occluded = undoOccluded;
+    //             this.source = undoSource;
+    //             this.updated = Date.now();
+    //         },
+    //         () => {
+    //             this.occluded = redoOccluded;
+    //             this.source = redoSource;
+    //             this.updated = Date.now();
+    //         },
+    //         [this.clientID],
+    //         frame,
+    //     );
 
-        this.history.do(
-            HistoryActions.CHANGED_ZORDER,
-            () => {
-                this.zOrder = undoZOrder;
-                this.source = undoSource;
-                this.updated = Date.now();
-            },
-            () => {
-                this.zOrder = redoZOrder;
-                this.source = redoSource;
-                this.updated = Date.now();
-            },
-            [this.clientID],
-            frame,
-        );
+    //     this.source = Source.MANUAL;
+    //     this.occluded = occluded;
+    // }
 
-        this.source = Source.MANUAL;
-        this.zOrder = zOrder;
-    }
+    // _saveZOrder(zOrder, frame) {
+    //     const undoZOrder = this.zOrder;
+    //     const redoZOrder = zOrder;
+    //     const undoSource = this.source;
+    //     const redoSource = Source.MANUAL;
 
-    save(frame, data) {
-        console.log('test');
-    }
+    //     this.history.do(
+    //         HistoryActions.CHANGED_ZORDER,
+    //         () => {
+    //             this.zOrder = undoZOrder;
+    //             this.source = undoSource;
+    //             this.updated = Date.now();
+    //         },
+    //         () => {
+    //             this.zOrder = redoZOrder;
+    //             this.source = redoSource;
+    //             this.updated = Date.now();
+    //         },
+    //         [this.clientID],
+    //         frame,
+    //     );
+
+    //     this.source = Source.MANUAL;
+    //     this.zOrder = zOrder;
+    // }
+
+    // save(frame, data) {
+    //     console.log('test');
+    // }
 }
 
 class Track extends Drawn {

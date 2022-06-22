@@ -392,7 +392,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
                 state.elements.forEach((element: Record<string, any>) => {
                     element.objectType = state.objectType;
                     element.label = jobInstance.labels.find((label: any) => label.id === element.label);
-                    element.frame = state.objectType || activeObjectType;
+                    element.frame = state.frame;
                     element.occluded = false;
                 });
             }
