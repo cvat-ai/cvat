@@ -20,7 +20,7 @@ export interface Props {
 }
 
 const CustomPopover = withVisibilityHandling(Popover, 'draw-ellipse');
-function DrawPointsControl(props: Props): JSX.Element {
+function DrawEllipseControl(props: Props): JSX.Element {
     const { canvasInstance, isDrawing, disabled } = props;
     const dynamicPopoverProps = isDrawing ? {
         overlayStyle: {
@@ -51,4 +51,4 @@ function DrawPointsControl(props: Props): JSX.Element {
     );
 }
 
-export default React.memo(DrawPointsControl);
+export default React.memo(DrawEllipseControl);

@@ -71,21 +71,18 @@ class AttributeSerializer(serializers.ModelSerializer):
 
 class SublabelSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(required=False)
-    name = serializers.CharField()
     attributes = AttributeSerializer(many=True, source='attributespec_set', default=[])
     color = serializers.CharField(allow_blank=True, required=False)
     type = serializers.CharField(allow_blank=True, required=False)
+    has_parent = serializers.BooleanField(source='has_parent_label')
 
     class Meta:
         model = models.Label
-        fields = ('id', 'name', 'color', 'attributes', 'type')
+        fields = ('id', 'name', 'color', 'attributes', 'type', 'has_parent', )
+        read_only_fields = ('has_parent',)
 
-class LabelSerializer(serializers.ModelSerializer):
-    id = serializers.IntegerField(required=False)
-    attributes = AttributeSerializer(many=True, source='attributespec_set', default=[])
-    color = serializers.CharField(allow_blank=True, required=False)
+class LabelSerializer(SublabelSerializer):
     deleted = serializers.BooleanField(required=False, help_text='Delete label if value is true from proper Task/Project object')
-    type = serializers.CharField(allow_blank=True, required=False)
     sublabels = SublabelSerializer(many=True, required=False)
     svg = serializers.CharField(allow_blank=True, required=False)
     elements = serializers.JSONField(required=False)
@@ -93,7 +90,7 @@ class LabelSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.Label
-        fields = ('id', 'name', 'color', 'attributes', 'deleted', 'type', 'svg', 'elements', 'edges', 'sublabels')
+        fields = ('id', 'name', 'color', 'attributes', 'deleted', 'type', 'svg', 'elements', 'edges', 'sublabels', 'has_parent', )
 
     def validate(self, attrs):
         if attrs.get('deleted') == True and attrs.get('id') is None:

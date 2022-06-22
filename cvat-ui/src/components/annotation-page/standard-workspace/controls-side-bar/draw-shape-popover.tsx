@@ -14,6 +14,7 @@ import { DimensionType, ShapeType } from 'reducers/interfaces';
 import { clamp } from 'utils/math';
 import LabelSelector from 'components/label-selector/label-selector';
 import CVATTooltip from 'components/common/cvat-tooltip';
+import { Label } from 'components/labels-editor/common';
 
 interface Props {
     shapeType: ShapeType;
@@ -70,7 +71,13 @@ function DrawShapePopoverComponent(props: Props): JSX.Element {
                 <Col span={24}>
                     <LabelSelector
                         style={{ width: '100%' }}
-                        labels={labels}
+                        labels={labels.filter((label: Label) => {
+                            if (shapeType === ShapeType.SKELETON) {
+                                return label.type === ShapeType.SKELETON;
+                            }
+
+                            return typeof label.type === 'undefined' || label.type === shapeType;
+                        })}
                         value={selectedLabelID}
                         onChange={onChangeLabel}
                     />
@@ -126,7 +133,7 @@ function DrawShapePopoverComponent(props: Props): JSX.Element {
                     </Row>
                 </>
             )}
-            {is2D && ![ShapeType.RECTANGLE, ShapeType.CUBOID, ShapeType.ELLIPSE].includes(shapeType) ? (
+            {is2D && [ShapeType.POLYGON, ShapeType.POLYLINE, ShapeType.POINTS].includes(shapeType) ? (
                 <Row justify='space-around' align='middle'>
                     <Col span={14}>
                         <Text className='cvat-text-color'> Number of points: </Text>

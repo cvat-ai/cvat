@@ -492,6 +492,7 @@ export enum ActiveControl {
     DRAW_POINTS = 'draw_points',
     DRAW_ELLIPSE = 'draw_ellipse',
     DRAW_CUBOID = 'draw_cuboid',
+    DRAW_SKELETON = 'draw_skeleton',
     MERGE = 'merge',
     GROUP = 'group',
     SPLIT = 'split',
@@ -509,6 +510,7 @@ export enum ShapeType {
     POINTS = 'points',
     ELLIPSE = 'ellipse',
     CUBOID = 'cuboid',
+    SKELETON = 'skeleton',
 }
 
 export enum ObjectType {

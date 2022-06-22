@@ -135,8 +135,23 @@
                 color: undefined,
                 type: undefined,
                 structure: undefined,
+                has_parent: undefined,
                 deleted: false,
             };
+
+            if (initialData.type === 'skeleton') {
+                initialData.structure = {
+                    svg: initialData.svg,
+                    edges: initialData.edges,
+                    elements: initialData.elements,
+                    sublabels: initialData.sublabels,
+                };
+
+                delete initialData.svg;
+                delete initialData.edges;
+                delete initialData.elements;
+                delete initialData.sublabels;
+            }
 
             for (const key of Object.keys(data)) {
                 if (Object.prototype.hasOwnProperty.call(initialData, key)) {
@@ -257,11 +272,27 @@
                             return data.structure;
                         },
                     },
+                    /**
+                     * @name deleted
+                     * @type {boolean}
+                     * @memberof module:API.cvat.classes.Label
+                     * @instance
+                     */
                     deleted: {
                         get: () => data.deleted,
                         set: (value) => {
                             data.deleted = value;
                         },
+                    },
+                    /**
+                     * @name hasParent
+                     * @type {boolean}
+                     * @memberof module:API.cvat.classes.Label
+                     * @readonly
+                     * @instance
+                     */
+                    hasParent: {
+                        get: () => data.has_parent,
                     },
                 }),
             );

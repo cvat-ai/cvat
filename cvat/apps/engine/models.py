@@ -488,6 +488,10 @@ class Label(models.Model):
     def __str__(self):
         return self.name
 
+
+    def has_parent_label(self):
+        return bool(self.parent_label)
+
     class Meta:
         default_permissions = ()
         unique_together = ('task', 'name')
