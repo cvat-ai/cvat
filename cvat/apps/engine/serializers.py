@@ -74,7 +74,7 @@ class SublabelSerializer(serializers.ModelSerializer):
     attributes = AttributeSerializer(many=True, source='attributespec_set', default=[])
     color = serializers.CharField(allow_blank=True, required=False)
     type = serializers.CharField(allow_blank=True, required=False)
-    has_parent = serializers.BooleanField(source='has_parent_label')
+    has_parent = serializers.BooleanField(source='has_parent_label', required=False)
 
     class Meta:
         model = models.Label
@@ -468,7 +468,6 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
         db_task = models.Task.objects.create(**validated_data)
 
         def create_labels(labels, parent_label=None):
-            result = []
             label_colors = list()
             for label in labels:
                 attributes = label.pop('attributespec_set')
@@ -481,12 +480,15 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
                 sublabels = label.pop('sublabels') if 'sublabels' in label else []
                 db_label = models.Label.objects.create(task=db_task, parent_label=parent_label, **label)
                 create_labels(sublabels, parent_label=db_label)
+                if db_label.svg:
+                    for db_sublabel in list(db_label.sublabels.all()):
+                        db_label.svg = db_label.svg.replace(f'data-label-name="{db_sublabel.name}"', f'data-label-id="{db_sublabel.id}"')
+                    db_label.save()
 
                 for attr in attributes:
                     if attr.get('id', None):
                         del attr['id']
                     models.AttributeSpec.objects.create(label=db_label, **attr)
-            return result
 
         create_labels(labels)
         task_path = db_task.get_task_dirname()

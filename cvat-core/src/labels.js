@@ -139,7 +139,7 @@
                 deleted: false,
             };
 
-            if (initialData.type === 'skeleton') {
+            if (initialData.type === 'skeleton' && !initialData.structure) {
                 initialData.structure = {
                     svg: initialData.svg,
                     edges: initialData.edges,

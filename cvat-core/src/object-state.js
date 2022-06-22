@@ -26,6 +26,8 @@ const { Source } = require('./enums');
                 label: null,
                 attributes: {},
                 descriptions: [],
+                elements: Array.isArray(serialized.elements) ?
+                    serialized.elements.map((element) => new ObjectState(element)) : undefined,
 
                 points: null,
                 rotation: null,
@@ -190,7 +192,17 @@ const { Source } = require('./enums');
                          * @throws {module:API.cvat.exceptions.ArgumentError}
                          * @instance
                          */
-                        get: () => data.points,
+                        get: () => {
+                            if (Array.isArray(data.points)) {
+                                return [...data.points];
+                            }
+
+                            if (Array.isArray(data.elements)) {
+                                return data.elements.map((element) => element.points).flat();
+                            }
+
+                            return [];
+                        },
                         set: (points) => {
                             if (Array.isArray(points)) {
                                 data.updateFlags.points = true;
@@ -402,6 +414,23 @@ const { Source } = require('./enums');
 
                             data.updateFlags.descriptions = true;
                             data.descriptions = [...descriptions];
+                        },
+                    },
+                    elements: {
+                        /**
+                         * Returns a list of object states for compound objects (like skeletons)
+                         * @name elements
+                         * @type {string[]}
+                         * @memberof module:API.cvat.classes.ObjectState
+                         * @throws {module:API.cvat.exceptions.ArgumentError}
+                         * @readonly
+                         * @instance
+                         */
+                        get: () => {
+                            if (data.elements) {
+                                return [...data.elements];
+                            }
+                            return [this];
                         },
                     },
                 }),

@@ -694,6 +694,20 @@ export class DrawHandlerImpl implements DrawHandler {
             .on('drawstop', (e: Event): void => {
                 const points = readPointsFromShape((e.target as any as { instance: SVG.Rect }).instance);
                 const [xtl, ytl, xbr, ybr] = this.getFinalRectCoordinates(points, true);
+                const elements: any[] = [];
+                Array.from(svgSkeleton.node.children).forEach((child: Element) => {
+                    if (child.tagName === 'circle') {
+                        const cx = +(child.getAttribute('cx') as string);
+                        const cy = +(child.getAttribute('cy') as string);
+                        const label = +child.getAttribute('data-label-id');
+                        elements.push({
+                            shapeType: 'points',
+                            points: [cx, cy],
+                            label,
+                        });
+                    }
+                });
+
                 const { shapeType, redraw: clientID } = this.drawData;
                 this.release();
 
@@ -702,7 +716,7 @@ export class DrawHandlerImpl implements DrawHandler {
                     this.onDrawDone({
                         clientID,
                         shapeType,
-                        points: [xtl, ytl, xbr, ybr],
+                        elements,
                     },
                     Date.now() - this.startTimestamp);
                 }

@@ -4,18 +4,8 @@
 
 (() => {
     const {
-        RectangleShape,
-        PolygonShape,
-        PolylineShape,
-        PointsShape,
-        EllipseShape,
-        CuboidShape,
-        RectangleTrack,
-        PolygonTrack,
-        PolylineTrack,
-        PointsTrack,
-        EllipseTrack,
-        CuboidTrack,
+        shapeFactory,
+        trackFactory,
         Track,
         Shape,
         Tag,
@@ -25,79 +15,12 @@
     const { checkObjectType } = require('./common');
     const Statistics = require('./statistics');
     const { Label } = require('./labels');
-    const { DataError, ArgumentError, ScriptingError } = require('./exceptions');
+    const { ArgumentError, ScriptingError } = require('./exceptions');
 
     const {
         HistoryActions, ObjectShape, ObjectType, colors,
     } = require('./enums');
     const ObjectState = require('./object-state');
-
-    function shapeFactory(shapeData, clientID, injection) {
-        const { type } = shapeData;
-        const color = colors[clientID % colors.length];
-
-        let shapeModel = null;
-        switch (type) {
-            case 'rectangle':
-                shapeModel = new RectangleShape(shapeData, clientID, color, injection);
-                break;
-            case 'polygon':
-                shapeModel = new PolygonShape(shapeData, clientID, color, injection);
-                break;
-            case 'polyline':
-                shapeModel = new PolylineShape(shapeData, clientID, color, injection);
-                break;
-            case 'points':
-                shapeModel = new PointsShape(shapeData, clientID, color, injection);
-                break;
-            case 'ellipse':
-                shapeModel = new EllipseShape(shapeData, clientID, color, injection);
-                break;
-            case 'cuboid':
-                shapeModel = new CuboidShape(shapeData, clientID, color, injection);
-                break;
-            default:
-                throw new DataError(`An unexpected type of shape "${type}"`);
-        }
-
-        return shapeModel;
-    }
-
-    function trackFactory(trackData, clientID, injection) {
-        if (trackData.shapes.length) {
-            const { type } = trackData.shapes[0];
-            const color = colors[clientID % colors.length];
-
-            let trackModel = null;
-            switch (type) {
-                case 'rectangle':
-                    trackModel = new RectangleTrack(trackData, clientID, color, injection);
-                    break;
-                case 'polygon':
-                    trackModel = new PolygonTrack(trackData, clientID, color, injection);
-                    break;
-                case 'polyline':
-                    trackModel = new PolylineTrack(trackData, clientID, color, injection);
-                    break;
-                case 'points':
-                    trackModel = new PointsTrack(trackData, clientID, color, injection);
-                    break;
-                case 'ellipse':
-                    trackModel = new EllipseTrack(trackData, clientID, color, injection);
-                    break;
-                case 'cuboid':
-                    trackModel = new CuboidTrack(trackData, clientID, color, injection);
-                    break;
-                default:
-                    throw new DataError(`An unexpected type of track "${type}"`);
-            }
-
-            return trackModel;
-        }
-
-        console.warn('The track without any shapes had been found. It was ignored.');
-        return null;
-    }
 
     class Collection {
         constructor(data) {
@@ -794,6 +717,17 @@
                             type: state.shapeType,
                             z_order: state.zOrder,
                             source: state.source,
+                            elements: state.shapeType === 'skeleton' ? state.elements.map((element) => ({
+                                attributes: [],
+                                frame: element.frame,
+                                group: 0,
+                                label_id: element.label.id,
+                                points: [...element.points],
+                                rotation: 0,
+                                type: element.shapeType,
+                                z_order: 0,
+                                occluded: element.occluded,
+                            })) : undefined,
                         });
                     } else if (state.objectType === 'track') {
                         constructed.tracks.push({
@@ -813,6 +747,17 @@
                                     rotation: state.rotation || 0,
                                     type: state.shapeType,
                                     z_order: state.zOrder,
+                                    elements: state.shapeType === 'skeleton' ? state.elements.map((element) => ({
+                                        attributes: [],
+                                        frame: element.frame,
+                                        group: 0,
+                                        label_id: element.label.id,
+                                        points: [...element.points],
+                                        rotation: 0,
+                                        type: element.shapeType,
+                                        z_order: 0,
+                                        occluded: element.occluded,
+                                    })) : undefined,
                                 },
                             ],
                         });

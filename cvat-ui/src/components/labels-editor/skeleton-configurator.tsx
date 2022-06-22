@@ -414,6 +414,7 @@ export default class SkeletonConfigurator extends React.PureComponent<Props, Sta
                 const elementID = child.getAttribute('data-element-id');
                 if (elementID) {
                     const elementLabel = this.labels[elementID];
+                    child.setAttribute('data-label-name', elementLabel.name);
                     if (elementLabel) {
                         elements.push({ label: elementLabel.name, element_id: +elementID });
                     }

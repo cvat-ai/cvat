@@ -161,6 +161,7 @@
      * @property {string} POLYLINE 'polyline'
      * @property {string} POINTS 'points'
      * @property {string} CUBOID 'cuboid'
+     * @property {string} SKELETON 'skeleton'
      * @readonly
      */
     const ObjectShape = Object.freeze({
@@ -170,6 +171,7 @@
         POINTS: 'points',
         ELLIPSE: 'ellipse',
         CUBOID: 'cuboid',
+        SKELETON: 'skeleton',
     });
 
     /**
