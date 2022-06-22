@@ -17,11 +17,17 @@ jobs:
         run: |
           default_branch=$(gh api /repos/$REPO | jq -r '.default_branch')
 
-          last_commit_time=$(date +%s \
-            -d $(gh api /repos/${REPO}/branches/${default_branch} | jq -r '.commit.commit.author.date'))
+          last_commit_date=$(gh api /repos/${REPO}/branches/${default_branch} | jq -r '.commit.commit.author.date')
 
-          last_night_time=$(date +%s \
-            -d $(gh api /repos/${REPO}/actions/workflows/schedule.yml/runs | jq -r '.workflow_runs[].updated_at' | sort | tail -1))
+          last_night_date=$(gh api /repos/${REPO}/actions/workflows/schedule.yml/runs | \
+            jq -r '.workflow_runs[]? | select((.status == "completed")) | .updated_at' \
+            | sort | tail -1)
+
+          last_night_time=$(date +%s -d $last_night_date)
+          last_commit_time=$(date +%s -d $last_commit_date)
+
+          echo Last CI-nightly workflow run time: $last_night_date
+          echo Last commit time in develop branch: $last_commit_date
 
           echo ::set-output name=last_commit_time::${last_commit_time}
           echo ::set-output name=last_night_time::${last_night_time}

@@ -6,6 +6,10 @@ on:
       - 'develop'
   pull_request:
     types: [edited, ready_for_review, opened, synchronize, reopened]
+    paths-ignore:
+      - '.github/workflows/**'
+      - 'site/**'
+      - '**/*.md'
 
 jobs:
   cache:
