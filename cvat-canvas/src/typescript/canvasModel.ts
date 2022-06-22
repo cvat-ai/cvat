@@ -73,6 +73,7 @@ export interface DrawData {
     shapeType?: string;
     rectDrawingMethod?: RectDrawingMethod;
     cuboidDrawingMethod?: CuboidDrawingMethod;
+    skeletonSVG?: string;
     numberOfPoints?: number;
     initialState?: any;
     crosshair?: boolean;

@@ -685,6 +685,57 @@ export class DrawHandlerImpl implements DrawHandler {
             });
     }
 
+    private drawSkeleton(): void {
+        this.drawInstance = this.canvas.rect();
+        const svgSkeleton = this.canvas.group();
+        svgSkeleton.node.innerHTML = this.drawData.skeletonSVG;
+
+        this.drawInstance
+            .on('drawstop', (e: Event): void => {
+                const points = readPointsFromShape((e.target as any as { instance: SVG.Rect }).instance);
+                const [xtl, ytl, xbr, ybr] = this.getFinalRectCoordinates(points, true);
+                const { shapeType, redraw: clientID } = this.drawData;
+                this.release();
+
+                if (this.canceled) return;
+                if (checkConstraint('rectangle', [xtl, ytl, xbr, ybr])) {
+                    this.onDrawDone({
+                        clientID,
+                        shapeType,
+                        points: [xtl, ytl, xbr, ybr],
+                    },
+                    Date.now() - this.startTimestamp);
+                }
+            })
+            .on('drawupdate', (): void => {
+                const x = this.drawInstance.x();
+                const y = this.drawInstance.y();
+                const width = this.drawInstance.width();
+                const height = this.drawInstance.height();
+                svgSkeleton.style({
+                    transform: `translate(${x}px, ${y}px)`,
+                });
+                svgSkeleton.node.innerHTML = this.drawData.skeletonSVG;
+                Array.from(svgSkeleton.node.children).forEach((child: Element) => {
+                    if (child.tagName === 'circle') {
+                        let cx = +(child.getAttribute('cx') as string);
+                        let cy = +(child.getAttribute('cy') as string);
+                        const cxOffset = cx / 100;
+                        const cyOffset = cy / 100;
+                        cx = cxOffset * width;
+                        cy = cyOffset * height;
+                        child.setAttribute('cx', `${cx}`);
+                        child.setAttribute('cy', `${cy}`);
+                    }
+                });
+            })
+            .addClass('cvat_canvas_shape_drawing')
+            .attr({
+                'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
+                'fill-opacity': this.configuration.creationOpacity,
+            });
+    }
+
     private pastePolyshape(): void {
         this.drawInstance.on('done', (e: CustomEvent): void => {
             const targetPoints = this.drawInstance
@@ -975,6 +1026,8 @@ export class DrawHandlerImpl implements DrawHandler {
                     this.drawCuboid();
                     this.shapeSizeElement = displayShapeSize(this.canvas, this.text);
                 }
+            } else if (this.drawData.shapeType === 'skeleton') {
+                this.drawSkeleton();
             }
 
             if (this.drawData.shapeType !== 'ellipse') {

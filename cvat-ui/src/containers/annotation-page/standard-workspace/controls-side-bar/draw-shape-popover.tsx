@@ -111,19 +111,25 @@ class DrawShapePopoverContainer extends React.PureComponent<Props, State> {
     }
 
     private onDraw(objectType: ObjectType): void {
-        const { canvasInstance, shapeType, onDrawStart } = this.props;
+        const {
+            canvasInstance, shapeType, onDrawStart, labels,
+        } = this.props;
 
         const {
             rectDrawingMethod, cuboidDrawingMethod, numberOfPoints, selectedLabelID,
         } = this.state;
 
         canvasInstance.cancel();
+
+        const selectedLabel = labels.find((label) => label.id === selectedLabelID);
         canvasInstance.draw({
             enabled: true,
             rectDrawingMethod,
             cuboidDrawingMethod,
             numberOfPoints,
             shapeType,
+            skeletonSVG: selectedLabel && selectedLabel.type === ShapeType.SKELETON ?
+                selectedLabel.structure.svg : undefined,
             crosshair: [ShapeType.RECTANGLE, ShapeType.CUBOID, ShapeType.ELLIPSE].includes(shapeType),
         });
 
