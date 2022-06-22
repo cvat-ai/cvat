@@ -25,7 +25,10 @@ COPY cvat-data/package*.json /tmp/cvat-data/
 
 # Install common dependencies
 WORKDIR /tmp/
-RUN npm ci --ignore-scripts
+RUN npm install -g npm@8.12.2
+RUN npm install --ignore-scripts
+# RUN npm audit fix --force
+# RUN npm ci --ignore-scripts
 
 # Build source code
 COPY cvat-data/ /tmp/cvat-data/
