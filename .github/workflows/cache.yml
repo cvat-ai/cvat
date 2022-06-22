@@ -24,7 +24,7 @@ jobs:
             ${{ runner.os }}-build-ui-
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v1.1.2
+        uses: docker/setup-buildx-action@v2
 
       - name: Caching CVAT server
         uses: docker/build-push-action@v2

@@ -13,8 +13,8 @@ services:
       - 9000:9000
       - 9001:9001
     environment:
-      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY}
-      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY}
+      MINIO_ROOT_USER: "minio_access_key"
+      MINIO_ROOT_PASSWORD: "minio_secret_key"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
       interval: 30s
@@ -31,8 +31,8 @@ services:
     environment:
       MC_PATH: "/usr/bin/mc"
       MINIO_HOST: "http://minio:9000"
-      MINIO_ACCESS_KEY:
-      MINIO_SECRET_KEY:
+      MINIO_ACCESS_KEY: "minio_access_key"
+      MINIO_SECRET_KEY: "minio_secret_key"
       MINIO_ALIAS: "local_minio"
       PRIVATE_BUCKET: "private"
       PUBLIC_BUCKET: "public"

@@ -11,6 +11,7 @@ import pytest
 from .utils.config import get_method, post_files_method, post_method
 
 
+@pytest.mark.usefixtures('dontchangedb')
 class TestGetProjects:
     def _find_project_by_user_org(self, user, projects, is_project_staff_flag, is_project_staff):
         if is_project_staff_flag:
@@ -112,7 +113,7 @@ class TestGetProjects:
 
         self._test_response_200(user_in_project['username'], project_id, org_id=user_in_project['org'])
 
-@pytest.mark.usefixtures("restore")
+@pytest.mark.usefixtures('changedb')
 class TestPostProjects:
     def _test_create_project_201(self, user, spec, **kwargs):
         response = post_method(user, '/projects', spec, **kwargs)
@@ -199,7 +200,7 @@ class TestPostProjects:
         }
         self._test_create_project_201(user['username'], spec, org_id=user['org'])
 
-@pytest.mark.usefixtures("restore")
+@pytest.mark.usefixtures("changedb")
 @pytest.mark.usefixtures("restore_cvat_data")
 class TestImportExportDatasetProject:
     def _test_export_project(self, username, project_id, format_name):
@@ -217,7 +218,7 @@ class TestImportExportDatasetProject:
         return response
 
     def _test_import_project(self, username, project_id, format_name, data):
-        response = post_files_method(username, f'projects/{project_id}/dataset', data,
+        response = post_files_method(username, f'projects/{project_id}/dataset', None, data,
             format=format_name)
         assert response.status_code == HTTPStatus.ACCEPTED
 

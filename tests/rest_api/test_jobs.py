@@ -5,7 +5,8 @@
 from http import HTTPStatus
 from deepdiff import DeepDiff
 import pytest
-from .utils.config import get_method, patch_method
+from copy import deepcopy
+from rest_api.utils.config import get_method, patch_method
 
 def get_job_staff(job, tasks, projects):
     job_staff = []
@@ -37,6 +38,7 @@ def filter_jobs(jobs, tasks, org):
 
     return jobs, kwargs
 
+@pytest.mark.usefixtures('dontchangedb')
 class TestGetJobs:
     def _test_get_job_200(self, user, jid, data, **kwargs):
         response = get_method(user, f'jobs/{jid}', **kwargs)
@@ -75,6 +77,7 @@ class TestGetJobs:
                 else:
                     self._test_get_job_403(user['username'], job['id'], **kwargs)
 
+@pytest.mark.usefixtures('dontchangedb')
 class TestListJobs:
     def _test_list_jobs_200(self, user, data, **kwargs):
         response = get_method(user, 'jobs', **kwargs, page_size='all')
@@ -110,6 +113,7 @@ class TestListJobs:
             else:
                 self._test_list_jobs_403(user['username'], **kwargs)
 
+@pytest.mark.usefixtures('dontchangedb')
 class TestGetAnnotations:
     def _test_get_job_annotations_200(self, user, jid, data, **kwargs):
         response = get_method(user, f'jobs/{jid}/annotations', **kwargs)
@@ -180,7 +184,8 @@ class TestGetAnnotations:
                 job_id, annotations['job'][str(job_id)], **kwargs)
         else:
             self._test_get_job_annotations_403(username, job_id, **kwargs)
-@pytest.mark.usefixtures("restore")
+
+@pytest.mark.usefixtures('changedb')
 class TestPatchJobAnnotations:
     _ORG = 2
 
@@ -195,7 +200,7 @@ class TestPatchJobAnnotations:
     @pytest.fixture(scope='class')
     def request_data(self, annotations):
         def get_data(jid):
-            data = annotations['job'][str(jid)].copy()
+            data = deepcopy(annotations['job'][str(jid)])
             data['shapes'][0].update({'points': [2.0, 3.0, 4.0, 5.0, 6.0, 7.0]})
             data['version'] += 1
             return data
@@ -259,7 +264,7 @@ class TestPatchJobAnnotations:
 
         self._test_check_respone(is_allow, response, data)
 
-@pytest.mark.usefixtures("restore")
+@pytest.mark.usefixtures('changedb')
 class TestPatchJob:
     _ORG = 2
 
@@ -277,7 +282,7 @@ class TestPatchJob:
     def expected_data(self, jobs, users):
         keys = ['url', 'id', 'username', 'first_name', 'last_name']
         def find(job_id, assignee_id):
-            data = jobs[job_id].copy()
+            data = deepcopy(jobs[job_id])
             data['assignee'] = dict(filter(lambda a: a[0] in keys,
                 users[assignee_id].items()))
             return data
@@ -290,7 +295,6 @@ class TestPatchJob:
             members -= {assignee_id(jobs[jid]), user_id}
             return members.pop()
         return find_new_assignee
-
     @pytest.mark.parametrize('org', [2])
     @pytest.mark.parametrize('role, task_staff, is_allow', [
         ('maintainer', False, True),  ('owner',  False, True),

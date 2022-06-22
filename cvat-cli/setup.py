@@ -5,7 +5,7 @@
 import os.path as osp
 import re
 
-import setuptools
+from setuptools import find_packages, setup
 
 
 def find_version(project_dir=None):
@@ -42,7 +42,7 @@ BASE_REQUIREMENTS = parse_requirements(BASE_REQUIREMENTS_FILE)
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
-setuptools.setup(
+setup(
     name="cvat-cli",
     version=find_version(project_dir="src/cvat_cli"),
     description="Command-line client for CVAT",
@@ -50,7 +50,7 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     url="https://github.com/openvinotoolkit/cvat/",
     package_dir={"": "src"},
-    packages=setuptools.find_packages(where='src'),
+    packages=find_packages(where="src"),
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",

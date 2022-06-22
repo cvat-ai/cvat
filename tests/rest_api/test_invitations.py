@@ -4,9 +4,9 @@
 
 from http import HTTPStatus
 import pytest
-from .utils.config import post_method
+from rest_api.utils.config import post_method
 
-@pytest.mark.usefixtures("restore")
+@pytest.mark.usefixtures('changedb')
 class TestCreateInvitations:
     def _test_post_invitation_201(self, user, data, invitee, **kwargs):
         response = post_method(user, 'invitations', data, **kwargs)

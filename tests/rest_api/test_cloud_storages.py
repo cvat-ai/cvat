@@ -6,8 +6,9 @@ import pytest
 from http import HTTPStatus
 from deepdiff import DeepDiff
 
-from .utils.config import get_method, patch_method, post_method
+from rest_api.utils.config import get_method, patch_method, post_method
 
+@pytest.mark.usefixtures('dontchangedb')
 class TestGetCloudStorage:
 
     def _test_can_see(self, user, storage_id, data, **kwargs):
@@ -59,8 +60,8 @@ class TestGetCloudStorage:
             self._test_cannot_see(username, storage_id, org_id=org_id)
 
 
-@pytest.mark.usefixtures("restore")
-class TestPostCloudStorage:
+@pytest.mark.usefixtures('changedb')
+class TestPostCloudStorage():
     _SPEC = {
         'provider_type': 'AWS_S3_BUCKET',
         'resource': 'test',
@@ -121,7 +122,7 @@ class TestPostCloudStorage:
         else:
             self._test_cannot_create(username, self._SPEC, org_id=org_id)
 
-@pytest.mark.usefixtures("restore")
+@pytest.mark.usefixtures('changedb')
 class TestPatchCloudStorage:
     _SPEC = {
         'display_name': 'New display name',

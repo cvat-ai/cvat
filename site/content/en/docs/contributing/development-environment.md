@@ -134,6 +134,7 @@ description: 'Installing a development environment for different operating syste
 
 
 You have done! Now it is possible to insert breakpoints and debug server and client of the tool.
+Instructions for running tests locally are available [here](/site/content/en/docs/contributing/running-tests.md).
 
 ## Note for Windows users
 

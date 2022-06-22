@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+from copy import deepcopy
 from http import HTTPStatus
 from io import BytesIO
 from time import sleep
@@ -32,6 +33,7 @@ def generate_image_files(count):
     return images
 
 
+@pytest.mark.usefixtures('dontchangedb')
 class TestGetTasks:
     def _test_task_list_200(self, user, project_id, data, exclude_paths = '', **kwargs):
         response = get_method(user, f'projects/{project_id}/tasks', **kwargs)
@@ -66,9 +68,6 @@ class TestGetTasks:
                 assert response.status_code == HTTPStatus.OK
                 assert any(_task['id'] == task['id'] for _task in response_data['results'])
 
-    # [sandbox] admin can see task data in project even he has no ownerships in this project
-    # [sandbox] business cannot see task data in project if he has no ownerships in this project
-    # [sandbox] user that has one of these ownerships: [Project:owner, Project:assignee] can see task data
     @pytest.mark.parametrize('project_id', [1])
     @pytest.mark.parametrize('groups, is_staff, is_allow', [
         ('admin', False, True),
@@ -81,18 +80,14 @@ class TestGetTasks:
 
         self._test_users_to_see_task_list(project_id, tasks, users, is_staff, is_allow, is_project_staff)
 
-    # [sandbox] user that has one of these ownerships: [Owner, Assignee] can see task data
     @pytest.mark.parametrize('project_id, groups', [(1, 'user')])
-    def test_task_assigneed_to_see_task(self, project_id, groups, users, tasks, find_users, is_task_staff):
+    def test_task_assigned_to_see_task(self, project_id, groups, users, tasks, find_users, is_task_staff):
         users = find_users(privilege=groups)
         tasks = list(filter(lambda x: x['project_id'] == project_id and x['assignee'], tasks))
         assert len(tasks)
 
         self._test_assigned_users_to_see_task_data(tasks, users, is_task_staff)
 
-    # [organization] maintainer can see task data even if he has no ownerships in corresponding Project, Task
-    # [organization] supervisor cannot see task data if he has no ownerships in corresponding Project, Task
-    # [organization] worker (as role) that has one of these ownerships: [Project:owner, Project:assignee], can see task data
     @pytest.mark.parametrize('org, project_id', [({'id': 2, 'slug': 'org2'}, 2)])
     @pytest.mark.parametrize('role, is_staff, is_allow', [
         ('maintainer', False, True),
@@ -105,7 +100,6 @@ class TestGetTasks:
 
         self._test_users_to_see_task_list(project_id, tasks, users, is_staff, is_allow, is_project_staff, org=org['slug'])
 
-    # [organization] worker (as role) that has one of these ownerships: [Owner, Assignee], can see task data
     @pytest.mark.parametrize('org, project_id, role', [
         ({'id': 2, 'slug': 'org2'}, 2, 'worker')
     ])
@@ -117,7 +111,7 @@ class TestGetTasks:
         self._test_assigned_users_to_see_task_data(tasks, users, is_task_staff, org=org['slug'])
 
 
-@pytest.mark.usefixtures("restore")
+@pytest.mark.usefixtures('changedb')
 class TestPostTasks:
     def _test_create_task_201(self, user, spec, **kwargs):
         response = post_method(user, '/tasks', spec, **kwargs)
@@ -126,31 +120,6 @@ class TestPostTasks:
     def _test_create_task_403(self, user, spec, **kwargs):
         response = post_method(user, '/tasks', spec, **kwargs)
         assert response.status_code == HTTPStatus.FORBIDDEN
-
-    @staticmethod
-    def _wait_until_task_is_created(username, task_id):
-        url = f'tasks/{task_id}/status'
-
-        while True:
-            response = get_method(username, url)
-            response_json = response.json()
-            if response_json['state'] == 'Finished' or response_json['state'] == 'Failed':
-                return response
-            sleep(1)
-
-    def _test_create_task_with_images(self, username, spec, data, files):
-        response = post_method(username, '/tasks', spec)
-        assert response.status_code == HTTPStatus.CREATED
-        task_id = response.json()['id']
-
-        response = post_files_method(username, f'/tasks/{task_id}/data', data, files)
-        assert response.status_code == HTTPStatus.ACCEPTED
-
-        response = self._wait_until_task_is_created(username, task_id)
-        response_json = response.json()
-        assert response_json['state'] == 'Finished'
-
-        return task_id
 
     def _test_users_to_create_task_in_project(self, project_id, users, is_staff, is_allow, is_project_staff, **kwargs):
         if is_staff:
@@ -171,9 +140,6 @@ class TestPostTasks:
             else:
                 self._test_create_task_403(username, spec, **kwargs)
 
-    # [sandbox] admin can create task in project even he has no ownerships in this project
-    # [sandbox] business cannot create task in project if he has no ownerships in this project
-    # [sandbox] user that has one of these ownerships: [Project:owner, Project:assignee] and has less than 10 task can create task in project
     @pytest.mark.parametrize('project_id', [1])
     @pytest.mark.parametrize('groups, is_staff, is_allow', [
         ('admin', False, True),
@@ -184,7 +150,6 @@ class TestPostTasks:
         users = find_users(privilege=groups)
         self._test_users_to_create_task_in_project(project_id, users, is_staff, is_allow, is_project_staff)
 
-    # [organization] worker cannot create task in project even he has no ownerships in this project
     @pytest.mark.parametrize('org, project_id', [({'id': 2, 'slug': 'org2'}, 2)])
     @pytest.mark.parametrize('role, is_staff, is_allow', [
         ('worker', False, False),
@@ -193,32 +158,7 @@ class TestPostTasks:
         users = find_users(org=org['id'], role=role)
         self._test_users_to_create_task_in_project(project_id, users, is_staff, is_allow, is_project_staff, org=org['slug'])
 
-    def test_can_create_task_with_defined_start_and_stop_frames(self):
-        username = 'admin1'
-        task_spec = {
-            'name': f'test {username} to create a task with defined start and stop frames',
-            "labels": [{
-                "name": "car",
-                "color": "#ff00ff"
-            }],
-        }
-
-        task_data = {
-            'image_quality': 75,
-            'start_frame': 2,
-            'stop_frame': 5
-        }
-        task_files = {
-            f'client_files[{i}]': image for i, image in enumerate(generate_image_files(7))
-        }
-
-        task_id = self._test_create_task_with_images(username, task_spec, task_data, task_files)
-
-        # check task size
-        response = get_method(username, f'tasks/{task_id}')
-        response_json = response.json()
-        assert response_json['size'] == 4
-
+@pytest.mark.usefixtures('dontchangedb')
 class TestGetData:
     _USERNAME = 'user1'
 
@@ -232,9 +172,9 @@ class TestGetData:
         assert response.status_code == HTTPStatus.OK
         assert response.headers['Content-Type'] == content_type
 
-@pytest.mark.usefixtures("restore")
+@pytest.mark.usefixtures('changedb')
 class TestPatchTaskAnnotations:
-    def _test_check_respone(self, is_allow, response, data=None):
+    def _test_check_response(self, is_allow, response, data=None):
         if is_allow:
             assert response.status_code == HTTPStatus.OK
             assert DeepDiff(data, response.json(),
@@ -245,7 +185,7 @@ class TestPatchTaskAnnotations:
     @pytest.fixture(scope='class')
     def request_data(self, annotations):
         def get_data(tid):
-            data = annotations['task'][str(tid)].copy()
+            data = deepcopy(annotations['task'][str(tid)])
             data['shapes'][0].update({'points': [2.0, 3.0, 4.0, 5.0, 6.0, 7.0]})
             data['version'] += 1
             return data
@@ -269,7 +209,7 @@ class TestPatchTaskAnnotations:
         response = patch_method(username, f'tasks/{tid}/annotations', data,
             org_id=org, action='update')
 
-        self._test_check_respone(is_allow, response, data)
+        self._test_check_response(is_allow, response, data)
 
     @pytest.mark.parametrize('org', [2])
     @pytest.mark.parametrize('role, task_staff, is_allow', [
@@ -288,10 +228,26 @@ class TestPatchTaskAnnotations:
         response = patch_method(username, f'tasks/{tid}/annotations', data,
             org_id=org, action='update')
 
-        self._test_check_respone(is_allow, response, data)
+        self._test_check_response(is_allow, response, data)
 
-@pytest.mark.usefixtures("restore")
-class TestExportDatasetTask:
+@pytest.mark.usefixtures('dontchangedb')
+class TestGetTaskDataset:
+    def _test_export_project(self, username, tid, **kwargs):
+        response = get_method(username, f'tasks/{tid}/dataset', **kwargs)
+        assert response.status_code == HTTPStatus.ACCEPTED
+
+        response = get_method(username, f'tasks/{tid}/dataset', **kwargs)
+        assert response.status_code == HTTPStatus.CREATED
+
+        response = get_method(username, f'tasks/{tid}/dataset', action='download', **kwargs)
+        assert response.status_code == HTTPStatus.OK
+
+    def test_admin_can_export_task_dataset(self, tasks_with_shapes):
+        task = tasks_with_shapes[0]
+        self._test_export_project('admin1', task['id'], format='CVAT for images 1.1')
+
+@pytest.mark.usefixtures("changedb")
+class TestPostTaskData:
     @staticmethod
     def _wait_until_task_is_created(username, task_id):
         url = f'tasks/{task_id}/status'

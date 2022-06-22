@@ -15,7 +15,7 @@ class StreamWithProgress:
         self.stream = stream
         self.pbar = pbar
 
-        if hasattr(stream, '__len__'):
+        if hasattr(stream, "__len__"):
             length = len(stream)
 
         self.length = length
@@ -37,8 +37,10 @@ class StreamWithProgress:
     def tell(self):
         return self.stream.tell()
 
+
 def expect_status(code: int, response: requests.Response) -> None:
     response.raise_for_status()
     if response.status_code != code:
-        raise Exception("Failed to upload file: "
-            f"unexpected status code received ({response.status_code})")
+        raise Exception(
+            "Failed to upload file: " f"unexpected status code received ({response.status_code})"
+        )

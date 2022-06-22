@@ -7,7 +7,7 @@ from time import sleep
 
 import pytest
 
-from .utils.config import get_method, post_method
+from rest_api.utils.config import get_method, post_method
 
 
 def _post_task_remote_data(username, task_id, resources):
@@ -29,7 +29,7 @@ def _wait_until_task_is_created(username, task_id):
         sleep(1)
 
 
-@pytest.mark.usefixtures("restore")
+@pytest.mark.usefixtures('changedb')
 class TestGetAnalytics:
     task_id = 12
     def _test_can_create(self, user, task_id, resources):
