@@ -1804,6 +1804,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
             // TODO: Use enums after typification cvat-core
             if (state.shapeType === 'rectangle') {
                 this.svgShapes[state.clientID] = this.addRect(translatedPoints, state);
+            } else if (state.shapeType === 'skeleton') {
+                this.svgShapes[state.clientID] = this.addSkeleton(state);
             } else {
                 const stringified = this.stringifyToCanvas(translatedPoints);
 
@@ -2430,6 +2432,49 @@ export class CanvasViewImpl implements CanvasView, Listener {
         }
 
         return cube;
+    }
+
+    private addSkeleton(state: any): any {
+        const skeleton = (this.adoptedContent as any)
+            .group()
+            .attr({
+                clientID: state.clientID,
+                'color-rendering': 'optimizeQuality',
+                id: `cvat_canvas_shape_${state.clientID}`,
+                fill: state.color,
+                'shape-rendering': 'geometricprecision',
+                stroke: state.color,
+                'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
+                'data-z-order': state.zOrder,
+            }).addClass('cvat_canvas_shape');
+
+        for (const element of state.elements) {
+            if (element.shapeType === 'points') {
+                const points: number[] = element.points as number[];
+                const [cx, cy] = this.translateToCanvas(points);
+                skeleton.circle()
+                    .move(cx, cy)
+                    .attr({
+                        fill: element.color,
+                        r: consts.BASE_POINT_SIZE / this.geometry.scale,
+                        'color-rendering': 'optimizeQuality',
+                        'pointer-events': 'none',
+                        'shape-rendering': 'geometricprecision',
+                        'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
+                    });
+            }
+        }
+        // todo: add all subshapes into the group and colorify them
+
+        if (state.occluded) {
+            skeleton.addClass('cvat_canvas_shape_occluded');
+        }
+
+        if (state.hidden || state.outside || this.isInnerHidden(state.clientID)) {
+            skeleton.addClass('cvat_canvas_hidden');
+        }
+
+        return skeleton;
     }
 
     private setupPoints(basicPolyline: SVG.PolyLine, state: any): any {

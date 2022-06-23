@@ -697,8 +697,8 @@ export class DrawHandlerImpl implements DrawHandler {
                 const elements: any[] = [];
                 Array.from(svgSkeleton.node.children).forEach((child: Element) => {
                     if (child.tagName === 'circle') {
-                        const cx = +(child.getAttribute('cx') as string);
-                        const cy = +(child.getAttribute('cy') as string);
+                        const cx = +(child.getAttribute('cx') as string) + xtl;
+                        const cy = +(child.getAttribute('cy') as string) + ytl;
                         const label = +child.getAttribute('data-label-id');
                         elements.push({
                             shapeType: 'points',
@@ -709,6 +709,7 @@ export class DrawHandlerImpl implements DrawHandler {
                 });
 
                 const { shapeType, redraw: clientID } = this.drawData;
+                svgSkeleton.remove();
                 this.release();
 
                 if (this.canceled) return;

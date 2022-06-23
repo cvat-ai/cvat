@@ -10,6 +10,12 @@
     stroke-opacity: 1;
 }
 
+g.cvat_canvas_shape {
+    > circle {
+        fill-opacity: 1;
+    }
+}
+
 polyline.cvat_canvas_shape {
     fill-opacity: 0;
 }
