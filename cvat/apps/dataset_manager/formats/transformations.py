@@ -50,3 +50,24 @@ class EllipsesToMasks:
         rle = mask_utils.encode(np.asfortranarray(mat))
         return datum_annotation.RleMask(rle=rle, label=ellipse.label, z_order=ellipse.z_order,
             attributes=ellipse.attributes, group=ellipse.group)
+
+class RawMaskToRLE:
+    @staticmethod
+    def convert_rle (rle_object):
+        # xs = [p for p in rle_object.points[0::2]]
+        # ys = [p for p in rle_object.points[1::2]]
+        # x0 = min(xs)
+        # x1 = max(xs)
+        # y0 = min(ys)
+        # y1 = max(ys)
+        # x,y,w,h = [x0, y0, x1 - x0, y1 - y0]
+        # rle = mask_utils.frPyObjects([rle_object.points], y + h, x + w)
+
+        points = rle_object.points
+
+        # rle = mask_utils.frPyObjects(list(int (v) for v in points[:-4]), points[-1]- points[-3], points[-2] - points[-4])
+        rle = mask_utils.frPyObjects([list(int (v) for v in points[:-4])], points[-1]- points[-3], points[-2] - points[-4])
+
+        # rle = mask_utils.frPyObjects([rle_object.points], img_h, img_w)
+
+        return rle

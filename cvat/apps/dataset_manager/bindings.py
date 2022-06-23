@@ -27,7 +27,11 @@ from cvat.apps.engine.models import Label, Project, ShapeType, Task
 from cvat.apps.dataset_manager.formats.utils import get_label_color
 
 from .annotation import AnnotationIR, AnnotationManager, TrackManager
-from .formats.transformations import EllipsesToMasks
+from .formats.transformations import EllipsesToMasks,RawMaskToRLE
+from cvat.apps.engine.log import get_logger
+from django.conf import settings
+import os
+
 
 CVAT_INTERNAL_ATTRIBUTES = {'occluded', 'outside', 'keyframe', 'track_id', 'rotation'}
 
@@ -1273,9 +1277,18 @@ def get_defaulted_subset(subset: str, subsets: List[str]) -> str:
                 i += 1
             raise Exception('Cannot find default name for subset')
 
+from pycocotools import mask as mask_utils
+import numpy as np
+import time
+from pycocotools import mask
 
 def convert_cvat_anno_to_dm(cvat_frame_anno, label_attrs, map_label, format_name=None, dimension=DimensionType.DIM_2D):
     item_anno = []
+
+    MIGRATION_NAME = os.path.splitext(os.path.basename(__file__))[0]
+    MIGRATION_LOG = os.path.join(settings.MIGRATIONS_LOGS_ROOT, f"{MIGRATION_NAME}.log")
+
+    logger = get_logger(MIGRATION_NAME,MIGRATION_LOG)
 
     def convert_attrs(label, cvat_attrs):
         cvat_attrs = {a.name: a.value for a in cvat_attrs}
@@ -1310,6 +1323,14 @@ def convert_cvat_anno_to_dm(cvat_frame_anno, label_attrs, map_label, format_name
             shapes.append({"id": shape.id, "label_id": shape.label_id})
 
     for index, shape_obj in enumerate(cvat_frame_anno.labeled_shapes):
+
+        logger.info("INDEX HERE **********")
+        logger.info(index)
+
+
+        logger.info("SAHEPE HERER !_!_!_!!_!_")
+        logger.info(shape_obj)
+
         anno_group = shape_obj.group or 0
         anno_label = map_label(shape_obj.label)
         anno_attr = convert_attrs(shape_obj.label, shape_obj.attributes)
@@ -1339,11 +1360,64 @@ def convert_cvat_anno_to_dm(cvat_frame_anno, label_attrs, map_label, format_name
                 "attributes": anno_attr,
             }), cvat_frame_anno.height, cvat_frame_anno.width)
         elif shape_obj.type == ShapeType.MASK:
-            anno = datum_annotation.RleMask()
+            logger.info("ENTERESAFSFHGAHJK SDFALSDKFHSADKJH")
+            # anno = datum_annotation.RleMask(rle=  anno_points)
+            # rle = mask_utils.encode(np.asfortranarray(anno_points))
+            int_points = [* map(int, anno_points)]
+            logger.info("INT POINTS HERE ")
+            logger.info(int_points)
+
+            # anno = datum_annotation.RleMask(rle=[int_points])
+
+            segmentation = list(int (v) for v in int_points[:-4])
+            h = int(int_points[-1] - int_points[-3])
+            w = int(int_points[-2] - int_points[-4])
+
+            rle = mask.merge(mask.frPyObjects([segmentation], h, w))
+            anno = datum_annotation.RleMask(rle=rle)
+
+            # time.sleep(10)
+            # anno = datum_annotation.RleMask(rle=int_points, label=anno_label, z_order=shape_obj.z_order,
+            # attributes=anno_attr, group=anno_group)
+
+            logger.info("annotation here ")
+            logger.info(anno)
+
+            # blah = (SimpleNamespace(**{
+            #     "points": int_points,
+            #     "label": anno_label,
+            #     "z_order": shape_obj.z_order,
+            #     "rotation": shape_obj.rotation,
+            #     "group": anno_group,
+            #     "attributes": anno_attr,
+            # }))
+
+            # logger.info("FULL OBJECT HERE")
+            # logger.info (blah)
+            # # anno = RawMaskToRLE.convert_rle )
+
+            # points = blah.points
+
+            # # rle = mask_utils.frPyObjects(list(int (v) for v in points[:-4]), points[-1]- points[-3], points[-2] - points[-4])
+            # rle = mask_utils.frPyObjects([list(int (v) for v in points[:-4])], points[-1]- points[-3], points[-2] - points[-4])
+
+
+            # anno  = datum_annotation.RleMask(rle=rle, label=blah.label, z_order=blah.z_order,
+            # attributes=blah.attributes, group=blah.group)
+
+            # anno = datum_annotation.PolyLine(anno_points,
+            #     label=anno_label, attributes=anno_attr, group=anno_group,
+            #     z_order=shape_obj.z_order)
+
+            # anno = datum_annotation.Polygon(anno_points,
+            #     label=anno_label, attributes=anno_attr, group=anno_group,
+            #     z_order=shape_obj.z_order)
+
+
         # elif shape_obj.type == ShapeType.POLYLINE:
-            anno = datum_annotation.PolyLine(anno_points,
-                label=anno_label, attributes=anno_attr, group=anno_group,
-                z_order=shape_obj.z_order)
+            # anno = datum_annotation.PolyLine(anno_points,
+            #     label=anno_label, attributes=anno_attr, group=anno_group,
+            #     z_order=shape_obj.z_order)
         elif shape_obj.type == ShapeType.POLYGON:
             anno = datum_annotation.Polygon(anno_points,
                 label=anno_label, attributes=anno_attr, group=anno_group,
