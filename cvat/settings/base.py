@@ -464,14 +464,7 @@ RESTRICTIONS = {
 
 # http://www.grantjenks.com/docs/diskcache/tutorial.html#djangocache
 CACHES = {
-    "default": {
-        "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": REDIS_URL,
-        "OPTIONS": {
-            "CLIENT_CLASS": "django_redis.client.DefaultClient",
-        }
-    },
-    'diskcache': {
+    'default': {
         'BACKEND': 'diskcache.DjangoCache',
         'LOCATION': CACHE_ROOT,
         'TIMEOUT': None,
