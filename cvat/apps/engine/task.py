@@ -6,6 +6,8 @@
 import itertools
 import os
 import sys
+
+from django.core.files import File
 from rest_framework.serializers import ValidationError
 import rq
 import re
@@ -31,6 +33,8 @@ from utils.dataset_manifest import ImageManifestManager, VideoManifestManager, i
 from utils.dataset_manifest.core import VideoManifestValidator
 from utils.dataset_manifest.utils import detect_related_images
 from .cloud_provider import get_cloud_storage_instance, Credentials
+
+from cvat.rebotics.s3_client import s3_client
 
 ############################# Low Level server API
 
@@ -274,7 +278,44 @@ def _get_manifest_frame_indexer(start_frame=0, frame_step=1):
     return lambda frame_id: start_frame + frame_id * frame_step
 
 
-# dafuq?!
+def _move_data_to_s3(db_task: models.Task, data, upload_dir):
+    # TODO: add some try-catch
+    db_data = db_task.data
+    client_files = db_data.client_files.all()
+    remote_files = db_data.remote_files.all()
+    slogger.glob.info('Moving files to s3:')
+    for client_file in client_files:
+        path = client_file.file.path
+        slogger.glob.info(path)
+        name = path.rsplit('/', 1)[-1]
+        with open(path, 'rb') as f:
+            models.S3File.objects.create(
+                file=File(f, name=name),
+                data=db_data,
+            )
+        os.remove(path)
+    for name in data['remote_files']:
+        path = os.path.join(upload_dir, name)
+        slogger.glob.info(path)
+        with open(path, 'rb') as f:
+            models.S3File.objects.create(
+                file=File(f, name=name),
+                data=db_data,
+            )
+        os.remove(path)
+    client_files.delete()
+    remote_files.delete()
+    slogger.glob.info('Done.')
+
+
+def _move_preview_to_s3(db_task: models.Task, path):
+    # TODO: add some try-catch
+    db_data = db_task.data
+    key = os.path.join(settings.AWS_LOCATION, settings.S3_UPLOAD_ROOT, str(db_data.pk), 'preview.jpeg')
+    s3_client.upload_from_path(path, key)
+    os.remove(path)
+
+
 @transaction.atomic
 def _create_thread(db_task, data, isBackupRestore=False, isDatasetImport=False):
     if isinstance(db_task, int):
@@ -662,7 +703,10 @@ def _create_thread(db_task, data, isBackupRestore=False, isDatasetImport=False):
             db_data.start_frame + (db_data.size - 1) * db_data.get_frame_step())
 
     preview = extractor.get_preview()
-    preview.save(db_data.get_preview_path())
+    preview_path = db_data.get_preview_path()
+    preview.save(preview_path)
 
     slogger.glob.info("Found frames {} for Data #{}".format(db_data.size, db_data.id))
+    _move_data_to_s3(db_task, data, upload_dir)
+    _move_preview_to_s3(db_task, preview_path)
     _save_task_to_db(db_task)

@@ -228,6 +228,5 @@ class UploadMixin(object):
                     destination.write(client_file['file'].read())
         return Response(status=status.HTTP_200_OK)
 
-    # override this to do stuff after upload
     def upload_finished(self, request):
         raise NotImplementedError('You need to implement upload_finished in UploadMixin')

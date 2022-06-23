@@ -417,10 +417,12 @@ LOGGING = {
         'cvat.server': {
             'handlers': ['console'],
             'level': os.getenv('DJANGO_LOG_LEVEL', 'DEBUG'),
+            'propagate': False
         },
         'cvat.client': {
             'handlers': [],
             'level': os.getenv('DJANGO_LOG_LEVEL', 'DEBUG'),
+            'propagate': False
         },
         'django': {
             'handlers': ['console'],
@@ -574,7 +576,7 @@ VERSION_TRACKER_URL = os.getenv(
 )
 
 # Media storage settings
-DEFAULT_FILE_STORAGE = 'cvat.rebotics.storage.CustomAWSMediaStorage'
+AWS_FILE_STORAGE = 'cvat.rebotics.storage.CustomAWSMediaStorage'
 
 # AWS s3 storage settings for media storage.
 AWS_S3_SIGNATURE_VERSION = 's3v4'
@@ -595,3 +597,5 @@ AWS_S3_REGION_NAME = os.getenv('AWS_S3_REGION_NAME')
 if not AWS_S3_REGION_NAME:  # treat empty string as None
     AWS_S3_REGION_NAME = None
 AWS_S3_ENDPOINT_URL = os.getenv('AWS_S3_ENDPOINT_URL')
+
+S3_UPLOAD_ROOT = 'data'

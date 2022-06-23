@@ -15,6 +15,8 @@ from django.db.models.fields import FloatField
 from django.core.serializers.json import DjangoJSONEncoder
 from cvat.apps.engine.utils import parse_specific_attributes
 from cvat.apps.organizations.models import Organization
+from cvat.rebotics.storage import CustomAWSMediaStorage
+
 
 class SafeCharField(models.CharField):
     def get_prep_value(self, value):
@@ -369,6 +371,21 @@ class RelatedFile(models.Model):
     class Meta:
         default_permissions = ()
         unique_together = ("data", "path")
+
+
+def s3_upload_path_handler(instance, filename):
+    return os.path.join(settings.S3_UPLOAD_ROOT, str(instance.data.pk), 'data', filename)
+
+
+class S3File(models.Model):
+    data = models.ForeignKey(Data, on_delete=models.CASCADE, related_name='s3_files', null=True)
+    file = models.FileField(upload_to=s3_upload_path_handler, max_length=1024,
+                            storage=CustomAWSMediaStorage)
+
+    class Meta:
+        default_permissions = ()
+        unique_together = ('data', 'file')
+
 
 class Segment(models.Model):
     task = models.ForeignKey(Task, on_delete=models.CASCADE)
