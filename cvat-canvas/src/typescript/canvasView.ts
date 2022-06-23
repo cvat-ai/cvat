@@ -2448,7 +2448,14 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 'data-z-order': state.zOrder,
             }).addClass('cvat_canvas_shape');
 
-        for (const element of state.elements) {
+        const SVGElement = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        const { svg } = state.label.structure;
+        if (svg) {
+            SVGElement.innerHTML = svg;
+        }
+        const templateElements = Array.from(SVGElement.children).filter((el: Element) => el.tagName === 'circle');
+        for (let i = 0; i < state.elements.length; i++) {
+            const element = state.elements[i];
             if (element.shapeType === 'points') {
                 const points: number[] = element.points as number[];
                 const [cx, cy] = this.translateToCanvas(points);
@@ -2461,10 +2468,42 @@ export class CanvasViewImpl implements CanvasView, Listener {
                         'pointer-events': 'none',
                         'shape-rendering': 'geometricprecision',
                         'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
+                        'data-node-id': templateElements[i].getAttribute('data-node-id'),
+                        'data-element-id': templateElements[i].getAttribute('data-element-id'),
                     });
             }
         }
-        // todo: add all subshapes into the group and colorify them
+
+        if (svg) {
+            for (const child of SVGElement.children) {
+                if (child.tagName === 'line') {
+                    const dataNodeFrom = child.getAttribute('data-node-from');
+                    const dataNodeTo = child.getAttribute('data-node-to');
+                    const nodeFrom = skeleton.node.querySelector(`[data-node-id="${dataNodeFrom}"]`);
+                    const nodeTo = skeleton.node.querySelector(`[data-node-id="${dataNodeTo}"]`);
+
+                    if (nodeFrom && nodeTo) {
+                        const x1 = nodeFrom.getAttribute('cx');
+                        const y1 = nodeFrom.getAttribute('cy');
+                        const x2 = nodeTo.getAttribute('cx');
+                        const y2 = nodeTo.getAttribute('cy');
+
+                        if (x1 && y1 && x2 && y2) {
+                            child.setAttribute('x1', x1);
+                            child.setAttribute('y1', y1);
+                            child.setAttribute('x2', x2);
+                            child.setAttribute('y2', y2);
+                            const line = skeleton.line(x1, y1, x2, y2).attr({
+                                'data-node-from': dataNodeFrom,
+                                'data-node-to': dataNodeTo,
+                                'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
+                            });
+                            skeleton.node.prepend(line.node)
+                        }
+                    }
+                }
+            }
+        }
 
         if (state.occluded) {
             skeleton.addClass('cvat_canvas_shape_occluded');

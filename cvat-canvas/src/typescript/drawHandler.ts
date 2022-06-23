@@ -732,7 +732,42 @@ export class DrawHandlerImpl implements DrawHandler {
                 });
                 svgSkeleton.node.innerHTML = this.drawData.skeletonSVG;
                 Array.from(svgSkeleton.node.children).forEach((child: Element) => {
-                    if (child.tagName === 'circle') {
+                    const dataType = child.getAttribute('data-type');
+                    if (child.tagName === 'circle' && dataType && dataType.includes('element')) {
+                        let cx = +(child.getAttribute('cx') as string);
+                        let cy = +(child.getAttribute('cy') as string);
+                        const cxOffset = cx / 100;
+                        const cyOffset = cy / 100;
+                        cx = cxOffset * width;
+                        cy = cyOffset * height;
+                        child.setAttribute('cx', `${cx}`);
+                        child.setAttribute('cy', `${cy}`);
+                    }
+                });
+
+                Array.from(svgSkeleton.node.children).forEach((child: Element) => {
+                    const dataType = child.getAttribute('data-type');
+                    if (child.tagName === 'line' && dataType && dataType.includes('edge')) {
+                        const dataNodeFrom = child.getAttribute('data-node-from');
+                        const dataNodeTo = child.getAttribute('data-node-to');
+                        if (dataNodeFrom && dataNodeTo) {
+                            const from = svgSkeleton.node.querySelector(`[data-node-id="${dataNodeFrom}"]`);
+                            const to = svgSkeleton.node.querySelector(`[data-node-id="${dataNodeTo}"]`);
+
+                            if (from && to) {
+                                const x1 = from.getAttribute('cx');
+                                const y1 = from.getAttribute('cy');
+                                const x2 = to.getAttribute('cx');
+                                const y2 = to.getAttribute('cy');
+
+                                if (x1 && y1 && x2 && y2) {
+                                    child.setAttribute('x1', x1);
+                                    child.setAttribute('y1', y1);
+                                    child.setAttribute('x2', x2);
+                                    child.setAttribute('y2', y2);
+                                }
+                            }
+                        }
                         let cx = +(child.getAttribute('cx') as string);
                         let cy = +(child.getAttribute('cy') as string);
                         const cxOffset = cx / 100;
