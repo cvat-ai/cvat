@@ -726,7 +726,7 @@ class SkeletonShape extends Drawn {
         this.rotation = data.rotation || 0;
         this.occluded = data.occluded;
         this.zOrder = data.z_order;
-        this.elements = data.elements.map((element) => shapeFactory(element, null, injection));
+        this.elements = data.elements.map((element) => shapeFactory(element, injection.nextClientID(), injection));
     }
 
     // Method is used to export data to the server

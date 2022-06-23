@@ -1837,6 +1837,13 @@ export class CanvasViewImpl implements CanvasView, Listener {
             });
 
             if (displayAllText) {
+                if (state.shapeType === 'skeleton') {
+                    state.elements.forEach((element: any) => {
+                        this.svgTexts[element.clientID] = this.addText(element);
+                        this.updateTextPosition(this.svgTexts[element.clientID], this.svgShapes[element.clientID]);
+                    });
+                }
+
                 this.svgTexts[state.clientID] = this.addText(state);
                 this.updateTextPosition(this.svgTexts[state.clientID], this.svgShapes[state.clientID]);
             }
@@ -2459,10 +2466,11 @@ export class CanvasViewImpl implements CanvasView, Listener {
             if (element.shapeType === 'points') {
                 const points: number[] = element.points as number[];
                 const [cx, cy] = this.translateToCanvas(points);
-                skeleton.circle()
+                const circle = skeleton.circle()
                     .move(cx, cy)
                     .attr({
                         fill: element.color,
+                        id: `cvat_canvas_shape_${element.clientID}`,
                         r: consts.BASE_POINT_SIZE / this.geometry.scale,
                         'color-rendering': 'optimizeQuality',
                         'pointer-events': 'none',
@@ -2471,6 +2479,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                         'data-node-id': templateElements[i].getAttribute('data-node-id'),
                         'data-element-id': templateElements[i].getAttribute('data-element-id'),
                     });
+                this.svgShapes[element.clientID] = circle;
             }
         }
 
@@ -2498,7 +2507,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                                 'data-node-to': dataNodeTo,
                                 'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
                             });
-                            skeleton.node.prepend(line.node)
+                            skeleton.node.prepend(line.node);
                         }
                     }
                 }

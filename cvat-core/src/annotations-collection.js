@@ -49,6 +49,7 @@
                 groups: this.groups,
                 frameMeta: this.frameMeta,
                 history: this.history,
+                nextClientID: () => ++this.count,
                 groupColors: {},
             };
         }
