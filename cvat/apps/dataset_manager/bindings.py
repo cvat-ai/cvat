@@ -1369,11 +1369,30 @@ def convert_cvat_anno_to_dm(cvat_frame_anno, label_attrs, map_label, format_name
 
             # anno = datum_annotation.RleMask(rle=[int_points])
 
-            segmentation = list(int (v) for v in int_points[:-4])
-            h = int(int_points[-1] - int_points[-3])
-            w = int(int_points[-2] - int_points[-4])
+            # segmentation = list(int (v) for v in int_points[:-4])
+            # h = int(int_points[-1] - int_points[-3])
+            # w = int(int_points[-2] - int_points[-4])
 
-            rle = mask.merge(mask.frPyObjects([segmentation], h, w))
+            # segmentation = [int_points]
+            # h = cvat_frame_anno.height
+            # w = cvat_frame_anno.width
+
+            # rle = mask.merge(mask.frPyObjects([segmentation], h, w))
+            # anno = datum_annotation.RleMask(rle=rle)
+            # anno = mask.merge(mask.frPyObjects(segmentation, h, w))
+
+            # anno = mask.frPyObjects(segmentation, h, w)
+
+
+            xs = [p for p in int_points[0::2]]
+            ys = [p for p in int_points[1::2]]
+            x0 = min(xs)
+            x1 = max(xs)
+            y0 = min(ys)
+            y1 = max(ys)
+            x,y,w,h = [x0, y0, x1 - x0, y1 - y0]
+            rle = mask_utils.frPyObjects([int_points], y + h, x + w)
+
             anno = datum_annotation.RleMask(rle=rle)
 
             # time.sleep(10)
