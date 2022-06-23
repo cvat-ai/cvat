@@ -76,7 +76,7 @@ function DrawShapePopoverComponent(props: Props): JSX.Element {
                                 return label.type === ShapeType.SKELETON;
                             }
 
-                            return typeof label.type === 'undefined' || label.type === shapeType;
+                            return typeof label.type !== 'string' || label.type === shapeType;
                         })}
                         value={selectedLabelID}
                         onChange={onChangeLabel}

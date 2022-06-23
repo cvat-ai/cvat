@@ -169,6 +169,7 @@
             this.frame = data.frame;
             this.removed = false;
             this.lock = false;
+            this.readOnlyFields = data.readOnlyFields || [];
             this.color = color;
             this.source = data.source;
             this.updated = Date.now();
@@ -518,12 +519,13 @@
             this.points = data.points;
             this.rotation = data.rotation || 0;
             this.occluded = data.occluded;
+            this.outside = data.outside;
             this.zOrder = data.z_order;
         }
 
         // Method is used to export data to the server
         toJSON() {
-            return {
+            const result = {
                 type: this.shapeType,
                 clientID: this.clientID,
                 occluded: this.occluded,
@@ -544,6 +546,12 @@
                 group: this.group,
                 source: this.source,
             };
+
+            if (typeof this.outside !== 'undefined') {
+                result.outside = this.outside;
+            }
+
+            return result;
         }
 
         // Method is used to construct ObjectState objects
@@ -552,7 +560,7 @@
                 throw new ScriptingError('Got frame is not equal to the frame of the shape');
             }
 
-            return {
+            const result = {
                 objectType: ObjectType.SHAPE,
                 shapeType: this.shapeType,
                 clientID: this.clientID,
@@ -573,6 +581,12 @@
                 frame,
                 source: this.source,
             };
+
+            if (typeof this.outside !== 'undefined') {
+                result.outside = this.outside;
+            }
+
+            return result;
         }
 
         _savePoints(points, rotation, frame) {
@@ -668,6 +682,10 @@
             }
 
             const updated = data.updateFlags;
+            for (const readOnlyField of this.readOnlyFields) {
+                updated[readOnlyField] = false;
+            }
+
             const fittedPoints = this._validateStateBeforeSave(frame, data, updated);
             const { rotation } = data;
 
@@ -719,15 +737,1066 @@
         }
     }
 
-    class SkeletonShape extends Drawn {
+    class Track extends Drawn {
+        constructor(data, clientID, color, injection) {
+            super(data, clientID, color, injection);
+            this.shapes = data.shapes.reduce((shapeAccumulator, value) => {
+                shapeAccumulator[value.frame] = {
+                    serverID: value.id,
+                    occluded: value.occluded,
+                    zOrder: value.z_order,
+                    points: value.points,
+                    outside: value.outside,
+                    rotation: value.rotation || 0,
+                    attributes: value.attributes.reduce((attributeAccumulator, attr) => {
+                        attributeAccumulator[attr.spec_id] = attr.value;
+                        return attributeAccumulator;
+                    }, {}),
+                };
+
+                return shapeAccumulator;
+            }, {});
+        }
+
+        // Method is used to export data to the server
+        toJSON() {
+            const labelAttributes = this.label.attributes.reduce((accumulator, attribute) => {
+                accumulator[attribute.id] = attribute;
+                return accumulator;
+            }, {});
+
+            return {
+                clientID: this.clientID,
+                id: this.serverID,
+                frame: this.frame,
+                label_id: this.label.id,
+                group: this.group,
+                source: this.source,
+                attributes: Object.keys(this.attributes).reduce((attributeAccumulator, attrId) => {
+                    if (!labelAttributes[attrId].mutable) {
+                        attributeAccumulator.push({
+                            spec_id: attrId,
+                            value: this.attributes[attrId],
+                        });
+                    }
+
+                    return attributeAccumulator;
+                }, []),
+                shapes: Object.keys(this.shapes).reduce((shapesAccumulator, frame) => {
+                    shapesAccumulator.push({
+                        type: this.shapeType,
+                        occluded: this.shapes[frame].occluded,
+                        z_order: this.shapes[frame].zOrder,
+                        points: [...this.shapes[frame].points],
+                        rotation: this.shapes[frame].rotation,
+                        outside: this.shapes[frame].outside,
+                        attributes: Object.keys(this.shapes[frame].attributes).reduce(
+                            (attributeAccumulator, attrId) => {
+                                if (labelAttributes[attrId].mutable) {
+                                    attributeAccumulator.push({
+                                        spec_id: attrId,
+                                        value: this.shapes[frame].attributes[attrId],
+                                    });
+                                }
+
+                                return attributeAccumulator;
+                            },
+                            [],
+                        ),
+                        id: this.shapes[frame].serverID,
+                        frame: +frame,
+                    });
+
+                    return shapesAccumulator;
+                }, []),
+            };
+        }
+
+        // Method is used to construct ObjectState objects
+        get(frame) {
+            const {
+                prev, next, first, last,
+            } = this.boundedKeyframes(frame);
+
+            return {
+                ...this.getPosition(frame, prev, next),
+                attributes: this.getAttributes(frame),
+                descriptions: [...this.descriptions],
+                group: this.groupObject,
+                objectType: ObjectType.TRACK,
+                shapeType: this.shapeType,
+                clientID: this.clientID,
+                serverID: this.serverID,
+                lock: this.lock,
+                color: this.color,
+                hidden: this.hidden,
+                updated: this.updated,
+                label: this.label,
+                pinned: this.pinned,
+                keyframes: {
+                    prev,
+                    next,
+                    first,
+                    last,
+                },
+                frame,
+                source: this.source,
+            };
+        }
+
+        boundedKeyframes(targetFrame) {
+            const frames = Object.keys(this.shapes).map((frame) => +frame);
+            let lDiff = Number.MAX_SAFE_INTEGER;
+            let rDiff = Number.MAX_SAFE_INTEGER;
+            let first = Number.MAX_SAFE_INTEGER;
+            let last = Number.MIN_SAFE_INTEGER;
+
+            for (const frame of frames) {
+                if (frame in this.frameMeta.deleted_frames) {
+                    continue;
+                }
+
+                if (frame < first) {
+                    first = frame;
+                }
+                if (frame > last) {
+                    last = frame;
+                }
+
+                const diff = Math.abs(targetFrame - frame);
+
+                if (frame < targetFrame && diff < lDiff) {
+                    lDiff = diff;
+                } else if (frame > targetFrame && diff < rDiff) {
+                    rDiff = diff;
+                }
+            }
+
+            const prev = lDiff === Number.MAX_SAFE_INTEGER ? null : targetFrame - lDiff;
+            const next = rDiff === Number.MAX_SAFE_INTEGER ? null : targetFrame + rDiff;
+
+            return {
+                prev,
+                next,
+                first,
+                last,
+            };
+        }
+
+        getAttributes(targetFrame) {
+            const result = {};
+
+            // First of all copy all unmutable attributes
+            for (const attrID in this.attributes) {
+                if (Object.prototype.hasOwnProperty.call(this.attributes, attrID)) {
+                    result[attrID] = this.attributes[attrID];
+                }
+            }
+
+            // Secondly get latest mutable attributes up to target frame
+            const frames = Object.keys(this.shapes).sort((a, b) => +a - +b);
+            for (const frame of frames) {
+                if (frame <= targetFrame) {
+                    const { attributes } = this.shapes[frame];
+
+                    for (const attrID in attributes) {
+                        if (Object.prototype.hasOwnProperty.call(attributes, attrID)) {
+                            result[attrID] = attributes[attrID];
+                        }
+                    }
+                }
+            }
+
+            return result;
+        }
+
+        _saveLabel(label, frame) {
+            const undoLabel = this.label;
+            const redoLabel = label;
+            const undoAttributes = {
+                unmutable: { ...this.attributes },
+                mutable: Object.keys(this.shapes).map((key) => ({
+                    frame: +key,
+                    attributes: { ...this.shapes[key].attributes },
+                })),
+            };
+
+            this.label = label;
+            this.attributes = {};
+            for (const shape of Object.values(this.shapes)) {
+                shape.attributes = {};
+            }
+            this.appendDefaultAttributes(label);
+
+            const redoAttributes = {
+                unmutable: { ...this.attributes },
+                mutable: Object.keys(this.shapes).map((key) => ({
+                    frame: +key,
+                    attributes: { ...this.shapes[key].attributes },
+                })),
+            };
+
+            this.history.do(
+                HistoryActions.CHANGED_LABEL,
+                () => {
+                    this.label = undoLabel;
+                    this.attributes = undoAttributes.unmutable;
+                    for (const mutable of undoAttributes.mutable) {
+                        this.shapes[mutable.frame].attributes = mutable.attributes;
+                    }
+                    this.updated = Date.now();
+                },
+                () => {
+                    this.label = redoLabel;
+                    this.attributes = redoAttributes.unmutable;
+                    for (const mutable of redoAttributes.mutable) {
+                        this.shapes[mutable.frame].attributes = mutable.attributes;
+                    }
+                    this.updated = Date.now();
+                },
+                [this.clientID],
+                frame,
+            );
+        }
+
+        _saveAttributes(attributes, frame) {
+            const current = this.get(frame);
+            const labelAttributes = this.label.attributes.reduce((accumulator, value) => {
+                accumulator[value.id] = value;
+                return accumulator;
+            }, {});
+
+            const wasKeyframe = frame in this.shapes;
+            const undoAttributes = this.attributes;
+            const undoShape = wasKeyframe ? this.shapes[frame] : undefined;
+
+            let mutableAttributesUpdated = false;
+            const redoAttributes = { ...this.attributes };
+            for (const attrID of Object.keys(attributes)) {
+                if (!labelAttributes[attrID].mutable) {
+                    redoAttributes[attrID] = attributes[attrID];
+                } else if (attributes[attrID] !== current.attributes[attrID]) {
+                    mutableAttributesUpdated = mutableAttributesUpdated ||
+                        // not keyframe yet
+                        !(frame in this.shapes) ||
+                        // keyframe, but without this attrID
+                        !(attrID in this.shapes[frame].attributes) ||
+                        // keyframe with attrID, but with another value
+                        this.shapes[frame].attributes[attrID] !== attributes[attrID];
+                }
+            }
+            let redoShape;
+            if (mutableAttributesUpdated) {
+                if (wasKeyframe) {
+                    redoShape = {
+                        ...this.shapes[frame],
+                        attributes: {
+                            ...this.shapes[frame].attributes,
+                        },
+                    };
+                } else {
+                    redoShape = {
+                        frame,
+                        zOrder: current.zOrder,
+                        points: current.points,
+                        outside: current.outside,
+                        occluded: current.occluded,
+                        attributes: {},
+                    };
+                }
+            }
+
+            for (const attrID of Object.keys(attributes)) {
+                if (labelAttributes[attrID].mutable && attributes[attrID] !== current.attributes[attrID]) {
+                    redoShape.attributes[attrID] = attributes[attrID];
+                }
+            }
+
+            this.attributes = redoAttributes;
+            if (redoShape) {
+                this.shapes[frame] = redoShape;
+            }
+
+            this.history.do(
+                HistoryActions.CHANGED_ATTRIBUTES,
+                () => {
+                    this.attributes = undoAttributes;
+                    if (undoShape) {
+                        this.shapes[frame] = undoShape;
+                    } else if (redoShape) {
+                        delete this.shapes[frame];
+                    }
+                    this.updated = Date.now();
+                },
+                () => {
+                    this.attributes = redoAttributes;
+                    if (redoShape) {
+                        this.shapes[frame] = redoShape;
+                    }
+                    this.updated = Date.now();
+                },
+                [this.clientID],
+                frame,
+            );
+        }
+
+        _appendShapeActionToHistory(actionType, frame, undoShape, redoShape, undoSource, redoSource) {
+            this.history.do(
+                actionType,
+                () => {
+                    if (!undoShape) {
+                        delete this.shapes[frame];
+                    } else {
+                        this.shapes[frame] = undoShape;
+                    }
+                    this.source = undoSource;
+                    this.updated = Date.now();
+                },
+                () => {
+                    if (!redoShape) {
+                        delete this.shapes[frame];
+                    } else {
+                        this.shapes[frame] = redoShape;
+                    }
+                    this.source = redoSource;
+                    this.updated = Date.now();
+                },
+                [this.clientID],
+                frame,
+            );
+        }
+
+        _savePoints(points, rotation, frame) {
+            const current = this.get(frame);
+            const wasKeyframe = frame in this.shapes;
+            const undoSource = this.source;
+            const redoSource = Source.MANUAL;
+            const undoShape = wasKeyframe ? this.shapes[frame] : undefined;
+            const redoShape = wasKeyframe ? { ...this.shapes[frame], points, rotation } : {
+                frame,
+                points,
+                rotation,
+                zOrder: current.zOrder,
+                outside: current.outside,
+                occluded: current.occluded,
+                attributes: {},
+            };
+
+            this.shapes[frame] = redoShape;
+            this.source = Source.MANUAL;
+            this._appendShapeActionToHistory(
+                HistoryActions.CHANGED_POINTS,
+                frame,
+                undoShape,
+                redoShape,
+                undoSource,
+                redoSource,
+            );
+        }
+
+        _saveOutside(frame, outside) {
+            const current = this.get(frame);
+            const wasKeyframe = frame in this.shapes;
+            const undoSource = this.source;
+            const redoSource = Source.MANUAL;
+            const undoShape = wasKeyframe ? this.shapes[frame] : undefined;
+            const redoShape = wasKeyframe ?
+                { ...this.shapes[frame], outside } :
+                {
+                    frame,
+                    outside,
+                    rotation: current.rotation,
+                    zOrder: current.zOrder,
+                    points: current.points,
+                    occluded: current.occluded,
+                    attributes: {},
+                };
+
+            this.shapes[frame] = redoShape;
+            this.source = Source.MANUAL;
+            this._appendShapeActionToHistory(
+                HistoryActions.CHANGED_OUTSIDE,
+                frame,
+                undoShape,
+                redoShape,
+                undoSource,
+                redoSource,
+            );
+        }
+
+        _saveOccluded(occluded, frame) {
+            const current = this.get(frame);
+            const wasKeyframe = frame in this.shapes;
+            const undoSource = this.source;
+            const redoSource = Source.MANUAL;
+            const undoShape = wasKeyframe ? this.shapes[frame] : undefined;
+            const redoShape = wasKeyframe ?
+                { ...this.shapes[frame], occluded } :
+                {
+                    frame,
+                    occluded,
+                    rotation: current.rotation,
+                    zOrder: current.zOrder,
+                    points: current.points,
+                    outside: current.outside,
+                    attributes: {},
+                };
+
+            this.shapes[frame] = redoShape;
+            this.source = Source.MANUAL;
+            this._appendShapeActionToHistory(
+                HistoryActions.CHANGED_OCCLUDED,
+                frame,
+                undoShape,
+                redoShape,
+                undoSource,
+                redoSource,
+            );
+        }
+
+        _saveZOrder(zOrder, frame) {
+            const current = this.get(frame);
+            const wasKeyframe = frame in this.shapes;
+            const undoSource = this.source;
+            const redoSource = Source.MANUAL;
+            const undoShape = wasKeyframe ? this.shapes[frame] : undefined;
+            const redoShape = wasKeyframe ?
+                { ...this.shapes[frame], zOrder } :
+                {
+                    frame,
+                    zOrder,
+                    rotation: current.rotation,
+                    occluded: current.occluded,
+                    points: current.points,
+                    outside: current.outside,
+                    attributes: {},
+                };
+
+            this.shapes[frame] = redoShape;
+            this.source = Source.MANUAL;
+            this._appendShapeActionToHistory(
+                HistoryActions.CHANGED_ZORDER,
+                frame,
+                undoShape,
+                redoShape,
+                undoSource,
+                redoSource,
+            );
+        }
+
+        _saveKeyframe(frame, keyframe) {
+            const current = this.get(frame);
+            const wasKeyframe = frame in this.shapes;
+
+            if ((keyframe && wasKeyframe) || (!keyframe && !wasKeyframe)) {
+                return;
+            }
+
+            const undoSource = this.source;
+            const redoSource = Source.MANUAL;
+            const undoShape = wasKeyframe ? this.shapes[frame] : undefined;
+            const redoShape = keyframe ?
+                {
+                    frame,
+                    rotation: current.rotation,
+                    zOrder: current.zOrder,
+                    points: current.points,
+                    outside: current.outside,
+                    occluded: current.occluded,
+                    attributes: {},
+                    source: current.source,
+                } :
+                undefined;
+
+            this.source = Source.MANUAL;
+            if (redoShape) {
+                this.shapes[frame] = redoShape;
+            } else {
+                delete this.shapes[frame];
+            }
+
+            this._appendShapeActionToHistory(
+                HistoryActions.CHANGED_KEYFRAME,
+                frame,
+                undoShape,
+                redoShape,
+                undoSource,
+                redoSource,
+            );
+        }
+
+        save(frame, data) {
+            if (this.lock && data.lock) {
+                return objectStateFactory.call(this, frame, this.get(frame));
+            }
+
+            const updated = data.updateFlags;
+            for (const readOnlyField of this.readOnlyFields) {
+                updated[readOnlyField] = false;
+            }
+
+            const fittedPoints = this._validateStateBeforeSave(frame, data, updated);
+            const { rotation } = data;
+
+            if (updated.label) {
+                this._saveLabel(data.label, frame);
+            }
+
+            if (updated.lock) {
+                this._saveLock(data.lock, frame);
+            }
+
+            if (updated.pinned) {
+                this._savePinned(data.pinned, frame);
+            }
+
+            if (updated.color) {
+                this._saveColor(data.color, frame);
+            }
+
+            if (updated.hidden) {
+                this._saveHidden(data.hidden, frame);
+            }
+
+            if (updated.points && fittedPoints.length) {
+                this._savePoints(fittedPoints, rotation, frame);
+            }
+
+            if (updated.outside) {
+                this._saveOutside(frame, data.outside);
+            }
+
+            if (updated.occluded) {
+                this._saveOccluded(data.occluded, frame);
+            }
+
+            if (updated.zOrder) {
+                this._saveZOrder(data.zOrder, frame);
+            }
+
+            if (updated.attributes) {
+                this._saveAttributes(data.attributes, frame);
+            }
+
+            if (updated.descriptions) {
+                this._saveDescriptions(data.descriptions);
+            }
+
+            if (updated.keyframe) {
+                this._saveKeyframe(frame, data.keyframe);
+            }
+
+            this.updateTimestamp(updated);
+            updated.reset();
+
+            return objectStateFactory.call(this, frame, this.get(frame));
+        }
+
+        getPosition(targetFrame, leftKeyframe, rightFrame) {
+            const leftFrame = targetFrame in this.shapes ? targetFrame : leftKeyframe;
+            const rightPosition = Number.isInteger(rightFrame) ? this.shapes[rightFrame] : null;
+            const leftPosition = Number.isInteger(leftFrame) ? this.shapes[leftFrame] : null;
+
+            if (leftPosition && rightPosition) {
+                return {
+                    ...this.interpolatePosition(
+                        leftPosition,
+                        rightPosition,
+                        (targetFrame - leftFrame) / (rightFrame - leftFrame),
+                    ),
+                    keyframe: targetFrame in this.shapes,
+                };
+            }
+
+            if (leftPosition) {
+                return {
+                    points: [...leftPosition.points],
+                    rotation: leftPosition.rotation,
+                    occluded: leftPosition.occluded,
+                    outside: leftPosition.outside,
+                    zOrder: leftPosition.zOrder,
+                    keyframe: targetFrame in this.shapes,
+                };
+            }
+
+            if (rightPosition) {
+                return {
+                    points: [...rightPosition.points],
+                    rotation: rightPosition.rotation,
+                    occluded: rightPosition.occluded,
+                    zOrder: rightPosition.zOrder,
+                    keyframe: targetFrame in this.shapes,
+                    outside: true,
+                };
+            }
+
+            throw new DataError(
+                'No one left position or right position was found. ' +
+                    `Interpolation impossible. Client ID: ${this.clientID}`,
+            );
+        }
+    }
+
+    class Tag extends Annotation {
+        // Method is used to export data to the server
+        toJSON() {
+            return {
+                clientID: this.clientID,
+                id: this.serverID,
+                frame: this.frame,
+                label_id: this.label.id,
+                group: this.group,
+                source: this.source,
+                attributes: Object.keys(this.attributes).reduce((attributeAccumulator, attrId) => {
+                    attributeAccumulator.push({
+                        spec_id: attrId,
+                        value: this.attributes[attrId],
+                    });
+
+                    return attributeAccumulator;
+                }, []),
+            };
+        }
+
+        // Method is used to construct ObjectState objects
+        get(frame) {
+            if (frame !== this.frame) {
+                throw new ScriptingError('Got frame is not equal to the frame of the shape');
+            }
+
+            return {
+                objectType: ObjectType.TAG,
+                clientID: this.clientID,
+                serverID: this.serverID,
+                lock: this.lock,
+                attributes: { ...this.attributes },
+                label: this.label,
+                group: this.groupObject,
+                color: this.color,
+                updated: this.updated,
+                frame,
+                source: this.source,
+            };
+        }
+
+        save(frame, data) {
+            if (frame !== this.frame) {
+                throw new ScriptingError('Got frame is not equal to the frame of the tag');
+            }
+
+            if (this.lock && data.lock) {
+                return objectStateFactory.call(this, frame, this.get(frame));
+            }
+
+            const updated = data.updateFlags;
+            for (const readOnlyField of this.readOnlyFields) {
+                updated[readOnlyField] = false;
+            }
+
+            this._validateStateBeforeSave(frame, data, updated);
+
+            // Now when all fields are validated, we can apply them
+            if (updated.label) {
+                this._saveLabel(data.label, frame);
+            }
+
+            if (updated.attributes) {
+                this._saveAttributes(data.attributes, frame);
+            }
+
+            if (updated.lock) {
+                this._saveLock(data.lock, frame);
+            }
+
+            if (updated.color) {
+                this._saveColor(data.color, frame);
+            }
+
+            this.updateTimestamp(updated);
+            updated.reset();
+
+            return objectStateFactory.call(this, frame, this.get(frame));
+        }
+    }
+
+    class RectangleShape extends Shape {
+        constructor(data, clientID, color, injection) {
+            super(data, clientID, color, injection);
+            this.shapeType = ObjectShape.RECTANGLE;
+            this.pinned = false;
+            checkNumberOfPoints(this.shapeType, this.points);
+        }
+
+        static distance(points, x, y, angle) {
+            const [xtl, ytl, xbr, ybr] = points;
+            const cx = xtl + (xbr - xtl) / 2;
+            const cy = ytl + (ybr - ytl) / 2;
+            const [rotX, rotY] = rotatePoint(x, y, -angle, cx, cy);
+
+            if (!(rotX >= xtl && rotX <= xbr && rotY >= ytl && rotY <= ybr)) {
+                // Cursor is outside of a box
+                return null;
+            }
+
+            // The shortest distance from point to an edge
+            return Math.min.apply(null, [rotX - xtl, rotY - ytl, xbr - rotX, ybr - rotY]);
+        }
+    }
+
+    class EllipseShape extends Shape {
+        constructor(data, clientID, color, injection) {
+            super(data, clientID, color, injection);
+            this.shapeType = ObjectShape.ELLIPSE;
+            this.pinned = false;
+            checkNumberOfPoints(this.shapeType, this.points);
+        }
+
+        static distance(points, x, y, angle) {
+            const [cx, cy, rightX, topY] = points;
+            const [rx, ry] = [rightX - cx, cy - topY];
+            const [rotX, rotY] = rotatePoint(x, y, -angle, cx, cy);
+            // https://math.stackexchange.com/questions/76457/check-if-a-point-is-within-an-ellipse
+            const pointWithinEllipse = (_x, _y) => (
+                ((_x - cx) ** 2) / rx ** 2) + (((_y - cy) ** 2) / ry ** 2
+            ) <= 1;
+
+            if (!pointWithinEllipse(rotX, rotY)) {
+                // Cursor is outside of an ellipse
+                return null;
+            }
+
+            if (Math.abs(x - cx) < Number.EPSILON && Math.abs(y - cy) < Number.EPSILON) {
+                // cursor is near to the center, just return minimum of height, width
+                return Math.min(rx, ry);
+            }
+
+            // ellipse equation is x^2/rx^2 + y^2/ry^2 = 1
+            // from this equation:
+            // x^2 = ((rx * ry)^2 - (y * rx)^2) / ry^2
+            // y^2 = ((rx * ry)^2 - (x * ry)^2) / rx^2
+
+            // we have one point inside the ellipse, let's build two lines (horizontal and vertical) through the point
+            // and find their interception with ellipse
+            const x2Equation = (_y) => (((rx * ry) ** 2) - ((_y * rx) ** 2)) / (ry ** 2);
+            const y2Equation = (_x) => (((rx * ry) ** 2) - ((_x * ry) ** 2)) / (rx ** 2);
+
+            // shift x,y to the ellipse coordinate system to compute equation correctly
+            // y axis is inverted
+            const [shiftedX, shiftedY] = [x - cx, cy - y];
+            const [x1, x2] = [Math.sqrt(x2Equation(shiftedY)), -Math.sqrt(x2Equation(shiftedY))];
+            const [y1, y2] = [Math.sqrt(y2Equation(shiftedX)), -Math.sqrt(y2Equation(shiftedX))];
+
+            // found two points on ellipse edge
+            const ellipseP1X = shiftedX >= 0 ? x1 : x2; // ellipseP1Y is shiftedY
+            const ellipseP2Y = shiftedY >= 0 ? y1 : y2; // ellipseP1X is shiftedX
+
+            // found diffs between two points on edges and target point
+            const diff1X = ellipseP1X - shiftedX;
+            const diff2Y = ellipseP2Y - shiftedY;
+
+            // return minimum, get absolute value because we need distance, not diff
+            return Math.min(Math.abs(diff1X), Math.abs(diff2Y));
+        }
+    }
+
+    class PolyShape extends Shape {
+        constructor(data, clientID, color, injection) {
+            super(data, clientID, color, injection);
+            this.rotation = 0; // is not supported
+        }
+    }
+
+    class PolygonShape extends PolyShape {
+        constructor(data, clientID, color, injection) {
+            super(data, clientID, color, injection);
+            this.shapeType = ObjectShape.POLYGON;
+            checkNumberOfPoints(this.shapeType, this.points);
+        }
+
+        static distance(points, x, y) {
+            function position(x1, y1, x2, y2) {
+                return (x2 - x1) * (y - y1) - (x - x1) * (y2 - y1);
+            }
+
+            let wn = 0;
+            const distances = [];
+
+            for (let i = 0, j = points.length - 2; i < points.length - 1; j = i, i += 2) {
+                // Current point
+                const x1 = points[j];
+                const y1 = points[j + 1];
+
+                // Next point
+                const x2 = points[i];
+                const y2 = points[i + 1];
+
+                // Check if a point is inside a polygon
+                // with a winding numbers algorithm
+                // https://en.wikipedia.org/wiki/Point_in_polygon#Winding_number_algorithm
+                if (y1 <= y) {
+                    if (y2 > y) {
+                        if (position(x1, y1, x2, y2) > 0) {
+                            wn++;
+                        }
+                    }
+                } else if (y2 <= y) {
+                    if (position(x1, y1, x2, y2) < 0) {
+                        wn--;
+                    }
+                }
+
+                // Find the shortest distance from point to an edge
+                // Get an equation of a line in general
+                const aCoef = y1 - y2;
+                const bCoef = x2 - x1;
+
+                // Vector (aCoef, bCoef) is a perpendicular to line
+                // Now find the point where two lines
+                // (edge and its perpendicular through the point (x,y)) are cross
+                const xCross = x - aCoef;
+                const yCross = y - bCoef;
+
+                if ((xCross - x1) * (x2 - xCross) >= 0 && (yCross - y1) * (y2 - yCross) >= 0) {
+                    // Cross point is on segment between p1(x1,y1) and p2(x2,y2)
+                    distances.push(Math.sqrt((x - xCross) ** 2 + (y - yCross) ** 2));
+                } else {
+                    distances.push(
+                        Math.min(
+                            Math.sqrt((x1 - x) ** 2 + (y1 - y) ** 2),
+                            Math.sqrt((x2 - x) ** 2 + (y2 - y) ** 2),
+                        ),
+                    );
+                }
+            }
+
+            if (wn !== 0) {
+                return Math.min.apply(null, distances);
+            }
+
+            return null;
+        }
+    }
+
+    class PolylineShape extends PolyShape {
+        constructor(data, clientID, color, injection) {
+            super(data, clientID, color, injection);
+            this.shapeType = ObjectShape.POLYLINE;
+            checkNumberOfPoints(this.shapeType, this.points);
+        }
+
+        static distance(points, x, y) {
+            const distances = [];
+            for (let i = 0; i < points.length - 2; i += 2) {
+                // Current point
+                const x1 = points[i];
+                const y1 = points[i + 1];
+
+                // Next point
+                const x2 = points[i + 2];
+                const y2 = points[i + 3];
+
+                // Find the shortest distance from point to an edge
+                if ((x - x1) * (x2 - x) >= 0 && (y - y1) * (y2 - y) >= 0) {
+                    // Find the length of a perpendicular
+                    // https://en.wikipedia.org/wiki/Distance_from_a_point_to_a_line
+                    distances.push(
+                        Math.abs((y2 - y1) * x - (x2 - x1) * y + x2 * y1 - y2 * x1) /
+                            Math.sqrt((y2 - y1) ** 2 + (x2 - x1) ** 2),
+                    );
+                } else {
+                    // The link below works for lines (which have infinite length)
+                    // There is a case when perpendicular doesn't cross the edge
+                    // In this case we don't use the computed distance
+                    // Instead we use just distance to the nearest point
+                    distances.push(
+                        Math.min(
+                            Math.sqrt((x1 - x) ** 2 + (y1 - y) ** 2),
+                            Math.sqrt((x2 - x) ** 2 + (y2 - y) ** 2),
+                        ),
+                    );
+                }
+            }
+
+            return Math.min.apply(null, distances);
+        }
+    }
+
+    class PointsShape extends PolyShape {
+        constructor(data, clientID, color, injection) {
+            super(data, clientID, color, injection);
+            this.shapeType = ObjectShape.POINTS;
+            checkNumberOfPoints(this.shapeType, this.points);
+        }
+
+        static distance(points, x, y) {
+            const distances = [];
+            for (let i = 0; i < points.length; i += 2) {
+                const x1 = points[i];
+                const y1 = points[i + 1];
+
+                distances.push(Math.sqrt((x1 - x) ** 2 + (y1 - y) ** 2));
+            }
+
+            return Math.min.apply(null, distances);
+        }
+    }
+
+    class CuboidShape extends Shape {
+        constructor(data, clientID, color, injection) {
+            super(data, clientID, color, injection);
+            this.rotation = 0;
+            this.shapeType = ObjectShape.CUBOID;
+            this.pinned = false;
+            checkNumberOfPoints(this.shapeType, this.points);
+        }
+
+        static makeHull(geoPoints) {
+            // Returns the convex hull, assuming that each points[i] <= points[i + 1].
+            function makeHullPresorted(points) {
+                if (points.length <= 1) return points.slice();
+
+                // Andrew's monotone chain algorithm. Positive y coordinates correspond to 'up'
+                // as per the mathematical convention, instead of 'down' as per the computer
+                // graphics convention. This doesn't affect the correctness of the result.
+
+                const upperHull = [];
+                for (let i = 0; i < points.length; i += 1) {
+                    const p = points[`${i}`];
+                    while (upperHull.length >= 2) {
+                        const q = upperHull[upperHull.length - 1];
+                        const r = upperHull[upperHull.length - 2];
+                        if ((q.x - r.x) * (p.y - r.y) >= (q.y - r.y) * (p.x - r.x)) upperHull.pop();
+                        else break;
+                    }
+                    upperHull.push(p);
+                }
+                upperHull.pop();
+
+                const lowerHull = [];
+                for (let i = points.length - 1; i >= 0; i -= 1) {
+                    const p = points[`${i}`];
+                    while (lowerHull.length >= 2) {
+                        const q = lowerHull[lowerHull.length - 1];
+                        const r = lowerHull[lowerHull.length - 2];
+                        if ((q.x - r.x) * (p.y - r.y) >= (q.y - r.y) * (p.x - r.x)) lowerHull.pop();
+                        else break;
+                    }
+                    lowerHull.push(p);
+                }
+                lowerHull.pop();
+
+                if (
+                    upperHull.length === 1 &&
+                    lowerHull.length === 1 &&
+                    upperHull[0].x === lowerHull[0].x &&
+                    upperHull[0].y === lowerHull[0].y
+                ) return upperHull;
+                return upperHull.concat(lowerHull);
+            }
+
+            function POINT_COMPARATOR(a, b) {
+                if (a.x < b.x) return -1;
+                if (a.x > b.x) return +1;
+                if (a.y < b.y) return -1;
+                if (a.y > b.y) return +1;
+                return 0;
+            }
+
+            const newPoints = geoPoints.slice();
+            newPoints.sort(POINT_COMPARATOR);
+            return makeHullPresorted(newPoints);
+        }
+
+        static contain(shapePoints, x, y) {
+            function isLeft(P0, P1, P2) {
+                return (P1.x - P0.x) * (P2.y - P0.y) - (P2.x - P0.x) * (P1.y - P0.y);
+            }
+            const points = CuboidShape.makeHull(shapePoints);
+            let wn = 0;
+            for (let i = 0; i < points.length; i += 1) {
+                const p1 = points[`${i}`];
+                const p2 = points[i + 1] || points[0];
+
+                if (p1.y <= y) {
+                    if (p2.y > y) {
+                        if (isLeft(p1, p2, { x, y }) > 0) {
+                            wn += 1;
+                        }
+                    }
+                } else if (p2.y < y) {
+                    if (isLeft(p1, p2, { x, y }) < 0) {
+                        wn -= 1;
+                    }
+                }
+            }
+
+            return wn !== 0;
+        }
+
+        static distance(actualPoints, x, y) {
+            const points = [];
+
+            for (let i = 0; i < 16; i += 2) {
+                points.push({ x: actualPoints[i], y: actualPoints[i + 1] });
+            }
+
+            if (!CuboidShape.contain(points, x, y)) return null;
+
+            let minDistance = Number.MAX_SAFE_INTEGER;
+            for (let i = 0; i < points.length; i += 1) {
+                const p1 = points[`${i}`];
+                const p2 = points[i + 1] || points[0];
+
+                // perpendicular from point to straight length
+                const distance = Math.abs((p2.y - p1.y) * x - (p2.x - p1.x) * y + p2.x * p1.y - p2.y * p1.x) /
+                    Math.sqrt((p2.y - p1.y) ** 2 + (p2.x - p1.x) ** 2);
+
+                // check if perpendicular belongs to the straight segment
+                const a = (p1.x - x) ** 2 + (p1.y - y) ** 2;
+                const b = (p2.x - p1.x) ** 2 + (p2.y - p1.y) ** 2;
+                const c = (p2.x - x) ** 2 + (p2.y - y) ** 2;
+                if (distance < minDistance && a + b - c >= 0 && c + b - a >= 0) {
+                    minDistance = distance;
+                }
+            }
+            return minDistance;
+        }
+    }
+
+    class SkeletonShape extends Shape {
         constructor(data, clientID, color, injection) {
             super(data, clientID, color, injection);
             this.shapeType = ObjectShape.SKELETON;
-            this.pinned = false;
+            this.pinned = true;
             this.rotation = data.rotation || 0;
-            this.occluded = data.occluded;
-            this.zOrder = data.z_order;
-            this.elements = data.elements.map((element) => shapeFactory(element, injection.nextClientID(), injection));
+            this.occluded = false;
+            this.points = undefined;
+            this.readOnlyFields = ['points', 'label', 'occluded', 'outside', 'pinned'];
+
+            /* eslint-disable-next-line no-use-before-define */
+            this.elements = data.elements.map((element) => shapeFactory({
+                ...element,
+                group: this.group,
+                z_order: this.zOrder,
+                source: this.source,
+                rotation: 0,
+                readOnlyFields: ['group', 'zOrder', 'source', 'rotation'],
+            }, injection.nextClientID(), injection));
+        }
+
+        static distance(points, x, y, angle) {
+            const [xtl, ytl, xbr, ybr] = points;
+            const cx = xtl + (xbr - xtl) / 2;
+            const cy = ytl + (ybr - ytl) / 2;
+            const [rotX, rotY] = rotatePoint(x, y, -angle, cx, cy);
+
+            if (!(rotX >= xtl && rotX <= xbr && rotY >= ytl && rotY <= ybr)) {
+                // Cursor is outside of a box
+                return null;
+            }
+
+            // The shortest distance from point to an edge
+            return Math.min.apply(null, [rotX - xtl, rotY - ytl, xbr - rotX, ybr - rotY]);
         }
 
         // Method is used to export data to the server
@@ -737,7 +1806,7 @@
                 clientID: this.clientID,
                 occluded: this.occluded,
                 z_order: this.zOrder,
-                points: undefined,
+                points: this.points,
                 rotation: this.rotation,
                 attributes: Object.keys(this.attributes).reduce((attributeAccumulator, attrId) => {
                     attributeAccumulator.push({
@@ -768,6 +1837,7 @@
                 clientID: this.clientID,
                 serverID: this.serverID,
                 occluded: this.occluded,
+                points: this.points,
                 lock: this.lock,
                 zOrder: this.zOrder,
                 rotation: this.rotation,
@@ -785,99 +1855,492 @@
             };
         }
 
+        save(frame, data) {
+            const result = Shape.prototype.save.call(this, frame, data);
 
+            data.elements.forEach((element, idx) => {
+                const annotationContext = this.elements[idx];
+                element.save.implementation.call(annotationContext, frame, element);
+            });
 
-        // _savePoints(points, rotation, frame) {
-        //     const undoPoints = this.points;
-        //     const undoRotation = this.rotation;
-        //     const redoPoints = points;
-        //     const redoRotation = rotation;
-        //     const undoSource = this.source;
-        //     const redoSource = Source.MANUAL;
-
-        //     this.history.do(
-        //         HistoryActions.CHANGED_POINTS,
-        //         () => {
-        //             this.points = undoPoints;
-        //             this.source = undoSource;
-        //             this.rotation = undoRotation;
-        //             this.updated = Date.now();
-        //         },
-        //         () => {
-        //             this.points = redoPoints;
-        //             this.source = redoSource;
-        //             this.rotation = redoRotation;
-        //             this.updated = Date.now();
-        //         },
-        //         [this.clientID],
-        //         frame,
-        //     );
-
-        //     this.source = Source.MANUAL;
-        //     this.points = points;
-        //     this.rotation = rotation;
-        // }
-
-        // _saveOccluded(occluded, frame) {
-        //     const undoOccluded = this.occluded;
-        //     const redoOccluded = occluded;
-        //     const undoSource = this.source;
-        //     const redoSource = Source.MANUAL;
-
-        //     this.history.do(
-        //         HistoryActions.CHANGED_OCCLUDED,
-        //         () => {
-        //             this.occluded = undoOccluded;
-        //             this.source = undoSource;
-        //             this.updated = Date.now();
-        //         },
-        //         () => {
-        //             this.occluded = redoOccluded;
-        //             this.source = redoSource;
-        //             this.updated = Date.now();
-        //         },
-        //         [this.clientID],
-        //         frame,
-        //     );
-
-        //     this.source = Source.MANUAL;
-        //     this.occluded = occluded;
-        // }
-
-        // _saveZOrder(zOrder, frame) {
-        //     const undoZOrder = this.zOrder;
-        //     const redoZOrder = zOrder;
-        //     const undoSource = this.source;
-        //     const redoSource = Source.MANUAL;
-
-        //     this.history.do(
-        //         HistoryActions.CHANGED_ZORDER,
-        //         () => {
-        //             this.zOrder = undoZOrder;
-        //             this.source = undoSource;
-        //             this.updated = Date.now();
-        //         },
-        //         () => {
-        //             this.zOrder = redoZOrder;
-        //             this.source = redoSource;
-        //             this.updated = Date.now();
-        //         },
-        //         [this.clientID],
-        //         frame,
-        //     );
-
-        //     this.source = Source.MANUAL;
-        //     this.zOrder = zOrder;
-        // }
-
-        // save(frame, data) {
-        //     console.log('test');
-        // }
+            return result;
+        }
     }
 
-    class Track extends Drawn {
+    class RectangleTrack extends Track {
         constructor(data, clientID, color, injection) {
             super(data, clientID, color, injection);
+            this.shapeType = ObjectShape.RECTANGLE;
+            this.pinned = false;
+            for (const shape of Object.values(this.shapes)) {
+                checkNumberOfPoints(this.shapeType, shape.points);
+            }
+        }
+
+        interpolatePosition(leftPosition, rightPosition, offset) {
+            const positionOffset = leftPosition.points.map((point, index) => rightPosition.points[index] - point);
+            return {
+                points: leftPosition.points.map((point, index) => point + positionOffset[index] * offset),
+                rotation:
+                    (leftPosition.rotation + findAngleDiff(
+                        rightPosition.rotation, leftPosition.rotation,
+                    ) * offset + 360) % 360,
+                occluded: leftPosition.occluded,
+                outside: leftPosition.outside,
+                zOrder: leftPosition.zOrder,
+            };
+        }
+    }
+
+    class EllipseTrack extends Track {
+        constructor(data, clientID, color, injection) {
+            super(data, clientID, color, injection);
+            this.shapeType = ObjectShape.ELLIPSE;
+            this.pinned = false;
+            for (const shape of Object.values(this.shapes)) {
+                checkNumberOfPoints(this.shapeType, shape.points);
+            }
+        }
+
+        interpolatePosition(leftPosition, rightPosition, offset) {
+            const positionOffset = leftPosition.points.map((point, index) => rightPosition.points[index] - point);
+
+            return {
+                points: leftPosition.points.map((point, index) => point + positionOffset[index] * offset),
+                rotation:
+                    (leftPosition.rotation + findAngleDiff(
+                        rightPosition.rotation, leftPosition.rotation,
+                    ) * offset + 360) % 360,
+                occluded: leftPosition.occluded,
+                outside: leftPosition.outside,
+                zOrder: leftPosition.zOrder,
+            };
+        }
+    }
+
+    class PolyTrack extends Track {
+        constructor(data, clientID, color, injection) {
+            super(data, clientID, color, injection);
+            for (const shape of Object.values(this.shapes)) {
+                shape.rotation = 0; // is not supported
+            }
+        }
+
+        interpolatePosition(leftPosition, rightPosition, offset) {
+            if (offset === 0) {
+                return {
+                    points: [...leftPosition.points],
+                    rotation: leftPosition.rotation,
+                    occluded: leftPosition.occluded,
+                    outside: leftPosition.outside,
+                    zOrder: leftPosition.zOrder,
+                };
+            }
+
+            function toArray(points) {
+                return points.reduce((acc, val) => {
+                    acc.push(val.x, val.y);
+                    return acc;
+                }, []);
+            }
+
+            function toPoints(array) {
+                return array.reduce((acc, _, index) => {
+                    if (index % 2) {
+                        acc.push({
+                            x: array[index - 1],
+                            y: array[index],
+                        });
+                    }
+
+                    return acc;
+                }, []);
+            }
+
+            function curveLength(points) {
+                return points.slice(1).reduce((acc, _, index) => {
+                    const dx = points[index + 1].x - points[index].x;
+                    const dy = points[index + 1].y - points[index].y;
+                    return acc + Math.sqrt(dx ** 2 + dy ** 2);
+                }, 0);
+            }
+
+            function curveToOffsetVec(points, length) {
+                const offsetVector = [0]; // with initial value
+                let accumulatedLength = 0;
+
+                points.slice(1).forEach((_, index) => {
+                    const dx = points[index + 1].x - points[index].x;
+                    const dy = points[index + 1].y - points[index].y;
+                    accumulatedLength += Math.sqrt(dx ** 2 + dy ** 2);
+                    offsetVector.push(accumulatedLength / length);
+                });
+
+                return offsetVector;
+            }
+
+            function findNearestPair(value, curve) {
+                let minimum = [0, Math.abs(value - curve[0])];
+                for (let i = 1; i < curve.length; i++) {
+                    const distance = Math.abs(value - curve[i]);
+                    if (distance < minimum[1]) {
+                        minimum = [i, distance];
+                    }
+                }
+
+                return minimum[0];
+            }
+
+            function matchLeftRight(leftCurve, rightCurve) {
+                const matching = {};
+                for (let i = 0; i < leftCurve.length; i++) {
+                    matching[i] = [findNearestPair(leftCurve[i], rightCurve)];
+                }
+
+                return matching;
+            }
+
+            function matchRightLeft(leftCurve, rightCurve, leftRightMatching) {
+                const matchedRightPoints = Object.values(leftRightMatching).flat();
+                const unmatchedRightPoints = rightCurve
+                    .map((_, index) => index)
+                    .filter((index) => !matchedRightPoints.includes(index));
+                const updatedMatching = { ...leftRightMatching };
+
+                for (const rightPoint of unmatchedRightPoints) {
+                    const leftPoint = findNearestPair(rightCurve[rightPoint], leftCurve);
+                    updatedMatching[leftPoint].push(rightPoint);
+                }
+
+                for (const key of Object.keys(updatedMatching)) {
+                    const sortedRightIndexes = updatedMatching[key].sort((a, b) => a - b);
+                    updatedMatching[key] = sortedRightIndexes;
+                }
+
+                return updatedMatching;
+            }
+
+            function reduceInterpolation(interpolatedPoints, matching, leftPoints, rightPoints) {
+                function averagePoint(points) {
+                    let sumX = 0;
+                    let sumY = 0;
+                    for (const point of points) {
+                        sumX += point.x;
+                        sumY += point.y;
+                    }
+
+                    return {
+                        x: sumX / points.length,
+                        y: sumY / points.length,
+                    };
+                }
+
+                function computeDistance(point1, point2) {
+                    return Math.sqrt((point1.x - point2.x) ** 2 + (point1.y - point2.y) ** 2);
+                }
+
+                function minimizeSegment(baseLength, N, startInterpolated, stopInterpolated) {
+                    const threshold = baseLength / (2 * N);
+                    const minimized = [interpolatedPoints[startInterpolated]];
+                    let latestPushed = startInterpolated;
+                    for (let i = startInterpolated + 1; i < stopInterpolated; i++) {
+                        const distance = computeDistance(interpolatedPoints[latestPushed], interpolatedPoints[i]);
+
+                        if (distance >= threshold) {
+                            minimized.push(interpolatedPoints[i]);
+                            latestPushed = i;
+                        }
+                    }
+
+                    minimized.push(interpolatedPoints[stopInterpolated]);
+
+                    if (minimized.length === 2) {
+                        const distance = computeDistance(
+                            interpolatedPoints[startInterpolated],
+                            interpolatedPoints[stopInterpolated],
+                        );
+
+                        if (distance < threshold) {
+                            return [averagePoint(minimized)];
+                        }
+                    }
+
+                    return minimized;
+                }
+
+                const reduced = [];
+                const interpolatedIndexes = {};
+                let accumulated = 0;
+                for (let i = 0; i < leftPoints.length; i++) {
+                    // eslint-disable-next-line
+                    interpolatedIndexes[i] = matching[i].map(() => accumulated++);
+                }
+
+                function leftSegment(start, stop) {
+                    const startInterpolated = interpolatedIndexes[start][0];
+                    const stopInterpolated = interpolatedIndexes[stop][0];
+
+                    if (startInterpolated === stopInterpolated) {
+                        reduced.push(interpolatedPoints[startInterpolated]);
+                        return;
+                    }
+
+                    const baseLength = curveLength(leftPoints.slice(start, stop + 1));
+                    const N = stop - start + 1;
+
+                    reduced.push(...minimizeSegment(baseLength, N, startInterpolated, stopInterpolated));
+                }
+
+                function rightSegment(leftPoint) {
+                    const start = matching[leftPoint][0];
+                    const [stop] = matching[leftPoint].slice(-1);
+                    const startInterpolated = interpolatedIndexes[leftPoint][0];
+                    const [stopInterpolated] = interpolatedIndexes[leftPoint].slice(-1);
+                    const baseLength = curveLength(rightPoints.slice(start, stop + 1));
+                    const N = stop - start + 1;
+
+                    reduced.push(...minimizeSegment(baseLength, N, startInterpolated, stopInterpolated));
+                }
+
+                let previousOpened = null;
+                for (let i = 0; i < leftPoints.length; i++) {
+                    if (matching[i].length === 1) {
+                        // check if left segment is opened
+                        if (previousOpened !== null) {
+                            // check if we should continue the left segment
+                            if (matching[i][0] === matching[previousOpened][0]) {
+                                continue;
+                            } else {
+                                // left segment found
+                                const start = previousOpened;
+                                const stop = i - 1;
+                                leftSegment(start, stop);
+
+                                // start next left segment
+                                previousOpened = i;
+                            }
+                        } else {
+                            // start next left segment
+                            previousOpened = i;
+                        }
+                    } else {
+                        // check if left segment is opened
+                        if (previousOpened !== null) {
+                            // left segment found
+                            const start = previousOpened;
+                            const stop = i - 1;
+                            leftSegment(start, stop);
+
+                            previousOpened = null;
+                        }
+
+                        // right segment found
+                        rightSegment(i);
+                    }
+                }
+
+                // check if there is an opened segment
+                if (previousOpened !== null) {
+                    leftSegment(previousOpened, leftPoints.length - 1);
+                }
+
+                return reduced;
+            }
+
+            // the algorithm below is based on fact that both left and right
+            // polyshapes have the same start point and the same draw direction
+            const leftPoints = toPoints(leftPosition.points);
+            const rightPoints = toPoints(rightPosition.points);
+            const leftOffsetVec = curveToOffsetVec(leftPoints, curveLength(leftPoints));
+            const rightOffsetVec = curveToOffsetVec(rightPoints, curveLength(rightPoints));
+
+            const matching = matchLeftRight(leftOffsetVec, rightOffsetVec);
+            const completedMatching = matchRightLeft(leftOffsetVec, rightOffsetVec, matching);
+
+            const interpolatedPoints = Object.keys(completedMatching)
+                .map((leftPointIdx) => +leftPointIdx)
+                .sort((a, b) => a - b)
+                .reduce((acc, leftPointIdx) => {
+                    const leftPoint = leftPoints[leftPointIdx];
+                    for (const rightPointIdx of completedMatching[leftPointIdx]) {
+                        const rightPoint = rightPoints[rightPointIdx];
+                        acc.push({
+                            x: leftPoint.x + (rightPoint.x - leftPoint.x) * offset,
+                            y: leftPoint.y + (rightPoint.y - leftPoint.y) * offset,
+                        });
+                    }
+
+                    return acc;
+                }, []);
+
+            const reducedPoints = reduceInterpolation(interpolatedPoints, completedMatching, leftPoints, rightPoints);
+
+            return {
+                points: toArray(reducedPoints),
+                rotation: leftPosition.rotation,
+                occluded: leftPosition.occluded,
+                outside: leftPosition.outside,
+                zOrder: leftPosition.zOrder,
+            };
+        }
+    }
+
+    class PolygonTrack extends PolyTrack {
+        constructor(data, clientID, color, injection) {
+            super(data, clientID, color, injection);
+            this.shapeType = ObjectShape.POLYGON;
+            for (const shape of Object.values(this.shapes)) {
+                checkNumberOfPoints(this.shapeType, shape.points);
+            }
+        }
+
+        interpolatePosition(leftPosition, rightPosition, offset) {
+            const copyLeft = {
+                ...leftPosition,
+                points: [...leftPosition.points, leftPosition.points[0], leftPosition.points[1]],
+            };
+
+            const copyRight = {
+                ...rightPosition,
+                points: [...rightPosition.points, rightPosition.points[0], rightPosition.points[1]],
+            };
+
+            const result = PolyTrack.prototype.interpolatePosition.call(this, copyLeft, copyRight, offset);
+
+            return {
+                ...result,
+                points: result.points.slice(0, -2),
+            };
+        }
+    }
+
+    class PolylineTrack extends PolyTrack {
+        constructor(data, clientID, color, injection) {
+            super(data, clientID, color, injection);
+            this.shapeType = ObjectShape.POLYLINE;
+            for (const shape of Object.values(this.shapes)) {
+                checkNumberOfPoints(this.shapeType, shape.points);
+            }
+        }
+    }
+
+    class PointsTrack extends PolyTrack {
+        constructor(data, clientID, color, injection) {
+            super(data, clientID, color, injection);
+            this.shapeType = ObjectShape.POINTS;
+            for (const shape of Object.values(this.shapes)) {
+                checkNumberOfPoints(this.shapeType, shape.points);
+            }
+        }
+
+        interpolatePosition(leftPosition, rightPosition, offset) {
+            // interpolate only when one point in both left and right positions
+            if (leftPosition.points.length === 2 && rightPosition.points.length === 2) {
+                return {
+                    points: leftPosition.points.map(
+                        (value, index) => value + (rightPosition.points[index] - value) * offset,
+                    ),
+                    rotation: leftPosition.rotation,
+                    occluded: leftPosition.occluded,
+                    outside: leftPosition.outside,
+                    zOrder: leftPosition.zOrder,
+                };
+            }
+
+            return {
+                points: [...leftPosition.points],
+                rotation: leftPosition.rotation,
+                occluded: leftPosition.occluded,
+                outside: leftPosition.outside,
+                zOrder: leftPosition.zOrder,
+            };
+        }
+    }
+
+    class CuboidTrack extends Track {
+        constructor(data, clientID, color, injection) {
+            super(data, clientID, color, injection);
+            this.shapeType = ObjectShape.CUBOID;
+            this.pinned = false;
+            for (const shape of Object.values(this.shapes)) {
+                checkNumberOfPoints(this.shapeType, shape.points);
+                shape.rotation = 0; // is not supported
+            }
+        }
+
+        interpolatePosition(leftPosition, rightPosition, offset) {
+            const positionOffset = leftPosition.points.map((point, index) => rightPosition.points[index] - point);
+
+            return {
+                points: leftPosition.points.map((point, index) => point + positionOffset[index] * offset),
+                rotation: leftPosition.rotation,
+                occluded: leftPosition.occluded,
+                outside: leftPosition.outside,
+                zOrder: leftPosition.zOrder,
+            };
+        }
+    }
+
+    class SkeletonTrack extends Drawn {
+        constructor(data, clientID, color, injection) {
+            super(data, clientID, color, injection);
+            this.shapeType = ObjectShape.SKELETON;
+            this.pinned = true;
+
+            // constructed.tracks.push({
+            //     attributes: attributes.filter((attr) => !labelAttributes[attr.spec_id].mutable),
+            //     descriptions: state.descriptions,
+            //     frame: state.frame,
+            //     group: 0,
+            //     source: state.source,
+            //     label_id: state.label.id,
+            //     shapes: [
+            //         {
+            //             attributes: attributes.filter((attr) => labelAttributes[attr.spec_id].mutable),
+            //             frame: state.frame,
+            //             occluded: state.occluded || false,
+            //             outside: false,
+            //             points: [...state.points],
+            //             rotation: state.rotation || 0,
+            //             type: state.shapeType,
+            //             z_order: state.zOrder,
+            //             elements: state.shapeType === 'skeleton' ? state.elements.map((element) => ({
+            //                 attributes: [],
+            //                 frame: element.frame,
+            //                 group: 0,
+            //                 label_id: element.label.id,
+            //                 points: [...element.points],
+            //                 rotation: 0,
+            //                 type: element.shapeType,
+            //                 z_order: 0,
+            //                 occluded: element.occluded,
+            //             })) : undefined,
+            //         },
+            //     ],
+            // });
+
+            // collect all elements
+            const tracks = [];
+            data.shapes.forEach((shape) => {
+                const { elements } = shape;
+                if (!tracks.length) {
+                    elements.forEach((element) => {
+                        tracks.push({
+                            attributes: {},
+                            descriptions: [],
+                            frame: shape.frame,
+                            group: 0,
+                            source: data.source,
+                            label_id: element.label_id,
+                            shapes: [],
+                        });
+                    });
+                }
+            });
+
+            /* eslint-disable-next-line no-use-before-define */
+            this.elements = data.elements.map((element) => shapeFactory(element, injection.nextClientID(), injection));
+
             this.shapes = data.shapes.reduce((shapeAccumulator, value) => {
                 shapeAccumulator[value.frame] = {
                     serverID: value.id,
@@ -1471,848 +2934,13 @@
         }
     }
 
-    class Tag extends Annotation {
-        // Method is used to export data to the server
-        toJSON() {
-            return {
-                clientID: this.clientID,
-                id: this.serverID,
-                frame: this.frame,
-                label_id: this.label.id,
-                group: this.group,
-                source: this.source,
-                attributes: Object.keys(this.attributes).reduce((attributeAccumulator, attrId) => {
-                    attributeAccumulator.push({
-                        spec_id: attrId,
-                        value: this.attributes[attrId],
-                    });
-
-                    return attributeAccumulator;
-                }, []),
-            };
-        }
-
-        // Method is used to construct ObjectState objects
-        get(frame) {
-            if (frame !== this.frame) {
-                throw new ScriptingError('Got frame is not equal to the frame of the shape');
-            }
-
-            return {
-                objectType: ObjectType.TAG,
-                clientID: this.clientID,
-                serverID: this.serverID,
-                lock: this.lock,
-                attributes: { ...this.attributes },
-                label: this.label,
-                group: this.groupObject,
-                color: this.color,
-                updated: this.updated,
-                frame,
-                source: this.source,
-            };
-        }
-
-        save(frame, data) {
-            if (frame !== this.frame) {
-                throw new ScriptingError('Got frame is not equal to the frame of the tag');
-            }
-
-            if (this.lock && data.lock) {
-                return objectStateFactory.call(this, frame, this.get(frame));
-            }
-
-            const updated = data.updateFlags;
-            this._validateStateBeforeSave(frame, data, updated);
-
-            // Now when all fields are validated, we can apply them
-            if (updated.label) {
-                this._saveLabel(data.label, frame);
-            }
-
-            if (updated.attributes) {
-                this._saveAttributes(data.attributes, frame);
-            }
-
-            if (updated.lock) {
-                this._saveLock(data.lock, frame);
-            }
-
-            if (updated.color) {
-                this._saveColor(data.color, frame);
-            }
-
-            this.updateTimestamp(updated);
-            updated.reset();
-
-            return objectStateFactory.call(this, frame, this.get(frame));
-        }
-    }
-
-    class RectangleShape extends Shape {
-        constructor(data, clientID, color, injection) {
-            super(data, clientID, color, injection);
-            this.shapeType = ObjectShape.RECTANGLE;
-            this.pinned = false;
-            checkNumberOfPoints(this.shapeType, this.points);
-        }
-
-        static distance(points, x, y, angle) {
-            const [xtl, ytl, xbr, ybr] = points;
-            const cx = xtl + (xbr - xtl) / 2;
-            const cy = ytl + (ybr - ytl) / 2;
-            const [rotX, rotY] = rotatePoint(x, y, -angle, cx, cy);
-
-            if (!(rotX >= xtl && rotX <= xbr && rotY >= ytl && rotY <= ybr)) {
-                // Cursor is outside of a box
-                return null;
-            }
-
-            // The shortest distance from point to an edge
-            return Math.min.apply(null, [rotX - xtl, rotY - ytl, xbr - rotX, ybr - rotY]);
-        }
-    }
-
-    class EllipseShape extends Shape {
-        constructor(data, clientID, color, injection) {
-            super(data, clientID, color, injection);
-            this.shapeType = ObjectShape.ELLIPSE;
-            this.pinned = false;
-            checkNumberOfPoints(this.shapeType, this.points);
-        }
-
-        static distance(points, x, y, angle) {
-            const [cx, cy, rightX, topY] = points;
-            const [rx, ry] = [rightX - cx, cy - topY];
-            const [rotX, rotY] = rotatePoint(x, y, -angle, cx, cy);
-            // https://math.stackexchange.com/questions/76457/check-if-a-point-is-within-an-ellipse
-            const pointWithinEllipse = (_x, _y) => (
-                ((_x - cx) ** 2) / rx ** 2) + (((_y - cy) ** 2) / ry ** 2
-            ) <= 1;
-
-            if (!pointWithinEllipse(rotX, rotY)) {
-                // Cursor is outside of an ellipse
-                return null;
-            }
-
-            if (Math.abs(x - cx) < Number.EPSILON && Math.abs(y - cy) < Number.EPSILON) {
-                // cursor is near to the center, just return minimum of height, width
-                return Math.min(rx, ry);
-            }
-
-            // ellipse equation is x^2/rx^2 + y^2/ry^2 = 1
-            // from this equation:
-            // x^2 = ((rx * ry)^2 - (y * rx)^2) / ry^2
-            // y^2 = ((rx * ry)^2 - (x * ry)^2) / rx^2
-
-            // we have one point inside the ellipse, let's build two lines (horizontal and vertical) through the point
-            // and find their interception with ellipse
-            const x2Equation = (_y) => (((rx * ry) ** 2) - ((_y * rx) ** 2)) / (ry ** 2);
-            const y2Equation = (_x) => (((rx * ry) ** 2) - ((_x * ry) ** 2)) / (rx ** 2);
-
-            // shift x,y to the ellipse coordinate system to compute equation correctly
-            // y axis is inverted
-            const [shiftedX, shiftedY] = [x - cx, cy - y];
-            const [x1, x2] = [Math.sqrt(x2Equation(shiftedY)), -Math.sqrt(x2Equation(shiftedY))];
-            const [y1, y2] = [Math.sqrt(y2Equation(shiftedX)), -Math.sqrt(y2Equation(shiftedX))];
-
-            // found two points on ellipse edge
-            const ellipseP1X = shiftedX >= 0 ? x1 : x2; // ellipseP1Y is shiftedY
-            const ellipseP2Y = shiftedY >= 0 ? y1 : y2; // ellipseP1X is shiftedX
-
-            // found diffs between two points on edges and target point
-            const diff1X = ellipseP1X - shiftedX;
-            const diff2Y = ellipseP2Y - shiftedY;
-
-            // return minimum, get absolute value because we need distance, not diff
-            return Math.min(Math.abs(diff1X), Math.abs(diff2Y));
-        }
-    }
-
-    class PolyShape extends Shape {
-        constructor(data, clientID, color, injection) {
-            super(data, clientID, color, injection);
-            this.rotation = 0; // is not supported
-        }
-    }
-
-    class PolygonShape extends PolyShape {
-        constructor(data, clientID, color, injection) {
-            super(data, clientID, color, injection);
-            this.shapeType = ObjectShape.POLYGON;
-            checkNumberOfPoints(this.shapeType, this.points);
-        }
-
-        static distance(points, x, y) {
-            function position(x1, y1, x2, y2) {
-                return (x2 - x1) * (y - y1) - (x - x1) * (y2 - y1);
-            }
-
-            let wn = 0;
-            const distances = [];
-
-            for (let i = 0, j = points.length - 2; i < points.length - 1; j = i, i += 2) {
-                // Current point
-                const x1 = points[j];
-                const y1 = points[j + 1];
-
-                // Next point
-                const x2 = points[i];
-                const y2 = points[i + 1];
-
-                // Check if a point is inside a polygon
-                // with a winding numbers algorithm
-                // https://en.wikipedia.org/wiki/Point_in_polygon#Winding_number_algorithm
-                if (y1 <= y) {
-                    if (y2 > y) {
-                        if (position(x1, y1, x2, y2) > 0) {
-                            wn++;
-                        }
-                    }
-                } else if (y2 <= y) {
-                    if (position(x1, y1, x2, y2) < 0) {
-                        wn--;
-                    }
-                }
-
-                // Find the shortest distance from point to an edge
-                // Get an equation of a line in general
-                const aCoef = y1 - y2;
-                const bCoef = x2 - x1;
-
-                // Vector (aCoef, bCoef) is a perpendicular to line
-                // Now find the point where two lines
-                // (edge and its perpendicular through the point (x,y)) are cross
-                const xCross = x - aCoef;
-                const yCross = y - bCoef;
-
-                if ((xCross - x1) * (x2 - xCross) >= 0 && (yCross - y1) * (y2 - yCross) >= 0) {
-                    // Cross point is on segment between p1(x1,y1) and p2(x2,y2)
-                    distances.push(Math.sqrt((x - xCross) ** 2 + (y - yCross) ** 2));
-                } else {
-                    distances.push(
-                        Math.min(
-                            Math.sqrt((x1 - x) ** 2 + (y1 - y) ** 2),
-                            Math.sqrt((x2 - x) ** 2 + (y2 - y) ** 2),
-                        ),
-                    );
-                }
-            }
-
-            if (wn !== 0) {
-                return Math.min.apply(null, distances);
-            }
-
-            return null;
-        }
-    }
-
-    class PolylineShape extends PolyShape {
-        constructor(data, clientID, color, injection) {
-            super(data, clientID, color, injection);
-            this.shapeType = ObjectShape.POLYLINE;
-            checkNumberOfPoints(this.shapeType, this.points);
-        }
-
-        static distance(points, x, y) {
-            const distances = [];
-            for (let i = 0; i < points.length - 2; i += 2) {
-                // Current point
-                const x1 = points[i];
-                const y1 = points[i + 1];
-
-                // Next point
-                const x2 = points[i + 2];
-                const y2 = points[i + 3];
-
-                // Find the shortest distance from point to an edge
-                if ((x - x1) * (x2 - x) >= 0 && (y - y1) * (y2 - y) >= 0) {
-                    // Find the length of a perpendicular
-                    // https://en.wikipedia.org/wiki/Distance_from_a_point_to_a_line
-                    distances.push(
-                        Math.abs((y2 - y1) * x - (x2 - x1) * y + x2 * y1 - y2 * x1) /
-                            Math.sqrt((y2 - y1) ** 2 + (x2 - x1) ** 2),
-                    );
-                } else {
-                    // The link below works for lines (which have infinite length)
-                    // There is a case when perpendicular doesn't cross the edge
-                    // In this case we don't use the computed distance
-                    // Instead we use just distance to the nearest point
-                    distances.push(
-                        Math.min(
-                            Math.sqrt((x1 - x) ** 2 + (y1 - y) ** 2),
-                            Math.sqrt((x2 - x) ** 2 + (y2 - y) ** 2),
-                        ),
-                    );
-                }
-            }
-
-            return Math.min.apply(null, distances);
-        }
-    }
-
-    class PointsShape extends PolyShape {
-        constructor(data, clientID, color, injection) {
-            super(data, clientID, color, injection);
-            this.shapeType = ObjectShape.POINTS;
-            checkNumberOfPoints(this.shapeType, this.points);
-        }
-
-        static distance(points, x, y) {
-            const distances = [];
-            for (let i = 0; i < points.length; i += 2) {
-                const x1 = points[i];
-                const y1 = points[i + 1];
-
-                distances.push(Math.sqrt((x1 - x) ** 2 + (y1 - y) ** 2));
-            }
-
-            return Math.min.apply(null, distances);
-        }
-    }
-
-    class CuboidShape extends Shape {
-        constructor(data, clientID, color, injection) {
-            super(data, clientID, color, injection);
-            this.rotation = 0;
-            this.shapeType = ObjectShape.CUBOID;
-            this.pinned = false;
-            checkNumberOfPoints(this.shapeType, this.points);
-        }
-
-        static makeHull(geoPoints) {
-            // Returns the convex hull, assuming that each points[i] <= points[i + 1].
-            function makeHullPresorted(points) {
-                if (points.length <= 1) return points.slice();
-
-                // Andrew's monotone chain algorithm. Positive y coordinates correspond to 'up'
-                // as per the mathematical convention, instead of 'down' as per the computer
-                // graphics convention. This doesn't affect the correctness of the result.
-
-                const upperHull = [];
-                for (let i = 0; i < points.length; i += 1) {
-                    const p = points[`${i}`];
-                    while (upperHull.length >= 2) {
-                        const q = upperHull[upperHull.length - 1];
-                        const r = upperHull[upperHull.length - 2];
-                        if ((q.x - r.x) * (p.y - r.y) >= (q.y - r.y) * (p.x - r.x)) upperHull.pop();
-                        else break;
-                    }
-                    upperHull.push(p);
-                }
-                upperHull.pop();
-
-                const lowerHull = [];
-                for (let i = points.length - 1; i >= 0; i -= 1) {
-                    const p = points[`${i}`];
-                    while (lowerHull.length >= 2) {
-                        const q = lowerHull[lowerHull.length - 1];
-                        const r = lowerHull[lowerHull.length - 2];
-                        if ((q.x - r.x) * (p.y - r.y) >= (q.y - r.y) * (p.x - r.x)) lowerHull.pop();
-                        else break;
-                    }
-                    lowerHull.push(p);
-                }
-                lowerHull.pop();
-
-                if (
-                    upperHull.length === 1 &&
-                    lowerHull.length === 1 &&
-                    upperHull[0].x === lowerHull[0].x &&
-                    upperHull[0].y === lowerHull[0].y
-                ) return upperHull;
-                return upperHull.concat(lowerHull);
-            }
-
-            function POINT_COMPARATOR(a, b) {
-                if (a.x < b.x) return -1;
-                if (a.x > b.x) return +1;
-                if (a.y < b.y) return -1;
-                if (a.y > b.y) return +1;
-                return 0;
-            }
-
-            const newPoints = geoPoints.slice();
-            newPoints.sort(POINT_COMPARATOR);
-            return makeHullPresorted(newPoints);
-        }
-
-        static contain(shapePoints, x, y) {
-            function isLeft(P0, P1, P2) {
-                return (P1.x - P0.x) * (P2.y - P0.y) - (P2.x - P0.x) * (P1.y - P0.y);
-            }
-            const points = CuboidShape.makeHull(shapePoints);
-            let wn = 0;
-            for (let i = 0; i < points.length; i += 1) {
-                const p1 = points[`${i}`];
-                const p2 = points[i + 1] || points[0];
-
-                if (p1.y <= y) {
-                    if (p2.y > y) {
-                        if (isLeft(p1, p2, { x, y }) > 0) {
-                            wn += 1;
-                        }
-                    }
-                } else if (p2.y < y) {
-                    if (isLeft(p1, p2, { x, y }) < 0) {
-                        wn -= 1;
-                    }
-                }
-            }
-
-            return wn !== 0;
-        }
-
-        static distance(actualPoints, x, y) {
-            const points = [];
-
-            for (let i = 0; i < 16; i += 2) {
-                points.push({ x: actualPoints[i], y: actualPoints[i + 1] });
-            }
-
-            if (!CuboidShape.contain(points, x, y)) return null;
-
-            let minDistance = Number.MAX_SAFE_INTEGER;
-            for (let i = 0; i < points.length; i += 1) {
-                const p1 = points[`${i}`];
-                const p2 = points[i + 1] || points[0];
-
-                // perpendicular from point to straight length
-                const distance = Math.abs((p2.y - p1.y) * x - (p2.x - p1.x) * y + p2.x * p1.y - p2.y * p1.x) /
-                    Math.sqrt((p2.y - p1.y) ** 2 + (p2.x - p1.x) ** 2);
-
-                // check if perpendicular belongs to the straight segment
-                const a = (p1.x - x) ** 2 + (p1.y - y) ** 2;
-                const b = (p2.x - p1.x) ** 2 + (p2.y - p1.y) ** 2;
-                const c = (p2.x - x) ** 2 + (p2.y - y) ** 2;
-                if (distance < minDistance && a + b - c >= 0 && c + b - a >= 0) {
-                    minDistance = distance;
-                }
-            }
-            return minDistance;
-        }
-    }
-
-    class RectangleTrack extends Track {
-        constructor(data, clientID, color, injection) {
-            super(data, clientID, color, injection);
-            this.shapeType = ObjectShape.RECTANGLE;
-            this.pinned = false;
-            for (const shape of Object.values(this.shapes)) {
-                checkNumberOfPoints(this.shapeType, shape.points);
-            }
-        }
-
-        interpolatePosition(leftPosition, rightPosition, offset) {
-            const positionOffset = leftPosition.points.map((point, index) => rightPosition.points[index] - point);
-            return {
-                points: leftPosition.points.map((point, index) => point + positionOffset[index] * offset),
-                rotation:
-                    (leftPosition.rotation + findAngleDiff(
-                        rightPosition.rotation, leftPosition.rotation,
-                    ) * offset + 360) % 360,
-                occluded: leftPosition.occluded,
-                outside: leftPosition.outside,
-                zOrder: leftPosition.zOrder,
-            };
-        }
-    }
-
-    class EllipseTrack extends Track {
-        constructor(data, clientID, color, injection) {
-            super(data, clientID, color, injection);
-            this.shapeType = ObjectShape.ELLIPSE;
-            this.pinned = false;
-            for (const shape of Object.values(this.shapes)) {
-                checkNumberOfPoints(this.shapeType, shape.points);
-            }
-        }
-
-        interpolatePosition(leftPosition, rightPosition, offset) {
-            const positionOffset = leftPosition.points.map((point, index) => rightPosition.points[index] - point);
-
-            return {
-                points: leftPosition.points.map((point, index) => point + positionOffset[index] * offset),
-                rotation:
-                    (leftPosition.rotation + findAngleDiff(
-                        rightPosition.rotation, leftPosition.rotation,
-                    ) * offset + 360) % 360,
-                occluded: leftPosition.occluded,
-                outside: leftPosition.outside,
-                zOrder: leftPosition.zOrder,
-            };
-        }
-    }
-
-    class PolyTrack extends Track {
-        constructor(data, clientID, color, injection) {
-            super(data, clientID, color, injection);
-            for (const shape of Object.values(this.shapes)) {
-                shape.rotation = 0; // is not supported
-            }
-        }
-
-        interpolatePosition(leftPosition, rightPosition, offset) {
-            if (offset === 0) {
-                return {
-                    points: [...leftPosition.points],
-                    rotation: leftPosition.rotation,
-                    occluded: leftPosition.occluded,
-                    outside: leftPosition.outside,
-                    zOrder: leftPosition.zOrder,
-                };
-            }
-
-            function toArray(points) {
-                return points.reduce((acc, val) => {
-                    acc.push(val.x, val.y);
-                    return acc;
-                }, []);
-            }
-
-            function toPoints(array) {
-                return array.reduce((acc, _, index) => {
-                    if (index % 2) {
-                        acc.push({
-                            x: array[index - 1],
-                            y: array[index],
-                        });
-                    }
-
-                    return acc;
-                }, []);
-            }
-
-            function curveLength(points) {
-                return points.slice(1).reduce((acc, _, index) => {
-                    const dx = points[index + 1].x - points[index].x;
-                    const dy = points[index + 1].y - points[index].y;
-                    return acc + Math.sqrt(dx ** 2 + dy ** 2);
-                }, 0);
-            }
-
-            function curveToOffsetVec(points, length) {
-                const offsetVector = [0]; // with initial value
-                let accumulatedLength = 0;
-
-                points.slice(1).forEach((_, index) => {
-                    const dx = points[index + 1].x - points[index].x;
-                    const dy = points[index + 1].y - points[index].y;
-                    accumulatedLength += Math.sqrt(dx ** 2 + dy ** 2);
-                    offsetVector.push(accumulatedLength / length);
-                });
-
-                return offsetVector;
-            }
-
-            function findNearestPair(value, curve) {
-                let minimum = [0, Math.abs(value - curve[0])];
-                for (let i = 1; i < curve.length; i++) {
-                    const distance = Math.abs(value - curve[i]);
-                    if (distance < minimum[1]) {
-                        minimum = [i, distance];
-                    }
-                }
-
-                return minimum[0];
-            }
-
-            function matchLeftRight(leftCurve, rightCurve) {
-                const matching = {};
-                for (let i = 0; i < leftCurve.length; i++) {
-                    matching[i] = [findNearestPair(leftCurve[i], rightCurve)];
-                }
-
-                return matching;
-            }
-
-            function matchRightLeft(leftCurve, rightCurve, leftRightMatching) {
-                const matchedRightPoints = Object.values(leftRightMatching).flat();
-                const unmatchedRightPoints = rightCurve
-                    .map((_, index) => index)
-                    .filter((index) => !matchedRightPoints.includes(index));
-                const updatedMatching = { ...leftRightMatching };
-
-                for (const rightPoint of unmatchedRightPoints) {
-                    const leftPoint = findNearestPair(rightCurve[rightPoint], leftCurve);
-                    updatedMatching[leftPoint].push(rightPoint);
-                }
-
-                for (const key of Object.keys(updatedMatching)) {
-                    const sortedRightIndexes = updatedMatching[key].sort((a, b) => a - b);
-                    updatedMatching[key] = sortedRightIndexes;
-                }
-
-                return updatedMatching;
-            }
-
-            function reduceInterpolation(interpolatedPoints, matching, leftPoints, rightPoints) {
-                function averagePoint(points) {
-                    let sumX = 0;
-                    let sumY = 0;
-                    for (const point of points) {
-                        sumX += point.x;
-                        sumY += point.y;
-                    }
-
-                    return {
-                        x: sumX / points.length,
-                        y: sumY / points.length,
-                    };
-                }
-
-                function computeDistance(point1, point2) {
-                    return Math.sqrt((point1.x - point2.x) ** 2 + (point1.y - point2.y) ** 2);
-                }
-
-                function minimizeSegment(baseLength, N, startInterpolated, stopInterpolated) {
-                    const threshold = baseLength / (2 * N);
-                    const minimized = [interpolatedPoints[startInterpolated]];
-                    let latestPushed = startInterpolated;
-                    for (let i = startInterpolated + 1; i < stopInterpolated; i++) {
-                        const distance = computeDistance(interpolatedPoints[latestPushed], interpolatedPoints[i]);
-
-                        if (distance >= threshold) {
-                            minimized.push(interpolatedPoints[i]);
-                            latestPushed = i;
-                        }
-                    }
-
-                    minimized.push(interpolatedPoints[stopInterpolated]);
-
-                    if (minimized.length === 2) {
-                        const distance = computeDistance(
-                            interpolatedPoints[startInterpolated],
-                            interpolatedPoints[stopInterpolated],
-                        );
-
-                        if (distance < threshold) {
-                            return [averagePoint(minimized)];
-                        }
-                    }
-
-                    return minimized;
-                }
-
-                const reduced = [];
-                const interpolatedIndexes = {};
-                let accumulated = 0;
-                for (let i = 0; i < leftPoints.length; i++) {
-                    // eslint-disable-next-line
-                    interpolatedIndexes[i] = matching[i].map(() => accumulated++);
-                }
-
-                function leftSegment(start, stop) {
-                    const startInterpolated = interpolatedIndexes[start][0];
-                    const stopInterpolated = interpolatedIndexes[stop][0];
-
-                    if (startInterpolated === stopInterpolated) {
-                        reduced.push(interpolatedPoints[startInterpolated]);
-                        return;
-                    }
-
-                    const baseLength = curveLength(leftPoints.slice(start, stop + 1));
-                    const N = stop - start + 1;
-
-                    reduced.push(...minimizeSegment(baseLength, N, startInterpolated, stopInterpolated));
-                }
-
-                function rightSegment(leftPoint) {
-                    const start = matching[leftPoint][0];
-                    const [stop] = matching[leftPoint].slice(-1);
-                    const startInterpolated = interpolatedIndexes[leftPoint][0];
-                    const [stopInterpolated] = interpolatedIndexes[leftPoint].slice(-1);
-                    const baseLength = curveLength(rightPoints.slice(start, stop + 1));
-                    const N = stop - start + 1;
-
-                    reduced.push(...minimizeSegment(baseLength, N, startInterpolated, stopInterpolated));
-                }
-
-                let previousOpened = null;
-                for (let i = 0; i < leftPoints.length; i++) {
-                    if (matching[i].length === 1) {
-                        // check if left segment is opened
-                        if (previousOpened !== null) {
-                            // check if we should continue the left segment
-                            if (matching[i][0] === matching[previousOpened][0]) {
-                                continue;
-                            } else {
-                                // left segment found
-                                const start = previousOpened;
-                                const stop = i - 1;
-                                leftSegment(start, stop);
-
-                                // start next left segment
-                                previousOpened = i;
-                            }
-                        } else {
-                            // start next left segment
-                            previousOpened = i;
-                        }
-                    } else {
-                        // check if left segment is opened
-                        if (previousOpened !== null) {
-                            // left segment found
-                            const start = previousOpened;
-                            const stop = i - 1;
-                            leftSegment(start, stop);
-
-                            previousOpened = null;
-                        }
-
-                        // right segment found
-                        rightSegment(i);
-                    }
-                }
-
-                // check if there is an opened segment
-                if (previousOpened !== null) {
-                    leftSegment(previousOpened, leftPoints.length - 1);
-                }
-
-                return reduced;
-            }
-
-            // the algorithm below is based on fact that both left and right
-            // polyshapes have the same start point and the same draw direction
-            const leftPoints = toPoints(leftPosition.points);
-            const rightPoints = toPoints(rightPosition.points);
-            const leftOffsetVec = curveToOffsetVec(leftPoints, curveLength(leftPoints));
-            const rightOffsetVec = curveToOffsetVec(rightPoints, curveLength(rightPoints));
-
-            const matching = matchLeftRight(leftOffsetVec, rightOffsetVec);
-            const completedMatching = matchRightLeft(leftOffsetVec, rightOffsetVec, matching);
-
-            const interpolatedPoints = Object.keys(completedMatching)
-                .map((leftPointIdx) => +leftPointIdx)
-                .sort((a, b) => a - b)
-                .reduce((acc, leftPointIdx) => {
-                    const leftPoint = leftPoints[leftPointIdx];
-                    for (const rightPointIdx of completedMatching[leftPointIdx]) {
-                        const rightPoint = rightPoints[rightPointIdx];
-                        acc.push({
-                            x: leftPoint.x + (rightPoint.x - leftPoint.x) * offset,
-                            y: leftPoint.y + (rightPoint.y - leftPoint.y) * offset,
-                        });
-                    }
-
-                    return acc;
-                }, []);
-
-            const reducedPoints = reduceInterpolation(interpolatedPoints, completedMatching, leftPoints, rightPoints);
-
-            return {
-                points: toArray(reducedPoints),
-                rotation: leftPosition.rotation,
-                occluded: leftPosition.occluded,
-                outside: leftPosition.outside,
-                zOrder: leftPosition.zOrder,
-            };
-        }
-    }
-
-    class PolygonTrack extends PolyTrack {
-        constructor(data, clientID, color, injection) {
-            super(data, clientID, color, injection);
-            this.shapeType = ObjectShape.POLYGON;
-            for (const shape of Object.values(this.shapes)) {
-                checkNumberOfPoints(this.shapeType, shape.points);
-            }
-        }
-
-        interpolatePosition(leftPosition, rightPosition, offset) {
-            const copyLeft = {
-                ...leftPosition,
-                points: [...leftPosition.points, leftPosition.points[0], leftPosition.points[1]],
-            };
-
-            const copyRight = {
-                ...rightPosition,
-                points: [...rightPosition.points, rightPosition.points[0], rightPosition.points[1]],
-            };
-
-            const result = PolyTrack.prototype.interpolatePosition.call(this, copyLeft, copyRight, offset);
-
-            return {
-                ...result,
-                points: result.points.slice(0, -2),
-            };
-        }
-    }
-
-    class PolylineTrack extends PolyTrack {
-        constructor(data, clientID, color, injection) {
-            super(data, clientID, color, injection);
-            this.shapeType = ObjectShape.POLYLINE;
-            for (const shape of Object.values(this.shapes)) {
-                checkNumberOfPoints(this.shapeType, shape.points);
-            }
-        }
-    }
-
-    class PointsTrack extends PolyTrack {
-        constructor(data, clientID, color, injection) {
-            super(data, clientID, color, injection);
-            this.shapeType = ObjectShape.POINTS;
-            for (const shape of Object.values(this.shapes)) {
-                checkNumberOfPoints(this.shapeType, shape.points);
-            }
-        }
-
-        interpolatePosition(leftPosition, rightPosition, offset) {
-            // interpolate only when one point in both left and right positions
-            if (leftPosition.points.length === 2 && rightPosition.points.length === 2) {
-                return {
-                    points: leftPosition.points.map(
-                        (value, index) => value + (rightPosition.points[index] - value) * offset,
-                    ),
-                    rotation: leftPosition.rotation,
-                    occluded: leftPosition.occluded,
-                    outside: leftPosition.outside,
-                    zOrder: leftPosition.zOrder,
-                };
-            }
-
-            return {
-                points: [...leftPosition.points],
-                rotation: leftPosition.rotation,
-                occluded: leftPosition.occluded,
-                outside: leftPosition.outside,
-                zOrder: leftPosition.zOrder,
-            };
-        }
-    }
-
-    class CuboidTrack extends Track {
-        constructor(data, clientID, color, injection) {
-            super(data, clientID, color, injection);
-            this.shapeType = ObjectShape.CUBOID;
-            this.pinned = false;
-            for (const shape of Object.values(this.shapes)) {
-                checkNumberOfPoints(this.shapeType, shape.points);
-                shape.rotation = 0; // is not supported
-            }
-        }
-
-        interpolatePosition(leftPosition, rightPosition, offset) {
-            const positionOffset = leftPosition.points.map((point, index) => rightPosition.points[index] - point);
-
-            return {
-                points: leftPosition.points.map((point, index) => point + positionOffset[index] * offset),
-                rotation: leftPosition.rotation,
-                occluded: leftPosition.occluded,
-                outside: leftPosition.outside,
-                zOrder: leftPosition.zOrder,
-            };
-        }
-    }
-
     RectangleTrack.distance = RectangleShape.distance;
     PolygonTrack.distance = PolygonShape.distance;
     PolylineTrack.distance = PolylineShape.distance;
     PointsTrack.distance = PointsShape.distance;
     EllipseTrack.distance = EllipseShape.distance;
     CuboidTrack.distance = CuboidShape.distance;
+    SkeletonTrack.distance = SkeletonShape.distance;
 
     function shapeFactory(shapeData, clientID, injection) {
         const { type } = shapeData;
