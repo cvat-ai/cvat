@@ -474,7 +474,8 @@ CACHES = {
     },
 }
 
-USE_CACHE = True
+USE_CACHE = bool(int(os.getenv('USE_CACHE', 1)))
+CACHE_EXPIRE = os.getenv('CACHE_EXPIRE', 7 * 24 * 60 * 60)  # week in seconds
 
 CORS_ALLOW_HEADERS = list(default_headers) + [
     # tus upload protocol headers

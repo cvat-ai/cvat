@@ -149,4 +149,5 @@ class CacheInteraction:
         return buff, mime_type
 
     def save_chunk(self, db_data_id, chunk_number, quality, buff, mime_type):
-        self._cache.set('{}_{}_{}'.format(db_data_id, chunk_number, quality), buff, tag=mime_type)
+        self._cache.set('{}_{}_{}'.format(db_data_id, chunk_number, quality), buff,
+                        tag=mime_type, expire=settings.CACHE_EXPIRE)
