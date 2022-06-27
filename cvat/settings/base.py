@@ -540,6 +540,9 @@ SPECTACULAR_SETTINGS = {
     # Need to reconsider this later. It happens, for example,
     # in TaskSerializer for data-originated fields - they can be empty.
     # https://github.com/tfranzel/drf-spectacular/issues/54
-    'COMPONENT_NO_READ_ONLY_REQUIRED': True
+    'COMPONENT_NO_READ_ONLY_REQUIRED': True,
+
+    # Required for correct file upload type (bytes)
+    'COMPONENT_SPLIT_REQUEST': True,
 }
 
