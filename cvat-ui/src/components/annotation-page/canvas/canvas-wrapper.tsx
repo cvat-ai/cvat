@@ -532,7 +532,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         const result = await jobInstance.annotations.select(event.detail.states, event.detail.x, event.detail.y);
 
         if (result && result.state) {
-            if (['polyline', 'points', 'skeleton'].includes(result.state.shapeType)) {
+            if (['polyline', 'points'].includes(result.state.shapeType)) {
                 if (result.distance > MAX_DISTANCE_TO_OPEN_SHAPE) {
                     return;
                 }
@@ -600,7 +600,7 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         const result = await jobInstance.annotations.select(e.detail.states, e.detail.x, e.detail.y);
 
         if (result && result.state) {
-            if (['polyline', 'points', 'skeleton'].includes(result.state.shapeType)) {
+            if (['polyline', 'points'].includes(result.state.shapeType)) {
                 if (result.distance > MAX_DISTANCE_TO_OPEN_SHAPE) {
                     return;
                 }

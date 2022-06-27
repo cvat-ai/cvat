@@ -1786,14 +1786,35 @@
 
         static distance(points, x, y) {
             const distances = [];
+            let xtl = Number.MAX_SAFE_INTEGER;
+            let ytl = Number.MAX_SAFE_INTEGER;
+            let xbr = 0;
+            let ybr = 0;
+
+            const MARGIN = 10;
             for (let i = 0; i < points.length; i += 2) {
                 const x1 = points[i];
                 const y1 = points[i + 1];
+                xtl = Math.min(x1, xtl);
+                ytl = Math.min(y1, ytl);
+                xbr = Math.max(x1, xbr);
+                ybr = Math.max(y1, ybr);
 
                 distances.push(Math.sqrt((x1 - x) ** 2 + (y1 - y) ** 2));
             }
 
-            return Math.min.apply(null, distances);
+            xtl -= MARGIN / 2;
+            xbr += MARGIN / 2;
+            ytl -= MARGIN / 2;
+            ybr += MARGIN / 2;
+
+            if (!(x >= xtl && x <= xbr && y >= ytl && y <= ybr)) {
+                // Cursor is outside of a box
+                return null;
+            }
+
+            // The shortest distance from point to an edge
+            return Math.min.apply(null, [x - xtl, y - ytl, xbr - x, ybr - y]);
         }
 
         // Method is used to export data to the server
