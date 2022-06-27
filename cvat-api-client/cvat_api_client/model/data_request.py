@@ -35,22 +35,20 @@ from cvat_api_client.exceptions import ApiAttributeError
 
 
 def lazy_import():
+    from cvat_api_client.model.chunk_type import ChunkType
     from cvat_api_client.model.client_file_request import ClientFileRequest
-    from cvat_api_client.model.compressed_chunk_type_enum import CompressedChunkTypeEnum
-    from cvat_api_client.model.original_chunk_type_enum import OriginalChunkTypeEnum
     from cvat_api_client.model.remote_file_request import RemoteFileRequest
     from cvat_api_client.model.server_file_request import ServerFileRequest
-    from cvat_api_client.model.sorting_method_enum import SortingMethodEnum
-    from cvat_api_client.model.storage_enum import StorageEnum
-    from cvat_api_client.model.storage_method_enum import StorageMethodEnum
+    from cvat_api_client.model.sorting_method import SortingMethod
+    from cvat_api_client.model.storage_method import StorageMethod
+    from cvat_api_client.model.storage_type import StorageType
+    globals()['ChunkType'] = ChunkType
     globals()['ClientFileRequest'] = ClientFileRequest
-    globals()['CompressedChunkTypeEnum'] = CompressedChunkTypeEnum
-    globals()['OriginalChunkTypeEnum'] = OriginalChunkTypeEnum
     globals()['RemoteFileRequest'] = RemoteFileRequest
     globals()['ServerFileRequest'] = ServerFileRequest
-    globals()['SortingMethodEnum'] = SortingMethodEnum
-    globals()['StorageEnum'] = StorageEnum
-    globals()['StorageMethodEnum'] = StorageMethodEnum
+    globals()['SortingMethod'] = SortingMethod
+    globals()['StorageMethod'] = StorageMethod
+    globals()['StorageType'] = StorageType
 
 
 class DataRequest(ModelNormal):
@@ -72,9 +70,9 @@ class DataRequest(ModelNormal):
 
       frame_filter (str): [optional]  # noqa: E501
 
-      compressed_chunk_type (CompressedChunkTypeEnum): [optional]  # noqa: E501
+      compressed_chunk_type (ChunkType): [optional]  # noqa: E501
 
-      original_chunk_type (OriginalChunkTypeEnum): [optional]  # noqa: E501
+      original_chunk_type (ChunkType): [optional]  # noqa: E501
 
       client_files ([ClientFileRequest]): [optional] if omitted the server will use the default value of []  # noqa: E501
 
@@ -90,11 +88,11 @@ class DataRequest(ModelNormal):
 
       copy_data (bool): [optional] if omitted the server will use the default value of False  # noqa: E501
 
-      storage_method (StorageMethodEnum): [optional]  # noqa: E501
+      storage_method (StorageMethod): [optional]  # noqa: E501
 
-      storage (StorageEnum): [optional]  # noqa: E501
+      storage (StorageType): [optional]  # noqa: E501
 
-      sorting_method (SortingMethodEnum): [optional]  # noqa: E501
+      sorting_method (SortingMethod): [optional]  # noqa: E501
 
 
       allowed_values (dict): The key is the tuple path to the attribute
@@ -157,8 +155,8 @@ class DataRequest(ModelNormal):
             'start_frame': (int,),  # noqa: E501
             'stop_frame': (int,),  # noqa: E501
             'frame_filter': (str,),  # noqa: E501
-            'compressed_chunk_type': (CompressedChunkTypeEnum,),  # noqa: E501
-            'original_chunk_type': (OriginalChunkTypeEnum,),  # noqa: E501
+            'compressed_chunk_type': (ChunkType,),  # noqa: E501
+            'original_chunk_type': (ChunkType,),  # noqa: E501
             'client_files': ([ClientFileRequest],),  # noqa: E501
             'server_files': ([ServerFileRequest],),  # noqa: E501
             'remote_files': ([RemoteFileRequest],),  # noqa: E501
@@ -166,9 +164,9 @@ class DataRequest(ModelNormal):
             'cloud_storage_id': (int, none_type,),  # noqa: E501
             'use_cache': (bool,),  # noqa: E501
             'copy_data': (bool,),  # noqa: E501
-            'storage_method': (StorageMethodEnum,),  # noqa: E501
-            'storage': (StorageEnum,),  # noqa: E501
-            'sorting_method': (SortingMethodEnum,),  # noqa: E501
+            'storage_method': (StorageMethod,),  # noqa: E501
+            'storage': (StorageType,),  # noqa: E501
+            'sorting_method': (SortingMethod,),  # noqa: E501
         }
 
     @cached_property
@@ -206,12 +204,12 @@ class DataRequest(ModelNormal):
     [optional]
     """
 
-    compressed_chunk_type: typing.ForwardRef("CompressedChunkTypeEnum") # noqa: E501
+    compressed_chunk_type: typing.ForwardRef("ChunkType") # noqa: E501
     """
     [optional]
     """
 
-    original_chunk_type: typing.ForwardRef("OriginalChunkTypeEnum") # noqa: E501
+    original_chunk_type: typing.ForwardRef("ChunkType") # noqa: E501
     """
     [optional]
     """
@@ -254,17 +252,17 @@ class DataRequest(ModelNormal):
     [optional, default: False]
     """
 
-    storage_method: typing.ForwardRef("StorageMethodEnum") # noqa: E501
+    storage_method: typing.ForwardRef("StorageMethod") # noqa: E501
     """
     [optional]
     """
 
-    storage: typing.ForwardRef("StorageEnum") # noqa: E501
+    storage: typing.ForwardRef("StorageType") # noqa: E501
     """
     [optional]
     """
 
-    sorting_method: typing.ForwardRef("SortingMethodEnum") # noqa: E501
+    sorting_method: typing.ForwardRef("SortingMethod") # noqa: E501
     """
     [optional]
     """
@@ -341,8 +339,8 @@ class DataRequest(ModelNormal):
             start_frame (int): [optional]  # noqa: E501
             stop_frame (int): [optional]  # noqa: E501
             frame_filter (str): [optional]  # noqa: E501
-            compressed_chunk_type (CompressedChunkTypeEnum): [optional]  # noqa: E501
-            original_chunk_type (OriginalChunkTypeEnum): [optional]  # noqa: E501
+            compressed_chunk_type (ChunkType): [optional]  # noqa: E501
+            original_chunk_type (ChunkType): [optional]  # noqa: E501
             client_files ([ClientFileRequest]): [optional] if omitted the server will use the default value of []  # noqa: E501
             server_files ([ServerFileRequest]): [optional] if omitted the server will use the default value of []  # noqa: E501
             remote_files ([RemoteFileRequest]): [optional] if omitted the server will use the default value of []  # noqa: E501
@@ -350,9 +348,9 @@ class DataRequest(ModelNormal):
             cloud_storage_id (int, none_type): [optional]  # noqa: E501
             use_cache (bool): [optional] if omitted the server will use the default value of False  # noqa: E501
             copy_data (bool): [optional] if omitted the server will use the default value of False  # noqa: E501
-            storage_method (StorageMethodEnum): [optional]  # noqa: E501
-            storage (StorageEnum): [optional]  # noqa: E501
-            sorting_method (SortingMethodEnum): [optional]  # noqa: E501
+            storage_method (StorageMethod): [optional]  # noqa: E501
+            storage (StorageType): [optional]  # noqa: E501
+            sorting_method (SortingMethod): [optional]  # noqa: E501
         """
 
         _check_type = kwargs.pop('_check_type', True)
@@ -447,8 +445,8 @@ class DataRequest(ModelNormal):
             start_frame (int): [optional]  # noqa: E501
             stop_frame (int): [optional]  # noqa: E501
             frame_filter (str): [optional]  # noqa: E501
-            compressed_chunk_type (CompressedChunkTypeEnum): [optional]  # noqa: E501
-            original_chunk_type (OriginalChunkTypeEnum): [optional]  # noqa: E501
+            compressed_chunk_type (ChunkType): [optional]  # noqa: E501
+            original_chunk_type (ChunkType): [optional]  # noqa: E501
             client_files ([ClientFileRequest]): [optional] if omitted the server will use the default value of []  # noqa: E501
             server_files ([ServerFileRequest]): [optional] if omitted the server will use the default value of []  # noqa: E501
             remote_files ([RemoteFileRequest]): [optional] if omitted the server will use the default value of []  # noqa: E501
@@ -456,9 +454,9 @@ class DataRequest(ModelNormal):
             cloud_storage_id (int, none_type): [optional]  # noqa: E501
             use_cache (bool): [optional] if omitted the server will use the default value of False  # noqa: E501
             copy_data (bool): [optional] if omitted the server will use the default value of False  # noqa: E501
-            storage_method (StorageMethodEnum): [optional]  # noqa: E501
-            storage (StorageEnum): [optional]  # noqa: E501
-            sorting_method (SortingMethodEnum): [optional]  # noqa: E501
+            storage_method (StorageMethod): [optional]  # noqa: E501
+            storage (StorageType): [optional]  # noqa: E501
+            sorting_method (SortingMethod): [optional]  # noqa: E501
         """
 
         _check_type = kwargs.pop('_check_type', True)

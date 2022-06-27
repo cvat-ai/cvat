@@ -544,5 +544,16 @@ SPECTACULAR_SETTINGS = {
 
     # Required for correct file upload type (bytes)
     'COMPONENT_SPLIT_REQUEST': True,
+
+    'ENUM_NAME_OVERRIDES': {
+        'ShapeType': 'cvat.apps.engine.models.ShapeType',
+        'OperationStatus': 'cvat.apps.engine.models.StateChoice',
+        'ChunkType': 'cvat.apps.engine.models.DataChoice',
+        'StorageMethod': 'cvat.apps.engine.models.StorageMethodChoice',
+        'JobStatus': 'cvat.apps.engine.models.StatusChoice',
+        'JobStage': 'cvat.apps.engine.models.StageChoice',
+        'StorageType': 'cvat.apps.engine.models.StorageChoice',
+        'SortingMethod': 'cvat.apps.engine.models.SortingMethod',
+    }
 }
 

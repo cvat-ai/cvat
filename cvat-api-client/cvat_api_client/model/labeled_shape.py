@@ -36,9 +36,9 @@ from cvat_api_client.exceptions import ApiAttributeError
 
 def lazy_import():
     from cvat_api_client.model.attribute_val import AttributeVal
-    from cvat_api_client.model.type411_enum import Type411Enum
+    from cvat_api_client.model.shape_type import ShapeType
     globals()['AttributeVal'] = AttributeVal
-    globals()['Type411Enum'] = Type411Enum
+    globals()['ShapeType'] = ShapeType
 
 
 class LabeledShape(ModelNormal):
@@ -48,7 +48,7 @@ class LabeledShape(ModelNormal):
     Do not edit the class manually.
 
     Attributes:
-      type (Type411Enum):
+      type (ShapeType):
 
       occluded (bool):
 
@@ -131,7 +131,7 @@ class LabeledShape(ModelNormal):
         """
         lazy_import()
         return {
-            'type': (Type411Enum,),  # noqa: E501
+            'type': (ShapeType,),  # noqa: E501
             'occluded': (bool,),  # noqa: E501
             'points': ([float],),  # noqa: E501
             'frame': (int,),  # noqa: E501
@@ -150,7 +150,7 @@ class LabeledShape(ModelNormal):
 
 
     # member type declarations
-    type: typing.ForwardRef("Type411Enum") # noqa: E501
+    type: typing.ForwardRef("ShapeType") # noqa: E501
     """
     """
 
@@ -227,7 +227,7 @@ class LabeledShape(ModelNormal):
         """LabeledShape - a model defined in OpenAPI
 
         Args:
-            type (Type411Enum):
+            type (ShapeType):
             occluded (bool):
             points ([float]):
             frame (int):
@@ -332,7 +332,7 @@ class LabeledShape(ModelNormal):
         """LabeledShape - a model defined in OpenAPI
 
         Args:
-            type (Type411Enum):
+            type (ShapeType):
             occluded (bool):
             points ([float]):
             frame (int):

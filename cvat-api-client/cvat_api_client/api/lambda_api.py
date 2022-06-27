@@ -98,7 +98,7 @@ class LambdaApi(object):
             },
             api_client=api_client
         )
-        self.lambda_functions_retrieve_endpoint = _Endpoint(
+        self.lambda_functions_list_endpoint = _Endpoint(
             settings={
                 'response_type': None,
                 'auth': [
@@ -108,7 +108,7 @@ class LambdaApi(object):
                     'tokenAuth'
                 ],
                 'endpoint_path': '/api/lambda/functions',
-                'operation_id': 'lambda_functions_retrieve',
+                'operation_id': 'lambda_functions_list',
                 'http_method': 'GET',
                 'servers': None,
             },
@@ -143,7 +143,7 @@ class LambdaApi(object):
             },
             api_client=api_client
         )
-        self.lambda_functions_retrieve2_endpoint = _Endpoint(
+        self.lambda_functions_retrieve_endpoint = _Endpoint(
             settings={
                 'response_type': ({str: (bool, date, datetime, dict, float, int, list, str, none_type)},),
                 'auth': [
@@ -153,7 +153,7 @@ class LambdaApi(object):
                     'tokenAuth'
                 ],
                 'endpoint_path': '/api/lambda/functions/{func_id}',
-                'operation_id': 'lambda_functions_retrieve2',
+                'operation_id': 'lambda_functions_retrieve',
                 'http_method': 'GET',
                 'servers': None,
             },
@@ -249,7 +249,7 @@ class LambdaApi(object):
             },
             api_client=api_client
         )
-        self.lambda_requests_retrieve_endpoint = _Endpoint(
+        self.lambda_requests_list_endpoint = _Endpoint(
             settings={
                 'response_type': None,
                 'auth': [
@@ -259,7 +259,7 @@ class LambdaApi(object):
                     'tokenAuth'
                 ],
                 'endpoint_path': '/api/lambda/requests',
-                'operation_id': 'lambda_requests_retrieve',
+                'operation_id': 'lambda_requests_list',
                 'http_method': 'GET',
                 'servers': None,
             },
@@ -294,7 +294,7 @@ class LambdaApi(object):
             },
             api_client=api_client
         )
-        self.lambda_requests_retrieve2_endpoint = _Endpoint(
+        self.lambda_requests_retrieve_endpoint = _Endpoint(
             settings={
                 'response_type': None,
                 'auth': [
@@ -304,7 +304,7 @@ class LambdaApi(object):
                     'tokenAuth'
                 ],
                 'endpoint_path': '/api/lambda/requests/{id}',
-                'operation_id': 'lambda_requests_retrieve2',
+                'operation_id': 'lambda_requests_retrieve',
                 'http_method': 'GET',
                 'servers': None,
             },
@@ -552,7 +552,7 @@ class LambdaApi(object):
             _preload_content=False, _check_status=False)
 
     @overload
-    def lambda_functions_retrieve(
+    def lambda_functions_list(
         self,
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
@@ -561,7 +561,7 @@ class LambdaApi(object):
         ...
 
     @overload
-    def lambda_functions_retrieve(
+    def lambda_functions_list(
         self,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
@@ -570,7 +570,7 @@ class LambdaApi(object):
         ...
 
     @overload
-    def lambda_functions_retrieve(
+    def lambda_functions_list(
         self,
         _return_http_data_only: typing.Literal[False],
         **kwargs
@@ -578,7 +578,7 @@ class LambdaApi(object):
         ...
 
     @overload
-    def lambda_functions_retrieve(
+    def lambda_functions_list(
         self,
         _preload_content: typing.Literal[False],
         **kwargs
@@ -586,7 +586,7 @@ class LambdaApi(object):
         ...
 
     @overload
-    def lambda_functions_retrieve(
+    def lambda_functions_list(
         self,
         _return_http_data_only: typing.Literal[True],
         _preload_content: typing.Literal[False],
@@ -595,7 +595,7 @@ class LambdaApi(object):
         ...
 
     @overload
-    def lambda_functions_retrieve(
+    def lambda_functions_list(
         self,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
@@ -603,7 +603,7 @@ class LambdaApi(object):
     ) -> urllib3.HTTPResponse:
         ...
 
-    def lambda_functions_retrieve(
+    def lambda_functions_list(
         self,
         **kwargs
     ) -> typing.Union[
@@ -616,7 +616,7 @@ class LambdaApi(object):
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.lambda_functions_retrieve(async_req=True)
+        >>> thread = api.lambda_functions_list(async_req=True)
         >>> result = thread.get()
 
 
@@ -689,16 +689,16 @@ class LambdaApi(object):
             '_content_type')
         kwargs['_host_index'] = kwargs.get('_host_index')
         kwargs['_request_auths'] = kwargs.get('_request_auths', None)
-        return self.lambda_functions_retrieve_endpoint.call_with_http_info(**kwargs)
+        return self.lambda_functions_list_endpoint.call_with_http_info(**kwargs)
 
-    def lambda_functions_retrieve_raw(
+    def lambda_functions_list_raw(
         self,
         *args,
         **kwargs
     ) -> urllib3.HTTPResponse:
         """
-        The same as lambda_functions_retrieve(), but returns the response unprocessed.
-        Equivalent to calling lambda_functions_retrieve with
+        The same as lambda_functions_list(), but returns the response unprocessed.
+        Equivalent to calling lambda_functions_list with
         _preload_content = False and _check_status=False
 
         Method returns a list of functions  # noqa: E501
@@ -706,7 +706,7 @@ class LambdaApi(object):
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.lambda_functions_retrieve(async_req=True)
+        >>> thread = api.lambda_functions_list(async_req=True)
         >>> result = thread.get()
 
 
@@ -739,11 +739,11 @@ class LambdaApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.lambda_functions_retrieve(*args, **kwargs,
+        return self.lambda_functions_list(*args, **kwargs,
             _preload_content=False, _check_status=False)
 
     @overload
-    def lambda_functions_retrieve2(
+    def lambda_functions_retrieve(
         self,
         func_id,
         _return_http_data_only: typing.Literal[True] = True,
@@ -753,7 +753,7 @@ class LambdaApi(object):
         ...
 
     @overload
-    def lambda_functions_retrieve2(
+    def lambda_functions_retrieve(
         self,
         func_id,
         _return_http_data_only: typing.Literal[False],
@@ -763,7 +763,7 @@ class LambdaApi(object):
         ...
 
     @overload
-    def lambda_functions_retrieve2(
+    def lambda_functions_retrieve(
         self,
         func_id,
         _return_http_data_only: typing.Literal[False],
@@ -772,7 +772,7 @@ class LambdaApi(object):
         ...
 
     @overload
-    def lambda_functions_retrieve2(
+    def lambda_functions_retrieve(
         self,
         func_id,
         _preload_content: typing.Literal[False],
@@ -781,7 +781,7 @@ class LambdaApi(object):
         ...
 
     @overload
-    def lambda_functions_retrieve2(
+    def lambda_functions_retrieve(
         self,
         func_id,
         _return_http_data_only: typing.Literal[True],
@@ -791,7 +791,7 @@ class LambdaApi(object):
         ...
 
     @overload
-    def lambda_functions_retrieve2(
+    def lambda_functions_retrieve(
         self,
         func_id,
         _return_http_data_only: typing.Literal[False],
@@ -800,7 +800,7 @@ class LambdaApi(object):
     ) -> urllib3.HTTPResponse:
         ...
 
-    def lambda_functions_retrieve2(
+    def lambda_functions_retrieve(
         self,
         func_id,
         **kwargs
@@ -814,7 +814,7 @@ class LambdaApi(object):
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.lambda_functions_retrieve2(func_id, async_req=True)
+        >>> thread = api.lambda_functions_retrieve(func_id, async_req=True)
         >>> result = thread.get()
 
         Args:
@@ -891,16 +891,16 @@ class LambdaApi(object):
         kwargs['_request_auths'] = kwargs.get('_request_auths', None)
         kwargs['func_id'] = \
             func_id
-        return self.lambda_functions_retrieve2_endpoint.call_with_http_info(**kwargs)
+        return self.lambda_functions_retrieve_endpoint.call_with_http_info(**kwargs)
 
-    def lambda_functions_retrieve2_raw(
+    def lambda_functions_retrieve_raw(
         self,
         *args,
         **kwargs
     ) -> urllib3.HTTPResponse:
         """
-        The same as lambda_functions_retrieve2(), but returns the response unprocessed.
-        Equivalent to calling lambda_functions_retrieve2 with
+        The same as lambda_functions_retrieve(), but returns the response unprocessed.
+        Equivalent to calling lambda_functions_retrieve with
         _preload_content = False and _check_status=False
 
         Method returns the information about the function  # noqa: E501
@@ -908,7 +908,7 @@ class LambdaApi(object):
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.lambda_functions_retrieve2(func_id, async_req=True)
+        >>> thread = api.lambda_functions_retrieve(func_id, async_req=True)
         >>> result = thread.get()
 
         Args:
@@ -943,7 +943,7 @@ class LambdaApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.lambda_functions_retrieve2(*args, **kwargs,
+        return self.lambda_functions_retrieve(*args, **kwargs,
             _preload_content=False, _check_status=False)
 
     @overload
@@ -1138,7 +1138,7 @@ class LambdaApi(object):
             _preload_content=False, _check_status=False)
 
     @overload
-    def lambda_requests_retrieve(
+    def lambda_requests_list(
         self,
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
@@ -1147,7 +1147,7 @@ class LambdaApi(object):
         ...
 
     @overload
-    def lambda_requests_retrieve(
+    def lambda_requests_list(
         self,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
@@ -1156,7 +1156,7 @@ class LambdaApi(object):
         ...
 
     @overload
-    def lambda_requests_retrieve(
+    def lambda_requests_list(
         self,
         _return_http_data_only: typing.Literal[False],
         **kwargs
@@ -1164,7 +1164,7 @@ class LambdaApi(object):
         ...
 
     @overload
-    def lambda_requests_retrieve(
+    def lambda_requests_list(
         self,
         _preload_content: typing.Literal[False],
         **kwargs
@@ -1172,7 +1172,7 @@ class LambdaApi(object):
         ...
 
     @overload
-    def lambda_requests_retrieve(
+    def lambda_requests_list(
         self,
         _return_http_data_only: typing.Literal[True],
         _preload_content: typing.Literal[False],
@@ -1181,7 +1181,7 @@ class LambdaApi(object):
         ...
 
     @overload
-    def lambda_requests_retrieve(
+    def lambda_requests_list(
         self,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
@@ -1189,7 +1189,7 @@ class LambdaApi(object):
     ) -> urllib3.HTTPResponse:
         ...
 
-    def lambda_requests_retrieve(
+    def lambda_requests_list(
         self,
         **kwargs
     ) -> typing.Union[
@@ -1202,7 +1202,7 @@ class LambdaApi(object):
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.lambda_requests_retrieve(async_req=True)
+        >>> thread = api.lambda_requests_list(async_req=True)
         >>> result = thread.get()
 
 
@@ -1275,16 +1275,16 @@ class LambdaApi(object):
             '_content_type')
         kwargs['_host_index'] = kwargs.get('_host_index')
         kwargs['_request_auths'] = kwargs.get('_request_auths', None)
-        return self.lambda_requests_retrieve_endpoint.call_with_http_info(**kwargs)
+        return self.lambda_requests_list_endpoint.call_with_http_info(**kwargs)
 
-    def lambda_requests_retrieve_raw(
+    def lambda_requests_list_raw(
         self,
         *args,
         **kwargs
     ) -> urllib3.HTTPResponse:
         """
-        The same as lambda_requests_retrieve(), but returns the response unprocessed.
-        Equivalent to calling lambda_requests_retrieve with
+        The same as lambda_requests_list(), but returns the response unprocessed.
+        Equivalent to calling lambda_requests_list with
         _preload_content = False and _check_status=False
 
         Method returns a list of requests  # noqa: E501
@@ -1292,7 +1292,7 @@ class LambdaApi(object):
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.lambda_requests_retrieve(async_req=True)
+        >>> thread = api.lambda_requests_list(async_req=True)
         >>> result = thread.get()
 
 
@@ -1325,11 +1325,11 @@ class LambdaApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.lambda_requests_retrieve(*args, **kwargs,
+        return self.lambda_requests_list(*args, **kwargs,
             _preload_content=False, _check_status=False)
 
     @overload
-    def lambda_requests_retrieve2(
+    def lambda_requests_retrieve(
         self,
         id,
         _return_http_data_only: typing.Literal[True] = True,
@@ -1339,7 +1339,7 @@ class LambdaApi(object):
         ...
 
     @overload
-    def lambda_requests_retrieve2(
+    def lambda_requests_retrieve(
         self,
         id,
         _return_http_data_only: typing.Literal[False],
@@ -1349,7 +1349,7 @@ class LambdaApi(object):
         ...
 
     @overload
-    def lambda_requests_retrieve2(
+    def lambda_requests_retrieve(
         self,
         id,
         _return_http_data_only: typing.Literal[False],
@@ -1358,7 +1358,7 @@ class LambdaApi(object):
         ...
 
     @overload
-    def lambda_requests_retrieve2(
+    def lambda_requests_retrieve(
         self,
         id,
         _preload_content: typing.Literal[False],
@@ -1367,7 +1367,7 @@ class LambdaApi(object):
         ...
 
     @overload
-    def lambda_requests_retrieve2(
+    def lambda_requests_retrieve(
         self,
         id,
         _return_http_data_only: typing.Literal[True],
@@ -1377,7 +1377,7 @@ class LambdaApi(object):
         ...
 
     @overload
-    def lambda_requests_retrieve2(
+    def lambda_requests_retrieve(
         self,
         id,
         _return_http_data_only: typing.Literal[False],
@@ -1386,7 +1386,7 @@ class LambdaApi(object):
     ) -> urllib3.HTTPResponse:
         ...
 
-    def lambda_requests_retrieve2(
+    def lambda_requests_retrieve(
         self,
         id,
         **kwargs
@@ -1400,7 +1400,7 @@ class LambdaApi(object):
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.lambda_requests_retrieve2(id, async_req=True)
+        >>> thread = api.lambda_requests_retrieve(id, async_req=True)
         >>> result = thread.get()
 
         Args:
@@ -1477,16 +1477,16 @@ class LambdaApi(object):
         kwargs['_request_auths'] = kwargs.get('_request_auths', None)
         kwargs['id'] = \
             id
-        return self.lambda_requests_retrieve2_endpoint.call_with_http_info(**kwargs)
+        return self.lambda_requests_retrieve_endpoint.call_with_http_info(**kwargs)
 
-    def lambda_requests_retrieve2_raw(
+    def lambda_requests_retrieve_raw(
         self,
         *args,
         **kwargs
     ) -> urllib3.HTTPResponse:
         """
-        The same as lambda_requests_retrieve2(), but returns the response unprocessed.
-        Equivalent to calling lambda_requests_retrieve2 with
+        The same as lambda_requests_retrieve(), but returns the response unprocessed.
+        Equivalent to calling lambda_requests_retrieve with
         _preload_content = False and _check_status=False
 
         Method returns the status of the request  # noqa: E501
@@ -1494,7 +1494,7 @@ class LambdaApi(object):
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.lambda_requests_retrieve2(id, async_req=True)
+        >>> thread = api.lambda_requests_retrieve(id, async_req=True)
         >>> result = thread.get()
 
         Args:
@@ -1529,6 +1529,6 @@ class LambdaApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.lambda_requests_retrieve2(*args, **kwargs,
+        return self.lambda_requests_retrieve(*args, **kwargs,
             _preload_content=False, _check_status=False)
 

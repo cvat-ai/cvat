@@ -36,9 +36,9 @@ from cvat_api_client.exceptions import ApiAttributeError
 
 def lazy_import():
     from cvat_api_client.model.attribute_val_request import AttributeValRequest
-    from cvat_api_client.model.type411_enum import Type411Enum
+    from cvat_api_client.model.shape_type import ShapeType
     globals()['AttributeValRequest'] = AttributeValRequest
-    globals()['Type411Enum'] = Type411Enum
+    globals()['ShapeType'] = ShapeType
 
 
 class LabeledShapeRequest(ModelNormal):
@@ -48,7 +48,7 @@ class LabeledShapeRequest(ModelNormal):
     Do not edit the class manually.
 
     Attributes:
-      type (Type411Enum):
+      type (ShapeType):
 
       occluded (bool):
 
@@ -134,7 +134,7 @@ class LabeledShapeRequest(ModelNormal):
         """
         lazy_import()
         return {
-            'type': (Type411Enum,),  # noqa: E501
+            'type': (ShapeType,),  # noqa: E501
             'occluded': (bool,),  # noqa: E501
             'points': ([float],),  # noqa: E501
             'frame': (int,),  # noqa: E501
@@ -153,7 +153,7 @@ class LabeledShapeRequest(ModelNormal):
 
 
     # member type declarations
-    type: typing.ForwardRef("Type411Enum") # noqa: E501
+    type: typing.ForwardRef("ShapeType") # noqa: E501
     """
     """
 
@@ -230,7 +230,7 @@ class LabeledShapeRequest(ModelNormal):
         """LabeledShapeRequest - a model defined in OpenAPI
 
         Args:
-            type (Type411Enum):
+            type (ShapeType):
             occluded (bool):
             points ([float]):
             frame (int):
@@ -335,7 +335,7 @@ class LabeledShapeRequest(ModelNormal):
         """LabeledShapeRequest - a model defined in OpenAPI
 
         Args:
-            type (Type411Enum):
+            type (ShapeType):
             occluded (bool):
             points ([float]):
             frame (int):

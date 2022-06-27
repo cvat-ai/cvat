@@ -54,7 +54,6 @@ BASE_REQUIREMENTS = parse_requirements(BASE_REQUIREMENTS_FILE)
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
-
 setup(
     name="cvat-api-client",
     version=find_version(project_dir="cvat_api_client"),
@@ -73,7 +72,7 @@ setup(
     python_requires=">=3.6",
     install_requires=BASE_REQUIREMENTS,
     package_dir={"": "."},
-    packages=find_packages(include=["cvat_api_client*"], exclude=["test*"]),
+    packages=find_packages(include=["cvat_api_client.*"]),
     include_package_data=True,
     license="MIT License",
 )

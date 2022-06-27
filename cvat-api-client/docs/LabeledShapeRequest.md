@@ -4,7 +4,7 @@
 ## Properties
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**type** | [**Type411Enum**](Type411Enum.md) |  | 
+**type** | [**ShapeType**](ShapeType.md) |  | 
 **occluded** | **bool** |  | 
 **points** | **[float]** |  | 
 **frame** | **int** |  | 

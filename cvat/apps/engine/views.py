@@ -603,6 +603,7 @@ class TaskViewSet(UploadMixin, viewsets.ModelViewSet):
             "label_set__attributespec_set",
             "segment_set__job_set")
     serializer_class = TaskSerializer
+    http_method_names = ('get', 'post', 'head', 'patch', 'delete', 'options', 'put')
     lookup_fields = {'project_name': 'project__name', 'owner': 'owner__username', 'assignee': 'assignee__username'}
     search_fields = ('project_name', 'name', 'owner', 'status', 'assignee', 'subset', 'mode', 'dimension')
     filter_fields = list(search_fields) + ['id', 'project_id', 'updated_date']
@@ -810,6 +811,14 @@ class TaskViewSet(UploadMixin, viewsets.ModelViewSet):
             return data_getter(request, self._object.data.start_frame,
                 self._object.data.stop_frame, self._object.data)
 
+    @extend_schema(methods=['PATCH'],
+        operation_id='tasks_data_file_partial_update',
+        summary="Allows to upload a file chunk. "
+            "Implements TUS file uploading protocol."
+    )
+    @extend_schema(methods=['HEAD'],
+        summary="Implements TUS file uploading protocol."
+    )
     @action(detail=True, methods=['HEAD', 'PATCH'], url_path='data/'+UploadMixin.file_id_regex)
     def append_data_chunk(self, request, pk, file_id):
         self._object = self.get_object()
@@ -903,6 +912,15 @@ class TaskViewSet(UploadMixin, viewsets.ModelViewSet):
                     return Response(data=str(e), status=status.HTTP_400_BAD_REQUEST)
                 return Response(data)
 
+    @extend_schema(methods=['PATCH'],
+        operation_id='tasks_annotations_file_partial_update',
+        summary="Allows to upload an annotation file chunk. "
+            "Implements TUS file uploading protocol."
+    )
+    @extend_schema(methods=['HEAD'],
+        operation_id='tasks_annotations_file_retrieve_status',
+        summary="Implements TUS file uploading protocol."
+    )
     @action(detail=True, methods=['HEAD', 'PATCH'], url_path='annotations/'+UploadMixin.file_id_regex)
     def append_annotations_chunk(self, request, pk, file_id):
         self._object = self.get_object()
@@ -1164,6 +1182,14 @@ class JobViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
                     return Response(data=str(e), status=status.HTTP_400_BAD_REQUEST)
                 return Response(data)
 
+    @extend_schema(methods=['PATCH'],
+        operation_id='jobs_annotations_file_partial_update',
+        summary="Allows to upload an annotation file chunk. "
+            "Implements TUS file uploading protocol."
+    )
+    @extend_schema(methods=['HEAD'],
+        summary="Implements TUS file uploading protocol."
+    )
     @action(detail=True, methods=['HEAD', 'PATCH'], url_path='annotations/'+UploadMixin.file_id_regex)
     def append_annotations_chunk(self, request, pk, file_id):
         self._object = self.get_object()

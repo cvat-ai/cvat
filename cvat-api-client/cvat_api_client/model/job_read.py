@@ -35,18 +35,18 @@ from cvat_api_client.exceptions import ApiAttributeError
 
 
 def lazy_import():
+    from cvat_api_client.model.chunk_type import ChunkType
     from cvat_api_client.model.comment_read_owner import CommentReadOwner
-    from cvat_api_client.model.data_compressed_chunk_type_enum import DataCompressedChunkTypeEnum
+    from cvat_api_client.model.job_stage import JobStage
+    from cvat_api_client.model.job_status import JobStatus
     from cvat_api_client.model.label import Label
-    from cvat_api_client.model.stage_enum import StageEnum
-    from cvat_api_client.model.state_bf1_enum import StateBf1Enum
-    from cvat_api_client.model.status_enum import StatusEnum
+    from cvat_api_client.model.operation_status import OperationStatus
+    globals()['ChunkType'] = ChunkType
     globals()['CommentReadOwner'] = CommentReadOwner
-    globals()['DataCompressedChunkTypeEnum'] = DataCompressedChunkTypeEnum
+    globals()['JobStage'] = JobStage
+    globals()['JobStatus'] = JobStatus
     globals()['Label'] = Label
-    globals()['StageEnum'] = StageEnum
-    globals()['StateBf1Enum'] = StateBf1Enum
-    globals()['StatusEnum'] = StatusEnum
+    globals()['OperationStatus'] = OperationStatus
 
 
 class JobRead(ModelNormal):
@@ -70,7 +70,7 @@ class JobRead(ModelNormal):
 
       task_id (int): [optional]  # noqa: E501
 
-      project_id (str, none_type): [optional]  # noqa: E501
+      project_id (int, none_type): [optional]  # noqa: E501
 
       status (bool, date, datetime, dict, float, int, list, str, none_type): [optional]  # noqa: E501
 
@@ -149,7 +149,7 @@ class JobRead(ModelNormal):
             'url': (str,),  # noqa: E501
             'id': (int,),  # noqa: E501
             'task_id': (int,),  # noqa: E501
-            'project_id': (str, none_type,),  # noqa: E501
+            'project_id': (int, none_type,),  # noqa: E501
             'status': (bool, date, datetime, dict, float, int, list, str, none_type,),  # noqa: E501
             'stage': (bool, date, datetime, dict, float, int, list, str, none_type,),  # noqa: E501
             'state': (bool, date, datetime, dict, float, int, list, str, none_type,),  # noqa: E501
@@ -181,7 +181,7 @@ class JobRead(ModelNormal):
     [optional]
     """
 
-    project_id: typing.Optional[str] # noqa: E501
+    project_id: typing.Optional[int] # noqa: E501
     """
     [optional]
     """
@@ -326,7 +326,7 @@ class JobRead(ModelNormal):
             url (str): [optional]  # noqa: E501
             id (int): [optional]  # noqa: E501
             task_id (int): [optional]  # noqa: E501
-            project_id (str, none_type): [optional]  # noqa: E501
+            project_id (int, none_type): [optional]  # noqa: E501
             status (bool, date, datetime, dict, float, int, list, str, none_type): [optional]  # noqa: E501
             stage (bool, date, datetime, dict, float, int, list, str, none_type): [optional]  # noqa: E501
             state (bool, date, datetime, dict, float, int, list, str, none_type): [optional]  # noqa: E501
@@ -433,7 +433,7 @@ class JobRead(ModelNormal):
             url (str): [optional]  # noqa: E501
             id (int): [optional]  # noqa: E501
             task_id (int): [optional]  # noqa: E501
-            project_id (str, none_type): [optional]  # noqa: E501
+            project_id (int, none_type): [optional]  # noqa: E501
             status (bool, date, datetime, dict, float, int, list, str, none_type): [optional]  # noqa: E501
             stage (bool, date, datetime, dict, float, int, list, str, none_type): [optional]  # noqa: E501
             state (bool, date, datetime, dict, float, int, list, str, none_type): [optional]  # noqa: E501

@@ -5,11 +5,11 @@ All URIs are relative to *http://localhost*
 Method | HTTP request | Description
 ------------- | ------------- | -------------
 [**lambda_functions_create**](LambdaApi.md#lambda_functions_create) | **POST** /api/lambda/functions/{func_id} | 
-[**lambda_functions_retrieve**](LambdaApi.md#lambda_functions_retrieve) | **GET** /api/lambda/functions | Method returns a list of functions
-[**lambda_functions_retrieve2**](LambdaApi.md#lambda_functions_retrieve2) | **GET** /api/lambda/functions/{func_id} | Method returns the information about the function
+[**lambda_functions_list**](LambdaApi.md#lambda_functions_list) | **GET** /api/lambda/functions | Method returns a list of functions
+[**lambda_functions_retrieve**](LambdaApi.md#lambda_functions_retrieve) | **GET** /api/lambda/functions/{func_id} | Method returns the information about the function
 [**lambda_requests_create**](LambdaApi.md#lambda_requests_create) | **POST** /api/lambda/requests | Method calls the function
-[**lambda_requests_retrieve**](LambdaApi.md#lambda_requests_retrieve) | **GET** /api/lambda/requests | Method returns a list of requests
-[**lambda_requests_retrieve2**](LambdaApi.md#lambda_requests_retrieve2) | **GET** /api/lambda/requests/{id} | Method returns the status of the request
+[**lambda_requests_list**](LambdaApi.md#lambda_requests_list) | **GET** /api/lambda/requests | Method returns a list of requests
+[**lambda_requests_retrieve**](LambdaApi.md#lambda_requests_retrieve) | **GET** /api/lambda/requests/{id} | Method returns the status of the request
 
 
 # **lambda_functions_create**
@@ -106,8 +106,8 @@ void (empty response body)
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
-# **lambda_functions_retrieve**
-> lambda_functions_retrieve()
+# **lambda_functions_list**
+> lambda_functions_list()
 
 Method returns a list of functions
 
@@ -166,9 +166,9 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # example, this endpoint has no required or optional parameters
     try:
         # Method returns a list of functions
-        api_instance.lambda_functions_retrieve()
+        api_instance.lambda_functions_list()
     except cvat_api_client.ApiException as e:
-        print("Exception when calling LambdaApi->lambda_functions_retrieve: %s\n" % e)
+        print("Exception when calling LambdaApi->lambda_functions_list: %s\n" % e)
 ```
 
 
@@ -197,8 +197,8 @@ void (empty response body)
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
-# **lambda_functions_retrieve2**
-> {str: (bool, date, datetime, dict, float, int, list, str, none_type)} lambda_functions_retrieve2(func_id)
+# **lambda_functions_retrieve**
+> {str: (bool, date, datetime, dict, float, int, list, str, none_type)} lambda_functions_retrieve(func_id)
 
 Method returns the information about the function
 
@@ -258,10 +258,10 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # example passing only required values which don't have defaults set
     try:
         # Method returns the information about the function
-        api_response = api_instance.lambda_functions_retrieve2(func_id)
+        api_response = api_instance.lambda_functions_retrieve(func_id)
         pprint(api_response)
     except cvat_api_client.ApiException as e:
-        print("Exception when calling LambdaApi->lambda_functions_retrieve2: %s\n" % e)
+        print("Exception when calling LambdaApi->lambda_functions_retrieve: %s\n" % e)
 ```
 
 
@@ -384,8 +384,8 @@ void (empty response body)
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
-# **lambda_requests_retrieve**
-> lambda_requests_retrieve()
+# **lambda_requests_list**
+> lambda_requests_list()
 
 Method returns a list of requests
 
@@ -444,9 +444,9 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # example, this endpoint has no required or optional parameters
     try:
         # Method returns a list of requests
-        api_instance.lambda_requests_retrieve()
+        api_instance.lambda_requests_list()
     except cvat_api_client.ApiException as e:
-        print("Exception when calling LambdaApi->lambda_requests_retrieve: %s\n" % e)
+        print("Exception when calling LambdaApi->lambda_requests_list: %s\n" % e)
 ```
 
 
@@ -475,8 +475,8 @@ void (empty response body)
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
-# **lambda_requests_retrieve2**
-> lambda_requests_retrieve2(id)
+# **lambda_requests_retrieve**
+> lambda_requests_retrieve(id)
 
 Method returns the status of the request
 
@@ -536,9 +536,9 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # example passing only required values which don't have defaults set
     try:
         # Method returns the status of the request
-        api_instance.lambda_requests_retrieve2(id)
+        api_instance.lambda_requests_retrieve(id)
     except cvat_api_client.ApiException as e:
-        print("Exception when calling LambdaApi->lambda_requests_retrieve2: %s\n" % e)
+        print("Exception when calling LambdaApi->lambda_requests_retrieve: %s\n" % e)
 ```
 
 

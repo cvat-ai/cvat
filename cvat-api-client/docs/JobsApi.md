@@ -6,9 +6,9 @@ Method | HTTP request | Description
 ------------- | ------------- | -------------
 [**jobs_annotations_create**](JobsApi.md#jobs_annotations_create) | **POST** /api/jobs/{id}/annotations/ | 
 [**jobs_annotations_destroy**](JobsApi.md#jobs_annotations_destroy) | **DELETE** /api/jobs/{id}/annotations/ | Method deletes all annotations for a specific job
+[**jobs_annotations_file_partial_update**](JobsApi.md#jobs_annotations_file_partial_update) | **PATCH** /api/jobs/{id}/annotations/{file_id} | Allows to upload an annotation file chunk. Implements TUS file uploading protocol.
 [**jobs_annotations_list**](JobsApi.md#jobs_annotations_list) | **GET** /api/jobs/{id}/annotations/ | Method returns annotations for a specific job
 [**jobs_annotations_partial_update**](JobsApi.md#jobs_annotations_partial_update) | **PATCH** /api/jobs/{id}/annotations/ | Method performs a partial update of annotations in a specific job
-[**jobs_annotations_partial_update2**](JobsApi.md#jobs_annotations_partial_update2) | **PATCH** /api/jobs/{id}/annotations/{file_id} | 
 [**jobs_annotations_update**](JobsApi.md#jobs_annotations_update) | **PUT** /api/jobs/{id}/annotations/ | Method performs an update of all annotations in a specific job
 [**jobs_commits_list**](JobsApi.md#jobs_commits_list) | **GET** /api/jobs/{id}/commits | The action returns the list of tracked changes for the job
 [**jobs_data_meta_retrieve**](JobsApi.md#jobs_data_meta_retrieve) | **GET** /api/jobs/{id}/data/meta | Method provides a meta information about media files which are related with the job
@@ -81,8 +81,8 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     id = 1 # int | A unique integer value identifying this job.
     job_write_request = JobWriteRequest(
         assignee=1,
-        stage=StageEnum("annotation"),
-        state=StateBf1Enum("new"),
+        stage=JobStage("annotation"),
+        state=OperationStatus("new"),
     ) # JobWriteRequest |  (optional)
 
     # example passing only required values which don't have defaults set
@@ -223,6 +223,121 @@ void (empty response body)
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
 **204** | The annotation has been deleted |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **jobs_annotations_file_partial_update**
+> JobWrite jobs_annotations_file_partial_update(file_id, id)
+
+Allows to upload an annotation file chunk. Implements TUS file uploading protocol.
+
+### Example
+
+* Api Key Authentication (SignatureAuthentication):
+* Basic Authentication (basicAuth):
+* Api Key Authentication (cookieAuth):
+* Api Key Authentication (tokenAuth):
+
+```python
+import time
+import cvat_api_client
+from cvat_api_client.api import jobs_api
+from cvat_api_client.model.job_write import JobWrite
+from cvat_api_client.model.patched_job_write_request import PatchedJobWriteRequest
+from pprint import pprint
+# Defining the host is optional and defaults to http://localhost
+# See configuration.py for a list of all supported configuration parameters.
+configuration = cvat_api_client.Configuration(
+    host = "http://localhost"
+)
+
+# The client must configure the authentication and authorization parameters
+# in accordance with the API server security policy.
+# Examples for each auth method are provided below, use the example that
+# satisfies your auth use case.
+
+# Configure API key authorization: SignatureAuthentication
+configuration.api_key['SignatureAuthentication'] = 'YOUR_API_KEY'
+
+# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
+# configuration.api_key_prefix['SignatureAuthentication'] = 'Bearer'
+
+# Configure HTTP basic authorization: basicAuth
+configuration = cvat_api_client.Configuration(
+    username = 'YOUR_USERNAME',
+    password = 'YOUR_PASSWORD'
+)
+
+# Configure API key authorization: cookieAuth
+configuration.api_key['cookieAuth'] = 'YOUR_API_KEY'
+
+# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
+# configuration.api_key_prefix['cookieAuth'] = 'Bearer'
+
+# Configure API key authorization: tokenAuth
+configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
+
+# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
+# configuration.api_key_prefix['tokenAuth'] = 'Bearer'
+
+# Enter a context with an instance of the API client
+with cvat_api_client.ApiClient(configuration) as api_client:
+    # Create an instance of the API class
+    api_instance = jobs_api.JobsApi(api_client)
+    file_id = "bf325375-e030-fccb-a009-17317c574773" # str | 
+    id = 1 # int | A unique integer value identifying this job.
+    patched_job_write_request = PatchedJobWriteRequest(
+        assignee=1,
+        stage=JobStage("annotation"),
+        state=OperationStatus("new"),
+    ) # PatchedJobWriteRequest |  (optional)
+
+    # example passing only required values which don't have defaults set
+    try:
+        # Allows to upload an annotation file chunk. Implements TUS file uploading protocol.
+        api_response = api_instance.jobs_annotations_file_partial_update(file_id, id)
+        pprint(api_response)
+    except cvat_api_client.ApiException as e:
+        print("Exception when calling JobsApi->jobs_annotations_file_partial_update: %s\n" % e)
+
+    # example passing only required values which don't have defaults set
+    # and optional values
+    try:
+        # Allows to upload an annotation file chunk. Implements TUS file uploading protocol.
+        api_response = api_instance.jobs_annotations_file_partial_update(file_id, id, patched_job_write_request=patched_job_write_request)
+        pprint(api_response)
+    except cvat_api_client.ApiException as e:
+        print("Exception when calling JobsApi->jobs_annotations_file_partial_update: %s\n" % e)
+```
+
+
+### Parameters
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **file_id** | **str**|  |
+ **id** | **int**| A unique integer value identifying this job. |
+ **patched_job_write_request** | [**PatchedJobWriteRequest**](PatchedJobWriteRequest.md)|  | [optional]
+
+### Return type
+
+[**JobWrite**](JobWrite.md)
+
+### Authorization
+
+[SignatureAuthentication](../README.md#SignatureAuthentication), [basicAuth](../README.md#basicAuth), [cookieAuth](../README.md#cookieAuth), [tokenAuth](../README.md#tokenAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json, application/x-www-form-urlencoded, multipart/form-data, application/offset+octet-stream
+ - **Accept**: application/vnd.cvat+json
+
+
+### HTTP response details
+
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** |  |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
@@ -407,8 +522,8 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     id = 1 # int | A unique integer value identifying this job.
     patched_job_write_request = PatchedJobWriteRequest(
         assignee=1,
-        stage=StageEnum("annotation"),
-        state=StateBf1Enum("new"),
+        stage=JobStage("annotation"),
+        state=OperationStatus("new"),
     ) # PatchedJobWriteRequest |  (optional)
 
     # example passing only required values which don't have defaults set
@@ -455,119 +570,6 @@ void (empty response body)
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
 **200** | No response body |  -  |
-
-[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
-
-# **jobs_annotations_partial_update2**
-> JobWrite jobs_annotations_partial_update2(file_id, id)
-
-
-
-### Example
-
-* Api Key Authentication (SignatureAuthentication):
-* Basic Authentication (basicAuth):
-* Api Key Authentication (cookieAuth):
-* Api Key Authentication (tokenAuth):
-
-```python
-import time
-import cvat_api_client
-from cvat_api_client.api import jobs_api
-from cvat_api_client.model.job_write import JobWrite
-from cvat_api_client.model.patched_job_write_request import PatchedJobWriteRequest
-from pprint import pprint
-# Defining the host is optional and defaults to http://localhost
-# See configuration.py for a list of all supported configuration parameters.
-configuration = cvat_api_client.Configuration(
-    host = "http://localhost"
-)
-
-# The client must configure the authentication and authorization parameters
-# in accordance with the API server security policy.
-# Examples for each auth method are provided below, use the example that
-# satisfies your auth use case.
-
-# Configure API key authorization: SignatureAuthentication
-configuration.api_key['SignatureAuthentication'] = 'YOUR_API_KEY'
-
-# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
-# configuration.api_key_prefix['SignatureAuthentication'] = 'Bearer'
-
-# Configure HTTP basic authorization: basicAuth
-configuration = cvat_api_client.Configuration(
-    username = 'YOUR_USERNAME',
-    password = 'YOUR_PASSWORD'
-)
-
-# Configure API key authorization: cookieAuth
-configuration.api_key['cookieAuth'] = 'YOUR_API_KEY'
-
-# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
-# configuration.api_key_prefix['cookieAuth'] = 'Bearer'
-
-# Configure API key authorization: tokenAuth
-configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
-
-# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
-# configuration.api_key_prefix['tokenAuth'] = 'Bearer'
-
-# Enter a context with an instance of the API client
-with cvat_api_client.ApiClient(configuration) as api_client:
-    # Create an instance of the API class
-    api_instance = jobs_api.JobsApi(api_client)
-    file_id = "bf325375-e030-fccb-a009-17317c574773" # str | 
-    id = 1 # int | A unique integer value identifying this job.
-    patched_job_write_request = PatchedJobWriteRequest(
-        assignee=1,
-        stage=StageEnum("annotation"),
-        state=StateBf1Enum("new"),
-    ) # PatchedJobWriteRequest |  (optional)
-
-    # example passing only required values which don't have defaults set
-    try:
-        api_response = api_instance.jobs_annotations_partial_update2(file_id, id)
-        pprint(api_response)
-    except cvat_api_client.ApiException as e:
-        print("Exception when calling JobsApi->jobs_annotations_partial_update2: %s\n" % e)
-
-    # example passing only required values which don't have defaults set
-    # and optional values
-    try:
-        api_response = api_instance.jobs_annotations_partial_update2(file_id, id, patched_job_write_request=patched_job_write_request)
-        pprint(api_response)
-    except cvat_api_client.ApiException as e:
-        print("Exception when calling JobsApi->jobs_annotations_partial_update2: %s\n" % e)
-```
-
-
-### Parameters
-
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
- **file_id** | **str**|  |
- **id** | **int**| A unique integer value identifying this job. |
- **patched_job_write_request** | [**PatchedJobWriteRequest**](PatchedJobWriteRequest.md)|  | [optional]
-
-### Return type
-
-[**JobWrite**](JobWrite.md)
-
-### Authorization
-
-[SignatureAuthentication](../README.md#SignatureAuthentication), [basicAuth](../README.md#basicAuth), [cookieAuth](../README.md#cookieAuth), [tokenAuth](../README.md#tokenAuth)
-
-### HTTP request headers
-
- - **Content-Type**: application/json, application/x-www-form-urlencoded, multipart/form-data, application/offset+octet-stream
- - **Accept**: application/vnd.cvat+json
-
-
-### HTTP response details
-
-| Status code | Description | Response headers |
-|-------------|-------------|------------------|
-**200** |  |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
@@ -1282,8 +1284,8 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     id = 1 # int | A unique integer value identifying this job.
     patched_job_write_request = PatchedJobWriteRequest(
         assignee=1,
-        stage=StageEnum("annotation"),
-        state=StateBf1Enum("new"),
+        stage=JobStage("annotation"),
+        state=OperationStatus("new"),
     ) # PatchedJobWriteRequest |  (optional)
 
     # example passing only required values which don't have defaults set
@@ -1492,8 +1494,8 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     id = 1 # int | A unique integer value identifying this job.
     job_write_request = JobWriteRequest(
         assignee=1,
-        stage=StageEnum("annotation"),
-        state=StateBf1Enum("new"),
+        stage=JobStage("annotation"),
+        state=OperationStatus("new"),
     ) # JobWriteRequest |  (optional)
 
     # example passing only required values which don't have defaults set

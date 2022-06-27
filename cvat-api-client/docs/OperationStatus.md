@@ -1,10 +1,10 @@
-# CompressedChunkTypeEnum
+# OperationStatus
 
 
 ## Properties
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**value** | **str** |  |  must be one of ["video", "imageset", "list", ]
+**value** | **str** |  |  must be one of ["new", "in progress", "completed", "rejected", ]
 
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
 

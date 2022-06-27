@@ -36,19 +36,17 @@ from cvat_api_client.exceptions import ApiAttributeError
 
 def lazy_import():
     from cvat_api_client.model.basic_user import BasicUser
+    from cvat_api_client.model.chunk_type import ChunkType
     from cvat_api_client.model.comment_read_owner import CommentReadOwner
-    from cvat_api_client.model.data_compressed_chunk_type_enum import DataCompressedChunkTypeEnum
-    from cvat_api_client.model.data_original_chunk_type_enum import DataOriginalChunkTypeEnum
+    from cvat_api_client.model.job_status import JobStatus
     from cvat_api_client.model.label import Label
     from cvat_api_client.model.segment import Segment
-    from cvat_api_client.model.status_enum import StatusEnum
     globals()['BasicUser'] = BasicUser
+    globals()['ChunkType'] = ChunkType
     globals()['CommentReadOwner'] = CommentReadOwner
-    globals()['DataCompressedChunkTypeEnum'] = DataCompressedChunkTypeEnum
-    globals()['DataOriginalChunkTypeEnum'] = DataOriginalChunkTypeEnum
+    globals()['JobStatus'] = JobStatus
     globals()['Label'] = Label
     globals()['Segment'] = Segment
-    globals()['StatusEnum'] = StatusEnum
 
 
 class Task(ModelNormal):

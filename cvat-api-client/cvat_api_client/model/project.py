@@ -36,13 +36,13 @@ from cvat_api_client.exceptions import ApiAttributeError
 
 def lazy_import():
     from cvat_api_client.model.comment_read_owner import CommentReadOwner
+    from cvat_api_client.model.job_status import JobStatus
     from cvat_api_client.model.label import Label
     from cvat_api_client.model.project_owner import ProjectOwner
-    from cvat_api_client.model.status_enum import StatusEnum
     globals()['CommentReadOwner'] = CommentReadOwner
+    globals()['JobStatus'] = JobStatus
     globals()['Label'] = Label
     globals()['ProjectOwner'] = ProjectOwner
-    globals()['StatusEnum'] = StatusEnum
 
 
 class Project(ModelNormal):

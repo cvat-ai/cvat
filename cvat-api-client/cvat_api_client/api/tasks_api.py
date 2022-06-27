@@ -231,6 +231,82 @@ class TasksApi(object):
             },
             api_client=api_client
         )
+        self.tasks_annotations_file_partial_update_endpoint = _Endpoint(
+            settings={
+                'response_type': (Task,),
+                'auth': [
+                    'SignatureAuthentication',
+                    'basicAuth',
+                    'cookieAuth',
+                    'tokenAuth'
+                ],
+                'endpoint_path': '/api/tasks/{id}/annotations/{file_id}',
+                'operation_id': 'tasks_annotations_file_partial_update',
+                'http_method': 'PATCH',
+                'servers': None,
+            },
+            params_map={
+                'all': [
+                    'file_id',
+                    'id',
+                    'patched_task_request',
+                ],
+                'required': [
+                    'file_id',
+                    'id',
+                ],
+                'nullable': [
+                ],
+                'enum': [
+                ],
+                'validation': [
+                    'file_id',
+                ]
+            },
+            root_map={
+                'validations': {
+                    ('file_id',): {
+
+                        'regex': {
+                            'pattern': r'^\b[0-9a-f]{8}\b-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-\b[0-9a-f]{12}\b$',  # noqa: E501
+                        },
+                    },
+                },
+                'allowed_values': {
+                },
+                'openapi_types': {
+                    'file_id':
+                        (str,),
+                    'id':
+                        (int,),
+                    'patched_task_request':
+                        (PatchedTaskRequest,),
+                },
+                'attribute_map': {
+                    'file_id': 'file_id',
+                    'id': 'id',
+                },
+                'location_map': {
+                    'file_id': 'path',
+                    'id': 'path',
+                    'patched_task_request': 'body',
+                },
+                'collection_format_map': {
+                }
+            },
+            headers_map={
+                'accept': [
+                    'application/vnd.cvat+json'
+                ],
+                'content_type': [
+                    'application/json',
+                    'application/x-www-form-urlencoded',
+                    'multipart/form-data',
+                    'application/offset+octet-stream'
+                ]
+            },
+            api_client=api_client
+        )
         self.tasks_annotations_partial_update_endpoint = _Endpoint(
             settings={
                 'response_type': (LabeledData,),
@@ -290,82 +366,6 @@ class TasksApi(object):
                     'action': 'query',
                     'id': 'path',
                     'patched_labeled_data_request': 'body',
-                },
-                'collection_format_map': {
-                }
-            },
-            headers_map={
-                'accept': [
-                    'application/vnd.cvat+json'
-                ],
-                'content_type': [
-                    'application/json',
-                    'application/x-www-form-urlencoded',
-                    'multipart/form-data',
-                    'application/offset+octet-stream'
-                ]
-            },
-            api_client=api_client
-        )
-        self.tasks_annotations_partial_update2_endpoint = _Endpoint(
-            settings={
-                'response_type': (Task,),
-                'auth': [
-                    'SignatureAuthentication',
-                    'basicAuth',
-                    'cookieAuth',
-                    'tokenAuth'
-                ],
-                'endpoint_path': '/api/tasks/{id}/annotations/{file_id}',
-                'operation_id': 'tasks_annotations_partial_update2',
-                'http_method': 'PATCH',
-                'servers': None,
-            },
-            params_map={
-                'all': [
-                    'file_id',
-                    'id',
-                    'patched_task_request',
-                ],
-                'required': [
-                    'file_id',
-                    'id',
-                ],
-                'nullable': [
-                ],
-                'enum': [
-                ],
-                'validation': [
-                    'file_id',
-                ]
-            },
-            root_map={
-                'validations': {
-                    ('file_id',): {
-
-                        'regex': {
-                            'pattern': r'^\b[0-9a-f]{8}\b-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-\b[0-9a-f]{12}\b$',  # noqa: E501
-                        },
-                    },
-                },
-                'allowed_values': {
-                },
-                'openapi_types': {
-                    'file_id':
-                        (str,),
-                    'id':
-                        (int,),
-                    'patched_task_request':
-                        (PatchedTaskRequest,),
-                },
-                'attribute_map': {
-                    'file_id': 'file_id',
-                    'id': 'id',
-                },
-                'location_map': {
-                    'file_id': 'path',
-                    'id': 'path',
-                    'patched_task_request': 'body',
                 },
                 'collection_format_map': {
                 }
@@ -835,6 +835,82 @@ class TasksApi(object):
             },
             api_client=api_client
         )
+        self.tasks_data_file_partial_update_endpoint = _Endpoint(
+            settings={
+                'response_type': (Task,),
+                'auth': [
+                    'SignatureAuthentication',
+                    'basicAuth',
+                    'cookieAuth',
+                    'tokenAuth'
+                ],
+                'endpoint_path': '/api/tasks/{id}/data/{file_id}',
+                'operation_id': 'tasks_data_file_partial_update',
+                'http_method': 'PATCH',
+                'servers': None,
+            },
+            params_map={
+                'all': [
+                    'file_id',
+                    'id',
+                    'patched_task_request',
+                ],
+                'required': [
+                    'file_id',
+                    'id',
+                ],
+                'nullable': [
+                ],
+                'enum': [
+                ],
+                'validation': [
+                    'file_id',
+                ]
+            },
+            root_map={
+                'validations': {
+                    ('file_id',): {
+
+                        'regex': {
+                            'pattern': r'^\b[0-9a-f]{8}\b-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-\b[0-9a-f]{12}\b$',  # noqa: E501
+                        },
+                    },
+                },
+                'allowed_values': {
+                },
+                'openapi_types': {
+                    'file_id':
+                        (str,),
+                    'id':
+                        (int,),
+                    'patched_task_request':
+                        (PatchedTaskRequest,),
+                },
+                'attribute_map': {
+                    'file_id': 'file_id',
+                    'id': 'id',
+                },
+                'location_map': {
+                    'file_id': 'path',
+                    'id': 'path',
+                    'patched_task_request': 'body',
+                },
+                'collection_format_map': {
+                }
+            },
+            headers_map={
+                'accept': [
+                    'application/vnd.cvat+json'
+                ],
+                'content_type': [
+                    'application/json',
+                    'application/x-www-form-urlencoded',
+                    'multipart/form-data',
+                    'application/offset+octet-stream'
+                ]
+            },
+            api_client=api_client
+        )
         self.tasks_data_meta_partial_update_endpoint = _Endpoint(
             settings={
                 'response_type': (DataMetaRead,),
@@ -949,82 +1025,6 @@ class TasksApi(object):
                     'application/vnd.cvat+json'
                 ],
                 'content_type': [],
-            },
-            api_client=api_client
-        )
-        self.tasks_data_partial_update_endpoint = _Endpoint(
-            settings={
-                'response_type': (Task,),
-                'auth': [
-                    'SignatureAuthentication',
-                    'basicAuth',
-                    'cookieAuth',
-                    'tokenAuth'
-                ],
-                'endpoint_path': '/api/tasks/{id}/data/{file_id}',
-                'operation_id': 'tasks_data_partial_update',
-                'http_method': 'PATCH',
-                'servers': None,
-            },
-            params_map={
-                'all': [
-                    'file_id',
-                    'id',
-                    'patched_task_request',
-                ],
-                'required': [
-                    'file_id',
-                    'id',
-                ],
-                'nullable': [
-                ],
-                'enum': [
-                ],
-                'validation': [
-                    'file_id',
-                ]
-            },
-            root_map={
-                'validations': {
-                    ('file_id',): {
-
-                        'regex': {
-                            'pattern': r'^\b[0-9a-f]{8}\b-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-\b[0-9a-f]{12}\b$',  # noqa: E501
-                        },
-                    },
-                },
-                'allowed_values': {
-                },
-                'openapi_types': {
-                    'file_id':
-                        (str,),
-                    'id':
-                        (int,),
-                    'patched_task_request':
-                        (PatchedTaskRequest,),
-                },
-                'attribute_map': {
-                    'file_id': 'file_id',
-                    'id': 'id',
-                },
-                'location_map': {
-                    'file_id': 'path',
-                    'id': 'path',
-                    'patched_task_request': 'body',
-                },
-                'collection_format_map': {
-                }
-            },
-            headers_map={
-                'accept': [
-                    'application/vnd.cvat+json'
-                ],
-                'content_type': [
-                    'application/json',
-                    'application/x-www-form-urlencoded',
-                    'multipart/form-data',
-                    'application/offset+octet-stream'
-                ]
             },
             api_client=api_client
         )
@@ -2270,6 +2270,223 @@ class TasksApi(object):
             _preload_content=False, _check_status=False)
 
     @overload
+    def tasks_annotations_file_partial_update(
+        self,
+        file_id,
+        id,
+        _return_http_data_only: typing.Literal[True] = True,
+        _preload_content: typing.Literal[True] = True,
+        **kwargs
+    ) -> object:
+        ...
+
+    @overload
+    def tasks_annotations_file_partial_update(
+        self,
+        file_id,
+        id,
+        _return_http_data_only: typing.Literal[False],
+        _preload_content: typing.Literal[False],
+        **kwargs
+    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+        ...
+
+    @overload
+    def tasks_annotations_file_partial_update(
+        self,
+        file_id,
+        id,
+        _return_http_data_only: typing.Literal[False],
+        **kwargs
+    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+        ...
+
+    @overload
+    def tasks_annotations_file_partial_update(
+        self,
+        file_id,
+        id,
+        _preload_content: typing.Literal[False],
+        **kwargs
+    ) -> urllib3.HTTPResponse:
+        ...
+
+    @overload
+    def tasks_annotations_file_partial_update(
+        self,
+        file_id,
+        id,
+        _return_http_data_only: typing.Literal[True],
+        _preload_content: typing.Literal[False],
+        **kwargs
+    ) -> urllib3.HTTPResponse:
+        ...
+
+    @overload
+    def tasks_annotations_file_partial_update(
+        self,
+        file_id,
+        id,
+        _return_http_data_only: typing.Literal[False],
+        _preload_content: typing.Literal[False],
+        **kwargs
+    ) -> urllib3.HTTPResponse:
+        ...
+
+    def tasks_annotations_file_partial_update(
+        self,
+        file_id,
+        id,
+        **kwargs
+    ) -> typing.Union[
+            typing.Tuple[object, int, typing.Dict[str, str]],
+            urllib3.HTTPResponse,
+            object
+    ]:
+        """Allows to upload an annotation file chunk. Implements TUS file uploading protocol.  # noqa: E501
+
+        This method makes a synchronous HTTP request by default. To make an
+        asynchronous HTTP request, please pass async_req=True
+
+        >>> thread = api.tasks_annotations_file_partial_update(file_id, id, async_req=True)
+        >>> result = thread.get()
+
+        Args:
+            file_id (str):
+            id (int): A unique integer value identifying this task.
+
+        Keyword Args:
+            patched_task_request (PatchedTaskRequest): [optional]
+            _return_http_data_only (bool): response data without head status
+                code and headers. Default is True.
+            _preload_content (bool): if False, the urllib3.HTTPResponse object
+                will be returned without reading/decoding response data.
+                Checked before _return_http_data_only.
+                Default is True.
+            _request_timeout (int/float/tuple): timeout setting for this request. If
+                one number provided, it will be total request timeout. It can also
+                be a pair (tuple) of (connection, read) timeouts.
+                Default is None.
+            _check_input_type (bool): specifies if type checking
+                should be done one the data sent to the server.
+                Default is True.
+            _check_return_type (bool): specifies if type checking
+                should be done one the data received from the server.
+                Default is True.
+            _check_status (bool): whether to check response status
+                for being positive or not.
+                Default is True
+            _spec_property_naming (bool): True if the variable names in the input data
+                are serialized names, as specified in the OpenAPI document.
+                False if the variable names in the input data
+                are pythonic names, e.g. snake case (default)
+            _content_type (str/None): force body content-type.
+                Default is None and content-type will be predicted by allowed
+                content-types and body.
+            _host_index (int/None): specifies the index of the server
+                that we want to use.
+                Default is read from the configuration.
+            _request_auths (list): set to override the auth_settings for an a single
+                request; this effectively ignores the authentication
+                in the spec for a single request.
+                Default is None
+            async_req (bool): execute request asynchronously
+
+        Returns:
+            Task
+                If the method is called asynchronously, returns the request
+                thread.
+        """
+        kwargs['async_req'] = kwargs.get(
+            'async_req', False
+        )
+        kwargs['_return_http_data_only'] = kwargs.get(
+            '_return_http_data_only', True
+        )
+        kwargs['_preload_content'] = kwargs.get(
+            '_preload_content', True
+        )
+        kwargs['_request_timeout'] = kwargs.get(
+            '_request_timeout', None
+        )
+        kwargs['_check_input_type'] = kwargs.get(
+            '_check_input_type', True
+        )
+        kwargs['_check_return_type'] = kwargs.get(
+            '_check_return_type', True
+        )
+        kwargs['_check_status'] = kwargs.get(
+            '_check_status', True
+        )
+        kwargs['_spec_property_naming'] = kwargs.get(
+            '_spec_property_naming', False
+        )
+        kwargs['_content_type'] = kwargs.get(
+            '_content_type')
+        kwargs['_host_index'] = kwargs.get('_host_index')
+        kwargs['_request_auths'] = kwargs.get('_request_auths', None)
+        kwargs['file_id'] = \
+            file_id
+        kwargs['id'] = \
+            id
+        return self.tasks_annotations_file_partial_update_endpoint.call_with_http_info(**kwargs)
+
+    def tasks_annotations_file_partial_update_raw(
+        self,
+        *args,
+        **kwargs
+    ) -> urllib3.HTTPResponse:
+        """
+        The same as tasks_annotations_file_partial_update(), but returns the response unprocessed.
+        Equivalent to calling tasks_annotations_file_partial_update with
+        _preload_content = False and _check_status=False
+
+        Allows to upload an annotation file chunk. Implements TUS file uploading protocol.  # noqa: E501
+
+        This method makes a synchronous HTTP request by default. To make an
+        asynchronous HTTP request, please pass async_req=True
+
+        >>> thread = api.tasks_annotations_file_partial_update(file_id, id, async_req=True)
+        >>> result = thread.get()
+
+        Args:
+            file_id (str):
+            id (int): A unique integer value identifying this task.
+
+        Keyword Args:
+            patched_task_request (PatchedTaskRequest): [optional]
+            _request_timeout (int/float/tuple): timeout setting for this request. If
+                one number provided, it will be total request timeout. It can also
+                be a pair (tuple) of (connection, read) timeouts.
+                Default is None.
+            _check_input_type (bool): specifies if type checking
+                should be done one the data sent to the server.
+                Default is True.
+            _spec_property_naming (bool): True if the variable names in the input data
+                are serialized names, as specified in the OpenAPI document.
+                False if the variable names in the input data
+                are pythonic names, e.g. snake case (default)
+            _content_type (str/None): force body content-type.
+                Default is None and content-type will be predicted by allowed
+                content-types and body.
+            _host_index (int/None): specifies the index of the server
+                that we want to use.
+                Default is read from the configuration.
+            _request_auths (list): set to override the auth_settings for an a single
+                request; this effectively ignores the authentication
+                in the spec for a single request.
+                Default is None
+            async_req (bool): execute request asynchronously
+
+        Returns:
+            Task
+                If the method is called asynchronously, returns the request
+                thread.
+        """
+        return self.tasks_annotations_file_partial_update(*args, **kwargs,
+            _preload_content=False, _check_status=False)
+
+    @overload
     def tasks_annotations_partial_update(
         self,
         action,
@@ -2484,223 +2701,6 @@ class TasksApi(object):
                 thread.
         """
         return self.tasks_annotations_partial_update(*args, **kwargs,
-            _preload_content=False, _check_status=False)
-
-    @overload
-    def tasks_annotations_partial_update2(
-        self,
-        file_id,
-        id,
-        _return_http_data_only: typing.Literal[True] = True,
-        _preload_content: typing.Literal[True] = True,
-        **kwargs
-    ) -> object:
-        ...
-
-    @overload
-    def tasks_annotations_partial_update2(
-        self,
-        file_id,
-        id,
-        _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
-        **kwargs
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
-        ...
-
-    @overload
-    def tasks_annotations_partial_update2(
-        self,
-        file_id,
-        id,
-        _return_http_data_only: typing.Literal[False],
-        **kwargs
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
-        ...
-
-    @overload
-    def tasks_annotations_partial_update2(
-        self,
-        file_id,
-        id,
-        _preload_content: typing.Literal[False],
-        **kwargs
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    @overload
-    def tasks_annotations_partial_update2(
-        self,
-        file_id,
-        id,
-        _return_http_data_only: typing.Literal[True],
-        _preload_content: typing.Literal[False],
-        **kwargs
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    @overload
-    def tasks_annotations_partial_update2(
-        self,
-        file_id,
-        id,
-        _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
-        **kwargs
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    def tasks_annotations_partial_update2(
-        self,
-        file_id,
-        id,
-        **kwargs
-    ) -> typing.Union[
-            typing.Tuple[object, int, typing.Dict[str, str]],
-            urllib3.HTTPResponse,
-            object
-    ]:
-        """tasks_annotations_partial_update2  # noqa: E501
-
-        This method makes a synchronous HTTP request by default. To make an
-        asynchronous HTTP request, please pass async_req=True
-
-        >>> thread = api.tasks_annotations_partial_update2(file_id, id, async_req=True)
-        >>> result = thread.get()
-
-        Args:
-            file_id (str):
-            id (int): A unique integer value identifying this task.
-
-        Keyword Args:
-            patched_task_request (PatchedTaskRequest): [optional]
-            _return_http_data_only (bool): response data without head status
-                code and headers. Default is True.
-            _preload_content (bool): if False, the urllib3.HTTPResponse object
-                will be returned without reading/decoding response data.
-                Checked before _return_http_data_only.
-                Default is True.
-            _request_timeout (int/float/tuple): timeout setting for this request. If
-                one number provided, it will be total request timeout. It can also
-                be a pair (tuple) of (connection, read) timeouts.
-                Default is None.
-            _check_input_type (bool): specifies if type checking
-                should be done one the data sent to the server.
-                Default is True.
-            _check_return_type (bool): specifies if type checking
-                should be done one the data received from the server.
-                Default is True.
-            _check_status (bool): whether to check response status
-                for being positive or not.
-                Default is True
-            _spec_property_naming (bool): True if the variable names in the input data
-                are serialized names, as specified in the OpenAPI document.
-                False if the variable names in the input data
-                are pythonic names, e.g. snake case (default)
-            _content_type (str/None): force body content-type.
-                Default is None and content-type will be predicted by allowed
-                content-types and body.
-            _host_index (int/None): specifies the index of the server
-                that we want to use.
-                Default is read from the configuration.
-            _request_auths (list): set to override the auth_settings for an a single
-                request; this effectively ignores the authentication
-                in the spec for a single request.
-                Default is None
-            async_req (bool): execute request asynchronously
-
-        Returns:
-            Task
-                If the method is called asynchronously, returns the request
-                thread.
-        """
-        kwargs['async_req'] = kwargs.get(
-            'async_req', False
-        )
-        kwargs['_return_http_data_only'] = kwargs.get(
-            '_return_http_data_only', True
-        )
-        kwargs['_preload_content'] = kwargs.get(
-            '_preload_content', True
-        )
-        kwargs['_request_timeout'] = kwargs.get(
-            '_request_timeout', None
-        )
-        kwargs['_check_input_type'] = kwargs.get(
-            '_check_input_type', True
-        )
-        kwargs['_check_return_type'] = kwargs.get(
-            '_check_return_type', True
-        )
-        kwargs['_check_status'] = kwargs.get(
-            '_check_status', True
-        )
-        kwargs['_spec_property_naming'] = kwargs.get(
-            '_spec_property_naming', False
-        )
-        kwargs['_content_type'] = kwargs.get(
-            '_content_type')
-        kwargs['_host_index'] = kwargs.get('_host_index')
-        kwargs['_request_auths'] = kwargs.get('_request_auths', None)
-        kwargs['file_id'] = \
-            file_id
-        kwargs['id'] = \
-            id
-        return self.tasks_annotations_partial_update2_endpoint.call_with_http_info(**kwargs)
-
-    def tasks_annotations_partial_update2_raw(
-        self,
-        *args,
-        **kwargs
-    ) -> urllib3.HTTPResponse:
-        """
-        The same as tasks_annotations_partial_update2(), but returns the response unprocessed.
-        Equivalent to calling tasks_annotations_partial_update2 with
-        _preload_content = False and _check_status=False
-
-        tasks_annotations_partial_update2  # noqa: E501
-
-        This method makes a synchronous HTTP request by default. To make an
-        asynchronous HTTP request, please pass async_req=True
-
-        >>> thread = api.tasks_annotations_partial_update2(file_id, id, async_req=True)
-        >>> result = thread.get()
-
-        Args:
-            file_id (str):
-            id (int): A unique integer value identifying this task.
-
-        Keyword Args:
-            patched_task_request (PatchedTaskRequest): [optional]
-            _request_timeout (int/float/tuple): timeout setting for this request. If
-                one number provided, it will be total request timeout. It can also
-                be a pair (tuple) of (connection, read) timeouts.
-                Default is None.
-            _check_input_type (bool): specifies if type checking
-                should be done one the data sent to the server.
-                Default is True.
-            _spec_property_naming (bool): True if the variable names in the input data
-                are serialized names, as specified in the OpenAPI document.
-                False if the variable names in the input data
-                are pythonic names, e.g. snake case (default)
-            _content_type (str/None): force body content-type.
-                Default is None and content-type will be predicted by allowed
-                content-types and body.
-            _host_index (int/None): specifies the index of the server
-                that we want to use.
-                Default is read from the configuration.
-            _request_auths (list): set to override the auth_settings for an a single
-                request; this effectively ignores the authentication
-                in the spec for a single request.
-                Default is None
-            async_req (bool): execute request asynchronously
-
-        Returns:
-            Task
-                If the method is called asynchronously, returns the request
-                thread.
-        """
-        return self.tasks_annotations_partial_update2(*args, **kwargs,
             _preload_content=False, _check_status=False)
 
     @overload
@@ -4170,6 +4170,223 @@ class TasksApi(object):
             _preload_content=False, _check_status=False)
 
     @overload
+    def tasks_data_file_partial_update(
+        self,
+        file_id,
+        id,
+        _return_http_data_only: typing.Literal[True] = True,
+        _preload_content: typing.Literal[True] = True,
+        **kwargs
+    ) -> object:
+        ...
+
+    @overload
+    def tasks_data_file_partial_update(
+        self,
+        file_id,
+        id,
+        _return_http_data_only: typing.Literal[False],
+        _preload_content: typing.Literal[False],
+        **kwargs
+    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+        ...
+
+    @overload
+    def tasks_data_file_partial_update(
+        self,
+        file_id,
+        id,
+        _return_http_data_only: typing.Literal[False],
+        **kwargs
+    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+        ...
+
+    @overload
+    def tasks_data_file_partial_update(
+        self,
+        file_id,
+        id,
+        _preload_content: typing.Literal[False],
+        **kwargs
+    ) -> urllib3.HTTPResponse:
+        ...
+
+    @overload
+    def tasks_data_file_partial_update(
+        self,
+        file_id,
+        id,
+        _return_http_data_only: typing.Literal[True],
+        _preload_content: typing.Literal[False],
+        **kwargs
+    ) -> urllib3.HTTPResponse:
+        ...
+
+    @overload
+    def tasks_data_file_partial_update(
+        self,
+        file_id,
+        id,
+        _return_http_data_only: typing.Literal[False],
+        _preload_content: typing.Literal[False],
+        **kwargs
+    ) -> urllib3.HTTPResponse:
+        ...
+
+    def tasks_data_file_partial_update(
+        self,
+        file_id,
+        id,
+        **kwargs
+    ) -> typing.Union[
+            typing.Tuple[object, int, typing.Dict[str, str]],
+            urllib3.HTTPResponse,
+            object
+    ]:
+        """Allows to upload a file chunk. Implements TUS file uploading protocol.  # noqa: E501
+
+        This method makes a synchronous HTTP request by default. To make an
+        asynchronous HTTP request, please pass async_req=True
+
+        >>> thread = api.tasks_data_file_partial_update(file_id, id, async_req=True)
+        >>> result = thread.get()
+
+        Args:
+            file_id (str):
+            id (int): A unique integer value identifying this task.
+
+        Keyword Args:
+            patched_task_request (PatchedTaskRequest): [optional]
+            _return_http_data_only (bool): response data without head status
+                code and headers. Default is True.
+            _preload_content (bool): if False, the urllib3.HTTPResponse object
+                will be returned without reading/decoding response data.
+                Checked before _return_http_data_only.
+                Default is True.
+            _request_timeout (int/float/tuple): timeout setting for this request. If
+                one number provided, it will be total request timeout. It can also
+                be a pair (tuple) of (connection, read) timeouts.
+                Default is None.
+            _check_input_type (bool): specifies if type checking
+                should be done one the data sent to the server.
+                Default is True.
+            _check_return_type (bool): specifies if type checking
+                should be done one the data received from the server.
+                Default is True.
+            _check_status (bool): whether to check response status
+                for being positive or not.
+                Default is True
+            _spec_property_naming (bool): True if the variable names in the input data
+                are serialized names, as specified in the OpenAPI document.
+                False if the variable names in the input data
+                are pythonic names, e.g. snake case (default)
+            _content_type (str/None): force body content-type.
+                Default is None and content-type will be predicted by allowed
+                content-types and body.
+            _host_index (int/None): specifies the index of the server
+                that we want to use.
+                Default is read from the configuration.
+            _request_auths (list): set to override the auth_settings for an a single
+                request; this effectively ignores the authentication
+                in the spec for a single request.
+                Default is None
+            async_req (bool): execute request asynchronously
+
+        Returns:
+            Task
+                If the method is called asynchronously, returns the request
+                thread.
+        """
+        kwargs['async_req'] = kwargs.get(
+            'async_req', False
+        )
+        kwargs['_return_http_data_only'] = kwargs.get(
+            '_return_http_data_only', True
+        )
+        kwargs['_preload_content'] = kwargs.get(
+            '_preload_content', True
+        )
+        kwargs['_request_timeout'] = kwargs.get(
+            '_request_timeout', None
+        )
+        kwargs['_check_input_type'] = kwargs.get(
+            '_check_input_type', True
+        )
+        kwargs['_check_return_type'] = kwargs.get(
+            '_check_return_type', True
+        )
+        kwargs['_check_status'] = kwargs.get(
+            '_check_status', True
+        )
+        kwargs['_spec_property_naming'] = kwargs.get(
+            '_spec_property_naming', False
+        )
+        kwargs['_content_type'] = kwargs.get(
+            '_content_type')
+        kwargs['_host_index'] = kwargs.get('_host_index')
+        kwargs['_request_auths'] = kwargs.get('_request_auths', None)
+        kwargs['file_id'] = \
+            file_id
+        kwargs['id'] = \
+            id
+        return self.tasks_data_file_partial_update_endpoint.call_with_http_info(**kwargs)
+
+    def tasks_data_file_partial_update_raw(
+        self,
+        *args,
+        **kwargs
+    ) -> urllib3.HTTPResponse:
+        """
+        The same as tasks_data_file_partial_update(), but returns the response unprocessed.
+        Equivalent to calling tasks_data_file_partial_update with
+        _preload_content = False and _check_status=False
+
+        Allows to upload a file chunk. Implements TUS file uploading protocol.  # noqa: E501
+
+        This method makes a synchronous HTTP request by default. To make an
+        asynchronous HTTP request, please pass async_req=True
+
+        >>> thread = api.tasks_data_file_partial_update(file_id, id, async_req=True)
+        >>> result = thread.get()
+
+        Args:
+            file_id (str):
+            id (int): A unique integer value identifying this task.
+
+        Keyword Args:
+            patched_task_request (PatchedTaskRequest): [optional]
+            _request_timeout (int/float/tuple): timeout setting for this request. If
+                one number provided, it will be total request timeout. It can also
+                be a pair (tuple) of (connection, read) timeouts.
+                Default is None.
+            _check_input_type (bool): specifies if type checking
+                should be done one the data sent to the server.
+                Default is True.
+            _spec_property_naming (bool): True if the variable names in the input data
+                are serialized names, as specified in the OpenAPI document.
+                False if the variable names in the input data
+                are pythonic names, e.g. snake case (default)
+            _content_type (str/None): force body content-type.
+                Default is None and content-type will be predicted by allowed
+                content-types and body.
+            _host_index (int/None): specifies the index of the server
+                that we want to use.
+                Default is read from the configuration.
+            _request_auths (list): set to override the auth_settings for an a single
+                request; this effectively ignores the authentication
+                in the spec for a single request.
+                Default is None
+            async_req (bool): execute request asynchronously
+
+        Returns:
+            Task
+                If the method is called asynchronously, returns the request
+                thread.
+        """
+        return self.tasks_data_file_partial_update(*args, **kwargs,
+            _preload_content=False, _check_status=False)
+
+    @overload
     def tasks_data_meta_partial_update(
         self,
         id,
@@ -4577,223 +4794,6 @@ class TasksApi(object):
                 thread.
         """
         return self.tasks_data_meta_retrieve(*args, **kwargs,
-            _preload_content=False, _check_status=False)
-
-    @overload
-    def tasks_data_partial_update(
-        self,
-        file_id,
-        id,
-        _return_http_data_only: typing.Literal[True] = True,
-        _preload_content: typing.Literal[True] = True,
-        **kwargs
-    ) -> object:
-        ...
-
-    @overload
-    def tasks_data_partial_update(
-        self,
-        file_id,
-        id,
-        _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
-        **kwargs
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
-        ...
-
-    @overload
-    def tasks_data_partial_update(
-        self,
-        file_id,
-        id,
-        _return_http_data_only: typing.Literal[False],
-        **kwargs
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
-        ...
-
-    @overload
-    def tasks_data_partial_update(
-        self,
-        file_id,
-        id,
-        _preload_content: typing.Literal[False],
-        **kwargs
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    @overload
-    def tasks_data_partial_update(
-        self,
-        file_id,
-        id,
-        _return_http_data_only: typing.Literal[True],
-        _preload_content: typing.Literal[False],
-        **kwargs
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    @overload
-    def tasks_data_partial_update(
-        self,
-        file_id,
-        id,
-        _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
-        **kwargs
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    def tasks_data_partial_update(
-        self,
-        file_id,
-        id,
-        **kwargs
-    ) -> typing.Union[
-            typing.Tuple[object, int, typing.Dict[str, str]],
-            urllib3.HTTPResponse,
-            object
-    ]:
-        """tasks_data_partial_update  # noqa: E501
-
-        This method makes a synchronous HTTP request by default. To make an
-        asynchronous HTTP request, please pass async_req=True
-
-        >>> thread = api.tasks_data_partial_update(file_id, id, async_req=True)
-        >>> result = thread.get()
-
-        Args:
-            file_id (str):
-            id (int): A unique integer value identifying this task.
-
-        Keyword Args:
-            patched_task_request (PatchedTaskRequest): [optional]
-            _return_http_data_only (bool): response data without head status
-                code and headers. Default is True.
-            _preload_content (bool): if False, the urllib3.HTTPResponse object
-                will be returned without reading/decoding response data.
-                Checked before _return_http_data_only.
-                Default is True.
-            _request_timeout (int/float/tuple): timeout setting for this request. If
-                one number provided, it will be total request timeout. It can also
-                be a pair (tuple) of (connection, read) timeouts.
-                Default is None.
-            _check_input_type (bool): specifies if type checking
-                should be done one the data sent to the server.
-                Default is True.
-            _check_return_type (bool): specifies if type checking
-                should be done one the data received from the server.
-                Default is True.
-            _check_status (bool): whether to check response status
-                for being positive or not.
-                Default is True
-            _spec_property_naming (bool): True if the variable names in the input data
-                are serialized names, as specified in the OpenAPI document.
-                False if the variable names in the input data
-                are pythonic names, e.g. snake case (default)
-            _content_type (str/None): force body content-type.
-                Default is None and content-type will be predicted by allowed
-                content-types and body.
-            _host_index (int/None): specifies the index of the server
-                that we want to use.
-                Default is read from the configuration.
-            _request_auths (list): set to override the auth_settings for an a single
-                request; this effectively ignores the authentication
-                in the spec for a single request.
-                Default is None
-            async_req (bool): execute request asynchronously
-
-        Returns:
-            Task
-                If the method is called asynchronously, returns the request
-                thread.
-        """
-        kwargs['async_req'] = kwargs.get(
-            'async_req', False
-        )
-        kwargs['_return_http_data_only'] = kwargs.get(
-            '_return_http_data_only', True
-        )
-        kwargs['_preload_content'] = kwargs.get(
-            '_preload_content', True
-        )
-        kwargs['_request_timeout'] = kwargs.get(
-            '_request_timeout', None
-        )
-        kwargs['_check_input_type'] = kwargs.get(
-            '_check_input_type', True
-        )
-        kwargs['_check_return_type'] = kwargs.get(
-            '_check_return_type', True
-        )
-        kwargs['_check_status'] = kwargs.get(
-            '_check_status', True
-        )
-        kwargs['_spec_property_naming'] = kwargs.get(
-            '_spec_property_naming', False
-        )
-        kwargs['_content_type'] = kwargs.get(
-            '_content_type')
-        kwargs['_host_index'] = kwargs.get('_host_index')
-        kwargs['_request_auths'] = kwargs.get('_request_auths', None)
-        kwargs['file_id'] = \
-            file_id
-        kwargs['id'] = \
-            id
-        return self.tasks_data_partial_update_endpoint.call_with_http_info(**kwargs)
-
-    def tasks_data_partial_update_raw(
-        self,
-        *args,
-        **kwargs
-    ) -> urllib3.HTTPResponse:
-        """
-        The same as tasks_data_partial_update(), but returns the response unprocessed.
-        Equivalent to calling tasks_data_partial_update with
-        _preload_content = False and _check_status=False
-
-        tasks_data_partial_update  # noqa: E501
-
-        This method makes a synchronous HTTP request by default. To make an
-        asynchronous HTTP request, please pass async_req=True
-
-        >>> thread = api.tasks_data_partial_update(file_id, id, async_req=True)
-        >>> result = thread.get()
-
-        Args:
-            file_id (str):
-            id (int): A unique integer value identifying this task.
-
-        Keyword Args:
-            patched_task_request (PatchedTaskRequest): [optional]
-            _request_timeout (int/float/tuple): timeout setting for this request. If
-                one number provided, it will be total request timeout. It can also
-                be a pair (tuple) of (connection, read) timeouts.
-                Default is None.
-            _check_input_type (bool): specifies if type checking
-                should be done one the data sent to the server.
-                Default is True.
-            _spec_property_naming (bool): True if the variable names in the input data
-                are serialized names, as specified in the OpenAPI document.
-                False if the variable names in the input data
-                are pythonic names, e.g. snake case (default)
-            _content_type (str/None): force body content-type.
-                Default is None and content-type will be predicted by allowed
-                content-types and body.
-            _host_index (int/None): specifies the index of the server
-                that we want to use.
-                Default is read from the configuration.
-            _request_auths (list): set to override the auth_settings for an a single
-                request; this effectively ignores the authentication
-                in the spec for a single request.
-                Default is None
-            async_req (bool): execute request asynchronously
-
-        Returns:
-            Task
-                If the method is called asynchronously, returns the request
-                thread.
-        """
-        return self.tasks_data_partial_update(*args, **kwargs,
             _preload_content=False, _check_status=False)
 
     @overload

@@ -35,10 +35,10 @@ from cvat_api_client.exceptions import ApiAttributeError
 
 
 def lazy_import():
-    from cvat_api_client.model.stage_enum import StageEnum
-    from cvat_api_client.model.state_bf1_enum import StateBf1Enum
-    globals()['StageEnum'] = StageEnum
-    globals()['StateBf1Enum'] = StateBf1Enum
+    from cvat_api_client.model.job_stage import JobStage
+    from cvat_api_client.model.operation_status import OperationStatus
+    globals()['JobStage'] = JobStage
+    globals()['OperationStatus'] = OperationStatus
 
 
 class JobWrite(ModelNormal):
@@ -50,9 +50,9 @@ class JobWrite(ModelNormal):
     Attributes:
       assignee (int, none_type): [optional]  # noqa: E501
 
-      stage (StageEnum): [optional]  # noqa: E501
+      stage (JobStage): [optional]  # noqa: E501
 
-      state (StateBf1Enum): [optional]  # noqa: E501
+      state (OperationStatus): [optional]  # noqa: E501
 
 
       allowed_values (dict): The key is the tuple path to the attribute
@@ -103,8 +103,8 @@ class JobWrite(ModelNormal):
         lazy_import()
         return {
             'assignee': (int, none_type,),  # noqa: E501
-            'stage': (StageEnum,),  # noqa: E501
-            'state': (StateBf1Enum,),  # noqa: E501
+            'stage': (JobStage,),  # noqa: E501
+            'state': (OperationStatus,),  # noqa: E501
         }
 
     @cached_property
@@ -118,12 +118,12 @@ class JobWrite(ModelNormal):
     [optional]
     """
 
-    stage: typing.ForwardRef("StageEnum") # noqa: E501
+    stage: typing.ForwardRef("JobStage") # noqa: E501
     """
     [optional]
     """
 
-    state: typing.ForwardRef("StateBf1Enum") # noqa: E501
+    state: typing.ForwardRef("OperationStatus") # noqa: E501
     """
     [optional]
     """
@@ -178,8 +178,8 @@ class JobWrite(ModelNormal):
                                 through its discriminator because we passed in
                                 _visited_composed_classes = (Animal,)
             assignee (int, none_type): [optional]  # noqa: E501
-            stage (StageEnum): [optional]  # noqa: E501
-            state (StateBf1Enum): [optional]  # noqa: E501
+            stage (JobStage): [optional]  # noqa: E501
+            state (OperationStatus): [optional]  # noqa: E501
         """
 
         _check_type = kwargs.pop('_check_type', True)
@@ -266,8 +266,8 @@ class JobWrite(ModelNormal):
                                 through its discriminator because we passed in
                                 _visited_composed_classes = (Animal,)
             assignee (int, none_type): [optional]  # noqa: E501
-            stage (StageEnum): [optional]  # noqa: E501
-            state (StateBf1Enum): [optional]  # noqa: E501
+            stage (JobStage): [optional]  # noqa: E501
+            state (OperationStatus): [optional]  # noqa: E501
         """
 
         _check_type = kwargs.pop('_check_type', True)

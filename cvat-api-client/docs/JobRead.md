@@ -11,7 +11,7 @@ Name | Type | Description | Notes
 **url** | **str** |  | [optional] [readonly] 
 **id** | **int** |  | [optional] [readonly] 
 **task_id** | **int** |  | [optional] [readonly] 
-**project_id** | **str, none_type** |  | [optional] [readonly] 
+**project_id** | **int, none_type** |  | [optional] [readonly] 
 **status** | **bool, date, datetime, dict, float, int, list, str, none_type** |  | [optional] [readonly] 
 **stage** | **bool, date, datetime, dict, float, int, list, str, none_type** |  | [optional] [readonly] 
 **state** | **bool, date, datetime, dict, float, int, list, str, none_type** |  | [optional] [readonly] 

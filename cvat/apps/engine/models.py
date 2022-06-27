@@ -14,6 +14,7 @@ from django.core.files.storage import FileSystemStorage
 from django.db import models
 from django.db.models.fields import FloatField
 from django.core.serializers.json import DjangoJSONEncoder
+from drf_spectacular.utils import extend_schema_field
 from cvat.apps.engine.utils import parse_specific_attributes
 from cvat.apps.organizations.models import Organization
 
@@ -37,6 +38,8 @@ class DimensionType(str, Enum):
         return self.value
 
 class StatusChoice(str, Enum):
+    """Deprecated. Use StageChoice and StateChoice instead"""
+
     ANNOTATION = 'annotation'
     VALIDATION = 'validation'
     COMPLETED = 'completed'
@@ -425,6 +428,7 @@ class Job(models.Model):
     state = models.CharField(max_length=32, choices=StateChoice.choices(),
         default=StateChoice.NEW)
 
+    @extend_schema_field(int)
     def get_project_id(self):
         project = self.segment.task.project
         return project.id if project else None

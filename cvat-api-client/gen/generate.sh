@@ -5,6 +5,8 @@ LIB_NAME="cvat_api_client"
 DST_DIR="."
 TEMPLATE_DIR="gen"
 
+rm -r ${DST_DIR}/docs/
+rm -r ${DST_DIR}/${LIB_NAME}
 cp ${TEMPLATE_DIR}/templates/openapi-generator/.openapi-generator-ignore ${DST_DIR}/
 
 # Pass template dir here

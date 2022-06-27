@@ -36,13 +36,13 @@ from cvat_api_client.exceptions import ApiAttributeError
 
 def lazy_import():
     from cvat_api_client.model.comment_read_owner import CommentReadOwner
-    from cvat_api_client.model.stage_enum import StageEnum
-    from cvat_api_client.model.state_bf1_enum import StateBf1Enum
-    from cvat_api_client.model.status_enum import StatusEnum
+    from cvat_api_client.model.job_stage import JobStage
+    from cvat_api_client.model.job_status import JobStatus
+    from cvat_api_client.model.operation_status import OperationStatus
     globals()['CommentReadOwner'] = CommentReadOwner
-    globals()['StageEnum'] = StageEnum
-    globals()['StateBf1Enum'] = StateBf1Enum
-    globals()['StatusEnum'] = StatusEnum
+    globals()['JobStage'] = JobStage
+    globals()['JobStatus'] = JobStatus
+    globals()['OperationStatus'] = OperationStatus
 
 
 class SimpleJob(ModelNormal):

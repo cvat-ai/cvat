@@ -7,8 +7,8 @@ Method | HTTP request | Description
 [**jobs_data_meta_partial_update**](TasksApi.md#jobs_data_meta_partial_update) | **PATCH** /api/jobs/{id}/data/meta | Method provides a meta information about media files which are related with the job
 [**tasks_annotations_create**](TasksApi.md#tasks_annotations_create) | **POST** /api/tasks/{id}/annotations/ | 
 [**tasks_annotations_destroy**](TasksApi.md#tasks_annotations_destroy) | **DELETE** /api/tasks/{id}/annotations/ | Method deletes all annotations for a specific task
+[**tasks_annotations_file_partial_update**](TasksApi.md#tasks_annotations_file_partial_update) | **PATCH** /api/tasks/{id}/annotations/{file_id} | Allows to upload an annotation file chunk. Implements TUS file uploading protocol.
 [**tasks_annotations_partial_update**](TasksApi.md#tasks_annotations_partial_update) | **PATCH** /api/tasks/{id}/annotations/ | Method performs a partial update of annotations in a specific task
-[**tasks_annotations_partial_update2**](TasksApi.md#tasks_annotations_partial_update2) | **PATCH** /api/tasks/{id}/annotations/{file_id} | 
 [**tasks_annotations_retrieve**](TasksApi.md#tasks_annotations_retrieve) | **GET** /api/tasks/{id}/annotations/ | Method allows to download task annotations
 [**tasks_annotations_update**](TasksApi.md#tasks_annotations_update) | **PUT** /api/tasks/{id}/annotations/ | Method allows to upload task annotations
 [**tasks_backup_create**](TasksApi.md#tasks_backup_create) | **POST** /api/tasks/backup/ | Method recreates a task from an attached task backup file
@@ -16,9 +16,9 @@ Method | HTTP request | Description
 [**tasks_backup_retrieve**](TasksApi.md#tasks_backup_retrieve) | **GET** /api/tasks/{id}/backup | Method backup a specified task
 [**tasks_create**](TasksApi.md#tasks_create) | **POST** /api/tasks | Method creates a new task in a database without any attached images and videos
 [**tasks_data_create**](TasksApi.md#tasks_data_create) | **POST** /api/tasks/{id}/data/ | Method permanently attaches images or video to a task. Supports tus uploads, see more https://tus.io/
+[**tasks_data_file_partial_update**](TasksApi.md#tasks_data_file_partial_update) | **PATCH** /api/tasks/{id}/data/{file_id} | Allows to upload a file chunk. Implements TUS file uploading protocol.
 [**tasks_data_meta_partial_update**](TasksApi.md#tasks_data_meta_partial_update) | **PATCH** /api/tasks/{id}/data/meta | Method provides a meta information about media files which are related with the task
 [**tasks_data_meta_retrieve**](TasksApi.md#tasks_data_meta_retrieve) | **GET** /api/tasks/{id}/data/meta | Method provides a meta information about media files which are related with the task
-[**tasks_data_partial_update**](TasksApi.md#tasks_data_partial_update) | **PATCH** /api/tasks/{id}/data/{file_id} | 
 [**tasks_data_retrieve**](TasksApi.md#tasks_data_retrieve) | **GET** /api/tasks/{id}/data/ | Method returns data for a specific task
 [**tasks_dataset_retrieve**](TasksApi.md#tasks_dataset_retrieve) | **GET** /api/tasks/{id}/dataset | Export task as a dataset in a specific format
 [**tasks_destroy**](TasksApi.md#tasks_destroy) | **DELETE** /api/tasks/{id} | Method deletes a specific task, all attached jobs, annotations, and data
@@ -91,8 +91,8 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     id = 1 # int | A unique integer value identifying this job.
     patched_job_write_request = PatchedJobWriteRequest(
         assignee=1,
-        stage=StageEnum("annotation"),
-        state=StateBf1Enum("new"),
+        stage=JobStage("annotation"),
+        state=OperationStatus("new"),
     ) # PatchedJobWriteRequest |  (optional)
 
     # example passing only required values which don't have defaults set
@@ -221,7 +221,7 @@ with cvat_api_client.ApiClient(configuration) as api_client:
         ],
         shapes=[
             LabeledShapeRequest(
-                type=Type411Enum("rectangle"),
+                type=ShapeType("rectangle"),
                 occluded=True,
                 z_order=0,
                 rotation=0.0,
@@ -250,7 +250,7 @@ with cvat_api_client.ApiClient(configuration) as api_client:
                 source="manual",
                 shapes=[
                     TrackedShapeRequest(
-                        type=Type411Enum("rectangle"),
+                        type=ShapeType("rectangle"),
                         occluded=True,
                         z_order=0,
                         rotation=0.0,
@@ -411,195 +411,10 @@ void (empty response body)
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
-# **tasks_annotations_partial_update**
-> LabeledData tasks_annotations_partial_update(action, id)
+# **tasks_annotations_file_partial_update**
+> Task tasks_annotations_file_partial_update(file_id, id)
 
-Method performs a partial update of annotations in a specific task
-
-### Example
-
-* Api Key Authentication (SignatureAuthentication):
-* Basic Authentication (basicAuth):
-* Api Key Authentication (cookieAuth):
-* Api Key Authentication (tokenAuth):
-
-```python
-import time
-import cvat_api_client
-from cvat_api_client.api import tasks_api
-from cvat_api_client.model.patched_labeled_data_request import PatchedLabeledDataRequest
-from cvat_api_client.model.labeled_data import LabeledData
-from pprint import pprint
-# Defining the host is optional and defaults to http://localhost
-# See configuration.py for a list of all supported configuration parameters.
-configuration = cvat_api_client.Configuration(
-    host = "http://localhost"
-)
-
-# The client must configure the authentication and authorization parameters
-# in accordance with the API server security policy.
-# Examples for each auth method are provided below, use the example that
-# satisfies your auth use case.
-
-# Configure API key authorization: SignatureAuthentication
-configuration.api_key['SignatureAuthentication'] = 'YOUR_API_KEY'
-
-# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
-# configuration.api_key_prefix['SignatureAuthentication'] = 'Bearer'
-
-# Configure HTTP basic authorization: basicAuth
-configuration = cvat_api_client.Configuration(
-    username = 'YOUR_USERNAME',
-    password = 'YOUR_PASSWORD'
-)
-
-# Configure API key authorization: cookieAuth
-configuration.api_key['cookieAuth'] = 'YOUR_API_KEY'
-
-# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
-# configuration.api_key_prefix['cookieAuth'] = 'Bearer'
-
-# Configure API key authorization: tokenAuth
-configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
-
-# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
-# configuration.api_key_prefix['tokenAuth'] = 'Bearer'
-
-# Enter a context with an instance of the API client
-with cvat_api_client.ApiClient(configuration) as api_client:
-    # Create an instance of the API class
-    api_instance = tasks_api.TasksApi(api_client)
-    action = "create" # str | 
-    id = 1 # int | A unique integer value identifying this task.
-    patched_labeled_data_request = PatchedLabeledDataRequest(
-        version=1,
-        tags=[
-            LabeledImageRequest(
-                id=1,
-                frame=0,
-                label_id=0,
-                group=0,
-                source="manual",
-                attributes=[
-                    AttributeValRequest(
-                        spec_id=1,
-                        value="value_example",
-                    ),
-                ],
-            ),
-        ],
-        shapes=[
-            LabeledShapeRequest(
-                type=Type411Enum("rectangle"),
-                occluded=True,
-                z_order=0,
-                rotation=0.0,
-                points=[
-                    3.14,
-                ],
-                id=1,
-                frame=0,
-                label_id=0,
-                group=0,
-                source="manual",
-                attributes=[
-                    AttributeValRequest(
-                        spec_id=1,
-                        value="value_example",
-                    ),
-                ],
-            ),
-        ],
-        tracks=[
-            LabeledTrackRequest(
-                id=1,
-                frame=0,
-                label_id=0,
-                group=0,
-                source="manual",
-                shapes=[
-                    TrackedShapeRequest(
-                        type=Type411Enum("rectangle"),
-                        occluded=True,
-                        z_order=0,
-                        rotation=0.0,
-                        points=[
-                            3.14,
-                        ],
-                        id=1,
-                        frame=0,
-                        outside=True,
-                        attributes=[
-                            AttributeValRequest(
-                                spec_id=1,
-                                value="value_example",
-                            ),
-                        ],
-                    ),
-                ],
-                attributes=[
-                    AttributeValRequest(
-                        spec_id=1,
-                        value="value_example",
-                    ),
-                ],
-            ),
-        ],
-    ) # PatchedLabeledDataRequest |  (optional)
-
-    # example passing only required values which don't have defaults set
-    try:
-        # Method performs a partial update of annotations in a specific task
-        api_response = api_instance.tasks_annotations_partial_update(action, id)
-        pprint(api_response)
-    except cvat_api_client.ApiException as e:
-        print("Exception when calling TasksApi->tasks_annotations_partial_update: %s\n" % e)
-
-    # example passing only required values which don't have defaults set
-    # and optional values
-    try:
-        # Method performs a partial update of annotations in a specific task
-        api_response = api_instance.tasks_annotations_partial_update(action, id, patched_labeled_data_request=patched_labeled_data_request)
-        pprint(api_response)
-    except cvat_api_client.ApiException as e:
-        print("Exception when calling TasksApi->tasks_annotations_partial_update: %s\n" % e)
-```
-
-
-### Parameters
-
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
- **action** | **str**|  |
- **id** | **int**| A unique integer value identifying this task. |
- **patched_labeled_data_request** | [**PatchedLabeledDataRequest**](PatchedLabeledDataRequest.md)|  | [optional]
-
-### Return type
-
-[**LabeledData**](LabeledData.md)
-
-### Authorization
-
-[SignatureAuthentication](../README.md#SignatureAuthentication), [basicAuth](../README.md#basicAuth), [cookieAuth](../README.md#cookieAuth), [tokenAuth](../README.md#tokenAuth)
-
-### HTTP request headers
-
- - **Content-Type**: application/json, application/x-www-form-urlencoded, multipart/form-data, application/offset+octet-stream
- - **Accept**: application/vnd.cvat+json
-
-
-### HTTP response details
-
-| Status code | Description | Response headers |
-|-------------|-------------|------------------|
-**200** |  |  -  |
-
-[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
-
-# **tasks_annotations_partial_update2**
-> Task tasks_annotations_partial_update2(file_id, id)
-
-
+Allows to upload an annotation file chunk. Implements TUS file uploading protocol.
 
 ### Example
 
@@ -695,18 +510,20 @@ with cvat_api_client.ApiClient(configuration) as api_client:
 
     # example passing only required values which don't have defaults set
     try:
-        api_response = api_instance.tasks_annotations_partial_update2(file_id, id)
+        # Allows to upload an annotation file chunk. Implements TUS file uploading protocol.
+        api_response = api_instance.tasks_annotations_file_partial_update(file_id, id)
         pprint(api_response)
     except cvat_api_client.ApiException as e:
-        print("Exception when calling TasksApi->tasks_annotations_partial_update2: %s\n" % e)
+        print("Exception when calling TasksApi->tasks_annotations_file_partial_update: %s\n" % e)
 
     # example passing only required values which don't have defaults set
     # and optional values
     try:
-        api_response = api_instance.tasks_annotations_partial_update2(file_id, id, patched_task_request=patched_task_request)
+        # Allows to upload an annotation file chunk. Implements TUS file uploading protocol.
+        api_response = api_instance.tasks_annotations_file_partial_update(file_id, id, patched_task_request=patched_task_request)
         pprint(api_response)
     except cvat_api_client.ApiException as e:
-        print("Exception when calling TasksApi->tasks_annotations_partial_update2: %s\n" % e)
+        print("Exception when calling TasksApi->tasks_annotations_file_partial_update: %s\n" % e)
 ```
 
 
@@ -721,6 +538,191 @@ Name | Type | Description  | Notes
 ### Return type
 
 [**Task**](Task.md)
+
+### Authorization
+
+[SignatureAuthentication](../README.md#SignatureAuthentication), [basicAuth](../README.md#basicAuth), [cookieAuth](../README.md#cookieAuth), [tokenAuth](../README.md#tokenAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json, application/x-www-form-urlencoded, multipart/form-data, application/offset+octet-stream
+ - **Accept**: application/vnd.cvat+json
+
+
+### HTTP response details
+
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** |  |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **tasks_annotations_partial_update**
+> LabeledData tasks_annotations_partial_update(action, id)
+
+Method performs a partial update of annotations in a specific task
+
+### Example
+
+* Api Key Authentication (SignatureAuthentication):
+* Basic Authentication (basicAuth):
+* Api Key Authentication (cookieAuth):
+* Api Key Authentication (tokenAuth):
+
+```python
+import time
+import cvat_api_client
+from cvat_api_client.api import tasks_api
+from cvat_api_client.model.patched_labeled_data_request import PatchedLabeledDataRequest
+from cvat_api_client.model.labeled_data import LabeledData
+from pprint import pprint
+# Defining the host is optional and defaults to http://localhost
+# See configuration.py for a list of all supported configuration parameters.
+configuration = cvat_api_client.Configuration(
+    host = "http://localhost"
+)
+
+# The client must configure the authentication and authorization parameters
+# in accordance with the API server security policy.
+# Examples for each auth method are provided below, use the example that
+# satisfies your auth use case.
+
+# Configure API key authorization: SignatureAuthentication
+configuration.api_key['SignatureAuthentication'] = 'YOUR_API_KEY'
+
+# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
+# configuration.api_key_prefix['SignatureAuthentication'] = 'Bearer'
+
+# Configure HTTP basic authorization: basicAuth
+configuration = cvat_api_client.Configuration(
+    username = 'YOUR_USERNAME',
+    password = 'YOUR_PASSWORD'
+)
+
+# Configure API key authorization: cookieAuth
+configuration.api_key['cookieAuth'] = 'YOUR_API_KEY'
+
+# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
+# configuration.api_key_prefix['cookieAuth'] = 'Bearer'
+
+# Configure API key authorization: tokenAuth
+configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
+
+# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
+# configuration.api_key_prefix['tokenAuth'] = 'Bearer'
+
+# Enter a context with an instance of the API client
+with cvat_api_client.ApiClient(configuration) as api_client:
+    # Create an instance of the API class
+    api_instance = tasks_api.TasksApi(api_client)
+    action = "create" # str | 
+    id = 1 # int | A unique integer value identifying this task.
+    patched_labeled_data_request = PatchedLabeledDataRequest(
+        version=1,
+        tags=[
+            LabeledImageRequest(
+                id=1,
+                frame=0,
+                label_id=0,
+                group=0,
+                source="manual",
+                attributes=[
+                    AttributeValRequest(
+                        spec_id=1,
+                        value="value_example",
+                    ),
+                ],
+            ),
+        ],
+        shapes=[
+            LabeledShapeRequest(
+                type=ShapeType("rectangle"),
+                occluded=True,
+                z_order=0,
+                rotation=0.0,
+                points=[
+                    3.14,
+                ],
+                id=1,
+                frame=0,
+                label_id=0,
+                group=0,
+                source="manual",
+                attributes=[
+                    AttributeValRequest(
+                        spec_id=1,
+                        value="value_example",
+                    ),
+                ],
+            ),
+        ],
+        tracks=[
+            LabeledTrackRequest(
+                id=1,
+                frame=0,
+                label_id=0,
+                group=0,
+                source="manual",
+                shapes=[
+                    TrackedShapeRequest(
+                        type=ShapeType("rectangle"),
+                        occluded=True,
+                        z_order=0,
+                        rotation=0.0,
+                        points=[
+                            3.14,
+                        ],
+                        id=1,
+                        frame=0,
+                        outside=True,
+                        attributes=[
+                            AttributeValRequest(
+                                spec_id=1,
+                                value="value_example",
+                            ),
+                        ],
+                    ),
+                ],
+                attributes=[
+                    AttributeValRequest(
+                        spec_id=1,
+                        value="value_example",
+                    ),
+                ],
+            ),
+        ],
+    ) # PatchedLabeledDataRequest |  (optional)
+
+    # example passing only required values which don't have defaults set
+    try:
+        # Method performs a partial update of annotations in a specific task
+        api_response = api_instance.tasks_annotations_partial_update(action, id)
+        pprint(api_response)
+    except cvat_api_client.ApiException as e:
+        print("Exception when calling TasksApi->tasks_annotations_partial_update: %s\n" % e)
+
+    # example passing only required values which don't have defaults set
+    # and optional values
+    try:
+        # Method performs a partial update of annotations in a specific task
+        api_response = api_instance.tasks_annotations_partial_update(action, id, patched_labeled_data_request=patched_labeled_data_request)
+        pprint(api_response)
+    except cvat_api_client.ApiException as e:
+        print("Exception when calling TasksApi->tasks_annotations_partial_update: %s\n" % e)
+```
+
+
+### Parameters
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **action** | **str**|  |
+ **id** | **int**| A unique integer value identifying this task. |
+ **patched_labeled_data_request** | [**PatchedLabeledDataRequest**](PatchedLabeledDataRequest.md)|  | [optional]
+
+### Return type
+
+[**LabeledData**](LabeledData.md)
 
 ### Authorization
 
@@ -929,7 +931,7 @@ with cvat_api_client.ApiClient(configuration) as api_client:
         ],
         shapes=[
             LabeledShapeRequest(
-                type=Type411Enum("rectangle"),
+                type=ShapeType("rectangle"),
                 occluded=True,
                 z_order=0,
                 rotation=0.0,
@@ -958,7 +960,7 @@ with cvat_api_client.ApiClient(configuration) as api_client:
                 source="manual",
                 shapes=[
                     TrackedShapeRequest(
-                        type=Type411Enum("rectangle"),
+                        type=ShapeType("rectangle"),
                         occluded=True,
                         z_order=0,
                         rotation=0.0,
@@ -1605,8 +1607,8 @@ with cvat_api_client.ApiClient(configuration) as api_client:
         start_frame=1,
         stop_frame=1,
         frame_filter="frame_filter_example",
-        compressed_chunk_type=CompressedChunkTypeEnum("video"),
-        original_chunk_type=OriginalChunkTypeEnum("video"),
+        compressed_chunk_type=ChunkType("video"),
+        original_chunk_type=ChunkType("video"),
         client_files=[
             ClientFileRequest(
                 file=open('/path/to/file', 'rb'),
@@ -1626,9 +1628,9 @@ with cvat_api_client.ApiClient(configuration) as api_client:
         cloud_storage_id=1,
         use_cache=False,
         copy_data=False,
-        storage_method=StorageMethodEnum("cache"),
-        storage=StorageEnum("cloud_storage"),
-        sorting_method=SortingMethodEnum("lexicographical"),
+        storage_method=StorageMethod("cache"),
+        storage=StorageType("cloud_storage"),
+        sorting_method=SortingMethod("lexicographical"),
     ) # DataRequest | 
     upload_finish = True # bool | Finishes data upload. Can be combined with Upload-Start header to create task data with one request (optional)
     upload_multiple = True # bool | Indicates that data with this request are single or multiple files that should be attached to a task (optional)
@@ -1680,6 +1682,152 @@ void (empty response body)
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
 **202** | No response body |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **tasks_data_file_partial_update**
+> Task tasks_data_file_partial_update(file_id, id)
+
+Allows to upload a file chunk. Implements TUS file uploading protocol.
+
+### Example
+
+* Api Key Authentication (SignatureAuthentication):
+* Basic Authentication (basicAuth):
+* Api Key Authentication (cookieAuth):
+* Api Key Authentication (tokenAuth):
+
+```python
+import time
+import cvat_api_client
+from cvat_api_client.api import tasks_api
+from cvat_api_client.model.task import Task
+from cvat_api_client.model.patched_task_request import PatchedTaskRequest
+from pprint import pprint
+# Defining the host is optional and defaults to http://localhost
+# See configuration.py for a list of all supported configuration parameters.
+configuration = cvat_api_client.Configuration(
+    host = "http://localhost"
+)
+
+# The client must configure the authentication and authorization parameters
+# in accordance with the API server security policy.
+# Examples for each auth method are provided below, use the example that
+# satisfies your auth use case.
+
+# Configure API key authorization: SignatureAuthentication
+configuration.api_key['SignatureAuthentication'] = 'YOUR_API_KEY'
+
+# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
+# configuration.api_key_prefix['SignatureAuthentication'] = 'Bearer'
+
+# Configure HTTP basic authorization: basicAuth
+configuration = cvat_api_client.Configuration(
+    username = 'YOUR_USERNAME',
+    password = 'YOUR_PASSWORD'
+)
+
+# Configure API key authorization: cookieAuth
+configuration.api_key['cookieAuth'] = 'YOUR_API_KEY'
+
+# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
+# configuration.api_key_prefix['cookieAuth'] = 'Bearer'
+
+# Configure API key authorization: tokenAuth
+configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
+
+# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
+# configuration.api_key_prefix['tokenAuth'] = 'Bearer'
+
+# Enter a context with an instance of the API client
+with cvat_api_client.ApiClient(configuration) as api_client:
+    # Create an instance of the API class
+    api_instance = tasks_api.TasksApi(api_client)
+    file_id = "bf325375-e030-fccb-a009-17317c574773" # str | 
+    id = 1 # int | A unique integer value identifying this task.
+    patched_task_request = PatchedTaskRequest(
+        name="name_example",
+        project_id=1,
+        owner=BasicUserRequest(
+            username="A",
+            first_name="first_name_example",
+            last_name="last_name_example",
+        ),
+        assignee=PatchedProjectRequestAssignee(None),
+        owner_id=1,
+        assignee_id=1,
+        bug_tracker="bug_tracker_example",
+        overlap=1,
+        segment_size=1,
+        labels=[
+            PatchedLabelRequest(
+                id=1,
+                name="name_example",
+                color="color_example",
+                attributes=[
+                    AttributeRequest(
+                        name="name_example",
+                        mutable=True,
+                        input_type=InputTypeEnum("checkbox"),
+                        default_value="default_value_example",
+                        values=[
+                            "values_example",
+                        ],
+                    ),
+                ],
+                deleted=True,
+            ),
+        ],
+        dimension="dimension_example",
+        subset="subset_example",
+    ) # PatchedTaskRequest |  (optional)
+
+    # example passing only required values which don't have defaults set
+    try:
+        # Allows to upload a file chunk. Implements TUS file uploading protocol.
+        api_response = api_instance.tasks_data_file_partial_update(file_id, id)
+        pprint(api_response)
+    except cvat_api_client.ApiException as e:
+        print("Exception when calling TasksApi->tasks_data_file_partial_update: %s\n" % e)
+
+    # example passing only required values which don't have defaults set
+    # and optional values
+    try:
+        # Allows to upload a file chunk. Implements TUS file uploading protocol.
+        api_response = api_instance.tasks_data_file_partial_update(file_id, id, patched_task_request=patched_task_request)
+        pprint(api_response)
+    except cvat_api_client.ApiException as e:
+        print("Exception when calling TasksApi->tasks_data_file_partial_update: %s\n" % e)
+```
+
+
+### Parameters
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **file_id** | **str**|  |
+ **id** | **int**| A unique integer value identifying this task. |
+ **patched_task_request** | [**PatchedTaskRequest**](PatchedTaskRequest.md)|  | [optional]
+
+### Return type
+
+[**Task**](Task.md)
+
+### Authorization
+
+[SignatureAuthentication](../README.md#SignatureAuthentication), [basicAuth](../README.md#basicAuth), [cookieAuth](../README.md#cookieAuth), [tokenAuth](../README.md#tokenAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json, application/x-www-form-urlencoded, multipart/form-data, application/offset+octet-stream
+ - **Accept**: application/vnd.cvat+json
+
+
+### HTTP response details
+
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** |  |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
@@ -1891,150 +2039,6 @@ Name | Type | Description  | Notes
 ### HTTP request headers
 
  - **Content-Type**: Not defined
- - **Accept**: application/vnd.cvat+json
-
-
-### HTTP response details
-
-| Status code | Description | Response headers |
-|-------------|-------------|------------------|
-**200** |  |  -  |
-
-[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
-
-# **tasks_data_partial_update**
-> Task tasks_data_partial_update(file_id, id)
-
-
-
-### Example
-
-* Api Key Authentication (SignatureAuthentication):
-* Basic Authentication (basicAuth):
-* Api Key Authentication (cookieAuth):
-* Api Key Authentication (tokenAuth):
-
-```python
-import time
-import cvat_api_client
-from cvat_api_client.api import tasks_api
-from cvat_api_client.model.task import Task
-from cvat_api_client.model.patched_task_request import PatchedTaskRequest
-from pprint import pprint
-# Defining the host is optional and defaults to http://localhost
-# See configuration.py for a list of all supported configuration parameters.
-configuration = cvat_api_client.Configuration(
-    host = "http://localhost"
-)
-
-# The client must configure the authentication and authorization parameters
-# in accordance with the API server security policy.
-# Examples for each auth method are provided below, use the example that
-# satisfies your auth use case.
-
-# Configure API key authorization: SignatureAuthentication
-configuration.api_key['SignatureAuthentication'] = 'YOUR_API_KEY'
-
-# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
-# configuration.api_key_prefix['SignatureAuthentication'] = 'Bearer'
-
-# Configure HTTP basic authorization: basicAuth
-configuration = cvat_api_client.Configuration(
-    username = 'YOUR_USERNAME',
-    password = 'YOUR_PASSWORD'
-)
-
-# Configure API key authorization: cookieAuth
-configuration.api_key['cookieAuth'] = 'YOUR_API_KEY'
-
-# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
-# configuration.api_key_prefix['cookieAuth'] = 'Bearer'
-
-# Configure API key authorization: tokenAuth
-configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
-
-# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
-# configuration.api_key_prefix['tokenAuth'] = 'Bearer'
-
-# Enter a context with an instance of the API client
-with cvat_api_client.ApiClient(configuration) as api_client:
-    # Create an instance of the API class
-    api_instance = tasks_api.TasksApi(api_client)
-    file_id = "bf325375-e030-fccb-a009-17317c574773" # str | 
-    id = 1 # int | A unique integer value identifying this task.
-    patched_task_request = PatchedTaskRequest(
-        name="name_example",
-        project_id=1,
-        owner=BasicUserRequest(
-            username="A",
-            first_name="first_name_example",
-            last_name="last_name_example",
-        ),
-        assignee=PatchedProjectRequestAssignee(None),
-        owner_id=1,
-        assignee_id=1,
-        bug_tracker="bug_tracker_example",
-        overlap=1,
-        segment_size=1,
-        labels=[
-            PatchedLabelRequest(
-                id=1,
-                name="name_example",
-                color="color_example",
-                attributes=[
-                    AttributeRequest(
-                        name="name_example",
-                        mutable=True,
-                        input_type=InputTypeEnum("checkbox"),
-                        default_value="default_value_example",
-                        values=[
-                            "values_example",
-                        ],
-                    ),
-                ],
-                deleted=True,
-            ),
-        ],
-        dimension="dimension_example",
-        subset="subset_example",
-    ) # PatchedTaskRequest |  (optional)
-
-    # example passing only required values which don't have defaults set
-    try:
-        api_response = api_instance.tasks_data_partial_update(file_id, id)
-        pprint(api_response)
-    except cvat_api_client.ApiException as e:
-        print("Exception when calling TasksApi->tasks_data_partial_update: %s\n" % e)
-
-    # example passing only required values which don't have defaults set
-    # and optional values
-    try:
-        api_response = api_instance.tasks_data_partial_update(file_id, id, patched_task_request=patched_task_request)
-        pprint(api_response)
-    except cvat_api_client.ApiException as e:
-        print("Exception when calling TasksApi->tasks_data_partial_update: %s\n" % e)
-```
-
-
-### Parameters
-
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
- **file_id** | **str**|  |
- **id** | **int**| A unique integer value identifying this task. |
- **patched_task_request** | [**PatchedTaskRequest**](PatchedTaskRequest.md)|  | [optional]
-
-### Return type
-
-[**Task**](Task.md)
-
-### Authorization
-
-[SignatureAuthentication](../README.md#SignatureAuthentication), [basicAuth](../README.md#basicAuth), [cookieAuth](../README.md#cookieAuth), [tokenAuth](../README.md#tokenAuth)
-
-### HTTP request headers
-
- - **Content-Type**: application/json, application/x-www-form-urlencoded, multipart/form-data, application/offset+octet-stream
  - **Accept**: application/vnd.cvat+json
 
 

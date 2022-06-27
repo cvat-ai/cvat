@@ -152,9 +152,9 @@ Class | Method | HTTP request | Description
 *IssuesApi* | [**issues_retrieve**](docs/IssuesApi.md#issues_retrieve) | **GET** /api/issues/{id} | Method returns details of an issue
 *JobsApi* | [**jobs_annotations_create**](docs/JobsApi.md#jobs_annotations_create) | **POST** /api/jobs/{id}/annotations/ | 
 *JobsApi* | [**jobs_annotations_destroy**](docs/JobsApi.md#jobs_annotations_destroy) | **DELETE** /api/jobs/{id}/annotations/ | Method deletes all annotations for a specific job
+*JobsApi* | [**jobs_annotations_file_partial_update**](docs/JobsApi.md#jobs_annotations_file_partial_update) | **PATCH** /api/jobs/{id}/annotations/{file_id} | Allows to upload an annotation file chunk. Implements TUS file uploading protocol.
 *JobsApi* | [**jobs_annotations_list**](docs/JobsApi.md#jobs_annotations_list) | **GET** /api/jobs/{id}/annotations/ | Method returns annotations for a specific job
 *JobsApi* | [**jobs_annotations_partial_update**](docs/JobsApi.md#jobs_annotations_partial_update) | **PATCH** /api/jobs/{id}/annotations/ | Method performs a partial update of annotations in a specific job
-*JobsApi* | [**jobs_annotations_partial_update2**](docs/JobsApi.md#jobs_annotations_partial_update2) | **PATCH** /api/jobs/{id}/annotations/{file_id} | 
 *JobsApi* | [**jobs_annotations_update**](docs/JobsApi.md#jobs_annotations_update) | **PUT** /api/jobs/{id}/annotations/ | Method performs an update of all annotations in a specific job
 *JobsApi* | [**jobs_commits_list**](docs/JobsApi.md#jobs_commits_list) | **GET** /api/jobs/{id}/commits | The action returns the list of tracked changes for the job
 *JobsApi* | [**jobs_data_meta_retrieve**](docs/JobsApi.md#jobs_data_meta_retrieve) | **GET** /api/jobs/{id}/data/meta | Method provides a meta information about media files which are related with the job
@@ -165,11 +165,11 @@ Class | Method | HTTP request | Description
 *JobsApi* | [**jobs_retrieve**](docs/JobsApi.md#jobs_retrieve) | **GET** /api/jobs/{id} | Method returns details of a job
 *JobsApi* | [**jobs_update**](docs/JobsApi.md#jobs_update) | **PUT** /api/jobs/{id} | Method updates a job by id
 *LambdaApi* | [**lambda_functions_create**](docs/LambdaApi.md#lambda_functions_create) | **POST** /api/lambda/functions/{func_id} | 
-*LambdaApi* | [**lambda_functions_retrieve**](docs/LambdaApi.md#lambda_functions_retrieve) | **GET** /api/lambda/functions | Method returns a list of functions
-*LambdaApi* | [**lambda_functions_retrieve2**](docs/LambdaApi.md#lambda_functions_retrieve2) | **GET** /api/lambda/functions/{func_id} | Method returns the information about the function
+*LambdaApi* | [**lambda_functions_list**](docs/LambdaApi.md#lambda_functions_list) | **GET** /api/lambda/functions | Method returns a list of functions
+*LambdaApi* | [**lambda_functions_retrieve**](docs/LambdaApi.md#lambda_functions_retrieve) | **GET** /api/lambda/functions/{func_id} | Method returns the information about the function
 *LambdaApi* | [**lambda_requests_create**](docs/LambdaApi.md#lambda_requests_create) | **POST** /api/lambda/requests | Method calls the function
-*LambdaApi* | [**lambda_requests_retrieve**](docs/LambdaApi.md#lambda_requests_retrieve) | **GET** /api/lambda/requests | Method returns a list of requests
-*LambdaApi* | [**lambda_requests_retrieve2**](docs/LambdaApi.md#lambda_requests_retrieve2) | **GET** /api/lambda/requests/{id} | Method returns the status of the request
+*LambdaApi* | [**lambda_requests_list**](docs/LambdaApi.md#lambda_requests_list) | **GET** /api/lambda/requests | Method returns a list of requests
+*LambdaApi* | [**lambda_requests_retrieve**](docs/LambdaApi.md#lambda_requests_retrieve) | **GET** /api/lambda/requests/{id} | Method returns the status of the request
 *MembershipsApi* | [**memberships_destroy**](docs/MembershipsApi.md#memberships_destroy) | **DELETE** /api/memberships/{id} | Method deletes a membership
 *MembershipsApi* | [**memberships_list**](docs/MembershipsApi.md#memberships_list) | **GET** /api/memberships | Method returns a paginated list of memberships according to query parameters
 *MembershipsApi* | [**memberships_partial_update**](docs/MembershipsApi.md#memberships_partial_update) | **PATCH** /api/memberships/{id} | Methods does a partial update of chosen fields in a membership
@@ -204,8 +204,8 @@ Class | Method | HTTP request | Description
 *TasksApi* | [**jobs_data_meta_partial_update**](docs/TasksApi.md#jobs_data_meta_partial_update) | **PATCH** /api/jobs/{id}/data/meta | Method provides a meta information about media files which are related with the job
 *TasksApi* | [**tasks_annotations_create**](docs/TasksApi.md#tasks_annotations_create) | **POST** /api/tasks/{id}/annotations/ | 
 *TasksApi* | [**tasks_annotations_destroy**](docs/TasksApi.md#tasks_annotations_destroy) | **DELETE** /api/tasks/{id}/annotations/ | Method deletes all annotations for a specific task
+*TasksApi* | [**tasks_annotations_file_partial_update**](docs/TasksApi.md#tasks_annotations_file_partial_update) | **PATCH** /api/tasks/{id}/annotations/{file_id} | Allows to upload an annotation file chunk. Implements TUS file uploading protocol.
 *TasksApi* | [**tasks_annotations_partial_update**](docs/TasksApi.md#tasks_annotations_partial_update) | **PATCH** /api/tasks/{id}/annotations/ | Method performs a partial update of annotations in a specific task
-*TasksApi* | [**tasks_annotations_partial_update2**](docs/TasksApi.md#tasks_annotations_partial_update2) | **PATCH** /api/tasks/{id}/annotations/{file_id} | 
 *TasksApi* | [**tasks_annotations_retrieve**](docs/TasksApi.md#tasks_annotations_retrieve) | **GET** /api/tasks/{id}/annotations/ | Method allows to download task annotations
 *TasksApi* | [**tasks_annotations_update**](docs/TasksApi.md#tasks_annotations_update) | **PUT** /api/tasks/{id}/annotations/ | Method allows to upload task annotations
 *TasksApi* | [**tasks_backup_create**](docs/TasksApi.md#tasks_backup_create) | **POST** /api/tasks/backup/ | Method recreates a task from an attached task backup file
@@ -213,9 +213,9 @@ Class | Method | HTTP request | Description
 *TasksApi* | [**tasks_backup_retrieve**](docs/TasksApi.md#tasks_backup_retrieve) | **GET** /api/tasks/{id}/backup | Method backup a specified task
 *TasksApi* | [**tasks_create**](docs/TasksApi.md#tasks_create) | **POST** /api/tasks | Method creates a new task in a database without any attached images and videos
 *TasksApi* | [**tasks_data_create**](docs/TasksApi.md#tasks_data_create) | **POST** /api/tasks/{id}/data/ | Method permanently attaches images or video to a task. Supports tus uploads, see more https://tus.io/
+*TasksApi* | [**tasks_data_file_partial_update**](docs/TasksApi.md#tasks_data_file_partial_update) | **PATCH** /api/tasks/{id}/data/{file_id} | Allows to upload a file chunk. Implements TUS file uploading protocol.
 *TasksApi* | [**tasks_data_meta_partial_update**](docs/TasksApi.md#tasks_data_meta_partial_update) | **PATCH** /api/tasks/{id}/data/meta | Method provides a meta information about media files which are related with the task
 *TasksApi* | [**tasks_data_meta_retrieve**](docs/TasksApi.md#tasks_data_meta_retrieve) | **GET** /api/tasks/{id}/data/meta | Method provides a meta information about media files which are related with the task
-*TasksApi* | [**tasks_data_partial_update**](docs/TasksApi.md#tasks_data_partial_update) | **PATCH** /api/tasks/{id}/data/{file_id} | 
 *TasksApi* | [**tasks_data_retrieve**](docs/TasksApi.md#tasks_data_retrieve) | **GET** /api/tasks/{id}/data/ | Method returns data for a specific task
 *TasksApi* | [**tasks_dataset_retrieve**](docs/TasksApi.md#tasks_dataset_retrieve) | **GET** /api/tasks/{id}/dataset | Export task as a dataset in a specific format
 *TasksApi* | [**tasks_destroy**](docs/TasksApi.md#tasks_destroy) | **DELETE** /api/tasks/{id} | Method deletes a specific task, all attached jobs, annotations, and data
@@ -242,6 +242,7 @@ Class | Method | HTTP request | Description
  - [AttributeValRequest](docs/AttributeValRequest.md)
  - [BasicUser](docs/BasicUser.md)
  - [BasicUserRequest](docs/BasicUserRequest.md)
+ - [ChunkType](docs/ChunkType.md)
  - [ClientFileRequest](docs/ClientFileRequest.md)
  - [CloudStorageRead](docs/CloudStorageRead.md)
  - [CloudStorageWrite](docs/CloudStorageWrite.md)
@@ -250,11 +251,8 @@ Class | Method | HTTP request | Description
  - [CommentReadOwner](docs/CommentReadOwner.md)
  - [CommentWrite](docs/CommentWrite.md)
  - [CommentWriteRequest](docs/CommentWriteRequest.md)
- - [CompressedChunkTypeEnum](docs/CompressedChunkTypeEnum.md)
  - [CredentialsTypeEnum](docs/CredentialsTypeEnum.md)
- - [DataCompressedChunkTypeEnum](docs/DataCompressedChunkTypeEnum.md)
  - [DataMetaRead](docs/DataMetaRead.md)
- - [DataOriginalChunkTypeEnum](docs/DataOriginalChunkTypeEnum.md)
  - [DataRequest](docs/DataRequest.md)
  - [DatasetFormat](docs/DatasetFormat.md)
  - [DatasetFormats](docs/DatasetFormats.md)
@@ -273,6 +271,8 @@ Class | Method | HTTP request | Description
  - [IssueWriteRequest](docs/IssueWriteRequest.md)
  - [JobCommit](docs/JobCommit.md)
  - [JobRead](docs/JobRead.md)
+ - [JobStage](docs/JobStage.md)
+ - [JobStatus](docs/JobStatus.md)
  - [JobWrite](docs/JobWrite.md)
  - [JobWriteRequest](docs/JobWriteRequest.md)
  - [Label](docs/Label.md)
@@ -292,10 +292,10 @@ Class | Method | HTTP request | Description
  - [MembershipRead](docs/MembershipRead.md)
  - [MembershipWrite](docs/MembershipWrite.md)
  - [MetaUser](docs/MetaUser.md)
+ - [OperationStatus](docs/OperationStatus.md)
  - [OrganizationRead](docs/OrganizationRead.md)
  - [OrganizationWrite](docs/OrganizationWrite.md)
  - [OrganizationWriteRequest](docs/OrganizationWriteRequest.md)
- - [OriginalChunkTypeEnum](docs/OriginalChunkTypeEnum.md)
  - [PaginatedCloudStorageReadList](docs/PaginatedCloudStorageReadList.md)
  - [PaginatedCommentReadList](docs/PaginatedCommentReadList.md)
  - [PaginatedInvitationReadList](docs/PaginatedInvitationReadList.md)
@@ -340,21 +340,18 @@ Class | Method | HTTP request | Description
  - [Segment](docs/Segment.md)
  - [SegmentRequest](docs/SegmentRequest.md)
  - [ServerFileRequest](docs/ServerFileRequest.md)
+ - [ShapeType](docs/ShapeType.md)
  - [SigningRequest](docs/SigningRequest.md)
  - [SimpleJob](docs/SimpleJob.md)
  - [SimpleJobRequest](docs/SimpleJobRequest.md)
- - [SortingMethodEnum](docs/SortingMethodEnum.md)
- - [StageEnum](docs/StageEnum.md)
- - [StateBf1Enum](docs/StateBf1Enum.md)
- - [StatusEnum](docs/StatusEnum.md)
- - [StorageEnum](docs/StorageEnum.md)
- - [StorageMethodEnum](docs/StorageMethodEnum.md)
+ - [SortingMethod](docs/SortingMethod.md)
+ - [StorageMethod](docs/StorageMethod.md)
+ - [StorageType](docs/StorageType.md)
  - [Task](docs/Task.md)
  - [TaskRequest](docs/TaskRequest.md)
  - [Token](docs/Token.md)
  - [TrackedShape](docs/TrackedShape.md)
  - [TrackedShapeRequest](docs/TrackedShapeRequest.md)
- - [Type411Enum](docs/Type411Enum.md)
  - [User](docs/User.md)
  - [UserAgreement](docs/UserAgreement.md)
  - [UserAgreementRequest](docs/UserAgreementRequest.md)
