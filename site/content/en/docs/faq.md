@@ -12,16 +12,22 @@ description: 'Answers to frequently asked questions'
 Before updating, please follow the [backup guide](/docs/administration/advanced/backup_guide/)
 and backup all CVAT volumes.
 
-To update CVAT, you should clone or download the new version of CVAT and rebuild the CVAT docker images as usual.
+To update CVAT, you should clone or download the new version of CVAT and pull the CVAT docker images as usual.
 
 ```bash
-docker-compose build
+docker-compose pull
 ```
 
 and run containers:
 
 ```bash
 docker-compose up -d
+```
+
+If you wish to run a development version, you can build the images locally:
+
+```bash
+docker-compose -f docker-compose.dev.yml build
 ```
 
 Sometimes the update process takes a lot of time due to changes in the database schema and data.
