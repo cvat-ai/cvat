@@ -2498,6 +2498,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         let xbr = Number.MIN_SAFE_INTEGER;
         let ybr = Number.MIN_SAFE_INTEGER;
 
+        const svgElements: SVG.Element[] = [];
         const templateElements = Array.from(SVGElement.children).filter((el: Element) => el.tagName === 'circle');
         for (let i = 0; i < state.elements.length; i++) {
             const element = state.elements[i];
@@ -2515,26 +2516,18 @@ export class CanvasViewImpl implements CanvasView, Listener {
                         id: `cvat_canvas_shape_${element.clientID}`,
                         r: consts.BASE_POINT_SIZE / this.geometry.scale,
                         'color-rendering': 'optimizeQuality',
-                        'pointer-events': 'none',
                         'shape-rendering': 'geometricprecision',
                         'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
                         'data-node-id': templateElements[i].getAttribute('data-node-id'),
                         'data-element-id': templateElements[i].getAttribute('data-element-id'),
                     }).style({
-                        'pointer-events': 'none',
+                        cursor: 'default',
                     });
-                this.svgShapes[element.clientID] = circle;
+                svgElements.push(circle);
             }
         }
 
         let bbox = skeleton.bbox();
-        // skeleton.style('transform', `translate(${bbox.x}px, ${bbox.y}px)`);
-        // skeleton.children().forEach((element: SVG.Element) => {
-        //     if (element.type === 'circle') {
-        //         element.move(element.cx() - bbox.x, element.cy() - bbox.y);
-        //     }
-        // });
-        // bbox = skeleton.bbox();
         const wrappingRect = skeleton.rect(bbox.width, bbox.height).move(bbox.x, bbox.y).attr({
             fill: 'inherit',
             'fill-opacity': 0,
@@ -2547,9 +2540,9 @@ export class CanvasViewImpl implements CanvasView, Listener {
             'data-ytl': ytl,
             'data-xbr': xbr,
             'data-ybr': ybr,
-        }).style({
-            'pointer-events': 'all',
         });
+
+        skeleton.node.prepend(wrappingRect.node);
 
         const setupEdges = (): void => {
             if (!svg) return;
@@ -2602,6 +2595,11 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
         skeleton.selectize = (enabled: boolean) => {
             this.selectize(enabled, wrappingRect);
+
+            // svgElements.forEach((element) => {
+            //     this.selectize(enabled, element);
+            // });
+
             return skeleton;
         };
 
@@ -2673,6 +2671,72 @@ export class CanvasViewImpl implements CanvasView, Listener {
         };
 
         skeleton.resize = (action: any) => {
+            svgElements.forEach((element) => {
+                let resized1 = false;
+                if (typeof action === 'object') {
+                    element.draggable()
+                        .on('dragstart', (): void => {
+                            this.mode = Mode.RESIZE;
+                            // hideText();
+                            // (skeleton as any).on('remove.drag', (): void => {
+                            //     this.mode = Mode.IDLE;
+                            //     // disable internal drag events of SVG.js
+                            //     window.dispatchEvent(new MouseEvent('mouseup'));
+                            // });
+                        })
+                        .on('dragmove', (e: CustomEvent): void => {
+                            // const { instance } = e.target as any;
+                            // const [x, y] = [instance.x(), instance.y()];
+                            // const prevXtl = +wrappingRect.attr('data-xtl');
+                            // const prevYtl = +wrappingRect.attr('data-ytl');
+
+                            // for (const child of skeleton.children()) {
+                            //     if (child.type === 'circle') {
+                            //         child.center(
+                            //             child.cx() - prevXtl + x,
+                            //             child.cy() - prevYtl + y,
+                            //         );
+                            //     }
+                            // }
+
+                            // wrappingRect.attr('data-xtl', x);
+                            // wrappingRect.attr('data-ytl', y);
+                            // wrappingRect.attr('data-xbr', x + instance.width());
+                            // wrappingRect.attr('data-ybr', y + instance.height());
+
+                            setupEdges();
+                        })
+                        .on('dragend', (e: CustomEvent): void => {
+                            // (skeleton as any).off('remove.drag');
+                            // this.mode = Mode.IDLE;
+                            // // showText();
+                            // const p1 = e.detail.handler.startPoints.point;
+                            // const p2 = e.detail.p;
+                            // const delta = 1;
+                            // const dx2 = (p1.x - p2.x) ** 2;
+                            // const dy2 = (p1.y - p2.y) ** 2;
+                            // if (Math.sqrt(dx2 + dy2) >= delta) {
+                            //     state.elements.forEach((element: any) => {
+                            //         const elementShape = skeleton.children()
+                            //             .find((child: SVG.Shape) => child.id() === `cvat_canvas_shape_${element.clientID}`);
+
+                            //         if (elementShape) {
+                            //             let points = readPointsFromShape(elementShape);
+                            //             points = this.translateFromCanvas(points);
+                            //             element.points = points;
+                            //         }
+                            //     });
+
+                            //     this.onEditDone(state, state.points);
+                            // }
+                        });
+                } else {
+                    (element as any).off('dragstart');
+                    (element as any).off('dragend');
+                    element.draggable(false);
+                }
+            });
+
             let resized = false;
             if (typeof action === 'object') {
                 (wrappingRect as any).resize(action).on('resizestart', (): void => {
