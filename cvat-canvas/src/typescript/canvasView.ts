@@ -2523,9 +2523,38 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     }).style({
                         cursor: 'default',
                     });
+
+                const mouseover = (): void => {
+                    const locked = this.drawnStates[state.clientID].lock;
+                    if (!locked) {
+                        circle.attr({
+                            'stroke-width': consts.POINTS_SELECTED_STROKE_WIDTH / this.geometry.scale,
+                        });
+                    }
+                };
+
+                const mouseleave = (): void => {
+                    circle.attr({
+                        'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
+                    });
+                };
+
+                circle.on('mouseover', mouseover);
+                circle.on('mouseleave', mouseleave);
+                circle.on('remove', () => {
+                    circle.off('remove');
+                    circle.off('mouseover', mouseover);
+                    circle.off('mouseleave', mouseleave);
+                });
+
                 svgElements.push(circle);
             }
         }
+
+        skeleton.on('remove', () => {
+            svgElements.forEach((element) => element.fire('remove'));
+            skeleton.off('remove');
+        });
 
         let bbox = skeleton.bbox();
         const wrappingRect = skeleton.rect(bbox.width, bbox.height).move(bbox.x, bbox.y).attr({
@@ -2609,10 +2638,11 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     .on('dragstart', (): void => {
                         this.mode = Mode.DRAG;
                         // hideText();
-                        (skeleton as any).on('remove.drag', (): void => {
+                        skeleton.on('remove.drag', (): void => {
                             this.mode = Mode.IDLE;
                             // disable internal drag events of SVG.js
                             window.dispatchEvent(new MouseEvent('mouseup'));
+                            skeleton.off('remove.drag');
                         });
                     })
                     .on('dragmove', (e: CustomEvent): void => {
@@ -2638,7 +2668,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                         setupEdges();
                     })
                     .on('dragend', (e: CustomEvent): void => {
-                        (skeleton as any).off('remove.drag');
+                        skeleton.off('remove.drag');
                         this.mode = Mode.IDLE;
                         // showText();
                         const p1 = e.detail.handler.startPoints.point;
@@ -2670,19 +2700,19 @@ export class CanvasViewImpl implements CanvasView, Listener {
             return skeleton;
         };
 
-        skeleton.resize = (action: any) => {
+        (skeleton as any).resize = (action: any) => {
             svgElements.forEach((element) => {
-                let resized1 = false;
                 if (typeof action === 'object') {
-                    element.draggable()
+                    (element as any).draggable()
                         .on('dragstart', (): void => {
                             this.mode = Mode.RESIZE;
                             // hideText();
-                            // (skeleton as any).on('remove.drag', (): void => {
-                            //     this.mode = Mode.IDLE;
-                            //     // disable internal drag events of SVG.js
-                            //     window.dispatchEvent(new MouseEvent('mouseup'));
-                            // });
+                            element.on('remove.drag', (): void => {
+                                this.mode = Mode.IDLE;
+                                // disable internal drag events of SVG.js
+                                window.dispatchEvent(new MouseEvent('mouseup'));
+                                element.off('remove.drag');
+                            });
                         })
                         .on('dragmove', (e: CustomEvent): void => {
                             // const { instance } = e.target as any;
@@ -2707,7 +2737,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                             setupEdges();
                         })
                         .on('dragend', (e: CustomEvent): void => {
-                            // (skeleton as any).off('remove.drag');
+                            element.off('remove.drag');
                             // this.mode = Mode.IDLE;
                             // // showText();
                             // const p1 = e.detail.handler.startPoints.point;
@@ -2733,7 +2763,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 } else {
                     (element as any).off('dragstart');
                     (element as any).off('dragend');
-                    element.draggable(false);
+                    (element as any).draggable(false);
                 }
             });
 
