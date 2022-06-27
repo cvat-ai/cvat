@@ -2485,19 +2485,29 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 stroke: state.color,
                 'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
                 'data-z-order': state.zOrder,
-            }).addClass('cvat_canvas_shape');
+            }).addClass('cvat_canvas_shape') as SVG.G;
 
         const SVGElement = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
         const { svg } = state.label.structure;
         if (svg) {
             SVGElement.innerHTML = svg;
         }
+
+        let xtl = Number.MAX_SAFE_INTEGER;
+        let ytl = Number.MAX_SAFE_INTEGER;
+        let xbr = Number.MIN_SAFE_INTEGER;
+        let ybr = Number.MIN_SAFE_INTEGER;
+
         const templateElements = Array.from(SVGElement.children).filter((el: Element) => el.tagName === 'circle');
         for (let i = 0; i < state.elements.length; i++) {
             const element = state.elements[i];
             if (element.shapeType === 'points') {
                 const points: number[] = element.points as number[];
                 const [cx, cy] = this.translateToCanvas(points);
+                xtl = Math.min(xtl, cx);
+                ytl = Math.min(ytl, cy);
+                xbr = Math.max(xbr, cx);
+                ybr = Math.max(ybr, cy);
                 const circle = skeleton.circle()
                     .move(cx, cy)
                     .attr({
@@ -2510,6 +2520,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
                         'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
                         'data-node-id': templateElements[i].getAttribute('data-node-id'),
                         'data-element-id': templateElements[i].getAttribute('data-element-id'),
+                    }).style({
+                        'pointer-events': 'none',
                     });
                 this.svgShapes[element.clientID] = circle;
             }
@@ -2522,18 +2534,26 @@ export class CanvasViewImpl implements CanvasView, Listener {
         //         element.move(element.cx() - bbox.x, element.cy() - bbox.y);
         //     }
         // });
-
-        bbox = skeleton.bbox();
-        skeleton.rect(bbox.width, bbox.height).move(bbox.x, bbox.y).attr({
-            fill: 'none',
+        // bbox = skeleton.bbox();
+        const wrappingRect = skeleton.rect(bbox.width, bbox.height).move(bbox.x, bbox.y).attr({
+            fill: 'inherit',
+            'fill-opacity': 0,
             'color-rendering': 'optimizeQuality',
             'shape-rendering': 'geometricprecision',
             stroke: 'inherit',
             'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
             'data-z-order': state.zOrder,
+            'data-xtl': xtl,
+            'data-ytl': ytl,
+            'data-xbr': xbr,
+            'data-ybr': ybr,
+        }).style({
+            'pointer-events': 'all',
         });
 
-        if (svg) {
+        const setupEdges = (): void => {
+            if (!svg) return;
+
             for (const child of SVGElement.children) {
                 if (child.tagName === 'line') {
                     const dataNodeFrom = child.getAttribute('data-node-from');
@@ -2542,27 +2562,35 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     const nodeTo = skeleton.node.querySelector(`[data-node-id="${dataNodeTo}"]`);
 
                     if (nodeFrom && nodeTo) {
-                        const x1 = nodeFrom.getAttribute('cx');
-                        const y1 = nodeFrom.getAttribute('cy');
-                        const x2 = nodeTo.getAttribute('cx');
-                        const y2 = nodeTo.getAttribute('cy');
+                        const x1 = +nodeFrom.getAttribute('cx');
+                        const y1 = +nodeFrom.getAttribute('cy');
+                        const x2 = +nodeTo.getAttribute('cx');
+                        const y2 = +nodeTo.getAttribute('cy');
 
                         if (x1 && y1 && x2 && y2) {
-                            child.setAttribute('x1', x1);
-                            child.setAttribute('y1', y1);
-                            child.setAttribute('x2', x2);
-                            child.setAttribute('y2', y2);
-                            const line = skeleton.line(x1, y1, x2, y2).attr({
-                                'data-node-from': dataNodeFrom,
-                                'data-node-to': dataNodeTo,
-                                'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
-                            });
-                            skeleton.node.prepend(line.node);
+                            const existingLine = skeleton.children().find((_child: SVG.Element): boolean => (
+                                _child.attr('data-node-from') === +dataNodeFrom && _child.attr('data-node-to') === +dataNodeTo
+                            ));
+
+                            if (existingLine) {
+                                existingLine.attr({
+                                    x1, y1, x2, y2,
+                                });
+                            } else {
+                                const line = skeleton.line(x1, y1, x2, y2).attr({
+                                    'data-node-from': dataNodeFrom,
+                                    'data-node-to': dataNodeTo,
+                                    'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
+                                });
+                                skeleton.node.prepend(line.node);
+                            }
                         }
                     }
                 }
             }
-        }
+        };
+
+        setupEdges();
 
         if (state.occluded) {
             skeleton.addClass('cvat_canvas_shape_occluded');
@@ -2571,6 +2599,158 @@ export class CanvasViewImpl implements CanvasView, Listener {
         if (state.hidden || state.outside || this.isInnerHidden(state.clientID)) {
             skeleton.addClass('cvat_canvas_hidden');
         }
+
+        skeleton.selectize = (enabled: boolean) => {
+            this.selectize(enabled, wrappingRect);
+            return skeleton;
+        };
+
+        skeleton.draggable = (enabled = true) => {
+            if (enabled) {
+                wrappingRect.draggable()
+                    .on('dragstart', (): void => {
+                        this.mode = Mode.DRAG;
+                        // hideText();
+                        (skeleton as any).on('remove.drag', (): void => {
+                            this.mode = Mode.IDLE;
+                            // disable internal drag events of SVG.js
+                            window.dispatchEvent(new MouseEvent('mouseup'));
+                        });
+                    })
+                    .on('dragmove', (e: CustomEvent): void => {
+                        const { instance } = e.target as any;
+                        const [x, y] = [instance.x(), instance.y()];
+                        const prevXtl = +wrappingRect.attr('data-xtl');
+                        const prevYtl = +wrappingRect.attr('data-ytl');
+
+                        for (const child of skeleton.children()) {
+                            if (child.type === 'circle') {
+                                child.center(
+                                    child.cx() - prevXtl + x,
+                                    child.cy() - prevYtl + y,
+                                );
+                            }
+                        }
+
+                        wrappingRect.attr('data-xtl', x);
+                        wrappingRect.attr('data-ytl', y);
+                        wrappingRect.attr('data-xbr', x + instance.width());
+                        wrappingRect.attr('data-ybr', y + instance.height());
+
+                        setupEdges();
+                    })
+                    .on('dragend', (e: CustomEvent): void => {
+                        (skeleton as any).off('remove.drag');
+                        this.mode = Mode.IDLE;
+                        // showText();
+                        const p1 = e.detail.handler.startPoints.point;
+                        const p2 = e.detail.p;
+                        const delta = 1;
+                        const dx2 = (p1.x - p2.x) ** 2;
+                        const dy2 = (p1.y - p2.y) ** 2;
+                        if (Math.sqrt(dx2 + dy2) >= delta) {
+                            state.elements.forEach((element: any) => {
+                                const elementShape = skeleton.children()
+                                    .find((child: SVG.Shape) => child.id() === `cvat_canvas_shape_${element.clientID}`);
+
+                                if (elementShape) {
+                                    let points = readPointsFromShape(elementShape);
+                                    points = this.translateFromCanvas(points);
+                                    element.points = points;
+                                }
+                            });
+
+                            this.onEditDone(state, state.points);
+                        }
+                    });
+            } else {
+                (wrappingRect as any).off('dragstart');
+                (wrappingRect as any).off('dragend');
+                wrappingRect.draggable(false);
+            }
+
+            return skeleton;
+        };
+
+        skeleton.resize = (action: any) => {
+            let resized = false;
+            if (typeof action === 'object') {
+                (wrappingRect as any).resize(action).on('resizestart', (): void => {
+                    this.mode = Mode.RESIZE;
+                    resized = false;
+                    // hideDirection();
+                    // hideText();
+                    // if (state.shapeType === 'rectangle' || state.shapeType === 'ellipse') {
+                    //     shapeSizeElement = displayShapeSize(this.adoptedContent, this.adoptedText);
+                    // }
+                    (wrappingRect as any).on('remove.resize', () => {
+                        // disable internal resize events of SVG.js
+                        window.dispatchEvent(new MouseEvent('mouseup'));
+                        this.mode = Mode.IDLE;
+                    });
+                }).on('resizing', (e: CustomEvent): void => {
+                    const { instance } = e.target as any;
+                    const [x, y] = [instance.x(), instance.y()];
+                    const prevXtl = +wrappingRect.attr('data-xtl');
+                    const prevYtl = +wrappingRect.attr('data-ytl');
+                    const prevXbr = +wrappingRect.attr('data-xbr');
+                    const prevYbr = +wrappingRect.attr('data-ybr');
+
+                    if (prevXbr - prevXtl < 0.1) return;
+                    if (prevYbr - prevYtl < 0.1) return;
+
+                    for (const child of skeleton.children()) {
+                        if (child.type === 'circle') {
+                            const offsetX = (child.cx() - prevXtl) / (prevXbr - prevXtl);
+                            const offsetY = (child.cy() - prevYtl) / (prevYbr - prevYtl);
+                            child.center(offsetX * instance.width() + x, offsetY * instance.height() + y);
+                        }
+                    }
+
+                    wrappingRect.attr('data-xtl', x);
+                    wrappingRect.attr('data-ytl', y);
+                    wrappingRect.attr('data-xbr', x + instance.width());
+                    wrappingRect.attr('data-ybr', y + instance.height());
+
+                    resized = true;
+                    setupEdges();
+                }).on('resizedone', (): void => {
+                    (wrappingRect as any).off('remove.resize');
+                    if (resized) {
+                        state.elements.forEach((element: any) => {
+                            const elementShape = skeleton.children()
+                                .find((child: SVG.Shape) => child.id() === `cvat_canvas_shape_${element.clientID}`);
+
+                            if (elementShape) {
+                                let points = readPointsFromShape(elementShape);
+                                points = this.translateFromCanvas(points);
+                                element.points = points;
+                            }
+                        });
+
+                        this.onEditDone(state, state.points);
+
+                        // points = this.translateFromCanvas(points);
+                        this.canvas.dispatchEvent(
+                            new CustomEvent('canvas.resizeshape', {
+                                bubbles: false,
+                                cancelable: true,
+                                detail: {
+                                    id: state.clientID,
+                                },
+                            }),
+                        );
+                    }
+                });
+            } else if (action === 'stop') {
+                (wrappingRect as any).off('resizestart');
+                (wrappingRect as any).off('resizing');
+                (wrappingRect as any).off('resizedone');
+                (wrappingRect as any).resize('stop');
+            }
+
+            return skeleton;
+        };
 
         return skeleton;
     }
