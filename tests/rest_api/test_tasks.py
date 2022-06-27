@@ -2,17 +2,23 @@
 #
 # SPDX-License-Identifier: MIT
 
+import json
 from copy import deepcopy
 from http import HTTPStatus
 from io import BytesIO
 from time import sleep
+from cvat_api_client.apis import ProjectsApi, TasksApi
+from cvat_api_client.model.rq_status import RqStatus
+from cvat_api_client.model.task_request import TaskRequest
+from cvat_api_client.models import TaskRequest, DataRequest, ClientFileRequest
 
 import pytest
 from deepdiff import DeepDiff
 from PIL import Image
+from urllib3 import HTTPResponse
 
 from .utils.config import (get_method, patch_method, post_files_method,
-                           post_method)
+                           post_method, make_api_client)
 
 
 def generate_image_file(filename, size=(50, 50)):
@@ -36,14 +42,20 @@ def generate_image_files(count):
 @pytest.mark.usefixtures('dontchangedb')
 class TestGetTasks:
     def _test_task_list_200(self, user, project_id, data, exclude_paths = '', **kwargs):
-        response = get_method(user, f'projects/{project_id}/tasks', **kwargs)
-        response_data = response.json()
-        assert response.status_code == HTTPStatus.OK
+        with make_api_client(user) as api_client:
+            api = ProjectsApi(api_client)
+            response = api.projects_tasks_list_raw(project_id, **kwargs)
+            assert response.status == HTTPStatus.OK
+
+        response_data = json.loads(response.data)
         assert DeepDiff(data, response_data['results'], ignore_order=True, exclude_paths=exclude_paths) == {}
 
     def _test_task_list_403(self, user, project_id, **kwargs):
-        response = get_method(user, f'projects/{project_id}/tasks', **kwargs)
-        assert response.status_code == HTTPStatus.FORBIDDEN
+        with make_api_client(user) as api_client:
+            api = ProjectsApi(api_client)
+            response = api.projects_tasks_list_raw(project_id, **kwargs)
+
+        assert response.status == HTTPStatus.FORBIDDEN
 
     def _test_users_to_see_task_list(self, project_id, tasks, users, is_staff, is_allow, is_project_staff, **kwargs):
         if is_staff:
@@ -249,27 +261,32 @@ class TestGetTaskDataset:
 @pytest.mark.usefixtures("changedb")
 class TestPostTaskData:
     @staticmethod
-    def _wait_until_task_is_created(username, task_id):
-        url = f'tasks/{task_id}/status'
-
+    def _wait_until_task_is_created(api: TasksApi, task_id: int) -> RqStatus:
         while True:
-            response = get_method(username, url)
-            response_json = response.json()
-            if response_json['state'] == 'Finished' or response_json['state'] == 'Failed':
-                return response
+            status: RqStatus = api.tasks_status_retrieve(task_id)
+            if status.state.value in ['Finished', 'Failed']:
+                return status
             sleep(1)
 
     def _test_create_task(self, username, spec, data, files):
-        response = post_method(username, '/tasks', spec)
-        assert response.status_code == HTTPStatus.CREATED
-        task_id = response.json()['id']
+        with make_api_client(user=username) as api_client:
+            api = TasksApi(api_client)
 
-        response = post_files_method(username, f'/tasks/{task_id}/data', data, files)
-        assert response.status_code == HTTPStatus.ACCEPTED
+            (task, status, _) = api.tasks_create(TaskRequest(**spec,
+                    _configuration=api_client.configuration),
+                _return_http_data_only=False)
+            assert status == HTTPStatus.CREATED
+            task_id = task.id
 
-        response = self._wait_until_task_is_created(username, task_id)
-        response_json = response.json()
-        assert response_json['state'] == 'Finished'
+
+            task_data = DataRequest(**data,
+                client_files=[ClientFileRequest(f) for f in files.values()])
+            response = api.tasks_data_create_raw(task_id, task_data,
+                _content_type="multipart/form-data")
+            assert response.status == HTTPStatus.ACCEPTED
+
+            status = self._wait_until_task_is_created(api, task_id)
+            assert status.state.value == 'Finished'
 
         return task_id
 

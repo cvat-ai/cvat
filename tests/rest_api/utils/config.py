@@ -4,19 +4,21 @@
 
 import os.path as osp
 import requests
+from cvat_api_client.api_client import ApiClient
+from cvat_api_client.configuration import Configuration
 
 ROOT_DIR = __file__[:__file__.rfind(osp.join("utils", ""))]
 ASSETS_DIR = osp.abspath(osp.join(ROOT_DIR, 'assets'))
 # Suppress the warning from Bandit about hardcoded passwords
 USER_PASS = '!Q@W#E$R' # nosec
-BASE_URL = 'http://localhost:8080/'
-API_URL = BASE_URL + 'api/'
+BASE_URL = 'http://localhost:8080'
+API_URL = BASE_URL + '/api/'
 
 def _to_query_params(**kwargs):
     return '&'.join([f'{k}={v}' for k,v in kwargs.items()])
 
 def get_server_url(endpoint, **kwargs):
-    return BASE_URL + endpoint + '?' + _to_query_params(**kwargs)
+    return BASE_URL + '/' + endpoint + '?' + _to_query_params(**kwargs)
 
 def get_api_url(endpoint, **kwargs):
     return API_URL + endpoint + '?' + _to_query_params(**kwargs)
@@ -41,3 +43,6 @@ def post_files_method(username, endpoint, data, files, **kwargs):
 
 def server_get(username, endpoint, **kwargs):
     return requests.get(get_server_url(endpoint, **kwargs), auth=(username, USER_PASS))
+
+def make_api_client(user) -> ApiClient:
+    return ApiClient(configuration=Configuration(host=BASE_URL, username=user, password=USER_PASS))
