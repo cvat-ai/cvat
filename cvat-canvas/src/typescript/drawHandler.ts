@@ -690,6 +690,20 @@ export class DrawHandlerImpl implements DrawHandler {
         const svgSkeleton = this.canvas.group();
         svgSkeleton.node.innerHTML = this.drawData.skeletonSVG;
 
+        let minX = Number.MAX_SAFE_INTEGER;
+        let minY = Number.MAX_SAFE_INTEGER;
+        let maxX = 0;
+        let maxY = 0;
+
+        svgSkeleton.children().forEach((child: SVG.Element): void => {
+            const cx = child.cx();
+            const cy = child.cx();
+            minX = Math.min(cx, minX);
+            minY = Math.min(cy, minY);
+            maxX = Math.max(cx, maxX);
+            maxY = Math.max(cy, maxY);
+        });
+
         this.drawInstance
             .on('drawstop', (e: Event): void => {
                 const points = readPointsFromShape((e.target as any as { instance: SVG.Rect }).instance);
@@ -730,14 +744,17 @@ export class DrawHandlerImpl implements DrawHandler {
                 svgSkeleton.style({
                     transform: `translate(${x}px, ${y}px)`,
                 });
+
+                const bbox = svgSkeleton.bbox();
                 svgSkeleton.node.innerHTML = this.drawData.skeletonSVG;
                 Array.from(svgSkeleton.node.children).forEach((child: Element) => {
                     const dataType = child.getAttribute('data-type');
                     if (child.tagName === 'circle' && dataType && dataType.includes('element')) {
                         let cx = +(child.getAttribute('cx') as string);
                         let cy = +(child.getAttribute('cy') as string);
-                        const cxOffset = cx / 100;
-                        const cyOffset = cy / 100;
+                        // todo: check if skeleton from one point
+                        const cxOffset = (cx - minX) / (maxX - minX);
+                        const cyOffset = (cy - minY) / (maxY - minY);
                         cx = cxOffset * width;
                         cy = cyOffset * height;
                         child.setAttribute('cx', `${cx}`);

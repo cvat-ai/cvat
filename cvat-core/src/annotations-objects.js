@@ -1767,7 +1767,7 @@
         constructor(data, clientID, color, injection) {
             super(data, clientID, color, injection);
             this.shapeType = ObjectShape.SKELETON;
-            this.pinned = true;
+            this.pinned = false;
             this.rotation = data.rotation || 0;
             this.occluded = false;
             this.points = undefined;
@@ -1856,13 +1856,12 @@
         }
 
         save(frame, data) {
-            const result = Shape.prototype.save.call(this, frame, data);
-
             data.elements.forEach((element, idx) => {
                 const annotationContext = this.elements[idx];
                 element.save.implementation.call(annotationContext, frame, element);
             });
 
+            const result = Shape.prototype.save.call(this, frame, data);
             return result;
         }
     }
@@ -2285,7 +2284,7 @@
         constructor(data, clientID, color, injection) {
             super(data, clientID, color, injection);
             this.shapeType = ObjectShape.SKELETON;
-            this.pinned = true;
+            this.pinned = false;
 
             const tracks = {};
             data.shapes.forEach((shape) => {

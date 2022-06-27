@@ -197,6 +197,9 @@ export function readPointsFromShape(shape: SVG.Shape): number[] {
     } else if (shape.type === 'rect') {
         points = `${shape.attr('x')},${shape.attr('y')} ` +
             `${shape.attr('x') + shape.attr('width')},${shape.attr('y') + shape.attr('height')}`;
+    } else if (shape.type === 'circle') {
+        const [cx, cy] = [+shape.attr('cx'), +shape.attr('cy')];
+        points = `${cx},${cy}`;
     } else {
         points = shape.attr('points');
     }
