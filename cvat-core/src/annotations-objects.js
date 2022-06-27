@@ -1784,19 +1784,16 @@
             }, injection.nextClientID(), injection));
         }
 
-        static distance(points, x, y, angle) {
-            const [xtl, ytl, xbr, ybr] = points;
-            const cx = xtl + (xbr - xtl) / 2;
-            const cy = ytl + (ybr - ytl) / 2;
-            const [rotX, rotY] = rotatePoint(x, y, -angle, cx, cy);
+        static distance(points, x, y) {
+            const distances = [];
+            for (let i = 0; i < points.length; i += 2) {
+                const x1 = points[i];
+                const y1 = points[i + 1];
 
-            if (!(rotX >= xtl && rotX <= xbr && rotY >= ytl && rotY <= ybr)) {
-                // Cursor is outside of a box
-                return null;
+                distances.push(Math.sqrt((x1 - x) ** 2 + (y1 - y) ** 2));
             }
 
-            // The shortest distance from point to an edge
-            return Math.min.apply(null, [rotX - xtl, rotY - ytl, xbr - rotX, ybr - rotY]);
+            return Math.min.apply(null, distances);
         }
 
         // Method is used to export data to the server
