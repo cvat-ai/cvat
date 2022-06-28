@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-const { Source } = require('./enums');
+const { Source, ObjectShape } = require('./enums');
 
 (() => {
     const PluginRegistry = require('./plugins');
@@ -193,27 +193,29 @@ const { Source } = require('./enums');
                          * @instance
                          */
                         get: () => {
-                            if (Array.isArray(data.points)) {
-                                return [...data.points];
+                            if (data.shapeType === ObjectShape.SKELETON) {
+                                return data.elements.map((element) => element.points).flat();
                             }
 
-                            if (Array.isArray(data.elements)) {
-                                return data.elements.map((element) => element.points).flat();
+                            if (Array.isArray(data.points)) {
+                                return [...data.points];
                             }
 
                             return [];
                         },
                         set: (points) => {
-                            if (Array.isArray(points)) {
-                                data.updateFlags.points = true;
-                                data.points = [...points];
-                            } else {
-                                throw new ArgumentError(
-                                    'Points are expected to be an array ' +
-                                        `but got ${
-                                            typeof points === 'object' ? points.constructor.name : typeof points
-                                        }`,
-                                );
+                            if (data.shapeType !== ObjectShape.SKELETON) {
+                                if (Array.isArray(points) && points.every((coord) => typeof coord === 'number')) {
+                                    data.updateFlags.points = true;
+                                    data.points = [...points];
+                                } else {
+                                    throw new ArgumentError(
+                                        'Points are expected to be an array of numbers ' +
+                                            `but got ${
+                                                typeof points === 'object' ? points.constructor.name : typeof points
+                                            }`,
+                                    );
+                                }
                             }
                         },
                     },
@@ -430,7 +432,7 @@ const { Source } = require('./enums');
                             if (data.elements) {
                                 return [...data.elements];
                             }
-                            return [this];
+                            return [];
                         },
                     },
                 }),

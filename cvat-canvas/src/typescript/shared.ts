@@ -193,14 +193,13 @@ export function readPointsFromShape(shape: SVG.Shape): number[] {
     let points = null;
     if (shape.type === 'ellipse') {
         const [rx, ry] = [+shape.attr('rx'), +shape.attr('ry')];
-        const [cx, cy] = [+shape.attr('cx'), +shape.attr('cy')];
+        const [cx, cy] = [shape.cx(), shape.cy()];
         points = `${cx},${cy} ${cx + rx},${cy - ry}`;
     } else if (shape.type === 'rect') {
         points = `${shape.attr('x')},${shape.attr('y')} ` +
             `${shape.attr('x') + shape.attr('width')},${shape.attr('y') + shape.attr('height')}`;
     } else if (shape.type === 'circle') {
-        const [cx, cy] = [+shape.attr('cx'), +shape.attr('cy')];
-        points = `${cx},${cy}`;
+        points = `${shape.cx()},${shape.cy()}`;
     } else {
         points = shape.attr('points');
     }

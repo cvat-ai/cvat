@@ -690,7 +690,11 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
             this.deleteObjects(deleted);
             this.addObjects(created);
-            this.updateObjects(updated);
+            // this.updateObjects(updated);
+
+            this.deleteObjects(updated);
+            this.addObjects(updated);
+
             this.sortObjects();
 
             if (this.controller.activeElement.clientID !== null) {
@@ -2740,6 +2744,15 @@ export class CanvasViewImpl implements CanvasView, Listener {
                                 }
                             });
 
+                            this.canvas.dispatchEvent(
+                                new CustomEvent('canvas.dragshape', {
+                                    bubbles: false,
+                                    cancelable: true,
+                                    detail: {
+                                        id: state.clientID,
+                                    },
+                                }),
+                            );
                             this.onEditDone(state, state.points);
                         }
                     });
@@ -2805,14 +2818,35 @@ export class CanvasViewImpl implements CanvasView, Listener {
                         .on('dragend', (e: CustomEvent): void => {
                             element.off('remove.drag');
                             this.mode = Mode.IDLE;
-                            // const p1 = e.detail.handler.startPoints.point;
-                            // const p2 = e.detail.p;
-                            // const delta = 1;
-                            // const dx2 = (p1.x - p2.x) ** 2;
-                            // const dy2 = (p1.y - p2.y) ** 2;
-                            // if (Math.sqrt(dx2 + dy2) >= delta) {
-                            //     this.onEditDone(state, state.points);
-                            // }
+                            const p1 = e.detail.handler.startPoints.point;
+                            const p2 = e.detail.p;
+                            const delta = 1;
+                            const dx2 = (p1.x - p2.x) ** 2;
+                            const dy2 = (p1.y - p2.y) ** 2;
+                            if (Math.sqrt(dx2 + dy2) >= delta) {
+                                // find object state
+                                const elementState = state.elements
+                                    .find((_element: any) => _element.clientID === clientID);
+                                const elementShape = skeleton.children()
+                                    .find((child: SVG.Shape) => child.id() === `cvat_canvas_shape_${clientID}`);
+
+                                if (elementShape) {
+                                    let points = readPointsFromShape(elementShape);
+                                    points = this.translateFromCanvas(points);
+                                    elementState.points = points;
+                                }
+
+                                this.canvas.dispatchEvent(
+                                    new CustomEvent('canvas.resizeshape', {
+                                        bubbles: false,
+                                        cancelable: true,
+                                        detail: {
+                                            id: state.clientID,
+                                        },
+                                    }),
+                                );
+                                this.onEditDone(state, state.points);
+                            }
 
                             showElementText();
                         });
@@ -2881,7 +2915,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
                         this.onEditDone(state, state.points);
 
-                        // points = this.translateFromCanvas(points);
                         this.canvas.dispatchEvent(
                             new CustomEvent('canvas.resizeshape', {
                                 bubbles: false,

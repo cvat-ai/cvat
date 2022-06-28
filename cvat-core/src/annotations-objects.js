@@ -1876,7 +1876,7 @@
         save(frame, data) {
             data.elements.forEach((element, idx) => {
                 const annotationContext = this.elements[idx];
-                element.save.implementation.call(annotationContext, frame, element);
+                annotationContext.save(frame, element);
             });
 
             const result = Shape.prototype.save.call(this, frame, data);
