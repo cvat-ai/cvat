@@ -220,9 +220,10 @@ class TestPatchTaskAnnotations:
 
         data = request_data(tid)
         with make_api_client(username) as api_client:
-            patched_data = PatchedLabeledDataRequest._from_openapi_data(**data, org_id=org)
+            patched_data = PatchedLabeledDataRequest(**deepcopy(data),
+                _configuration=api_client.configuration)
             response = TasksApi(api_client).tasks_annotations_partial_update_raw(
-                id=tid, action='update',
+                id=tid, action='update', org=org,
                 patched_labeled_data_request=patched_data)
 
         self._test_check_response(is_allow, response, data)
@@ -242,7 +243,8 @@ class TestPatchTaskAnnotations:
 
         data = request_data(tid)
         with make_api_client(username) as api_client:
-            patched_data = PatchedLabeledDataRequest._from_openapi_data(**data)
+            patched_data = PatchedLabeledDataRequest(**deepcopy(data),
+                _configuration=api_client.configuration)
             response = TasksApi(api_client).tasks_annotations_partial_update_raw(
                 id=tid, org_id=org, action='update',
                 patched_labeled_data_request=patched_data)
