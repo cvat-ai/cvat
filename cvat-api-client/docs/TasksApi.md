@@ -12,7 +12,7 @@ Method | HTTP request | Description
 [**tasks_annotations_retrieve**](TasksApi.md#tasks_annotations_retrieve) | **GET** /api/tasks/{id}/annotations/ | Method allows to download task annotations
 [**tasks_annotations_update**](TasksApi.md#tasks_annotations_update) | **PUT** /api/tasks/{id}/annotations/ | Method allows to upload task annotations
 [**tasks_backup_create**](TasksApi.md#tasks_backup_create) | **POST** /api/tasks/backup/ | Method recreates a task from an attached task backup file
-[**tasks_backup_partial_update**](TasksApi.md#tasks_backup_partial_update) | **PATCH** /api/tasks/backup/{file_id} | 
+[**tasks_backup_file_partial_update**](TasksApi.md#tasks_backup_file_partial_update) | **PATCH** /api/tasks/backup/{file_id} | Allows to upload a file chunk. Implements TUS file uploading protocol.
 [**tasks_backup_retrieve**](TasksApi.md#tasks_backup_retrieve) | **GET** /api/tasks/{id}/backup | Method backup a specified task
 [**tasks_create**](TasksApi.md#tasks_create) | **POST** /api/tasks | Method creates a new task in a database without any attached images and videos
 [**tasks_data_create**](TasksApi.md#tasks_data_create) | **POST** /api/tasks/{id}/data/ | Method permanently attaches images or video to a task. Supports tus uploads, see more https://tus.io/
@@ -89,6 +89,9 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = tasks_api.TasksApi(api_client)
     id = 1 # int | A unique integer value identifying this job.
+    x_organization = "X-Organization_example" # str |  (optional)
+    org = "org_example" # str | Organization unique slug (optional)
+    org_id = 1 # int | Organization identifier (optional)
     patched_job_write_request = PatchedJobWriteRequest(
         assignee=1,
         stage=JobStage("annotation"),
@@ -107,7 +110,7 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # and optional values
     try:
         # Method provides a meta information about media files which are related with the job
-        api_response = api_instance.jobs_data_meta_partial_update(id, patched_job_write_request=patched_job_write_request)
+        api_response = api_instance.jobs_data_meta_partial_update(id, x_organization=x_organization, org=org, org_id=org_id, patched_job_write_request=patched_job_write_request)
         pprint(api_response)
     except cvat_api_client.ApiException as e:
         print("Exception when calling TasksApi->jobs_data_meta_partial_update: %s\n" % e)
@@ -119,6 +122,9 @@ with cvat_api_client.ApiClient(configuration) as api_client:
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **id** | **int**| A unique integer value identifying this job. |
+ **x_organization** | **str**|  | [optional]
+ **org** | **str**| Organization unique slug | [optional]
+ **org_id** | **int**| Organization identifier | [optional]
  **patched_job_write_request** | [**PatchedJobWriteRequest**](PatchedJobWriteRequest.md)|  | [optional]
 
 ### Return type
@@ -277,10 +283,21 @@ with cvat_api_client.ApiClient(configuration) as api_client:
             ),
         ],
     ) # LabeledDataRequest | 
+    x_organization = "X-Organization_example" # str |  (optional)
+    org = "org_example" # str | Organization unique slug (optional)
+    org_id = 1 # int | Organization identifier (optional)
 
     # example passing only required values which don't have defaults set
     try:
         api_response = api_instance.tasks_annotations_create(id, labeled_data_request)
+        pprint(api_response)
+    except cvat_api_client.ApiException as e:
+        print("Exception when calling TasksApi->tasks_annotations_create: %s\n" % e)
+
+    # example passing only required values which don't have defaults set
+    # and optional values
+    try:
+        api_response = api_instance.tasks_annotations_create(id, labeled_data_request, x_organization=x_organization, org=org, org_id=org_id)
         pprint(api_response)
     except cvat_api_client.ApiException as e:
         print("Exception when calling TasksApi->tasks_annotations_create: %s\n" % e)
@@ -293,6 +310,9 @@ Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **id** | **int**| A unique integer value identifying this task. |
  **labeled_data_request** | [**LabeledDataRequest**](LabeledDataRequest.md)|  |
+ **x_organization** | **str**|  | [optional]
+ **org** | **str**| Organization unique slug | [optional]
+ **org_id** | **int**| Organization identifier | [optional]
 
 ### Return type
 
@@ -373,11 +393,22 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = tasks_api.TasksApi(api_client)
     id = 1 # int | A unique integer value identifying this task.
+    x_organization = "X-Organization_example" # str |  (optional)
+    org = "org_example" # str | Organization unique slug (optional)
+    org_id = 1 # int | Organization identifier (optional)
 
     # example passing only required values which don't have defaults set
     try:
         # Method deletes all annotations for a specific task
         api_instance.tasks_annotations_destroy(id)
+    except cvat_api_client.ApiException as e:
+        print("Exception when calling TasksApi->tasks_annotations_destroy: %s\n" % e)
+
+    # example passing only required values which don't have defaults set
+    # and optional values
+    try:
+        # Method deletes all annotations for a specific task
+        api_instance.tasks_annotations_destroy(id, x_organization=x_organization, org=org, org_id=org_id)
     except cvat_api_client.ApiException as e:
         print("Exception when calling TasksApi->tasks_annotations_destroy: %s\n" % e)
 ```
@@ -388,6 +419,9 @@ with cvat_api_client.ApiClient(configuration) as api_client:
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **id** | **int**| A unique integer value identifying this task. |
+ **x_organization** | **str**|  | [optional]
+ **org** | **str**| Organization unique slug | [optional]
+ **org_id** | **int**| Organization identifier | [optional]
 
 ### Return type
 
@@ -471,6 +505,9 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     api_instance = tasks_api.TasksApi(api_client)
     file_id = "bf325375-e030-fccb-a009-17317c574773" # str | 
     id = 1 # int | A unique integer value identifying this task.
+    x_organization = "X-Organization_example" # str |  (optional)
+    org = "org_example" # str | Organization unique slug (optional)
+    org_id = 1 # int | Organization identifier (optional)
     patched_task_request = PatchedTaskRequest(
         name="name_example",
         project_id=1,
@@ -520,7 +557,7 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # and optional values
     try:
         # Allows to upload an annotation file chunk. Implements TUS file uploading protocol.
-        api_response = api_instance.tasks_annotations_file_partial_update(file_id, id, patched_task_request=patched_task_request)
+        api_response = api_instance.tasks_annotations_file_partial_update(file_id, id, x_organization=x_organization, org=org, org_id=org_id, patched_task_request=patched_task_request)
         pprint(api_response)
     except cvat_api_client.ApiException as e:
         print("Exception when calling TasksApi->tasks_annotations_file_partial_update: %s\n" % e)
@@ -533,6 +570,9 @@ Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **file_id** | **str**|  |
  **id** | **int**| A unique integer value identifying this task. |
+ **x_organization** | **str**|  | [optional]
+ **org** | **str**| Organization unique slug | [optional]
+ **org_id** | **int**| Organization identifier | [optional]
  **patched_task_request** | [**PatchedTaskRequest**](PatchedTaskRequest.md)|  | [optional]
 
 ### Return type
@@ -617,6 +657,9 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     api_instance = tasks_api.TasksApi(api_client)
     action = "create" # str | 
     id = 1 # int | A unique integer value identifying this task.
+    x_organization = "X-Organization_example" # str |  (optional)
+    org = "org_example" # str | Organization unique slug (optional)
+    org_id = 1 # int | Organization identifier (optional)
     patched_labeled_data_request = PatchedLabeledDataRequest(
         version=1,
         tags=[
@@ -705,7 +748,7 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # and optional values
     try:
         # Method performs a partial update of annotations in a specific task
-        api_response = api_instance.tasks_annotations_partial_update(action, id, patched_labeled_data_request=patched_labeled_data_request)
+        api_response = api_instance.tasks_annotations_partial_update(action, id, x_organization=x_organization, org=org, org_id=org_id, patched_labeled_data_request=patched_labeled_data_request)
         pprint(api_response)
     except cvat_api_client.ApiException as e:
         print("Exception when calling TasksApi->tasks_annotations_partial_update: %s\n" % e)
@@ -718,6 +761,9 @@ Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **action** | **str**|  |
  **id** | **int**| A unique integer value identifying this task. |
+ **x_organization** | **str**|  | [optional]
+ **org** | **str**| Organization unique slug | [optional]
+ **org_id** | **int**| Organization identifier | [optional]
  **patched_labeled_data_request** | [**PatchedLabeledDataRequest**](PatchedLabeledDataRequest.md)|  | [optional]
 
 ### Return type
@@ -799,9 +845,12 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = tasks_api.TasksApi(api_client)
     id = 1 # int | A unique integer value identifying this task.
+    x_organization = "X-Organization_example" # str |  (optional)
     action = "download" # str | Used to start downloading process after annotation file had been created (optional) if omitted the server will use the default value of "download"
     filename = "filename_example" # str | Desired output file name (optional)
     format = "format_example" # str | Desired output format name You can get the list of supported formats at: /server/annotation/formats (optional)
+    org = "org_example" # str | Organization unique slug (optional)
+    org_id = 1 # int | Organization identifier (optional)
 
     # example passing only required values which don't have defaults set
     try:
@@ -814,7 +863,7 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # and optional values
     try:
         # Method allows to download task annotations
-        api_instance.tasks_annotations_retrieve(id, action=action, filename=filename, format=format)
+        api_instance.tasks_annotations_retrieve(id, x_organization=x_organization, action=action, filename=filename, format=format, org=org, org_id=org_id)
     except cvat_api_client.ApiException as e:
         print("Exception when calling TasksApi->tasks_annotations_retrieve: %s\n" % e)
 ```
@@ -825,9 +874,12 @@ with cvat_api_client.ApiClient(configuration) as api_client:
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **id** | **int**| A unique integer value identifying this task. |
+ **x_organization** | **str**|  | [optional]
  **action** | **str**| Used to start downloading process after annotation file had been created | [optional] if omitted the server will use the default value of "download"
  **filename** | **str**| Desired output file name | [optional]
  **format** | **str**| Desired output format name You can get the list of supported formats at: /server/annotation/formats | [optional]
+ **org** | **str**| Organization unique slug | [optional]
+ **org_id** | **int**| Organization identifier | [optional]
 
 ### Return type
 
@@ -987,7 +1039,10 @@ with cvat_api_client.ApiClient(configuration) as api_client:
             ),
         ],
     ) # LabeledDataRequest | 
+    x_organization = "X-Organization_example" # str |  (optional)
     format = "format_example" # str | Input format name You can get the list of supported formats at: /server/annotation/formats (optional)
+    org = "org_example" # str | Organization unique slug (optional)
+    org_id = 1 # int | Organization identifier (optional)
 
     # example passing only required values which don't have defaults set
     try:
@@ -1000,7 +1055,7 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # and optional values
     try:
         # Method allows to upload task annotations
-        api_instance.tasks_annotations_update(id, labeled_data_request, format=format)
+        api_instance.tasks_annotations_update(id, labeled_data_request, x_organization=x_organization, format=format, org=org, org_id=org_id)
     except cvat_api_client.ApiException as e:
         print("Exception when calling TasksApi->tasks_annotations_update: %s\n" % e)
 ```
@@ -1012,7 +1067,10 @@ Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **id** | **int**| A unique integer value identifying this task. |
  **labeled_data_request** | [**LabeledDataRequest**](LabeledDataRequest.md)|  |
+ **x_organization** | **str**|  | [optional]
  **format** | **str**| Input format name You can get the list of supported formats at: /server/annotation/formats | [optional]
+ **org** | **str**| Organization unique slug | [optional]
+ **org_id** | **int**| Organization identifier | [optional]
 
 ### Return type
 
@@ -1131,11 +1189,22 @@ with cvat_api_client.ApiClient(configuration) as api_client:
         dimension="dimension_example",
         subset="subset_example",
     ) # TaskRequest | 
+    x_organization = "X-Organization_example" # str |  (optional)
+    org = "org_example" # str | Organization unique slug (optional)
+    org_id = 1 # int | Organization identifier (optional)
 
     # example passing only required values which don't have defaults set
     try:
         # Method recreates a task from an attached task backup file
         api_instance.tasks_backup_create(task_request)
+    except cvat_api_client.ApiException as e:
+        print("Exception when calling TasksApi->tasks_backup_create: %s\n" % e)
+
+    # example passing only required values which don't have defaults set
+    # and optional values
+    try:
+        # Method recreates a task from an attached task backup file
+        api_instance.tasks_backup_create(task_request, x_organization=x_organization, org=org, org_id=org_id)
     except cvat_api_client.ApiException as e:
         print("Exception when calling TasksApi->tasks_backup_create: %s\n" % e)
 ```
@@ -1146,6 +1215,9 @@ with cvat_api_client.ApiClient(configuration) as api_client:
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **task_request** | [**TaskRequest**](TaskRequest.md)|  |
+ **x_organization** | **str**|  | [optional]
+ **org** | **str**| Organization unique slug | [optional]
+ **org_id** | **int**| Organization identifier | [optional]
 
 ### Return type
 
@@ -1170,10 +1242,10 @@ void (empty response body)
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
-# **tasks_backup_partial_update**
-> Task tasks_backup_partial_update(file_id)
+# **tasks_backup_file_partial_update**
+> Task tasks_backup_file_partial_update(file_id)
 
-
+Allows to upload a file chunk. Implements TUS file uploading protocol.
 
 ### Example
 
@@ -1229,6 +1301,9 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = tasks_api.TasksApi(api_client)
     file_id = "bf325375-e030-fccb-a009-17317c574773" # str | 
+    x_organization = "X-Organization_example" # str |  (optional)
+    org = "org_example" # str | Organization unique slug (optional)
+    org_id = 1 # int | Organization identifier (optional)
     patched_task_request = PatchedTaskRequest(
         name="name_example",
         project_id=1,
@@ -1268,18 +1343,20 @@ with cvat_api_client.ApiClient(configuration) as api_client:
 
     # example passing only required values which don't have defaults set
     try:
-        api_response = api_instance.tasks_backup_partial_update(file_id)
+        # Allows to upload a file chunk. Implements TUS file uploading protocol.
+        api_response = api_instance.tasks_backup_file_partial_update(file_id)
         pprint(api_response)
     except cvat_api_client.ApiException as e:
-        print("Exception when calling TasksApi->tasks_backup_partial_update: %s\n" % e)
+        print("Exception when calling TasksApi->tasks_backup_file_partial_update: %s\n" % e)
 
     # example passing only required values which don't have defaults set
     # and optional values
     try:
-        api_response = api_instance.tasks_backup_partial_update(file_id, patched_task_request=patched_task_request)
+        # Allows to upload a file chunk. Implements TUS file uploading protocol.
+        api_response = api_instance.tasks_backup_file_partial_update(file_id, x_organization=x_organization, org=org, org_id=org_id, patched_task_request=patched_task_request)
         pprint(api_response)
     except cvat_api_client.ApiException as e:
-        print("Exception when calling TasksApi->tasks_backup_partial_update: %s\n" % e)
+        print("Exception when calling TasksApi->tasks_backup_file_partial_update: %s\n" % e)
 ```
 
 
@@ -1288,6 +1365,9 @@ with cvat_api_client.ApiClient(configuration) as api_client:
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **file_id** | **str**|  |
+ **x_organization** | **str**|  | [optional]
+ **org** | **str**| Organization unique slug | [optional]
+ **org_id** | **int**| Organization identifier | [optional]
  **patched_task_request** | [**PatchedTaskRequest**](PatchedTaskRequest.md)|  | [optional]
 
 ### Return type
@@ -1369,11 +1449,22 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = tasks_api.TasksApi(api_client)
     id = 1 # int | A unique integer value identifying this task.
+    x_organization = "X-Organization_example" # str |  (optional)
+    org = "org_example" # str | Organization unique slug (optional)
+    org_id = 1 # int | Organization identifier (optional)
 
     # example passing only required values which don't have defaults set
     try:
         # Method backup a specified task
         api_instance.tasks_backup_retrieve(id)
+    except cvat_api_client.ApiException as e:
+        print("Exception when calling TasksApi->tasks_backup_retrieve: %s\n" % e)
+
+    # example passing only required values which don't have defaults set
+    # and optional values
+    try:
+        # Method backup a specified task
+        api_instance.tasks_backup_retrieve(id, x_organization=x_organization, org=org, org_id=org_id)
     except cvat_api_client.ApiException as e:
         print("Exception when calling TasksApi->tasks_backup_retrieve: %s\n" % e)
 ```
@@ -1384,6 +1475,9 @@ with cvat_api_client.ApiClient(configuration) as api_client:
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **id** | **int**| A unique integer value identifying this task. |
+ **x_organization** | **str**|  | [optional]
+ **org** | **str**| Organization unique slug | [optional]
+ **org_id** | **int**| Organization identifier | [optional]
 
 ### Return type
 
@@ -1503,11 +1597,23 @@ with cvat_api_client.ApiClient(configuration) as api_client:
         dimension="dimension_example",
         subset="subset_example",
     ) # TaskRequest | 
+    x_organization = "X-Organization_example" # str |  (optional)
+    org = "org_example" # str | Organization unique slug (optional)
+    org_id = 1 # int | Organization identifier (optional)
 
     # example passing only required values which don't have defaults set
     try:
         # Method creates a new task in a database without any attached images and videos
         api_response = api_instance.tasks_create(task_request)
+        pprint(api_response)
+    except cvat_api_client.ApiException as e:
+        print("Exception when calling TasksApi->tasks_create: %s\n" % e)
+
+    # example passing only required values which don't have defaults set
+    # and optional values
+    try:
+        # Method creates a new task in a database without any attached images and videos
+        api_response = api_instance.tasks_create(task_request, x_organization=x_organization, org=org, org_id=org_id)
         pprint(api_response)
     except cvat_api_client.ApiException as e:
         print("Exception when calling TasksApi->tasks_create: %s\n" % e)
@@ -1519,6 +1625,9 @@ with cvat_api_client.ApiClient(configuration) as api_client:
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **task_request** | [**TaskRequest**](TaskRequest.md)|  |
+ **x_organization** | **str**|  | [optional]
+ **org** | **str**| Organization unique slug | [optional]
+ **org_id** | **int**| Organization identifier | [optional]
 
 ### Return type
 
@@ -1635,6 +1744,9 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     upload_finish = True # bool | Finishes data upload. Can be combined with Upload-Start header to create task data with one request (optional)
     upload_multiple = True # bool | Indicates that data with this request are single or multiple files that should be attached to a task (optional)
     upload_start = True # bool | Initializes data upload. No data should be sent with this header (optional)
+    x_organization = "X-Organization_example" # str |  (optional)
+    org = "org_example" # str | Organization unique slug (optional)
+    org_id = 1 # int | Organization identifier (optional)
 
     # example passing only required values which don't have defaults set
     try:
@@ -1647,7 +1759,7 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # and optional values
     try:
         # Method permanently attaches images or video to a task. Supports tus uploads, see more https://tus.io/
-        api_instance.tasks_data_create(id, data_request, upload_finish=upload_finish, upload_multiple=upload_multiple, upload_start=upload_start)
+        api_instance.tasks_data_create(id, data_request, upload_finish=upload_finish, upload_multiple=upload_multiple, upload_start=upload_start, x_organization=x_organization, org=org, org_id=org_id)
     except cvat_api_client.ApiException as e:
         print("Exception when calling TasksApi->tasks_data_create: %s\n" % e)
 ```
@@ -1662,6 +1774,9 @@ Name | Type | Description  | Notes
  **upload_finish** | **bool**| Finishes data upload. Can be combined with Upload-Start header to create task data with one request | [optional]
  **upload_multiple** | **bool**| Indicates that data with this request are single or multiple files that should be attached to a task | [optional]
  **upload_start** | **bool**| Initializes data upload. No data should be sent with this header | [optional]
+ **x_organization** | **str**|  | [optional]
+ **org** | **str**| Organization unique slug | [optional]
+ **org_id** | **int**| Organization identifier | [optional]
 
 ### Return type
 
@@ -1745,6 +1860,9 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     api_instance = tasks_api.TasksApi(api_client)
     file_id = "bf325375-e030-fccb-a009-17317c574773" # str | 
     id = 1 # int | A unique integer value identifying this task.
+    x_organization = "X-Organization_example" # str |  (optional)
+    org = "org_example" # str | Organization unique slug (optional)
+    org_id = 1 # int | Organization identifier (optional)
     patched_task_request = PatchedTaskRequest(
         name="name_example",
         project_id=1,
@@ -1794,7 +1912,7 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # and optional values
     try:
         # Allows to upload a file chunk. Implements TUS file uploading protocol.
-        api_response = api_instance.tasks_data_file_partial_update(file_id, id, patched_task_request=patched_task_request)
+        api_response = api_instance.tasks_data_file_partial_update(file_id, id, x_organization=x_organization, org=org, org_id=org_id, patched_task_request=patched_task_request)
         pprint(api_response)
     except cvat_api_client.ApiException as e:
         print("Exception when calling TasksApi->tasks_data_file_partial_update: %s\n" % e)
@@ -1807,6 +1925,9 @@ Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **file_id** | **str**|  |
  **id** | **int**| A unique integer value identifying this task. |
+ **x_organization** | **str**|  | [optional]
+ **org** | **str**| Organization unique slug | [optional]
+ **org_id** | **int**| Organization identifier | [optional]
  **patched_task_request** | [**PatchedTaskRequest**](PatchedTaskRequest.md)|  | [optional]
 
 ### Return type
@@ -1890,6 +2011,9 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = tasks_api.TasksApi(api_client)
     id = 1 # int | A unique integer value identifying this task.
+    x_organization = "X-Organization_example" # str |  (optional)
+    org = "org_example" # str | Organization unique slug (optional)
+    org_id = 1 # int | Organization identifier (optional)
     patched_data_meta_read_request = PatchedDataMetaReadRequest(
         image_quality=0,
         frames=[
@@ -1917,7 +2041,7 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # and optional values
     try:
         # Method provides a meta information about media files which are related with the task
-        api_response = api_instance.tasks_data_meta_partial_update(id, patched_data_meta_read_request=patched_data_meta_read_request)
+        api_response = api_instance.tasks_data_meta_partial_update(id, x_organization=x_organization, org=org, org_id=org_id, patched_data_meta_read_request=patched_data_meta_read_request)
         pprint(api_response)
     except cvat_api_client.ApiException as e:
         print("Exception when calling TasksApi->tasks_data_meta_partial_update: %s\n" % e)
@@ -1929,6 +2053,9 @@ with cvat_api_client.ApiClient(configuration) as api_client:
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **id** | **int**| A unique integer value identifying this task. |
+ **x_organization** | **str**|  | [optional]
+ **org** | **str**| Organization unique slug | [optional]
+ **org_id** | **int**| Organization identifier | [optional]
  **patched_data_meta_read_request** | [**PatchedDataMetaReadRequest**](PatchedDataMetaReadRequest.md)|  | [optional]
 
 ### Return type
@@ -2011,11 +2138,23 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = tasks_api.TasksApi(api_client)
     id = 1 # int | A unique integer value identifying this task.
+    x_organization = "X-Organization_example" # str |  (optional)
+    org = "org_example" # str | Organization unique slug (optional)
+    org_id = 1 # int | Organization identifier (optional)
 
     # example passing only required values which don't have defaults set
     try:
         # Method provides a meta information about media files which are related with the task
         api_response = api_instance.tasks_data_meta_retrieve(id)
+        pprint(api_response)
+    except cvat_api_client.ApiException as e:
+        print("Exception when calling TasksApi->tasks_data_meta_retrieve: %s\n" % e)
+
+    # example passing only required values which don't have defaults set
+    # and optional values
+    try:
+        # Method provides a meta information about media files which are related with the task
+        api_response = api_instance.tasks_data_meta_retrieve(id, x_organization=x_organization, org=org, org_id=org_id)
         pprint(api_response)
     except cvat_api_client.ApiException as e:
         print("Exception when calling TasksApi->tasks_data_meta_retrieve: %s\n" % e)
@@ -2027,6 +2166,9 @@ with cvat_api_client.ApiClient(configuration) as api_client:
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **id** | **int**| A unique integer value identifying this task. |
+ **x_organization** | **str**|  | [optional]
+ **org** | **str**| Organization unique slug | [optional]
+ **org_id** | **int**| Organization identifier | [optional]
 
 ### Return type
 
@@ -2107,14 +2249,25 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = tasks_api.TasksApi(api_client)
     id = 1 # int | A unique integer value identifying this task.
-    number = 3.14 # float | A unique number value identifying chunk or frame, doesn't matter for 'preview' type
+    number = 1 # int | A unique number value identifying chunk or frame, doesn't matter for 'preview' type
     quality = "compressed" # str | Specifies the quality level of the requested data, doesn't matter for 'preview' type
     type = "chunk" # str | Specifies the type of the requested data
+    x_organization = "X-Organization_example" # str |  (optional)
+    org = "org_example" # str | Organization unique slug (optional)
+    org_id = 1 # int | Organization identifier (optional)
 
     # example passing only required values which don't have defaults set
     try:
         # Method returns data for a specific task
         api_instance.tasks_data_retrieve(id, number, quality, type)
+    except cvat_api_client.ApiException as e:
+        print("Exception when calling TasksApi->tasks_data_retrieve: %s\n" % e)
+
+    # example passing only required values which don't have defaults set
+    # and optional values
+    try:
+        # Method returns data for a specific task
+        api_instance.tasks_data_retrieve(id, number, quality, type, x_organization=x_organization, org=org, org_id=org_id)
     except cvat_api_client.ApiException as e:
         print("Exception when calling TasksApi->tasks_data_retrieve: %s\n" % e)
 ```
@@ -2125,9 +2278,12 @@ with cvat_api_client.ApiClient(configuration) as api_client:
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **id** | **int**| A unique integer value identifying this task. |
- **number** | **float**| A unique number value identifying chunk or frame, doesn&#39;t matter for &#39;preview&#39; type |
+ **number** | **int**| A unique number value identifying chunk or frame, doesn&#39;t matter for &#39;preview&#39; type |
  **quality** | **str**| Specifies the quality level of the requested data, doesn&#39;t matter for &#39;preview&#39; type |
  **type** | **str**| Specifies the type of the requested data |
+ **x_organization** | **str**|  | [optional]
+ **org** | **str**| Organization unique slug | [optional]
+ **org_id** | **int**| Organization identifier | [optional]
 
 ### Return type
 
@@ -2209,8 +2365,11 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     api_instance = tasks_api.TasksApi(api_client)
     format = "format_example" # str | Desired output format name You can get the list of supported formats at: /server/annotation/formats
     id = 1 # int | A unique integer value identifying this task.
+    x_organization = "X-Organization_example" # str |  (optional)
     action = "download" # str | Used to start downloading process after annotation file had been created (optional) if omitted the server will use the default value of "download"
     filename = "filename_example" # str | Desired output file name (optional)
+    org = "org_example" # str | Organization unique slug (optional)
+    org_id = 1 # int | Organization identifier (optional)
 
     # example passing only required values which don't have defaults set
     try:
@@ -2223,7 +2382,7 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # and optional values
     try:
         # Export task as a dataset in a specific format
-        api_instance.tasks_dataset_retrieve(format, id, action=action, filename=filename)
+        api_instance.tasks_dataset_retrieve(format, id, x_organization=x_organization, action=action, filename=filename, org=org, org_id=org_id)
     except cvat_api_client.ApiException as e:
         print("Exception when calling TasksApi->tasks_dataset_retrieve: %s\n" % e)
 ```
@@ -2235,8 +2394,11 @@ Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **format** | **str**| Desired output format name You can get the list of supported formats at: /server/annotation/formats |
  **id** | **int**| A unique integer value identifying this task. |
+ **x_organization** | **str**|  | [optional]
  **action** | **str**| Used to start downloading process after annotation file had been created | [optional] if omitted the server will use the default value of "download"
  **filename** | **str**| Desired output file name | [optional]
+ **org** | **str**| Organization unique slug | [optional]
+ **org_id** | **int**| Organization identifier | [optional]
 
 ### Return type
 
@@ -2320,11 +2482,22 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = tasks_api.TasksApi(api_client)
     id = 1 # int | A unique integer value identifying this task.
+    x_organization = "X-Organization_example" # str |  (optional)
+    org = "org_example" # str | Organization unique slug (optional)
+    org_id = 1 # int | Organization identifier (optional)
 
     # example passing only required values which don't have defaults set
     try:
         # Method deletes a specific task, all attached jobs, annotations, and data
         api_instance.tasks_destroy(id)
+    except cvat_api_client.ApiException as e:
+        print("Exception when calling TasksApi->tasks_destroy: %s\n" % e)
+
+    # example passing only required values which don't have defaults set
+    # and optional values
+    try:
+        # Method deletes a specific task, all attached jobs, annotations, and data
+        api_instance.tasks_destroy(id, x_organization=x_organization, org=org, org_id=org_id)
     except cvat_api_client.ApiException as e:
         print("Exception when calling TasksApi->tasks_destroy: %s\n" % e)
 ```
@@ -2335,6 +2508,9 @@ with cvat_api_client.ApiClient(configuration) as api_client:
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **id** | **int**| A unique integer value identifying this task. |
+ **x_organization** | **str**|  | [optional]
+ **org** | **str**| Organization unique slug | [optional]
+ **org_id** | **int**| Organization identifier | [optional]
 
 ### Return type
 
@@ -2416,9 +2592,10 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = tasks_api.TasksApi(api_client)
     id = 1 # int | A unique integer value identifying this task.
+    x_organization = "X-Organization_example" # str |  (optional)
     filter = "filter_example" # str | A filter term. Avaliable filter_fields: ['project_name', 'name', 'owner', 'status', 'assignee', 'subset', 'mode', 'dimension', 'id', 'project_id', 'updated_date'] (optional)
     org = "org_example" # str | Organization unique slug (optional)
-    org_id = "org_id_example" # str | Organization identifier (optional)
+    org_id = 1 # int | Organization identifier (optional)
     page = 1 # int | A page number within the paginated result set. (optional)
     page_size = 1 # int | Number of results to return per page. (optional)
     search = "search_example" # str | A search term. Avaliable search_fields: ('project_name', 'name', 'owner', 'status', 'assignee', 'subset', 'mode', 'dimension') (optional)
@@ -2436,7 +2613,7 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # and optional values
     try:
         # Method returns a list of jobs for a specific task
-        api_response = api_instance.tasks_jobs_list(id, filter=filter, org=org, org_id=org_id, page=page, page_size=page_size, search=search, sort=sort)
+        api_response = api_instance.tasks_jobs_list(id, x_organization=x_organization, filter=filter, org=org, org_id=org_id, page=page, page_size=page_size, search=search, sort=sort)
         pprint(api_response)
     except cvat_api_client.ApiException as e:
         print("Exception when calling TasksApi->tasks_jobs_list: %s\n" % e)
@@ -2448,9 +2625,10 @@ with cvat_api_client.ApiClient(configuration) as api_client:
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **id** | **int**| A unique integer value identifying this task. |
+ **x_organization** | **str**|  | [optional]
  **filter** | **str**| A filter term. Avaliable filter_fields: [&#39;project_name&#39;, &#39;name&#39;, &#39;owner&#39;, &#39;status&#39;, &#39;assignee&#39;, &#39;subset&#39;, &#39;mode&#39;, &#39;dimension&#39;, &#39;id&#39;, &#39;project_id&#39;, &#39;updated_date&#39;] | [optional]
  **org** | **str**| Organization unique slug | [optional]
- **org_id** | **str**| Organization identifier | [optional]
+ **org_id** | **int**| Organization identifier | [optional]
  **page** | **int**| A page number within the paginated result set. | [optional]
  **page_size** | **int**| Number of results to return per page. | [optional]
  **search** | **str**| A search term. Avaliable search_fields: (&#39;project_name&#39;, &#39;name&#39;, &#39;owner&#39;, &#39;status&#39;, &#39;assignee&#39;, &#39;subset&#39;, &#39;mode&#39;, &#39;dimension&#39;) | [optional]
@@ -2535,9 +2713,10 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 with cvat_api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = tasks_api.TasksApi(api_client)
+    x_organization = "X-Organization_example" # str |  (optional)
     filter = "filter_example" # str | A filter term. Avaliable filter_fields: ['project_name', 'name', 'owner', 'status', 'assignee', 'subset', 'mode', 'dimension', 'id', 'project_id', 'updated_date'] (optional)
     org = "org_example" # str | Organization unique slug (optional)
-    org_id = "org_id_example" # str | Organization identifier (optional)
+    org_id = 1 # int | Organization identifier (optional)
     page = 1 # int | A page number within the paginated result set. (optional)
     page_size = 1 # int | Number of results to return per page. (optional)
     search = "search_example" # str | A search term. Avaliable search_fields: ('project_name', 'name', 'owner', 'status', 'assignee', 'subset', 'mode', 'dimension') (optional)
@@ -2547,7 +2726,7 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # and optional values
     try:
         # Returns a paginated list of tasks according to query parameters (10 tasks per page)
-        api_response = api_instance.tasks_list(filter=filter, org=org, org_id=org_id, page=page, page_size=page_size, search=search, sort=sort)
+        api_response = api_instance.tasks_list(x_organization=x_organization, filter=filter, org=org, org_id=org_id, page=page, page_size=page_size, search=search, sort=sort)
         pprint(api_response)
     except cvat_api_client.ApiException as e:
         print("Exception when calling TasksApi->tasks_list: %s\n" % e)
@@ -2558,9 +2737,10 @@ with cvat_api_client.ApiClient(configuration) as api_client:
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
+ **x_organization** | **str**|  | [optional]
  **filter** | **str**| A filter term. Avaliable filter_fields: [&#39;project_name&#39;, &#39;name&#39;, &#39;owner&#39;, &#39;status&#39;, &#39;assignee&#39;, &#39;subset&#39;, &#39;mode&#39;, &#39;dimension&#39;, &#39;id&#39;, &#39;project_id&#39;, &#39;updated_date&#39;] | [optional]
  **org** | **str**| Organization unique slug | [optional]
- **org_id** | **str**| Organization identifier | [optional]
+ **org_id** | **int**| Organization identifier | [optional]
  **page** | **int**| A page number within the paginated result set. | [optional]
  **page_size** | **int**| Number of results to return per page. | [optional]
  **search** | **str**| A search term. Avaliable search_fields: (&#39;project_name&#39;, &#39;name&#39;, &#39;owner&#39;, &#39;status&#39;, &#39;assignee&#39;, &#39;subset&#39;, &#39;mode&#39;, &#39;dimension&#39;) | [optional]
@@ -2647,6 +2827,9 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = tasks_api.TasksApi(api_client)
     id = 1 # int | A unique integer value identifying this task.
+    x_organization = "X-Organization_example" # str |  (optional)
+    org = "org_example" # str | Organization unique slug (optional)
+    org_id = 1 # int | Organization identifier (optional)
     patched_task_request = PatchedTaskRequest(
         name="name_example",
         project_id=1,
@@ -2696,7 +2879,7 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # and optional values
     try:
         # Methods does a partial update of chosen fields in a task
-        api_response = api_instance.tasks_partial_update(id, patched_task_request=patched_task_request)
+        api_response = api_instance.tasks_partial_update(id, x_organization=x_organization, org=org, org_id=org_id, patched_task_request=patched_task_request)
         pprint(api_response)
     except cvat_api_client.ApiException as e:
         print("Exception when calling TasksApi->tasks_partial_update: %s\n" % e)
@@ -2708,6 +2891,9 @@ with cvat_api_client.ApiClient(configuration) as api_client:
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **id** | **int**| A unique integer value identifying this task. |
+ **x_organization** | **str**|  | [optional]
+ **org** | **str**| Organization unique slug | [optional]
+ **org_id** | **int**| Organization identifier | [optional]
  **patched_task_request** | [**PatchedTaskRequest**](PatchedTaskRequest.md)|  | [optional]
 
 ### Return type
@@ -2790,11 +2976,23 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = tasks_api.TasksApi(api_client)
     id = 1 # int | A unique integer value identifying this task.
+    x_organization = "X-Organization_example" # str |  (optional)
+    org = "org_example" # str | Organization unique slug (optional)
+    org_id = 1 # int | Organization identifier (optional)
 
     # example passing only required values which don't have defaults set
     try:
         # Method returns details of a specific task
         api_response = api_instance.tasks_retrieve(id)
+        pprint(api_response)
+    except cvat_api_client.ApiException as e:
+        print("Exception when calling TasksApi->tasks_retrieve: %s\n" % e)
+
+    # example passing only required values which don't have defaults set
+    # and optional values
+    try:
+        # Method returns details of a specific task
+        api_response = api_instance.tasks_retrieve(id, x_organization=x_organization, org=org, org_id=org_id)
         pprint(api_response)
     except cvat_api_client.ApiException as e:
         print("Exception when calling TasksApi->tasks_retrieve: %s\n" % e)
@@ -2806,6 +3004,9 @@ with cvat_api_client.ApiClient(configuration) as api_client:
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **id** | **int**| A unique integer value identifying this task. |
+ **x_organization** | **str**|  | [optional]
+ **org** | **str**| Organization unique slug | [optional]
+ **org_id** | **int**| Organization identifier | [optional]
 
 ### Return type
 
@@ -2887,11 +3088,23 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = tasks_api.TasksApi(api_client)
     id = 1 # int | A unique integer value identifying this task.
+    x_organization = "X-Organization_example" # str |  (optional)
+    org = "org_example" # str | Organization unique slug (optional)
+    org_id = 1 # int | Organization identifier (optional)
 
     # example passing only required values which don't have defaults set
     try:
         # When task is being created the method returns information about a status of the creation process
         api_response = api_instance.tasks_status_retrieve(id)
+        pprint(api_response)
+    except cvat_api_client.ApiException as e:
+        print("Exception when calling TasksApi->tasks_status_retrieve: %s\n" % e)
+
+    # example passing only required values which don't have defaults set
+    # and optional values
+    try:
+        # When task is being created the method returns information about a status of the creation process
+        api_response = api_instance.tasks_status_retrieve(id, x_organization=x_organization, org=org, org_id=org_id)
         pprint(api_response)
     except cvat_api_client.ApiException as e:
         print("Exception when calling TasksApi->tasks_status_retrieve: %s\n" % e)
@@ -2903,6 +3116,9 @@ with cvat_api_client.ApiClient(configuration) as api_client:
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **id** | **int**| A unique integer value identifying this task. |
+ **x_organization** | **str**|  | [optional]
+ **org** | **str**| Organization unique slug | [optional]
+ **org_id** | **int**| Organization identifier | [optional]
 
 ### Return type
 
@@ -3021,11 +3237,23 @@ with cvat_api_client.ApiClient(configuration) as api_client:
         dimension="dimension_example",
         subset="subset_example",
     ) # TaskRequest | 
+    x_organization = "X-Organization_example" # str |  (optional)
+    org = "org_example" # str | Organization unique slug (optional)
+    org_id = 1 # int | Organization identifier (optional)
 
     # example passing only required values which don't have defaults set
     try:
         # Method updates a task by id
         api_response = api_instance.tasks_update(id, task_request)
+        pprint(api_response)
+    except cvat_api_client.ApiException as e:
+        print("Exception when calling TasksApi->tasks_update: %s\n" % e)
+
+    # example passing only required values which don't have defaults set
+    # and optional values
+    try:
+        # Method updates a task by id
+        api_response = api_instance.tasks_update(id, task_request, x_organization=x_organization, org=org, org_id=org_id)
         pprint(api_response)
     except cvat_api_client.ApiException as e:
         print("Exception when calling TasksApi->tasks_update: %s\n" % e)
@@ -3038,6 +3266,9 @@ Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **id** | **int**| A unique integer value identifying this task. |
  **task_request** | [**TaskRequest**](TaskRequest.md)|  |
+ **x_organization** | **str**|  | [optional]
+ **org** | **str**| Organization unique slug | [optional]
+ **org_id** | **int**| Organization identifier | [optional]
 
 ### Return type
 

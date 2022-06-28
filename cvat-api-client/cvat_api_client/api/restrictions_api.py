@@ -51,6 +51,9 @@ class RestrictionsApi(object):
             },
             params_map={
                 'all': [
+                    'x_organization',
+                    'org',
+                    'org_id',
                 ],
                 'required': [],
                 'nullable': [
@@ -66,10 +69,22 @@ class RestrictionsApi(object):
                 'allowed_values': {
                 },
                 'openapi_types': {
+                    'x_organization':
+                        (str,),
+                    'org':
+                        (str,),
+                    'org_id':
+                        (int,),
                 },
                 'attribute_map': {
+                    'x_organization': 'X-Organization',
+                    'org': 'org',
+                    'org_id': 'org_id',
                 },
                 'location_map': {
+                    'x_organization': 'header',
+                    'org': 'query',
+                    'org_id': 'query',
                 },
                 'collection_format_map': {
                 }
@@ -91,6 +106,9 @@ class RestrictionsApi(object):
             },
             params_map={
                 'all': [
+                    'x_organization',
+                    'org',
+                    'org_id',
                 ],
                 'required': [],
                 'nullable': [
@@ -106,10 +124,22 @@ class RestrictionsApi(object):
                 'allowed_values': {
                 },
                 'openapi_types': {
+                    'x_organization':
+                        (str,),
+                    'org':
+                        (str,),
+                    'org_id':
+                        (int,),
                 },
                 'attribute_map': {
+                    'x_organization': 'X-Organization',
+                    'org': 'org',
+                    'org_id': 'org_id',
                 },
                 'location_map': {
+                    'x_organization': 'header',
+                    'org': 'query',
+                    'org_id': 'query',
                 },
                 'collection_format_map': {
                 }
@@ -193,6 +223,9 @@ class RestrictionsApi(object):
 
 
         Keyword Args:
+            x_organization (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
             _preload_content (bool): if False, the urllib3.HTTPResponse object
@@ -283,6 +316,9 @@ class RestrictionsApi(object):
 
 
         Keyword Args:
+            x_organization (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             _request_timeout (int/float/tuple): timeout setting for this request. If
                 one number provided, it will be total request timeout. It can also
                 be a pair (tuple) of (connection, read) timeouts.
@@ -384,6 +420,9 @@ class RestrictionsApi(object):
 
 
         Keyword Args:
+            x_organization (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
             _preload_content (bool): if False, the urllib3.HTTPResponse object
@@ -474,6 +513,9 @@ class RestrictionsApi(object):
 
 
         Keyword Args:
+            x_organization (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             _request_timeout (int/float/tuple): timeout setting for this request. If
                 one number provided, it will be total request timeout. It can also
                 be a pair (tuple) of (connection, read) timeouts.

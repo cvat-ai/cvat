@@ -61,6 +61,9 @@ class InvitationsApi(object):
             params_map={
                 'all': [
                     'invitation_write_request',
+                    'x_organization',
+                    'org',
+                    'org_id',
                 ],
                 'required': [
                     'invitation_write_request',
@@ -80,11 +83,23 @@ class InvitationsApi(object):
                 'openapi_types': {
                     'invitation_write_request':
                         (InvitationWriteRequest,),
+                    'x_organization':
+                        (str,),
+                    'org':
+                        (str,),
+                    'org_id':
+                        (int,),
                 },
                 'attribute_map': {
+                    'x_organization': 'X-Organization',
+                    'org': 'org',
+                    'org_id': 'org_id',
                 },
                 'location_map': {
                     'invitation_write_request': 'body',
+                    'x_organization': 'header',
+                    'org': 'query',
+                    'org_id': 'query',
                 },
                 'collection_format_map': {
                 }
@@ -119,6 +134,9 @@ class InvitationsApi(object):
             params_map={
                 'all': [
                     'key',
+                    'x_organization',
+                    'org',
+                    'org_id',
                 ],
                 'required': [
                     'key',
@@ -138,12 +156,24 @@ class InvitationsApi(object):
                 'openapi_types': {
                     'key':
                         (str,),
+                    'x_organization':
+                        (str,),
+                    'org':
+                        (str,),
+                    'org_id':
+                        (int,),
                 },
                 'attribute_map': {
                     'key': 'key',
+                    'x_organization': 'X-Organization',
+                    'org': 'org',
+                    'org_id': 'org_id',
                 },
                 'location_map': {
                     'key': 'path',
+                    'x_organization': 'header',
+                    'org': 'query',
+                    'org_id': 'query',
                 },
                 'collection_format_map': {
                 }
@@ -170,6 +200,7 @@ class InvitationsApi(object):
             },
             params_map={
                 'all': [
+                    'x_organization',
                     'filter',
                     'org',
                     'org_id',
@@ -192,12 +223,14 @@ class InvitationsApi(object):
                 'allowed_values': {
                 },
                 'openapi_types': {
+                    'x_organization':
+                        (str,),
                     'filter':
                         (str,),
                     'org':
                         (str,),
                     'org_id':
-                        (str,),
+                        (int,),
                     'page':
                         (int,),
                     'page_size':
@@ -208,6 +241,7 @@ class InvitationsApi(object):
                         (str,),
                 },
                 'attribute_map': {
+                    'x_organization': 'X-Organization',
                     'filter': 'filter',
                     'org': 'org',
                     'org_id': 'org_id',
@@ -217,6 +251,7 @@ class InvitationsApi(object):
                     'sort': 'sort',
                 },
                 'location_map': {
+                    'x_organization': 'header',
                     'filter': 'query',
                     'org': 'query',
                     'org_id': 'query',
@@ -253,6 +288,9 @@ class InvitationsApi(object):
             params_map={
                 'all': [
                     'key',
+                    'x_organization',
+                    'org',
+                    'org_id',
                     'patched_invitation_write_request',
                 ],
                 'required': [
@@ -273,14 +311,26 @@ class InvitationsApi(object):
                 'openapi_types': {
                     'key':
                         (str,),
+                    'x_organization':
+                        (str,),
+                    'org':
+                        (str,),
+                    'org_id':
+                        (int,),
                     'patched_invitation_write_request':
                         (PatchedInvitationWriteRequest,),
                 },
                 'attribute_map': {
                     'key': 'key',
+                    'x_organization': 'X-Organization',
+                    'org': 'org',
+                    'org_id': 'org_id',
                 },
                 'location_map': {
                     'key': 'path',
+                    'x_organization': 'header',
+                    'org': 'query',
+                    'org_id': 'query',
                     'patched_invitation_write_request': 'body',
                 },
                 'collection_format_map': {
@@ -316,6 +366,9 @@ class InvitationsApi(object):
             params_map={
                 'all': [
                     'key',
+                    'x_organization',
+                    'org',
+                    'org_id',
                 ],
                 'required': [
                     'key',
@@ -335,12 +388,24 @@ class InvitationsApi(object):
                 'openapi_types': {
                     'key':
                         (str,),
+                    'x_organization':
+                        (str,),
+                    'org':
+                        (str,),
+                    'org_id':
+                        (int,),
                 },
                 'attribute_map': {
                     'key': 'key',
+                    'x_organization': 'X-Organization',
+                    'org': 'org',
+                    'org_id': 'org_id',
                 },
                 'location_map': {
                     'key': 'path',
+                    'x_organization': 'header',
+                    'org': 'query',
+                    'org_id': 'query',
                 },
                 'collection_format_map': {
                 }
@@ -433,6 +498,9 @@ class InvitationsApi(object):
             invitation_write_request (InvitationWriteRequest):
 
         Keyword Args:
+            x_organization (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
             _preload_content (bool): if False, the urllib3.HTTPResponse object
@@ -527,6 +595,9 @@ class InvitationsApi(object):
             invitation_write_request (InvitationWriteRequest):
 
         Keyword Args:
+            x_organization (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             _request_timeout (int/float/tuple): timeout setting for this request. If
                 one number provided, it will be total request timeout. It can also
                 be a pair (tuple) of (connection, read) timeouts.
@@ -637,6 +708,9 @@ class InvitationsApi(object):
             key (str): A unique value identifying this invitation.
 
         Keyword Args:
+            x_organization (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
             _preload_content (bool): if False, the urllib3.HTTPResponse object
@@ -731,6 +805,9 @@ class InvitationsApi(object):
             key (str): A unique value identifying this invitation.
 
         Keyword Args:
+            x_organization (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             _request_timeout (int/float/tuple): timeout setting for this request. If
                 one number provided, it will be total request timeout. It can also
                 be a pair (tuple) of (connection, read) timeouts.
@@ -832,9 +909,10 @@ class InvitationsApi(object):
 
 
         Keyword Args:
+            x_organization (str): [optional]
             filter (str): A filter term. Avaliable filter_fields: ('owner',). [optional]
             org (str): Organization unique slug. [optional]
-            org_id (str): Organization identifier. [optional]
+            org_id (int): Organization identifier. [optional]
             page (int): A page number within the paginated result set.. [optional]
             page_size (int): Number of results to return per page.. [optional]
             search (str): A search term. Avaliable search_fields: ('owner',). [optional]
@@ -929,9 +1007,10 @@ class InvitationsApi(object):
 
 
         Keyword Args:
+            x_organization (str): [optional]
             filter (str): A filter term. Avaliable filter_fields: ('owner',). [optional]
             org (str): Organization unique slug. [optional]
-            org_id (str): Organization identifier. [optional]
+            org_id (int): Organization identifier. [optional]
             page (int): A page number within the paginated result set.. [optional]
             page_size (int): Number of results to return per page.. [optional]
             search (str): A search term. Avaliable search_fields: ('owner',). [optional]
@@ -1046,6 +1125,9 @@ class InvitationsApi(object):
             key (str): A unique value identifying this invitation.
 
         Keyword Args:
+            x_organization (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             patched_invitation_write_request (PatchedInvitationWriteRequest): [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
@@ -1141,6 +1223,9 @@ class InvitationsApi(object):
             key (str): A unique value identifying this invitation.
 
         Keyword Args:
+            x_organization (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             patched_invitation_write_request (PatchedInvitationWriteRequest): [optional]
             _request_timeout (int/float/tuple): timeout setting for this request. If
                 one number provided, it will be total request timeout. It can also
@@ -1252,6 +1337,9 @@ class InvitationsApi(object):
             key (str): A unique value identifying this invitation.
 
         Keyword Args:
+            x_organization (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
             _preload_content (bool): if False, the urllib3.HTTPResponse object
@@ -1346,6 +1434,9 @@ class InvitationsApi(object):
             key (str): A unique value identifying this invitation.
 
         Keyword Args:
+            x_organization (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             _request_timeout (int/float/tuple): timeout setting for this request. If
                 one number provided, it will be total request timeout. It can also
                 be a pair (tuple) of (connection, read) timeouts.

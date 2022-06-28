@@ -73,11 +73,23 @@ with cvat_api_client.ApiClient(configuration) as api_client:
         role=RoleEnum("worker"),
         email="email_example",
     ) # InvitationWriteRequest | 
+    x_organization = "X-Organization_example" # str |  (optional)
+    org = "org_example" # str | Organization unique slug (optional)
+    org_id = 1 # int | Organization identifier (optional)
 
     # example passing only required values which don't have defaults set
     try:
         # Method creates an invitation
         api_response = api_instance.invitations_create(invitation_write_request)
+        pprint(api_response)
+    except cvat_api_client.ApiException as e:
+        print("Exception when calling InvitationsApi->invitations_create: %s\n" % e)
+
+    # example passing only required values which don't have defaults set
+    # and optional values
+    try:
+        # Method creates an invitation
+        api_response = api_instance.invitations_create(invitation_write_request, x_organization=x_organization, org=org, org_id=org_id)
         pprint(api_response)
     except cvat_api_client.ApiException as e:
         print("Exception when calling InvitationsApi->invitations_create: %s\n" % e)
@@ -89,6 +101,9 @@ with cvat_api_client.ApiClient(configuration) as api_client:
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **invitation_write_request** | [**InvitationWriteRequest**](InvitationWriteRequest.md)|  |
+ **x_organization** | **str**|  | [optional]
+ **org** | **str**| Organization unique slug | [optional]
+ **org_id** | **int**| Organization identifier | [optional]
 
 ### Return type
 
@@ -169,11 +184,22 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = invitations_api.InvitationsApi(api_client)
     key = "key_example" # str | A unique value identifying this invitation.
+    x_organization = "X-Organization_example" # str |  (optional)
+    org = "org_example" # str | Organization unique slug (optional)
+    org_id = 1 # int | Organization identifier (optional)
 
     # example passing only required values which don't have defaults set
     try:
         # Method deletes an invitation
         api_instance.invitations_destroy(key)
+    except cvat_api_client.ApiException as e:
+        print("Exception when calling InvitationsApi->invitations_destroy: %s\n" % e)
+
+    # example passing only required values which don't have defaults set
+    # and optional values
+    try:
+        # Method deletes an invitation
+        api_instance.invitations_destroy(key, x_organization=x_organization, org=org, org_id=org_id)
     except cvat_api_client.ApiException as e:
         print("Exception when calling InvitationsApi->invitations_destroy: %s\n" % e)
 ```
@@ -184,6 +210,9 @@ with cvat_api_client.ApiClient(configuration) as api_client:
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **key** | **str**| A unique value identifying this invitation. |
+ **x_organization** | **str**|  | [optional]
+ **org** | **str**| Organization unique slug | [optional]
+ **org_id** | **int**| Organization identifier | [optional]
 
 ### Return type
 
@@ -264,9 +293,10 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 with cvat_api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = invitations_api.InvitationsApi(api_client)
+    x_organization = "X-Organization_example" # str |  (optional)
     filter = "filter_example" # str | A filter term. Avaliable filter_fields: ('owner',) (optional)
     org = "org_example" # str | Organization unique slug (optional)
-    org_id = "org_id_example" # str | Organization identifier (optional)
+    org_id = 1 # int | Organization identifier (optional)
     page = 1 # int | A page number within the paginated result set. (optional)
     page_size = 1 # int | Number of results to return per page. (optional)
     search = "search_example" # str | A search term. Avaliable search_fields: ('owner',) (optional)
@@ -276,7 +306,7 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # and optional values
     try:
         # Method returns a paginated list of invitations according to query parameters
-        api_response = api_instance.invitations_list(filter=filter, org=org, org_id=org_id, page=page, page_size=page_size, search=search, sort=sort)
+        api_response = api_instance.invitations_list(x_organization=x_organization, filter=filter, org=org, org_id=org_id, page=page, page_size=page_size, search=search, sort=sort)
         pprint(api_response)
     except cvat_api_client.ApiException as e:
         print("Exception when calling InvitationsApi->invitations_list: %s\n" % e)
@@ -287,9 +317,10 @@ with cvat_api_client.ApiClient(configuration) as api_client:
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
+ **x_organization** | **str**|  | [optional]
  **filter** | **str**| A filter term. Avaliable filter_fields: (&#39;owner&#39;,) | [optional]
  **org** | **str**| Organization unique slug | [optional]
- **org_id** | **str**| Organization identifier | [optional]
+ **org_id** | **int**| Organization identifier | [optional]
  **page** | **int**| A page number within the paginated result set. | [optional]
  **page_size** | **int**| Number of results to return per page. | [optional]
  **search** | **str**| A search term. Avaliable search_fields: (&#39;owner&#39;,) | [optional]
@@ -376,6 +407,9 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = invitations_api.InvitationsApi(api_client)
     key = "key_example" # str | A unique value identifying this invitation.
+    x_organization = "X-Organization_example" # str |  (optional)
+    org = "org_example" # str | Organization unique slug (optional)
+    org_id = 1 # int | Organization identifier (optional)
     patched_invitation_write_request = PatchedInvitationWriteRequest(
         role=RoleEnum("worker"),
         email="email_example",
@@ -393,7 +427,7 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # and optional values
     try:
         # Methods does a partial update of chosen fields in an invitation
-        api_response = api_instance.invitations_partial_update(key, patched_invitation_write_request=patched_invitation_write_request)
+        api_response = api_instance.invitations_partial_update(key, x_organization=x_organization, org=org, org_id=org_id, patched_invitation_write_request=patched_invitation_write_request)
         pprint(api_response)
     except cvat_api_client.ApiException as e:
         print("Exception when calling InvitationsApi->invitations_partial_update: %s\n" % e)
@@ -405,6 +439,9 @@ with cvat_api_client.ApiClient(configuration) as api_client:
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **key** | **str**| A unique value identifying this invitation. |
+ **x_organization** | **str**|  | [optional]
+ **org** | **str**| Organization unique slug | [optional]
+ **org_id** | **int**| Organization identifier | [optional]
  **patched_invitation_write_request** | [**PatchedInvitationWriteRequest**](PatchedInvitationWriteRequest.md)|  | [optional]
 
 ### Return type
@@ -487,11 +524,23 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = invitations_api.InvitationsApi(api_client)
     key = "key_example" # str | A unique value identifying this invitation.
+    x_organization = "X-Organization_example" # str |  (optional)
+    org = "org_example" # str | Organization unique slug (optional)
+    org_id = 1 # int | Organization identifier (optional)
 
     # example passing only required values which don't have defaults set
     try:
         # Method returns details of an invitation
         api_response = api_instance.invitations_retrieve(key)
+        pprint(api_response)
+    except cvat_api_client.ApiException as e:
+        print("Exception when calling InvitationsApi->invitations_retrieve: %s\n" % e)
+
+    # example passing only required values which don't have defaults set
+    # and optional values
+    try:
+        # Method returns details of an invitation
+        api_response = api_instance.invitations_retrieve(key, x_organization=x_organization, org=org, org_id=org_id)
         pprint(api_response)
     except cvat_api_client.ApiException as e:
         print("Exception when calling InvitationsApi->invitations_retrieve: %s\n" % e)
@@ -503,6 +552,9 @@ with cvat_api_client.ApiClient(configuration) as api_client:
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **key** | **str**| A unique value identifying this invitation. |
+ **x_organization** | **str**|  | [optional]
+ **org** | **str**| Organization unique slug | [optional]
+ **org_id** | **int**| Organization identifier | [optional]
 
 ### Return type
 

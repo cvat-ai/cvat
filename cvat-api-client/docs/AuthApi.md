@@ -78,10 +78,21 @@ with cvat_api_client.ApiClient(configuration) as api_client:
         email="email_example",
         password="password_example",
     ) # LoginRequest | 
+    x_organization = "X-Organization_example" # str |  (optional)
+    org = "org_example" # str | Organization unique slug (optional)
+    org_id = 1 # int | Organization identifier (optional)
 
     # example passing only required values which don't have defaults set
     try:
         api_response = api_instance.auth_login_create(login_request)
+        pprint(api_response)
+    except cvat_api_client.ApiException as e:
+        print("Exception when calling AuthApi->auth_login_create: %s\n" % e)
+
+    # example passing only required values which don't have defaults set
+    # and optional values
+    try:
+        api_response = api_instance.auth_login_create(login_request, x_organization=x_organization, org=org, org_id=org_id)
         pprint(api_response)
     except cvat_api_client.ApiException as e:
         print("Exception when calling AuthApi->auth_login_create: %s\n" % e)
@@ -93,6 +104,9 @@ with cvat_api_client.ApiClient(configuration) as api_client:
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **login_request** | [**LoginRequest**](LoginRequest.md)|  |
+ **x_organization** | **str**|  | [optional]
+ **org** | **str**| Organization unique slug | [optional]
+ **org_id** | **int**| Organization identifier | [optional]
 
 ### Return type
 
@@ -175,10 +189,14 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 with cvat_api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = auth_api.AuthApi(api_client)
+    x_organization = "X-Organization_example" # str |  (optional)
+    org = "org_example" # str | Organization unique slug (optional)
+    org_id = 1 # int | Organization identifier (optional)
 
-    # example, this endpoint has no required or optional parameters
+    # example passing only required values which don't have defaults set
+    # and optional values
     try:
-        api_response = api_instance.auth_logout_create()
+        api_response = api_instance.auth_logout_create(x_organization=x_organization, org=org, org_id=org_id)
         pprint(api_response)
     except cvat_api_client.ApiException as e:
         print("Exception when calling AuthApi->auth_logout_create: %s\n" % e)
@@ -186,7 +204,12 @@ with cvat_api_client.ApiClient(configuration) as api_client:
 
 
 ### Parameters
-This endpoint does not need any parameter.
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **x_organization** | **str**|  | [optional]
+ **org** | **str**| Organization unique slug | [optional]
+ **org_id** | **int**| Organization identifier | [optional]
 
 ### Return type
 
@@ -275,10 +298,21 @@ with cvat_api_client.ApiClient(configuration) as api_client:
         new_password1="new_password1_example",
         new_password2="new_password2_example",
     ) # PasswordChangeRequest | 
+    x_organization = "X-Organization_example" # str |  (optional)
+    org = "org_example" # str | Organization unique slug (optional)
+    org_id = 1 # int | Organization identifier (optional)
 
     # example passing only required values which don't have defaults set
     try:
         api_response = api_instance.auth_password_change_create(password_change_request)
+        pprint(api_response)
+    except cvat_api_client.ApiException as e:
+        print("Exception when calling AuthApi->auth_password_change_create: %s\n" % e)
+
+    # example passing only required values which don't have defaults set
+    # and optional values
+    try:
+        api_response = api_instance.auth_password_change_create(password_change_request, x_organization=x_organization, org=org, org_id=org_id)
         pprint(api_response)
     except cvat_api_client.ApiException as e:
         print("Exception when calling AuthApi->auth_password_change_create: %s\n" % e)
@@ -290,6 +324,9 @@ with cvat_api_client.ApiClient(configuration) as api_client:
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **password_change_request** | [**PasswordChangeRequest**](PasswordChangeRequest.md)|  |
+ **x_organization** | **str**|  | [optional]
+ **org** | **str**| Organization unique slug | [optional]
+ **org_id** | **int**| Organization identifier | [optional]
 
 ### Return type
 
@@ -379,10 +416,21 @@ with cvat_api_client.ApiClient(configuration) as api_client:
         uid="uid_example",
         token="token_example",
     ) # PasswordResetConfirmRequest | 
+    x_organization = "X-Organization_example" # str |  (optional)
+    org = "org_example" # str | Organization unique slug (optional)
+    org_id = 1 # int | Organization identifier (optional)
 
     # example passing only required values which don't have defaults set
     try:
         api_response = api_instance.auth_password_reset_confirm_create(password_reset_confirm_request)
+        pprint(api_response)
+    except cvat_api_client.ApiException as e:
+        print("Exception when calling AuthApi->auth_password_reset_confirm_create: %s\n" % e)
+
+    # example passing only required values which don't have defaults set
+    # and optional values
+    try:
+        api_response = api_instance.auth_password_reset_confirm_create(password_reset_confirm_request, x_organization=x_organization, org=org, org_id=org_id)
         pprint(api_response)
     except cvat_api_client.ApiException as e:
         print("Exception when calling AuthApi->auth_password_reset_confirm_create: %s\n" % e)
@@ -394,6 +442,9 @@ with cvat_api_client.ApiClient(configuration) as api_client:
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **password_reset_confirm_request** | [**PasswordResetConfirmRequest**](PasswordResetConfirmRequest.md)|  |
+ **x_organization** | **str**|  | [optional]
+ **org** | **str**| Organization unique slug | [optional]
+ **org_id** | **int**| Organization identifier | [optional]
 
 ### Return type
 
@@ -480,10 +531,21 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     password_reset_serializer_ex_request = PasswordResetSerializerExRequest(
         email="email_example",
     ) # PasswordResetSerializerExRequest | 
+    x_organization = "X-Organization_example" # str |  (optional)
+    org = "org_example" # str | Organization unique slug (optional)
+    org_id = 1 # int | Organization identifier (optional)
 
     # example passing only required values which don't have defaults set
     try:
         api_response = api_instance.auth_password_reset_create(password_reset_serializer_ex_request)
+        pprint(api_response)
+    except cvat_api_client.ApiException as e:
+        print("Exception when calling AuthApi->auth_password_reset_create: %s\n" % e)
+
+    # example passing only required values which don't have defaults set
+    # and optional values
+    try:
+        api_response = api_instance.auth_password_reset_create(password_reset_serializer_ex_request, x_organization=x_organization, org=org, org_id=org_id)
         pprint(api_response)
     except cvat_api_client.ApiException as e:
         print("Exception when calling AuthApi->auth_password_reset_create: %s\n" % e)
@@ -495,6 +557,9 @@ with cvat_api_client.ApiClient(configuration) as api_client:
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **password_reset_serializer_ex_request** | [**PasswordResetSerializerExRequest**](PasswordResetSerializerExRequest.md)|  |
+ **x_organization** | **str**|  | [optional]
+ **org** | **str**| Organization unique slug | [optional]
+ **org_id** | **int**| Organization identifier | [optional]
 
 ### Return type
 
@@ -593,10 +658,21 @@ with cvat_api_client.ApiClient(configuration) as api_client:
             ),
         ],
     ) # RestrictedRegisterRequest | 
+    x_organization = "X-Organization_example" # str |  (optional)
+    org = "org_example" # str | Organization unique slug (optional)
+    org_id = 1 # int | Organization identifier (optional)
 
     # example passing only required values which don't have defaults set
     try:
         api_response = api_instance.auth_register_create(restricted_register_request)
+        pprint(api_response)
+    except cvat_api_client.ApiException as e:
+        print("Exception when calling AuthApi->auth_register_create: %s\n" % e)
+
+    # example passing only required values which don't have defaults set
+    # and optional values
+    try:
+        api_response = api_instance.auth_register_create(restricted_register_request, x_organization=x_organization, org=org, org_id=org_id)
         pprint(api_response)
     except cvat_api_client.ApiException as e:
         print("Exception when calling AuthApi->auth_register_create: %s\n" % e)
@@ -608,6 +684,9 @@ with cvat_api_client.ApiClient(configuration) as api_client:
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **restricted_register_request** | [**RestrictedRegisterRequest**](RestrictedRegisterRequest.md)|  |
+ **x_organization** | **str**|  | [optional]
+ **org** | **str**| Organization unique slug | [optional]
+ **org_id** | **int**| Organization identifier | [optional]
 
 ### Return type
 
@@ -693,11 +772,23 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     signing_request = SigningRequest(
         url="url_example",
     ) # SigningRequest | 
+    x_organization = "X-Organization_example" # str |  (optional)
+    org = "org_example" # str | Organization unique slug (optional)
+    org_id = 1 # int | Organization identifier (optional)
 
     # example passing only required values which don't have defaults set
     try:
         # This method signs URL for access to the server
         api_response = api_instance.auth_signing_create(signing_request)
+        pprint(api_response)
+    except cvat_api_client.ApiException as e:
+        print("Exception when calling AuthApi->auth_signing_create: %s\n" % e)
+
+    # example passing only required values which don't have defaults set
+    # and optional values
+    try:
+        # This method signs URL for access to the server
+        api_response = api_instance.auth_signing_create(signing_request, x_organization=x_organization, org=org, org_id=org_id)
         pprint(api_response)
     except cvat_api_client.ApiException as e:
         print("Exception when calling AuthApi->auth_signing_create: %s\n" % e)
@@ -709,6 +800,9 @@ with cvat_api_client.ApiClient(configuration) as api_client:
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **signing_request** | [**SigningRequest**](SigningRequest.md)|  |
+ **x_organization** | **str**|  | [optional]
+ **org** | **str**| Organization unique slug | [optional]
+ **org_id** | **int**| Organization identifier | [optional]
 
 ### Return type
 

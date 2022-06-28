@@ -69,10 +69,20 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = lambda_api.LambdaApi(api_client)
     func_id = "2" # str | 
+    x_organization = "X-Organization_example" # str |  (optional)
+    org = "org_example" # str | Organization unique slug (optional)
+    org_id = 1 # int | Organization identifier (optional)
 
     # example passing only required values which don't have defaults set
     try:
         api_instance.lambda_functions_create(func_id)
+    except cvat_api_client.ApiException as e:
+        print("Exception when calling LambdaApi->lambda_functions_create: %s\n" % e)
+
+    # example passing only required values which don't have defaults set
+    # and optional values
+    try:
+        api_instance.lambda_functions_create(func_id, x_organization=x_organization, org=org, org_id=org_id)
     except cvat_api_client.ApiException as e:
         print("Exception when calling LambdaApi->lambda_functions_create: %s\n" % e)
 ```
@@ -83,6 +93,9 @@ with cvat_api_client.ApiClient(configuration) as api_client:
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **func_id** | **str**|  |
+ **x_organization** | **str**|  | [optional]
+ **org** | **str**| Organization unique slug | [optional]
+ **org_id** | **int**| Organization identifier | [optional]
 
 ### Return type
 
@@ -162,18 +175,27 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 with cvat_api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = lambda_api.LambdaApi(api_client)
+    x_organization = "X-Organization_example" # str |  (optional)
+    org = "org_example" # str | Organization unique slug (optional)
+    org_id = 1 # int | Organization identifier (optional)
 
-    # example, this endpoint has no required or optional parameters
+    # example passing only required values which don't have defaults set
+    # and optional values
     try:
         # Method returns a list of functions
-        api_instance.lambda_functions_list()
+        api_instance.lambda_functions_list(x_organization=x_organization, org=org, org_id=org_id)
     except cvat_api_client.ApiException as e:
         print("Exception when calling LambdaApi->lambda_functions_list: %s\n" % e)
 ```
 
 
 ### Parameters
-This endpoint does not need any parameter.
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **x_organization** | **str**|  | [optional]
+ **org** | **str**| Organization unique slug | [optional]
+ **org_id** | **int**| Organization identifier | [optional]
 
 ### Return type
 
@@ -254,11 +276,23 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = lambda_api.LambdaApi(api_client)
     func_id = "2" # str | 
+    x_organization = "X-Organization_example" # str |  (optional)
+    org = "org_example" # str | Organization unique slug (optional)
+    org_id = 1 # int | Organization identifier (optional)
 
     # example passing only required values which don't have defaults set
     try:
         # Method returns the information about the function
         api_response = api_instance.lambda_functions_retrieve(func_id)
+        pprint(api_response)
+    except cvat_api_client.ApiException as e:
+        print("Exception when calling LambdaApi->lambda_functions_retrieve: %s\n" % e)
+
+    # example passing only required values which don't have defaults set
+    # and optional values
+    try:
+        # Method returns the information about the function
+        api_response = api_instance.lambda_functions_retrieve(func_id, x_organization=x_organization, org=org, org_id=org_id)
         pprint(api_response)
     except cvat_api_client.ApiException as e:
         print("Exception when calling LambdaApi->lambda_functions_retrieve: %s\n" % e)
@@ -270,6 +304,9 @@ with cvat_api_client.ApiClient(configuration) as api_client:
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **func_id** | **str**|  |
+ **x_organization** | **str**|  | [optional]
+ **org** | **str**| Organization unique slug | [optional]
+ **org_id** | **int**| Organization identifier | [optional]
 
 ### Return type
 
@@ -349,18 +386,27 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 with cvat_api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = lambda_api.LambdaApi(api_client)
+    x_organization = "X-Organization_example" # str |  (optional)
+    org = "org_example" # str | Organization unique slug (optional)
+    org_id = 1 # int | Organization identifier (optional)
 
-    # example, this endpoint has no required or optional parameters
+    # example passing only required values which don't have defaults set
+    # and optional values
     try:
         # Method calls the function
-        api_instance.lambda_requests_create()
+        api_instance.lambda_requests_create(x_organization=x_organization, org=org, org_id=org_id)
     except cvat_api_client.ApiException as e:
         print("Exception when calling LambdaApi->lambda_requests_create: %s\n" % e)
 ```
 
 
 ### Parameters
-This endpoint does not need any parameter.
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **x_organization** | **str**|  | [optional]
+ **org** | **str**| Organization unique slug | [optional]
+ **org_id** | **int**| Organization identifier | [optional]
 
 ### Return type
 
@@ -440,18 +486,27 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 with cvat_api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = lambda_api.LambdaApi(api_client)
+    x_organization = "X-Organization_example" # str |  (optional)
+    org = "org_example" # str | Organization unique slug (optional)
+    org_id = 1 # int | Organization identifier (optional)
 
-    # example, this endpoint has no required or optional parameters
+    # example passing only required values which don't have defaults set
+    # and optional values
     try:
         # Method returns a list of requests
-        api_instance.lambda_requests_list()
+        api_instance.lambda_requests_list(x_organization=x_organization, org=org, org_id=org_id)
     except cvat_api_client.ApiException as e:
         print("Exception when calling LambdaApi->lambda_requests_list: %s\n" % e)
 ```
 
 
 ### Parameters
-This endpoint does not need any parameter.
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **x_organization** | **str**|  | [optional]
+ **org** | **str**| Organization unique slug | [optional]
+ **org_id** | **int**| Organization identifier | [optional]
 
 ### Return type
 
@@ -532,11 +587,22 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = lambda_api.LambdaApi(api_client)
     id = 1 # int | Request id
+    x_organization = "X-Organization_example" # str |  (optional)
+    org = "org_example" # str | Organization unique slug (optional)
+    org_id = 1 # int | Organization identifier (optional)
 
     # example passing only required values which don't have defaults set
     try:
         # Method returns the status of the request
         api_instance.lambda_requests_retrieve(id)
+    except cvat_api_client.ApiException as e:
+        print("Exception when calling LambdaApi->lambda_requests_retrieve: %s\n" % e)
+
+    # example passing only required values which don't have defaults set
+    # and optional values
+    try:
+        # Method returns the status of the request
+        api_instance.lambda_requests_retrieve(id, x_organization=x_organization, org=org, org_id=org_id)
     except cvat_api_client.ApiException as e:
         print("Exception when calling LambdaApi->lambda_requests_retrieve: %s\n" % e)
 ```
@@ -547,6 +613,9 @@ with cvat_api_client.ApiClient(configuration) as api_client:
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **id** | **int**| Request id |
+ **x_organization** | **str**|  | [optional]
+ **org** | **str**| Organization unique slug | [optional]
+ **org_id** | **int**| Organization identifier | [optional]
 
 ### Return type
 

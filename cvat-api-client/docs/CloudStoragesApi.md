@@ -71,7 +71,10 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = cloud_storages_api.CloudStoragesApi(api_client)
     id = 1 # int | A unique integer value identifying this cloud storage.
+    x_organization = "X-Organization_example" # str |  (optional)
     manifest_path = "manifest_path_example" # str | Path to the manifest file in a cloud storage (optional)
+    org = "org_example" # str | Organization unique slug (optional)
+    org_id = 1 # int | Organization identifier (optional)
 
     # example passing only required values which don't have defaults set
     try:
@@ -85,7 +88,7 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # and optional values
     try:
         # Method returns a manifest content
-        api_response = api_instance.cloudstorages_content_retrieve(id, manifest_path=manifest_path)
+        api_response = api_instance.cloudstorages_content_retrieve(id, x_organization=x_organization, manifest_path=manifest_path, org=org, org_id=org_id)
         pprint(api_response)
     except cvat_api_client.ApiException as e:
         print("Exception when calling CloudStoragesApi->cloudstorages_content_retrieve: %s\n" % e)
@@ -97,7 +100,10 @@ with cvat_api_client.ApiClient(configuration) as api_client:
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **id** | **int**| A unique integer value identifying this cloud storage. |
+ **x_organization** | **str**|  | [optional]
  **manifest_path** | **str**| Path to the manifest file in a cloud storage | [optional]
+ **org** | **str**| Organization unique slug | [optional]
+ **org_id** | **int**| Organization identifier | [optional]
 
 ### Return type
 
@@ -202,11 +208,23 @@ with cvat_api_client.ApiClient(configuration) as api_client:
             ),
         ],
     ) # CloudStorageWriteRequest | 
+    x_organization = "X-Organization_example" # str |  (optional)
+    org = "org_example" # str | Organization unique slug (optional)
+    org_id = 1 # int | Organization identifier (optional)
 
     # example passing only required values which don't have defaults set
     try:
         # Method creates a cloud storage with a specified characteristics
         api_response = api_instance.cloudstorages_create(cloud_storage_write_request)
+        pprint(api_response)
+    except cvat_api_client.ApiException as e:
+        print("Exception when calling CloudStoragesApi->cloudstorages_create: %s\n" % e)
+
+    # example passing only required values which don't have defaults set
+    # and optional values
+    try:
+        # Method creates a cloud storage with a specified characteristics
+        api_response = api_instance.cloudstorages_create(cloud_storage_write_request, x_organization=x_organization, org=org, org_id=org_id)
         pprint(api_response)
     except cvat_api_client.ApiException as e:
         print("Exception when calling CloudStoragesApi->cloudstorages_create: %s\n" % e)
@@ -218,6 +236,9 @@ with cvat_api_client.ApiClient(configuration) as api_client:
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **cloud_storage_write_request** | [**CloudStorageWriteRequest**](CloudStorageWriteRequest.md)|  |
+ **x_organization** | **str**|  | [optional]
+ **org** | **str**| Organization unique slug | [optional]
+ **org_id** | **int**| Organization identifier | [optional]
 
 ### Return type
 
@@ -298,11 +319,22 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = cloud_storages_api.CloudStoragesApi(api_client)
     id = 1 # int | A unique integer value identifying this cloud storage.
+    x_organization = "X-Organization_example" # str |  (optional)
+    org = "org_example" # str | Organization unique slug (optional)
+    org_id = 1 # int | Organization identifier (optional)
 
     # example passing only required values which don't have defaults set
     try:
         # Method deletes a specific cloud storage
         api_instance.cloudstorages_destroy(id)
+    except cvat_api_client.ApiException as e:
+        print("Exception when calling CloudStoragesApi->cloudstorages_destroy: %s\n" % e)
+
+    # example passing only required values which don't have defaults set
+    # and optional values
+    try:
+        # Method deletes a specific cloud storage
+        api_instance.cloudstorages_destroy(id, x_organization=x_organization, org=org, org_id=org_id)
     except cvat_api_client.ApiException as e:
         print("Exception when calling CloudStoragesApi->cloudstorages_destroy: %s\n" % e)
 ```
@@ -313,6 +345,9 @@ with cvat_api_client.ApiClient(configuration) as api_client:
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **id** | **int**| A unique integer value identifying this cloud storage. |
+ **x_organization** | **str**|  | [optional]
+ **org** | **str**| Organization unique slug | [optional]
+ **org_id** | **int**| Organization identifier | [optional]
 
 ### Return type
 
@@ -393,9 +428,10 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 with cvat_api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = cloud_storages_api.CloudStoragesApi(api_client)
+    x_organization = "X-Organization_example" # str |  (optional)
     filter = "filter_example" # str | A filter term. Avaliable filter_fields: ['provider_type', 'display_name', 'resource', 'credentials_type', 'owner', 'description', 'id'] (optional)
     org = "org_example" # str | Organization unique slug (optional)
-    org_id = "org_id_example" # str | Organization identifier (optional)
+    org_id = 1 # int | Organization identifier (optional)
     page = 1 # int | A page number within the paginated result set. (optional)
     page_size = 1 # int | Number of results to return per page. (optional)
     search = "search_example" # str | A search term. Avaliable search_fields: ('provider_type', 'display_name', 'resource', 'credentials_type', 'owner', 'description') (optional)
@@ -405,7 +441,7 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # and optional values
     try:
         # Returns a paginated list of storages according to query parameters
-        api_response = api_instance.cloudstorages_list(filter=filter, org=org, org_id=org_id, page=page, page_size=page_size, search=search, sort=sort)
+        api_response = api_instance.cloudstorages_list(x_organization=x_organization, filter=filter, org=org, org_id=org_id, page=page, page_size=page_size, search=search, sort=sort)
         pprint(api_response)
     except cvat_api_client.ApiException as e:
         print("Exception when calling CloudStoragesApi->cloudstorages_list: %s\n" % e)
@@ -416,9 +452,10 @@ with cvat_api_client.ApiClient(configuration) as api_client:
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
+ **x_organization** | **str**|  | [optional]
  **filter** | **str**| A filter term. Avaliable filter_fields: [&#39;provider_type&#39;, &#39;display_name&#39;, &#39;resource&#39;, &#39;credentials_type&#39;, &#39;owner&#39;, &#39;description&#39;, &#39;id&#39;] | [optional]
  **org** | **str**| Organization unique slug | [optional]
- **org_id** | **str**| Organization identifier | [optional]
+ **org_id** | **int**| Organization identifier | [optional]
  **page** | **int**| A page number within the paginated result set. | [optional]
  **page_size** | **int**| Number of results to return per page. | [optional]
  **search** | **str**| A search term. Avaliable search_fields: (&#39;provider_type&#39;, &#39;display_name&#39;, &#39;resource&#39;, &#39;credentials_type&#39;, &#39;owner&#39;, &#39;description&#39;) | [optional]
@@ -505,6 +542,9 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = cloud_storages_api.CloudStoragesApi(api_client)
     id = 1 # int | A unique integer value identifying this cloud storage.
+    x_organization = "X-Organization_example" # str |  (optional)
+    org = "org_example" # str | Organization unique slug (optional)
+    org_id = 1 # int | Organization identifier (optional)
     patched_cloud_storage_write_request = PatchedCloudStorageWriteRequest(
         provider_type=ProviderTypeEnum("AWS_S3_BUCKET"),
         resource="resource_example",
@@ -541,7 +581,7 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # and optional values
     try:
         # Methods does a partial update of chosen fields in a cloud storage instance
-        api_response = api_instance.cloudstorages_partial_update(id, patched_cloud_storage_write_request=patched_cloud_storage_write_request)
+        api_response = api_instance.cloudstorages_partial_update(id, x_organization=x_organization, org=org, org_id=org_id, patched_cloud_storage_write_request=patched_cloud_storage_write_request)
         pprint(api_response)
     except cvat_api_client.ApiException as e:
         print("Exception when calling CloudStoragesApi->cloudstorages_partial_update: %s\n" % e)
@@ -553,6 +593,9 @@ with cvat_api_client.ApiClient(configuration) as api_client:
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **id** | **int**| A unique integer value identifying this cloud storage. |
+ **x_organization** | **str**|  | [optional]
+ **org** | **str**| Organization unique slug | [optional]
+ **org_id** | **int**| Organization identifier | [optional]
  **patched_cloud_storage_write_request** | [**PatchedCloudStorageWriteRequest**](PatchedCloudStorageWriteRequest.md)|  | [optional]
 
 ### Return type
@@ -634,11 +677,22 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = cloud_storages_api.CloudStoragesApi(api_client)
     id = 1 # int | A unique integer value identifying this cloud storage.
+    x_organization = "X-Organization_example" # str |  (optional)
+    org = "org_example" # str | Organization unique slug (optional)
+    org_id = 1 # int | Organization identifier (optional)
 
     # example passing only required values which don't have defaults set
     try:
         # Method returns a preview image from a cloud storage
         api_instance.cloudstorages_preview_retrieve(id)
+    except cvat_api_client.ApiException as e:
+        print("Exception when calling CloudStoragesApi->cloudstorages_preview_retrieve: %s\n" % e)
+
+    # example passing only required values which don't have defaults set
+    # and optional values
+    try:
+        # Method returns a preview image from a cloud storage
+        api_instance.cloudstorages_preview_retrieve(id, x_organization=x_organization, org=org, org_id=org_id)
     except cvat_api_client.ApiException as e:
         print("Exception when calling CloudStoragesApi->cloudstorages_preview_retrieve: %s\n" % e)
 ```
@@ -649,6 +703,9 @@ with cvat_api_client.ApiClient(configuration) as api_client:
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **id** | **int**| A unique integer value identifying this cloud storage. |
+ **x_organization** | **str**|  | [optional]
+ **org** | **str**| Organization unique slug | [optional]
+ **org_id** | **int**| Organization identifier | [optional]
 
 ### Return type
 
@@ -730,11 +787,23 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = cloud_storages_api.CloudStoragesApi(api_client)
     id = 1 # int | A unique integer value identifying this cloud storage.
+    x_organization = "X-Organization_example" # str |  (optional)
+    org = "org_example" # str | Organization unique slug (optional)
+    org_id = 1 # int | Organization identifier (optional)
 
     # example passing only required values which don't have defaults set
     try:
         # Method returns details of a specific cloud storage
         api_response = api_instance.cloudstorages_retrieve(id)
+        pprint(api_response)
+    except cvat_api_client.ApiException as e:
+        print("Exception when calling CloudStoragesApi->cloudstorages_retrieve: %s\n" % e)
+
+    # example passing only required values which don't have defaults set
+    # and optional values
+    try:
+        # Method returns details of a specific cloud storage
+        api_response = api_instance.cloudstorages_retrieve(id, x_organization=x_organization, org=org, org_id=org_id)
         pprint(api_response)
     except cvat_api_client.ApiException as e:
         print("Exception when calling CloudStoragesApi->cloudstorages_retrieve: %s\n" % e)
@@ -746,6 +815,9 @@ with cvat_api_client.ApiClient(configuration) as api_client:
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **id** | **int**| A unique integer value identifying this cloud storage. |
+ **x_organization** | **str**|  | [optional]
+ **org** | **str**| Organization unique slug | [optional]
+ **org_id** | **int**| Organization identifier | [optional]
 
 ### Return type
 
@@ -826,11 +898,23 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = cloud_storages_api.CloudStoragesApi(api_client)
     id = 1 # int | A unique integer value identifying this cloud storage.
+    x_organization = "X-Organization_example" # str |  (optional)
+    org = "org_example" # str | Organization unique slug (optional)
+    org_id = 1 # int | Organization identifier (optional)
 
     # example passing only required values which don't have defaults set
     try:
         # Method returns a cloud storage status
         api_response = api_instance.cloudstorages_status_retrieve(id)
+        pprint(api_response)
+    except cvat_api_client.ApiException as e:
+        print("Exception when calling CloudStoragesApi->cloudstorages_status_retrieve: %s\n" % e)
+
+    # example passing only required values which don't have defaults set
+    # and optional values
+    try:
+        # Method returns a cloud storage status
+        api_response = api_instance.cloudstorages_status_retrieve(id, x_organization=x_organization, org=org, org_id=org_id)
         pprint(api_response)
     except cvat_api_client.ApiException as e:
         print("Exception when calling CloudStoragesApi->cloudstorages_status_retrieve: %s\n" % e)
@@ -842,6 +926,9 @@ with cvat_api_client.ApiClient(configuration) as api_client:
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **id** | **int**| A unique integer value identifying this cloud storage. |
+ **x_organization** | **str**|  | [optional]
+ **org** | **str**| Organization unique slug | [optional]
+ **org_id** | **int**| Organization identifier | [optional]
 
 ### Return type
 

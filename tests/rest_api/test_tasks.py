@@ -8,9 +8,7 @@ from http import HTTPStatus
 from io import BytesIO
 from time import sleep
 from cvat_api_client.apis import ProjectsApi, TasksApi
-from cvat_api_client.model.rq_status import RqStatus
-from cvat_api_client.model.task_request import TaskRequest
-from cvat_api_client.models import TaskRequest, DataRequest, ClientFileRequest, Task, PatchedLabeledDataRequest
+from cvat_api_client.models import TaskRequest, DataRequest, ClientFileRequest, Task, PatchedLabeledDataRequest, RqStatus
 
 import pytest
 from deepdiff import DeepDiff
@@ -73,7 +71,7 @@ class TestGetTasks:
 
             for user in staff_users:
                 with make_api_client(user['username']) as api_client:
-                    response = TasksApi(api_client).tasks_retrieve_raw(task['id'], **kwargs)
+                    response = TasksApi(api_client).tasks_list_raw(**kwargs)
                     assert response.status == HTTPStatus.OK
                     response_data = json.loads(response.data)
 

@@ -68,11 +68,22 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = users_api.UsersApi(api_client)
     id = 1 # int | A unique integer value identifying this user.
+    x_organization = "X-Organization_example" # str |  (optional)
+    org = "org_example" # str | Organization unique slug (optional)
+    org_id = 1 # int | Organization identifier (optional)
 
     # example passing only required values which don't have defaults set
     try:
         # Method deletes a specific user from the server
         api_instance.users_destroy(id)
+    except cvat_api_client.ApiException as e:
+        print("Exception when calling UsersApi->users_destroy: %s\n" % e)
+
+    # example passing only required values which don't have defaults set
+    # and optional values
+    try:
+        # Method deletes a specific user from the server
+        api_instance.users_destroy(id, x_organization=x_organization, org=org, org_id=org_id)
     except cvat_api_client.ApiException as e:
         print("Exception when calling UsersApi->users_destroy: %s\n" % e)
 ```
@@ -83,6 +94,9 @@ with cvat_api_client.ApiClient(configuration) as api_client:
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **id** | **int**| A unique integer value identifying this user. |
+ **x_organization** | **str**|  | [optional]
+ **org** | **str**| Organization unique slug | [optional]
+ **org_id** | **int**| Organization identifier | [optional]
 
 ### Return type
 
@@ -163,9 +177,10 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 with cvat_api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = users_api.UsersApi(api_client)
+    x_organization = "X-Organization_example" # str |  (optional)
     filter = "filter_example" # str | A filter term. Avaliable filter_fields: ('id', 'is_active', 'username') (optional)
     org = "org_example" # str | Organization unique slug (optional)
-    org_id = "org_id_example" # str | Organization identifier (optional)
+    org_id = 1 # int | Organization identifier (optional)
     page = 1 # int | A page number within the paginated result set. (optional)
     page_size = 1 # int | Number of results to return per page. (optional)
     search = "search_example" # str | A search term. Avaliable search_fields: ('username', 'first_name', 'last_name') (optional)
@@ -175,7 +190,7 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # and optional values
     try:
         # Method provides a paginated list of users registered on the server
-        api_response = api_instance.users_list(filter=filter, org=org, org_id=org_id, page=page, page_size=page_size, search=search, sort=sort)
+        api_response = api_instance.users_list(x_organization=x_organization, filter=filter, org=org, org_id=org_id, page=page, page_size=page_size, search=search, sort=sort)
         pprint(api_response)
     except cvat_api_client.ApiException as e:
         print("Exception when calling UsersApi->users_list: %s\n" % e)
@@ -186,9 +201,10 @@ with cvat_api_client.ApiClient(configuration) as api_client:
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
+ **x_organization** | **str**|  | [optional]
  **filter** | **str**| A filter term. Avaliable filter_fields: (&#39;id&#39;, &#39;is_active&#39;, &#39;username&#39;) | [optional]
  **org** | **str**| Organization unique slug | [optional]
- **org_id** | **str**| Organization identifier | [optional]
+ **org_id** | **int**| Organization identifier | [optional]
  **page** | **int**| A page number within the paginated result set. | [optional]
  **page_size** | **int**| Number of results to return per page. | [optional]
  **search** | **str**| A search term. Avaliable search_fields: (&#39;username&#39;, &#39;first_name&#39;, &#39;last_name&#39;) | [optional]
@@ -274,11 +290,23 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = users_api.UsersApi(api_client)
     id = 1 # int | A unique integer value identifying this user.
+    x_organization = "X-Organization_example" # str |  (optional)
+    org = "org_example" # str | Organization unique slug (optional)
+    org_id = 1 # int | Organization identifier (optional)
 
     # example passing only required values which don't have defaults set
     try:
         # Method updates chosen fields of a user
         api_response = api_instance.users_partial_update(id)
+        pprint(api_response)
+    except cvat_api_client.ApiException as e:
+        print("Exception when calling UsersApi->users_partial_update: %s\n" % e)
+
+    # example passing only required values which don't have defaults set
+    # and optional values
+    try:
+        # Method updates chosen fields of a user
+        api_response = api_instance.users_partial_update(id, x_organization=x_organization, org=org, org_id=org_id)
         pprint(api_response)
     except cvat_api_client.ApiException as e:
         print("Exception when calling UsersApi->users_partial_update: %s\n" % e)
@@ -290,6 +318,9 @@ with cvat_api_client.ApiClient(configuration) as api_client:
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **id** | **int**| A unique integer value identifying this user. |
+ **x_organization** | **str**|  | [optional]
+ **org** | **str**| Organization unique slug | [optional]
+ **org_id** | **int**| Organization identifier | [optional]
 
 ### Return type
 
@@ -371,11 +402,23 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = users_api.UsersApi(api_client)
     id = 1 # int | A unique integer value identifying this user.
+    x_organization = "X-Organization_example" # str |  (optional)
+    org = "org_example" # str | Organization unique slug (optional)
+    org_id = 1 # int | Organization identifier (optional)
 
     # example passing only required values which don't have defaults set
     try:
         # Method provides information of a specific user
         api_response = api_instance.users_retrieve(id)
+        pprint(api_response)
+    except cvat_api_client.ApiException as e:
+        print("Exception when calling UsersApi->users_retrieve: %s\n" % e)
+
+    # example passing only required values which don't have defaults set
+    # and optional values
+    try:
+        # Method provides information of a specific user
+        api_response = api_instance.users_retrieve(id, x_organization=x_organization, org=org, org_id=org_id)
         pprint(api_response)
     except cvat_api_client.ApiException as e:
         print("Exception when calling UsersApi->users_retrieve: %s\n" % e)
@@ -387,6 +430,9 @@ with cvat_api_client.ApiClient(configuration) as api_client:
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **id** | **int**| A unique integer value identifying this user. |
+ **x_organization** | **str**|  | [optional]
+ **org** | **str**| Organization unique slug | [optional]
+ **org_id** | **int**| Organization identifier | [optional]
 
 ### Return type
 
@@ -469,11 +515,15 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 with cvat_api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = users_api.UsersApi(api_client)
+    x_organization = "X-Organization_example" # str |  (optional)
+    org = "org_example" # str | Organization unique slug (optional)
+    org_id = 1 # int | Organization identifier (optional)
 
-    # example, this endpoint has no required or optional parameters
+    # example passing only required values which don't have defaults set
+    # and optional values
     try:
         # Method returns an instance of a user who is currently authorized
-        api_response = api_instance.users_self_retrieve()
+        api_response = api_instance.users_self_retrieve(x_organization=x_organization, org=org, org_id=org_id)
         pprint(api_response)
     except cvat_api_client.ApiException as e:
         print("Exception when calling UsersApi->users_self_retrieve: %s\n" % e)
@@ -481,7 +531,12 @@ with cvat_api_client.ApiClient(configuration) as api_client:
 
 
 ### Parameters
-This endpoint does not need any parameter.
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **x_organization** | **str**|  | [optional]
+ **org** | **str**| Organization unique slug | [optional]
+ **org_id** | **int**| Organization identifier | [optional]
 
 ### Return type
 

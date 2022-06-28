@@ -105,9 +105,12 @@ with cvat_api_client.ApiClient(configuration) as api_client:
         email="email_example",
         password="password_example",
     ) # LoginRequest | 
+    x_organization = "X-Organization_example" # str |  (optional)
+    org = "org_example" # str | Organization unique slug (optional)
+    org_id = 1 # int | Organization identifier (optional)
 
     try:
-        api_response = api_instance.auth_login_create(login_request)
+        api_response = api_instance.auth_login_create(login_request, x_organization=x_organization, org=org, org_id=org_id)
         pprint(api_response)
     except cvat_api_client.ApiException as e:
         print("Exception when calling AuthApi->auth_login_create: %s\n" % e)
@@ -209,7 +212,7 @@ Class | Method | HTTP request | Description
 *TasksApi* | [**tasks_annotations_retrieve**](docs/TasksApi.md#tasks_annotations_retrieve) | **GET** /api/tasks/{id}/annotations/ | Method allows to download task annotations
 *TasksApi* | [**tasks_annotations_update**](docs/TasksApi.md#tasks_annotations_update) | **PUT** /api/tasks/{id}/annotations/ | Method allows to upload task annotations
 *TasksApi* | [**tasks_backup_create**](docs/TasksApi.md#tasks_backup_create) | **POST** /api/tasks/backup/ | Method recreates a task from an attached task backup file
-*TasksApi* | [**tasks_backup_partial_update**](docs/TasksApi.md#tasks_backup_partial_update) | **PATCH** /api/tasks/backup/{file_id} | 
+*TasksApi* | [**tasks_backup_file_partial_update**](docs/TasksApi.md#tasks_backup_file_partial_update) | **PATCH** /api/tasks/backup/{file_id} | Allows to upload a file chunk. Implements TUS file uploading protocol.
 *TasksApi* | [**tasks_backup_retrieve**](docs/TasksApi.md#tasks_backup_retrieve) | **GET** /api/tasks/{id}/backup | Method backup a specified task
 *TasksApi* | [**tasks_create**](docs/TasksApi.md#tasks_create) | **POST** /api/tasks | Method creates a new task in a database without any attached images and videos
 *TasksApi* | [**tasks_data_create**](docs/TasksApi.md#tasks_data_create) | **POST** /api/tasks/{id}/data/ | Method permanently attaches images or video to a task. Supports tus uploads, see more https://tus.io/

@@ -63,6 +63,9 @@ class ServerApi(object):
             },
             params_map={
                 'all': [
+                    'x_organization',
+                    'org',
+                    'org_id',
                 ],
                 'required': [],
                 'nullable': [
@@ -78,10 +81,22 @@ class ServerApi(object):
                 'allowed_values': {
                 },
                 'openapi_types': {
+                    'x_organization':
+                        (str,),
+                    'org':
+                        (str,),
+                    'org_id':
+                        (int,),
                 },
                 'attribute_map': {
+                    'x_organization': 'X-Organization',
+                    'org': 'org',
+                    'org_id': 'org_id',
                 },
                 'location_map': {
+                    'x_organization': 'header',
+                    'org': 'query',
+                    'org_id': 'query',
                 },
                 'collection_format_map': {
                 }
@@ -110,6 +125,9 @@ class ServerApi(object):
             },
             params_map={
                 'all': [
+                    'x_organization',
+                    'org',
+                    'org_id',
                 ],
                 'required': [],
                 'nullable': [
@@ -125,10 +143,22 @@ class ServerApi(object):
                 'allowed_values': {
                 },
                 'openapi_types': {
+                    'x_organization':
+                        (str,),
+                    'org':
+                        (str,),
+                    'org_id':
+                        (int,),
                 },
                 'attribute_map': {
+                    'x_organization': 'X-Organization',
+                    'org': 'org',
+                    'org_id': 'org_id',
                 },
                 'location_map': {
+                    'x_organization': 'header',
+                    'org': 'query',
+                    'org_id': 'query',
                 },
                 'collection_format_map': {
                 }
@@ -158,6 +188,9 @@ class ServerApi(object):
             params_map={
                 'all': [
                     'exception_request',
+                    'x_organization',
+                    'org',
+                    'org_id',
                 ],
                 'required': [
                     'exception_request',
@@ -177,11 +210,23 @@ class ServerApi(object):
                 'openapi_types': {
                     'exception_request':
                         (ExceptionRequest,),
+                    'x_organization':
+                        (str,),
+                    'org':
+                        (str,),
+                    'org_id':
+                        (int,),
                 },
                 'attribute_map': {
+                    'x_organization': 'X-Organization',
+                    'org': 'org',
+                    'org_id': 'org_id',
                 },
                 'location_map': {
                     'exception_request': 'body',
+                    'x_organization': 'header',
+                    'org': 'query',
+                    'org_id': 'query',
                 },
                 'collection_format_map': {
                 }
@@ -216,6 +261,9 @@ class ServerApi(object):
             params_map={
                 'all': [
                     'log_event_request',
+                    'x_organization',
+                    'org',
+                    'org_id',
                 ],
                 'required': [
                     'log_event_request',
@@ -235,11 +283,23 @@ class ServerApi(object):
                 'openapi_types': {
                     'log_event_request':
                         ([LogEventRequest],),
+                    'x_organization':
+                        (str,),
+                    'org':
+                        (str,),
+                    'org_id':
+                        (int,),
                 },
                 'attribute_map': {
+                    'x_organization': 'X-Organization',
+                    'org': 'org',
+                    'org_id': 'org_id',
                 },
                 'location_map': {
                     'log_event_request': 'body',
+                    'x_organization': 'header',
+                    'org': 'query',
+                    'org_id': 'query',
                 },
                 'collection_format_map': {
                 }
@@ -273,6 +333,9 @@ class ServerApi(object):
             },
             params_map={
                 'all': [
+                    'x_organization',
+                    'org',
+                    'org_id',
                 ],
                 'required': [],
                 'nullable': [
@@ -288,10 +351,22 @@ class ServerApi(object):
                 'allowed_values': {
                 },
                 'openapi_types': {
+                    'x_organization':
+                        (str,),
+                    'org':
+                        (str,),
+                    'org_id':
+                        (int,),
                 },
                 'attribute_map': {
+                    'x_organization': 'X-Organization',
+                    'org': 'org',
+                    'org_id': 'org_id',
                 },
                 'location_map': {
+                    'x_organization': 'header',
+                    'org': 'query',
+                    'org_id': 'query',
                 },
                 'collection_format_map': {
                 }
@@ -320,7 +395,10 @@ class ServerApi(object):
             },
             params_map={
                 'all': [
+                    'x_organization',
                     'directory',
+                    'org',
+                    'org_id',
                 ],
                 'required': [],
                 'nullable': [
@@ -336,14 +414,26 @@ class ServerApi(object):
                 'allowed_values': {
                 },
                 'openapi_types': {
+                    'x_organization':
+                        (str,),
                     'directory':
                         (str,),
+                    'org':
+                        (str,),
+                    'org_id':
+                        (int,),
                 },
                 'attribute_map': {
+                    'x_organization': 'X-Organization',
                     'directory': 'directory',
+                    'org': 'org',
+                    'org_id': 'org_id',
                 },
                 'location_map': {
+                    'x_organization': 'header',
                     'directory': 'query',
+                    'org': 'query',
+                    'org_id': 'query',
                 },
                 'collection_format_map': {
                 }
@@ -427,6 +517,9 @@ class ServerApi(object):
 
 
         Keyword Args:
+            x_organization (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
             _preload_content (bool): if False, the urllib3.HTTPResponse object
@@ -517,6 +610,9 @@ class ServerApi(object):
 
 
         Keyword Args:
+            x_organization (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             _request_timeout (int/float/tuple): timeout setting for this request. If
                 one number provided, it will be total request timeout. It can also
                 be a pair (tuple) of (connection, read) timeouts.
@@ -618,6 +714,9 @@ class ServerApi(object):
 
 
         Keyword Args:
+            x_organization (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
             _preload_content (bool): if False, the urllib3.HTTPResponse object
@@ -708,6 +807,9 @@ class ServerApi(object):
 
 
         Keyword Args:
+            x_organization (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             _request_timeout (int/float/tuple): timeout setting for this request. If
                 one number provided, it will be total request timeout. It can also
                 be a pair (tuple) of (connection, read) timeouts.
@@ -819,6 +921,9 @@ class ServerApi(object):
             exception_request (ExceptionRequest):
 
         Keyword Args:
+            x_organization (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
             _preload_content (bool): if False, the urllib3.HTTPResponse object
@@ -914,6 +1019,9 @@ class ServerApi(object):
             exception_request (ExceptionRequest):
 
         Keyword Args:
+            x_organization (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             _request_timeout (int/float/tuple): timeout setting for this request. If
                 one number provided, it will be total request timeout. It can also
                 be a pair (tuple) of (connection, read) timeouts.
@@ -1025,6 +1133,9 @@ class ServerApi(object):
             log_event_request ([LogEventRequest]):
 
         Keyword Args:
+            x_organization (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
             _preload_content (bool): if False, the urllib3.HTTPResponse object
@@ -1120,6 +1231,9 @@ class ServerApi(object):
             log_event_request ([LogEventRequest]):
 
         Keyword Args:
+            x_organization (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             _request_timeout (int/float/tuple): timeout setting for this request. If
                 one number provided, it will be total request timeout. It can also
                 be a pair (tuple) of (connection, read) timeouts.
@@ -1221,6 +1335,9 @@ class ServerApi(object):
 
 
         Keyword Args:
+            x_organization (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
             _preload_content (bool): if False, the urllib3.HTTPResponse object
@@ -1311,6 +1428,9 @@ class ServerApi(object):
 
 
         Keyword Args:
+            x_organization (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             _request_timeout (int/float/tuple): timeout setting for this request. If
                 one number provided, it will be total request timeout. It can also
                 be a pair (tuple) of (connection, read) timeouts.
@@ -1412,7 +1532,10 @@ class ServerApi(object):
 
 
         Keyword Args:
+            x_organization (str): [optional]
             directory (str): Directory to browse. [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
             _preload_content (bool): if False, the urllib3.HTTPResponse object
@@ -1503,7 +1626,10 @@ class ServerApi(object):
 
 
         Keyword Args:
+            x_organization (str): [optional]
             directory (str): Directory to browse. [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             _request_timeout (int/float/tuple): timeout setting for this request. If
                 one number provided, it will be total request timeout. It can also
                 be a pair (tuple) of (connection, read) timeouts.

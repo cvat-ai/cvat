@@ -61,7 +61,10 @@ class CloudStoragesApi(object):
             params_map={
                 'all': [
                     'id',
+                    'x_organization',
                     'manifest_path',
+                    'org',
+                    'org_id',
                 ],
                 'required': [
                     'id',
@@ -81,16 +84,28 @@ class CloudStoragesApi(object):
                 'openapi_types': {
                     'id':
                         (int,),
+                    'x_organization':
+                        (str,),
                     'manifest_path':
                         (str,),
+                    'org':
+                        (str,),
+                    'org_id':
+                        (int,),
                 },
                 'attribute_map': {
                     'id': 'id',
+                    'x_organization': 'X-Organization',
                     'manifest_path': 'manifest_path',
+                    'org': 'org',
+                    'org_id': 'org_id',
                 },
                 'location_map': {
                     'id': 'path',
+                    'x_organization': 'header',
                     'manifest_path': 'query',
+                    'org': 'query',
+                    'org_id': 'query',
                 },
                 'collection_format_map': {
                 }
@@ -120,6 +135,9 @@ class CloudStoragesApi(object):
             params_map={
                 'all': [
                     'cloud_storage_write_request',
+                    'x_organization',
+                    'org',
+                    'org_id',
                 ],
                 'required': [
                     'cloud_storage_write_request',
@@ -139,11 +157,23 @@ class CloudStoragesApi(object):
                 'openapi_types': {
                     'cloud_storage_write_request':
                         (CloudStorageWriteRequest,),
+                    'x_organization':
+                        (str,),
+                    'org':
+                        (str,),
+                    'org_id':
+                        (int,),
                 },
                 'attribute_map': {
+                    'x_organization': 'X-Organization',
+                    'org': 'org',
+                    'org_id': 'org_id',
                 },
                 'location_map': {
                     'cloud_storage_write_request': 'body',
+                    'x_organization': 'header',
+                    'org': 'query',
+                    'org_id': 'query',
                 },
                 'collection_format_map': {
                 }
@@ -178,6 +208,9 @@ class CloudStoragesApi(object):
             params_map={
                 'all': [
                     'id',
+                    'x_organization',
+                    'org',
+                    'org_id',
                 ],
                 'required': [
                     'id',
@@ -197,12 +230,24 @@ class CloudStoragesApi(object):
                 'openapi_types': {
                     'id':
                         (int,),
+                    'x_organization':
+                        (str,),
+                    'org':
+                        (str,),
+                    'org_id':
+                        (int,),
                 },
                 'attribute_map': {
                     'id': 'id',
+                    'x_organization': 'X-Organization',
+                    'org': 'org',
+                    'org_id': 'org_id',
                 },
                 'location_map': {
                     'id': 'path',
+                    'x_organization': 'header',
+                    'org': 'query',
+                    'org_id': 'query',
                 },
                 'collection_format_map': {
                 }
@@ -229,6 +274,7 @@ class CloudStoragesApi(object):
             },
             params_map={
                 'all': [
+                    'x_organization',
                     'filter',
                     'org',
                     'org_id',
@@ -251,12 +297,14 @@ class CloudStoragesApi(object):
                 'allowed_values': {
                 },
                 'openapi_types': {
+                    'x_organization':
+                        (str,),
                     'filter':
                         (str,),
                     'org':
                         (str,),
                     'org_id':
-                        (str,),
+                        (int,),
                     'page':
                         (int,),
                     'page_size':
@@ -267,6 +315,7 @@ class CloudStoragesApi(object):
                         (str,),
                 },
                 'attribute_map': {
+                    'x_organization': 'X-Organization',
                     'filter': 'filter',
                     'org': 'org',
                     'org_id': 'org_id',
@@ -276,6 +325,7 @@ class CloudStoragesApi(object):
                     'sort': 'sort',
                 },
                 'location_map': {
+                    'x_organization': 'header',
                     'filter': 'query',
                     'org': 'query',
                     'org_id': 'query',
@@ -312,6 +362,9 @@ class CloudStoragesApi(object):
             params_map={
                 'all': [
                     'id',
+                    'x_organization',
+                    'org',
+                    'org_id',
                     'patched_cloud_storage_write_request',
                 ],
                 'required': [
@@ -332,14 +385,26 @@ class CloudStoragesApi(object):
                 'openapi_types': {
                     'id':
                         (int,),
+                    'x_organization':
+                        (str,),
+                    'org':
+                        (str,),
+                    'org_id':
+                        (int,),
                     'patched_cloud_storage_write_request':
                         (PatchedCloudStorageWriteRequest,),
                 },
                 'attribute_map': {
                     'id': 'id',
+                    'x_organization': 'X-Organization',
+                    'org': 'org',
+                    'org_id': 'org_id',
                 },
                 'location_map': {
                     'id': 'path',
+                    'x_organization': 'header',
+                    'org': 'query',
+                    'org_id': 'query',
                     'patched_cloud_storage_write_request': 'body',
                 },
                 'collection_format_map': {
@@ -375,6 +440,9 @@ class CloudStoragesApi(object):
             params_map={
                 'all': [
                     'id',
+                    'x_organization',
+                    'org',
+                    'org_id',
                 ],
                 'required': [
                     'id',
@@ -394,12 +462,24 @@ class CloudStoragesApi(object):
                 'openapi_types': {
                     'id':
                         (int,),
+                    'x_organization':
+                        (str,),
+                    'org':
+                        (str,),
+                    'org_id':
+                        (int,),
                 },
                 'attribute_map': {
                     'id': 'id',
+                    'x_organization': 'X-Organization',
+                    'org': 'org',
+                    'org_id': 'org_id',
                 },
                 'location_map': {
                     'id': 'path',
+                    'x_organization': 'header',
+                    'org': 'query',
+                    'org_id': 'query',
                 },
                 'collection_format_map': {
                 }
@@ -427,6 +507,9 @@ class CloudStoragesApi(object):
             params_map={
                 'all': [
                     'id',
+                    'x_organization',
+                    'org',
+                    'org_id',
                 ],
                 'required': [
                     'id',
@@ -446,12 +529,24 @@ class CloudStoragesApi(object):
                 'openapi_types': {
                     'id':
                         (int,),
+                    'x_organization':
+                        (str,),
+                    'org':
+                        (str,),
+                    'org_id':
+                        (int,),
                 },
                 'attribute_map': {
                     'id': 'id',
+                    'x_organization': 'X-Organization',
+                    'org': 'org',
+                    'org_id': 'org_id',
                 },
                 'location_map': {
                     'id': 'path',
+                    'x_organization': 'header',
+                    'org': 'query',
+                    'org_id': 'query',
                 },
                 'collection_format_map': {
                 }
@@ -481,6 +576,9 @@ class CloudStoragesApi(object):
             params_map={
                 'all': [
                     'id',
+                    'x_organization',
+                    'org',
+                    'org_id',
                 ],
                 'required': [
                     'id',
@@ -500,12 +598,24 @@ class CloudStoragesApi(object):
                 'openapi_types': {
                     'id':
                         (int,),
+                    'x_organization':
+                        (str,),
+                    'org':
+                        (str,),
+                    'org_id':
+                        (int,),
                 },
                 'attribute_map': {
                     'id': 'id',
+                    'x_organization': 'X-Organization',
+                    'org': 'org',
+                    'org_id': 'org_id',
                 },
                 'location_map': {
                     'id': 'path',
+                    'x_organization': 'header',
+                    'org': 'query',
+                    'org_id': 'query',
                 },
                 'collection_format_map': {
                 }
@@ -598,7 +708,10 @@ class CloudStoragesApi(object):
             id (int): A unique integer value identifying this cloud storage.
 
         Keyword Args:
+            x_organization (str): [optional]
             manifest_path (str): Path to the manifest file in a cloud storage. [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
             _preload_content (bool): if False, the urllib3.HTTPResponse object
@@ -693,7 +806,10 @@ class CloudStoragesApi(object):
             id (int): A unique integer value identifying this cloud storage.
 
         Keyword Args:
+            x_organization (str): [optional]
             manifest_path (str): Path to the manifest file in a cloud storage. [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             _request_timeout (int/float/tuple): timeout setting for this request. If
                 one number provided, it will be total request timeout. It can also
                 be a pair (tuple) of (connection, read) timeouts.
@@ -804,6 +920,9 @@ class CloudStoragesApi(object):
             cloud_storage_write_request (CloudStorageWriteRequest):
 
         Keyword Args:
+            x_organization (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
             _preload_content (bool): if False, the urllib3.HTTPResponse object
@@ -898,6 +1017,9 @@ class CloudStoragesApi(object):
             cloud_storage_write_request (CloudStorageWriteRequest):
 
         Keyword Args:
+            x_organization (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             _request_timeout (int/float/tuple): timeout setting for this request. If
                 one number provided, it will be total request timeout. It can also
                 be a pair (tuple) of (connection, read) timeouts.
@@ -1008,6 +1130,9 @@ class CloudStoragesApi(object):
             id (int): A unique integer value identifying this cloud storage.
 
         Keyword Args:
+            x_organization (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
             _preload_content (bool): if False, the urllib3.HTTPResponse object
@@ -1102,6 +1227,9 @@ class CloudStoragesApi(object):
             id (int): A unique integer value identifying this cloud storage.
 
         Keyword Args:
+            x_organization (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             _request_timeout (int/float/tuple): timeout setting for this request. If
                 one number provided, it will be total request timeout. It can also
                 be a pair (tuple) of (connection, read) timeouts.
@@ -1203,9 +1331,10 @@ class CloudStoragesApi(object):
 
 
         Keyword Args:
+            x_organization (str): [optional]
             filter (str): A filter term. Avaliable filter_fields: ['provider_type', 'display_name', 'resource', 'credentials_type', 'owner', 'description', 'id']. [optional]
             org (str): Organization unique slug. [optional]
-            org_id (str): Organization identifier. [optional]
+            org_id (int): Organization identifier. [optional]
             page (int): A page number within the paginated result set.. [optional]
             page_size (int): Number of results to return per page.. [optional]
             search (str): A search term. Avaliable search_fields: ('provider_type', 'display_name', 'resource', 'credentials_type', 'owner', 'description'). [optional]
@@ -1300,9 +1429,10 @@ class CloudStoragesApi(object):
 
 
         Keyword Args:
+            x_organization (str): [optional]
             filter (str): A filter term. Avaliable filter_fields: ['provider_type', 'display_name', 'resource', 'credentials_type', 'owner', 'description', 'id']. [optional]
             org (str): Organization unique slug. [optional]
-            org_id (str): Organization identifier. [optional]
+            org_id (int): Organization identifier. [optional]
             page (int): A page number within the paginated result set.. [optional]
             page_size (int): Number of results to return per page.. [optional]
             search (str): A search term. Avaliable search_fields: ('provider_type', 'display_name', 'resource', 'credentials_type', 'owner', 'description'). [optional]
@@ -1417,6 +1547,9 @@ class CloudStoragesApi(object):
             id (int): A unique integer value identifying this cloud storage.
 
         Keyword Args:
+            x_organization (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             patched_cloud_storage_write_request (PatchedCloudStorageWriteRequest): [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
@@ -1512,6 +1645,9 @@ class CloudStoragesApi(object):
             id (int): A unique integer value identifying this cloud storage.
 
         Keyword Args:
+            x_organization (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             patched_cloud_storage_write_request (PatchedCloudStorageWriteRequest): [optional]
             _request_timeout (int/float/tuple): timeout setting for this request. If
                 one number provided, it will be total request timeout. It can also
@@ -1623,6 +1759,9 @@ class CloudStoragesApi(object):
             id (int): A unique integer value identifying this cloud storage.
 
         Keyword Args:
+            x_organization (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
             _preload_content (bool): if False, the urllib3.HTTPResponse object
@@ -1717,6 +1856,9 @@ class CloudStoragesApi(object):
             id (int): A unique integer value identifying this cloud storage.
 
         Keyword Args:
+            x_organization (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             _request_timeout (int/float/tuple): timeout setting for this request. If
                 one number provided, it will be total request timeout. It can also
                 be a pair (tuple) of (connection, read) timeouts.
@@ -1827,6 +1969,9 @@ class CloudStoragesApi(object):
             id (int): A unique integer value identifying this cloud storage.
 
         Keyword Args:
+            x_organization (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
             _preload_content (bool): if False, the urllib3.HTTPResponse object
@@ -1921,6 +2066,9 @@ class CloudStoragesApi(object):
             id (int): A unique integer value identifying this cloud storage.
 
         Keyword Args:
+            x_organization (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             _request_timeout (int/float/tuple): timeout setting for this request. If
                 one number provided, it will be total request timeout. It can also
                 be a pair (tuple) of (connection, read) timeouts.
@@ -2031,6 +2179,9 @@ class CloudStoragesApi(object):
             id (int): A unique integer value identifying this cloud storage.
 
         Keyword Args:
+            x_organization (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
             _preload_content (bool): if False, the urllib3.HTTPResponse object
@@ -2125,6 +2276,9 @@ class CloudStoragesApi(object):
             id (int): A unique integer value identifying this cloud storage.
 
         Keyword Args:
+            x_organization (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             _request_timeout (int/float/tuple): timeout setting for this request. If
                 one number provided, it will be total request timeout. It can also
                 be a pair (tuple) of (connection, read) timeouts.

@@ -69,11 +69,15 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 with cvat_api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = server_api.ServerApi(api_client)
+    x_organization = "X-Organization_example" # str |  (optional)
+    org = "org_example" # str | Organization unique slug (optional)
+    org_id = 1 # int | Organization identifier (optional)
 
-    # example, this endpoint has no required or optional parameters
+    # example passing only required values which don't have defaults set
+    # and optional values
     try:
         # Method provides basic CVAT information
-        api_response = api_instance.server_about_retrieve()
+        api_response = api_instance.server_about_retrieve(x_organization=x_organization, org=org, org_id=org_id)
         pprint(api_response)
     except cvat_api_client.ApiException as e:
         print("Exception when calling ServerApi->server_about_retrieve: %s\n" % e)
@@ -81,7 +85,12 @@ with cvat_api_client.ApiClient(configuration) as api_client:
 
 
 ### Parameters
-This endpoint does not need any parameter.
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **x_organization** | **str**|  | [optional]
+ **org** | **str**| Organization unique slug | [optional]
+ **org_id** | **int**| Organization identifier | [optional]
 
 ### Return type
 
@@ -162,11 +171,15 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 with cvat_api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = server_api.ServerApi(api_client)
+    x_organization = "X-Organization_example" # str |  (optional)
+    org = "org_example" # str | Organization unique slug (optional)
+    org_id = 1 # int | Organization identifier (optional)
 
-    # example, this endpoint has no required or optional parameters
+    # example passing only required values which don't have defaults set
+    # and optional values
     try:
         # Method provides the list of supported annotations formats
-        api_response = api_instance.server_annotation_formats_retrieve()
+        api_response = api_instance.server_annotation_formats_retrieve(x_organization=x_organization, org=org, org_id=org_id)
         pprint(api_response)
     except cvat_api_client.ApiException as e:
         print("Exception when calling ServerApi->server_annotation_formats_retrieve: %s\n" % e)
@@ -174,7 +187,12 @@ with cvat_api_client.ApiClient(configuration) as api_client:
 
 
 ### Parameters
-This endpoint does not need any parameter.
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **x_organization** | **str**|  | [optional]
+ **org** | **str**| Organization unique slug | [optional]
+ **org_id** | **int**| Organization identifier | [optional]
 
 ### Return type
 
@@ -272,11 +290,23 @@ with cvat_api_client.ApiClient(configuration) as api_client:
         column=1,
         stack="stack_example",
     ) # ExceptionRequest | 
+    x_organization = "X-Organization_example" # str |  (optional)
+    org = "org_example" # str | Organization unique slug (optional)
+    org_id = 1 # int | Organization identifier (optional)
 
     # example passing only required values which don't have defaults set
     try:
         # Method saves an exception from a client on the server
         api_response = api_instance.server_exception_create(exception_request)
+        pprint(api_response)
+    except cvat_api_client.ApiException as e:
+        print("Exception when calling ServerApi->server_exception_create: %s\n" % e)
+
+    # example passing only required values which don't have defaults set
+    # and optional values
+    try:
+        # Method saves an exception from a client on the server
+        api_response = api_instance.server_exception_create(exception_request, x_organization=x_organization, org=org, org_id=org_id)
         pprint(api_response)
     except cvat_api_client.ApiException as e:
         print("Exception when calling ServerApi->server_exception_create: %s\n" % e)
@@ -288,6 +318,9 @@ with cvat_api_client.ApiClient(configuration) as api_client:
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **exception_request** | [**ExceptionRequest**](ExceptionRequest.md)|  |
+ **x_organization** | **str**|  | [optional]
+ **org** | **str**| Organization unique slug | [optional]
+ **org_id** | **int**| Organization identifier | [optional]
 
 ### Return type
 
@@ -386,11 +419,23 @@ with cvat_api_client.ApiClient(configuration) as api_client:
             is_active=True,
         ),
     ] # [LogEventRequest] | 
+    x_organization = "X-Organization_example" # str |  (optional)
+    org = "org_example" # str | Organization unique slug (optional)
+    org_id = 1 # int | Organization identifier (optional)
 
     # example passing only required values which don't have defaults set
     try:
         # Method saves logs from a client on the server
         api_response = api_instance.server_logs_create(log_event_request)
+        pprint(api_response)
+    except cvat_api_client.ApiException as e:
+        print("Exception when calling ServerApi->server_logs_create: %s\n" % e)
+
+    # example passing only required values which don't have defaults set
+    # and optional values
+    try:
+        # Method saves logs from a client on the server
+        api_response = api_instance.server_logs_create(log_event_request, x_organization=x_organization, org=org, org_id=org_id)
         pprint(api_response)
     except cvat_api_client.ApiException as e:
         print("Exception when calling ServerApi->server_logs_create: %s\n" % e)
@@ -402,6 +447,9 @@ with cvat_api_client.ApiClient(configuration) as api_client:
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **log_event_request** | [**[LogEventRequest]**](LogEventRequest.md)|  |
+ **x_organization** | **str**|  | [optional]
+ **org** | **str**| Organization unique slug | [optional]
+ **org_id** | **int**| Organization identifier | [optional]
 
 ### Return type
 
@@ -482,11 +530,15 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 with cvat_api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = server_api.ServerApi(api_client)
+    x_organization = "X-Organization_example" # str |  (optional)
+    org = "org_example" # str | Organization unique slug (optional)
+    org_id = 1 # int | Organization identifier (optional)
 
-    # example, this endpoint has no required or optional parameters
+    # example passing only required values which don't have defaults set
+    # and optional values
     try:
         # Method provides allowed plugins
-        api_response = api_instance.server_plugins_retrieve()
+        api_response = api_instance.server_plugins_retrieve(x_organization=x_organization, org=org, org_id=org_id)
         pprint(api_response)
     except cvat_api_client.ApiException as e:
         print("Exception when calling ServerApi->server_plugins_retrieve: %s\n" % e)
@@ -494,7 +546,12 @@ with cvat_api_client.ApiClient(configuration) as api_client:
 
 
 ### Parameters
-This endpoint does not need any parameter.
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **x_organization** | **str**|  | [optional]
+ **org** | **str**| Organization unique slug | [optional]
+ **org_id** | **int**| Organization identifier | [optional]
 
 ### Return type
 
@@ -575,13 +632,16 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 with cvat_api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = server_api.ServerApi(api_client)
+    x_organization = "X-Organization_example" # str |  (optional)
     directory = "directory_example" # str | Directory to browse (optional)
+    org = "org_example" # str | Organization unique slug (optional)
+    org_id = 1 # int | Organization identifier (optional)
 
     # example passing only required values which don't have defaults set
     # and optional values
     try:
         # Returns all files and folders that are on the server along specified path
-        api_response = api_instance.server_share_list(directory=directory)
+        api_response = api_instance.server_share_list(x_organization=x_organization, directory=directory, org=org, org_id=org_id)
         pprint(api_response)
     except cvat_api_client.ApiException as e:
         print("Exception when calling ServerApi->server_share_list: %s\n" % e)
@@ -592,7 +652,10 @@ with cvat_api_client.ApiClient(configuration) as api_client:
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
+ **x_organization** | **str**|  | [optional]
  **directory** | **str**| Directory to browse | [optional]
+ **org** | **str**| Organization unique slug | [optional]
+ **org_id** | **int**| Organization identifier | [optional]
 
 ### Return type
 

@@ -70,9 +70,10 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = issues_api.IssuesApi(api_client)
     id = 1 # int | A unique integer value identifying this issue.
+    x_organization = "X-Organization_example" # str |  (optional)
     filter = "filter_example" # str | A filter term. Avaliable filter_fields: ['owner', 'assignee', 'id', 'job_id', 'task_id', 'resolved'] (optional)
     org = "org_example" # str | Organization unique slug (optional)
-    org_id = "org_id_example" # str | Organization identifier (optional)
+    org_id = 1 # int | Organization identifier (optional)
     page = 1 # int | A page number within the paginated result set. (optional)
     page_size = 1 # int | Number of results to return per page. (optional)
     search = "search_example" # str | A search term. Avaliable search_fields: ('owner', 'assignee') (optional)
@@ -90,7 +91,7 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # and optional values
     try:
         # The action returns all comments of a specific issue
-        api_response = api_instance.issues_comments_list(id, filter=filter, org=org, org_id=org_id, page=page, page_size=page_size, search=search, sort=sort)
+        api_response = api_instance.issues_comments_list(id, x_organization=x_organization, filter=filter, org=org, org_id=org_id, page=page, page_size=page_size, search=search, sort=sort)
         pprint(api_response)
     except cvat_api_client.ApiException as e:
         print("Exception when calling IssuesApi->issues_comments_list: %s\n" % e)
@@ -102,9 +103,10 @@ with cvat_api_client.ApiClient(configuration) as api_client:
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **id** | **int**| A unique integer value identifying this issue. |
+ **x_organization** | **str**|  | [optional]
  **filter** | **str**| A filter term. Avaliable filter_fields: [&#39;owner&#39;, &#39;assignee&#39;, &#39;id&#39;, &#39;job_id&#39;, &#39;task_id&#39;, &#39;resolved&#39;] | [optional]
  **org** | **str**| Organization unique slug | [optional]
- **org_id** | **str**| Organization identifier | [optional]
+ **org_id** | **int**| Organization identifier | [optional]
  **page** | **int**| A page number within the paginated result set. | [optional]
  **page_size** | **int**| Number of results to return per page. | [optional]
  **search** | **str**| A search term. Avaliable search_fields: (&#39;owner&#39;, &#39;assignee&#39;) | [optional]
@@ -200,11 +202,23 @@ with cvat_api_client.ApiClient(configuration) as api_client:
         message="message_example",
         resolved=True,
     ) # IssueWriteRequest | 
+    x_organization = "X-Organization_example" # str |  (optional)
+    org = "org_example" # str | Organization unique slug (optional)
+    org_id = 1 # int | Organization identifier (optional)
 
     # example passing only required values which don't have defaults set
     try:
         # Method creates an issue
         api_response = api_instance.issues_create(issue_write_request)
+        pprint(api_response)
+    except cvat_api_client.ApiException as e:
+        print("Exception when calling IssuesApi->issues_create: %s\n" % e)
+
+    # example passing only required values which don't have defaults set
+    # and optional values
+    try:
+        # Method creates an issue
+        api_response = api_instance.issues_create(issue_write_request, x_organization=x_organization, org=org, org_id=org_id)
         pprint(api_response)
     except cvat_api_client.ApiException as e:
         print("Exception when calling IssuesApi->issues_create: %s\n" % e)
@@ -216,6 +230,9 @@ with cvat_api_client.ApiClient(configuration) as api_client:
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **issue_write_request** | [**IssueWriteRequest**](IssueWriteRequest.md)|  |
+ **x_organization** | **str**|  | [optional]
+ **org** | **str**| Organization unique slug | [optional]
+ **org_id** | **int**| Organization identifier | [optional]
 
 ### Return type
 
@@ -296,11 +313,22 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = issues_api.IssuesApi(api_client)
     id = 1 # int | A unique integer value identifying this issue.
+    x_organization = "X-Organization_example" # str |  (optional)
+    org = "org_example" # str | Organization unique slug (optional)
+    org_id = 1 # int | Organization identifier (optional)
 
     # example passing only required values which don't have defaults set
     try:
         # Method deletes an issue
         api_instance.issues_destroy(id)
+    except cvat_api_client.ApiException as e:
+        print("Exception when calling IssuesApi->issues_destroy: %s\n" % e)
+
+    # example passing only required values which don't have defaults set
+    # and optional values
+    try:
+        # Method deletes an issue
+        api_instance.issues_destroy(id, x_organization=x_organization, org=org, org_id=org_id)
     except cvat_api_client.ApiException as e:
         print("Exception when calling IssuesApi->issues_destroy: %s\n" % e)
 ```
@@ -311,6 +339,9 @@ with cvat_api_client.ApiClient(configuration) as api_client:
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **id** | **int**| A unique integer value identifying this issue. |
+ **x_organization** | **str**|  | [optional]
+ **org** | **str**| Organization unique slug | [optional]
+ **org_id** | **int**| Organization identifier | [optional]
 
 ### Return type
 
@@ -391,9 +422,10 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 with cvat_api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = issues_api.IssuesApi(api_client)
+    x_organization = "X-Organization_example" # str |  (optional)
     filter = "filter_example" # str | A filter term. Avaliable filter_fields: ['owner', 'assignee', 'id', 'job_id', 'task_id', 'resolved'] (optional)
     org = "org_example" # str | Organization unique slug (optional)
-    org_id = "org_id_example" # str | Organization identifier (optional)
+    org_id = 1 # int | Organization identifier (optional)
     page = 1 # int | A page number within the paginated result set. (optional)
     page_size = 1 # int | Number of results to return per page. (optional)
     search = "search_example" # str | A search term. Avaliable search_fields: ('owner', 'assignee') (optional)
@@ -403,7 +435,7 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # and optional values
     try:
         # Method returns a paginated list of issues according to query parameters
-        api_response = api_instance.issues_list(filter=filter, org=org, org_id=org_id, page=page, page_size=page_size, search=search, sort=sort)
+        api_response = api_instance.issues_list(x_organization=x_organization, filter=filter, org=org, org_id=org_id, page=page, page_size=page_size, search=search, sort=sort)
         pprint(api_response)
     except cvat_api_client.ApiException as e:
         print("Exception when calling IssuesApi->issues_list: %s\n" % e)
@@ -414,9 +446,10 @@ with cvat_api_client.ApiClient(configuration) as api_client:
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
+ **x_organization** | **str**|  | [optional]
  **filter** | **str**| A filter term. Avaliable filter_fields: [&#39;owner&#39;, &#39;assignee&#39;, &#39;id&#39;, &#39;job_id&#39;, &#39;task_id&#39;, &#39;resolved&#39;] | [optional]
  **org** | **str**| Organization unique slug | [optional]
- **org_id** | **str**| Organization identifier | [optional]
+ **org_id** | **int**| Organization identifier | [optional]
  **page** | **int**| A page number within the paginated result set. | [optional]
  **page_size** | **int**| Number of results to return per page. | [optional]
  **search** | **str**| A search term. Avaliable search_fields: (&#39;owner&#39;, &#39;assignee&#39;) | [optional]
@@ -503,6 +536,9 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = issues_api.IssuesApi(api_client)
     id = 1 # int | A unique integer value identifying this issue.
+    x_organization = "X-Organization_example" # str |  (optional)
+    org = "org_example" # str | Organization unique slug (optional)
+    org_id = 1 # int | Organization identifier (optional)
     patched_issue_write_request = PatchedIssueWriteRequest(
         frame=1,
         position=[
@@ -526,7 +562,7 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # and optional values
     try:
         # Methods does a partial update of chosen fields in an issue
-        api_response = api_instance.issues_partial_update(id, patched_issue_write_request=patched_issue_write_request)
+        api_response = api_instance.issues_partial_update(id, x_organization=x_organization, org=org, org_id=org_id, patched_issue_write_request=patched_issue_write_request)
         pprint(api_response)
     except cvat_api_client.ApiException as e:
         print("Exception when calling IssuesApi->issues_partial_update: %s\n" % e)
@@ -538,6 +574,9 @@ with cvat_api_client.ApiClient(configuration) as api_client:
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **id** | **int**| A unique integer value identifying this issue. |
+ **x_organization** | **str**|  | [optional]
+ **org** | **str**| Organization unique slug | [optional]
+ **org_id** | **int**| Organization identifier | [optional]
  **patched_issue_write_request** | [**PatchedIssueWriteRequest**](PatchedIssueWriteRequest.md)|  | [optional]
 
 ### Return type
@@ -620,11 +659,23 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = issues_api.IssuesApi(api_client)
     id = 1 # int | A unique integer value identifying this issue.
+    x_organization = "X-Organization_example" # str |  (optional)
+    org = "org_example" # str | Organization unique slug (optional)
+    org_id = 1 # int | Organization identifier (optional)
 
     # example passing only required values which don't have defaults set
     try:
         # Method returns details of an issue
         api_response = api_instance.issues_retrieve(id)
+        pprint(api_response)
+    except cvat_api_client.ApiException as e:
+        print("Exception when calling IssuesApi->issues_retrieve: %s\n" % e)
+
+    # example passing only required values which don't have defaults set
+    # and optional values
+    try:
+        # Method returns details of an issue
+        api_response = api_instance.issues_retrieve(id, x_organization=x_organization, org=org, org_id=org_id)
         pprint(api_response)
     except cvat_api_client.ApiException as e:
         print("Exception when calling IssuesApi->issues_retrieve: %s\n" % e)
@@ -636,6 +687,9 @@ with cvat_api_client.ApiClient(configuration) as api_client:
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **id** | **int**| A unique integer value identifying this issue. |
+ **x_organization** | **str**|  | [optional]
+ **org** | **str**| Organization unique slug | [optional]
+ **org_id** | **int**| Organization identifier | [optional]
 
 ### Return type
 

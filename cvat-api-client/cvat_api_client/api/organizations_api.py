@@ -60,6 +60,9 @@ class OrganizationsApi(object):
             params_map={
                 'all': [
                     'organization_write_request',
+                    'x_organization',
+                    'org',
+                    'org_id',
                 ],
                 'required': [
                     'organization_write_request',
@@ -79,11 +82,23 @@ class OrganizationsApi(object):
                 'openapi_types': {
                     'organization_write_request':
                         (OrganizationWriteRequest,),
+                    'x_organization':
+                        (str,),
+                    'org':
+                        (str,),
+                    'org_id':
+                        (int,),
                 },
                 'attribute_map': {
+                    'x_organization': 'X-Organization',
+                    'org': 'org',
+                    'org_id': 'org_id',
                 },
                 'location_map': {
                     'organization_write_request': 'body',
+                    'x_organization': 'header',
+                    'org': 'query',
+                    'org_id': 'query',
                 },
                 'collection_format_map': {
                 }
@@ -118,6 +133,9 @@ class OrganizationsApi(object):
             params_map={
                 'all': [
                     'id',
+                    'x_organization',
+                    'org',
+                    'org_id',
                 ],
                 'required': [
                     'id',
@@ -137,12 +155,24 @@ class OrganizationsApi(object):
                 'openapi_types': {
                     'id':
                         (int,),
+                    'x_organization':
+                        (str,),
+                    'org':
+                        (str,),
+                    'org_id':
+                        (int,),
                 },
                 'attribute_map': {
                     'id': 'id',
+                    'x_organization': 'X-Organization',
+                    'org': 'org',
+                    'org_id': 'org_id',
                 },
                 'location_map': {
                     'id': 'path',
+                    'x_organization': 'header',
+                    'org': 'query',
+                    'org_id': 'query',
                 },
                 'collection_format_map': {
                 }
@@ -169,6 +199,7 @@ class OrganizationsApi(object):
             },
             params_map={
                 'all': [
+                    'x_organization',
                     'filter',
                     'org',
                     'org_id',
@@ -189,18 +220,21 @@ class OrganizationsApi(object):
                 'allowed_values': {
                 },
                 'openapi_types': {
+                    'x_organization':
+                        (str,),
                     'filter':
                         (str,),
                     'org':
                         (str,),
                     'org_id':
-                        (str,),
+                        (int,),
                     'search':
                         (str,),
                     'sort':
                         (str,),
                 },
                 'attribute_map': {
+                    'x_organization': 'X-Organization',
                     'filter': 'filter',
                     'org': 'org',
                     'org_id': 'org_id',
@@ -208,6 +242,7 @@ class OrganizationsApi(object):
                     'sort': 'sort',
                 },
                 'location_map': {
+                    'x_organization': 'header',
                     'filter': 'query',
                     'org': 'query',
                     'org_id': 'query',
@@ -242,6 +277,9 @@ class OrganizationsApi(object):
             params_map={
                 'all': [
                     'id',
+                    'x_organization',
+                    'org',
+                    'org_id',
                     'patched_organization_write_request',
                 ],
                 'required': [
@@ -262,14 +300,26 @@ class OrganizationsApi(object):
                 'openapi_types': {
                     'id':
                         (int,),
+                    'x_organization':
+                        (str,),
+                    'org':
+                        (str,),
+                    'org_id':
+                        (int,),
                     'patched_organization_write_request':
                         (PatchedOrganizationWriteRequest,),
                 },
                 'attribute_map': {
                     'id': 'id',
+                    'x_organization': 'X-Organization',
+                    'org': 'org',
+                    'org_id': 'org_id',
                 },
                 'location_map': {
                     'id': 'path',
+                    'x_organization': 'header',
+                    'org': 'query',
+                    'org_id': 'query',
                     'patched_organization_write_request': 'body',
                 },
                 'collection_format_map': {
@@ -305,6 +355,9 @@ class OrganizationsApi(object):
             params_map={
                 'all': [
                     'id',
+                    'x_organization',
+                    'org',
+                    'org_id',
                 ],
                 'required': [
                     'id',
@@ -324,12 +377,24 @@ class OrganizationsApi(object):
                 'openapi_types': {
                     'id':
                         (int,),
+                    'x_organization':
+                        (str,),
+                    'org':
+                        (str,),
+                    'org_id':
+                        (int,),
                 },
                 'attribute_map': {
                     'id': 'id',
+                    'x_organization': 'X-Organization',
+                    'org': 'org',
+                    'org_id': 'org_id',
                 },
                 'location_map': {
                     'id': 'path',
+                    'x_organization': 'header',
+                    'org': 'query',
+                    'org_id': 'query',
                 },
                 'collection_format_map': {
                 }
@@ -422,6 +487,9 @@ class OrganizationsApi(object):
             organization_write_request (OrganizationWriteRequest):
 
         Keyword Args:
+            x_organization (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
             _preload_content (bool): if False, the urllib3.HTTPResponse object
@@ -516,6 +584,9 @@ class OrganizationsApi(object):
             organization_write_request (OrganizationWriteRequest):
 
         Keyword Args:
+            x_organization (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             _request_timeout (int/float/tuple): timeout setting for this request. If
                 one number provided, it will be total request timeout. It can also
                 be a pair (tuple) of (connection, read) timeouts.
@@ -626,6 +697,9 @@ class OrganizationsApi(object):
             id (int): A unique integer value identifying this organization.
 
         Keyword Args:
+            x_organization (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
             _preload_content (bool): if False, the urllib3.HTTPResponse object
@@ -720,6 +794,9 @@ class OrganizationsApi(object):
             id (int): A unique integer value identifying this organization.
 
         Keyword Args:
+            x_organization (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             _request_timeout (int/float/tuple): timeout setting for this request. If
                 one number provided, it will be total request timeout. It can also
                 be a pair (tuple) of (connection, read) timeouts.
@@ -821,9 +898,10 @@ class OrganizationsApi(object):
 
 
         Keyword Args:
+            x_organization (str): [optional]
             filter (str): A filter term. Avaliable filter_fields: ['name', 'owner', 'id', 'slug']. [optional]
             org (str): Organization unique slug. [optional]
-            org_id (str): Organization identifier. [optional]
+            org_id (int): Organization identifier. [optional]
             search (str): A search term. Avaliable search_fields: ('name', 'owner'). [optional]
             sort (str): Which field to use when ordering the results. Avaliable ordering_fields: ['name', 'owner', 'id', 'slug']. [optional]
             _return_http_data_only (bool): response data without head status
@@ -916,9 +994,10 @@ class OrganizationsApi(object):
 
 
         Keyword Args:
+            x_organization (str): [optional]
             filter (str): A filter term. Avaliable filter_fields: ['name', 'owner', 'id', 'slug']. [optional]
             org (str): Organization unique slug. [optional]
-            org_id (str): Organization identifier. [optional]
+            org_id (int): Organization identifier. [optional]
             search (str): A search term. Avaliable search_fields: ('name', 'owner'). [optional]
             sort (str): Which field to use when ordering the results. Avaliable ordering_fields: ['name', 'owner', 'id', 'slug']. [optional]
             _request_timeout (int/float/tuple): timeout setting for this request. If
@@ -1031,6 +1110,9 @@ class OrganizationsApi(object):
             id (int): A unique integer value identifying this organization.
 
         Keyword Args:
+            x_organization (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             patched_organization_write_request (PatchedOrganizationWriteRequest): [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
@@ -1126,6 +1208,9 @@ class OrganizationsApi(object):
             id (int): A unique integer value identifying this organization.
 
         Keyword Args:
+            x_organization (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             patched_organization_write_request (PatchedOrganizationWriteRequest): [optional]
             _request_timeout (int/float/tuple): timeout setting for this request. If
                 one number provided, it will be total request timeout. It can also
@@ -1237,6 +1322,9 @@ class OrganizationsApi(object):
             id (int): A unique integer value identifying this organization.
 
         Keyword Args:
+            x_organization (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
             _preload_content (bool): if False, the urllib3.HTTPResponse object
@@ -1331,6 +1419,9 @@ class OrganizationsApi(object):
             id (int): A unique integer value identifying this organization.
 
         Keyword Args:
+            x_organization (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             _request_timeout (int/float/tuple): timeout setting for this request. If
                 one number provided, it will be total request timeout. It can also
                 be a pair (tuple) of (connection, read) timeouts.

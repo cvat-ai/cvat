@@ -78,7 +78,6 @@ class ContextMiddleware:
 
         return self.get_response(request)
 
-
 @extend_schema(tags=['auth'])
 @extend_schema_view(post=extend_schema(
     summary='This method signs URL for access to the server',

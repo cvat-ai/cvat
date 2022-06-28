@@ -66,6 +66,9 @@ class JobsApi(object):
             params_map={
                 'all': [
                     'id',
+                    'x_organization',
+                    'org',
+                    'org_id',
                     'job_write_request',
                 ],
                 'required': [
@@ -86,14 +89,26 @@ class JobsApi(object):
                 'openapi_types': {
                     'id':
                         (int,),
+                    'x_organization':
+                        (str,),
+                    'org':
+                        (str,),
+                    'org_id':
+                        (int,),
                     'job_write_request':
                         (JobWriteRequest,),
                 },
                 'attribute_map': {
                     'id': 'id',
+                    'x_organization': 'X-Organization',
+                    'org': 'org',
+                    'org_id': 'org_id',
                 },
                 'location_map': {
                     'id': 'path',
+                    'x_organization': 'header',
+                    'org': 'query',
+                    'org_id': 'query',
                     'job_write_request': 'body',
                 },
                 'collection_format_map': {
@@ -129,6 +144,9 @@ class JobsApi(object):
             params_map={
                 'all': [
                     'id',
+                    'x_organization',
+                    'org',
+                    'org_id',
                 ],
                 'required': [
                     'id',
@@ -148,12 +166,24 @@ class JobsApi(object):
                 'openapi_types': {
                     'id':
                         (int,),
+                    'x_organization':
+                        (str,),
+                    'org':
+                        (str,),
+                    'org_id':
+                        (int,),
                 },
                 'attribute_map': {
                     'id': 'id',
+                    'x_organization': 'X-Organization',
+                    'org': 'org',
+                    'org_id': 'org_id',
                 },
                 'location_map': {
                     'id': 'path',
+                    'x_organization': 'header',
+                    'org': 'query',
+                    'org_id': 'query',
                 },
                 'collection_format_map': {
                 }
@@ -182,6 +212,9 @@ class JobsApi(object):
                 'all': [
                     'file_id',
                     'id',
+                    'x_organization',
+                    'org',
+                    'org_id',
                     'patched_job_write_request',
                 ],
                 'required': [
@@ -212,16 +245,28 @@ class JobsApi(object):
                         (str,),
                     'id':
                         (int,),
+                    'x_organization':
+                        (str,),
+                    'org':
+                        (str,),
+                    'org_id':
+                        (int,),
                     'patched_job_write_request':
                         (PatchedJobWriteRequest,),
                 },
                 'attribute_map': {
                     'file_id': 'file_id',
                     'id': 'id',
+                    'x_organization': 'X-Organization',
+                    'org': 'org',
+                    'org_id': 'org_id',
                 },
                 'location_map': {
                     'file_id': 'path',
                     'id': 'path',
+                    'x_organization': 'header',
+                    'org': 'query',
+                    'org_id': 'query',
                     'patched_job_write_request': 'body',
                 },
                 'collection_format_map': {
@@ -257,6 +302,7 @@ class JobsApi(object):
             params_map={
                 'all': [
                     'id',
+                    'x_organization',
                     'filter',
                     'org',
                     'org_id',
@@ -283,12 +329,14 @@ class JobsApi(object):
                 'openapi_types': {
                     'id':
                         (int,),
+                    'x_organization':
+                        (str,),
                     'filter':
                         (str,),
                     'org':
                         (str,),
                     'org_id':
-                        (str,),
+                        (int,),
                     'page':
                         (int,),
                     'page_size':
@@ -300,6 +348,7 @@ class JobsApi(object):
                 },
                 'attribute_map': {
                     'id': 'id',
+                    'x_organization': 'X-Organization',
                     'filter': 'filter',
                     'org': 'org',
                     'org_id': 'org_id',
@@ -310,6 +359,7 @@ class JobsApi(object):
                 },
                 'location_map': {
                     'id': 'path',
+                    'x_organization': 'header',
                     'filter': 'query',
                     'org': 'query',
                     'org_id': 'query',
@@ -347,6 +397,9 @@ class JobsApi(object):
                 'all': [
                     'action',
                     'id',
+                    'x_organization',
+                    'org',
+                    'org_id',
                     'patched_job_write_request',
                 ],
                 'required': [
@@ -377,16 +430,28 @@ class JobsApi(object):
                         (str,),
                     'id':
                         (int,),
+                    'x_organization':
+                        (str,),
+                    'org':
+                        (str,),
+                    'org_id':
+                        (int,),
                     'patched_job_write_request':
                         (PatchedJobWriteRequest,),
                 },
                 'attribute_map': {
                     'action': 'action',
                     'id': 'id',
+                    'x_organization': 'X-Organization',
+                    'org': 'org',
+                    'org_id': 'org_id',
                 },
                 'location_map': {
                     'action': 'query',
                     'id': 'path',
+                    'x_organization': 'header',
+                    'org': 'query',
+                    'org_id': 'query',
                     'patched_job_write_request': 'body',
                 },
                 'collection_format_map': {
@@ -421,6 +486,9 @@ class JobsApi(object):
                 'all': [
                     'id',
                     'annotation_file_request',
+                    'x_organization',
+                    'org',
+                    'org_id',
                 ],
                 'required': [
                     'id',
@@ -443,13 +511,25 @@ class JobsApi(object):
                         (int,),
                     'annotation_file_request':
                         (AnnotationFileRequest,),
+                    'x_organization':
+                        (str,),
+                    'org':
+                        (str,),
+                    'org_id':
+                        (int,),
                 },
                 'attribute_map': {
                     'id': 'id',
+                    'x_organization': 'X-Organization',
+                    'org': 'org',
+                    'org_id': 'org_id',
                 },
                 'location_map': {
                     'id': 'path',
                     'annotation_file_request': 'body',
+                    'x_organization': 'header',
+                    'org': 'query',
+                    'org_id': 'query',
                 },
                 'collection_format_map': {
                 }
@@ -482,6 +562,7 @@ class JobsApi(object):
             params_map={
                 'all': [
                     'id',
+                    'x_organization',
                     'filter',
                     'org',
                     'org_id',
@@ -508,12 +589,14 @@ class JobsApi(object):
                 'openapi_types': {
                     'id':
                         (int,),
+                    'x_organization':
+                        (str,),
                     'filter':
                         (str,),
                     'org':
                         (str,),
                     'org_id':
-                        (str,),
+                        (int,),
                     'page':
                         (int,),
                     'page_size':
@@ -525,6 +608,7 @@ class JobsApi(object):
                 },
                 'attribute_map': {
                     'id': 'id',
+                    'x_organization': 'X-Organization',
                     'filter': 'filter',
                     'org': 'org',
                     'org_id': 'org_id',
@@ -535,6 +619,7 @@ class JobsApi(object):
                 },
                 'location_map': {
                     'id': 'path',
+                    'x_organization': 'header',
                     'filter': 'query',
                     'org': 'query',
                     'org_id': 'query',
@@ -571,6 +656,9 @@ class JobsApi(object):
             params_map={
                 'all': [
                     'id',
+                    'x_organization',
+                    'org',
+                    'org_id',
                 ],
                 'required': [
                     'id',
@@ -590,12 +678,24 @@ class JobsApi(object):
                 'openapi_types': {
                     'id':
                         (int,),
+                    'x_organization':
+                        (str,),
+                    'org':
+                        (str,),
+                    'org_id':
+                        (int,),
                 },
                 'attribute_map': {
                     'id': 'id',
+                    'x_organization': 'X-Organization',
+                    'org': 'org',
+                    'org_id': 'org_id',
                 },
                 'location_map': {
                     'id': 'path',
+                    'x_organization': 'header',
+                    'org': 'query',
+                    'org_id': 'query',
                 },
                 'collection_format_map': {
                 }
@@ -628,6 +728,9 @@ class JobsApi(object):
                     'number',
                     'quality',
                     'type',
+                    'x_organization',
+                    'org',
+                    'org_id',
                 ],
                 'required': [
                     'id',
@@ -670,18 +773,30 @@ class JobsApi(object):
                         (str,),
                     'type':
                         (str,),
+                    'x_organization':
+                        (str,),
+                    'org':
+                        (str,),
+                    'org_id':
+                        (int,),
                 },
                 'attribute_map': {
                     'id': 'id',
                     'number': 'number',
                     'quality': 'quality',
                     'type': 'type',
+                    'x_organization': 'X-Organization',
+                    'org': 'org',
+                    'org_id': 'org_id',
                 },
                 'location_map': {
                     'id': 'path',
                     'number': 'query',
                     'quality': 'query',
                     'type': 'query',
+                    'x_organization': 'header',
+                    'org': 'query',
+                    'org_id': 'query',
                 },
                 'collection_format_map': {
                 }
@@ -709,6 +824,7 @@ class JobsApi(object):
             params_map={
                 'all': [
                     'id',
+                    'x_organization',
                     'filter',
                     'org',
                     'org_id',
@@ -735,12 +851,14 @@ class JobsApi(object):
                 'openapi_types': {
                     'id':
                         (int,),
+                    'x_organization':
+                        (str,),
                     'filter':
                         (str,),
                     'org':
                         (str,),
                     'org_id':
-                        (str,),
+                        (int,),
                     'page':
                         (int,),
                     'page_size':
@@ -752,6 +870,7 @@ class JobsApi(object):
                 },
                 'attribute_map': {
                     'id': 'id',
+                    'x_organization': 'X-Organization',
                     'filter': 'filter',
                     'org': 'org',
                     'org_id': 'org_id',
@@ -762,6 +881,7 @@ class JobsApi(object):
                 },
                 'location_map': {
                     'id': 'path',
+                    'x_organization': 'header',
                     'filter': 'query',
                     'org': 'query',
                     'org_id': 'query',
@@ -797,6 +917,7 @@ class JobsApi(object):
             },
             params_map={
                 'all': [
+                    'x_organization',
                     'filter',
                     'org',
                     'org_id',
@@ -819,12 +940,14 @@ class JobsApi(object):
                 'allowed_values': {
                 },
                 'openapi_types': {
+                    'x_organization':
+                        (str,),
                     'filter':
                         (str,),
                     'org':
                         (str,),
                     'org_id':
-                        (str,),
+                        (int,),
                     'page':
                         (int,),
                     'page_size':
@@ -835,6 +958,7 @@ class JobsApi(object):
                         (str,),
                 },
                 'attribute_map': {
+                    'x_organization': 'X-Organization',
                     'filter': 'filter',
                     'org': 'org',
                     'org_id': 'org_id',
@@ -844,6 +968,7 @@ class JobsApi(object):
                     'sort': 'sort',
                 },
                 'location_map': {
+                    'x_organization': 'header',
                     'filter': 'query',
                     'org': 'query',
                     'org_id': 'query',
@@ -880,6 +1005,9 @@ class JobsApi(object):
             params_map={
                 'all': [
                     'id',
+                    'x_organization',
+                    'org',
+                    'org_id',
                     'patched_job_write_request',
                 ],
                 'required': [
@@ -900,14 +1028,26 @@ class JobsApi(object):
                 'openapi_types': {
                     'id':
                         (int,),
+                    'x_organization':
+                        (str,),
+                    'org':
+                        (str,),
+                    'org_id':
+                        (int,),
                     'patched_job_write_request':
                         (PatchedJobWriteRequest,),
                 },
                 'attribute_map': {
                     'id': 'id',
+                    'x_organization': 'X-Organization',
+                    'org': 'org',
+                    'org_id': 'org_id',
                 },
                 'location_map': {
                     'id': 'path',
+                    'x_organization': 'header',
+                    'org': 'query',
+                    'org_id': 'query',
                     'patched_job_write_request': 'body',
                 },
                 'collection_format_map': {
@@ -943,6 +1083,9 @@ class JobsApi(object):
             params_map={
                 'all': [
                     'id',
+                    'x_organization',
+                    'org',
+                    'org_id',
                 ],
                 'required': [
                     'id',
@@ -962,12 +1105,24 @@ class JobsApi(object):
                 'openapi_types': {
                     'id':
                         (int,),
+                    'x_organization':
+                        (str,),
+                    'org':
+                        (str,),
+                    'org_id':
+                        (int,),
                 },
                 'attribute_map': {
                     'id': 'id',
+                    'x_organization': 'X-Organization',
+                    'org': 'org',
+                    'org_id': 'org_id',
                 },
                 'location_map': {
                     'id': 'path',
+                    'x_organization': 'header',
+                    'org': 'query',
+                    'org_id': 'query',
                 },
                 'collection_format_map': {
                 }
@@ -997,6 +1152,9 @@ class JobsApi(object):
             params_map={
                 'all': [
                     'id',
+                    'x_organization',
+                    'org',
+                    'org_id',
                     'job_write_request',
                 ],
                 'required': [
@@ -1017,14 +1175,26 @@ class JobsApi(object):
                 'openapi_types': {
                     'id':
                         (int,),
+                    'x_organization':
+                        (str,),
+                    'org':
+                        (str,),
+                    'org_id':
+                        (int,),
                     'job_write_request':
                         (JobWriteRequest,),
                 },
                 'attribute_map': {
                     'id': 'id',
+                    'x_organization': 'X-Organization',
+                    'org': 'org',
+                    'org_id': 'org_id',
                 },
                 'location_map': {
                     'id': 'path',
+                    'x_organization': 'header',
+                    'org': 'query',
+                    'org_id': 'query',
                     'job_write_request': 'body',
                 },
                 'collection_format_map': {
@@ -1123,6 +1293,9 @@ class JobsApi(object):
             id (int): A unique integer value identifying this job.
 
         Keyword Args:
+            x_organization (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             job_write_request (JobWriteRequest): [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
@@ -1218,6 +1391,9 @@ class JobsApi(object):
             id (int): A unique integer value identifying this job.
 
         Keyword Args:
+            x_organization (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             job_write_request (JobWriteRequest): [optional]
             _request_timeout (int/float/tuple): timeout setting for this request. If
                 one number provided, it will be total request timeout. It can also
@@ -1329,6 +1505,9 @@ class JobsApi(object):
             id (int): A unique integer value identifying this job.
 
         Keyword Args:
+            x_organization (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
             _preload_content (bool): if False, the urllib3.HTTPResponse object
@@ -1423,6 +1602,9 @@ class JobsApi(object):
             id (int): A unique integer value identifying this job.
 
         Keyword Args:
+            x_organization (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             _request_timeout (int/float/tuple): timeout setting for this request. If
                 one number provided, it will be total request timeout. It can also
                 be a pair (tuple) of (connection, read) timeouts.
@@ -1541,6 +1723,9 @@ class JobsApi(object):
             id (int): A unique integer value identifying this job.
 
         Keyword Args:
+            x_organization (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             patched_job_write_request (PatchedJobWriteRequest): [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
@@ -1639,6 +1824,9 @@ class JobsApi(object):
             id (int): A unique integer value identifying this job.
 
         Keyword Args:
+            x_organization (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             patched_job_write_request (PatchedJobWriteRequest): [optional]
             _request_timeout (int/float/tuple): timeout setting for this request. If
                 one number provided, it will be total request timeout. It can also
@@ -1750,9 +1938,10 @@ class JobsApi(object):
             id (int): A unique integer value identifying this job.
 
         Keyword Args:
+            x_organization (str): [optional]
             filter (str): A filter term. Avaliable filter_fields: ['task_name', 'project_name', 'assignee', 'state', 'stage', 'id', 'task_id', 'project_id', 'updated_date']. [optional]
             org (str): Organization unique slug. [optional]
-            org_id (str): Organization identifier. [optional]
+            org_id (int): Organization identifier. [optional]
             page (int): A page number within the paginated result set.. [optional]
             page_size (int): Number of results to return per page.. [optional]
             search (str): A search term. Avaliable search_fields: ('task_name', 'project_name', 'assignee', 'state', 'stage'). [optional]
@@ -1851,9 +2040,10 @@ class JobsApi(object):
             id (int): A unique integer value identifying this job.
 
         Keyword Args:
+            x_organization (str): [optional]
             filter (str): A filter term. Avaliable filter_fields: ['task_name', 'project_name', 'assignee', 'state', 'stage', 'id', 'task_id', 'project_id', 'updated_date']. [optional]
             org (str): Organization unique slug. [optional]
-            org_id (str): Organization identifier. [optional]
+            org_id (int): Organization identifier. [optional]
             page (int): A page number within the paginated result set.. [optional]
             page_size (int): Number of results to return per page.. [optional]
             search (str): A search term. Avaliable search_fields: ('task_name', 'project_name', 'assignee', 'state', 'stage'). [optional]
@@ -1976,6 +2166,9 @@ class JobsApi(object):
             id (int): A unique integer value identifying this job.
 
         Keyword Args:
+            x_organization (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             patched_job_write_request (PatchedJobWriteRequest): [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
@@ -2074,6 +2267,9 @@ class JobsApi(object):
             id (int): A unique integer value identifying this job.
 
         Keyword Args:
+            x_organization (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             patched_job_write_request (PatchedJobWriteRequest): [optional]
             _request_timeout (int/float/tuple): timeout setting for this request. If
                 one number provided, it will be total request timeout. It can also
@@ -2193,6 +2389,9 @@ class JobsApi(object):
             annotation_file_request (AnnotationFileRequest):
 
         Keyword Args:
+            x_organization (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
             _preload_content (bool): if False, the urllib3.HTTPResponse object
@@ -2290,6 +2489,9 @@ class JobsApi(object):
             annotation_file_request (AnnotationFileRequest):
 
         Keyword Args:
+            x_organization (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             _request_timeout (int/float/tuple): timeout setting for this request. If
                 one number provided, it will be total request timeout. It can also
                 be a pair (tuple) of (connection, read) timeouts.
@@ -2400,9 +2602,10 @@ class JobsApi(object):
             id (int): A unique integer value identifying this job.
 
         Keyword Args:
+            x_organization (str): [optional]
             filter (str): A filter term. Avaliable filter_fields: ['task_name', 'project_name', 'assignee', 'state', 'stage', 'id', 'task_id', 'project_id', 'updated_date']. [optional]
             org (str): Organization unique slug. [optional]
-            org_id (str): Organization identifier. [optional]
+            org_id (int): Organization identifier. [optional]
             page (int): A page number within the paginated result set.. [optional]
             page_size (int): Number of results to return per page.. [optional]
             search (str): A search term. Avaliable search_fields: ('task_name', 'project_name', 'assignee', 'state', 'stage'). [optional]
@@ -2501,9 +2704,10 @@ class JobsApi(object):
             id (int): A unique integer value identifying this job.
 
         Keyword Args:
+            x_organization (str): [optional]
             filter (str): A filter term. Avaliable filter_fields: ['task_name', 'project_name', 'assignee', 'state', 'stage', 'id', 'task_id', 'project_id', 'updated_date']. [optional]
             org (str): Organization unique slug. [optional]
-            org_id (str): Organization identifier. [optional]
+            org_id (int): Organization identifier. [optional]
             page (int): A page number within the paginated result set.. [optional]
             page_size (int): Number of results to return per page.. [optional]
             search (str): A search term. Avaliable search_fields: ('task_name', 'project_name', 'assignee', 'state', 'stage'). [optional]
@@ -2618,6 +2822,9 @@ class JobsApi(object):
             id (int): A unique integer value identifying this job.
 
         Keyword Args:
+            x_organization (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
             _preload_content (bool): if False, the urllib3.HTTPResponse object
@@ -2712,6 +2919,9 @@ class JobsApi(object):
             id (int): A unique integer value identifying this job.
 
         Keyword Args:
+            x_organization (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             _request_timeout (int/float/tuple): timeout setting for this request. If
                 one number provided, it will be total request timeout. It can also
                 be a pair (tuple) of (connection, read) timeouts.
@@ -2846,6 +3056,9 @@ class JobsApi(object):
             type (str): Specifies the type of the requested data
 
         Keyword Args:
+            x_organization (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
             _preload_content (bool): if False, the urllib3.HTTPResponse object
@@ -2949,6 +3162,9 @@ class JobsApi(object):
             type (str): Specifies the type of the requested data
 
         Keyword Args:
+            x_organization (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             _request_timeout (int/float/tuple): timeout setting for this request. If
                 one number provided, it will be total request timeout. It can also
                 be a pair (tuple) of (connection, read) timeouts.
@@ -3059,9 +3275,10 @@ class JobsApi(object):
             id (int): A unique integer value identifying this job.
 
         Keyword Args:
+            x_organization (str): [optional]
             filter (str): A filter term. Avaliable filter_fields: ['task_name', 'project_name', 'assignee', 'state', 'stage', 'id', 'task_id', 'project_id', 'updated_date']. [optional]
             org (str): Organization unique slug. [optional]
-            org_id (str): Organization identifier. [optional]
+            org_id (int): Organization identifier. [optional]
             page (int): A page number within the paginated result set.. [optional]
             page_size (int): Number of results to return per page.. [optional]
             search (str): A search term. Avaliable search_fields: ('task_name', 'project_name', 'assignee', 'state', 'stage'). [optional]
@@ -3160,9 +3377,10 @@ class JobsApi(object):
             id (int): A unique integer value identifying this job.
 
         Keyword Args:
+            x_organization (str): [optional]
             filter (str): A filter term. Avaliable filter_fields: ['task_name', 'project_name', 'assignee', 'state', 'stage', 'id', 'task_id', 'project_id', 'updated_date']. [optional]
             org (str): Organization unique slug. [optional]
-            org_id (str): Organization identifier. [optional]
+            org_id (int): Organization identifier. [optional]
             page (int): A page number within the paginated result set.. [optional]
             page_size (int): Number of results to return per page.. [optional]
             search (str): A search term. Avaliable search_fields: ('task_name', 'project_name', 'assignee', 'state', 'stage'). [optional]
@@ -3268,9 +3486,10 @@ class JobsApi(object):
 
 
         Keyword Args:
+            x_organization (str): [optional]
             filter (str): A filter term. Avaliable filter_fields: ['task_name', 'project_name', 'assignee', 'state', 'stage', 'id', 'task_id', 'project_id', 'updated_date']. [optional]
             org (str): Organization unique slug. [optional]
-            org_id (str): Organization identifier. [optional]
+            org_id (int): Organization identifier. [optional]
             page (int): A page number within the paginated result set.. [optional]
             page_size (int): Number of results to return per page.. [optional]
             search (str): A search term. Avaliable search_fields: ('task_name', 'project_name', 'assignee', 'state', 'stage'). [optional]
@@ -3365,9 +3584,10 @@ class JobsApi(object):
 
 
         Keyword Args:
+            x_organization (str): [optional]
             filter (str): A filter term. Avaliable filter_fields: ['task_name', 'project_name', 'assignee', 'state', 'stage', 'id', 'task_id', 'project_id', 'updated_date']. [optional]
             org (str): Organization unique slug. [optional]
-            org_id (str): Organization identifier. [optional]
+            org_id (int): Organization identifier. [optional]
             page (int): A page number within the paginated result set.. [optional]
             page_size (int): Number of results to return per page.. [optional]
             search (str): A search term. Avaliable search_fields: ('task_name', 'project_name', 'assignee', 'state', 'stage'). [optional]
@@ -3482,6 +3702,9 @@ class JobsApi(object):
             id (int): A unique integer value identifying this job.
 
         Keyword Args:
+            x_organization (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             patched_job_write_request (PatchedJobWriteRequest): [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
@@ -3577,6 +3800,9 @@ class JobsApi(object):
             id (int): A unique integer value identifying this job.
 
         Keyword Args:
+            x_organization (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             patched_job_write_request (PatchedJobWriteRequest): [optional]
             _request_timeout (int/float/tuple): timeout setting for this request. If
                 one number provided, it will be total request timeout. It can also
@@ -3688,6 +3914,9 @@ class JobsApi(object):
             id (int): A unique integer value identifying this job.
 
         Keyword Args:
+            x_organization (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
             _preload_content (bool): if False, the urllib3.HTTPResponse object
@@ -3782,6 +4011,9 @@ class JobsApi(object):
             id (int): A unique integer value identifying this job.
 
         Keyword Args:
+            x_organization (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             _request_timeout (int/float/tuple): timeout setting for this request. If
                 one number provided, it will be total request timeout. It can also
                 be a pair (tuple) of (connection, read) timeouts.
@@ -3892,6 +4124,9 @@ class JobsApi(object):
             id (int): A unique integer value identifying this job.
 
         Keyword Args:
+            x_organization (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             job_write_request (JobWriteRequest): [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
@@ -3987,6 +4222,9 @@ class JobsApi(object):
             id (int): A unique integer value identifying this job.
 
         Keyword Args:
+            x_organization (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             job_write_request (JobWriteRequest): [optional]
             _request_timeout (int/float/tuple): timeout setting for this request. If
                 one number provided, it will be total request timeout. It can also

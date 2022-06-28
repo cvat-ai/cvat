@@ -32,18 +32,27 @@ configuration = cvat_api_client.Configuration(
 with cvat_api_client.ApiClient() as api_client:
     # Create an instance of the API class
     api_instance = restrictions_api.RestrictionsApi(api_client)
+    x_organization = "X-Organization_example" # str |  (optional)
+    org = "org_example" # str | Organization unique slug (optional)
+    org_id = 1 # int | Organization identifier (optional)
 
-    # example, this endpoint has no required or optional parameters
+    # example passing only required values which don't have defaults set
+    # and optional values
     try:
         # Method provides CVAT terms of use
-        api_instance.restrictions_terms_of_use_retrieve()
+        api_instance.restrictions_terms_of_use_retrieve(x_organization=x_organization, org=org, org_id=org_id)
     except cvat_api_client.ApiException as e:
         print("Exception when calling RestrictionsApi->restrictions_terms_of_use_retrieve: %s\n" % e)
 ```
 
 
 ### Parameters
-This endpoint does not need any parameter.
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **x_organization** | **str**|  | [optional]
+ **org** | **str**| Organization unique slug | [optional]
+ **org_id** | **int**| Organization identifier | [optional]
 
 ### Return type
 
@@ -92,11 +101,15 @@ configuration = cvat_api_client.Configuration(
 with cvat_api_client.ApiClient() as api_client:
     # Create an instance of the API class
     api_instance = restrictions_api.RestrictionsApi(api_client)
+    x_organization = "X-Organization_example" # str |  (optional)
+    org = "org_example" # str | Organization unique slug (optional)
+    org_id = 1 # int | Organization identifier (optional)
 
-    # example, this endpoint has no required or optional parameters
+    # example passing only required values which don't have defaults set
+    # and optional values
     try:
         # Method provides user agreements that the user must accept to register
-        api_response = api_instance.restrictions_user_agreements_retrieve()
+        api_response = api_instance.restrictions_user_agreements_retrieve(x_organization=x_organization, org=org, org_id=org_id)
         pprint(api_response)
     except cvat_api_client.ApiException as e:
         print("Exception when calling RestrictionsApi->restrictions_user_agreements_retrieve: %s\n" % e)
@@ -104,7 +117,12 @@ with cvat_api_client.ApiClient() as api_client:
 
 
 ### Parameters
-This endpoint does not need any parameter.
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **x_organization** | **str**|  | [optional]
+ **org** | **str**| Organization unique slug | [optional]
+ **org_id** | **int**| Organization identifier | [optional]
 
 ### Return type
 

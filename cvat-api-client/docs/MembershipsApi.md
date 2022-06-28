@@ -67,11 +67,22 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = memberships_api.MembershipsApi(api_client)
     id = 1 # int | A unique integer value identifying this membership.
+    x_organization = "X-Organization_example" # str |  (optional)
+    org = "org_example" # str | Organization unique slug (optional)
+    org_id = 1 # int | Organization identifier (optional)
 
     # example passing only required values which don't have defaults set
     try:
         # Method deletes a membership
         api_instance.memberships_destroy(id)
+    except cvat_api_client.ApiException as e:
+        print("Exception when calling MembershipsApi->memberships_destroy: %s\n" % e)
+
+    # example passing only required values which don't have defaults set
+    # and optional values
+    try:
+        # Method deletes a membership
+        api_instance.memberships_destroy(id, x_organization=x_organization, org=org, org_id=org_id)
     except cvat_api_client.ApiException as e:
         print("Exception when calling MembershipsApi->memberships_destroy: %s\n" % e)
 ```
@@ -82,6 +93,9 @@ with cvat_api_client.ApiClient(configuration) as api_client:
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **id** | **int**| A unique integer value identifying this membership. |
+ **x_organization** | **str**|  | [optional]
+ **org** | **str**| Organization unique slug | [optional]
+ **org_id** | **int**| Organization identifier | [optional]
 
 ### Return type
 
@@ -162,9 +176,10 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 with cvat_api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = memberships_api.MembershipsApi(api_client)
+    x_organization = "X-Organization_example" # str |  (optional)
     filter = "filter_example" # str | A filter term. Avaliable filter_fields: ['user_name', 'role', 'id', 'user'] (optional)
     org = "org_example" # str | Organization unique slug (optional)
-    org_id = "org_id_example" # str | Organization identifier (optional)
+    org_id = 1 # int | Organization identifier (optional)
     page = 1 # int | A page number within the paginated result set. (optional)
     page_size = 1 # int | Number of results to return per page. (optional)
     search = "search_example" # str | A search term. Avaliable search_fields: ('user_name', 'role') (optional)
@@ -174,7 +189,7 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # and optional values
     try:
         # Method returns a paginated list of memberships according to query parameters
-        api_response = api_instance.memberships_list(filter=filter, org=org, org_id=org_id, page=page, page_size=page_size, search=search, sort=sort)
+        api_response = api_instance.memberships_list(x_organization=x_organization, filter=filter, org=org, org_id=org_id, page=page, page_size=page_size, search=search, sort=sort)
         pprint(api_response)
     except cvat_api_client.ApiException as e:
         print("Exception when calling MembershipsApi->memberships_list: %s\n" % e)
@@ -185,9 +200,10 @@ with cvat_api_client.ApiClient(configuration) as api_client:
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
+ **x_organization** | **str**|  | [optional]
  **filter** | **str**| A filter term. Avaliable filter_fields: [&#39;user_name&#39;, &#39;role&#39;, &#39;id&#39;, &#39;user&#39;] | [optional]
  **org** | **str**| Organization unique slug | [optional]
- **org_id** | **str**| Organization identifier | [optional]
+ **org_id** | **int**| Organization identifier | [optional]
  **page** | **int**| A page number within the paginated result set. | [optional]
  **page_size** | **int**| Number of results to return per page. | [optional]
  **search** | **str**| A search term. Avaliable search_fields: (&#39;user_name&#39;, &#39;role&#39;) | [optional]
@@ -274,6 +290,9 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = memberships_api.MembershipsApi(api_client)
     id = 1 # int | A unique integer value identifying this membership.
+    x_organization = "X-Organization_example" # str |  (optional)
+    org = "org_example" # str | Organization unique slug (optional)
+    org_id = 1 # int | Organization identifier (optional)
     patched_membership_write_request = PatchedMembershipWriteRequest(
         role=RoleEnum("worker"),
     ) # PatchedMembershipWriteRequest |  (optional)
@@ -290,7 +309,7 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # and optional values
     try:
         # Methods does a partial update of chosen fields in a membership
-        api_response = api_instance.memberships_partial_update(id, patched_membership_write_request=patched_membership_write_request)
+        api_response = api_instance.memberships_partial_update(id, x_organization=x_organization, org=org, org_id=org_id, patched_membership_write_request=patched_membership_write_request)
         pprint(api_response)
     except cvat_api_client.ApiException as e:
         print("Exception when calling MembershipsApi->memberships_partial_update: %s\n" % e)
@@ -302,6 +321,9 @@ with cvat_api_client.ApiClient(configuration) as api_client:
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **id** | **int**| A unique integer value identifying this membership. |
+ **x_organization** | **str**|  | [optional]
+ **org** | **str**| Organization unique slug | [optional]
+ **org_id** | **int**| Organization identifier | [optional]
  **patched_membership_write_request** | [**PatchedMembershipWriteRequest**](PatchedMembershipWriteRequest.md)|  | [optional]
 
 ### Return type
@@ -384,11 +406,23 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = memberships_api.MembershipsApi(api_client)
     id = 1 # int | A unique integer value identifying this membership.
+    x_organization = "X-Organization_example" # str |  (optional)
+    org = "org_example" # str | Organization unique slug (optional)
+    org_id = 1 # int | Organization identifier (optional)
 
     # example passing only required values which don't have defaults set
     try:
         # Method returns details of a membership
         api_response = api_instance.memberships_retrieve(id)
+        pprint(api_response)
+    except cvat_api_client.ApiException as e:
+        print("Exception when calling MembershipsApi->memberships_retrieve: %s\n" % e)
+
+    # example passing only required values which don't have defaults set
+    # and optional values
+    try:
+        # Method returns details of a membership
+        api_response = api_instance.memberships_retrieve(id, x_organization=x_organization, org=org, org_id=org_id)
         pprint(api_response)
     except cvat_api_client.ApiException as e:
         print("Exception when calling MembershipsApi->memberships_retrieve: %s\n" % e)
@@ -400,6 +434,9 @@ with cvat_api_client.ApiClient(configuration) as api_client:
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **id** | **int**| A unique integer value identifying this membership. |
+ **x_organization** | **str**|  | [optional]
+ **org** | **str**| Organization unique slug | [optional]
+ **org_id** | **int**| Organization identifier | [optional]
 
 ### Return type
 

@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+from drf_spectacular.openapi import AutoSchema
 from drf_spectacular.extensions import OpenApiFilterExtension, OpenApiAuthenticationExtension
 from drf_spectacular.plumbing import build_parameter_type
 from drf_spectacular.utils import OpenApiParameter
@@ -42,3 +43,31 @@ class SignatureAuthenticationScheme(OpenApiAuthenticationExtension):
             'in': 'query',
             'name': 'sign',
         }
+
+class CustomAutoSchema(AutoSchema):
+    # https://github.com/tfranzel/drf-spectacular/issues/111
+    # Adds organization context parameters to all endpoints
+
+    def get_override_parameters(self):
+        return [
+            OpenApiParameter(
+                name='org',
+                type=str,
+                required=False,
+                location=OpenApiParameter.QUERY,
+                description="Organization unique slug",
+            ),
+            OpenApiParameter(
+                name='org_id',
+                type=int,
+                required=False,
+                location=OpenApiParameter.QUERY,
+                description="Organization identifier",
+            ),
+            OpenApiParameter(
+                name='X-Organization',
+                type=str,
+                required=False,
+                location=OpenApiParameter.HEADER
+            ),
+        ]

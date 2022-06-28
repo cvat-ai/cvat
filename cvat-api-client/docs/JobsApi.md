@@ -79,6 +79,9 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = jobs_api.JobsApi(api_client)
     id = 1 # int | A unique integer value identifying this job.
+    x_organization = "X-Organization_example" # str |  (optional)
+    org = "org_example" # str | Organization unique slug (optional)
+    org_id = 1 # int | Organization identifier (optional)
     job_write_request = JobWriteRequest(
         assignee=1,
         stage=JobStage("annotation"),
@@ -95,7 +98,7 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # example passing only required values which don't have defaults set
     # and optional values
     try:
-        api_response = api_instance.jobs_annotations_create(id, job_write_request=job_write_request)
+        api_response = api_instance.jobs_annotations_create(id, x_organization=x_organization, org=org, org_id=org_id, job_write_request=job_write_request)
         pprint(api_response)
     except cvat_api_client.ApiException as e:
         print("Exception when calling JobsApi->jobs_annotations_create: %s\n" % e)
@@ -107,6 +110,9 @@ with cvat_api_client.ApiClient(configuration) as api_client:
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **id** | **int**| A unique integer value identifying this job. |
+ **x_organization** | **str**|  | [optional]
+ **org** | **str**| Organization unique slug | [optional]
+ **org_id** | **int**| Organization identifier | [optional]
  **job_write_request** | [**JobWriteRequest**](JobWriteRequest.md)|  | [optional]
 
 ### Return type
@@ -188,11 +194,22 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = jobs_api.JobsApi(api_client)
     id = 1 # int | A unique integer value identifying this job.
+    x_organization = "X-Organization_example" # str |  (optional)
+    org = "org_example" # str | Organization unique slug (optional)
+    org_id = 1 # int | Organization identifier (optional)
 
     # example passing only required values which don't have defaults set
     try:
         # Method deletes all annotations for a specific job
         api_instance.jobs_annotations_destroy(id)
+    except cvat_api_client.ApiException as e:
+        print("Exception when calling JobsApi->jobs_annotations_destroy: %s\n" % e)
+
+    # example passing only required values which don't have defaults set
+    # and optional values
+    try:
+        # Method deletes all annotations for a specific job
+        api_instance.jobs_annotations_destroy(id, x_organization=x_organization, org=org, org_id=org_id)
     except cvat_api_client.ApiException as e:
         print("Exception when calling JobsApi->jobs_annotations_destroy: %s\n" % e)
 ```
@@ -203,6 +220,9 @@ with cvat_api_client.ApiClient(configuration) as api_client:
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **id** | **int**| A unique integer value identifying this job. |
+ **x_organization** | **str**|  | [optional]
+ **org** | **str**| Organization unique slug | [optional]
+ **org_id** | **int**| Organization identifier | [optional]
 
 ### Return type
 
@@ -286,6 +306,9 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     api_instance = jobs_api.JobsApi(api_client)
     file_id = "bf325375-e030-fccb-a009-17317c574773" # str | 
     id = 1 # int | A unique integer value identifying this job.
+    x_organization = "X-Organization_example" # str |  (optional)
+    org = "org_example" # str | Organization unique slug (optional)
+    org_id = 1 # int | Organization identifier (optional)
     patched_job_write_request = PatchedJobWriteRequest(
         assignee=1,
         stage=JobStage("annotation"),
@@ -304,7 +327,7 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # and optional values
     try:
         # Allows to upload an annotation file chunk. Implements TUS file uploading protocol.
-        api_response = api_instance.jobs_annotations_file_partial_update(file_id, id, patched_job_write_request=patched_job_write_request)
+        api_response = api_instance.jobs_annotations_file_partial_update(file_id, id, x_organization=x_organization, org=org, org_id=org_id, patched_job_write_request=patched_job_write_request)
         pprint(api_response)
     except cvat_api_client.ApiException as e:
         print("Exception when calling JobsApi->jobs_annotations_file_partial_update: %s\n" % e)
@@ -317,6 +340,9 @@ Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **file_id** | **str**|  |
  **id** | **int**| A unique integer value identifying this job. |
+ **x_organization** | **str**|  | [optional]
+ **org** | **str**| Organization unique slug | [optional]
+ **org_id** | **int**| Organization identifier | [optional]
  **patched_job_write_request** | [**PatchedJobWriteRequest**](PatchedJobWriteRequest.md)|  | [optional]
 
 ### Return type
@@ -399,9 +425,10 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = jobs_api.JobsApi(api_client)
     id = 1 # int | A unique integer value identifying this job.
+    x_organization = "X-Organization_example" # str |  (optional)
     filter = "filter_example" # str | A filter term. Avaliable filter_fields: ['task_name', 'project_name', 'assignee', 'state', 'stage', 'id', 'task_id', 'project_id', 'updated_date'] (optional)
     org = "org_example" # str | Organization unique slug (optional)
-    org_id = "org_id_example" # str | Organization identifier (optional)
+    org_id = 1 # int | Organization identifier (optional)
     page = 1 # int | A page number within the paginated result set. (optional)
     page_size = 1 # int | Number of results to return per page. (optional)
     search = "search_example" # str | A search term. Avaliable search_fields: ('task_name', 'project_name', 'assignee', 'state', 'stage') (optional)
@@ -419,7 +446,7 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # and optional values
     try:
         # Method returns annotations for a specific job
-        api_response = api_instance.jobs_annotations_list(id, filter=filter, org=org, org_id=org_id, page=page, page_size=page_size, search=search, sort=sort)
+        api_response = api_instance.jobs_annotations_list(id, x_organization=x_organization, filter=filter, org=org, org_id=org_id, page=page, page_size=page_size, search=search, sort=sort)
         pprint(api_response)
     except cvat_api_client.ApiException as e:
         print("Exception when calling JobsApi->jobs_annotations_list: %s\n" % e)
@@ -431,9 +458,10 @@ with cvat_api_client.ApiClient(configuration) as api_client:
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **id** | **int**| A unique integer value identifying this job. |
+ **x_organization** | **str**|  | [optional]
  **filter** | **str**| A filter term. Avaliable filter_fields: [&#39;task_name&#39;, &#39;project_name&#39;, &#39;assignee&#39;, &#39;state&#39;, &#39;stage&#39;, &#39;id&#39;, &#39;task_id&#39;, &#39;project_id&#39;, &#39;updated_date&#39;] | [optional]
  **org** | **str**| Organization unique slug | [optional]
- **org_id** | **str**| Organization identifier | [optional]
+ **org_id** | **int**| Organization identifier | [optional]
  **page** | **int**| A page number within the paginated result set. | [optional]
  **page_size** | **int**| Number of results to return per page. | [optional]
  **search** | **str**| A search term. Avaliable search_fields: (&#39;task_name&#39;, &#39;project_name&#39;, &#39;assignee&#39;, &#39;state&#39;, &#39;stage&#39;) | [optional]
@@ -520,6 +548,9 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     api_instance = jobs_api.JobsApi(api_client)
     action = "create" # str | 
     id = 1 # int | A unique integer value identifying this job.
+    x_organization = "X-Organization_example" # str |  (optional)
+    org = "org_example" # str | Organization unique slug (optional)
+    org_id = 1 # int | Organization identifier (optional)
     patched_job_write_request = PatchedJobWriteRequest(
         assignee=1,
         stage=JobStage("annotation"),
@@ -537,7 +568,7 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # and optional values
     try:
         # Method performs a partial update of annotations in a specific job
-        api_instance.jobs_annotations_partial_update(action, id, patched_job_write_request=patched_job_write_request)
+        api_instance.jobs_annotations_partial_update(action, id, x_organization=x_organization, org=org, org_id=org_id, patched_job_write_request=patched_job_write_request)
     except cvat_api_client.ApiException as e:
         print("Exception when calling JobsApi->jobs_annotations_partial_update: %s\n" % e)
 ```
@@ -549,6 +580,9 @@ Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **action** | **str**|  |
  **id** | **int**| A unique integer value identifying this job. |
+ **x_organization** | **str**|  | [optional]
+ **org** | **str**| Organization unique slug | [optional]
+ **org_id** | **int**| Organization identifier | [optional]
  **patched_job_write_request** | [**PatchedJobWriteRequest**](PatchedJobWriteRequest.md)|  | [optional]
 
 ### Return type
@@ -634,11 +668,22 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     annotation_file_request = AnnotationFileRequest(
         annotation_file=open('/path/to/file', 'rb'),
     ) # AnnotationFileRequest | 
+    x_organization = "X-Organization_example" # str |  (optional)
+    org = "org_example" # str | Organization unique slug (optional)
+    org_id = 1 # int | Organization identifier (optional)
 
     # example passing only required values which don't have defaults set
     try:
         # Method performs an update of all annotations in a specific job
         api_instance.jobs_annotations_update(id, annotation_file_request)
+    except cvat_api_client.ApiException as e:
+        print("Exception when calling JobsApi->jobs_annotations_update: %s\n" % e)
+
+    # example passing only required values which don't have defaults set
+    # and optional values
+    try:
+        # Method performs an update of all annotations in a specific job
+        api_instance.jobs_annotations_update(id, annotation_file_request, x_organization=x_organization, org=org, org_id=org_id)
     except cvat_api_client.ApiException as e:
         print("Exception when calling JobsApi->jobs_annotations_update: %s\n" % e)
 ```
@@ -650,6 +695,9 @@ Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **id** | **int**| A unique integer value identifying this job. |
  **annotation_file_request** | [**AnnotationFileRequest**](AnnotationFileRequest.md)|  |
+ **x_organization** | **str**|  | [optional]
+ **org** | **str**| Organization unique slug | [optional]
+ **org_id** | **int**| Organization identifier | [optional]
 
 ### Return type
 
@@ -733,9 +781,10 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = jobs_api.JobsApi(api_client)
     id = 1 # int | A unique integer value identifying this job.
+    x_organization = "X-Organization_example" # str |  (optional)
     filter = "filter_example" # str | A filter term. Avaliable filter_fields: ['task_name', 'project_name', 'assignee', 'state', 'stage', 'id', 'task_id', 'project_id', 'updated_date'] (optional)
     org = "org_example" # str | Organization unique slug (optional)
-    org_id = "org_id_example" # str | Organization identifier (optional)
+    org_id = 1 # int | Organization identifier (optional)
     page = 1 # int | A page number within the paginated result set. (optional)
     page_size = 1 # int | Number of results to return per page. (optional)
     search = "search_example" # str | A search term. Avaliable search_fields: ('task_name', 'project_name', 'assignee', 'state', 'stage') (optional)
@@ -753,7 +802,7 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # and optional values
     try:
         # The action returns the list of tracked changes for the job
-        api_response = api_instance.jobs_commits_list(id, filter=filter, org=org, org_id=org_id, page=page, page_size=page_size, search=search, sort=sort)
+        api_response = api_instance.jobs_commits_list(id, x_organization=x_organization, filter=filter, org=org, org_id=org_id, page=page, page_size=page_size, search=search, sort=sort)
         pprint(api_response)
     except cvat_api_client.ApiException as e:
         print("Exception when calling JobsApi->jobs_commits_list: %s\n" % e)
@@ -765,9 +814,10 @@ with cvat_api_client.ApiClient(configuration) as api_client:
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **id** | **int**| A unique integer value identifying this job. |
+ **x_organization** | **str**|  | [optional]
  **filter** | **str**| A filter term. Avaliable filter_fields: [&#39;task_name&#39;, &#39;project_name&#39;, &#39;assignee&#39;, &#39;state&#39;, &#39;stage&#39;, &#39;id&#39;, &#39;task_id&#39;, &#39;project_id&#39;, &#39;updated_date&#39;] | [optional]
  **org** | **str**| Organization unique slug | [optional]
- **org_id** | **str**| Organization identifier | [optional]
+ **org_id** | **int**| Organization identifier | [optional]
  **page** | **int**| A page number within the paginated result set. | [optional]
  **page_size** | **int**| Number of results to return per page. | [optional]
  **search** | **str**| A search term. Avaliable search_fields: (&#39;task_name&#39;, &#39;project_name&#39;, &#39;assignee&#39;, &#39;state&#39;, &#39;stage&#39;) | [optional]
@@ -853,11 +903,23 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = jobs_api.JobsApi(api_client)
     id = 1 # int | A unique integer value identifying this job.
+    x_organization = "X-Organization_example" # str |  (optional)
+    org = "org_example" # str | Organization unique slug (optional)
+    org_id = 1 # int | Organization identifier (optional)
 
     # example passing only required values which don't have defaults set
     try:
         # Method provides a meta information about media files which are related with the job
         api_response = api_instance.jobs_data_meta_retrieve(id)
+        pprint(api_response)
+    except cvat_api_client.ApiException as e:
+        print("Exception when calling JobsApi->jobs_data_meta_retrieve: %s\n" % e)
+
+    # example passing only required values which don't have defaults set
+    # and optional values
+    try:
+        # Method provides a meta information about media files which are related with the job
+        api_response = api_instance.jobs_data_meta_retrieve(id, x_organization=x_organization, org=org, org_id=org_id)
         pprint(api_response)
     except cvat_api_client.ApiException as e:
         print("Exception when calling JobsApi->jobs_data_meta_retrieve: %s\n" % e)
@@ -869,6 +931,9 @@ with cvat_api_client.ApiClient(configuration) as api_client:
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **id** | **int**| A unique integer value identifying this job. |
+ **x_organization** | **str**|  | [optional]
+ **org** | **str**| Organization unique slug | [optional]
+ **org_id** | **int**| Organization identifier | [optional]
 
 ### Return type
 
@@ -952,11 +1017,22 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     number = 3.14 # float | A unique number value identifying chunk or frame, doesn't matter for 'preview' type
     quality = "compressed" # str | Specifies the quality level of the requested data, doesn't matter for 'preview' type
     type = "chunk" # str | Specifies the type of the requested data
+    x_organization = "X-Organization_example" # str |  (optional)
+    org = "org_example" # str | Organization unique slug (optional)
+    org_id = 1 # int | Organization identifier (optional)
 
     # example passing only required values which don't have defaults set
     try:
         # Method returns data for a specific job
         api_instance.jobs_data_retrieve(id, number, quality, type)
+    except cvat_api_client.ApiException as e:
+        print("Exception when calling JobsApi->jobs_data_retrieve: %s\n" % e)
+
+    # example passing only required values which don't have defaults set
+    # and optional values
+    try:
+        # Method returns data for a specific job
+        api_instance.jobs_data_retrieve(id, number, quality, type, x_organization=x_organization, org=org, org_id=org_id)
     except cvat_api_client.ApiException as e:
         print("Exception when calling JobsApi->jobs_data_retrieve: %s\n" % e)
 ```
@@ -970,6 +1046,9 @@ Name | Type | Description  | Notes
  **number** | **float**| A unique number value identifying chunk or frame, doesn&#39;t matter for &#39;preview&#39; type |
  **quality** | **str**| Specifies the quality level of the requested data, doesn&#39;t matter for &#39;preview&#39; type |
  **type** | **str**| Specifies the type of the requested data |
+ **x_organization** | **str**|  | [optional]
+ **org** | **str**| Organization unique slug | [optional]
+ **org_id** | **int**| Organization identifier | [optional]
 
 ### Return type
 
@@ -1051,9 +1130,10 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = jobs_api.JobsApi(api_client)
     id = 1 # int | A unique integer value identifying this job.
+    x_organization = "X-Organization_example" # str |  (optional)
     filter = "filter_example" # str | A filter term. Avaliable filter_fields: ['task_name', 'project_name', 'assignee', 'state', 'stage', 'id', 'task_id', 'project_id', 'updated_date'] (optional)
     org = "org_example" # str | Organization unique slug (optional)
-    org_id = "org_id_example" # str | Organization identifier (optional)
+    org_id = 1 # int | Organization identifier (optional)
     page = 1 # int | A page number within the paginated result set. (optional)
     page_size = 1 # int | Number of results to return per page. (optional)
     search = "search_example" # str | A search term. Avaliable search_fields: ('task_name', 'project_name', 'assignee', 'state', 'stage') (optional)
@@ -1071,7 +1151,7 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # and optional values
     try:
         # Method returns list of issues for the job
-        api_response = api_instance.jobs_issues_list(id, filter=filter, org=org, org_id=org_id, page=page, page_size=page_size, search=search, sort=sort)
+        api_response = api_instance.jobs_issues_list(id, x_organization=x_organization, filter=filter, org=org, org_id=org_id, page=page, page_size=page_size, search=search, sort=sort)
         pprint(api_response)
     except cvat_api_client.ApiException as e:
         print("Exception when calling JobsApi->jobs_issues_list: %s\n" % e)
@@ -1083,9 +1163,10 @@ with cvat_api_client.ApiClient(configuration) as api_client:
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **id** | **int**| A unique integer value identifying this job. |
+ **x_organization** | **str**|  | [optional]
  **filter** | **str**| A filter term. Avaliable filter_fields: [&#39;task_name&#39;, &#39;project_name&#39;, &#39;assignee&#39;, &#39;state&#39;, &#39;stage&#39;, &#39;id&#39;, &#39;task_id&#39;, &#39;project_id&#39;, &#39;updated_date&#39;] | [optional]
  **org** | **str**| Organization unique slug | [optional]
- **org_id** | **str**| Organization identifier | [optional]
+ **org_id** | **int**| Organization identifier | [optional]
  **page** | **int**| A page number within the paginated result set. | [optional]
  **page_size** | **int**| Number of results to return per page. | [optional]
  **search** | **str**| A search term. Avaliable search_fields: (&#39;task_name&#39;, &#39;project_name&#39;, &#39;assignee&#39;, &#39;state&#39;, &#39;stage&#39;) | [optional]
@@ -1170,9 +1251,10 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 with cvat_api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = jobs_api.JobsApi(api_client)
+    x_organization = "X-Organization_example" # str |  (optional)
     filter = "filter_example" # str | A filter term. Avaliable filter_fields: ['task_name', 'project_name', 'assignee', 'state', 'stage', 'id', 'task_id', 'project_id', 'updated_date'] (optional)
     org = "org_example" # str | Organization unique slug (optional)
-    org_id = "org_id_example" # str | Organization identifier (optional)
+    org_id = 1 # int | Organization identifier (optional)
     page = 1 # int | A page number within the paginated result set. (optional)
     page_size = 1 # int | Number of results to return per page. (optional)
     search = "search_example" # str | A search term. Avaliable search_fields: ('task_name', 'project_name', 'assignee', 'state', 'stage') (optional)
@@ -1182,7 +1264,7 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # and optional values
     try:
         # Method returns a paginated list of jobs according to query parameters
-        api_response = api_instance.jobs_list(filter=filter, org=org, org_id=org_id, page=page, page_size=page_size, search=search, sort=sort)
+        api_response = api_instance.jobs_list(x_organization=x_organization, filter=filter, org=org, org_id=org_id, page=page, page_size=page_size, search=search, sort=sort)
         pprint(api_response)
     except cvat_api_client.ApiException as e:
         print("Exception when calling JobsApi->jobs_list: %s\n" % e)
@@ -1193,9 +1275,10 @@ with cvat_api_client.ApiClient(configuration) as api_client:
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
+ **x_organization** | **str**|  | [optional]
  **filter** | **str**| A filter term. Avaliable filter_fields: [&#39;task_name&#39;, &#39;project_name&#39;, &#39;assignee&#39;, &#39;state&#39;, &#39;stage&#39;, &#39;id&#39;, &#39;task_id&#39;, &#39;project_id&#39;, &#39;updated_date&#39;] | [optional]
  **org** | **str**| Organization unique slug | [optional]
- **org_id** | **str**| Organization identifier | [optional]
+ **org_id** | **int**| Organization identifier | [optional]
  **page** | **int**| A page number within the paginated result set. | [optional]
  **page_size** | **int**| Number of results to return per page. | [optional]
  **search** | **str**| A search term. Avaliable search_fields: (&#39;task_name&#39;, &#39;project_name&#39;, &#39;assignee&#39;, &#39;state&#39;, &#39;stage&#39;) | [optional]
@@ -1282,6 +1365,9 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = jobs_api.JobsApi(api_client)
     id = 1 # int | A unique integer value identifying this job.
+    x_organization = "X-Organization_example" # str |  (optional)
+    org = "org_example" # str | Organization unique slug (optional)
+    org_id = 1 # int | Organization identifier (optional)
     patched_job_write_request = PatchedJobWriteRequest(
         assignee=1,
         stage=JobStage("annotation"),
@@ -1300,7 +1386,7 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # and optional values
     try:
         # Methods does a partial update of chosen fields in a job
-        api_response = api_instance.jobs_partial_update(id, patched_job_write_request=patched_job_write_request)
+        api_response = api_instance.jobs_partial_update(id, x_organization=x_organization, org=org, org_id=org_id, patched_job_write_request=patched_job_write_request)
         pprint(api_response)
     except cvat_api_client.ApiException as e:
         print("Exception when calling JobsApi->jobs_partial_update: %s\n" % e)
@@ -1312,6 +1398,9 @@ with cvat_api_client.ApiClient(configuration) as api_client:
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **id** | **int**| A unique integer value identifying this job. |
+ **x_organization** | **str**|  | [optional]
+ **org** | **str**| Organization unique slug | [optional]
+ **org_id** | **int**| Organization identifier | [optional]
  **patched_job_write_request** | [**PatchedJobWriteRequest**](PatchedJobWriteRequest.md)|  | [optional]
 
 ### Return type
@@ -1394,11 +1483,23 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = jobs_api.JobsApi(api_client)
     id = 1 # int | A unique integer value identifying this job.
+    x_organization = "X-Organization_example" # str |  (optional)
+    org = "org_example" # str | Organization unique slug (optional)
+    org_id = 1 # int | Organization identifier (optional)
 
     # example passing only required values which don't have defaults set
     try:
         # Method returns details of a job
         api_response = api_instance.jobs_retrieve(id)
+        pprint(api_response)
+    except cvat_api_client.ApiException as e:
+        print("Exception when calling JobsApi->jobs_retrieve: %s\n" % e)
+
+    # example passing only required values which don't have defaults set
+    # and optional values
+    try:
+        # Method returns details of a job
+        api_response = api_instance.jobs_retrieve(id, x_organization=x_organization, org=org, org_id=org_id)
         pprint(api_response)
     except cvat_api_client.ApiException as e:
         print("Exception when calling JobsApi->jobs_retrieve: %s\n" % e)
@@ -1410,6 +1511,9 @@ with cvat_api_client.ApiClient(configuration) as api_client:
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **id** | **int**| A unique integer value identifying this job. |
+ **x_organization** | **str**|  | [optional]
+ **org** | **str**| Organization unique slug | [optional]
+ **org_id** | **int**| Organization identifier | [optional]
 
 ### Return type
 
@@ -1492,6 +1596,9 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = jobs_api.JobsApi(api_client)
     id = 1 # int | A unique integer value identifying this job.
+    x_organization = "X-Organization_example" # str |  (optional)
+    org = "org_example" # str | Organization unique slug (optional)
+    org_id = 1 # int | Organization identifier (optional)
     job_write_request = JobWriteRequest(
         assignee=1,
         stage=JobStage("annotation"),
@@ -1510,7 +1617,7 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # and optional values
     try:
         # Method updates a job by id
-        api_response = api_instance.jobs_update(id, job_write_request=job_write_request)
+        api_response = api_instance.jobs_update(id, x_organization=x_organization, org=org, org_id=org_id, job_write_request=job_write_request)
         pprint(api_response)
     except cvat_api_client.ApiException as e:
         print("Exception when calling JobsApi->jobs_update: %s\n" % e)
@@ -1522,6 +1629,9 @@ with cvat_api_client.ApiClient(configuration) as api_client:
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **id** | **int**| A unique integer value identifying this job. |
+ **x_organization** | **str**|  | [optional]
+ **org** | **str**| Organization unique slug | [optional]
+ **org_id** | **int**| Organization identifier | [optional]
  **job_write_request** | [**JobWriteRequest**](JobWriteRequest.md)|  | [optional]
 
 ### Return type

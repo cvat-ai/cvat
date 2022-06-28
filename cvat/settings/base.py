@@ -177,7 +177,7 @@ REST_FRAMEWORK = {
         'anon': '100/minute',
     },
     'DEFAULT_METADATA_CLASS': 'rest_framework.metadata.SimpleMetadata',
-    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+    'DEFAULT_SCHEMA_CLASS': 'cvat.apps.iam.schema.CustomAutoSchema',
 }
 
 REST_AUTH_REGISTER_SERIALIZERS = {
@@ -554,6 +554,6 @@ SPECTACULAR_SETTINGS = {
         'JobStage': 'cvat.apps.engine.models.StageChoice',
         'StorageType': 'cvat.apps.engine.models.StorageChoice',
         'SortingMethod': 'cvat.apps.engine.models.SortingMethod',
-    }
+    },
 }
 

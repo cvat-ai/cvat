@@ -77,8 +77,11 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     api_instance = projects_api.ProjectsApi(api_client)
     format = "format_example" # str | Desired output format name You can get the list of supported formats at: /server/annotation/formats
     id = 1 # int | A unique integer value identifying this project.
+    x_organization = "X-Organization_example" # str |  (optional)
     action = "download" # str | Used to start downloading process after annotation file had been created (optional) if omitted the server will use the default value of "download"
     filename = "filename_example" # str | Desired output file name (optional)
+    org = "org_example" # str | Organization unique slug (optional)
+    org_id = 1 # int | Organization identifier (optional)
 
     # example passing only required values which don't have defaults set
     try:
@@ -91,7 +94,7 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # and optional values
     try:
         # Method allows to download project annotations
-        api_instance.projects_annotations_retrieve(format, id, action=action, filename=filename)
+        api_instance.projects_annotations_retrieve(format, id, x_organization=x_organization, action=action, filename=filename, org=org, org_id=org_id)
     except cvat_api_client.ApiException as e:
         print("Exception when calling ProjectsApi->projects_annotations_retrieve: %s\n" % e)
 ```
@@ -103,8 +106,11 @@ Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **format** | **str**| Desired output format name You can get the list of supported formats at: /server/annotation/formats |
  **id** | **int**| A unique integer value identifying this project. |
+ **x_organization** | **str**|  | [optional]
  **action** | **str**| Used to start downloading process after annotation file had been created | [optional] if omitted the server will use the default value of "download"
  **filename** | **str**| Desired output file name | [optional]
+ **org** | **str**| Organization unique slug | [optional]
+ **org_id** | **int**| Organization identifier | [optional]
 
 ### Return type
 
@@ -218,11 +224,22 @@ with cvat_api_client.ApiClient(configuration) as api_client:
             "task_subsets_example",
         ],
     ) # ProjectRequest | 
+    x_organization = "X-Organization_example" # str |  (optional)
+    org = "org_example" # str | Organization unique slug (optional)
+    org_id = 1 # int | Organization identifier (optional)
 
     # example passing only required values which don't have defaults set
     try:
         # Methods create a project from a backup
         api_instance.projects_backup_create(project_request)
+    except cvat_api_client.ApiException as e:
+        print("Exception when calling ProjectsApi->projects_backup_create: %s\n" % e)
+
+    # example passing only required values which don't have defaults set
+    # and optional values
+    try:
+        # Methods create a project from a backup
+        api_instance.projects_backup_create(project_request, x_organization=x_organization, org=org, org_id=org_id)
     except cvat_api_client.ApiException as e:
         print("Exception when calling ProjectsApi->projects_backup_create: %s\n" % e)
 ```
@@ -233,6 +250,9 @@ with cvat_api_client.ApiClient(configuration) as api_client:
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **project_request** | [**ProjectRequest**](ProjectRequest.md)|  |
+ **x_organization** | **str**|  | [optional]
+ **org** | **str**| Organization unique slug | [optional]
+ **org_id** | **int**| Organization identifier | [optional]
 
 ### Return type
 
@@ -316,6 +336,9 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = projects_api.ProjectsApi(api_client)
     file_id = "bf325375-e030-fccb-a009-17317c574773" # str | 
+    x_organization = "X-Organization_example" # str |  (optional)
+    org = "org_example" # str | Organization unique slug (optional)
+    org_id = 1 # int | Organization identifier (optional)
     patched_project_request = PatchedProjectRequest(
         name="name_example",
         labels=[
@@ -356,7 +379,7 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # example passing only required values which don't have defaults set
     # and optional values
     try:
-        api_response = api_instance.projects_backup_partial_update(file_id, patched_project_request=patched_project_request)
+        api_response = api_instance.projects_backup_partial_update(file_id, x_organization=x_organization, org=org, org_id=org_id, patched_project_request=patched_project_request)
         pprint(api_response)
     except cvat_api_client.ApiException as e:
         print("Exception when calling ProjectsApi->projects_backup_partial_update: %s\n" % e)
@@ -368,6 +391,9 @@ with cvat_api_client.ApiClient(configuration) as api_client:
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **file_id** | **str**|  |
+ **x_organization** | **str**|  | [optional]
+ **org** | **str**| Organization unique slug | [optional]
+ **org_id** | **int**| Organization identifier | [optional]
  **patched_project_request** | [**PatchedProjectRequest**](PatchedProjectRequest.md)|  | [optional]
 
 ### Return type
@@ -449,11 +475,22 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = projects_api.ProjectsApi(api_client)
     id = 1 # int | A unique integer value identifying this project.
+    x_organization = "X-Organization_example" # str |  (optional)
+    org = "org_example" # str | Organization unique slug (optional)
+    org_id = 1 # int | Organization identifier (optional)
 
     # example passing only required values which don't have defaults set
     try:
         # Methods creates a backup copy of a project
         api_instance.projects_backup_retrieve(id)
+    except cvat_api_client.ApiException as e:
+        print("Exception when calling ProjectsApi->projects_backup_retrieve: %s\n" % e)
+
+    # example passing only required values which don't have defaults set
+    # and optional values
+    try:
+        # Methods creates a backup copy of a project
+        api_instance.projects_backup_retrieve(id, x_organization=x_organization, org=org, org_id=org_id)
     except cvat_api_client.ApiException as e:
         print("Exception when calling ProjectsApi->projects_backup_retrieve: %s\n" % e)
 ```
@@ -464,6 +501,9 @@ with cvat_api_client.ApiClient(configuration) as api_client:
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **id** | **int**| A unique integer value identifying this project. |
+ **x_organization** | **str**|  | [optional]
+ **org** | **str**| Organization unique slug | [optional]
+ **org_id** | **int**| Organization identifier | [optional]
 
 ### Return type
 
@@ -576,11 +616,23 @@ with cvat_api_client.ApiClient(configuration) as api_client:
             "task_subsets_example",
         ],
     ) # ProjectRequest | 
+    x_organization = "X-Organization_example" # str |  (optional)
+    org = "org_example" # str | Organization unique slug (optional)
+    org_id = 1 # int | Organization identifier (optional)
 
     # example passing only required values which don't have defaults set
     try:
         # Method creates a new project
         api_response = api_instance.projects_create(project_request)
+        pprint(api_response)
+    except cvat_api_client.ApiException as e:
+        print("Exception when calling ProjectsApi->projects_create: %s\n" % e)
+
+    # example passing only required values which don't have defaults set
+    # and optional values
+    try:
+        # Method creates a new project
+        api_response = api_instance.projects_create(project_request, x_organization=x_organization, org=org, org_id=org_id)
         pprint(api_response)
     except cvat_api_client.ApiException as e:
         print("Exception when calling ProjectsApi->projects_create: %s\n" % e)
@@ -592,6 +644,9 @@ with cvat_api_client.ApiClient(configuration) as api_client:
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **project_request** | [**ProjectRequest**](ProjectRequest.md)|  |
+ **x_organization** | **str**|  | [optional]
+ **org** | **str**| Organization unique slug | [optional]
+ **org_id** | **int**| Organization identifier | [optional]
 
 ### Return type
 
@@ -703,11 +758,22 @@ with cvat_api_client.ApiClient(configuration) as api_client:
             "task_subsets_example",
         ],
     ) # ProjectRequest | 
+    x_organization = "X-Organization_example" # str |  (optional)
+    org = "org_example" # str | Organization unique slug (optional)
+    org_id = 1 # int | Organization identifier (optional)
 
     # example passing only required values which don't have defaults set
     try:
         # Import dataset in specific format as a project
         api_instance.projects_dataset_create(format, id, project_request)
+    except cvat_api_client.ApiException as e:
+        print("Exception when calling ProjectsApi->projects_dataset_create: %s\n" % e)
+
+    # example passing only required values which don't have defaults set
+    # and optional values
+    try:
+        # Import dataset in specific format as a project
+        api_instance.projects_dataset_create(format, id, project_request, x_organization=x_organization, org=org, org_id=org_id)
     except cvat_api_client.ApiException as e:
         print("Exception when calling ProjectsApi->projects_dataset_create: %s\n" % e)
 ```
@@ -720,6 +786,9 @@ Name | Type | Description  | Notes
  **format** | **str**| Desired dataset format name You can get the list of supported formats at: /server/annotation/formats |
  **id** | **int**| A unique integer value identifying this project. |
  **project_request** | [**ProjectRequest**](ProjectRequest.md)|  |
+ **x_organization** | **str**|  | [optional]
+ **org** | **str**| Organization unique slug | [optional]
+ **org_id** | **int**| Organization identifier | [optional]
 
 ### Return type
 
@@ -805,6 +874,9 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     api_instance = projects_api.ProjectsApi(api_client)
     file_id = "bf325375-e030-fccb-a009-17317c574773" # str | 
     id = 1 # int | A unique integer value identifying this project.
+    x_organization = "X-Organization_example" # str |  (optional)
+    org = "org_example" # str | Organization unique slug (optional)
+    org_id = 1 # int | Organization identifier (optional)
     patched_project_request = PatchedProjectRequest(
         name="name_example",
         labels=[
@@ -845,7 +917,7 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # example passing only required values which don't have defaults set
     # and optional values
     try:
-        api_response = api_instance.projects_dataset_partial_update(file_id, id, patched_project_request=patched_project_request)
+        api_response = api_instance.projects_dataset_partial_update(file_id, id, x_organization=x_organization, org=org, org_id=org_id, patched_project_request=patched_project_request)
         pprint(api_response)
     except cvat_api_client.ApiException as e:
         print("Exception when calling ProjectsApi->projects_dataset_partial_update: %s\n" % e)
@@ -858,6 +930,9 @@ Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **file_id** | **str**|  |
  **id** | **int**| A unique integer value identifying this project. |
+ **x_organization** | **str**|  | [optional]
+ **org** | **str**| Organization unique slug | [optional]
+ **org_id** | **int**| Organization identifier | [optional]
  **patched_project_request** | [**PatchedProjectRequest**](PatchedProjectRequest.md)|  | [optional]
 
 ### Return type
@@ -940,8 +1015,11 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     api_instance = projects_api.ProjectsApi(api_client)
     format = "format_example" # str | Desired output format name You can get the list of supported formats at: /server/annotation/formats
     id = 1 # int | A unique integer value identifying this project.
+    x_organization = "X-Organization_example" # str |  (optional)
     action = "download" # str | Used to start downloading process after annotation file had been created (optional)
     filename = "filename_example" # str | Desired output file name (optional)
+    org = "org_example" # str | Organization unique slug (optional)
+    org_id = 1 # int | Organization identifier (optional)
 
     # example passing only required values which don't have defaults set
     try:
@@ -954,7 +1032,7 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # and optional values
     try:
         # Export project as a dataset in a specific format
-        api_instance.projects_dataset_retrieve(format, id, action=action, filename=filename)
+        api_instance.projects_dataset_retrieve(format, id, x_organization=x_organization, action=action, filename=filename, org=org, org_id=org_id)
     except cvat_api_client.ApiException as e:
         print("Exception when calling ProjectsApi->projects_dataset_retrieve: %s\n" % e)
 ```
@@ -966,8 +1044,11 @@ Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **format** | **str**| Desired output format name You can get the list of supported formats at: /server/annotation/formats |
  **id** | **int**| A unique integer value identifying this project. |
+ **x_organization** | **str**|  | [optional]
  **action** | **str**| Used to start downloading process after annotation file had been created | [optional]
  **filename** | **str**| Desired output file name | [optional]
+ **org** | **str**| Organization unique slug | [optional]
+ **org_id** | **int**| Organization identifier | [optional]
 
 ### Return type
 
@@ -1051,11 +1132,22 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = projects_api.ProjectsApi(api_client)
     id = 1 # int | A unique integer value identifying this project.
+    x_organization = "X-Organization_example" # str |  (optional)
+    org = "org_example" # str | Organization unique slug (optional)
+    org_id = 1 # int | Organization identifier (optional)
 
     # example passing only required values which don't have defaults set
     try:
         # Method deletes a specific project
         api_instance.projects_destroy(id)
+    except cvat_api_client.ApiException as e:
+        print("Exception when calling ProjectsApi->projects_destroy: %s\n" % e)
+
+    # example passing only required values which don't have defaults set
+    # and optional values
+    try:
+        # Method deletes a specific project
+        api_instance.projects_destroy(id, x_organization=x_organization, org=org, org_id=org_id)
     except cvat_api_client.ApiException as e:
         print("Exception when calling ProjectsApi->projects_destroy: %s\n" % e)
 ```
@@ -1066,6 +1158,9 @@ with cvat_api_client.ApiClient(configuration) as api_client:
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **id** | **int**| A unique integer value identifying this project. |
+ **x_organization** | **str**|  | [optional]
+ **org** | **str**| Organization unique slug | [optional]
+ **org_id** | **int**| Organization identifier | [optional]
 
 ### Return type
 
@@ -1146,9 +1241,10 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 with cvat_api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = projects_api.ProjectsApi(api_client)
+    x_organization = "X-Organization_example" # str |  (optional)
     filter = "filter_example" # str | A filter term. Avaliable filter_fields: ['name', 'owner', 'assignee', 'status', 'id', 'updated_date'] (optional)
     org = "org_example" # str | Organization unique slug (optional)
-    org_id = "org_id_example" # str | Organization identifier (optional)
+    org_id = 1 # int | Organization identifier (optional)
     page = 1 # int | A page number within the paginated result set. (optional)
     page_size = 1 # int | Number of results to return per page. (optional)
     search = "search_example" # str | A search term. Avaliable search_fields: ('name', 'owner', 'assignee', 'status') (optional)
@@ -1158,7 +1254,7 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # and optional values
     try:
         # Returns a paginated list of projects according to query parameters (12 projects per page)
-        api_response = api_instance.projects_list(filter=filter, org=org, org_id=org_id, page=page, page_size=page_size, search=search, sort=sort)
+        api_response = api_instance.projects_list(x_organization=x_organization, filter=filter, org=org, org_id=org_id, page=page, page_size=page_size, search=search, sort=sort)
         pprint(api_response)
     except cvat_api_client.ApiException as e:
         print("Exception when calling ProjectsApi->projects_list: %s\n" % e)
@@ -1169,9 +1265,10 @@ with cvat_api_client.ApiClient(configuration) as api_client:
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
+ **x_organization** | **str**|  | [optional]
  **filter** | **str**| A filter term. Avaliable filter_fields: [&#39;name&#39;, &#39;owner&#39;, &#39;assignee&#39;, &#39;status&#39;, &#39;id&#39;, &#39;updated_date&#39;] | [optional]
  **org** | **str**| Organization unique slug | [optional]
- **org_id** | **str**| Organization identifier | [optional]
+ **org_id** | **int**| Organization identifier | [optional]
  **page** | **int**| A page number within the paginated result set. | [optional]
  **page_size** | **int**| Number of results to return per page. | [optional]
  **search** | **str**| A search term. Avaliable search_fields: (&#39;name&#39;, &#39;owner&#39;, &#39;assignee&#39;, &#39;status&#39;) | [optional]
@@ -1258,6 +1355,9 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = projects_api.ProjectsApi(api_client)
     id = 1 # int | A unique integer value identifying this project.
+    x_organization = "X-Organization_example" # str |  (optional)
+    org = "org_example" # str | Organization unique slug (optional)
+    org_id = 1 # int | Organization identifier (optional)
     patched_project_request = PatchedProjectRequest(
         name="name_example",
         labels=[
@@ -1300,7 +1400,7 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # and optional values
     try:
         # Methods does a partial update of chosen fields in a project
-        api_response = api_instance.projects_partial_update(id, patched_project_request=patched_project_request)
+        api_response = api_instance.projects_partial_update(id, x_organization=x_organization, org=org, org_id=org_id, patched_project_request=patched_project_request)
         pprint(api_response)
     except cvat_api_client.ApiException as e:
         print("Exception when calling ProjectsApi->projects_partial_update: %s\n" % e)
@@ -1312,6 +1412,9 @@ with cvat_api_client.ApiClient(configuration) as api_client:
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **id** | **int**| A unique integer value identifying this project. |
+ **x_organization** | **str**|  | [optional]
+ **org** | **str**| Organization unique slug | [optional]
+ **org_id** | **int**| Organization identifier | [optional]
  **patched_project_request** | [**PatchedProjectRequest**](PatchedProjectRequest.md)|  | [optional]
 
 ### Return type
@@ -1394,11 +1497,23 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = projects_api.ProjectsApi(api_client)
     id = 1 # int | A unique integer value identifying this project.
+    x_organization = "X-Organization_example" # str |  (optional)
+    org = "org_example" # str | Organization unique slug (optional)
+    org_id = 1 # int | Organization identifier (optional)
 
     # example passing only required values which don't have defaults set
     try:
         # Method returns details of a specific project
         api_response = api_instance.projects_retrieve(id)
+        pprint(api_response)
+    except cvat_api_client.ApiException as e:
+        print("Exception when calling ProjectsApi->projects_retrieve: %s\n" % e)
+
+    # example passing only required values which don't have defaults set
+    # and optional values
+    try:
+        # Method returns details of a specific project
+        api_response = api_instance.projects_retrieve(id, x_organization=x_organization, org=org, org_id=org_id)
         pprint(api_response)
     except cvat_api_client.ApiException as e:
         print("Exception when calling ProjectsApi->projects_retrieve: %s\n" % e)
@@ -1410,6 +1525,9 @@ with cvat_api_client.ApiClient(configuration) as api_client:
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **id** | **int**| A unique integer value identifying this project. |
+ **x_organization** | **str**|  | [optional]
+ **org** | **str**| Organization unique slug | [optional]
+ **org_id** | **int**| Organization identifier | [optional]
 
 ### Return type
 
@@ -1491,9 +1609,10 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = projects_api.ProjectsApi(api_client)
     id = 1 # int | A unique integer value identifying this project.
+    x_organization = "X-Organization_example" # str |  (optional)
     filter = "filter_example" # str | A filter term. Avaliable filter_fields: ['name', 'owner', 'assignee', 'status', 'id', 'updated_date'] (optional)
     org = "org_example" # str | Organization unique slug (optional)
-    org_id = "org_id_example" # str | Organization identifier (optional)
+    org_id = 1 # int | Organization identifier (optional)
     page = 1 # int | A page number within the paginated result set. (optional)
     page_size = 1 # int | Number of results to return per page. (optional)
     search = "search_example" # str | A search term. Avaliable search_fields: ('name', 'owner', 'assignee', 'status') (optional)
@@ -1511,7 +1630,7 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # and optional values
     try:
         # Method returns information of the tasks of the project with the selected id
-        api_response = api_instance.projects_tasks_list(id, filter=filter, org=org, org_id=org_id, page=page, page_size=page_size, search=search, sort=sort)
+        api_response = api_instance.projects_tasks_list(id, x_organization=x_organization, filter=filter, org=org, org_id=org_id, page=page, page_size=page_size, search=search, sort=sort)
         pprint(api_response)
     except cvat_api_client.ApiException as e:
         print("Exception when calling ProjectsApi->projects_tasks_list: %s\n" % e)
@@ -1523,9 +1642,10 @@ with cvat_api_client.ApiClient(configuration) as api_client:
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **id** | **int**| A unique integer value identifying this project. |
+ **x_organization** | **str**|  | [optional]
  **filter** | **str**| A filter term. Avaliable filter_fields: [&#39;name&#39;, &#39;owner&#39;, &#39;assignee&#39;, &#39;status&#39;, &#39;id&#39;, &#39;updated_date&#39;] | [optional]
  **org** | **str**| Organization unique slug | [optional]
- **org_id** | **str**| Organization identifier | [optional]
+ **org_id** | **int**| Organization identifier | [optional]
  **page** | **int**| A page number within the paginated result set. | [optional]
  **page_size** | **int**| Number of results to return per page. | [optional]
  **search** | **str**| A search term. Avaliable search_fields: (&#39;name&#39;, &#39;owner&#39;, &#39;assignee&#39;, &#39;status&#39;) | [optional]

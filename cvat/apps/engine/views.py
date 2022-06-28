@@ -628,6 +628,14 @@ class TaskViewSet(UploadMixin, viewsets.ModelViewSet):
     def import_backup(self, request, pk=None):
         return self.upload_data(request)
 
+    @extend_schema(methods=['PATCH'],
+        operation_id='tasks_backup_file_partial_update',
+        summary="Allows to upload a file chunk. "
+            "Implements TUS file uploading protocol."
+    )
+    @extend_schema(methods=['HEAD'],
+        summary="Implements TUS file uploading protocol."
+    )
     @action(detail=False, methods=['HEAD', 'PATCH'], url_path='backup/'+UploadMixin.file_id_regex)
     def append_backup_chunk(self, request, file_id):
         return self.append_tus_chunk(request, file_id)
@@ -779,7 +787,7 @@ class TaskViewSet(UploadMixin, viewsets.ModelViewSet):
             OpenApiParameter('quality', location=OpenApiParameter.QUERY, required=True,
                 type=OpenApiTypes.STR, enum=['compressed', 'original'],
                 description="Specifies the quality level of the requested data, doesn't matter for 'preview' type"),
-            OpenApiParameter('number', location=OpenApiParameter.QUERY, required=True, type=OpenApiTypes.NUMBER,
+            OpenApiParameter('number', location=OpenApiParameter.QUERY, required=True, type=OpenApiTypes.INT,
                 description="A unique number value identifying chunk or frame, doesn't matter for 'preview' type"),
         ],
         responses={

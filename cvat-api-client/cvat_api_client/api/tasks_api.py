@@ -69,6 +69,9 @@ class TasksApi(object):
             params_map={
                 'all': [
                     'id',
+                    'x_organization',
+                    'org',
+                    'org_id',
                     'patched_job_write_request',
                 ],
                 'required': [
@@ -89,14 +92,26 @@ class TasksApi(object):
                 'openapi_types': {
                     'id':
                         (int,),
+                    'x_organization':
+                        (str,),
+                    'org':
+                        (str,),
+                    'org_id':
+                        (int,),
                     'patched_job_write_request':
                         (PatchedJobWriteRequest,),
                 },
                 'attribute_map': {
                     'id': 'id',
+                    'x_organization': 'X-Organization',
+                    'org': 'org',
+                    'org_id': 'org_id',
                 },
                 'location_map': {
                     'id': 'path',
+                    'x_organization': 'header',
+                    'org': 'query',
+                    'org_id': 'query',
                     'patched_job_write_request': 'body',
                 },
                 'collection_format_map': {
@@ -133,6 +148,9 @@ class TasksApi(object):
                 'all': [
                     'id',
                     'labeled_data_request',
+                    'x_organization',
+                    'org',
+                    'org_id',
                 ],
                 'required': [
                     'id',
@@ -155,13 +173,25 @@ class TasksApi(object):
                         (int,),
                     'labeled_data_request':
                         (LabeledDataRequest,),
+                    'x_organization':
+                        (str,),
+                    'org':
+                        (str,),
+                    'org_id':
+                        (int,),
                 },
                 'attribute_map': {
                     'id': 'id',
+                    'x_organization': 'X-Organization',
+                    'org': 'org',
+                    'org_id': 'org_id',
                 },
                 'location_map': {
                     'id': 'path',
                     'labeled_data_request': 'body',
+                    'x_organization': 'header',
+                    'org': 'query',
+                    'org_id': 'query',
                 },
                 'collection_format_map': {
                 }
@@ -196,6 +226,9 @@ class TasksApi(object):
             params_map={
                 'all': [
                     'id',
+                    'x_organization',
+                    'org',
+                    'org_id',
                 ],
                 'required': [
                     'id',
@@ -215,12 +248,24 @@ class TasksApi(object):
                 'openapi_types': {
                     'id':
                         (int,),
+                    'x_organization':
+                        (str,),
+                    'org':
+                        (str,),
+                    'org_id':
+                        (int,),
                 },
                 'attribute_map': {
                     'id': 'id',
+                    'x_organization': 'X-Organization',
+                    'org': 'org',
+                    'org_id': 'org_id',
                 },
                 'location_map': {
                     'id': 'path',
+                    'x_organization': 'header',
+                    'org': 'query',
+                    'org_id': 'query',
                 },
                 'collection_format_map': {
                 }
@@ -249,6 +294,9 @@ class TasksApi(object):
                 'all': [
                     'file_id',
                     'id',
+                    'x_organization',
+                    'org',
+                    'org_id',
                     'patched_task_request',
                 ],
                 'required': [
@@ -279,16 +327,28 @@ class TasksApi(object):
                         (str,),
                     'id':
                         (int,),
+                    'x_organization':
+                        (str,),
+                    'org':
+                        (str,),
+                    'org_id':
+                        (int,),
                     'patched_task_request':
                         (PatchedTaskRequest,),
                 },
                 'attribute_map': {
                     'file_id': 'file_id',
                     'id': 'id',
+                    'x_organization': 'X-Organization',
+                    'org': 'org',
+                    'org_id': 'org_id',
                 },
                 'location_map': {
                     'file_id': 'path',
                     'id': 'path',
+                    'x_organization': 'header',
+                    'org': 'query',
+                    'org_id': 'query',
                     'patched_task_request': 'body',
                 },
                 'collection_format_map': {
@@ -325,6 +385,9 @@ class TasksApi(object):
                 'all': [
                     'action',
                     'id',
+                    'x_organization',
+                    'org',
+                    'org_id',
                     'patched_labeled_data_request',
                 ],
                 'required': [
@@ -355,16 +418,28 @@ class TasksApi(object):
                         (str,),
                     'id':
                         (int,),
+                    'x_organization':
+                        (str,),
+                    'org':
+                        (str,),
+                    'org_id':
+                        (int,),
                     'patched_labeled_data_request':
                         (PatchedLabeledDataRequest,),
                 },
                 'attribute_map': {
                     'action': 'action',
                     'id': 'id',
+                    'x_organization': 'X-Organization',
+                    'org': 'org',
+                    'org_id': 'org_id',
                 },
                 'location_map': {
                     'action': 'query',
                     'id': 'path',
+                    'x_organization': 'header',
+                    'org': 'query',
+                    'org_id': 'query',
                     'patched_labeled_data_request': 'body',
                 },
                 'collection_format_map': {
@@ -400,9 +475,12 @@ class TasksApi(object):
             params_map={
                 'all': [
                     'id',
+                    'x_organization',
                     'action',
                     'filename',
                     'format',
+                    'org',
+                    'org_id',
                 ],
                 'required': [
                     'id',
@@ -427,24 +505,36 @@ class TasksApi(object):
                 'openapi_types': {
                     'id':
                         (int,),
+                    'x_organization':
+                        (str,),
                     'action':
                         (str,),
                     'filename':
                         (str,),
                     'format':
                         (str,),
+                    'org':
+                        (str,),
+                    'org_id':
+                        (int,),
                 },
                 'attribute_map': {
                     'id': 'id',
+                    'x_organization': 'X-Organization',
                     'action': 'action',
                     'filename': 'filename',
                     'format': 'format',
+                    'org': 'org',
+                    'org_id': 'org_id',
                 },
                 'location_map': {
                     'id': 'path',
+                    'x_organization': 'header',
                     'action': 'query',
                     'filename': 'query',
                     'format': 'query',
+                    'org': 'query',
+                    'org_id': 'query',
                 },
                 'collection_format_map': {
                 }
@@ -473,7 +563,10 @@ class TasksApi(object):
                 'all': [
                     'id',
                     'labeled_data_request',
+                    'x_organization',
                     'format',
+                    'org',
+                    'org_id',
                 ],
                 'required': [
                     'id',
@@ -496,17 +589,29 @@ class TasksApi(object):
                         (int,),
                     'labeled_data_request':
                         (LabeledDataRequest,),
+                    'x_organization':
+                        (str,),
                     'format':
                         (str,),
+                    'org':
+                        (str,),
+                    'org_id':
+                        (int,),
                 },
                 'attribute_map': {
                     'id': 'id',
+                    'x_organization': 'X-Organization',
                     'format': 'format',
+                    'org': 'org',
+                    'org_id': 'org_id',
                 },
                 'location_map': {
                     'id': 'path',
                     'labeled_data_request': 'body',
+                    'x_organization': 'header',
                     'format': 'query',
+                    'org': 'query',
+                    'org_id': 'query',
                 },
                 'collection_format_map': {
                 }
@@ -539,6 +644,9 @@ class TasksApi(object):
             params_map={
                 'all': [
                     'task_request',
+                    'x_organization',
+                    'org',
+                    'org_id',
                 ],
                 'required': [
                     'task_request',
@@ -558,11 +666,23 @@ class TasksApi(object):
                 'openapi_types': {
                     'task_request':
                         (TaskRequest,),
+                    'x_organization':
+                        (str,),
+                    'org':
+                        (str,),
+                    'org_id':
+                        (int,),
                 },
                 'attribute_map': {
+                    'x_organization': 'X-Organization',
+                    'org': 'org',
+                    'org_id': 'org_id',
                 },
                 'location_map': {
                     'task_request': 'body',
+                    'x_organization': 'header',
+                    'org': 'query',
+                    'org_id': 'query',
                 },
                 'collection_format_map': {
                 }
@@ -578,7 +698,7 @@ class TasksApi(object):
             },
             api_client=api_client
         )
-        self.tasks_backup_partial_update_endpoint = _Endpoint(
+        self.tasks_backup_file_partial_update_endpoint = _Endpoint(
             settings={
                 'response_type': (Task,),
                 'auth': [
@@ -588,13 +708,16 @@ class TasksApi(object):
                     'tokenAuth'
                 ],
                 'endpoint_path': '/api/tasks/backup/{file_id}',
-                'operation_id': 'tasks_backup_partial_update',
+                'operation_id': 'tasks_backup_file_partial_update',
                 'http_method': 'PATCH',
                 'servers': None,
             },
             params_map={
                 'all': [
                     'file_id',
+                    'x_organization',
+                    'org',
+                    'org_id',
                     'patched_task_request',
                 ],
                 'required': [
@@ -622,14 +745,26 @@ class TasksApi(object):
                 'openapi_types': {
                     'file_id':
                         (str,),
+                    'x_organization':
+                        (str,),
+                    'org':
+                        (str,),
+                    'org_id':
+                        (int,),
                     'patched_task_request':
                         (PatchedTaskRequest,),
                 },
                 'attribute_map': {
                     'file_id': 'file_id',
+                    'x_organization': 'X-Organization',
+                    'org': 'org',
+                    'org_id': 'org_id',
                 },
                 'location_map': {
                     'file_id': 'path',
+                    'x_organization': 'header',
+                    'org': 'query',
+                    'org_id': 'query',
                     'patched_task_request': 'body',
                 },
                 'collection_format_map': {
@@ -665,6 +800,9 @@ class TasksApi(object):
             params_map={
                 'all': [
                     'id',
+                    'x_organization',
+                    'org',
+                    'org_id',
                 ],
                 'required': [
                     'id',
@@ -684,12 +822,24 @@ class TasksApi(object):
                 'openapi_types': {
                     'id':
                         (int,),
+                    'x_organization':
+                        (str,),
+                    'org':
+                        (str,),
+                    'org_id':
+                        (int,),
                 },
                 'attribute_map': {
                     'id': 'id',
+                    'x_organization': 'X-Organization',
+                    'org': 'org',
+                    'org_id': 'org_id',
                 },
                 'location_map': {
                     'id': 'path',
+                    'x_organization': 'header',
+                    'org': 'query',
+                    'org_id': 'query',
                 },
                 'collection_format_map': {
                 }
@@ -717,6 +867,9 @@ class TasksApi(object):
             params_map={
                 'all': [
                     'task_request',
+                    'x_organization',
+                    'org',
+                    'org_id',
                 ],
                 'required': [
                     'task_request',
@@ -736,11 +889,23 @@ class TasksApi(object):
                 'openapi_types': {
                     'task_request':
                         (TaskRequest,),
+                    'x_organization':
+                        (str,),
+                    'org':
+                        (str,),
+                    'org_id':
+                        (int,),
                 },
                 'attribute_map': {
+                    'x_organization': 'X-Organization',
+                    'org': 'org',
+                    'org_id': 'org_id',
                 },
                 'location_map': {
                     'task_request': 'body',
+                    'x_organization': 'header',
+                    'org': 'query',
+                    'org_id': 'query',
                 },
                 'collection_format_map': {
                 }
@@ -779,6 +944,9 @@ class TasksApi(object):
                     'upload_finish',
                     'upload_multiple',
                     'upload_start',
+                    'x_organization',
+                    'org',
+                    'org_id',
                 ],
                 'required': [
                     'id',
@@ -807,12 +975,21 @@ class TasksApi(object):
                         (bool,),
                     'upload_start':
                         (bool,),
+                    'x_organization':
+                        (str,),
+                    'org':
+                        (str,),
+                    'org_id':
+                        (int,),
                 },
                 'attribute_map': {
                     'id': 'id',
                     'upload_finish': 'Upload-Finish',
                     'upload_multiple': 'Upload-Multiple',
                     'upload_start': 'Upload-Start',
+                    'x_organization': 'X-Organization',
+                    'org': 'org',
+                    'org_id': 'org_id',
                 },
                 'location_map': {
                     'id': 'path',
@@ -820,6 +997,9 @@ class TasksApi(object):
                     'upload_finish': 'header',
                     'upload_multiple': 'header',
                     'upload_start': 'header',
+                    'x_organization': 'header',
+                    'org': 'query',
+                    'org_id': 'query',
                 },
                 'collection_format_map': {
                 }
@@ -853,6 +1033,9 @@ class TasksApi(object):
                 'all': [
                     'file_id',
                     'id',
+                    'x_organization',
+                    'org',
+                    'org_id',
                     'patched_task_request',
                 ],
                 'required': [
@@ -883,16 +1066,28 @@ class TasksApi(object):
                         (str,),
                     'id':
                         (int,),
+                    'x_organization':
+                        (str,),
+                    'org':
+                        (str,),
+                    'org_id':
+                        (int,),
                     'patched_task_request':
                         (PatchedTaskRequest,),
                 },
                 'attribute_map': {
                     'file_id': 'file_id',
                     'id': 'id',
+                    'x_organization': 'X-Organization',
+                    'org': 'org',
+                    'org_id': 'org_id',
                 },
                 'location_map': {
                     'file_id': 'path',
                     'id': 'path',
+                    'x_organization': 'header',
+                    'org': 'query',
+                    'org_id': 'query',
                     'patched_task_request': 'body',
                 },
                 'collection_format_map': {
@@ -928,6 +1123,9 @@ class TasksApi(object):
             params_map={
                 'all': [
                     'id',
+                    'x_organization',
+                    'org',
+                    'org_id',
                     'patched_data_meta_read_request',
                 ],
                 'required': [
@@ -948,14 +1146,26 @@ class TasksApi(object):
                 'openapi_types': {
                     'id':
                         (int,),
+                    'x_organization':
+                        (str,),
+                    'org':
+                        (str,),
+                    'org_id':
+                        (int,),
                     'patched_data_meta_read_request':
                         (PatchedDataMetaReadRequest,),
                 },
                 'attribute_map': {
                     'id': 'id',
+                    'x_organization': 'X-Organization',
+                    'org': 'org',
+                    'org_id': 'org_id',
                 },
                 'location_map': {
                     'id': 'path',
+                    'x_organization': 'header',
+                    'org': 'query',
+                    'org_id': 'query',
                     'patched_data_meta_read_request': 'body',
                 },
                 'collection_format_map': {
@@ -991,6 +1201,9 @@ class TasksApi(object):
             params_map={
                 'all': [
                     'id',
+                    'x_organization',
+                    'org',
+                    'org_id',
                 ],
                 'required': [
                     'id',
@@ -1010,12 +1223,24 @@ class TasksApi(object):
                 'openapi_types': {
                     'id':
                         (int,),
+                    'x_organization':
+                        (str,),
+                    'org':
+                        (str,),
+                    'org_id':
+                        (int,),
                 },
                 'attribute_map': {
                     'id': 'id',
+                    'x_organization': 'X-Organization',
+                    'org': 'org',
+                    'org_id': 'org_id',
                 },
                 'location_map': {
                     'id': 'path',
+                    'x_organization': 'header',
+                    'org': 'query',
+                    'org_id': 'query',
                 },
                 'collection_format_map': {
                 }
@@ -1048,6 +1273,9 @@ class TasksApi(object):
                     'number',
                     'quality',
                     'type',
+                    'x_organization',
+                    'org',
+                    'org_id',
                 ],
                 'required': [
                     'id',
@@ -1085,23 +1313,35 @@ class TasksApi(object):
                     'id':
                         (int,),
                     'number':
-                        (float,),
+                        (int,),
                     'quality':
                         (str,),
                     'type':
                         (str,),
+                    'x_organization':
+                        (str,),
+                    'org':
+                        (str,),
+                    'org_id':
+                        (int,),
                 },
                 'attribute_map': {
                     'id': 'id',
                     'number': 'number',
                     'quality': 'quality',
                     'type': 'type',
+                    'x_organization': 'X-Organization',
+                    'org': 'org',
+                    'org_id': 'org_id',
                 },
                 'location_map': {
                     'id': 'path',
                     'number': 'query',
                     'quality': 'query',
                     'type': 'query',
+                    'x_organization': 'header',
+                    'org': 'query',
+                    'org_id': 'query',
                 },
                 'collection_format_map': {
                 }
@@ -1130,8 +1370,11 @@ class TasksApi(object):
                 'all': [
                     'format',
                     'id',
+                    'x_organization',
                     'action',
                     'filename',
+                    'org',
+                    'org_id',
                 ],
                 'required': [
                     'format',
@@ -1159,22 +1402,34 @@ class TasksApi(object):
                         (str,),
                     'id':
                         (int,),
+                    'x_organization':
+                        (str,),
                     'action':
                         (str,),
                     'filename':
                         (str,),
+                    'org':
+                        (str,),
+                    'org_id':
+                        (int,),
                 },
                 'attribute_map': {
                     'format': 'format',
                     'id': 'id',
+                    'x_organization': 'X-Organization',
                     'action': 'action',
                     'filename': 'filename',
+                    'org': 'org',
+                    'org_id': 'org_id',
                 },
                 'location_map': {
                     'format': 'query',
                     'id': 'path',
+                    'x_organization': 'header',
                     'action': 'query',
                     'filename': 'query',
+                    'org': 'query',
+                    'org_id': 'query',
                 },
                 'collection_format_map': {
                 }
@@ -1202,6 +1457,9 @@ class TasksApi(object):
             params_map={
                 'all': [
                     'id',
+                    'x_organization',
+                    'org',
+                    'org_id',
                 ],
                 'required': [
                     'id',
@@ -1221,12 +1479,24 @@ class TasksApi(object):
                 'openapi_types': {
                     'id':
                         (int,),
+                    'x_organization':
+                        (str,),
+                    'org':
+                        (str,),
+                    'org_id':
+                        (int,),
                 },
                 'attribute_map': {
                     'id': 'id',
+                    'x_organization': 'X-Organization',
+                    'org': 'org',
+                    'org_id': 'org_id',
                 },
                 'location_map': {
                     'id': 'path',
+                    'x_organization': 'header',
+                    'org': 'query',
+                    'org_id': 'query',
                 },
                 'collection_format_map': {
                 }
@@ -1254,6 +1524,7 @@ class TasksApi(object):
             params_map={
                 'all': [
                     'id',
+                    'x_organization',
                     'filter',
                     'org',
                     'org_id',
@@ -1280,12 +1551,14 @@ class TasksApi(object):
                 'openapi_types': {
                     'id':
                         (int,),
+                    'x_organization':
+                        (str,),
                     'filter':
                         (str,),
                     'org':
                         (str,),
                     'org_id':
-                        (str,),
+                        (int,),
                     'page':
                         (int,),
                     'page_size':
@@ -1297,6 +1570,7 @@ class TasksApi(object):
                 },
                 'attribute_map': {
                     'id': 'id',
+                    'x_organization': 'X-Organization',
                     'filter': 'filter',
                     'org': 'org',
                     'org_id': 'org_id',
@@ -1307,6 +1581,7 @@ class TasksApi(object):
                 },
                 'location_map': {
                     'id': 'path',
+                    'x_organization': 'header',
                     'filter': 'query',
                     'org': 'query',
                     'org_id': 'query',
@@ -1342,6 +1617,7 @@ class TasksApi(object):
             },
             params_map={
                 'all': [
+                    'x_organization',
                     'filter',
                     'org',
                     'org_id',
@@ -1364,12 +1640,14 @@ class TasksApi(object):
                 'allowed_values': {
                 },
                 'openapi_types': {
+                    'x_organization':
+                        (str,),
                     'filter':
                         (str,),
                     'org':
                         (str,),
                     'org_id':
-                        (str,),
+                        (int,),
                     'page':
                         (int,),
                     'page_size':
@@ -1380,6 +1658,7 @@ class TasksApi(object):
                         (str,),
                 },
                 'attribute_map': {
+                    'x_organization': 'X-Organization',
                     'filter': 'filter',
                     'org': 'org',
                     'org_id': 'org_id',
@@ -1389,6 +1668,7 @@ class TasksApi(object):
                     'sort': 'sort',
                 },
                 'location_map': {
+                    'x_organization': 'header',
                     'filter': 'query',
                     'org': 'query',
                     'org_id': 'query',
@@ -1425,6 +1705,9 @@ class TasksApi(object):
             params_map={
                 'all': [
                     'id',
+                    'x_organization',
+                    'org',
+                    'org_id',
                     'patched_task_request',
                 ],
                 'required': [
@@ -1445,14 +1728,26 @@ class TasksApi(object):
                 'openapi_types': {
                     'id':
                         (int,),
+                    'x_organization':
+                        (str,),
+                    'org':
+                        (str,),
+                    'org_id':
+                        (int,),
                     'patched_task_request':
                         (PatchedTaskRequest,),
                 },
                 'attribute_map': {
                     'id': 'id',
+                    'x_organization': 'X-Organization',
+                    'org': 'org',
+                    'org_id': 'org_id',
                 },
                 'location_map': {
                     'id': 'path',
+                    'x_organization': 'header',
+                    'org': 'query',
+                    'org_id': 'query',
                     'patched_task_request': 'body',
                 },
                 'collection_format_map': {
@@ -1488,6 +1783,9 @@ class TasksApi(object):
             params_map={
                 'all': [
                     'id',
+                    'x_organization',
+                    'org',
+                    'org_id',
                 ],
                 'required': [
                     'id',
@@ -1507,12 +1805,24 @@ class TasksApi(object):
                 'openapi_types': {
                     'id':
                         (int,),
+                    'x_organization':
+                        (str,),
+                    'org':
+                        (str,),
+                    'org_id':
+                        (int,),
                 },
                 'attribute_map': {
                     'id': 'id',
+                    'x_organization': 'X-Organization',
+                    'org': 'org',
+                    'org_id': 'org_id',
                 },
                 'location_map': {
                     'id': 'path',
+                    'x_organization': 'header',
+                    'org': 'query',
+                    'org_id': 'query',
                 },
                 'collection_format_map': {
                 }
@@ -1542,6 +1852,9 @@ class TasksApi(object):
             params_map={
                 'all': [
                     'id',
+                    'x_organization',
+                    'org',
+                    'org_id',
                 ],
                 'required': [
                     'id',
@@ -1561,12 +1874,24 @@ class TasksApi(object):
                 'openapi_types': {
                     'id':
                         (int,),
+                    'x_organization':
+                        (str,),
+                    'org':
+                        (str,),
+                    'org_id':
+                        (int,),
                 },
                 'attribute_map': {
                     'id': 'id',
+                    'x_organization': 'X-Organization',
+                    'org': 'org',
+                    'org_id': 'org_id',
                 },
                 'location_map': {
                     'id': 'path',
+                    'x_organization': 'header',
+                    'org': 'query',
+                    'org_id': 'query',
                 },
                 'collection_format_map': {
                 }
@@ -1597,6 +1922,9 @@ class TasksApi(object):
                 'all': [
                     'id',
                     'task_request',
+                    'x_organization',
+                    'org',
+                    'org_id',
                 ],
                 'required': [
                     'id',
@@ -1619,13 +1947,25 @@ class TasksApi(object):
                         (int,),
                     'task_request':
                         (TaskRequest,),
+                    'x_organization':
+                        (str,),
+                    'org':
+                        (str,),
+                    'org_id':
+                        (int,),
                 },
                 'attribute_map': {
                     'id': 'id',
+                    'x_organization': 'X-Organization',
+                    'org': 'org',
+                    'org_id': 'org_id',
                 },
                 'location_map': {
                     'id': 'path',
                     'task_request': 'body',
+                    'x_organization': 'header',
+                    'org': 'query',
+                    'org_id': 'query',
                 },
                 'collection_format_map': {
                 }
@@ -1723,6 +2063,9 @@ class TasksApi(object):
             id (int): A unique integer value identifying this job.
 
         Keyword Args:
+            x_organization (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             patched_job_write_request (PatchedJobWriteRequest): [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
@@ -1818,6 +2161,9 @@ class TasksApi(object):
             id (int): A unique integer value identifying this job.
 
         Keyword Args:
+            x_organization (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             patched_job_write_request (PatchedJobWriteRequest): [optional]
             _request_timeout (int/float/tuple): timeout setting for this request. If
                 one number provided, it will be total request timeout. It can also
@@ -1937,6 +2283,9 @@ class TasksApi(object):
             labeled_data_request (LabeledDataRequest):
 
         Keyword Args:
+            x_organization (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
             _preload_content (bool): if False, the urllib3.HTTPResponse object
@@ -2034,6 +2383,9 @@ class TasksApi(object):
             labeled_data_request (LabeledDataRequest):
 
         Keyword Args:
+            x_organization (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             _request_timeout (int/float/tuple): timeout setting for this request. If
                 one number provided, it will be total request timeout. It can also
                 be a pair (tuple) of (connection, read) timeouts.
@@ -2144,6 +2496,9 @@ class TasksApi(object):
             id (int): A unique integer value identifying this task.
 
         Keyword Args:
+            x_organization (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
             _preload_content (bool): if False, the urllib3.HTTPResponse object
@@ -2238,6 +2593,9 @@ class TasksApi(object):
             id (int): A unique integer value identifying this task.
 
         Keyword Args:
+            x_organization (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             _request_timeout (int/float/tuple): timeout setting for this request. If
                 one number provided, it will be total request timeout. It can also
                 be a pair (tuple) of (connection, read) timeouts.
@@ -2356,6 +2714,9 @@ class TasksApi(object):
             id (int): A unique integer value identifying this task.
 
         Keyword Args:
+            x_organization (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             patched_task_request (PatchedTaskRequest): [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
@@ -2454,6 +2815,9 @@ class TasksApi(object):
             id (int): A unique integer value identifying this task.
 
         Keyword Args:
+            x_organization (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             patched_task_request (PatchedTaskRequest): [optional]
             _request_timeout (int/float/tuple): timeout setting for this request. If
                 one number provided, it will be total request timeout. It can also
@@ -2573,6 +2937,9 @@ class TasksApi(object):
             id (int): A unique integer value identifying this task.
 
         Keyword Args:
+            x_organization (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             patched_labeled_data_request (PatchedLabeledDataRequest): [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
@@ -2671,6 +3038,9 @@ class TasksApi(object):
             id (int): A unique integer value identifying this task.
 
         Keyword Args:
+            x_organization (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             patched_labeled_data_request (PatchedLabeledDataRequest): [optional]
             _request_timeout (int/float/tuple): timeout setting for this request. If
                 one number provided, it will be total request timeout. It can also
@@ -2782,9 +3152,12 @@ class TasksApi(object):
             id (int): A unique integer value identifying this task.
 
         Keyword Args:
+            x_organization (str): [optional]
             action (str): Used to start downloading process after annotation file had been created. [optional] if omitted the server will use the default value of "download"
             filename (str): Desired output file name. [optional]
             format (str): Desired output format name You can get the list of supported formats at: /server/annotation/formats. [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
             _preload_content (bool): if False, the urllib3.HTTPResponse object
@@ -2879,9 +3252,12 @@ class TasksApi(object):
             id (int): A unique integer value identifying this task.
 
         Keyword Args:
+            x_organization (str): [optional]
             action (str): Used to start downloading process after annotation file had been created. [optional] if omitted the server will use the default value of "download"
             filename (str): Desired output file name. [optional]
             format (str): Desired output format name You can get the list of supported formats at: /server/annotation/formats. [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             _request_timeout (int/float/tuple): timeout setting for this request. If
                 one number provided, it will be total request timeout. It can also
                 be a pair (tuple) of (connection, read) timeouts.
@@ -3000,7 +3376,10 @@ class TasksApi(object):
             labeled_data_request (LabeledDataRequest):
 
         Keyword Args:
+            x_organization (str): [optional]
             format (str): Input format name You can get the list of supported formats at: /server/annotation/formats. [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
             _preload_content (bool): if False, the urllib3.HTTPResponse object
@@ -3098,7 +3477,10 @@ class TasksApi(object):
             labeled_data_request (LabeledDataRequest):
 
         Keyword Args:
+            x_organization (str): [optional]
             format (str): Input format name You can get the list of supported formats at: /server/annotation/formats. [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             _request_timeout (int/float/tuple): timeout setting for this request. If
                 one number provided, it will be total request timeout. It can also
                 be a pair (tuple) of (connection, read) timeouts.
@@ -3209,6 +3591,9 @@ class TasksApi(object):
             task_request (TaskRequest):
 
         Keyword Args:
+            x_organization (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
             _preload_content (bool): if False, the urllib3.HTTPResponse object
@@ -3303,6 +3688,9 @@ class TasksApi(object):
             task_request (TaskRequest):
 
         Keyword Args:
+            x_organization (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             _request_timeout (int/float/tuple): timeout setting for this request. If
                 one number provided, it will be total request timeout. It can also
                 be a pair (tuple) of (connection, read) timeouts.
@@ -3335,7 +3723,7 @@ class TasksApi(object):
             _preload_content=False, _check_status=False)
 
     @overload
-    def tasks_backup_partial_update(
+    def tasks_backup_file_partial_update(
         self,
         file_id,
         _return_http_data_only: typing.Literal[True] = True,
@@ -3345,7 +3733,7 @@ class TasksApi(object):
         ...
 
     @overload
-    def tasks_backup_partial_update(
+    def tasks_backup_file_partial_update(
         self,
         file_id,
         _return_http_data_only: typing.Literal[False],
@@ -3355,7 +3743,7 @@ class TasksApi(object):
         ...
 
     @overload
-    def tasks_backup_partial_update(
+    def tasks_backup_file_partial_update(
         self,
         file_id,
         _return_http_data_only: typing.Literal[False],
@@ -3364,7 +3752,7 @@ class TasksApi(object):
         ...
 
     @overload
-    def tasks_backup_partial_update(
+    def tasks_backup_file_partial_update(
         self,
         file_id,
         _preload_content: typing.Literal[False],
@@ -3373,7 +3761,7 @@ class TasksApi(object):
         ...
 
     @overload
-    def tasks_backup_partial_update(
+    def tasks_backup_file_partial_update(
         self,
         file_id,
         _return_http_data_only: typing.Literal[True],
@@ -3383,7 +3771,7 @@ class TasksApi(object):
         ...
 
     @overload
-    def tasks_backup_partial_update(
+    def tasks_backup_file_partial_update(
         self,
         file_id,
         _return_http_data_only: typing.Literal[False],
@@ -3392,7 +3780,7 @@ class TasksApi(object):
     ) -> urllib3.HTTPResponse:
         ...
 
-    def tasks_backup_partial_update(
+    def tasks_backup_file_partial_update(
         self,
         file_id,
         **kwargs
@@ -3401,18 +3789,21 @@ class TasksApi(object):
             urllib3.HTTPResponse,
             object
     ]:
-        """tasks_backup_partial_update  # noqa: E501
+        """Allows to upload a file chunk. Implements TUS file uploading protocol.  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.tasks_backup_partial_update(file_id, async_req=True)
+        >>> thread = api.tasks_backup_file_partial_update(file_id, async_req=True)
         >>> result = thread.get()
 
         Args:
             file_id (str):
 
         Keyword Args:
+            x_organization (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             patched_task_request (PatchedTaskRequest): [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
@@ -3484,30 +3875,33 @@ class TasksApi(object):
         kwargs['_request_auths'] = kwargs.get('_request_auths', None)
         kwargs['file_id'] = \
             file_id
-        return self.tasks_backup_partial_update_endpoint.call_with_http_info(**kwargs)
+        return self.tasks_backup_file_partial_update_endpoint.call_with_http_info(**kwargs)
 
-    def tasks_backup_partial_update_raw(
+    def tasks_backup_file_partial_update_raw(
         self,
         *args,
         **kwargs
     ) -> urllib3.HTTPResponse:
         """
-        The same as tasks_backup_partial_update(), but returns the response unprocessed.
-        Equivalent to calling tasks_backup_partial_update with
+        The same as tasks_backup_file_partial_update(), but returns the response unprocessed.
+        Equivalent to calling tasks_backup_file_partial_update with
         _preload_content = False and _check_status=False
 
-        tasks_backup_partial_update  # noqa: E501
+        Allows to upload a file chunk. Implements TUS file uploading protocol.  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.tasks_backup_partial_update(file_id, async_req=True)
+        >>> thread = api.tasks_backup_file_partial_update(file_id, async_req=True)
         >>> result = thread.get()
 
         Args:
             file_id (str):
 
         Keyword Args:
+            x_organization (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             patched_task_request (PatchedTaskRequest): [optional]
             _request_timeout (int/float/tuple): timeout setting for this request. If
                 one number provided, it will be total request timeout. It can also
@@ -3537,7 +3931,7 @@ class TasksApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.tasks_backup_partial_update(*args, **kwargs,
+        return self.tasks_backup_file_partial_update(*args, **kwargs,
             _preload_content=False, _check_status=False)
 
     @overload
@@ -3619,6 +4013,9 @@ class TasksApi(object):
             id (int): A unique integer value identifying this task.
 
         Keyword Args:
+            x_organization (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
             _preload_content (bool): if False, the urllib3.HTTPResponse object
@@ -3713,6 +4110,9 @@ class TasksApi(object):
             id (int): A unique integer value identifying this task.
 
         Keyword Args:
+            x_organization (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             _request_timeout (int/float/tuple): timeout setting for this request. If
                 one number provided, it will be total request timeout. It can also
                 be a pair (tuple) of (connection, read) timeouts.
@@ -3823,6 +4223,9 @@ class TasksApi(object):
             task_request (TaskRequest):
 
         Keyword Args:
+            x_organization (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
             _preload_content (bool): if False, the urllib3.HTTPResponse object
@@ -3917,6 +4320,9 @@ class TasksApi(object):
             task_request (TaskRequest):
 
         Keyword Args:
+            x_organization (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             _request_timeout (int/float/tuple): timeout setting for this request. If
                 one number provided, it will be total request timeout. It can also
                 be a pair (tuple) of (connection, read) timeouts.
@@ -4038,6 +4444,9 @@ class TasksApi(object):
             upload_finish (bool): Finishes data upload. Can be combined with Upload-Start header to create task data with one request. [optional]
             upload_multiple (bool): Indicates that data with this request are single or multiple files that should be attached to a task. [optional]
             upload_start (bool): Initializes data upload. No data should be sent with this header. [optional]
+            x_organization (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
             _preload_content (bool): if False, the urllib3.HTTPResponse object
@@ -4138,6 +4547,9 @@ class TasksApi(object):
             upload_finish (bool): Finishes data upload. Can be combined with Upload-Start header to create task data with one request. [optional]
             upload_multiple (bool): Indicates that data with this request are single or multiple files that should be attached to a task. [optional]
             upload_start (bool): Initializes data upload. No data should be sent with this header. [optional]
+            x_organization (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             _request_timeout (int/float/tuple): timeout setting for this request. If
                 one number provided, it will be total request timeout. It can also
                 be a pair (tuple) of (connection, read) timeouts.
@@ -4256,6 +4668,9 @@ class TasksApi(object):
             id (int): A unique integer value identifying this task.
 
         Keyword Args:
+            x_organization (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             patched_task_request (PatchedTaskRequest): [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
@@ -4354,6 +4769,9 @@ class TasksApi(object):
             id (int): A unique integer value identifying this task.
 
         Keyword Args:
+            x_organization (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             patched_task_request (PatchedTaskRequest): [optional]
             _request_timeout (int/float/tuple): timeout setting for this request. If
                 one number provided, it will be total request timeout. It can also
@@ -4465,6 +4883,9 @@ class TasksApi(object):
             id (int): A unique integer value identifying this task.
 
         Keyword Args:
+            x_organization (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             patched_data_meta_read_request (PatchedDataMetaReadRequest): [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
@@ -4560,6 +4981,9 @@ class TasksApi(object):
             id (int): A unique integer value identifying this task.
 
         Keyword Args:
+            x_organization (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             patched_data_meta_read_request (PatchedDataMetaReadRequest): [optional]
             _request_timeout (int/float/tuple): timeout setting for this request. If
                 one number provided, it will be total request timeout. It can also
@@ -4671,6 +5095,9 @@ class TasksApi(object):
             id (int): A unique integer value identifying this task.
 
         Keyword Args:
+            x_organization (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
             _preload_content (bool): if False, the urllib3.HTTPResponse object
@@ -4765,6 +5192,9 @@ class TasksApi(object):
             id (int): A unique integer value identifying this task.
 
         Keyword Args:
+            x_organization (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             _request_timeout (int/float/tuple): timeout setting for this request. If
                 one number provided, it will be total request timeout. It can also
                 be a pair (tuple) of (connection, read) timeouts.
@@ -4894,11 +5324,14 @@ class TasksApi(object):
 
         Args:
             id (int): A unique integer value identifying this task.
-            number (float): A unique number value identifying chunk or frame, doesn't matter for 'preview' type
+            number (int): A unique number value identifying chunk or frame, doesn't matter for 'preview' type
             quality (str): Specifies the quality level of the requested data, doesn't matter for 'preview' type
             type (str): Specifies the type of the requested data
 
         Keyword Args:
+            x_organization (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
             _preload_content (bool): if False, the urllib3.HTTPResponse object
@@ -4997,11 +5430,14 @@ class TasksApi(object):
 
         Args:
             id (int): A unique integer value identifying this task.
-            number (float): A unique number value identifying chunk or frame, doesn't matter for 'preview' type
+            number (int): A unique number value identifying chunk or frame, doesn't matter for 'preview' type
             quality (str): Specifies the quality level of the requested data, doesn't matter for 'preview' type
             type (str): Specifies the type of the requested data
 
         Keyword Args:
+            x_organization (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             _request_timeout (int/float/tuple): timeout setting for this request. If
                 one number provided, it will be total request timeout. It can also
                 be a pair (tuple) of (connection, read) timeouts.
@@ -5120,8 +5556,11 @@ class TasksApi(object):
             id (int): A unique integer value identifying this task.
 
         Keyword Args:
+            x_organization (str): [optional]
             action (str): Used to start downloading process after annotation file had been created. [optional] if omitted the server will use the default value of "download"
             filename (str): Desired output file name. [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
             _preload_content (bool): if False, the urllib3.HTTPResponse object
@@ -5219,8 +5658,11 @@ class TasksApi(object):
             id (int): A unique integer value identifying this task.
 
         Keyword Args:
+            x_organization (str): [optional]
             action (str): Used to start downloading process after annotation file had been created. [optional] if omitted the server will use the default value of "download"
             filename (str): Desired output file name. [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             _request_timeout (int/float/tuple): timeout setting for this request. If
                 one number provided, it will be total request timeout. It can also
                 be a pair (tuple) of (connection, read) timeouts.
@@ -5331,6 +5773,9 @@ class TasksApi(object):
             id (int): A unique integer value identifying this task.
 
         Keyword Args:
+            x_organization (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
             _preload_content (bool): if False, the urllib3.HTTPResponse object
@@ -5425,6 +5870,9 @@ class TasksApi(object):
             id (int): A unique integer value identifying this task.
 
         Keyword Args:
+            x_organization (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             _request_timeout (int/float/tuple): timeout setting for this request. If
                 one number provided, it will be total request timeout. It can also
                 be a pair (tuple) of (connection, read) timeouts.
@@ -5535,9 +5983,10 @@ class TasksApi(object):
             id (int): A unique integer value identifying this task.
 
         Keyword Args:
+            x_organization (str): [optional]
             filter (str): A filter term. Avaliable filter_fields: ['project_name', 'name', 'owner', 'status', 'assignee', 'subset', 'mode', 'dimension', 'id', 'project_id', 'updated_date']. [optional]
             org (str): Organization unique slug. [optional]
-            org_id (str): Organization identifier. [optional]
+            org_id (int): Organization identifier. [optional]
             page (int): A page number within the paginated result set.. [optional]
             page_size (int): Number of results to return per page.. [optional]
             search (str): A search term. Avaliable search_fields: ('project_name', 'name', 'owner', 'status', 'assignee', 'subset', 'mode', 'dimension'). [optional]
@@ -5636,9 +6085,10 @@ class TasksApi(object):
             id (int): A unique integer value identifying this task.
 
         Keyword Args:
+            x_organization (str): [optional]
             filter (str): A filter term. Avaliable filter_fields: ['project_name', 'name', 'owner', 'status', 'assignee', 'subset', 'mode', 'dimension', 'id', 'project_id', 'updated_date']. [optional]
             org (str): Organization unique slug. [optional]
-            org_id (str): Organization identifier. [optional]
+            org_id (int): Organization identifier. [optional]
             page (int): A page number within the paginated result set.. [optional]
             page_size (int): Number of results to return per page.. [optional]
             search (str): A search term. Avaliable search_fields: ('project_name', 'name', 'owner', 'status', 'assignee', 'subset', 'mode', 'dimension'). [optional]
@@ -5744,9 +6194,10 @@ class TasksApi(object):
 
 
         Keyword Args:
+            x_organization (str): [optional]
             filter (str): A filter term. Avaliable filter_fields: ['project_name', 'name', 'owner', 'status', 'assignee', 'subset', 'mode', 'dimension', 'id', 'project_id', 'updated_date']. [optional]
             org (str): Organization unique slug. [optional]
-            org_id (str): Organization identifier. [optional]
+            org_id (int): Organization identifier. [optional]
             page (int): A page number within the paginated result set.. [optional]
             page_size (int): Number of results to return per page.. [optional]
             search (str): A search term. Avaliable search_fields: ('project_name', 'name', 'owner', 'status', 'assignee', 'subset', 'mode', 'dimension'). [optional]
@@ -5841,9 +6292,10 @@ class TasksApi(object):
 
 
         Keyword Args:
+            x_organization (str): [optional]
             filter (str): A filter term. Avaliable filter_fields: ['project_name', 'name', 'owner', 'status', 'assignee', 'subset', 'mode', 'dimension', 'id', 'project_id', 'updated_date']. [optional]
             org (str): Organization unique slug. [optional]
-            org_id (str): Organization identifier. [optional]
+            org_id (int): Organization identifier. [optional]
             page (int): A page number within the paginated result set.. [optional]
             page_size (int): Number of results to return per page.. [optional]
             search (str): A search term. Avaliable search_fields: ('project_name', 'name', 'owner', 'status', 'assignee', 'subset', 'mode', 'dimension'). [optional]
@@ -5958,6 +6410,9 @@ class TasksApi(object):
             id (int): A unique integer value identifying this task.
 
         Keyword Args:
+            x_organization (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             patched_task_request (PatchedTaskRequest): [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
@@ -6053,6 +6508,9 @@ class TasksApi(object):
             id (int): A unique integer value identifying this task.
 
         Keyword Args:
+            x_organization (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             patched_task_request (PatchedTaskRequest): [optional]
             _request_timeout (int/float/tuple): timeout setting for this request. If
                 one number provided, it will be total request timeout. It can also
@@ -6164,6 +6622,9 @@ class TasksApi(object):
             id (int): A unique integer value identifying this task.
 
         Keyword Args:
+            x_organization (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
             _preload_content (bool): if False, the urllib3.HTTPResponse object
@@ -6258,6 +6719,9 @@ class TasksApi(object):
             id (int): A unique integer value identifying this task.
 
         Keyword Args:
+            x_organization (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             _request_timeout (int/float/tuple): timeout setting for this request. If
                 one number provided, it will be total request timeout. It can also
                 be a pair (tuple) of (connection, read) timeouts.
@@ -6368,6 +6832,9 @@ class TasksApi(object):
             id (int): A unique integer value identifying this task.
 
         Keyword Args:
+            x_organization (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
             _preload_content (bool): if False, the urllib3.HTTPResponse object
@@ -6462,6 +6929,9 @@ class TasksApi(object):
             id (int): A unique integer value identifying this task.
 
         Keyword Args:
+            x_organization (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             _request_timeout (int/float/tuple): timeout setting for this request. If
                 one number provided, it will be total request timeout. It can also
                 be a pair (tuple) of (connection, read) timeouts.
@@ -6580,6 +7050,9 @@ class TasksApi(object):
             task_request (TaskRequest):
 
         Keyword Args:
+            x_organization (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
             _preload_content (bool): if False, the urllib3.HTTPResponse object
@@ -6677,6 +7150,9 @@ class TasksApi(object):
             task_request (TaskRequest):
 
         Keyword Args:
+            x_organization (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             _request_timeout (int/float/tuple): timeout setting for this request. If
                 one number provided, it will be total request timeout. It can also
                 be a pair (tuple) of (connection, read) timeouts.

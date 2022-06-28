@@ -65,13 +65,16 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 with cvat_api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = schema_api.SchemaApi(api_client)
+    x_organization = "X-Organization_example" # str |  (optional)
     lang = "af" # str |  (optional)
+    org = "org_example" # str | Organization unique slug (optional)
+    org_id = 1 # int | Organization identifier (optional)
     scheme = "json" # str |  (optional)
 
     # example passing only required values which don't have defaults set
     # and optional values
     try:
-        api_response = api_instance.schema_retrieve(lang=lang, scheme=scheme)
+        api_response = api_instance.schema_retrieve(x_organization=x_organization, lang=lang, org=org, org_id=org_id, scheme=scheme)
         pprint(api_response)
     except cvat_api_client.ApiException as e:
         print("Exception when calling SchemaApi->schema_retrieve: %s\n" % e)
@@ -82,7 +85,10 @@ with cvat_api_client.ApiClient(configuration) as api_client:
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
+ **x_organization** | **str**|  | [optional]
  **lang** | **str**|  | [optional]
+ **org** | **str**| Organization unique slug | [optional]
+ **org_id** | **int**| Organization identifier | [optional]
  **scheme** | **str**|  | [optional]
 
 ### Return type

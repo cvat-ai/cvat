@@ -62,6 +62,7 @@ class IssuesApi(object):
             params_map={
                 'all': [
                     'id',
+                    'x_organization',
                     'filter',
                     'org',
                     'org_id',
@@ -88,12 +89,14 @@ class IssuesApi(object):
                 'openapi_types': {
                     'id':
                         (int,),
+                    'x_organization':
+                        (str,),
                     'filter':
                         (str,),
                     'org':
                         (str,),
                     'org_id':
-                        (str,),
+                        (int,),
                     'page':
                         (int,),
                     'page_size':
@@ -105,6 +108,7 @@ class IssuesApi(object):
                 },
                 'attribute_map': {
                     'id': 'id',
+                    'x_organization': 'X-Organization',
                     'filter': 'filter',
                     'org': 'org',
                     'org_id': 'org_id',
@@ -115,6 +119,7 @@ class IssuesApi(object):
                 },
                 'location_map': {
                     'id': 'path',
+                    'x_organization': 'header',
                     'filter': 'query',
                     'org': 'query',
                     'org_id': 'query',
@@ -151,6 +156,9 @@ class IssuesApi(object):
             params_map={
                 'all': [
                     'issue_write_request',
+                    'x_organization',
+                    'org',
+                    'org_id',
                 ],
                 'required': [
                     'issue_write_request',
@@ -170,11 +178,23 @@ class IssuesApi(object):
                 'openapi_types': {
                     'issue_write_request':
                         (IssueWriteRequest,),
+                    'x_organization':
+                        (str,),
+                    'org':
+                        (str,),
+                    'org_id':
+                        (int,),
                 },
                 'attribute_map': {
+                    'x_organization': 'X-Organization',
+                    'org': 'org',
+                    'org_id': 'org_id',
                 },
                 'location_map': {
                     'issue_write_request': 'body',
+                    'x_organization': 'header',
+                    'org': 'query',
+                    'org_id': 'query',
                 },
                 'collection_format_map': {
                 }
@@ -209,6 +229,9 @@ class IssuesApi(object):
             params_map={
                 'all': [
                     'id',
+                    'x_organization',
+                    'org',
+                    'org_id',
                 ],
                 'required': [
                     'id',
@@ -228,12 +251,24 @@ class IssuesApi(object):
                 'openapi_types': {
                     'id':
                         (int,),
+                    'x_organization':
+                        (str,),
+                    'org':
+                        (str,),
+                    'org_id':
+                        (int,),
                 },
                 'attribute_map': {
                     'id': 'id',
+                    'x_organization': 'X-Organization',
+                    'org': 'org',
+                    'org_id': 'org_id',
                 },
                 'location_map': {
                     'id': 'path',
+                    'x_organization': 'header',
+                    'org': 'query',
+                    'org_id': 'query',
                 },
                 'collection_format_map': {
                 }
@@ -260,6 +295,7 @@ class IssuesApi(object):
             },
             params_map={
                 'all': [
+                    'x_organization',
                     'filter',
                     'org',
                     'org_id',
@@ -282,12 +318,14 @@ class IssuesApi(object):
                 'allowed_values': {
                 },
                 'openapi_types': {
+                    'x_organization':
+                        (str,),
                     'filter':
                         (str,),
                     'org':
                         (str,),
                     'org_id':
-                        (str,),
+                        (int,),
                     'page':
                         (int,),
                     'page_size':
@@ -298,6 +336,7 @@ class IssuesApi(object):
                         (str,),
                 },
                 'attribute_map': {
+                    'x_organization': 'X-Organization',
                     'filter': 'filter',
                     'org': 'org',
                     'org_id': 'org_id',
@@ -307,6 +346,7 @@ class IssuesApi(object):
                     'sort': 'sort',
                 },
                 'location_map': {
+                    'x_organization': 'header',
                     'filter': 'query',
                     'org': 'query',
                     'org_id': 'query',
@@ -343,6 +383,9 @@ class IssuesApi(object):
             params_map={
                 'all': [
                     'id',
+                    'x_organization',
+                    'org',
+                    'org_id',
                     'patched_issue_write_request',
                 ],
                 'required': [
@@ -363,14 +406,26 @@ class IssuesApi(object):
                 'openapi_types': {
                     'id':
                         (int,),
+                    'x_organization':
+                        (str,),
+                    'org':
+                        (str,),
+                    'org_id':
+                        (int,),
                     'patched_issue_write_request':
                         (PatchedIssueWriteRequest,),
                 },
                 'attribute_map': {
                     'id': 'id',
+                    'x_organization': 'X-Organization',
+                    'org': 'org',
+                    'org_id': 'org_id',
                 },
                 'location_map': {
                     'id': 'path',
+                    'x_organization': 'header',
+                    'org': 'query',
+                    'org_id': 'query',
                     'patched_issue_write_request': 'body',
                 },
                 'collection_format_map': {
@@ -406,6 +461,9 @@ class IssuesApi(object):
             params_map={
                 'all': [
                     'id',
+                    'x_organization',
+                    'org',
+                    'org_id',
                 ],
                 'required': [
                     'id',
@@ -425,12 +483,24 @@ class IssuesApi(object):
                 'openapi_types': {
                     'id':
                         (int,),
+                    'x_organization':
+                        (str,),
+                    'org':
+                        (str,),
+                    'org_id':
+                        (int,),
                 },
                 'attribute_map': {
                     'id': 'id',
+                    'x_organization': 'X-Organization',
+                    'org': 'org',
+                    'org_id': 'org_id',
                 },
                 'location_map': {
                     'id': 'path',
+                    'x_organization': 'header',
+                    'org': 'query',
+                    'org_id': 'query',
                 },
                 'collection_format_map': {
                 }
@@ -523,9 +593,10 @@ class IssuesApi(object):
             id (int): A unique integer value identifying this issue.
 
         Keyword Args:
+            x_organization (str): [optional]
             filter (str): A filter term. Avaliable filter_fields: ['owner', 'assignee', 'id', 'job_id', 'task_id', 'resolved']. [optional]
             org (str): Organization unique slug. [optional]
-            org_id (str): Organization identifier. [optional]
+            org_id (int): Organization identifier. [optional]
             page (int): A page number within the paginated result set.. [optional]
             page_size (int): Number of results to return per page.. [optional]
             search (str): A search term. Avaliable search_fields: ('owner', 'assignee'). [optional]
@@ -624,9 +695,10 @@ class IssuesApi(object):
             id (int): A unique integer value identifying this issue.
 
         Keyword Args:
+            x_organization (str): [optional]
             filter (str): A filter term. Avaliable filter_fields: ['owner', 'assignee', 'id', 'job_id', 'task_id', 'resolved']. [optional]
             org (str): Organization unique slug. [optional]
-            org_id (str): Organization identifier. [optional]
+            org_id (int): Organization identifier. [optional]
             page (int): A page number within the paginated result set.. [optional]
             page_size (int): Number of results to return per page.. [optional]
             search (str): A search term. Avaliable search_fields: ('owner', 'assignee'). [optional]
@@ -741,6 +813,9 @@ class IssuesApi(object):
             issue_write_request (IssueWriteRequest):
 
         Keyword Args:
+            x_organization (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
             _preload_content (bool): if False, the urllib3.HTTPResponse object
@@ -835,6 +910,9 @@ class IssuesApi(object):
             issue_write_request (IssueWriteRequest):
 
         Keyword Args:
+            x_organization (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             _request_timeout (int/float/tuple): timeout setting for this request. If
                 one number provided, it will be total request timeout. It can also
                 be a pair (tuple) of (connection, read) timeouts.
@@ -945,6 +1023,9 @@ class IssuesApi(object):
             id (int): A unique integer value identifying this issue.
 
         Keyword Args:
+            x_organization (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
             _preload_content (bool): if False, the urllib3.HTTPResponse object
@@ -1039,6 +1120,9 @@ class IssuesApi(object):
             id (int): A unique integer value identifying this issue.
 
         Keyword Args:
+            x_organization (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             _request_timeout (int/float/tuple): timeout setting for this request. If
                 one number provided, it will be total request timeout. It can also
                 be a pair (tuple) of (connection, read) timeouts.
@@ -1140,9 +1224,10 @@ class IssuesApi(object):
 
 
         Keyword Args:
+            x_organization (str): [optional]
             filter (str): A filter term. Avaliable filter_fields: ['owner', 'assignee', 'id', 'job_id', 'task_id', 'resolved']. [optional]
             org (str): Organization unique slug. [optional]
-            org_id (str): Organization identifier. [optional]
+            org_id (int): Organization identifier. [optional]
             page (int): A page number within the paginated result set.. [optional]
             page_size (int): Number of results to return per page.. [optional]
             search (str): A search term. Avaliable search_fields: ('owner', 'assignee'). [optional]
@@ -1237,9 +1322,10 @@ class IssuesApi(object):
 
 
         Keyword Args:
+            x_organization (str): [optional]
             filter (str): A filter term. Avaliable filter_fields: ['owner', 'assignee', 'id', 'job_id', 'task_id', 'resolved']. [optional]
             org (str): Organization unique slug. [optional]
-            org_id (str): Organization identifier. [optional]
+            org_id (int): Organization identifier. [optional]
             page (int): A page number within the paginated result set.. [optional]
             page_size (int): Number of results to return per page.. [optional]
             search (str): A search term. Avaliable search_fields: ('owner', 'assignee'). [optional]
@@ -1354,6 +1440,9 @@ class IssuesApi(object):
             id (int): A unique integer value identifying this issue.
 
         Keyword Args:
+            x_organization (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             patched_issue_write_request (PatchedIssueWriteRequest): [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
@@ -1449,6 +1538,9 @@ class IssuesApi(object):
             id (int): A unique integer value identifying this issue.
 
         Keyword Args:
+            x_organization (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             patched_issue_write_request (PatchedIssueWriteRequest): [optional]
             _request_timeout (int/float/tuple): timeout setting for this request. If
                 one number provided, it will be total request timeout. It can also
@@ -1560,6 +1652,9 @@ class IssuesApi(object):
             id (int): A unique integer value identifying this issue.
 
         Keyword Args:
+            x_organization (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
             _preload_content (bool): if False, the urllib3.HTTPResponse object
@@ -1654,6 +1749,9 @@ class IssuesApi(object):
             id (int): A unique integer value identifying this issue.
 
         Keyword Args:
+            x_organization (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             _request_timeout (int/float/tuple): timeout setting for this request. If
                 one number provided, it will be total request timeout. It can also
                 be a pair (tuple) of (connection, read) timeouts.

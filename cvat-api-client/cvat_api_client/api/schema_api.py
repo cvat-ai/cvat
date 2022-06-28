@@ -55,7 +55,10 @@ class SchemaApi(object):
             },
             params_map={
                 'all': [
+                    'x_organization',
                     'lang',
+                    'org',
+                    'org_id',
                     'scheme',
                 ],
                 'required': [],
@@ -178,17 +181,29 @@ class SchemaApi(object):
                     },
                 },
                 'openapi_types': {
+                    'x_organization':
+                        (str,),
                     'lang':
                         (str,),
+                    'org':
+                        (str,),
+                    'org_id':
+                        (int,),
                     'scheme':
                         (str,),
                 },
                 'attribute_map': {
+                    'x_organization': 'X-Organization',
                     'lang': 'lang',
+                    'org': 'org',
+                    'org_id': 'org_id',
                     'scheme': 'scheme',
                 },
                 'location_map': {
+                    'x_organization': 'header',
                     'lang': 'query',
+                    'org': 'query',
+                    'org_id': 'query',
                     'scheme': 'query',
                 },
                 'collection_format_map': {
@@ -277,7 +292,10 @@ class SchemaApi(object):
 
 
         Keyword Args:
+            x_organization (str): [optional]
             lang (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             scheme (str): [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
@@ -370,7 +388,10 @@ class SchemaApi(object):
 
 
         Keyword Args:
+            x_organization (str): [optional]
             lang (str): [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
             scheme (str): [optional]
             _request_timeout (int/float/tuple): timeout setting for this request. If
                 one number provided, it will be total request timeout. It can also
