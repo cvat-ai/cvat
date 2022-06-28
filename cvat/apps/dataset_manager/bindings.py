@@ -1360,12 +1360,14 @@ def convert_cvat_anno_to_dm(cvat_frame_anno, label_attrs, map_label, format_name
                 "attributes": anno_attr,
             }), cvat_frame_anno.height, cvat_frame_anno.width)
         elif shape_obj.type == ShapeType.MASK:
-            logger.info("ENTERESAFSFHGAHJK SDFALSDKFHSADKJH")
+            # logger.info("ENTERESAFSFHGAHJK SDFALSDKFHSADKJH")
+
             # anno = datum_annotation.RleMask(rle=  anno_points)
             # rle = mask_utils.encode(np.asfortranarray(anno_points))
-            int_points = [* map(int, anno_points)]
-            logger.info("INT POINTS HERE ")
-            logger.info(int_points)
+
+            # int_points = [* map(int, anno_points)]
+            # logger.info("INT POINTS HERE ")
+            # logger.info(int_points)
 
             # anno = datum_annotation.RleMask(rle=[int_points])
 
@@ -1379,28 +1381,65 @@ def convert_cvat_anno_to_dm(cvat_frame_anno, label_attrs, map_label, format_name
 
             # rle = mask.merge(mask.frPyObjects([segmentation], h, w))
             # anno = datum_annotation.RleMask(rle=rle)
+
             # anno = mask.merge(mask.frPyObjects(segmentation, h, w))
 
             # anno = mask.frPyObjects(segmentation, h, w)
 
 
-            xs = [p for p in int_points[0::2]]
-            ys = [p for p in int_points[1::2]]
-            x0 = min(xs)
-            x1 = max(xs)
-            y0 = min(ys)
-            y1 = max(ys)
-            x,y,w,h = [x0, y0, x1 - x0, y1 - y0]
-            rle = mask_utils.frPyObjects([int_points], y + h, x + w)
+            # xs = [p for p in int_points[0::2]]
+            # ys = [p for p in int_points[1::2]]
+            # x0 = min(xs)
+            # x1 = max(xs)
+            # y0 = min(ys)
+            # y1 = max(ys)
+            # x,y,w,h = [x0, y0, x1 - x0, y1 - y0]
+            # rle = mask_utils.frPyObjects([int_points], y + h, x + w)
 
-            anno = datum_annotation.RleMask(rle=rle)
+            # anno = datum_annotation.RleMask(rle=rle)
 
             # time.sleep(10)
             # anno = datum_annotation.RleMask(rle=int_points, label=anno_label, z_order=shape_obj.z_order,
             # attributes=anno_attr, group=anno_group)
 
-            logger.info("annotation here ")
-            logger.info(anno)
+
+
+
+            # anno = datum_annotation.Polygon(map(int, anno_points),
+            #     label=anno_label, attributes=anno_attr, group=anno_group,
+            #     z_order=shape_obj.z_order)
+
+
+            # annotation_dict = OrderedDict([
+            #     ("rle", f"{list(int (v) for v in shape_obj.points[:-4])}"[1:-1]),
+            #     ("left", f"{int(shape_obj.points[-4])}"),
+            #     ("top", f"{int(shape_obj.points[-3])}"),
+            #     ("width", f"{int(shape_obj.points[-2] - shape_obj.points[-4])}"),
+            #     ("height", f"{int(shape_obj.points[-1] - shape_obj.points[-3])}")])
+
+            # attributes = []
+            # shape = {
+            #     'attributes': attributes,
+            #     'points': [],
+            # }
+
+            # shape['points'] = annotation_dict['rle'].split(',')
+            # shape['points'].append(annotation_dict['left'])
+            # shape['points'].append(annotation_dict['top'])
+            # shape['points'].append("{}".format(int(annotation_dict['left']) + int(annotation_dict['width'])))
+            # shape['points'].append("{}".format(int(annotation_dict['top']) + int(annotation_dict['height'])))
+
+
+            # logger.info("shape here ")
+            # logger.info(shape)
+
+            # logger.info("annotation dict here ")
+            # logger.info(annotation_dict)
+
+            # raise Exception("exception here ")
+
+            # logger.info(anno)
+            # anno = "sodfk"
 
             # blah = (SimpleNamespace(**{
             #     "points": int_points,
@@ -1418,11 +1457,11 @@ def convert_cvat_anno_to_dm(cvat_frame_anno, label_attrs, map_label, format_name
             # points = blah.points
 
             # # rle = mask_utils.frPyObjects(list(int (v) for v in points[:-4]), points[-1]- points[-3], points[-2] - points[-4])
-            # rle = mask_utils.frPyObjects([list(int (v) for v in points[:-4])], points[-1]- points[-3], points[-2] - points[-4])
+            # rle = mask_utils.frPyObjects([list(int (v) for v in shape_obj.points[:-4])], shape_obj.points[-1]- shape_obj.points[-3], shape_obj.points[-2] - shape_obj.points[-4])
 
 
-            # anno  = datum_annotation.RleMask(rle=rle, label=blah.label, z_order=blah.z_order,
-            # attributes=blah.attributes, group=blah.group)
+            # anno  = datum_annotation.RleMask(rle=rle, label=anno_label, z_order=shape_obj.z_order,
+            # attributes=anno_attr, group=anno_group)
 
             # anno = datum_annotation.PolyLine(anno_points,
             #     label=anno_label, attributes=anno_attr, group=anno_group,
@@ -1432,6 +1471,14 @@ def convert_cvat_anno_to_dm(cvat_frame_anno, label_attrs, map_label, format_name
             #     label=anno_label, attributes=anno_attr, group=anno_group,
             #     z_order=shape_obj.z_order)
 
+
+            # points = shape_obj.points
+
+            # anno = datum_annotation.RleMask(rle=points, label=anno_label, attributes=anno_attr, group=anno_group, z_order=shape_obj.z_order)
+
+            anno = datum_annotation.Bbox(anno_points[-4], anno_points[-3], anno_points[-2] - anno_points[-4], anno_points[-1] - anno_points[-3],
+                label=anno_label, attributes=anno_attr, group=anno_group,
+                z_order=shape_obj.z_order)
 
         # elif shape_obj.type == ShapeType.POLYLINE:
             # anno = datum_annotation.PolyLine(anno_points,
