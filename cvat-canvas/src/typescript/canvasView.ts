@@ -546,24 +546,22 @@ export class CanvasViewImpl implements CanvasView, Listener {
             element.setAttribute('stroke-width', `${+previousWidth * 2}`);
         }
 
-        // Transform all drawn shapes
-        for (const key in this.svgShapes) {
-            if (Object.prototype.hasOwnProperty.call(this.svgShapes, key)) {
-                const object = this.svgShapes[key];
-                object.attr({
-                    'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
-                });
+        // Transform all drawn shapes and text
+        for (const key of Object.keys(this.svgShapes)) {
+            const clientID = +key;
+            const object = this.svgShapes[clientID];
+            object.attr({
+                'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
+            });
+            if (object.type === 'circle') {
+                object.attr('r', `${consts.BASE_POINT_SIZE / this.geometry.scale}`);
             }
+            this.updateTextPosition(this.svgTexts[clientID]);
         }
 
-        // Transform all text
-        for (const key in this.svgShapes) {
-            if (
-                Object.prototype.hasOwnProperty.call(this.svgShapes, key) &&
-                    Object.prototype.hasOwnProperty.call(this.svgTexts, key)
-            ) {
-                this.updateTextPosition(this.svgTexts[key]);
-            }
+        // Transform skeleton edges
+        for (const skeletonEdge of window.document.getElementsByClassName('cvat_canvas_skeleton_edge')) {
+            skeletonEdge.setAttribute('stroke-width', `${consts.BASE_STROKE_WIDTH / this.geometry.scale}`);
         }
 
         // Transform all drawn issues region
@@ -2642,7 +2640,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                                     'data-node-from': dataNodeFrom,
                                     'data-node-to': dataNodeTo,
                                     'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
-                                });
+                                }).addClass('cvat_canvas_skeleton_edge');
                                 skeleton.node.prepend(line.node);
                             }
                         }
