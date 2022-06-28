@@ -193,7 +193,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
                     if (text) {
                         text.removeClass('cvat_canvas_hidden');
-                        this.updateTextPosition(text, shape);
+                        this.updateTextPosition(text);
                     }
                 }
             }
@@ -562,7 +562,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 Object.prototype.hasOwnProperty.call(this.svgShapes, key) &&
                     Object.prototype.hasOwnProperty.call(this.svgTexts, key)
             ) {
-                this.updateTextPosition(this.svgTexts[key], this.svgShapes[key]);
+                this.updateTextPosition(this.svgTexts[key]);
             }
         }
 
@@ -1203,10 +1203,9 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     }
                 }
             } else if (configuration.displayAllText === false && this.configuration.displayAllText) {
-                for (const i in this.drawnStates) {
-                    if (i in this.svgTexts && Number.parseInt(i, 10) !== activeElement.clientID) {
-                        this.svgTexts[i].remove();
-                        delete this.svgTexts[i];
+                for (const clientID in this.drawnStates) {
+                    if (+clientID !== activeElement.clientID) {
+                        this.deleteText(+clientID);
                     }
                 }
             }
@@ -1230,9 +1229,10 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     const clientID = +key;
                     const [state] = states.filter((_state: any) => _state.clientID === clientID);
                     if (clientID in this.svgTexts) {
-                        this.svgTexts[clientID].remove();
-                        delete this.svgTexts[clientID];
-                        if (state) this.svgTexts[clientID] = this.addText(state);
+                        this.deleteText(+clientID);
+                        if (state) {
+                            this.svgTexts[clientID] = this.addText(state);
+                        }
                     }
                 }
             }
@@ -1240,7 +1240,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             if (updateTextPosition) {
                 for (const i in this.drawnStates) {
                     if (i in this.svgTexts) {
-                        this.updateTextPosition(this.svgTexts[i], this.svgShapes[i]);
+                        this.updateTextPosition(this.svgTexts[i]);
                     }
                 }
             }
@@ -1632,8 +1632,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
         }
     }
 
-    private saveState(state: any): void {
-        this.drawnStates[state.clientID] = {
+    private saveState(state: any): DrawnState {
+        const result = {
             clientID: state.clientID,
             outside: state.outside,
             occluded: state.occluded,
@@ -1650,7 +1650,11 @@ export class CanvasViewImpl implements CanvasView, Listener {
             updated: state.updated,
             frame: state.frame,
             label: state.label,
+            elements: state.shapeType === 'skeleton' ?
+                state.elements.map((element: any) => this.saveState(element)) : null,
         };
+
+        return result;
     }
 
     private updateObjects(states: any[]): void {
@@ -1675,7 +1679,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     );
                     if (text) {
                         text.removeClass('cvat_canvas_hidden');
-                        this.updateTextPosition(text, shape);
+                        this.updateTextPosition(text);
                     }
                 }
             }
@@ -1775,23 +1779,31 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 }
             }
 
-            this.saveState(state);
+            this.drawnStates[state.clientID] = this.saveState(state);
         }
     }
 
     private deleteObjects(states: any[]): void {
         for (const state of states) {
             if (state.clientID in this.svgTexts) {
-                this.svgTexts[state.clientID].remove();
-                delete this.svgTexts[state.clientID];
+                this.deleteText(state.clientID);
             }
 
-            this.svgShapes[state.clientID].fire('remove');
-            this.svgShapes[state.clientID].off('click');
-            this.svgShapes[state.clientID].off('remove');
-            this.svgShapes[state.clientID].remove();
-            delete this.drawnStates[state.clientID];
-            delete this.svgShapes[state.clientID];
+            if (state.shapeType === 'skeleton') {
+                this.deleteObjects(state.elements);
+            }
+
+            if (state.clientID in this.svgShapes) {
+                this.svgShapes[state.clientID].fire('remove');
+                this.svgShapes[state.clientID].off('click');
+                this.svgShapes[state.clientID].off('remove');
+                this.svgShapes[state.clientID].remove();
+                delete this.svgShapes[state.clientID];
+            }
+
+            if (state.clientID in this.drawnStates) {
+                delete this.drawnStates[state.clientID];
+            }
         }
     }
 
@@ -1837,18 +1849,11 @@ export class CanvasViewImpl implements CanvasView, Listener {
             });
 
             if (displayAllText) {
-                if (state.shapeType === 'skeleton') {
-                    state.elements.forEach((element: any) => {
-                        this.svgTexts[element.clientID] = this.addText(element);
-                        this.updateTextPosition(this.svgTexts[element.clientID], this.svgShapes[element.clientID]);
-                    });
-                }
-
                 this.svgTexts[state.clientID] = this.addText(state);
-                this.updateTextPosition(this.svgTexts[state.clientID], this.svgShapes[state.clientID]);
+                this.updateTextPosition(this.svgTexts[state.clientID]);
             }
 
-            this.saveState(state);
+            this.drawnStates[state.clientID] = this.saveState(state);
         }
     }
 
@@ -1927,8 +1932,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             // TODO: Hide text only if it is hidden by settings
             const text = this.svgTexts[clientID];
             if (text && !displayAllText) {
-                text.remove();
-                delete this.svgTexts[clientID];
+                this.deleteText(clientID);
             }
 
             this.sortObjects();
@@ -1979,7 +1983,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             text = this.addText(state);
             this.svgTexts[state.clientID] = text;
         }
-        this.updateTextPosition(text, shape);
+        this.updateTextPosition(text);
 
         if (this.stateIsLocked(state)) {
             return;
@@ -2006,7 +2010,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         const showText = (): void => {
             if (text) {
                 text.removeClass('cvat_canvas_hidden');
-                this.updateTextPosition(text, shape);
+                this.updateTextPosition(text);
             }
         };
 
@@ -2220,7 +2224,20 @@ export class CanvasViewImpl implements CanvasView, Listener {
     }
 
     // Update text position after corresponding box has been moved, resized, etc.
-    private updateTextPosition(text: SVG.Text, shape: SVG.Shape): void {
+    private updateTextPosition(text: SVG.Text): void {
+        const clientID = text.attr('data-client-id');
+        if (!Number.isInteger(clientID)) return;
+        const shape = this.svgShapes[clientID];
+        if (!shape) return;
+
+        if (clientID in this.drawnStates && this.drawnStates[clientID].shapeType === 'skeleton') {
+            this.drawnStates[clientID].elements.forEach((element: DrawnState) => {
+                if (element.clientID in this.svgTexts) {
+                    this.updateTextPosition(this.svgTexts[element.clientID]);
+                }
+            });
+        }
+
         if (text.node.style.display === 'none') return; // wrong transformation matrix
         const { textFontSize, textPosition } = this.configuration;
 
@@ -2308,15 +2325,27 @@ export class CanvasViewImpl implements CanvasView, Listener {
         }
     }
 
-    private addText(state: any): SVG.Text {
+    private deleteText(clientID: number): void {
+        if (clientID in this.svgTexts) {
+            this.svgTexts[clientID].remove();
+            delete this.svgTexts[clientID];
+        }
+
+        if (clientID in this.drawnStates && this.drawnStates[clientID].shapeType === 'skeleton') {
+            this.drawnStates[clientID].elements.forEach((element) => {
+                this.deleteText(element.clientID);
+            });
+        }
+    }
+
+    private addText(state: any, options: { textContent?: string } = {}): SVG.Text {
         const { undefinedAttrValue } = this.configuration;
-        const content = this.configuration.textContent;
+        const content = options.textContent || this.configuration.textContent;
         const withID = content.includes('id');
         const withAttr = content.includes('attributes');
         const withLabel = content.includes('label');
         const withSource = content.includes('source');
         const withDescriptions = content.includes('descriptions');
-
         const textFontSize = this.configuration.textFontSize || 12;
         const {
             label, clientID, attributes, source, descriptions,
@@ -2325,6 +2354,14 @@ export class CanvasViewImpl implements CanvasView, Listener {
             acc[val.id] = val.name;
             return acc;
         }, {});
+
+        if (state.shapeType === 'skeleton') {
+            state.elements.forEach((element: any) => {
+                if (!(element.clientID in this.svgTexts)) {
+                    this.svgTexts[element.clientID] = this.addText(element, { textContent: 'label, attributes' });
+                }
+            });
+        }
 
         return this.adoptedText
             .text((block): void => {
@@ -2357,6 +2394,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 }
             })
             .move(0, 0)
+            .attr({ 'data-client-id': state.clientID })
             .style({ 'font-size': textFontSize })
             .addClass('cvat_canvas_text');
     }
@@ -2523,6 +2561,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     }).style({
                         cursor: 'default',
                     });
+                this.svgShapes[element.clientID] = circle;
 
                 const mouseover = (): void => {
                     const locked = this.drawnStates[state.clientID].lock;

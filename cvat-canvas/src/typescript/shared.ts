@@ -52,6 +52,7 @@ export interface DrawnState {
     updated: number;
     frame: number;
     label: any;
+    elements: DrawnState[] | null;
 }
 
 // Translate point array from the canvas coordinate system
