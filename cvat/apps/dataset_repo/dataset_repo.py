@@ -26,7 +26,7 @@ from cvat.apps.engine.plugins import add_plugin
 
 def _have_no_access_exception(ex):
     if 'Permission denied' in ex.stderr or 'Could not read from remote repository' in ex.stderr:
-        keys = subprocess.run(['ssh-add -L'], shell = True,
+        keys = subprocess.run(['ssh-add', '-L'], #nosec
             stdout = subprocess.PIPE).stdout.decode('utf-8').split('\n')
         keys = list(filter(len, list(map(lambda x: x.strip(), keys))))
         raise Exception(
@@ -268,7 +268,7 @@ class Git:
 
         # Dump an annotation
         timestamp = datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
-        dump_name = os.path.join(db_task.get_task_dirname(),
+        dump_name = os.path.join(db_task.get_dirname(),
                                  "git_annotation_{}_{}.zip".format(self._format, timestamp))
 
         export_task(
@@ -303,7 +303,7 @@ class Git:
         }
 
         old_diffs_dir = os.path.join(os.path.dirname(self._diffs_dir), 'repos_diffs')
-        if (os.path.isdir(old_diffs_dir)):
+        if os.path.isdir(old_diffs_dir):
             _read_old_diffs(old_diffs_dir, summary_diff)
 
         for diff_name in list(map(lambda x: os.path.join(self._diffs_dir, x), os.listdir(self._diffs_dir))):

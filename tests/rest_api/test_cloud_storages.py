@@ -180,7 +180,7 @@ class TestPatchCloudStorage:
         ('maintainer', False, True),
         ('supervisor', False, False),
     ])
-    def test_org_user_update_coud_storage(self, org_id, storage_id, role, is_owner, is_allow, find_users, cloud_storages):
+    def test_org_user_update_cloud_storage(self, org_id, storage_id, role, is_owner, is_allow, find_users, cloud_storages):
         cloud_storage = cloud_storages[storage_id]
         username = cloud_storage['owner']['username'] if is_owner else \
             next((u for u in find_users(role=role, org=org_id) if u['id'] != cloud_storage['owner']['id']))['username']

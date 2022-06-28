@@ -1413,7 +1413,7 @@
   "pk": 1,
   "fields": {
     "password": "pbkdf2_sha256$260000$DevmxlmLwciP1P6sZs2Qag$U9DFtjTWx96Sk95qY6UXVcvpdQEP2LcoFBftk5D2RKY=",
-    "last_login": "2022-06-08T08:32:30.152Z",
+    "last_login": "2022-06-22T09:20:25.189Z",
     "is_superuser": true,
     "username": "admin1",
     "first_name": "Admin",
@@ -2182,6 +2182,14 @@
   "fields": {
     "app_label": "dataset_repo",
     "model": "gitdata"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 49,
+  "fields": {
+    "app_label": "engine",
+    "model": "storage"
   }
 },
 {
@@ -3688,7 +3696,9 @@
     "created_date": "2021-12-14T19:46:37.969Z",
     "updated_date": "2022-03-05T09:47:49.679Z",
     "status": "annotation",
-    "organization": null
+    "organization": null,
+    "source_storage": null,
+    "target_storage": null
   }
 },
 {
@@ -3702,7 +3712,9 @@
     "created_date": "2021-12-14T19:52:37.278Z",
     "updated_date": "2022-03-28T13:04:54.669Z",
     "status": "annotation",
-    "organization": 2
+    "organization": 2,
+    "source_storage": null,
+    "target_storage": null
   }
 },
 {
@@ -3716,7 +3728,9 @@
     "created_date": "2022-03-28T13:05:24.659Z",
     "updated_date": "2022-03-28T13:06:09.283Z",
     "status": "annotation",
-    "organization": 2
+    "organization": 2,
+    "source_storage": null,
+    "target_storage": null
   }
 },
 {
@@ -3730,7 +3744,9 @@
     "created_date": "2022-06-08T08:32:45.521Z",
     "updated_date": "2022-06-08T08:33:20.759Z",
     "status": "annotation",
-    "organization": 2
+    "organization": 2,
+    "source_storage": null,
+    "target_storage": null
   }
 },
 {
@@ -3751,7 +3767,9 @@
     "data": 2,
     "dimension": "2d",
     "subset": "",
-    "organization": 1
+    "organization": 1,
+    "source_storage": null,
+    "target_storage": null
   }
 },
 {
@@ -3772,7 +3790,9 @@
     "data": 5,
     "dimension": "2d",
     "subset": "",
-    "organization": null
+    "organization": null,
+    "source_storage": null,
+    "target_storage": null
   }
 },
 {
@@ -3793,7 +3813,9 @@
     "data": 6,
     "dimension": "3d",
     "subset": "",
-    "organization": null
+    "organization": null,
+    "source_storage": null,
+    "target_storage": null
   }
 },
 {
@@ -3814,7 +3836,9 @@
     "data": 7,
     "dimension": "2d",
     "subset": "",
-    "organization": 2
+    "organization": 2,
+    "source_storage": null,
+    "target_storage": null
   }
 },
 {
@@ -3835,7 +3859,9 @@
     "data": 8,
     "dimension": "2d",
     "subset": "",
-    "organization": null
+    "organization": null,
+    "source_storage": null,
+    "target_storage": null
   }
 },
 {
@@ -3856,7 +3882,9 @@
     "data": 9,
     "dimension": "2d",
     "subset": "",
-    "organization": null
+    "organization": null,
+    "source_storage": null,
+    "target_storage": null
   }
 },
 {
@@ -3877,7 +3905,9 @@
     "data": 11,
     "dimension": "2d",
     "subset": "Train",
-    "organization": 2
+    "organization": 2,
+    "source_storage": null,
+    "target_storage": null
   }
 },
 {
@@ -3898,7 +3928,9 @@
     "data": null,
     "dimension": "2d",
     "subset": "",
-    "organization": null
+    "organization": null,
+    "source_storage": null,
+    "target_storage": null
   }
 },
 {
@@ -3919,7 +3951,9 @@
     "data": 12,
     "dimension": "2d",
     "subset": "",
-    "organization": 2
+    "organization": 2,
+    "source_storage": null,
+    "target_storage": null
   }
 },
 {
@@ -4724,6 +4758,7 @@
   "fields": {
     "segment": 2,
     "assignee": 6,
+    "updated_date": "2022-06-22T09:18:45.296Z",
     "status": "annotation",
     "stage": "annotation",
     "state": "new"
@@ -4735,6 +4770,7 @@
   "fields": {
     "segment": 7,
     "assignee": 9,
+    "updated_date": "2022-06-22T09:18:45.296Z",
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress"
@@ -4746,6 +4782,7 @@
   "fields": {
     "segment": 8,
     "assignee": null,
+    "updated_date": "2022-06-22T09:18:45.296Z",
     "status": "annotation",
     "stage": "annotation",
     "state": "new"
@@ -4757,6 +4794,7 @@
   "fields": {
     "segment": 9,
     "assignee": null,
+    "updated_date": "2022-06-22T09:18:45.296Z",
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress"
@@ -4768,6 +4806,7 @@
   "fields": {
     "segment": 10,
     "assignee": 1,
+    "updated_date": "2022-06-22T09:18:45.296Z",
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress"
@@ -4779,6 +4818,7 @@
   "fields": {
     "segment": 11,
     "assignee": 9,
+    "updated_date": "2022-06-22T09:18:45.296Z",
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress"
@@ -4790,6 +4830,7 @@
   "fields": {
     "segment": 12,
     "assignee": null,
+    "updated_date": "2022-06-22T09:18:45.296Z",
     "status": "validation",
     "stage": "validation",
     "state": "new"
@@ -4801,6 +4842,7 @@
   "fields": {
     "segment": 13,
     "assignee": null,
+    "updated_date": "2022-06-22T09:18:45.296Z",
     "status": "validation",
     "stage": "acceptance",
     "state": "new"
@@ -4812,6 +4854,7 @@
   "fields": {
     "segment": 14,
     "assignee": null,
+    "updated_date": "2022-06-22T09:18:45.296Z",
     "status": "annotation",
     "stage": "annotation",
     "state": "new"
@@ -4823,6 +4866,7 @@
   "fields": {
     "segment": 16,
     "assignee": 7,
+    "updated_date": "2022-06-22T09:18:45.296Z",
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress"
@@ -4834,6 +4878,7 @@
   "fields": {
     "segment": 17,
     "assignee": null,
+    "updated_date": "2022-06-22T09:18:45.296Z",
     "status": "annotation",
     "stage": "annotation",
     "state": "in progress"

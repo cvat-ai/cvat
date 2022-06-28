@@ -80,8 +80,8 @@ def create_db_task(data):
 
     labels = data.pop('labels', None)
     db_task = Task.objects.create(**data)
-    shutil.rmtree(db_task.get_task_dirname(), ignore_errors=True)
-    os.makedirs(db_task.get_task_dirname())
+    shutil.rmtree(db_task.get_dirname(), ignore_errors=True)
+    os.makedirs(db_task.get_dirname())
     os.makedirs(db_task.get_task_logs_dirname())
     os.makedirs(db_task.get_task_artifacts_dirname())
     db_task.data = db_data
@@ -117,8 +117,8 @@ def create_db_task(data):
 def create_db_project(data):
     labels = data.pop('labels', None)
     db_project = Project.objects.create(**data)
-    shutil.rmtree(db_project.get_project_dirname(), ignore_errors=True)
-    os.makedirs(db_project.get_project_dirname())
+    shutil.rmtree(db_project.get_dirname(), ignore_errors=True)
+    os.makedirs(db_project.get_dirname())
     os.makedirs(db_project.get_project_logs_dirname())
 
     if not labels is None:
@@ -1979,11 +1979,11 @@ class TaskDeleteAPITestCase(APITestCase):
 
     def test_api_v2_tasks_delete_task_data_after_delete_task(self):
         for task in self.tasks:
-            task_dir = task.get_task_dirname()
+            task_dir = task.get_dirname()
             self.assertTrue(os.path.exists(task_dir))
         self._check_api_v2_tasks_id(self.admin)
         for task in self.tasks:
-            task_dir = task.get_task_dirname()
+            task_dir = task.get_dirname()
             self.assertFalse(os.path.exists(task_dir))
 
 class TaskUpdateAPITestCase(APITestCase):
@@ -2418,7 +2418,7 @@ class TaskMoveAPITestCase(APITestCase):
     def _check_api_v2_tasks(self, tid, data, expected_status=status.HTTP_200_OK):
         response = self._run_api_v2_tasks_id(tid, data)
         self.assertEqual(response.status_code, expected_status)
-        if (expected_status == status.HTTP_200_OK):
+        if expected_status == status.HTTP_200_OK:
             self._check_response(response, data)
 
     def test_move_task_bad_request(self):
@@ -2936,6 +2936,8 @@ class TaskImportExportAPITestCase(APITestCase):
                             "created_date",
                             "updated_date",
                             "data",
+                            "source_storage",
+                            "target_storage",
                         ),
                     )
 
