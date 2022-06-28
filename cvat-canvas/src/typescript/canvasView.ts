@@ -2536,7 +2536,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         let xbr = Number.MIN_SAFE_INTEGER;
         let ybr = Number.MIN_SAFE_INTEGER;
 
-        const svgElements: SVG.Element[] = [];
+        const svgElements: Record<number, SVG.Element> = {};
         const templateElements = Array.from(SVGElement.children).filter((el: Element) => el.tagName === 'circle');
         for (let i = 0; i < state.elements.length; i++) {
             const element = state.elements[i];
@@ -2586,12 +2586,12 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     circle.off('mouseleave', mouseleave);
                 });
 
-                svgElements.push(circle);
+                svgElements[element.clientID] = circle;
             }
         }
 
         skeleton.on('remove', () => {
-            svgElements.forEach((element) => element.fire('remove'));
+            Object.values(svgElements).forEach((element) => element.fire('remove'));
             skeleton.off('remove');
         });
 
@@ -2663,22 +2663,37 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
         skeleton.selectize = (enabled: boolean) => {
             this.selectize(enabled, wrappingRect);
-
-            // svgElements.forEach((element) => {
-            //     this.selectize(enabled, element);
-            // });
-
             return skeleton;
         };
 
         skeleton.draggable = (enabled = true) => {
+            const textList = [
+                state.clientID, ...state.elements.map((element: any): number => element.clientID),
+            ].map((clientID: number) => this.svgTexts[clientID]).filter((text: SVG.Text | undefined) => (
+                typeof text !== 'undefined'
+            ));
+
+            const hideText = (): void => {
+                textList.forEach((text: SVG.Text) => {
+                    text.addClass('cvat_canvas_hidden');
+                });
+            };
+
+            const showText = (): void => {
+                textList.forEach((text: SVG.Text) => {
+                    text.removeClass('cvat_canvas_hidden');
+                    this.updateTextPosition(text);
+                });
+            };
+
             if (enabled) {
                 wrappingRect.draggable()
                     .on('dragstart', (): void => {
                         this.mode = Mode.DRAG;
-                        // hideText();
+                        hideText();
                         skeleton.on('remove.drag', (): void => {
                             this.mode = Mode.IDLE;
+                            showText();
                             // disable internal drag events of SVG.js
                             window.dispatchEvent(new MouseEvent('mouseup'));
                             skeleton.off('remove.drag');
@@ -2709,7 +2724,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     .on('dragend', (e: CustomEvent): void => {
                         skeleton.off('remove.drag');
                         this.mode = Mode.IDLE;
-                        // showText();
+                        showText();
                         const p1 = e.detail.handler.startPoints.point;
                         const p2 = e.detail.p;
                         const delta = 1;
@@ -2740,12 +2755,45 @@ export class CanvasViewImpl implements CanvasView, Listener {
         };
 
         (skeleton as any).resize = (action: any) => {
-            svgElements.forEach((element) => {
+            const textList = [
+                state.clientID, ...state.elements.map((element: any): number => element.clientID),
+            ].map((clientID: number) => this.svgTexts[clientID]).filter((text: SVG.Text | undefined) => (
+                typeof text !== 'undefined'
+            ));
+
+            const hideText = (): void => {
+                textList.forEach((text: SVG.Text) => {
+                    text.addClass('cvat_canvas_hidden');
+                });
+            };
+
+            const showText = (): void => {
+                textList.forEach((text: SVG.Text) => {
+                    text.removeClass('cvat_canvas_hidden');
+                    this.updateTextPosition(text);
+                });
+            };
+
+            Object.entries(svgElements).forEach(([clientID, element]) => {
+                const text = this.svgTexts[+clientID];
+                const hideElementText = (): void => {
+                    if (text) {
+                        text.addClass('cvat_canvas_hidden');
+                    }
+                };
+
+                const showElementText = (): void => {
+                    if (text) {
+                        text.removeClass('cvat_canvas_hidden');
+                        this.updateTextPosition(text);
+                    }
+                };
+
                 if (typeof action === 'object') {
                     (element as any).draggable()
                         .on('dragstart', (): void => {
                             this.mode = Mode.RESIZE;
-                            // hideText();
+                            hideElementText();
                             element.on('remove.drag', (): void => {
                                 this.mode = Mode.IDLE;
                                 // disable internal drag events of SVG.js
@@ -2753,51 +2801,22 @@ export class CanvasViewImpl implements CanvasView, Listener {
                                 element.off('remove.drag');
                             });
                         })
-                        .on('dragmove', (e: CustomEvent): void => {
-                            // const { instance } = e.target as any;
-                            // const [x, y] = [instance.x(), instance.y()];
-                            // const prevXtl = +wrappingRect.attr('data-xtl');
-                            // const prevYtl = +wrappingRect.attr('data-ytl');
-
-                            // for (const child of skeleton.children()) {
-                            //     if (child.type === 'circle') {
-                            //         child.center(
-                            //             child.cx() - prevXtl + x,
-                            //             child.cy() - prevYtl + y,
-                            //         );
-                            //     }
-                            // }
-
-                            // wrappingRect.attr('data-xtl', x);
-                            // wrappingRect.attr('data-ytl', y);
-                            // wrappingRect.attr('data-xbr', x + instance.width());
-                            // wrappingRect.attr('data-ybr', y + instance.height());
-
+                        .on('dragmove', (): void => {
                             setupEdges();
                         })
                         .on('dragend', (e: CustomEvent): void => {
                             element.off('remove.drag');
-                            // this.mode = Mode.IDLE;
-                            // // showText();
+                            this.mode = Mode.IDLE;
                             // const p1 = e.detail.handler.startPoints.point;
                             // const p2 = e.detail.p;
                             // const delta = 1;
                             // const dx2 = (p1.x - p2.x) ** 2;
                             // const dy2 = (p1.y - p2.y) ** 2;
                             // if (Math.sqrt(dx2 + dy2) >= delta) {
-                            //     state.elements.forEach((element: any) => {
-                            //         const elementShape = skeleton.children()
-                            //             .find((child: SVG.Shape) => child.id() === `cvat_canvas_shape_${element.clientID}`);
-
-                            //         if (elementShape) {
-                            //             let points = readPointsFromShape(elementShape);
-                            //             points = this.translateFromCanvas(points);
-                            //             element.points = points;
-                            //         }
-                            //     });
-
                             //     this.onEditDone(state, state.points);
                             // }
+
+                            showElementText();
                         });
                 } else {
                     (element as any).off('dragstart');
@@ -2811,12 +2830,11 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 (wrappingRect as any).resize(action).on('resizestart', (): void => {
                     this.mode = Mode.RESIZE;
                     resized = false;
-                    // hideDirection();
-                    // hideText();
-                    // if (state.shapeType === 'rectangle' || state.shapeType === 'ellipse') {
-                    //     shapeSizeElement = displayShapeSize(this.adoptedContent, this.adoptedText);
-                    // }
+                    hideText();
                     (wrappingRect as any).on('remove.resize', () => {
+                        this.mode = Mode.IDLE;
+                        showText();
+
                         // disable internal resize events of SVG.js
                         window.dispatchEvent(new MouseEvent('mouseup'));
                         this.mode = Mode.IDLE;
@@ -2848,6 +2866,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     resized = true;
                     setupEdges();
                 }).on('resizedone', (): void => {
+                    showText();
+                    this.mode = Mode.IDLE;
                     (wrappingRect as any).off('remove.resize');
                     if (resized) {
                         state.elements.forEach((element: any) => {
