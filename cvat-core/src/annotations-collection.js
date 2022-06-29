@@ -530,41 +530,23 @@
 
         statistics() {
             const labels = {};
-            const skeleton = {
-                rectangle: {
-                    shape: 0,
-                    track: 0,
-                },
-                polygon: {
-                    shape: 0,
-                    track: 0,
-                },
-                polyline: {
-                    shape: 0,
-                    track: 0,
-                },
-                points: {
-                    shape: 0,
-                    track: 0,
-                },
-                ellipse: {
-                    shape: 0,
-                    track: 0,
-                },
-                cuboid: {
-                    shape: 0,
-                    track: 0,
-                },
-                tags: 0,
+            const shapes = ['rectangle', 'polygon', 'polyline', 'points', 'ellipse', 'cuboid', 'skeleton'];
+            const body = {
+                ...(shapes.reduce((acc, val) => ({
+                    ...acc,
+                    [val]: { shape: 0, track: 0 },
+                }), {})),
+
+                tag: 0,
                 manually: 0,
                 interpolated: 0,
                 total: 0,
             };
 
-            const total = JSON.parse(JSON.stringify(skeleton));
+            const total = JSON.parse(JSON.stringify(body));
             for (const label of Object.values(this.labels)) {
                 const { name } = label;
-                labels[name] = JSON.parse(JSON.stringify(skeleton));
+                labels[name] = JSON.parse(JSON.stringify(body));
             }
 
             for (const object of Object.values(this.objects)) {
@@ -629,13 +611,13 @@
             }
 
             for (const label of Object.keys(labels)) {
-                for (const key of Object.keys(labels[label])) {
-                    if (typeof labels[label][key] === 'object') {
-                        for (const objectType of Object.keys(labels[label][key])) {
-                            total[key][objectType] += labels[label][key][objectType];
+                for (const shapeType of Object.keys(labels[label])) {
+                    if (typeof labels[label][shapeType] === 'object') {
+                        for (const objectType of Object.keys(labels[label][shapeType])) {
+                            total[shapeType][objectType] += labels[label][shapeType][objectType];
                         }
                     } else {
-                        total[key] += labels[label][key];
+                        total[shapeType] += labels[label][shapeType];
                     }
                 }
             }

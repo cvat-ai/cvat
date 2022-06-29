@@ -14,38 +14,42 @@
                 this,
                 Object.freeze({
                     /**
-                    * Statistics by labels with a structure:
+                    * Statistics collected by labels, has the following structure:
                     * @example
                     * {
                     *     label: {
-                    *         boxes: {
-                    *             tracks: 10,
-                    *             shapes: 11,
+                    *         rectangle: {
+                    *             track: 10,
+                    *             shape: 11,
                     *         },
-                    *         polygons: {
-                    *             tracks: 13,
-                    *             shapes: 14,
+                    *         polygon: {
+                    *             track: 13,
+                    *             shape: 14,
                     *         },
-                    *         polylines: {
-                    *             tracks: 16,
-                    *             shapes: 17,
+                    *         polyline: {
+                    *             track: 16,
+                    *             shape: 17,
                     *         },
                     *         points: {
-                    *             tracks: 19,
-                    *             shapes: 20,
+                    *             track: 19,
+                    *             shape: 20,
                     *         },
                     *         ellipse: {
-                    *             tracks: 13,
-                    *             shapes: 15,
+                    *             track: 13,
+                    *             shape: 15,
                     *         },
-                    *         cuboids: {
-                    *             tracks: 21,
-                    *             shapes: 22,
+                    *         cuboid: {
+                    *             track: 21,
+                    *             shape: 22,
                     *         },
-                    *         tags: 66,
-                    *         manually: 186,
+                    *         skeleton: {
+                    *             track: 21,
+                    *             shape: 22,
+                    *         },
+                    *         tag: 66,
+                    *         manually: 207,
                     *         interpolated: 500,
-                    *         total: 608,
+                    *         total: 630,
                     *     }
                     * }
                     * @name label
@@ -58,22 +62,22 @@
                         get: () => JSON.parse(JSON.stringify(label)),
                     },
                     /**
-                    * Total statistics (covers all labels) with a structure:
+                    * Total objects statistics (within all the labels), has the following structure:
                     * @example
                     * {
-                    *     boxes: {
-                    *             tracks: 10,
-                    *             shapes: 11,
-                    *     },
-                    *     polygons: {
-                    *         tracks: 13,
-                    *         shapes: 14,
-                    *     },
-                    *     polylines: {
+                    *    rectangle: {
+                    *        tracks: 10,
+                    *        shapes: 11,
+                    *    },
+                    *    polygon: {
+                    *        tracks: 13,
+                    *        shapes: 14,
+                    *    },
+                    *    polyline: {
                     *        tracks: 16,
                     *        shapes: 17,
                     *    },
-                    *    points: {
+                    *    point: {
                     *        tracks: 19,
                     *        shapes: 20,
                     *    },
@@ -81,11 +85,15 @@
                     *        tracks: 13,
                     *        shapes: 15,
                     *    },
-                    *    cuboids: {
+                    *    cuboid: {
                     *        tracks: 21,
                     *        shapes: 22,
                     *    },
-                    *    tags: 66,
+                    *    skeleton: {
+                    *        tracks: 21,
+                    *        shapes: 22,
+                    *    },
+                    *    tag: 66,
                     *    manually: 186,
                     *    interpolated: 500,
                     *    total: 608,
