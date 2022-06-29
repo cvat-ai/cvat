@@ -2302,6 +2302,7 @@
         constructor(data, clientID, color, injection) {
             super(data, clientID, color, injection);
             this.shapeType = ObjectShape.SKELETON;
+            this.readOnlyFields = ['points', 'label', 'occluded', 'outside', 'pinned'];
             this.pinned = false;
 
             const tracks = {};
@@ -2429,7 +2430,13 @@
         }
 
         save(frame, data) {
-            return objectStateFactory.call(this, frame, this.get(frame));
+            data.elements.forEach((element, idx) => {
+                const annotationContext = this.elements[idx];
+                annotationContext.save(frame, element);
+            });
+
+            const result = Track.prototype.save.call(this, frame, data);
+            return result;
         }
 
         getPosition(targetFrame) {
