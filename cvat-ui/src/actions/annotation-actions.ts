@@ -463,22 +463,26 @@ export function showFilters(visible: boolean): AnyAction {
 export function propagateObjectAsync(sessionInstance: any, objectState: any, from: number, to: number): ThunkAction {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         try {
-            const copy = {
-                attributes: objectState.attributes,
-                points: objectState.points,
-                occluded: objectState.occluded,
-                objectType: objectState.objectType !== ObjectType.TRACK ? objectState.objectType : ObjectType.SHAPE,
-                shapeType: objectState.shapeType,
-                label: objectState.label,
-                zOrder: objectState.zOrder,
+            const getCopyFromState = (_objectState: any): any => ({
+                attributes: _objectState.attributes,
+                points: _objectState.shapeType === 'skeleton' ? null : _objectState.points,
+                occluded: _objectState.occluded,
+                objectType: _objectState.objectType !== ObjectType.TRACK ? _objectState.objectType : ObjectType.SHAPE,
+                shapeType: _objectState.shapeType,
+                label: _objectState.label,
+                zOrder: _objectState.zOrder,
                 frame: from,
-                source: objectState.source,
-            };
+                elements: _objectState.shapeType === 'skeleton' ? _objectState.elements.map((element: any): any => getCopyFromState(element)) : [],
+                source: _objectState.source,
+            });
+
+            const copy = getCopyFromState(objectState);
 
             await sessionInstance.logger.log(LogType.propagateObject, { count: to - from + 1 });
             const states = [];
             for (let frame = from; frame <= to; frame++) {
                 copy.frame = frame;
+                copy.elements.forEach((element: any) => { element.frame = frame; });
                 const newState = new cvat.classes.ObjectState(copy);
                 states.push(newState);
             }
