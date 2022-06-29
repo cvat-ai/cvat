@@ -11,6 +11,7 @@ cvat:
     replicas: 1
     image: openvino/cvat_server
     tag: latest
+    imagepullploicy: IfNotPresent
     permissionFix:
       enabled: true
     labels: {}
@@ -61,6 +62,7 @@ cvat:
     replicas: 1
     image: openvino/cvat_ui
     tag: latest
+    imagepullploicy: IfNotPresent
     labels: {}
     #  test: test
     annotations: {}
@@ -103,6 +105,7 @@ cvat:
     replicas: 1
     image: openpolicyagent/opa
     tag: 0.34.2-rootless
+    imagepullploicy: IfNotPresent
     labels: {}
     #  test: test
     annotations: {}
