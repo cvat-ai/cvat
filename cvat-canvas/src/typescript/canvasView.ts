@@ -556,7 +556,9 @@ export class CanvasViewImpl implements CanvasView, Listener {
             if (object.type === 'circle') {
                 object.attr('r', `${consts.BASE_POINT_SIZE / this.geometry.scale}`);
             }
-            this.updateTextPosition(this.svgTexts[clientID]);
+            if (clientID in this.svgTexts) {
+                this.updateTextPosition(this.svgTexts[clientID]);
+            }
         }
 
         // Transform skeleton edges
@@ -2592,20 +2594,24 @@ export class CanvasViewImpl implements CanvasView, Listener {
             }
         }
 
+        const wrappingRectMargin = 20;
+        xtl -= wrappingRectMargin;
+        ytl -= wrappingRectMargin;
+        xbr += wrappingRectMargin;
+        ybr += wrappingRectMargin;
+
         skeleton.on('remove', () => {
             Object.values(svgElements).forEach((element) => element.fire('remove'));
             skeleton.off('remove');
         });
 
-        let bbox = skeleton.bbox();
-        const wrappingRect = skeleton.rect(bbox.width, bbox.height).move(bbox.x, bbox.y).attr({
+        const wrappingRect = skeleton.rect(xbr - xtl, ybr - ytl).move(xtl, ytl).attr({
             fill: 'inherit',
             'fill-opacity': 0,
             'color-rendering': 'optimizeQuality',
             'shape-rendering': 'geometricprecision',
             stroke: 'inherit',
-            'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
-            'data-z-order': state.zOrder,
+            'stroke-width': 'inherit',
             'data-xtl': xtl,
             'data-ytl': ytl,
             'data-xbr': xbr,
@@ -2785,8 +2791,9 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 });
             };
 
-            Object.entries(svgElements).forEach(([clientID, element]) => {
-                const text = this.svgTexts[+clientID];
+            Object.entries(svgElements).forEach(([key, element]) => {
+                const clientID = +key;
+                const text = this.svgTexts[clientID];
                 const hideElementText = (): void => {
                     if (text) {
                         text.addClass('cvat_canvas_hidden');
