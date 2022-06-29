@@ -2360,7 +2360,7 @@
                 group: this.group,
                 source: this.source,
                 attributes: [],
-                shapes,
+                shapes: Object.values(shapes),
             };
         }
 
