@@ -50,7 +50,11 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
     const {
         clientID, outsideDisabled, hiddenDisabled, keyframeDisabled,
     } = own;
-    const [objectState] = states.filter((_objectState): boolean => _objectState.clientID === clientID);
+    let [objectState] = states.filter((_objectState): boolean => _objectState.clientID === clientID);
+    if (!objectState) {
+        const elements = states.map((_objectState: any): any[] => _objectState.elements).flat();
+        [objectState] = elements.filter((_objectState): boolean => _objectState.clientID === clientID);
+    }
 
     return {
         objectState,

@@ -4,10 +4,13 @@
 
 import React from 'react';
 
+import Text from 'antd/lib/typography/Text';
+
 import ObjectButtonsContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/object-buttons';
 import { ObjectType, ShapeType, ColorBy } from 'reducers/interfaces';
 import ItemDetails, { attrValuesAreEqual } from './object-item-details';
 import ItemBasics from './object-item-basics';
+import Collapse from 'antd/lib/collapse';
 
 interface Props {
     normalizedKeyMap: Record<string, string>;
@@ -19,6 +22,7 @@ interface Props {
     serverID: number | undefined;
     labelID: number;
     locked: boolean;
+    elements: any[];
     attrValues: Record<number, string>;
     color: string;
     colorBy: ColorBy;
@@ -55,6 +59,7 @@ function objectItemsAreEqual(prevProps: Props, nextProps: Props): boolean {
         nextProps.collapsed === prevProps.collapsed &&
         nextProps.labels === prevProps.labels &&
         nextProps.attributes === prevProps.attributes &&
+        nextProps.elements === prevProps.elements &&
         nextProps.normalizedKeyMap === prevProps.normalizedKeyMap &&
         nextProps.colorBy === prevProps.colorBy &&
         attrValuesAreEqual(nextProps.attrValues, prevProps.attrValues)
@@ -74,6 +79,7 @@ function ObjectItemComponent(props: Props): JSX.Element {
         labelID,
         color,
         colorBy,
+        elements,
         attributes,
         labels,
         collapsed,
@@ -153,6 +159,34 @@ function ObjectItemComponent(props: Props): JSX.Element {
                         collapse={collapse}
                         changeAttribute={changeAttribute}
                     />
+                )}
+                {!!elements.length && (
+                    <>
+                        <Collapse className='cvat-objects-sidebar-state-item-elements-collapse'>
+                            <Collapse.Panel
+                                header={(
+                                    <>
+                                        <Text style={{ fontSize: 10 }} type='secondary'>PARTS</Text>
+                                        <br />
+                                    </>
+                                )}
+                                key='elements'
+                            >
+                                {elements.map((element: any) => (
+                                    <div key={element.clientID} className='cvat-objects-sidebar-state-item-elements'>
+                                        <Text
+                                            type='secondary'
+                                            style={{ fontSize: 10 }}
+                                            className='cvat-objects-sidebar-state-item-object-type-text'
+                                        >
+                                            {`${element.label.name} [${element.shapeType.toUpperCase()}]`}
+                                        </Text>
+                                        <ObjectButtonsContainer readonly={readonly} clientID={element.clientID} />
+                                    </div>
+                                ))}
+                            </Collapse.Panel>
+                        </Collapse>
+                    </>
                 )}
             </div>
         </div>

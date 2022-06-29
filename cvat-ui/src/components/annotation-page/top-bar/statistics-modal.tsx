@@ -184,19 +184,19 @@ function StatisticsModalComponent(props: StateToProps & DispatchToProps): JSX.El
             width: 100,
         },
         {
-            title: makeShapesTracksTitle('Cuboids'),
+            title: makeShapesTracksTitle('Cuboid'),
             dataIndex: 'cuboid',
             key: 'cuboid',
             width: 100,
         },
         {
-            title: makeShapesTracksTitle('Skeletons'),
+            title: makeShapesTracksTitle('Skeleton'),
             dataIndex: 'skeleton',
             key: 'skeleton',
             width: 100,
         },
         {
-            title: <Text strong> Tags </Text>,
+            title: <Text strong> Tag </Text>,
             dataIndex: 'tag',
             key: 'tag',
             width: 100,

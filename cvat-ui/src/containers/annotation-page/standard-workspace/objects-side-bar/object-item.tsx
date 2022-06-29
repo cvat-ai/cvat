@@ -365,6 +365,7 @@ class ObjectItemContainer extends React.PureComponent<Props> {
                 labelID={objectState.label.id}
                 color={stateColor}
                 attributes={attributes}
+                elements={objectState.elements}
                 normalizedKeyMap={normalizedKeyMap}
                 labels={labels}
                 colorBy={colorBy}
