@@ -2350,9 +2350,17 @@
 
         // Method is used to export data to the server
         toJSON() {
-            // todo
-            return {
+            const { shapes } = this;
 
+            return {
+                clientID: this.clientID,
+                id: this.serverID,
+                frame: this.frame,
+                label_id: this.label.id,
+                group: this.group,
+                source: this.source,
+                attributes: [],
+                shapes,
             };
         }
 
@@ -2457,9 +2465,9 @@
             const result = {};
             for (const keyframe of allKeyframes) {
                 result[keyframe] = {
-                    type: ObjectShape.SKELTON,
+                    type: this.shapeType,
                     occluded: false,
-                    z_order: false, // todo: get rotation from general shape
+                    z_order: false, // todo: get z_order from general shape
                     rotation: 0, // todo: get rotation from general shape
                     frame: +keyframe,
                     outside: false, // todo: get outside from general shape
@@ -2467,13 +2475,11 @@
                     elements: this.elements.map((element) => {
                         const elementData = element.get(+keyframe);
                         return ({
-                            frame: +keyframe,
                             label_id: elementData.label.id,
-                            group: elementData.group,
-                            z_order: elementData.zOrder,
-                            source: elementData.source,
-                            rotation: elementData.rotation,
+                            occluded: elementData.occluded,
+                            outside: elementData.outside,
                             points: elementData.points,
+                            attributes: elementData.attributes,
                         });
                     }),
                 }
