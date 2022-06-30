@@ -109,6 +109,8 @@ class JobAnnotation:
         db_track_attrvals = []
         db_shapes = []
         db_shape_attrvals = []
+        db_shape_elements = []
+        db_shape_elem_attrs = []
 
         for track in tracks:
             track_attributes = track.pop("attributes", [])
@@ -126,6 +128,7 @@ class JobAnnotation:
 
             for shape in shapes:
                 shape_attributes = shape.pop("attributes", [])
+                shape_elements = shape.pop("elements", [])
                 # FIXME: need to clamp points (be sure that all of them inside the image)
                 # Should we check here or implement a validator?
                 db_shape = models.TrackedShape(**shape)
@@ -138,8 +141,26 @@ class JobAnnotation:
                     db_attrval.shape_id = len(db_shapes)
                     db_shape_attrvals.append(db_attrval)
 
+                for elem in shape_elements:
+                    elem_attributes = elem.pop("attributes", [])
+                    db_elem = models.TrackedSkeleton(**elem)
+                    if db_elem.label_id not in self.db_labels:
+                        raise AttributeError("label_id `{}` is invalid".format(db_elem.label_id))
+                    db_elem.shape_id = len(db_shapes)
+
+                    for attr in elem_attributes:
+                        db_attr = models.TrackedSkeletonAttributeVal(**attr)
+                        if db_attr.spec_id not in self.db_attributes[db_elem.label_id]["all"]:
+                            raise AttributeError("spec_id `{}` is invalid".format(db_attr.spec_id))
+                        db_attr.skeleton_id = len(db_shape_elements)
+                        db_shape_elem_attrs.append(db_attr)
+
+                    db_shape_elements.append(db_elem)
+                    elem["attributes"] = elem_attributes
+
                 db_shapes.append(db_shape)
                 shape["attributes"] = shape_attributes
+                shape["elements"] = shape_elements
 
             db_tracks.append(db_track)
             track["attributes"] = track_attributes
@@ -177,11 +198,35 @@ class JobAnnotation:
             flt_param={}
         )
 
+        for db_elem in db_shape_elements:
+            db_elem.shape_id = db_shapes[db_elem.shape_id].id
+
+        db_shape_elements = bulk_create(
+            db_model=models.TrackedSkeleton,
+            objects=db_shape_elements,
+            flt_param={"shape__track__job_id": self.db_job.id}
+        )
+
+        for db_attr in db_shape_elem_attrs:
+            db_attr.skeleton_id = db_shape_elements[db_attr.skeleton_id].id
+
+        bulk_create(
+            db_model=models.TrackedSkeletonAttributeVal,
+            objects=db_shape_elem_attrs,
+            flt_param={}
+        )
+
         shape_idx = 0
+        shape_elem_idx = 0
         for track, db_track in zip(tracks, db_tracks):
             track["id"] = db_track.id
             for shape in track["shapes"]:
                 shape["id"] = db_shapes[shape_idx].id
+
+                for elem in shape["elements"]:
+                    elem["id"] = db_shape_elements[shape_elem_idx].id
+                    shape_elem_idx += 1
+
                 shape_idx += 1
 
         self.ir_data.tracks = tracks
@@ -189,9 +234,12 @@ class JobAnnotation:
     def _save_shapes_to_db(self, shapes):
         db_shapes = []
         db_attrvals = []
+        all_elements = []
 
         for shape in shapes:
             attributes = shape.pop("attributes", [])
+            elements = shape.pop("elements", [])
+            all_elements.append(elements)
             # FIXME: need to clamp points (be sure that all of them inside the image)
             # Should we check here or implement a validator?
             db_shape = models.LabeledShape(job=self.db_job, **shape)
@@ -208,6 +256,7 @@ class JobAnnotation:
 
             db_shapes.append(db_shape)
             shape["attributes"] = attributes
+            shape["elements"] = elements
 
         db_shapes = bulk_create(
             db_model=models.LabeledShape,
@@ -226,6 +275,46 @@ class JobAnnotation:
 
         for shape, db_shape in zip(shapes, db_shapes):
             shape["id"] = db_shape.id
+
+        for db_shape, elems, shape in zip(db_shapes, all_elements, shapes):
+            db_elements = []
+            db_attrs = []
+            for elem in elems:
+                attributes = elem.pop("attributes", [])
+
+                db_elem = models.LabeledSkeleton(shape=db_shape, **elem)
+                if db_elem.label_id and db_elem.label_id not in self.db_labels:
+                    raise AttributeError("label_id `{}` is invalid".format(db_elem.label_id))
+                db_elem.shape_id = db_shape.id
+                db_elements.append(db_elem)
+
+                elem["attributes"] = attributes
+
+                for attr in attributes:
+                    db_attr = models.LabeledSkeletonAttributeVal(**attr)
+                    if db_attr.spec_id not in self.db_attributes[db_elem.label_id]["all"]:
+                        raise AttributeError("spec_id `{}` is invalid".format(db_attr.spec_id))
+
+                    db_attr.skeleton_id = len(db_elements)
+                    db_attrs.append(db_attr)
+
+            db_elements = bulk_create(
+                db_model=models.LabeledSkeleton,
+                objects=db_elements,
+                flt_param={"shape_id": db_shape.id}
+            )
+
+            for db_attr in db_attrs:
+                db_attr.skeleton_id = db_elements[db_attr.skeleton_id].id
+
+            bulk_create(
+                db_model=models.LabeledSkeletonAttributeVal,
+                objects=db_attrs,
+                flt_param={}
+            )
+
+            for elem, db_elem in zip(shape['elements'], db_elements):
+                elem["id"] = db_elem.id
 
         self.ir_data.shapes = shapes
 
@@ -379,7 +468,9 @@ class JobAnnotation:
     def _init_shapes_from_db(self):
         db_shapes = self.db_job.labeledshape_set.prefetch_related(
             "label",
-            "labeledshapeattributeval_set"
+            "labeledshapeattributeval_set",
+            "labeledskeleton_set",
+            "labeledskeleton__labeledskeletonattributeval_set"
         ).values(
             'id',
             'label_id',
@@ -394,6 +485,16 @@ class JobAnnotation:
             'labeledshapeattributeval__spec_id',
             'labeledshapeattributeval__value',
             'labeledshapeattributeval__id',
+            'labeledskeleton__id',
+            'labeledskeleton__type',
+            'labeledskeleton__frame',
+            'labeledskeleton__occluded',
+            'labeledskeleton__outside',
+            'labeledskeleton__points',
+            'labeledskeleton__label_id',
+            'labeledskeleton__labeledskeletonattributeval__spec_id',
+            'labeledskeleton__labeledskeletonattributeval__value',
+            'labeledskeleton__labeledskeletonattributeval__id',
             ).order_by('frame')
 
         db_shapes = _merge_table_rows(
@@ -404,12 +505,40 @@ class JobAnnotation:
                     'labeledshapeattributeval__value',
                     'labeledshapeattributeval__id',
                 ],
+                'labeledskeleton_set': [
+                    'labeledskeleton__id',
+                    'labeledskeleton__type',
+                    'labeledskeleton__frame',
+                    'labeledskeleton__occluded',
+                    'labeledskeleton__outside',
+                    'labeledskeleton__points',
+                    'labeledskeleton__label_id',
+                    'labeledskeleton__labeledskeletonattributeval__spec_id',
+                    'labeledskeleton__labeledskeletonattributeval__value',
+                    'labeledskeleton__labeledskeletonattributeval__id',
+                ],
             },
             field_id='id',
         )
         for db_shape in db_shapes:
             self._extend_attributes(db_shape.labeledshapeattributeval_set,
                 self.db_attributes[db_shape.label_id]["all"].values())
+
+            db_shape.labeledskeleton_set = _merge_table_rows(
+                rows=db_shape.labeledskeleton_set,
+                keys_for_merge={
+                    'labeledskeletonattributeval_set': [
+                        'labeledskeletonattributeval__spec_id',
+                        'labeledskeletonattributeval__value',
+                        'labeledskeletonattributeval__id',
+                    ],
+                },
+                field_id='id',
+            )
+
+            for db_elem in db_shape.labeledskeleton_set:
+                self._extend_attributes(db_elem.labeledskeletonattributeval_set,
+                    self.db_attributes[db_elem.label_id]["all"].values())
 
         serializer = serializers.LabeledShapeSerializer(db_shapes, many=True)
         self.ir_data.shapes = serializer.data
@@ -418,7 +547,8 @@ class JobAnnotation:
         db_tracks = self.db_job.labeledtrack_set.prefetch_related(
             "label",
             "labeledtrackattributeval_set",
-            "trackedshape_set__trackedshapeattributeval_set"
+            "trackedshape_set__trackedshapeattributeval_set",
+            "trackedshape_set__trackedskeleton_set__trackedskeletonattributeval_set"
         ).values(
             "id",
             "frame",
@@ -439,6 +569,15 @@ class JobAnnotation:
             "trackedshape__trackedshapeattributeval__spec_id",
             "trackedshape__trackedshapeattributeval__value",
             "trackedshape__trackedshapeattributeval__id",
+            "trackedshape__trackedskeleton__id",
+            "trackedshape__trackedskeleton__type",
+            "trackedshape__trackedskeleton__occluded",
+            "trackedshape__trackedskeleton__outside",
+            "trackedshape__trackedskeleton__points",
+            "trackedshape__trackedskeleton__label_id",
+            "trackedshape__trackedskeleton__trackedskeletonattributeval__spec_id",
+            "trackedshape__trackedskeleton__trackedskeletonattributeval__value",
+            "trackedshape__trackedskeleton__trackedskeletonattributeval__id",
         ).order_by('id', 'trackedshape__frame')
 
         db_tracks = _merge_table_rows(
@@ -461,6 +600,15 @@ class JobAnnotation:
                     "trackedshape__trackedshapeattributeval__spec_id",
                     "trackedshape__trackedshapeattributeval__value",
                     "trackedshape__trackedshapeattributeval__id",
+                    "trackedshape__trackedskeleton__id",
+                    "trackedshape__trackedskeleton__type",
+                    "trackedshape__trackedskeleton__occluded",
+                    "trackedshape__trackedskeleton__outside",
+                    "trackedshape__trackedskeleton__points",
+                    "trackedshape__trackedskeleton__label_id",
+                    "trackedshape__trackedskeleton__trackedskeletonattributeval__spec_id",
+                    "trackedshape__trackedskeleton__trackedskeletonattributeval__value",
+                    "trackedshape__trackedskeleton__trackedskeletonattributeval__id",
                 ],
             },
             field_id="id",
@@ -472,6 +620,17 @@ class JobAnnotation:
                     'trackedshapeattributeval__value',
                     'trackedshapeattributeval__spec_id',
                     'trackedshapeattributeval__id',
+                ],
+                'trackedskeleton_set': [
+                    "trackedskeleton__id",
+                    "trackedskeleton__type",
+                    "trackedskeleton__occluded",
+                    "trackedskeleton__outside",
+                    "trackedskeleton__points",
+                    "trackedskeleton__label_id",
+                    "trackedskeleton__trackedskeletonattributeval__spec_id",
+                    "trackedskeleton__trackedskeletonattributeval__value",
+                    "trackedskeleton__trackedskeletonattributeval__id",
                 ]
             }, 'id')
 
@@ -483,6 +642,14 @@ class JobAnnotation:
 
             default_attribute_values = self.db_attributes[db_track.label_id]["mutable"].values()
             for db_shape in db_track["trackedshape_set"]:
+                db_shape["trackedskeleton_set"] = _merge_table_rows(db_shape["trackedskeleton_set"], {
+                    'trackedskeletonattributeval_set': [
+                        "trackedskeletonattributeval__spec_id",
+                        "trackedskeletonattributeval__value",
+                        "trackedskeletonattributeval__id",
+                    ]
+                }, 'id')
+
                 db_shape["trackedshapeattributeval_set"] = list(
                     set(db_shape["trackedshapeattributeval_set"])
                 )
@@ -491,6 +658,13 @@ class JobAnnotation:
                 self._extend_attributes(db_shape["trackedshapeattributeval_set"], default_attribute_values)
                 default_attribute_values = db_shape["trackedshapeattributeval_set"]
 
+                for db_elem in db_shape["trackedskeleton_set"]:
+                    db_elem["trackedskeletonattributeval_set"] = list(
+                        set(db_elem["trackedskeletonattributeval_set"])
+                    )
+
+                    self._extend_attributes(db_elem["trackedskeletonattributeval_set"],
+                        self.db_attributes[db_elem.label_id]["all"].values())
 
         serializer = serializers.LabeledTrackSerializer(db_tracks, many=True)
         self.ir_data.tracks = serializer.data

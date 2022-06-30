@@ -7,6 +7,7 @@ import re
 import shutil
 
 from tempfile import NamedTemporaryFile
+from requests import request
 
 from rest_framework import serializers, exceptions
 from django.contrib.auth.models import User, Group
@@ -752,24 +753,53 @@ class LabeledImageSerializer(AnnotationSerializer):
 
 class ShapeSerializer(serializers.Serializer):
     type = serializers.ChoiceField(choices=models.ShapeType.choices())
+    occluded = serializers.BooleanField(default=False, required=False)
+    z_order = serializers.IntegerField(default=0, required=False)
+    rotation = serializers.FloatField(default=0, min_value=0, max_value=360, required=False)
+    points = serializers.ListField(
+        child=serializers.FloatField(),
+        allow_empty=True, required=False
+    )
+
+class LabeledSkeletonSerializer(serializers.Serializer):
+    id = serializers.IntegerField(default=None, allow_null=True)
+    type = serializers.ChoiceField(choices=models.ShapeType.choices())
+    frame = serializers.IntegerField(min_value=0)
     occluded = serializers.BooleanField()
-    z_order = serializers.IntegerField(default=0)
-    rotation = serializers.FloatField(default=0, min_value=0, max_value=360)
+    outside = serializers.BooleanField()
     points = serializers.ListField(
         child=serializers.FloatField(),
         allow_empty=False,
     )
+    label_id = serializers.IntegerField(min_value=0)
+    attributes = AttributeValSerializer(many=True,
+        source="labeledskeletonattributeval_set")
 
 class LabeledShapeSerializer(ShapeSerializer, AnnotationSerializer):
     attributes = AttributeValSerializer(many=True,
         source="labeledshapeattributeval_set")
+    elements = LabeledSkeletonSerializer(many=True, source='labeledskeleton_set')
+
+class TrackedSkeletonSerializer(serializers.Serializer):
+    id = serializers.IntegerField(default=None, allow_null=True)
+    type = serializers.ChoiceField(choices=models.ShapeType.choices())
+    occluded = serializers.BooleanField()
+    outside = serializers.BooleanField()
+    points = serializers.ListField(
+        child=serializers.FloatField(),
+        allow_empty=False,
+    )
+    label_id = serializers.IntegerField(min_value=0)
+    attributes = AttributeValSerializer(many=True,
+        source="trackedskeletonattributeval_set")
 
 class TrackedShapeSerializer(ShapeSerializer):
     id = serializers.IntegerField(default=None, allow_null=True)
     frame = serializers.IntegerField(min_value=0)
-    outside = serializers.BooleanField()
+    outside = serializers.BooleanField(default=False, required=False)
     attributes = AttributeValSerializer(many=True,
         source="trackedshapeattributeval_set")
+    elements = TrackedSkeletonSerializer(many=True, source='trackedskeleton_set')
 
 class LabeledTrackSerializer(AnnotationSerializer):
     shapes = TrackedShapeSerializer(many=True, allow_empty=False,
