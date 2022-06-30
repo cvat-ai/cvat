@@ -387,12 +387,15 @@ export default class CanvasWrapperComponent extends React.PureComponent<Props> {
         state.frame = frame;
         state.rotation = state.rotation || 0;
         state.occluded = state.occluded || false;
+        state.outside = state.outside || false;
         if (state.shapeType === ShapeType.SKELETON && Array.isArray(state.elements)) {
             state.elements.forEach((element: Record<string, any>) => {
                 element.objectType = state.objectType;
-                element.label = jobInstance.labels.find((label: any) => label.id === element.label);
+                element.label = element.label || jobInstance.labels.find((label: any) => label.id === element.labelID);
                 element.frame = state.frame;
-                element.occluded = false;
+                element.rotation = 0;
+                element.occluded = element.occluded || false;
+                element.outside = element.outside || false;
             });
         }
 

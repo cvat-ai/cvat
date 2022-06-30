@@ -17,6 +17,11 @@ import {
     Point,
     readPointsFromShape,
     clamp,
+    translateToCanvas,
+    computerWrappingBox,
+    makeSVGFromTemplate,
+    setupSkeletonEdges,
+    translateFromCanvas,
 } from './shared';
 import Crosshair from './crosshair';
 import consts from './consts';
@@ -717,7 +722,7 @@ export class DrawHandlerImpl implements DrawHandler {
                         elements.push({
                             shapeType: 'points',
                             points: [cx, cy],
-                            label,
+                            labelID: label,
                         });
                     }
                 });
@@ -840,10 +845,9 @@ export class DrawHandlerImpl implements DrawHandler {
     // Common settings for rectangle and polyshapes
     private pasteShape(): void {
         function moveShape(shape: SVG.Shape, x: number, y: number): void {
-            const bbox = shape.bbox();
             const { rotation } = shape.transform();
             shape.untransform();
-            shape.move(x - bbox.width / 2, y - bbox.height / 2);
+            shape.center(x, y);
             shape.rotate(rotation);
         }
 
@@ -851,7 +855,7 @@ export class DrawHandlerImpl implements DrawHandler {
         moveShape(this.drawInstance, initialX, initialY);
 
         this.canvas.on('mousemove.draw', (): void => {
-            const { x, y } = this.cursorPosition; // was computer in another callback
+            const { x, y } = this.cursorPosition; // was computed in another callback
             moveShape(this.drawInstance, x, y);
         });
     }
@@ -859,7 +863,7 @@ export class DrawHandlerImpl implements DrawHandler {
     private pasteBox(box: BBox, rotation: number): void {
         this.drawInstance = (this.canvas as any)
             .rect(box.width, box.height)
-            .move(box.x, box.y)
+            .center(box.x, box.y)
             .addClass('cvat_canvas_shape_drawing')
             .attr({
                 'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
@@ -968,6 +972,83 @@ export class DrawHandlerImpl implements DrawHandler {
         this.pastePolyshape();
     }
 
+    private pasteSkeleton(box: BBox, elements: any[]): void {
+        const { offset } = this.geometry;
+        let [xtl, ytl] = [box.x, box.y];
+
+        this.pasteBox(box, 0);
+        const svgSkeleton = makeSVGFromTemplate(this.drawData.skeletonSVG);
+        this.canvas.add(svgSkeleton);
+
+        svgSkeleton.children().forEach((child: SVG.Element): void => {
+            const dataType = child.attr('data-type');
+            if (child.node.tagName === 'circle' && dataType && dataType.includes('element')) {
+                const labelID = +child.attr('data-label-id');
+                const element = elements.find((_element: any): boolean => _element.label.id === labelID);
+                if (element) {
+                    const points = translateToCanvas(offset, element.points);
+                    child.center(points[0], points[1]);
+                }
+            }
+        });
+
+        const originalRemove = this.drawInstance.remove.bind(this.drawInstance);
+        this.drawInstance.remove = () => {
+            svgSkeleton.remove();
+            originalRemove();
+        };
+
+        this.drawInstance.off('done').on('done', (e: CustomEvent) => {
+            if (!e.detail.originalEvent.ctrlKey) {
+                this.release();
+            }
+
+            this.onDrawDone(
+                {
+                    shapeType: this.drawData.initialState.shapeType,
+                    objectType: this.drawData.initialState.objectType,
+                    points: null,
+                    elements: this.drawData.initialState.elements.map((element: any) => ({
+                        shapeType: element.shapeType,
+                        outside: element.outside,
+                        occluded: element.occluded,
+                        label: element.label,
+                        attributes: element.attributes,
+                        points: (() => {
+                            const circle = svgSkeleton.children()
+                                .find((child: SVG.Element) => child.attr('data-label-id') === element.label.id);
+                            const points = translateFromCanvas(this.geometry.offset, [circle.cx(), circle.cy()]);
+                            return points;
+                        })(),
+                    })),
+                    occluded: this.drawData.initialState.occluded,
+                    attributes: { ...this.drawData.initialState.attributes },
+                    label: this.drawData.initialState.label,
+                    color: this.drawData.initialState.color,
+                    rotation: this.drawData.initialState.rotation,
+                },
+                Date.now() - this.startTimestamp,
+                e.detail.originalEvent.ctrlKey,
+            );
+        });
+
+        this.canvas.on('mousemove.draw', (): void => {
+            const [newXtl, newYtl] = [this.drawInstance.x(), this.drawInstance.y()];
+            const [xDiff, yDiff] = [newXtl - xtl, newYtl - ytl];
+            xtl = newXtl;
+            ytl = newYtl;
+            svgSkeleton.children().forEach((child: SVG.Element): void => {
+                const dataType = child.attr('data-type');
+                if (child.node.tagName === 'circle' && dataType && dataType.includes('element')) {
+                    const [cx, cy] = [child.cx(), child.cy()];
+                    child.center(cx + xDiff, cy + yDiff);
+                }
+            });
+
+            setupSkeletonEdges(svgSkeleton, svgSkeleton, this.geometry.scale);
+        });
+    }
+
     private pastePoints(initialPoints: string): void {
         function moveShape(shape: SVG.PolyLine, group: SVG.G, x: number, y: number, scale: number): void {
             const bbox = shape.bbox();
@@ -1037,10 +1118,7 @@ export class DrawHandlerImpl implements DrawHandler {
         if (this.drawData.initialState) {
             const { offset } = this.geometry;
             if (this.drawData.shapeType === 'rectangle') {
-                const [xtl, ytl, xbr, ybr] = this.drawData.initialState.points.map(
-                    (coord: number): number => coord + offset,
-                );
-
+                const [xtl, ytl, xbr, ybr] = translateToCanvas(offset, this.drawData.initialState.points);
                 this.pasteBox({
                     x: xtl,
                     y: ytl,
@@ -1048,13 +1126,15 @@ export class DrawHandlerImpl implements DrawHandler {
                     height: ybr - ytl,
                 }, this.drawData.initialState.rotation);
             } else if (this.drawData.shapeType === 'ellipse') {
-                const [cx, cy, rightX, topY] = this.drawData.initialState.points.map(
-                    (coord: number): number => coord + offset,
-                );
-
+                const [cx, cy, rightX, topY] = translateToCanvas(offset, this.drawData.initialState.points);
                 this.pasteEllipse([cx, cy, rightX - cx, cy - topY], this.drawData.initialState.rotation);
+            } else if (this.drawData.shapeType === 'skeleton') {
+                const box = computerWrappingBox(
+                    translateToCanvas(offset, this.drawData.initialState.points), consts.SKELETON_RECT_MARGIN,
+                );
+                this.pasteSkeleton(box, this.drawData.initialState.elements);
             } else {
-                const points = this.drawData.initialState.points.map((coord: number): number => coord + offset);
+                const points = translateToCanvas(offset, this.drawData.initialState.points);
                 const stringifiedPoints = stringifyPoints(points);
 
                 if (this.drawData.shapeType === 'polygon') {
