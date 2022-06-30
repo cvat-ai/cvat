@@ -21,7 +21,7 @@ from datumaro.util.image import ByteImage, Image
 from django.utils import timezone
 
 from cvat.apps.engine.frame_provider import FrameProvider
-from cvat.apps.engine.models import AttributeType, DimensionType, AttributeSpec
+from cvat.apps.engine.models import AttributeType, DimensionType, AttributeSpec, LabelType
 from cvat.apps.engine.models import Image as Img
 from cvat.apps.engine.models import Label, Project, ShapeType, Task
 from cvat.apps.dataset_manager.formats.utils import get_label_color
@@ -166,17 +166,19 @@ class InstanceLabelData:
 class TaskData(InstanceLabelData):
     Shape = namedtuple("Shape", 'id, label_id')  # 3d
     LabeledShape = namedtuple(
-        'LabeledShape', 'type, frame, label, points, occluded, attributes, source, rotation, group, z_order')
+        'LabeledShape', 'type, frame, label, points, occluded, attributes, source, elements, rotation, group, z_order')
+    LabeledSkeleton = namedtuple(
+        'LabeledShape', 'type, frame, label, points, occluded, outside, attributes')
     LabeledShape.__new__.__defaults__ = (0, 0, 0)
     TrackedShape = namedtuple(
-        'TrackedShape', 'type, frame, points, occluded, outside, keyframe, attributes, rotation, source, group, z_order, label, track_id')
+        'TrackedShape', 'type, frame, points, occluded, outside, keyframe, attributes, elements, rotation, source, group, z_order, label, track_id')
     TrackedShape.__new__.__defaults__ = (0, 'manual', 0, 0, None, 0)
     Track = namedtuple('Track', 'label, group, source, shapes')
     Tag = namedtuple('Tag', 'frame, label, attributes, source, group')
     Tag.__new__.__defaults__ = (0, )
     Frame = namedtuple(
         'Frame', 'idx, id, frame, name, width, height, labeled_shapes, tags, shapes, labels')
-    Labels = namedtuple('Label', 'id, name, color')
+    Labels = namedtuple('Label', 'id, name, color, type')
 
     def __init__(self, annotation_ir, db_task, host='', create_callback=None):
         self._annotation_ir = annotation_ir
@@ -266,10 +268,12 @@ class TaskData(InstanceLabelData):
         ])
 
         if label_mapping is not None:
-            meta['labels'] = [
-                ("label", OrderedDict([
+            labels = []
+            for db_label in label_mapping.values():
+                label = OrderedDict([
                     ("name", db_label.name),
                     ("color", db_label.color),
+                    ("type", db_label.type),
                     ("attributes", [
                         ("attribute", OrderedDict([
                             ("name", db_attr.name),
@@ -278,8 +282,31 @@ class TaskData(InstanceLabelData):
                             ("default_value", db_attr.default_value),
                             ("values", db_attr.values)]))
                         for db_attr in db_label.attributespec_set.all()])
-                ])) for db_label in label_mapping.values()
-            ]
+                ])
+                if db_label.type == str(LabelType.SKELETON):
+                    edges = []
+                    for edge in db_label.edges:
+                        edges.append(('edge', OrderedDict([
+                            ('from', str(edge['from'])),
+                            ('to', str(edge['to']))
+                        ])))
+
+                    elements = []
+                    for elem in db_label.elements:
+                        elements.append(('element', OrderedDict([
+                            ('label_id', str(elem['label'])),
+                            ('element_id', str(elem['element_id']))
+                        ])))
+                    # meta['edges'] = edges
+                    label["skeleton"] = OrderedDict([
+                        ("edges", edges),
+                        ("elements", elements),
+                        ("svg", db_label.svg)
+                    ])
+
+                labels.append(('label', label))
+
+            meta['labels'] = labels
 
         if hasattr(db_task.data, "video"):
             meta["original_size"] = OrderedDict([
@@ -317,6 +344,20 @@ class TaskData(InstanceLabelData):
             attributes=self._export_attributes(shape["attributes"]),
         )
 
+    def _export_labeled_skeletons(self, shapes):
+        skeletons = []
+        for shape in shapes:
+            skeletons.append(TaskData.LabeledSkeleton(
+                type=shape["type"],
+                frame=self.abs_frame_id(shape["frame"]),
+                label=self._get_label_name(shape["label_id"]),
+                points=shape["points"],
+                occluded=shape["occluded"],
+                outside=shape["outside"],
+                attributes=self._export_attributes(shape["attributes"]),
+            ))
+        return skeletons
+
     def _export_labeled_shape(self, shape):
         return TaskData.LabeledShape(
             type=shape["type"],
@@ -329,6 +370,7 @@ class TaskData(InstanceLabelData):
             group=shape.get("group", 0),
             source=shape["source"],
             attributes=self._export_attributes(shape["attributes"]),
+            elements=self._export_labeled_skeletons(shape["elements"])
         )
 
     def _export_shape(self, shape):
@@ -351,7 +393,8 @@ class TaskData(InstanceLabelData):
         return TaskData.Labels(
             id=label.id,
             name=label.name,
-            color=label.color
+            color=label.color,
+            type=label.type
         )
 
     def group_by_frame(self, include_empty=False):
@@ -592,12 +635,22 @@ class ProjectData(InstanceLabelData):
         points: List[float] = attrib()
         occluded: bool = attrib()
         attributes: List[InstanceLabelData.Attribute] = attrib()
+        elements: List['ProjectData.LabeledSkeleton'] = attrib()
         source: str = attrib(default='manual')
         group: int = attrib(default=0)
         rotation: int = attrib(default=0)
         z_order: int = attrib(default=0)
         task_id: int = attrib(default=None)
         subset: str = attrib(default=None)
+
+    @attrs
+    class LabeledSkeleton:
+        label: str = attrib()
+        points: List[float] = attrib()
+        occluded: bool = attrib()
+        outside: bool = attrib()
+        frame: int = attrib()
+        attributes: List[InstanceLabelData.Attribute] = attrib()
 
     @attrs
     class TrackedShape:
@@ -755,6 +808,7 @@ class ProjectData(InstanceLabelData):
                     ("label", OrderedDict([
                         ("name", db_label.name),
                         ("color", db_label.color),
+                        ("type", db_label.type),
                         ("attributes", [
                             ("attribute", OrderedDict([
                                 ("name", db_attr.name),
@@ -798,6 +852,18 @@ class ProjectData(InstanceLabelData):
             attributes=self._export_attributes(shape["attributes"]),
         )
 
+    def _export_labeled_skeleton(self, shape: dict, task_id: int, shape_id: int):
+        return ProjectData.LabeledSkeleton(
+            type=shape["type"],
+            label=self._get_label_name(shape["label_id"]),
+            frame=self.abs_frame_id(task_id, shape["frame"]),
+            points=shape["points"],
+            occluded=shape["occluded"],
+            outside=shape["outside"],
+            attributes=self._export_attributes(shape["attributes"]),
+            shape_id=shape_id,
+        )
+
     def _export_labeled_shape(self, shape: dict, task_id: int):
         return ProjectData.LabeledShape(
             type=shape["type"],
@@ -810,6 +876,7 @@ class ProjectData(InstanceLabelData):
             group=shape.get("group", 0),
             source=shape["source"],
             attributes=self._export_attributes(shape["attributes"]),
+            elements=self._export_labeled_skeleton(shape["elements"], task_id, shape.id),
             task_id=task_id,
         )
 
@@ -1123,7 +1190,7 @@ class CvatTaskDataExtractor(datum_extractor.SourceExtractor, CVATDataExtractorMi
                     attributes["updatedAt"] = self._user["updatedAt"]
                     attributes["labels"] = []
                     for (idx, (_, label)) in enumerate(task_data.meta['task']['labels']):
-                        attributes["labels"].append({"label_id": idx, "name": label["name"], "color": label["color"]})
+                        attributes["labels"].append({"label_id": idx, "name": label["name"], "color": label["color"], "type": label["type"]})
                         attributes["track_id"] = -1
 
                 dm_item = datum_extractor.DatasetItem(
@@ -1230,7 +1297,7 @@ class CVATProjectDataExtractor(datum_extractor.Extractor, CVATDataExtractorMixin
                     attributes["updatedAt"] = self._user["updatedAt"]
                     attributes["labels"] = []
                     for (idx, (_, label)) in enumerate(project_data.meta['project']['labels']):
-                        attributes["labels"].append({"label_id": idx, "name": label["name"], "color": label["color"]})
+                        attributes["labels"].append({"label_id": idx, "name": label["name"], "color": label["color"], "type": label["type"]})
                         attributes["track_id"] = -1
 
                 dm_item = datum_extractor.DatasetItem(
@@ -1551,7 +1618,8 @@ def import_labels_to_project(project_annotation, dataset: Dataset):
     for label in dataset.categories()[datum_annotation.AnnotationType.label].items:
         db_label = Label(
             name=label.name,
-            color=get_label_color(label.name, label_colors)
+            color=get_label_color(label.name, label_colors),
+            type="any"
         )
         labels.append(db_label)
         label_colors.append(db_label.color)
