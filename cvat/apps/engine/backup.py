@@ -701,6 +701,8 @@ def _create_backup(db_instance, Exporter, output_path, logger, cache_ttl):
 
 def export(db_instance, request):
     action = request.query_params.get('action', None)
+    filename = request.query_params.get('filename', None)
+
     if action not in (None, 'download'):
         raise serializers.ValidationError(
             "Unexpected action specified for the request")
@@ -745,14 +747,14 @@ def export(db_instance, request):
 
                     timestamp = datetime.strftime(last_project_update_time,
                         "%Y_%m_%d_%H_%M_%S")
-                    filename = "{}_{}_backup_{}{}".format(
+                    filename = filename or "{}_{}_backup_{}{}".format(
                         filename_prefix, db_instance.name, timestamp,
-                        os.path.splitext(file_path)[1])
+                        os.path.splitext(file_path)[1]).lower()
 
                     location = location_conf.get('location')
                     if location == Location.LOCAL:
                         return sendfile(request, file_path, attachment=True,
-                            attachment_filename=filename.lower())
+                            attachment_filename=filename)
                     elif location == Location.CLOUD_STORAGE:
 
                         @validate_bucket_status
