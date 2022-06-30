@@ -75,12 +75,22 @@ class SublabelSerializer(serializers.ModelSerializer):
     attributes = AttributeSerializer(many=True, source='attributespec_set', default=[])
     color = serializers.CharField(allow_blank=True, required=False)
     type = serializers.CharField(allow_blank=True, required=False)
-    has_parent = serializers.BooleanField(source='has_parent_label', required=False)
+    parent = serializers.IntegerField(source='get_parent', required=False, allow_null=True)
 
     class Meta:
         model = models.Label
-        fields = ('id', 'name', 'color', 'attributes', 'type', 'has_parent', )
-        read_only_fields = ('has_parent',)
+        fields = ('id', 'name', 'color', 'attributes', 'type', 'parent', )
+        read_only_fields = ('parent',)
+
+class SkeletonSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(required=False)
+    svg = serializers.CharField(allow_blank=True, required=False)
+    elements = serializers.JSONField(required=False)
+    edges = serializers.JSONField(required=False)
+
+    class Meta:
+        model = models.Skeleton
+        fields = ('id', 'svg', 'elements', 'edges')
 
 class LabelSerializer(SublabelSerializer):
     deleted = serializers.BooleanField(required=False, help_text='Delete label if value is true from proper Task/Project object')
@@ -88,10 +98,19 @@ class LabelSerializer(SublabelSerializer):
     svg = serializers.CharField(allow_blank=True, required=False)
     elements = serializers.JSONField(required=False)
     edges = serializers.JSONField(required=False)
+    skeleton = SkeletonSerializer(required=False)
 
     class Meta:
         model = models.Label
-        fields = ('id', 'name', 'color', 'attributes', 'deleted', 'type', 'svg', 'elements', 'edges', 'sublabels', 'has_parent', )
+        fields = ('id', 'name', 'color', 'attributes', 'deleted', 'type', 'svg', 'elements', 'edges', 'sublabels', 'parent', 'skeleton')
+
+    def to_representation(self, instance):
+        label = super().to_representation(instance)
+        if label['type'] == str(models.LabelType.SKELETON):
+            label['edges'] = label['skeleton']['edges']
+            label['elements'] = label['skeleton']['elements']
+            label['svg'] = label['skeleton']['svg']
+        return label
 
     def validate(self, attrs):
         if attrs.get('deleted') == True and attrs.get('id') is None:
@@ -100,7 +119,7 @@ class LabelSerializer(SublabelSerializer):
         return attrs
 
     @staticmethod
-    def update_instance(validated_data, parent_instance):
+    def update_instance(validated_data, parent_instance, parent_label=None):
         attributes = validated_data.pop('attributespec_set', [])
         instance = dict()
         if isinstance(parent_instance, models.Project):
@@ -118,7 +137,7 @@ class LabelSerializer(SublabelSerializer):
             db_label.name = validated_data.get('name', db_label.name)
             logger.info("{}({}) label was updated".format(db_label.name, db_label.id))
         else:
-            db_label = models.Label.objects.create(name=validated_data.get('name'), **instance)
+            db_label = models.Label.objects.create(name=validated_data.get('name'), parent=parent_label, **instance)
             logger.info("New {} label was created".format(db_label.name))
         if validated_data.get('deleted') == True:
             db_label.delete()
@@ -147,6 +166,7 @@ class LabelSerializer(SublabelSerializer):
                 db_attr.input_type = attr.get('input_type', db_attr.input_type)
                 db_attr.values = attr.get('values', db_attr.values)
                 db_attr.save()
+        return db_label
 
 class JobCommitSerializer(serializers.ModelSerializer):
     class Meta:
@@ -478,13 +498,16 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
                     label['color'] = get_label_color(label['name'], label_colors)
                 label_colors.append(label['color'])
 
-                sublabels = label.pop('sublabels') if 'sublabels' in label else []
-                db_label = models.Label.objects.create(task=db_task, parent_label=parent_label, **label)
+                sublabels = label.pop('sublabels', [])
+                elements = label.pop('elements', [])
+                edges = label.pop('edges', [])
+                svg = label.pop('svg', [])
+                db_label = models.Label.objects.create(task=db_task, parent=parent_label, **label)
                 create_labels(sublabels, parent_label=db_label)
-                if db_label.svg:
+                if db_label.type == str(models.LabelType.SKELETON):
                     for db_sublabel in list(db_label.sublabels.all()):
-                        db_label.svg = db_label.svg.replace(f'data-label-name="{db_sublabel.name}"', f'data-label-id="{db_sublabel.id}"')
-                    db_label.save()
+                        svg = svg.replace(f'data-label-name="{db_sublabel.name}"', f'data-label-id="{db_sublabel.id}"')
+                    models.Skeleton.objects.create(root=db_label, edges=edges, elements=elements, svg=svg)
 
                 for attr in attributes:
                     if attr.get('id', None):
@@ -517,9 +540,23 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
             instance.bug_tracker)
         instance.subset = validated_data.get('subset', instance.subset)
         labels = validated_data.get('label_set', [])
-        if instance.project_id is None:
+
+        def update_labels(labels, parent_label=None):
             for label in labels:
-                LabelSerializer.update_instance(label, instance)
+                sublabels = label.pop('sublabels', [])
+                elements = label.pop('elements', [])
+                edges = label.pop('edges', [])
+                svg = label.pop('svg', [])
+                db_label = LabelSerializer.update_instance(label, instance, parent_label)
+                update_labels(sublabels, parent_label=db_label)
+                if db_label.type == str(models.LabelType.SKELETON):
+                    for db_sublabel in list(db_label.sublabels.all()):
+                        svg = svg.replace(f'data-label-name="{db_sublabel.name}"', f'data-label-id="{db_sublabel.id}"')
+                    models.Skeleton.objects.create(root=db_label, edges=edges, elements=elements, svg=svg)
+
+        if instance.project_id is None:
+            update_labels(labels)
+
         validated_project_id = validated_data.get('project_id')
         if validated_project_id is not None and validated_project_id != instance.project_id:
             project = models.Project.objects.get(id=validated_project_id)
@@ -753,9 +790,9 @@ class LabeledImageSerializer(AnnotationSerializer):
 
 class ShapeSerializer(serializers.Serializer):
     type = serializers.ChoiceField(choices=models.ShapeType.choices())
-    occluded = serializers.BooleanField(default=False, required=False)
-    z_order = serializers.IntegerField(default=0, required=False)
-    rotation = serializers.FloatField(default=0, min_value=0, max_value=360, required=False)
+    occluded = serializers.BooleanField()
+    z_order = serializers.IntegerField(default=0)
+    rotation = serializers.FloatField(default=0, min_value=0, max_value=360)
     points = serializers.ListField(
         child=serializers.FloatField(),
         allow_empty=True, required=False
@@ -796,7 +833,7 @@ class TrackedSkeletonSerializer(serializers.Serializer):
 class TrackedShapeSerializer(ShapeSerializer):
     id = serializers.IntegerField(default=None, allow_null=True)
     frame = serializers.IntegerField(min_value=0)
-    outside = serializers.BooleanField(default=False, required=False)
+    outside = serializers.BooleanField()
     attributes = AttributeValSerializer(many=True,
         source="trackedshapeattributeval_set")
     elements = TrackedSkeletonSerializer(many=True, source='trackedskeleton_set')

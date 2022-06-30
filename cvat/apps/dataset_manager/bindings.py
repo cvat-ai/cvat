@@ -285,23 +285,23 @@ class TaskData(InstanceLabelData):
                 ])
                 if db_label.type == str(LabelType.SKELETON):
                     edges = []
-                    for edge in db_label.edges:
+                    for edge in db_label.skeleton.edges:
                         edges.append(('edge', OrderedDict([
                             ('from', str(edge['from'])),
                             ('to', str(edge['to']))
                         ])))
 
                     elements = []
-                    for elem in db_label.elements:
+                    for elem in db_label.skeleton.elements:
                         elements.append(('element', OrderedDict([
                             ('label_id', str(elem['label'])),
                             ('element_id', str(elem['element_id']))
                         ])))
-                    # meta['edges'] = edges
+
                     label["skeleton"] = OrderedDict([
                         ("edges", edges),
                         ("elements", elements),
-                        ("svg", db_label.svg)
+                        ("svg", db_label.skeleton.svg)
                     ])
 
                 labels.append(('label', label))

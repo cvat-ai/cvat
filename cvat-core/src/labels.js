@@ -135,7 +135,7 @@
                 color: undefined,
                 type: undefined,
                 structure: undefined,
-                has_parent: undefined,
+                parent: undefined,
                 deleted: false,
             };
 
@@ -292,7 +292,7 @@
                      * @instance
                      */
                     hasParent: {
-                        get: () => data.has_parent,
+                        get: () => data.parent,
                     },
                 }),
             );

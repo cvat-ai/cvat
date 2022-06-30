@@ -481,21 +481,29 @@ class Label(models.Model):
     name = SafeCharField(max_length=64)
     color = models.CharField(default='', max_length=8)
     type = models.CharField(max_length=32, null=True, choices=LabelType.choices(), default=None)
-    parent_label = models.ForeignKey('self', on_delete=models.CASCADE, null=True, related_name='sublabels')
-    svg = models.TextField(null=True, default=None)
-    elements = models.JSONField(null=True)
-    edges = models.JSONField(null=True)
+    parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, related_name='sublabels')
 
     def __str__(self):
         return self.name
 
-
-    def has_parent_label(self):
-        return bool(self.parent_label)
+    def get_parent(self):
+        if self.parent:
+            return self.parent.id
+        return None
 
     class Meta:
         default_permissions = ()
         unique_together = ('task', 'name')
+
+class Skeleton(models.Model):
+    root = models.OneToOneField(Label, on_delete=models.CASCADE, null=True, default=None)
+    svg = models.TextField(null=True, default=None)
+    elements = models.JSONField(null=True)
+    edges = models.JSONField(null=True)
+
+    class Meta:
+        default_permissions = ()
+        unique_together = ('root',)
 
 class AttributeType(str, Enum):
     CHECKBOX = 'checkbox'
