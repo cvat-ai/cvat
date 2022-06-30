@@ -242,4 +242,110 @@ export function translateFromCanvas(offset: number, points: number[]): number[] 
     return points.map((coord: number): number => coord - offset);
 }
 
+export function computerWrappingBox(points: number[], margin = 0): Box & BBox {
+    let xtl = Number.MAX_SAFE_INTEGER;
+    let ytl = Number.MAX_SAFE_INTEGER;
+    let xbr = Number.MIN_SAFE_INTEGER;
+    let ybr = Number.MIN_SAFE_INTEGER;
+
+    for (let i = 0; i < points.length; i += 2) {
+        const [x, y] = [points[i], points[i + 1]];
+        xtl = Math.min(xtl, x);
+        ytl = Math.min(ytl, y);
+        xbr = Math.max(xbr, x);
+        ybr = Math.max(ybr, y);
+    }
+
+    const box = {
+        xtl: xtl - margin,
+        ytl: ytl - margin,
+        xbr: xbr + margin,
+        ybr: ybr + margin,
+    };
+
+    return {
+        ...box,
+        x: box.xtl,
+        y: box.ytl,
+        width: box.xbr - box.xtl,
+        height: box.ybr - box.ytl,
+    };
+}
+
+export function getSkeletonEdgeCoordinates(edge: SVG.Line): {
+    x1: number, y1: number, x2: number, y2: number
+} {
+    let x1 = 0;
+    let y1 = 0;
+    let x2 = 0;
+    let y2 = 0;
+
+    const parent = edge.parent() as any as SVG.G;
+    if (parent.type !== 'g') {
+        throw new Error('Edge parent must be a group');
+    }
+
+    const dataNodeFrom = edge.attr('data-node-from');
+    const dataNodeTo = edge.attr('data-node-to');
+    const nodeFrom = parent.children()
+        .find((element: SVG.Element): boolean => element.attr('data-node-id') === dataNodeFrom);
+    const nodeTo = parent.children()
+        .find((element: SVG.Element): boolean => element.attr('data-node-id') === dataNodeTo);
+
+    if (!nodeFrom || !nodeTo) {
+        throw new Error(`Edges nodeFrom ${dataNodeFrom} or nodeTo ${dataNodeTo} do not refer to any node`);
+    }
+
+    x1 = nodeFrom.cx();
+    y1 = nodeFrom.cy();
+    x2 = nodeTo.cx();
+    y2 = nodeTo.cy();
+
+    if ([x1, y1, x2, y2].some((coord: number): boolean => typeof coord !== 'number')) {
+        throw new Error(`Edge coordinates must be numbers, got [${x1}, ${y1}, ${x2}, ${y2}]`);
+    }
+
+    return {
+        x1, y1, x2, y2,
+    };
+}
+
+export function makeSVGFromTemplate(template: string): SVG.G {
+    const SVGElement = new SVG.G();
+    /* eslint-disable-next-line no-unsanitized/property */
+    SVGElement.node.innerHTML = template;
+    return SVGElement;
+}
+
+export function setupSkeletonEdges(skeleton: SVG.G, referenceSVG: SVG.G): void {
+    for (const child of referenceSVG.children()) {
+        // search for all edges on template
+        const dataType = child.attr('data-type');
+        if (child.type === 'line' && dataType === 'edge') {
+            const dataNodeFrom = child.attr('data-node-from');
+            const dataNodeTo = child.attr('data-node-to');
+            if (!Number.isInteger(dataNodeFrom) || !Number.isInteger(dataNodeTo)) {
+                throw new Error(`Edge nodeFrom and nodeTo must be numbers, got ${dataNodeFrom}, ${dataNodeTo}`);
+            }
+
+            // try to find the same edge on the skeleton
+            let edge = skeleton.children().find((_child: SVG.Element) => (
+                _child.attr('data-node-from') === dataNodeFrom && _child.attr('data-node-to') === dataNodeTo
+            )) as SVG.Line;
+
+            // if not found, lets create it
+            if (!edge) {
+                edge = skeleton.line(0, 0, 0, 0).attr({
+                    'data-node-from': dataNodeFrom,
+                    'data-node-to': dataNodeTo,
+                    'stroke-width': 'inherit',
+                }).addClass('cvat_canvas_skeleton_edge') as SVG.Line;
+            }
+
+            const points = getSkeletonEdgeCoordinates(edge);
+            edge.attr({ ...points, 'stroke-width': 'inherit' });
+        }
+    }
+}
+
 export type PropType<T, Prop extends keyof T> = T[Prop];

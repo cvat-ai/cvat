@@ -2594,11 +2594,10 @@ export class CanvasViewImpl implements CanvasView, Listener {
             }
         }
 
-        const wrappingRectMargin = 20;
-        xtl -= wrappingRectMargin;
-        ytl -= wrappingRectMargin;
-        xbr += wrappingRectMargin;
-        ybr += wrappingRectMargin;
+        xtl -= consts.SKELETON_RECT_MARGIN;
+        ytl -= consts.SKELETON_RECT_MARGIN;
+        xbr += consts.SKELETON_RECT_MARGIN;
+        ybr += consts.SKELETON_RECT_MARGIN;
 
         skeleton.on('remove', () => {
             Object.values(svgElements).forEach((element) => element.fire('remove'));
@@ -2650,6 +2649,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                                     'data-node-from': dataNodeFrom,
                                     'data-node-to': dataNodeTo,
                                     'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
+                                    stroke: 'inherit',
                                 }).addClass('cvat_canvas_skeleton_edge');
                                 skeleton.node.prepend(line.node);
                             }

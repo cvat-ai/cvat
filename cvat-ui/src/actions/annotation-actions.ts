@@ -472,12 +472,12 @@ export function propagateObjectAsync(sessionInstance: any, objectState: any, fro
                 label: _objectState.label,
                 zOrder: _objectState.zOrder,
                 frame: from,
-                elements: _objectState.shapeType === 'skeleton' ? _objectState.elements.map((element: any): any => getCopyFromState(element)) : [],
+                elements: _objectState.shapeType === 'skeleton' ? _objectState.elements
+                    .map((element: any): any => getCopyFromState(element)) : [],
                 source: _objectState.source,
             });
 
             const copy = getCopyFromState(objectState);
-
             await sessionInstance.logger.log(LogType.propagateObject, { count: to - from + 1 });
             const states = [];
             for (let frame = from; frame <= to; frame++) {
@@ -1504,7 +1504,7 @@ export function pasteShapeAsync(): ThunkAction {
             drawing: { activeInitialState: initialState },
         } = getStore().getState().annotation;
 
-        if (initialState) {
+        if (initialState && canvasInstance) {
             let activeControl = ActiveControl.CURSOR;
             if (initialState.shapeType === ShapeType.RECTANGLE) {
                 activeControl = ActiveControl.DRAW_RECTANGLE;
@@ -1516,6 +1516,8 @@ export function pasteShapeAsync(): ThunkAction {
                 activeControl = ActiveControl.DRAW_POLYLINE;
             } else if (initialState.shapeType === ShapeType.CUBOID) {
                 activeControl = ActiveControl.DRAW_CUBOID;
+            } else if (initialState.shapeType === ShapeType.SKELETON) {
+                activeControl = ActiveControl.DRAW_SKELETON;
             }
 
             dispatch({
@@ -1524,9 +1526,8 @@ export function pasteShapeAsync(): ThunkAction {
                     activeControl,
                 },
             });
-            if (canvasInstance instanceof Canvas) {
-                canvasInstance.cancel();
-            }
+            canvasInstance.cancel();
+
             if (initialState.objectType === ObjectType.TAG) {
                 const objectState = new cvat.classes.ObjectState({
                     objectType: ObjectType.TAG,
@@ -1539,6 +1540,8 @@ export function pasteShapeAsync(): ThunkAction {
                 canvasInstance.draw({
                     enabled: true,
                     initialState,
+                    ...(initialState.shapeType === ShapeType.SKELETON ?
+                        { skeletonSVG: initialState.label.structure.svg } : {}),
                 });
             }
         }
