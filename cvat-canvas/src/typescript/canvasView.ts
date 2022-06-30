@@ -2661,6 +2661,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
         setupEdges();
 
+        skeleton.rotate(state.rotation);
+
         if (state.occluded) {
             skeleton.addClass('cvat_canvas_shape_occluded');
         }
@@ -2867,6 +2869,9 @@ export class CanvasViewImpl implements CanvasView, Listener {
             let resized = false;
             if (typeof action === 'object') {
                 (wrappingRect as any).resize(action).on('resizestart', (): void => {
+                    let { rotation } = skeleton.transform();
+                    wrappingRect.attr('data-rotation', rotation);
+
                     this.mode = Mode.RESIZE;
                     resized = false;
                     hideText();
@@ -2879,6 +2884,16 @@ export class CanvasViewImpl implements CanvasView, Listener {
                         this.mode = Mode.IDLE;
                     });
                 }).on('resizing', (e: CustomEvent): void => {
+                    let { rotation } = wrappingRect.transform();
+                    const prevRotation = wrappingRect.attr('data-rotation');
+                    if (prevRotation) {
+                        rotation += prevRotation;
+                    }
+
+                    skeleton.rotate(rotation);
+                    wrappingRect.rotate(0);
+                    e.target.instance.remember('_selectHandler').nested.rotate(0);
+
                     const { instance } = e.target as any;
                     const [x, y] = [instance.x(), instance.y()];
                     const prevXtl = +wrappingRect.attr('data-xtl');
@@ -2905,10 +2920,13 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     resized = true;
                     setupEdges();
                 }).on('resizedone', (): void => {
+                    const { rotation } = skeleton.transform();
+                    wrappingRect.attr('data-rotation', rotation);
                     showText();
                     this.mode = Mode.IDLE;
                     (wrappingRect as any).off('remove.resize');
                     if (resized) {
+                        state.rotation = rotation;
                         state.elements.forEach((element: any) => {
                             const elementShape = skeleton.children()
                                 .find((child: SVG.Shape) => child.id() === `cvat_canvas_shape_${element.clientID}`);

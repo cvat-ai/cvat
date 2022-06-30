@@ -62,6 +62,7 @@ const { Source, ObjectShape } = require('./enums');
                     this.descriptions = false;
 
                     this.points = false;
+                    this.rotation = false;
                     this.outside = false;
                     this.occluded = false;
                     this.keyframe = false;
@@ -231,7 +232,7 @@ const { Source, ObjectShape } = require('./enums');
                         get: () => data.rotation,
                         set: (rotation) => {
                             if (typeof rotation === 'number') {
-                                data.updateFlags.points = true;
+                                data.updateFlags.rotation = true;
                                 data.rotation = rotation;
                             } else {
                                 throw new ArgumentError(

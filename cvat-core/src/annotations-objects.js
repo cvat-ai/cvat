@@ -589,24 +589,20 @@
             return result;
         }
 
-        _savePoints(points, rotation, frame) {
-            const undoPoints = this.points;
+        _saveRotation(rotation, frame) {
             const undoRotation = this.rotation;
-            const redoPoints = points;
             const redoRotation = rotation;
             const undoSource = this.source;
             const redoSource = Source.MANUAL;
 
             this.history.do(
-                HistoryActions.CHANGED_POINTS,
+                HistoryActions.CHANGED_ROTATION,
                 () => {
-                    this.points = undoPoints;
                     this.source = undoSource;
                     this.rotation = undoRotation;
                     this.updated = Date.now();
                 },
                 () => {
-                    this.points = redoPoints;
                     this.source = redoSource;
                     this.rotation = redoRotation;
                     this.updated = Date.now();
@@ -616,8 +612,33 @@
             );
 
             this.source = Source.MANUAL;
-            this.points = points;
             this.rotation = rotation;
+        }
+
+        _savePoints(points, frame) {
+            const undoPoints = this.points;
+            const redoPoints = points;
+            const undoSource = this.source;
+            const redoSource = Source.MANUAL;
+
+            this.history.do(
+                HistoryActions.CHANGED_POINTS,
+                () => {
+                    this.points = undoPoints;
+                    this.source = undoSource;
+                    this.updated = Date.now();
+                },
+                () => {
+                    this.points = redoPoints;
+                    this.source = redoSource;
+                    this.updated = Date.now();
+                },
+                [this.clientID],
+                frame,
+            );
+
+            this.source = Source.MANUAL;
+            this.points = points;
         }
 
         _saveOccluded(occluded, frame) {
@@ -700,6 +721,10 @@
 
             if (updated.descriptions) {
                 this._saveDescriptions(data.descriptions);
+            }
+
+            if (updated.rotation) {
+                this._saveRotation(rotation, frame);
             }
 
             if (updated.points && fittedPoints.length) {
@@ -1066,16 +1091,42 @@
             );
         }
 
-        _savePoints(points, rotation, frame) {
+        _saveRotation(rotation, frame) {
             const current = this.get(frame);
             const wasKeyframe = frame in this.shapes;
             const undoSource = this.source;
             const redoSource = Source.MANUAL;
             const undoShape = wasKeyframe ? this.shapes[frame] : undefined;
-            const redoShape = wasKeyframe ? { ...this.shapes[frame], points, rotation } : {
+            const redoShape = wasKeyframe ? { ...this.shapes[frame], rotation } : {
+                frame,
+                rotation,
+                zOrder: current.zOrder,
+                outside: current.outside,
+                occluded: current.occluded,
+                attributes: {},
+            };
+
+            this.shapes[frame] = redoShape;
+            this.source = Source.MANUAL;
+            this._appendShapeActionToHistory(
+                HistoryActions.CHANGED_ROTATION,
+                frame,
+                undoShape,
+                redoShape,
+                undoSource,
+                redoSource,
+            );
+        }
+
+        _savePoints(points, frame) {
+            const current = this.get(frame);
+            const wasKeyframe = frame in this.shapes;
+            const undoSource = this.source;
+            const redoSource = Source.MANUAL;
+            const undoShape = wasKeyframe ? this.shapes[frame] : undefined;
+            const redoShape = wasKeyframe ? { ...this.shapes[frame], points } : {
                 frame,
                 points,
-                rotation,
                 zOrder: current.zOrder,
                 outside: current.outside,
                 occluded: current.occluded,
@@ -1259,7 +1310,11 @@
             }
 
             if (updated.points && fittedPoints.length) {
-                this._savePoints(fittedPoints, rotation, frame);
+                this._savePoints(fittedPoints, frame);
+            }
+
+            if (updated.rotation) {
+                this._saveRotation(rotation, frame);
             }
 
             if (updated.outside) {
@@ -1308,25 +1363,15 @@
                 };
             }
 
-            if (leftPosition) {
+            const singlePosition = leftPosition || rightPosition;
+            if (singlePosition) {
                 return {
-                    points: [...leftPosition.points],
-                    rotation: leftPosition.rotation,
-                    occluded: leftPosition.occluded,
-                    outside: leftPosition.outside,
-                    zOrder: leftPosition.zOrder,
+                    points: [...singlePosition.points],
+                    rotation: singlePosition.rotation,
+                    occluded: singlePosition.occluded,
+                    zOrder: singlePosition.zOrder,
                     keyframe: targetFrame in this.shapes,
-                };
-            }
-
-            if (rightPosition) {
-                return {
-                    points: [...rightPosition.points],
-                    rotation: rightPosition.rotation,
-                    occluded: rightPosition.occluded,
-                    zOrder: rightPosition.zOrder,
-                    keyframe: targetFrame in this.shapes,
-                    outside: true,
+                    outside: singlePosition === rightPosition ? true : singlePosition.outside,
                 };
             }
 
@@ -2447,15 +2492,41 @@
             return result;
         }
 
-        getPosition(targetFrame) {
-            return {
-                points: undefined,
-                rotation: 0, // todo: get rotation from general shape
-                occluded: false,
-                outside: false, // todo: get outside from general shape
-                zOrder: 0, // todo: get rotation from general shape
-                keyframe: targetFrame in this.shapes,
-            };
+        getPosition(targetFrame, leftKeyframe, rightFrame) {
+            const leftFrame = targetFrame in this.shapes ? targetFrame : leftKeyframe;
+            const rightPosition = Number.isInteger(rightFrame) ? this.shapes[rightFrame] : null;
+            const leftPosition = Number.isInteger(leftFrame) ? this.shapes[leftFrame] : null;
+            const offset = (targetFrame - leftFrame) / (rightFrame - leftFrame);
+
+            if (leftPosition && rightPosition) {
+                return {
+                    points: undefined,
+                    rotation: (leftPosition.rotation + findAngleDiff(
+                        rightPosition.rotation, leftPosition.rotation,
+                    ) * offset + 360) % 360,
+                    occluded: leftPosition.occluded,
+                    outside: leftPosition.outside,
+                    zOrder: leftPosition.zOrder,
+                    keyframe: targetFrame in this.shapes,
+                };
+            }
+
+            const singlePosition = leftPosition || rightPosition;
+            if (singlePosition) {
+                return {
+                    points: undefined,
+                    rotation: singlePosition.rotation,
+                    occluded: singlePosition.occluded,
+                    zOrder: singlePosition.zOrder,
+                    keyframe: targetFrame in this.shapes,
+                    outside: singlePosition === rightPosition ? true : singlePosition.outside,
+                };
+            }
+
+            throw new DataError(
+                'No one left position or right position was found. ' +
+                    `Interpolation impossible. Client ID: ${this.clientID}`,
+            );
         }
 
         get shapes() {

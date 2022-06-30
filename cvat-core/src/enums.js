@@ -288,6 +288,7 @@
         CHANGED_LABEL: 'Changed label',
         CHANGED_ATTRIBUTES: 'Changed attributes',
         CHANGED_POINTS: 'Changed points',
+        CHANGED_ROTATION: 'Object rotated',
         CHANGED_OUTSIDE: 'Changed outside',
         CHANGED_OCCLUDED: 'Changed occluded',
         CHANGED_ZORDER: 'Changed z-order',
