@@ -703,7 +703,7 @@ export class DrawHandlerImpl implements DrawHandler {
 
         this.pointsGroup.children().forEach((child: SVG.Element): void => {
             const cx = child.cx();
-            const cy = child.cx();
+            const cy = child.cy();
             minX = Math.min(cx, minX);
             minY = Math.min(cy, minY);
             maxX = Math.max(cx, maxX);
