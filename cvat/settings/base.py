@@ -235,6 +235,7 @@ TEMPLATES = [
 WSGI_APPLICATION = 'cvat.wsgi.application'
 
 # IAM settings
+IAM_FORBID_REGISTRATION = os.getenv('FORBID_REGISTRATION', 'No')
 IAM_TYPE = 'BASIC'
 IAM_DEFAULT_ROLES = ['user']
 IAM_ADMIN_ROLE = 'admin'

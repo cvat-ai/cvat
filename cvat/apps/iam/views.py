@@ -1,6 +1,7 @@
 # Copyright (C) 2021 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
+from django.http import Http404
 
 from django.core.exceptions import BadRequest
 from django.utils.functional import SimpleLazyObject
@@ -107,6 +108,11 @@ class SigningView(views.APIView):
 
 
 class RegisterViewEx(RegisterView):
+    def create(self, request, *args, **kwargs):
+        if settings.IAM_FORBID_REGISTRATION == 'Yes':
+            raise Http404
+        return super().create(request, *args, **kwargs)
+
     def get_response_data(self, user):
         data = self.get_serializer(user).data
         data['email_verification_required'] = True

@@ -39,6 +39,7 @@ services:
       CVAT_REDIS_HOST: 'cvat_redis'
       CVAT_POSTGRES_HOST: 'cvat_db'
       ADAPTIVE_AUTO_ANNOTATION: 'false'
+      FORBID_REGISTRATION: '${FORBID_REGISTRATION}'
       no_proxy: elasticsearch,kibana,logstash,nuclio,opa,${no_proxy}
     labels:
       - traefik.enable=true
