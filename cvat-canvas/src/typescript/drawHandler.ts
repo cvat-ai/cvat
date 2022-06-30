@@ -771,6 +771,7 @@ export class DrawHandlerImpl implements DrawHandler {
                     const dataType = child.getAttribute('data-type');
                     if (child.tagName === 'line' && dataType && dataType.includes('edge')) {
                         child.setAttribute('stroke-width', 'inherit');
+                        child.setAttribute('stroke', 'inherit');
                         const dataNodeFrom = child.getAttribute('data-node-from');
                         const dataNodeTo = child.getAttribute('data-node-to');
                         if (dataNodeFrom && dataNodeTo) {

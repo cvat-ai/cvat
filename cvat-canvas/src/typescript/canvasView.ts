@@ -2649,6 +2649,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                                     'data-node-from': dataNodeFrom,
                                     'data-node-to': dataNodeTo,
                                     'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
+                                    stroke: 'inherit',
                                 }).addClass('cvat_canvas_skeleton_edge');
                                 skeleton.node.prepend(line.node);
                             }
