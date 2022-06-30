@@ -2467,7 +2467,7 @@
                 result[keyframe] = {
                     type: this.shapeType,
                     occluded: false,
-                    z_order: false, // todo: get z_order from general shape
+                    z_order: 0, // todo: get z_order from general shape
                     rotation: 0, // todo: get rotation from general shape
                     frame: +keyframe,
                     outside: false, // todo: get outside from general shape
@@ -2475,14 +2475,15 @@
                     elements: this.elements.map((element) => {
                         const elementData = element.get(+keyframe);
                         return ({
+                            type: elementData.shapeType,
                             label_id: elementData.label.id,
                             occluded: elementData.occluded,
                             outside: elementData.outside,
                             points: elementData.points,
-                            attributes: elementData.attributes,
+                            attributes: [],
                         });
                     }),
-                }
+                };
             }
 
             return result;
