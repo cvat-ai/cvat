@@ -692,15 +692,16 @@ export class DrawHandlerImpl implements DrawHandler {
 
     private drawSkeleton(): void {
         this.drawInstance = this.canvas.rect();
-        const svgSkeleton = this.canvas.group();
-        svgSkeleton.node.innerHTML = this.drawData.skeletonSVG;
+        this.pointsGroup = makeSVGFromTemplate(this.drawData.skeletonSVG);
+        this.canvas.add(this.pointsGroup);
+        this.pointsGroup.attr('stroke-width', consts.BASE_STROKE_WIDTH / this.geometry.scale);
 
         let minX = Number.MAX_SAFE_INTEGER;
         let minY = Number.MAX_SAFE_INTEGER;
         let maxX = 0;
         let maxY = 0;
 
-        svgSkeleton.children().forEach((child: SVG.Element): void => {
+        this.pointsGroup.children().forEach((child: SVG.Element): void => {
             const cx = child.cx();
             const cy = child.cx();
             minX = Math.min(cx, minX);
@@ -714,7 +715,7 @@ export class DrawHandlerImpl implements DrawHandler {
                 const points = readPointsFromShape((e.target as any as { instance: SVG.Rect }).instance);
                 const [xtl, ytl, xbr, ybr] = this.getFinalRectCoordinates(points, true);
                 const elements: any[] = [];
-                Array.from(svgSkeleton.node.children).forEach((child: Element) => {
+                Array.from(this.pointsGroup.node.children).forEach((child: Element) => {
                     if (child.tagName === 'circle') {
                         const cx = +(child.getAttribute('cx') as string) + xtl;
                         const cy = +(child.getAttribute('cy') as string) + ytl;
@@ -728,7 +729,6 @@ export class DrawHandlerImpl implements DrawHandler {
                 });
 
                 const { shapeType, redraw: clientID } = this.drawData;
-                svgSkeleton.remove();
                 this.release();
 
                 if (this.canceled) return;
@@ -746,15 +746,15 @@ export class DrawHandlerImpl implements DrawHandler {
                 const y = this.drawInstance.y();
                 const width = this.drawInstance.width();
                 const height = this.drawInstance.height();
-                svgSkeleton.style({
+                this.pointsGroup.style({
                     transform: `translate(${x}px, ${y}px)`,
                 });
 
-                const bbox = svgSkeleton.bbox();
-                svgSkeleton.node.innerHTML = this.drawData.skeletonSVG;
-                Array.from(svgSkeleton.node.children).forEach((child: Element) => {
+                this.pointsGroup.node.innerHTML = this.drawData.skeletonSVG;
+                Array.from(this.pointsGroup.node.children).forEach((child: Element) => {
                     const dataType = child.getAttribute('data-type');
                     if (child.tagName === 'circle' && dataType && dataType.includes('element')) {
+                        child.setAttribute('r', `${consts.BASE_POINT_SIZE / this.geometry.scale}`);
                         let cx = +(child.getAttribute('cx') as string);
                         let cy = +(child.getAttribute('cy') as string);
                         // todo: check if skeleton from one point
@@ -767,14 +767,15 @@ export class DrawHandlerImpl implements DrawHandler {
                     }
                 });
 
-                Array.from(svgSkeleton.node.children).forEach((child: Element) => {
+                Array.from(this.pointsGroup.node.children).forEach((child: Element) => {
                     const dataType = child.getAttribute('data-type');
                     if (child.tagName === 'line' && dataType && dataType.includes('edge')) {
+                        child.setAttribute('stroke-width', 'inherit');
                         const dataNodeFrom = child.getAttribute('data-node-from');
                         const dataNodeTo = child.getAttribute('data-node-to');
                         if (dataNodeFrom && dataNodeTo) {
-                            const from = svgSkeleton.node.querySelector(`[data-node-id="${dataNodeFrom}"]`);
-                            const to = svgSkeleton.node.querySelector(`[data-node-id="${dataNodeTo}"]`);
+                            const from = this.pointsGroup.node.querySelector(`[data-node-id="${dataNodeFrom}"]`);
+                            const to = this.pointsGroup.node.querySelector(`[data-node-id="${dataNodeTo}"]`);
 
                             if (from && to) {
                                 const x1 = from.getAttribute('cx');
@@ -977,12 +978,14 @@ export class DrawHandlerImpl implements DrawHandler {
         let [xtl, ytl] = [box.x, box.y];
 
         this.pasteBox(box, 0);
-        const svgSkeleton = makeSVGFromTemplate(this.drawData.skeletonSVG);
-        this.canvas.add(svgSkeleton);
+        this.pointsGroup = makeSVGFromTemplate(this.drawData.skeletonSVG);
+        this.pointsGroup.attr('stroke-width', consts.BASE_STROKE_WIDTH / this.geometry.scale);
+        this.canvas.add(this.pointsGroup);
 
-        svgSkeleton.children().forEach((child: SVG.Element): void => {
+        this.pointsGroup.children().forEach((child: SVG.Element): void => {
             const dataType = child.attr('data-type');
             if (child.node.tagName === 'circle' && dataType && dataType.includes('element')) {
+                child.attr('r', `${consts.BASE_POINT_SIZE / this.geometry.scale}`);
                 const labelID = +child.attr('data-label-id');
                 const element = elements.find((_element: any): boolean => _element.label.id === labelID);
                 if (element) {
@@ -992,41 +995,36 @@ export class DrawHandlerImpl implements DrawHandler {
             }
         });
 
-        const originalRemove = this.drawInstance.remove.bind(this.drawInstance);
-        this.drawInstance.remove = () => {
-            svgSkeleton.remove();
-            originalRemove();
-        };
-
         this.drawInstance.off('done').on('done', (e: CustomEvent) => {
+            const result = {
+                shapeType: this.drawData.initialState.shapeType,
+                objectType: this.drawData.initialState.objectType,
+                elements: this.drawData.initialState.elements.map((element: any) => ({
+                    shapeType: element.shapeType,
+                    outside: element.outside,
+                    occluded: element.occluded,
+                    label: element.label,
+                    attributes: element.attributes,
+                    points: (() => {
+                        const circle = this.pointsGroup.children()
+                            .find((child: SVG.Element) => child.attr('data-label-id') === element.label.id);
+                        const points = translateFromCanvas(this.geometry.offset, [circle.cx(), circle.cy()]);
+                        return points;
+                    })(),
+                })),
+                occluded: this.drawData.initialState.occluded,
+                attributes: { ...this.drawData.initialState.attributes },
+                label: this.drawData.initialState.label,
+                color: this.drawData.initialState.color,
+                rotation: this.drawData.initialState.rotation,
+            };
+
             if (!e.detail.originalEvent.ctrlKey) {
                 this.release();
             }
 
             this.onDrawDone(
-                {
-                    shapeType: this.drawData.initialState.shapeType,
-                    objectType: this.drawData.initialState.objectType,
-                    points: null,
-                    elements: this.drawData.initialState.elements.map((element: any) => ({
-                        shapeType: element.shapeType,
-                        outside: element.outside,
-                        occluded: element.occluded,
-                        label: element.label,
-                        attributes: element.attributes,
-                        points: (() => {
-                            const circle = svgSkeleton.children()
-                                .find((child: SVG.Element) => child.attr('data-label-id') === element.label.id);
-                            const points = translateFromCanvas(this.geometry.offset, [circle.cx(), circle.cy()]);
-                            return points;
-                        })(),
-                    })),
-                    occluded: this.drawData.initialState.occluded,
-                    attributes: { ...this.drawData.initialState.attributes },
-                    label: this.drawData.initialState.label,
-                    color: this.drawData.initialState.color,
-                    rotation: this.drawData.initialState.rotation,
-                },
+                result,
                 Date.now() - this.startTimestamp,
                 e.detail.originalEvent.ctrlKey,
             );
@@ -1037,7 +1035,7 @@ export class DrawHandlerImpl implements DrawHandler {
             const [xDiff, yDiff] = [newXtl - xtl, newYtl - ytl];
             xtl = newXtl;
             ytl = newYtl;
-            svgSkeleton.children().forEach((child: SVG.Element): void => {
+            this.pointsGroup.children().forEach((child: SVG.Element): void => {
                 const dataType = child.attr('data-type');
                 if (child.node.tagName === 'circle' && dataType && dataType.includes('element')) {
                     const [cx, cy] = [child.cx(), child.cy()];
@@ -1045,7 +1043,7 @@ export class DrawHandlerImpl implements DrawHandler {
                 }
             });
 
-            setupSkeletonEdges(svgSkeleton, svgSkeleton, this.geometry.scale);
+            setupSkeletonEdges(this.pointsGroup, this.pointsGroup);
         });
     }
 
@@ -1261,6 +1259,10 @@ export class DrawHandlerImpl implements DrawHandler {
         }
 
         if (this.pointsGroup) {
+            this.pointsGroup.attr({
+                'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
+            });
+
             for (const point of this.pointsGroup.children()) {
                 point.attr({
                     'stroke-width': consts.POINTS_STROKE_WIDTH / geometry.scale,

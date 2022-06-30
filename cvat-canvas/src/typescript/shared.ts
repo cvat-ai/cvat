@@ -317,7 +317,7 @@ export function makeSVGFromTemplate(template: string): SVG.G {
     return SVGElement;
 }
 
-export function setupSkeletonEdges(skeleton: SVG.G, referenceSVG: SVG.G, scale: number): void {
+export function setupSkeletonEdges(skeleton: SVG.G, referenceSVG: SVG.G): void {
     for (const child of referenceSVG.children()) {
         // search for all edges on template
         const dataType = child.attr('data-type');
@@ -338,12 +338,12 @@ export function setupSkeletonEdges(skeleton: SVG.G, referenceSVG: SVG.G, scale: 
                 edge = skeleton.line(0, 0, 0, 0).attr({
                     'data-node-from': dataNodeFrom,
                     'data-node-to': dataNodeTo,
-                    'stroke-width': consts.BASE_STROKE_WIDTH / scale,
+                    'stroke-width': 'inherit',
                 }).addClass('cvat_canvas_skeleton_edge') as SVG.Line;
             }
 
             const points = getSkeletonEdgeCoordinates(edge);
-            edge.attr({ ...points });
+            edge.attr({ ...points, 'stroke-width': 'inherit' });
         }
     }
 }
