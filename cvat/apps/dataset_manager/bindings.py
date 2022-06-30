@@ -1476,14 +1476,28 @@ def convert_cvat_anno_to_dm(cvat_frame_anno, label_attrs, map_label, format_name
 
             # anno = datum_annotation.RleMask(rle=points, label=anno_label, attributes=anno_attr, group=anno_group, z_order=shape_obj.z_order)
 
-            anno = datum_annotation.Bbox(anno_points[-4], anno_points[-3], anno_points[-2] - anno_points[-4], anno_points[-1] - anno_points[-3],
-                label=anno_label, attributes=anno_attr, group=anno_group,
-                z_order=shape_obj.z_order)
+            # anno = datum_annotation.Bbox(anno_points[-4], anno_points[-3], anno_points[-2] - anno_points[-4], anno_points[-1] - anno_points[-3],
+            #     label=anno_label, attributes=anno_attr, group=anno_group,
+            #     z_order=shape_obj.z_order)
+
+        #      anno = datum_annotation.RleMask()
+        # # elif shape_obj.type == ShapeType.POLYLINE:
+        #      anno = datum_annotation.PolyLine(anno_points,
+        #         label=anno_label, attributes=anno_attr, group=anno_group,
+        #         z_order=shape_obj.z_order)
 
         # elif shape_obj.type == ShapeType.POLYLINE:
             # anno = datum_annotation.PolyLine(anno_points,
             #     label=anno_label, attributes=anno_attr, group=anno_group,
             #     z_order=shape_obj.z_order)
+            anno = RawMaskToRLE.convert_rle(SimpleNamespace(**{
+                "points": [*map(int,shape_obj.points)],
+                "label": anno_label,
+                "z_order": shape_obj.z_order,
+                "rotation": shape_obj.rotation,
+                "group": anno_group,
+                "attributes": anno_attr,
+            }))
         elif shape_obj.type == ShapeType.POLYGON:
             anno = datum_annotation.Polygon(anno_points,
                 label=anno_label, attributes=anno_attr, group=anno_group,
