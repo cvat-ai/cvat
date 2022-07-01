@@ -157,6 +157,19 @@
         return values.includes(value);
     }
 
+    function copyShape(state, frame, data) {
+        return {
+            frame,
+            rotation: state.rotation,
+            zOrder: state.zOrder,
+            points: state.points,
+            occluded: state.occluded,
+            outside: state.outside,
+            attributes: {},
+            ...data,
+        };
+    }
+
     class Annotation {
         constructor(data, clientID, color, injection) {
             this.taskLabels = injection.labels;
@@ -1092,19 +1105,12 @@
         }
 
         _saveRotation(rotation, frame) {
-            const current = this.get(frame);
             const wasKeyframe = frame in this.shapes;
             const undoSource = this.source;
             const redoSource = Source.MANUAL;
             const undoShape = wasKeyframe ? this.shapes[frame] : undefined;
-            const redoShape = wasKeyframe ? { ...this.shapes[frame], rotation } : {
-                frame,
-                rotation,
-                zOrder: current.zOrder,
-                outside: current.outside,
-                occluded: current.occluded,
-                attributes: {},
-            };
+            const redoShape = wasKeyframe ?
+                { ...this.shapes[frame], rotation } : copyShape(this.get(frame), frame, { rotation });
 
             this.shapes[frame] = redoShape;
             this.source = Source.MANUAL;
@@ -1119,19 +1125,12 @@
         }
 
         _savePoints(points, frame) {
-            const current = this.get(frame);
             const wasKeyframe = frame in this.shapes;
             const undoSource = this.source;
             const redoSource = Source.MANUAL;
             const undoShape = wasKeyframe ? this.shapes[frame] : undefined;
-            const redoShape = wasKeyframe ? { ...this.shapes[frame], points } : {
-                frame,
-                points,
-                zOrder: current.zOrder,
-                outside: current.outside,
-                occluded: current.occluded,
-                attributes: {},
-            };
+            const redoShape = wasKeyframe ?
+                { ...this.shapes[frame], points } : copyShape(this.get(frame), frame, { points });
 
             this.shapes[frame] = redoShape;
             this.source = Source.MANUAL;
@@ -1146,22 +1145,13 @@
         }
 
         _saveOutside(frame, outside) {
-            const current = this.get(frame);
             const wasKeyframe = frame in this.shapes;
             const undoSource = this.source;
             const redoSource = Source.MANUAL;
             const undoShape = wasKeyframe ? this.shapes[frame] : undefined;
             const redoShape = wasKeyframe ?
                 { ...this.shapes[frame], outside } :
-                {
-                    frame,
-                    outside,
-                    rotation: current.rotation,
-                    zOrder: current.zOrder,
-                    points: current.points,
-                    occluded: current.occluded,
-                    attributes: {},
-                };
+                copyShape(this.get(frame), frame, { outside });
 
             this.shapes[frame] = redoShape;
             this.source = Source.MANUAL;
@@ -1176,22 +1166,13 @@
         }
 
         _saveOccluded(occluded, frame) {
-            const current = this.get(frame);
             const wasKeyframe = frame in this.shapes;
             const undoSource = this.source;
             const redoSource = Source.MANUAL;
             const undoShape = wasKeyframe ? this.shapes[frame] : undefined;
             const redoShape = wasKeyframe ?
                 { ...this.shapes[frame], occluded } :
-                {
-                    frame,
-                    occluded,
-                    rotation: current.rotation,
-                    zOrder: current.zOrder,
-                    points: current.points,
-                    outside: current.outside,
-                    attributes: {},
-                };
+                copyShape(this.get(frame), frame, { occluded });
 
             this.shapes[frame] = redoShape;
             this.source = Source.MANUAL;
@@ -1206,22 +1187,13 @@
         }
 
         _saveZOrder(zOrder, frame) {
-            const current = this.get(frame);
             const wasKeyframe = frame in this.shapes;
             const undoSource = this.source;
             const redoSource = Source.MANUAL;
             const undoShape = wasKeyframe ? this.shapes[frame] : undefined;
             const redoShape = wasKeyframe ?
                 { ...this.shapes[frame], zOrder } :
-                {
-                    frame,
-                    zOrder,
-                    rotation: current.rotation,
-                    occluded: current.occluded,
-                    points: current.points,
-                    outside: current.outside,
-                    attributes: {},
-                };
+                copyShape(this.get(frame), frame, { zOrder });
 
             this.shapes[frame] = redoShape;
             this.source = Source.MANUAL;
@@ -1236,7 +1208,6 @@
         }
 
         _saveKeyframe(frame, keyframe) {
-            const current = this.get(frame);
             const wasKeyframe = frame in this.shapes;
 
             if ((keyframe && wasKeyframe) || (!keyframe && !wasKeyframe)) {
@@ -1246,18 +1217,7 @@
             const undoSource = this.source;
             const redoSource = Source.MANUAL;
             const undoShape = wasKeyframe ? this.shapes[frame] : undefined;
-            const redoShape = keyframe ?
-                {
-                    frame,
-                    rotation: current.rotation,
-                    zOrder: current.zOrder,
-                    points: current.points,
-                    outside: current.outside,
-                    occluded: current.occluded,
-                    attributes: {},
-                    source: current.source,
-                } :
-                undefined;
+            const redoShape = keyframe ? copyShape(this.get(frame), frame, {}) : undefined;
 
             this.source = Source.MANUAL;
             if (redoShape) {
