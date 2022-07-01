@@ -1734,6 +1734,10 @@ class UserViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
         return queryset
 
     def get_serializer_class(self):
+        # Early exit for drf-spectacular compatibility
+        if getattr(self, 'swagger_fake_view', False):
+            return UserSerializer
+
         user = self.request.user
         if user.is_staff:
             return UserSerializer
