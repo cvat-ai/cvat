@@ -955,6 +955,95 @@ def dump_as_cvat_interpolation(dumper, annotations):
                 dumper.open_points(dump_data)
             elif shape.type == "cuboid":
                 dumper.open_cuboid(dump_data)
+            elif shape.type == 'skeleton':
+                dumper.open_skeleton(dump_data)
+
+                for elem in shape.elements:
+                    data = OrderedDict([
+                        ("outside", str(int(elem.outside))),
+                        ("occluded", str(int(elem.occluded))),
+                        ("keyframe", str(int(elem.keyframe))),
+                    ])
+
+                    if elem.type == "rectangle":
+                        data.update(OrderedDict([
+                            ("xtl", "{:.2f}".format(elem.points[0])),
+                            ("ytl", "{:.2f}".format(elem.points[1])),
+                            ("xbr", "{:.2f}".format(elem.points[2])),
+                            ("ybr", "{:.2f}".format(elem.points[3])),
+                        ]))
+                        dumper.open_box(data)
+
+                    elif elem.type == "ellipse":
+                        data.update(OrderedDict([
+                            ("cx", "{:.2f}".format(elem.points[0])),
+                            ("cy", "{:.2f}".format(elem.points[1])),
+                            ("rx", "{:.2f}".format(elem.points[2] - elem.points[0])),
+                            ("ry", "{:.2f}".format(elem.points[1] - elem.points[3]))
+                        ]))
+                        dumper.open_ellipse(data)
+
+                    elif elem.type == "cuboid":
+                        data.update(OrderedDict([
+                            ("xtl1", "{:.2f}".format(elem.points[0])),
+                            ("ytl1", "{:.2f}".format(elem.points[1])),
+                            ("xbl1", "{:.2f}".format(elem.points[2])),
+                            ("ybl1", "{:.2f}".format(elem.points[3])),
+                            ("xtr1", "{:.2f}".format(elem.points[4])),
+                            ("ytr1", "{:.2f}".format(elem.points[5])),
+                            ("xbr1", "{:.2f}".format(elem.points[6])),
+                            ("ybr1", "{:.2f}".format(elem.points[7])),
+                            ("xtl2", "{:.2f}".format(elem.points[8])),
+                            ("ytl2", "{:.2f}".format(elem.points[9])),
+                            ("xbl2", "{:.2f}".format(elem.points[10])),
+                            ("ybl2", "{:.2f}".format(elem.points[11])),
+                            ("xtr2", "{:.2f}".format(elem.points[12])),
+                            ("ytr2", "{:.2f}".format(elem.points[13])),
+                            ("xbr2", "{:.2f}".format(elem.points[14])),
+                            ("ybr2", "{:.2f}".format(elem.points[15]))
+                        ]))
+                        dumper.open_cuboid(data)
+                    elif shape.type == "polygon":
+                        data.update(OrderedDict([
+                            ("points", ';'.join(['{:.2f},{:.2f}'.format(x, y)
+                                for x,y in pairwise(elem.points)]))
+                        ]))
+                        dumper.open_polygon(data)
+                    elif shape.type == "polyline":
+                        data.update(OrderedDict([
+                            ("points", ';'.join(['{:.2f},{:.2f}'.format(x, y)
+                                for x,y in pairwise(elem.points)]))
+                        ]))
+                        dumper.open_polyline(data)
+                    elif shape.type == "points":
+                        data.update(OrderedDict([
+                            ("points", ';'.join(['{:.2f},{:.2f}'.format(x, y)
+                                for x,y in pairwise(elem.points)]))
+                        ]))
+                        dumper.open_points(data)
+                    else:
+                        raise NotImplementedError("unknown shape type")
+
+                    for attr in elem.attributes:
+                        dumper.add_attribute(OrderedDict([
+                            ("name", attr.name),
+                            ("value", attr.value)
+                        ]))
+
+                    if elem.type == "rectangle":
+                        dumper.close_box()
+                    elif elem.type == "ellipse":
+                        dumper.close_ellipse()
+                    elif elem.type == "polygon":
+                        dumper.close_polygon()
+                    elif elem.type == "polyline":
+                        dumper.close_polyline()
+                    elif elem.type == "points":
+                        dumper.close_points()
+                    elif elem.type == "cuboid":
+                        dumper.close_cuboid()
+                    else:
+                        raise NotImplementedError("unknown shape type")
             else:
                 raise NotImplementedError("unknown shape type")
 
@@ -976,6 +1065,8 @@ def dump_as_cvat_interpolation(dumper, annotations):
                 dumper.close_points()
             elif shape.type == "cuboid":
                 dumper.close_cuboid()
+            elif shape.type == "skeleton":
+                dumper.close_skeleton()
             else:
                 raise NotImplementedError("unknown shape type")
         dumper.close_track()
@@ -1006,6 +1097,7 @@ def dump_as_cvat_interpolation(dumper, annotations):
                 z_order=shape.z_order,
                 frame=shape.frame,
                 attributes=shape.attributes,
+                elements=shape.elements,
             )] +
             ( # add a finishing frame if it does not hop over the last frame
             [annotations.TrackedShape(
@@ -1018,6 +1110,7 @@ def dump_as_cvat_interpolation(dumper, annotations):
                 z_order=shape.z_order,
                 frame=shape.frame + frame_step,
                 attributes=shape.attributes,
+                elements=shape.elements,
             )] if shape.frame + frame_step < \
                     stop_frame \
                else []
