@@ -2349,9 +2349,20 @@
             this.shapeType = ObjectShape.SKELETON;
             this.readOnlyFields = ['points', 'label', 'occluded', 'outside', 'pinned'];
             this.pinned = false;
+            this.shapes = {};
 
             const tracks = {};
             data.shapes.forEach((shape) => {
+                this.shapes[shape.frame] = ({
+                    type: shape.type,
+                    occluded: shape.occluded,
+                    outside: shape.outside,
+                    attributes: shape.attributes,
+                    rotation: shape.rotation,
+                    z_order: shape.z_order,
+                    id: shape.id,
+                });
+
                 shape.elements.forEach((element, idx) => {
                     if (!tracks[idx]) {
                         tracks[idx] = {
@@ -2411,9 +2422,7 @@
 
         // Method is used to construct ObjectState objects
         get(frame) {
-            const {
-                prev, next, first, last,
-            } = this.boundedKeyframes(frame);
+            const { prev, next } = this.boundedKeyframes(frame);
 
             return {
                 ...this.getPosition(frame, prev, next),
@@ -2430,25 +2439,16 @@
                 updated: this.updated,
                 label: this.label,
                 pinned: this.pinned,
-                keyframes: {
-                    prev,
-                    next,
-                    first,
-                    last,
-                },
+                keyframes: this.deepBoundedKeyframes(frame),
                 elements: this.elements.map((element) => element.get(frame)),
                 frame,
                 source: this.source,
             };
         }
 
-        boundedKeyframes(targetFrame) {
-            const boundedKeyframes = {
-                prev: null,
-                next: null,
-                first: null,
-                last: null,
-            };
+        // finds keyframes considering keyframes of nested elements
+        deepBoundedKeyframes(targetFrame) {
+            const boundedKeyframes = Track.prototype.boundedKeyframes.call(this, targetFrame);
 
             for (const element of this.elements) {
                 const keyframes = element.boundedKeyframes(targetFrame);
@@ -2492,15 +2492,19 @@
             return result;
         }
 
-        getPosition(targetFrame, leftKeyframe, rightFrame) {
+        getPosition(targetFrame) {
+            const {
+                prev: leftKeyframe,
+                next: rightKeyframe,
+            } = Track.prototype.boundedKeyframes.call(this, targetFrame);
+
             const leftFrame = targetFrame in this.shapes ? targetFrame : leftKeyframe;
-            const rightPosition = Number.isInteger(rightFrame) ? this.shapes[rightFrame] : null;
+            const rightPosition = Number.isInteger(rightKeyframe) ? this.shapes[rightKeyframe] : null;
             const leftPosition = Number.isInteger(leftFrame) ? this.shapes[leftFrame] : null;
-            const offset = (targetFrame - leftFrame) / (rightFrame - leftFrame);
+            const offset = (targetFrame - leftFrame) / (rightKeyframe - leftFrame);
 
             if (leftPosition && rightPosition) {
                 return {
-                    points: undefined,
                     rotation: (leftPosition.rotation + findAngleDiff(
                         rightPosition.rotation, leftPosition.rotation,
                     ) * offset + 360) % 360,
@@ -2529,19 +2533,20 @@
             );
         }
 
-        get shapes() {
-            let allKeyframes = new Set(this.elements.map((element) => Object.keys(element.shapes)).flat());
-            allKeyframes = Array.from(allKeyframes);
+        prepareShapesForServer() {
+            let allKeyframes = new Set([this, this.elements].map((element) => Object.keys(element.shapes)).flat());
+            allKeyframes = Array.from(allKeyframes).map((keyframe) => +keyframe);
 
             const result = {};
             for (const keyframe of allKeyframes) {
+                const skeletonShape = this.get(keyframe);
                 result[keyframe] = {
                     type: this.shapeType,
-                    occluded: false,
-                    z_order: 0, // todo: get z_order from general shape
-                    rotation: 0, // todo: get rotation from general shape
-                    frame: +keyframe,
-                    outside: false, // todo: get outside from general shape
+                    occluded: skeletonShape.occluded,
+                    z_order: skeletonShape.zOrder,
+                    rotation: skeletonShape.rotation,
+                    frame: keyframe,
+                    outside: skeletonShape.outside,
                     attributes: [],
                     elements: this.elements.map((element) => {
                         const elementData = element.get(+keyframe);
@@ -2559,10 +2564,6 @@
 
             return result;
         }
-
-        set shapes(data) {
-
-        };
     }
 
     RectangleTrack.distance = RectangleShape.distance;
