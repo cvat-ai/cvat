@@ -1497,7 +1497,7 @@ def convert_cvat_anno_to_dm(cvat_frame_anno, label_attrs, map_label, format_name
                 "rotation": shape_obj.rotation,
                 "group": anno_group,
                 "attributes": anno_attr,
-            }))
+            }),cvat_frame_anno.width, cvat_frame_anno.height)
         elif shape_obj.type == ShapeType.POLYGON:
             anno = datum_annotation.Polygon(anno_points,
                 label=anno_label, attributes=anno_attr, group=anno_group,

@@ -9,6 +9,10 @@ from itertools import chain
 from pycocotools import mask as mask_utils
 from pycocotools import mask as cocomask
 from skimage import measure
+from PIL import Image, ImageDraw, ImageFilter
+from matplotlib import cm
+
+
 
 from datumaro.components.extractor import ItemTransform
 import datumaro.components.annotation as datum_annotation
@@ -80,12 +84,12 @@ class RawMaskToRLE:
 
         np_array = np.array(decoded).reshape(height,width)
 
-        # im = Image.fromarray(np.uint8(cm.gist_earth(np_array)*255))
+        im = Image.fromarray(np.uint8(cm.gist_earth(np_array)*255))
 
-        return np_array
+        return im
 
     @staticmethod
-    def convert_rle (rle_object):
+    def convert_rle (rle_object,img_w,img_h):
         # xs = [p for p in rle_object.points[0::2]]
         # ys = [p for p in rle_object.points[1::2]]
         # x0 = min(xs)
@@ -104,11 +108,17 @@ class RawMaskToRLE:
 
         mask = RawMaskToRLE.points_to_np_array_converter(rle_object.points)
 
-        fortran_ground_truth_binary_mask = np.asfortranarray(mask)
+        background = Image.new("L", (img_w,img_h))
+        bg_w, bg_h = background.size
+        background.paste(mask, (rle_object.points[-4], rle_object.points[-3]))
+
+        final_array = np.array(background)
+
+        fortran_ground_truth_binary_mask = np.asfortranarray(final_array)
         encoded_ground_truth = cocomask.encode(fortran_ground_truth_binary_mask.astype(np.uint8))
         ground_truth_area = cocomask.area(encoded_ground_truth)
         ground_truth_bounding_box = cocomask.toBbox(encoded_ground_truth)
-        contours = measure.find_contours(mask, 0.5)
+        contours = measure.find_contours(final_array, 0.5)
         segmentations = []
         for contour in contours:
             contour = np.flip(contour, axis=1).astype(int)
@@ -123,3 +133,21 @@ class RawMaskToRLE:
 
         # return rle
 
+def create_annotation_format2(masks, category_id, image_id):
+    global annotation_id
+    kernel = np.ones((2, 2), np.uint8)
+    masks = cv2.dilate(masks, kernel, iterations=1)
+    C, h = cv2.findContours(masks, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+    seg = [[float(x) for x in contour.flatten()] for contour in C]
+    seg = [cont for cont in seg if len(cont) > 4]  # filter all polygons that are boxes
+    rle = mask.frPyObjects(seg, masks.shape[0], masks.shape[1])
+    annotation_id += 1
+    return {
+        'area': float(sum(mask.area(rle))),
+        'bbox': list(mask.toBbox(rle).tolist()), #'bbox': list(mask.toBbox(rle)[0]),
+        'category_id': int(category_id),
+        'id': int(annotation_id),
+        "image_id": int(image_id),
+        'iscrowd': int(0),
+        'segmentation': seg
+    }
