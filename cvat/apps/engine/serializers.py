@@ -75,11 +75,11 @@ class SublabelSerializer(serializers.ModelSerializer):
     attributes = AttributeSerializer(many=True, source='attributespec_set', default=[])
     color = serializers.CharField(allow_blank=True, required=False)
     type = serializers.CharField(allow_blank=True, required=False)
-    parent = serializers.IntegerField(source='get_parent', required=False, allow_null=True)
+    has_parent = serializers.BooleanField(source='has_parent_label', required=False)
 
     class Meta:
         model = models.Label
-        fields = ('id', 'name', 'color', 'attributes', 'type', 'parent', )
+        fields = ('id', 'name', 'color', 'attributes', 'type', 'has_parent', )
         read_only_fields = ('parent',)
 
 class SkeletonSerializer(serializers.ModelSerializer):
@@ -102,7 +102,7 @@ class LabelSerializer(SublabelSerializer):
 
     class Meta:
         model = models.Label
-        fields = ('id', 'name', 'color', 'attributes', 'deleted', 'type', 'svg', 'elements', 'edges', 'sublabels', 'parent', 'skeleton')
+        fields = ('id', 'name', 'color', 'attributes', 'deleted', 'type', 'svg', 'elements', 'edges', 'sublabels', 'has_parent', 'skeleton')
 
     def to_representation(self, instance):
         label = super().to_representation(instance)
