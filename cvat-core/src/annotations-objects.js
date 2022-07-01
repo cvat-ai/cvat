@@ -2406,8 +2406,6 @@
 
         // Method is used to export data to the server
         toJSON() {
-            const { shapes } = this;
-
             return {
                 clientID: this.clientID,
                 id: this.serverID,
@@ -2416,7 +2414,7 @@
                 group: this.group,
                 source: this.source,
                 attributes: [],
-                shapes: Object.values(shapes),
+                shapes: Object.values(this.prepareShapesForServer()),
             };
         }
 
@@ -2534,7 +2532,7 @@
         }
 
         prepareShapesForServer() {
-            let allKeyframes = new Set([this, this.elements].map((element) => Object.keys(element.shapes)).flat());
+            let allKeyframes = new Set([this, ...this.elements].map((element) => Object.keys(element.shapes)).flat());
             allKeyframes = Array.from(allKeyframes).map((keyframe) => +keyframe);
 
             const result = {};
