@@ -18,7 +18,6 @@ from cvat_api_client.model.attribute_val_request import AttributeValRequest
 from cvat_api_client.model.basic_user import BasicUser
 from cvat_api_client.model.basic_user_request import BasicUserRequest
 from cvat_api_client.model.chunk_type import ChunkType
-from cvat_api_client.model.client_file_request import ClientFileRequest
 from cvat_api_client.model.cloud_storage_read import CloudStorageRead
 from cvat_api_client.model.cloud_storage_write import CloudStorageWrite
 from cvat_api_client.model.cloud_storage_write_request import CloudStorageWriteRequest
@@ -105,7 +104,6 @@ from cvat_api_client.model.project_owner import ProjectOwner
 from cvat_api_client.model.project_request import ProjectRequest
 from cvat_api_client.model.project_search import ProjectSearch
 from cvat_api_client.model.provider_type_enum import ProviderTypeEnum
-from cvat_api_client.model.remote_file_request import RemoteFileRequest
 from cvat_api_client.model.rest_auth_detail import RestAuthDetail
 from cvat_api_client.model.restricted_register import RestrictedRegister
 from cvat_api_client.model.restricted_register_request import RestrictedRegisterRequest
@@ -114,7 +112,6 @@ from cvat_api_client.model.rq_status import RqStatus
 from cvat_api_client.model.rq_status_state_enum import RqStatusStateEnum
 from cvat_api_client.model.segment import Segment
 from cvat_api_client.model.segment_request import SegmentRequest
-from cvat_api_client.model.server_file_request import ServerFileRequest
 from cvat_api_client.model.shape_type import ShapeType
 from cvat_api_client.model.signing_request import SigningRequest
 from cvat_api_client.model.simple_job import SimpleJob

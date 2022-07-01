@@ -36,16 +36,10 @@ from cvat_api_client.exceptions import ApiAttributeError
 
 def lazy_import():
     from cvat_api_client.model.chunk_type import ChunkType
-    from cvat_api_client.model.client_file_request import ClientFileRequest
-    from cvat_api_client.model.remote_file_request import RemoteFileRequest
-    from cvat_api_client.model.server_file_request import ServerFileRequest
     from cvat_api_client.model.sorting_method import SortingMethod
     from cvat_api_client.model.storage_method import StorageMethod
     from cvat_api_client.model.storage_type import StorageType
     globals()['ChunkType'] = ChunkType
-    globals()['ClientFileRequest'] = ClientFileRequest
-    globals()['RemoteFileRequest'] = RemoteFileRequest
-    globals()['ServerFileRequest'] = ServerFileRequest
     globals()['SortingMethod'] = SortingMethod
     globals()['StorageMethod'] = StorageMethod
     globals()['StorageType'] = StorageType
@@ -74,11 +68,11 @@ class DataRequest(ModelNormal):
 
       original_chunk_type (ChunkType): [optional]  # noqa: E501
 
-      client_files ([ClientFileRequest]): [optional] if omitted the server will use the default value of []  # noqa: E501
+      client_files ([file_type]): [optional] if omitted the server will use the default value of []  # noqa: E501
 
-      server_files ([ServerFileRequest]): [optional] if omitted the server will use the default value of []  # noqa: E501
+      server_files ([str]): [optional] if omitted the server will use the default value of []  # noqa: E501
 
-      remote_files ([RemoteFileRequest]): [optional] if omitted the server will use the default value of []  # noqa: E501
+      remote_files ([str]): [optional] if omitted the server will use the default value of []  # noqa: E501
 
       use_zip_chunks (bool): [optional] if omitted the server will use the default value of False  # noqa: E501
 
@@ -157,9 +151,9 @@ class DataRequest(ModelNormal):
             'frame_filter': (str,),  # noqa: E501
             'compressed_chunk_type': (ChunkType,),  # noqa: E501
             'original_chunk_type': (ChunkType,),  # noqa: E501
-            'client_files': ([ClientFileRequest],),  # noqa: E501
-            'server_files': ([ServerFileRequest],),  # noqa: E501
-            'remote_files': ([RemoteFileRequest],),  # noqa: E501
+            'client_files': ([file_type],),  # noqa: E501
+            'server_files': ([str],),  # noqa: E501
+            'remote_files': ([str],),  # noqa: E501
             'use_zip_chunks': (bool,),  # noqa: E501
             'cloud_storage_id': (int, none_type,),  # noqa: E501
             'use_cache': (bool,),  # noqa: E501
@@ -214,22 +208,22 @@ class DataRequest(ModelNormal):
     [optional]
     """
 
-    client_files: typing.List[typing.ForwardRef("ClientFileRequest")] # noqa: E501
+    client_files: typing.List[file_type] # noqa: E501
     """
     [optional, default: []]
-    [ClientFileRequest]
+    [file_type]
     """
 
-    server_files: typing.List[typing.ForwardRef("ServerFileRequest")] # noqa: E501
+    server_files: typing.List[str] # noqa: E501
     """
     [optional, default: []]
-    [ServerFileRequest]
+    [str]
     """
 
-    remote_files: typing.List[typing.ForwardRef("RemoteFileRequest")] # noqa: E501
+    remote_files: typing.List[str] # noqa: E501
     """
     [optional, default: []]
-    [RemoteFileRequest]
+    [str]
     """
 
     use_zip_chunks: bool # noqa: E501
@@ -341,9 +335,9 @@ class DataRequest(ModelNormal):
             frame_filter (str): [optional]  # noqa: E501
             compressed_chunk_type (ChunkType): [optional]  # noqa: E501
             original_chunk_type (ChunkType): [optional]  # noqa: E501
-            client_files ([ClientFileRequest]): [optional] if omitted the server will use the default value of []  # noqa: E501
-            server_files ([ServerFileRequest]): [optional] if omitted the server will use the default value of []  # noqa: E501
-            remote_files ([RemoteFileRequest]): [optional] if omitted the server will use the default value of []  # noqa: E501
+            client_files ([file_type]): [optional] if omitted the server will use the default value of []  # noqa: E501
+            server_files ([str]): [optional] if omitted the server will use the default value of []  # noqa: E501
+            remote_files ([str]): [optional] if omitted the server will use the default value of []  # noqa: E501
             use_zip_chunks (bool): [optional] if omitted the server will use the default value of False  # noqa: E501
             cloud_storage_id (int, none_type): [optional]  # noqa: E501
             use_cache (bool): [optional] if omitted the server will use the default value of False  # noqa: E501
@@ -447,9 +441,9 @@ class DataRequest(ModelNormal):
             frame_filter (str): [optional]  # noqa: E501
             compressed_chunk_type (ChunkType): [optional]  # noqa: E501
             original_chunk_type (ChunkType): [optional]  # noqa: E501
-            client_files ([ClientFileRequest]): [optional] if omitted the server will use the default value of []  # noqa: E501
-            server_files ([ServerFileRequest]): [optional] if omitted the server will use the default value of []  # noqa: E501
-            remote_files ([RemoteFileRequest]): [optional] if omitted the server will use the default value of []  # noqa: E501
+            client_files ([file_type]): [optional] if omitted the server will use the default value of []  # noqa: E501
+            server_files ([str]): [optional] if omitted the server will use the default value of []  # noqa: E501
+            remote_files ([str]): [optional] if omitted the server will use the default value of []  # noqa: E501
             use_zip_chunks (bool): [optional] if omitted the server will use the default value of False  # noqa: E501
             cloud_storage_id (int, none_type): [optional]  # noqa: E501
             use_cache (bool): [optional] if omitted the server will use the default value of False  # noqa: E501

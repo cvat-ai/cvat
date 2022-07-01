@@ -106,6 +106,32 @@ class ApiClient(object):
     def user_agent(self, value):
         self.default_headers['User-Agent'] = value
 
+    def _serialize_post_parameter(self, obj):
+        if isinstance(obj, (str, int, float, none_type, bool)):
+            return ('', json.dumps(obj), 'application/json')
+        elif isinstance(obj, io.IOBase):
+            return self._serialize_file(obj)
+        raise ApiValueError(
+            'Unable to prepare type {} for serialization'.format(
+                obj.__class__.__name__))
+
+    def _convert_body_to_post_params(self, body):
+        # body must be a flat structure, lists of primitives is possible
+        body = self.sanitize_for_serialization(body, read_files=False)
+        assert isinstance(body, dict), type(body)
+
+        post_params = []
+        for k, v in body.items():
+            if isinstance(v, (tuple, list)):
+                for i, entry in enumerate(v):
+                    post_params.append((
+                        f'{k}[{i}]',
+                        self._serialize_post_parameter(entry)
+                    ))
+            else:
+                post_params.append((k, self._serialize_post_parameter(v)))
+        return post_params
+
     def set_default_header(self, header_name, header_value):
         self.default_headers[header_name] = header_value
 
@@ -166,19 +192,24 @@ class ApiClient(object):
                                                      collection_formats)
 
         # post parameters
+        post_params = post_params if post_params else []
         if post_params or files:
-            post_params = post_params if post_params else []
             post_params = self.sanitize_for_serialization(post_params)
             post_params = self.parameters_to_tuples(post_params,
                                                     collection_formats)
             post_params.extend(self.files_parameters(files))
-            if header_params['Content-Type'].startswith("multipart"):
-                post_params = self.parameters_to_multipart(post_params,
-                                                           (dict))
 
-        # body
-        if body:
-            body = self.sanitize_for_serialization(body)
+        if header_params.get('Content-Type', '').startswith("multipart"):
+            if body:
+                post_params.extend(self._convert_body_to_post_params(body))
+                body = None
+
+            if post_params:
+                post_params = self.parameters_to_multipart(post_params, (dict))
+        else:
+            # body
+            if body:
+                body = self.sanitize_for_serialization(body)
 
         # auth setting
         self.update_params_for_auth(header_params, query_params,
@@ -272,7 +303,8 @@ class ApiClient(object):
         return new_params
 
     @classmethod
-    def sanitize_for_serialization(cls, obj):
+    def sanitize_for_serialization(cls, obj, *,
+            read_files: bool = True):
         """Prepares data for transmission before it is sent with the rest client
         If obj is None, return None.
         If obj is str, int, long, float, bool, return directly.
@@ -283,26 +315,37 @@ class ApiClient(object):
         If obj is OpenAPI model, return the properties dict.
         If obj is io.IOBase, return the bytes
         :param obj: The data to serialize.
+        :param read_files: Whether to read file data or leave files as is.
         :return: The serialized form of data.
         """
         if isinstance(obj, (ModelNormal, ModelComposed)):
             return {
-                key: cls.sanitize_for_serialization(val) for key,
-                val in model_to_dict(
+                key: cls.sanitize_for_serialization(val, read_files=read_files)
+                for key, val in model_to_dict(
                     obj,
-                    serialize=True).items()}
+                    serialize=True).items()
+            }
         elif isinstance(obj, io.IOBase):
-            return cls.get_file_data_and_close_file(obj)
+            if read_files:
+                return cls.get_file_data_and_close_file(obj)
+            else:
+                return obj
         elif isinstance(obj, (str, int, float, none_type, bool)):
             return obj
         elif isinstance(obj, (datetime, date)):
             return obj.isoformat()
         elif isinstance(obj, ModelSimple):
-            return cls.sanitize_for_serialization(obj.value)
+            return cls.sanitize_for_serialization(obj.value,
+                read_files=read_files)
         elif isinstance(obj, (list, tuple)):
-            return [cls.sanitize_for_serialization(item) for item in obj]
+            return [cls.sanitize_for_serialization(item, read_files=read_files)
+                for item in obj
+            ]
         if isinstance(obj, dict):
-            return {key: cls.sanitize_for_serialization(val) for key, val in obj.items()}
+            return {
+                key: cls.sanitize_for_serialization(val, read_files=read_files)
+                for key, val in obj.items()
+            }
         raise ApiValueError(
             'Unable to prepare type {} for serialization'.format(
                 obj.__class__.__name__))
@@ -561,6 +604,17 @@ class ApiClient(object):
         file_instance.close()
         return file_data
 
+    def _serialize_file(self, file_instance: io.IOBase):
+        if file_instance.closed is True:
+            raise ApiValueError("Cannot read a closed file.")
+        filename = os.path.basename(file_instance.name)
+
+        filedata = self.get_file_data_and_close_file(file_instance)
+
+        mimetype = mimetypes.guess_type(filename)[0] or 'application/octet-stream'
+
+        return filename, filedata, mimetype
+
     def files_parameters(self,
                          files: typing.Optional[typing.Dict[str,
                                                             typing.List[io.IOBase]]] = None):
@@ -582,17 +636,12 @@ class ApiClient(object):
                 if file_instance is None:
                     # if the file field is nullable, skip None values
                     continue
-                if file_instance.closed is True:
-                    raise ApiValueError(
-                        "Cannot read a closed file. The passed in file_type "
-                        "for %s must be open." % param_name
-                    )
-                filename = os.path.basename(file_instance.name)
-                filedata = self.get_file_data_and_close_file(file_instance)
-                mimetype = (mimetypes.guess_type(filename)[0] or
-                            'application/octet-stream')
-                params.append(
-                    tuple([param_name, tuple([filename, filedata, mimetype])]))
+
+                try:
+                    params.append((param_name, self._serialize_file(file_instance)))
+                except ApiValueError as e:
+                    raise ApiValueError("The passed in file_type "
+                        "for %s must be open." % param_name) from e
 
         return params
 

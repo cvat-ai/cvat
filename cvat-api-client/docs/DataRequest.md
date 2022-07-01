@@ -12,9 +12,9 @@ Name | Type | Description | Notes
 **frame_filter** | **str** |  | [optional] 
 **compressed_chunk_type** | [**ChunkType**](ChunkType.md) |  | [optional] 
 **original_chunk_type** | [**ChunkType**](ChunkType.md) |  | [optional] 
-**client_files** | [**[ClientFileRequest]**](ClientFileRequest.md) |  | [optional]  if omitted the server will use the default value of []
-**server_files** | [**[ServerFileRequest]**](ServerFileRequest.md) |  | [optional]  if omitted the server will use the default value of []
-**remote_files** | [**[RemoteFileRequest]**](RemoteFileRequest.md) |  | [optional]  if omitted the server will use the default value of []
+**client_files** | **[file_type]** |  | [optional]  if omitted the server will use the default value of []
+**server_files** | **[str]** |  | [optional]  if omitted the server will use the default value of []
+**remote_files** | **[str]** |  | [optional]  if omitted the server will use the default value of []
 **use_zip_chunks** | **bool** |  | [optional]  if omitted the server will use the default value of False
 **cloud_storage_id** | **int, none_type** |  | [optional] 
 **use_cache** | **bool** |  | [optional]  if omitted the server will use the default value of False

@@ -8,7 +8,7 @@ from http import HTTPStatus
 from io import BytesIO
 from time import sleep
 from cvat_api_client.apis import ProjectsApi, TasksApi
-from cvat_api_client.models import TaskRequest, DataRequest, ClientFileRequest, Task, PatchedLabeledDataRequest, RqStatus
+from cvat_api_client.models import TaskRequest, DataRequest, Task, PatchedLabeledDataRequest, RqStatus
 
 import pytest
 from deepdiff import DeepDiff
@@ -281,7 +281,7 @@ class TestPostTaskData:
             sleep(1)
 
     def _test_create_task(self, username, spec, data, files):
-        with make_api_client(user=username) as api_client:
+        with make_api_client(username) as api_client:
             api = TasksApi(api_client)
 
             (task, status, _) = api.tasks_create(TaskRequest(**spec,
@@ -290,8 +290,7 @@ class TestPostTaskData:
             assert status == HTTPStatus.CREATED
             task_id = task.id
 
-            task_data = DataRequest(**data,
-                client_files=[ClientFileRequest(f) for f in files.values()])
+            task_data = DataRequest(**data, client_files=list(files.values()))
             response = api.tasks_data_create_raw(task_id, task_data,
                 _content_type="multipart/form-data")
             assert response.status == HTTPStatus.ACCEPTED

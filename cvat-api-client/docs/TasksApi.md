@@ -1718,21 +1718,9 @@ with cvat_api_client.ApiClient(configuration) as api_client:
         frame_filter="frame_filter_example",
         compressed_chunk_type=ChunkType("video"),
         original_chunk_type=ChunkType("video"),
-        client_files=[
-            ClientFileRequest(
-                file=open('/path/to/file', 'rb'),
-            ),
-        ],
-        server_files=[
-            ServerFileRequest(
-                file="file_example",
-            ),
-        ],
-        remote_files=[
-            RemoteFileRequest(
-                file="file_example",
-            ),
-        ],
+        client_files=[],
+        server_files=[],
+        remote_files=[],
         use_zip_chunks=False,
         cloud_storage_id=1,
         use_cache=False,

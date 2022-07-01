@@ -31,7 +31,6 @@ cvat_api_client/model/attribute_val_request.py
 cvat_api_client/model/basic_user.py
 cvat_api_client/model/basic_user_request.py
 cvat_api_client/model/chunk_type.py
-cvat_api_client/model/client_file_request.py
 cvat_api_client/model/cloud_storage_read.py
 cvat_api_client/model/cloud_storage_write.py
 cvat_api_client/model/cloud_storage_write_request.py
@@ -118,7 +117,6 @@ cvat_api_client/model/project_owner.py
 cvat_api_client/model/project_request.py
 cvat_api_client/model/project_search.py
 cvat_api_client/model/provider_type_enum.py
-cvat_api_client/model/remote_file_request.py
 cvat_api_client/model/rest_auth_detail.py
 cvat_api_client/model/restricted_register.py
 cvat_api_client/model/restricted_register_request.py
@@ -127,7 +125,6 @@ cvat_api_client/model/rq_status.py
 cvat_api_client/model/rq_status_state_enum.py
 cvat_api_client/model/segment.py
 cvat_api_client/model/segment_request.py
-cvat_api_client/model/server_file_request.py
 cvat_api_client/model/shape_type.py
 cvat_api_client/model/signing_request.py
 cvat_api_client/model/simple_job.py
@@ -156,7 +153,6 @@ docs/AuthApi.md
 docs/BasicUser.md
 docs/BasicUserRequest.md
 docs/ChunkType.md
-docs/ClientFileRequest.md
 docs/CloudStorageRead.md
 docs/CloudStorageWrite.md
 docs/CloudStorageWriteRequest.md
@@ -252,7 +248,6 @@ docs/ProjectRequest.md
 docs/ProjectSearch.md
 docs/ProjectsApi.md
 docs/ProviderTypeEnum.md
-docs/RemoteFileRequest.md
 docs/RestAuthDetail.md
 docs/RestrictedRegister.md
 docs/RestrictedRegisterRequest.md
@@ -264,7 +259,6 @@ docs/SchemaApi.md
 docs/Segment.md
 docs/SegmentRequest.md
 docs/ServerApi.md
-docs/ServerFileRequest.md
 docs/ShapeType.md
 docs/SigningRequest.md
 docs/SimpleJob.md
