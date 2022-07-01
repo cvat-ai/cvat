@@ -2228,26 +2228,21 @@ export class CanvasViewImpl implements CanvasView, Listener {
     }
 
     // Update text position after corresponding box has been moved, resized, etc.
-    private updateTextPosition(text: SVG.Text): void {
+    private updateTextPosition(
+        text: SVG.Text,
+        options: { rotation?: { angle: number, cx: number, cy: number } } = {},
+    ): void {
         const clientID = text.attr('data-client-id');
         if (!Number.isInteger(clientID)) return;
         const shape = this.svgShapes[clientID];
         if (!shape) return;
-
-        if (clientID in this.drawnStates && this.drawnStates[clientID].shapeType === 'skeleton') {
-            this.drawnStates[clientID].elements.forEach((element: DrawnState) => {
-                if (element.clientID in this.svgTexts) {
-                    this.updateTextPosition(this.svgTexts[element.clientID]);
-                }
-            });
-        }
 
         if (text.node.style.display === 'none') return; // wrong transformation matrix
         const { textFontSize, textPosition } = this.configuration;
 
         text.untransform();
         text.style({ 'font-size': `${textFontSize}px` });
-        const { rotation } = shape.transform();
+        const rotation = options.rotation?.angle || shape.transform().rotation;
 
         // Find the best place for a text
         let [clientX, clientY, clientCX, clientCY]: number[] = [0, 0, 0, 0];
@@ -2308,8 +2303,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
         const [x, y, rotX, rotY]: number[] = translateToSVG(this.text, [
             clientX + (textPosition === 'auto' ? consts.TEXT_MARGIN : 0),
             clientY + (textPosition === 'auto' ? consts.TEXT_MARGIN : 0),
-            clientCX,
-            clientCY,
+            options.rotation?.cx || clientCX,
+            options.rotation?.cy || clientCY,
         ]);
 
         const textBBox = ((text.node as any) as SVGTextElement).getBBox();
@@ -2320,8 +2315,24 @@ export class CanvasViewImpl implements CanvasView, Listener {
             text.move(x, y);
         }
 
+        let childOptions = {};
         if (rotation) {
             text.rotate(rotation, rotX, rotY);
+            childOptions = {
+                rotation: {
+                    angle: rotation,
+                    cx: clientCX,
+                    cy: clientCY,
+                },
+            };
+        }
+
+        if (clientID in this.drawnStates && this.drawnStates[clientID].shapeType === 'skeleton') {
+            this.drawnStates[clientID].elements.forEach((element: DrawnState) => {
+                if (element.clientID in this.svgTexts) {
+                    this.updateTextPosition(this.svgTexts[element.clientID], childOptions);
+                }
+            });
         }
 
         for (const tspan of (text.lines() as any).members) {
@@ -2869,7 +2880,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             let resized = false;
             if (typeof action === 'object') {
                 (wrappingRect as any).resize(action).on('resizestart', (): void => {
-                    let { rotation } = skeleton.transform();
+                    const { rotation } = skeleton.transform();
                     wrappingRect.attr('data-rotation', rotation);
 
                     this.mode = Mode.RESIZE;
