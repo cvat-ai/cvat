@@ -667,19 +667,34 @@ class ProjectSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         labels = validated_data.pop('label_set')
         db_project = models.Project.objects.create(**validated_data)
-        label_colors = list()
-        for label in labels:
-            if label.get('id', None):
-                del label['id']
-            attributes = label.pop('attributespec_set')
-            if not label.get('color', None):
-                label['color'] = get_label_color(label['name'], label_colors)
-            label_colors.append(label['color'])
-            db_label = models.Label.objects.create(project=db_project, **label)
-            for attr in attributes:
-                if attr.get('id', None):
-                    del attr['id']
-                models.AttributeSpec.objects.create(label=db_label, **attr)
+
+        def create_labels(labels, parent_label=None):
+            label_colors = list()
+            for label in labels:
+                attributes = label.pop('attributespec_set')
+                if label.get('id', None):
+                    del label['id']
+                if not label.get('color', None):
+                    label['color'] = get_label_color(label['name'], label_colors)
+                label_colors.append(label['color'])
+
+                sublabels = label.pop('sublabels', [])
+                elements = label.pop('elements', [])
+                edges = label.pop('edges', [])
+                svg = label.pop('svg', [])
+                db_label = models.Label.objects.create(project=db_project, parent=parent_label, **label)
+                create_labels(sublabels, parent_label=db_label)
+                if db_label.type == str(models.LabelType.SKELETON):
+                    for db_sublabel in list(db_label.sublabels.all()):
+                        svg = svg.replace(f'data-label-name="{db_sublabel.name}"', f'data-label-id="{db_sublabel.id}"')
+                    models.Skeleton.objects.create(root=db_label, edges=edges, elements=elements, svg=svg)
+
+                for attr in attributes:
+                    if attr.get('id', None):
+                        del attr['id']
+                    models.AttributeSpec.objects.create(label=db_label, **attr)
+
+        create_labels(labels)
 
         project_path = db_project.get_project_dirname()
         if os.path.isdir(project_path):
@@ -695,8 +710,21 @@ class ProjectSerializer(serializers.ModelSerializer):
         instance.assignee_id = validated_data.get('assignee_id', instance.assignee_id)
         instance.bug_tracker = validated_data.get('bug_tracker', instance.bug_tracker)
         labels = validated_data.get('label_set', [])
-        for label in labels:
-            LabelSerializer.update_instance(label, instance)
+
+        def update_labels(labels, parent_label=None):
+            for label in labels:
+                sublabels = label.pop('sublabels', [])
+                elements = label.pop('elements', [])
+                edges = label.pop('edges', [])
+                svg = label.pop('svg', [])
+                db_label = LabelSerializer.update_instance(label, instance, parent_label)
+                update_labels(sublabels, parent_label=db_label)
+                if db_label.type == str(models.LabelType.SKELETON):
+                    for db_sublabel in list(db_label.sublabels.all()):
+                        svg = svg.replace(f'data-label-name="{db_sublabel.name}"', f'data-label-id="{db_sublabel.id}"')
+                    models.Skeleton.objects.create(root=db_label, edges=edges, elements=elements, svg=svg)
+
+        update_labels(labels)
 
         instance.save()
         return instance
