@@ -2909,7 +2909,11 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     resized = true;
                     setupEdges();
                 }).on('resizedone', (): void => {
-                    const { rotation } = skeleton.transform();
+                    let { rotation } = skeleton.transform();
+                    // be sure, that rotation in range [0; 360]
+                    while (rotation < 0) rotation += 360;
+                    rotation %= 360;
+
                     wrappingRect.attr('data-rotation', rotation);
                     showText();
                     this.mode = Mode.IDLE;
