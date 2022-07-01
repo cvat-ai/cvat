@@ -8,10 +8,13 @@ import uuid
 
 from django.conf import settings
 from django.core.cache import cache
+from distutils.util import strtobool
 from rest_framework import status
 from rest_framework.response import Response
 
-from cvat.apps.engine.serializers import DataSerializer
+from cvat.apps.engine.models import Location
+from cvat.apps.engine.location import StorageType, get_location_configuration
+from cvat.apps.engine.serializers import DataSerializer, LabeledDataSerializer
 
 class TusFile:
     _tus_cache_timeout = 3600
@@ -90,7 +93,7 @@ class TusChunk:
 
 # This upload mixin is implemented using tus
 # tus is open protocol for file uploads (see more https://tus.io/)
-class UploadMixin(object):
+class UploadMixin:
     _tus_api_version = '1.0.0'
     _tus_api_version_supported = ['1.0.0']
     _tus_api_extensions = []
@@ -238,3 +241,80 @@ class UploadMixin(object):
     # override this to do stuff after upload
     def upload_finished(self, request):
         raise NotImplementedError('You need to implement upload_finished in UploadMixin')
+
+class AnnotationMixin:
+    def export_annotations(self, request, pk, db_obj, export_func, callback, get_data=None):
+        format_name = request.query_params.get("format")
+        action = request.query_params.get("action", "").lower()
+        filename = request.query_params.get("filename", "")
+
+        use_default_location = request.query_params.get("use_default_location", True)
+        use_settings = strtobool(str(use_default_location))
+        obj = db_obj if use_settings else request.query_params
+        location_conf = get_location_configuration(
+            obj=obj,
+            use_settings=use_settings,
+            field_name=StorageType.TARGET,
+        )
+
+        rq_id = "/api/{}/{}/annotations/{}".format(self._object.__class__.__name__.lower(), pk, format_name)
+
+        if format_name:
+            return export_func(db_instance=self._object,
+                rq_id=rq_id,
+                request=request,
+                action=action,
+                callback=callback,
+                format_name=format_name,
+                filename=filename,
+                location_conf=location_conf,
+            )
+
+        if not get_data:
+            return Response("Format is not specified",status=status.HTTP_400_BAD_REQUEST)
+
+        data = get_data(pk)
+        serializer = LabeledDataSerializer(data=data)
+        if serializer.is_valid(raise_exception=True):
+            return Response(serializer.data)
+
+    def import_annotations(self, request, pk, db_obj, import_func, rq_func):
+        use_default_location = request.query_params.get('use_default_location', True)
+        use_settings = strtobool(str(use_default_location))
+        obj = db_obj if use_settings else request.query_params
+        location_conf = get_location_configuration(
+            obj=obj,
+            use_settings=use_settings,
+            field_name=StorageType.SOURCE,
+        )
+
+        if location_conf['location'] == Location.CLOUD_STORAGE:
+            format_name = request.query_params.get('format')
+            file_name = request.query_params.get('filename')
+            rq_id = "{}@/api/{}/{}/annotations/upload".format(
+                self._object.__class__.__name__.lower(), request.user, pk
+            )
+
+            return import_func(
+                request=request,
+                rq_id=rq_id,
+                rq_func=rq_func,
+                pk=pk,
+                format_name=format_name,
+                location_conf=location_conf,
+                filename=file_name,
+            )
+
+        return self.upload_data(request)
+
+class SerializeMixin:
+    def serialize(self, request, export_func):
+        db_object = self.get_object() # force to call check_object_permissions
+        return export_func(db_object, request)
+
+    def deserialize(self, request, import_func):
+        location = request.query_params.get("location", Location.LOCAL)
+        if location == Location.CLOUD_STORAGE:
+            file_name = request.query_params.get("filename", "")
+            return import_func(request, filename=file_name)
+        return self.upload_data(request)

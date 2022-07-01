@@ -112,6 +112,12 @@ def _save_task_to_db(db_task):
         db_job = models.Job(segment=db_segment)
         db_job.save()
 
+        # create job directory
+        job_path = db_job.get_dirname()
+        if os.path.isdir(job_path):
+            shutil.rmtree(job_path)
+        os.makedirs(job_path)
+
 
     db_task.data.save()
     db_task.save()
@@ -489,7 +495,7 @@ def _create_thread(db_task, data, isBackupRestore=False, isDatasetImport=False):
     # calculate chunk size if it isn't specified
     if db_data.chunk_size is None:
         if isinstance(compressed_chunk_writer, ZipCompressedChunkWriter):
-            if not (db_data.storage == models.StorageChoice.CLOUD_STORAGE):
+            if not db_data.storage == models.StorageChoice.CLOUD_STORAGE:
                 w, h = extractor.get_image_size(0)
             else:
                 img_properties = manifest[0]
@@ -507,7 +513,7 @@ def _create_thread(db_task, data, isBackupRestore=False, isDatasetImport=False):
         job.save_meta()
 
     if settings.USE_CACHE and db_data.storage_method == models.StorageMethodChoice.CACHE:
-       for media_type, media_files in media.items():
+        for media_type, media_files in media.items():
 
             if not media_files:
                 continue

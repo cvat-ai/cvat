@@ -32,7 +32,9 @@
         "url": "http://localhost:8080/api/users/1",
         "username": "admin1"
       },
+      "source_storage": null,
       "status": "annotation",
+      "target_storage": null,
       "task_subsets": [],
       "tasks": [
         13
@@ -62,7 +64,9 @@
         "url": "http://localhost:8080/api/users/3",
         "username": "user2"
       },
+      "source_storage": null,
       "status": "annotation",
+      "target_storage": null,
       "task_subsets": [],
       "tasks": [],
       "updated_date": "2022-03-28T13:06:09.283000Z",
@@ -103,7 +107,9 @@
         "url": "http://localhost:8080/api/users/10",
         "username": "business1"
       },
+      "source_storage": null,
       "status": "annotation",
+      "target_storage": null,
       "task_subsets": [
         "Train"
       ],
@@ -161,7 +167,9 @@
         "url": "http://localhost:8080/api/users/10",
         "username": "business1"
       },
+      "source_storage": null,
       "status": "annotation",
+      "target_storage": null,
       "task_subsets": [],
       "tasks": [
         9

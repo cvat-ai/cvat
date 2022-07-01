@@ -6,9 +6,15 @@ on:
       - 'develop'
   pull_request:
     types: [edited, ready_for_review, opened, synchronize, reopened]
+    paths-ignore:
+      - 'site/**'
+      - '**/*.md'
+
+env:
+  SERVER_IMAGE_TEST_REPO: cvat_server
 
 jobs:
-  cache:
+  search_cache:
     if: |
       github.event.pull_request.draft == false &&
       !startsWith(github.event.pull_request.title, '[WIP]') &&
@@ -20,78 +26,82 @@ jobs:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       REPO: ${{ github.repository }}
     steps:
-      - name: Getting SHA from the default branch
+      - name: Getting SHA with cache from the default branch
         id: get-sha
         run: |
           DEFAULT_BRANCH=$(gh api /repos/$REPO | jq -r '.default_branch')
-          SHA=$(gh api /repos/$REPO/git/ref/heads/$DEFAULT_BRANCH | jq -r '.object.sha')
+          for sha in $(gh api "/repos/$REPO/commits?per_page=100&sha=$DEFAULT_BRANCH" | jq -r '.[].sha');
+          do
+            RUN_status=$(gh api /repos/${REPO}/actions/workflows/cache.yml/runs | \
+              jq -r ".workflow_runs[]? | select((.head_sha == \"${sha}\") and (.conclusion == \"success\")) | .status")
+
+            if [[ ${RUN_status} == "completed" ]]; then
+              SHA=$sha
+              break
+            fi
+          done
+
+          echo Default branch is ${DEFAULT_BRANCH}
+          echo Workflow will try to get cache from commit: ${SHA}
 
           echo ::set-output name=default_branch::${DEFAULT_BRANCH}
           echo ::set-output name=sha::${SHA}
 
-      - name: Waiting a cache creation in the default branch
-        env:
-          DEFAULT_BRANCH: ${{ steps.get-sha.outputs.default_branch }}
-          SHA: ${{ steps.get-sha.outputs.sha }}
-        run: |
-          SLEEP=45
-          NUMBER_ATTEMPTS=10
-          while [[ ${NUMBER_ATTEMPTS} -gt 0 ]]; do
+  build:
+    needs: search_cache
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
 
-            RUN_status=$(gh api /repos/${REPO}/actions/workflows/cache.yml/runs | \
-              jq -r ".workflow_runs[]? |
-              select((.head_sha == \"${SHA}\")) | .status")
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-            if [[ ${RUN_status} == "completed" ]]; then
-              echo "The cache creation on the ${DEFAULT_BRANCH} branch has finished. Status: ${RUN_status}"
-              break
-            else
-              echo "The creation of the cache is not yet complete."
-              echo "There are still attempts to check the cache: ${NUMBER_ATTEMPTS}"
-              echo "Status of caching in the ${DEFAULT_BRANCH} branch: ${RUN_status}"
-              echo "sleep ${SLEEP}"
-              sleep ${SLEEP}
-              ((NUMBER_ATTEMPTS--))
-            fi
-          done
-          if [[ ${NUMBER_ATTEMPTS} -eq 0 ]]; then
-            echo "Number of attempts expired!"
-            echo "Probably the creation of the cache is not yet complete. Will continue working without the cache."
-          fi
+      - name: CVAT server. Getting cache from the default branch
+        uses: actions/cache@v3
+        with:
+          path: /tmp/cvat_cache_server
+          key: ${{ runner.os }}-build-server-${{ needs.search_cache.outputs.sha }}
 
-  Unit_testing:
-      needs: cache
-      runs-on: ubuntu-latest
-      steps:
+      - name: CVAT server. Extract metadata (tags, labels) for Docker
+        id: meta-server
+        uses: docker/metadata-action@master
+        with:
+          images: ${{ secrets.DOCKERHUB_WORKSPACE }}/${{ env.SERVER_IMAGE_TEST_REPO }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: CVAT server. Build and push
+        uses: docker/build-push-action@v3
+        with:
+          cache-from: type=local,src=/tmp/cvat_cache_server
+          context: .
+          file: Dockerfile
+          push: true
+          tags: ${{ steps.meta-server.outputs.tags }}
+          labels: ${{ steps.meta-server.outputs.labels }}
+
+  unit_testing:
+    needs: [build, search_cache]
+    runs-on: ubuntu-latest
+    steps:
       - uses: actions/checkout@v2
 
       - uses: actions/setup-python@v2
         with:
           python-version: '3.8'
 
-      - name: Getting CVAT server cache from the default branch
-        uses: actions/cache@v2
-        with:
-          path: /tmp/cvat_cache_server
-          key: ${{ runner.os }}-build-server-${{ needs.cache.outputs.sha }}
-
       - name: Getting CVAT UI cache from the default branch
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: /tmp/cvat_cache_ui
-          key: ${{ runner.os }}-build-ui-${{ needs.cache.outputs.sha }}
+          key: ${{ runner.os }}-build-ui-${{ needs.search_cache.outputs.sha }}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@master
-
-      - name: Building CVAT server image
-        uses: docker/build-push-action@v2
-        with:
-          context: .
-          file: ./Dockerfile
-          cache-from: type=local,src=/tmp/cvat_cache_server
-          tags: openvino/cvat_server:latest
-          load: true
 
       - name: Building CVAT UI image
         uses: docker/build-push-action@v2
@@ -101,6 +111,23 @@ jobs:
           cache-from: type=local,src=/tmp/cvat_cache_ui
           tags: openvino/cvat_ui:latest
           load: true
+
+      - name: CVAT server. Extract metadata (tags, labels) for Docker
+        id: meta-server
+        uses: docker/metadata-action@master
+        with:
+          images: ${{ secrets.DOCKERHUB_WORKSPACE }}/${{ env.SERVER_IMAGE_TEST_REPO }}
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Pull CVAT server image
+        run: |
+          docker pull ${{ steps.meta-server.outputs.tags }}
+          docker tag ${{ steps.meta-server.outputs.tags }} openvino/cvat_server
 
       - name: Running OPA tests
         run: |
@@ -119,23 +146,37 @@ jobs:
           HOST_COVERAGE_DATA_DIR: ${{ github.workspace }}
           CONTAINER_COVERAGE_DATA_DIR: "/coverage_data"
         run: |
-          docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.ci.yml run cvat_ci /bin/bash \
-          -c 'coverage run -a manage.py test cvat/apps cvat-cli -k 'tasks_id' -k 'lambda' -k 'share' && mv .coverage ${CONTAINER_COVERAGE_DATA_DIR}'
+          docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d cvat_opa
+
+          max_tries=12
+          while [[  $(curl -s -o /dev/null -w "%{http_code}" localhost:8181/health) != "200" && max_tries -gt 0 ]]; do (( max_tries-- )); sleep 5; done
 
           docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.ci.yml run cvat_ci /bin/bash \
-          -c 'cd cvat-data && npm ci --ignore-scripts && cd ../cvat-core && npm ci --ignore-scripts && npm run test && mv ./reports/coverage/lcov.info ${CONTAINER_COVERAGE_DATA_DIR} && chmod a+rwx ${CONTAINER_COVERAGE_DATA_DIR}/lcov.info'
+          -c 'python manage.py test cvat/apps cvat-cli -k tasks_id -k lambda -k share -v 2'
 
-      - name: Uploading code coverage results as an artifact
-        if: github.ref == 'refs/heads/develop'
+          docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.ci.yml run cvat_ci /bin/bash \
+          -c 'cd cvat-data && npm ci --ignore-scripts && cd ../cvat-core && npm ci --ignore-scripts && npm run test'
+
+      - name: Creating a log file from cvat containers
+        if: failure()
+        env:
+          LOGS_DIR: "${{ github.workspace }}/unit_testing"
+        run: |
+            mkdir $LOGS_DIR
+            docker logs cvat > $LOGS_DIR/cvat.log
+            docker logs cvat_opa 2> $LOGS_DIR/cvat_opa.log
+
+      - name: Uploading "cvat" container logs as an artifact
+        if: failure()
         uses: actions/upload-artifact@v2
+        env:
+          LOGS_DIR: "${{ github.workspace }}/unit_testing"
         with:
-          name: coverage_results
-          path: |
-            ${{ github.workspace }}/.coverage
-            ${{ github.workspace }}/lcov.info
+          name: cvat_container_logs
+          path: $LOGS_DIR
 
-  E2E_testing:
-    needs: cache
+  e2e_testing:
+    needs: [build, search_cache]
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -144,33 +185,14 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: Getting CVAT server cache from the default branch
-        uses: actions/cache@v2
-        with:
-          path: /tmp/cvat_cache_server
-          key: ${{ runner.os }}-build-server-${{ needs.cache.outputs.sha }}
-
       - name: Getting CVAT UI cache from the default branch
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: /tmp/cvat_cache_ui
-          key: ${{ runner.os }}-build-ui-${{ needs.cache.outputs.sha }}
-
-      - uses: actions/setup-node@v2
-        with:
-            node-version: '16.x'
+          key: ${{ runner.os }}-build-ui-${{ needs.search_cache.outputs.sha }}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@master
-
-      - name: Building CVAT server image
-        uses: docker/build-push-action@v2
-        with:
-          context: .
-          file: ./Dockerfile
-          cache-from: type=local,src=/tmp/cvat_cache_server
-          tags: openvino/cvat_server:latest
-          load: true
 
       - name: Building CVAT UI image
         uses: docker/build-push-action@v2
@@ -181,14 +203,28 @@ jobs:
           tags: openvino/cvat_ui:latest
           load: true
 
-      - name: Instrumentation of the code then rebuilding the CVAT UI
-        if: github.ref == 'refs/heads/develop'
-        run: |
-          npm ci
-          npm run coverage
-          docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f components/serverless/docker-compose.serverless.yml build cvat_ui
+      - name: CVAT server. Extract metadata (tags, labels) for Docker
+        id: meta-server
+        uses: docker/metadata-action@master
+        with:
+          images: ${{ secrets.DOCKERHUB_WORKSPACE }}/${{ env.SERVER_IMAGE_TEST_REPO }}
 
-      - name: Run CVAT instance for E2E testing
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Pull CVAT server image
+        run: |
+          docker pull ${{ steps.meta-server.outputs.tags }}
+          docker tag ${{ steps.meta-server.outputs.tags }} openvino/cvat_server
+
+      - uses: actions/setup-node@v2
+        with:
+            node-version: '16.x'
+
+      - name: Run CVAT instance
         run: |
           docker-compose \
             -f docker-compose.yml \
@@ -234,13 +270,6 @@ jobs:
         run: |
             docker logs cvat > ${{ github.workspace }}/tests/cvat_${{ matrix.specs }}.log
 
-      - name: Uploading cypress screenshots as an artifact
-        if: failure()
-        uses: actions/upload-artifact@v2
-        with:
-          name: cypress_screenshots_${{ matrix.specs }}
-          path: ${{ github.workspace }}/tests/cypress/screenshots
-
       - name: Uploading "cvat" container logs as an artifact
         if: failure()
         uses: actions/upload-artifact@v2
@@ -248,70 +277,9 @@ jobs:
           name: cvat_container_logs
           path: ${{ github.workspace }}/tests/cvat_${{ matrix.specs }}.log
 
-      - name: Uploading code coverage results as an artifact
-        if: github.ref == 'refs/heads/develop'
+      - name: Uploading cypress screenshots as an artifact
+        if: failure()
         uses: actions/upload-artifact@v2
         with:
-          name: coverage_results
-          path: ${{ github.workspace }}/tests/.nyc_output
-
-  Coveralls:
-    if: github.ref == 'refs/heads/develop'
-    runs-on: ubuntu-latest
-    needs: [Unit_testing, E2E_testing]
-    steps:
-      - uses: actions/checkout@v2
-
-      - name: Getting SHA from the default branch
-        id: get-sha
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          REPO: ${{ github.repository }}
-        run: |
-          DEFAULT_BRANCH=$(gh api /repos/$REPO | jq -r '.default_branch')
-          SHA=$(gh api /repos/$REPO/git/ref/heads/$DEFAULT_BRANCH | jq -r '.object.sha')
-
-          echo ::set-output name=default_branch::${DEFAULT_BRANCH}
-          echo ::set-output name=sha::${SHA}
-
-      - name: Getting CVAT server cache from the default branch
-        uses: actions/cache@v2
-        with:
-          path: /tmp/cvat_cache_server
-          key: ${{ runner.os }}-build-server-${{ steps.get-sha.outputs.sha }}
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v1.1.2
-
-      - name: Building CVAT server image
-        uses: docker/build-push-action@v2
-        with:
-          context: .
-          file: ./Dockerfile
-          cache-from: type=local,src=/tmp/cvat_cache_server
-          tags: openvino/cvat_server:latest
-          load: true
-
-      - name: Downloading coverage results
-        uses: actions/download-artifact@v2
-        with:
-          name: coverage_results
-
-      - name: Combining coverage results
-        run: |
-          mkdir -p ./nyc_output_tmp
-          mv ./out_*.json ./nyc_output_tmp
-          mkdir -p ./.nyc_output
-          npm ci
-          npx nyc merge ./nyc_output_tmp ./.nyc_output/out.json
-
-      - name: Sending results to Coveralls
-        env:
-          HOST_COVERAGE_DATA_DIR: ${{ github.workspace }}
-          CONTAINER_COVERAGE_DATA_DIR: "/coverage_data"
-          COVERALLS_SERVICE_NAME: github
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-            npx nyc report --reporter=text-lcov >> ${HOST_COVERAGE_DATA_DIR}/lcov.info
-            docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.ci.yml run cvat_ci /bin/bash -c 'cd ${CONTAINER_COVERAGE_DATA_DIR} && coveralls-lcov -v -n lcov.info > ${CONTAINER_COVERAGE_DATA_DIR}/coverage.json'
-            docker-compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.ci.yml run cvat_ci /bin/bash -c 'ln -s ${CONTAINER_COVERAGE_DATA_DIR}/.git . && ln -s ${CONTAINER_COVERAGE_DATA_DIR}/.coverage . && ln -s ${CONTAINER_COVERAGE_DATA_DIR}/coverage.json . && coveralls --merge=coverage.json'
+          name: cypress_screenshots_${{ matrix.specs }}
+          path: ${{ github.workspace }}/tests/cypress/screenshots

@@ -58,8 +58,10 @@
         }
       ],
       "size": 5,
+      "source_storage": null,
       "status": "annotation",
       "subset": "",
+      "target_storage": null,
       "updated_date": "2022-06-08T08:33:20.808000Z",
       "url": "http://localhost:8080/api/tasks/13"
     },
@@ -91,8 +93,10 @@
       "project_id": null,
       "segment_size": 0,
       "segments": [],
+      "source_storage": null,
       "status": "annotation",
       "subset": "",
+      "target_storage": null,
       "updated_date": "2022-03-14T13:24:05.861000Z",
       "url": "http://localhost:8080/api/tasks/12"
     },
@@ -163,8 +167,10 @@
         }
       ],
       "size": 11,
+      "source_storage": null,
       "status": "annotation",
       "subset": "Train",
+      "target_storage": null,
       "updated_date": "2022-03-05T10:32:35.568000Z",
       "url": "http://localhost:8080/api/tasks/11"
     },
@@ -290,8 +296,10 @@
         }
       ],
       "size": 20,
+      "source_storage": null,
       "status": "annotation",
       "subset": "",
+      "target_storage": null,
       "updated_date": "2022-03-05T09:47:49.667000Z",
       "url": "http://localhost:8080/api/tasks/9"
     },
@@ -362,8 +370,10 @@
         }
       ],
       "size": 14,
+      "source_storage": null,
       "status": "annotation",
       "subset": "",
+      "target_storage": null,
       "updated_date": "2022-03-05T08:52:34.908000Z",
       "url": "http://localhost:8080/api/tasks/8"
     },
@@ -428,8 +438,10 @@
         }
       ],
       "size": 11,
+      "source_storage": null,
       "status": "annotation",
       "subset": "",
+      "target_storage": null,
       "updated_date": "2022-02-21T10:41:38.540000Z",
       "url": "http://localhost:8080/api/tasks/7"
     },
@@ -482,8 +494,10 @@
         }
       ],
       "size": 1,
+      "source_storage": null,
       "status": "annotation",
       "subset": "",
+      "target_storage": null,
       "updated_date": "2022-02-16T06:26:54.836000Z",
       "url": "http://localhost:8080/api/tasks/6"
     },
@@ -548,8 +562,10 @@
         }
       ],
       "size": 25,
+      "source_storage": null,
       "status": "annotation",
       "subset": "",
+      "target_storage": null,
       "updated_date": "2022-02-21T10:40:21.257000Z",
       "url": "http://localhost:8080/api/tasks/5"
     },
@@ -620,8 +636,10 @@
         }
       ],
       "size": 23,
+      "source_storage": null,
       "status": "annotation",
       "subset": "",
+      "target_storage": null,
       "updated_date": "2021-12-22T07:14:15.234000Z",
       "url": "http://localhost:8080/api/tasks/2"
     }

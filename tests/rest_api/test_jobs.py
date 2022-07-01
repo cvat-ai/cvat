@@ -44,7 +44,7 @@ class TestGetJobs:
         response = get_method(user, f'jobs/{jid}', **kwargs)
 
         assert response.status_code == HTTPStatus.OK
-        assert DeepDiff(data, response.json()) == {}
+        assert DeepDiff(data, response.json(), exclude_paths="root['updated_date']") == {}
 
     def _test_get_job_403(self, user, jid, **kwargs):
         response = get_method(user, f'jobs/{jid}', **kwargs)
@@ -83,7 +83,7 @@ class TestListJobs:
         response = get_method(user, 'jobs', **kwargs, page_size='all')
 
         assert response.status_code == HTTPStatus.OK
-        assert DeepDiff(data, response.json()['results']) == {}
+        assert DeepDiff(data, response.json()['results'], exclude_paths="root['updated_date']") == {}
 
     def _test_list_jobs_403(self, user, **kwargs):
         response = get_method(user, 'jobs', **kwargs)
@@ -123,7 +123,7 @@ class TestGetAnnotations:
 
         assert response.status_code == HTTPStatus.OK
         assert DeepDiff(data, response_data,
-            exclude_paths="root['version']") == {}
+            exclude_regex_paths=r"root\['version|updated_date'\]") == {}
 
     def _test_get_job_annotations_403(self, user, jid, **kwargs):
         response = get_method(user, f'jobs/{jid}/annotations', **kwargs)
@@ -193,7 +193,7 @@ class TestPatchJobAnnotations:
         if is_allow:
             assert response.status_code == HTTPStatus.OK
             assert DeepDiff(data, response.json(),
-                exclude_paths="root['version']") == {}
+                exclude_regex_paths=r"root\['version|updated_date'\]") == {}
         else:
             assert response.status_code == HTTPStatus.FORBIDDEN
 
@@ -313,6 +313,7 @@ class TestPatchJob:
 
         if is_allow:
             assert response.status_code == HTTPStatus.OK
-            assert DeepDiff(expected_data(jid, assignee), response.json()) == {}
+            assert DeepDiff(expected_data(jid, assignee), response.json(),
+                exclude_paths="root['updated_date']") == {}
         else:
             assert response.status_code == HTTPStatus.FORBIDDEN
