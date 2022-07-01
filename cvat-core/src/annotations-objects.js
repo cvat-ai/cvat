@@ -112,28 +112,6 @@
         return [rotX, rotY];
     }
 
-    function fitPoints(shapeType, points, rotation, maxX, maxY) {
-        checkObjectType('rotation', rotation, 'number', null);
-        points.forEach((coordinate) => checkObjectType('coordinate', coordinate, 'number', null));
-
-        if (shapeType === ObjectShape.CUBOID || shapeType === ObjectShape.ELLIPSE || !!rotation) {
-            // cuboids and rotated bounding boxes cannot be fitted
-            return points;
-        }
-
-        const fittedPoints = [];
-
-        for (let i = 0; i < points.length - 1; i += 2) {
-            const x = points[i];
-            const y = points[i + 1];
-            const clampedX = Math.clamp(x, 0, maxX);
-            const clampedY = Math.clamp(y, 0, maxY);
-            fittedPoints.push(clampedX, clampedY);
-        }
-
-        return fittedPoints;
-    }
-
     function validateAttributeValue(value, attr) {
         const { values } = attr;
         const type = attr.inputType;
@@ -155,6 +133,19 @@
         }
 
         return values.includes(value);
+    }
+
+    function copyShape(state, frame, data) {
+        return {
+            frame,
+            rotation: state.rotation,
+            zOrder: state.zOrder,
+            points: state.points,
+            occluded: state.occluded,
+            outside: state.outside,
+            attributes: {},
+            ...data,
+        };
     }
 
     class Annotation {
@@ -198,8 +189,9 @@
                     },
                 },
             );
-            this.appendDefaultAttributes(this.label);
+            this.isSkeletonElement = injection.isSkeletonElement || false;
 
+            this.appendDefaultAttributes(this.label);
             injection.groups.max = Math.max(injection.groups.max, this.group);
         }
 
@@ -328,9 +320,7 @@
             );
         }
 
-        _validateStateBeforeSave(frame, data, updated) {
-            let fittedPoints = [];
-
+        _validateStateBeforeSave(data, updated) {
             if (updated.label) {
                 checkObjectType('label', data.label, null, Label);
             }
@@ -362,23 +352,6 @@
                     throw new ArgumentError(
                         `Descriptions are expected to be an array of strings but got ${data.descriptions}`,
                     );
-                }
-            }
-
-            if (updated.points) {
-                checkObjectType('points', data.points, null, Array);
-                checkNumberOfPoints(this.shapeType, data.points);
-                // cut points
-                const { width, height, filename } = this.frameMeta[frame];
-                fittedPoints = fitPoints(this.shapeType, data.points, data.rotation, width, height);
-                let check = true;
-                if (filename && filename.slice(filename.length - 3) === 'pcd') {
-                    check = false;
-                }
-                if (check) {
-                    if (!checkShapeArea(this.shapeType, fittedPoints)) {
-                        fittedPoints = [];
-                    }
                 }
             }
 
@@ -421,8 +394,6 @@
                     );
                 }
             }
-
-            return fittedPoints;
         }
 
         appendDefaultAttributes(label) {
@@ -498,6 +469,55 @@
             );
 
             this.pinned = pinned;
+        }
+
+        _fitPoints(points, rotation, maxX, maxY) {
+            const { shapeType, isSkeletonElement } = this;
+            checkObjectType('rotation', rotation, 'number', null);
+            points.forEach((coordinate) => checkObjectType('coordinate', coordinate, 'number', null));
+
+            if (isSkeletonElement || shapeType === ObjectShape.CUBOID ||
+                shapeType === ObjectShape.ELLIPSE || !!rotation) {
+                // cuboids and rotated bounding boxes cannot be fitted
+                return points;
+            }
+
+            const fittedPoints = [];
+
+            for (let i = 0; i < points.length - 1; i += 2) {
+                const x = points[i];
+                const y = points[i + 1];
+                const clampedX = Math.clamp(x, 0, maxX);
+                const clampedY = Math.clamp(y, 0, maxY);
+                fittedPoints.push(clampedX, clampedY);
+            }
+
+            return fittedPoints;
+        }
+
+        _validateStateBeforeSave(frame, data, updated) {
+            /* eslint-disable-next-line no-underscore-dangle */
+            Annotation.prototype._validateStateBeforeSave.call(this, data, updated);
+
+            let fittedPoints = [];
+            if (updated.points) {
+                checkObjectType('points', data.points, null, Array);
+                checkNumberOfPoints(this.shapeType, data.points);
+                // cut points
+                const { width, height, filename } = this.frameMeta[frame];
+                fittedPoints = this._fitPoints(data.points, data.rotation, width, height);
+                let check = true;
+                if (filename && filename.slice(filename.length - 3) === 'pcd') {
+                    check = false;
+                }
+                if (check) {
+                    if (!checkShapeArea(this.shapeType, fittedPoints)) {
+                        fittedPoints = [];
+                    }
+                }
+            }
+
+            return fittedPoints;
         }
 
         save() {
@@ -1092,19 +1112,12 @@
         }
 
         _saveRotation(rotation, frame) {
-            const current = this.get(frame);
             const wasKeyframe = frame in this.shapes;
             const undoSource = this.source;
             const redoSource = Source.MANUAL;
             const undoShape = wasKeyframe ? this.shapes[frame] : undefined;
-            const redoShape = wasKeyframe ? { ...this.shapes[frame], rotation } : {
-                frame,
-                rotation,
-                zOrder: current.zOrder,
-                outside: current.outside,
-                occluded: current.occluded,
-                attributes: {},
-            };
+            const redoShape = wasKeyframe ?
+                { ...this.shapes[frame], rotation } : copyShape(this.get(frame), frame, { rotation });
 
             this.shapes[frame] = redoShape;
             this.source = Source.MANUAL;
@@ -1119,19 +1132,12 @@
         }
 
         _savePoints(points, frame) {
-            const current = this.get(frame);
             const wasKeyframe = frame in this.shapes;
             const undoSource = this.source;
             const redoSource = Source.MANUAL;
             const undoShape = wasKeyframe ? this.shapes[frame] : undefined;
-            const redoShape = wasKeyframe ? { ...this.shapes[frame], points } : {
-                frame,
-                points,
-                zOrder: current.zOrder,
-                outside: current.outside,
-                occluded: current.occluded,
-                attributes: {},
-            };
+            const redoShape = wasKeyframe ?
+                { ...this.shapes[frame], points } : copyShape(this.get(frame), frame, { points });
 
             this.shapes[frame] = redoShape;
             this.source = Source.MANUAL;
@@ -1146,22 +1152,13 @@
         }
 
         _saveOutside(frame, outside) {
-            const current = this.get(frame);
             const wasKeyframe = frame in this.shapes;
             const undoSource = this.source;
             const redoSource = Source.MANUAL;
             const undoShape = wasKeyframe ? this.shapes[frame] : undefined;
             const redoShape = wasKeyframe ?
                 { ...this.shapes[frame], outside } :
-                {
-                    frame,
-                    outside,
-                    rotation: current.rotation,
-                    zOrder: current.zOrder,
-                    points: current.points,
-                    occluded: current.occluded,
-                    attributes: {},
-                };
+                copyShape(this.get(frame), frame, { outside });
 
             this.shapes[frame] = redoShape;
             this.source = Source.MANUAL;
@@ -1176,22 +1173,13 @@
         }
 
         _saveOccluded(occluded, frame) {
-            const current = this.get(frame);
             const wasKeyframe = frame in this.shapes;
             const undoSource = this.source;
             const redoSource = Source.MANUAL;
             const undoShape = wasKeyframe ? this.shapes[frame] : undefined;
             const redoShape = wasKeyframe ?
                 { ...this.shapes[frame], occluded } :
-                {
-                    frame,
-                    occluded,
-                    rotation: current.rotation,
-                    zOrder: current.zOrder,
-                    points: current.points,
-                    outside: current.outside,
-                    attributes: {},
-                };
+                copyShape(this.get(frame), frame, { occluded });
 
             this.shapes[frame] = redoShape;
             this.source = Source.MANUAL;
@@ -1206,22 +1194,13 @@
         }
 
         _saveZOrder(zOrder, frame) {
-            const current = this.get(frame);
             const wasKeyframe = frame in this.shapes;
             const undoSource = this.source;
             const redoSource = Source.MANUAL;
             const undoShape = wasKeyframe ? this.shapes[frame] : undefined;
             const redoShape = wasKeyframe ?
                 { ...this.shapes[frame], zOrder } :
-                {
-                    frame,
-                    zOrder,
-                    rotation: current.rotation,
-                    occluded: current.occluded,
-                    points: current.points,
-                    outside: current.outside,
-                    attributes: {},
-                };
+                copyShape(this.get(frame), frame, { zOrder });
 
             this.shapes[frame] = redoShape;
             this.source = Source.MANUAL;
@@ -1236,7 +1215,6 @@
         }
 
         _saveKeyframe(frame, keyframe) {
-            const current = this.get(frame);
             const wasKeyframe = frame in this.shapes;
 
             if ((keyframe && wasKeyframe) || (!keyframe && !wasKeyframe)) {
@@ -1246,18 +1224,7 @@
             const undoSource = this.source;
             const redoSource = Source.MANUAL;
             const undoShape = wasKeyframe ? this.shapes[frame] : undefined;
-            const redoShape = keyframe ?
-                {
-                    frame,
-                    rotation: current.rotation,
-                    zOrder: current.zOrder,
-                    points: current.points,
-                    outside: current.outside,
-                    occluded: current.occluded,
-                    attributes: {},
-                    source: current.source,
-                } :
-                undefined;
+            const redoShape = keyframe ? copyShape(this.get(frame), frame, {}) : undefined;
 
             this.source = Source.MANUAL;
             if (redoShape) {
@@ -1438,7 +1405,7 @@
                 updated[readOnlyField] = false;
             }
 
-            this._validateStateBeforeSave(frame, data, updated);
+            this._validateStateBeforeSave(data, updated);
 
             // Now when all fields are validated, we can apply them
             if (updated.label) {
@@ -1826,7 +1793,7 @@
                 source: this.source,
                 rotation: 0,
                 readOnlyFields: ['group', 'zOrder', 'source', 'rotation'],
-            }, injection.nextClientID(), injection));
+            }, injection.nextClientID(), { ...injection, isSkeletonElement: true }));
         }
 
         static distance(points, x, y) {
@@ -2349,9 +2316,20 @@
             this.shapeType = ObjectShape.SKELETON;
             this.readOnlyFields = ['points', 'label', 'occluded', 'outside', 'pinned'];
             this.pinned = false;
+            this.shapes = {};
 
             const tracks = {};
             data.shapes.forEach((shape) => {
+                this.shapes[shape.frame] = ({
+                    type: shape.type,
+                    occluded: shape.occluded,
+                    outside: shape.outside,
+                    attributes: shape.attributes,
+                    rotation: shape.rotation,
+                    z_order: shape.z_order,
+                    id: shape.id,
+                });
+
                 shape.elements.forEach((element, idx) => {
                     if (!tracks[idx]) {
                         tracks[idx] = {
@@ -2389,14 +2367,12 @@
 
             /* eslint-disable-next-line no-use-before-define */
             this.elements = Object.values(tracks).map((track) => trackFactory(
-                track, injection.nextClientID(), injection,
+                track, injection.nextClientID(), { ...injection, isSkeletonElement: true },
             ));
         }
 
         // Method is used to export data to the server
         toJSON() {
-            const { shapes } = this;
-
             return {
                 clientID: this.clientID,
                 id: this.serverID,
@@ -2405,15 +2381,13 @@
                 group: this.group,
                 source: this.source,
                 attributes: [],
-                shapes: Object.values(shapes),
+                shapes: Object.values(this.prepareShapesForServer()),
             };
         }
 
         // Method is used to construct ObjectState objects
         get(frame) {
-            const {
-                prev, next, first, last,
-            } = this.boundedKeyframes(frame);
+            const { prev, next } = this.boundedKeyframes(frame);
 
             return {
                 ...this.getPosition(frame, prev, next),
@@ -2430,25 +2404,16 @@
                 updated: this.updated,
                 label: this.label,
                 pinned: this.pinned,
-                keyframes: {
-                    prev,
-                    next,
-                    first,
-                    last,
-                },
+                keyframes: this.deepBoundedKeyframes(frame),
                 elements: this.elements.map((element) => element.get(frame)),
                 frame,
                 source: this.source,
             };
         }
 
-        boundedKeyframes(targetFrame) {
-            const boundedKeyframes = {
-                prev: null,
-                next: null,
-                first: null,
-                last: null,
-            };
+        // finds keyframes considering keyframes of nested elements
+        deepBoundedKeyframes(targetFrame) {
+            const boundedKeyframes = Track.prototype.boundedKeyframes.call(this, targetFrame);
 
             for (const element of this.elements) {
                 const keyframes = element.boundedKeyframes(targetFrame);
@@ -2492,15 +2457,19 @@
             return result;
         }
 
-        getPosition(targetFrame, leftKeyframe, rightFrame) {
+        getPosition(targetFrame) {
+            const {
+                prev: leftKeyframe,
+                next: rightKeyframe,
+            } = Track.prototype.boundedKeyframes.call(this, targetFrame);
+
             const leftFrame = targetFrame in this.shapes ? targetFrame : leftKeyframe;
-            const rightPosition = Number.isInteger(rightFrame) ? this.shapes[rightFrame] : null;
+            const rightPosition = Number.isInteger(rightKeyframe) ? this.shapes[rightKeyframe] : null;
             const leftPosition = Number.isInteger(leftFrame) ? this.shapes[leftFrame] : null;
-            const offset = (targetFrame - leftFrame) / (rightFrame - leftFrame);
+            const offset = (targetFrame - leftFrame) / (rightKeyframe - leftFrame);
 
             if (leftPosition && rightPosition) {
                 return {
-                    points: undefined,
                     rotation: (leftPosition.rotation + findAngleDiff(
                         rightPosition.rotation, leftPosition.rotation,
                     ) * offset + 360) % 360,
@@ -2529,19 +2498,20 @@
             );
         }
 
-        get shapes() {
-            let allKeyframes = new Set(this.elements.map((element) => Object.keys(element.shapes)).flat());
-            allKeyframes = Array.from(allKeyframes);
+        prepareShapesForServer() {
+            let allKeyframes = new Set([this, ...this.elements].map((element) => Object.keys(element.shapes)).flat());
+            allKeyframes = Array.from(allKeyframes).map((keyframe) => +keyframe);
 
             const result = {};
             for (const keyframe of allKeyframes) {
+                const skeletonShape = this.get(keyframe);
                 result[keyframe] = {
                     type: this.shapeType,
-                    occluded: false,
-                    z_order: 0, // todo: get z_order from general shape
-                    rotation: 0, // todo: get rotation from general shape
-                    frame: +keyframe,
-                    outside: false, // todo: get outside from general shape
+                    occluded: skeletonShape.occluded,
+                    z_order: skeletonShape.zOrder,
+                    rotation: skeletonShape.rotation,
+                    frame: keyframe,
+                    outside: skeletonShape.outside,
                     attributes: [],
                     elements: this.elements.map((element) => {
                         const elementData = element.get(+keyframe);
@@ -2559,10 +2529,6 @@
 
             return result;
         }
-
-        set shapes(data) {
-
-        };
     }
 
     RectangleTrack.distance = RectangleShape.distance;

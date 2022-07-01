@@ -119,7 +119,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
     private translatePointsFromRotatedShape(shape: SVG.Shape, points: number[]): number[] {
         const { rotation } = shape.transform();
-        // currently shape is rotated and shifted somehow additionally (css transform property)
+        // currently shape is rotated and SHIFTED somehow additionally (css transform property)
         // let's remove rotation to get correct transformation matrix (element -> screen)
         // correct means that we do not consider points to be rotated
         // because rotation property is stored separately and already saved
@@ -129,8 +129,10 @@ export class CanvasViewImpl implements CanvasView, Listener {
         try {
             // get each point and apply a couple of matrix transformation to it
             const point = this.content.createSVGPoint();
-            // matrix to convert from ELEMENT file system to CLIENT coordinate system
-            const ctm = ((shape.node as any) as SVGRectElement | SVGPolygonElement | SVGPolylineElement).getScreenCTM();
+            // matrix to convert from ELEMENT coordinate system to CLIENT coordinate system
+            const ctm = (
+                (shape.node as any) as SVGRectElement | SVGPolygonElement | SVGPolylineElement | SVGGElement
+            ).getScreenCTM();
             // matrix to convert from CLIENT coordinate system to CANVAS coordinate system
             const ctm1 = this.content.getScreenCTM().inverse();
             // NOTE: I tried to use element.getCTM(), but this way does not work on firefox
@@ -2041,36 +2043,20 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     const dx2 = (p1.x - p2.x) ** 2;
                     const dy2 = (p1.y - p2.y) ** 2;
                     if (Math.sqrt(dx2 + dy2) >= delta) {
-                        if (state.shapeType === 'skeleton') {
-                            state.elements.forEach((element: any) => {
-                                const elementShape = shape.children()
-                                    .find((child: SVG.Shape) => child.id() === `cvat_canvas_shape_${element.clientID}`);
+                        // these points does not take into account possible transformations, applied on the element
+                        // so, if any (like rotation) we need to map them to canvas coordinate space
+                        let points = readPointsFromShape(shape);
 
-                                if (elementShape) {
-                                    let points = readPointsFromShape(elementShape);
-                                    points = this.translateFromCanvas(points);
-                                    element.points = points;
-                                }
-                            });
+                        // let's keep current points, but they could be rewritten in updateObjects
+                        this.drawnStates[clientID].points = this.translateFromCanvas(points);
 
-                            this.onEditDone(state, state.points);
-                        } else {
-                            // these points does not take into account possible transformations, applied on the element
-                            // so, if any (like rotation) we need to map them to canvas coordinate space
-                            let points = readPointsFromShape(shape);
-
-                            // let's keep current points, but they could be rewritten in updateObjects
-                            this.drawnStates[clientID].points = this.translateFromCanvas(points);
-
-                            const { rotation } = shape.transform();
-                            if (rotation) {
-                                points = this.translatePointsFromRotatedShape(shape, points);
-                            }
-
-                            points = this.translateFromCanvas(points);
-                            this.onEditDone(state, points);
+                        const { rotation } = shape.transform();
+                        if (rotation) {
+                            points = this.translatePointsFromRotatedShape(shape, points);
                         }
 
+                        points = this.translateFromCanvas(points);
+                        this.onEditDone(state, points);
                         this.canvas.dispatchEvent(
                             new CustomEvent('canvas.dragshape', {
                                 bubbles: false,
@@ -2144,41 +2130,24 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 showDirection();
                 showText();
                 if (resized) {
-                    if (state.shapeType === 'skeleton') {
-                        state.elements.forEach((element: any) => {
-                            const elementShape = shape.children()
-                                .find((child: SVG.Shape) => child.id() === `cvat_canvas_shape_${element.clientID}`);
+                    let rotation = shape.transform().rotation || 0;
 
-                            if (elementShape) {
-                                let points = readPointsFromShape(elementShape);
-                                points = this.translateFromCanvas(points);
-                                element.points = points;
-                            }
-                        });
+                    // be sure, that rotation in range [0; 360]
+                    while (rotation < 0) rotation += 360;
+                    rotation %= 360;
 
-                        this.onEditDone(state, state.points);
-                    } else {
-                        let rotation = shape.transform().rotation || 0;
+                    // these points does not take into account possible transformations, applied on the element
+                    // so, if any (like rotation) we need to map them to canvas coordinate space
+                    let points = readPointsFromShape(shape);
 
-                        // be sure, that rotation in range [0; 360]
-                        while (rotation < 0) rotation += 360;
-                        rotation %= 360;
-
-                        // these points does not take into account possible transformations, applied on the element
-                        // so, if any (like rotation) we need to map them to canvas coordinate space
-                        let points = readPointsFromShape(shape);
-
-                        // let's keep current points, but they could be rewritten in updateObjects
-                        this.drawnStates[clientID].points = this.translateFromCanvas(points);
-                        this.drawnStates[clientID].rotation = rotation;
-                        if (rotation) {
-                            points = this.translatePointsFromRotatedShape(shape, points);
-                        }
-
-                        this.onEditDone(state, this.translateFromCanvas(points), rotation);
+                    // let's keep current points, but they could be rewritten in updateObjects
+                    this.drawnStates[clientID].points = this.translateFromCanvas(points);
+                    this.drawnStates[clientID].rotation = rotation;
+                    if (rotation) {
+                        points = this.translatePointsFromRotatedShape(shape, points);
                     }
 
-                    // points = this.translateFromCanvas(points);
+                    this.onEditDone(state, this.translateFromCanvas(points), rotation);
                     this.canvas.dispatchEvent(
                         new CustomEvent('canvas.resizeshape', {
                             bubbles: false,
@@ -2228,26 +2197,21 @@ export class CanvasViewImpl implements CanvasView, Listener {
     }
 
     // Update text position after corresponding box has been moved, resized, etc.
-    private updateTextPosition(text: SVG.Text): void {
+    private updateTextPosition(
+        text: SVG.Text,
+        options: { rotation?: { angle: number, cx: number, cy: number } } = {},
+    ): void {
         const clientID = text.attr('data-client-id');
         if (!Number.isInteger(clientID)) return;
         const shape = this.svgShapes[clientID];
         if (!shape) return;
-
-        if (clientID in this.drawnStates && this.drawnStates[clientID].shapeType === 'skeleton') {
-            this.drawnStates[clientID].elements.forEach((element: DrawnState) => {
-                if (element.clientID in this.svgTexts) {
-                    this.updateTextPosition(this.svgTexts[element.clientID]);
-                }
-            });
-        }
 
         if (text.node.style.display === 'none') return; // wrong transformation matrix
         const { textFontSize, textPosition } = this.configuration;
 
         text.untransform();
         text.style({ 'font-size': `${textFontSize}px` });
-        const { rotation } = shape.transform();
+        const rotation = options.rotation?.angle || shape.transform().rotation;
 
         // Find the best place for a text
         let [clientX, clientY, clientCX, clientCY]: number[] = [0, 0, 0, 0];
@@ -2308,8 +2272,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
         const [x, y, rotX, rotY]: number[] = translateToSVG(this.text, [
             clientX + (textPosition === 'auto' ? consts.TEXT_MARGIN : 0),
             clientY + (textPosition === 'auto' ? consts.TEXT_MARGIN : 0),
-            clientCX,
-            clientCY,
+            options.rotation?.cx || clientCX,
+            options.rotation?.cy || clientCY,
         ]);
 
         const textBBox = ((text.node as any) as SVGTextElement).getBBox();
@@ -2320,8 +2284,24 @@ export class CanvasViewImpl implements CanvasView, Listener {
             text.move(x, y);
         }
 
+        let childOptions = {};
         if (rotation) {
             text.rotate(rotation, rotX, rotY);
+            childOptions = {
+                rotation: {
+                    angle: rotation,
+                    cx: clientCX,
+                    cy: clientCY,
+                },
+            };
+        }
+
+        if (clientID in this.drawnStates && this.drawnStates[clientID].shapeType === 'skeleton') {
+            this.drawnStates[clientID].elements.forEach((element: DrawnState) => {
+                if (element.clientID in this.svgTexts) {
+                    this.updateTextPosition(this.svgTexts[element.clientID], childOptions);
+                }
+            });
         }
 
         for (const tspan of (text.lines() as any).members) {
@@ -2747,6 +2727,11 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
                                 if (elementShape) {
                                     let points = readPointsFromShape(elementShape);
+                                    const { rotation } = skeleton.transform();
+                                    if (rotation) {
+                                        points = this.translatePointsFromRotatedShape(skeleton, points);
+                                    }
+
                                     points = this.translateFromCanvas(points);
                                     element.points = points;
                                 }
@@ -2842,6 +2827,10 @@ export class CanvasViewImpl implements CanvasView, Listener {
                                 if (elementShape) {
                                     let points = readPointsFromShape(elementShape);
                                     points = this.translateFromCanvas(points);
+                                    const { rotation } = skeleton.transform();
+                                    if (rotation) {
+                                        points = this.translatePointsFromRotatedShape(skeleton, points);
+                                    }
                                     elementState.points = points;
                                 }
 
@@ -2869,7 +2858,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             let resized = false;
             if (typeof action === 'object') {
                 (wrappingRect as any).resize(action).on('resizestart', (): void => {
-                    let { rotation } = skeleton.transform();
+                    const { rotation } = skeleton.transform();
                     wrappingRect.attr('data-rotation', rotation);
 
                     this.mode = Mode.RESIZE;
@@ -2920,7 +2909,11 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     resized = true;
                     setupEdges();
                 }).on('resizedone', (): void => {
-                    const { rotation } = skeleton.transform();
+                    let { rotation } = skeleton.transform();
+                    // be sure, that rotation in range [0; 360]
+                    while (rotation < 0) rotation += 360;
+                    rotation %= 360;
+
                     wrappingRect.attr('data-rotation', rotation);
                     showText();
                     this.mode = Mode.IDLE;
@@ -2933,6 +2926,9 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
                             if (elementShape) {
                                 let points = readPointsFromShape(elementShape);
+                                if (rotation) {
+                                    points = this.translatePointsFromRotatedShape(skeleton, points);
+                                }
                                 points = this.translateFromCanvas(points);
                                 element.points = points;
                             }
