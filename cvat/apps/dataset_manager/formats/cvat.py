@@ -1030,7 +1030,7 @@ def dump_as_cvat_interpolation(dumper, annotations):
     dumper.close_root()
 
 def load_anno(file_object, annotations):
-    supported_shapes = ('box', 'ellipse', 'polygon', 'polyline', 'points', 'cuboid')
+    supported_shapes = ('box', 'ellipse', 'polygon', 'polyline', 'points', 'cuboid', 'skeleton')
     context = ElementTree.iterparse(file_object, events=("start", "end"))
     context = iter(context)
     next(context)
@@ -1060,10 +1060,19 @@ def load_anno(file_object, annotations):
                 ))
             elif el.tag in supported_shapes and (track is not None or image_is_opened):
                 attributes = []
-                shape = {
-                    'attributes': attributes,
-                    'points': [],
-                }
+                if shape and shape['type'] == 'skeleton':
+                    element = {
+                        'attributes': attributes,
+                        'points': [],
+                        'type': 'rectangle' if el.tag == 'box' else el.tag
+                    }
+                else:
+                    shape = {
+                        'attributes': attributes,
+                        'points': [],
+                        'type': 'rectangle' if el.tag == 'box' else el.tag,
+                        'elements': []
+                    }
             elif el.tag == 'tag' and image_is_opened:
                 attributes = []
                 tag = {
@@ -1079,7 +1088,48 @@ def load_anno(file_object, annotations):
                     name=el.attrib['name'],
                     value=el.text or "",
                 ))
-            if el.tag in supported_shapes:
+            if el.tag in supported_shapes and shape['type'] == 'skeleton' and el.tag != 'skeleton':
+                element['frame'] = frame_id
+                element['label_id'] = annotations._get_label_id(el.attrib['label'])
+
+                element['occluded'] = el.attrib['occluded'] == '1'
+                element['outside'] = el.attrib['outside'] == '1'
+
+                if el.tag == 'box':
+                    element['points'].append(el.attrib['xtl'])
+                    element['points'].append(el.attrib['ytl'])
+                    element['points'].append(el.attrib['xbr'])
+                    element['points'].append(el.attrib['ybr'])
+                elif el.tag == 'ellipse':
+                    element['points'].append(el.attrib['cx'])
+                    element['points'].append(el.attrib['cy'])
+                    element['points'].append("{:.2f}".format(float(el.attrib['cx']) + float(el.attrib['rx'])))
+                    element['points'].append("{:.2f}".format(float(el.attrib['cy']) - float(el.attrib['ry'])))
+                elif el.tag == 'cuboid':
+                    element['points'].append(el.attrib['xtl1'])
+                    element['points'].append(el.attrib['ytl1'])
+                    element['points'].append(el.attrib['xbl1'])
+                    element['points'].append(el.attrib['ybl1'])
+                    element['points'].append(el.attrib['xtr1'])
+                    element['points'].append(el.attrib['ytr1'])
+                    element['points'].append(el.attrib['xbr1'])
+                    element['points'].append(el.attrib['ybr1'])
+
+                    element['points'].append(el.attrib['xtl2'])
+                    element['points'].append(el.attrib['ytl2'])
+                    element['points'].append(el.attrib['xbl2'])
+                    element['points'].append(el.attrib['ybl2'])
+                    element['points'].append(el.attrib['xtr2'])
+                    element['points'].append(el.attrib['ytr2'])
+                    element['points'].append(el.attrib['xbr2'])
+                    element['points'].append(el.attrib['ybr2'])
+                else:
+                    for pair in el.attrib['points'].split(';'):
+                        element['points'].extend(map(float, pair.split(',')))
+
+                shape['elements'].append(element)
+
+            elif el.tag in supported_shapes:
                 if track is not None:
                     shape['frame'] = el.attrib['frame']
                     shape['outside'] = el.attrib['outside'] == "1"
@@ -1090,7 +1140,6 @@ def load_anno(file_object, annotations):
                     shape['group'] = int(el.attrib.get('group_id', 0))
                     shape['source'] = str(el.attrib.get('source', 'manual'))
 
-                shape['type'] = 'rectangle' if el.tag == 'box' else el.tag
                 shape['occluded'] = el.attrib['occluded'] == '1'
                 shape['z_order'] = int(el.attrib.get('z_order', 0))
                 shape['rotation'] = float(el.attrib.get('rotation', 0))
@@ -1123,6 +1172,8 @@ def load_anno(file_object, annotations):
                     shape['points'].append(el.attrib['ytr2'])
                     shape['points'].append(el.attrib['xbr2'])
                     shape['points'].append(el.attrib['ybr2'])
+                elif el.tag == 'skeleton':
+                    pass
                 else:
                     for pair in el.attrib['points'].split(';'):
                         shape['points'].extend(map(float, pair.split(',')))

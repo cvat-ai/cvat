@@ -486,10 +486,8 @@ class Label(models.Model):
     def __str__(self):
         return self.name
 
-    def get_parent(self):
-        if self.parent:
-            return self.parent.id
-        return None
+    def has_parent_label(self):
+        return bool(self.parent)
 
     class Meta:
         default_permissions = ()
