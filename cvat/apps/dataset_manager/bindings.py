@@ -168,7 +168,7 @@ class TaskData(InstanceLabelData):
     LabeledShape = namedtuple(
         'LabeledShape', 'type, frame, label, points, occluded, attributes, source, elements, rotation, group, z_order')
     LabeledSkeleton = namedtuple(
-        'LabeledShape', 'type, frame, label, points, occluded, outside, attributes')
+        'LabeledSkeleton', 'type, frame, label, points, occluded, outside, attributes')
     LabeledShape.__new__.__defaults__ = (0, 0, 0)
     TrackedShape = namedtuple(
         'TrackedShape', 'type, frame, points, occluded, outside, keyframe, attributes, elements, rotation, source, group, z_order, label, track_id')
@@ -298,7 +298,7 @@ class TaskData(InstanceLabelData):
                             ('element_id', str(elem['element_id']))
                         ])))
 
-                    label["skeleton"] = OrderedDict([
+                    label["structure"] = OrderedDict([
                         ("edges", edges),
                         ("elements", elements),
                         ("svg", db_label.skeleton.svg)
