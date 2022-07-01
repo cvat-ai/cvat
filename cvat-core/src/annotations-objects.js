@@ -112,28 +112,6 @@
         return [rotX, rotY];
     }
 
-    function fitPoints(shapeType, points, rotation, maxX, maxY) {
-        checkObjectType('rotation', rotation, 'number', null);
-        points.forEach((coordinate) => checkObjectType('coordinate', coordinate, 'number', null));
-
-        if (shapeType === ObjectShape.CUBOID || shapeType === ObjectShape.ELLIPSE || !!rotation) {
-            // cuboids and rotated bounding boxes cannot be fitted
-            return points;
-        }
-
-        const fittedPoints = [];
-
-        for (let i = 0; i < points.length - 1; i += 2) {
-            const x = points[i];
-            const y = points[i + 1];
-            const clampedX = Math.clamp(x, 0, maxX);
-            const clampedY = Math.clamp(y, 0, maxY);
-            fittedPoints.push(clampedX, clampedY);
-        }
-
-        return fittedPoints;
-    }
-
     function validateAttributeValue(value, attr) {
         const { values } = attr;
         const type = attr.inputType;
@@ -211,8 +189,9 @@
                     },
                 },
             );
-            this.appendDefaultAttributes(this.label);
+            this.isSkeletonElement = injection.isSkeletonElement || false;
 
+            this.appendDefaultAttributes(this.label);
             injection.groups.max = Math.max(injection.groups.max, this.group);
         }
 
@@ -341,9 +320,7 @@
             );
         }
 
-        _validateStateBeforeSave(frame, data, updated) {
-            let fittedPoints = [];
-
+        _validateStateBeforeSave(data, updated) {
             if (updated.label) {
                 checkObjectType('label', data.label, null, Label);
             }
@@ -375,23 +352,6 @@
                     throw new ArgumentError(
                         `Descriptions are expected to be an array of strings but got ${data.descriptions}`,
                     );
-                }
-            }
-
-            if (updated.points) {
-                checkObjectType('points', data.points, null, Array);
-                checkNumberOfPoints(this.shapeType, data.points);
-                // cut points
-                const { width, height, filename } = this.frameMeta[frame];
-                fittedPoints = fitPoints(this.shapeType, data.points, data.rotation, width, height);
-                let check = true;
-                if (filename && filename.slice(filename.length - 3) === 'pcd') {
-                    check = false;
-                }
-                if (check) {
-                    if (!checkShapeArea(this.shapeType, fittedPoints)) {
-                        fittedPoints = [];
-                    }
                 }
             }
 
@@ -434,8 +394,6 @@
                     );
                 }
             }
-
-            return fittedPoints;
         }
 
         appendDefaultAttributes(label) {
@@ -511,6 +469,55 @@
             );
 
             this.pinned = pinned;
+        }
+
+        _fitPoints(points, rotation, maxX, maxY) {
+            const { shapeType, isSkeletonElement } = this;
+            checkObjectType('rotation', rotation, 'number', null);
+            points.forEach((coordinate) => checkObjectType('coordinate', coordinate, 'number', null));
+
+            if (isSkeletonElement || shapeType === ObjectShape.CUBOID ||
+                shapeType === ObjectShape.ELLIPSE || !!rotation) {
+                // cuboids and rotated bounding boxes cannot be fitted
+                return points;
+            }
+
+            const fittedPoints = [];
+
+            for (let i = 0; i < points.length - 1; i += 2) {
+                const x = points[i];
+                const y = points[i + 1];
+                const clampedX = Math.clamp(x, 0, maxX);
+                const clampedY = Math.clamp(y, 0, maxY);
+                fittedPoints.push(clampedX, clampedY);
+            }
+
+            return fittedPoints;
+        }
+
+        _validateStateBeforeSave(frame, data, updated) {
+            /* eslint-disable-next-line no-underscore-dangle */
+            Annotation.prototype._validateStateBeforeSave.call(this, data, updated);
+
+            let fittedPoints = [];
+            if (updated.points) {
+                checkObjectType('points', data.points, null, Array);
+                checkNumberOfPoints(this.shapeType, data.points);
+                // cut points
+                const { width, height, filename } = this.frameMeta[frame];
+                fittedPoints = this._fitPoints(data.points, data.rotation, width, height);
+                let check = true;
+                if (filename && filename.slice(filename.length - 3) === 'pcd') {
+                    check = false;
+                }
+                if (check) {
+                    if (!checkShapeArea(this.shapeType, fittedPoints)) {
+                        fittedPoints = [];
+                    }
+                }
+            }
+
+            return fittedPoints;
         }
 
         save() {
@@ -1398,7 +1405,7 @@
                 updated[readOnlyField] = false;
             }
 
-            this._validateStateBeforeSave(frame, data, updated);
+            this._validateStateBeforeSave(data, updated);
 
             // Now when all fields are validated, we can apply them
             if (updated.label) {
@@ -1786,7 +1793,7 @@
                 source: this.source,
                 rotation: 0,
                 readOnlyFields: ['group', 'zOrder', 'source', 'rotation'],
-            }, injection.nextClientID(), injection));
+            }, injection.nextClientID(), { ...injection, isSkeletonElement: true }));
         }
 
         static distance(points, x, y) {
@@ -2360,7 +2367,7 @@
 
             /* eslint-disable-next-line no-use-before-define */
             this.elements = Object.values(tracks).map((track) => trackFactory(
-                track, injection.nextClientID(), injection,
+                track, injection.nextClientID(), { ...injection, isSkeletonElement: true },
             ));
         }
 
