@@ -28,17 +28,15 @@ from cvat_api_client.model_utils import (  # noqa: F401
 )
 from cvat_api_client.model.data_meta_read import DataMetaRead
 from cvat_api_client.model.data_request import DataRequest
-from cvat_api_client.model.labeled_data import LabeledData
-from cvat_api_client.model.labeled_data_request import LabeledDataRequest
 from cvat_api_client.model.paginated_job_read_list import PaginatedJobReadList
-from cvat_api_client.model.paginated_task_list import PaginatedTaskList
-from cvat_api_client.model.patched_data_meta_read_request import PatchedDataMetaReadRequest
+from cvat_api_client.model.paginated_task_read_list import PaginatedTaskReadList
 from cvat_api_client.model.patched_job_write_request import PatchedJobWriteRequest
-from cvat_api_client.model.patched_labeled_data_request import PatchedLabeledDataRequest
-from cvat_api_client.model.patched_task_request import PatchedTaskRequest
+from cvat_api_client.model.patched_task_write_request import PatchedTaskWriteRequest
 from cvat_api_client.model.rq_status import RqStatus
-from cvat_api_client.model.task import Task
-from cvat_api_client.model.task_request import TaskRequest
+from cvat_api_client.model.task_file_request import TaskFileRequest
+from cvat_api_client.model.task_read import TaskRead
+from cvat_api_client.model.task_write import TaskWrite
+from cvat_api_client.model.task_write_request import TaskWriteRequest
 
 
 class TasksApi(object):
@@ -132,7 +130,7 @@ class TasksApi(object):
         )
         self.tasks_annotations_create_endpoint = _Endpoint(
             settings={
-                'response_type': (LabeledData,),
+                'response_type': None,
                 'auth': [
                     'SignatureAuthentication',
                     'basicAuth',
@@ -147,18 +145,24 @@ class TasksApi(object):
             params_map={
                 'all': [
                     'id',
-                    'labeled_data_request',
+                    'task_write_request',
                     'x_organization',
+                    'cloud_storage_id',
+                    'filename',
+                    'format',
+                    'location',
                     'org',
                     'org_id',
+                    'use_default_location',
                 ],
                 'required': [
                     'id',
-                    'labeled_data_request',
+                    'task_write_request',
                 ],
                 'nullable': [
                 ],
                 'enum': [
+                    'location',
                 ],
                 'validation': [
                 ]
@@ -167,39 +171,62 @@ class TasksApi(object):
                 'validations': {
                 },
                 'allowed_values': {
+                    ('location',): {
+
+                        "CLOUD_STORAGE": "cloud_storage",
+                        "LOCAL": "local"
+                    },
                 },
                 'openapi_types': {
                     'id':
                         (int,),
-                    'labeled_data_request':
-                        (LabeledDataRequest,),
+                    'task_write_request':
+                        (TaskWriteRequest,),
                     'x_organization':
+                        (str,),
+                    'cloud_storage_id':
+                        (float,),
+                    'filename':
+                        (str,),
+                    'format':
+                        (str,),
+                    'location':
                         (str,),
                     'org':
                         (str,),
                     'org_id':
                         (int,),
+                    'use_default_location':
+                        (bool,),
                 },
                 'attribute_map': {
                     'id': 'id',
                     'x_organization': 'X-Organization',
+                    'cloud_storage_id': 'cloud_storage_id',
+                    'filename': 'filename',
+                    'format': 'format',
+                    'location': 'location',
                     'org': 'org',
                     'org_id': 'org_id',
+                    'use_default_location': 'use_default_location',
                 },
                 'location_map': {
                     'id': 'path',
-                    'labeled_data_request': 'body',
+                    'task_write_request': 'body',
                     'x_organization': 'header',
+                    'cloud_storage_id': 'query',
+                    'filename': 'query',
+                    'format': 'query',
+                    'location': 'query',
                     'org': 'query',
                     'org_id': 'query',
+                    'use_default_location': 'query',
                 },
                 'collection_format_map': {
                 }
             },
             headers_map={
-                'accept': [
-                    'application/vnd.cvat+json'
-                ],
+                'accept': [],
                 'content_type': [
                     'application/json',
                     'application/x-www-form-urlencoded',
@@ -278,7 +305,7 @@ class TasksApi(object):
         )
         self.tasks_annotations_file_partial_update_endpoint = _Endpoint(
             settings={
-                'response_type': (Task,),
+                'response_type': (TaskWrite,),
                 'auth': [
                     'SignatureAuthentication',
                     'basicAuth',
@@ -297,7 +324,7 @@ class TasksApi(object):
                     'x_organization',
                     'org',
                     'org_id',
-                    'patched_task_request',
+                    'patched_task_write_request',
                 ],
                 'required': [
                     'file_id',
@@ -333,8 +360,8 @@ class TasksApi(object):
                         (str,),
                     'org_id':
                         (int,),
-                    'patched_task_request':
-                        (PatchedTaskRequest,),
+                    'patched_task_write_request':
+                        (PatchedTaskWriteRequest,),
                 },
                 'attribute_map': {
                     'file_id': 'file_id',
@@ -349,7 +376,7 @@ class TasksApi(object):
                     'x_organization': 'header',
                     'org': 'query',
                     'org_id': 'query',
-                    'patched_task_request': 'body',
+                    'patched_task_write_request': 'body',
                 },
                 'collection_format_map': {
                 }
@@ -369,7 +396,7 @@ class TasksApi(object):
         )
         self.tasks_annotations_partial_update_endpoint = _Endpoint(
             settings={
-                'response_type': (LabeledData,),
+                'response_type': (TaskWrite,),
                 'auth': [
                     'SignatureAuthentication',
                     'basicAuth',
@@ -388,7 +415,7 @@ class TasksApi(object):
                     'x_organization',
                     'org',
                     'org_id',
-                    'patched_labeled_data_request',
+                    'patched_task_write_request',
                 ],
                 'required': [
                     'action',
@@ -424,8 +451,8 @@ class TasksApi(object):
                         (str,),
                     'org_id':
                         (int,),
-                    'patched_labeled_data_request':
-                        (PatchedLabeledDataRequest,),
+                    'patched_task_write_request':
+                        (PatchedTaskWriteRequest,),
                 },
                 'attribute_map': {
                     'action': 'action',
@@ -440,7 +467,7 @@ class TasksApi(object):
                     'x_organization': 'header',
                     'org': 'query',
                     'org_id': 'query',
-                    'patched_labeled_data_request': 'body',
+                    'patched_task_write_request': 'body',
                 },
                 'collection_format_map': {
                 }
@@ -477,10 +504,13 @@ class TasksApi(object):
                     'id',
                     'x_organization',
                     'action',
+                    'cloud_storage_id',
                     'filename',
                     'format',
+                    'location',
                     'org',
                     'org_id',
+                    'use_default_location',
                 ],
                 'required': [
                     'id',
@@ -489,6 +519,7 @@ class TasksApi(object):
                 ],
                 'enum': [
                     'action',
+                    'location',
                 ],
                 'validation': [
                 ]
@@ -501,6 +532,11 @@ class TasksApi(object):
 
                         "DOWNLOAD": "download"
                     },
+                    ('location',): {
+
+                        "CLOUD_STORAGE": "cloud_storage",
+                        "LOCAL": "local"
+                    },
                 },
                 'openapi_types': {
                     'id':
@@ -509,32 +545,44 @@ class TasksApi(object):
                         (str,),
                     'action':
                         (str,),
+                    'cloud_storage_id':
+                        (float,),
                     'filename':
                         (str,),
                     'format':
+                        (str,),
+                    'location':
                         (str,),
                     'org':
                         (str,),
                     'org_id':
                         (int,),
+                    'use_default_location':
+                        (bool,),
                 },
                 'attribute_map': {
                     'id': 'id',
                     'x_organization': 'X-Organization',
                     'action': 'action',
+                    'cloud_storage_id': 'cloud_storage_id',
                     'filename': 'filename',
                     'format': 'format',
+                    'location': 'location',
                     'org': 'org',
                     'org_id': 'org_id',
+                    'use_default_location': 'use_default_location',
                 },
                 'location_map': {
                     'id': 'path',
                     'x_organization': 'header',
                     'action': 'query',
+                    'cloud_storage_id': 'query',
                     'filename': 'query',
                     'format': 'query',
+                    'location': 'query',
                     'org': 'query',
                     'org_id': 'query',
+                    'use_default_location': 'query',
                 },
                 'collection_format_map': {
                 }
@@ -562,7 +610,7 @@ class TasksApi(object):
             params_map={
                 'all': [
                     'id',
-                    'labeled_data_request',
+                    'task_write_request',
                     'x_organization',
                     'format',
                     'org',
@@ -570,7 +618,7 @@ class TasksApi(object):
                 ],
                 'required': [
                     'id',
-                    'labeled_data_request',
+                    'task_write_request',
                 ],
                 'nullable': [
                 ],
@@ -587,8 +635,8 @@ class TasksApi(object):
                 'openapi_types': {
                     'id':
                         (int,),
-                    'labeled_data_request':
-                        (LabeledDataRequest,),
+                    'task_write_request':
+                        (TaskWriteRequest,),
                     'x_organization':
                         (str,),
                     'format':
@@ -607,7 +655,7 @@ class TasksApi(object):
                 },
                 'location_map': {
                     'id': 'path',
-                    'labeled_data_request': 'body',
+                    'task_write_request': 'body',
                     'x_organization': 'header',
                     'format': 'query',
                     'org': 'query',
@@ -643,17 +691,21 @@ class TasksApi(object):
             },
             params_map={
                 'all': [
-                    'task_request',
+                    'task_file_request',
                     'x_organization',
+                    'cloud_storage_id',
+                    'filename',
+                    'location',
                     'org',
                     'org_id',
                 ],
                 'required': [
-                    'task_request',
+                    'task_file_request',
                 ],
                 'nullable': [
                 ],
                 'enum': [
+                    'location',
                 ],
                 'validation': [
                 ]
@@ -662,11 +714,22 @@ class TasksApi(object):
                 'validations': {
                 },
                 'allowed_values': {
+                    ('location',): {
+
+                        "CLOUD_STORAGE": "cloud_storage",
+                        "LOCAL": "local"
+                    },
                 },
                 'openapi_types': {
-                    'task_request':
-                        (TaskRequest,),
+                    'task_file_request':
+                        (TaskFileRequest,),
                     'x_organization':
+                        (str,),
+                    'cloud_storage_id':
+                        (float,),
+                    'filename':
+                        (str,),
+                    'location':
                         (str,),
                     'org':
                         (str,),
@@ -675,12 +738,18 @@ class TasksApi(object):
                 },
                 'attribute_map': {
                     'x_organization': 'X-Organization',
+                    'cloud_storage_id': 'cloud_storage_id',
+                    'filename': 'filename',
+                    'location': 'location',
                     'org': 'org',
                     'org_id': 'org_id',
                 },
                 'location_map': {
-                    'task_request': 'body',
+                    'task_file_request': 'body',
                     'x_organization': 'header',
+                    'cloud_storage_id': 'query',
+                    'filename': 'query',
+                    'location': 'query',
                     'org': 'query',
                     'org_id': 'query',
                 },
@@ -700,7 +769,7 @@ class TasksApi(object):
         )
         self.tasks_backup_file_partial_update_endpoint = _Endpoint(
             settings={
-                'response_type': (Task,),
+                'response_type': (TaskWrite,),
                 'auth': [
                     'SignatureAuthentication',
                     'basicAuth',
@@ -718,7 +787,7 @@ class TasksApi(object):
                     'x_organization',
                     'org',
                     'org_id',
-                    'patched_task_request',
+                    'patched_task_write_request',
                 ],
                 'required': [
                     'file_id',
@@ -751,8 +820,8 @@ class TasksApi(object):
                         (str,),
                     'org_id':
                         (int,),
-                    'patched_task_request':
-                        (PatchedTaskRequest,),
+                    'patched_task_write_request':
+                        (PatchedTaskWriteRequest,),
                 },
                 'attribute_map': {
                     'file_id': 'file_id',
@@ -765,7 +834,7 @@ class TasksApi(object):
                     'x_organization': 'header',
                     'org': 'query',
                     'org_id': 'query',
-                    'patched_task_request': 'body',
+                    'patched_task_write_request': 'body',
                 },
                 'collection_format_map': {
                 }
@@ -801,8 +870,13 @@ class TasksApi(object):
                 'all': [
                     'id',
                     'x_organization',
+                    'action',
+                    'cloud_storage_id',
+                    'filename',
+                    'location',
                     'org',
                     'org_id',
+                    'use_default_location',
                 ],
                 'required': [
                     'id',
@@ -810,6 +884,8 @@ class TasksApi(object):
                 'nullable': [
                 ],
                 'enum': [
+                    'action',
+                    'location',
                 ],
                 'validation': [
                 ]
@@ -818,28 +894,57 @@ class TasksApi(object):
                 'validations': {
                 },
                 'allowed_values': {
+                    ('action',): {
+
+                        "DOWNLOAD": "download"
+                    },
+                    ('location',): {
+
+                        "CLOUD_STORAGE": "cloud_storage",
+                        "LOCAL": "local"
+                    },
                 },
                 'openapi_types': {
                     'id':
                         (int,),
                     'x_organization':
                         (str,),
+                    'action':
+                        (str,),
+                    'cloud_storage_id':
+                        (float,),
+                    'filename':
+                        (str,),
+                    'location':
+                        (str,),
                     'org':
                         (str,),
                     'org_id':
                         (int,),
+                    'use_default_location':
+                        (bool,),
                 },
                 'attribute_map': {
                     'id': 'id',
                     'x_organization': 'X-Organization',
+                    'action': 'action',
+                    'cloud_storage_id': 'cloud_storage_id',
+                    'filename': 'filename',
+                    'location': 'location',
                     'org': 'org',
                     'org_id': 'org_id',
+                    'use_default_location': 'use_default_location',
                 },
                 'location_map': {
                     'id': 'path',
                     'x_organization': 'header',
+                    'action': 'query',
+                    'cloud_storage_id': 'query',
+                    'filename': 'query',
+                    'location': 'query',
                     'org': 'query',
                     'org_id': 'query',
+                    'use_default_location': 'query',
                 },
                 'collection_format_map': {
                 }
@@ -852,7 +957,7 @@ class TasksApi(object):
         )
         self.tasks_create_endpoint = _Endpoint(
             settings={
-                'response_type': (Task,),
+                'response_type': (TaskWrite,),
                 'auth': [
                     'SignatureAuthentication',
                     'basicAuth',
@@ -866,13 +971,13 @@ class TasksApi(object):
             },
             params_map={
                 'all': [
-                    'task_request',
+                    'task_write_request',
                     'x_organization',
                     'org',
                     'org_id',
                 ],
                 'required': [
-                    'task_request',
+                    'task_write_request',
                 ],
                 'nullable': [
                 ],
@@ -887,8 +992,8 @@ class TasksApi(object):
                 'allowed_values': {
                 },
                 'openapi_types': {
-                    'task_request':
-                        (TaskRequest,),
+                    'task_write_request':
+                        (TaskWriteRequest,),
                     'x_organization':
                         (str,),
                     'org':
@@ -902,7 +1007,7 @@ class TasksApi(object):
                     'org_id': 'org_id',
                 },
                 'location_map': {
-                    'task_request': 'body',
+                    'task_write_request': 'body',
                     'x_organization': 'header',
                     'org': 'query',
                     'org_id': 'query',
@@ -1017,7 +1122,7 @@ class TasksApi(object):
         )
         self.tasks_data_file_partial_update_endpoint = _Endpoint(
             settings={
-                'response_type': (Task,),
+                'response_type': (TaskWrite,),
                 'auth': [
                     'SignatureAuthentication',
                     'basicAuth',
@@ -1036,7 +1141,7 @@ class TasksApi(object):
                     'x_organization',
                     'org',
                     'org_id',
-                    'patched_task_request',
+                    'patched_task_write_request',
                 ],
                 'required': [
                     'file_id',
@@ -1072,8 +1177,8 @@ class TasksApi(object):
                         (str,),
                     'org_id':
                         (int,),
-                    'patched_task_request':
-                        (PatchedTaskRequest,),
+                    'patched_task_write_request':
+                        (PatchedTaskWriteRequest,),
                 },
                 'attribute_map': {
                     'file_id': 'file_id',
@@ -1088,7 +1193,7 @@ class TasksApi(object):
                     'x_organization': 'header',
                     'org': 'query',
                     'org_id': 'query',
-                    'patched_task_request': 'body',
+                    'patched_task_write_request': 'body',
                 },
                 'collection_format_map': {
                 }
@@ -1126,7 +1231,7 @@ class TasksApi(object):
                     'x_organization',
                     'org',
                     'org_id',
-                    'patched_data_meta_read_request',
+                    'patched_task_write_request',
                 ],
                 'required': [
                     'id',
@@ -1152,8 +1257,8 @@ class TasksApi(object):
                         (str,),
                     'org_id':
                         (int,),
-                    'patched_data_meta_read_request':
-                        (PatchedDataMetaReadRequest,),
+                    'patched_task_write_request':
+                        (PatchedTaskWriteRequest,),
                 },
                 'attribute_map': {
                     'id': 'id',
@@ -1166,7 +1271,7 @@ class TasksApi(object):
                     'x_organization': 'header',
                     'org': 'query',
                     'org_id': 'query',
-                    'patched_data_meta_read_request': 'body',
+                    'patched_task_write_request': 'body',
                 },
                 'collection_format_map': {
                 }
@@ -1372,9 +1477,12 @@ class TasksApi(object):
                     'id',
                     'x_organization',
                     'action',
+                    'cloud_storage_id',
                     'filename',
+                    'location',
                     'org',
                     'org_id',
+                    'use_default_location',
                 ],
                 'required': [
                     'format',
@@ -1384,6 +1492,7 @@ class TasksApi(object):
                 ],
                 'enum': [
                     'action',
+                    'location',
                 ],
                 'validation': [
                 ]
@@ -1396,6 +1505,11 @@ class TasksApi(object):
 
                         "DOWNLOAD": "download"
                     },
+                    ('location',): {
+
+                        "CLOUD_STORAGE": "cloud_storage",
+                        "LOCAL": "local"
+                    },
                 },
                 'openapi_types': {
                     'format':
@@ -1406,30 +1520,42 @@ class TasksApi(object):
                         (str,),
                     'action':
                         (str,),
+                    'cloud_storage_id':
+                        (float,),
                     'filename':
+                        (str,),
+                    'location':
                         (str,),
                     'org':
                         (str,),
                     'org_id':
                         (int,),
+                    'use_default_location':
+                        (bool,),
                 },
                 'attribute_map': {
                     'format': 'format',
                     'id': 'id',
                     'x_organization': 'X-Organization',
                     'action': 'action',
+                    'cloud_storage_id': 'cloud_storage_id',
                     'filename': 'filename',
+                    'location': 'location',
                     'org': 'org',
                     'org_id': 'org_id',
+                    'use_default_location': 'use_default_location',
                 },
                 'location_map': {
                     'format': 'query',
                     'id': 'path',
                     'x_organization': 'header',
                     'action': 'query',
+                    'cloud_storage_id': 'query',
                     'filename': 'query',
+                    'location': 'query',
                     'org': 'query',
                     'org_id': 'query',
+                    'use_default_location': 'query',
                 },
                 'collection_format_map': {
                 }
@@ -1603,7 +1729,7 @@ class TasksApi(object):
         )
         self.tasks_list_endpoint = _Endpoint(
             settings={
-                'response_type': (PaginatedTaskList,),
+                'response_type': (PaginatedTaskReadList,),
                 'auth': [
                     'SignatureAuthentication',
                     'basicAuth',
@@ -1690,7 +1816,7 @@ class TasksApi(object):
         )
         self.tasks_partial_update_endpoint = _Endpoint(
             settings={
-                'response_type': (Task,),
+                'response_type': (TaskWrite,),
                 'auth': [
                     'SignatureAuthentication',
                     'basicAuth',
@@ -1708,7 +1834,7 @@ class TasksApi(object):
                     'x_organization',
                     'org',
                     'org_id',
-                    'patched_task_request',
+                    'patched_task_write_request',
                 ],
                 'required': [
                     'id',
@@ -1734,8 +1860,8 @@ class TasksApi(object):
                         (str,),
                     'org_id':
                         (int,),
-                    'patched_task_request':
-                        (PatchedTaskRequest,),
+                    'patched_task_write_request':
+                        (PatchedTaskWriteRequest,),
                 },
                 'attribute_map': {
                     'id': 'id',
@@ -1748,7 +1874,7 @@ class TasksApi(object):
                     'x_organization': 'header',
                     'org': 'query',
                     'org_id': 'query',
-                    'patched_task_request': 'body',
+                    'patched_task_write_request': 'body',
                 },
                 'collection_format_map': {
                 }
@@ -1768,7 +1894,7 @@ class TasksApi(object):
         )
         self.tasks_retrieve_endpoint = _Endpoint(
             settings={
-                'response_type': (Task,),
+                'response_type': (TaskRead,),
                 'auth': [
                     'SignatureAuthentication',
                     'basicAuth',
@@ -1906,7 +2032,7 @@ class TasksApi(object):
         )
         self.tasks_update_endpoint = _Endpoint(
             settings={
-                'response_type': (Task,),
+                'response_type': (TaskWrite,),
                 'auth': [
                     'SignatureAuthentication',
                     'basicAuth',
@@ -1921,14 +2047,14 @@ class TasksApi(object):
             params_map={
                 'all': [
                     'id',
-                    'task_request',
+                    'task_write_request',
                     'x_organization',
                     'org',
                     'org_id',
                 ],
                 'required': [
                     'id',
-                    'task_request',
+                    'task_write_request',
                 ],
                 'nullable': [
                 ],
@@ -1945,8 +2071,8 @@ class TasksApi(object):
                 'openapi_types': {
                     'id':
                         (int,),
-                    'task_request':
-                        (TaskRequest,),
+                    'task_write_request':
+                        (TaskWriteRequest,),
                     'x_organization':
                         (str,),
                     'org':
@@ -1962,7 +2088,7 @@ class TasksApi(object):
                 },
                 'location_map': {
                     'id': 'path',
-                    'task_request': 'body',
+                    'task_write_request': 'body',
                     'x_organization': 'header',
                     'org': 'query',
                     'org_id': 'query',
@@ -2200,39 +2326,39 @@ class TasksApi(object):
     def tasks_annotations_create(
         self,
         id,
-        labeled_data_request,
+        task_write_request,
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
         **kwargs
-    ) -> object:
+    ) -> None:
         ...
 
     @overload
     def tasks_annotations_create(
         self,
         id,
-        labeled_data_request,
+        task_write_request,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
         **kwargs
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
         ...
 
     @overload
     def tasks_annotations_create(
         self,
         id,
-        labeled_data_request,
+        task_write_request,
         _return_http_data_only: typing.Literal[False],
         **kwargs
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
         ...
 
     @overload
     def tasks_annotations_create(
         self,
         id,
-        labeled_data_request,
+        task_write_request,
         _preload_content: typing.Literal[False],
         **kwargs
     ) -> urllib3.HTTPResponse:
@@ -2242,7 +2368,7 @@ class TasksApi(object):
     def tasks_annotations_create(
         self,
         id,
-        labeled_data_request,
+        task_write_request,
         _return_http_data_only: typing.Literal[True],
         _preload_content: typing.Literal[False],
         **kwargs
@@ -2253,7 +2379,7 @@ class TasksApi(object):
     def tasks_annotations_create(
         self,
         id,
-        labeled_data_request,
+        task_write_request,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
         **kwargs
@@ -2263,29 +2389,34 @@ class TasksApi(object):
     def tasks_annotations_create(
         self,
         id,
-        labeled_data_request,
+        task_write_request,
         **kwargs
     ) -> typing.Union[
-            typing.Tuple[object, int, typing.Dict[str, str]],
+            typing.Tuple[None, int, typing.Dict[str, str]],
             urllib3.HTTPResponse,
-            object
+            None
     ]:
-        """tasks_annotations_create  # noqa: E501
+        """Method allows to upload task annotations from storage  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.tasks_annotations_create(id, labeled_data_request, async_req=True)
+        >>> thread = api.tasks_annotations_create(id, task_write_request, async_req=True)
         >>> result = thread.get()
 
         Args:
             id (int): A unique integer value identifying this task.
-            labeled_data_request (LabeledDataRequest):
+            task_write_request (TaskWriteRequest):
 
         Keyword Args:
             x_organization (str): [optional]
+            cloud_storage_id (float): Storage id. [optional]
+            filename (str): Annotation file name. [optional]
+            format (str): Input format name You can get the list of supported formats at: /server/annotation/formats. [optional]
+            location (str): where to import the annotation from. [optional]
             org (str): Organization unique slug. [optional]
             org_id (int): Organization identifier. [optional]
+            use_default_location (bool): Use the location that was configured in task to import annotations. [optional] if omitted the server will use the default value of True
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
             _preload_content (bool): if False, the urllib3.HTTPResponse object
@@ -2322,7 +2453,7 @@ class TasksApi(object):
             async_req (bool): execute request asynchronously
 
         Returns:
-            LabeledData
+            None
                 If the method is called asynchronously, returns the request
                 thread.
         """
@@ -2356,8 +2487,8 @@ class TasksApi(object):
         kwargs['_request_auths'] = kwargs.get('_request_auths', None)
         kwargs['id'] = \
             id
-        kwargs['labeled_data_request'] = \
-            labeled_data_request
+        kwargs['task_write_request'] = \
+            task_write_request
         return self.tasks_annotations_create_endpoint.call_with_http_info(**kwargs)
 
     def tasks_annotations_create_raw(
@@ -2370,22 +2501,27 @@ class TasksApi(object):
         Equivalent to calling tasks_annotations_create with
         _preload_content = False and _check_status=False
 
-        tasks_annotations_create  # noqa: E501
+        Method allows to upload task annotations from storage  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.tasks_annotations_create(id, labeled_data_request, async_req=True)
+        >>> thread = api.tasks_annotations_create(id, task_write_request, async_req=True)
         >>> result = thread.get()
 
         Args:
             id (int): A unique integer value identifying this task.
-            labeled_data_request (LabeledDataRequest):
+            task_write_request (TaskWriteRequest):
 
         Keyword Args:
             x_organization (str): [optional]
+            cloud_storage_id (float): Storage id. [optional]
+            filename (str): Annotation file name. [optional]
+            format (str): Input format name You can get the list of supported formats at: /server/annotation/formats. [optional]
+            location (str): where to import the annotation from. [optional]
             org (str): Organization unique slug. [optional]
             org_id (int): Organization identifier. [optional]
+            use_default_location (bool): Use the location that was configured in task to import annotations. [optional] if omitted the server will use the default value of True
             _request_timeout (int/float/tuple): timeout setting for this request. If
                 one number provided, it will be total request timeout. It can also
                 be a pair (tuple) of (connection, read) timeouts.
@@ -2410,7 +2546,7 @@ class TasksApi(object):
             async_req (bool): execute request asynchronously
 
         Returns:
-            LabeledData
+            None
                 If the method is called asynchronously, returns the request
                 thread.
         """
@@ -2717,7 +2853,7 @@ class TasksApi(object):
             x_organization (str): [optional]
             org (str): Organization unique slug. [optional]
             org_id (int): Organization identifier. [optional]
-            patched_task_request (PatchedTaskRequest): [optional]
+            patched_task_write_request (PatchedTaskWriteRequest): [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
             _preload_content (bool): if False, the urllib3.HTTPResponse object
@@ -2754,7 +2890,7 @@ class TasksApi(object):
             async_req (bool): execute request asynchronously
 
         Returns:
-            Task
+            TaskWrite
                 If the method is called asynchronously, returns the request
                 thread.
         """
@@ -2818,7 +2954,7 @@ class TasksApi(object):
             x_organization (str): [optional]
             org (str): Organization unique slug. [optional]
             org_id (int): Organization identifier. [optional]
-            patched_task_request (PatchedTaskRequest): [optional]
+            patched_task_write_request (PatchedTaskWriteRequest): [optional]
             _request_timeout (int/float/tuple): timeout setting for this request. If
                 one number provided, it will be total request timeout. It can also
                 be a pair (tuple) of (connection, read) timeouts.
@@ -2843,7 +2979,7 @@ class TasksApi(object):
             async_req (bool): execute request asynchronously
 
         Returns:
-            Task
+            TaskWrite
                 If the method is called asynchronously, returns the request
                 thread.
         """
@@ -2940,7 +3076,7 @@ class TasksApi(object):
             x_organization (str): [optional]
             org (str): Organization unique slug. [optional]
             org_id (int): Organization identifier. [optional]
-            patched_labeled_data_request (PatchedLabeledDataRequest): [optional]
+            patched_task_write_request (PatchedTaskWriteRequest): [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
             _preload_content (bool): if False, the urllib3.HTTPResponse object
@@ -2977,7 +3113,7 @@ class TasksApi(object):
             async_req (bool): execute request asynchronously
 
         Returns:
-            LabeledData
+            TaskWrite
                 If the method is called asynchronously, returns the request
                 thread.
         """
@@ -3041,7 +3177,7 @@ class TasksApi(object):
             x_organization (str): [optional]
             org (str): Organization unique slug. [optional]
             org_id (int): Organization identifier. [optional]
-            patched_labeled_data_request (PatchedLabeledDataRequest): [optional]
+            patched_task_write_request (PatchedTaskWriteRequest): [optional]
             _request_timeout (int/float/tuple): timeout setting for this request. If
                 one number provided, it will be total request timeout. It can also
                 be a pair (tuple) of (connection, read) timeouts.
@@ -3066,7 +3202,7 @@ class TasksApi(object):
             async_req (bool): execute request asynchronously
 
         Returns:
-            LabeledData
+            TaskWrite
                 If the method is called asynchronously, returns the request
                 thread.
         """
@@ -3154,10 +3290,13 @@ class TasksApi(object):
         Keyword Args:
             x_organization (str): [optional]
             action (str): Used to start downloading process after annotation file had been created. [optional] if omitted the server will use the default value of "download"
+            cloud_storage_id (float): Storage id. [optional]
             filename (str): Desired output file name. [optional]
             format (str): Desired output format name You can get the list of supported formats at: /server/annotation/formats. [optional]
+            location (str): Where need to save downloaded dataset. [optional]
             org (str): Organization unique slug. [optional]
             org_id (int): Organization identifier. [optional]
+            use_default_location (bool): Use the location that was configured in the task to export annotation. [optional] if omitted the server will use the default value of True
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
             _preload_content (bool): if False, the urllib3.HTTPResponse object
@@ -3254,10 +3393,13 @@ class TasksApi(object):
         Keyword Args:
             x_organization (str): [optional]
             action (str): Used to start downloading process after annotation file had been created. [optional] if omitted the server will use the default value of "download"
+            cloud_storage_id (float): Storage id. [optional]
             filename (str): Desired output file name. [optional]
             format (str): Desired output format name You can get the list of supported formats at: /server/annotation/formats. [optional]
+            location (str): Where need to save downloaded dataset. [optional]
             org (str): Organization unique slug. [optional]
             org_id (int): Organization identifier. [optional]
+            use_default_location (bool): Use the location that was configured in the task to export annotation. [optional] if omitted the server will use the default value of True
             _request_timeout (int/float/tuple): timeout setting for this request. If
                 one number provided, it will be total request timeout. It can also
                 be a pair (tuple) of (connection, read) timeouts.
@@ -3293,7 +3435,7 @@ class TasksApi(object):
     def tasks_annotations_update(
         self,
         id,
-        labeled_data_request,
+        task_write_request,
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
         **kwargs
@@ -3304,7 +3446,7 @@ class TasksApi(object):
     def tasks_annotations_update(
         self,
         id,
-        labeled_data_request,
+        task_write_request,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
         **kwargs
@@ -3315,7 +3457,7 @@ class TasksApi(object):
     def tasks_annotations_update(
         self,
         id,
-        labeled_data_request,
+        task_write_request,
         _return_http_data_only: typing.Literal[False],
         **kwargs
     ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
@@ -3325,7 +3467,7 @@ class TasksApi(object):
     def tasks_annotations_update(
         self,
         id,
-        labeled_data_request,
+        task_write_request,
         _preload_content: typing.Literal[False],
         **kwargs
     ) -> urllib3.HTTPResponse:
@@ -3335,7 +3477,7 @@ class TasksApi(object):
     def tasks_annotations_update(
         self,
         id,
-        labeled_data_request,
+        task_write_request,
         _return_http_data_only: typing.Literal[True],
         _preload_content: typing.Literal[False],
         **kwargs
@@ -3346,7 +3488,7 @@ class TasksApi(object):
     def tasks_annotations_update(
         self,
         id,
-        labeled_data_request,
+        task_write_request,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
         **kwargs
@@ -3356,7 +3498,7 @@ class TasksApi(object):
     def tasks_annotations_update(
         self,
         id,
-        labeled_data_request,
+        task_write_request,
         **kwargs
     ) -> typing.Union[
             typing.Tuple[None, int, typing.Dict[str, str]],
@@ -3368,12 +3510,12 @@ class TasksApi(object):
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.tasks_annotations_update(id, labeled_data_request, async_req=True)
+        >>> thread = api.tasks_annotations_update(id, task_write_request, async_req=True)
         >>> result = thread.get()
 
         Args:
             id (int): A unique integer value identifying this task.
-            labeled_data_request (LabeledDataRequest):
+            task_write_request (TaskWriteRequest):
 
         Keyword Args:
             x_organization (str): [optional]
@@ -3450,8 +3592,8 @@ class TasksApi(object):
         kwargs['_request_auths'] = kwargs.get('_request_auths', None)
         kwargs['id'] = \
             id
-        kwargs['labeled_data_request'] = \
-            labeled_data_request
+        kwargs['task_write_request'] = \
+            task_write_request
         return self.tasks_annotations_update_endpoint.call_with_http_info(**kwargs)
 
     def tasks_annotations_update_raw(
@@ -3469,12 +3611,12 @@ class TasksApi(object):
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.tasks_annotations_update(id, labeled_data_request, async_req=True)
+        >>> thread = api.tasks_annotations_update(id, task_write_request, async_req=True)
         >>> result = thread.get()
 
         Args:
             id (int): A unique integer value identifying this task.
-            labeled_data_request (LabeledDataRequest):
+            task_write_request (TaskWriteRequest):
 
         Keyword Args:
             x_organization (str): [optional]
@@ -3515,7 +3657,7 @@ class TasksApi(object):
     @overload
     def tasks_backup_create(
         self,
-        task_request,
+        task_file_request,
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
         **kwargs
@@ -3525,7 +3667,7 @@ class TasksApi(object):
     @overload
     def tasks_backup_create(
         self,
-        task_request,
+        task_file_request,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
         **kwargs
@@ -3535,7 +3677,7 @@ class TasksApi(object):
     @overload
     def tasks_backup_create(
         self,
-        task_request,
+        task_file_request,
         _return_http_data_only: typing.Literal[False],
         **kwargs
     ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
@@ -3544,7 +3686,7 @@ class TasksApi(object):
     @overload
     def tasks_backup_create(
         self,
-        task_request,
+        task_file_request,
         _preload_content: typing.Literal[False],
         **kwargs
     ) -> urllib3.HTTPResponse:
@@ -3553,7 +3695,7 @@ class TasksApi(object):
     @overload
     def tasks_backup_create(
         self,
-        task_request,
+        task_file_request,
         _return_http_data_only: typing.Literal[True],
         _preload_content: typing.Literal[False],
         **kwargs
@@ -3563,7 +3705,7 @@ class TasksApi(object):
     @overload
     def tasks_backup_create(
         self,
-        task_request,
+        task_file_request,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
         **kwargs
@@ -3572,7 +3714,7 @@ class TasksApi(object):
 
     def tasks_backup_create(
         self,
-        task_request,
+        task_file_request,
         **kwargs
     ) -> typing.Union[
             typing.Tuple[None, int, typing.Dict[str, str]],
@@ -3584,14 +3726,17 @@ class TasksApi(object):
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.tasks_backup_create(task_request, async_req=True)
+        >>> thread = api.tasks_backup_create(task_file_request, async_req=True)
         >>> result = thread.get()
 
         Args:
-            task_request (TaskRequest):
+            task_file_request (TaskFileRequest):
 
         Keyword Args:
             x_organization (str): [optional]
+            cloud_storage_id (float): Storage id. [optional]
+            filename (str): Backup file name. [optional]
+            location (str): Where to import the backup file from. [optional] if omitted the server will use the default value of "local"
             org (str): Organization unique slug. [optional]
             org_id (int): Organization identifier. [optional]
             _return_http_data_only (bool): response data without head status
@@ -3662,8 +3807,8 @@ class TasksApi(object):
             '_content_type')
         kwargs['_host_index'] = kwargs.get('_host_index')
         kwargs['_request_auths'] = kwargs.get('_request_auths', None)
-        kwargs['task_request'] = \
-            task_request
+        kwargs['task_file_request'] = \
+            task_file_request
         return self.tasks_backup_create_endpoint.call_with_http_info(**kwargs)
 
     def tasks_backup_create_raw(
@@ -3681,14 +3826,17 @@ class TasksApi(object):
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.tasks_backup_create(task_request, async_req=True)
+        >>> thread = api.tasks_backup_create(task_file_request, async_req=True)
         >>> result = thread.get()
 
         Args:
-            task_request (TaskRequest):
+            task_file_request (TaskFileRequest):
 
         Keyword Args:
             x_organization (str): [optional]
+            cloud_storage_id (float): Storage id. [optional]
+            filename (str): Backup file name. [optional]
+            location (str): Where to import the backup file from. [optional] if omitted the server will use the default value of "local"
             org (str): Organization unique slug. [optional]
             org_id (int): Organization identifier. [optional]
             _request_timeout (int/float/tuple): timeout setting for this request. If
@@ -3804,7 +3952,7 @@ class TasksApi(object):
             x_organization (str): [optional]
             org (str): Organization unique slug. [optional]
             org_id (int): Organization identifier. [optional]
-            patched_task_request (PatchedTaskRequest): [optional]
+            patched_task_write_request (PatchedTaskWriteRequest): [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
             _preload_content (bool): if False, the urllib3.HTTPResponse object
@@ -3841,7 +3989,7 @@ class TasksApi(object):
             async_req (bool): execute request asynchronously
 
         Returns:
-            Task
+            TaskWrite
                 If the method is called asynchronously, returns the request
                 thread.
         """
@@ -3902,7 +4050,7 @@ class TasksApi(object):
             x_organization (str): [optional]
             org (str): Organization unique slug. [optional]
             org_id (int): Organization identifier. [optional]
-            patched_task_request (PatchedTaskRequest): [optional]
+            patched_task_write_request (PatchedTaskWriteRequest): [optional]
             _request_timeout (int/float/tuple): timeout setting for this request. If
                 one number provided, it will be total request timeout. It can also
                 be a pair (tuple) of (connection, read) timeouts.
@@ -3927,7 +4075,7 @@ class TasksApi(object):
             async_req (bool): execute request asynchronously
 
         Returns:
-            Task
+            TaskWrite
                 If the method is called asynchronously, returns the request
                 thread.
         """
@@ -4014,8 +4162,13 @@ class TasksApi(object):
 
         Keyword Args:
             x_organization (str): [optional]
+            action (str): Used to start downloading process after backup file had been created. [optional] if omitted the server will use the default value of "download"
+            cloud_storage_id (float): Storage id. [optional]
+            filename (str): Backup file name. [optional]
+            location (str): Where need to save downloaded backup. [optional]
             org (str): Organization unique slug. [optional]
             org_id (int): Organization identifier. [optional]
+            use_default_location (bool): Use the location that was configured in the task to export backup. [optional] if omitted the server will use the default value of True
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
             _preload_content (bool): if False, the urllib3.HTTPResponse object
@@ -4111,8 +4264,13 @@ class TasksApi(object):
 
         Keyword Args:
             x_organization (str): [optional]
+            action (str): Used to start downloading process after backup file had been created. [optional] if omitted the server will use the default value of "download"
+            cloud_storage_id (float): Storage id. [optional]
+            filename (str): Backup file name. [optional]
+            location (str): Where need to save downloaded backup. [optional]
             org (str): Organization unique slug. [optional]
             org_id (int): Organization identifier. [optional]
+            use_default_location (bool): Use the location that was configured in the task to export backup. [optional] if omitted the server will use the default value of True
             _request_timeout (int/float/tuple): timeout setting for this request. If
                 one number provided, it will be total request timeout. It can also
                 be a pair (tuple) of (connection, read) timeouts.
@@ -4147,7 +4305,7 @@ class TasksApi(object):
     @overload
     def tasks_create(
         self,
-        task_request,
+        task_write_request,
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
         **kwargs
@@ -4157,7 +4315,7 @@ class TasksApi(object):
     @overload
     def tasks_create(
         self,
-        task_request,
+        task_write_request,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
         **kwargs
@@ -4167,7 +4325,7 @@ class TasksApi(object):
     @overload
     def tasks_create(
         self,
-        task_request,
+        task_write_request,
         _return_http_data_only: typing.Literal[False],
         **kwargs
     ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
@@ -4176,7 +4334,7 @@ class TasksApi(object):
     @overload
     def tasks_create(
         self,
-        task_request,
+        task_write_request,
         _preload_content: typing.Literal[False],
         **kwargs
     ) -> urllib3.HTTPResponse:
@@ -4185,7 +4343,7 @@ class TasksApi(object):
     @overload
     def tasks_create(
         self,
-        task_request,
+        task_write_request,
         _return_http_data_only: typing.Literal[True],
         _preload_content: typing.Literal[False],
         **kwargs
@@ -4195,7 +4353,7 @@ class TasksApi(object):
     @overload
     def tasks_create(
         self,
-        task_request,
+        task_write_request,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
         **kwargs
@@ -4204,7 +4362,7 @@ class TasksApi(object):
 
     def tasks_create(
         self,
-        task_request,
+        task_write_request,
         **kwargs
     ) -> typing.Union[
             typing.Tuple[object, int, typing.Dict[str, str]],
@@ -4216,11 +4374,11 @@ class TasksApi(object):
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.tasks_create(task_request, async_req=True)
+        >>> thread = api.tasks_create(task_write_request, async_req=True)
         >>> result = thread.get()
 
         Args:
-            task_request (TaskRequest):
+            task_write_request (TaskWriteRequest):
 
         Keyword Args:
             x_organization (str): [optional]
@@ -4262,7 +4420,7 @@ class TasksApi(object):
             async_req (bool): execute request asynchronously
 
         Returns:
-            Task
+            TaskWrite
                 If the method is called asynchronously, returns the request
                 thread.
         """
@@ -4294,8 +4452,8 @@ class TasksApi(object):
             '_content_type')
         kwargs['_host_index'] = kwargs.get('_host_index')
         kwargs['_request_auths'] = kwargs.get('_request_auths', None)
-        kwargs['task_request'] = \
-            task_request
+        kwargs['task_write_request'] = \
+            task_write_request
         return self.tasks_create_endpoint.call_with_http_info(**kwargs)
 
     def tasks_create_raw(
@@ -4313,11 +4471,11 @@ class TasksApi(object):
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.tasks_create(task_request, async_req=True)
+        >>> thread = api.tasks_create(task_write_request, async_req=True)
         >>> result = thread.get()
 
         Args:
-            task_request (TaskRequest):
+            task_write_request (TaskWriteRequest):
 
         Keyword Args:
             x_organization (str): [optional]
@@ -4347,7 +4505,7 @@ class TasksApi(object):
             async_req (bool): execute request asynchronously
 
         Returns:
-            Task
+            TaskWrite
                 If the method is called asynchronously, returns the request
                 thread.
         """
@@ -4671,7 +4829,7 @@ class TasksApi(object):
             x_organization (str): [optional]
             org (str): Organization unique slug. [optional]
             org_id (int): Organization identifier. [optional]
-            patched_task_request (PatchedTaskRequest): [optional]
+            patched_task_write_request (PatchedTaskWriteRequest): [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
             _preload_content (bool): if False, the urllib3.HTTPResponse object
@@ -4708,7 +4866,7 @@ class TasksApi(object):
             async_req (bool): execute request asynchronously
 
         Returns:
-            Task
+            TaskWrite
                 If the method is called asynchronously, returns the request
                 thread.
         """
@@ -4772,7 +4930,7 @@ class TasksApi(object):
             x_organization (str): [optional]
             org (str): Organization unique slug. [optional]
             org_id (int): Organization identifier. [optional]
-            patched_task_request (PatchedTaskRequest): [optional]
+            patched_task_write_request (PatchedTaskWriteRequest): [optional]
             _request_timeout (int/float/tuple): timeout setting for this request. If
                 one number provided, it will be total request timeout. It can also
                 be a pair (tuple) of (connection, read) timeouts.
@@ -4797,7 +4955,7 @@ class TasksApi(object):
             async_req (bool): execute request asynchronously
 
         Returns:
-            Task
+            TaskWrite
                 If the method is called asynchronously, returns the request
                 thread.
         """
@@ -4886,7 +5044,7 @@ class TasksApi(object):
             x_organization (str): [optional]
             org (str): Organization unique slug. [optional]
             org_id (int): Organization identifier. [optional]
-            patched_data_meta_read_request (PatchedDataMetaReadRequest): [optional]
+            patched_task_write_request (PatchedTaskWriteRequest): [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
             _preload_content (bool): if False, the urllib3.HTTPResponse object
@@ -4984,7 +5142,7 @@ class TasksApi(object):
             x_organization (str): [optional]
             org (str): Organization unique slug. [optional]
             org_id (int): Organization identifier. [optional]
-            patched_data_meta_read_request (PatchedDataMetaReadRequest): [optional]
+            patched_task_write_request (PatchedTaskWriteRequest): [optional]
             _request_timeout (int/float/tuple): timeout setting for this request. If
                 one number provided, it will be total request timeout. It can also
                 be a pair (tuple) of (connection, read) timeouts.
@@ -5558,9 +5716,12 @@ class TasksApi(object):
         Keyword Args:
             x_organization (str): [optional]
             action (str): Used to start downloading process after annotation file had been created. [optional] if omitted the server will use the default value of "download"
+            cloud_storage_id (float): Storage id. [optional]
             filename (str): Desired output file name. [optional]
+            location (str): Where need to save downloaded dataset. [optional]
             org (str): Organization unique slug. [optional]
             org_id (int): Organization identifier. [optional]
+            use_default_location (bool): Use the location that was configured in task to export annotations. [optional] if omitted the server will use the default value of True
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
             _preload_content (bool): if False, the urllib3.HTTPResponse object
@@ -5660,9 +5821,12 @@ class TasksApi(object):
         Keyword Args:
             x_organization (str): [optional]
             action (str): Used to start downloading process after annotation file had been created. [optional] if omitted the server will use the default value of "download"
+            cloud_storage_id (float): Storage id. [optional]
             filename (str): Desired output file name. [optional]
+            location (str): Where need to save downloaded dataset. [optional]
             org (str): Organization unique slug. [optional]
             org_id (int): Organization identifier. [optional]
+            use_default_location (bool): Use the location that was configured in task to export annotations. [optional] if omitted the server will use the default value of True
             _request_timeout (int/float/tuple): timeout setting for this request. If
                 one number provided, it will be total request timeout. It can also
                 be a pair (tuple) of (connection, read) timeouts.
@@ -6238,7 +6402,7 @@ class TasksApi(object):
             async_req (bool): execute request asynchronously
 
         Returns:
-            PaginatedTaskList
+            PaginatedTaskReadList
                 If the method is called asynchronously, returns the request
                 thread.
         """
@@ -6324,7 +6488,7 @@ class TasksApi(object):
             async_req (bool): execute request asynchronously
 
         Returns:
-            PaginatedTaskList
+            PaginatedTaskReadList
                 If the method is called asynchronously, returns the request
                 thread.
         """
@@ -6413,7 +6577,7 @@ class TasksApi(object):
             x_organization (str): [optional]
             org (str): Organization unique slug. [optional]
             org_id (int): Organization identifier. [optional]
-            patched_task_request (PatchedTaskRequest): [optional]
+            patched_task_write_request (PatchedTaskWriteRequest): [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
             _preload_content (bool): if False, the urllib3.HTTPResponse object
@@ -6450,7 +6614,7 @@ class TasksApi(object):
             async_req (bool): execute request asynchronously
 
         Returns:
-            Task
+            TaskWrite
                 If the method is called asynchronously, returns the request
                 thread.
         """
@@ -6511,7 +6675,7 @@ class TasksApi(object):
             x_organization (str): [optional]
             org (str): Organization unique slug. [optional]
             org_id (int): Organization identifier. [optional]
-            patched_task_request (PatchedTaskRequest): [optional]
+            patched_task_write_request (PatchedTaskWriteRequest): [optional]
             _request_timeout (int/float/tuple): timeout setting for this request. If
                 one number provided, it will be total request timeout. It can also
                 be a pair (tuple) of (connection, read) timeouts.
@@ -6536,7 +6700,7 @@ class TasksApi(object):
             async_req (bool): execute request asynchronously
 
         Returns:
-            Task
+            TaskWrite
                 If the method is called asynchronously, returns the request
                 thread.
         """
@@ -6661,7 +6825,7 @@ class TasksApi(object):
             async_req (bool): execute request asynchronously
 
         Returns:
-            Task
+            TaskRead
                 If the method is called asynchronously, returns the request
                 thread.
         """
@@ -6746,7 +6910,7 @@ class TasksApi(object):
             async_req (bool): execute request asynchronously
 
         Returns:
-            Task
+            TaskRead
                 If the method is called asynchronously, returns the request
                 thread.
         """
@@ -6967,7 +7131,7 @@ class TasksApi(object):
     def tasks_update(
         self,
         id,
-        task_request,
+        task_write_request,
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
         **kwargs
@@ -6978,7 +7142,7 @@ class TasksApi(object):
     def tasks_update(
         self,
         id,
-        task_request,
+        task_write_request,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
         **kwargs
@@ -6989,7 +7153,7 @@ class TasksApi(object):
     def tasks_update(
         self,
         id,
-        task_request,
+        task_write_request,
         _return_http_data_only: typing.Literal[False],
         **kwargs
     ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
@@ -6999,7 +7163,7 @@ class TasksApi(object):
     def tasks_update(
         self,
         id,
-        task_request,
+        task_write_request,
         _preload_content: typing.Literal[False],
         **kwargs
     ) -> urllib3.HTTPResponse:
@@ -7009,7 +7173,7 @@ class TasksApi(object):
     def tasks_update(
         self,
         id,
-        task_request,
+        task_write_request,
         _return_http_data_only: typing.Literal[True],
         _preload_content: typing.Literal[False],
         **kwargs
@@ -7020,7 +7184,7 @@ class TasksApi(object):
     def tasks_update(
         self,
         id,
-        task_request,
+        task_write_request,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
         **kwargs
@@ -7030,7 +7194,7 @@ class TasksApi(object):
     def tasks_update(
         self,
         id,
-        task_request,
+        task_write_request,
         **kwargs
     ) -> typing.Union[
             typing.Tuple[object, int, typing.Dict[str, str]],
@@ -7042,12 +7206,12 @@ class TasksApi(object):
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.tasks_update(id, task_request, async_req=True)
+        >>> thread = api.tasks_update(id, task_write_request, async_req=True)
         >>> result = thread.get()
 
         Args:
             id (int): A unique integer value identifying this task.
-            task_request (TaskRequest):
+            task_write_request (TaskWriteRequest):
 
         Keyword Args:
             x_organization (str): [optional]
@@ -7089,7 +7253,7 @@ class TasksApi(object):
             async_req (bool): execute request asynchronously
 
         Returns:
-            Task
+            TaskWrite
                 If the method is called asynchronously, returns the request
                 thread.
         """
@@ -7123,8 +7287,8 @@ class TasksApi(object):
         kwargs['_request_auths'] = kwargs.get('_request_auths', None)
         kwargs['id'] = \
             id
-        kwargs['task_request'] = \
-            task_request
+        kwargs['task_write_request'] = \
+            task_write_request
         return self.tasks_update_endpoint.call_with_http_info(**kwargs)
 
     def tasks_update_raw(
@@ -7142,12 +7306,12 @@ class TasksApi(object):
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.tasks_update(id, task_request, async_req=True)
+        >>> thread = api.tasks_update(id, task_write_request, async_req=True)
         >>> result = thread.get()
 
         Args:
             id (int): A unique integer value identifying this task.
-            task_request (TaskRequest):
+            task_write_request (TaskWriteRequest):
 
         Keyword Args:
             x_organization (str): [optional]
@@ -7177,7 +7341,7 @@ class TasksApi(object):
             async_req (bool): execute request asynchronously
 
         Returns:
-            Task
+            TaskWrite
                 If the method is called asynchronously, returns the request
                 thread.
         """

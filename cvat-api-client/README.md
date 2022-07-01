@@ -129,6 +129,7 @@ Class | Method | HTTP request | Description
 *AuthApi* | [**auth_password_reset_create**](docs/AuthApi.md#auth_password_reset_create) | **POST** /api/auth/password/reset | 
 *AuthApi* | [**auth_register_create**](docs/AuthApi.md#auth_register_create) | **POST** /api/auth/register | 
 *AuthApi* | [**auth_signing_create**](docs/AuthApi.md#auth_signing_create) | **POST** /api/auth/signing | This method signs URL for access to the server
+*CloudStoragesApi* | [**cloudstorages_actions_retrieve**](docs/CloudStoragesApi.md#cloudstorages_actions_retrieve) | **GET** /api/cloudstorages/{id}/actions | Method returns allowed actions for the cloud storage
 *CloudStoragesApi* | [**cloudstorages_content_retrieve**](docs/CloudStoragesApi.md#cloudstorages_content_retrieve) | **GET** /api/cloudstorages/{id}/content | Method returns a manifest content
 *CloudStoragesApi* | [**cloudstorages_create**](docs/CloudStoragesApi.md#cloudstorages_create) | **POST** /api/cloudstorages | Method creates a cloud storage with a specified characteristics
 *CloudStoragesApi* | [**cloudstorages_destroy**](docs/CloudStoragesApi.md#cloudstorages_destroy) | **DELETE** /api/cloudstorages/{id} | Method deletes a specific cloud storage
@@ -153,15 +154,16 @@ Class | Method | HTTP request | Description
 *IssuesApi* | [**issues_list**](docs/IssuesApi.md#issues_list) | **GET** /api/issues | Method returns a paginated list of issues according to query parameters
 *IssuesApi* | [**issues_partial_update**](docs/IssuesApi.md#issues_partial_update) | **PATCH** /api/issues/{id} | Methods does a partial update of chosen fields in an issue
 *IssuesApi* | [**issues_retrieve**](docs/IssuesApi.md#issues_retrieve) | **GET** /api/issues/{id} | Method returns details of an issue
-*JobsApi* | [**jobs_annotations_create**](docs/JobsApi.md#jobs_annotations_create) | **POST** /api/jobs/{id}/annotations/ | 
+*JobsApi* | [**jobs_annotations_create**](docs/JobsApi.md#jobs_annotations_create) | **POST** /api/jobs/{id}/annotations/ | Method allows to upload job annotations
 *JobsApi* | [**jobs_annotations_destroy**](docs/JobsApi.md#jobs_annotations_destroy) | **DELETE** /api/jobs/{id}/annotations/ | Method deletes all annotations for a specific job
 *JobsApi* | [**jobs_annotations_file_partial_update**](docs/JobsApi.md#jobs_annotations_file_partial_update) | **PATCH** /api/jobs/{id}/annotations/{file_id} | Allows to upload an annotation file chunk. Implements TUS file uploading protocol.
-*JobsApi* | [**jobs_annotations_list**](docs/JobsApi.md#jobs_annotations_list) | **GET** /api/jobs/{id}/annotations/ | Method returns annotations for a specific job
 *JobsApi* | [**jobs_annotations_partial_update**](docs/JobsApi.md#jobs_annotations_partial_update) | **PATCH** /api/jobs/{id}/annotations/ | Method performs a partial update of annotations in a specific job
+*JobsApi* | [**jobs_annotations_retrieve**](docs/JobsApi.md#jobs_annotations_retrieve) | **GET** /api/jobs/{id}/annotations/ | Method returns annotations for a specific job
 *JobsApi* | [**jobs_annotations_update**](docs/JobsApi.md#jobs_annotations_update) | **PUT** /api/jobs/{id}/annotations/ | Method performs an update of all annotations in a specific job
 *JobsApi* | [**jobs_commits_list**](docs/JobsApi.md#jobs_commits_list) | **GET** /api/jobs/{id}/commits | The action returns the list of tracked changes for the job
 *JobsApi* | [**jobs_data_meta_retrieve**](docs/JobsApi.md#jobs_data_meta_retrieve) | **GET** /api/jobs/{id}/data/meta | Method provides a meta information about media files which are related with the job
 *JobsApi* | [**jobs_data_retrieve**](docs/JobsApi.md#jobs_data_retrieve) | **GET** /api/jobs/{id}/data | Method returns data for a specific job
+*JobsApi* | [**jobs_dataset_retrieve**](docs/JobsApi.md#jobs_dataset_retrieve) | **GET** /api/jobs/{id}/dataset | Export job as a dataset in a specific format
 *JobsApi* | [**jobs_issues_list**](docs/JobsApi.md#jobs_issues_list) | **GET** /api/jobs/{id}/issues | Method returns list of issues for the job
 *JobsApi* | [**jobs_list**](docs/JobsApi.md#jobs_list) | **GET** /api/jobs | Method returns a paginated list of jobs according to query parameters
 *JobsApi* | [**jobs_partial_update**](docs/JobsApi.md#jobs_partial_update) | **PATCH** /api/jobs/{id} | Methods does a partial update of chosen fields in a job
@@ -205,7 +207,7 @@ Class | Method | HTTP request | Description
 *ServerApi* | [**server_plugins_retrieve**](docs/ServerApi.md#server_plugins_retrieve) | **GET** /api/server/plugins | Method provides allowed plugins
 *ServerApi* | [**server_share_list**](docs/ServerApi.md#server_share_list) | **GET** /api/server/share | Returns all files and folders that are on the server along specified path
 *TasksApi* | [**jobs_data_meta_partial_update**](docs/TasksApi.md#jobs_data_meta_partial_update) | **PATCH** /api/jobs/{id}/data/meta | Method provides a meta information about media files which are related with the job
-*TasksApi* | [**tasks_annotations_create**](docs/TasksApi.md#tasks_annotations_create) | **POST** /api/tasks/{id}/annotations/ | 
+*TasksApi* | [**tasks_annotations_create**](docs/TasksApi.md#tasks_annotations_create) | **POST** /api/tasks/{id}/annotations/ | Method allows to upload task annotations from storage
 *TasksApi* | [**tasks_annotations_destroy**](docs/TasksApi.md#tasks_annotations_destroy) | **DELETE** /api/tasks/{id}/annotations/ | Method deletes all annotations for a specific task
 *TasksApi* | [**tasks_annotations_file_partial_update**](docs/TasksApi.md#tasks_annotations_file_partial_update) | **PATCH** /api/tasks/{id}/annotations/{file_id} | Allows to upload an annotation file chunk. Implements TUS file uploading protocol.
 *TasksApi* | [**tasks_annotations_partial_update**](docs/TasksApi.md#tasks_annotations_partial_update) | **PATCH** /api/tasks/{id}/annotations/ | Method performs a partial update of annotations in a specific task
@@ -242,7 +244,6 @@ Class | Method | HTTP request | Description
  - [Attribute](docs/Attribute.md)
  - [AttributeRequest](docs/AttributeRequest.md)
  - [AttributeVal](docs/AttributeVal.md)
- - [AttributeValRequest](docs/AttributeValRequest.md)
  - [BasicUser](docs/BasicUser.md)
  - [BasicUserRequest](docs/BasicUserRequest.md)
  - [ChunkType](docs/ChunkType.md)
@@ -263,7 +264,6 @@ Class | Method | HTTP request | Description
  - [FileInfo](docs/FileInfo.md)
  - [FileInfoTypeEnum](docs/FileInfoTypeEnum.md)
  - [FrameMeta](docs/FrameMeta.md)
- - [FrameMetaRequest](docs/FrameMetaRequest.md)
  - [InputTypeEnum](docs/InputTypeEnum.md)
  - [InvitationRead](docs/InvitationRead.md)
  - [InvitationWrite](docs/InvitationWrite.md)
@@ -279,13 +279,10 @@ Class | Method | HTTP request | Description
  - [JobWriteRequest](docs/JobWriteRequest.md)
  - [Label](docs/Label.md)
  - [LabeledData](docs/LabeledData.md)
- - [LabeledDataRequest](docs/LabeledDataRequest.md)
  - [LabeledImage](docs/LabeledImage.md)
- - [LabeledImageRequest](docs/LabeledImageRequest.md)
  - [LabeledShape](docs/LabeledShape.md)
- - [LabeledShapeRequest](docs/LabeledShapeRequest.md)
  - [LabeledTrack](docs/LabeledTrack.md)
- - [LabeledTrackRequest](docs/LabeledTrackRequest.md)
+ - [LocationEnum](docs/LocationEnum.md)
  - [LogEvent](docs/LogEvent.md)
  - [LogEventRequest](docs/LogEventRequest.md)
  - [LoginRequest](docs/LoginRequest.md)
@@ -304,33 +301,33 @@ Class | Method | HTTP request | Description
  - [PaginatedIssueReadList](docs/PaginatedIssueReadList.md)
  - [PaginatedJobCommitList](docs/PaginatedJobCommitList.md)
  - [PaginatedJobReadList](docs/PaginatedJobReadList.md)
- - [PaginatedLabeledDataList](docs/PaginatedLabeledDataList.md)
  - [PaginatedMembershipReadList](docs/PaginatedMembershipReadList.md)
  - [PaginatedMetaUserList](docs/PaginatedMetaUserList.md)
  - [PaginatedPolymorphicProjectList](docs/PaginatedPolymorphicProjectList.md)
- - [PaginatedTaskList](docs/PaginatedTaskList.md)
+ - [PaginatedTaskReadList](docs/PaginatedTaskReadList.md)
  - [PasswordChangeRequest](docs/PasswordChangeRequest.md)
  - [PasswordResetConfirmRequest](docs/PasswordResetConfirmRequest.md)
  - [PasswordResetSerializerExRequest](docs/PasswordResetSerializerExRequest.md)
  - [PatchedCloudStorageWriteRequest](docs/PatchedCloudStorageWriteRequest.md)
  - [PatchedCommentWriteRequest](docs/PatchedCommentWriteRequest.md)
- - [PatchedDataMetaReadRequest](docs/PatchedDataMetaReadRequest.md)
  - [PatchedInvitationWriteRequest](docs/PatchedInvitationWriteRequest.md)
  - [PatchedIssueWriteRequest](docs/PatchedIssueWriteRequest.md)
  - [PatchedJobWriteRequest](docs/PatchedJobWriteRequest.md)
  - [PatchedLabelRequest](docs/PatchedLabelRequest.md)
- - [PatchedLabeledDataRequest](docs/PatchedLabeledDataRequest.md)
  - [PatchedMembershipWriteRequest](docs/PatchedMembershipWriteRequest.md)
  - [PatchedOrganizationWriteRequest](docs/PatchedOrganizationWriteRequest.md)
- - [PatchedProjectRequest](docs/PatchedProjectRequest.md)
- - [PatchedProjectRequestAssignee](docs/PatchedProjectRequestAssignee.md)
- - [PatchedTaskRequest](docs/PatchedTaskRequest.md)
+ - [PatchedProjectWriteRequest](docs/PatchedProjectWriteRequest.md)
+ - [PatchedTaskWriteRequest](docs/PatchedTaskWriteRequest.md)
+ - [PatchedTaskWriteRequestTargetStorage](docs/PatchedTaskWriteRequestTargetStorage.md)
  - [Plugins](docs/Plugins.md)
  - [PolymorphicProject](docs/PolymorphicProject.md)
- - [Project](docs/Project.md)
- - [ProjectOwner](docs/ProjectOwner.md)
- - [ProjectRequest](docs/ProjectRequest.md)
+ - [ProjectFileRequest](docs/ProjectFileRequest.md)
+ - [ProjectRead](docs/ProjectRead.md)
+ - [ProjectReadAssignee](docs/ProjectReadAssignee.md)
+ - [ProjectReadOwner](docs/ProjectReadOwner.md)
  - [ProjectSearch](docs/ProjectSearch.md)
+ - [ProjectWrite](docs/ProjectWrite.md)
+ - [ProjectWriteRequest](docs/ProjectWriteRequest.md)
  - [ProviderTypeEnum](docs/ProviderTypeEnum.md)
  - [RestAuthDetail](docs/RestAuthDetail.md)
  - [RestrictedRegister](docs/RestrictedRegister.md)
@@ -339,19 +336,21 @@ Class | Method | HTTP request | Description
  - [RqStatus](docs/RqStatus.md)
  - [RqStatusStateEnum](docs/RqStatusStateEnum.md)
  - [Segment](docs/Segment.md)
- - [SegmentRequest](docs/SegmentRequest.md)
  - [ShapeType](docs/ShapeType.md)
  - [SigningRequest](docs/SigningRequest.md)
  - [SimpleJob](docs/SimpleJob.md)
- - [SimpleJobRequest](docs/SimpleJobRequest.md)
  - [SortingMethod](docs/SortingMethod.md)
+ - [Storage](docs/Storage.md)
  - [StorageMethod](docs/StorageMethod.md)
+ - [StorageRequest](docs/StorageRequest.md)
  - [StorageType](docs/StorageType.md)
- - [Task](docs/Task.md)
- - [TaskRequest](docs/TaskRequest.md)
+ - [TaskFileRequest](docs/TaskFileRequest.md)
+ - [TaskRead](docs/TaskRead.md)
+ - [TaskReadTargetStorage](docs/TaskReadTargetStorage.md)
+ - [TaskWrite](docs/TaskWrite.md)
+ - [TaskWriteRequest](docs/TaskWriteRequest.md)
  - [Token](docs/Token.md)
  - [TrackedShape](docs/TrackedShape.md)
- - [TrackedShapeRequest](docs/TrackedShapeRequest.md)
  - [User](docs/User.md)
  - [UserAgreement](docs/UserAgreement.md)
  - [UserAgreementRequest](docs/UserAgreementRequest.md)

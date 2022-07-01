@@ -31,10 +31,10 @@ from cvat_api_client.model.data_meta_read import DataMetaRead
 from cvat_api_client.model.job_read import JobRead
 from cvat_api_client.model.job_write import JobWrite
 from cvat_api_client.model.job_write_request import JobWriteRequest
+from cvat_api_client.model.labeled_data import LabeledData
 from cvat_api_client.model.paginated_issue_read_list import PaginatedIssueReadList
 from cvat_api_client.model.paginated_job_commit_list import PaginatedJobCommitList
 from cvat_api_client.model.paginated_job_read_list import PaginatedJobReadList
-from cvat_api_client.model.paginated_labeled_data_list import PaginatedLabeledDataList
 from cvat_api_client.model.patched_job_write_request import PatchedJobWriteRequest
 
 
@@ -51,7 +51,7 @@ class JobsApi(object):
         self.api_client = api_client
         self.jobs_annotations_create_endpoint = _Endpoint(
             settings={
-                'response_type': (JobWrite,),
+                'response_type': None,
                 'auth': [
                     'SignatureAuthentication',
                     'basicAuth',
@@ -67,8 +67,13 @@ class JobsApi(object):
                 'all': [
                     'id',
                     'x_organization',
+                    'cloud_storage_id',
+                    'filename',
+                    'format',
+                    'location',
                     'org',
                     'org_id',
+                    'use_default_location',
                     'job_write_request',
                 ],
                 'required': [
@@ -77,6 +82,7 @@ class JobsApi(object):
                 'nullable': [
                 ],
                 'enum': [
+                    'location',
                 ],
                 'validation': [
                 ]
@@ -85,39 +91,62 @@ class JobsApi(object):
                 'validations': {
                 },
                 'allowed_values': {
+                    ('location',): {
+
+                        "CLOUD_STORAGE": "cloud_storage",
+                        "LOCAL": "local"
+                    },
                 },
                 'openapi_types': {
                     'id':
                         (int,),
                     'x_organization':
                         (str,),
+                    'cloud_storage_id':
+                        (float,),
+                    'filename':
+                        (str,),
+                    'format':
+                        (str,),
+                    'location':
+                        (str,),
                     'org':
                         (str,),
                     'org_id':
                         (int,),
+                    'use_default_location':
+                        (bool,),
                     'job_write_request':
                         (JobWriteRequest,),
                 },
                 'attribute_map': {
                     'id': 'id',
                     'x_organization': 'X-Organization',
+                    'cloud_storage_id': 'cloud_storage_id',
+                    'filename': 'filename',
+                    'format': 'format',
+                    'location': 'location',
                     'org': 'org',
                     'org_id': 'org_id',
+                    'use_default_location': 'use_default_location',
                 },
                 'location_map': {
                     'id': 'path',
                     'x_organization': 'header',
+                    'cloud_storage_id': 'query',
+                    'filename': 'query',
+                    'format': 'query',
+                    'location': 'query',
                     'org': 'query',
                     'org_id': 'query',
+                    'use_default_location': 'query',
                     'job_write_request': 'body',
                 },
                 'collection_format_map': {
                 }
             },
             headers_map={
-                'accept': [
-                    'application/vnd.cvat+json'
-                ],
+                'accept': [],
                 'content_type': [
                     'application/json',
                     'application/x-www-form-urlencoded',
@@ -285,100 +314,6 @@ class JobsApi(object):
             },
             api_client=api_client
         )
-        self.jobs_annotations_list_endpoint = _Endpoint(
-            settings={
-                'response_type': (PaginatedLabeledDataList,),
-                'auth': [
-                    'SignatureAuthentication',
-                    'basicAuth',
-                    'cookieAuth',
-                    'tokenAuth'
-                ],
-                'endpoint_path': '/api/jobs/{id}/annotations/',
-                'operation_id': 'jobs_annotations_list',
-                'http_method': 'GET',
-                'servers': None,
-            },
-            params_map={
-                'all': [
-                    'id',
-                    'x_organization',
-                    'filter',
-                    'org',
-                    'org_id',
-                    'page',
-                    'page_size',
-                    'search',
-                    'sort',
-                ],
-                'required': [
-                    'id',
-                ],
-                'nullable': [
-                ],
-                'enum': [
-                ],
-                'validation': [
-                ]
-            },
-            root_map={
-                'validations': {
-                },
-                'allowed_values': {
-                },
-                'openapi_types': {
-                    'id':
-                        (int,),
-                    'x_organization':
-                        (str,),
-                    'filter':
-                        (str,),
-                    'org':
-                        (str,),
-                    'org_id':
-                        (int,),
-                    'page':
-                        (int,),
-                    'page_size':
-                        (int,),
-                    'search':
-                        (str,),
-                    'sort':
-                        (str,),
-                },
-                'attribute_map': {
-                    'id': 'id',
-                    'x_organization': 'X-Organization',
-                    'filter': 'filter',
-                    'org': 'org',
-                    'org_id': 'org_id',
-                    'page': 'page',
-                    'page_size': 'page_size',
-                    'search': 'search',
-                    'sort': 'sort',
-                },
-                'location_map': {
-                    'id': 'path',
-                    'x_organization': 'header',
-                    'filter': 'query',
-                    'org': 'query',
-                    'org_id': 'query',
-                    'page': 'query',
-                    'page_size': 'query',
-                    'search': 'query',
-                    'sort': 'query',
-                },
-                'collection_format_map': {
-                }
-            },
-            headers_map={
-                'accept': [
-                    'application/vnd.cvat+json'
-                ],
-                'content_type': [],
-            },
-            api_client=api_client
-        )
         self.jobs_annotations_partial_update_endpoint = _Endpoint(
             settings={
                 'response_type': None,
@@ -465,6 +400,116 @@ class JobsApi(object):
                     'multipart/form-data',
                     'application/offset+octet-stream'
                 ]
+            },
+            api_client=api_client
+        )
+        self.jobs_annotations_retrieve_endpoint = _Endpoint(
+            settings={
+                'response_type': (LabeledData,),
+                'auth': [
+                    'SignatureAuthentication',
+                    'basicAuth',
+                    'cookieAuth',
+                    'tokenAuth'
+                ],
+                'endpoint_path': '/api/jobs/{id}/annotations/',
+                'operation_id': 'jobs_annotations_retrieve',
+                'http_method': 'GET',
+                'servers': None,
+            },
+            params_map={
+                'all': [
+                    'id',
+                    'x_organization',
+                    'action',
+                    'cloud_storage_id',
+                    'filename',
+                    'format',
+                    'location',
+                    'org',
+                    'org_id',
+                    'use_default_location',
+                ],
+                'required': [
+                    'id',
+                ],
+                'nullable': [
+                ],
+                'enum': [
+                    'action',
+                    'location',
+                ],
+                'validation': [
+                ]
+            },
+            root_map={
+                'validations': {
+                },
+                'allowed_values': {
+                    ('action',): {
+
+                        "DOWNLOAD": "download"
+                    },
+                    ('location',): {
+
+                        "CLOUD_STORAGE": "cloud_storage",
+                        "LOCAL": "local"
+                    },
+                },
+                'openapi_types': {
+                    'id':
+                        (int,),
+                    'x_organization':
+                        (str,),
+                    'action':
+                        (str,),
+                    'cloud_storage_id':
+                        (float,),
+                    'filename':
+                        (str,),
+                    'format':
+                        (str,),
+                    'location':
+                        (str,),
+                    'org':
+                        (str,),
+                    'org_id':
+                        (int,),
+                    'use_default_location':
+                        (bool,),
+                },
+                'attribute_map': {
+                    'id': 'id',
+                    'x_organization': 'X-Organization',
+                    'action': 'action',
+                    'cloud_storage_id': 'cloud_storage_id',
+                    'filename': 'filename',
+                    'format': 'format',
+                    'location': 'location',
+                    'org': 'org',
+                    'org_id': 'org_id',
+                    'use_default_location': 'use_default_location',
+                },
+                'location_map': {
+                    'id': 'path',
+                    'x_organization': 'header',
+                    'action': 'query',
+                    'cloud_storage_id': 'query',
+                    'filename': 'query',
+                    'format': 'query',
+                    'location': 'query',
+                    'org': 'query',
+                    'org_id': 'query',
+                    'use_default_location': 'query',
+                },
+                'collection_format_map': {
+                }
+            },
+            headers_map={
+                'accept': [
+                    'application/vnd.cvat+json'
+                ],
+                'content_type': [],
             },
             api_client=api_client
         )
@@ -797,6 +842,115 @@ class JobsApi(object):
                     'x_organization': 'header',
                     'org': 'query',
                     'org_id': 'query',
+                },
+                'collection_format_map': {
+                }
+            },
+            headers_map={
+                'accept': [],
+                'content_type': [],
+            },
+            api_client=api_client
+        )
+        self.jobs_dataset_retrieve_endpoint = _Endpoint(
+            settings={
+                'response_type': None,
+                'auth': [
+                    'SignatureAuthentication',
+                    'basicAuth',
+                    'cookieAuth',
+                    'tokenAuth'
+                ],
+                'endpoint_path': '/api/jobs/{id}/dataset',
+                'operation_id': 'jobs_dataset_retrieve',
+                'http_method': 'GET',
+                'servers': None,
+            },
+            params_map={
+                'all': [
+                    'format',
+                    'id',
+                    'x_organization',
+                    'action',
+                    'cloud_storage_id',
+                    'filename',
+                    'location',
+                    'org',
+                    'org_id',
+                    'use_default_location',
+                ],
+                'required': [
+                    'format',
+                    'id',
+                ],
+                'nullable': [
+                ],
+                'enum': [
+                    'action',
+                    'location',
+                ],
+                'validation': [
+                ]
+            },
+            root_map={
+                'validations': {
+                },
+                'allowed_values': {
+                    ('action',): {
+
+                        "DOWNLOAD": "download"
+                    },
+                    ('location',): {
+
+                        "CLOUD_STORAGE": "cloud_storage",
+                        "LOCAL": "local"
+                    },
+                },
+                'openapi_types': {
+                    'format':
+                        (str,),
+                    'id':
+                        (int,),
+                    'x_organization':
+                        (str,),
+                    'action':
+                        (str,),
+                    'cloud_storage_id':
+                        (float,),
+                    'filename':
+                        (str,),
+                    'location':
+                        (str,),
+                    'org':
+                        (str,),
+                    'org_id':
+                        (int,),
+                    'use_default_location':
+                        (bool,),
+                },
+                'attribute_map': {
+                    'format': 'format',
+                    'id': 'id',
+                    'x_organization': 'X-Organization',
+                    'action': 'action',
+                    'cloud_storage_id': 'cloud_storage_id',
+                    'filename': 'filename',
+                    'location': 'location',
+                    'org': 'org',
+                    'org_id': 'org_id',
+                    'use_default_location': 'use_default_location',
+                },
+                'location_map': {
+                    'format': 'query',
+                    'id': 'path',
+                    'x_organization': 'header',
+                    'action': 'query',
+                    'cloud_storage_id': 'query',
+                    'filename': 'query',
+                    'location': 'query',
+                    'org': 'query',
+                    'org_id': 'query',
+                    'use_default_location': 'query',
                 },
                 'collection_format_map': {
                 }
@@ -1221,7 +1375,7 @@ class JobsApi(object):
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
         **kwargs
-    ) -> object:
+    ) -> None:
         ...
 
     @overload
@@ -1231,7 +1385,7 @@ class JobsApi(object):
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
         **kwargs
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
         ...
 
     @overload
@@ -1240,7 +1394,7 @@ class JobsApi(object):
         id,
         _return_http_data_only: typing.Literal[False],
         **kwargs
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
         ...
 
     @overload
@@ -1277,11 +1431,11 @@ class JobsApi(object):
         id,
         **kwargs
     ) -> typing.Union[
-            typing.Tuple[object, int, typing.Dict[str, str]],
+            typing.Tuple[None, int, typing.Dict[str, str]],
             urllib3.HTTPResponse,
-            object
+            None
     ]:
-        """jobs_annotations_create  # noqa: E501
+        """Method allows to upload job annotations  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
@@ -1294,8 +1448,13 @@ class JobsApi(object):
 
         Keyword Args:
             x_organization (str): [optional]
+            cloud_storage_id (float): Storage id. [optional]
+            filename (str): Annotation file name. [optional]
+            format (str): Input format name You can get the list of supported formats at: /server/annotation/formats. [optional]
+            location (str): where to import the annotation from. [optional]
             org (str): Organization unique slug. [optional]
             org_id (int): Organization identifier. [optional]
+            use_default_location (bool): Use the location that was configured in the task to import annotation. [optional] if omitted the server will use the default value of True
             job_write_request (JobWriteRequest): [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
@@ -1333,7 +1492,7 @@ class JobsApi(object):
             async_req (bool): execute request asynchronously
 
         Returns:
-            JobWrite
+            None
                 If the method is called asynchronously, returns the request
                 thread.
         """
@@ -1379,7 +1538,7 @@ class JobsApi(object):
         Equivalent to calling jobs_annotations_create with
         _preload_content = False and _check_status=False
 
-        jobs_annotations_create  # noqa: E501
+        Method allows to upload job annotations  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
@@ -1392,8 +1551,13 @@ class JobsApi(object):
 
         Keyword Args:
             x_organization (str): [optional]
+            cloud_storage_id (float): Storage id. [optional]
+            filename (str): Annotation file name. [optional]
+            format (str): Input format name You can get the list of supported formats at: /server/annotation/formats. [optional]
+            location (str): where to import the annotation from. [optional]
             org (str): Organization unique slug. [optional]
             org_id (int): Organization identifier. [optional]
+            use_default_location (bool): Use the location that was configured in the task to import annotation. [optional] if omitted the server will use the default value of True
             job_write_request (JobWriteRequest): [optional]
             _request_timeout (int/float/tuple): timeout setting for this request. If
                 one number provided, it will be total request timeout. It can also
@@ -1419,7 +1583,7 @@ class JobsApi(object):
             async_req (bool): execute request asynchronously
 
         Returns:
-            JobWrite
+            None
                 If the method is called asynchronously, returns the request
                 thread.
         """
@@ -1860,226 +2024,6 @@ class JobsApi(object):
             _preload_content=False, _check_status=False)
 
     @overload
-    def jobs_annotations_list(
-        self,
-        id,
-        _return_http_data_only: typing.Literal[True] = True,
-        _preload_content: typing.Literal[True] = True,
-        **kwargs
-    ) -> object:
-        ...
-
-    @overload
-    def jobs_annotations_list(
-        self,
-        id,
-        _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
-        **kwargs
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
-        ...
-
-    @overload
-    def jobs_annotations_list(
-        self,
-        id,
-        _return_http_data_only: typing.Literal[False],
-        **kwargs
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
-        ...
-
-    @overload
-    def jobs_annotations_list(
-        self,
-        id,
-        _preload_content: typing.Literal[False],
-        **kwargs
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    @overload
-    def jobs_annotations_list(
-        self,
-        id,
-        _return_http_data_only: typing.Literal[True],
-        _preload_content: typing.Literal[False],
-        **kwargs
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    @overload
-    def jobs_annotations_list(
-        self,
-        id,
-        _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
-        **kwargs
-    ) -> urllib3.HTTPResponse:
-        ...
-
-    def jobs_annotations_list(
-        self,
-        id,
-        **kwargs
-    ) -> typing.Union[
-            typing.Tuple[object, int, typing.Dict[str, str]],
-            urllib3.HTTPResponse,
-            object
-    ]:
-        """Method returns annotations for a specific job  # noqa: E501
-
-        This method makes a synchronous HTTP request by default. To make an
-        asynchronous HTTP request, please pass async_req=True
-
-        >>> thread = api.jobs_annotations_list(id, async_req=True)
-        >>> result = thread.get()
-
-        Args:
-            id (int): A unique integer value identifying this job.
-
-        Keyword Args:
-            x_organization (str): [optional]
-            filter (str): A filter term. Avaliable filter_fields: ['task_name', 'project_name', 'assignee', 'state', 'stage', 'id', 'task_id', 'project_id', 'updated_date']. [optional]
-            org (str): Organization unique slug. [optional]
-            org_id (int): Organization identifier. [optional]
-            page (int): A page number within the paginated result set.. [optional]
-            page_size (int): Number of results to return per page.. [optional]
-            search (str): A search term. Avaliable search_fields: ('task_name', 'project_name', 'assignee', 'state', 'stage'). [optional]
-            sort (str): Which field to use when ordering the results. Avaliable ordering_fields: ['task_name', 'project_name', 'assignee', 'state', 'stage', 'id', 'task_id', 'project_id', 'updated_date']. [optional]
-            _return_http_data_only (bool): response data without head status
-                code and headers. Default is True.
-            _preload_content (bool): if False, the urllib3.HTTPResponse object
-                will be returned without reading/decoding response data.
-                Checked before _return_http_data_only.
-                Default is True.
-            _request_timeout (int/float/tuple): timeout setting for this request. If
-                one number provided, it will be total request timeout. It can also
-                be a pair (tuple) of (connection, read) timeouts.
-                Default is None.
-            _check_input_type (bool): specifies if type checking
-                should be done one the data sent to the server.
-                Default is True.
-            _check_return_type (bool): specifies if type checking
-                should be done one the data received from the server.
-                Default is True.
-            _check_status (bool): whether to check response status
-                for being positive or not.
-                Default is True
-            _spec_property_naming (bool): True if the variable names in the input data
-                are serialized names, as specified in the OpenAPI document.
-                False if the variable names in the input data
-                are pythonic names, e.g. snake case (default)
-            _content_type (str/None): force body content-type.
-                Default is None and content-type will be predicted by allowed
-                content-types and body.
-            _host_index (int/None): specifies the index of the server
-                that we want to use.
-                Default is read from the configuration.
-            _request_auths (list): set to override the auth_settings for an a single
-                request; this effectively ignores the authentication
-                in the spec for a single request.
-                Default is None
-            async_req (bool): execute request asynchronously
-
-        Returns:
-            PaginatedLabeledDataList
-                If the method is called asynchronously, returns the request
-                thread.
-        """
-        kwargs['async_req'] = kwargs.get(
-            'async_req', False
-        )
-        kwargs['_return_http_data_only'] = kwargs.get(
-            '_return_http_data_only', True
-        )
-        kwargs['_preload_content'] = kwargs.get(
-            '_preload_content', True
-        )
-        kwargs['_request_timeout'] = kwargs.get(
-            '_request_timeout', None
-        )
-        kwargs['_check_input_type'] = kwargs.get(
-            '_check_input_type', True
-        )
-        kwargs['_check_return_type'] = kwargs.get(
-            '_check_return_type', True
-        )
-        kwargs['_check_status'] = kwargs.get(
-            '_check_status', True
-        )
-        kwargs['_spec_property_naming'] = kwargs.get(
-            '_spec_property_naming', False
-        )
-        kwargs['_content_type'] = kwargs.get(
-            '_content_type')
-        kwargs['_host_index'] = kwargs.get('_host_index')
-        kwargs['_request_auths'] = kwargs.get('_request_auths', None)
-        kwargs['id'] = \
-            id
-        return self.jobs_annotations_list_endpoint.call_with_http_info(**kwargs)
-
-    def jobs_annotations_list_raw(
-        self,
-        *args,
-        **kwargs
-    ) -> urllib3.HTTPResponse:
-        """
-        The same as jobs_annotations_list(), but returns the response unprocessed.
-        Equivalent to calling jobs_annotations_list with
-        _preload_content = False and _check_status=False
-
-        Method returns annotations for a specific job  # noqa: E501
-
-        This method makes a synchronous HTTP request by default. To make an
-        asynchronous HTTP request, please pass async_req=True
-
-        >>> thread = api.jobs_annotations_list(id, async_req=True)
-        >>> result = thread.get()
-
-        Args:
-            id (int): A unique integer value identifying this job.
-
-        Keyword Args:
-            x_organization (str): [optional]
-            filter (str): A filter term. Avaliable filter_fields: ['task_name', 'project_name', 'assignee', 'state', 'stage', 'id', 'task_id', 'project_id', 'updated_date']. [optional]
-            org (str): Organization unique slug. [optional]
-            org_id (int): Organization identifier. [optional]
-            page (int): A page number within the paginated result set.. [optional]
-            page_size (int): Number of results to return per page.. [optional]
-            search (str): A search term. Avaliable search_fields: ('task_name', 'project_name', 'assignee', 'state', 'stage'). [optional]
-            sort (str): Which field to use when ordering the results. Avaliable ordering_fields: ['task_name', 'project_name', 'assignee', 'state', 'stage', 'id', 'task_id', 'project_id', 'updated_date']. [optional]
-            _request_timeout (int/float/tuple): timeout setting for this request. If
-                one number provided, it will be total request timeout. It can also
-                be a pair (tuple) of (connection, read) timeouts.
-                Default is None.
-            _check_input_type (bool): specifies if type checking
-                should be done one the data sent to the server.
-                Default is True.
-            _spec_property_naming (bool): True if the variable names in the input data
-                are serialized names, as specified in the OpenAPI document.
-                False if the variable names in the input data
-                are pythonic names, e.g. snake case (default)
-            _content_type (str/None): force body content-type.
-                Default is None and content-type will be predicted by allowed
-                content-types and body.
-            _host_index (int/None): specifies the index of the server
-                that we want to use.
-                Default is read from the configuration.
-            _request_auths (list): set to override the auth_settings for an a single
-                request; this effectively ignores the authentication
-                in the spec for a single request.
-                Default is None
-            async_req (bool): execute request asynchronously
-
-        Returns:
-            PaginatedLabeledDataList
-                If the method is called asynchronously, returns the request
-                thread.
-        """
-        return self.jobs_annotations_list(*args, **kwargs,
-            _preload_content=False, _check_status=False)
-
-    @overload
     def jobs_annotations_partial_update(
         self,
         action,
@@ -2300,6 +2244,228 @@ class JobsApi(object):
                 thread.
         """
         return self.jobs_annotations_partial_update(*args, **kwargs,
+            _preload_content=False, _check_status=False)
+
+    @overload
+    def jobs_annotations_retrieve(
+        self,
+        id,
+        _return_http_data_only: typing.Literal[True] = True,
+        _preload_content: typing.Literal[True] = True,
+        **kwargs
+    ) -> object:
+        ...
+
+    @overload
+    def jobs_annotations_retrieve(
+        self,
+        id,
+        _return_http_data_only: typing.Literal[False],
+        _preload_content: typing.Literal[False],
+        **kwargs
+    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+        ...
+
+    @overload
+    def jobs_annotations_retrieve(
+        self,
+        id,
+        _return_http_data_only: typing.Literal[False],
+        **kwargs
+    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+        ...
+
+    @overload
+    def jobs_annotations_retrieve(
+        self,
+        id,
+        _preload_content: typing.Literal[False],
+        **kwargs
+    ) -> urllib3.HTTPResponse:
+        ...
+
+    @overload
+    def jobs_annotations_retrieve(
+        self,
+        id,
+        _return_http_data_only: typing.Literal[True],
+        _preload_content: typing.Literal[False],
+        **kwargs
+    ) -> urllib3.HTTPResponse:
+        ...
+
+    @overload
+    def jobs_annotations_retrieve(
+        self,
+        id,
+        _return_http_data_only: typing.Literal[False],
+        _preload_content: typing.Literal[False],
+        **kwargs
+    ) -> urllib3.HTTPResponse:
+        ...
+
+    def jobs_annotations_retrieve(
+        self,
+        id,
+        **kwargs
+    ) -> typing.Union[
+            typing.Tuple[object, int, typing.Dict[str, str]],
+            urllib3.HTTPResponse,
+            object
+    ]:
+        """Method returns annotations for a specific job  # noqa: E501
+
+        This method makes a synchronous HTTP request by default. To make an
+        asynchronous HTTP request, please pass async_req=True
+
+        >>> thread = api.jobs_annotations_retrieve(id, async_req=True)
+        >>> result = thread.get()
+
+        Args:
+            id (int): A unique integer value identifying this job.
+
+        Keyword Args:
+            x_organization (str): [optional]
+            action (str): Used to start downloading process after annotation file had been created. [optional] if omitted the server will use the default value of "download"
+            cloud_storage_id (float): Storage id. [optional]
+            filename (str): Desired output file name. [optional]
+            format (str): Desired output format name You can get the list of supported formats at: /server/annotation/formats. [optional]
+            location (str): Where need to save downloaded annotation. [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
+            use_default_location (bool): Use the location that was configured in the task to export annotation. [optional] if omitted the server will use the default value of True
+            _return_http_data_only (bool): response data without head status
+                code and headers. Default is True.
+            _preload_content (bool): if False, the urllib3.HTTPResponse object
+                will be returned without reading/decoding response data.
+                Checked before _return_http_data_only.
+                Default is True.
+            _request_timeout (int/float/tuple): timeout setting for this request. If
+                one number provided, it will be total request timeout. It can also
+                be a pair (tuple) of (connection, read) timeouts.
+                Default is None.
+            _check_input_type (bool): specifies if type checking
+                should be done one the data sent to the server.
+                Default is True.
+            _check_return_type (bool): specifies if type checking
+                should be done one the data received from the server.
+                Default is True.
+            _check_status (bool): whether to check response status
+                for being positive or not.
+                Default is True
+            _spec_property_naming (bool): True if the variable names in the input data
+                are serialized names, as specified in the OpenAPI document.
+                False if the variable names in the input data
+                are pythonic names, e.g. snake case (default)
+            _content_type (str/None): force body content-type.
+                Default is None and content-type will be predicted by allowed
+                content-types and body.
+            _host_index (int/None): specifies the index of the server
+                that we want to use.
+                Default is read from the configuration.
+            _request_auths (list): set to override the auth_settings for an a single
+                request; this effectively ignores the authentication
+                in the spec for a single request.
+                Default is None
+            async_req (bool): execute request asynchronously
+
+        Returns:
+            LabeledData
+                If the method is called asynchronously, returns the request
+                thread.
+        """
+        kwargs['async_req'] = kwargs.get(
+            'async_req', False
+        )
+        kwargs['_return_http_data_only'] = kwargs.get(
+            '_return_http_data_only', True
+        )
+        kwargs['_preload_content'] = kwargs.get(
+            '_preload_content', True
+        )
+        kwargs['_request_timeout'] = kwargs.get(
+            '_request_timeout', None
+        )
+        kwargs['_check_input_type'] = kwargs.get(
+            '_check_input_type', True
+        )
+        kwargs['_check_return_type'] = kwargs.get(
+            '_check_return_type', True
+        )
+        kwargs['_check_status'] = kwargs.get(
+            '_check_status', True
+        )
+        kwargs['_spec_property_naming'] = kwargs.get(
+            '_spec_property_naming', False
+        )
+        kwargs['_content_type'] = kwargs.get(
+            '_content_type')
+        kwargs['_host_index'] = kwargs.get('_host_index')
+        kwargs['_request_auths'] = kwargs.get('_request_auths', None)
+        kwargs['id'] = \
+            id
+        return self.jobs_annotations_retrieve_endpoint.call_with_http_info(**kwargs)
+
+    def jobs_annotations_retrieve_raw(
+        self,
+        *args,
+        **kwargs
+    ) -> urllib3.HTTPResponse:
+        """
+        The same as jobs_annotations_retrieve(), but returns the response unprocessed.
+        Equivalent to calling jobs_annotations_retrieve with
+        _preload_content = False and _check_status=False
+
+        Method returns annotations for a specific job  # noqa: E501
+
+        This method makes a synchronous HTTP request by default. To make an
+        asynchronous HTTP request, please pass async_req=True
+
+        >>> thread = api.jobs_annotations_retrieve(id, async_req=True)
+        >>> result = thread.get()
+
+        Args:
+            id (int): A unique integer value identifying this job.
+
+        Keyword Args:
+            x_organization (str): [optional]
+            action (str): Used to start downloading process after annotation file had been created. [optional] if omitted the server will use the default value of "download"
+            cloud_storage_id (float): Storage id. [optional]
+            filename (str): Desired output file name. [optional]
+            format (str): Desired output format name You can get the list of supported formats at: /server/annotation/formats. [optional]
+            location (str): Where need to save downloaded annotation. [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
+            use_default_location (bool): Use the location that was configured in the task to export annotation. [optional] if omitted the server will use the default value of True
+            _request_timeout (int/float/tuple): timeout setting for this request. If
+                one number provided, it will be total request timeout. It can also
+                be a pair (tuple) of (connection, read) timeouts.
+                Default is None.
+            _check_input_type (bool): specifies if type checking
+                should be done one the data sent to the server.
+                Default is True.
+            _spec_property_naming (bool): True if the variable names in the input data
+                are serialized names, as specified in the OpenAPI document.
+                False if the variable names in the input data
+                are pythonic names, e.g. snake case (default)
+            _content_type (str/None): force body content-type.
+                Default is None and content-type will be predicted by allowed
+                content-types and body.
+            _host_index (int/None): specifies the index of the server
+                that we want to use.
+                Default is read from the configuration.
+            _request_auths (list): set to override the auth_settings for an a single
+                request; this effectively ignores the authentication
+                in the spec for a single request.
+                Default is None
+            async_req (bool): execute request asynchronously
+
+        Returns:
+            LabeledData
+                If the method is called asynchronously, returns the request
+                thread.
+        """
+        return self.jobs_annotations_retrieve(*args, **kwargs,
             _preload_content=False, _check_status=False)
 
     @overload
@@ -3194,6 +3360,237 @@ class JobsApi(object):
                 thread.
         """
         return self.jobs_data_retrieve(*args, **kwargs,
+            _preload_content=False, _check_status=False)
+
+    @overload
+    def jobs_dataset_retrieve(
+        self,
+        format,
+        id,
+        _return_http_data_only: typing.Literal[True] = True,
+        _preload_content: typing.Literal[True] = True,
+        **kwargs
+    ) -> None:
+        ...
+
+    @overload
+    def jobs_dataset_retrieve(
+        self,
+        format,
+        id,
+        _return_http_data_only: typing.Literal[False],
+        _preload_content: typing.Literal[False],
+        **kwargs
+    ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
+        ...
+
+    @overload
+    def jobs_dataset_retrieve(
+        self,
+        format,
+        id,
+        _return_http_data_only: typing.Literal[False],
+        **kwargs
+    ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
+        ...
+
+    @overload
+    def jobs_dataset_retrieve(
+        self,
+        format,
+        id,
+        _preload_content: typing.Literal[False],
+        **kwargs
+    ) -> urllib3.HTTPResponse:
+        ...
+
+    @overload
+    def jobs_dataset_retrieve(
+        self,
+        format,
+        id,
+        _return_http_data_only: typing.Literal[True],
+        _preload_content: typing.Literal[False],
+        **kwargs
+    ) -> urllib3.HTTPResponse:
+        ...
+
+    @overload
+    def jobs_dataset_retrieve(
+        self,
+        format,
+        id,
+        _return_http_data_only: typing.Literal[False],
+        _preload_content: typing.Literal[False],
+        **kwargs
+    ) -> urllib3.HTTPResponse:
+        ...
+
+    def jobs_dataset_retrieve(
+        self,
+        format,
+        id,
+        **kwargs
+    ) -> typing.Union[
+            typing.Tuple[None, int, typing.Dict[str, str]],
+            urllib3.HTTPResponse,
+            None
+    ]:
+        """Export job as a dataset in a specific format  # noqa: E501
+
+        This method makes a synchronous HTTP request by default. To make an
+        asynchronous HTTP request, please pass async_req=True
+
+        >>> thread = api.jobs_dataset_retrieve(format, id, async_req=True)
+        >>> result = thread.get()
+
+        Args:
+            format (str): Desired output format name You can get the list of supported formats at: /server/annotation/formats
+            id (int): A unique integer value identifying this job.
+
+        Keyword Args:
+            x_organization (str): [optional]
+            action (str): Used to start downloading process after annotation file had been created. [optional] if omitted the server will use the default value of "download"
+            cloud_storage_id (float): Storage id. [optional]
+            filename (str): Desired output file name. [optional]
+            location (str): Where need to save downloaded dataset. [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
+            use_default_location (bool): Use the location that was configured in the task to export dataset. [optional] if omitted the server will use the default value of True
+            _return_http_data_only (bool): response data without head status
+                code and headers. Default is True.
+            _preload_content (bool): if False, the urllib3.HTTPResponse object
+                will be returned without reading/decoding response data.
+                Checked before _return_http_data_only.
+                Default is True.
+            _request_timeout (int/float/tuple): timeout setting for this request. If
+                one number provided, it will be total request timeout. It can also
+                be a pair (tuple) of (connection, read) timeouts.
+                Default is None.
+            _check_input_type (bool): specifies if type checking
+                should be done one the data sent to the server.
+                Default is True.
+            _check_return_type (bool): specifies if type checking
+                should be done one the data received from the server.
+                Default is True.
+            _check_status (bool): whether to check response status
+                for being positive or not.
+                Default is True
+            _spec_property_naming (bool): True if the variable names in the input data
+                are serialized names, as specified in the OpenAPI document.
+                False if the variable names in the input data
+                are pythonic names, e.g. snake case (default)
+            _content_type (str/None): force body content-type.
+                Default is None and content-type will be predicted by allowed
+                content-types and body.
+            _host_index (int/None): specifies the index of the server
+                that we want to use.
+                Default is read from the configuration.
+            _request_auths (list): set to override the auth_settings for an a single
+                request; this effectively ignores the authentication
+                in the spec for a single request.
+                Default is None
+            async_req (bool): execute request asynchronously
+
+        Returns:
+            None
+                If the method is called asynchronously, returns the request
+                thread.
+        """
+        kwargs['async_req'] = kwargs.get(
+            'async_req', False
+        )
+        kwargs['_return_http_data_only'] = kwargs.get(
+            '_return_http_data_only', True
+        )
+        kwargs['_preload_content'] = kwargs.get(
+            '_preload_content', True
+        )
+        kwargs['_request_timeout'] = kwargs.get(
+            '_request_timeout', None
+        )
+        kwargs['_check_input_type'] = kwargs.get(
+            '_check_input_type', True
+        )
+        kwargs['_check_return_type'] = kwargs.get(
+            '_check_return_type', True
+        )
+        kwargs['_check_status'] = kwargs.get(
+            '_check_status', True
+        )
+        kwargs['_spec_property_naming'] = kwargs.get(
+            '_spec_property_naming', False
+        )
+        kwargs['_content_type'] = kwargs.get(
+            '_content_type')
+        kwargs['_host_index'] = kwargs.get('_host_index')
+        kwargs['_request_auths'] = kwargs.get('_request_auths', None)
+        kwargs['format'] = \
+            format
+        kwargs['id'] = \
+            id
+        return self.jobs_dataset_retrieve_endpoint.call_with_http_info(**kwargs)
+
+    def jobs_dataset_retrieve_raw(
+        self,
+        *args,
+        **kwargs
+    ) -> urllib3.HTTPResponse:
+        """
+        The same as jobs_dataset_retrieve(), but returns the response unprocessed.
+        Equivalent to calling jobs_dataset_retrieve with
+        _preload_content = False and _check_status=False
+
+        Export job as a dataset in a specific format  # noqa: E501
+
+        This method makes a synchronous HTTP request by default. To make an
+        asynchronous HTTP request, please pass async_req=True
+
+        >>> thread = api.jobs_dataset_retrieve(format, id, async_req=True)
+        >>> result = thread.get()
+
+        Args:
+            format (str): Desired output format name You can get the list of supported formats at: /server/annotation/formats
+            id (int): A unique integer value identifying this job.
+
+        Keyword Args:
+            x_organization (str): [optional]
+            action (str): Used to start downloading process after annotation file had been created. [optional] if omitted the server will use the default value of "download"
+            cloud_storage_id (float): Storage id. [optional]
+            filename (str): Desired output file name. [optional]
+            location (str): Where need to save downloaded dataset. [optional]
+            org (str): Organization unique slug. [optional]
+            org_id (int): Organization identifier. [optional]
+            use_default_location (bool): Use the location that was configured in the task to export dataset. [optional] if omitted the server will use the default value of True
+            _request_timeout (int/float/tuple): timeout setting for this request. If
+                one number provided, it will be total request timeout. It can also
+                be a pair (tuple) of (connection, read) timeouts.
+                Default is None.
+            _check_input_type (bool): specifies if type checking
+                should be done one the data sent to the server.
+                Default is True.
+            _spec_property_naming (bool): True if the variable names in the input data
+                are serialized names, as specified in the OpenAPI document.
+                False if the variable names in the input data
+                are pythonic names, e.g. snake case (default)
+            _content_type (str/None): force body content-type.
+                Default is None and content-type will be predicted by allowed
+                content-types and body.
+            _host_index (int/None): specifies the index of the server
+                that we want to use.
+                Default is read from the configuration.
+            _request_auths (list): set to override the auth_settings for an a single
+                request; this effectively ignores the authentication
+                in the spec for a single request.
+                Default is None
+            async_req (bool): execute request asynchronously
+
+        Returns:
+            None
+                If the method is called asynchronously, returns the request
+                thread.
+        """
+        return self.jobs_dataset_retrieve(*args, **kwargs,
             _preload_content=False, _check_status=False)
 
     @overload

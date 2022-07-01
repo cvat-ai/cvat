@@ -8,7 +8,7 @@ from http import HTTPStatus
 from io import BytesIO
 from time import sleep
 from cvat_api_client.apis import ProjectsApi, TasksApi
-from cvat_api_client.models import TaskRequest, DataRequest, Task, PatchedLabeledDataRequest, RqStatus
+from cvat_api_client.models import DataRequest, RqStatus, TaskWriteRequest, TaskRead, PatchedTaskWriteRequest
 
 import pytest
 from deepdiff import DeepDiff
@@ -124,12 +124,12 @@ class TestGetTasks:
 class TestPostTasks:
     def _test_create_task_201(self, user, spec, **kwargs):
         with make_api_client(user) as api_client:
-            response = TasksApi(api_client).tasks_create_raw(TaskRequest(**spec), **kwargs)
+            response = TasksApi(api_client).tasks_create_raw(TaskWriteRequest(**spec), **kwargs)
             assert response.status == HTTPStatus.CREATED
 
     def _test_create_task_403(self, user, spec, **kwargs):
         with make_api_client(user) as api_client:
-            response = TasksApi(api_client).tasks_create_raw(TaskRequest(**spec), **kwargs)
+            response = TasksApi(api_client).tasks_create_raw(TaskWriteRequest(**spec), **kwargs)
             assert response.status == HTTPStatus.FORBIDDEN
 
     def _test_users_to_create_task_in_project(self, project_id, users, is_staff, is_allow, is_project_staff, **kwargs):
@@ -220,11 +220,11 @@ class TestPatchTaskAnnotations:
 
         data = request_data(tid)
         with make_api_client(username) as api_client:
-            patched_data = PatchedLabeledDataRequest(**deepcopy(data),
+            patched_data = PatchedTaskWriteRequest(**deepcopy(data),
                 _configuration=api_client.configuration)
             response = TasksApi(api_client).tasks_annotations_partial_update_raw(
                 id=tid, action='update', org=org,
-                patched_labeled_data_request=patched_data)
+                patched_task_write_request=patched_data)
 
         self._test_check_response(is_allow, response, data)
 
@@ -243,11 +243,11 @@ class TestPatchTaskAnnotations:
 
         data = request_data(tid)
         with make_api_client(username) as api_client:
-            patched_data = PatchedLabeledDataRequest(**deepcopy(data),
+            patched_data = PatchedTaskWriteRequest(**deepcopy(data),
                 _configuration=api_client.configuration)
             response = TasksApi(api_client).tasks_annotations_partial_update_raw(
                 id=tid, org_id=org, action='update',
-                patched_labeled_data_request=patched_data)
+                patched_task_write_request=patched_data)
 
         self._test_check_response(is_allow, response, data)
 
@@ -284,7 +284,7 @@ class TestPostTaskData:
         with make_api_client(username) as api_client:
             api = TasksApi(api_client)
 
-            (task, status, _) = api.tasks_create(TaskRequest(**spec,
+            (task, status, _) = api.tasks_create(TaskWriteRequest(**spec,
                     _configuration=api_client.configuration),
                 _return_http_data_only=False)
             assert status == HTTPStatus.CREATED
@@ -306,7 +306,16 @@ class TestPostTaskData:
             'name': f'test {username} to create a task with defined start and stop frames',
             "labels": [{
                 "name": "car",
-                "color": "#ff00ff"
+                "color": "#ff00ff",
+                "attributes": [
+                    {
+                        "name": "a",
+                        "mutable": True,
+                        "input_type": "number",
+                        "default_value": "5",
+                        "values": ["4", "5", "6"]
+                    }
+                ]
             }],
         }
 
@@ -323,5 +332,5 @@ class TestPostTaskData:
 
         # check task size
         with make_api_client(username) as api_client:
-            task: Task = TasksApi(api_client).tasks_retrieve(task_id)
+            task: TaskRead = TasksApi(api_client).tasks_retrieve(task_id)
             assert task.size == 4

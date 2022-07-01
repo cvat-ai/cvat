@@ -5,7 +5,7 @@ All URIs are relative to *http://localhost*
 Method | HTTP request | Description
 ------------- | ------------- | -------------
 [**jobs_data_meta_partial_update**](TasksApi.md#jobs_data_meta_partial_update) | **PATCH** /api/jobs/{id}/data/meta | Method provides a meta information about media files which are related with the job
-[**tasks_annotations_create**](TasksApi.md#tasks_annotations_create) | **POST** /api/tasks/{id}/annotations/ | 
+[**tasks_annotations_create**](TasksApi.md#tasks_annotations_create) | **POST** /api/tasks/{id}/annotations/ | Method allows to upload task annotations from storage
 [**tasks_annotations_destroy**](TasksApi.md#tasks_annotations_destroy) | **DELETE** /api/tasks/{id}/annotations/ | Method deletes all annotations for a specific task
 [**tasks_annotations_file_partial_update**](TasksApi.md#tasks_annotations_file_partial_update) | **PATCH** /api/tasks/{id}/annotations/{file_id} | Allows to upload an annotation file chunk. Implements TUS file uploading protocol.
 [**tasks_annotations_partial_update**](TasksApi.md#tasks_annotations_partial_update) | **PATCH** /api/tasks/{id}/annotations/ | Method performs a partial update of annotations in a specific task
@@ -150,9 +150,9 @@ Name | Type | Description  | Notes
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **tasks_annotations_create**
-> LabeledData tasks_annotations_create(id, labeled_data_request)
+> tasks_annotations_create(id, task_write_request)
 
-
+Method allows to upload task annotations from storage
 
 ### Example
 
@@ -165,8 +165,7 @@ Name | Type | Description  | Notes
 import time
 import cvat_api_client
 from cvat_api_client.api import tasks_api
-from cvat_api_client.model.labeled_data_request import LabeledDataRequest
-from cvat_api_client.model.labeled_data import LabeledData
+from cvat_api_client.model.task_write_request import TaskWriteRequest
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
@@ -208,97 +207,58 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = tasks_api.TasksApi(api_client)
     id = 1 # int | A unique integer value identifying this task.
-    labeled_data_request = LabeledDataRequest(
-        version=1,
-        tags=[
-            LabeledImageRequest(
+    task_write_request = TaskWriteRequest(
+        name="name_example",
+        project_id=1,
+        owner_id=1,
+        assignee_id=1,
+        bug_tracker="bug_tracker_example",
+        overlap=1,
+        segment_size=1,
+        labels=[
+            PatchedLabelRequest(
                 id=1,
-                frame=0,
-                label_id=0,
-                group=0,
-                source="manual",
+                name="name_example",
+                color="color_example",
                 attributes=[
-                    AttributeValRequest(
-                        spec_id=1,
-                        value="value_example",
-                    ),
-                ],
-            ),
-        ],
-        shapes=[
-            LabeledShapeRequest(
-                type=ShapeType("rectangle"),
-                occluded=True,
-                z_order=0,
-                rotation=0.0,
-                points=[
-                    3.14,
-                ],
-                id=1,
-                frame=0,
-                label_id=0,
-                group=0,
-                source="manual",
-                attributes=[
-                    AttributeValRequest(
-                        spec_id=1,
-                        value="value_example",
-                    ),
-                ],
-            ),
-        ],
-        tracks=[
-            LabeledTrackRequest(
-                id=1,
-                frame=0,
-                label_id=0,
-                group=0,
-                source="manual",
-                shapes=[
-                    TrackedShapeRequest(
-                        type=ShapeType("rectangle"),
-                        occluded=True,
-                        z_order=0,
-                        rotation=0.0,
-                        points=[
-                            3.14,
-                        ],
-                        id=1,
-                        frame=0,
-                        outside=True,
-                        attributes=[
-                            AttributeValRequest(
-                                spec_id=1,
-                                value="value_example",
-                            ),
+                    AttributeRequest(
+                        name="name_example",
+                        mutable=True,
+                        input_type=InputTypeEnum("checkbox"),
+                        default_value="default_value_example",
+                        values=[
+                            "values_example",
                         ],
                     ),
                 ],
-                attributes=[
-                    AttributeValRequest(
-                        spec_id=1,
-                        value="value_example",
-                    ),
-                ],
+                deleted=True,
             ),
         ],
-    ) # LabeledDataRequest | 
+        subset="subset_example",
+        target_storage=PatchedTaskWriteRequestTargetStorage(None),
+        source_storage=PatchedTaskWriteRequestTargetStorage(None),
+    ) # TaskWriteRequest | 
     x_organization = "X-Organization_example" # str |  (optional)
+    cloud_storage_id = 3.14 # float | Storage id (optional)
+    filename = "filename_example" # str | Annotation file name (optional)
+    format = "format_example" # str | Input format name You can get the list of supported formats at: /server/annotation/formats (optional)
+    location = "cloud_storage" # str | where to import the annotation from (optional)
     org = "org_example" # str | Organization unique slug (optional)
     org_id = 1 # int | Organization identifier (optional)
+    use_default_location = True # bool | Use the location that was configured in task to import annotations (optional) if omitted the server will use the default value of True
 
     # example passing only required values which don't have defaults set
     try:
-        api_response = api_instance.tasks_annotations_create(id, labeled_data_request)
-        pprint(api_response)
+        # Method allows to upload task annotations from storage
+        api_instance.tasks_annotations_create(id, task_write_request)
     except cvat_api_client.ApiException as e:
         print("Exception when calling TasksApi->tasks_annotations_create: %s\n" % e)
 
     # example passing only required values which don't have defaults set
     # and optional values
     try:
-        api_response = api_instance.tasks_annotations_create(id, labeled_data_request, x_organization=x_organization, org=org, org_id=org_id)
-        pprint(api_response)
+        # Method allows to upload task annotations from storage
+        api_instance.tasks_annotations_create(id, task_write_request, x_organization=x_organization, cloud_storage_id=cloud_storage_id, filename=filename, format=format, location=location, org=org, org_id=org_id, use_default_location=use_default_location)
     except cvat_api_client.ApiException as e:
         print("Exception when calling TasksApi->tasks_annotations_create: %s\n" % e)
 ```
@@ -309,14 +269,19 @@ with cvat_api_client.ApiClient(configuration) as api_client:
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **id** | **int**| A unique integer value identifying this task. |
- **labeled_data_request** | [**LabeledDataRequest**](LabeledDataRequest.md)|  |
+ **task_write_request** | [**TaskWriteRequest**](TaskWriteRequest.md)|  |
  **x_organization** | **str**|  | [optional]
+ **cloud_storage_id** | **float**| Storage id | [optional]
+ **filename** | **str**| Annotation file name | [optional]
+ **format** | **str**| Input format name You can get the list of supported formats at: /server/annotation/formats | [optional]
+ **location** | **str**| where to import the annotation from | [optional]
  **org** | **str**| Organization unique slug | [optional]
  **org_id** | **int**| Organization identifier | [optional]
+ **use_default_location** | **bool**| Use the location that was configured in task to import annotations | [optional] if omitted the server will use the default value of True
 
 ### Return type
 
-[**LabeledData**](LabeledData.md)
+void (empty response body)
 
 ### Authorization
 
@@ -325,14 +290,16 @@ Name | Type | Description  | Notes
 ### HTTP request headers
 
  - **Content-Type**: application/json, application/x-www-form-urlencoded, multipart/form-data, application/offset+octet-stream
- - **Accept**: application/vnd.cvat+json
+ - **Accept**: Not defined
 
 
 ### HTTP response details
 
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
-**200** |  |  -  |
+**201** | Uploading has finished |  -  |
+**202** | Uploading has been started |  -  |
+**405** | Format is not available |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
@@ -446,7 +413,7 @@ void (empty response body)
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **tasks_annotations_file_partial_update**
-> Task tasks_annotations_file_partial_update(file_id, id)
+> TaskWrite tasks_annotations_file_partial_update(file_id, id)
 
 Allows to upload an annotation file chunk. Implements TUS file uploading protocol.
 
@@ -461,8 +428,8 @@ Allows to upload an annotation file chunk. Implements TUS file uploading protoco
 import time
 import cvat_api_client
 from cvat_api_client.api import tasks_api
-from cvat_api_client.model.task import Task
-from cvat_api_client.model.patched_task_request import PatchedTaskRequest
+from cvat_api_client.model.task_write import TaskWrite
+from cvat_api_client.model.patched_task_write_request import PatchedTaskWriteRequest
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
@@ -508,15 +475,9 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     x_organization = "X-Organization_example" # str |  (optional)
     org = "org_example" # str | Organization unique slug (optional)
     org_id = 1 # int | Organization identifier (optional)
-    patched_task_request = PatchedTaskRequest(
+    patched_task_write_request = PatchedTaskWriteRequest(
         name="name_example",
         project_id=1,
-        owner=BasicUserRequest(
-            username="A",
-            first_name="first_name_example",
-            last_name="last_name_example",
-        ),
-        assignee=PatchedProjectRequestAssignee(None),
         owner_id=1,
         assignee_id=1,
         bug_tracker="bug_tracker_example",
@@ -541,9 +502,10 @@ with cvat_api_client.ApiClient(configuration) as api_client:
                 deleted=True,
             ),
         ],
-        dimension="dimension_example",
         subset="subset_example",
-    ) # PatchedTaskRequest |  (optional)
+        target_storage=PatchedTaskWriteRequestTargetStorage(None),
+        source_storage=PatchedTaskWriteRequestTargetStorage(None),
+    ) # PatchedTaskWriteRequest |  (optional)
 
     # example passing only required values which don't have defaults set
     try:
@@ -557,7 +519,7 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # and optional values
     try:
         # Allows to upload an annotation file chunk. Implements TUS file uploading protocol.
-        api_response = api_instance.tasks_annotations_file_partial_update(file_id, id, x_organization=x_organization, org=org, org_id=org_id, patched_task_request=patched_task_request)
+        api_response = api_instance.tasks_annotations_file_partial_update(file_id, id, x_organization=x_organization, org=org, org_id=org_id, patched_task_write_request=patched_task_write_request)
         pprint(api_response)
     except cvat_api_client.ApiException as e:
         print("Exception when calling TasksApi->tasks_annotations_file_partial_update: %s\n" % e)
@@ -573,11 +535,11 @@ Name | Type | Description  | Notes
  **x_organization** | **str**|  | [optional]
  **org** | **str**| Organization unique slug | [optional]
  **org_id** | **int**| Organization identifier | [optional]
- **patched_task_request** | [**PatchedTaskRequest**](PatchedTaskRequest.md)|  | [optional]
+ **patched_task_write_request** | [**PatchedTaskWriteRequest**](PatchedTaskWriteRequest.md)|  | [optional]
 
 ### Return type
 
-[**Task**](Task.md)
+[**TaskWrite**](TaskWrite.md)
 
 ### Authorization
 
@@ -598,7 +560,7 @@ Name | Type | Description  | Notes
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **tasks_annotations_partial_update**
-> LabeledData tasks_annotations_partial_update(action, id)
+> TaskWrite tasks_annotations_partial_update(action, id)
 
 Method performs a partial update of annotations in a specific task
 
@@ -613,8 +575,8 @@ Method performs a partial update of annotations in a specific task
 import time
 import cvat_api_client
 from cvat_api_client.api import tasks_api
-from cvat_api_client.model.patched_labeled_data_request import PatchedLabeledDataRequest
-from cvat_api_client.model.labeled_data import LabeledData
+from cvat_api_client.model.task_write import TaskWrite
+from cvat_api_client.model.patched_task_write_request import PatchedTaskWriteRequest
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
@@ -660,81 +622,37 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     x_organization = "X-Organization_example" # str |  (optional)
     org = "org_example" # str | Organization unique slug (optional)
     org_id = 1 # int | Organization identifier (optional)
-    patched_labeled_data_request = PatchedLabeledDataRequest(
-        version=1,
-        tags=[
-            LabeledImageRequest(
+    patched_task_write_request = PatchedTaskWriteRequest(
+        name="name_example",
+        project_id=1,
+        owner_id=1,
+        assignee_id=1,
+        bug_tracker="bug_tracker_example",
+        overlap=1,
+        segment_size=1,
+        labels=[
+            PatchedLabelRequest(
                 id=1,
-                frame=0,
-                label_id=0,
-                group=0,
-                source="manual",
+                name="name_example",
+                color="color_example",
                 attributes=[
-                    AttributeValRequest(
-                        spec_id=1,
-                        value="value_example",
-                    ),
-                ],
-            ),
-        ],
-        shapes=[
-            LabeledShapeRequest(
-                type=ShapeType("rectangle"),
-                occluded=True,
-                z_order=0,
-                rotation=0.0,
-                points=[
-                    3.14,
-                ],
-                id=1,
-                frame=0,
-                label_id=0,
-                group=0,
-                source="manual",
-                attributes=[
-                    AttributeValRequest(
-                        spec_id=1,
-                        value="value_example",
-                    ),
-                ],
-            ),
-        ],
-        tracks=[
-            LabeledTrackRequest(
-                id=1,
-                frame=0,
-                label_id=0,
-                group=0,
-                source="manual",
-                shapes=[
-                    TrackedShapeRequest(
-                        type=ShapeType("rectangle"),
-                        occluded=True,
-                        z_order=0,
-                        rotation=0.0,
-                        points=[
-                            3.14,
-                        ],
-                        id=1,
-                        frame=0,
-                        outside=True,
-                        attributes=[
-                            AttributeValRequest(
-                                spec_id=1,
-                                value="value_example",
-                            ),
+                    AttributeRequest(
+                        name="name_example",
+                        mutable=True,
+                        input_type=InputTypeEnum("checkbox"),
+                        default_value="default_value_example",
+                        values=[
+                            "values_example",
                         ],
                     ),
                 ],
-                attributes=[
-                    AttributeValRequest(
-                        spec_id=1,
-                        value="value_example",
-                    ),
-                ],
+                deleted=True,
             ),
         ],
-    ) # PatchedLabeledDataRequest |  (optional)
+        subset="subset_example",
+        target_storage=PatchedTaskWriteRequestTargetStorage(None),
+        source_storage=PatchedTaskWriteRequestTargetStorage(None),
+    ) # PatchedTaskWriteRequest |  (optional)
 
     # example passing only required values which don't have defaults set
     try:
@@ -748,7 +666,7 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # and optional values
     try:
         # Method performs a partial update of annotations in a specific task
-        api_response = api_instance.tasks_annotations_partial_update(action, id, x_organization=x_organization, org=org, org_id=org_id, patched_labeled_data_request=patched_labeled_data_request)
+        api_response = api_instance.tasks_annotations_partial_update(action, id, x_organization=x_organization, org=org, org_id=org_id, patched_task_write_request=patched_task_write_request)
         pprint(api_response)
     except cvat_api_client.ApiException as e:
         print("Exception when calling TasksApi->tasks_annotations_partial_update: %s\n" % e)
@@ -764,11 +682,11 @@ Name | Type | Description  | Notes
  **x_organization** | **str**|  | [optional]
  **org** | **str**| Organization unique slug | [optional]
  **org_id** | **int**| Organization identifier | [optional]
- **patched_labeled_data_request** | [**PatchedLabeledDataRequest**](PatchedLabeledDataRequest.md)|  | [optional]
+ **patched_task_write_request** | [**PatchedTaskWriteRequest**](PatchedTaskWriteRequest.md)|  | [optional]
 
 ### Return type
 
-[**LabeledData**](LabeledData.md)
+[**TaskWrite**](TaskWrite.md)
 
 ### Authorization
 
@@ -847,10 +765,13 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     id = 1 # int | A unique integer value identifying this task.
     x_organization = "X-Organization_example" # str |  (optional)
     action = "download" # str | Used to start downloading process after annotation file had been created (optional) if omitted the server will use the default value of "download"
+    cloud_storage_id = 3.14 # float | Storage id (optional)
     filename = "filename_example" # str | Desired output file name (optional)
     format = "format_example" # str | Desired output format name You can get the list of supported formats at: /server/annotation/formats (optional)
+    location = "cloud_storage" # str | Where need to save downloaded dataset (optional)
     org = "org_example" # str | Organization unique slug (optional)
     org_id = 1 # int | Organization identifier (optional)
+    use_default_location = True # bool | Use the location that was configured in the task to export annotation (optional) if omitted the server will use the default value of True
 
     # example passing only required values which don't have defaults set
     try:
@@ -863,7 +784,7 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # and optional values
     try:
         # Method allows to download task annotations
-        api_instance.tasks_annotations_retrieve(id, x_organization=x_organization, action=action, filename=filename, format=format, org=org, org_id=org_id)
+        api_instance.tasks_annotations_retrieve(id, x_organization=x_organization, action=action, cloud_storage_id=cloud_storage_id, filename=filename, format=format, location=location, org=org, org_id=org_id, use_default_location=use_default_location)
     except cvat_api_client.ApiException as e:
         print("Exception when calling TasksApi->tasks_annotations_retrieve: %s\n" % e)
 ```
@@ -876,10 +797,13 @@ Name | Type | Description  | Notes
  **id** | **int**| A unique integer value identifying this task. |
  **x_organization** | **str**|  | [optional]
  **action** | **str**| Used to start downloading process after annotation file had been created | [optional] if omitted the server will use the default value of "download"
+ **cloud_storage_id** | **float**| Storage id | [optional]
  **filename** | **str**| Desired output file name | [optional]
  **format** | **str**| Desired output format name You can get the list of supported formats at: /server/annotation/formats | [optional]
+ **location** | **str**| Where need to save downloaded dataset | [optional]
  **org** | **str**| Organization unique slug | [optional]
  **org_id** | **int**| Organization identifier | [optional]
+ **use_default_location** | **bool**| Use the location that was configured in the task to export annotation | [optional] if omitted the server will use the default value of True
 
 ### Return type
 
@@ -907,7 +831,7 @@ void (empty response body)
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **tasks_annotations_update**
-> tasks_annotations_update(id, labeled_data_request)
+> tasks_annotations_update(id, task_write_request)
 
 Method allows to upload task annotations
 
@@ -922,7 +846,7 @@ Method allows to upload task annotations
 import time
 import cvat_api_client
 from cvat_api_client.api import tasks_api
-from cvat_api_client.model.labeled_data_request import LabeledDataRequest
+from cvat_api_client.model.task_write_request import TaskWriteRequest
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
@@ -964,81 +888,37 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = tasks_api.TasksApi(api_client)
     id = 1 # int | A unique integer value identifying this task.
-    labeled_data_request = LabeledDataRequest(
-        version=1,
-        tags=[
-            LabeledImageRequest(
+    task_write_request = TaskWriteRequest(
+        name="name_example",
+        project_id=1,
+        owner_id=1,
+        assignee_id=1,
+        bug_tracker="bug_tracker_example",
+        overlap=1,
+        segment_size=1,
+        labels=[
+            PatchedLabelRequest(
                 id=1,
-                frame=0,
-                label_id=0,
-                group=0,
-                source="manual",
+                name="name_example",
+                color="color_example",
                 attributes=[
-                    AttributeValRequest(
-                        spec_id=1,
-                        value="value_example",
-                    ),
-                ],
-            ),
-        ],
-        shapes=[
-            LabeledShapeRequest(
-                type=ShapeType("rectangle"),
-                occluded=True,
-                z_order=0,
-                rotation=0.0,
-                points=[
-                    3.14,
-                ],
-                id=1,
-                frame=0,
-                label_id=0,
-                group=0,
-                source="manual",
-                attributes=[
-                    AttributeValRequest(
-                        spec_id=1,
-                        value="value_example",
-                    ),
-                ],
-            ),
-        ],
-        tracks=[
-            LabeledTrackRequest(
-                id=1,
-                frame=0,
-                label_id=0,
-                group=0,
-                source="manual",
-                shapes=[
-                    TrackedShapeRequest(
-                        type=ShapeType("rectangle"),
-                        occluded=True,
-                        z_order=0,
-                        rotation=0.0,
-                        points=[
-                            3.14,
-                        ],
-                        id=1,
-                        frame=0,
-                        outside=True,
-                        attributes=[
-                            AttributeValRequest(
-                                spec_id=1,
-                                value="value_example",
-                            ),
+                    AttributeRequest(
+                        name="name_example",
+                        mutable=True,
+                        input_type=InputTypeEnum("checkbox"),
+                        default_value="default_value_example",
+                        values=[
+                            "values_example",
                         ],
                     ),
                 ],
-                attributes=[
-                    AttributeValRequest(
-                        spec_id=1,
-                        value="value_example",
-                    ),
-                ],
+                deleted=True,
             ),
         ],
-    ) # LabeledDataRequest | 
+        subset="subset_example",
+        target_storage=PatchedTaskWriteRequestTargetStorage(None),
+        source_storage=PatchedTaskWriteRequestTargetStorage(None),
+    ) # TaskWriteRequest | 
     x_organization = "X-Organization_example" # str |  (optional)
     format = "format_example" # str | Input format name You can get the list of supported formats at: /server/annotation/formats (optional)
     org = "org_example" # str | Organization unique slug (optional)
@@ -1047,7 +927,7 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # example passing only required values which don't have defaults set
     try:
         # Method allows to upload task annotations
-        api_instance.tasks_annotations_update(id, labeled_data_request)
+        api_instance.tasks_annotations_update(id, task_write_request)
     except cvat_api_client.ApiException as e:
         print("Exception when calling TasksApi->tasks_annotations_update: %s\n" % e)
 
@@ -1055,7 +935,7 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # and optional values
     try:
         # Method allows to upload task annotations
-        api_instance.tasks_annotations_update(id, labeled_data_request, x_organization=x_organization, format=format, org=org, org_id=org_id)
+        api_instance.tasks_annotations_update(id, task_write_request, x_organization=x_organization, format=format, org=org, org_id=org_id)
     except cvat_api_client.ApiException as e:
         print("Exception when calling TasksApi->tasks_annotations_update: %s\n" % e)
 ```
@@ -1066,7 +946,7 @@ with cvat_api_client.ApiClient(configuration) as api_client:
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **id** | **int**| A unique integer value identifying this task. |
- **labeled_data_request** | [**LabeledDataRequest**](LabeledDataRequest.md)|  |
+ **task_write_request** | [**TaskWriteRequest**](TaskWriteRequest.md)|  |
  **x_organization** | **str**|  | [optional]
  **format** | **str**| Input format name You can get the list of supported formats at: /server/annotation/formats | [optional]
  **org** | **str**| Organization unique slug | [optional]
@@ -1097,7 +977,7 @@ void (empty response body)
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **tasks_backup_create**
-> tasks_backup_create(task_request)
+> tasks_backup_create(task_file_request)
 
 Method recreates a task from an attached task backup file
 
@@ -1112,7 +992,7 @@ Method recreates a task from an attached task backup file
 import time
 import cvat_api_client
 from cvat_api_client.api import tasks_api
-from cvat_api_client.model.task_request import TaskRequest
+from cvat_api_client.model.task_file_request import TaskFileRequest
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
@@ -1153,50 +1033,20 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 with cvat_api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = tasks_api.TasksApi(api_client)
-    task_request = TaskRequest(
-        name="name_example",
-        project_id=1,
-        owner=BasicUserRequest(
-            username="A",
-            first_name="first_name_example",
-            last_name="last_name_example",
-        ),
-        assignee=PatchedProjectRequestAssignee(None),
-        owner_id=1,
-        assignee_id=1,
-        bug_tracker="bug_tracker_example",
-        overlap=1,
-        segment_size=1,
-        labels=[
-            PatchedLabelRequest(
-                id=1,
-                name="name_example",
-                color="color_example",
-                attributes=[
-                    AttributeRequest(
-                        name="name_example",
-                        mutable=True,
-                        input_type=InputTypeEnum("checkbox"),
-                        default_value="default_value_example",
-                        values=[
-                            "values_example",
-                        ],
-                    ),
-                ],
-                deleted=True,
-            ),
-        ],
-        dimension="dimension_example",
-        subset="subset_example",
-    ) # TaskRequest | 
+    task_file_request = TaskFileRequest(
+        task_file=open('/path/to/file', 'rb'),
+    ) # TaskFileRequest | 
     x_organization = "X-Organization_example" # str |  (optional)
+    cloud_storage_id = 3.14 # float | Storage id (optional)
+    filename = "filename_example" # str | Backup file name (optional)
+    location = "local" # str | Where to import the backup file from (optional) if omitted the server will use the default value of "local"
     org = "org_example" # str | Organization unique slug (optional)
     org_id = 1 # int | Organization identifier (optional)
 
     # example passing only required values which don't have defaults set
     try:
         # Method recreates a task from an attached task backup file
-        api_instance.tasks_backup_create(task_request)
+        api_instance.tasks_backup_create(task_file_request)
     except cvat_api_client.ApiException as e:
         print("Exception when calling TasksApi->tasks_backup_create: %s\n" % e)
 
@@ -1204,7 +1054,7 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # and optional values
     try:
         # Method recreates a task from an attached task backup file
-        api_instance.tasks_backup_create(task_request, x_organization=x_organization, org=org, org_id=org_id)
+        api_instance.tasks_backup_create(task_file_request, x_organization=x_organization, cloud_storage_id=cloud_storage_id, filename=filename, location=location, org=org, org_id=org_id)
     except cvat_api_client.ApiException as e:
         print("Exception when calling TasksApi->tasks_backup_create: %s\n" % e)
 ```
@@ -1214,8 +1064,11 @@ with cvat_api_client.ApiClient(configuration) as api_client:
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **task_request** | [**TaskRequest**](TaskRequest.md)|  |
+ **task_file_request** | [**TaskFileRequest**](TaskFileRequest.md)|  |
  **x_organization** | **str**|  | [optional]
+ **cloud_storage_id** | **float**| Storage id | [optional]
+ **filename** | **str**| Backup file name | [optional]
+ **location** | **str**| Where to import the backup file from | [optional] if omitted the server will use the default value of "local"
  **org** | **str**| Organization unique slug | [optional]
  **org_id** | **int**| Organization identifier | [optional]
 
@@ -1243,7 +1096,7 @@ void (empty response body)
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **tasks_backup_file_partial_update**
-> Task tasks_backup_file_partial_update(file_id)
+> TaskWrite tasks_backup_file_partial_update(file_id)
 
 Allows to upload a file chunk. Implements TUS file uploading protocol.
 
@@ -1258,8 +1111,8 @@ Allows to upload a file chunk. Implements TUS file uploading protocol.
 import time
 import cvat_api_client
 from cvat_api_client.api import tasks_api
-from cvat_api_client.model.task import Task
-from cvat_api_client.model.patched_task_request import PatchedTaskRequest
+from cvat_api_client.model.task_write import TaskWrite
+from cvat_api_client.model.patched_task_write_request import PatchedTaskWriteRequest
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
@@ -1304,15 +1157,9 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     x_organization = "X-Organization_example" # str |  (optional)
     org = "org_example" # str | Organization unique slug (optional)
     org_id = 1 # int | Organization identifier (optional)
-    patched_task_request = PatchedTaskRequest(
+    patched_task_write_request = PatchedTaskWriteRequest(
         name="name_example",
         project_id=1,
-        owner=BasicUserRequest(
-            username="A",
-            first_name="first_name_example",
-            last_name="last_name_example",
-        ),
-        assignee=PatchedProjectRequestAssignee(None),
         owner_id=1,
         assignee_id=1,
         bug_tracker="bug_tracker_example",
@@ -1337,9 +1184,10 @@ with cvat_api_client.ApiClient(configuration) as api_client:
                 deleted=True,
             ),
         ],
-        dimension="dimension_example",
         subset="subset_example",
-    ) # PatchedTaskRequest |  (optional)
+        target_storage=PatchedTaskWriteRequestTargetStorage(None),
+        source_storage=PatchedTaskWriteRequestTargetStorage(None),
+    ) # PatchedTaskWriteRequest |  (optional)
 
     # example passing only required values which don't have defaults set
     try:
@@ -1353,7 +1201,7 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # and optional values
     try:
         # Allows to upload a file chunk. Implements TUS file uploading protocol.
-        api_response = api_instance.tasks_backup_file_partial_update(file_id, x_organization=x_organization, org=org, org_id=org_id, patched_task_request=patched_task_request)
+        api_response = api_instance.tasks_backup_file_partial_update(file_id, x_organization=x_organization, org=org, org_id=org_id, patched_task_write_request=patched_task_write_request)
         pprint(api_response)
     except cvat_api_client.ApiException as e:
         print("Exception when calling TasksApi->tasks_backup_file_partial_update: %s\n" % e)
@@ -1368,11 +1216,11 @@ Name | Type | Description  | Notes
  **x_organization** | **str**|  | [optional]
  **org** | **str**| Organization unique slug | [optional]
  **org_id** | **int**| Organization identifier | [optional]
- **patched_task_request** | [**PatchedTaskRequest**](PatchedTaskRequest.md)|  | [optional]
+ **patched_task_write_request** | [**PatchedTaskWriteRequest**](PatchedTaskWriteRequest.md)|  | [optional]
 
 ### Return type
 
-[**Task**](Task.md)
+[**TaskWrite**](TaskWrite.md)
 
 ### Authorization
 
@@ -1450,8 +1298,13 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     api_instance = tasks_api.TasksApi(api_client)
     id = 1 # int | A unique integer value identifying this task.
     x_organization = "X-Organization_example" # str |  (optional)
+    action = "download" # str | Used to start downloading process after backup file had been created (optional) if omitted the server will use the default value of "download"
+    cloud_storage_id = 3.14 # float | Storage id (optional)
+    filename = "filename_example" # str | Backup file name (optional)
+    location = "cloud_storage" # str | Where need to save downloaded backup (optional)
     org = "org_example" # str | Organization unique slug (optional)
     org_id = 1 # int | Organization identifier (optional)
+    use_default_location = True # bool | Use the location that was configured in the task to export backup (optional) if omitted the server will use the default value of True
 
     # example passing only required values which don't have defaults set
     try:
@@ -1464,7 +1317,7 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # and optional values
     try:
         # Method backup a specified task
-        api_instance.tasks_backup_retrieve(id, x_organization=x_organization, org=org, org_id=org_id)
+        api_instance.tasks_backup_retrieve(id, x_organization=x_organization, action=action, cloud_storage_id=cloud_storage_id, filename=filename, location=location, org=org, org_id=org_id, use_default_location=use_default_location)
     except cvat_api_client.ApiException as e:
         print("Exception when calling TasksApi->tasks_backup_retrieve: %s\n" % e)
 ```
@@ -1476,8 +1329,13 @@ Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **id** | **int**| A unique integer value identifying this task. |
  **x_organization** | **str**|  | [optional]
+ **action** | **str**| Used to start downloading process after backup file had been created | [optional] if omitted the server will use the default value of "download"
+ **cloud_storage_id** | **float**| Storage id | [optional]
+ **filename** | **str**| Backup file name | [optional]
+ **location** | **str**| Where need to save downloaded backup | [optional]
  **org** | **str**| Organization unique slug | [optional]
  **org_id** | **int**| Organization identifier | [optional]
+ **use_default_location** | **bool**| Use the location that was configured in the task to export backup | [optional] if omitted the server will use the default value of True
 
 ### Return type
 
@@ -1504,7 +1362,7 @@ void (empty response body)
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **tasks_create**
-> Task tasks_create(task_request)
+> TaskWrite tasks_create(task_write_request)
 
 Method creates a new task in a database without any attached images and videos
 
@@ -1519,8 +1377,8 @@ Method creates a new task in a database without any attached images and videos
 import time
 import cvat_api_client
 from cvat_api_client.api import tasks_api
-from cvat_api_client.model.task import Task
-from cvat_api_client.model.task_request import TaskRequest
+from cvat_api_client.model.task_write import TaskWrite
+from cvat_api_client.model.task_write_request import TaskWriteRequest
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
@@ -1561,15 +1419,9 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 with cvat_api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = tasks_api.TasksApi(api_client)
-    task_request = TaskRequest(
+    task_write_request = TaskWriteRequest(
         name="name_example",
         project_id=1,
-        owner=BasicUserRequest(
-            username="A",
-            first_name="first_name_example",
-            last_name="last_name_example",
-        ),
-        assignee=PatchedProjectRequestAssignee(None),
         owner_id=1,
         assignee_id=1,
         bug_tracker="bug_tracker_example",
@@ -1594,9 +1446,10 @@ with cvat_api_client.ApiClient(configuration) as api_client:
                 deleted=True,
             ),
         ],
-        dimension="dimension_example",
         subset="subset_example",
-    ) # TaskRequest | 
+        target_storage=PatchedTaskWriteRequestTargetStorage(None),
+        source_storage=PatchedTaskWriteRequestTargetStorage(None),
+    ) # TaskWriteRequest | 
     x_organization = "X-Organization_example" # str |  (optional)
     org = "org_example" # str | Organization unique slug (optional)
     org_id = 1 # int | Organization identifier (optional)
@@ -1604,7 +1457,7 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # example passing only required values which don't have defaults set
     try:
         # Method creates a new task in a database without any attached images and videos
-        api_response = api_instance.tasks_create(task_request)
+        api_response = api_instance.tasks_create(task_write_request)
         pprint(api_response)
     except cvat_api_client.ApiException as e:
         print("Exception when calling TasksApi->tasks_create: %s\n" % e)
@@ -1613,7 +1466,7 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # and optional values
     try:
         # Method creates a new task in a database without any attached images and videos
-        api_response = api_instance.tasks_create(task_request, x_organization=x_organization, org=org, org_id=org_id)
+        api_response = api_instance.tasks_create(task_write_request, x_organization=x_organization, org=org, org_id=org_id)
         pprint(api_response)
     except cvat_api_client.ApiException as e:
         print("Exception when calling TasksApi->tasks_create: %s\n" % e)
@@ -1624,14 +1477,14 @@ with cvat_api_client.ApiClient(configuration) as api_client:
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **task_request** | [**TaskRequest**](TaskRequest.md)|  |
+ **task_write_request** | [**TaskWriteRequest**](TaskWriteRequest.md)|  |
  **x_organization** | **str**|  | [optional]
  **org** | **str**| Organization unique slug | [optional]
  **org_id** | **int**| Organization identifier | [optional]
 
 ### Return type
 
-[**Task**](Task.md)
+[**TaskWrite**](TaskWrite.md)
 
 ### Authorization
 
@@ -1789,7 +1642,7 @@ void (empty response body)
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **tasks_data_file_partial_update**
-> Task tasks_data_file_partial_update(file_id, id)
+> TaskWrite tasks_data_file_partial_update(file_id, id)
 
 Allows to upload a file chunk. Implements TUS file uploading protocol.
 
@@ -1804,8 +1657,8 @@ Allows to upload a file chunk. Implements TUS file uploading protocol.
 import time
 import cvat_api_client
 from cvat_api_client.api import tasks_api
-from cvat_api_client.model.task import Task
-from cvat_api_client.model.patched_task_request import PatchedTaskRequest
+from cvat_api_client.model.task_write import TaskWrite
+from cvat_api_client.model.patched_task_write_request import PatchedTaskWriteRequest
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
@@ -1851,15 +1704,9 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     x_organization = "X-Organization_example" # str |  (optional)
     org = "org_example" # str | Organization unique slug (optional)
     org_id = 1 # int | Organization identifier (optional)
-    patched_task_request = PatchedTaskRequest(
+    patched_task_write_request = PatchedTaskWriteRequest(
         name="name_example",
         project_id=1,
-        owner=BasicUserRequest(
-            username="A",
-            first_name="first_name_example",
-            last_name="last_name_example",
-        ),
-        assignee=PatchedProjectRequestAssignee(None),
         owner_id=1,
         assignee_id=1,
         bug_tracker="bug_tracker_example",
@@ -1884,9 +1731,10 @@ with cvat_api_client.ApiClient(configuration) as api_client:
                 deleted=True,
             ),
         ],
-        dimension="dimension_example",
         subset="subset_example",
-    ) # PatchedTaskRequest |  (optional)
+        target_storage=PatchedTaskWriteRequestTargetStorage(None),
+        source_storage=PatchedTaskWriteRequestTargetStorage(None),
+    ) # PatchedTaskWriteRequest |  (optional)
 
     # example passing only required values which don't have defaults set
     try:
@@ -1900,7 +1748,7 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # and optional values
     try:
         # Allows to upload a file chunk. Implements TUS file uploading protocol.
-        api_response = api_instance.tasks_data_file_partial_update(file_id, id, x_organization=x_organization, org=org, org_id=org_id, patched_task_request=patched_task_request)
+        api_response = api_instance.tasks_data_file_partial_update(file_id, id, x_organization=x_organization, org=org, org_id=org_id, patched_task_write_request=patched_task_write_request)
         pprint(api_response)
     except cvat_api_client.ApiException as e:
         print("Exception when calling TasksApi->tasks_data_file_partial_update: %s\n" % e)
@@ -1916,11 +1764,11 @@ Name | Type | Description  | Notes
  **x_organization** | **str**|  | [optional]
  **org** | **str**| Organization unique slug | [optional]
  **org_id** | **int**| Organization identifier | [optional]
- **patched_task_request** | [**PatchedTaskRequest**](PatchedTaskRequest.md)|  | [optional]
+ **patched_task_write_request** | [**PatchedTaskWriteRequest**](PatchedTaskWriteRequest.md)|  | [optional]
 
 ### Return type
 
-[**Task**](Task.md)
+[**TaskWrite**](TaskWrite.md)
 
 ### Authorization
 
@@ -1957,7 +1805,7 @@ import time
 import cvat_api_client
 from cvat_api_client.api import tasks_api
 from cvat_api_client.model.data_meta_read import DataMetaRead
-from cvat_api_client.model.patched_data_meta_read_request import PatchedDataMetaReadRequest
+from cvat_api_client.model.patched_task_write_request import PatchedTaskWriteRequest
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
@@ -2002,20 +1850,37 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     x_organization = "X-Organization_example" # str |  (optional)
     org = "org_example" # str | Organization unique slug (optional)
     org_id = 1 # int | Organization identifier (optional)
-    patched_data_meta_read_request = PatchedDataMetaReadRequest(
-        image_quality=0,
-        frames=[
-            FrameMetaRequest(
-                width=1,
-                height=1,
+    patched_task_write_request = PatchedTaskWriteRequest(
+        name="name_example",
+        project_id=1,
+        owner_id=1,
+        assignee_id=1,
+        bug_tracker="bug_tracker_example",
+        overlap=1,
+        segment_size=1,
+        labels=[
+            PatchedLabelRequest(
+                id=1,
                 name="name_example",
-                has_related_context=True,
+                color="color_example",
+                attributes=[
+                    AttributeRequest(
+                        name="name_example",
+                        mutable=True,
+                        input_type=InputTypeEnum("checkbox"),
+                        default_value="default_value_example",
+                        values=[
+                            "values_example",
+                        ],
+                    ),
+                ],
+                deleted=True,
             ),
         ],
-        deleted_frames=[
-            0,
-        ],
-    ) # PatchedDataMetaReadRequest |  (optional)
+        subset="subset_example",
+        target_storage=PatchedTaskWriteRequestTargetStorage(None),
+        source_storage=PatchedTaskWriteRequestTargetStorage(None),
+    ) # PatchedTaskWriteRequest |  (optional)
 
     # example passing only required values which don't have defaults set
     try:
@@ -2029,7 +1894,7 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # and optional values
     try:
         # Method provides a meta information about media files which are related with the task
-        api_response = api_instance.tasks_data_meta_partial_update(id, x_organization=x_organization, org=org, org_id=org_id, patched_data_meta_read_request=patched_data_meta_read_request)
+        api_response = api_instance.tasks_data_meta_partial_update(id, x_organization=x_organization, org=org, org_id=org_id, patched_task_write_request=patched_task_write_request)
         pprint(api_response)
     except cvat_api_client.ApiException as e:
         print("Exception when calling TasksApi->tasks_data_meta_partial_update: %s\n" % e)
@@ -2044,7 +1909,7 @@ Name | Type | Description  | Notes
  **x_organization** | **str**|  | [optional]
  **org** | **str**| Organization unique slug | [optional]
  **org_id** | **int**| Organization identifier | [optional]
- **patched_data_meta_read_request** | [**PatchedDataMetaReadRequest**](PatchedDataMetaReadRequest.md)|  | [optional]
+ **patched_task_write_request** | [**PatchedTaskWriteRequest**](PatchedTaskWriteRequest.md)|  | [optional]
 
 ### Return type
 
@@ -2355,9 +2220,12 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     id = 1 # int | A unique integer value identifying this task.
     x_organization = "X-Organization_example" # str |  (optional)
     action = "download" # str | Used to start downloading process after annotation file had been created (optional) if omitted the server will use the default value of "download"
+    cloud_storage_id = 3.14 # float | Storage id (optional)
     filename = "filename_example" # str | Desired output file name (optional)
+    location = "cloud_storage" # str | Where need to save downloaded dataset (optional)
     org = "org_example" # str | Organization unique slug (optional)
     org_id = 1 # int | Organization identifier (optional)
+    use_default_location = True # bool | Use the location that was configured in task to export annotations (optional) if omitted the server will use the default value of True
 
     # example passing only required values which don't have defaults set
     try:
@@ -2370,7 +2238,7 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # and optional values
     try:
         # Export task as a dataset in a specific format
-        api_instance.tasks_dataset_retrieve(format, id, x_organization=x_organization, action=action, filename=filename, org=org, org_id=org_id)
+        api_instance.tasks_dataset_retrieve(format, id, x_organization=x_organization, action=action, cloud_storage_id=cloud_storage_id, filename=filename, location=location, org=org, org_id=org_id, use_default_location=use_default_location)
     except cvat_api_client.ApiException as e:
         print("Exception when calling TasksApi->tasks_dataset_retrieve: %s\n" % e)
 ```
@@ -2384,9 +2252,12 @@ Name | Type | Description  | Notes
  **id** | **int**| A unique integer value identifying this task. |
  **x_organization** | **str**|  | [optional]
  **action** | **str**| Used to start downloading process after annotation file had been created | [optional] if omitted the server will use the default value of "download"
+ **cloud_storage_id** | **float**| Storage id | [optional]
  **filename** | **str**| Desired output file name | [optional]
+ **location** | **str**| Where need to save downloaded dataset | [optional]
  **org** | **str**| Organization unique slug | [optional]
  **org_id** | **int**| Organization identifier | [optional]
+ **use_default_location** | **bool**| Use the location that was configured in task to export annotations | [optional] if omitted the server will use the default value of True
 
 ### Return type
 
@@ -2645,7 +2516,7 @@ Name | Type | Description  | Notes
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **tasks_list**
-> PaginatedTaskList tasks_list()
+> PaginatedTaskReadList tasks_list()
 
 Returns a paginated list of tasks according to query parameters (10 tasks per page)
 
@@ -2660,7 +2531,7 @@ Returns a paginated list of tasks according to query parameters (10 tasks per pa
 import time
 import cvat_api_client
 from cvat_api_client.api import tasks_api
-from cvat_api_client.model.paginated_task_list import PaginatedTaskList
+from cvat_api_client.model.paginated_task_read_list import PaginatedTaskReadList
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
@@ -2736,7 +2607,7 @@ Name | Type | Description  | Notes
 
 ### Return type
 
-[**PaginatedTaskList**](PaginatedTaskList.md)
+[**PaginatedTaskReadList**](PaginatedTaskReadList.md)
 
 ### Authorization
 
@@ -2757,7 +2628,7 @@ Name | Type | Description  | Notes
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **tasks_partial_update**
-> Task tasks_partial_update(id)
+> TaskWrite tasks_partial_update(id)
 
 Methods does a partial update of chosen fields in a task
 
@@ -2772,8 +2643,8 @@ Methods does a partial update of chosen fields in a task
 import time
 import cvat_api_client
 from cvat_api_client.api import tasks_api
-from cvat_api_client.model.task import Task
-from cvat_api_client.model.patched_task_request import PatchedTaskRequest
+from cvat_api_client.model.task_write import TaskWrite
+from cvat_api_client.model.patched_task_write_request import PatchedTaskWriteRequest
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
@@ -2818,15 +2689,9 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     x_organization = "X-Organization_example" # str |  (optional)
     org = "org_example" # str | Organization unique slug (optional)
     org_id = 1 # int | Organization identifier (optional)
-    patched_task_request = PatchedTaskRequest(
+    patched_task_write_request = PatchedTaskWriteRequest(
         name="name_example",
         project_id=1,
-        owner=BasicUserRequest(
-            username="A",
-            first_name="first_name_example",
-            last_name="last_name_example",
-        ),
-        assignee=PatchedProjectRequestAssignee(None),
         owner_id=1,
         assignee_id=1,
         bug_tracker="bug_tracker_example",
@@ -2851,9 +2716,10 @@ with cvat_api_client.ApiClient(configuration) as api_client:
                 deleted=True,
             ),
         ],
-        dimension="dimension_example",
         subset="subset_example",
-    ) # PatchedTaskRequest |  (optional)
+        target_storage=PatchedTaskWriteRequestTargetStorage(None),
+        source_storage=PatchedTaskWriteRequestTargetStorage(None),
+    ) # PatchedTaskWriteRequest |  (optional)
 
     # example passing only required values which don't have defaults set
     try:
@@ -2867,7 +2733,7 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # and optional values
     try:
         # Methods does a partial update of chosen fields in a task
-        api_response = api_instance.tasks_partial_update(id, x_organization=x_organization, org=org, org_id=org_id, patched_task_request=patched_task_request)
+        api_response = api_instance.tasks_partial_update(id, x_organization=x_organization, org=org, org_id=org_id, patched_task_write_request=patched_task_write_request)
         pprint(api_response)
     except cvat_api_client.ApiException as e:
         print("Exception when calling TasksApi->tasks_partial_update: %s\n" % e)
@@ -2882,11 +2748,11 @@ Name | Type | Description  | Notes
  **x_organization** | **str**|  | [optional]
  **org** | **str**| Organization unique slug | [optional]
  **org_id** | **int**| Organization identifier | [optional]
- **patched_task_request** | [**PatchedTaskRequest**](PatchedTaskRequest.md)|  | [optional]
+ **patched_task_write_request** | [**PatchedTaskWriteRequest**](PatchedTaskWriteRequest.md)|  | [optional]
 
 ### Return type
 
-[**Task**](Task.md)
+[**TaskWrite**](TaskWrite.md)
 
 ### Authorization
 
@@ -2907,7 +2773,7 @@ Name | Type | Description  | Notes
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **tasks_retrieve**
-> Task tasks_retrieve(id)
+> TaskRead tasks_retrieve(id)
 
 Method returns details of a specific task
 
@@ -2922,7 +2788,7 @@ Method returns details of a specific task
 import time
 import cvat_api_client
 from cvat_api_client.api import tasks_api
-from cvat_api_client.model.task import Task
+from cvat_api_client.model.task_read import TaskRead
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
@@ -2998,7 +2864,7 @@ Name | Type | Description  | Notes
 
 ### Return type
 
-[**Task**](Task.md)
+[**TaskRead**](TaskRead.md)
 
 ### Authorization
 
@@ -3131,7 +2997,7 @@ Name | Type | Description  | Notes
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **tasks_update**
-> Task tasks_update(id, task_request)
+> TaskWrite tasks_update(id, task_write_request)
 
 Method updates a task by id
 
@@ -3146,8 +3012,8 @@ Method updates a task by id
 import time
 import cvat_api_client
 from cvat_api_client.api import tasks_api
-from cvat_api_client.model.task import Task
-from cvat_api_client.model.task_request import TaskRequest
+from cvat_api_client.model.task_write import TaskWrite
+from cvat_api_client.model.task_write_request import TaskWriteRequest
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
@@ -3189,15 +3055,9 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = tasks_api.TasksApi(api_client)
     id = 1 # int | A unique integer value identifying this task.
-    task_request = TaskRequest(
+    task_write_request = TaskWriteRequest(
         name="name_example",
         project_id=1,
-        owner=BasicUserRequest(
-            username="A",
-            first_name="first_name_example",
-            last_name="last_name_example",
-        ),
-        assignee=PatchedProjectRequestAssignee(None),
         owner_id=1,
         assignee_id=1,
         bug_tracker="bug_tracker_example",
@@ -3222,9 +3082,10 @@ with cvat_api_client.ApiClient(configuration) as api_client:
                 deleted=True,
             ),
         ],
-        dimension="dimension_example",
         subset="subset_example",
-    ) # TaskRequest | 
+        target_storage=PatchedTaskWriteRequestTargetStorage(None),
+        source_storage=PatchedTaskWriteRequestTargetStorage(None),
+    ) # TaskWriteRequest | 
     x_organization = "X-Organization_example" # str |  (optional)
     org = "org_example" # str | Organization unique slug (optional)
     org_id = 1 # int | Organization identifier (optional)
@@ -3232,7 +3093,7 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # example passing only required values which don't have defaults set
     try:
         # Method updates a task by id
-        api_response = api_instance.tasks_update(id, task_request)
+        api_response = api_instance.tasks_update(id, task_write_request)
         pprint(api_response)
     except cvat_api_client.ApiException as e:
         print("Exception when calling TasksApi->tasks_update: %s\n" % e)
@@ -3241,7 +3102,7 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # and optional values
     try:
         # Method updates a task by id
-        api_response = api_instance.tasks_update(id, task_request, x_organization=x_organization, org=org, org_id=org_id)
+        api_response = api_instance.tasks_update(id, task_write_request, x_organization=x_organization, org=org, org_id=org_id)
         pprint(api_response)
     except cvat_api_client.ApiException as e:
         print("Exception when calling TasksApi->tasks_update: %s\n" % e)
@@ -3253,14 +3114,14 @@ with cvat_api_client.ApiClient(configuration) as api_client:
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **id** | **int**| A unique integer value identifying this task. |
- **task_request** | [**TaskRequest**](TaskRequest.md)|  |
+ **task_write_request** | [**TaskWriteRequest**](TaskWriteRequest.md)|  |
  **x_organization** | **str**|  | [optional]
  **org** | **str**| Organization unique slug | [optional]
  **org_id** | **int**| Organization identifier | [optional]
 
 ### Return type
 
-[**Task**](Task.md)
+[**TaskWrite**](TaskWrite.md)
 
 ### Authorization
 

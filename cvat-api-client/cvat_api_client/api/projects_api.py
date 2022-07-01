@@ -27,10 +27,12 @@ from cvat_api_client.model_utils import (  # noqa: F401
     validate_and_convert_types
 )
 from cvat_api_client.model.paginated_polymorphic_project_list import PaginatedPolymorphicProjectList
-from cvat_api_client.model.paginated_task_list import PaginatedTaskList
-from cvat_api_client.model.patched_project_request import PatchedProjectRequest
-from cvat_api_client.model.project import Project
-from cvat_api_client.model.project_request import ProjectRequest
+from cvat_api_client.model.paginated_task_read_list import PaginatedTaskReadList
+from cvat_api_client.model.patched_project_write_request import PatchedProjectWriteRequest
+from cvat_api_client.model.project_file_request import ProjectFileRequest
+from cvat_api_client.model.project_read import ProjectRead
+from cvat_api_client.model.project_write import ProjectWrite
+from cvat_api_client.model.project_write_request import ProjectWriteRequest
 
 
 class ProjectsApi(object):
@@ -64,9 +66,12 @@ class ProjectsApi(object):
                     'id',
                     'x_organization',
                     'action',
+                    'cloud_storage_id',
                     'filename',
+                    'location',
                     'org',
                     'org_id',
+                    'use_default_location',
                 ],
                 'required': [
                     'format',
@@ -76,6 +81,7 @@ class ProjectsApi(object):
                 ],
                 'enum': [
                     'action',
+                    'location',
                 ],
                 'validation': [
                 ]
@@ -88,6 +94,11 @@ class ProjectsApi(object):
 
                         "DOWNLOAD": "download"
                     },
+                    ('location',): {
+
+                        "CLOUD_STORAGE": "cloud_storage",
+                        "LOCAL": "local"
+                    },
                 },
                 'openapi_types': {
                     'format':
@@ -98,30 +109,42 @@ class ProjectsApi(object):
                         (str,),
                     'action':
                         (str,),
+                    'cloud_storage_id':
+                        (float,),
                     'filename':
+                        (str,),
+                    'location':
                         (str,),
                     'org':
                         (str,),
                     'org_id':
                         (int,),
+                    'use_default_location':
+                        (bool,),
                 },
                 'attribute_map': {
                     'format': 'format',
                     'id': 'id',
                     'x_organization': 'X-Organization',
                     'action': 'action',
+                    'cloud_storage_id': 'cloud_storage_id',
                     'filename': 'filename',
+                    'location': 'location',
                     'org': 'org',
                     'org_id': 'org_id',
+                    'use_default_location': 'use_default_location',
                 },
                 'location_map': {
                     'format': 'query',
                     'id': 'path',
                     'x_organization': 'header',
                     'action': 'query',
+                    'cloud_storage_id': 'query',
                     'filename': 'query',
+                    'location': 'query',
                     'org': 'query',
                     'org_id': 'query',
+                    'use_default_location': 'query',
                 },
                 'collection_format_map': {
                 }
@@ -148,17 +171,21 @@ class ProjectsApi(object):
             },
             params_map={
                 'all': [
-                    'project_request',
+                    'project_file_request',
                     'x_organization',
+                    'cloud_storage_id',
+                    'filename',
+                    'location',
                     'org',
                     'org_id',
                 ],
                 'required': [
-                    'project_request',
+                    'project_file_request',
                 ],
                 'nullable': [
                 ],
                 'enum': [
+                    'location',
                 ],
                 'validation': [
                 ]
@@ -167,11 +194,22 @@ class ProjectsApi(object):
                 'validations': {
                 },
                 'allowed_values': {
+                    ('location',): {
+
+                        "CLOUD_STORAGE": "cloud_storage",
+                        "LOCAL": "local"
+                    },
                 },
                 'openapi_types': {
-                    'project_request':
-                        (ProjectRequest,),
+                    'project_file_request':
+                        (ProjectFileRequest,),
                     'x_organization':
+                        (str,),
+                    'cloud_storage_id':
+                        (float,),
+                    'filename':
+                        (str,),
+                    'location':
                         (str,),
                     'org':
                         (str,),
@@ -180,12 +218,18 @@ class ProjectsApi(object):
                 },
                 'attribute_map': {
                     'x_organization': 'X-Organization',
+                    'cloud_storage_id': 'cloud_storage_id',
+                    'filename': 'filename',
+                    'location': 'location',
                     'org': 'org',
                     'org_id': 'org_id',
                 },
                 'location_map': {
-                    'project_request': 'body',
+                    'project_file_request': 'body',
                     'x_organization': 'header',
+                    'cloud_storage_id': 'query',
+                    'filename': 'query',
+                    'location': 'query',
                     'org': 'query',
                     'org_id': 'query',
                 },
@@ -205,7 +249,7 @@ class ProjectsApi(object):
         )
         self.projects_backup_partial_update_endpoint = _Endpoint(
             settings={
-                'response_type': (Project,),
+                'response_type': (ProjectWrite,),
                 'auth': [
                     'SignatureAuthentication',
                     'basicAuth',
@@ -223,7 +267,7 @@ class ProjectsApi(object):
                     'x_organization',
                     'org',
                     'org_id',
-                    'patched_project_request',
+                    'patched_project_write_request',
                 ],
                 'required': [
                     'file_id',
@@ -256,8 +300,8 @@ class ProjectsApi(object):
                         (str,),
                     'org_id':
                         (int,),
-                    'patched_project_request':
-                        (PatchedProjectRequest,),
+                    'patched_project_write_request':
+                        (PatchedProjectWriteRequest,),
                 },
                 'attribute_map': {
                     'file_id': 'file_id',
@@ -270,7 +314,7 @@ class ProjectsApi(object):
                     'x_organization': 'header',
                     'org': 'query',
                     'org_id': 'query',
-                    'patched_project_request': 'body',
+                    'patched_project_write_request': 'body',
                 },
                 'collection_format_map': {
                 }
@@ -306,8 +350,13 @@ class ProjectsApi(object):
                 'all': [
                     'id',
                     'x_organization',
+                    'action',
+                    'cloud_storage_id',
+                    'filename',
+                    'location',
                     'org',
                     'org_id',
+                    'use_default_location',
                 ],
                 'required': [
                     'id',
@@ -315,6 +364,8 @@ class ProjectsApi(object):
                 'nullable': [
                 ],
                 'enum': [
+                    'action',
+                    'location',
                 ],
                 'validation': [
                 ]
@@ -323,28 +374,57 @@ class ProjectsApi(object):
                 'validations': {
                 },
                 'allowed_values': {
+                    ('action',): {
+
+                        "DOWNLOAD": "download"
+                    },
+                    ('location',): {
+
+                        "CLOUD_STORAGE": "cloud_storage",
+                        "LOCAL": "local"
+                    },
                 },
                 'openapi_types': {
                     'id':
                         (int,),
                     'x_organization':
                         (str,),
+                    'action':
+                        (str,),
+                    'cloud_storage_id':
+                        (float,),
+                    'filename':
+                        (str,),
+                    'location':
+                        (str,),
                     'org':
                         (str,),
                     'org_id':
                         (int,),
+                    'use_default_location':
+                        (bool,),
                 },
                 'attribute_map': {
                     'id': 'id',
                     'x_organization': 'X-Organization',
+                    'action': 'action',
+                    'cloud_storage_id': 'cloud_storage_id',
+                    'filename': 'filename',
+                    'location': 'location',
                     'org': 'org',
                     'org_id': 'org_id',
+                    'use_default_location': 'use_default_location',
                 },
                 'location_map': {
                     'id': 'path',
                     'x_organization': 'header',
+                    'action': 'query',
+                    'cloud_storage_id': 'query',
+                    'filename': 'query',
+                    'location': 'query',
                     'org': 'query',
                     'org_id': 'query',
+                    'use_default_location': 'query',
                 },
                 'collection_format_map': {
                 }
@@ -357,7 +437,7 @@ class ProjectsApi(object):
         )
         self.projects_create_endpoint = _Endpoint(
             settings={
-                'response_type': (Project,),
+                'response_type': (ProjectWrite,),
                 'auth': [
                     'SignatureAuthentication',
                     'basicAuth',
@@ -371,13 +451,13 @@ class ProjectsApi(object):
             },
             params_map={
                 'all': [
-                    'project_request',
+                    'project_write_request',
                     'x_organization',
                     'org',
                     'org_id',
                 ],
                 'required': [
-                    'project_request',
+                    'project_write_request',
                 ],
                 'nullable': [
                 ],
@@ -392,8 +472,8 @@ class ProjectsApi(object):
                 'allowed_values': {
                 },
                 'openapi_types': {
-                    'project_request':
-                        (ProjectRequest,),
+                    'project_write_request':
+                        (ProjectWriteRequest,),
                     'x_organization':
                         (str,),
                     'org':
@@ -407,7 +487,7 @@ class ProjectsApi(object):
                     'org_id': 'org_id',
                 },
                 'location_map': {
-                    'project_request': 'body',
+                    'project_write_request': 'body',
                     'x_organization': 'header',
                     'org': 'query',
                     'org_id': 'query',
@@ -446,19 +526,24 @@ class ProjectsApi(object):
                 'all': [
                     'format',
                     'id',
-                    'project_request',
+                    'project_write_request',
                     'x_organization',
+                    'cloud_storage_id',
+                    'filename',
+                    'location',
                     'org',
                     'org_id',
+                    'use_default_location',
                 ],
                 'required': [
                     'format',
                     'id',
-                    'project_request',
+                    'project_write_request',
                 ],
                 'nullable': [
                 ],
                 'enum': [
+                    'location',
                 ],
                 'validation': [
                 ]
@@ -467,35 +552,56 @@ class ProjectsApi(object):
                 'validations': {
                 },
                 'allowed_values': {
+                    ('location',): {
+
+                        "CLOUD_STORAGE": "cloud_storage",
+                        "LOCAL": "local"
+                    },
                 },
                 'openapi_types': {
                     'format':
                         (str,),
                     'id':
                         (int,),
-                    'project_request':
-                        (ProjectRequest,),
+                    'project_write_request':
+                        (ProjectWriteRequest,),
                     'x_organization':
+                        (str,),
+                    'cloud_storage_id':
+                        (float,),
+                    'filename':
+                        (str,),
+                    'location':
                         (str,),
                     'org':
                         (str,),
                     'org_id':
                         (int,),
+                    'use_default_location':
+                        (bool,),
                 },
                 'attribute_map': {
                     'format': 'format',
                     'id': 'id',
                     'x_organization': 'X-Organization',
+                    'cloud_storage_id': 'cloud_storage_id',
+                    'filename': 'filename',
+                    'location': 'location',
                     'org': 'org',
                     'org_id': 'org_id',
+                    'use_default_location': 'use_default_location',
                 },
                 'location_map': {
                     'format': 'query',
                     'id': 'path',
-                    'project_request': 'body',
+                    'project_write_request': 'body',
                     'x_organization': 'header',
+                    'cloud_storage_id': 'query',
+                    'filename': 'query',
+                    'location': 'query',
                     'org': 'query',
                     'org_id': 'query',
+                    'use_default_location': 'query',
                 },
                 'collection_format_map': {
                 }
@@ -513,7 +619,7 @@ class ProjectsApi(object):
         )
         self.projects_dataset_partial_update_endpoint = _Endpoint(
             settings={
-                'response_type': (Project,),
+                'response_type': (ProjectWrite,),
                 'auth': [
                     'SignatureAuthentication',
                     'basicAuth',
@@ -532,7 +638,7 @@ class ProjectsApi(object):
                     'x_organization',
                     'org',
                     'org_id',
-                    'patched_project_request',
+                    'patched_project_write_request',
                 ],
                 'required': [
                     'file_id',
@@ -568,8 +674,8 @@ class ProjectsApi(object):
                         (str,),
                     'org_id':
                         (int,),
-                    'patched_project_request':
-                        (PatchedProjectRequest,),
+                    'patched_project_write_request':
+                        (PatchedProjectWriteRequest,),
                 },
                 'attribute_map': {
                     'file_id': 'file_id',
@@ -584,7 +690,7 @@ class ProjectsApi(object):
                     'x_organization': 'header',
                     'org': 'query',
                     'org_id': 'query',
-                    'patched_project_request': 'body',
+                    'patched_project_write_request': 'body',
                 },
                 'collection_format_map': {
                 }
@@ -622,9 +728,12 @@ class ProjectsApi(object):
                     'id',
                     'x_organization',
                     'action',
+                    'cloud_storage_id',
                     'filename',
+                    'location',
                     'org',
                     'org_id',
+                    'use_default_location',
                 ],
                 'required': [
                     'format',
@@ -634,6 +743,7 @@ class ProjectsApi(object):
                 ],
                 'enum': [
                     'action',
+                    'location',
                 ],
                 'validation': [
                 ]
@@ -647,6 +757,11 @@ class ProjectsApi(object):
                         "DOWNLOAD": "download",
                         "IMPORT_STATUS": "import_status"
                     },
+                    ('location',): {
+
+                        "CLOUD_STORAGE": "cloud_storage",
+                        "LOCAL": "local"
+                    },
                 },
                 'openapi_types': {
                     'format':
@@ -657,30 +772,42 @@ class ProjectsApi(object):
                         (str,),
                     'action':
                         (str,),
+                    'cloud_storage_id':
+                        (float,),
                     'filename':
+                        (str,),
+                    'location':
                         (str,),
                     'org':
                         (str,),
                     'org_id':
                         (int,),
+                    'use_default_location':
+                        (bool,),
                 },
                 'attribute_map': {
                     'format': 'format',
                     'id': 'id',
                     'x_organization': 'X-Organization',
                     'action': 'action',
+                    'cloud_storage_id': 'cloud_storage_id',
                     'filename': 'filename',
+                    'location': 'location',
                     'org': 'org',
                     'org_id': 'org_id',
+                    'use_default_location': 'use_default_location',
                 },
                 'location_map': {
                     'format': 'query',
                     'id': 'path',
                     'x_organization': 'header',
                     'action': 'query',
+                    'cloud_storage_id': 'query',
                     'filename': 'query',
+                    'location': 'query',
                     'org': 'query',
                     'org_id': 'query',
+                    'use_default_location': 'query',
                 },
                 'collection_format_map': {
                 }
@@ -847,7 +974,7 @@ class ProjectsApi(object):
         )
         self.projects_partial_update_endpoint = _Endpoint(
             settings={
-                'response_type': (Project,),
+                'response_type': (ProjectWrite,),
                 'auth': [
                     'SignatureAuthentication',
                     'basicAuth',
@@ -865,7 +992,7 @@ class ProjectsApi(object):
                     'x_organization',
                     'org',
                     'org_id',
-                    'patched_project_request',
+                    'patched_project_write_request',
                 ],
                 'required': [
                     'id',
@@ -891,8 +1018,8 @@ class ProjectsApi(object):
                         (str,),
                     'org_id':
                         (int,),
-                    'patched_project_request':
-                        (PatchedProjectRequest,),
+                    'patched_project_write_request':
+                        (PatchedProjectWriteRequest,),
                 },
                 'attribute_map': {
                     'id': 'id',
@@ -905,7 +1032,7 @@ class ProjectsApi(object):
                     'x_organization': 'header',
                     'org': 'query',
                     'org_id': 'query',
-                    'patched_project_request': 'body',
+                    'patched_project_write_request': 'body',
                 },
                 'collection_format_map': {
                 }
@@ -925,7 +1052,7 @@ class ProjectsApi(object):
         )
         self.projects_retrieve_endpoint = _Endpoint(
             settings={
-                'response_type': (Project,),
+                'response_type': (ProjectRead,),
                 'auth': [
                     'SignatureAuthentication',
                     'basicAuth',
@@ -994,7 +1121,7 @@ class ProjectsApi(object):
         )
         self.projects_tasks_list_endpoint = _Endpoint(
             settings={
-                'response_type': (PaginatedTaskList,),
+                'response_type': (PaginatedTaskReadList,),
                 'auth': [
                     'SignatureAuthentication',
                     'basicAuth',
@@ -1176,9 +1303,12 @@ class ProjectsApi(object):
         Keyword Args:
             x_organization (str): [optional]
             action (str): Used to start downloading process after annotation file had been created. [optional] if omitted the server will use the default value of "download"
+            cloud_storage_id (float): Storage id. [optional]
             filename (str): Desired output file name. [optional]
+            location (str): Where need to save downloaded dataset. [optional]
             org (str): Organization unique slug. [optional]
             org_id (int): Organization identifier. [optional]
+            use_default_location (bool): Use the location that was configured in project to export annotation. [optional] if omitted the server will use the default value of True
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
             _preload_content (bool): if False, the urllib3.HTTPResponse object
@@ -1278,9 +1408,12 @@ class ProjectsApi(object):
         Keyword Args:
             x_organization (str): [optional]
             action (str): Used to start downloading process after annotation file had been created. [optional] if omitted the server will use the default value of "download"
+            cloud_storage_id (float): Storage id. [optional]
             filename (str): Desired output file name. [optional]
+            location (str): Where need to save downloaded dataset. [optional]
             org (str): Organization unique slug. [optional]
             org_id (int): Organization identifier. [optional]
+            use_default_location (bool): Use the location that was configured in project to export annotation. [optional] if omitted the server will use the default value of True
             _request_timeout (int/float/tuple): timeout setting for this request. If
                 one number provided, it will be total request timeout. It can also
                 be a pair (tuple) of (connection, read) timeouts.
@@ -1315,7 +1448,7 @@ class ProjectsApi(object):
     @overload
     def projects_backup_create(
         self,
-        project_request,
+        project_file_request,
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
         **kwargs
@@ -1325,7 +1458,7 @@ class ProjectsApi(object):
     @overload
     def projects_backup_create(
         self,
-        project_request,
+        project_file_request,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
         **kwargs
@@ -1335,7 +1468,7 @@ class ProjectsApi(object):
     @overload
     def projects_backup_create(
         self,
-        project_request,
+        project_file_request,
         _return_http_data_only: typing.Literal[False],
         **kwargs
     ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
@@ -1344,7 +1477,7 @@ class ProjectsApi(object):
     @overload
     def projects_backup_create(
         self,
-        project_request,
+        project_file_request,
         _preload_content: typing.Literal[False],
         **kwargs
     ) -> urllib3.HTTPResponse:
@@ -1353,7 +1486,7 @@ class ProjectsApi(object):
     @overload
     def projects_backup_create(
         self,
-        project_request,
+        project_file_request,
         _return_http_data_only: typing.Literal[True],
         _preload_content: typing.Literal[False],
         **kwargs
@@ -1363,7 +1496,7 @@ class ProjectsApi(object):
     @overload
     def projects_backup_create(
         self,
-        project_request,
+        project_file_request,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
         **kwargs
@@ -1372,7 +1505,7 @@ class ProjectsApi(object):
 
     def projects_backup_create(
         self,
-        project_request,
+        project_file_request,
         **kwargs
     ) -> typing.Union[
             typing.Tuple[None, int, typing.Dict[str, str]],
@@ -1384,14 +1517,17 @@ class ProjectsApi(object):
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.projects_backup_create(project_request, async_req=True)
+        >>> thread = api.projects_backup_create(project_file_request, async_req=True)
         >>> result = thread.get()
 
         Args:
-            project_request (ProjectRequest):
+            project_file_request (ProjectFileRequest):
 
         Keyword Args:
             x_organization (str): [optional]
+            cloud_storage_id (float): Storage id. [optional]
+            filename (str): Backup file name. [optional]
+            location (str): Where to import the backup file from. [optional] if omitted the server will use the default value of "local"
             org (str): Organization unique slug. [optional]
             org_id (int): Organization identifier. [optional]
             _return_http_data_only (bool): response data without head status
@@ -1462,8 +1598,8 @@ class ProjectsApi(object):
             '_content_type')
         kwargs['_host_index'] = kwargs.get('_host_index')
         kwargs['_request_auths'] = kwargs.get('_request_auths', None)
-        kwargs['project_request'] = \
-            project_request
+        kwargs['project_file_request'] = \
+            project_file_request
         return self.projects_backup_create_endpoint.call_with_http_info(**kwargs)
 
     def projects_backup_create_raw(
@@ -1481,14 +1617,17 @@ class ProjectsApi(object):
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.projects_backup_create(project_request, async_req=True)
+        >>> thread = api.projects_backup_create(project_file_request, async_req=True)
         >>> result = thread.get()
 
         Args:
-            project_request (ProjectRequest):
+            project_file_request (ProjectFileRequest):
 
         Keyword Args:
             x_organization (str): [optional]
+            cloud_storage_id (float): Storage id. [optional]
+            filename (str): Backup file name. [optional]
+            location (str): Where to import the backup file from. [optional] if omitted the server will use the default value of "local"
             org (str): Organization unique slug. [optional]
             org_id (int): Organization identifier. [optional]
             _request_timeout (int/float/tuple): timeout setting for this request. If
@@ -1604,7 +1743,7 @@ class ProjectsApi(object):
             x_organization (str): [optional]
             org (str): Organization unique slug. [optional]
             org_id (int): Organization identifier. [optional]
-            patched_project_request (PatchedProjectRequest): [optional]
+            patched_project_write_request (PatchedProjectWriteRequest): [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
             _preload_content (bool): if False, the urllib3.HTTPResponse object
@@ -1641,7 +1780,7 @@ class ProjectsApi(object):
             async_req (bool): execute request asynchronously
 
         Returns:
-            Project
+            ProjectWrite
                 If the method is called asynchronously, returns the request
                 thread.
         """
@@ -1702,7 +1841,7 @@ class ProjectsApi(object):
             x_organization (str): [optional]
             org (str): Organization unique slug. [optional]
             org_id (int): Organization identifier. [optional]
-            patched_project_request (PatchedProjectRequest): [optional]
+            patched_project_write_request (PatchedProjectWriteRequest): [optional]
             _request_timeout (int/float/tuple): timeout setting for this request. If
                 one number provided, it will be total request timeout. It can also
                 be a pair (tuple) of (connection, read) timeouts.
@@ -1727,7 +1866,7 @@ class ProjectsApi(object):
             async_req (bool): execute request asynchronously
 
         Returns:
-            Project
+            ProjectWrite
                 If the method is called asynchronously, returns the request
                 thread.
         """
@@ -1814,8 +1953,13 @@ class ProjectsApi(object):
 
         Keyword Args:
             x_organization (str): [optional]
+            action (str): Used to start downloading process after backup file had been created. [optional] if omitted the server will use the default value of "download"
+            cloud_storage_id (float): Storage id. [optional]
+            filename (str): Backup file name. [optional]
+            location (str): Where need to save downloaded backup. [optional]
             org (str): Organization unique slug. [optional]
             org_id (int): Organization identifier. [optional]
+            use_default_location (bool): Use the location that was configured in project to export backup. [optional] if omitted the server will use the default value of True
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
             _preload_content (bool): if False, the urllib3.HTTPResponse object
@@ -1911,8 +2055,13 @@ class ProjectsApi(object):
 
         Keyword Args:
             x_organization (str): [optional]
+            action (str): Used to start downloading process after backup file had been created. [optional] if omitted the server will use the default value of "download"
+            cloud_storage_id (float): Storage id. [optional]
+            filename (str): Backup file name. [optional]
+            location (str): Where need to save downloaded backup. [optional]
             org (str): Organization unique slug. [optional]
             org_id (int): Organization identifier. [optional]
+            use_default_location (bool): Use the location that was configured in project to export backup. [optional] if omitted the server will use the default value of True
             _request_timeout (int/float/tuple): timeout setting for this request. If
                 one number provided, it will be total request timeout. It can also
                 be a pair (tuple) of (connection, read) timeouts.
@@ -1947,7 +2096,7 @@ class ProjectsApi(object):
     @overload
     def projects_create(
         self,
-        project_request,
+        project_write_request,
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
         **kwargs
@@ -1957,7 +2106,7 @@ class ProjectsApi(object):
     @overload
     def projects_create(
         self,
-        project_request,
+        project_write_request,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
         **kwargs
@@ -1967,7 +2116,7 @@ class ProjectsApi(object):
     @overload
     def projects_create(
         self,
-        project_request,
+        project_write_request,
         _return_http_data_only: typing.Literal[False],
         **kwargs
     ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
@@ -1976,7 +2125,7 @@ class ProjectsApi(object):
     @overload
     def projects_create(
         self,
-        project_request,
+        project_write_request,
         _preload_content: typing.Literal[False],
         **kwargs
     ) -> urllib3.HTTPResponse:
@@ -1985,7 +2134,7 @@ class ProjectsApi(object):
     @overload
     def projects_create(
         self,
-        project_request,
+        project_write_request,
         _return_http_data_only: typing.Literal[True],
         _preload_content: typing.Literal[False],
         **kwargs
@@ -1995,7 +2144,7 @@ class ProjectsApi(object):
     @overload
     def projects_create(
         self,
-        project_request,
+        project_write_request,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
         **kwargs
@@ -2004,7 +2153,7 @@ class ProjectsApi(object):
 
     def projects_create(
         self,
-        project_request,
+        project_write_request,
         **kwargs
     ) -> typing.Union[
             typing.Tuple[object, int, typing.Dict[str, str]],
@@ -2016,11 +2165,11 @@ class ProjectsApi(object):
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.projects_create(project_request, async_req=True)
+        >>> thread = api.projects_create(project_write_request, async_req=True)
         >>> result = thread.get()
 
         Args:
-            project_request (ProjectRequest):
+            project_write_request (ProjectWriteRequest):
 
         Keyword Args:
             x_organization (str): [optional]
@@ -2062,7 +2211,7 @@ class ProjectsApi(object):
             async_req (bool): execute request asynchronously
 
         Returns:
-            Project
+            ProjectWrite
                 If the method is called asynchronously, returns the request
                 thread.
         """
@@ -2094,8 +2243,8 @@ class ProjectsApi(object):
             '_content_type')
         kwargs['_host_index'] = kwargs.get('_host_index')
         kwargs['_request_auths'] = kwargs.get('_request_auths', None)
-        kwargs['project_request'] = \
-            project_request
+        kwargs['project_write_request'] = \
+            project_write_request
         return self.projects_create_endpoint.call_with_http_info(**kwargs)
 
     def projects_create_raw(
@@ -2113,11 +2262,11 @@ class ProjectsApi(object):
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.projects_create(project_request, async_req=True)
+        >>> thread = api.projects_create(project_write_request, async_req=True)
         >>> result = thread.get()
 
         Args:
-            project_request (ProjectRequest):
+            project_write_request (ProjectWriteRequest):
 
         Keyword Args:
             x_organization (str): [optional]
@@ -2147,7 +2296,7 @@ class ProjectsApi(object):
             async_req (bool): execute request asynchronously
 
         Returns:
-            Project
+            ProjectWrite
                 If the method is called asynchronously, returns the request
                 thread.
         """
@@ -2159,7 +2308,7 @@ class ProjectsApi(object):
         self,
         format,
         id,
-        project_request,
+        project_write_request,
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
         **kwargs
@@ -2171,7 +2320,7 @@ class ProjectsApi(object):
         self,
         format,
         id,
-        project_request,
+        project_write_request,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
         **kwargs
@@ -2183,7 +2332,7 @@ class ProjectsApi(object):
         self,
         format,
         id,
-        project_request,
+        project_write_request,
         _return_http_data_only: typing.Literal[False],
         **kwargs
     ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
@@ -2194,7 +2343,7 @@ class ProjectsApi(object):
         self,
         format,
         id,
-        project_request,
+        project_write_request,
         _preload_content: typing.Literal[False],
         **kwargs
     ) -> urllib3.HTTPResponse:
@@ -2205,7 +2354,7 @@ class ProjectsApi(object):
         self,
         format,
         id,
-        project_request,
+        project_write_request,
         _return_http_data_only: typing.Literal[True],
         _preload_content: typing.Literal[False],
         **kwargs
@@ -2217,7 +2366,7 @@ class ProjectsApi(object):
         self,
         format,
         id,
-        project_request,
+        project_write_request,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
         **kwargs
@@ -2228,7 +2377,7 @@ class ProjectsApi(object):
         self,
         format,
         id,
-        project_request,
+        project_write_request,
         **kwargs
     ) -> typing.Union[
             typing.Tuple[None, int, typing.Dict[str, str]],
@@ -2240,18 +2389,22 @@ class ProjectsApi(object):
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.projects_dataset_create(format, id, project_request, async_req=True)
+        >>> thread = api.projects_dataset_create(format, id, project_write_request, async_req=True)
         >>> result = thread.get()
 
         Args:
             format (str): Desired dataset format name You can get the list of supported formats at: /server/annotation/formats
             id (int): A unique integer value identifying this project.
-            project_request (ProjectRequest):
+            project_write_request (ProjectWriteRequest):
 
         Keyword Args:
             x_organization (str): [optional]
+            cloud_storage_id (float): Storage id. [optional]
+            filename (str): Dataset file name. [optional]
+            location (str): Where to import the dataset from. [optional]
             org (str): Organization unique slug. [optional]
             org_id (int): Organization identifier. [optional]
+            use_default_location (bool): Use the location that was configured in the project to import annotations. [optional] if omitted the server will use the default value of True
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
             _preload_content (bool): if False, the urllib3.HTTPResponse object
@@ -2324,8 +2477,8 @@ class ProjectsApi(object):
             format
         kwargs['id'] = \
             id
-        kwargs['project_request'] = \
-            project_request
+        kwargs['project_write_request'] = \
+            project_write_request
         return self.projects_dataset_create_endpoint.call_with_http_info(**kwargs)
 
     def projects_dataset_create_raw(
@@ -2343,18 +2496,22 @@ class ProjectsApi(object):
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.projects_dataset_create(format, id, project_request, async_req=True)
+        >>> thread = api.projects_dataset_create(format, id, project_write_request, async_req=True)
         >>> result = thread.get()
 
         Args:
             format (str): Desired dataset format name You can get the list of supported formats at: /server/annotation/formats
             id (int): A unique integer value identifying this project.
-            project_request (ProjectRequest):
+            project_write_request (ProjectWriteRequest):
 
         Keyword Args:
             x_organization (str): [optional]
+            cloud_storage_id (float): Storage id. [optional]
+            filename (str): Dataset file name. [optional]
+            location (str): Where to import the dataset from. [optional]
             org (str): Organization unique slug. [optional]
             org_id (int): Organization identifier. [optional]
+            use_default_location (bool): Use the location that was configured in the project to import annotations. [optional] if omitted the server will use the default value of True
             _request_timeout (int/float/tuple): timeout setting for this request. If
                 one number provided, it will be total request timeout. It can also
                 be a pair (tuple) of (connection, read) timeouts.
@@ -2476,7 +2633,7 @@ class ProjectsApi(object):
             x_organization (str): [optional]
             org (str): Organization unique slug. [optional]
             org_id (int): Organization identifier. [optional]
-            patched_project_request (PatchedProjectRequest): [optional]
+            patched_project_write_request (PatchedProjectWriteRequest): [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
             _preload_content (bool): if False, the urllib3.HTTPResponse object
@@ -2513,7 +2670,7 @@ class ProjectsApi(object):
             async_req (bool): execute request asynchronously
 
         Returns:
-            Project
+            ProjectWrite
                 If the method is called asynchronously, returns the request
                 thread.
         """
@@ -2577,7 +2734,7 @@ class ProjectsApi(object):
             x_organization (str): [optional]
             org (str): Organization unique slug. [optional]
             org_id (int): Organization identifier. [optional]
-            patched_project_request (PatchedProjectRequest): [optional]
+            patched_project_write_request (PatchedProjectWriteRequest): [optional]
             _request_timeout (int/float/tuple): timeout setting for this request. If
                 one number provided, it will be total request timeout. It can also
                 be a pair (tuple) of (connection, read) timeouts.
@@ -2602,7 +2759,7 @@ class ProjectsApi(object):
             async_req (bool): execute request asynchronously
 
         Returns:
-            Project
+            ProjectWrite
                 If the method is called asynchronously, returns the request
                 thread.
         """
@@ -2698,9 +2855,12 @@ class ProjectsApi(object):
         Keyword Args:
             x_organization (str): [optional]
             action (str): Used to start downloading process after annotation file had been created. [optional]
+            cloud_storage_id (float): Storage id. [optional]
             filename (str): Desired output file name. [optional]
+            location (str): Where need to save downloaded dataset. [optional]
             org (str): Organization unique slug. [optional]
             org_id (int): Organization identifier. [optional]
+            use_default_location (bool): Use the location that was configured in project to import dataset. [optional] if omitted the server will use the default value of True
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
             _preload_content (bool): if False, the urllib3.HTTPResponse object
@@ -2800,9 +2960,12 @@ class ProjectsApi(object):
         Keyword Args:
             x_organization (str): [optional]
             action (str): Used to start downloading process after annotation file had been created. [optional]
+            cloud_storage_id (float): Storage id. [optional]
             filename (str): Desired output file name. [optional]
+            location (str): Where need to save downloaded dataset. [optional]
             org (str): Organization unique slug. [optional]
             org_id (int): Organization identifier. [optional]
+            use_default_location (bool): Use the location that was configured in project to import dataset. [optional] if omitted the server will use the default value of True
             _request_timeout (int/float/tuple): timeout setting for this request. If
                 one number provided, it will be total request timeout. It can also
                 be a pair (tuple) of (connection, read) timeouts.
@@ -3333,7 +3496,7 @@ class ProjectsApi(object):
             x_organization (str): [optional]
             org (str): Organization unique slug. [optional]
             org_id (int): Organization identifier. [optional]
-            patched_project_request (PatchedProjectRequest): [optional]
+            patched_project_write_request (PatchedProjectWriteRequest): [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
             _preload_content (bool): if False, the urllib3.HTTPResponse object
@@ -3370,7 +3533,7 @@ class ProjectsApi(object):
             async_req (bool): execute request asynchronously
 
         Returns:
-            Project
+            ProjectWrite
                 If the method is called asynchronously, returns the request
                 thread.
         """
@@ -3431,7 +3594,7 @@ class ProjectsApi(object):
             x_organization (str): [optional]
             org (str): Organization unique slug. [optional]
             org_id (int): Organization identifier. [optional]
-            patched_project_request (PatchedProjectRequest): [optional]
+            patched_project_write_request (PatchedProjectWriteRequest): [optional]
             _request_timeout (int/float/tuple): timeout setting for this request. If
                 one number provided, it will be total request timeout. It can also
                 be a pair (tuple) of (connection, read) timeouts.
@@ -3456,7 +3619,7 @@ class ProjectsApi(object):
             async_req (bool): execute request asynchronously
 
         Returns:
-            Project
+            ProjectWrite
                 If the method is called asynchronously, returns the request
                 thread.
         """
@@ -3581,7 +3744,7 @@ class ProjectsApi(object):
             async_req (bool): execute request asynchronously
 
         Returns:
-            Project
+            ProjectRead
                 If the method is called asynchronously, returns the request
                 thread.
         """
@@ -3666,7 +3829,7 @@ class ProjectsApi(object):
             async_req (bool): execute request asynchronously
 
         Returns:
-            Project
+            ProjectRead
                 If the method is called asynchronously, returns the request
                 thread.
         """
@@ -3796,7 +3959,7 @@ class ProjectsApi(object):
             async_req (bool): execute request asynchronously
 
         Returns:
-            PaginatedTaskList
+            PaginatedTaskReadList
                 If the method is called asynchronously, returns the request
                 thread.
         """
@@ -3886,7 +4049,7 @@ class ProjectsApi(object):
             async_req (bool): execute request asynchronously
 
         Returns:
-            PaginatedTaskList
+            PaginatedTaskReadList
                 If the method is called asynchronously, returns the request
                 thread.
         """

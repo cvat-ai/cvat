@@ -79,9 +79,12 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     id = 1 # int | A unique integer value identifying this project.
     x_organization = "X-Organization_example" # str |  (optional)
     action = "download" # str | Used to start downloading process after annotation file had been created (optional) if omitted the server will use the default value of "download"
+    cloud_storage_id = 3.14 # float | Storage id (optional)
     filename = "filename_example" # str | Desired output file name (optional)
+    location = "cloud_storage" # str | Where need to save downloaded dataset (optional)
     org = "org_example" # str | Organization unique slug (optional)
     org_id = 1 # int | Organization identifier (optional)
+    use_default_location = True # bool | Use the location that was configured in project to export annotation (optional) if omitted the server will use the default value of True
 
     # example passing only required values which don't have defaults set
     try:
@@ -94,7 +97,7 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # and optional values
     try:
         # Method allows to download project annotations
-        api_instance.projects_annotations_retrieve(format, id, x_organization=x_organization, action=action, filename=filename, org=org, org_id=org_id)
+        api_instance.projects_annotations_retrieve(format, id, x_organization=x_organization, action=action, cloud_storage_id=cloud_storage_id, filename=filename, location=location, org=org, org_id=org_id, use_default_location=use_default_location)
     except cvat_api_client.ApiException as e:
         print("Exception when calling ProjectsApi->projects_annotations_retrieve: %s\n" % e)
 ```
@@ -108,9 +111,12 @@ Name | Type | Description  | Notes
  **id** | **int**| A unique integer value identifying this project. |
  **x_organization** | **str**|  | [optional]
  **action** | **str**| Used to start downloading process after annotation file had been created | [optional] if omitted the server will use the default value of "download"
+ **cloud_storage_id** | **float**| Storage id | [optional]
  **filename** | **str**| Desired output file name | [optional]
+ **location** | **str**| Where need to save downloaded dataset | [optional]
  **org** | **str**| Organization unique slug | [optional]
  **org_id** | **int**| Organization identifier | [optional]
+ **use_default_location** | **bool**| Use the location that was configured in project to export annotation | [optional] if omitted the server will use the default value of True
 
 ### Return type
 
@@ -139,7 +145,7 @@ void (empty response body)
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **projects_backup_create**
-> projects_backup_create(project_request)
+> projects_backup_create(project_file_request)
 
 Methods create a project from a backup
 
@@ -154,7 +160,7 @@ Methods create a project from a backup
 import time
 import cvat_api_client
 from cvat_api_client.api import projects_api
-from cvat_api_client.model.project_request import ProjectRequest
+from cvat_api_client.model.project_file_request import ProjectFileRequest
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
@@ -195,43 +201,20 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 with cvat_api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = projects_api.ProjectsApi(api_client)
-    project_request = ProjectRequest(
-        name="name_example",
-        labels=[
-            PatchedLabelRequest(
-                id=1,
-                name="name_example",
-                color="color_example",
-                attributes=[
-                    AttributeRequest(
-                        name="name_example",
-                        mutable=True,
-                        input_type=InputTypeEnum("checkbox"),
-                        default_value="default_value_example",
-                        values=[
-                            "values_example",
-                        ],
-                    ),
-                ],
-                deleted=True,
-            ),
-        ],
-        assignee=PatchedProjectRequestAssignee(None),
-        owner_id=1,
-        assignee_id=1,
-        bug_tracker="bug_tracker_example",
-        task_subsets=[
-            "task_subsets_example",
-        ],
-    ) # ProjectRequest | 
+    project_file_request = ProjectFileRequest(
+        project_file=open('/path/to/file', 'rb'),
+    ) # ProjectFileRequest | 
     x_organization = "X-Organization_example" # str |  (optional)
+    cloud_storage_id = 3.14 # float | Storage id (optional)
+    filename = "filename_example" # str | Backup file name (optional)
+    location = "local" # str | Where to import the backup file from (optional) if omitted the server will use the default value of "local"
     org = "org_example" # str | Organization unique slug (optional)
     org_id = 1 # int | Organization identifier (optional)
 
     # example passing only required values which don't have defaults set
     try:
         # Methods create a project from a backup
-        api_instance.projects_backup_create(project_request)
+        api_instance.projects_backup_create(project_file_request)
     except cvat_api_client.ApiException as e:
         print("Exception when calling ProjectsApi->projects_backup_create: %s\n" % e)
 
@@ -239,7 +222,7 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # and optional values
     try:
         # Methods create a project from a backup
-        api_instance.projects_backup_create(project_request, x_organization=x_organization, org=org, org_id=org_id)
+        api_instance.projects_backup_create(project_file_request, x_organization=x_organization, cloud_storage_id=cloud_storage_id, filename=filename, location=location, org=org, org_id=org_id)
     except cvat_api_client.ApiException as e:
         print("Exception when calling ProjectsApi->projects_backup_create: %s\n" % e)
 ```
@@ -249,8 +232,11 @@ with cvat_api_client.ApiClient(configuration) as api_client:
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **project_request** | [**ProjectRequest**](ProjectRequest.md)|  |
+ **project_file_request** | [**ProjectFileRequest**](ProjectFileRequest.md)|  |
  **x_organization** | **str**|  | [optional]
+ **cloud_storage_id** | **float**| Storage id | [optional]
+ **filename** | **str**| Backup file name | [optional]
+ **location** | **str**| Where to import the backup file from | [optional] if omitted the server will use the default value of "local"
  **org** | **str**| Organization unique slug | [optional]
  **org_id** | **int**| Organization identifier | [optional]
 
@@ -278,7 +264,7 @@ void (empty response body)
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **projects_backup_partial_update**
-> Project projects_backup_partial_update(file_id)
+> ProjectWrite projects_backup_partial_update(file_id)
 
 
 
@@ -293,8 +279,8 @@ void (empty response body)
 import time
 import cvat_api_client
 from cvat_api_client.api import projects_api
-from cvat_api_client.model.project import Project
-from cvat_api_client.model.patched_project_request import PatchedProjectRequest
+from cvat_api_client.model.project_write import ProjectWrite
+from cvat_api_client.model.patched_project_write_request import PatchedProjectWriteRequest
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
@@ -339,7 +325,7 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     x_organization = "X-Organization_example" # str |  (optional)
     org = "org_example" # str | Organization unique slug (optional)
     org_id = 1 # int | Organization identifier (optional)
-    patched_project_request = PatchedProjectRequest(
+    patched_project_write_request = PatchedProjectWriteRequest(
         name="name_example",
         labels=[
             PatchedLabelRequest(
@@ -360,14 +346,21 @@ with cvat_api_client.ApiClient(configuration) as api_client:
                 deleted=True,
             ),
         ],
-        assignee=PatchedProjectRequestAssignee(None),
         owner_id=1,
         assignee_id=1,
         bug_tracker="bug_tracker_example",
+        target_storage=StorageRequest(
+            location=LocationEnum("cloud_storage"),
+            cloud_storage_id=1,
+        ),
+        source_storage=StorageRequest(
+            location=LocationEnum("cloud_storage"),
+            cloud_storage_id=1,
+        ),
         task_subsets=[
             "task_subsets_example",
         ],
-    ) # PatchedProjectRequest |  (optional)
+    ) # PatchedProjectWriteRequest |  (optional)
 
     # example passing only required values which don't have defaults set
     try:
@@ -379,7 +372,7 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # example passing only required values which don't have defaults set
     # and optional values
     try:
-        api_response = api_instance.projects_backup_partial_update(file_id, x_organization=x_organization, org=org, org_id=org_id, patched_project_request=patched_project_request)
+        api_response = api_instance.projects_backup_partial_update(file_id, x_organization=x_organization, org=org, org_id=org_id, patched_project_write_request=patched_project_write_request)
         pprint(api_response)
     except cvat_api_client.ApiException as e:
         print("Exception when calling ProjectsApi->projects_backup_partial_update: %s\n" % e)
@@ -394,11 +387,11 @@ Name | Type | Description  | Notes
  **x_organization** | **str**|  | [optional]
  **org** | **str**| Organization unique slug | [optional]
  **org_id** | **int**| Organization identifier | [optional]
- **patched_project_request** | [**PatchedProjectRequest**](PatchedProjectRequest.md)|  | [optional]
+ **patched_project_write_request** | [**PatchedProjectWriteRequest**](PatchedProjectWriteRequest.md)|  | [optional]
 
 ### Return type
 
-[**Project**](Project.md)
+[**ProjectWrite**](ProjectWrite.md)
 
 ### Authorization
 
@@ -476,8 +469,13 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     api_instance = projects_api.ProjectsApi(api_client)
     id = 1 # int | A unique integer value identifying this project.
     x_organization = "X-Organization_example" # str |  (optional)
+    action = "download" # str | Used to start downloading process after backup file had been created (optional) if omitted the server will use the default value of "download"
+    cloud_storage_id = 3.14 # float | Storage id (optional)
+    filename = "filename_example" # str | Backup file name (optional)
+    location = "cloud_storage" # str | Where need to save downloaded backup (optional)
     org = "org_example" # str | Organization unique slug (optional)
     org_id = 1 # int | Organization identifier (optional)
+    use_default_location = True # bool | Use the location that was configured in project to export backup (optional) if omitted the server will use the default value of True
 
     # example passing only required values which don't have defaults set
     try:
@@ -490,7 +488,7 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # and optional values
     try:
         # Methods creates a backup copy of a project
-        api_instance.projects_backup_retrieve(id, x_organization=x_organization, org=org, org_id=org_id)
+        api_instance.projects_backup_retrieve(id, x_organization=x_organization, action=action, cloud_storage_id=cloud_storage_id, filename=filename, location=location, org=org, org_id=org_id, use_default_location=use_default_location)
     except cvat_api_client.ApiException as e:
         print("Exception when calling ProjectsApi->projects_backup_retrieve: %s\n" % e)
 ```
@@ -502,8 +500,13 @@ Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **id** | **int**| A unique integer value identifying this project. |
  **x_organization** | **str**|  | [optional]
+ **action** | **str**| Used to start downloading process after backup file had been created | [optional] if omitted the server will use the default value of "download"
+ **cloud_storage_id** | **float**| Storage id | [optional]
+ **filename** | **str**| Backup file name | [optional]
+ **location** | **str**| Where need to save downloaded backup | [optional]
  **org** | **str**| Organization unique slug | [optional]
  **org_id** | **int**| Organization identifier | [optional]
+ **use_default_location** | **bool**| Use the location that was configured in project to export backup | [optional] if omitted the server will use the default value of True
 
 ### Return type
 
@@ -530,7 +533,7 @@ void (empty response body)
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **projects_create**
-> Project projects_create(project_request)
+> ProjectWrite projects_create(project_write_request)
 
 Method creates a new project
 
@@ -545,8 +548,8 @@ Method creates a new project
 import time
 import cvat_api_client
 from cvat_api_client.api import projects_api
-from cvat_api_client.model.project import Project
-from cvat_api_client.model.project_request import ProjectRequest
+from cvat_api_client.model.project_write import ProjectWrite
+from cvat_api_client.model.project_write_request import ProjectWriteRequest
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
@@ -587,7 +590,7 @@ configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
 with cvat_api_client.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = projects_api.ProjectsApi(api_client)
-    project_request = ProjectRequest(
+    project_write_request = ProjectWriteRequest(
         name="name_example",
         labels=[
             PatchedLabelRequest(
@@ -608,14 +611,21 @@ with cvat_api_client.ApiClient(configuration) as api_client:
                 deleted=True,
             ),
         ],
-        assignee=PatchedProjectRequestAssignee(None),
         owner_id=1,
         assignee_id=1,
         bug_tracker="bug_tracker_example",
+        target_storage=StorageRequest(
+            location=LocationEnum("cloud_storage"),
+            cloud_storage_id=1,
+        ),
+        source_storage=StorageRequest(
+            location=LocationEnum("cloud_storage"),
+            cloud_storage_id=1,
+        ),
         task_subsets=[
             "task_subsets_example",
         ],
-    ) # ProjectRequest | 
+    ) # ProjectWriteRequest | 
     x_organization = "X-Organization_example" # str |  (optional)
     org = "org_example" # str | Organization unique slug (optional)
     org_id = 1 # int | Organization identifier (optional)
@@ -623,7 +633,7 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # example passing only required values which don't have defaults set
     try:
         # Method creates a new project
-        api_response = api_instance.projects_create(project_request)
+        api_response = api_instance.projects_create(project_write_request)
         pprint(api_response)
     except cvat_api_client.ApiException as e:
         print("Exception when calling ProjectsApi->projects_create: %s\n" % e)
@@ -632,7 +642,7 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # and optional values
     try:
         # Method creates a new project
-        api_response = api_instance.projects_create(project_request, x_organization=x_organization, org=org, org_id=org_id)
+        api_response = api_instance.projects_create(project_write_request, x_organization=x_organization, org=org, org_id=org_id)
         pprint(api_response)
     except cvat_api_client.ApiException as e:
         print("Exception when calling ProjectsApi->projects_create: %s\n" % e)
@@ -643,14 +653,14 @@ with cvat_api_client.ApiClient(configuration) as api_client:
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **project_request** | [**ProjectRequest**](ProjectRequest.md)|  |
+ **project_write_request** | [**ProjectWriteRequest**](ProjectWriteRequest.md)|  |
  **x_organization** | **str**|  | [optional]
  **org** | **str**| Organization unique slug | [optional]
  **org_id** | **int**| Organization identifier | [optional]
 
 ### Return type
 
-[**Project**](Project.md)
+[**ProjectWrite**](ProjectWrite.md)
 
 ### Authorization
 
@@ -671,7 +681,7 @@ Name | Type | Description  | Notes
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **projects_dataset_create**
-> projects_dataset_create(format, id, project_request)
+> projects_dataset_create(format, id, project_write_request)
 
 Import dataset in specific format as a project
 
@@ -686,7 +696,7 @@ Import dataset in specific format as a project
 import time
 import cvat_api_client
 from cvat_api_client.api import projects_api
-from cvat_api_client.model.project_request import ProjectRequest
+from cvat_api_client.model.project_write_request import ProjectWriteRequest
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
@@ -729,7 +739,7 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     api_instance = projects_api.ProjectsApi(api_client)
     format = "format_example" # str | Desired dataset format name You can get the list of supported formats at: /server/annotation/formats
     id = 1 # int | A unique integer value identifying this project.
-    project_request = ProjectRequest(
+    project_write_request = ProjectWriteRequest(
         name="name_example",
         labels=[
             PatchedLabelRequest(
@@ -750,22 +760,33 @@ with cvat_api_client.ApiClient(configuration) as api_client:
                 deleted=True,
             ),
         ],
-        assignee=PatchedProjectRequestAssignee(None),
         owner_id=1,
         assignee_id=1,
         bug_tracker="bug_tracker_example",
+        target_storage=StorageRequest(
+            location=LocationEnum("cloud_storage"),
+            cloud_storage_id=1,
+        ),
+        source_storage=StorageRequest(
+            location=LocationEnum("cloud_storage"),
+            cloud_storage_id=1,
+        ),
         task_subsets=[
             "task_subsets_example",
         ],
-    ) # ProjectRequest | 
+    ) # ProjectWriteRequest | 
     x_organization = "X-Organization_example" # str |  (optional)
+    cloud_storage_id = 3.14 # float | Storage id (optional)
+    filename = "filename_example" # str | Dataset file name (optional)
+    location = "cloud_storage" # str | Where to import the dataset from (optional)
     org = "org_example" # str | Organization unique slug (optional)
     org_id = 1 # int | Organization identifier (optional)
+    use_default_location = True # bool | Use the location that was configured in the project to import annotations (optional) if omitted the server will use the default value of True
 
     # example passing only required values which don't have defaults set
     try:
         # Import dataset in specific format as a project
-        api_instance.projects_dataset_create(format, id, project_request)
+        api_instance.projects_dataset_create(format, id, project_write_request)
     except cvat_api_client.ApiException as e:
         print("Exception when calling ProjectsApi->projects_dataset_create: %s\n" % e)
 
@@ -773,7 +794,7 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # and optional values
     try:
         # Import dataset in specific format as a project
-        api_instance.projects_dataset_create(format, id, project_request, x_organization=x_organization, org=org, org_id=org_id)
+        api_instance.projects_dataset_create(format, id, project_write_request, x_organization=x_organization, cloud_storage_id=cloud_storage_id, filename=filename, location=location, org=org, org_id=org_id, use_default_location=use_default_location)
     except cvat_api_client.ApiException as e:
         print("Exception when calling ProjectsApi->projects_dataset_create: %s\n" % e)
 ```
@@ -785,10 +806,14 @@ Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **format** | **str**| Desired dataset format name You can get the list of supported formats at: /server/annotation/formats |
  **id** | **int**| A unique integer value identifying this project. |
- **project_request** | [**ProjectRequest**](ProjectRequest.md)|  |
+ **project_write_request** | [**ProjectWriteRequest**](ProjectWriteRequest.md)|  |
  **x_organization** | **str**|  | [optional]
+ **cloud_storage_id** | **float**| Storage id | [optional]
+ **filename** | **str**| Dataset file name | [optional]
+ **location** | **str**| Where to import the dataset from | [optional]
  **org** | **str**| Organization unique slug | [optional]
  **org_id** | **int**| Organization identifier | [optional]
+ **use_default_location** | **bool**| Use the location that was configured in the project to import annotations | [optional] if omitted the server will use the default value of True
 
 ### Return type
 
@@ -815,7 +840,7 @@ void (empty response body)
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **projects_dataset_partial_update**
-> Project projects_dataset_partial_update(file_id, id)
+> ProjectWrite projects_dataset_partial_update(file_id, id)
 
 
 
@@ -830,8 +855,8 @@ void (empty response body)
 import time
 import cvat_api_client
 from cvat_api_client.api import projects_api
-from cvat_api_client.model.project import Project
-from cvat_api_client.model.patched_project_request import PatchedProjectRequest
+from cvat_api_client.model.project_write import ProjectWrite
+from cvat_api_client.model.patched_project_write_request import PatchedProjectWriteRequest
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
@@ -877,7 +902,7 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     x_organization = "X-Organization_example" # str |  (optional)
     org = "org_example" # str | Organization unique slug (optional)
     org_id = 1 # int | Organization identifier (optional)
-    patched_project_request = PatchedProjectRequest(
+    patched_project_write_request = PatchedProjectWriteRequest(
         name="name_example",
         labels=[
             PatchedLabelRequest(
@@ -898,14 +923,21 @@ with cvat_api_client.ApiClient(configuration) as api_client:
                 deleted=True,
             ),
         ],
-        assignee=PatchedProjectRequestAssignee(None),
         owner_id=1,
         assignee_id=1,
         bug_tracker="bug_tracker_example",
+        target_storage=StorageRequest(
+            location=LocationEnum("cloud_storage"),
+            cloud_storage_id=1,
+        ),
+        source_storage=StorageRequest(
+            location=LocationEnum("cloud_storage"),
+            cloud_storage_id=1,
+        ),
         task_subsets=[
             "task_subsets_example",
         ],
-    ) # PatchedProjectRequest |  (optional)
+    ) # PatchedProjectWriteRequest |  (optional)
 
     # example passing only required values which don't have defaults set
     try:
@@ -917,7 +949,7 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # example passing only required values which don't have defaults set
     # and optional values
     try:
-        api_response = api_instance.projects_dataset_partial_update(file_id, id, x_organization=x_organization, org=org, org_id=org_id, patched_project_request=patched_project_request)
+        api_response = api_instance.projects_dataset_partial_update(file_id, id, x_organization=x_organization, org=org, org_id=org_id, patched_project_write_request=patched_project_write_request)
         pprint(api_response)
     except cvat_api_client.ApiException as e:
         print("Exception when calling ProjectsApi->projects_dataset_partial_update: %s\n" % e)
@@ -933,11 +965,11 @@ Name | Type | Description  | Notes
  **x_organization** | **str**|  | [optional]
  **org** | **str**| Organization unique slug | [optional]
  **org_id** | **int**| Organization identifier | [optional]
- **patched_project_request** | [**PatchedProjectRequest**](PatchedProjectRequest.md)|  | [optional]
+ **patched_project_write_request** | [**PatchedProjectWriteRequest**](PatchedProjectWriteRequest.md)|  | [optional]
 
 ### Return type
 
-[**Project**](Project.md)
+[**ProjectWrite**](ProjectWrite.md)
 
 ### Authorization
 
@@ -1017,9 +1049,12 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     id = 1 # int | A unique integer value identifying this project.
     x_organization = "X-Organization_example" # str |  (optional)
     action = "download" # str | Used to start downloading process after annotation file had been created (optional)
+    cloud_storage_id = 3.14 # float | Storage id (optional)
     filename = "filename_example" # str | Desired output file name (optional)
+    location = "cloud_storage" # str | Where need to save downloaded dataset (optional)
     org = "org_example" # str | Organization unique slug (optional)
     org_id = 1 # int | Organization identifier (optional)
+    use_default_location = True # bool | Use the location that was configured in project to import dataset (optional) if omitted the server will use the default value of True
 
     # example passing only required values which don't have defaults set
     try:
@@ -1032,7 +1067,7 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # and optional values
     try:
         # Export project as a dataset in a specific format
-        api_instance.projects_dataset_retrieve(format, id, x_organization=x_organization, action=action, filename=filename, org=org, org_id=org_id)
+        api_instance.projects_dataset_retrieve(format, id, x_organization=x_organization, action=action, cloud_storage_id=cloud_storage_id, filename=filename, location=location, org=org, org_id=org_id, use_default_location=use_default_location)
     except cvat_api_client.ApiException as e:
         print("Exception when calling ProjectsApi->projects_dataset_retrieve: %s\n" % e)
 ```
@@ -1046,9 +1081,12 @@ Name | Type | Description  | Notes
  **id** | **int**| A unique integer value identifying this project. |
  **x_organization** | **str**|  | [optional]
  **action** | **str**| Used to start downloading process after annotation file had been created | [optional]
+ **cloud_storage_id** | **float**| Storage id | [optional]
  **filename** | **str**| Desired output file name | [optional]
+ **location** | **str**| Where need to save downloaded dataset | [optional]
  **org** | **str**| Organization unique slug | [optional]
  **org_id** | **int**| Organization identifier | [optional]
+ **use_default_location** | **bool**| Use the location that was configured in project to import dataset | [optional] if omitted the server will use the default value of True
 
 ### Return type
 
@@ -1297,7 +1335,7 @@ Name | Type | Description  | Notes
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **projects_partial_update**
-> Project projects_partial_update(id)
+> ProjectWrite projects_partial_update(id)
 
 Methods does a partial update of chosen fields in a project
 
@@ -1312,8 +1350,8 @@ Methods does a partial update of chosen fields in a project
 import time
 import cvat_api_client
 from cvat_api_client.api import projects_api
-from cvat_api_client.model.project import Project
-from cvat_api_client.model.patched_project_request import PatchedProjectRequest
+from cvat_api_client.model.project_write import ProjectWrite
+from cvat_api_client.model.patched_project_write_request import PatchedProjectWriteRequest
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
@@ -1358,7 +1396,7 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     x_organization = "X-Organization_example" # str |  (optional)
     org = "org_example" # str | Organization unique slug (optional)
     org_id = 1 # int | Organization identifier (optional)
-    patched_project_request = PatchedProjectRequest(
+    patched_project_write_request = PatchedProjectWriteRequest(
         name="name_example",
         labels=[
             PatchedLabelRequest(
@@ -1379,14 +1417,21 @@ with cvat_api_client.ApiClient(configuration) as api_client:
                 deleted=True,
             ),
         ],
-        assignee=PatchedProjectRequestAssignee(None),
         owner_id=1,
         assignee_id=1,
         bug_tracker="bug_tracker_example",
+        target_storage=StorageRequest(
+            location=LocationEnum("cloud_storage"),
+            cloud_storage_id=1,
+        ),
+        source_storage=StorageRequest(
+            location=LocationEnum("cloud_storage"),
+            cloud_storage_id=1,
+        ),
         task_subsets=[
             "task_subsets_example",
         ],
-    ) # PatchedProjectRequest |  (optional)
+    ) # PatchedProjectWriteRequest |  (optional)
 
     # example passing only required values which don't have defaults set
     try:
@@ -1400,7 +1445,7 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # and optional values
     try:
         # Methods does a partial update of chosen fields in a project
-        api_response = api_instance.projects_partial_update(id, x_organization=x_organization, org=org, org_id=org_id, patched_project_request=patched_project_request)
+        api_response = api_instance.projects_partial_update(id, x_organization=x_organization, org=org, org_id=org_id, patched_project_write_request=patched_project_write_request)
         pprint(api_response)
     except cvat_api_client.ApiException as e:
         print("Exception when calling ProjectsApi->projects_partial_update: %s\n" % e)
@@ -1415,11 +1460,11 @@ Name | Type | Description  | Notes
  **x_organization** | **str**|  | [optional]
  **org** | **str**| Organization unique slug | [optional]
  **org_id** | **int**| Organization identifier | [optional]
- **patched_project_request** | [**PatchedProjectRequest**](PatchedProjectRequest.md)|  | [optional]
+ **patched_project_write_request** | [**PatchedProjectWriteRequest**](PatchedProjectWriteRequest.md)|  | [optional]
 
 ### Return type
 
-[**Project**](Project.md)
+[**ProjectWrite**](ProjectWrite.md)
 
 ### Authorization
 
@@ -1440,7 +1485,7 @@ Name | Type | Description  | Notes
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **projects_retrieve**
-> Project projects_retrieve(id)
+> ProjectRead projects_retrieve(id)
 
 Method returns details of a specific project
 
@@ -1455,7 +1500,7 @@ Method returns details of a specific project
 import time
 import cvat_api_client
 from cvat_api_client.api import projects_api
-from cvat_api_client.model.project import Project
+from cvat_api_client.model.project_read import ProjectRead
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
@@ -1531,7 +1576,7 @@ Name | Type | Description  | Notes
 
 ### Return type
 
-[**Project**](Project.md)
+[**ProjectRead**](ProjectRead.md)
 
 ### Authorization
 
@@ -1552,7 +1597,7 @@ Name | Type | Description  | Notes
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **projects_tasks_list**
-> PaginatedTaskList projects_tasks_list(id)
+> PaginatedTaskReadList projects_tasks_list(id)
 
 Method returns information of the tasks of the project with the selected id
 
@@ -1567,7 +1612,7 @@ Method returns information of the tasks of the project with the selected id
 import time
 import cvat_api_client
 from cvat_api_client.api import projects_api
-from cvat_api_client.model.paginated_task_list import PaginatedTaskList
+from cvat_api_client.model.paginated_task_read_list import PaginatedTaskReadList
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
 # See configuration.py for a list of all supported configuration parameters.
@@ -1653,7 +1698,7 @@ Name | Type | Description  | Notes
 
 ### Return type
 
-[**PaginatedTaskList**](PaginatedTaskList.md)
+[**PaginatedTaskReadList**](PaginatedTaskReadList.md)
 
 ### Authorization
 

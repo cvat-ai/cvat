@@ -66,7 +66,7 @@ class AttributeSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         if instance:
             rep = super().to_representation(instance)
-            rep['values'] = rep['values'].split('\n')
+            rep['values'] = instance.values.split('\n')
         else:
             rep = instance
 
@@ -426,8 +426,8 @@ class TaskReadSerializer(serializers.ModelSerializer):
     assignee = BasicUserSerializer(allow_null=True, required=False)
     project_id = serializers.IntegerField(required=False, allow_null=True)
     dimension = serializers.CharField(allow_blank=True, required=False)
-    target_storage = StorageSerializer(required=False)
-    source_storage = StorageSerializer(required=False)
+    target_storage = StorageSerializer(required=False, allow_null=True)
+    source_storage = StorageSerializer(required=False, allow_null=True)
 
     class Meta:
         model = models.Task
@@ -451,8 +451,8 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
     owner_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)
     assignee_id = serializers.IntegerField(write_only=True, allow_null=True, required=False)
     project_id = serializers.IntegerField(required=False, allow_null=True)
-    target_storage = StorageSerializer(required=False)
-    source_storage = StorageSerializer(required=False)
+    target_storage = StorageSerializer(required=False, allow_null=True)
+    source_storage = StorageSerializer(required=False, allow_null=True)
 
     class Meta:
         model = models.Task

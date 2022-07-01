@@ -35,18 +35,20 @@ from cvat_api_client.exceptions import ApiAttributeError
 
 
 def lazy_import():
-    from cvat_api_client.model.comment_read_owner import CommentReadOwner
     from cvat_api_client.model.job_status import JobStatus
     from cvat_api_client.model.label import Label
-    from cvat_api_client.model.project import Project
-    from cvat_api_client.model.project_owner import ProjectOwner
+    from cvat_api_client.model.project_read import ProjectRead
+    from cvat_api_client.model.project_read_assignee import ProjectReadAssignee
+    from cvat_api_client.model.project_read_owner import ProjectReadOwner
     from cvat_api_client.model.project_search import ProjectSearch
-    globals()['CommentReadOwner'] = CommentReadOwner
+    from cvat_api_client.model.storage import Storage
     globals()['JobStatus'] = JobStatus
     globals()['Label'] = Label
-    globals()['Project'] = Project
-    globals()['ProjectOwner'] = ProjectOwner
+    globals()['ProjectRead'] = ProjectRead
+    globals()['ProjectReadAssignee'] = ProjectReadAssignee
+    globals()['ProjectReadOwner'] = ProjectReadOwner
     globals()['ProjectSearch'] = ProjectSearch
+    globals()['Storage'] = Storage
 
 
 class PolymorphicProject(ModelComposed):
@@ -113,8 +115,8 @@ class PolymorphicProject(ModelComposed):
             'id': (int,),  # noqa: E501
             'labels': ([Label],),  # noqa: E501
             'tasks': ([int],),  # noqa: E501
-            'owner': (ProjectOwner,),  # noqa: E501
-            'assignee': (CommentReadOwner,),  # noqa: E501
+            'owner': (ProjectReadOwner,),  # noqa: E501
+            'assignee': (ProjectReadAssignee,),  # noqa: E501
             'bug_tracker': (str,),  # noqa: E501
             'task_subsets': ([str],),  # noqa: E501
             'created_date': (datetime,),  # noqa: E501
@@ -122,6 +124,8 @@ class PolymorphicProject(ModelComposed):
             'status': (bool, date, datetime, dict, float, int, list, str, none_type,),  # noqa: E501
             'dimension': (str,),  # noqa: E501
             'organization': (int, none_type,),  # noqa: E501
+            'target_storage': (Storage,),  # noqa: E501
+            'source_storage': (Storage,),  # noqa: E501
         }
 
     @cached_property
@@ -129,7 +133,7 @@ class PolymorphicProject(ModelComposed):
         lazy_import()
         val = {
             'None': ProjectSearch,
-            'Project': Project,
+            'ProjectRead': ProjectRead,
             'ProjectSearch': ProjectSearch,
         }
         if not val:
@@ -163,12 +167,12 @@ class PolymorphicProject(ModelComposed):
     [int]
     """
 
-    owner: typing.ForwardRef("ProjectOwner") # noqa: E501
+    owner: typing.ForwardRef("ProjectReadOwner") # noqa: E501
     """
     [optional]
     """
 
-    assignee: typing.Optional[typing.ForwardRef("CommentReadOwner")] # noqa: E501
+    assignee: typing.Optional[typing.ForwardRef("ProjectReadAssignee")] # noqa: E501
     """
     [optional]
     """
@@ -209,6 +213,16 @@ class PolymorphicProject(ModelComposed):
     [optional]
     """
 
+    target_storage: typing.ForwardRef("Storage") # noqa: E501
+    """
+    [optional]
+    """
+
+    source_storage: typing.ForwardRef("Storage") # noqa: E501
+    """
+    [optional]
+    """
+
 
 
     attribute_map = {
@@ -226,6 +240,8 @@ class PolymorphicProject(ModelComposed):
         'status': 'status',  # noqa: E501
         'dimension': 'dimension',  # noqa: E501
         'organization': 'organization',  # noqa: E501
+        'target_storage': 'target_storage',  # noqa: E501
+        'source_storage': 'source_storage',  # noqa: E501
     }
 
     read_only_vars = {
@@ -281,8 +297,8 @@ class PolymorphicProject(ModelComposed):
             id (int): [optional]  # noqa: E501
             labels ([Label]): [optional] if omitted the server will use the default value of []  # noqa: E501
             tasks ([int]): [optional]  # noqa: E501
-            owner (ProjectOwner): [optional]  # noqa: E501
-            assignee (CommentReadOwner): [optional]  # noqa: E501
+            owner (ProjectReadOwner): [optional]  # noqa: E501
+            assignee (ProjectReadAssignee): [optional]  # noqa: E501
             bug_tracker (str): [optional]  # noqa: E501
             task_subsets ([str]): [optional]  # noqa: E501
             created_date (datetime): [optional]  # noqa: E501
@@ -290,6 +306,8 @@ class PolymorphicProject(ModelComposed):
             status (bool, date, datetime, dict, float, int, list, str, none_type): [optional]  # noqa: E501
             dimension (str): [optional]  # noqa: E501
             organization (int, none_type): [optional]  # noqa: E501
+            target_storage (Storage): [optional]  # noqa: E501
+            source_storage (Storage): [optional]  # noqa: E501
         """
 
         _check_type = kwargs.pop('_check_type', True)
@@ -401,8 +419,8 @@ class PolymorphicProject(ModelComposed):
             id (int): [optional]  # noqa: E501
             labels ([Label]): [optional] if omitted the server will use the default value of []  # noqa: E501
             tasks ([int]): [optional]  # noqa: E501
-            owner (ProjectOwner): [optional]  # noqa: E501
-            assignee (CommentReadOwner): [optional]  # noqa: E501
+            owner (ProjectReadOwner): [optional]  # noqa: E501
+            assignee (ProjectReadAssignee): [optional]  # noqa: E501
             bug_tracker (str): [optional]  # noqa: E501
             task_subsets ([str]): [optional]  # noqa: E501
             created_date (datetime): [optional]  # noqa: E501
@@ -410,6 +428,8 @@ class PolymorphicProject(ModelComposed):
             status (bool, date, datetime, dict, float, int, list, str, none_type): [optional]  # noqa: E501
             dimension (str): [optional]  # noqa: E501
             organization (int, none_type): [optional]  # noqa: E501
+            target_storage (Storage): [optional]  # noqa: E501
+            source_storage (Storage): [optional]  # noqa: E501
         """
 
         _check_type = kwargs.pop('_check_type', True)
@@ -485,7 +505,7 @@ class PolymorphicProject(ModelComposed):
           'allOf': [
           ],
           'oneOf': [
-              Project,
+              ProjectRead,
               ProjectSearch,
           ],
         }

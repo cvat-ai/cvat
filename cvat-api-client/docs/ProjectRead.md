@@ -1,10 +1,10 @@
-# PolymorphicProject
+# ProjectRead
 
 
 ## Properties
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**name** | **str** |  | [readonly] 
+**name** | **str** |  | 
 **url** | **str** |  | [optional] [readonly] 
 **id** | **int** |  | [optional] [readonly] 
 **labels** | [**[Label]**](Label.md) |  | [optional]  if omitted the server will use the default value of []

@@ -4,6 +4,7 @@ All URIs are relative to *http://localhost*
 
 Method | HTTP request | Description
 ------------- | ------------- | -------------
+[**cloudstorages_actions_retrieve**](CloudStoragesApi.md#cloudstorages_actions_retrieve) | **GET** /api/cloudstorages/{id}/actions | Method returns allowed actions for the cloud storage
 [**cloudstorages_content_retrieve**](CloudStoragesApi.md#cloudstorages_content_retrieve) | **GET** /api/cloudstorages/{id}/content | Method returns a manifest content
 [**cloudstorages_create**](CloudStoragesApi.md#cloudstorages_create) | **POST** /api/cloudstorages | Method creates a cloud storage with a specified characteristics
 [**cloudstorages_destroy**](CloudStoragesApi.md#cloudstorages_destroy) | **DELETE** /api/cloudstorages/{id} | Method deletes a specific cloud storage
@@ -13,6 +14,119 @@ Method | HTTP request | Description
 [**cloudstorages_retrieve**](CloudStoragesApi.md#cloudstorages_retrieve) | **GET** /api/cloudstorages/{id} | Method returns details of a specific cloud storage
 [**cloudstorages_status_retrieve**](CloudStoragesApi.md#cloudstorages_status_retrieve) | **GET** /api/cloudstorages/{id}/status | Method returns a cloud storage status
 
+
+# **cloudstorages_actions_retrieve**
+> str cloudstorages_actions_retrieve(id)
+
+Method returns allowed actions for the cloud storage
+
+Method return allowed actions for cloud storage. It's required for reading/writing
+
+### Example
+
+* Api Key Authentication (SignatureAuthentication):
+* Basic Authentication (basicAuth):
+* Api Key Authentication (cookieAuth):
+* Api Key Authentication (tokenAuth):
+
+```python
+import time
+import cvat_api_client
+from cvat_api_client.api import cloud_storages_api
+from pprint import pprint
+# Defining the host is optional and defaults to http://localhost
+# See configuration.py for a list of all supported configuration parameters.
+configuration = cvat_api_client.Configuration(
+    host = "http://localhost"
+)
+
+# The client must configure the authentication and authorization parameters
+# in accordance with the API server security policy.
+# Examples for each auth method are provided below, use the example that
+# satisfies your auth use case.
+
+# Configure API key authorization: SignatureAuthentication
+configuration.api_key['SignatureAuthentication'] = 'YOUR_API_KEY'
+
+# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
+# configuration.api_key_prefix['SignatureAuthentication'] = 'Bearer'
+
+# Configure HTTP basic authorization: basicAuth
+configuration = cvat_api_client.Configuration(
+    username = 'YOUR_USERNAME',
+    password = 'YOUR_PASSWORD'
+)
+
+# Configure API key authorization: cookieAuth
+configuration.api_key['cookieAuth'] = 'YOUR_API_KEY'
+
+# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
+# configuration.api_key_prefix['cookieAuth'] = 'Bearer'
+
+# Configure API key authorization: tokenAuth
+configuration.api_key['tokenAuth'] = 'YOUR_API_KEY'
+
+# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
+# configuration.api_key_prefix['tokenAuth'] = 'Bearer'
+
+# Enter a context with an instance of the API client
+with cvat_api_client.ApiClient(configuration) as api_client:
+    # Create an instance of the API class
+    api_instance = cloud_storages_api.CloudStoragesApi(api_client)
+    id = 1 # int | A unique integer value identifying this cloud storage.
+    x_organization = "X-Organization_example" # str |  (optional)
+    org = "org_example" # str | Organization unique slug (optional)
+    org_id = 1 # int | Organization identifier (optional)
+
+    # example passing only required values which don't have defaults set
+    try:
+        # Method returns allowed actions for the cloud storage
+        api_response = api_instance.cloudstorages_actions_retrieve(id)
+        pprint(api_response)
+    except cvat_api_client.ApiException as e:
+        print("Exception when calling CloudStoragesApi->cloudstorages_actions_retrieve: %s\n" % e)
+
+    # example passing only required values which don't have defaults set
+    # and optional values
+    try:
+        # Method returns allowed actions for the cloud storage
+        api_response = api_instance.cloudstorages_actions_retrieve(id, x_organization=x_organization, org=org, org_id=org_id)
+        pprint(api_response)
+    except cvat_api_client.ApiException as e:
+        print("Exception when calling CloudStoragesApi->cloudstorages_actions_retrieve: %s\n" % e)
+```
+
+
+### Parameters
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **id** | **int**| A unique integer value identifying this cloud storage. |
+ **x_organization** | **str**|  | [optional]
+ **org** | **str**| Organization unique slug | [optional]
+ **org_id** | **int**| Organization identifier | [optional]
+
+### Return type
+
+**str**
+
+### Authorization
+
+[SignatureAuthentication](../README.md#SignatureAuthentication), [basicAuth](../README.md#basicAuth), [cookieAuth](../README.md#cookieAuth), [tokenAuth](../README.md#tokenAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/vnd.cvat+json
+
+
+### HTTP response details
+
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | Cloud Storage actions (GET | PUT | DELETE) |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **cloudstorages_content_retrieve**
 > {str: (bool, date, datetime, dict, float, int, list, str, none_type)} cloudstorages_content_retrieve(id)
