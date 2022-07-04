@@ -352,9 +352,10 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         this.data.canvasSize.height = height;
         this.data.canvasSize.width = width;
 
-        this.data.imageOffset = Math.floor(
-            Math.max(this.data.canvasSize.height / FrameZoom.MIN, this.data.canvasSize.width / FrameZoom.MIN),
-        );
+        // this.data.imageOffset = Math.floor(
+        //     Math.max(this.data.canvasSize.height / FrameZoom.MIN, this.data.canvasSize.width / FrameZoom.MIN),
+        // );
+        this.data.imageOffset = 0;
 
         this.notify(UpdateReasons.FITTED_CANVAS);
         this.notify(UpdateReasons.OBJECTS_UPDATED);

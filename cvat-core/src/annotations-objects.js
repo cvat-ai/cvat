@@ -112,6 +112,36 @@
         return [rotX, rotY];
     }
 
+    function computeWrappingBox(points, margin = 0) {
+        let xtl = Number.MAX_SAFE_INTEGER;
+        let ytl = Number.MAX_SAFE_INTEGER;
+        let xbr = Number.MIN_SAFE_INTEGER;
+        let ybr = Number.MIN_SAFE_INTEGER;
+
+        for (let i = 0; i < points.length; i += 2) {
+            const [x, y] = [points[i], points[i + 1]];
+            xtl = Math.min(xtl, x);
+            ytl = Math.min(ytl, y);
+            xbr = Math.max(xbr, x);
+            ybr = Math.max(ybr, y);
+        }
+
+        const box = {
+            xtl: xtl - margin,
+            ytl: ytl - margin,
+            xbr: xbr + margin,
+            ybr: ybr + margin,
+        };
+
+        return {
+            ...box,
+            x: box.xtl,
+            y: box.ytl,
+            width: box.xbr - box.xtl,
+            height: box.ybr - box.ytl,
+        };
+    }
+
     function validateAttributeValue(value, attr) {
         const { values } = attr;
         const type = attr.inputType;
@@ -2448,10 +2478,66 @@
         }
 
         save(frame, data) {
+            const notChangedElements = data.elements.filter((el) => !el.updateFlags.points);
+            console.log('Points before: ', this.elements.map((element) => element.get(frame).points).flat());
+            let prevBBox = computeWrappingBox(this.elements.map((element) => element.get(frame).points).flat());
+            console.log('BBox before: ', prevBBox);
+            let prevCX = prevBBox.x + prevBBox.width / 2;
+            let prevCY = prevBBox.y + prevBBox.height / 2;
+
             data.elements.forEach((element, idx) => {
                 const annotationContext = this.elements[idx];
                 annotationContext.save(frame, element);
             });
+
+            console.log('Points after: ', this.elements.map((element) => element.get(frame).points).flat());
+            let bbox = computeWrappingBox(this.elements.map((element) => element.get(frame).points).flat());
+            let cx = bbox.x + bbox.width / 2;
+            let cy = bbox.x + bbox.width / 2;
+
+            console.log('BBox after: ', bbox);
+            const { rotation } = this.get(frame);
+            if (data.rotation) {
+                for (const element of data.elements) {
+                    // point must be here after rotation
+                    const [prevRotX, prevRotY] = rotatePoint(element.points[0], element.points[1], rotation, prevCX, prevCY);
+                    const angle = (rotation * Math.PI) / 180;
+
+                    // but with new center it will be another place, we need to find new position
+                    // using this position with fixed rotation angle and new center points must be the same place as previous
+                    // const newX = ((prevRotX + prevRotY) / Math.cos(angle) + (cx - cy) * Math.tan(angle) + cx + cy) / (1 + Math.tan(angle));
+                    // const newY = (prevRotY - (newX - cx) * Math.sin(angle) - cy) / (Math.cos(angle)) + cy;
+                    const tan = Math.tan(angle);
+                    const cos = Math.cos(angle);
+                    const sin = Math.sin(angle);
+                    const newX = (prevRotX - cx + (prevRotY - cy) * tan) * cos + cx;
+                    const newY = (prevRotY + cy * cos - newX * sin + cx * sin - cy) / cos;
+
+                    console.log('Point: ', element.label.name, ' with old rotated position ', rotatePoint(element.points[0], element.points[1], rotation, prevCX, prevCY), ' has new one ', rotatePoint(newX, newY, rotation, cx, cy));
+
+                    element.points = [newX, newY];
+
+                    // prevBBox = bbox;
+                    // prevCX = cx;
+                    // prevCY = cy;
+
+                    // console.log('Previous cx, cy', prevCX, prevCY);
+                    // console.log('cx, cy', cx, cy);
+                    // bbox = computeWrappingBox(data.elements.map((element) => element.points).flat());
+                    // cx = bbox.x + bbox.width / 2;
+                    // cy = bbox.x + bbox.width / 2;
+                }
+            }
+
+            data.elements.forEach((element, idx) => {
+                const annotationContext = this.elements[idx];
+                annotationContext.save(frame, element);
+            });
+
+            const finalBBox = computeWrappingBox(this.elements.map((element) => element.get(frame).points).flat());
+            console.log('Final points: ', this.elements.map((element) => element.get(frame).points).flat());
+            console.log('Final bbox: ', computeWrappingBox(this.elements.map((element) => element.get(frame).points).flat()));
+            console.log('Final cx, cy: ', finalBBox.x + finalBBox.width / 2, finalBBox.y + finalBBox.height / 2);
 
             const result = Track.prototype.save.call(this, frame, data);
             return result;

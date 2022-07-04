@@ -35,6 +35,7 @@ import {
     DrawnState,
     rotate2DPoints,
     readPointsFromShape,
+    computeWrappingBox,
 } from './shared';
 import {
     CanvasModel,
@@ -117,13 +118,20 @@ export class CanvasViewImpl implements CanvasView, Listener {
         return translateFromCanvas(offset, points);
     }
 
-    private translatePointsFromRotatedShape(shape: SVG.Shape, points: number[]): number[] {
+    private translatePointsFromRotatedShape(
+        shape: SVG.Shape, points: number[], cx: number = null, cy: number = null,
+    ): number[] {
         const { rotation } = shape.transform();
         // currently shape is rotated and SHIFTED somehow additionally (css transform property)
         // let's remove rotation to get correct transformation matrix (element -> screen)
         // correct means that we do not consider points to be rotated
         // because rotation property is stored separately and already saved
-        shape.rotate(0);
+        if (cx !== null && cy !== null) {
+            shape.rotate(0, cx, cy);
+        } else {
+            shape.rotate(0);
+        }
+
         const result = [];
 
         try {
@@ -146,7 +154,11 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 result.push(transformedPoint.x, transformedPoint.y);
             }
         } finally {
-            shape.rotate(rotation);
+            if (cx !== null && cy !== null) {
+                shape.rotate(rotation, cx, cy);
+            } else {
+                shape.rotate(rotation);
+            }
         }
 
         return result;
@@ -2515,6 +2527,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             SVGElement.innerHTML = svg;
         }
 
+        const bbox = computeWrappingBox(state.elements.map((element: any) => element.points).flat());
         let xtl = Number.MAX_SAFE_INTEGER;
         let ytl = Number.MAX_SAFE_INTEGER;
         let xbr = Number.MIN_SAFE_INTEGER;
@@ -2532,7 +2545,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 xbr = Math.max(xbr, cx);
                 ybr = Math.max(ybr, cy);
                 const circle = skeleton.circle()
-                    .move(cx, cy)
+                    .center(cx, cy)
                     .attr({
                         fill: element.color,
                         id: `cvat_canvas_shape_${element.clientID}`,
@@ -2641,7 +2654,9 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
         setupEdges();
 
-        skeleton.rotate(state.rotation);
+        skeleton.cx();
+        skeleton.rotate(state.rotation, bbox.x + bbox.width / 2, bbox.y + bbox.height / 2);
+        skeleton.cx();
 
         if (state.occluded) {
             skeleton.addClass('cvat_canvas_shape_occluded');
@@ -2729,7 +2744,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                                     let points = readPointsFromShape(elementShape);
                                     const { rotation } = skeleton.transform();
                                     if (rotation) {
-                                        points = this.translatePointsFromRotatedShape(skeleton, points);
+                                        points = this.translatePointsFromRotatedShape(skeleton, points, );
                                     }
 
                                     points = this.translateFromCanvas(points);
@@ -2819,20 +2834,42 @@ export class CanvasViewImpl implements CanvasView, Listener {
                             const dy2 = (p1.y - p2.y) ** 2;
                             if (Math.sqrt(dx2 + dy2) >= delta) {
                                 // find object state
-                                const elementState = state.elements
-                                    .find((_element: any) => _element.clientID === clientID);
-                                const elementShape = skeleton.children()
-                                    .find((child: SVG.Shape) => child.id() === `cvat_canvas_shape_${clientID}`);
+                                // const elementState = state.elements
+                                //     .find((_element: any) => _element.clientID === clientID);
+                                // const elementShape = skeleton.children()
+                                //     .find((child: SVG.Shape) => child.id() === `cvat_canvas_shape_${clientID}`);
 
-                                if (elementShape) {
+                                // if (elementShape) {
+                                //     let points = readPointsFromShape(elementShape);
+                                //     const { rotation } = skeleton.transform();
+                                //     if (rotation) {
+                                //         points = this.translatePointsFromRotatedShape(
+                                //             skeleton,
+                                //             points,
+                                //             bbox.x + bbox.width / 2,
+                                //             bbox.y + bbox.height / 2,
+                                //         );
+                                //     }
+                                //     points = this.translateFromCanvas(points);
+                                //     elementState.points = points;
+                                // }
+
+                                state.elements.forEach((elementState) => {
+                                    const elementShape = skeleton.children()
+                                        .find((child: SVG.Shape) => child.id() === `cvat_canvas_shape_${elementState.clientID}`);
                                     let points = readPointsFromShape(elementShape);
                                     const { rotation } = skeleton.transform();
                                     if (rotation) {
-                                        points = this.translatePointsFromRotatedShape(skeleton, points);
+                                        points = this.translatePointsFromRotatedShape(
+                                            skeleton,
+                                            points,
+                                            // bbox.x + bbox.width / 2,
+                                            // bbox.y + bbox.height / 2,
+                                        );
                                     }
                                     points = this.translateFromCanvas(points);
                                     elementState.points = points;
-                                }
+                                });
 
                                 this.canvas.dispatchEvent(
                                     new CustomEvent('canvas.resizeshape', {

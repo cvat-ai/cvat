@@ -217,6 +217,8 @@ const { Source, ObjectShape } = require('./enums');
                                             }`,
                                     );
                                 }
+                            } else {
+                                data.updateFlags.points = true;
                             }
                         },
                     },
@@ -232,6 +234,7 @@ const { Source, ObjectShape } = require('./enums');
                         get: () => data.rotation,
                         set: (rotation) => {
                             if (typeof rotation === 'number') {
+                                // if (rotation === data.rotation) return;
                                 data.updateFlags.rotation = true;
                                 data.rotation = rotation;
                             } else {

@@ -18,7 +18,7 @@ import {
     readPointsFromShape,
     clamp,
     translateToCanvas,
-    computerWrappingBox,
+    computeWrappingBox,
     makeSVGFromTemplate,
     setupSkeletonEdges,
     translateFromCanvas,
@@ -1135,7 +1135,7 @@ export class DrawHandlerImpl implements DrawHandler {
                 const [cx, cy, rightX, topY] = translateToCanvas(offset, this.drawData.initialState.points);
                 this.pasteEllipse([cx, cy, rightX - cx, cy - topY], this.drawData.initialState.rotation);
             } else if (this.drawData.shapeType === 'skeleton') {
-                const box = computerWrappingBox(
+                const box = computeWrappingBox(
                     translateToCanvas(offset, this.drawData.initialState.points), consts.SKELETON_RECT_MARGIN,
                 );
                 this.pasteSkeleton(box, this.drawData.initialState.elements, this.drawData.initialState.rotation);

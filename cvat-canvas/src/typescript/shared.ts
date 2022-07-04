@@ -242,7 +242,7 @@ export function translateFromCanvas(offset: number, points: number[]): number[] 
     return points.map((coord: number): number => coord - offset);
 }
 
-export function computerWrappingBox(points: number[], margin = 0): Box & BBox {
+export function computeWrappingBox(points: number[], margin = 0): Box & BBox {
     let xtl = Number.MAX_SAFE_INTEGER;
     let ytl = Number.MAX_SAFE_INTEGER;
     let xbr = Number.MIN_SAFE_INTEGER;
