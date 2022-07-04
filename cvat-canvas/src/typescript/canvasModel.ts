@@ -542,6 +542,10 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         }
 
         if (drawData.enabled) {
+            if (drawData.shapeType === 'skeleton' && !drawData.skeletonSVG) {
+                throw new Error('Skeleton template must be specified when drawing a skeleton');
+            }
+
             if (this.data.drawData.enabled) {
                 throw new Error('Drawing has been already started');
             } else if (!drawData.shapeType && !drawData.initialState) {

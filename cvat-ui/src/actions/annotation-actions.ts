@@ -1609,6 +1609,8 @@ export function repeatDrawShapeAsync(): ThunkAction {
             activeControl = ActiveControl.DRAW_CUBOID;
         } else if (activeShapeType === ShapeType.ELLIPSE) {
             activeControl = ActiveControl.DRAW_ELLIPSE;
+        } else if (activeShapeType === ShapeType.SKELETON) {
+            activeControl = ActiveControl.DRAW_SKELETON;
         }
 
         dispatch({
@@ -1621,10 +1623,16 @@ export function repeatDrawShapeAsync(): ThunkAction {
         if (canvasInstance instanceof Canvas) {
             canvasInstance.cancel();
         }
+
+        const [activeLabel] = labels.filter((label: any) => label.id === activeLabelID);
+        if (!activeLabel) {
+            throw new Error(`Label with ID ${activeLabelID}, was not found`);
+        }
+
         if (activeObjectType === ObjectType.TAG) {
             const objectState = new cvat.classes.ObjectState({
                 objectType: ObjectType.TAG,
-                label: labels.filter((label: any) => label.id === activeLabelID)[0],
+                label: activeLabel,
                 frame: frameNumber,
             });
             dispatch(createAnnotationsAsync(jobInstance, frameNumber, [objectState]));
@@ -1636,6 +1644,7 @@ export function repeatDrawShapeAsync(): ThunkAction {
                 numberOfPoints: activeNumOfPoints,
                 shapeType: activeShapeType,
                 crosshair: [ShapeType.RECTANGLE, ShapeType.CUBOID, ShapeType.ELLIPSE].includes(activeShapeType),
+                skeletonSVG: activeShapeType === ShapeType.SKELETON ? activeLabel.structure.svg : undefined,
             });
         }
     };
