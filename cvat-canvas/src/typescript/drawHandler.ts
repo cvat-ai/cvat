@@ -974,16 +974,14 @@ export class DrawHandlerImpl implements DrawHandler {
         this.pastePolyshape();
     }
 
-    private pasteSkeleton(box: BBox, elements: any[], rotation: number): void {
+    private pasteSkeleton(box: BBox, elements: any[]): void {
         const { offset } = this.geometry;
         let [xtl, ytl] = [box.x, box.y];
 
         this.pasteBox(box, 0);
-        this.drawInstance.rotate(rotation);
         this.pointsGroup = makeSVGFromTemplate(this.drawData.skeletonSVG);
         this.pointsGroup.attr('stroke-width', consts.BASE_STROKE_WIDTH / this.geometry.scale);
         this.canvas.add(this.pointsGroup);
-        this.pointsGroup.rotate(rotation, box.x + box.width / 2, box.y + box.height / 2);
 
         this.pointsGroup.children().forEach((child: SVG.Element): void => {
             const dataType = child.attr('data-type');
@@ -1034,7 +1032,7 @@ export class DrawHandlerImpl implements DrawHandler {
         });
 
         this.canvas.on('mousemove.draw', (): void => {
-            const [newXtl, newYtl, width, height] = [
+            const [newXtl, newYtl] = [
                 this.drawInstance.x(), this.drawInstance.y(),
                 this.drawInstance.width(), this.drawInstance.height(),
             ];
@@ -1049,8 +1047,6 @@ export class DrawHandlerImpl implements DrawHandler {
                 }
             });
             this.pointsGroup.untransform();
-            this.pointsGroup.rotate(rotation, newXtl + width / 2, newYtl + height / 2);
-
             setupSkeletonEdges(this.pointsGroup, this.pointsGroup);
         });
     }
@@ -1138,7 +1134,7 @@ export class DrawHandlerImpl implements DrawHandler {
                 const box = computeWrappingBox(
                     translateToCanvas(offset, this.drawData.initialState.points), consts.SKELETON_RECT_MARGIN,
                 );
-                this.pasteSkeleton(box, this.drawData.initialState.elements, this.drawData.initialState.rotation);
+                this.pasteSkeleton(box, this.drawData.initialState.elements);
             } else {
                 const points = translateToCanvas(offset, this.drawData.initialState.points);
                 const stringifiedPoints = stringifyPoints(points);

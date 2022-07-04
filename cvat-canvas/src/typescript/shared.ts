@@ -342,6 +342,7 @@ export function setupSkeletonEdges(skeleton: SVG.G, referenceSVG: SVG.G): void {
                 }).addClass('cvat_canvas_skeleton_edge') as SVG.Line;
             }
 
+            skeleton.node.prepend(edge.node);
             const points = getSkeletonEdgeCoordinates(edge);
             edge.attr({ ...points, 'stroke-width': 'inherit' });
         }

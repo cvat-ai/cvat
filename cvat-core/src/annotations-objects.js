@@ -1932,6 +1932,8 @@
         }
 
         save(frame, data) {
+
+
             data.elements.forEach((element, idx) => {
                 const annotationContext = this.elements[idx];
                 annotationContext.save(frame, element);

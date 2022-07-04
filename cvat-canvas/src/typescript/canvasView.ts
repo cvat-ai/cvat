@@ -36,6 +36,8 @@ import {
     rotate2DPoints,
     readPointsFromShape,
     computeWrappingBox,
+    setupSkeletonEdges,
+    makeSVGFromTemplate,
 } from './shared';
 import {
     CanvasModel,
@@ -2521,20 +2523,15 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 'data-z-order': state.zOrder,
             }).addClass('cvat_canvas_shape') as SVG.G;
 
-        const SVGElement = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-        const { svg } = state.label.structure;
-        if (svg) {
-            SVGElement.innerHTML = svg;
-        }
+        const SVGElement = makeSVGFromTemplate(state.label.structure.svg);
 
-        const bbox = computeWrappingBox(state.elements.map((element: any) => element.points).flat());
         let xtl = Number.MAX_SAFE_INTEGER;
         let ytl = Number.MAX_SAFE_INTEGER;
         let xbr = Number.MIN_SAFE_INTEGER;
         let ybr = Number.MIN_SAFE_INTEGER;
 
         const svgElements: Record<number, SVG.Element> = {};
-        const templateElements = Array.from(SVGElement.children).filter((el: Element) => el.tagName === 'circle');
+        const templateElements = Array.from(SVGElement.children()).filter((el: SVG.Element) => el.type === 'circle');
         for (let i = 0; i < state.elements.length; i++) {
             const element = state.elements[i];
             if (element.shapeType === 'points') {
@@ -2553,8 +2550,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
                         'color-rendering': 'optimizeQuality',
                         'shape-rendering': 'geometricprecision',
                         'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
-                        'data-node-id': templateElements[i].getAttribute('data-node-id'),
-                        'data-element-id': templateElements[i].getAttribute('data-element-id'),
+                        'data-node-id': templateElements[i].attr('data-node-id'),
+                        'data-element-id': templateElements[i].attr('data-element-id'),
                     }).style({
                         cursor: 'default',
                     });
@@ -2611,48 +2608,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         });
 
         skeleton.node.prepend(wrappingRect.node);
-
-        const setupEdges = (): void => {
-            if (!svg) return;
-
-            for (const child of SVGElement.children) {
-                if (child.tagName === 'line') {
-                    const dataNodeFrom = child.getAttribute('data-node-from');
-                    const dataNodeTo = child.getAttribute('data-node-to');
-                    const nodeFrom = skeleton.node.querySelector(`[data-node-id="${dataNodeFrom}"]`);
-                    const nodeTo = skeleton.node.querySelector(`[data-node-id="${dataNodeTo}"]`);
-
-                    if (nodeFrom && nodeTo) {
-                        const x1 = +nodeFrom.getAttribute('cx');
-                        const y1 = +nodeFrom.getAttribute('cy');
-                        const x2 = +nodeTo.getAttribute('cx');
-                        const y2 = +nodeTo.getAttribute('cy');
-
-                        if (x1 && y1 && x2 && y2) {
-                            const existingLine = skeleton.children().find((_child: SVG.Element): boolean => (
-                                _child.attr('data-node-from') === +dataNodeFrom && _child.attr('data-node-to') === +dataNodeTo
-                            ));
-
-                            if (existingLine) {
-                                existingLine.attr({
-                                    x1, y1, x2, y2,
-                                });
-                            } else {
-                                const line = skeleton.line(x1, y1, x2, y2).attr({
-                                    'data-node-from': dataNodeFrom,
-                                    'data-node-to': dataNodeTo,
-                                    'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
-                                    stroke: 'inherit',
-                                }).addClass('cvat_canvas_skeleton_edge');
-                                skeleton.node.prepend(line.node);
-                            }
-                        }
-                    }
-                }
-            }
-        };
-
-        setupEdges();
+        setupSkeletonEdges(skeleton, SVGElement);
 
         if (state.occluded) {
             skeleton.addClass('cvat_canvas_shape_occluded');
@@ -2662,12 +2618,12 @@ export class CanvasViewImpl implements CanvasView, Listener {
             skeleton.addClass('cvat_canvas_hidden');
         }
 
-        skeleton.selectize = (enabled: boolean) => {
+        (skeleton as any).selectize = (enabled: boolean) => {
             this.selectize(enabled, wrappingRect);
             return skeleton;
         };
 
-        skeleton.draggable = (enabled = true) => {
+        (skeleton as any).draggable = (enabled = true) => {
             const textList = [
                 state.clientID, ...state.elements.map((element: any): number => element.clientID),
             ].map((clientID: number) => this.svgTexts[clientID]).filter((text: SVG.Text | undefined) => (
@@ -2688,7 +2644,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             };
 
             if (enabled) {
-                wrappingRect.draggable()
+                (wrappingRect as any).draggable()
                     .on('dragstart', (): void => {
                         this.mode = Mode.DRAG;
                         hideText();
@@ -2720,7 +2676,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                         wrappingRect.attr('data-xbr', x + instance.width());
                         wrappingRect.attr('data-ybr', y + instance.height());
 
-                        setupEdges();
+                        setupSkeletonEdges(skeleton, SVGElement);
                     })
                     .on('dragend', (e: CustomEvent): void => {
                         skeleton.off('remove.drag');
@@ -2757,7 +2713,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             } else {
                 (wrappingRect as any).off('dragstart');
                 (wrappingRect as any).off('dragend');
-                wrappingRect.draggable(false);
+                (wrappingRect as any).draggable(false);
             }
 
             return skeleton;
@@ -2812,7 +2768,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                             });
                         })
                         .on('dragmove', (): void => {
-                            setupEdges();
+                            setupSkeletonEdges(skeleton, SVGElement);
                         })
                         .on('dragend', (e: CustomEvent): void => {
                             element.off('remove.drag');
@@ -2900,7 +2856,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     wrappingRect.attr('data-ybr', y + instance.height());
 
                     resized = true;
-                    setupEdges();
+                    setupSkeletonEdges(skeleton, SVGElement);
                 }).on('resizedone', (): void => {
                     let { rotation } = skeleton.transform();
                     // be sure, that rotation in range [0; 360]
