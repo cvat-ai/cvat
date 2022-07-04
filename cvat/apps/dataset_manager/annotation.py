@@ -439,6 +439,12 @@ class TrackManager(ObjectManager):
                 copied["points"] = points
             return copied
 
+        def copy_skeleton(source, points=None):
+            copied = deepcopy(source)
+            if points is not None:
+                copied["points"] = points
+            return copied
+
         def find_angle_diff(right_angle, left_angle):
             angle_diff = right_angle - left_angle
             angle_diff = ((angle_diff + 180) % 360) - 180
@@ -693,6 +699,31 @@ class TrackManager(ObjectManager):
 
             return shapes
 
+        def skeleton_interpolation(shape0, shape1):
+            shapes = []
+            distance = shape1["frame"] - shape0["frame"]
+            diff = np.subtract(shape1["points"], shape0["points"])
+
+            for frame in range(shape0["frame"] + 1, shape1["frame"]):
+                offset = (frame - shape0["frame"]) / distance
+                rotation = (shape0["rotation"] + find_angle_diff(
+                    shape1["rotation"], shape0["rotation"],
+                ) * offset + 360) % 360
+                points = shape0["points"] + diff * offset
+
+                elements = []
+                for elem0, elem1 in zip(shape0["elements"], shape1["elements"]):
+                    elems_diff = np.subtract(elem1["points"], elem0["points"])
+                    points = elem0["points"] + elems_diff * offset
+
+                    elements.append(copy_skeleton(elem0, points.tolist()))
+
+                shape = copy_shape(shape0, frame, points.tolist(), rotation)
+                shape["elements"] = elements
+                shapes.append(shape)
+
+            return shapes
+
         def interpolate(shape0, shape1):
             is_same_type = shape0["type"] == shape1["type"]
             is_rectangle = shape0["type"] == ShapeType.RECTANGLE
@@ -701,6 +732,7 @@ class TrackManager(ObjectManager):
             is_polygon = shape0["type"] == ShapeType.POLYGON
             is_polyline = shape0["type"] == ShapeType.POLYLINE
             is_points = shape0["type"] == ShapeType.POINTS
+            is_skeleton = shape0["type"] == ShapeType.SKELETON
 
             if not is_same_type:
                 raise NotImplementedError()
@@ -712,8 +744,8 @@ class TrackManager(ObjectManager):
                 shapes = points_interpolation(shape0, shape1)
             elif is_polygon or is_polyline:
                 shapes = polyshape_interpolation(shape0, shape1)
-            else:
-                raise NotImplementedError()
+            elif is_skeleton:
+                shapes = skeleton_interpolation(shape0, shape1)
 
             return shapes
 

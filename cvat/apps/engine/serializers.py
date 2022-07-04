@@ -544,15 +544,8 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
         def update_labels(labels, parent_label=None):
             for label in labels:
                 sublabels = label.pop('sublabels', [])
-                elements = label.pop('elements', [])
-                edges = label.pop('edges', [])
-                svg = label.pop('svg', [])
                 db_label = LabelSerializer.update_instance(label, instance, parent_label)
                 update_labels(sublabels, parent_label=db_label)
-                if db_label.type == str(models.LabelType.SKELETON):
-                    for db_sublabel in list(db_label.sublabels.all()):
-                        svg = svg.replace(f'data-label-name="{db_sublabel.name}"', f'data-label-id="{db_sublabel.id}"')
-                    models.Skeleton.objects.create(root=db_label, edges=edges, elements=elements, svg=svg)
 
         if instance.project_id is None:
             update_labels(labels)
@@ -714,15 +707,8 @@ class ProjectSerializer(serializers.ModelSerializer):
         def update_labels(labels, parent_label=None):
             for label in labels:
                 sublabels = label.pop('sublabels', [])
-                elements = label.pop('elements', [])
-                edges = label.pop('edges', [])
-                svg = label.pop('svg', [])
                 db_label = LabelSerializer.update_instance(label, instance, parent_label)
                 update_labels(sublabels, parent_label=db_label)
-                if db_label.type == str(models.LabelType.SKELETON):
-                    for db_sublabel in list(db_label.sublabels.all()):
-                        svg = svg.replace(f'data-label-name="{db_sublabel.name}"', f'data-label-id="{db_sublabel.id}"')
-                    models.Skeleton.objects.create(root=db_label, edges=edges, elements=elements, svg=svg)
 
         update_labels(labels)
 
@@ -843,7 +829,8 @@ class LabeledSkeletonSerializer(serializers.Serializer):
 class LabeledShapeSerializer(ShapeSerializer, AnnotationSerializer):
     attributes = AttributeValSerializer(many=True,
         source="labeledshapeattributeval_set")
-    elements = LabeledSkeletonSerializer(many=True, source='labeledskeleton_set')
+    elements = LabeledSkeletonSerializer(many=True, source='labeledskeleton_set',
+        required=False)
 
 class TrackedSkeletonSerializer(serializers.Serializer):
     id = serializers.IntegerField(default=None, allow_null=True)
@@ -864,7 +851,8 @@ class TrackedShapeSerializer(ShapeSerializer):
     outside = serializers.BooleanField()
     attributes = AttributeValSerializer(many=True,
         source="trackedshapeattributeval_set")
-    elements = TrackedSkeletonSerializer(many=True, source='trackedskeleton_set')
+    elements = TrackedSkeletonSerializer(many=True, source='trackedskeleton_set',
+        required=False)
 
 class LabeledTrackSerializer(AnnotationSerializer):
     shapes = TrackedShapeSerializer(many=True, allow_empty=False,

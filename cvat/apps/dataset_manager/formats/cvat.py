@@ -960,9 +960,9 @@ def dump_as_cvat_interpolation(dumper, annotations):
 
                 for elem in shape.elements:
                     data = OrderedDict([
+                        ("label", elem.label),
                         ("outside", str(int(elem.outside))),
                         ("occluded", str(int(elem.occluded))),
-                        ("keyframe", str(int(elem.keyframe))),
                     ])
 
                     if elem.type == "rectangle":
@@ -1003,19 +1003,19 @@ def dump_as_cvat_interpolation(dumper, annotations):
                             ("ybr2", "{:.2f}".format(elem.points[15]))
                         ]))
                         dumper.open_cuboid(data)
-                    elif shape.type == "polygon":
+                    elif elem.type == "polygon":
                         data.update(OrderedDict([
                             ("points", ';'.join(['{:.2f},{:.2f}'.format(x, y)
                                 for x,y in pairwise(elem.points)]))
                         ]))
                         dumper.open_polygon(data)
-                    elif shape.type == "polyline":
+                    elif elem.type == "polyline":
                         data.update(OrderedDict([
                             ("points", ';'.join(['{:.2f},{:.2f}'.format(x, y)
                                 for x,y in pairwise(elem.points)]))
                         ]))
                         dumper.open_polyline(data)
-                    elif shape.type == "points":
+                    elif elem.type == "points":
                         data.update(OrderedDict([
                             ("points", ';'.join(['{:.2f},{:.2f}'.format(x, y)
                                 for x,y in pairwise(elem.points)]))
@@ -1182,7 +1182,8 @@ def load_anno(file_object, annotations):
                     value=el.text or "",
                 ))
             if el.tag in supported_shapes and shape['type'] == 'skeleton' and el.tag != 'skeleton':
-                element['frame'] = frame_id
+                if track is None:
+                    element['frame'] = frame_id
                 element['label_id'] = annotations._get_label_id(el.attrib['label'])
 
                 element['occluded'] = el.attrib['occluded'] == '1'
