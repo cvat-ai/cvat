@@ -829,7 +829,8 @@ class LabeledSkeletonSerializer(serializers.Serializer):
 class LabeledShapeSerializer(ShapeSerializer, AnnotationSerializer):
     attributes = AttributeValSerializer(many=True,
         source="labeledshapeattributeval_set")
-    elements = LabeledSkeletonSerializer(many=True, source='labeledskeleton_set')
+    elements = LabeledSkeletonSerializer(many=True, source='labeledskeleton_set',
+        required=False)
 
 class TrackedSkeletonSerializer(serializers.Serializer):
     id = serializers.IntegerField(default=None, allow_null=True)
@@ -850,7 +851,8 @@ class TrackedShapeSerializer(ShapeSerializer):
     outside = serializers.BooleanField()
     attributes = AttributeValSerializer(many=True,
         source="trackedshapeattributeval_set")
-    elements = TrackedSkeletonSerializer(many=True, source='trackedskeleton_set')
+    elements = TrackedSkeletonSerializer(many=True, source='trackedskeleton_set',
+        required=False)
 
 class LabeledTrackSerializer(AnnotationSerializer):
     shapes = TrackedShapeSerializer(many=True, allow_empty=False,

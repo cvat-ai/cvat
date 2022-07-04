@@ -174,6 +174,8 @@ class TaskData(InstanceLabelData):
         'TrackedShape', 'type, frame, points, occluded, outside, keyframe, attributes, elements, rotation, source, group, z_order, label, track_id')
     TrackedShape.__new__.__defaults__ = (0, 'manual', 0, 0, None, 0)
     Track = namedtuple('Track', 'label, group, source, shapes')
+    TrackedSkeleton = namedtuple(
+        'TrackedSkeleton', 'type, points, occluded, outside, attributes, label, shape_id')
     Tag = namedtuple('Tag', 'frame, label, attributes, source, group')
     Tag.__new__.__defaults__ = (0, )
     Frame = namedtuple(
@@ -327,6 +329,20 @@ class TaskData(InstanceLabelData):
             self._meta["source"] = str(
                 osp.basename(self._db_task.data.video.path))
 
+    def _export_tracked_skeletons(self, shapes, shape_id):
+        skeletons = []
+        for shape in shapes:
+            skeletons.append(TaskData.TrackedSkeleton(
+                type=shape["type"],
+                label=self._get_label_name(shape["label_id"]),
+                points=shape["points"],
+                occluded=shape["occluded"],
+                outside=shape.get("outside", False),
+                shape_id=shape_id,
+                attributes=self._export_attributes(shape["attributes"]),
+            ))
+        return skeletons
+
     def _export_tracked_shape(self, shape):
         return TaskData.TrackedShape(
             type=shape["type"],
@@ -342,6 +358,7 @@ class TaskData(InstanceLabelData):
             track_id=shape["track_id"],
             source=shape.get("source", "manual"),
             attributes=self._export_attributes(shape["attributes"]),
+            elements=self._export_tracked_skeletons(shape["elements"], shape["id"])
         )
 
     def _export_labeled_skeletons(self, shapes):
