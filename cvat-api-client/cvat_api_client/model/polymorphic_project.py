@@ -183,7 +183,7 @@ class PolymorphicProject(ModelComposed):
     """
     """
 
-    labels: typing.List["Label"]  # noqa: E501
+    labels: typing.List[Label]  # noqa: E501
     """
     [optional, default: []]
     [Label]
@@ -195,12 +195,12 @@ class PolymorphicProject(ModelComposed):
     [int]
     """
 
-    owner: "ProjectReadOwner"  # noqa: E501
+    owner: ProjectReadOwner  # noqa: E501
     """
     [optional]
     """
 
-    assignee: typing.Optional["ProjectReadAssignee"]  # noqa: E501
+    assignee: ProjectReadAssignee  # noqa: E501
     """
     [optional]
     """
@@ -226,7 +226,7 @@ class PolymorphicProject(ModelComposed):
     [optional]
     """
 
-    status: typing.Optional[object]  # noqa: E501
+    status: typing.Union[typing.Any, none_type]  # noqa: E501
     """
     [optional]
     """
@@ -236,17 +236,17 @@ class PolymorphicProject(ModelComposed):
     [optional]
     """
 
-    organization: typing.Optional[int]  # noqa: E501
+    organization: typing.Union[int, none_type]  # noqa: E501
     """
     [optional]
     """
 
-    target_storage: "Storage"  # noqa: E501
+    target_storage: Storage  # noqa: E501
     """
     [optional]
     """
 
-    source_storage: "Storage"  # noqa: E501
+    source_storage: Storage  # noqa: E501
     """
     [optional]
     """

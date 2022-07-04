@@ -9,6 +9,8 @@
 """
 
 
+from __future__ import annotations
+
 import re  # noqa: F401
 import sys  # noqa: F401
 import typing
@@ -216,7 +218,7 @@ class SchemaApi(object):
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
         **kwargs,
-    ) -> object:
+    ) -> typing.Union[typing.Dict[str, (typing.Any, none_type)]]:
         ...
 
     @overload
@@ -225,13 +227,17 @@ class SchemaApi(object):
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
         **kwargs,
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[
+        typing.Union[typing.Dict[str, (typing.Any, none_type)]], int, typing.Dict[str, str]
+    ]:
         ...
 
     @overload
     def retrieve(
         self, _return_http_data_only: typing.Literal[False], **kwargs
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[
+        typing.Union[typing.Dict[str, (typing.Any, none_type)]], int, typing.Dict[str, str]
+    ]:
         ...
 
     @overload
@@ -259,7 +265,11 @@ class SchemaApi(object):
     def retrieve(
         self, **kwargs
     ) -> typing.Union[
-        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
+        typing.Tuple[
+            typing.Union[typing.Dict[str, (typing.Any, none_type)]], int, typing.Dict[str, str]
+        ],
+        urllib3.HTTPResponse,
+        typing.Union[typing.Dict[str, (typing.Any, none_type)]],
     ]:
         """retrieve  # noqa: E501
 

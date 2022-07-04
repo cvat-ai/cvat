@@ -9,6 +9,8 @@
 """
 
 
+from __future__ import annotations
+
 import re  # noqa: F401
 import sys  # noqa: F401
 import typing
@@ -560,7 +562,7 @@ class CloudStoragesApi(object):
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
         **kwargs,
-    ) -> object:
+    ) -> str:
         ...
 
     @overload
@@ -570,13 +572,13 @@ class CloudStoragesApi(object):
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
         **kwargs,
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[str, int, typing.Dict[str, str]]:
         ...
 
     @overload
     def cloudstorages_actions_retrieve(
         self, id, _return_http_data_only: typing.Literal[False], **kwargs
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[str, int, typing.Dict[str, str]]:
         ...
 
     @overload
@@ -607,9 +609,7 @@ class CloudStoragesApi(object):
 
     def cloudstorages_actions_retrieve(
         self, id, **kwargs
-    ) -> typing.Union[
-        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
-    ]:
+    ) -> typing.Union[typing.Tuple[str, int, typing.Dict[str, str]], urllib3.HTTPResponse, str]:
         """Method returns allowed actions for the cloud storage  # noqa: E501
 
         Method return allowed actions for cloud storage. It's required for reading/writing  # noqa: E501
@@ -741,7 +741,7 @@ class CloudStoragesApi(object):
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
         **kwargs,
-    ) -> object:
+    ) -> typing.Union[typing.Dict[str, (typing.Any, none_type)]]:
         ...
 
     @overload
@@ -751,13 +751,17 @@ class CloudStoragesApi(object):
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
         **kwargs,
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[
+        typing.Union[typing.Dict[str, (typing.Any, none_type)]], int, typing.Dict[str, str]
+    ]:
         ...
 
     @overload
     def cloudstorages_content_retrieve(
         self, id, _return_http_data_only: typing.Literal[False], **kwargs
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[
+        typing.Union[typing.Dict[str, (typing.Any, none_type)]], int, typing.Dict[str, str]
+    ]:
         ...
 
     @overload
@@ -789,7 +793,11 @@ class CloudStoragesApi(object):
     def cloudstorages_content_retrieve(
         self, id, **kwargs
     ) -> typing.Union[
-        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
+        typing.Tuple[
+            typing.Union[typing.Dict[str, (typing.Any, none_type)]], int, typing.Dict[str, str]
+        ],
+        urllib3.HTTPResponse,
+        typing.Union[typing.Dict[str, (typing.Any, none_type)]],
     ]:
         """Method returns a manifest content  # noqa: E501
 
@@ -922,7 +930,7 @@ class CloudStoragesApi(object):
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
         **kwargs,
-    ) -> object:
+    ) -> CloudStorageWrite:
         ...
 
     @overload
@@ -932,13 +940,13 @@ class CloudStoragesApi(object):
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
         **kwargs,
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[CloudStorageWrite, int, typing.Dict[str, str]]:
         ...
 
     @overload
     def cloudstorages_create(
         self, cloud_storage_write_request, _return_http_data_only: typing.Literal[False], **kwargs
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[CloudStorageWrite, int, typing.Dict[str, str]]:
         ...
 
     @overload
@@ -970,7 +978,9 @@ class CloudStoragesApi(object):
     def cloudstorages_create(
         self, cloud_storage_write_request, **kwargs
     ) -> typing.Union[
-        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
+        typing.Tuple[CloudStorageWrite, int, typing.Dict[str, str]],
+        urllib3.HTTPResponse,
+        CloudStorageWrite,
     ]:
         """Method creates a cloud storage with a specified characteristics  # noqa: E501
 
@@ -1277,7 +1287,7 @@ class CloudStoragesApi(object):
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
         **kwargs,
-    ) -> object:
+    ) -> PaginatedCloudStorageReadList:
         ...
 
     @overload
@@ -1286,13 +1296,13 @@ class CloudStoragesApi(object):
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
         **kwargs,
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[PaginatedCloudStorageReadList, int, typing.Dict[str, str]]:
         ...
 
     @overload
     def cloudstorages_list(
         self, _return_http_data_only: typing.Literal[False], **kwargs
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[PaginatedCloudStorageReadList, int, typing.Dict[str, str]]:
         ...
 
     @overload
@@ -1322,7 +1332,9 @@ class CloudStoragesApi(object):
     def cloudstorages_list(
         self, **kwargs
     ) -> typing.Union[
-        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
+        typing.Tuple[PaginatedCloudStorageReadList, int, typing.Dict[str, str]],
+        urllib3.HTTPResponse,
+        PaginatedCloudStorageReadList,
     ]:
         """Returns a paginated list of storages according to query parameters  # noqa: E501
 
@@ -1456,7 +1468,7 @@ class CloudStoragesApi(object):
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
         **kwargs,
-    ) -> object:
+    ) -> CloudStorageWrite:
         ...
 
     @overload
@@ -1466,13 +1478,13 @@ class CloudStoragesApi(object):
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
         **kwargs,
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[CloudStorageWrite, int, typing.Dict[str, str]]:
         ...
 
     @overload
     def cloudstorages_partial_update(
         self, id, _return_http_data_only: typing.Literal[False], **kwargs
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[CloudStorageWrite, int, typing.Dict[str, str]]:
         ...
 
     @overload
@@ -1504,7 +1516,9 @@ class CloudStoragesApi(object):
     def cloudstorages_partial_update(
         self, id, **kwargs
     ) -> typing.Union[
-        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
+        typing.Tuple[CloudStorageWrite, int, typing.Dict[str, str]],
+        urllib3.HTTPResponse,
+        CloudStorageWrite,
     ]:
         """Methods does a partial update of chosen fields in a cloud storage instance  # noqa: E501
 
@@ -1814,7 +1828,7 @@ class CloudStoragesApi(object):
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
         **kwargs,
-    ) -> object:
+    ) -> CloudStorageRead:
         ...
 
     @overload
@@ -1824,13 +1838,13 @@ class CloudStoragesApi(object):
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
         **kwargs,
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[CloudStorageRead, int, typing.Dict[str, str]]:
         ...
 
     @overload
     def cloudstorages_retrieve(
         self, id, _return_http_data_only: typing.Literal[False], **kwargs
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[CloudStorageRead, int, typing.Dict[str, str]]:
         ...
 
     @overload
@@ -1862,7 +1876,9 @@ class CloudStoragesApi(object):
     def cloudstorages_retrieve(
         self, id, **kwargs
     ) -> typing.Union[
-        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
+        typing.Tuple[CloudStorageRead, int, typing.Dict[str, str]],
+        urllib3.HTTPResponse,
+        CloudStorageRead,
     ]:
         """Method returns details of a specific cloud storage  # noqa: E501
 
@@ -1993,7 +2009,7 @@ class CloudStoragesApi(object):
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
         **kwargs,
-    ) -> object:
+    ) -> str:
         ...
 
     @overload
@@ -2003,13 +2019,13 @@ class CloudStoragesApi(object):
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
         **kwargs,
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[str, int, typing.Dict[str, str]]:
         ...
 
     @overload
     def cloudstorages_status_retrieve(
         self, id, _return_http_data_only: typing.Literal[False], **kwargs
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[str, int, typing.Dict[str, str]]:
         ...
 
     @overload
@@ -2040,9 +2056,7 @@ class CloudStoragesApi(object):
 
     def cloudstorages_status_retrieve(
         self, id, **kwargs
-    ) -> typing.Union[
-        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
-    ]:
+    ) -> typing.Union[typing.Tuple[str, int, typing.Dict[str, str]], urllib3.HTTPResponse, str]:
         """Method returns a cloud storage status  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an

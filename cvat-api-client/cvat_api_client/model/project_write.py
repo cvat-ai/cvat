@@ -146,7 +146,7 @@ class ProjectWrite(ModelNormal):
     """
     """
 
-    labels: typing.List["Label"]  # noqa: E501
+    labels: typing.List[Label]  # noqa: E501
     """
     [optional, default: []]
     [Label]
@@ -157,12 +157,12 @@ class ProjectWrite(ModelNormal):
     [optional]
     """
 
-    target_storage: "Storage"  # noqa: E501
+    target_storage: Storage  # noqa: E501
     """
     [optional]
     """
 
-    source_storage: "Storage"  # noqa: E501
+    source_storage: Storage  # noqa: E501
     """
     [optional]
     """

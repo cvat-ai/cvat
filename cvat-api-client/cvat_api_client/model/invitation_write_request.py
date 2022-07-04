@@ -125,7 +125,7 @@ class InvitationWriteRequest(ModelNormal):
         return None
 
     # member type declarations
-    role: "RoleEnum"  # noqa: E501
+    role: RoleEnum  # noqa: E501
     """
     """
 

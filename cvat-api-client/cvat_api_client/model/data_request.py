@@ -189,7 +189,7 @@ class DataRequest(ModelNormal):
         return None
 
     # member type declarations
-    chunk_size: typing.Optional[int]  # noqa: E501
+    chunk_size: typing.Union[int, none_type]  # noqa: E501
     """
     [optional]
     """
@@ -218,12 +218,12 @@ class DataRequest(ModelNormal):
     [optional]
     """
 
-    compressed_chunk_type: "ChunkType"  # noqa: E501
+    compressed_chunk_type: ChunkType  # noqa: E501
     """
     [optional]
     """
 
-    original_chunk_type: "ChunkType"  # noqa: E501
+    original_chunk_type: ChunkType  # noqa: E501
     """
     [optional]
     """
@@ -251,7 +251,7 @@ class DataRequest(ModelNormal):
     [optional, default: False]
     """
 
-    cloud_storage_id: typing.Optional[int]  # noqa: E501
+    cloud_storage_id: typing.Union[int, none_type]  # noqa: E501
     """
     [optional]
     """
@@ -266,17 +266,17 @@ class DataRequest(ModelNormal):
     [optional, default: False]
     """
 
-    storage_method: "StorageMethod"  # noqa: E501
+    storage_method: StorageMethod  # noqa: E501
     """
     [optional]
     """
 
-    storage: "StorageType"  # noqa: E501
+    storage: StorageType  # noqa: E501
     """
     [optional]
     """
 
-    sorting_method: "SortingMethod"  # noqa: E501
+    sorting_method: SortingMethod  # noqa: E501
     """
     [optional]
     """

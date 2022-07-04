@@ -136,12 +136,12 @@ class JobCommit(ModelNormal):
     [optional]
     """
 
-    owner: typing.Optional[int]  # noqa: E501
+    owner: typing.Union[int, none_type]  # noqa: E501
     """
     [optional]
     """
 
-    data: typing.Dict  # noqa: E501
+    data: typing.Union[typing.Dict[str, (typing.Any, none_type)]]  # noqa: E501
     """
     [optional]
     {str: (bool, date, datetime, dict, float, int, list, str, none_type)}

@@ -179,17 +179,17 @@ class TaskWriteRequest(ModelNormal):
     """
     """
 
-    project_id: typing.Optional[int]  # noqa: E501
+    project_id: typing.Union[int, none_type]  # noqa: E501
     """
     [optional]
     """
 
-    owner_id: typing.Optional[int]  # noqa: E501
+    owner_id: typing.Union[int, none_type]  # noqa: E501
     """
     [optional]
     """
 
-    assignee_id: typing.Optional[int]  # noqa: E501
+    assignee_id: typing.Union[int, none_type]  # noqa: E501
     """
     [optional]
     """
@@ -199,7 +199,7 @@ class TaskWriteRequest(ModelNormal):
     [optional]
     """
 
-    overlap: typing.Optional[int]  # noqa: E501
+    overlap: typing.Union[int, none_type]  # noqa: E501
     """
     [optional]
     """
@@ -209,7 +209,7 @@ class TaskWriteRequest(ModelNormal):
     [optional]
     """
 
-    labels: typing.List["PatchedLabelRequest"]  # noqa: E501
+    labels: typing.List[PatchedLabelRequest]  # noqa: E501
     """
     [optional]
     [PatchedLabelRequest]
@@ -220,12 +220,12 @@ class TaskWriteRequest(ModelNormal):
     [optional]
     """
 
-    target_storage: typing.Optional["PatchedTaskWriteRequestTargetStorage"]  # noqa: E501
+    target_storage: PatchedTaskWriteRequestTargetStorage  # noqa: E501
     """
     [optional]
     """
 
-    source_storage: typing.Optional["PatchedTaskWriteRequestTargetStorage"]  # noqa: E501
+    source_storage: PatchedTaskWriteRequestTargetStorage  # noqa: E501
     """
     [optional]
     """

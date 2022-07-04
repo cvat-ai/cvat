@@ -143,7 +143,7 @@ class CommentRead(ModelNormal):
     [optional]
     """
 
-    owner: typing.Optional["CommentReadOwner"]  # noqa: E501
+    owner: CommentReadOwner  # noqa: E501
     """
     [optional]
     """

@@ -9,6 +9,8 @@
 """
 
 
+from __future__ import annotations
+
 import re  # noqa: F401
 import sys  # noqa: F401
 import typing
@@ -1444,7 +1446,7 @@ class JobsApi(object):
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
         **kwargs,
-    ) -> object:
+    ) -> JobWrite:
         ...
 
     @overload
@@ -1455,13 +1457,13 @@ class JobsApi(object):
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
         **kwargs,
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[JobWrite, int, typing.Dict[str, str]]:
         ...
 
     @overload
     def annotations_file_partial_update(
         self, file_id, id, _return_http_data_only: typing.Literal[False], **kwargs
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[JobWrite, int, typing.Dict[str, str]]:
         ...
 
     @overload
@@ -1495,7 +1497,7 @@ class JobsApi(object):
     def annotations_file_partial_update(
         self, file_id, id, **kwargs
     ) -> typing.Union[
-        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
+        typing.Tuple[JobWrite, int, typing.Dict[str, str]], urllib3.HTTPResponse, JobWrite
     ]:
         """Allows to upload an annotation file chunk. Implements TUS file uploading protocol.  # noqa: E501
 
@@ -1817,7 +1819,7 @@ class JobsApi(object):
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
         **kwargs,
-    ) -> object:
+    ) -> LabeledData:
         ...
 
     @overload
@@ -1827,13 +1829,13 @@ class JobsApi(object):
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
         **kwargs,
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[LabeledData, int, typing.Dict[str, str]]:
         ...
 
     @overload
     def annotations_retrieve(
         self, id, _return_http_data_only: typing.Literal[False], **kwargs
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[LabeledData, int, typing.Dict[str, str]]:
         ...
 
     @overload
@@ -1865,7 +1867,7 @@ class JobsApi(object):
     def annotations_retrieve(
         self, id, **kwargs
     ) -> typing.Union[
-        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
+        typing.Tuple[LabeledData, int, typing.Dict[str, str]], urllib3.HTTPResponse, LabeledData
     ]:
         """Method returns annotations for a specific job  # noqa: E501
 
@@ -2190,7 +2192,7 @@ class JobsApi(object):
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
         **kwargs,
-    ) -> object:
+    ) -> PaginatedJobCommitList:
         ...
 
     @overload
@@ -2200,13 +2202,13 @@ class JobsApi(object):
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
         **kwargs,
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[PaginatedJobCommitList, int, typing.Dict[str, str]]:
         ...
 
     @overload
     def commits_list(
         self, id, _return_http_data_only: typing.Literal[False], **kwargs
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[PaginatedJobCommitList, int, typing.Dict[str, str]]:
         ...
 
     @overload
@@ -2238,7 +2240,9 @@ class JobsApi(object):
     def commits_list(
         self, id, **kwargs
     ) -> typing.Union[
-        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
+        typing.Tuple[PaginatedJobCommitList, int, typing.Dict[str, str]],
+        urllib3.HTTPResponse,
+        PaginatedJobCommitList,
     ]:
         """The action returns the list of tracked changes for the job  # noqa: E501
 
@@ -2377,7 +2381,7 @@ class JobsApi(object):
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
         **kwargs,
-    ) -> object:
+    ) -> DataMetaRead:
         ...
 
     @overload
@@ -2387,13 +2391,13 @@ class JobsApi(object):
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
         **kwargs,
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[DataMetaRead, int, typing.Dict[str, str]]:
         ...
 
     @overload
     def data_meta_retrieve(
         self, id, _return_http_data_only: typing.Literal[False], **kwargs
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[DataMetaRead, int, typing.Dict[str, str]]:
         ...
 
     @overload
@@ -2425,7 +2429,7 @@ class JobsApi(object):
     def data_meta_retrieve(
         self, id, **kwargs
     ) -> typing.Union[
-        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
+        typing.Tuple[DataMetaRead, int, typing.Dict[str, str]], urllib3.HTTPResponse, DataMetaRead
     ]:
         """Method provides a meta information about media files which are related with the job  # noqa: E501
 
@@ -2942,7 +2946,7 @@ class JobsApi(object):
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
         **kwargs,
-    ) -> object:
+    ) -> PaginatedIssueReadList:
         ...
 
     @overload
@@ -2952,13 +2956,13 @@ class JobsApi(object):
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
         **kwargs,
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[PaginatedIssueReadList, int, typing.Dict[str, str]]:
         ...
 
     @overload
     def issues_list(
         self, id, _return_http_data_only: typing.Literal[False], **kwargs
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[PaginatedIssueReadList, int, typing.Dict[str, str]]:
         ...
 
     @overload
@@ -2990,7 +2994,9 @@ class JobsApi(object):
     def issues_list(
         self, id, **kwargs
     ) -> typing.Union[
-        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
+        typing.Tuple[PaginatedIssueReadList, int, typing.Dict[str, str]],
+        urllib3.HTTPResponse,
+        PaginatedIssueReadList,
     ]:
         """Method returns list of issues for the job  # noqa: E501
 
@@ -3128,7 +3134,7 @@ class JobsApi(object):
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
         **kwargs,
-    ) -> object:
+    ) -> PaginatedJobReadList:
         ...
 
     @overload
@@ -3137,13 +3143,13 @@ class JobsApi(object):
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
         **kwargs,
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[PaginatedJobReadList, int, typing.Dict[str, str]]:
         ...
 
     @overload
     def list(
         self, _return_http_data_only: typing.Literal[False], **kwargs
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[PaginatedJobReadList, int, typing.Dict[str, str]]:
         ...
 
     @overload
@@ -3171,7 +3177,9 @@ class JobsApi(object):
     def list(
         self, **kwargs
     ) -> typing.Union[
-        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
+        typing.Tuple[PaginatedJobReadList, int, typing.Dict[str, str]],
+        urllib3.HTTPResponse,
+        PaginatedJobReadList,
     ]:
         """Method returns a paginated list of jobs according to query parameters  # noqa: E501
 
@@ -3305,7 +3313,7 @@ class JobsApi(object):
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
         **kwargs,
-    ) -> object:
+    ) -> JobWrite:
         ...
 
     @overload
@@ -3315,13 +3323,13 @@ class JobsApi(object):
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
         **kwargs,
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[JobWrite, int, typing.Dict[str, str]]:
         ...
 
     @overload
     def partial_update(
         self, id, _return_http_data_only: typing.Literal[False], **kwargs
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[JobWrite, int, typing.Dict[str, str]]:
         ...
 
     @overload
@@ -3353,7 +3361,7 @@ class JobsApi(object):
     def partial_update(
         self, id, **kwargs
     ) -> typing.Union[
-        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
+        typing.Tuple[JobWrite, int, typing.Dict[str, str]], urllib3.HTTPResponse, JobWrite
     ]:
         """Methods does a partial update of chosen fields in a job  # noqa: E501
 
@@ -3484,7 +3492,7 @@ class JobsApi(object):
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
         **kwargs,
-    ) -> object:
+    ) -> JobRead:
         ...
 
     @overload
@@ -3494,13 +3502,13 @@ class JobsApi(object):
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
         **kwargs,
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[JobRead, int, typing.Dict[str, str]]:
         ...
 
     @overload
     def retrieve(
         self, id, _return_http_data_only: typing.Literal[False], **kwargs
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[JobRead, int, typing.Dict[str, str]]:
         ...
 
     @overload
@@ -3532,7 +3540,7 @@ class JobsApi(object):
     def retrieve(
         self, id, **kwargs
     ) -> typing.Union[
-        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
+        typing.Tuple[JobRead, int, typing.Dict[str, str]], urllib3.HTTPResponse, JobRead
     ]:
         """Method returns details of a job  # noqa: E501
 
@@ -3661,7 +3669,7 @@ class JobsApi(object):
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
         **kwargs,
-    ) -> object:
+    ) -> JobWrite:
         ...
 
     @overload
@@ -3671,13 +3679,13 @@ class JobsApi(object):
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
         **kwargs,
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[JobWrite, int, typing.Dict[str, str]]:
         ...
 
     @overload
     def update(
         self, id, _return_http_data_only: typing.Literal[False], **kwargs
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[JobWrite, int, typing.Dict[str, str]]:
         ...
 
     @overload
@@ -3707,7 +3715,7 @@ class JobsApi(object):
     def update(
         self, id, **kwargs
     ) -> typing.Union[
-        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
+        typing.Tuple[JobWrite, int, typing.Dict[str, str]], urllib3.HTTPResponse, JobWrite
     ]:
         """Method updates a job by id  # noqa: E501
 

@@ -158,7 +158,7 @@ class MembershipWrite(ModelNormal):
     [optional]
     """
 
-    role: "RoleEnum"  # noqa: E501
+    role: RoleEnum  # noqa: E501
     """
     """
 

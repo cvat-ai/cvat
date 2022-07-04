@@ -9,6 +9,8 @@
 """
 
 
+from __future__ import annotations
+
 import re  # noqa: F401
 import sys  # noqa: F401
 import typing
@@ -360,7 +362,7 @@ class ServerApi(object):
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
         **kwargs,
-    ) -> object:
+    ) -> About:
         ...
 
     @overload
@@ -369,13 +371,13 @@ class ServerApi(object):
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
         **kwargs,
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[About, int, typing.Dict[str, str]]:
         ...
 
     @overload
     def about_retrieve(
         self, _return_http_data_only: typing.Literal[False], **kwargs
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[About, int, typing.Dict[str, str]]:
         ...
 
     @overload
@@ -404,9 +406,7 @@ class ServerApi(object):
 
     def about_retrieve(
         self, **kwargs
-    ) -> typing.Union[
-        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
-    ]:
+    ) -> typing.Union[typing.Tuple[About, int, typing.Dict[str, str]], urllib3.HTTPResponse, About]:
         """Method provides basic CVAT information  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
@@ -528,7 +528,7 @@ class ServerApi(object):
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
         **kwargs,
-    ) -> object:
+    ) -> DatasetFormats:
         ...
 
     @overload
@@ -537,13 +537,13 @@ class ServerApi(object):
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
         **kwargs,
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[DatasetFormats, int, typing.Dict[str, str]]:
         ...
 
     @overload
     def annotation_formats_retrieve(
         self, _return_http_data_only: typing.Literal[False], **kwargs
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[DatasetFormats, int, typing.Dict[str, str]]:
         ...
 
     @overload
@@ -573,7 +573,9 @@ class ServerApi(object):
     def annotation_formats_retrieve(
         self, **kwargs
     ) -> typing.Union[
-        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
+        typing.Tuple[DatasetFormats, int, typing.Dict[str, str]],
+        urllib3.HTTPResponse,
+        DatasetFormats,
     ]:
         """Method provides the list of supported annotations formats  # noqa: E501
 
@@ -699,7 +701,7 @@ class ServerApi(object):
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
         **kwargs,
-    ) -> object:
+    ) -> Exception:
         ...
 
     @overload
@@ -709,13 +711,13 @@ class ServerApi(object):
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
         **kwargs,
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[Exception, int, typing.Dict[str, str]]:
         ...
 
     @overload
     def exception_create(
         self, exception_request, _return_http_data_only: typing.Literal[False], **kwargs
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[Exception, int, typing.Dict[str, str]]:
         ...
 
     @overload
@@ -747,7 +749,7 @@ class ServerApi(object):
     def exception_create(
         self, exception_request, **kwargs
     ) -> typing.Union[
-        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
+        typing.Tuple[Exception, int, typing.Dict[str, str]], urllib3.HTTPResponse, Exception
     ]:
         """Method saves an exception from a client on the server  # noqa: E501
 
@@ -878,7 +880,7 @@ class ServerApi(object):
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
         **kwargs,
-    ) -> object:
+    ) -> typing.List[LogEvent]:
         ...
 
     @overload
@@ -888,13 +890,13 @@ class ServerApi(object):
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
         **kwargs,
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[typing.List[LogEvent], int, typing.Dict[str, str]]:
         ...
 
     @overload
     def logs_create(
         self, log_event_request, _return_http_data_only: typing.Literal[False], **kwargs
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[typing.List[LogEvent], int, typing.Dict[str, str]]:
         ...
 
     @overload
@@ -926,7 +928,9 @@ class ServerApi(object):
     def logs_create(
         self, log_event_request, **kwargs
     ) -> typing.Union[
-        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
+        typing.Tuple[typing.List[LogEvent], int, typing.Dict[str, str]],
+        urllib3.HTTPResponse,
+        typing.List[LogEvent],
     ]:
         """Method saves logs from a client on the server  # noqa: E501
 
@@ -1056,7 +1060,7 @@ class ServerApi(object):
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
         **kwargs,
-    ) -> object:
+    ) -> Plugins:
         ...
 
     @overload
@@ -1065,13 +1069,13 @@ class ServerApi(object):
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
         **kwargs,
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[Plugins, int, typing.Dict[str, str]]:
         ...
 
     @overload
     def plugins_retrieve(
         self, _return_http_data_only: typing.Literal[False], **kwargs
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[Plugins, int, typing.Dict[str, str]]:
         ...
 
     @overload
@@ -1101,7 +1105,7 @@ class ServerApi(object):
     def plugins_retrieve(
         self, **kwargs
     ) -> typing.Union[
-        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
+        typing.Tuple[Plugins, int, typing.Dict[str, str]], urllib3.HTTPResponse, Plugins
     ]:
         """Method provides allowed plugins  # noqa: E501
 
@@ -1224,7 +1228,7 @@ class ServerApi(object):
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
         **kwargs,
-    ) -> object:
+    ) -> typing.List[FileInfo]:
         ...
 
     @overload
@@ -1233,13 +1237,13 @@ class ServerApi(object):
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
         **kwargs,
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[typing.List[FileInfo], int, typing.Dict[str, str]]:
         ...
 
     @overload
     def share_list(
         self, _return_http_data_only: typing.Literal[False], **kwargs
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[typing.List[FileInfo], int, typing.Dict[str, str]]:
         ...
 
     @overload
@@ -1267,7 +1271,9 @@ class ServerApi(object):
     def share_list(
         self, **kwargs
     ) -> typing.Union[
-        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
+        typing.Tuple[typing.List[FileInfo], int, typing.Dict[str, str]],
+        urllib3.HTTPResponse,
+        typing.List[FileInfo],
     ]:
         """Returns all files and folders that are on the server along specified path  # noqa: E501
 

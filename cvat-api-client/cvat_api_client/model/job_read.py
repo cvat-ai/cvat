@@ -247,12 +247,12 @@ class JobRead(ModelNormal):
     [optional]
     """
 
-    project_id: typing.Optional[int]  # noqa: E501
+    project_id: typing.Union[int, none_type]  # noqa: E501
     """
     [optional]
     """
 
-    assignee: typing.Optional["CommentReadOwner"]  # noqa: E501
+    assignee: CommentReadOwner  # noqa: E501
     """
     """
 
@@ -260,26 +260,26 @@ class JobRead(ModelNormal):
     """
     """
 
-    labels: typing.List["Label"]  # noqa: E501
+    labels: typing.List[Label]  # noqa: E501
     """
     [Label]
     """
 
-    bug_tracker: typing.Optional[str]  # noqa: E501
+    bug_tracker: typing.Union[str, none_type]  # noqa: E501
     """
     """
 
-    status: typing.Optional[object]  # noqa: E501
+    status: typing.Union[typing.Any, none_type]  # noqa: E501
     """
     [optional]
     """
 
-    stage: typing.Optional[object]  # noqa: E501
+    stage: typing.Union[typing.Any, none_type]  # noqa: E501
     """
     [optional]
     """
 
-    state: typing.Optional[object]  # noqa: E501
+    state: typing.Union[typing.Any, none_type]  # noqa: E501
     """
     [optional]
     """
@@ -299,12 +299,12 @@ class JobRead(ModelNormal):
     [optional]
     """
 
-    data_chunk_size: typing.Optional[int]  # noqa: E501
+    data_chunk_size: typing.Union[int, none_type]  # noqa: E501
     """
     [optional]
     """
 
-    data_compressed_chunk_type: typing.Optional[object]  # noqa: E501
+    data_compressed_chunk_type: typing.Union[typing.Any, none_type]  # noqa: E501
     """
     [optional]
     """

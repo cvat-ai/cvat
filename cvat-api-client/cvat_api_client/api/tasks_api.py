@@ -9,6 +9,8 @@
 """
 
 
+from __future__ import annotations
+
 import re  # noqa: F401
 import sys  # noqa: F401
 import typing
@@ -1658,7 +1660,7 @@ class TasksApi(object):
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
         **kwargs,
-    ) -> object:
+    ) -> DataMetaRead:
         ...
 
     @overload
@@ -1668,13 +1670,13 @@ class TasksApi(object):
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
         **kwargs,
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[DataMetaRead, int, typing.Dict[str, str]]:
         ...
 
     @overload
     def jobs_data_meta_partial_update(
         self, id, _return_http_data_only: typing.Literal[False], **kwargs
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[DataMetaRead, int, typing.Dict[str, str]]:
         ...
 
     @overload
@@ -1706,7 +1708,7 @@ class TasksApi(object):
     def jobs_data_meta_partial_update(
         self, id, **kwargs
     ) -> typing.Union[
-        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
+        typing.Tuple[DataMetaRead, int, typing.Dict[str, str]], urllib3.HTTPResponse, DataMetaRead
     ]:
         """Method provides a meta information about media files which are related with the job  # noqa: E501
 
@@ -2209,7 +2211,7 @@ class TasksApi(object):
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
         **kwargs,
-    ) -> object:
+    ) -> TaskWrite:
         ...
 
     @overload
@@ -2220,13 +2222,13 @@ class TasksApi(object):
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
         **kwargs,
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[TaskWrite, int, typing.Dict[str, str]]:
         ...
 
     @overload
     def annotations_file_partial_update(
         self, file_id, id, _return_http_data_only: typing.Literal[False], **kwargs
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[TaskWrite, int, typing.Dict[str, str]]:
         ...
 
     @overload
@@ -2260,7 +2262,7 @@ class TasksApi(object):
     def annotations_file_partial_update(
         self, file_id, id, **kwargs
     ) -> typing.Union[
-        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
+        typing.Tuple[TaskWrite, int, typing.Dict[str, str]], urllib3.HTTPResponse, TaskWrite
     ]:
         """Allows to upload an annotation file chunk. Implements TUS file uploading protocol.  # noqa: E501
 
@@ -2397,7 +2399,7 @@ class TasksApi(object):
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
         **kwargs,
-    ) -> object:
+    ) -> TaskWrite:
         ...
 
     @overload
@@ -2408,13 +2410,13 @@ class TasksApi(object):
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
         **kwargs,
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[TaskWrite, int, typing.Dict[str, str]]:
         ...
 
     @overload
     def annotations_partial_update(
         self, action, id, _return_http_data_only: typing.Literal[False], **kwargs
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[TaskWrite, int, typing.Dict[str, str]]:
         ...
 
     @overload
@@ -2448,7 +2450,7 @@ class TasksApi(object):
     def annotations_partial_update(
         self, action, id, **kwargs
     ) -> typing.Union[
-        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
+        typing.Tuple[TaskWrite, int, typing.Dict[str, str]], urllib3.HTTPResponse, TaskWrite
     ]:
         """Method performs a partial update of annotations in a specific task  # noqa: E501
 
@@ -3138,7 +3140,7 @@ class TasksApi(object):
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
         **kwargs,
-    ) -> object:
+    ) -> TaskWrite:
         ...
 
     @overload
@@ -3148,13 +3150,13 @@ class TasksApi(object):
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
         **kwargs,
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[TaskWrite, int, typing.Dict[str, str]]:
         ...
 
     @overload
     def backup_file_partial_update(
         self, file_id, _return_http_data_only: typing.Literal[False], **kwargs
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[TaskWrite, int, typing.Dict[str, str]]:
         ...
 
     @overload
@@ -3186,7 +3188,7 @@ class TasksApi(object):
     def backup_file_partial_update(
         self, file_id, **kwargs
     ) -> typing.Union[
-        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
+        typing.Tuple[TaskWrite, int, typing.Dict[str, str]], urllib3.HTTPResponse, TaskWrite
     ]:
         """Allows to upload a file chunk. Implements TUS file uploading protocol.  # noqa: E501
 
@@ -3504,7 +3506,7 @@ class TasksApi(object):
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
         **kwargs,
-    ) -> object:
+    ) -> TaskWrite:
         ...
 
     @overload
@@ -3514,13 +3516,13 @@ class TasksApi(object):
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
         **kwargs,
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[TaskWrite, int, typing.Dict[str, str]]:
         ...
 
     @overload
     def create(
         self, task_write_request, _return_http_data_only: typing.Literal[False], **kwargs
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[TaskWrite, int, typing.Dict[str, str]]:
         ...
 
     @overload
@@ -3552,7 +3554,7 @@ class TasksApi(object):
     def create(
         self, task_write_request, **kwargs
     ) -> typing.Union[
-        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
+        typing.Tuple[TaskWrite, int, typing.Dict[str, str]], urllib3.HTTPResponse, TaskWrite
     ]:
         """Method creates a new task in a database without any attached images and videos  # noqa: E501
 
@@ -3870,7 +3872,7 @@ class TasksApi(object):
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
         **kwargs,
-    ) -> object:
+    ) -> TaskWrite:
         ...
 
     @overload
@@ -3881,13 +3883,13 @@ class TasksApi(object):
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
         **kwargs,
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[TaskWrite, int, typing.Dict[str, str]]:
         ...
 
     @overload
     def data_file_partial_update(
         self, file_id, id, _return_http_data_only: typing.Literal[False], **kwargs
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[TaskWrite, int, typing.Dict[str, str]]:
         ...
 
     @overload
@@ -3921,7 +3923,7 @@ class TasksApi(object):
     def data_file_partial_update(
         self, file_id, id, **kwargs
     ) -> typing.Union[
-        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
+        typing.Tuple[TaskWrite, int, typing.Dict[str, str]], urllib3.HTTPResponse, TaskWrite
     ]:
         """Allows to upload a file chunk. Implements TUS file uploading protocol.  # noqa: E501
 
@@ -4057,7 +4059,7 @@ class TasksApi(object):
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
         **kwargs,
-    ) -> object:
+    ) -> DataMetaRead:
         ...
 
     @overload
@@ -4067,13 +4069,13 @@ class TasksApi(object):
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
         **kwargs,
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[DataMetaRead, int, typing.Dict[str, str]]:
         ...
 
     @overload
     def data_meta_partial_update(
         self, id, _return_http_data_only: typing.Literal[False], **kwargs
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[DataMetaRead, int, typing.Dict[str, str]]:
         ...
 
     @overload
@@ -4105,7 +4107,7 @@ class TasksApi(object):
     def data_meta_partial_update(
         self, id, **kwargs
     ) -> typing.Union[
-        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
+        typing.Tuple[DataMetaRead, int, typing.Dict[str, str]], urllib3.HTTPResponse, DataMetaRead
     ]:
         """Method provides a meta information about media files which are related with the task  # noqa: E501
 
@@ -4238,7 +4240,7 @@ class TasksApi(object):
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
         **kwargs,
-    ) -> object:
+    ) -> DataMetaRead:
         ...
 
     @overload
@@ -4248,13 +4250,13 @@ class TasksApi(object):
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
         **kwargs,
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[DataMetaRead, int, typing.Dict[str, str]]:
         ...
 
     @overload
     def data_meta_retrieve(
         self, id, _return_http_data_only: typing.Literal[False], **kwargs
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[DataMetaRead, int, typing.Dict[str, str]]:
         ...
 
     @overload
@@ -4286,7 +4288,7 @@ class TasksApi(object):
     def data_meta_retrieve(
         self, id, **kwargs
     ) -> typing.Union[
-        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
+        typing.Tuple[DataMetaRead, int, typing.Dict[str, str]], urllib3.HTTPResponse, DataMetaRead
     ]:
         """Method provides a meta information about media files which are related with the task  # noqa: E501
 
@@ -4978,7 +4980,7 @@ class TasksApi(object):
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
         **kwargs,
-    ) -> object:
+    ) -> PaginatedJobReadList:
         ...
 
     @overload
@@ -4988,13 +4990,13 @@ class TasksApi(object):
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
         **kwargs,
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[PaginatedJobReadList, int, typing.Dict[str, str]]:
         ...
 
     @overload
     def jobs_list(
         self, id, _return_http_data_only: typing.Literal[False], **kwargs
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[PaginatedJobReadList, int, typing.Dict[str, str]]:
         ...
 
     @overload
@@ -5026,7 +5028,9 @@ class TasksApi(object):
     def jobs_list(
         self, id, **kwargs
     ) -> typing.Union[
-        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
+        typing.Tuple[PaginatedJobReadList, int, typing.Dict[str, str]],
+        urllib3.HTTPResponse,
+        PaginatedJobReadList,
     ]:
         """Method returns a list of jobs for a specific task  # noqa: E501
 
@@ -5164,7 +5168,7 @@ class TasksApi(object):
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
         **kwargs,
-    ) -> object:
+    ) -> PaginatedTaskReadList:
         ...
 
     @overload
@@ -5173,13 +5177,13 @@ class TasksApi(object):
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
         **kwargs,
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[PaginatedTaskReadList, int, typing.Dict[str, str]]:
         ...
 
     @overload
     def list(
         self, _return_http_data_only: typing.Literal[False], **kwargs
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[PaginatedTaskReadList, int, typing.Dict[str, str]]:
         ...
 
     @overload
@@ -5207,7 +5211,9 @@ class TasksApi(object):
     def list(
         self, **kwargs
     ) -> typing.Union[
-        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
+        typing.Tuple[PaginatedTaskReadList, int, typing.Dict[str, str]],
+        urllib3.HTTPResponse,
+        PaginatedTaskReadList,
     ]:
         """Returns a paginated list of tasks according to query parameters (10 tasks per page)  # noqa: E501
 
@@ -5341,7 +5347,7 @@ class TasksApi(object):
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
         **kwargs,
-    ) -> object:
+    ) -> TaskWrite:
         ...
 
     @overload
@@ -5351,13 +5357,13 @@ class TasksApi(object):
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
         **kwargs,
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[TaskWrite, int, typing.Dict[str, str]]:
         ...
 
     @overload
     def partial_update(
         self, id, _return_http_data_only: typing.Literal[False], **kwargs
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[TaskWrite, int, typing.Dict[str, str]]:
         ...
 
     @overload
@@ -5389,7 +5395,7 @@ class TasksApi(object):
     def partial_update(
         self, id, **kwargs
     ) -> typing.Union[
-        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
+        typing.Tuple[TaskWrite, int, typing.Dict[str, str]], urllib3.HTTPResponse, TaskWrite
     ]:
         """Methods does a partial update of chosen fields in a task  # noqa: E501
 
@@ -5520,7 +5526,7 @@ class TasksApi(object):
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
         **kwargs,
-    ) -> object:
+    ) -> TaskRead:
         ...
 
     @overload
@@ -5530,13 +5536,13 @@ class TasksApi(object):
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
         **kwargs,
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[TaskRead, int, typing.Dict[str, str]]:
         ...
 
     @overload
     def retrieve(
         self, id, _return_http_data_only: typing.Literal[False], **kwargs
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[TaskRead, int, typing.Dict[str, str]]:
         ...
 
     @overload
@@ -5568,7 +5574,7 @@ class TasksApi(object):
     def retrieve(
         self, id, **kwargs
     ) -> typing.Union[
-        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
+        typing.Tuple[TaskRead, int, typing.Dict[str, str]], urllib3.HTTPResponse, TaskRead
     ]:
         """Method returns details of a specific task  # noqa: E501
 
@@ -5697,7 +5703,7 @@ class TasksApi(object):
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
         **kwargs,
-    ) -> object:
+    ) -> RqStatus:
         ...
 
     @overload
@@ -5707,13 +5713,13 @@ class TasksApi(object):
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
         **kwargs,
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[RqStatus, int, typing.Dict[str, str]]:
         ...
 
     @overload
     def status_retrieve(
         self, id, _return_http_data_only: typing.Literal[False], **kwargs
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[RqStatus, int, typing.Dict[str, str]]:
         ...
 
     @overload
@@ -5745,7 +5751,7 @@ class TasksApi(object):
     def status_retrieve(
         self, id, **kwargs
     ) -> typing.Union[
-        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
+        typing.Tuple[RqStatus, int, typing.Dict[str, str]], urllib3.HTTPResponse, RqStatus
     ]:
         """When task is being created the method returns information about a status of the creation process  # noqa: E501
 
@@ -5875,7 +5881,7 @@ class TasksApi(object):
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
         **kwargs,
-    ) -> object:
+    ) -> TaskWrite:
         ...
 
     @overload
@@ -5886,13 +5892,13 @@ class TasksApi(object):
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
         **kwargs,
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[TaskWrite, int, typing.Dict[str, str]]:
         ...
 
     @overload
     def update(
         self, id, task_write_request, _return_http_data_only: typing.Literal[False], **kwargs
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[TaskWrite, int, typing.Dict[str, str]]:
         ...
 
     @overload
@@ -5926,7 +5932,7 @@ class TasksApi(object):
     def update(
         self, id, task_write_request, **kwargs
     ) -> typing.Union[
-        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
+        typing.Tuple[TaskWrite, int, typing.Dict[str, str]], urllib3.HTTPResponse, TaskWrite
     ]:
         """Method updates a task by id  # noqa: E501
 

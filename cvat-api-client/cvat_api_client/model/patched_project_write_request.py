@@ -160,18 +160,18 @@ class PatchedProjectWriteRequest(ModelNormal):
     [optional]
     """
 
-    labels: typing.List["PatchedLabelRequest"]  # noqa: E501
+    labels: typing.List[PatchedLabelRequest]  # noqa: E501
     """
     [optional, default: []]
     [PatchedLabelRequest]
     """
 
-    owner_id: typing.Optional[int]  # noqa: E501
+    owner_id: typing.Union[int, none_type]  # noqa: E501
     """
     [optional]
     """
 
-    assignee_id: typing.Optional[int]  # noqa: E501
+    assignee_id: typing.Union[int, none_type]  # noqa: E501
     """
     [optional]
     """
@@ -181,12 +181,12 @@ class PatchedProjectWriteRequest(ModelNormal):
     [optional]
     """
 
-    target_storage: "StorageRequest"  # noqa: E501
+    target_storage: StorageRequest  # noqa: E501
     """
     [optional]
     """
 
-    source_storage: "StorageRequest"  # noqa: E501
+    source_storage: StorageRequest  # noqa: E501
     """
     [optional]
     """

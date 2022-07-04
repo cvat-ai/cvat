@@ -120,12 +120,12 @@ class PatchedTaskWriteRequestTargetStorage(ModelComposed):
         return None
 
     # member type declarations
-    location: "LocationEnum"  # noqa: E501
+    location: LocationEnum  # noqa: E501
     """
     [optional]
     """
 
-    cloud_storage_id: typing.Optional[int]  # noqa: E501
+    cloud_storage_id: typing.Union[int, none_type]  # noqa: E501
     """
     [optional]
     """

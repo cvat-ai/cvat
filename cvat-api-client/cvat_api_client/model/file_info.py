@@ -129,7 +129,7 @@ class FileInfo(ModelNormal):
     """
     """
 
-    type: "FileInfoTypeEnum"  # noqa: E501
+    type: FileInfoTypeEnum  # noqa: E501
     """
     """
 

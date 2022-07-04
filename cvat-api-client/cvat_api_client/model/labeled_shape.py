@@ -170,7 +170,7 @@ class LabeledShape(ModelNormal):
         return None
 
     # member type declarations
-    type: "ShapeType"  # noqa: E501
+    type: ShapeType  # noqa: E501
     """
     """
 
@@ -193,7 +193,7 @@ class LabeledShape(ModelNormal):
     [float]
     """
 
-    id: typing.Optional[int]  # noqa: E501
+    id: typing.Union[int, none_type]  # noqa: E501
     """
     [optional]
     """
@@ -206,7 +206,7 @@ class LabeledShape(ModelNormal):
     """
     """
 
-    group: typing.Optional[int]  # noqa: E501
+    group: typing.Union[int, none_type]  # noqa: E501
     """
     """
 
@@ -215,7 +215,7 @@ class LabeledShape(ModelNormal):
     [optional, default: "manual"]
     """
 
-    attributes: typing.List["AttributeVal"]  # noqa: E501
+    attributes: typing.List[AttributeVal]  # noqa: E501
     """
     [AttributeVal]
     """

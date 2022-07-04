@@ -134,7 +134,7 @@ class Segment(ModelNormal):
     [optional]
     """
 
-    jobs: typing.List["SimpleJob"]  # noqa: E501
+    jobs: typing.List[SimpleJob]  # noqa: E501
     """
     [SimpleJob]
     """

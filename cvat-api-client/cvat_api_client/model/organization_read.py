@@ -177,13 +177,13 @@ class OrganizationRead(ModelNormal):
     [optional]
     """
 
-    contact: typing.Dict  # noqa: E501
+    contact: typing.Union[typing.Dict[str, (typing.Any, none_type)]]  # noqa: E501
     """
     [optional]
     {str: (bool, date, datetime, dict, float, int, list, str, none_type)}
     """
 
-    owner: "BasicUser"  # noqa: E501
+    owner: BasicUser  # noqa: E501
     """
     """
 

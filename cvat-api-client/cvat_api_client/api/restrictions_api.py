@@ -9,6 +9,8 @@
 """
 
 
+from __future__ import annotations
+
 import re  # noqa: F401
 import sys  # noqa: F401
 import typing
@@ -313,7 +315,7 @@ class RestrictionsApi(object):
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
         **kwargs,
-    ) -> object:
+    ) -> UserAgreement:
         ...
 
     @overload
@@ -322,13 +324,13 @@ class RestrictionsApi(object):
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
         **kwargs,
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[UserAgreement, int, typing.Dict[str, str]]:
         ...
 
     @overload
     def user_agreements_retrieve(
         self, _return_http_data_only: typing.Literal[False], **kwargs
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[UserAgreement, int, typing.Dict[str, str]]:
         ...
 
     @overload
@@ -358,7 +360,7 @@ class RestrictionsApi(object):
     def user_agreements_retrieve(
         self, **kwargs
     ) -> typing.Union[
-        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
+        typing.Tuple[UserAgreement, int, typing.Dict[str, str]], urllib3.HTTPResponse, UserAgreement
     ]:
         """Method provides user agreements that the user must accept to register  # noqa: E501
 

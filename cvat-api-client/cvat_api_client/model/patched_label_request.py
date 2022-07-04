@@ -150,7 +150,7 @@ class PatchedLabelRequest(ModelNormal):
     [optional]
     """
 
-    attributes: typing.List["AttributeRequest"]  # noqa: E501
+    attributes: typing.List[AttributeRequest]  # noqa: E501
     """
     [optional, default: []]
     [AttributeRequest]

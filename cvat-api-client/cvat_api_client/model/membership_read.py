@@ -153,7 +153,7 @@ class MembershipRead(ModelNormal):
     [optional]
     """
 
-    user: "BasicUser"  # noqa: E501
+    user: BasicUser  # noqa: E501
     """
     """
 
@@ -172,7 +172,7 @@ class MembershipRead(ModelNormal):
     [optional]
     """
 
-    role: typing.Optional[object]  # noqa: E501
+    role: typing.Union[typing.Any, none_type]  # noqa: E501
     """
     [optional]
     """

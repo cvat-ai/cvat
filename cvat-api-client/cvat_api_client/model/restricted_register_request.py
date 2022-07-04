@@ -183,7 +183,7 @@ class RestrictedRegisterRequest(ModelNormal):
     [optional]
     """
 
-    confirmations: typing.List["UserAgreementRequest"]  # noqa: E501
+    confirmations: typing.List[UserAgreementRequest]  # noqa: E501
     """
     [optional]
     [UserAgreementRequest]

@@ -9,6 +9,8 @@
 """
 
 
+from __future__ import annotations
+
 import re  # noqa: F401
 import sys  # noqa: F401
 import typing
@@ -461,7 +463,7 @@ class MembershipsApi(object):
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
         **kwargs,
-    ) -> object:
+    ) -> PaginatedMembershipReadList:
         ...
 
     @overload
@@ -470,13 +472,13 @@ class MembershipsApi(object):
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
         **kwargs,
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[PaginatedMembershipReadList, int, typing.Dict[str, str]]:
         ...
 
     @overload
     def list(
         self, _return_http_data_only: typing.Literal[False], **kwargs
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[PaginatedMembershipReadList, int, typing.Dict[str, str]]:
         ...
 
     @overload
@@ -504,7 +506,9 @@ class MembershipsApi(object):
     def list(
         self, **kwargs
     ) -> typing.Union[
-        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
+        typing.Tuple[PaginatedMembershipReadList, int, typing.Dict[str, str]],
+        urllib3.HTTPResponse,
+        PaginatedMembershipReadList,
     ]:
         """Method returns a paginated list of memberships according to query parameters  # noqa: E501
 
@@ -638,7 +642,7 @@ class MembershipsApi(object):
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
         **kwargs,
-    ) -> object:
+    ) -> MembershipWrite:
         ...
 
     @overload
@@ -648,13 +652,13 @@ class MembershipsApi(object):
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
         **kwargs,
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[MembershipWrite, int, typing.Dict[str, str]]:
         ...
 
     @overload
     def partial_update(
         self, id, _return_http_data_only: typing.Literal[False], **kwargs
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[MembershipWrite, int, typing.Dict[str, str]]:
         ...
 
     @overload
@@ -686,7 +690,9 @@ class MembershipsApi(object):
     def partial_update(
         self, id, **kwargs
     ) -> typing.Union[
-        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
+        typing.Tuple[MembershipWrite, int, typing.Dict[str, str]],
+        urllib3.HTTPResponse,
+        MembershipWrite,
     ]:
         """Methods does a partial update of chosen fields in a membership  # noqa: E501
 
@@ -817,7 +823,7 @@ class MembershipsApi(object):
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
         **kwargs,
-    ) -> object:
+    ) -> MembershipRead:
         ...
 
     @overload
@@ -827,13 +833,13 @@ class MembershipsApi(object):
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
         **kwargs,
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[MembershipRead, int, typing.Dict[str, str]]:
         ...
 
     @overload
     def retrieve(
         self, id, _return_http_data_only: typing.Literal[False], **kwargs
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[MembershipRead, int, typing.Dict[str, str]]:
         ...
 
     @overload
@@ -865,7 +871,9 @@ class MembershipsApi(object):
     def retrieve(
         self, id, **kwargs
     ) -> typing.Union[
-        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
+        typing.Tuple[MembershipRead, int, typing.Dict[str, str]],
+        urllib3.HTTPResponse,
+        MembershipRead,
     ]:
         """Method returns details of a membership  # noqa: E501
 

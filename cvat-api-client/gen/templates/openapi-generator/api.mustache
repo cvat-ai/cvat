@@ -1,5 +1,7 @@
 {{>partial_header}}
 
+from __future__ import annotations
+
 import typing
 from typing import overload
 import urllib3
@@ -238,7 +240,7 @@ class {{classname}}(object):
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
         **kwargs
-    ) -> {{#returnType}}object{{/returnType}}{{^returnType}}None{{/returnType}}:
+    ) -> {{>return_type}}:
         ...
 
     @overload
@@ -257,7 +259,7 @@ class {{classname}}(object):
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
         **kwargs
-    ) -> typing.Tuple[{{#returnType}}object{{/returnType}}{{^returnType}}None{{/returnType}}, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[{{>return_type}}, int, typing.Dict[str, str]]:
         ...
 
     @overload
@@ -275,7 +277,7 @@ class {{classname}}(object):
 {{/requiredParams}}
         _return_http_data_only: typing.Literal[False],
         **kwargs
-    ) -> typing.Tuple[{{#returnType}}object{{/returnType}}{{^returnType}}None{{/returnType}}, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[{{>return_type}}, int, typing.Dict[str, str]]:
         ...
 
     @overload
@@ -348,9 +350,9 @@ class {{classname}}(object):
 {{/requiredParams}}
         **kwargs
     ) -> typing.Union[
-            typing.Tuple[{{#returnType}}object{{/returnType}}{{^returnType}}None{{/returnType}}, int, typing.Dict[str, str]],
+            typing.Tuple[{{>return_type}}, int, typing.Dict[str, str]],
             urllib3.HTTPResponse,
-            {{#returnType}}object{{/returnType}}{{^returnType}}None{{/returnType}}
+            {{>return_type}}
     ]:
         """{{{summary}}}{{^summary}}{{>operation_name}}{{/summary}}  # noqa: E501
 

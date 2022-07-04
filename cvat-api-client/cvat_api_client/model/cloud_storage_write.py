@@ -197,7 +197,7 @@ class CloudStorageWrite(ModelNormal):
         return None
 
     # member type declarations
-    provider_type: "ProviderTypeEnum"  # noqa: E501
+    provider_type: ProviderTypeEnum  # noqa: E501
     """
     """
 
@@ -209,12 +209,12 @@ class CloudStorageWrite(ModelNormal):
     """
     """
 
-    owner: "BasicUser"  # noqa: E501
+    owner: BasicUser  # noqa: E501
     """
     [optional]
     """
 
-    credentials_type: "CredentialsTypeEnum"  # noqa: E501
+    credentials_type: CredentialsTypeEnum  # noqa: E501
     """
     """
 
@@ -268,13 +268,13 @@ class CloudStorageWrite(ModelNormal):
     [optional]
     """
 
-    manifests: typing.List["Manifest"]  # noqa: E501
+    manifests: typing.List[Manifest]  # noqa: E501
     """
     [optional, default: []]
     [Manifest]
     """
 
-    organization: typing.Optional[int]  # noqa: E501
+    organization: typing.Union[int, none_type]  # noqa: E501
     """
     [optional]
     """

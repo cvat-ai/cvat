@@ -154,7 +154,7 @@ class LabeledTrack(ModelNormal):
         return None
 
     # member type declarations
-    id: typing.Optional[int]  # noqa: E501
+    id: typing.Union[int, none_type]  # noqa: E501
     """
     [optional]
     """
@@ -167,7 +167,7 @@ class LabeledTrack(ModelNormal):
     """
     """
 
-    group: typing.Optional[int]  # noqa: E501
+    group: typing.Union[int, none_type]  # noqa: E501
     """
     """
 
@@ -176,12 +176,12 @@ class LabeledTrack(ModelNormal):
     [optional, default: "manual"]
     """
 
-    shapes: typing.List["TrackedShape"]  # noqa: E501
+    shapes: typing.List[TrackedShape]  # noqa: E501
     """
     [TrackedShape]
     """
 
-    attributes: typing.List["AttributeVal"]  # noqa: E501
+    attributes: typing.List[AttributeVal]  # noqa: E501
     """
     [AttributeVal]
     """

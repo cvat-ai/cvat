@@ -259,7 +259,7 @@ class TaskRead(ModelNormal):
     [optional]
     """
 
-    project_id: typing.Optional[int]  # noqa: E501
+    project_id: typing.Union[int, none_type]  # noqa: E501
     """
     [optional]
     """
@@ -269,12 +269,12 @@ class TaskRead(ModelNormal):
     [optional]
     """
 
-    owner: "BasicUser"  # noqa: E501
+    owner: BasicUser  # noqa: E501
     """
     [optional]
     """
 
-    assignee: typing.Optional["CommentReadOwner"]  # noqa: E501
+    assignee: CommentReadOwner  # noqa: E501
     """
     [optional]
     """
@@ -304,34 +304,34 @@ class TaskRead(ModelNormal):
     [optional]
     """
 
-    status: typing.Optional[object]  # noqa: E501
+    status: typing.Union[typing.Any, none_type]  # noqa: E501
     """
     [optional]
     """
 
-    labels: typing.List["Label"]  # noqa: E501
+    labels: typing.List[Label]  # noqa: E501
     """
     [optional]
     [Label]
     """
 
-    segments: typing.List["Segment"]  # noqa: E501
+    segments: typing.List[Segment]  # noqa: E501
     """
     [optional]
     [Segment]
     """
 
-    data_chunk_size: typing.Optional[int]  # noqa: E501
+    data_chunk_size: typing.Union[int, none_type]  # noqa: E501
     """
     [optional]
     """
 
-    data_compressed_chunk_type: typing.Optional[object]  # noqa: E501
+    data_compressed_chunk_type: typing.Union[typing.Any, none_type]  # noqa: E501
     """
     [optional]
     """
 
-    data_original_chunk_type: typing.Optional[object]  # noqa: E501
+    data_original_chunk_type: typing.Union[typing.Any, none_type]  # noqa: E501
     """
     [optional]
     """
@@ -361,17 +361,17 @@ class TaskRead(ModelNormal):
     [optional]
     """
 
-    organization: typing.Optional[int]  # noqa: E501
+    organization: typing.Union[int, none_type]  # noqa: E501
     """
     [optional]
     """
 
-    target_storage: typing.Optional["TaskReadTargetStorage"]  # noqa: E501
+    target_storage: TaskReadTargetStorage  # noqa: E501
     """
     [optional]
     """
 
-    source_storage: typing.Optional["TaskReadTargetStorage"]  # noqa: E501
+    source_storage: TaskReadTargetStorage  # noqa: E501
     """
     [optional]
     """

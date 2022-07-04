@@ -145,15 +145,15 @@ class InvitationRead(ModelNormal):
     [optional]
     """
 
-    owner: "BasicUser"  # noqa: E501
+    owner: BasicUser  # noqa: E501
     """
     """
 
-    role: "RoleEnum"  # noqa: E501
+    role: RoleEnum  # noqa: E501
     """
     """
 
-    user: "BasicUser"  # noqa: E501
+    user: BasicUser  # noqa: E501
     """
     """
 

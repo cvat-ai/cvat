@@ -9,6 +9,8 @@
 """
 
 
+from __future__ import annotations
+
 import re  # noqa: F401
 import sys  # noqa: F401
 import typing
@@ -706,7 +708,7 @@ class LambdaApi(object):
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
         **kwargs,
-    ) -> object:
+    ) -> typing.Union[typing.Dict[str, (typing.Any, none_type)]]:
         ...
 
     @overload
@@ -716,13 +718,17 @@ class LambdaApi(object):
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
         **kwargs,
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[
+        typing.Union[typing.Dict[str, (typing.Any, none_type)]], int, typing.Dict[str, str]
+    ]:
         ...
 
     @overload
     def functions_retrieve(
         self, func_id, _return_http_data_only: typing.Literal[False], **kwargs
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[
+        typing.Union[typing.Dict[str, (typing.Any, none_type)]], int, typing.Dict[str, str]
+    ]:
         ...
 
     @overload
@@ -754,7 +760,11 @@ class LambdaApi(object):
     def functions_retrieve(
         self, func_id, **kwargs
     ) -> typing.Union[
-        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
+        typing.Tuple[
+            typing.Union[typing.Dict[str, (typing.Any, none_type)]], int, typing.Dict[str, str]
+        ],
+        urllib3.HTTPResponse,
+        typing.Union[typing.Dict[str, (typing.Any, none_type)]],
     ]:
         """Method returns the information about the function  # noqa: E501
 

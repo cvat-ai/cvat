@@ -9,6 +9,8 @@
 """
 
 
+from __future__ import annotations
+
 import re  # noqa: F401
 import sys  # noqa: F401
 import typing
@@ -335,7 +337,7 @@ class OrganizationsApi(object):
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
         **kwargs,
-    ) -> object:
+    ) -> OrganizationWrite:
         ...
 
     @overload
@@ -345,13 +347,13 @@ class OrganizationsApi(object):
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
         **kwargs,
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[OrganizationWrite, int, typing.Dict[str, str]]:
         ...
 
     @overload
     def create(
         self, organization_write_request, _return_http_data_only: typing.Literal[False], **kwargs
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[OrganizationWrite, int, typing.Dict[str, str]]:
         ...
 
     @overload
@@ -383,7 +385,9 @@ class OrganizationsApi(object):
     def create(
         self, organization_write_request, **kwargs
     ) -> typing.Union[
-        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
+        typing.Tuple[OrganizationWrite, int, typing.Dict[str, str]],
+        urllib3.HTTPResponse,
+        OrganizationWrite,
     ]:
         """Method creates an organization  # noqa: E501
 
@@ -686,7 +690,7 @@ class OrganizationsApi(object):
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
         **kwargs,
-    ) -> object:
+    ) -> typing.List[OrganizationRead]:
         ...
 
     @overload
@@ -695,13 +699,13 @@ class OrganizationsApi(object):
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
         **kwargs,
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[typing.List[OrganizationRead], int, typing.Dict[str, str]]:
         ...
 
     @overload
     def list(
         self, _return_http_data_only: typing.Literal[False], **kwargs
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[typing.List[OrganizationRead], int, typing.Dict[str, str]]:
         ...
 
     @overload
@@ -729,7 +733,9 @@ class OrganizationsApi(object):
     def list(
         self, **kwargs
     ) -> typing.Union[
-        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
+        typing.Tuple[typing.List[OrganizationRead], int, typing.Dict[str, str]],
+        urllib3.HTTPResponse,
+        typing.List[OrganizationRead],
     ]:
         """Method returns a paginated list of organizatins according to query parameters  # noqa: E501
 
@@ -859,7 +865,7 @@ class OrganizationsApi(object):
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
         **kwargs,
-    ) -> object:
+    ) -> OrganizationWrite:
         ...
 
     @overload
@@ -869,13 +875,13 @@ class OrganizationsApi(object):
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
         **kwargs,
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[OrganizationWrite, int, typing.Dict[str, str]]:
         ...
 
     @overload
     def partial_update(
         self, id, _return_http_data_only: typing.Literal[False], **kwargs
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[OrganizationWrite, int, typing.Dict[str, str]]:
         ...
 
     @overload
@@ -907,7 +913,9 @@ class OrganizationsApi(object):
     def partial_update(
         self, id, **kwargs
     ) -> typing.Union[
-        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
+        typing.Tuple[OrganizationWrite, int, typing.Dict[str, str]],
+        urllib3.HTTPResponse,
+        OrganizationWrite,
     ]:
         """Methods does a partial update of chosen fields in an organization  # noqa: E501
 
@@ -1038,7 +1046,7 @@ class OrganizationsApi(object):
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
         **kwargs,
-    ) -> object:
+    ) -> OrganizationRead:
         ...
 
     @overload
@@ -1048,13 +1056,13 @@ class OrganizationsApi(object):
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
         **kwargs,
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[OrganizationRead, int, typing.Dict[str, str]]:
         ...
 
     @overload
     def retrieve(
         self, id, _return_http_data_only: typing.Literal[False], **kwargs
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[OrganizationRead, int, typing.Dict[str, str]]:
         ...
 
     @overload
@@ -1086,7 +1094,9 @@ class OrganizationsApi(object):
     def retrieve(
         self, id, **kwargs
     ) -> typing.Union[
-        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
+        typing.Tuple[OrganizationRead, int, typing.Dict[str, str]],
+        urllib3.HTTPResponse,
+        OrganizationRead,
     ]:
         """Method returns details of an organization  # noqa: E501
 

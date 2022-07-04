@@ -148,7 +148,7 @@ class Label(ModelNormal):
     [optional]
     """
 
-    attributes: typing.List["Attribute"]  # noqa: E501
+    attributes: typing.List[Attribute]  # noqa: E501
     """
     [optional, default: []]
     [Attribute]

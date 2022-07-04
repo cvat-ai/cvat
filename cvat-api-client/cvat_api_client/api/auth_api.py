@@ -9,6 +9,8 @@
 """
 
 
+from __future__ import annotations
+
 import re  # noqa: F401
 import sys  # noqa: F401
 import typing
@@ -446,7 +448,7 @@ class AuthApi(object):
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
         **kwargs,
-    ) -> object:
+    ) -> Token:
         ...
 
     @overload
@@ -456,13 +458,13 @@ class AuthApi(object):
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
         **kwargs,
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[Token, int, typing.Dict[str, str]]:
         ...
 
     @overload
     def login_create(
         self, login_request, _return_http_data_only: typing.Literal[False], **kwargs
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[Token, int, typing.Dict[str, str]]:
         ...
 
     @overload
@@ -493,9 +495,7 @@ class AuthApi(object):
 
     def login_create(
         self, login_request, **kwargs
-    ) -> typing.Union[
-        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
-    ]:
+    ) -> typing.Union[typing.Tuple[Token, int, typing.Dict[str, str]], urllib3.HTTPResponse, Token]:
         """login_create  # noqa: E501
 
         Check the credentials and return the REST Token if the credentials are valid and authenticated. Calls Django Auth login method to register User ID in Django session framework  Accept the following POST parameters: username, password Return the REST Framework Token Object's key.  # noqa: E501
@@ -624,7 +624,7 @@ class AuthApi(object):
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
         **kwargs,
-    ) -> object:
+    ) -> RestAuthDetail:
         ...
 
     @overload
@@ -633,13 +633,13 @@ class AuthApi(object):
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
         **kwargs,
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[RestAuthDetail, int, typing.Dict[str, str]]:
         ...
 
     @overload
     def logout_create(
         self, _return_http_data_only: typing.Literal[False], **kwargs
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[RestAuthDetail, int, typing.Dict[str, str]]:
         ...
 
     @overload
@@ -669,7 +669,9 @@ class AuthApi(object):
     def logout_create(
         self, **kwargs
     ) -> typing.Union[
-        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
+        typing.Tuple[RestAuthDetail, int, typing.Dict[str, str]],
+        urllib3.HTTPResponse,
+        RestAuthDetail,
     ]:
         """logout_create  # noqa: E501
 
@@ -795,7 +797,7 @@ class AuthApi(object):
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
         **kwargs,
-    ) -> object:
+    ) -> RestAuthDetail:
         ...
 
     @overload
@@ -805,13 +807,13 @@ class AuthApi(object):
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
         **kwargs,
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[RestAuthDetail, int, typing.Dict[str, str]]:
         ...
 
     @overload
     def password_change_create(
         self, password_change_request, _return_http_data_only: typing.Literal[False], **kwargs
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[RestAuthDetail, int, typing.Dict[str, str]]:
         ...
 
     @overload
@@ -843,7 +845,9 @@ class AuthApi(object):
     def password_change_create(
         self, password_change_request, **kwargs
     ) -> typing.Union[
-        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
+        typing.Tuple[RestAuthDetail, int, typing.Dict[str, str]],
+        urllib3.HTTPResponse,
+        RestAuthDetail,
     ]:
         """password_change_create  # noqa: E501
 
@@ -976,7 +980,7 @@ class AuthApi(object):
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
         **kwargs,
-    ) -> object:
+    ) -> RestAuthDetail:
         ...
 
     @overload
@@ -986,7 +990,7 @@ class AuthApi(object):
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
         **kwargs,
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[RestAuthDetail, int, typing.Dict[str, str]]:
         ...
 
     @overload
@@ -995,7 +999,7 @@ class AuthApi(object):
         password_reset_confirm_request,
         _return_http_data_only: typing.Literal[False],
         **kwargs,
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[RestAuthDetail, int, typing.Dict[str, str]]:
         ...
 
     @overload
@@ -1027,7 +1031,9 @@ class AuthApi(object):
     def password_reset_confirm_create(
         self, password_reset_confirm_request, **kwargs
     ) -> typing.Union[
-        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
+        typing.Tuple[RestAuthDetail, int, typing.Dict[str, str]],
+        urllib3.HTTPResponse,
+        RestAuthDetail,
     ]:
         """password_reset_confirm_create  # noqa: E501
 
@@ -1160,7 +1166,7 @@ class AuthApi(object):
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
         **kwargs,
-    ) -> object:
+    ) -> RestAuthDetail:
         ...
 
     @overload
@@ -1170,7 +1176,7 @@ class AuthApi(object):
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
         **kwargs,
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[RestAuthDetail, int, typing.Dict[str, str]]:
         ...
 
     @overload
@@ -1179,7 +1185,7 @@ class AuthApi(object):
         password_reset_serializer_ex_request,
         _return_http_data_only: typing.Literal[False],
         **kwargs,
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[RestAuthDetail, int, typing.Dict[str, str]]:
         ...
 
     @overload
@@ -1214,7 +1220,9 @@ class AuthApi(object):
     def password_reset_create(
         self, password_reset_serializer_ex_request, **kwargs
     ) -> typing.Union[
-        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
+        typing.Tuple[RestAuthDetail, int, typing.Dict[str, str]],
+        urllib3.HTTPResponse,
+        RestAuthDetail,
     ]:
         """password_reset_create  # noqa: E501
 
@@ -1347,7 +1355,7 @@ class AuthApi(object):
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
         **kwargs,
-    ) -> object:
+    ) -> RestrictedRegister:
         ...
 
     @overload
@@ -1357,13 +1365,13 @@ class AuthApi(object):
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
         **kwargs,
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[RestrictedRegister, int, typing.Dict[str, str]]:
         ...
 
     @overload
     def register_create(
         self, restricted_register_request, _return_http_data_only: typing.Literal[False], **kwargs
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[RestrictedRegister, int, typing.Dict[str, str]]:
         ...
 
     @overload
@@ -1395,7 +1403,9 @@ class AuthApi(object):
     def register_create(
         self, restricted_register_request, **kwargs
     ) -> typing.Union[
-        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
+        typing.Tuple[RestrictedRegister, int, typing.Dict[str, str]],
+        urllib3.HTTPResponse,
+        RestrictedRegister,
     ]:
         """register_create  # noqa: E501
 
@@ -1524,7 +1534,7 @@ class AuthApi(object):
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
         **kwargs,
-    ) -> object:
+    ) -> str:
         ...
 
     @overload
@@ -1534,13 +1544,13 @@ class AuthApi(object):
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
         **kwargs,
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[str, int, typing.Dict[str, str]]:
         ...
 
     @overload
     def signing_create(
         self, signing_request, _return_http_data_only: typing.Literal[False], **kwargs
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[str, int, typing.Dict[str, str]]:
         ...
 
     @overload
@@ -1571,9 +1581,7 @@ class AuthApi(object):
 
     def signing_create(
         self, signing_request, **kwargs
-    ) -> typing.Union[
-        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
-    ]:
+    ) -> typing.Union[typing.Tuple[str, int, typing.Dict[str, str]], urllib3.HTTPResponse, str]:
         """This method signs URL for access to the server  # noqa: E501
 
         Signed URL contains a token which authenticates a user on the server.Signed URL is valid during 30 seconds since signing.  # noqa: E501

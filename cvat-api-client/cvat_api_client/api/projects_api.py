@@ -9,6 +9,8 @@
 """
 
 
+from __future__ import annotations
+
 import re  # noqa: F401
 import sys  # noqa: F401
 import typing
@@ -1336,7 +1338,7 @@ class ProjectsApi(object):
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
         **kwargs,
-    ) -> object:
+    ) -> ProjectWrite:
         ...
 
     @overload
@@ -1346,13 +1348,13 @@ class ProjectsApi(object):
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
         **kwargs,
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[ProjectWrite, int, typing.Dict[str, str]]:
         ...
 
     @overload
     def backup_partial_update(
         self, file_id, _return_http_data_only: typing.Literal[False], **kwargs
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[ProjectWrite, int, typing.Dict[str, str]]:
         ...
 
     @overload
@@ -1384,7 +1386,7 @@ class ProjectsApi(object):
     def backup_partial_update(
         self, file_id, **kwargs
     ) -> typing.Union[
-        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
+        typing.Tuple[ProjectWrite, int, typing.Dict[str, str]], urllib3.HTTPResponse, ProjectWrite
     ]:
         """backup_partial_update  # noqa: E501
 
@@ -1702,7 +1704,7 @@ class ProjectsApi(object):
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
         **kwargs,
-    ) -> object:
+    ) -> ProjectWrite:
         ...
 
     @overload
@@ -1712,13 +1714,13 @@ class ProjectsApi(object):
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
         **kwargs,
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[ProjectWrite, int, typing.Dict[str, str]]:
         ...
 
     @overload
     def create(
         self, project_write_request, _return_http_data_only: typing.Literal[False], **kwargs
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[ProjectWrite, int, typing.Dict[str, str]]:
         ...
 
     @overload
@@ -1750,7 +1752,7 @@ class ProjectsApi(object):
     def create(
         self, project_write_request, **kwargs
     ) -> typing.Union[
-        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
+        typing.Tuple[ProjectWrite, int, typing.Dict[str, str]], urllib3.HTTPResponse, ProjectWrite
     ]:
         """Method creates a new project  # noqa: E501
 
@@ -2082,7 +2084,7 @@ class ProjectsApi(object):
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
         **kwargs,
-    ) -> object:
+    ) -> ProjectWrite:
         ...
 
     @overload
@@ -2093,13 +2095,13 @@ class ProjectsApi(object):
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
         **kwargs,
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[ProjectWrite, int, typing.Dict[str, str]]:
         ...
 
     @overload
     def dataset_partial_update(
         self, file_id, id, _return_http_data_only: typing.Literal[False], **kwargs
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[ProjectWrite, int, typing.Dict[str, str]]:
         ...
 
     @overload
@@ -2133,7 +2135,7 @@ class ProjectsApi(object):
     def dataset_partial_update(
         self, file_id, id, **kwargs
     ) -> typing.Union[
-        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
+        typing.Tuple[ProjectWrite, int, typing.Dict[str, str]], urllib3.HTTPResponse, ProjectWrite
     ]:
         """dataset_partial_update  # noqa: E501
 
@@ -2635,7 +2637,7 @@ class ProjectsApi(object):
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
         **kwargs,
-    ) -> object:
+    ) -> PaginatedPolymorphicProjectList:
         ...
 
     @overload
@@ -2644,13 +2646,13 @@ class ProjectsApi(object):
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
         **kwargs,
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[PaginatedPolymorphicProjectList, int, typing.Dict[str, str]]:
         ...
 
     @overload
     def list(
         self, _return_http_data_only: typing.Literal[False], **kwargs
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[PaginatedPolymorphicProjectList, int, typing.Dict[str, str]]:
         ...
 
     @overload
@@ -2678,7 +2680,9 @@ class ProjectsApi(object):
     def list(
         self, **kwargs
     ) -> typing.Union[
-        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
+        typing.Tuple[PaginatedPolymorphicProjectList, int, typing.Dict[str, str]],
+        urllib3.HTTPResponse,
+        PaginatedPolymorphicProjectList,
     ]:
         """Returns a paginated list of projects according to query parameters (12 projects per page)  # noqa: E501
 
@@ -2812,7 +2816,7 @@ class ProjectsApi(object):
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
         **kwargs,
-    ) -> object:
+    ) -> ProjectWrite:
         ...
 
     @overload
@@ -2822,13 +2826,13 @@ class ProjectsApi(object):
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
         **kwargs,
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[ProjectWrite, int, typing.Dict[str, str]]:
         ...
 
     @overload
     def partial_update(
         self, id, _return_http_data_only: typing.Literal[False], **kwargs
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[ProjectWrite, int, typing.Dict[str, str]]:
         ...
 
     @overload
@@ -2860,7 +2864,7 @@ class ProjectsApi(object):
     def partial_update(
         self, id, **kwargs
     ) -> typing.Union[
-        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
+        typing.Tuple[ProjectWrite, int, typing.Dict[str, str]], urllib3.HTTPResponse, ProjectWrite
     ]:
         """Methods does a partial update of chosen fields in a project  # noqa: E501
 
@@ -2991,7 +2995,7 @@ class ProjectsApi(object):
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
         **kwargs,
-    ) -> object:
+    ) -> ProjectRead:
         ...
 
     @overload
@@ -3001,13 +3005,13 @@ class ProjectsApi(object):
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
         **kwargs,
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[ProjectRead, int, typing.Dict[str, str]]:
         ...
 
     @overload
     def retrieve(
         self, id, _return_http_data_only: typing.Literal[False], **kwargs
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[ProjectRead, int, typing.Dict[str, str]]:
         ...
 
     @overload
@@ -3039,7 +3043,7 @@ class ProjectsApi(object):
     def retrieve(
         self, id, **kwargs
     ) -> typing.Union[
-        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
+        typing.Tuple[ProjectRead, int, typing.Dict[str, str]], urllib3.HTTPResponse, ProjectRead
     ]:
         """Method returns details of a specific project  # noqa: E501
 
@@ -3168,7 +3172,7 @@ class ProjectsApi(object):
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
         **kwargs,
-    ) -> object:
+    ) -> PaginatedTaskReadList:
         ...
 
     @overload
@@ -3178,13 +3182,13 @@ class ProjectsApi(object):
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
         **kwargs,
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[PaginatedTaskReadList, int, typing.Dict[str, str]]:
         ...
 
     @overload
     def tasks_list(
         self, id, _return_http_data_only: typing.Literal[False], **kwargs
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[PaginatedTaskReadList, int, typing.Dict[str, str]]:
         ...
 
     @overload
@@ -3216,7 +3220,9 @@ class ProjectsApi(object):
     def tasks_list(
         self, id, **kwargs
     ) -> typing.Union[
-        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
+        typing.Tuple[PaginatedTaskReadList, int, typing.Dict[str, str]],
+        urllib3.HTTPResponse,
+        PaginatedTaskReadList,
     ]:
         """Method returns information of the tasks of the project with the selected id  # noqa: E501
 

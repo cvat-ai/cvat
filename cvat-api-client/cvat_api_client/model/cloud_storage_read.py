@@ -175,18 +175,18 @@ class CloudStorageRead(ModelNormal):
     [optional]
     """
 
-    owner: "BasicUser"  # noqa: E501
+    owner: BasicUser  # noqa: E501
     """
     [optional]
     """
 
-    manifests: typing.List["Manifest"]  # noqa: E501
+    manifests: typing.List[Manifest]  # noqa: E501
     """
     [optional, default: []]
     [Manifest]
     """
 
-    provider_type: "ProviderTypeEnum"  # noqa: E501
+    provider_type: ProviderTypeEnum  # noqa: E501
     """
     """
 
@@ -208,7 +208,7 @@ class CloudStorageRead(ModelNormal):
     [optional]
     """
 
-    credentials_type: "CredentialsTypeEnum"  # noqa: E501
+    credentials_type: CredentialsTypeEnum  # noqa: E501
     """
     """
 
@@ -222,7 +222,7 @@ class CloudStorageRead(ModelNormal):
     [optional]
     """
 
-    organization: typing.Optional[int]  # noqa: E501
+    organization: typing.Union[int, none_type]  # noqa: E501
     """
     [optional]
     """

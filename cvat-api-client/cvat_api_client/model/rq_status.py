@@ -128,7 +128,7 @@ class RqStatus(ModelNormal):
         return None
 
     # member type declarations
-    state: "RqStatusStateEnum"  # noqa: E501
+    state: RqStatusStateEnum  # noqa: E501
     """
     """
 

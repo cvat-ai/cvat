@@ -154,7 +154,7 @@ class RestrictedRegister(ModelNormal):
     [optional]
     """
 
-    confirmations: typing.List["UserAgreement"]  # noqa: E501
+    confirmations: typing.List[UserAgreement]  # noqa: E501
     """
     [optional]
     [UserAgreement]

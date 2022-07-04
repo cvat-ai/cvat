@@ -145,7 +145,7 @@ class IssueWriteRequest(ModelNormal):
     """
     """
 
-    assignee: typing.Optional[int]  # noqa: E501
+    assignee: typing.Union[int, none_type]  # noqa: E501
     """
     [optional]
     """

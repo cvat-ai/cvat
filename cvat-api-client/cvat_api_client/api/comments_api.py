@@ -9,6 +9,8 @@
 """
 
 
+from __future__ import annotations
+
 import re  # noqa: F401
 import sys  # noqa: F401
 import typing
@@ -344,7 +346,7 @@ class CommentsApi(object):
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
         **kwargs,
-    ) -> object:
+    ) -> CommentWrite:
         ...
 
     @overload
@@ -354,13 +356,13 @@ class CommentsApi(object):
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
         **kwargs,
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[CommentWrite, int, typing.Dict[str, str]]:
         ...
 
     @overload
     def create(
         self, comment_write_request, _return_http_data_only: typing.Literal[False], **kwargs
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[CommentWrite, int, typing.Dict[str, str]]:
         ...
 
     @overload
@@ -392,7 +394,7 @@ class CommentsApi(object):
     def create(
         self, comment_write_request, **kwargs
     ) -> typing.Union[
-        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
+        typing.Tuple[CommentWrite, int, typing.Dict[str, str]], urllib3.HTTPResponse, CommentWrite
     ]:
         """Method creates a comment  # noqa: E501
 
@@ -695,7 +697,7 @@ class CommentsApi(object):
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
         **kwargs,
-    ) -> object:
+    ) -> PaginatedCommentReadList:
         ...
 
     @overload
@@ -704,13 +706,13 @@ class CommentsApi(object):
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
         **kwargs,
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[PaginatedCommentReadList, int, typing.Dict[str, str]]:
         ...
 
     @overload
     def list(
         self, _return_http_data_only: typing.Literal[False], **kwargs
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[PaginatedCommentReadList, int, typing.Dict[str, str]]:
         ...
 
     @overload
@@ -738,7 +740,9 @@ class CommentsApi(object):
     def list(
         self, **kwargs
     ) -> typing.Union[
-        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
+        typing.Tuple[PaginatedCommentReadList, int, typing.Dict[str, str]],
+        urllib3.HTTPResponse,
+        PaginatedCommentReadList,
     ]:
         """Method returns a paginated list of comments according to query parameters  # noqa: E501
 
@@ -872,7 +876,7 @@ class CommentsApi(object):
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
         **kwargs,
-    ) -> object:
+    ) -> CommentWrite:
         ...
 
     @overload
@@ -882,13 +886,13 @@ class CommentsApi(object):
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
         **kwargs,
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[CommentWrite, int, typing.Dict[str, str]]:
         ...
 
     @overload
     def partial_update(
         self, id, _return_http_data_only: typing.Literal[False], **kwargs
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[CommentWrite, int, typing.Dict[str, str]]:
         ...
 
     @overload
@@ -920,7 +924,7 @@ class CommentsApi(object):
     def partial_update(
         self, id, **kwargs
     ) -> typing.Union[
-        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
+        typing.Tuple[CommentWrite, int, typing.Dict[str, str]], urllib3.HTTPResponse, CommentWrite
     ]:
         """Methods does a partial update of chosen fields in a comment  # noqa: E501
 
@@ -1051,7 +1055,7 @@ class CommentsApi(object):
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
         **kwargs,
-    ) -> object:
+    ) -> CommentRead:
         ...
 
     @overload
@@ -1061,13 +1065,13 @@ class CommentsApi(object):
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
         **kwargs,
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[CommentRead, int, typing.Dict[str, str]]:
         ...
 
     @overload
     def retrieve(
         self, id, _return_http_data_only: typing.Literal[False], **kwargs
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[CommentRead, int, typing.Dict[str, str]]:
         ...
 
     @overload
@@ -1099,7 +1103,7 @@ class CommentsApi(object):
     def retrieve(
         self, id, **kwargs
     ) -> typing.Union[
-        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
+        typing.Tuple[CommentRead, int, typing.Dict[str, str]], urllib3.HTTPResponse, CommentRead
     ]:
         """Method returns details of a comment  # noqa: E501
 

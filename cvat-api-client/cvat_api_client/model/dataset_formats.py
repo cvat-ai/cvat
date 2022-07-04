@@ -121,12 +121,12 @@ class DatasetFormats(ModelNormal):
         return None
 
     # member type declarations
-    importers: typing.List["DatasetFormat"]  # noqa: E501
+    importers: typing.List[DatasetFormat]  # noqa: E501
     """
     [DatasetFormat]
     """
 
-    exporters: typing.List["DatasetFormat"]  # noqa: E501
+    exporters: typing.List[DatasetFormat]  # noqa: E501
     """
     [DatasetFormat]
     """

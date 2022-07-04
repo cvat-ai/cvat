@@ -129,17 +129,17 @@ class JobWrite(ModelNormal):
         return None
 
     # member type declarations
-    assignee: typing.Optional[int]  # noqa: E501
+    assignee: typing.Union[int, none_type]  # noqa: E501
     """
     [optional]
     """
 
-    stage: "JobStage"  # noqa: E501
+    stage: JobStage  # noqa: E501
     """
     [optional]
     """
 
-    state: "OperationStatus"  # noqa: E501
+    state: OperationStatus  # noqa: E501
     """
     [optional]
     """

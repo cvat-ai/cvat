@@ -135,17 +135,17 @@ class LabeledData(ModelNormal):
     """
     """
 
-    tags: typing.List["LabeledImage"]  # noqa: E501
+    tags: typing.List[LabeledImage]  # noqa: E501
     """
     [LabeledImage]
     """
 
-    shapes: typing.List["LabeledShape"]  # noqa: E501
+    shapes: typing.List[LabeledShape]  # noqa: E501
     """
     [LabeledShape]
     """
 
-    tracks: typing.List["LabeledTrack"]  # noqa: E501
+    tracks: typing.List[LabeledTrack]  # noqa: E501
     """
     [LabeledTrack]
     """

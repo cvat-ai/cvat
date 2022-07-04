@@ -147,7 +147,7 @@ class AttributeRequest(ModelNormal):
     """
     """
 
-    input_type: "InputTypeEnum"  # noqa: E501
+    input_type: InputTypeEnum  # noqa: E501
     """
     """
 

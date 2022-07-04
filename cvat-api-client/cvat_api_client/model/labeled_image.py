@@ -149,7 +149,7 @@ class LabeledImage(ModelNormal):
         return None
 
     # member type declarations
-    id: typing.Optional[int]  # noqa: E501
+    id: typing.Union[int, none_type]  # noqa: E501
     """
     [optional]
     """
@@ -162,7 +162,7 @@ class LabeledImage(ModelNormal):
     """
     """
 
-    group: typing.Optional[int]  # noqa: E501
+    group: typing.Union[int, none_type]  # noqa: E501
     """
     """
 
@@ -171,7 +171,7 @@ class LabeledImage(ModelNormal):
     [optional, default: "manual"]
     """
 
-    attributes: typing.List["AttributeVal"]  # noqa: E501
+    attributes: typing.List[AttributeVal]  # noqa: E501
     """
     [AttributeVal]
     """

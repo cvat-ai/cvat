@@ -180,7 +180,7 @@ class TaskWrite(ModelNormal):
     """
     """
 
-    project_id: typing.Optional[int]  # noqa: E501
+    project_id: typing.Union[int, none_type]  # noqa: E501
     """
     [optional]
     """
@@ -190,7 +190,7 @@ class TaskWrite(ModelNormal):
     [optional]
     """
 
-    overlap: typing.Optional[int]  # noqa: E501
+    overlap: typing.Union[int, none_type]  # noqa: E501
     """
     [optional]
     """
@@ -200,7 +200,7 @@ class TaskWrite(ModelNormal):
     [optional]
     """
 
-    labels: typing.List["Label"]  # noqa: E501
+    labels: typing.List[Label]  # noqa: E501
     """
     [optional]
     [Label]
@@ -211,12 +211,12 @@ class TaskWrite(ModelNormal):
     [optional]
     """
 
-    target_storage: typing.Optional["TaskReadTargetStorage"]  # noqa: E501
+    target_storage: TaskReadTargetStorage  # noqa: E501
     """
     [optional]
     """
 
-    source_storage: typing.Optional["TaskReadTargetStorage"]  # noqa: E501
+    source_storage: TaskReadTargetStorage  # noqa: E501
     """
     [optional]
     """

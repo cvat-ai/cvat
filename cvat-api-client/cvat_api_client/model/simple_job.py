@@ -179,21 +179,21 @@ class SimpleJob(ModelNormal):
     [optional]
     """
 
-    assignee: typing.Optional["CommentReadOwner"]  # noqa: E501
+    assignee: CommentReadOwner  # noqa: E501
     """
     """
 
-    status: typing.Optional[object]  # noqa: E501
+    status: typing.Union[typing.Any, none_type]  # noqa: E501
     """
     [optional]
     """
 
-    stage: typing.Optional[object]  # noqa: E501
+    stage: typing.Union[typing.Any, none_type]  # noqa: E501
     """
     [optional]
     """
 
-    state: typing.Optional[object]  # noqa: E501
+    state: typing.Union[typing.Any, none_type]  # noqa: E501
     """
     [optional]
     """

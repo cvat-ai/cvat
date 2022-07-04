@@ -138,17 +138,17 @@ class PaginatedMetaUserList(ModelNormal):
     [optional]
     """
 
-    next: typing.Optional[str]  # noqa: E501
+    next: typing.Union[str, none_type]  # noqa: E501
     """
     [optional]
     """
 
-    previous: typing.Optional[str]  # noqa: E501
+    previous: typing.Union[str, none_type]  # noqa: E501
     """
     [optional]
     """
 
-    results: typing.List["MetaUser"]  # noqa: E501
+    results: typing.List[MetaUser]  # noqa: E501
     """
     [optional]
     [MetaUser]

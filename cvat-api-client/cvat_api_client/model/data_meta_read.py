@@ -176,7 +176,7 @@ class DataMetaRead(ModelNormal):
     [optional]
     """
 
-    frames: typing.List["FrameMeta"]  # noqa: E501
+    frames: typing.Union[typing.List[FrameMeta], none_type]  # noqa: E501
     """
     [FrameMeta], none_type
     """

@@ -9,6 +9,8 @@
 """
 
 
+from __future__ import annotations
+
 import re  # noqa: F401
 import sys  # noqa: F401
 import typing
@@ -506,7 +508,7 @@ class UsersApi(object):
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
         **kwargs,
-    ) -> object:
+    ) -> PaginatedMetaUserList:
         ...
 
     @overload
@@ -515,13 +517,13 @@ class UsersApi(object):
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
         **kwargs,
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[PaginatedMetaUserList, int, typing.Dict[str, str]]:
         ...
 
     @overload
     def list(
         self, _return_http_data_only: typing.Literal[False], **kwargs
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[PaginatedMetaUserList, int, typing.Dict[str, str]]:
         ...
 
     @overload
@@ -549,7 +551,9 @@ class UsersApi(object):
     def list(
         self, **kwargs
     ) -> typing.Union[
-        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
+        typing.Tuple[PaginatedMetaUserList, int, typing.Dict[str, str]],
+        urllib3.HTTPResponse,
+        PaginatedMetaUserList,
     ]:
         """Method provides a paginated list of users registered on the server  # noqa: E501
 
@@ -683,7 +687,7 @@ class UsersApi(object):
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
         **kwargs,
-    ) -> object:
+    ) -> MetaUser:
         ...
 
     @overload
@@ -693,13 +697,13 @@ class UsersApi(object):
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
         **kwargs,
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[MetaUser, int, typing.Dict[str, str]]:
         ...
 
     @overload
     def partial_update(
         self, id, _return_http_data_only: typing.Literal[False], **kwargs
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[MetaUser, int, typing.Dict[str, str]]:
         ...
 
     @overload
@@ -731,7 +735,7 @@ class UsersApi(object):
     def partial_update(
         self, id, **kwargs
     ) -> typing.Union[
-        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
+        typing.Tuple[MetaUser, int, typing.Dict[str, str]], urllib3.HTTPResponse, MetaUser
     ]:
         """Method updates chosen fields of a user  # noqa: E501
 
@@ -862,7 +866,7 @@ class UsersApi(object):
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
         **kwargs,
-    ) -> object:
+    ) -> MetaUser:
         ...
 
     @overload
@@ -872,13 +876,13 @@ class UsersApi(object):
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
         **kwargs,
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[MetaUser, int, typing.Dict[str, str]]:
         ...
 
     @overload
     def retrieve(
         self, id, _return_http_data_only: typing.Literal[False], **kwargs
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[MetaUser, int, typing.Dict[str, str]]:
         ...
 
     @overload
@@ -910,7 +914,7 @@ class UsersApi(object):
     def retrieve(
         self, id, **kwargs
     ) -> typing.Union[
-        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
+        typing.Tuple[MetaUser, int, typing.Dict[str, str]], urllib3.HTTPResponse, MetaUser
     ]:
         """Method provides information of a specific user  # noqa: E501
 
@@ -1038,7 +1042,7 @@ class UsersApi(object):
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
         **kwargs,
-    ) -> object:
+    ) -> MetaUser:
         ...
 
     @overload
@@ -1047,13 +1051,13 @@ class UsersApi(object):
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
         **kwargs,
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[MetaUser, int, typing.Dict[str, str]]:
         ...
 
     @overload
     def self_retrieve(
         self, _return_http_data_only: typing.Literal[False], **kwargs
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[MetaUser, int, typing.Dict[str, str]]:
         ...
 
     @overload
@@ -1083,7 +1087,7 @@ class UsersApi(object):
     def self_retrieve(
         self, **kwargs
     ) -> typing.Union[
-        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
+        typing.Tuple[MetaUser, int, typing.Dict[str, str]], urllib3.HTTPResponse, MetaUser
     ]:
         """Method returns an instance of a user who is currently authorized  # noqa: E501
 

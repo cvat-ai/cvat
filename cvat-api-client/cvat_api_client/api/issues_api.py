@@ -9,6 +9,8 @@
 """
 
 
+from __future__ import annotations
+
 import re  # noqa: F401
 import sys  # noqa: F401
 import typing
@@ -417,7 +419,7 @@ class IssuesApi(object):
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
         **kwargs,
-    ) -> object:
+    ) -> PaginatedCommentReadList:
         ...
 
     @overload
@@ -427,13 +429,13 @@ class IssuesApi(object):
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
         **kwargs,
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[PaginatedCommentReadList, int, typing.Dict[str, str]]:
         ...
 
     @overload
     def comments_list(
         self, id, _return_http_data_only: typing.Literal[False], **kwargs
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[PaginatedCommentReadList, int, typing.Dict[str, str]]:
         ...
 
     @overload
@@ -465,7 +467,9 @@ class IssuesApi(object):
     def comments_list(
         self, id, **kwargs
     ) -> typing.Union[
-        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
+        typing.Tuple[PaginatedCommentReadList, int, typing.Dict[str, str]],
+        urllib3.HTTPResponse,
+        PaginatedCommentReadList,
     ]:
         """The action returns all comments of a specific issue  # noqa: E501
 
@@ -604,7 +608,7 @@ class IssuesApi(object):
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
         **kwargs,
-    ) -> object:
+    ) -> IssueWrite:
         ...
 
     @overload
@@ -614,13 +618,13 @@ class IssuesApi(object):
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
         **kwargs,
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[IssueWrite, int, typing.Dict[str, str]]:
         ...
 
     @overload
     def create(
         self, issue_write_request, _return_http_data_only: typing.Literal[False], **kwargs
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[IssueWrite, int, typing.Dict[str, str]]:
         ...
 
     @overload
@@ -652,7 +656,7 @@ class IssuesApi(object):
     def create(
         self, issue_write_request, **kwargs
     ) -> typing.Union[
-        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
+        typing.Tuple[IssueWrite, int, typing.Dict[str, str]], urllib3.HTTPResponse, IssueWrite
     ]:
         """Method creates an issue  # noqa: E501
 
@@ -955,7 +959,7 @@ class IssuesApi(object):
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
         **kwargs,
-    ) -> object:
+    ) -> PaginatedIssueReadList:
         ...
 
     @overload
@@ -964,13 +968,13 @@ class IssuesApi(object):
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
         **kwargs,
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[PaginatedIssueReadList, int, typing.Dict[str, str]]:
         ...
 
     @overload
     def list(
         self, _return_http_data_only: typing.Literal[False], **kwargs
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[PaginatedIssueReadList, int, typing.Dict[str, str]]:
         ...
 
     @overload
@@ -998,7 +1002,9 @@ class IssuesApi(object):
     def list(
         self, **kwargs
     ) -> typing.Union[
-        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
+        typing.Tuple[PaginatedIssueReadList, int, typing.Dict[str, str]],
+        urllib3.HTTPResponse,
+        PaginatedIssueReadList,
     ]:
         """Method returns a paginated list of issues according to query parameters  # noqa: E501
 
@@ -1132,7 +1138,7 @@ class IssuesApi(object):
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
         **kwargs,
-    ) -> object:
+    ) -> IssueWrite:
         ...
 
     @overload
@@ -1142,13 +1148,13 @@ class IssuesApi(object):
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
         **kwargs,
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[IssueWrite, int, typing.Dict[str, str]]:
         ...
 
     @overload
     def partial_update(
         self, id, _return_http_data_only: typing.Literal[False], **kwargs
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[IssueWrite, int, typing.Dict[str, str]]:
         ...
 
     @overload
@@ -1180,7 +1186,7 @@ class IssuesApi(object):
     def partial_update(
         self, id, **kwargs
     ) -> typing.Union[
-        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
+        typing.Tuple[IssueWrite, int, typing.Dict[str, str]], urllib3.HTTPResponse, IssueWrite
     ]:
         """Methods does a partial update of chosen fields in an issue  # noqa: E501
 
@@ -1311,7 +1317,7 @@ class IssuesApi(object):
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
         **kwargs,
-    ) -> object:
+    ) -> IssueRead:
         ...
 
     @overload
@@ -1321,13 +1327,13 @@ class IssuesApi(object):
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
         **kwargs,
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[IssueRead, int, typing.Dict[str, str]]:
         ...
 
     @overload
     def retrieve(
         self, id, _return_http_data_only: typing.Literal[False], **kwargs
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[IssueRead, int, typing.Dict[str, str]]:
         ...
 
     @overload
@@ -1359,7 +1365,7 @@ class IssuesApi(object):
     def retrieve(
         self, id, **kwargs
     ) -> typing.Union[
-        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
+        typing.Tuple[IssueRead, int, typing.Dict[str, str]], urllib3.HTTPResponse, IssueRead
     ]:
         """Method returns details of an issue  # noqa: E501
 

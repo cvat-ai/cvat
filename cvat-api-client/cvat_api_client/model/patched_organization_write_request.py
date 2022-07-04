@@ -147,7 +147,7 @@ class PatchedOrganizationWriteRequest(ModelNormal):
     [optional]
     """
 
-    contact: typing.Dict  # noqa: E501
+    contact: typing.Union[typing.Dict[str, (typing.Any, none_type)]]  # noqa: E501
     """
     [optional]
     {str: (bool, date, datetime, dict, float, int, list, str, none_type)}

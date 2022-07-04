@@ -9,6 +9,8 @@
 """
 
 
+from __future__ import annotations
+
 import re  # noqa: F401
 import sys  # noqa: F401
 import typing
@@ -344,7 +346,7 @@ class InvitationsApi(object):
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
         **kwargs,
-    ) -> object:
+    ) -> InvitationWrite:
         ...
 
     @overload
@@ -354,13 +356,13 @@ class InvitationsApi(object):
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
         **kwargs,
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[InvitationWrite, int, typing.Dict[str, str]]:
         ...
 
     @overload
     def create(
         self, invitation_write_request, _return_http_data_only: typing.Literal[False], **kwargs
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[InvitationWrite, int, typing.Dict[str, str]]:
         ...
 
     @overload
@@ -392,7 +394,9 @@ class InvitationsApi(object):
     def create(
         self, invitation_write_request, **kwargs
     ) -> typing.Union[
-        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
+        typing.Tuple[InvitationWrite, int, typing.Dict[str, str]],
+        urllib3.HTTPResponse,
+        InvitationWrite,
     ]:
         """Method creates an invitation  # noqa: E501
 
@@ -695,7 +699,7 @@ class InvitationsApi(object):
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
         **kwargs,
-    ) -> object:
+    ) -> PaginatedInvitationReadList:
         ...
 
     @overload
@@ -704,13 +708,13 @@ class InvitationsApi(object):
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
         **kwargs,
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[PaginatedInvitationReadList, int, typing.Dict[str, str]]:
         ...
 
     @overload
     def list(
         self, _return_http_data_only: typing.Literal[False], **kwargs
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[PaginatedInvitationReadList, int, typing.Dict[str, str]]:
         ...
 
     @overload
@@ -738,7 +742,9 @@ class InvitationsApi(object):
     def list(
         self, **kwargs
     ) -> typing.Union[
-        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
+        typing.Tuple[PaginatedInvitationReadList, int, typing.Dict[str, str]],
+        urllib3.HTTPResponse,
+        PaginatedInvitationReadList,
     ]:
         """Method returns a paginated list of invitations according to query parameters  # noqa: E501
 
@@ -872,7 +878,7 @@ class InvitationsApi(object):
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
         **kwargs,
-    ) -> object:
+    ) -> InvitationWrite:
         ...
 
     @overload
@@ -882,13 +888,13 @@ class InvitationsApi(object):
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
         **kwargs,
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[InvitationWrite, int, typing.Dict[str, str]]:
         ...
 
     @overload
     def partial_update(
         self, key, _return_http_data_only: typing.Literal[False], **kwargs
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[InvitationWrite, int, typing.Dict[str, str]]:
         ...
 
     @overload
@@ -920,7 +926,9 @@ class InvitationsApi(object):
     def partial_update(
         self, key, **kwargs
     ) -> typing.Union[
-        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
+        typing.Tuple[InvitationWrite, int, typing.Dict[str, str]],
+        urllib3.HTTPResponse,
+        InvitationWrite,
     ]:
         """Methods does a partial update of chosen fields in an invitation  # noqa: E501
 
@@ -1051,7 +1059,7 @@ class InvitationsApi(object):
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
         **kwargs,
-    ) -> object:
+    ) -> InvitationRead:
         ...
 
     @overload
@@ -1061,13 +1069,13 @@ class InvitationsApi(object):
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
         **kwargs,
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[InvitationRead, int, typing.Dict[str, str]]:
         ...
 
     @overload
     def retrieve(
         self, key, _return_http_data_only: typing.Literal[False], **kwargs
-    ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
+    ) -> typing.Tuple[InvitationRead, int, typing.Dict[str, str]]:
         ...
 
     @overload
@@ -1099,7 +1107,9 @@ class InvitationsApi(object):
     def retrieve(
         self, key, **kwargs
     ) -> typing.Union[
-        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
+        typing.Tuple[InvitationRead, int, typing.Dict[str, str]],
+        urllib3.HTTPResponse,
+        InvitationRead,
     ]:
         """Method returns details of an invitation  # noqa: E501
 

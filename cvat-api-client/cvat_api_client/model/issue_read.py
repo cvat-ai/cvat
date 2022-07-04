@@ -167,12 +167,12 @@ class IssueRead(ModelNormal):
     [optional]
     """
 
-    owner: typing.Optional["CommentReadOwner"]  # noqa: E501
+    owner: CommentReadOwner  # noqa: E501
     """
     [optional]
     """
 
-    assignee: typing.Optional["CommentReadOwner"]  # noqa: E501
+    assignee: CommentReadOwner  # noqa: E501
     """
     [optional]
     """
@@ -187,7 +187,7 @@ class IssueRead(ModelNormal):
     [optional]
     """
 
-    comments: typing.List["CommentRead"]  # noqa: E501
+    comments: typing.List[CommentRead]  # noqa: E501
     """
     [CommentRead]
     """
