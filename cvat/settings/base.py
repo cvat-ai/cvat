@@ -463,19 +463,20 @@ RESTRICTIONS = {
 }
 
 # http://www.grantjenks.com/docs/diskcache/tutorial.html#djangocache
+USE_CACHE = bool(int(os.getenv('USE_CACHE', 1)))
+CACHE_EXPIRE = os.getenv('CACHE_EXPIRE', 7 * 24 * 60 * 60)  # week in seconds
+
 CACHES = {
     'default': {
         'BACKEND': 'diskcache.DjangoCache',
         'LOCATION': CACHE_ROOT,
-        'TIMEOUT': None,
+        'TIMEOUT': CACHE_EXPIRE,
         'OPTIONS': {
-            'size_limit' : 2 ** 40,  # 1 Tb
+            'size_limit': 2 ** 40,  # 1 Tb
         }
     },
 }
 
-USE_CACHE = bool(int(os.getenv('USE_CACHE', 1)))
-CACHE_EXPIRE = os.getenv('CACHE_EXPIRE', 7 * 24 * 60 * 60)  # week in seconds
 
 CORS_ALLOW_HEADERS = list(default_headers) + [
     # tus upload protocol headers

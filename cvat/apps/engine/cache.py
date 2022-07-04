@@ -21,13 +21,30 @@ from cvat.apps.engine.cloud_provider import get_cloud_storage_instance, Credenti
 from cvat.apps.engine.utils import md5_hash
 
 
-class CacheInteraction:
-    def __init__(self, dimension=DimensionType.DIM_2D):
-        self._cache = Cache(settings.CACHE_ROOT)
-        self._dimension = dimension
+class CacheClient:
+    def __init__(self, root=settings.CACHE_ROOT):
+        self._cache = Cache(root)
 
     def __del__(self):
         self._cache.close()
+
+    def get(self, key, default=None, **kwargs):
+        return self._cache.get(key, default=default, **kwargs)
+
+    def set(self, key, value, expire=settings.CACHE_EXPIRE, **kwargs):
+        return self._cache.set(key, value, expire=expire, **kwargs)
+
+    def delete(self, key, **kwargs):
+        return self._cache.delete(key, **kwargs)
+
+
+default_cache = CacheClient()
+
+
+class CacheInteraction:
+    def __init__(self, dimension=DimensionType.DIM_2D):
+        self._cache = default_cache
+        self._dimension = dimension
 
     def get_buff_mime(self, chunk_number, quality, db_data):
         chunk, tag = self._cache.get('{}_{}_{}'.format(db_data.id, chunk_number, quality), tag=True)

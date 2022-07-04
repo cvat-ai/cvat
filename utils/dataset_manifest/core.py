@@ -15,6 +15,10 @@ from json.decoder import JSONDecodeError
 
 from .utils import SortingMethod, md5_hash, rotate_image, sort
 
+from cvat.apps.engine.cache import default_cache
+from cvat.rebotics.s3_client import s3_client
+
+
 class VideoStreamReader:
     def __init__(self, source_path, chunk_size, force):
         self._source_path = source_path
@@ -273,6 +277,15 @@ class _Manifest:
         return os.path.basename(self._path) if not self._upload_dir \
             else os.path.relpath(self._path, self._upload_dir)
 
+
+class _S3Manifest(_Manifest):
+    # Manifest, which is stored on s3.
+    # same except assertions on path.
+    def __init__(self, path, upload_dir=None):
+        self._path = path if path.endswith('.jsonl') else os.path.join(path, self.FILE_NAME)
+        self._upload_dir = upload_dir
+
+
 # Needed for faster iteration over the manifest file, will be generated to work inside CVAT
 # and will not be generated when manually creating a manifest
 class _Index:
@@ -300,8 +313,7 @@ class _Index:
         os.remove(self._path)
 
     def create(self, manifest, skip):
-        assert os.path.exists(manifest), 'A manifest file not exists, index cannot be created'
-        with open(manifest, 'r+') as manifest_file:
+        with self._get_file(manifest) as manifest_file:
             while skip:
                 manifest_file.readline()
                 skip -= 1
@@ -316,8 +328,7 @@ class _Index:
                 line = manifest_file.readline()
 
     def partial_update(self, manifest, number):
-        assert os.path.exists(manifest), 'A manifest file not exists, index cannot be updated'
-        with open(manifest, 'r+') as manifest_file:
+        with self._get_file(manifest) as manifest_file:
             manifest_file.seek(self._index[number])
             line = manifest_file.readline()
             while line:
@@ -333,6 +344,44 @@ class _Index:
 
     def __len__(self):
         return len(self._index)
+
+    def _get_file(self, manifest):
+        t = type(manifest)
+        if t == str:
+            path = manifest
+        elif t == _Manifest:
+            path = manifest.path
+        elif t == _S3Manifest:
+            with NamedTemporaryFile(delete=False) as f:
+                s3_client.download_to_io(f)
+                path = f.name
+        else:
+            raise ValueError(f'Unsupported manifest type: {t.__name__}')
+        assert os.path.exists(path), 'A manifest file not exists, index cannot be created'
+        return open(path, 'r+')
+
+
+class _CachedIndex(_Index):
+    # Index, which is stored in cache instead of local files.
+    def __init__(self, path):
+        self._path = os.path.join(path, self.FILE_NAME)
+        self._index = {}
+
+    def dump(self):
+        default_cache.set(
+            self._path,
+            json.dumps(self._index, separators=(',', ':'))
+        )
+
+    def load(self):
+        self._index = json.loads(
+            default_cache.get(self._path),
+            object_hook=lambda d: {int(k): v for k, v in d.items()}
+        )
+
+    def remove(self):
+        default_cache.delete(self.path)
+
 
 def _set_index(func):
     def wrapper(self, *args, **kwargs):
@@ -630,6 +679,9 @@ class ImageManifestManager(_ManifestManager):
                         properties[optional_field] =  value
                 subset.append(properties)
         return index_list, subset
+
+
+# class S3ManifestManager()
 
 
 class _BaseManifestValidator(ABC):
