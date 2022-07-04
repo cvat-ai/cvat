@@ -11,16 +11,18 @@
 
 from __future__ import annotations
 
-import typing
-
 import re  # noqa: F401
 import sys  # noqa: F401
+import typing
+from typing import TYPE_CHECKING
 
+from cvat_api_client.exceptions import ApiAttributeError
 from cvat_api_client.model_utils import (  # noqa: F401
     ApiTypeError,
     ModelComposed,
     ModelNormal,
     ModelSimple,
+    OpenApiModel,
     cached_property,
     change_keys_js_to_python,
     convert_js_args_to_python_args,
@@ -29,9 +31,12 @@ from cvat_api_client.model_utils import (  # noqa: F401
     file_type,
     none_type,
     validate_get_composed_info,
-    OpenApiModel
 )
-from cvat_api_client.exceptions import ApiAttributeError
+
+if TYPE_CHECKING:
+    # Enable introspection. Can't work normally due to cyclic imports
+    from cvat_api_client.apis import *
+    from cvat_api_client.models import *
 
 
 def lazy_import():
@@ -39,10 +44,11 @@ def lazy_import():
     from cvat_api_client.model.sorting_method import SortingMethod
     from cvat_api_client.model.storage_method import StorageMethod
     from cvat_api_client.model.storage_type import StorageType
-    globals()['ChunkType'] = ChunkType
-    globals()['SortingMethod'] = SortingMethod
-    globals()['StorageMethod'] = StorageMethod
-    globals()['StorageType'] = StorageType
+
+    globals()["ChunkType"] = ChunkType
+    globals()["SortingMethod"] = SortingMethod
+    globals()["StorageMethod"] = StorageMethod
+    globals()["StorageType"] = StorageType
 
 
 class DataRequest(ModelNormal):
@@ -107,16 +113,15 @@ class DataRequest(ModelNormal):
 
     """
 
-    allowed_values = {
-    }
+    allowed_values = {}
 
     validations = {
-        ('image_quality',): {
-            'inclusive_maximum': 100,
-            'inclusive_minimum': 0,
+        ("image_quality",): {
+            "inclusive_maximum": 100,
+            "inclusive_minimum": 0,
         },
-        ('frame_filter',): {
-            'max_length': 256,
+        ("frame_filter",): {
+            "max_length": 256,
         },
     }
 
@@ -127,7 +132,17 @@ class DataRequest(ModelNormal):
         of type self, this must run after the class is loaded
         """
         lazy_import()
-        return (bool, date, datetime, dict, float, int, list, str, none_type,)  # noqa: E501
+        return (
+            bool,
+            date,
+            datetime,
+            dict,
+            float,
+            int,
+            list,
+            str,
+            none_type,
+        )  # noqa: E501
 
     _nullable = False
 
@@ -143,149 +158,151 @@ class DataRequest(ModelNormal):
         """
         lazy_import()
         return {
-            'image_quality': (int,),  # noqa: E501
-            'chunk_size': (int, none_type,),  # noqa: E501
-            'size': (int,),  # noqa: E501
-            'start_frame': (int,),  # noqa: E501
-            'stop_frame': (int,),  # noqa: E501
-            'frame_filter': (str,),  # noqa: E501
-            'compressed_chunk_type': (ChunkType,),  # noqa: E501
-            'original_chunk_type': (ChunkType,),  # noqa: E501
-            'client_files': ([file_type],),  # noqa: E501
-            'server_files': ([str],),  # noqa: E501
-            'remote_files': ([str],),  # noqa: E501
-            'use_zip_chunks': (bool,),  # noqa: E501
-            'cloud_storage_id': (int, none_type,),  # noqa: E501
-            'use_cache': (bool,),  # noqa: E501
-            'copy_data': (bool,),  # noqa: E501
-            'storage_method': (StorageMethod,),  # noqa: E501
-            'storage': (StorageType,),  # noqa: E501
-            'sorting_method': (SortingMethod,),  # noqa: E501
+            "image_quality": (int,),  # noqa: E501
+            "chunk_size": (
+                int,
+                none_type,
+            ),  # noqa: E501
+            "size": (int,),  # noqa: E501
+            "start_frame": (int,),  # noqa: E501
+            "stop_frame": (int,),  # noqa: E501
+            "frame_filter": (str,),  # noqa: E501
+            "compressed_chunk_type": (ChunkType,),  # noqa: E501
+            "original_chunk_type": (ChunkType,),  # noqa: E501
+            "client_files": ([file_type],),  # noqa: E501
+            "server_files": ([str],),  # noqa: E501
+            "remote_files": ([str],),  # noqa: E501
+            "use_zip_chunks": (bool,),  # noqa: E501
+            "cloud_storage_id": (
+                int,
+                none_type,
+            ),  # noqa: E501
+            "use_cache": (bool,),  # noqa: E501
+            "copy_data": (bool,),  # noqa: E501
+            "storage_method": (StorageMethod,),  # noqa: E501
+            "storage": (StorageType,),  # noqa: E501
+            "sorting_method": (SortingMethod,),  # noqa: E501
         }
 
     @cached_property
     def discriminator():
         return None
 
-
     # member type declarations
-    chunk_size: typing.Optional[int] # noqa: E501
+    chunk_size: typing.Optional[int]  # noqa: E501
     """
     [optional]
     """
 
-    size: int # noqa: E501
+    size: int  # noqa: E501
     """
     [optional]
     """
 
-    image_quality: int # noqa: E501
+    image_quality: int  # noqa: E501
     """
     """
 
-    start_frame: int # noqa: E501
+    start_frame: int  # noqa: E501
     """
     [optional]
     """
 
-    stop_frame: int # noqa: E501
+    stop_frame: int  # noqa: E501
     """
     [optional]
     """
 
-    frame_filter: str # noqa: E501
+    frame_filter: str  # noqa: E501
     """
     [optional]
     """
 
-    compressed_chunk_type: typing.ForwardRef("ChunkType") # noqa: E501
+    compressed_chunk_type: "ChunkType"  # noqa: E501
     """
     [optional]
     """
 
-    original_chunk_type: typing.ForwardRef("ChunkType") # noqa: E501
+    original_chunk_type: "ChunkType"  # noqa: E501
     """
     [optional]
     """
 
-    client_files: typing.List[file_type] # noqa: E501
+    client_files: typing.List[file_type]  # noqa: E501
     """
     [optional, default: []]
     [file_type]
     """
 
-    server_files: typing.List[str] # noqa: E501
+    server_files: typing.List[str]  # noqa: E501
     """
     [optional, default: []]
     [str]
     """
 
-    remote_files: typing.List[str] # noqa: E501
+    remote_files: typing.List[str]  # noqa: E501
     """
     [optional, default: []]
     [str]
     """
 
-    use_zip_chunks: bool # noqa: E501
+    use_zip_chunks: bool  # noqa: E501
     """
     [optional, default: False]
     """
 
-    cloud_storage_id: typing.Optional[int] # noqa: E501
+    cloud_storage_id: typing.Optional[int]  # noqa: E501
     """
     [optional]
     """
 
-    use_cache: bool # noqa: E501
+    use_cache: bool  # noqa: E501
     """
     [optional, default: False]
     """
 
-    copy_data: bool # noqa: E501
+    copy_data: bool  # noqa: E501
     """
     [optional, default: False]
     """
 
-    storage_method: typing.ForwardRef("StorageMethod") # noqa: E501
+    storage_method: "StorageMethod"  # noqa: E501
     """
     [optional]
     """
 
-    storage: typing.ForwardRef("StorageType") # noqa: E501
+    storage: "StorageType"  # noqa: E501
     """
     [optional]
     """
 
-    sorting_method: typing.ForwardRef("SortingMethod") # noqa: E501
+    sorting_method: "SortingMethod"  # noqa: E501
     """
     [optional]
     """
-
-
 
     attribute_map = {
-        'image_quality': 'image_quality',  # noqa: E501
-        'chunk_size': 'chunk_size',  # noqa: E501
-        'size': 'size',  # noqa: E501
-        'start_frame': 'start_frame',  # noqa: E501
-        'stop_frame': 'stop_frame',  # noqa: E501
-        'frame_filter': 'frame_filter',  # noqa: E501
-        'compressed_chunk_type': 'compressed_chunk_type',  # noqa: E501
-        'original_chunk_type': 'original_chunk_type',  # noqa: E501
-        'client_files': 'client_files',  # noqa: E501
-        'server_files': 'server_files',  # noqa: E501
-        'remote_files': 'remote_files',  # noqa: E501
-        'use_zip_chunks': 'use_zip_chunks',  # noqa: E501
-        'cloud_storage_id': 'cloud_storage_id',  # noqa: E501
-        'use_cache': 'use_cache',  # noqa: E501
-        'copy_data': 'copy_data',  # noqa: E501
-        'storage_method': 'storage_method',  # noqa: E501
-        'storage': 'storage',  # noqa: E501
-        'sorting_method': 'sorting_method',  # noqa: E501
+        "image_quality": "image_quality",  # noqa: E501
+        "chunk_size": "chunk_size",  # noqa: E501
+        "size": "size",  # noqa: E501
+        "start_frame": "start_frame",  # noqa: E501
+        "stop_frame": "stop_frame",  # noqa: E501
+        "frame_filter": "frame_filter",  # noqa: E501
+        "compressed_chunk_type": "compressed_chunk_type",  # noqa: E501
+        "original_chunk_type": "original_chunk_type",  # noqa: E501
+        "client_files": "client_files",  # noqa: E501
+        "server_files": "server_files",  # noqa: E501
+        "remote_files": "remote_files",  # noqa: E501
+        "use_zip_chunks": "use_zip_chunks",  # noqa: E501
+        "cloud_storage_id": "cloud_storage_id",  # noqa: E501
+        "use_cache": "use_cache",  # noqa: E501
+        "copy_data": "copy_data",  # noqa: E501
+        "storage_method": "storage_method",  # noqa: E501
+        "storage": "storage",  # noqa: E501
+        "sorting_method": "sorting_method",  # noqa: E501
     }
 
-    read_only_vars = {
-    }
+    read_only_vars = {}
 
     _composed_schemas = {}
 
@@ -347,11 +364,11 @@ class DataRequest(ModelNormal):
             sorting_method (SortingMethod): [optional]  # noqa: E501
         """
 
-        _check_type = kwargs.pop('_check_type', True)
-        _spec_property_naming = kwargs.pop('_spec_property_naming', True)
-        _path_to_item = kwargs.pop('_path_to_item', ())
-        _configuration = kwargs.pop('_configuration', None)
-        _visited_composed_classes = kwargs.pop('_visited_composed_classes', ())
+        _check_type = kwargs.pop("_check_type", True)
+        _spec_property_naming = kwargs.pop("_spec_property_naming", True)
+        _path_to_item = kwargs.pop("_path_to_item", ())
+        _configuration = kwargs.pop("_configuration", None)
+        _visited_composed_classes = kwargs.pop("_visited_composed_classes", ())
 
         self = super(OpenApiModel, cls).__new__(cls)
 
@@ -361,7 +378,8 @@ class DataRequest(ModelNormal):
                     kwargs.update(arg)
                 else:
                     raise ApiTypeError(
-                        "Invalid positional arguments=%s passed to %s. Remove those invalid positional arguments." % (
+                        "Invalid positional arguments=%s passed to %s. Remove those invalid positional arguments."
+                        % (
                             args,
                             self.__class__.__name__,
                         ),
@@ -378,23 +396,27 @@ class DataRequest(ModelNormal):
 
         self.image_quality = image_quality
         for var_name, var_value in kwargs.items():
-            if var_name not in self.attribute_map and \
-                        self._configuration is not None and \
-                        self._configuration.discard_unknown_keys and \
-                        self.additional_properties_type is None:
+            if (
+                var_name not in self.attribute_map
+                and self._configuration is not None
+                and self._configuration.discard_unknown_keys
+                and self.additional_properties_type is None
+            ):
                 # discard variable.
                 continue
             setattr(self, var_name, var_value)
         return self
 
-    required_properties = set([
-        '_data_store',
-        '_check_type',
-        '_spec_property_naming',
-        '_path_to_item',
-        '_configuration',
-        '_visited_composed_classes',
-    ])
+    required_properties = set(
+        [
+            "_data_store",
+            "_check_type",
+            "_spec_property_naming",
+            "_path_to_item",
+            "_configuration",
+            "_visited_composed_classes",
+        ]
+    )
 
     @convert_js_args_to_python_args
     def __init__(self, image_quality, *args, **kwargs):  # noqa: E501
@@ -453,11 +475,11 @@ class DataRequest(ModelNormal):
             sorting_method (SortingMethod): [optional]  # noqa: E501
         """
 
-        _check_type = kwargs.pop('_check_type', True)
-        _spec_property_naming = kwargs.pop('_spec_property_naming', False)
-        _path_to_item = kwargs.pop('_path_to_item', ())
-        _configuration = kwargs.pop('_configuration', None)
-        _visited_composed_classes = kwargs.pop('_visited_composed_classes', ())
+        _check_type = kwargs.pop("_check_type", True)
+        _spec_property_naming = kwargs.pop("_spec_property_naming", False)
+        _path_to_item = kwargs.pop("_path_to_item", ())
+        _configuration = kwargs.pop("_configuration", None)
+        _visited_composed_classes = kwargs.pop("_visited_composed_classes", ())
 
         if args:
             for arg in args:
@@ -465,7 +487,8 @@ class DataRequest(ModelNormal):
                     kwargs.update(arg)
                 else:
                     raise ApiTypeError(
-                        "Invalid positional arguments=%s passed to %s. Remove those invalid positional arguments." % (
+                        "Invalid positional arguments=%s passed to %s. Remove those invalid positional arguments."
+                        % (
                             args,
                             self.__class__.__name__,
                         ),
@@ -482,14 +505,17 @@ class DataRequest(ModelNormal):
 
         self.image_quality = image_quality
         for var_name, var_value in kwargs.items():
-            if var_name not in self.attribute_map and \
-                        self._configuration is not None and \
-                        self._configuration.discard_unknown_keys and \
-                        self.additional_properties_type is None:
+            if (
+                var_name not in self.attribute_map
+                and self._configuration is not None
+                and self._configuration.discard_unknown_keys
+                and self.additional_properties_type is None
+            ):
                 # discard variable.
                 continue
             setattr(self, var_name, var_value)
             if var_name in self.read_only_vars:
-                raise ApiAttributeError(f"`{var_name}` is a read-only attribute. Use `from_openapi_data` to instantiate "
-                                     f"class with read only attributes.")
-
+                raise ApiAttributeError(
+                    f"`{var_name}` is a read-only attribute. Use `from_openapi_data` to instantiate "
+                    f"class with read only attributes."
+                )

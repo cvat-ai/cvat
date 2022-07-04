@@ -9,14 +9,15 @@
 """
 
 
-import typing
-from typing import overload
-import urllib3
-
 import re  # noqa: F401
 import sys  # noqa: F401
+import typing
+from typing import TYPE_CHECKING, overload
 
-from cvat_api_client.api_client import ApiClient, Endpoint as _Endpoint
+import urllib3
+
+from cvat_api_client.api_client import ApiClient
+from cvat_api_client.api_client import Endpoint as _Endpoint
 from cvat_api_client.model_utils import (  # noqa: F401
     check_allowed_values,
     check_validations,
@@ -24,8 +25,13 @@ from cvat_api_client.model_utils import (  # noqa: F401
     datetime,
     file_type,
     none_type,
-    validate_and_convert_types
+    validate_and_convert_types,
 )
+
+if TYPE_CHECKING:
+    # Enable introspection. Can't work normally due to cyclic imports
+    from cvat_api_client.apis import *
+    from cvat_api_client.models import *
 
 
 class SchemaApi(object):
@@ -39,44 +45,37 @@ class SchemaApi(object):
         if api_client is None:
             api_client = ApiClient()
         self.api_client = api_client
-        self.schema_retrieve_endpoint = _Endpoint(
+        self.retrieve_endpoint = _Endpoint(
             settings={
-                'response_type': ({str: (bool, date, datetime, dict, float, int, list, str, none_type)},),
-                'auth': [
-                    'SignatureAuthentication',
-                    'basicAuth',
-                    'cookieAuth',
-                    'tokenAuth'
-                ],
-                'endpoint_path': '/api/schema/',
-                'operation_id': 'schema_retrieve',
-                'http_method': 'GET',
-                'servers': None,
+                "response_type": (
+                    {str: (bool, date, datetime, dict, float, int, list, str, none_type)},
+                ),
+                "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
+                "endpoint_path": "/api/schema/",
+                "operation_id": "retrieve",
+                "http_method": "GET",
+                "servers": None,
             },
             params_map={
-                'all': [
-                    'x_organization',
-                    'lang',
-                    'org',
-                    'org_id',
-                    'scheme',
+                "all": [
+                    "x_organization",
+                    "lang",
+                    "org",
+                    "org_id",
+                    "scheme",
                 ],
-                'required': [],
-                'nullable': [
+                "required": [],
+                "nullable": [],
+                "enum": [
+                    "lang",
+                    "scheme",
                 ],
-                'enum': [
-                    'lang',
-                    'scheme',
-                ],
-                'validation': [
-                ]
+                "validation": [],
             },
             root_map={
-                'validations': {
-                },
-                'allowed_values': {
-                    ('lang',): {
-
+                "validations": {},
+                "allowed_values": {
+                    ("lang",): {
                         "AF": "af",
                         "AR": "ar",
                         "AR-DZ": "ar-dz",
@@ -172,122 +171,103 @@ class SchemaApi(object):
                         "UZ": "uz",
                         "VI": "vi",
                         "ZH-HANS": "zh-hans",
-                        "ZH-HANT": "zh-hant"
+                        "ZH-HANT": "zh-hant",
                     },
-                    ('scheme',): {
-
-                        "JSON": "json",
-                        "YAML": "yaml"
-                    },
+                    ("scheme",): {"JSON": "json", "YAML": "yaml"},
                 },
-                'openapi_types': {
-                    'x_organization':
-                        (str,),
-                    'lang':
-                        (str,),
-                    'org':
-                        (str,),
-                    'org_id':
-                        (int,),
-                    'scheme':
-                        (str,),
+                "openapi_types": {
+                    "x_organization": (str,),
+                    "lang": (str,),
+                    "org": (str,),
+                    "org_id": (int,),
+                    "scheme": (str,),
                 },
-                'attribute_map': {
-                    'x_organization': 'X-Organization',
-                    'lang': 'lang',
-                    'org': 'org',
-                    'org_id': 'org_id',
-                    'scheme': 'scheme',
+                "attribute_map": {
+                    "x_organization": "X-Organization",
+                    "lang": "lang",
+                    "org": "org",
+                    "org_id": "org_id",
+                    "scheme": "scheme",
                 },
-                'location_map': {
-                    'x_organization': 'header',
-                    'lang': 'query',
-                    'org': 'query',
-                    'org_id': 'query',
-                    'scheme': 'query',
+                "location_map": {
+                    "x_organization": "header",
+                    "lang": "query",
+                    "org": "query",
+                    "org_id": "query",
+                    "scheme": "query",
                 },
-                'collection_format_map': {
-                }
+                "collection_format_map": {},
             },
             headers_map={
-                'accept': [
-                    'application/vnd.oai.openapi',
-                    'application/yaml',
-                    'application/vnd.oai.openapi+json',
-                    'application/json'
+                "accept": [
+                    "application/vnd.oai.openapi",
+                    "application/yaml",
+                    "application/vnd.oai.openapi+json",
+                    "application/json",
                 ],
-                'content_type': [],
+                "content_type": [],
             },
-            api_client=api_client
+            api_client=api_client,
         )
 
     @overload
-    def schema_retrieve(
+    def retrieve(
         self,
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
-        **kwargs
+        **kwargs,
     ) -> object:
         ...
 
     @overload
-    def schema_retrieve(
+    def retrieve(
         self,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def schema_retrieve(
-        self,
-        _return_http_data_only: typing.Literal[False],
-        **kwargs
+    def retrieve(
+        self, _return_http_data_only: typing.Literal[False], **kwargs
     ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def schema_retrieve(
-        self,
-        _preload_content: typing.Literal[False],
-        **kwargs
-    ) -> urllib3.HTTPResponse:
+    def retrieve(self, _preload_content: typing.Literal[False], **kwargs) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def schema_retrieve(
+    def retrieve(
         self,
         _return_http_data_only: typing.Literal[True],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def schema_retrieve(
+    def retrieve(
         self,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
-    def schema_retrieve(
-        self,
-        **kwargs
+    def retrieve(
+        self, **kwargs
     ) -> typing.Union[
-            typing.Tuple[object, int, typing.Dict[str, str]],
-            urllib3.HTTPResponse,
-            object
+        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
     ]:
-        """schema_retrieve  # noqa: E501
+        """retrieve  # noqa: E501
 
         OpenApi3 schema for this API. Format can be selected via content negotiation.  - YAML: application/vnd.oai.openapi - JSON: application/vnd.oai.openapi+json  # noqa: E501
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.schema_retrieve(async_req=True)
+        >>> thread = api.retrieve(async_req=True)
         >>> result = thread.get()
 
 
@@ -337,53 +317,32 @@ class SchemaApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        kwargs['async_req'] = kwargs.get(
-            'async_req', False
-        )
-        kwargs['_return_http_data_only'] = kwargs.get(
-            '_return_http_data_only', True
-        )
-        kwargs['_preload_content'] = kwargs.get(
-            '_preload_content', True
-        )
-        kwargs['_request_timeout'] = kwargs.get(
-            '_request_timeout', None
-        )
-        kwargs['_check_input_type'] = kwargs.get(
-            '_check_input_type', True
-        )
-        kwargs['_check_return_type'] = kwargs.get(
-            '_check_return_type', True
-        )
-        kwargs['_check_status'] = kwargs.get(
-            '_check_status', True
-        )
-        kwargs['_spec_property_naming'] = kwargs.get(
-            '_spec_property_naming', False
-        )
-        kwargs['_content_type'] = kwargs.get(
-            '_content_type')
-        kwargs['_host_index'] = kwargs.get('_host_index')
-        kwargs['_request_auths'] = kwargs.get('_request_auths', None)
-        return self.schema_retrieve_endpoint.call_with_http_info(**kwargs)
+        kwargs["async_req"] = kwargs.get("async_req", False)
+        kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
+        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
+        kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
+        kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
+        kwargs["_check_status"] = kwargs.get("_check_status", True)
+        kwargs["_spec_property_naming"] = kwargs.get("_spec_property_naming", False)
+        kwargs["_content_type"] = kwargs.get("_content_type")
+        kwargs["_host_index"] = kwargs.get("_host_index")
+        kwargs["_request_auths"] = kwargs.get("_request_auths", None)
+        return self.retrieve_endpoint.call_with_http_info(**kwargs)
 
-    def schema_retrieve_raw(
-        self,
-        *args,
-        **kwargs
-    ) -> urllib3.HTTPResponse:
+    def retrieve_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
         """
-        The same as schema_retrieve(), but returns the response unprocessed.
-        Equivalent to calling schema_retrieve with
+        The same as retrieve(), but returns the response unprocessed.
+        Equivalent to calling retrieve with
         _preload_content = False and _check_status=False
 
-        schema_retrieve  # noqa: E501
+        retrieve  # noqa: E501
 
         OpenApi3 schema for this API. Format can be selected via content negotiation.  - YAML: application/vnd.oai.openapi - JSON: application/vnd.oai.openapi+json  # noqa: E501
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.schema_retrieve(async_req=True)
+        >>> thread = api.retrieve(async_req=True)
         >>> result = thread.get()
 
 
@@ -421,6 +380,4 @@ class SchemaApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.schema_retrieve(*args, **kwargs,
-            _preload_content=False, _check_status=False)
-
+        return self.retrieve(*args, **kwargs, _preload_content=False, _check_status=False)

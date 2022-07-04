@@ -15,6 +15,8 @@ mv schema.yml cvat-api-client/schema/
 
 2. Generate package code (call from the package root directory):
 ```bash
+# pip install -r requirements/development.txt
+
 ./gen/generate.sh
 ```
 

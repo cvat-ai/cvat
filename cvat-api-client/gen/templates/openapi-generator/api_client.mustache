@@ -3,6 +3,7 @@
 import json
 import atexit
 import mimetypes
+import importlib
 from multiprocessing.pool import ThreadPool
 import io
 import os
@@ -32,6 +33,12 @@ from {{packageName}}.model_utils import (
     none_type,
     validate_and_convert_types
 )
+
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    # Enable introspection. Can't work normally due to cyclic imports
+    from cvat_api_client.apis import *
+    from cvat_api_client.models import *
 
 
 class ApiClient(object):
@@ -734,6 +741,31 @@ class ApiClient(object):
             raise ApiValueError(
                 'Authentication token must be in `query` or `header`'
             )
+
+{{#apiInfo}}{{#apis}}
+    {{>api_name}}: '{{classname}}'{{/apis}}{{/apiInfo}}
+
+    _apis: typing.Dict[str, object] = { {{#apiInfo}}{{#apis}}
+        '{{>api_name}}': [None, '{{classname}}'],{{/apis}}{{/apiInfo}}
+    }
+
+    def _make_api_instance(self, klass_name):
+        package = __name__.rsplit('.', maxsplit=1)[0]
+        module = importlib.import_module(package + '.apis')
+        api_klass = getattr(module, klass_name)
+        return api_klass(self)
+
+    def __getattr__(self, key):
+        notfound = object()
+        api_instance, api_klassname = self._apis.get(key, notfound)
+        if api_instance is notfound:
+            raise AttributeError(f"Can't find the '{key}' attribute")
+
+        if api_instance is None:
+            api_instance = self._make_api_instance(api_klassname)
+            setattr(self, key, api_instance)
+
+        return api_instance
 
 
 class Endpoint(object):

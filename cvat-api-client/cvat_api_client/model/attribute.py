@@ -11,16 +11,18 @@
 
 from __future__ import annotations
 
-import typing
-
 import re  # noqa: F401
 import sys  # noqa: F401
+import typing
+from typing import TYPE_CHECKING
 
+from cvat_api_client.exceptions import ApiAttributeError
 from cvat_api_client.model_utils import (  # noqa: F401
     ApiTypeError,
     ModelComposed,
     ModelNormal,
     ModelSimple,
+    OpenApiModel,
     cached_property,
     change_keys_js_to_python,
     convert_js_args_to_python_args,
@@ -29,14 +31,18 @@ from cvat_api_client.model_utils import (  # noqa: F401
     file_type,
     none_type,
     validate_get_composed_info,
-    OpenApiModel
 )
-from cvat_api_client.exceptions import ApiAttributeError
+
+if TYPE_CHECKING:
+    # Enable introspection. Can't work normally due to cyclic imports
+    from cvat_api_client.apis import *
+    from cvat_api_client.models import *
 
 
 def lazy_import():
     from cvat_api_client.model.input_type_enum import InputTypeEnum
-    globals()['InputTypeEnum'] = InputTypeEnum
+
+    globals()["InputTypeEnum"] = InputTypeEnum
 
 
 class Attribute(ModelNormal):
@@ -77,15 +83,14 @@ class Attribute(ModelNormal):
 
     """
 
-    allowed_values = {
-    }
+    allowed_values = {}
 
     validations = {
-        ('name',): {
-            'max_length': 64,
+        ("name",): {
+            "max_length": 64,
         },
-        ('default_value',): {
-            'max_length': 128,
+        ("default_value",): {
+            "max_length": 128,
         },
     }
 
@@ -96,7 +101,17 @@ class Attribute(ModelNormal):
         of type self, this must run after the class is loaded
         """
         lazy_import()
-        return (bool, date, datetime, dict, float, int, list, str, none_type,)  # noqa: E501
+        return (
+            bool,
+            date,
+            datetime,
+            dict,
+            float,
+            int,
+            list,
+            str,
+            none_type,
+        )  # noqa: E501
 
     _nullable = False
 
@@ -112,66 +127,65 @@ class Attribute(ModelNormal):
         """
         lazy_import()
         return {
-            'name': (str,),  # noqa: E501
-            'mutable': (bool,),  # noqa: E501
-            'input_type': (InputTypeEnum,),  # noqa: E501
-            'default_value': (str,),  # noqa: E501
-            'values': ([str],),  # noqa: E501
-            'id': (int,),  # noqa: E501
+            "name": (str,),  # noqa: E501
+            "mutable": (bool,),  # noqa: E501
+            "input_type": (InputTypeEnum,),  # noqa: E501
+            "default_value": (str,),  # noqa: E501
+            "values": ([str],),  # noqa: E501
+            "id": (int,),  # noqa: E501
         }
 
     @cached_property
     def discriminator():
         return None
 
-
     # member type declarations
-    id: int # noqa: E501
+    id: int  # noqa: E501
     """
     [optional]
     """
 
-    name: str # noqa: E501
+    name: str  # noqa: E501
     """
     """
 
-    mutable: bool # noqa: E501
+    mutable: bool  # noqa: E501
     """
     """
 
-    input_type: typing.ForwardRef("InputTypeEnum") # noqa: E501
+    input_type: "InputTypeEnum"  # noqa: E501
     """
     """
 
-    default_value: str # noqa: E501
+    default_value: str  # noqa: E501
     """
     """
 
-    values: typing.List[str] # noqa: E501
+    values: typing.List[str]  # noqa: E501
     """
     [str]
     """
 
-
-
     attribute_map = {
-        'name': 'name',  # noqa: E501
-        'mutable': 'mutable',  # noqa: E501
-        'input_type': 'input_type',  # noqa: E501
-        'default_value': 'default_value',  # noqa: E501
-        'values': 'values',  # noqa: E501
-        'id': 'id',  # noqa: E501
+        "name": "name",  # noqa: E501
+        "mutable": "mutable",  # noqa: E501
+        "input_type": "input_type",  # noqa: E501
+        "default_value": "default_value",  # noqa: E501
+        "values": "values",  # noqa: E501
+        "id": "id",  # noqa: E501
     }
 
     read_only_vars = {
-        'id',  # noqa: E501
+        "id",  # noqa: E501
     }
 
     _composed_schemas = {}
 
     @classmethod
     @convert_js_args_to_python_args
-    def _from_openapi_data(cls, name, mutable, input_type, default_value, values, *args, **kwargs):  # noqa: E501
+    def _from_openapi_data(
+        cls, name, mutable, input_type, default_value, values, *args, **kwargs
+    ):  # noqa: E501
         """Attribute - a model defined in OpenAPI
 
         Args:
@@ -215,11 +229,11 @@ class Attribute(ModelNormal):
             id (int): [optional]  # noqa: E501
         """
 
-        _check_type = kwargs.pop('_check_type', True)
-        _spec_property_naming = kwargs.pop('_spec_property_naming', True)
-        _path_to_item = kwargs.pop('_path_to_item', ())
-        _configuration = kwargs.pop('_configuration', None)
-        _visited_composed_classes = kwargs.pop('_visited_composed_classes', ())
+        _check_type = kwargs.pop("_check_type", True)
+        _spec_property_naming = kwargs.pop("_spec_property_naming", True)
+        _path_to_item = kwargs.pop("_path_to_item", ())
+        _configuration = kwargs.pop("_configuration", None)
+        _visited_composed_classes = kwargs.pop("_visited_composed_classes", ())
 
         self = super(OpenApiModel, cls).__new__(cls)
 
@@ -229,7 +243,8 @@ class Attribute(ModelNormal):
                     kwargs.update(arg)
                 else:
                     raise ApiTypeError(
-                        "Invalid positional arguments=%s passed to %s. Remove those invalid positional arguments." % (
+                        "Invalid positional arguments=%s passed to %s. Remove those invalid positional arguments."
+                        % (
                             args,
                             self.__class__.__name__,
                         ),
@@ -250,26 +265,32 @@ class Attribute(ModelNormal):
         self.default_value = default_value
         self.values = values
         for var_name, var_value in kwargs.items():
-            if var_name not in self.attribute_map and \
-                        self._configuration is not None and \
-                        self._configuration.discard_unknown_keys and \
-                        self.additional_properties_type is None:
+            if (
+                var_name not in self.attribute_map
+                and self._configuration is not None
+                and self._configuration.discard_unknown_keys
+                and self.additional_properties_type is None
+            ):
                 # discard variable.
                 continue
             setattr(self, var_name, var_value)
         return self
 
-    required_properties = set([
-        '_data_store',
-        '_check_type',
-        '_spec_property_naming',
-        '_path_to_item',
-        '_configuration',
-        '_visited_composed_classes',
-    ])
+    required_properties = set(
+        [
+            "_data_store",
+            "_check_type",
+            "_spec_property_naming",
+            "_path_to_item",
+            "_configuration",
+            "_visited_composed_classes",
+        ]
+    )
 
     @convert_js_args_to_python_args
-    def __init__(self, name, mutable, input_type, default_value, values, *args, **kwargs):  # noqa: E501
+    def __init__(
+        self, name, mutable, input_type, default_value, values, *args, **kwargs
+    ):  # noqa: E501
         """Attribute - a model defined in OpenAPI
 
         Args:
@@ -313,11 +334,11 @@ class Attribute(ModelNormal):
             id (int): [optional]  # noqa: E501
         """
 
-        _check_type = kwargs.pop('_check_type', True)
-        _spec_property_naming = kwargs.pop('_spec_property_naming', False)
-        _path_to_item = kwargs.pop('_path_to_item', ())
-        _configuration = kwargs.pop('_configuration', None)
-        _visited_composed_classes = kwargs.pop('_visited_composed_classes', ())
+        _check_type = kwargs.pop("_check_type", True)
+        _spec_property_naming = kwargs.pop("_spec_property_naming", False)
+        _path_to_item = kwargs.pop("_path_to_item", ())
+        _configuration = kwargs.pop("_configuration", None)
+        _visited_composed_classes = kwargs.pop("_visited_composed_classes", ())
 
         if args:
             for arg in args:
@@ -325,7 +346,8 @@ class Attribute(ModelNormal):
                     kwargs.update(arg)
                 else:
                     raise ApiTypeError(
-                        "Invalid positional arguments=%s passed to %s. Remove those invalid positional arguments." % (
+                        "Invalid positional arguments=%s passed to %s. Remove those invalid positional arguments."
+                        % (
                             args,
                             self.__class__.__name__,
                         ),
@@ -346,14 +368,17 @@ class Attribute(ModelNormal):
         self.default_value = default_value
         self.values = values
         for var_name, var_value in kwargs.items():
-            if var_name not in self.attribute_map and \
-                        self._configuration is not None and \
-                        self._configuration.discard_unknown_keys and \
-                        self.additional_properties_type is None:
+            if (
+                var_name not in self.attribute_map
+                and self._configuration is not None
+                and self._configuration.discard_unknown_keys
+                and self.additional_properties_type is None
+            ):
                 # discard variable.
                 continue
             setattr(self, var_name, var_value)
             if var_name in self.read_only_vars:
-                raise ApiAttributeError(f"`{var_name}` is a read-only attribute. Use `from_openapi_data` to instantiate "
-                                     f"class with read only attributes.")
-
+                raise ApiAttributeError(
+                    f"`{var_name}` is a read-only attribute. Use `from_openapi_data` to instantiate "
+                    f"class with read only attributes."
+                )

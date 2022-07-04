@@ -11,16 +11,18 @@
 
 from __future__ import annotations
 
-import typing
-
 import re  # noqa: F401
 import sys  # noqa: F401
+import typing
+from typing import TYPE_CHECKING
 
+from cvat_api_client.exceptions import ApiAttributeError
 from cvat_api_client.model_utils import (  # noqa: F401
     ApiTypeError,
     ModelComposed,
     ModelNormal,
     ModelSimple,
+    OpenApiModel,
     cached_property,
     change_keys_js_to_python,
     convert_js_args_to_python_args,
@@ -29,9 +31,12 @@ from cvat_api_client.model_utils import (  # noqa: F401
     file_type,
     none_type,
     validate_get_composed_info,
-    OpenApiModel
 )
-from cvat_api_client.exceptions import ApiAttributeError
+
+if TYPE_CHECKING:
+    # Enable introspection. Can't work normally due to cyclic imports
+    from cvat_api_client.apis import *
+    from cvat_api_client.models import *
 
 
 def lazy_import():
@@ -42,13 +47,14 @@ def lazy_import():
     from cvat_api_client.model.project_read_owner import ProjectReadOwner
     from cvat_api_client.model.project_search import ProjectSearch
     from cvat_api_client.model.storage import Storage
-    globals()['JobStatus'] = JobStatus
-    globals()['Label'] = Label
-    globals()['ProjectRead'] = ProjectRead
-    globals()['ProjectReadAssignee'] = ProjectReadAssignee
-    globals()['ProjectReadOwner'] = ProjectReadOwner
-    globals()['ProjectSearch'] = ProjectSearch
-    globals()['Storage'] = Storage
+
+    globals()["JobStatus"] = JobStatus
+    globals()["Label"] = Label
+    globals()["ProjectRead"] = ProjectRead
+    globals()["ProjectReadAssignee"] = ProjectReadAssignee
+    globals()["ProjectReadOwner"] = ProjectReadOwner
+    globals()["ProjectSearch"] = ProjectSearch
+    globals()["Storage"] = Storage
 
 
 class PolymorphicProject(ModelComposed):
@@ -75,15 +81,14 @@ class PolymorphicProject(ModelComposed):
           as additional properties values.
     """
 
-    allowed_values = {
-    }
+    allowed_values = {}
 
     validations = {
-        ('bug_tracker',): {
-            'max_length': 2000,
+        ("bug_tracker",): {
+            "max_length": 2000,
         },
-        ('dimension',): {
-            'max_length': 16,
+        ("dimension",): {
+            "max_length": 16,
         },
     }
 
@@ -94,7 +99,17 @@ class PolymorphicProject(ModelComposed):
         of type self, this must run after the class is loaded
         """
         lazy_import()
-        return (bool, date, datetime, dict, float, int, list, str, none_type,)  # noqa: E501
+        return (
+            bool,
+            date,
+            datetime,
+            dict,
+            float,
+            int,
+            list,
+            str,
+            none_type,
+        )  # noqa: E501
 
     _nullable = False
 
@@ -110,150 +125,161 @@ class PolymorphicProject(ModelComposed):
         """
         lazy_import()
         return {
-            'name': (str,),  # noqa: E501
-            'url': (str,),  # noqa: E501
-            'id': (int,),  # noqa: E501
-            'labels': ([Label],),  # noqa: E501
-            'tasks': ([int],),  # noqa: E501
-            'owner': (ProjectReadOwner,),  # noqa: E501
-            'assignee': (ProjectReadAssignee,),  # noqa: E501
-            'bug_tracker': (str,),  # noqa: E501
-            'task_subsets': ([str],),  # noqa: E501
-            'created_date': (datetime,),  # noqa: E501
-            'updated_date': (datetime,),  # noqa: E501
-            'status': (bool, date, datetime, dict, float, int, list, str, none_type,),  # noqa: E501
-            'dimension': (str,),  # noqa: E501
-            'organization': (int, none_type,),  # noqa: E501
-            'target_storage': (Storage,),  # noqa: E501
-            'source_storage': (Storage,),  # noqa: E501
+            "name": (str,),  # noqa: E501
+            "url": (str,),  # noqa: E501
+            "id": (int,),  # noqa: E501
+            "labels": ([Label],),  # noqa: E501
+            "tasks": ([int],),  # noqa: E501
+            "owner": (ProjectReadOwner,),  # noqa: E501
+            "assignee": (ProjectReadAssignee,),  # noqa: E501
+            "bug_tracker": (str,),  # noqa: E501
+            "task_subsets": ([str],),  # noqa: E501
+            "created_date": (datetime,),  # noqa: E501
+            "updated_date": (datetime,),  # noqa: E501
+            "status": (
+                bool,
+                date,
+                datetime,
+                dict,
+                float,
+                int,
+                list,
+                str,
+                none_type,
+            ),  # noqa: E501
+            "dimension": (str,),  # noqa: E501
+            "organization": (
+                int,
+                none_type,
+            ),  # noqa: E501
+            "target_storage": (Storage,),  # noqa: E501
+            "source_storage": (Storage,),  # noqa: E501
         }
 
     @cached_property
     def discriminator():
         lazy_import()
         val = {
-            'None': ProjectSearch,
-            'ProjectRead': ProjectRead,
-            'ProjectSearch': ProjectSearch,
+            "None": ProjectSearch,
+            "ProjectRead": ProjectRead,
+            "ProjectSearch": ProjectSearch,
         }
         if not val:
             return None
-        return {'name': val}
+        return {"name": val}
 
     # member type declarations
-    url: str # noqa: E501
+    url: str  # noqa: E501
     """
     [optional]
     """
 
-    id: int # noqa: E501
+    id: int  # noqa: E501
     """
     [optional]
     """
 
-    name: str # noqa: E501
+    name: str  # noqa: E501
     """
     """
 
-    labels: typing.List[typing.ForwardRef("Label")] # noqa: E501
+    labels: typing.List["Label"]  # noqa: E501
     """
     [optional, default: []]
     [Label]
     """
 
-    tasks: typing.List[int] # noqa: E501
+    tasks: typing.List[int]  # noqa: E501
     """
     [optional]
     [int]
     """
 
-    owner: typing.ForwardRef("ProjectReadOwner") # noqa: E501
+    owner: "ProjectReadOwner"  # noqa: E501
     """
     [optional]
     """
 
-    assignee: typing.Optional[typing.ForwardRef("ProjectReadAssignee")] # noqa: E501
+    assignee: typing.Optional["ProjectReadAssignee"]  # noqa: E501
     """
     [optional]
     """
 
-    bug_tracker: str # noqa: E501
+    bug_tracker: str  # noqa: E501
     """
     [optional]
     """
 
-    task_subsets: typing.List[str] # noqa: E501
+    task_subsets: typing.List[str]  # noqa: E501
     """
     [optional]
     [str]
     """
 
-    created_date: datetime # noqa: E501
+    created_date: datetime  # noqa: E501
     """
     [optional]
     """
 
-    updated_date: datetime # noqa: E501
+    updated_date: datetime  # noqa: E501
     """
     [optional]
     """
 
-    status: typing.Optional[object] # noqa: E501
+    status: typing.Optional[object]  # noqa: E501
     """
     [optional]
     """
 
-    dimension: str # noqa: E501
+    dimension: str  # noqa: E501
     """
     [optional]
     """
 
-    organization: typing.Optional[int] # noqa: E501
+    organization: typing.Optional[int]  # noqa: E501
     """
     [optional]
     """
 
-    target_storage: typing.ForwardRef("Storage") # noqa: E501
+    target_storage: "Storage"  # noqa: E501
     """
     [optional]
     """
 
-    source_storage: typing.ForwardRef("Storage") # noqa: E501
+    source_storage: "Storage"  # noqa: E501
     """
     [optional]
     """
-
-
 
     attribute_map = {
-        'name': 'name',  # noqa: E501
-        'url': 'url',  # noqa: E501
-        'id': 'id',  # noqa: E501
-        'labels': 'labels',  # noqa: E501
-        'tasks': 'tasks',  # noqa: E501
-        'owner': 'owner',  # noqa: E501
-        'assignee': 'assignee',  # noqa: E501
-        'bug_tracker': 'bug_tracker',  # noqa: E501
-        'task_subsets': 'task_subsets',  # noqa: E501
-        'created_date': 'created_date',  # noqa: E501
-        'updated_date': 'updated_date',  # noqa: E501
-        'status': 'status',  # noqa: E501
-        'dimension': 'dimension',  # noqa: E501
-        'organization': 'organization',  # noqa: E501
-        'target_storage': 'target_storage',  # noqa: E501
-        'source_storage': 'source_storage',  # noqa: E501
+        "name": "name",  # noqa: E501
+        "url": "url",  # noqa: E501
+        "id": "id",  # noqa: E501
+        "labels": "labels",  # noqa: E501
+        "tasks": "tasks",  # noqa: E501
+        "owner": "owner",  # noqa: E501
+        "assignee": "assignee",  # noqa: E501
+        "bug_tracker": "bug_tracker",  # noqa: E501
+        "task_subsets": "task_subsets",  # noqa: E501
+        "created_date": "created_date",  # noqa: E501
+        "updated_date": "updated_date",  # noqa: E501
+        "status": "status",  # noqa: E501
+        "dimension": "dimension",  # noqa: E501
+        "organization": "organization",  # noqa: E501
+        "target_storage": "target_storage",  # noqa: E501
+        "source_storage": "source_storage",  # noqa: E501
     }
 
     read_only_vars = {
-        'name',  # noqa: E501
-        'url',  # noqa: E501
-        'id',  # noqa: E501
-        'tasks',  # noqa: E501
-        'created_date',  # noqa: E501
-        'updated_date',  # noqa: E501
-        'status',  # noqa: E501
-        'dimension',  # noqa: E501
-        'organization',  # noqa: E501
+        "name",  # noqa: E501
+        "url",  # noqa: E501
+        "id",  # noqa: E501
+        "tasks",  # noqa: E501
+        "created_date",  # noqa: E501
+        "updated_date",  # noqa: E501
+        "status",  # noqa: E501
+        "dimension",  # noqa: E501
+        "organization",  # noqa: E501
     }
 
     @classmethod
@@ -310,11 +336,11 @@ class PolymorphicProject(ModelComposed):
             source_storage (Storage): [optional]  # noqa: E501
         """
 
-        _check_type = kwargs.pop('_check_type', True)
-        _spec_property_naming = kwargs.pop('_spec_property_naming', False)
-        _path_to_item = kwargs.pop('_path_to_item', ())
-        _configuration = kwargs.pop('_configuration', None)
-        _visited_composed_classes = kwargs.pop('_visited_composed_classes', ())
+        _check_type = kwargs.pop("_check_type", True)
+        _spec_property_naming = kwargs.pop("_spec_property_naming", False)
+        _path_to_item = kwargs.pop("_path_to_item", ())
+        _configuration = kwargs.pop("_configuration", None)
+        _visited_composed_classes = kwargs.pop("_visited_composed_classes", ())
 
         self = super(OpenApiModel, cls).__new__(cls)
 
@@ -324,7 +350,8 @@ class PolymorphicProject(ModelComposed):
                     kwargs.update(arg)
                 else:
                     raise ApiTypeError(
-                        "Invalid positional arguments=%s passed to %s. Remove those invalid positional arguments." % (
+                        "Invalid positional arguments=%s passed to %s. Remove those invalid positional arguments."
+                        % (
                             args,
                             self.__class__.__name__,
                         ),
@@ -340,45 +367,48 @@ class PolymorphicProject(ModelComposed):
         self._visited_composed_classes = _visited_composed_classes + (self.__class__,)
 
         constant_args = {
-            '_check_type': _check_type,
-            '_path_to_item': _path_to_item,
-            '_spec_property_naming': _spec_property_naming,
-            '_configuration': _configuration,
-            '_visited_composed_classes': self._visited_composed_classes,
+            "_check_type": _check_type,
+            "_path_to_item": _path_to_item,
+            "_spec_property_naming": _spec_property_naming,
+            "_configuration": _configuration,
+            "_visited_composed_classes": self._visited_composed_classes,
         }
         required_args = {
-            'name': name,
+            "name": name,
         }
         kwargs.update(required_args)
-        composed_info = validate_get_composed_info(
-            constant_args, kwargs, self)
+        composed_info = validate_get_composed_info(constant_args, kwargs, self)
         self._composed_instances = composed_info[0]
         self._var_name_to_model_instances = composed_info[1]
         self._additional_properties_model_instances = composed_info[2]
         discarded_args = composed_info[3]
 
         for var_name, var_value in kwargs.items():
-            if var_name in discarded_args and \
-                        self._configuration is not None and \
-                        self._configuration.discard_unknown_keys and \
-                        self._additional_properties_model_instances:
+            if (
+                var_name in discarded_args
+                and self._configuration is not None
+                and self._configuration.discard_unknown_keys
+                and self._additional_properties_model_instances
+            ):
                 # discard variable.
                 continue
             setattr(self, var_name, var_value)
 
         return self
 
-    required_properties = set([
-        '_data_store',
-        '_check_type',
-        '_spec_property_naming',
-        '_path_to_item',
-        '_configuration',
-        '_visited_composed_classes',
-        '_composed_instances',
-        '_var_name_to_model_instances',
-        '_additional_properties_model_instances',
-    ])
+    required_properties = set(
+        [
+            "_data_store",
+            "_check_type",
+            "_spec_property_naming",
+            "_path_to_item",
+            "_configuration",
+            "_visited_composed_classes",
+            "_composed_instances",
+            "_var_name_to_model_instances",
+            "_additional_properties_model_instances",
+        ]
+    )
 
     @convert_js_args_to_python_args
     def __init__(self, name, *args, **kwargs):  # noqa: E501
@@ -432,11 +462,11 @@ class PolymorphicProject(ModelComposed):
             source_storage (Storage): [optional]  # noqa: E501
         """
 
-        _check_type = kwargs.pop('_check_type', True)
-        _spec_property_naming = kwargs.pop('_spec_property_naming', False)
-        _path_to_item = kwargs.pop('_path_to_item', ())
-        _configuration = kwargs.pop('_configuration', None)
-        _visited_composed_classes = kwargs.pop('_visited_composed_classes', ())
+        _check_type = kwargs.pop("_check_type", True)
+        _spec_property_naming = kwargs.pop("_spec_property_naming", False)
+        _path_to_item = kwargs.pop("_path_to_item", ())
+        _configuration = kwargs.pop("_configuration", None)
+        _visited_composed_classes = kwargs.pop("_visited_composed_classes", ())
 
         if args:
             for arg in args:
@@ -444,7 +474,8 @@ class PolymorphicProject(ModelComposed):
                     kwargs.update(arg)
                 else:
                     raise ApiTypeError(
-                        "Invalid positional arguments=%s passed to %s. Remove those invalid positional arguments." % (
+                        "Invalid positional arguments=%s passed to %s. Remove those invalid positional arguments."
+                        % (
                             args,
                             self.__class__.__name__,
                         ),
@@ -460,34 +491,37 @@ class PolymorphicProject(ModelComposed):
         self._visited_composed_classes = _visited_composed_classes + (self.__class__,)
 
         constant_args = {
-            '_check_type': _check_type,
-            '_path_to_item': _path_to_item,
-            '_spec_property_naming': _spec_property_naming,
-            '_configuration': _configuration,
-            '_visited_composed_classes': self._visited_composed_classes,
+            "_check_type": _check_type,
+            "_path_to_item": _path_to_item,
+            "_spec_property_naming": _spec_property_naming,
+            "_configuration": _configuration,
+            "_visited_composed_classes": self._visited_composed_classes,
         }
         required_args = {
-            'name': name,
+            "name": name,
         }
         kwargs.update(required_args)
-        composed_info = validate_get_composed_info(
-            constant_args, kwargs, self)
+        composed_info = validate_get_composed_info(constant_args, kwargs, self)
         self._composed_instances = composed_info[0]
         self._var_name_to_model_instances = composed_info[1]
         self._additional_properties_model_instances = composed_info[2]
         discarded_args = composed_info[3]
 
         for var_name, var_value in kwargs.items():
-            if var_name in discarded_args and \
-                        self._configuration is not None and \
-                        self._configuration.discard_unknown_keys and \
-                        self._additional_properties_model_instances:
+            if (
+                var_name in discarded_args
+                and self._configuration is not None
+                and self._configuration.discard_unknown_keys
+                and self._additional_properties_model_instances
+            ):
                 # discard variable.
                 continue
             setattr(self, var_name, var_value)
             if var_name in self.read_only_vars:
-                raise ApiAttributeError(f"`{var_name}` is a read-only attribute. Use `from_openapi_data` to instantiate "
-                                     f"class with read only attributes.")
+                raise ApiAttributeError(
+                    f"`{var_name}` is a read-only attribute. Use `from_openapi_data` to instantiate "
+                    f"class with read only attributes."
+                )
 
     @cached_property
     def _composed_schemas():
@@ -500,12 +534,10 @@ class PolymorphicProject(ModelComposed):
         # loading
         lazy_import()
         return {
-          'anyOf': [
-          ],
-          'allOf': [
-          ],
-          'oneOf': [
-              ProjectRead,
-              ProjectSearch,
-          ],
+            "anyOf": [],
+            "allOf": [],
+            "oneOf": [
+                ProjectRead,
+                ProjectSearch,
+            ],
         }

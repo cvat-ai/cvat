@@ -1,14 +1,16 @@
+import json
 from pprint import pprint
+
+from urllib3 import HTTPResponse
+
 import cvat_api_client
 import cvat_api_client.apis
 from cvat_api_client.configuration import Configuration
-from cvat_api_client.models import Task, Login, PaginatedTaskList
-from urllib3 import HTTPResponse
-import json
+from cvat_api_client.models import Login, PaginatedTaskList, Task
 
 
 def main():
-    config = Configuration(host='http://localhost:8080', username='business1', password='!Q@W#E$R')
+    config = Configuration(host="http://localhost:8080", username="business1", password="!Q@W#E$R")
     with cvat_api_client.ApiClient(configuration=config) as client:
         # auth_api = cvat_api_client.apis.AuthApi(client)
         # login = Login(password='admin', username='admin')
@@ -23,5 +25,6 @@ def main():
         decoded = json.loads(tasks.data)
         PaginatedTaskList._from_openapi_data(**decoded, _configuration=config)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()

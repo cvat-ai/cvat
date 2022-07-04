@@ -7,7 +7,7 @@ from copy import deepcopy
 from http import HTTPStatus
 from io import BytesIO
 from time import sleep
-from cvat_api_client.apis import ProjectsApi, TasksApi
+from cvat_api_client.apis import TasksApi
 from cvat_api_client.models import DataRequest, RqStatus, TaskWriteRequest, TaskRead, PatchedTaskWriteRequest
 
 import pytest
@@ -38,16 +38,16 @@ def generate_image_files(count):
 @pytest.mark.usefixtures('dontchangedb')
 class TestGetTasks:
     def _test_task_list_200(self, user, project_id, data, exclude_paths = '', **kwargs):
-        with make_api_client(user) as api_client:
-            response = ProjectsApi(api_client).projects_tasks_list_raw(project_id, **kwargs)
+        with make_api_client(user) as client:
+            response = client.projects_api.tasks_list_raw(project_id, **kwargs)
             assert response.status == HTTPStatus.OK
 
         response_data = json.loads(response.data)
         assert DeepDiff(data, response_data['results'], ignore_order=True, exclude_paths=exclude_paths) == {}
 
     def _test_task_list_403(self, user, project_id, **kwargs):
-        with make_api_client(user) as api_client:
-            response = ProjectsApi(api_client).projects_tasks_list_raw(project_id, **kwargs)
+        with make_api_client(user) as client:
+            response = client.projects_api.tasks_list_raw(project_id, **kwargs)
 
         assert response.status == HTTPStatus.FORBIDDEN
 
@@ -70,8 +70,8 @@ class TestGetTasks:
             assert len(staff_users)
 
             for user in staff_users:
-                with make_api_client(user['username']) as api_client:
-                    response = TasksApi(api_client).tasks_list_raw(**kwargs)
+                with make_api_client(user['username']) as client:
+                    response = client.tasks_api.list_raw(**kwargs)
                     assert response.status == HTTPStatus.OK
                     response_data = json.loads(response.data)
 
@@ -123,13 +123,13 @@ class TestGetTasks:
 @pytest.mark.usefixtures('changedb')
 class TestPostTasks:
     def _test_create_task_201(self, user, spec, **kwargs):
-        with make_api_client(user) as api_client:
-            response = TasksApi(api_client).tasks_create_raw(TaskWriteRequest(**spec), **kwargs)
+        with make_api_client(user) as client:
+            response = client.tasks_api.create_raw(TaskWriteRequest(**spec), **kwargs)
             assert response.status == HTTPStatus.CREATED
 
     def _test_create_task_403(self, user, spec, **kwargs):
-        with make_api_client(user) as api_client:
-            response = TasksApi(api_client).tasks_create_raw(TaskWriteRequest(**spec), **kwargs)
+        with make_api_client(user) as client:
+            response = client.tasks_api.create_raw(TaskWriteRequest(**spec), **kwargs)
             assert response.status == HTTPStatus.FORBIDDEN
 
     def _test_users_to_create_task_in_project(self, project_id, users, is_staff, is_allow, is_project_staff, **kwargs):
@@ -179,8 +179,8 @@ class TestGetData:
         ('image/x.point-cloud-data', 6),
     ])
     def test_frame_content_type(self, content_type, task_id):
-        with make_api_client(self._USERNAME) as api_client:
-            response = TasksApi(api_client).tasks_data_retrieve_raw(task_id,
+        with make_api_client(self._USERNAME) as client:
+            response = client.tasks_api.data_retrieve_raw(task_id,
                 type='frame', quality='original', number=0)
             assert response.status == HTTPStatus.OK
             assert response.headers['Content-Type'] == content_type
@@ -219,10 +219,10 @@ class TestPatchTaskAnnotations:
         username, tid = find_task_staff_user(filtered_tasks, users, task_staff)
 
         data = request_data(tid)
-        with make_api_client(username) as api_client:
+        with make_api_client(username) as client:
             patched_data = PatchedTaskWriteRequest(**deepcopy(data),
-                _configuration=api_client.configuration)
-            response = TasksApi(api_client).tasks_annotations_partial_update_raw(
+                _configuration=client.configuration)
+            response = client.tasks_api.annotations_partial_update_raw(
                 id=tid, action='update', org=org,
                 patched_task_write_request=patched_data)
 
@@ -242,10 +242,10 @@ class TestPatchTaskAnnotations:
         username, tid = find_task_staff_user(tasks, users, task_staff)
 
         data = request_data(tid)
-        with make_api_client(username) as api_client:
+        with make_api_client(username) as client:
             patched_data = PatchedTaskWriteRequest(**deepcopy(data),
-                _configuration=api_client.configuration)
-            response = TasksApi(api_client).tasks_annotations_partial_update_raw(
+                _configuration=client.configuration)
+            response = client.tasks_api.annotations_partial_update_raw(
                 id=tid, org_id=org, action='update',
                 patched_task_write_request=patched_data)
 
@@ -254,16 +254,14 @@ class TestPatchTaskAnnotations:
 @pytest.mark.usefixtures('dontchangedb')
 class TestGetTaskDataset:
     def _test_export_project(self, username, tid, **kwargs):
-        with make_api_client(username) as api_client:
-            tasks_api = TasksApi(api_client)
-
-            response = tasks_api.tasks_dataset_retrieve_raw(id=tid, **kwargs)
+        with make_api_client(username) as client:
+            response = client.tasks_api.dataset_retrieve_raw(id=tid, **kwargs)
             assert response.status == HTTPStatus.ACCEPTED
 
-            response = tasks_api.tasks_dataset_retrieve_raw(id=tid, **kwargs)
+            response = client.tasks_api.dataset_retrieve_raw(id=tid, **kwargs)
             assert response.status == HTTPStatus.CREATED
 
-            response = tasks_api.tasks_dataset_retrieve_raw(id=tid, **kwargs, action='download')
+            response = client.tasks_api.dataset_retrieve_raw(id=tid, **kwargs, action='download')
             assert response.status == HTTPStatus.OK
 
     def test_admin_can_export_task_dataset(self, tasks_with_shapes):
@@ -275,27 +273,25 @@ class TestPostTaskData:
     @staticmethod
     def _wait_until_task_is_created(api: TasksApi, task_id: int) -> RqStatus:
         while True:
-            status: RqStatus = api.tasks_status_retrieve(task_id)
+            status: RqStatus = api.status_retrieve(task_id)
             if status.state.value in ['Finished', 'Failed']:
                 return status
             sleep(1)
 
     def _test_create_task(self, username, spec, data, files):
-        with make_api_client(username) as api_client:
-            api = TasksApi(api_client)
-
-            (task, status, _) = api.tasks_create(TaskWriteRequest(**spec,
-                    _configuration=api_client.configuration),
+        with make_api_client(username) as client:
+            (task, status, _) = client.tasks_api.create(TaskWriteRequest(**spec,
+                    _configuration=client.configuration),
                 _return_http_data_only=False)
             assert status == HTTPStatus.CREATED
             task_id = task.id
 
             task_data = DataRequest(**data, client_files=list(files.values()))
-            response = api.tasks_data_create_raw(task_id, task_data,
+            response = client.tasks_api.data_create_raw(task_id, task_data,
                 _content_type="multipart/form-data")
             assert response.status == HTTPStatus.ACCEPTED
 
-            status = self._wait_until_task_is_created(api, task_id)
+            status = self._wait_until_task_is_created(client.tasks_api, task_id)
             assert status.state.value == 'Finished'
 
         return task_id
@@ -331,6 +327,6 @@ class TestPostTaskData:
         task_id = self._test_create_task(username, task_spec, task_data, task_files)
 
         # check task size
-        with make_api_client(username) as api_client:
-            task: TaskRead = TasksApi(api_client).tasks_retrieve(task_id)
+        with make_api_client(username) as client:
+            task: TaskRead = client.tasks_api.retrieve(task_id)
             assert task.size == 4

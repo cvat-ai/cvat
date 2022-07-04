@@ -9,14 +9,16 @@
 """
 
 
-import typing
-from typing import overload
-import urllib3
-
 import re  # noqa: F401
 import sys  # noqa: F401
+import typing
+from typing import TYPE_CHECKING, overload
 
-from cvat_api_client.api_client import ApiClient, Endpoint as _Endpoint
+import urllib3
+
+from cvat_api_client.api_client import ApiClient
+from cvat_api_client.api_client import Endpoint as _Endpoint
+from cvat_api_client.model.user_agreement import UserAgreement
 from cvat_api_client.model_utils import (  # noqa: F401
     check_allowed_values,
     check_validations,
@@ -24,9 +26,13 @@ from cvat_api_client.model_utils import (  # noqa: F401
     datetime,
     file_type,
     none_type,
-    validate_and_convert_types
+    validate_and_convert_types,
 )
-from cvat_api_client.model.user_agreement import UserAgreement
+
+if TYPE_CHECKING:
+    # Enable introspection. Can't work normally due to cyclic imports
+    from cvat_api_client.apis import *
+    from cvat_api_client.models import *
 
 
 class RestrictionsApi(object):
@@ -40,185 +46,156 @@ class RestrictionsApi(object):
         if api_client is None:
             api_client = ApiClient()
         self.api_client = api_client
-        self.restrictions_terms_of_use_retrieve_endpoint = _Endpoint(
+        self.terms_of_use_retrieve_endpoint = _Endpoint(
             settings={
-                'response_type': None,
-                'auth': [],
-                'endpoint_path': '/api/restrictions/terms-of-use',
-                'operation_id': 'restrictions_terms_of_use_retrieve',
-                'http_method': 'GET',
-                'servers': None,
+                "response_type": None,
+                "auth": [],
+                "endpoint_path": "/api/restrictions/terms-of-use",
+                "operation_id": "terms_of_use_retrieve",
+                "http_method": "GET",
+                "servers": None,
             },
             params_map={
-                'all': [
-                    'x_organization',
-                    'org',
-                    'org_id',
+                "all": [
+                    "x_organization",
+                    "org",
+                    "org_id",
                 ],
-                'required': [],
-                'nullable': [
-                ],
-                'enum': [
-                ],
-                'validation': [
-                ]
+                "required": [],
+                "nullable": [],
+                "enum": [],
+                "validation": [],
             },
             root_map={
-                'validations': {
+                "validations": {},
+                "allowed_values": {},
+                "openapi_types": {
+                    "x_organization": (str,),
+                    "org": (str,),
+                    "org_id": (int,),
                 },
-                'allowed_values': {
+                "attribute_map": {
+                    "x_organization": "X-Organization",
+                    "org": "org",
+                    "org_id": "org_id",
                 },
-                'openapi_types': {
-                    'x_organization':
-                        (str,),
-                    'org':
-                        (str,),
-                    'org_id':
-                        (int,),
+                "location_map": {
+                    "x_organization": "header",
+                    "org": "query",
+                    "org_id": "query",
                 },
-                'attribute_map': {
-                    'x_organization': 'X-Organization',
-                    'org': 'org',
-                    'org_id': 'org_id',
-                },
-                'location_map': {
-                    'x_organization': 'header',
-                    'org': 'query',
-                    'org_id': 'query',
-                },
-                'collection_format_map': {
-                }
+                "collection_format_map": {},
             },
             headers_map={
-                'accept': [],
-                'content_type': [],
+                "accept": [],
+                "content_type": [],
             },
-            api_client=api_client
+            api_client=api_client,
         )
-        self.restrictions_user_agreements_retrieve_endpoint = _Endpoint(
+        self.user_agreements_retrieve_endpoint = _Endpoint(
             settings={
-                'response_type': (UserAgreement,),
-                'auth': [],
-                'endpoint_path': '/api/restrictions/user-agreements',
-                'operation_id': 'restrictions_user_agreements_retrieve',
-                'http_method': 'GET',
-                'servers': None,
+                "response_type": (UserAgreement,),
+                "auth": [],
+                "endpoint_path": "/api/restrictions/user-agreements",
+                "operation_id": "user_agreements_retrieve",
+                "http_method": "GET",
+                "servers": None,
             },
             params_map={
-                'all': [
-                    'x_organization',
-                    'org',
-                    'org_id',
+                "all": [
+                    "x_organization",
+                    "org",
+                    "org_id",
                 ],
-                'required': [],
-                'nullable': [
-                ],
-                'enum': [
-                ],
-                'validation': [
-                ]
+                "required": [],
+                "nullable": [],
+                "enum": [],
+                "validation": [],
             },
             root_map={
-                'validations': {
+                "validations": {},
+                "allowed_values": {},
+                "openapi_types": {
+                    "x_organization": (str,),
+                    "org": (str,),
+                    "org_id": (int,),
                 },
-                'allowed_values': {
+                "attribute_map": {
+                    "x_organization": "X-Organization",
+                    "org": "org",
+                    "org_id": "org_id",
                 },
-                'openapi_types': {
-                    'x_organization':
-                        (str,),
-                    'org':
-                        (str,),
-                    'org_id':
-                        (int,),
+                "location_map": {
+                    "x_organization": "header",
+                    "org": "query",
+                    "org_id": "query",
                 },
-                'attribute_map': {
-                    'x_organization': 'X-Organization',
-                    'org': 'org',
-                    'org_id': 'org_id',
-                },
-                'location_map': {
-                    'x_organization': 'header',
-                    'org': 'query',
-                    'org_id': 'query',
-                },
-                'collection_format_map': {
-                }
+                "collection_format_map": {},
             },
             headers_map={
-                'accept': [
-                    'application/vnd.cvat+json'
-                ],
-                'content_type': [],
+                "accept": ["application/vnd.cvat+json"],
+                "content_type": [],
             },
-            api_client=api_client
+            api_client=api_client,
         )
 
     @overload
-    def restrictions_terms_of_use_retrieve(
+    def terms_of_use_retrieve(
         self,
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
-        **kwargs
+        **kwargs,
     ) -> None:
         ...
 
     @overload
-    def restrictions_terms_of_use_retrieve(
+    def terms_of_use_retrieve(
         self,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def restrictions_terms_of_use_retrieve(
-        self,
-        _return_http_data_only: typing.Literal[False],
-        **kwargs
+    def terms_of_use_retrieve(
+        self, _return_http_data_only: typing.Literal[False], **kwargs
     ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def restrictions_terms_of_use_retrieve(
-        self,
-        _preload_content: typing.Literal[False],
-        **kwargs
+    def terms_of_use_retrieve(
+        self, _preload_content: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def restrictions_terms_of_use_retrieve(
+    def terms_of_use_retrieve(
         self,
         _return_http_data_only: typing.Literal[True],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def restrictions_terms_of_use_retrieve(
+    def terms_of_use_retrieve(
         self,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
-    def restrictions_terms_of_use_retrieve(
-        self,
-        **kwargs
-    ) -> typing.Union[
-            typing.Tuple[None, int, typing.Dict[str, str]],
-            urllib3.HTTPResponse,
-            None
-    ]:
+    def terms_of_use_retrieve(
+        self, **kwargs
+    ) -> typing.Union[typing.Tuple[None, int, typing.Dict[str, str]], urllib3.HTTPResponse, None]:
         """Method provides CVAT terms of use  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.restrictions_terms_of_use_retrieve(async_req=True)
+        >>> thread = api.terms_of_use_retrieve(async_req=True)
         >>> result = thread.get()
 
 
@@ -266,44 +243,23 @@ class RestrictionsApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        kwargs['async_req'] = kwargs.get(
-            'async_req', False
-        )
-        kwargs['_return_http_data_only'] = kwargs.get(
-            '_return_http_data_only', True
-        )
-        kwargs['_preload_content'] = kwargs.get(
-            '_preload_content', True
-        )
-        kwargs['_request_timeout'] = kwargs.get(
-            '_request_timeout', None
-        )
-        kwargs['_check_input_type'] = kwargs.get(
-            '_check_input_type', True
-        )
-        kwargs['_check_return_type'] = kwargs.get(
-            '_check_return_type', True
-        )
-        kwargs['_check_status'] = kwargs.get(
-            '_check_status', True
-        )
-        kwargs['_spec_property_naming'] = kwargs.get(
-            '_spec_property_naming', False
-        )
-        kwargs['_content_type'] = kwargs.get(
-            '_content_type')
-        kwargs['_host_index'] = kwargs.get('_host_index')
-        kwargs['_request_auths'] = kwargs.get('_request_auths', None)
-        return self.restrictions_terms_of_use_retrieve_endpoint.call_with_http_info(**kwargs)
+        kwargs["async_req"] = kwargs.get("async_req", False)
+        kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
+        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
+        kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
+        kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
+        kwargs["_check_status"] = kwargs.get("_check_status", True)
+        kwargs["_spec_property_naming"] = kwargs.get("_spec_property_naming", False)
+        kwargs["_content_type"] = kwargs.get("_content_type")
+        kwargs["_host_index"] = kwargs.get("_host_index")
+        kwargs["_request_auths"] = kwargs.get("_request_auths", None)
+        return self.terms_of_use_retrieve_endpoint.call_with_http_info(**kwargs)
 
-    def restrictions_terms_of_use_retrieve_raw(
-        self,
-        *args,
-        **kwargs
-    ) -> urllib3.HTTPResponse:
+    def terms_of_use_retrieve_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
         """
-        The same as restrictions_terms_of_use_retrieve(), but returns the response unprocessed.
-        Equivalent to calling restrictions_terms_of_use_retrieve with
+        The same as terms_of_use_retrieve(), but returns the response unprocessed.
+        Equivalent to calling terms_of_use_retrieve with
         _preload_content = False and _check_status=False
 
         Method provides CVAT terms of use  # noqa: E501
@@ -311,7 +267,7 @@ class RestrictionsApi(object):
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.restrictions_terms_of_use_retrieve(async_req=True)
+        >>> thread = api.terms_of_use_retrieve(async_req=True)
         >>> result = thread.get()
 
 
@@ -347,75 +303,69 @@ class RestrictionsApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.restrictions_terms_of_use_retrieve(*args, **kwargs,
-            _preload_content=False, _check_status=False)
+        return self.terms_of_use_retrieve(
+            *args, **kwargs, _preload_content=False, _check_status=False
+        )
 
     @overload
-    def restrictions_user_agreements_retrieve(
+    def user_agreements_retrieve(
         self,
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
-        **kwargs
+        **kwargs,
     ) -> object:
         ...
 
     @overload
-    def restrictions_user_agreements_retrieve(
+    def user_agreements_retrieve(
         self,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def restrictions_user_agreements_retrieve(
-        self,
-        _return_http_data_only: typing.Literal[False],
-        **kwargs
+    def user_agreements_retrieve(
+        self, _return_http_data_only: typing.Literal[False], **kwargs
     ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def restrictions_user_agreements_retrieve(
-        self,
-        _preload_content: typing.Literal[False],
-        **kwargs
+    def user_agreements_retrieve(
+        self, _preload_content: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def restrictions_user_agreements_retrieve(
+    def user_agreements_retrieve(
         self,
         _return_http_data_only: typing.Literal[True],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def restrictions_user_agreements_retrieve(
+    def user_agreements_retrieve(
         self,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
-    def restrictions_user_agreements_retrieve(
-        self,
-        **kwargs
+    def user_agreements_retrieve(
+        self, **kwargs
     ) -> typing.Union[
-            typing.Tuple[object, int, typing.Dict[str, str]],
-            urllib3.HTTPResponse,
-            object
+        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
     ]:
         """Method provides user agreements that the user must accept to register  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.restrictions_user_agreements_retrieve(async_req=True)
+        >>> thread = api.user_agreements_retrieve(async_req=True)
         >>> result = thread.get()
 
 
@@ -463,44 +413,23 @@ class RestrictionsApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        kwargs['async_req'] = kwargs.get(
-            'async_req', False
-        )
-        kwargs['_return_http_data_only'] = kwargs.get(
-            '_return_http_data_only', True
-        )
-        kwargs['_preload_content'] = kwargs.get(
-            '_preload_content', True
-        )
-        kwargs['_request_timeout'] = kwargs.get(
-            '_request_timeout', None
-        )
-        kwargs['_check_input_type'] = kwargs.get(
-            '_check_input_type', True
-        )
-        kwargs['_check_return_type'] = kwargs.get(
-            '_check_return_type', True
-        )
-        kwargs['_check_status'] = kwargs.get(
-            '_check_status', True
-        )
-        kwargs['_spec_property_naming'] = kwargs.get(
-            '_spec_property_naming', False
-        )
-        kwargs['_content_type'] = kwargs.get(
-            '_content_type')
-        kwargs['_host_index'] = kwargs.get('_host_index')
-        kwargs['_request_auths'] = kwargs.get('_request_auths', None)
-        return self.restrictions_user_agreements_retrieve_endpoint.call_with_http_info(**kwargs)
+        kwargs["async_req"] = kwargs.get("async_req", False)
+        kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
+        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
+        kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
+        kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
+        kwargs["_check_status"] = kwargs.get("_check_status", True)
+        kwargs["_spec_property_naming"] = kwargs.get("_spec_property_naming", False)
+        kwargs["_content_type"] = kwargs.get("_content_type")
+        kwargs["_host_index"] = kwargs.get("_host_index")
+        kwargs["_request_auths"] = kwargs.get("_request_auths", None)
+        return self.user_agreements_retrieve_endpoint.call_with_http_info(**kwargs)
 
-    def restrictions_user_agreements_retrieve_raw(
-        self,
-        *args,
-        **kwargs
-    ) -> urllib3.HTTPResponse:
+    def user_agreements_retrieve_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
         """
-        The same as restrictions_user_agreements_retrieve(), but returns the response unprocessed.
-        Equivalent to calling restrictions_user_agreements_retrieve with
+        The same as user_agreements_retrieve(), but returns the response unprocessed.
+        Equivalent to calling user_agreements_retrieve with
         _preload_content = False and _check_status=False
 
         Method provides user agreements that the user must accept to register  # noqa: E501
@@ -508,7 +437,7 @@ class RestrictionsApi(object):
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.restrictions_user_agreements_retrieve(async_req=True)
+        >>> thread = api.user_agreements_retrieve(async_req=True)
         >>> result = thread.get()
 
 
@@ -544,6 +473,6 @@ class RestrictionsApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.restrictions_user_agreements_retrieve(*args, **kwargs,
-            _preload_content=False, _check_status=False)
-
+        return self.user_agreements_retrieve(
+            *args, **kwargs, _preload_content=False, _check_status=False
+        )

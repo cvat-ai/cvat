@@ -248,6 +248,7 @@ Method updates chosen fields of a user
 import time
 import cvat_api_client
 from cvat_api_client.api import users_api
+from cvat_api_client.model.patched_user_request import PatchedUserRequest
 from cvat_api_client.model.meta_user import MetaUser
 from pprint import pprint
 # Defining the host is optional and defaults to http://localhost
@@ -293,6 +294,18 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     x_organization = "X-Organization_example" # str |  (optional)
     org = "org_example" # str | Organization unique slug (optional)
     org_id = 1 # int | Organization identifier (optional)
+    patched_user_request = PatchedUserRequest(
+        username="A",
+        first_name="first_name_example",
+        last_name="last_name_example",
+        email="email_example",
+        groups=[
+            "groups_example",
+        ],
+        is_staff=True,
+        is_superuser=True,
+        is_active=True,
+    ) # PatchedUserRequest |  (optional)
 
     # example passing only required values which don't have defaults set
     try:
@@ -306,7 +319,7 @@ with cvat_api_client.ApiClient(configuration) as api_client:
     # and optional values
     try:
         # Method updates chosen fields of a user
-        api_response = api_instance.users_partial_update(id, x_organization=x_organization, org=org, org_id=org_id)
+        api_response = api_instance.users_partial_update(id, x_organization=x_organization, org=org, org_id=org_id, patched_user_request=patched_user_request)
         pprint(api_response)
     except cvat_api_client.ApiException as e:
         print("Exception when calling UsersApi->users_partial_update: %s\n" % e)
@@ -321,6 +334,7 @@ Name | Type | Description  | Notes
  **x_organization** | **str**|  | [optional]
  **org** | **str**| Organization unique slug | [optional]
  **org_id** | **int**| Organization identifier | [optional]
+ **patched_user_request** | [**PatchedUserRequest**](PatchedUserRequest.md)|  | [optional]
 
 ### Return type
 
@@ -332,7 +346,7 @@ Name | Type | Description  | Notes
 
 ### HTTP request headers
 
- - **Content-Type**: Not defined
+ - **Content-Type**: application/json, application/x-www-form-urlencoded, multipart/form-data, application/offset+octet-stream
  - **Accept**: application/vnd.cvat+json
 
 

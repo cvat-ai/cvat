@@ -9,14 +9,22 @@
 """
 
 
-import typing
-from typing import overload
-import urllib3
-
 import re  # noqa: F401
 import sys  # noqa: F401
+import typing
+from typing import TYPE_CHECKING, overload
 
-from cvat_api_client.api_client import ApiClient, Endpoint as _Endpoint
+import urllib3
+
+from cvat_api_client.api_client import ApiClient
+from cvat_api_client.api_client import Endpoint as _Endpoint
+from cvat_api_client.model.cloud_storage_read import CloudStorageRead
+from cvat_api_client.model.cloud_storage_write import CloudStorageWrite
+from cvat_api_client.model.cloud_storage_write_request import CloudStorageWriteRequest
+from cvat_api_client.model.paginated_cloud_storage_read_list import PaginatedCloudStorageReadList
+from cvat_api_client.model.patched_cloud_storage_write_request import (
+    PatchedCloudStorageWriteRequest,
+)
 from cvat_api_client.model_utils import (  # noqa: F401
     check_allowed_values,
     check_validations,
@@ -24,13 +32,13 @@ from cvat_api_client.model_utils import (  # noqa: F401
     datetime,
     file_type,
     none_type,
-    validate_and_convert_types
+    validate_and_convert_types,
 )
-from cvat_api_client.model.cloud_storage_read import CloudStorageRead
-from cvat_api_client.model.cloud_storage_write import CloudStorageWrite
-from cvat_api_client.model.cloud_storage_write_request import CloudStorageWriteRequest
-from cvat_api_client.model.paginated_cloud_storage_read_list import PaginatedCloudStorageReadList
-from cvat_api_client.model.patched_cloud_storage_write_request import PatchedCloudStorageWriteRequest
+
+if TYPE_CHECKING:
+    # Enable introspection. Can't work normally due to cyclic imports
+    from cvat_api_client.apis import *
+    from cvat_api_client.models import *
 
 
 class CloudStoragesApi(object):
@@ -46,656 +54,503 @@ class CloudStoragesApi(object):
         self.api_client = api_client
         self.cloudstorages_actions_retrieve_endpoint = _Endpoint(
             settings={
-                'response_type': (str,),
-                'auth': [
-                    'SignatureAuthentication',
-                    'basicAuth',
-                    'cookieAuth',
-                    'tokenAuth'
-                ],
-                'endpoint_path': '/api/cloudstorages/{id}/actions',
-                'operation_id': 'cloudstorages_actions_retrieve',
-                'http_method': 'GET',
-                'servers': None,
+                "response_type": (str,),
+                "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
+                "endpoint_path": "/api/cloudstorages/{id}/actions",
+                "operation_id": "cloudstorages_actions_retrieve",
+                "http_method": "GET",
+                "servers": None,
             },
             params_map={
-                'all': [
-                    'id',
-                    'x_organization',
-                    'org',
-                    'org_id',
+                "all": [
+                    "id",
+                    "x_organization",
+                    "org",
+                    "org_id",
                 ],
-                'required': [
-                    'id',
+                "required": [
+                    "id",
                 ],
-                'nullable': [
-                ],
-                'enum': [
-                ],
-                'validation': [
-                ]
+                "nullable": [],
+                "enum": [],
+                "validation": [],
             },
             root_map={
-                'validations': {
+                "validations": {},
+                "allowed_values": {},
+                "openapi_types": {
+                    "id": (int,),
+                    "x_organization": (str,),
+                    "org": (str,),
+                    "org_id": (int,),
                 },
-                'allowed_values': {
+                "attribute_map": {
+                    "id": "id",
+                    "x_organization": "X-Organization",
+                    "org": "org",
+                    "org_id": "org_id",
                 },
-                'openapi_types': {
-                    'id':
-                        (int,),
-                    'x_organization':
-                        (str,),
-                    'org':
-                        (str,),
-                    'org_id':
-                        (int,),
+                "location_map": {
+                    "id": "path",
+                    "x_organization": "header",
+                    "org": "query",
+                    "org_id": "query",
                 },
-                'attribute_map': {
-                    'id': 'id',
-                    'x_organization': 'X-Organization',
-                    'org': 'org',
-                    'org_id': 'org_id',
-                },
-                'location_map': {
-                    'id': 'path',
-                    'x_organization': 'header',
-                    'org': 'query',
-                    'org_id': 'query',
-                },
-                'collection_format_map': {
-                }
+                "collection_format_map": {},
             },
             headers_map={
-                'accept': [
-                    'application/vnd.cvat+json'
-                ],
-                'content_type': [],
+                "accept": ["application/vnd.cvat+json"],
+                "content_type": [],
             },
-            api_client=api_client
+            api_client=api_client,
         )
         self.cloudstorages_content_retrieve_endpoint = _Endpoint(
             settings={
-                'response_type': ({str: (bool, date, datetime, dict, float, int, list, str, none_type)},),
-                'auth': [
-                    'SignatureAuthentication',
-                    'basicAuth',
-                    'cookieAuth',
-                    'tokenAuth'
-                ],
-                'endpoint_path': '/api/cloudstorages/{id}/content',
-                'operation_id': 'cloudstorages_content_retrieve',
-                'http_method': 'GET',
-                'servers': None,
+                "response_type": (
+                    {str: (bool, date, datetime, dict, float, int, list, str, none_type)},
+                ),
+                "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
+                "endpoint_path": "/api/cloudstorages/{id}/content",
+                "operation_id": "cloudstorages_content_retrieve",
+                "http_method": "GET",
+                "servers": None,
             },
             params_map={
-                'all': [
-                    'id',
-                    'x_organization',
-                    'manifest_path',
-                    'org',
-                    'org_id',
+                "all": [
+                    "id",
+                    "x_organization",
+                    "manifest_path",
+                    "org",
+                    "org_id",
                 ],
-                'required': [
-                    'id',
+                "required": [
+                    "id",
                 ],
-                'nullable': [
-                ],
-                'enum': [
-                ],
-                'validation': [
-                ]
+                "nullable": [],
+                "enum": [],
+                "validation": [],
             },
             root_map={
-                'validations': {
+                "validations": {},
+                "allowed_values": {},
+                "openapi_types": {
+                    "id": (int,),
+                    "x_organization": (str,),
+                    "manifest_path": (str,),
+                    "org": (str,),
+                    "org_id": (int,),
                 },
-                'allowed_values': {
+                "attribute_map": {
+                    "id": "id",
+                    "x_organization": "X-Organization",
+                    "manifest_path": "manifest_path",
+                    "org": "org",
+                    "org_id": "org_id",
                 },
-                'openapi_types': {
-                    'id':
-                        (int,),
-                    'x_organization':
-                        (str,),
-                    'manifest_path':
-                        (str,),
-                    'org':
-                        (str,),
-                    'org_id':
-                        (int,),
+                "location_map": {
+                    "id": "path",
+                    "x_organization": "header",
+                    "manifest_path": "query",
+                    "org": "query",
+                    "org_id": "query",
                 },
-                'attribute_map': {
-                    'id': 'id',
-                    'x_organization': 'X-Organization',
-                    'manifest_path': 'manifest_path',
-                    'org': 'org',
-                    'org_id': 'org_id',
-                },
-                'location_map': {
-                    'id': 'path',
-                    'x_organization': 'header',
-                    'manifest_path': 'query',
-                    'org': 'query',
-                    'org_id': 'query',
-                },
-                'collection_format_map': {
-                }
+                "collection_format_map": {},
             },
             headers_map={
-                'accept': [
-                    'application/vnd.cvat+json'
-                ],
-                'content_type': [],
+                "accept": ["application/vnd.cvat+json"],
+                "content_type": [],
             },
-            api_client=api_client
+            api_client=api_client,
         )
         self.cloudstorages_create_endpoint = _Endpoint(
             settings={
-                'response_type': (CloudStorageWrite,),
-                'auth': [
-                    'SignatureAuthentication',
-                    'basicAuth',
-                    'cookieAuth',
-                    'tokenAuth'
-                ],
-                'endpoint_path': '/api/cloudstorages',
-                'operation_id': 'cloudstorages_create',
-                'http_method': 'POST',
-                'servers': None,
+                "response_type": (CloudStorageWrite,),
+                "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
+                "endpoint_path": "/api/cloudstorages",
+                "operation_id": "cloudstorages_create",
+                "http_method": "POST",
+                "servers": None,
             },
             params_map={
-                'all': [
-                    'cloud_storage_write_request',
-                    'x_organization',
-                    'org',
-                    'org_id',
+                "all": [
+                    "cloud_storage_write_request",
+                    "x_organization",
+                    "org",
+                    "org_id",
                 ],
-                'required': [
-                    'cloud_storage_write_request',
+                "required": [
+                    "cloud_storage_write_request",
                 ],
-                'nullable': [
-                ],
-                'enum': [
-                ],
-                'validation': [
-                ]
+                "nullable": [],
+                "enum": [],
+                "validation": [],
             },
             root_map={
-                'validations': {
+                "validations": {},
+                "allowed_values": {},
+                "openapi_types": {
+                    "cloud_storage_write_request": (CloudStorageWriteRequest,),
+                    "x_organization": (str,),
+                    "org": (str,),
+                    "org_id": (int,),
                 },
-                'allowed_values': {
+                "attribute_map": {
+                    "x_organization": "X-Organization",
+                    "org": "org",
+                    "org_id": "org_id",
                 },
-                'openapi_types': {
-                    'cloud_storage_write_request':
-                        (CloudStorageWriteRequest,),
-                    'x_organization':
-                        (str,),
-                    'org':
-                        (str,),
-                    'org_id':
-                        (int,),
+                "location_map": {
+                    "cloud_storage_write_request": "body",
+                    "x_organization": "header",
+                    "org": "query",
+                    "org_id": "query",
                 },
-                'attribute_map': {
-                    'x_organization': 'X-Organization',
-                    'org': 'org',
-                    'org_id': 'org_id',
-                },
-                'location_map': {
-                    'cloud_storage_write_request': 'body',
-                    'x_organization': 'header',
-                    'org': 'query',
-                    'org_id': 'query',
-                },
-                'collection_format_map': {
-                }
+                "collection_format_map": {},
             },
             headers_map={
-                'accept': [
-                    'application/vnd.cvat+json'
+                "accept": ["application/vnd.cvat+json"],
+                "content_type": [
+                    "application/json",
+                    "application/x-www-form-urlencoded",
+                    "multipart/form-data",
+                    "application/offset+octet-stream",
                 ],
-                'content_type': [
-                    'application/json',
-                    'application/x-www-form-urlencoded',
-                    'multipart/form-data',
-                    'application/offset+octet-stream'
-                ]
             },
-            api_client=api_client
+            api_client=api_client,
         )
         self.cloudstorages_destroy_endpoint = _Endpoint(
             settings={
-                'response_type': None,
-                'auth': [
-                    'SignatureAuthentication',
-                    'basicAuth',
-                    'cookieAuth',
-                    'tokenAuth'
-                ],
-                'endpoint_path': '/api/cloudstorages/{id}',
-                'operation_id': 'cloudstorages_destroy',
-                'http_method': 'DELETE',
-                'servers': None,
+                "response_type": None,
+                "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
+                "endpoint_path": "/api/cloudstorages/{id}",
+                "operation_id": "cloudstorages_destroy",
+                "http_method": "DELETE",
+                "servers": None,
             },
             params_map={
-                'all': [
-                    'id',
-                    'x_organization',
-                    'org',
-                    'org_id',
+                "all": [
+                    "id",
+                    "x_organization",
+                    "org",
+                    "org_id",
                 ],
-                'required': [
-                    'id',
+                "required": [
+                    "id",
                 ],
-                'nullable': [
-                ],
-                'enum': [
-                ],
-                'validation': [
-                ]
+                "nullable": [],
+                "enum": [],
+                "validation": [],
             },
             root_map={
-                'validations': {
+                "validations": {},
+                "allowed_values": {},
+                "openapi_types": {
+                    "id": (int,),
+                    "x_organization": (str,),
+                    "org": (str,),
+                    "org_id": (int,),
                 },
-                'allowed_values': {
+                "attribute_map": {
+                    "id": "id",
+                    "x_organization": "X-Organization",
+                    "org": "org",
+                    "org_id": "org_id",
                 },
-                'openapi_types': {
-                    'id':
-                        (int,),
-                    'x_organization':
-                        (str,),
-                    'org':
-                        (str,),
-                    'org_id':
-                        (int,),
+                "location_map": {
+                    "id": "path",
+                    "x_organization": "header",
+                    "org": "query",
+                    "org_id": "query",
                 },
-                'attribute_map': {
-                    'id': 'id',
-                    'x_organization': 'X-Organization',
-                    'org': 'org',
-                    'org_id': 'org_id',
-                },
-                'location_map': {
-                    'id': 'path',
-                    'x_organization': 'header',
-                    'org': 'query',
-                    'org_id': 'query',
-                },
-                'collection_format_map': {
-                }
+                "collection_format_map": {},
             },
             headers_map={
-                'accept': [],
-                'content_type': [],
+                "accept": [],
+                "content_type": [],
             },
-            api_client=api_client
+            api_client=api_client,
         )
         self.cloudstorages_list_endpoint = _Endpoint(
             settings={
-                'response_type': (PaginatedCloudStorageReadList,),
-                'auth': [
-                    'SignatureAuthentication',
-                    'basicAuth',
-                    'cookieAuth',
-                    'tokenAuth'
-                ],
-                'endpoint_path': '/api/cloudstorages',
-                'operation_id': 'cloudstorages_list',
-                'http_method': 'GET',
-                'servers': None,
+                "response_type": (PaginatedCloudStorageReadList,),
+                "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
+                "endpoint_path": "/api/cloudstorages",
+                "operation_id": "cloudstorages_list",
+                "http_method": "GET",
+                "servers": None,
             },
             params_map={
-                'all': [
-                    'x_organization',
-                    'filter',
-                    'org',
-                    'org_id',
-                    'page',
-                    'page_size',
-                    'search',
-                    'sort',
+                "all": [
+                    "x_organization",
+                    "filter",
+                    "org",
+                    "org_id",
+                    "page",
+                    "page_size",
+                    "search",
+                    "sort",
                 ],
-                'required': [],
-                'nullable': [
-                ],
-                'enum': [
-                ],
-                'validation': [
-                ]
+                "required": [],
+                "nullable": [],
+                "enum": [],
+                "validation": [],
             },
             root_map={
-                'validations': {
+                "validations": {},
+                "allowed_values": {},
+                "openapi_types": {
+                    "x_organization": (str,),
+                    "filter": (str,),
+                    "org": (str,),
+                    "org_id": (int,),
+                    "page": (int,),
+                    "page_size": (int,),
+                    "search": (str,),
+                    "sort": (str,),
                 },
-                'allowed_values': {
+                "attribute_map": {
+                    "x_organization": "X-Organization",
+                    "filter": "filter",
+                    "org": "org",
+                    "org_id": "org_id",
+                    "page": "page",
+                    "page_size": "page_size",
+                    "search": "search",
+                    "sort": "sort",
                 },
-                'openapi_types': {
-                    'x_organization':
-                        (str,),
-                    'filter':
-                        (str,),
-                    'org':
-                        (str,),
-                    'org_id':
-                        (int,),
-                    'page':
-                        (int,),
-                    'page_size':
-                        (int,),
-                    'search':
-                        (str,),
-                    'sort':
-                        (str,),
+                "location_map": {
+                    "x_organization": "header",
+                    "filter": "query",
+                    "org": "query",
+                    "org_id": "query",
+                    "page": "query",
+                    "page_size": "query",
+                    "search": "query",
+                    "sort": "query",
                 },
-                'attribute_map': {
-                    'x_organization': 'X-Organization',
-                    'filter': 'filter',
-                    'org': 'org',
-                    'org_id': 'org_id',
-                    'page': 'page',
-                    'page_size': 'page_size',
-                    'search': 'search',
-                    'sort': 'sort',
-                },
-                'location_map': {
-                    'x_organization': 'header',
-                    'filter': 'query',
-                    'org': 'query',
-                    'org_id': 'query',
-                    'page': 'query',
-                    'page_size': 'query',
-                    'search': 'query',
-                    'sort': 'query',
-                },
-                'collection_format_map': {
-                }
+                "collection_format_map": {},
             },
             headers_map={
-                'accept': [
-                    'application/vnd.cvat+json'
-                ],
-                'content_type': [],
+                "accept": ["application/vnd.cvat+json"],
+                "content_type": [],
             },
-            api_client=api_client
+            api_client=api_client,
         )
         self.cloudstorages_partial_update_endpoint = _Endpoint(
             settings={
-                'response_type': (CloudStorageWrite,),
-                'auth': [
-                    'SignatureAuthentication',
-                    'basicAuth',
-                    'cookieAuth',
-                    'tokenAuth'
-                ],
-                'endpoint_path': '/api/cloudstorages/{id}',
-                'operation_id': 'cloudstorages_partial_update',
-                'http_method': 'PATCH',
-                'servers': None,
+                "response_type": (CloudStorageWrite,),
+                "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
+                "endpoint_path": "/api/cloudstorages/{id}",
+                "operation_id": "cloudstorages_partial_update",
+                "http_method": "PATCH",
+                "servers": None,
             },
             params_map={
-                'all': [
-                    'id',
-                    'x_organization',
-                    'org',
-                    'org_id',
-                    'patched_cloud_storage_write_request',
+                "all": [
+                    "id",
+                    "x_organization",
+                    "org",
+                    "org_id",
+                    "patched_cloud_storage_write_request",
                 ],
-                'required': [
-                    'id',
+                "required": [
+                    "id",
                 ],
-                'nullable': [
-                ],
-                'enum': [
-                ],
-                'validation': [
-                ]
+                "nullable": [],
+                "enum": [],
+                "validation": [],
             },
             root_map={
-                'validations': {
+                "validations": {},
+                "allowed_values": {},
+                "openapi_types": {
+                    "id": (int,),
+                    "x_organization": (str,),
+                    "org": (str,),
+                    "org_id": (int,),
+                    "patched_cloud_storage_write_request": (PatchedCloudStorageWriteRequest,),
                 },
-                'allowed_values': {
+                "attribute_map": {
+                    "id": "id",
+                    "x_organization": "X-Organization",
+                    "org": "org",
+                    "org_id": "org_id",
                 },
-                'openapi_types': {
-                    'id':
-                        (int,),
-                    'x_organization':
-                        (str,),
-                    'org':
-                        (str,),
-                    'org_id':
-                        (int,),
-                    'patched_cloud_storage_write_request':
-                        (PatchedCloudStorageWriteRequest,),
+                "location_map": {
+                    "id": "path",
+                    "x_organization": "header",
+                    "org": "query",
+                    "org_id": "query",
+                    "patched_cloud_storage_write_request": "body",
                 },
-                'attribute_map': {
-                    'id': 'id',
-                    'x_organization': 'X-Organization',
-                    'org': 'org',
-                    'org_id': 'org_id',
-                },
-                'location_map': {
-                    'id': 'path',
-                    'x_organization': 'header',
-                    'org': 'query',
-                    'org_id': 'query',
-                    'patched_cloud_storage_write_request': 'body',
-                },
-                'collection_format_map': {
-                }
+                "collection_format_map": {},
             },
             headers_map={
-                'accept': [
-                    'application/vnd.cvat+json'
+                "accept": ["application/vnd.cvat+json"],
+                "content_type": [
+                    "application/json",
+                    "application/x-www-form-urlencoded",
+                    "multipart/form-data",
+                    "application/offset+octet-stream",
                 ],
-                'content_type': [
-                    'application/json',
-                    'application/x-www-form-urlencoded',
-                    'multipart/form-data',
-                    'application/offset+octet-stream'
-                ]
             },
-            api_client=api_client
+            api_client=api_client,
         )
         self.cloudstorages_preview_retrieve_endpoint = _Endpoint(
             settings={
-                'response_type': None,
-                'auth': [
-                    'SignatureAuthentication',
-                    'basicAuth',
-                    'cookieAuth',
-                    'tokenAuth'
-                ],
-                'endpoint_path': '/api/cloudstorages/{id}/preview',
-                'operation_id': 'cloudstorages_preview_retrieve',
-                'http_method': 'GET',
-                'servers': None,
+                "response_type": None,
+                "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
+                "endpoint_path": "/api/cloudstorages/{id}/preview",
+                "operation_id": "cloudstorages_preview_retrieve",
+                "http_method": "GET",
+                "servers": None,
             },
             params_map={
-                'all': [
-                    'id',
-                    'x_organization',
-                    'org',
-                    'org_id',
+                "all": [
+                    "id",
+                    "x_organization",
+                    "org",
+                    "org_id",
                 ],
-                'required': [
-                    'id',
+                "required": [
+                    "id",
                 ],
-                'nullable': [
-                ],
-                'enum': [
-                ],
-                'validation': [
-                ]
+                "nullable": [],
+                "enum": [],
+                "validation": [],
             },
             root_map={
-                'validations': {
+                "validations": {},
+                "allowed_values": {},
+                "openapi_types": {
+                    "id": (int,),
+                    "x_organization": (str,),
+                    "org": (str,),
+                    "org_id": (int,),
                 },
-                'allowed_values': {
+                "attribute_map": {
+                    "id": "id",
+                    "x_organization": "X-Organization",
+                    "org": "org",
+                    "org_id": "org_id",
                 },
-                'openapi_types': {
-                    'id':
-                        (int,),
-                    'x_organization':
-                        (str,),
-                    'org':
-                        (str,),
-                    'org_id':
-                        (int,),
+                "location_map": {
+                    "id": "path",
+                    "x_organization": "header",
+                    "org": "query",
+                    "org_id": "query",
                 },
-                'attribute_map': {
-                    'id': 'id',
-                    'x_organization': 'X-Organization',
-                    'org': 'org',
-                    'org_id': 'org_id',
-                },
-                'location_map': {
-                    'id': 'path',
-                    'x_organization': 'header',
-                    'org': 'query',
-                    'org_id': 'query',
-                },
-                'collection_format_map': {
-                }
+                "collection_format_map": {},
             },
             headers_map={
-                'accept': [],
-                'content_type': [],
+                "accept": [],
+                "content_type": [],
             },
-            api_client=api_client
+            api_client=api_client,
         )
         self.cloudstorages_retrieve_endpoint = _Endpoint(
             settings={
-                'response_type': (CloudStorageRead,),
-                'auth': [
-                    'SignatureAuthentication',
-                    'basicAuth',
-                    'cookieAuth',
-                    'tokenAuth'
-                ],
-                'endpoint_path': '/api/cloudstorages/{id}',
-                'operation_id': 'cloudstorages_retrieve',
-                'http_method': 'GET',
-                'servers': None,
+                "response_type": (CloudStorageRead,),
+                "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
+                "endpoint_path": "/api/cloudstorages/{id}",
+                "operation_id": "cloudstorages_retrieve",
+                "http_method": "GET",
+                "servers": None,
             },
             params_map={
-                'all': [
-                    'id',
-                    'x_organization',
-                    'org',
-                    'org_id',
+                "all": [
+                    "id",
+                    "x_organization",
+                    "org",
+                    "org_id",
                 ],
-                'required': [
-                    'id',
+                "required": [
+                    "id",
                 ],
-                'nullable': [
-                ],
-                'enum': [
-                ],
-                'validation': [
-                ]
+                "nullable": [],
+                "enum": [],
+                "validation": [],
             },
             root_map={
-                'validations': {
+                "validations": {},
+                "allowed_values": {},
+                "openapi_types": {
+                    "id": (int,),
+                    "x_organization": (str,),
+                    "org": (str,),
+                    "org_id": (int,),
                 },
-                'allowed_values': {
+                "attribute_map": {
+                    "id": "id",
+                    "x_organization": "X-Organization",
+                    "org": "org",
+                    "org_id": "org_id",
                 },
-                'openapi_types': {
-                    'id':
-                        (int,),
-                    'x_organization':
-                        (str,),
-                    'org':
-                        (str,),
-                    'org_id':
-                        (int,),
+                "location_map": {
+                    "id": "path",
+                    "x_organization": "header",
+                    "org": "query",
+                    "org_id": "query",
                 },
-                'attribute_map': {
-                    'id': 'id',
-                    'x_organization': 'X-Organization',
-                    'org': 'org',
-                    'org_id': 'org_id',
-                },
-                'location_map': {
-                    'id': 'path',
-                    'x_organization': 'header',
-                    'org': 'query',
-                    'org_id': 'query',
-                },
-                'collection_format_map': {
-                }
+                "collection_format_map": {},
             },
             headers_map={
-                'accept': [
-                    'application/vnd.cvat+json'
-                ],
-                'content_type': [],
+                "accept": ["application/vnd.cvat+json"],
+                "content_type": [],
             },
-            api_client=api_client
+            api_client=api_client,
         )
         self.cloudstorages_status_retrieve_endpoint = _Endpoint(
             settings={
-                'response_type': (str,),
-                'auth': [
-                    'SignatureAuthentication',
-                    'basicAuth',
-                    'cookieAuth',
-                    'tokenAuth'
-                ],
-                'endpoint_path': '/api/cloudstorages/{id}/status',
-                'operation_id': 'cloudstorages_status_retrieve',
-                'http_method': 'GET',
-                'servers': None,
+                "response_type": (str,),
+                "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
+                "endpoint_path": "/api/cloudstorages/{id}/status",
+                "operation_id": "cloudstorages_status_retrieve",
+                "http_method": "GET",
+                "servers": None,
             },
             params_map={
-                'all': [
-                    'id',
-                    'x_organization',
-                    'org',
-                    'org_id',
+                "all": [
+                    "id",
+                    "x_organization",
+                    "org",
+                    "org_id",
                 ],
-                'required': [
-                    'id',
+                "required": [
+                    "id",
                 ],
-                'nullable': [
-                ],
-                'enum': [
-                ],
-                'validation': [
-                ]
+                "nullable": [],
+                "enum": [],
+                "validation": [],
             },
             root_map={
-                'validations': {
+                "validations": {},
+                "allowed_values": {},
+                "openapi_types": {
+                    "id": (int,),
+                    "x_organization": (str,),
+                    "org": (str,),
+                    "org_id": (int,),
                 },
-                'allowed_values': {
+                "attribute_map": {
+                    "id": "id",
+                    "x_organization": "X-Organization",
+                    "org": "org",
+                    "org_id": "org_id",
                 },
-                'openapi_types': {
-                    'id':
-                        (int,),
-                    'x_organization':
-                        (str,),
-                    'org':
-                        (str,),
-                    'org_id':
-                        (int,),
+                "location_map": {
+                    "id": "path",
+                    "x_organization": "header",
+                    "org": "query",
+                    "org_id": "query",
                 },
-                'attribute_map': {
-                    'id': 'id',
-                    'x_organization': 'X-Organization',
-                    'org': 'org',
-                    'org_id': 'org_id',
-                },
-                'location_map': {
-                    'id': 'path',
-                    'x_organization': 'header',
-                    'org': 'query',
-                    'org_id': 'query',
-                },
-                'collection_format_map': {
-                }
+                "collection_format_map": {},
             },
             headers_map={
-                'accept': [
-                    'application/vnd.cvat+json'
-                ],
-                'content_type': [],
+                "accept": ["application/vnd.cvat+json"],
+                "content_type": [],
             },
-            api_client=api_client
+            api_client=api_client,
         )
 
     @overload
@@ -704,7 +559,7 @@ class CloudStoragesApi(object):
         id,
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
-        **kwargs
+        **kwargs,
     ) -> object:
         ...
 
@@ -714,25 +569,19 @@ class CloudStoragesApi(object):
         id,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
         ...
 
     @overload
     def cloudstorages_actions_retrieve(
-        self,
-        id,
-        _return_http_data_only: typing.Literal[False],
-        **kwargs
+        self, id, _return_http_data_only: typing.Literal[False], **kwargs
     ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
         ...
 
     @overload
     def cloudstorages_actions_retrieve(
-        self,
-        id,
-        _preload_content: typing.Literal[False],
-        **kwargs
+        self, id, _preload_content: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
@@ -742,7 +591,7 @@ class CloudStoragesApi(object):
         id,
         _return_http_data_only: typing.Literal[True],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
@@ -752,18 +601,14 @@ class CloudStoragesApi(object):
         id,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
     def cloudstorages_actions_retrieve(
-        self,
-        id,
-        **kwargs
+        self, id, **kwargs
     ) -> typing.Union[
-            typing.Tuple[object, int, typing.Dict[str, str]],
-            urllib3.HTTPResponse,
-            object
+        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
     ]:
         """Method returns allowed actions for the cloud storage  # noqa: E501
 
@@ -821,43 +666,21 @@ class CloudStoragesApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        kwargs['async_req'] = kwargs.get(
-            'async_req', False
-        )
-        kwargs['_return_http_data_only'] = kwargs.get(
-            '_return_http_data_only', True
-        )
-        kwargs['_preload_content'] = kwargs.get(
-            '_preload_content', True
-        )
-        kwargs['_request_timeout'] = kwargs.get(
-            '_request_timeout', None
-        )
-        kwargs['_check_input_type'] = kwargs.get(
-            '_check_input_type', True
-        )
-        kwargs['_check_return_type'] = kwargs.get(
-            '_check_return_type', True
-        )
-        kwargs['_check_status'] = kwargs.get(
-            '_check_status', True
-        )
-        kwargs['_spec_property_naming'] = kwargs.get(
-            '_spec_property_naming', False
-        )
-        kwargs['_content_type'] = kwargs.get(
-            '_content_type')
-        kwargs['_host_index'] = kwargs.get('_host_index')
-        kwargs['_request_auths'] = kwargs.get('_request_auths', None)
-        kwargs['id'] = \
-            id
+        kwargs["async_req"] = kwargs.get("async_req", False)
+        kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
+        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
+        kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
+        kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
+        kwargs["_check_status"] = kwargs.get("_check_status", True)
+        kwargs["_spec_property_naming"] = kwargs.get("_spec_property_naming", False)
+        kwargs["_content_type"] = kwargs.get("_content_type")
+        kwargs["_host_index"] = kwargs.get("_host_index")
+        kwargs["_request_auths"] = kwargs.get("_request_auths", None)
+        kwargs["id"] = id
         return self.cloudstorages_actions_retrieve_endpoint.call_with_http_info(**kwargs)
 
-    def cloudstorages_actions_retrieve_raw(
-        self,
-        *args,
-        **kwargs
-    ) -> urllib3.HTTPResponse:
+    def cloudstorages_actions_retrieve_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
         """
         The same as cloudstorages_actions_retrieve(), but returns the response unprocessed.
         Equivalent to calling cloudstorages_actions_retrieve with
@@ -907,8 +730,9 @@ class CloudStoragesApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.cloudstorages_actions_retrieve(*args, **kwargs,
-            _preload_content=False, _check_status=False)
+        return self.cloudstorages_actions_retrieve(
+            *args, **kwargs, _preload_content=False, _check_status=False
+        )
 
     @overload
     def cloudstorages_content_retrieve(
@@ -916,7 +740,7 @@ class CloudStoragesApi(object):
         id,
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
-        **kwargs
+        **kwargs,
     ) -> object:
         ...
 
@@ -926,25 +750,19 @@ class CloudStoragesApi(object):
         id,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
         ...
 
     @overload
     def cloudstorages_content_retrieve(
-        self,
-        id,
-        _return_http_data_only: typing.Literal[False],
-        **kwargs
+        self, id, _return_http_data_only: typing.Literal[False], **kwargs
     ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
         ...
 
     @overload
     def cloudstorages_content_retrieve(
-        self,
-        id,
-        _preload_content: typing.Literal[False],
-        **kwargs
+        self, id, _preload_content: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
@@ -954,7 +772,7 @@ class CloudStoragesApi(object):
         id,
         _return_http_data_only: typing.Literal[True],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
@@ -964,18 +782,14 @@ class CloudStoragesApi(object):
         id,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
     def cloudstorages_content_retrieve(
-        self,
-        id,
-        **kwargs
+        self, id, **kwargs
     ) -> typing.Union[
-            typing.Tuple[object, int, typing.Dict[str, str]],
-            urllib3.HTTPResponse,
-            object
+        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
     ]:
         """Method returns a manifest content  # noqa: E501
 
@@ -1033,43 +847,21 @@ class CloudStoragesApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        kwargs['async_req'] = kwargs.get(
-            'async_req', False
-        )
-        kwargs['_return_http_data_only'] = kwargs.get(
-            '_return_http_data_only', True
-        )
-        kwargs['_preload_content'] = kwargs.get(
-            '_preload_content', True
-        )
-        kwargs['_request_timeout'] = kwargs.get(
-            '_request_timeout', None
-        )
-        kwargs['_check_input_type'] = kwargs.get(
-            '_check_input_type', True
-        )
-        kwargs['_check_return_type'] = kwargs.get(
-            '_check_return_type', True
-        )
-        kwargs['_check_status'] = kwargs.get(
-            '_check_status', True
-        )
-        kwargs['_spec_property_naming'] = kwargs.get(
-            '_spec_property_naming', False
-        )
-        kwargs['_content_type'] = kwargs.get(
-            '_content_type')
-        kwargs['_host_index'] = kwargs.get('_host_index')
-        kwargs['_request_auths'] = kwargs.get('_request_auths', None)
-        kwargs['id'] = \
-            id
+        kwargs["async_req"] = kwargs.get("async_req", False)
+        kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
+        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
+        kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
+        kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
+        kwargs["_check_status"] = kwargs.get("_check_status", True)
+        kwargs["_spec_property_naming"] = kwargs.get("_spec_property_naming", False)
+        kwargs["_content_type"] = kwargs.get("_content_type")
+        kwargs["_host_index"] = kwargs.get("_host_index")
+        kwargs["_request_auths"] = kwargs.get("_request_auths", None)
+        kwargs["id"] = id
         return self.cloudstorages_content_retrieve_endpoint.call_with_http_info(**kwargs)
 
-    def cloudstorages_content_retrieve_raw(
-        self,
-        *args,
-        **kwargs
-    ) -> urllib3.HTTPResponse:
+    def cloudstorages_content_retrieve_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
         """
         The same as cloudstorages_content_retrieve(), but returns the response unprocessed.
         Equivalent to calling cloudstorages_content_retrieve with
@@ -1119,8 +911,9 @@ class CloudStoragesApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.cloudstorages_content_retrieve(*args, **kwargs,
-            _preload_content=False, _check_status=False)
+        return self.cloudstorages_content_retrieve(
+            *args, **kwargs, _preload_content=False, _check_status=False
+        )
 
     @overload
     def cloudstorages_create(
@@ -1128,7 +921,7 @@ class CloudStoragesApi(object):
         cloud_storage_write_request,
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
-        **kwargs
+        **kwargs,
     ) -> object:
         ...
 
@@ -1138,25 +931,19 @@ class CloudStoragesApi(object):
         cloud_storage_write_request,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
         ...
 
     @overload
     def cloudstorages_create(
-        self,
-        cloud_storage_write_request,
-        _return_http_data_only: typing.Literal[False],
-        **kwargs
+        self, cloud_storage_write_request, _return_http_data_only: typing.Literal[False], **kwargs
     ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
         ...
 
     @overload
     def cloudstorages_create(
-        self,
-        cloud_storage_write_request,
-        _preload_content: typing.Literal[False],
-        **kwargs
+        self, cloud_storage_write_request, _preload_content: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
@@ -1166,7 +953,7 @@ class CloudStoragesApi(object):
         cloud_storage_write_request,
         _return_http_data_only: typing.Literal[True],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
@@ -1176,18 +963,14 @@ class CloudStoragesApi(object):
         cloud_storage_write_request,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
     def cloudstorages_create(
-        self,
-        cloud_storage_write_request,
-        **kwargs
+        self, cloud_storage_write_request, **kwargs
     ) -> typing.Union[
-            typing.Tuple[object, int, typing.Dict[str, str]],
-            urllib3.HTTPResponse,
-            object
+        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
     ]:
         """Method creates a cloud storage with a specified characteristics  # noqa: E501
 
@@ -1244,43 +1027,21 @@ class CloudStoragesApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        kwargs['async_req'] = kwargs.get(
-            'async_req', False
-        )
-        kwargs['_return_http_data_only'] = kwargs.get(
-            '_return_http_data_only', True
-        )
-        kwargs['_preload_content'] = kwargs.get(
-            '_preload_content', True
-        )
-        kwargs['_request_timeout'] = kwargs.get(
-            '_request_timeout', None
-        )
-        kwargs['_check_input_type'] = kwargs.get(
-            '_check_input_type', True
-        )
-        kwargs['_check_return_type'] = kwargs.get(
-            '_check_return_type', True
-        )
-        kwargs['_check_status'] = kwargs.get(
-            '_check_status', True
-        )
-        kwargs['_spec_property_naming'] = kwargs.get(
-            '_spec_property_naming', False
-        )
-        kwargs['_content_type'] = kwargs.get(
-            '_content_type')
-        kwargs['_host_index'] = kwargs.get('_host_index')
-        kwargs['_request_auths'] = kwargs.get('_request_auths', None)
-        kwargs['cloud_storage_write_request'] = \
-            cloud_storage_write_request
+        kwargs["async_req"] = kwargs.get("async_req", False)
+        kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
+        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
+        kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
+        kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
+        kwargs["_check_status"] = kwargs.get("_check_status", True)
+        kwargs["_spec_property_naming"] = kwargs.get("_spec_property_naming", False)
+        kwargs["_content_type"] = kwargs.get("_content_type")
+        kwargs["_host_index"] = kwargs.get("_host_index")
+        kwargs["_request_auths"] = kwargs.get("_request_auths", None)
+        kwargs["cloud_storage_write_request"] = cloud_storage_write_request
         return self.cloudstorages_create_endpoint.call_with_http_info(**kwargs)
 
-    def cloudstorages_create_raw(
-        self,
-        *args,
-        **kwargs
-    ) -> urllib3.HTTPResponse:
+    def cloudstorages_create_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
         """
         The same as cloudstorages_create(), but returns the response unprocessed.
         Equivalent to calling cloudstorages_create with
@@ -1329,8 +1090,9 @@ class CloudStoragesApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.cloudstorages_create(*args, **kwargs,
-            _preload_content=False, _check_status=False)
+        return self.cloudstorages_create(
+            *args, **kwargs, _preload_content=False, _check_status=False
+        )
 
     @overload
     def cloudstorages_destroy(
@@ -1338,7 +1100,7 @@ class CloudStoragesApi(object):
         id,
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
-        **kwargs
+        **kwargs,
     ) -> None:
         ...
 
@@ -1348,25 +1110,19 @@ class CloudStoragesApi(object):
         id,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
         ...
 
     @overload
     def cloudstorages_destroy(
-        self,
-        id,
-        _return_http_data_only: typing.Literal[False],
-        **kwargs
+        self, id, _return_http_data_only: typing.Literal[False], **kwargs
     ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
         ...
 
     @overload
     def cloudstorages_destroy(
-        self,
-        id,
-        _preload_content: typing.Literal[False],
-        **kwargs
+        self, id, _preload_content: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
@@ -1376,7 +1132,7 @@ class CloudStoragesApi(object):
         id,
         _return_http_data_only: typing.Literal[True],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
@@ -1386,19 +1142,13 @@ class CloudStoragesApi(object):
         id,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
     def cloudstorages_destroy(
-        self,
-        id,
-        **kwargs
-    ) -> typing.Union[
-            typing.Tuple[None, int, typing.Dict[str, str]],
-            urllib3.HTTPResponse,
-            None
-    ]:
+        self, id, **kwargs
+    ) -> typing.Union[typing.Tuple[None, int, typing.Dict[str, str]], urllib3.HTTPResponse, None]:
         """Method deletes a specific cloud storage  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
@@ -1454,43 +1204,21 @@ class CloudStoragesApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        kwargs['async_req'] = kwargs.get(
-            'async_req', False
-        )
-        kwargs['_return_http_data_only'] = kwargs.get(
-            '_return_http_data_only', True
-        )
-        kwargs['_preload_content'] = kwargs.get(
-            '_preload_content', True
-        )
-        kwargs['_request_timeout'] = kwargs.get(
-            '_request_timeout', None
-        )
-        kwargs['_check_input_type'] = kwargs.get(
-            '_check_input_type', True
-        )
-        kwargs['_check_return_type'] = kwargs.get(
-            '_check_return_type', True
-        )
-        kwargs['_check_status'] = kwargs.get(
-            '_check_status', True
-        )
-        kwargs['_spec_property_naming'] = kwargs.get(
-            '_spec_property_naming', False
-        )
-        kwargs['_content_type'] = kwargs.get(
-            '_content_type')
-        kwargs['_host_index'] = kwargs.get('_host_index')
-        kwargs['_request_auths'] = kwargs.get('_request_auths', None)
-        kwargs['id'] = \
-            id
+        kwargs["async_req"] = kwargs.get("async_req", False)
+        kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
+        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
+        kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
+        kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
+        kwargs["_check_status"] = kwargs.get("_check_status", True)
+        kwargs["_spec_property_naming"] = kwargs.get("_spec_property_naming", False)
+        kwargs["_content_type"] = kwargs.get("_content_type")
+        kwargs["_host_index"] = kwargs.get("_host_index")
+        kwargs["_request_auths"] = kwargs.get("_request_auths", None)
+        kwargs["id"] = id
         return self.cloudstorages_destroy_endpoint.call_with_http_info(**kwargs)
 
-    def cloudstorages_destroy_raw(
-        self,
-        *args,
-        **kwargs
-    ) -> urllib3.HTTPResponse:
+    def cloudstorages_destroy_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
         """
         The same as cloudstorages_destroy(), but returns the response unprocessed.
         Equivalent to calling cloudstorages_destroy with
@@ -1539,15 +1267,16 @@ class CloudStoragesApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.cloudstorages_destroy(*args, **kwargs,
-            _preload_content=False, _check_status=False)
+        return self.cloudstorages_destroy(
+            *args, **kwargs, _preload_content=False, _check_status=False
+        )
 
     @overload
     def cloudstorages_list(
         self,
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
-        **kwargs
+        **kwargs,
     ) -> object:
         ...
 
@@ -1556,23 +1285,19 @@ class CloudStoragesApi(object):
         self,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
         ...
 
     @overload
     def cloudstorages_list(
-        self,
-        _return_http_data_only: typing.Literal[False],
-        **kwargs
+        self, _return_http_data_only: typing.Literal[False], **kwargs
     ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
         ...
 
     @overload
     def cloudstorages_list(
-        self,
-        _preload_content: typing.Literal[False],
-        **kwargs
+        self, _preload_content: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
@@ -1581,7 +1306,7 @@ class CloudStoragesApi(object):
         self,
         _return_http_data_only: typing.Literal[True],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
@@ -1590,17 +1315,14 @@ class CloudStoragesApi(object):
         self,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
     def cloudstorages_list(
-        self,
-        **kwargs
+        self, **kwargs
     ) -> typing.Union[
-            typing.Tuple[object, int, typing.Dict[str, str]],
-            urllib3.HTTPResponse,
-            object
+        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
     ]:
         """Returns a paginated list of storages according to query parameters  # noqa: E501
 
@@ -1660,41 +1382,20 @@ class CloudStoragesApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        kwargs['async_req'] = kwargs.get(
-            'async_req', False
-        )
-        kwargs['_return_http_data_only'] = kwargs.get(
-            '_return_http_data_only', True
-        )
-        kwargs['_preload_content'] = kwargs.get(
-            '_preload_content', True
-        )
-        kwargs['_request_timeout'] = kwargs.get(
-            '_request_timeout', None
-        )
-        kwargs['_check_input_type'] = kwargs.get(
-            '_check_input_type', True
-        )
-        kwargs['_check_return_type'] = kwargs.get(
-            '_check_return_type', True
-        )
-        kwargs['_check_status'] = kwargs.get(
-            '_check_status', True
-        )
-        kwargs['_spec_property_naming'] = kwargs.get(
-            '_spec_property_naming', False
-        )
-        kwargs['_content_type'] = kwargs.get(
-            '_content_type')
-        kwargs['_host_index'] = kwargs.get('_host_index')
-        kwargs['_request_auths'] = kwargs.get('_request_auths', None)
+        kwargs["async_req"] = kwargs.get("async_req", False)
+        kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
+        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
+        kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
+        kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
+        kwargs["_check_status"] = kwargs.get("_check_status", True)
+        kwargs["_spec_property_naming"] = kwargs.get("_spec_property_naming", False)
+        kwargs["_content_type"] = kwargs.get("_content_type")
+        kwargs["_host_index"] = kwargs.get("_host_index")
+        kwargs["_request_auths"] = kwargs.get("_request_auths", None)
         return self.cloudstorages_list_endpoint.call_with_http_info(**kwargs)
 
-    def cloudstorages_list_raw(
-        self,
-        *args,
-        **kwargs
-    ) -> urllib3.HTTPResponse:
+    def cloudstorages_list_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
         """
         The same as cloudstorages_list(), but returns the response unprocessed.
         Equivalent to calling cloudstorages_list with
@@ -1746,8 +1447,7 @@ class CloudStoragesApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.cloudstorages_list(*args, **kwargs,
-            _preload_content=False, _check_status=False)
+        return self.cloudstorages_list(*args, **kwargs, _preload_content=False, _check_status=False)
 
     @overload
     def cloudstorages_partial_update(
@@ -1755,7 +1455,7 @@ class CloudStoragesApi(object):
         id,
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
-        **kwargs
+        **kwargs,
     ) -> object:
         ...
 
@@ -1765,25 +1465,19 @@ class CloudStoragesApi(object):
         id,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
         ...
 
     @overload
     def cloudstorages_partial_update(
-        self,
-        id,
-        _return_http_data_only: typing.Literal[False],
-        **kwargs
+        self, id, _return_http_data_only: typing.Literal[False], **kwargs
     ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
         ...
 
     @overload
     def cloudstorages_partial_update(
-        self,
-        id,
-        _preload_content: typing.Literal[False],
-        **kwargs
+        self, id, _preload_content: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
@@ -1793,7 +1487,7 @@ class CloudStoragesApi(object):
         id,
         _return_http_data_only: typing.Literal[True],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
@@ -1803,18 +1497,14 @@ class CloudStoragesApi(object):
         id,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
     def cloudstorages_partial_update(
-        self,
-        id,
-        **kwargs
+        self, id, **kwargs
     ) -> typing.Union[
-            typing.Tuple[object, int, typing.Dict[str, str]],
-            urllib3.HTTPResponse,
-            object
+        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
     ]:
         """Methods does a partial update of chosen fields in a cloud storage instance  # noqa: E501
 
@@ -1872,43 +1562,21 @@ class CloudStoragesApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        kwargs['async_req'] = kwargs.get(
-            'async_req', False
-        )
-        kwargs['_return_http_data_only'] = kwargs.get(
-            '_return_http_data_only', True
-        )
-        kwargs['_preload_content'] = kwargs.get(
-            '_preload_content', True
-        )
-        kwargs['_request_timeout'] = kwargs.get(
-            '_request_timeout', None
-        )
-        kwargs['_check_input_type'] = kwargs.get(
-            '_check_input_type', True
-        )
-        kwargs['_check_return_type'] = kwargs.get(
-            '_check_return_type', True
-        )
-        kwargs['_check_status'] = kwargs.get(
-            '_check_status', True
-        )
-        kwargs['_spec_property_naming'] = kwargs.get(
-            '_spec_property_naming', False
-        )
-        kwargs['_content_type'] = kwargs.get(
-            '_content_type')
-        kwargs['_host_index'] = kwargs.get('_host_index')
-        kwargs['_request_auths'] = kwargs.get('_request_auths', None)
-        kwargs['id'] = \
-            id
+        kwargs["async_req"] = kwargs.get("async_req", False)
+        kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
+        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
+        kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
+        kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
+        kwargs["_check_status"] = kwargs.get("_check_status", True)
+        kwargs["_spec_property_naming"] = kwargs.get("_spec_property_naming", False)
+        kwargs["_content_type"] = kwargs.get("_content_type")
+        kwargs["_host_index"] = kwargs.get("_host_index")
+        kwargs["_request_auths"] = kwargs.get("_request_auths", None)
+        kwargs["id"] = id
         return self.cloudstorages_partial_update_endpoint.call_with_http_info(**kwargs)
 
-    def cloudstorages_partial_update_raw(
-        self,
-        *args,
-        **kwargs
-    ) -> urllib3.HTTPResponse:
+    def cloudstorages_partial_update_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
         """
         The same as cloudstorages_partial_update(), but returns the response unprocessed.
         Equivalent to calling cloudstorages_partial_update with
@@ -1958,8 +1626,9 @@ class CloudStoragesApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.cloudstorages_partial_update(*args, **kwargs,
-            _preload_content=False, _check_status=False)
+        return self.cloudstorages_partial_update(
+            *args, **kwargs, _preload_content=False, _check_status=False
+        )
 
     @overload
     def cloudstorages_preview_retrieve(
@@ -1967,7 +1636,7 @@ class CloudStoragesApi(object):
         id,
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
-        **kwargs
+        **kwargs,
     ) -> None:
         ...
 
@@ -1977,25 +1646,19 @@ class CloudStoragesApi(object):
         id,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
         ...
 
     @overload
     def cloudstorages_preview_retrieve(
-        self,
-        id,
-        _return_http_data_only: typing.Literal[False],
-        **kwargs
+        self, id, _return_http_data_only: typing.Literal[False], **kwargs
     ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
         ...
 
     @overload
     def cloudstorages_preview_retrieve(
-        self,
-        id,
-        _preload_content: typing.Literal[False],
-        **kwargs
+        self, id, _preload_content: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
@@ -2005,7 +1668,7 @@ class CloudStoragesApi(object):
         id,
         _return_http_data_only: typing.Literal[True],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
@@ -2015,19 +1678,13 @@ class CloudStoragesApi(object):
         id,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
     def cloudstorages_preview_retrieve(
-        self,
-        id,
-        **kwargs
-    ) -> typing.Union[
-            typing.Tuple[None, int, typing.Dict[str, str]],
-            urllib3.HTTPResponse,
-            None
-    ]:
+        self, id, **kwargs
+    ) -> typing.Union[typing.Tuple[None, int, typing.Dict[str, str]], urllib3.HTTPResponse, None]:
         """Method returns a preview image from a cloud storage  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
@@ -2083,43 +1740,21 @@ class CloudStoragesApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        kwargs['async_req'] = kwargs.get(
-            'async_req', False
-        )
-        kwargs['_return_http_data_only'] = kwargs.get(
-            '_return_http_data_only', True
-        )
-        kwargs['_preload_content'] = kwargs.get(
-            '_preload_content', True
-        )
-        kwargs['_request_timeout'] = kwargs.get(
-            '_request_timeout', None
-        )
-        kwargs['_check_input_type'] = kwargs.get(
-            '_check_input_type', True
-        )
-        kwargs['_check_return_type'] = kwargs.get(
-            '_check_return_type', True
-        )
-        kwargs['_check_status'] = kwargs.get(
-            '_check_status', True
-        )
-        kwargs['_spec_property_naming'] = kwargs.get(
-            '_spec_property_naming', False
-        )
-        kwargs['_content_type'] = kwargs.get(
-            '_content_type')
-        kwargs['_host_index'] = kwargs.get('_host_index')
-        kwargs['_request_auths'] = kwargs.get('_request_auths', None)
-        kwargs['id'] = \
-            id
+        kwargs["async_req"] = kwargs.get("async_req", False)
+        kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
+        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
+        kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
+        kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
+        kwargs["_check_status"] = kwargs.get("_check_status", True)
+        kwargs["_spec_property_naming"] = kwargs.get("_spec_property_naming", False)
+        kwargs["_content_type"] = kwargs.get("_content_type")
+        kwargs["_host_index"] = kwargs.get("_host_index")
+        kwargs["_request_auths"] = kwargs.get("_request_auths", None)
+        kwargs["id"] = id
         return self.cloudstorages_preview_retrieve_endpoint.call_with_http_info(**kwargs)
 
-    def cloudstorages_preview_retrieve_raw(
-        self,
-        *args,
-        **kwargs
-    ) -> urllib3.HTTPResponse:
+    def cloudstorages_preview_retrieve_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
         """
         The same as cloudstorages_preview_retrieve(), but returns the response unprocessed.
         Equivalent to calling cloudstorages_preview_retrieve with
@@ -2168,8 +1803,9 @@ class CloudStoragesApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.cloudstorages_preview_retrieve(*args, **kwargs,
-            _preload_content=False, _check_status=False)
+        return self.cloudstorages_preview_retrieve(
+            *args, **kwargs, _preload_content=False, _check_status=False
+        )
 
     @overload
     def cloudstorages_retrieve(
@@ -2177,7 +1813,7 @@ class CloudStoragesApi(object):
         id,
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
-        **kwargs
+        **kwargs,
     ) -> object:
         ...
 
@@ -2187,25 +1823,19 @@ class CloudStoragesApi(object):
         id,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
         ...
 
     @overload
     def cloudstorages_retrieve(
-        self,
-        id,
-        _return_http_data_only: typing.Literal[False],
-        **kwargs
+        self, id, _return_http_data_only: typing.Literal[False], **kwargs
     ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
         ...
 
     @overload
     def cloudstorages_retrieve(
-        self,
-        id,
-        _preload_content: typing.Literal[False],
-        **kwargs
+        self, id, _preload_content: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
@@ -2215,7 +1845,7 @@ class CloudStoragesApi(object):
         id,
         _return_http_data_only: typing.Literal[True],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
@@ -2225,18 +1855,14 @@ class CloudStoragesApi(object):
         id,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
     def cloudstorages_retrieve(
-        self,
-        id,
-        **kwargs
+        self, id, **kwargs
     ) -> typing.Union[
-            typing.Tuple[object, int, typing.Dict[str, str]],
-            urllib3.HTTPResponse,
-            object
+        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
     ]:
         """Method returns details of a specific cloud storage  # noqa: E501
 
@@ -2293,43 +1919,21 @@ class CloudStoragesApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        kwargs['async_req'] = kwargs.get(
-            'async_req', False
-        )
-        kwargs['_return_http_data_only'] = kwargs.get(
-            '_return_http_data_only', True
-        )
-        kwargs['_preload_content'] = kwargs.get(
-            '_preload_content', True
-        )
-        kwargs['_request_timeout'] = kwargs.get(
-            '_request_timeout', None
-        )
-        kwargs['_check_input_type'] = kwargs.get(
-            '_check_input_type', True
-        )
-        kwargs['_check_return_type'] = kwargs.get(
-            '_check_return_type', True
-        )
-        kwargs['_check_status'] = kwargs.get(
-            '_check_status', True
-        )
-        kwargs['_spec_property_naming'] = kwargs.get(
-            '_spec_property_naming', False
-        )
-        kwargs['_content_type'] = kwargs.get(
-            '_content_type')
-        kwargs['_host_index'] = kwargs.get('_host_index')
-        kwargs['_request_auths'] = kwargs.get('_request_auths', None)
-        kwargs['id'] = \
-            id
+        kwargs["async_req"] = kwargs.get("async_req", False)
+        kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
+        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
+        kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
+        kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
+        kwargs["_check_status"] = kwargs.get("_check_status", True)
+        kwargs["_spec_property_naming"] = kwargs.get("_spec_property_naming", False)
+        kwargs["_content_type"] = kwargs.get("_content_type")
+        kwargs["_host_index"] = kwargs.get("_host_index")
+        kwargs["_request_auths"] = kwargs.get("_request_auths", None)
+        kwargs["id"] = id
         return self.cloudstorages_retrieve_endpoint.call_with_http_info(**kwargs)
 
-    def cloudstorages_retrieve_raw(
-        self,
-        *args,
-        **kwargs
-    ) -> urllib3.HTTPResponse:
+    def cloudstorages_retrieve_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
         """
         The same as cloudstorages_retrieve(), but returns the response unprocessed.
         Equivalent to calling cloudstorages_retrieve with
@@ -2378,8 +1982,9 @@ class CloudStoragesApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.cloudstorages_retrieve(*args, **kwargs,
-            _preload_content=False, _check_status=False)
+        return self.cloudstorages_retrieve(
+            *args, **kwargs, _preload_content=False, _check_status=False
+        )
 
     @overload
     def cloudstorages_status_retrieve(
@@ -2387,7 +1992,7 @@ class CloudStoragesApi(object):
         id,
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
-        **kwargs
+        **kwargs,
     ) -> object:
         ...
 
@@ -2397,25 +2002,19 @@ class CloudStoragesApi(object):
         id,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
         ...
 
     @overload
     def cloudstorages_status_retrieve(
-        self,
-        id,
-        _return_http_data_only: typing.Literal[False],
-        **kwargs
+        self, id, _return_http_data_only: typing.Literal[False], **kwargs
     ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
         ...
 
     @overload
     def cloudstorages_status_retrieve(
-        self,
-        id,
-        _preload_content: typing.Literal[False],
-        **kwargs
+        self, id, _preload_content: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
@@ -2425,7 +2024,7 @@ class CloudStoragesApi(object):
         id,
         _return_http_data_only: typing.Literal[True],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
@@ -2435,18 +2034,14 @@ class CloudStoragesApi(object):
         id,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
     def cloudstorages_status_retrieve(
-        self,
-        id,
-        **kwargs
+        self, id, **kwargs
     ) -> typing.Union[
-            typing.Tuple[object, int, typing.Dict[str, str]],
-            urllib3.HTTPResponse,
-            object
+        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
     ]:
         """Method returns a cloud storage status  # noqa: E501
 
@@ -2503,43 +2098,21 @@ class CloudStoragesApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        kwargs['async_req'] = kwargs.get(
-            'async_req', False
-        )
-        kwargs['_return_http_data_only'] = kwargs.get(
-            '_return_http_data_only', True
-        )
-        kwargs['_preload_content'] = kwargs.get(
-            '_preload_content', True
-        )
-        kwargs['_request_timeout'] = kwargs.get(
-            '_request_timeout', None
-        )
-        kwargs['_check_input_type'] = kwargs.get(
-            '_check_input_type', True
-        )
-        kwargs['_check_return_type'] = kwargs.get(
-            '_check_return_type', True
-        )
-        kwargs['_check_status'] = kwargs.get(
-            '_check_status', True
-        )
-        kwargs['_spec_property_naming'] = kwargs.get(
-            '_spec_property_naming', False
-        )
-        kwargs['_content_type'] = kwargs.get(
-            '_content_type')
-        kwargs['_host_index'] = kwargs.get('_host_index')
-        kwargs['_request_auths'] = kwargs.get('_request_auths', None)
-        kwargs['id'] = \
-            id
+        kwargs["async_req"] = kwargs.get("async_req", False)
+        kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
+        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
+        kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
+        kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
+        kwargs["_check_status"] = kwargs.get("_check_status", True)
+        kwargs["_spec_property_naming"] = kwargs.get("_spec_property_naming", False)
+        kwargs["_content_type"] = kwargs.get("_content_type")
+        kwargs["_host_index"] = kwargs.get("_host_index")
+        kwargs["_request_auths"] = kwargs.get("_request_auths", None)
+        kwargs["id"] = id
         return self.cloudstorages_status_retrieve_endpoint.call_with_http_info(**kwargs)
 
-    def cloudstorages_status_retrieve_raw(
-        self,
-        *args,
-        **kwargs
-    ) -> urllib3.HTTPResponse:
+    def cloudstorages_status_retrieve_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
         """
         The same as cloudstorages_status_retrieve(), but returns the response unprocessed.
         Equivalent to calling cloudstorages_status_retrieve with
@@ -2588,6 +2161,6 @@ class CloudStoragesApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.cloudstorages_status_retrieve(*args, **kwargs,
-            _preload_content=False, _check_status=False)
-
+        return self.cloudstorages_status_retrieve(
+            *args, **kwargs, _preload_content=False, _check_status=False
+        )

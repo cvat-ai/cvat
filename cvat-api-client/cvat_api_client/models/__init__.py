@@ -77,8 +77,12 @@ from cvat_api_client.model.paginated_polymorphic_project_list import PaginatedPo
 from cvat_api_client.model.paginated_task_read_list import PaginatedTaskReadList
 from cvat_api_client.model.password_change_request import PasswordChangeRequest
 from cvat_api_client.model.password_reset_confirm_request import PasswordResetConfirmRequest
-from cvat_api_client.model.password_reset_serializer_ex_request import PasswordResetSerializerExRequest
-from cvat_api_client.model.patched_cloud_storage_write_request import PatchedCloudStorageWriteRequest
+from cvat_api_client.model.password_reset_serializer_ex_request import (
+    PasswordResetSerializerExRequest,
+)
+from cvat_api_client.model.patched_cloud_storage_write_request import (
+    PatchedCloudStorageWriteRequest,
+)
 from cvat_api_client.model.patched_comment_write_request import PatchedCommentWriteRequest
 from cvat_api_client.model.patched_invitation_write_request import PatchedInvitationWriteRequest
 from cvat_api_client.model.patched_issue_write_request import PatchedIssueWriteRequest
@@ -88,7 +92,10 @@ from cvat_api_client.model.patched_membership_write_request import PatchedMember
 from cvat_api_client.model.patched_organization_write_request import PatchedOrganizationWriteRequest
 from cvat_api_client.model.patched_project_write_request import PatchedProjectWriteRequest
 from cvat_api_client.model.patched_task_write_request import PatchedTaskWriteRequest
-from cvat_api_client.model.patched_task_write_request_target_storage import PatchedTaskWriteRequestTargetStorage
+from cvat_api_client.model.patched_task_write_request_target_storage import (
+    PatchedTaskWriteRequestTargetStorage,
+)
+from cvat_api_client.model.patched_user_request import PatchedUserRequest
 from cvat_api_client.model.plugins import Plugins
 from cvat_api_client.model.polymorphic_project import PolymorphicProject
 from cvat_api_client.model.project_file_request import ProjectFileRequest

@@ -11,16 +11,18 @@
 
 from __future__ import annotations
 
-import typing
-
 import re  # noqa: F401
 import sys  # noqa: F401
+import typing
+from typing import TYPE_CHECKING
 
+from cvat_api_client.exceptions import ApiAttributeError
 from cvat_api_client.model_utils import (  # noqa: F401
     ApiTypeError,
     ModelComposed,
     ModelNormal,
     ModelSimple,
+    OpenApiModel,
     cached_property,
     change_keys_js_to_python,
     convert_js_args_to_python_args,
@@ -29,16 +31,22 @@ from cvat_api_client.model_utils import (  # noqa: F401
     file_type,
     none_type,
     validate_get_composed_info,
-    OpenApiModel
 )
-from cvat_api_client.exceptions import ApiAttributeError
+
+if TYPE_CHECKING:
+    # Enable introspection. Can't work normally due to cyclic imports
+    from cvat_api_client.apis import *
+    from cvat_api_client.models import *
 
 
 def lazy_import():
     from cvat_api_client.model.patched_label_request import PatchedLabelRequest
-    from cvat_api_client.model.patched_task_write_request_target_storage import PatchedTaskWriteRequestTargetStorage
-    globals()['PatchedLabelRequest'] = PatchedLabelRequest
-    globals()['PatchedTaskWriteRequestTargetStorage'] = PatchedTaskWriteRequestTargetStorage
+    from cvat_api_client.model.patched_task_write_request_target_storage import (
+        PatchedTaskWriteRequestTargetStorage,
+    )
+
+    globals()["PatchedLabelRequest"] = PatchedLabelRequest
+    globals()["PatchedTaskWriteRequestTargetStorage"] = PatchedTaskWriteRequestTargetStorage
 
 
 class TaskWriteRequest(ModelNormal):
@@ -89,19 +97,18 @@ class TaskWriteRequest(ModelNormal):
 
     """
 
-    allowed_values = {
-    }
+    allowed_values = {}
 
     validations = {
-        ('name',): {
-            'max_length': 256,
-            'min_length': 1,
+        ("name",): {
+            "max_length": 256,
+            "min_length": 1,
         },
-        ('bug_tracker',): {
-            'max_length': 2000,
+        ("bug_tracker",): {
+            "max_length": 2000,
         },
-        ('subset',): {
-            'max_length': 64,
+        ("subset",): {
+            "max_length": 64,
         },
     }
 
@@ -112,7 +119,17 @@ class TaskWriteRequest(ModelNormal):
         of type self, this must run after the class is loaded
         """
         lazy_import()
-        return (bool, date, datetime, dict, float, int, list, str, none_type,)  # noqa: E501
+        return (
+            bool,
+            date,
+            datetime,
+            dict,
+            float,
+            int,
+            list,
+            str,
+            none_type,
+        )  # noqa: E501
 
     _nullable = False
 
@@ -128,98 +145,106 @@ class TaskWriteRequest(ModelNormal):
         """
         lazy_import()
         return {
-            'name': (str,),  # noqa: E501
-            'project_id': (int, none_type,),  # noqa: E501
-            'owner_id': (int, none_type,),  # noqa: E501
-            'assignee_id': (int, none_type,),  # noqa: E501
-            'bug_tracker': (str,),  # noqa: E501
-            'overlap': (int, none_type,),  # noqa: E501
-            'segment_size': (int,),  # noqa: E501
-            'labels': ([PatchedLabelRequest],),  # noqa: E501
-            'subset': (str,),  # noqa: E501
-            'target_storage': (PatchedTaskWriteRequestTargetStorage,),  # noqa: E501
-            'source_storage': (PatchedTaskWriteRequestTargetStorage,),  # noqa: E501
+            "name": (str,),  # noqa: E501
+            "project_id": (
+                int,
+                none_type,
+            ),  # noqa: E501
+            "owner_id": (
+                int,
+                none_type,
+            ),  # noqa: E501
+            "assignee_id": (
+                int,
+                none_type,
+            ),  # noqa: E501
+            "bug_tracker": (str,),  # noqa: E501
+            "overlap": (
+                int,
+                none_type,
+            ),  # noqa: E501
+            "segment_size": (int,),  # noqa: E501
+            "labels": ([PatchedLabelRequest],),  # noqa: E501
+            "subset": (str,),  # noqa: E501
+            "target_storage": (PatchedTaskWriteRequestTargetStorage,),  # noqa: E501
+            "source_storage": (PatchedTaskWriteRequestTargetStorage,),  # noqa: E501
         }
 
     @cached_property
     def discriminator():
         return None
 
-
     # member type declarations
-    name: str # noqa: E501
+    name: str  # noqa: E501
     """
     """
 
-    project_id: typing.Optional[int] # noqa: E501
+    project_id: typing.Optional[int]  # noqa: E501
     """
     [optional]
     """
 
-    owner_id: typing.Optional[int] # noqa: E501
+    owner_id: typing.Optional[int]  # noqa: E501
     """
     [optional]
     """
 
-    assignee_id: typing.Optional[int] # noqa: E501
+    assignee_id: typing.Optional[int]  # noqa: E501
     """
     [optional]
     """
 
-    bug_tracker: str # noqa: E501
+    bug_tracker: str  # noqa: E501
     """
     [optional]
     """
 
-    overlap: typing.Optional[int] # noqa: E501
+    overlap: typing.Optional[int]  # noqa: E501
     """
     [optional]
     """
 
-    segment_size: int # noqa: E501
+    segment_size: int  # noqa: E501
     """
     [optional]
     """
 
-    labels: typing.List[typing.ForwardRef("PatchedLabelRequest")] # noqa: E501
+    labels: typing.List["PatchedLabelRequest"]  # noqa: E501
     """
     [optional]
     [PatchedLabelRequest]
     """
 
-    subset: str # noqa: E501
+    subset: str  # noqa: E501
     """
     [optional]
     """
 
-    target_storage: typing.Optional[typing.ForwardRef("PatchedTaskWriteRequestTargetStorage")] # noqa: E501
+    target_storage: typing.Optional["PatchedTaskWriteRequestTargetStorage"]  # noqa: E501
     """
     [optional]
     """
 
-    source_storage: typing.Optional[typing.ForwardRef("PatchedTaskWriteRequestTargetStorage")] # noqa: E501
+    source_storage: typing.Optional["PatchedTaskWriteRequestTargetStorage"]  # noqa: E501
     """
     [optional]
     """
-
-
 
     attribute_map = {
-        'name': 'name',  # noqa: E501
-        'project_id': 'project_id',  # noqa: E501
-        'owner_id': 'owner_id',  # noqa: E501
-        'assignee_id': 'assignee_id',  # noqa: E501
-        'bug_tracker': 'bug_tracker',  # noqa: E501
-        'overlap': 'overlap',  # noqa: E501
-        'segment_size': 'segment_size',  # noqa: E501
-        'labels': 'labels',  # noqa: E501
-        'subset': 'subset',  # noqa: E501
-        'target_storage': 'target_storage',  # noqa: E501
-        'source_storage': 'source_storage',  # noqa: E501
+        "name": "name",  # noqa: E501
+        "project_id": "project_id",  # noqa: E501
+        "owner_id": "owner_id",  # noqa: E501
+        "assignee_id": "assignee_id",  # noqa: E501
+        "bug_tracker": "bug_tracker",  # noqa: E501
+        "overlap": "overlap",  # noqa: E501
+        "segment_size": "segment_size",  # noqa: E501
+        "labels": "labels",  # noqa: E501
+        "subset": "subset",  # noqa: E501
+        "target_storage": "target_storage",  # noqa: E501
+        "source_storage": "source_storage",  # noqa: E501
     }
 
-    read_only_vars = {
-    }
+    read_only_vars = {}
 
     _composed_schemas = {}
 
@@ -274,11 +299,11 @@ class TaskWriteRequest(ModelNormal):
             source_storage (PatchedTaskWriteRequestTargetStorage): [optional]  # noqa: E501
         """
 
-        _check_type = kwargs.pop('_check_type', True)
-        _spec_property_naming = kwargs.pop('_spec_property_naming', True)
-        _path_to_item = kwargs.pop('_path_to_item', ())
-        _configuration = kwargs.pop('_configuration', None)
-        _visited_composed_classes = kwargs.pop('_visited_composed_classes', ())
+        _check_type = kwargs.pop("_check_type", True)
+        _spec_property_naming = kwargs.pop("_spec_property_naming", True)
+        _path_to_item = kwargs.pop("_path_to_item", ())
+        _configuration = kwargs.pop("_configuration", None)
+        _visited_composed_classes = kwargs.pop("_visited_composed_classes", ())
 
         self = super(OpenApiModel, cls).__new__(cls)
 
@@ -288,7 +313,8 @@ class TaskWriteRequest(ModelNormal):
                     kwargs.update(arg)
                 else:
                     raise ApiTypeError(
-                        "Invalid positional arguments=%s passed to %s. Remove those invalid positional arguments." % (
+                        "Invalid positional arguments=%s passed to %s. Remove those invalid positional arguments."
+                        % (
                             args,
                             self.__class__.__name__,
                         ),
@@ -305,23 +331,27 @@ class TaskWriteRequest(ModelNormal):
 
         self.name = name
         for var_name, var_value in kwargs.items():
-            if var_name not in self.attribute_map and \
-                        self._configuration is not None and \
-                        self._configuration.discard_unknown_keys and \
-                        self.additional_properties_type is None:
+            if (
+                var_name not in self.attribute_map
+                and self._configuration is not None
+                and self._configuration.discard_unknown_keys
+                and self.additional_properties_type is None
+            ):
                 # discard variable.
                 continue
             setattr(self, var_name, var_value)
         return self
 
-    required_properties = set([
-        '_data_store',
-        '_check_type',
-        '_spec_property_naming',
-        '_path_to_item',
-        '_configuration',
-        '_visited_composed_classes',
-    ])
+    required_properties = set(
+        [
+            "_data_store",
+            "_check_type",
+            "_spec_property_naming",
+            "_path_to_item",
+            "_configuration",
+            "_visited_composed_classes",
+        ]
+    )
 
     @convert_js_args_to_python_args
     def __init__(self, name, *args, **kwargs):  # noqa: E501
@@ -373,11 +403,11 @@ class TaskWriteRequest(ModelNormal):
             source_storage (PatchedTaskWriteRequestTargetStorage): [optional]  # noqa: E501
         """
 
-        _check_type = kwargs.pop('_check_type', True)
-        _spec_property_naming = kwargs.pop('_spec_property_naming', False)
-        _path_to_item = kwargs.pop('_path_to_item', ())
-        _configuration = kwargs.pop('_configuration', None)
-        _visited_composed_classes = kwargs.pop('_visited_composed_classes', ())
+        _check_type = kwargs.pop("_check_type", True)
+        _spec_property_naming = kwargs.pop("_spec_property_naming", False)
+        _path_to_item = kwargs.pop("_path_to_item", ())
+        _configuration = kwargs.pop("_configuration", None)
+        _visited_composed_classes = kwargs.pop("_visited_composed_classes", ())
 
         if args:
             for arg in args:
@@ -385,7 +415,8 @@ class TaskWriteRequest(ModelNormal):
                     kwargs.update(arg)
                 else:
                     raise ApiTypeError(
-                        "Invalid positional arguments=%s passed to %s. Remove those invalid positional arguments." % (
+                        "Invalid positional arguments=%s passed to %s. Remove those invalid positional arguments."
+                        % (
                             args,
                             self.__class__.__name__,
                         ),
@@ -402,14 +433,17 @@ class TaskWriteRequest(ModelNormal):
 
         self.name = name
         for var_name, var_value in kwargs.items():
-            if var_name not in self.attribute_map and \
-                        self._configuration is not None and \
-                        self._configuration.discard_unknown_keys and \
-                        self.additional_properties_type is None:
+            if (
+                var_name not in self.attribute_map
+                and self._configuration is not None
+                and self._configuration.discard_unknown_keys
+                and self.additional_properties_type is None
+            ):
                 # discard variable.
                 continue
             setattr(self, var_name, var_value)
             if var_name in self.read_only_vars:
-                raise ApiAttributeError(f"`{var_name}` is a read-only attribute. Use `from_openapi_data` to instantiate "
-                                     f"class with read only attributes.")
-
+                raise ApiAttributeError(
+                    f"`{var_name}` is a read-only attribute. Use `from_openapi_data` to instantiate "
+                    f"class with read only attributes."
+                )

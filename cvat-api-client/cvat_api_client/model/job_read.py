@@ -11,16 +11,18 @@
 
 from __future__ import annotations
 
-import typing
-
 import re  # noqa: F401
 import sys  # noqa: F401
+import typing
+from typing import TYPE_CHECKING
 
+from cvat_api_client.exceptions import ApiAttributeError
 from cvat_api_client.model_utils import (  # noqa: F401
     ApiTypeError,
     ModelComposed,
     ModelNormal,
     ModelSimple,
+    OpenApiModel,
     cached_property,
     change_keys_js_to_python,
     convert_js_args_to_python_args,
@@ -29,9 +31,12 @@ from cvat_api_client.model_utils import (  # noqa: F401
     file_type,
     none_type,
     validate_get_composed_info,
-    OpenApiModel
 )
-from cvat_api_client.exceptions import ApiAttributeError
+
+if TYPE_CHECKING:
+    # Enable introspection. Can't work normally due to cyclic imports
+    from cvat_api_client.apis import *
+    from cvat_api_client.models import *
 
 
 def lazy_import():
@@ -41,12 +46,13 @@ def lazy_import():
     from cvat_api_client.model.job_status import JobStatus
     from cvat_api_client.model.label import Label
     from cvat_api_client.model.operation_status import OperationStatus
-    globals()['ChunkType'] = ChunkType
-    globals()['CommentReadOwner'] = CommentReadOwner
-    globals()['JobStage'] = JobStage
-    globals()['JobStatus'] = JobStatus
-    globals()['Label'] = Label
-    globals()['OperationStatus'] = OperationStatus
+
+    globals()["ChunkType"] = ChunkType
+    globals()["CommentReadOwner"] = CommentReadOwner
+    globals()["JobStage"] = JobStage
+    globals()["JobStatus"] = JobStatus
+    globals()["Label"] = Label
+    globals()["OperationStatus"] = OperationStatus
 
 
 class JobRead(ModelNormal):
@@ -109,15 +115,14 @@ class JobRead(ModelNormal):
 
     """
 
-    allowed_values = {
-    }
+    allowed_values = {}
 
     validations = {
-        ('dimension',): {
-            'max_length': 2,
+        ("dimension",): {
+            "max_length": 2,
         },
-        ('bug_tracker',): {
-            'max_length': 2000,
+        ("bug_tracker",): {
+            "max_length": 2000,
         },
     }
 
@@ -128,7 +133,17 @@ class JobRead(ModelNormal):
         of type self, this must run after the class is loaded
         """
         lazy_import()
-        return (bool, date, datetime, dict, float, int, list, str, none_type,)  # noqa: E501
+        return (
+            bool,
+            date,
+            datetime,
+            dict,
+            float,
+            int,
+            list,
+            str,
+            none_type,
+        )  # noqa: E501
 
     _nullable = False
 
@@ -144,156 +159,204 @@ class JobRead(ModelNormal):
         """
         lazy_import()
         return {
-            'assignee': (CommentReadOwner,),  # noqa: E501
-            'dimension': (str,),  # noqa: E501
-            'labels': ([Label],),  # noqa: E501
-            'bug_tracker': (str, none_type,),  # noqa: E501
-            'url': (str,),  # noqa: E501
-            'id': (int,),  # noqa: E501
-            'task_id': (int,),  # noqa: E501
-            'project_id': (int, none_type,),  # noqa: E501
-            'status': (bool, date, datetime, dict, float, int, list, str, none_type,),  # noqa: E501
-            'stage': (bool, date, datetime, dict, float, int, list, str, none_type,),  # noqa: E501
-            'state': (bool, date, datetime, dict, float, int, list, str, none_type,),  # noqa: E501
-            'mode': (str,),  # noqa: E501
-            'start_frame': (int,),  # noqa: E501
-            'stop_frame': (int,),  # noqa: E501
-            'data_chunk_size': (int, none_type,),  # noqa: E501
-            'data_compressed_chunk_type': (bool, date, datetime, dict, float, int, list, str, none_type,),  # noqa: E501
-            'updated_date': (datetime,),  # noqa: E501
+            "assignee": (CommentReadOwner,),  # noqa: E501
+            "dimension": (str,),  # noqa: E501
+            "labels": ([Label],),  # noqa: E501
+            "bug_tracker": (
+                str,
+                none_type,
+            ),  # noqa: E501
+            "url": (str,),  # noqa: E501
+            "id": (int,),  # noqa: E501
+            "task_id": (int,),  # noqa: E501
+            "project_id": (
+                int,
+                none_type,
+            ),  # noqa: E501
+            "status": (
+                bool,
+                date,
+                datetime,
+                dict,
+                float,
+                int,
+                list,
+                str,
+                none_type,
+            ),  # noqa: E501
+            "stage": (
+                bool,
+                date,
+                datetime,
+                dict,
+                float,
+                int,
+                list,
+                str,
+                none_type,
+            ),  # noqa: E501
+            "state": (
+                bool,
+                date,
+                datetime,
+                dict,
+                float,
+                int,
+                list,
+                str,
+                none_type,
+            ),  # noqa: E501
+            "mode": (str,),  # noqa: E501
+            "start_frame": (int,),  # noqa: E501
+            "stop_frame": (int,),  # noqa: E501
+            "data_chunk_size": (
+                int,
+                none_type,
+            ),  # noqa: E501
+            "data_compressed_chunk_type": (
+                bool,
+                date,
+                datetime,
+                dict,
+                float,
+                int,
+                list,
+                str,
+                none_type,
+            ),  # noqa: E501
+            "updated_date": (datetime,),  # noqa: E501
         }
 
     @cached_property
     def discriminator():
         return None
 
-
     # member type declarations
-    url: str # noqa: E501
+    url: str  # noqa: E501
     """
     [optional]
     """
 
-    id: int # noqa: E501
+    id: int  # noqa: E501
     """
     [optional]
     """
 
-    task_id: int # noqa: E501
+    task_id: int  # noqa: E501
     """
     [optional]
     """
 
-    project_id: typing.Optional[int] # noqa: E501
+    project_id: typing.Optional[int]  # noqa: E501
     """
     [optional]
     """
 
-    assignee: typing.Optional[typing.ForwardRef("CommentReadOwner")] # noqa: E501
+    assignee: typing.Optional["CommentReadOwner"]  # noqa: E501
     """
     """
 
-    dimension: str # noqa: E501
+    dimension: str  # noqa: E501
     """
     """
 
-    labels: typing.List[typing.ForwardRef("Label")] # noqa: E501
+    labels: typing.List["Label"]  # noqa: E501
     """
     [Label]
     """
 
-    bug_tracker: typing.Optional[str] # noqa: E501
+    bug_tracker: typing.Optional[str]  # noqa: E501
     """
     """
 
-    status: typing.Optional[object] # noqa: E501
+    status: typing.Optional[object]  # noqa: E501
     """
     [optional]
     """
 
-    stage: typing.Optional[object] # noqa: E501
+    stage: typing.Optional[object]  # noqa: E501
     """
     [optional]
     """
 
-    state: typing.Optional[object] # noqa: E501
+    state: typing.Optional[object]  # noqa: E501
     """
     [optional]
     """
 
-    mode: str # noqa: E501
+    mode: str  # noqa: E501
     """
     [optional]
     """
 
-    start_frame: int # noqa: E501
+    start_frame: int  # noqa: E501
     """
     [optional]
     """
 
-    stop_frame: int # noqa: E501
+    stop_frame: int  # noqa: E501
     """
     [optional]
     """
 
-    data_chunk_size: typing.Optional[int] # noqa: E501
+    data_chunk_size: typing.Optional[int]  # noqa: E501
     """
     [optional]
     """
 
-    data_compressed_chunk_type: typing.Optional[object] # noqa: E501
+    data_compressed_chunk_type: typing.Optional[object]  # noqa: E501
     """
     [optional]
     """
 
-    updated_date: datetime # noqa: E501
+    updated_date: datetime  # noqa: E501
     """
     [optional]
     """
-
-
 
     attribute_map = {
-        'assignee': 'assignee',  # noqa: E501
-        'dimension': 'dimension',  # noqa: E501
-        'labels': 'labels',  # noqa: E501
-        'bug_tracker': 'bug_tracker',  # noqa: E501
-        'url': 'url',  # noqa: E501
-        'id': 'id',  # noqa: E501
-        'task_id': 'task_id',  # noqa: E501
-        'project_id': 'project_id',  # noqa: E501
-        'status': 'status',  # noqa: E501
-        'stage': 'stage',  # noqa: E501
-        'state': 'state',  # noqa: E501
-        'mode': 'mode',  # noqa: E501
-        'start_frame': 'start_frame',  # noqa: E501
-        'stop_frame': 'stop_frame',  # noqa: E501
-        'data_chunk_size': 'data_chunk_size',  # noqa: E501
-        'data_compressed_chunk_type': 'data_compressed_chunk_type',  # noqa: E501
-        'updated_date': 'updated_date',  # noqa: E501
+        "assignee": "assignee",  # noqa: E501
+        "dimension": "dimension",  # noqa: E501
+        "labels": "labels",  # noqa: E501
+        "bug_tracker": "bug_tracker",  # noqa: E501
+        "url": "url",  # noqa: E501
+        "id": "id",  # noqa: E501
+        "task_id": "task_id",  # noqa: E501
+        "project_id": "project_id",  # noqa: E501
+        "status": "status",  # noqa: E501
+        "stage": "stage",  # noqa: E501
+        "state": "state",  # noqa: E501
+        "mode": "mode",  # noqa: E501
+        "start_frame": "start_frame",  # noqa: E501
+        "stop_frame": "stop_frame",  # noqa: E501
+        "data_chunk_size": "data_chunk_size",  # noqa: E501
+        "data_compressed_chunk_type": "data_compressed_chunk_type",  # noqa: E501
+        "updated_date": "updated_date",  # noqa: E501
     }
 
     read_only_vars = {
-        'url',  # noqa: E501
-        'id',  # noqa: E501
-        'task_id',  # noqa: E501
-        'project_id',  # noqa: E501
-        'status',  # noqa: E501
-        'stage',  # noqa: E501
-        'state',  # noqa: E501
-        'mode',  # noqa: E501
-        'start_frame',  # noqa: E501
-        'stop_frame',  # noqa: E501
-        'data_chunk_size',  # noqa: E501
-        'data_compressed_chunk_type',  # noqa: E501
-        'updated_date',  # noqa: E501
+        "url",  # noqa: E501
+        "id",  # noqa: E501
+        "task_id",  # noqa: E501
+        "project_id",  # noqa: E501
+        "status",  # noqa: E501
+        "stage",  # noqa: E501
+        "state",  # noqa: E501
+        "mode",  # noqa: E501
+        "start_frame",  # noqa: E501
+        "stop_frame",  # noqa: E501
+        "data_chunk_size",  # noqa: E501
+        "data_compressed_chunk_type",  # noqa: E501
+        "updated_date",  # noqa: E501
     }
 
     _composed_schemas = {}
 
     @classmethod
     @convert_js_args_to_python_args
-    def _from_openapi_data(cls, assignee, dimension, labels, bug_tracker, *args, **kwargs):  # noqa: E501
+    def _from_openapi_data(
+        cls, assignee, dimension, labels, bug_tracker, *args, **kwargs
+    ):  # noqa: E501
         """JobRead - a model defined in OpenAPI
 
         Args:
@@ -348,11 +411,11 @@ class JobRead(ModelNormal):
             updated_date (datetime): [optional]  # noqa: E501
         """
 
-        _check_type = kwargs.pop('_check_type', True)
-        _spec_property_naming = kwargs.pop('_spec_property_naming', True)
-        _path_to_item = kwargs.pop('_path_to_item', ())
-        _configuration = kwargs.pop('_configuration', None)
-        _visited_composed_classes = kwargs.pop('_visited_composed_classes', ())
+        _check_type = kwargs.pop("_check_type", True)
+        _spec_property_naming = kwargs.pop("_spec_property_naming", True)
+        _path_to_item = kwargs.pop("_path_to_item", ())
+        _configuration = kwargs.pop("_configuration", None)
+        _visited_composed_classes = kwargs.pop("_visited_composed_classes", ())
 
         self = super(OpenApiModel, cls).__new__(cls)
 
@@ -362,7 +425,8 @@ class JobRead(ModelNormal):
                     kwargs.update(arg)
                 else:
                     raise ApiTypeError(
-                        "Invalid positional arguments=%s passed to %s. Remove those invalid positional arguments." % (
+                        "Invalid positional arguments=%s passed to %s. Remove those invalid positional arguments."
+                        % (
                             args,
                             self.__class__.__name__,
                         ),
@@ -382,23 +446,27 @@ class JobRead(ModelNormal):
         self.labels = labels
         self.bug_tracker = bug_tracker
         for var_name, var_value in kwargs.items():
-            if var_name not in self.attribute_map and \
-                        self._configuration is not None and \
-                        self._configuration.discard_unknown_keys and \
-                        self.additional_properties_type is None:
+            if (
+                var_name not in self.attribute_map
+                and self._configuration is not None
+                and self._configuration.discard_unknown_keys
+                and self.additional_properties_type is None
+            ):
                 # discard variable.
                 continue
             setattr(self, var_name, var_value)
         return self
 
-    required_properties = set([
-        '_data_store',
-        '_check_type',
-        '_spec_property_naming',
-        '_path_to_item',
-        '_configuration',
-        '_visited_composed_classes',
-    ])
+    required_properties = set(
+        [
+            "_data_store",
+            "_check_type",
+            "_spec_property_naming",
+            "_path_to_item",
+            "_configuration",
+            "_visited_composed_classes",
+        ]
+    )
 
     @convert_js_args_to_python_args
     def __init__(self, assignee, dimension, labels, bug_tracker, *args, **kwargs):  # noqa: E501
@@ -456,11 +524,11 @@ class JobRead(ModelNormal):
             updated_date (datetime): [optional]  # noqa: E501
         """
 
-        _check_type = kwargs.pop('_check_type', True)
-        _spec_property_naming = kwargs.pop('_spec_property_naming', False)
-        _path_to_item = kwargs.pop('_path_to_item', ())
-        _configuration = kwargs.pop('_configuration', None)
-        _visited_composed_classes = kwargs.pop('_visited_composed_classes', ())
+        _check_type = kwargs.pop("_check_type", True)
+        _spec_property_naming = kwargs.pop("_spec_property_naming", False)
+        _path_to_item = kwargs.pop("_path_to_item", ())
+        _configuration = kwargs.pop("_configuration", None)
+        _visited_composed_classes = kwargs.pop("_visited_composed_classes", ())
 
         if args:
             for arg in args:
@@ -468,7 +536,8 @@ class JobRead(ModelNormal):
                     kwargs.update(arg)
                 else:
                     raise ApiTypeError(
-                        "Invalid positional arguments=%s passed to %s. Remove those invalid positional arguments." % (
+                        "Invalid positional arguments=%s passed to %s. Remove those invalid positional arguments."
+                        % (
                             args,
                             self.__class__.__name__,
                         ),
@@ -488,14 +557,17 @@ class JobRead(ModelNormal):
         self.labels = labels
         self.bug_tracker = bug_tracker
         for var_name, var_value in kwargs.items():
-            if var_name not in self.attribute_map and \
-                        self._configuration is not None and \
-                        self._configuration.discard_unknown_keys and \
-                        self.additional_properties_type is None:
+            if (
+                var_name not in self.attribute_map
+                and self._configuration is not None
+                and self._configuration.discard_unknown_keys
+                and self.additional_properties_type is None
+            ):
                 # discard variable.
                 continue
             setattr(self, var_name, var_value)
             if var_name in self.read_only_vars:
-                raise ApiAttributeError(f"`{var_name}` is a read-only attribute. Use `from_openapi_data` to instantiate "
-                                     f"class with read only attributes.")
-
+                raise ApiAttributeError(
+                    f"`{var_name}` is a read-only attribute. Use `from_openapi_data` to instantiate "
+                    f"class with read only attributes."
+                )

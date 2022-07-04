@@ -11,16 +11,18 @@
 
 from __future__ import annotations
 
-import typing
-
 import re  # noqa: F401
 import sys  # noqa: F401
+import typing
+from typing import TYPE_CHECKING
 
+from cvat_api_client.exceptions import ApiAttributeError
 from cvat_api_client.model_utils import (  # noqa: F401
     ApiTypeError,
     ModelComposed,
     ModelNormal,
     ModelSimple,
+    OpenApiModel,
     cached_property,
     change_keys_js_to_python,
     convert_js_args_to_python_args,
@@ -29,16 +31,20 @@ from cvat_api_client.model_utils import (  # noqa: F401
     file_type,
     none_type,
     validate_get_composed_info,
-    OpenApiModel
 )
-from cvat_api_client.exceptions import ApiAttributeError
+
+if TYPE_CHECKING:
+    # Enable introspection. Can't work normally due to cyclic imports
+    from cvat_api_client.apis import *
+    from cvat_api_client.models import *
 
 
 def lazy_import():
     from cvat_api_client.model.comment_read import CommentRead
     from cvat_api_client.model.comment_read_owner import CommentReadOwner
-    globals()['CommentRead'] = CommentRead
-    globals()['CommentReadOwner'] = CommentReadOwner
+
+    globals()["CommentRead"] = CommentRead
+    globals()["CommentReadOwner"] = CommentReadOwner
 
 
 class IssueRead(ModelNormal):
@@ -87,11 +93,9 @@ class IssueRead(ModelNormal):
 
     """
 
-    allowed_values = {
-    }
+    allowed_values = {}
 
-    validations = {
-    }
+    validations = {}
 
     @cached_property
     def additional_properties_type():
@@ -100,7 +104,17 @@ class IssueRead(ModelNormal):
         of type self, this must run after the class is loaded
         """
         lazy_import()
-        return (bool, date, datetime, dict, float, int, list, str, none_type,)  # noqa: E501
+        return (
+            bool,
+            date,
+            datetime,
+            dict,
+            float,
+            int,
+            list,
+            str,
+            none_type,
+        )  # noqa: E501
 
     _nullable = False
 
@@ -116,96 +130,93 @@ class IssueRead(ModelNormal):
         """
         lazy_import()
         return {
-            'position': ([float],),  # noqa: E501
-            'comments': ([CommentRead],),  # noqa: E501
-            'id': (int,),  # noqa: E501
-            'frame': (int,),  # noqa: E501
-            'job': (int,),  # noqa: E501
-            'owner': (CommentReadOwner,),  # noqa: E501
-            'assignee': (CommentReadOwner,),  # noqa: E501
-            'created_date': (datetime,),  # noqa: E501
-            'updated_date': (datetime,),  # noqa: E501
-            'resolved': (bool,),  # noqa: E501
+            "position": ([float],),  # noqa: E501
+            "comments": ([CommentRead],),  # noqa: E501
+            "id": (int,),  # noqa: E501
+            "frame": (int,),  # noqa: E501
+            "job": (int,),  # noqa: E501
+            "owner": (CommentReadOwner,),  # noqa: E501
+            "assignee": (CommentReadOwner,),  # noqa: E501
+            "created_date": (datetime,),  # noqa: E501
+            "updated_date": (datetime,),  # noqa: E501
+            "resolved": (bool,),  # noqa: E501
         }
 
     @cached_property
     def discriminator():
         return None
 
-
     # member type declarations
-    id: int # noqa: E501
+    id: int  # noqa: E501
     """
     [optional]
     """
 
-    frame: int # noqa: E501
+    frame: int  # noqa: E501
     """
     [optional]
     """
 
-    position: typing.List[float] # noqa: E501
+    position: typing.List[float]  # noqa: E501
     """
     [float]
     """
 
-    job: int # noqa: E501
+    job: int  # noqa: E501
     """
     [optional]
     """
 
-    owner: typing.Optional[typing.ForwardRef("CommentReadOwner")] # noqa: E501
+    owner: typing.Optional["CommentReadOwner"]  # noqa: E501
     """
     [optional]
     """
 
-    assignee: typing.Optional[typing.ForwardRef("CommentReadOwner")] # noqa: E501
+    assignee: typing.Optional["CommentReadOwner"]  # noqa: E501
     """
     [optional]
     """
 
-    created_date: datetime # noqa: E501
+    created_date: datetime  # noqa: E501
     """
     [optional]
     """
 
-    updated_date: datetime # noqa: E501
+    updated_date: datetime  # noqa: E501
     """
     [optional]
     """
 
-    comments: typing.List[typing.ForwardRef("CommentRead")] # noqa: E501
+    comments: typing.List["CommentRead"]  # noqa: E501
     """
     [CommentRead]
     """
 
-    resolved: bool # noqa: E501
+    resolved: bool  # noqa: E501
     """
     [optional]
     """
 
-
-
     attribute_map = {
-        'position': 'position',  # noqa: E501
-        'comments': 'comments',  # noqa: E501
-        'id': 'id',  # noqa: E501
-        'frame': 'frame',  # noqa: E501
-        'job': 'job',  # noqa: E501
-        'owner': 'owner',  # noqa: E501
-        'assignee': 'assignee',  # noqa: E501
-        'created_date': 'created_date',  # noqa: E501
-        'updated_date': 'updated_date',  # noqa: E501
-        'resolved': 'resolved',  # noqa: E501
+        "position": "position",  # noqa: E501
+        "comments": "comments",  # noqa: E501
+        "id": "id",  # noqa: E501
+        "frame": "frame",  # noqa: E501
+        "job": "job",  # noqa: E501
+        "owner": "owner",  # noqa: E501
+        "assignee": "assignee",  # noqa: E501
+        "created_date": "created_date",  # noqa: E501
+        "updated_date": "updated_date",  # noqa: E501
+        "resolved": "resolved",  # noqa: E501
     }
 
     read_only_vars = {
-        'id',  # noqa: E501
-        'frame',  # noqa: E501
-        'job',  # noqa: E501
-        'created_date',  # noqa: E501
-        'updated_date',  # noqa: E501
-        'resolved',  # noqa: E501
+        "id",  # noqa: E501
+        "frame",  # noqa: E501
+        "job",  # noqa: E501
+        "created_date",  # noqa: E501
+        "updated_date",  # noqa: E501
+        "resolved",  # noqa: E501
     }
 
     _composed_schemas = {}
@@ -260,11 +271,11 @@ class IssueRead(ModelNormal):
             resolved (bool): [optional]  # noqa: E501
         """
 
-        _check_type = kwargs.pop('_check_type', True)
-        _spec_property_naming = kwargs.pop('_spec_property_naming', True)
-        _path_to_item = kwargs.pop('_path_to_item', ())
-        _configuration = kwargs.pop('_configuration', None)
-        _visited_composed_classes = kwargs.pop('_visited_composed_classes', ())
+        _check_type = kwargs.pop("_check_type", True)
+        _spec_property_naming = kwargs.pop("_spec_property_naming", True)
+        _path_to_item = kwargs.pop("_path_to_item", ())
+        _configuration = kwargs.pop("_configuration", None)
+        _visited_composed_classes = kwargs.pop("_visited_composed_classes", ())
 
         self = super(OpenApiModel, cls).__new__(cls)
 
@@ -274,7 +285,8 @@ class IssueRead(ModelNormal):
                     kwargs.update(arg)
                 else:
                     raise ApiTypeError(
-                        "Invalid positional arguments=%s passed to %s. Remove those invalid positional arguments." % (
+                        "Invalid positional arguments=%s passed to %s. Remove those invalid positional arguments."
+                        % (
                             args,
                             self.__class__.__name__,
                         ),
@@ -292,23 +304,27 @@ class IssueRead(ModelNormal):
         self.position = position
         self.comments = comments
         for var_name, var_value in kwargs.items():
-            if var_name not in self.attribute_map and \
-                        self._configuration is not None and \
-                        self._configuration.discard_unknown_keys and \
-                        self.additional_properties_type is None:
+            if (
+                var_name not in self.attribute_map
+                and self._configuration is not None
+                and self._configuration.discard_unknown_keys
+                and self.additional_properties_type is None
+            ):
                 # discard variable.
                 continue
             setattr(self, var_name, var_value)
         return self
 
-    required_properties = set([
-        '_data_store',
-        '_check_type',
-        '_spec_property_naming',
-        '_path_to_item',
-        '_configuration',
-        '_visited_composed_classes',
-    ])
+    required_properties = set(
+        [
+            "_data_store",
+            "_check_type",
+            "_spec_property_naming",
+            "_path_to_item",
+            "_configuration",
+            "_visited_composed_classes",
+        ]
+    )
 
     @convert_js_args_to_python_args
     def __init__(self, position, comments, *args, **kwargs):  # noqa: E501
@@ -359,11 +375,11 @@ class IssueRead(ModelNormal):
             resolved (bool): [optional]  # noqa: E501
         """
 
-        _check_type = kwargs.pop('_check_type', True)
-        _spec_property_naming = kwargs.pop('_spec_property_naming', False)
-        _path_to_item = kwargs.pop('_path_to_item', ())
-        _configuration = kwargs.pop('_configuration', None)
-        _visited_composed_classes = kwargs.pop('_visited_composed_classes', ())
+        _check_type = kwargs.pop("_check_type", True)
+        _spec_property_naming = kwargs.pop("_spec_property_naming", False)
+        _path_to_item = kwargs.pop("_path_to_item", ())
+        _configuration = kwargs.pop("_configuration", None)
+        _visited_composed_classes = kwargs.pop("_visited_composed_classes", ())
 
         if args:
             for arg in args:
@@ -371,7 +387,8 @@ class IssueRead(ModelNormal):
                     kwargs.update(arg)
                 else:
                     raise ApiTypeError(
-                        "Invalid positional arguments=%s passed to %s. Remove those invalid positional arguments." % (
+                        "Invalid positional arguments=%s passed to %s. Remove those invalid positional arguments."
+                        % (
                             args,
                             self.__class__.__name__,
                         ),
@@ -389,14 +406,17 @@ class IssueRead(ModelNormal):
         self.position = position
         self.comments = comments
         for var_name, var_value in kwargs.items():
-            if var_name not in self.attribute_map and \
-                        self._configuration is not None and \
-                        self._configuration.discard_unknown_keys and \
-                        self.additional_properties_type is None:
+            if (
+                var_name not in self.attribute_map
+                and self._configuration is not None
+                and self._configuration.discard_unknown_keys
+                and self.additional_properties_type is None
+            ):
                 # discard variable.
                 continue
             setattr(self, var_name, var_value)
             if var_name in self.read_only_vars:
-                raise ApiAttributeError(f"`{var_name}` is a read-only attribute. Use `from_openapi_data` to instantiate "
-                                     f"class with read only attributes.")
-
+                raise ApiAttributeError(
+                    f"`{var_name}` is a read-only attribute. Use `from_openapi_data` to instantiate "
+                    f"class with read only attributes."
+                )

@@ -9,23 +9,15 @@
 """
 
 
-import typing
-from typing import overload
-import urllib3
-
 import re  # noqa: F401
 import sys  # noqa: F401
+import typing
+from typing import TYPE_CHECKING, overload
 
-from cvat_api_client.api_client import ApiClient, Endpoint as _Endpoint
-from cvat_api_client.model_utils import (  # noqa: F401
-    check_allowed_values,
-    check_validations,
-    date,
-    datetime,
-    file_type,
-    none_type,
-    validate_and_convert_types
-)
+import urllib3
+
+from cvat_api_client.api_client import ApiClient
+from cvat_api_client.api_client import Endpoint as _Endpoint
 from cvat_api_client.model.paginated_polymorphic_project_list import PaginatedPolymorphicProjectList
 from cvat_api_client.model.paginated_task_read_list import PaginatedTaskReadList
 from cvat_api_client.model.patched_project_write_request import PatchedProjectWriteRequest
@@ -33,6 +25,20 @@ from cvat_api_client.model.project_file_request import ProjectFileRequest
 from cvat_api_client.model.project_read import ProjectRead
 from cvat_api_client.model.project_write import ProjectWrite
 from cvat_api_client.model.project_write_request import ProjectWriteRequest
+from cvat_api_client.model_utils import (  # noqa: F401
+    check_allowed_values,
+    check_validations,
+    date,
+    datetime,
+    file_type,
+    none_type,
+    validate_and_convert_types,
+)
+
+if TYPE_CHECKING:
+    # Enable introspection. Can't work normally due to cyclic imports
+    from cvat_api_client.apis import *
+    from cvat_api_client.models import *
 
 
 class ProjectsApi(object):
@@ -46,1254 +52,973 @@ class ProjectsApi(object):
         if api_client is None:
             api_client = ApiClient()
         self.api_client = api_client
-        self.projects_annotations_retrieve_endpoint = _Endpoint(
+        self.annotations_retrieve_endpoint = _Endpoint(
             settings={
-                'response_type': None,
-                'auth': [
-                    'SignatureAuthentication',
-                    'basicAuth',
-                    'cookieAuth',
-                    'tokenAuth'
-                ],
-                'endpoint_path': '/api/projects/{id}/annotations',
-                'operation_id': 'projects_annotations_retrieve',
-                'http_method': 'GET',
-                'servers': None,
+                "response_type": None,
+                "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
+                "endpoint_path": "/api/projects/{id}/annotations",
+                "operation_id": "annotations_retrieve",
+                "http_method": "GET",
+                "servers": None,
             },
             params_map={
-                'all': [
-                    'format',
-                    'id',
-                    'x_organization',
-                    'action',
-                    'cloud_storage_id',
-                    'filename',
-                    'location',
-                    'org',
-                    'org_id',
-                    'use_default_location',
+                "all": [
+                    "format",
+                    "id",
+                    "x_organization",
+                    "action",
+                    "cloud_storage_id",
+                    "filename",
+                    "location",
+                    "org",
+                    "org_id",
+                    "use_default_location",
                 ],
-                'required': [
-                    'format',
-                    'id',
+                "required": [
+                    "format",
+                    "id",
                 ],
-                'nullable': [
+                "nullable": [],
+                "enum": [
+                    "action",
+                    "location",
                 ],
-                'enum': [
-                    'action',
-                    'location',
-                ],
-                'validation': [
-                ]
+                "validation": [],
             },
             root_map={
-                'validations': {
+                "validations": {},
+                "allowed_values": {
+                    ("action",): {"DOWNLOAD": "download"},
+                    ("location",): {"CLOUD_STORAGE": "cloud_storage", "LOCAL": "local"},
                 },
-                'allowed_values': {
-                    ('action',): {
-
-                        "DOWNLOAD": "download"
-                    },
-                    ('location',): {
-
-                        "CLOUD_STORAGE": "cloud_storage",
-                        "LOCAL": "local"
-                    },
+                "openapi_types": {
+                    "format": (str,),
+                    "id": (int,),
+                    "x_organization": (str,),
+                    "action": (str,),
+                    "cloud_storage_id": (float,),
+                    "filename": (str,),
+                    "location": (str,),
+                    "org": (str,),
+                    "org_id": (int,),
+                    "use_default_location": (bool,),
                 },
-                'openapi_types': {
-                    'format':
-                        (str,),
-                    'id':
-                        (int,),
-                    'x_organization':
-                        (str,),
-                    'action':
-                        (str,),
-                    'cloud_storage_id':
-                        (float,),
-                    'filename':
-                        (str,),
-                    'location':
-                        (str,),
-                    'org':
-                        (str,),
-                    'org_id':
-                        (int,),
-                    'use_default_location':
-                        (bool,),
+                "attribute_map": {
+                    "format": "format",
+                    "id": "id",
+                    "x_organization": "X-Organization",
+                    "action": "action",
+                    "cloud_storage_id": "cloud_storage_id",
+                    "filename": "filename",
+                    "location": "location",
+                    "org": "org",
+                    "org_id": "org_id",
+                    "use_default_location": "use_default_location",
                 },
-                'attribute_map': {
-                    'format': 'format',
-                    'id': 'id',
-                    'x_organization': 'X-Organization',
-                    'action': 'action',
-                    'cloud_storage_id': 'cloud_storage_id',
-                    'filename': 'filename',
-                    'location': 'location',
-                    'org': 'org',
-                    'org_id': 'org_id',
-                    'use_default_location': 'use_default_location',
+                "location_map": {
+                    "format": "query",
+                    "id": "path",
+                    "x_organization": "header",
+                    "action": "query",
+                    "cloud_storage_id": "query",
+                    "filename": "query",
+                    "location": "query",
+                    "org": "query",
+                    "org_id": "query",
+                    "use_default_location": "query",
                 },
-                'location_map': {
-                    'format': 'query',
-                    'id': 'path',
-                    'x_organization': 'header',
-                    'action': 'query',
-                    'cloud_storage_id': 'query',
-                    'filename': 'query',
-                    'location': 'query',
-                    'org': 'query',
-                    'org_id': 'query',
-                    'use_default_location': 'query',
-                },
-                'collection_format_map': {
-                }
+                "collection_format_map": {},
             },
             headers_map={
-                'accept': [],
-                'content_type': [],
+                "accept": [],
+                "content_type": [],
             },
-            api_client=api_client
+            api_client=api_client,
         )
-        self.projects_backup_create_endpoint = _Endpoint(
+        self.backup_create_endpoint = _Endpoint(
             settings={
-                'response_type': None,
-                'auth': [
-                    'SignatureAuthentication',
-                    'basicAuth',
-                    'cookieAuth',
-                    'tokenAuth'
-                ],
-                'endpoint_path': '/api/projects/backup/',
-                'operation_id': 'projects_backup_create',
-                'http_method': 'POST',
-                'servers': None,
+                "response_type": None,
+                "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
+                "endpoint_path": "/api/projects/backup/",
+                "operation_id": "backup_create",
+                "http_method": "POST",
+                "servers": None,
             },
             params_map={
-                'all': [
-                    'project_file_request',
-                    'x_organization',
-                    'cloud_storage_id',
-                    'filename',
-                    'location',
-                    'org',
-                    'org_id',
+                "all": [
+                    "project_file_request",
+                    "x_organization",
+                    "cloud_storage_id",
+                    "filename",
+                    "location",
+                    "org",
+                    "org_id",
                 ],
-                'required': [
-                    'project_file_request',
+                "required": [
+                    "project_file_request",
                 ],
-                'nullable': [
+                "nullable": [],
+                "enum": [
+                    "location",
                 ],
-                'enum': [
-                    'location',
-                ],
-                'validation': [
-                ]
+                "validation": [],
             },
             root_map={
-                'validations': {
+                "validations": {},
+                "allowed_values": {
+                    ("location",): {"CLOUD_STORAGE": "cloud_storage", "LOCAL": "local"},
                 },
-                'allowed_values': {
-                    ('location',): {
-
-                        "CLOUD_STORAGE": "cloud_storage",
-                        "LOCAL": "local"
-                    },
+                "openapi_types": {
+                    "project_file_request": (ProjectFileRequest,),
+                    "x_organization": (str,),
+                    "cloud_storage_id": (float,),
+                    "filename": (str,),
+                    "location": (str,),
+                    "org": (str,),
+                    "org_id": (int,),
                 },
-                'openapi_types': {
-                    'project_file_request':
-                        (ProjectFileRequest,),
-                    'x_organization':
-                        (str,),
-                    'cloud_storage_id':
-                        (float,),
-                    'filename':
-                        (str,),
-                    'location':
-                        (str,),
-                    'org':
-                        (str,),
-                    'org_id':
-                        (int,),
+                "attribute_map": {
+                    "x_organization": "X-Organization",
+                    "cloud_storage_id": "cloud_storage_id",
+                    "filename": "filename",
+                    "location": "location",
+                    "org": "org",
+                    "org_id": "org_id",
                 },
-                'attribute_map': {
-                    'x_organization': 'X-Organization',
-                    'cloud_storage_id': 'cloud_storage_id',
-                    'filename': 'filename',
-                    'location': 'location',
-                    'org': 'org',
-                    'org_id': 'org_id',
+                "location_map": {
+                    "project_file_request": "body",
+                    "x_organization": "header",
+                    "cloud_storage_id": "query",
+                    "filename": "query",
+                    "location": "query",
+                    "org": "query",
+                    "org_id": "query",
                 },
-                'location_map': {
-                    'project_file_request': 'body',
-                    'x_organization': 'header',
-                    'cloud_storage_id': 'query',
-                    'filename': 'query',
-                    'location': 'query',
-                    'org': 'query',
-                    'org_id': 'query',
-                },
-                'collection_format_map': {
-                }
+                "collection_format_map": {},
             },
             headers_map={
-                'accept': [],
-                'content_type': [
-                    'application/json',
-                    'application/x-www-form-urlencoded',
-                    'multipart/form-data',
-                    'application/offset+octet-stream'
-                ]
-            },
-            api_client=api_client
-        )
-        self.projects_backup_partial_update_endpoint = _Endpoint(
-            settings={
-                'response_type': (ProjectWrite,),
-                'auth': [
-                    'SignatureAuthentication',
-                    'basicAuth',
-                    'cookieAuth',
-                    'tokenAuth'
+                "accept": [],
+                "content_type": [
+                    "application/json",
+                    "application/x-www-form-urlencoded",
+                    "multipart/form-data",
+                    "application/offset+octet-stream",
                 ],
-                'endpoint_path': '/api/projects/backup/{file_id}',
-                'operation_id': 'projects_backup_partial_update',
-                'http_method': 'PATCH',
-                'servers': None,
+            },
+            api_client=api_client,
+        )
+        self.backup_partial_update_endpoint = _Endpoint(
+            settings={
+                "response_type": (ProjectWrite,),
+                "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
+                "endpoint_path": "/api/projects/backup/{file_id}",
+                "operation_id": "backup_partial_update",
+                "http_method": "PATCH",
+                "servers": None,
             },
             params_map={
-                'all': [
-                    'file_id',
-                    'x_organization',
-                    'org',
-                    'org_id',
-                    'patched_project_write_request',
+                "all": [
+                    "file_id",
+                    "x_organization",
+                    "org",
+                    "org_id",
+                    "patched_project_write_request",
                 ],
-                'required': [
-                    'file_id',
+                "required": [
+                    "file_id",
                 ],
-                'nullable': [
+                "nullable": [],
+                "enum": [],
+                "validation": [
+                    "file_id",
                 ],
-                'enum': [
-                ],
-                'validation': [
-                    'file_id',
-                ]
             },
             root_map={
-                'validations': {
-                    ('file_id',): {
-
-                        'regex': {
-                            'pattern': r'^\b[0-9a-f]{8}\b-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-\b[0-9a-f]{12}\b$',  # noqa: E501
+                "validations": {
+                    ("file_id",): {
+                        "regex": {
+                            "pattern": r"^\b[0-9a-f]{8}\b-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-\b[0-9a-f]{12}\b$",  # noqa: E501
                         },
                     },
                 },
-                'allowed_values': {
+                "allowed_values": {},
+                "openapi_types": {
+                    "file_id": (str,),
+                    "x_organization": (str,),
+                    "org": (str,),
+                    "org_id": (int,),
+                    "patched_project_write_request": (PatchedProjectWriteRequest,),
                 },
-                'openapi_types': {
-                    'file_id':
-                        (str,),
-                    'x_organization':
-                        (str,),
-                    'org':
-                        (str,),
-                    'org_id':
-                        (int,),
-                    'patched_project_write_request':
-                        (PatchedProjectWriteRequest,),
+                "attribute_map": {
+                    "file_id": "file_id",
+                    "x_organization": "X-Organization",
+                    "org": "org",
+                    "org_id": "org_id",
                 },
-                'attribute_map': {
-                    'file_id': 'file_id',
-                    'x_organization': 'X-Organization',
-                    'org': 'org',
-                    'org_id': 'org_id',
+                "location_map": {
+                    "file_id": "path",
+                    "x_organization": "header",
+                    "org": "query",
+                    "org_id": "query",
+                    "patched_project_write_request": "body",
                 },
-                'location_map': {
-                    'file_id': 'path',
-                    'x_organization': 'header',
-                    'org': 'query',
-                    'org_id': 'query',
-                    'patched_project_write_request': 'body',
-                },
-                'collection_format_map': {
-                }
+                "collection_format_map": {},
             },
             headers_map={
-                'accept': [
-                    'application/vnd.cvat+json'
+                "accept": ["application/vnd.cvat+json"],
+                "content_type": [
+                    "application/json",
+                    "application/x-www-form-urlencoded",
+                    "multipart/form-data",
+                    "application/offset+octet-stream",
                 ],
-                'content_type': [
-                    'application/json',
-                    'application/x-www-form-urlencoded',
-                    'multipart/form-data',
-                    'application/offset+octet-stream'
-                ]
             },
-            api_client=api_client
+            api_client=api_client,
         )
-        self.projects_backup_retrieve_endpoint = _Endpoint(
+        self.backup_retrieve_endpoint = _Endpoint(
             settings={
-                'response_type': None,
-                'auth': [
-                    'SignatureAuthentication',
-                    'basicAuth',
-                    'cookieAuth',
-                    'tokenAuth'
-                ],
-                'endpoint_path': '/api/projects/{id}/backup',
-                'operation_id': 'projects_backup_retrieve',
-                'http_method': 'GET',
-                'servers': None,
+                "response_type": None,
+                "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
+                "endpoint_path": "/api/projects/{id}/backup",
+                "operation_id": "backup_retrieve",
+                "http_method": "GET",
+                "servers": None,
             },
             params_map={
-                'all': [
-                    'id',
-                    'x_organization',
-                    'action',
-                    'cloud_storage_id',
-                    'filename',
-                    'location',
-                    'org',
-                    'org_id',
-                    'use_default_location',
+                "all": [
+                    "id",
+                    "x_organization",
+                    "action",
+                    "cloud_storage_id",
+                    "filename",
+                    "location",
+                    "org",
+                    "org_id",
+                    "use_default_location",
                 ],
-                'required': [
-                    'id',
+                "required": [
+                    "id",
                 ],
-                'nullable': [
+                "nullable": [],
+                "enum": [
+                    "action",
+                    "location",
                 ],
-                'enum': [
-                    'action',
-                    'location',
-                ],
-                'validation': [
-                ]
+                "validation": [],
             },
             root_map={
-                'validations': {
+                "validations": {},
+                "allowed_values": {
+                    ("action",): {"DOWNLOAD": "download"},
+                    ("location",): {"CLOUD_STORAGE": "cloud_storage", "LOCAL": "local"},
                 },
-                'allowed_values': {
-                    ('action',): {
-
-                        "DOWNLOAD": "download"
-                    },
-                    ('location',): {
-
-                        "CLOUD_STORAGE": "cloud_storage",
-                        "LOCAL": "local"
-                    },
+                "openapi_types": {
+                    "id": (int,),
+                    "x_organization": (str,),
+                    "action": (str,),
+                    "cloud_storage_id": (float,),
+                    "filename": (str,),
+                    "location": (str,),
+                    "org": (str,),
+                    "org_id": (int,),
+                    "use_default_location": (bool,),
                 },
-                'openapi_types': {
-                    'id':
-                        (int,),
-                    'x_organization':
-                        (str,),
-                    'action':
-                        (str,),
-                    'cloud_storage_id':
-                        (float,),
-                    'filename':
-                        (str,),
-                    'location':
-                        (str,),
-                    'org':
-                        (str,),
-                    'org_id':
-                        (int,),
-                    'use_default_location':
-                        (bool,),
+                "attribute_map": {
+                    "id": "id",
+                    "x_organization": "X-Organization",
+                    "action": "action",
+                    "cloud_storage_id": "cloud_storage_id",
+                    "filename": "filename",
+                    "location": "location",
+                    "org": "org",
+                    "org_id": "org_id",
+                    "use_default_location": "use_default_location",
                 },
-                'attribute_map': {
-                    'id': 'id',
-                    'x_organization': 'X-Organization',
-                    'action': 'action',
-                    'cloud_storage_id': 'cloud_storage_id',
-                    'filename': 'filename',
-                    'location': 'location',
-                    'org': 'org',
-                    'org_id': 'org_id',
-                    'use_default_location': 'use_default_location',
+                "location_map": {
+                    "id": "path",
+                    "x_organization": "header",
+                    "action": "query",
+                    "cloud_storage_id": "query",
+                    "filename": "query",
+                    "location": "query",
+                    "org": "query",
+                    "org_id": "query",
+                    "use_default_location": "query",
                 },
-                'location_map': {
-                    'id': 'path',
-                    'x_organization': 'header',
-                    'action': 'query',
-                    'cloud_storage_id': 'query',
-                    'filename': 'query',
-                    'location': 'query',
-                    'org': 'query',
-                    'org_id': 'query',
-                    'use_default_location': 'query',
-                },
-                'collection_format_map': {
-                }
+                "collection_format_map": {},
             },
             headers_map={
-                'accept': [],
-                'content_type': [],
+                "accept": [],
+                "content_type": [],
             },
-            api_client=api_client
+            api_client=api_client,
         )
-        self.projects_create_endpoint = _Endpoint(
+        self.create_endpoint = _Endpoint(
             settings={
-                'response_type': (ProjectWrite,),
-                'auth': [
-                    'SignatureAuthentication',
-                    'basicAuth',
-                    'cookieAuth',
-                    'tokenAuth'
-                ],
-                'endpoint_path': '/api/projects',
-                'operation_id': 'projects_create',
-                'http_method': 'POST',
-                'servers': None,
+                "response_type": (ProjectWrite,),
+                "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
+                "endpoint_path": "/api/projects",
+                "operation_id": "create",
+                "http_method": "POST",
+                "servers": None,
             },
             params_map={
-                'all': [
-                    'project_write_request',
-                    'x_organization',
-                    'org',
-                    'org_id',
+                "all": [
+                    "project_write_request",
+                    "x_organization",
+                    "org",
+                    "org_id",
                 ],
-                'required': [
-                    'project_write_request',
+                "required": [
+                    "project_write_request",
                 ],
-                'nullable': [
-                ],
-                'enum': [
-                ],
-                'validation': [
-                ]
+                "nullable": [],
+                "enum": [],
+                "validation": [],
             },
             root_map={
-                'validations': {
+                "validations": {},
+                "allowed_values": {},
+                "openapi_types": {
+                    "project_write_request": (ProjectWriteRequest,),
+                    "x_organization": (str,),
+                    "org": (str,),
+                    "org_id": (int,),
                 },
-                'allowed_values': {
+                "attribute_map": {
+                    "x_organization": "X-Organization",
+                    "org": "org",
+                    "org_id": "org_id",
                 },
-                'openapi_types': {
-                    'project_write_request':
-                        (ProjectWriteRequest,),
-                    'x_organization':
-                        (str,),
-                    'org':
-                        (str,),
-                    'org_id':
-                        (int,),
+                "location_map": {
+                    "project_write_request": "body",
+                    "x_organization": "header",
+                    "org": "query",
+                    "org_id": "query",
                 },
-                'attribute_map': {
-                    'x_organization': 'X-Organization',
-                    'org': 'org',
-                    'org_id': 'org_id',
-                },
-                'location_map': {
-                    'project_write_request': 'body',
-                    'x_organization': 'header',
-                    'org': 'query',
-                    'org_id': 'query',
-                },
-                'collection_format_map': {
-                }
+                "collection_format_map": {},
             },
             headers_map={
-                'accept': [
-                    'application/vnd.cvat+json'
+                "accept": ["application/vnd.cvat+json"],
+                "content_type": [
+                    "application/json",
+                    "application/x-www-form-urlencoded",
+                    "multipart/form-data",
+                    "application/offset+octet-stream",
                 ],
-                'content_type': [
-                    'application/json',
-                    'application/x-www-form-urlencoded',
-                    'multipart/form-data',
-                    'application/offset+octet-stream'
-                ]
             },
-            api_client=api_client
+            api_client=api_client,
         )
-        self.projects_dataset_create_endpoint = _Endpoint(
+        self.dataset_create_endpoint = _Endpoint(
             settings={
-                'response_type': None,
-                'auth': [
-                    'SignatureAuthentication',
-                    'basicAuth',
-                    'cookieAuth',
-                    'tokenAuth'
-                ],
-                'endpoint_path': '/api/projects/{id}/dataset/',
-                'operation_id': 'projects_dataset_create',
-                'http_method': 'POST',
-                'servers': None,
+                "response_type": None,
+                "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
+                "endpoint_path": "/api/projects/{id}/dataset/",
+                "operation_id": "dataset_create",
+                "http_method": "POST",
+                "servers": None,
             },
             params_map={
-                'all': [
-                    'format',
-                    'id',
-                    'project_write_request',
-                    'x_organization',
-                    'cloud_storage_id',
-                    'filename',
-                    'location',
-                    'org',
-                    'org_id',
-                    'use_default_location',
+                "all": [
+                    "format",
+                    "id",
+                    "project_write_request",
+                    "x_organization",
+                    "cloud_storage_id",
+                    "filename",
+                    "location",
+                    "org",
+                    "org_id",
+                    "use_default_location",
                 ],
-                'required': [
-                    'format',
-                    'id',
-                    'project_write_request',
+                "required": [
+                    "format",
+                    "id",
+                    "project_write_request",
                 ],
-                'nullable': [
+                "nullable": [],
+                "enum": [
+                    "location",
                 ],
-                'enum': [
-                    'location',
-                ],
-                'validation': [
-                ]
+                "validation": [],
             },
             root_map={
-                'validations': {
+                "validations": {},
+                "allowed_values": {
+                    ("location",): {"CLOUD_STORAGE": "cloud_storage", "LOCAL": "local"},
                 },
-                'allowed_values': {
-                    ('location',): {
-
-                        "CLOUD_STORAGE": "cloud_storage",
-                        "LOCAL": "local"
-                    },
+                "openapi_types": {
+                    "format": (str,),
+                    "id": (int,),
+                    "project_write_request": (ProjectWriteRequest,),
+                    "x_organization": (str,),
+                    "cloud_storage_id": (float,),
+                    "filename": (str,),
+                    "location": (str,),
+                    "org": (str,),
+                    "org_id": (int,),
+                    "use_default_location": (bool,),
                 },
-                'openapi_types': {
-                    'format':
-                        (str,),
-                    'id':
-                        (int,),
-                    'project_write_request':
-                        (ProjectWriteRequest,),
-                    'x_organization':
-                        (str,),
-                    'cloud_storage_id':
-                        (float,),
-                    'filename':
-                        (str,),
-                    'location':
-                        (str,),
-                    'org':
-                        (str,),
-                    'org_id':
-                        (int,),
-                    'use_default_location':
-                        (bool,),
+                "attribute_map": {
+                    "format": "format",
+                    "id": "id",
+                    "x_organization": "X-Organization",
+                    "cloud_storage_id": "cloud_storage_id",
+                    "filename": "filename",
+                    "location": "location",
+                    "org": "org",
+                    "org_id": "org_id",
+                    "use_default_location": "use_default_location",
                 },
-                'attribute_map': {
-                    'format': 'format',
-                    'id': 'id',
-                    'x_organization': 'X-Organization',
-                    'cloud_storage_id': 'cloud_storage_id',
-                    'filename': 'filename',
-                    'location': 'location',
-                    'org': 'org',
-                    'org_id': 'org_id',
-                    'use_default_location': 'use_default_location',
+                "location_map": {
+                    "format": "query",
+                    "id": "path",
+                    "project_write_request": "body",
+                    "x_organization": "header",
+                    "cloud_storage_id": "query",
+                    "filename": "query",
+                    "location": "query",
+                    "org": "query",
+                    "org_id": "query",
+                    "use_default_location": "query",
                 },
-                'location_map': {
-                    'format': 'query',
-                    'id': 'path',
-                    'project_write_request': 'body',
-                    'x_organization': 'header',
-                    'cloud_storage_id': 'query',
-                    'filename': 'query',
-                    'location': 'query',
-                    'org': 'query',
-                    'org_id': 'query',
-                    'use_default_location': 'query',
-                },
-                'collection_format_map': {
-                }
+                "collection_format_map": {},
             },
             headers_map={
-                'accept': [],
-                'content_type': [
-                    'application/json',
-                    'application/x-www-form-urlencoded',
-                    'multipart/form-data',
-                    'application/offset+octet-stream'
-                ]
-            },
-            api_client=api_client
-        )
-        self.projects_dataset_partial_update_endpoint = _Endpoint(
-            settings={
-                'response_type': (ProjectWrite,),
-                'auth': [
-                    'SignatureAuthentication',
-                    'basicAuth',
-                    'cookieAuth',
-                    'tokenAuth'
+                "accept": [],
+                "content_type": [
+                    "application/json",
+                    "application/x-www-form-urlencoded",
+                    "multipart/form-data",
+                    "application/offset+octet-stream",
                 ],
-                'endpoint_path': '/api/projects/{id}/dataset/{file_id}',
-                'operation_id': 'projects_dataset_partial_update',
-                'http_method': 'PATCH',
-                'servers': None,
+            },
+            api_client=api_client,
+        )
+        self.dataset_partial_update_endpoint = _Endpoint(
+            settings={
+                "response_type": (ProjectWrite,),
+                "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
+                "endpoint_path": "/api/projects/{id}/dataset/{file_id}",
+                "operation_id": "dataset_partial_update",
+                "http_method": "PATCH",
+                "servers": None,
             },
             params_map={
-                'all': [
-                    'file_id',
-                    'id',
-                    'x_organization',
-                    'org',
-                    'org_id',
-                    'patched_project_write_request',
+                "all": [
+                    "file_id",
+                    "id",
+                    "x_organization",
+                    "org",
+                    "org_id",
+                    "patched_project_write_request",
                 ],
-                'required': [
-                    'file_id',
-                    'id',
+                "required": [
+                    "file_id",
+                    "id",
                 ],
-                'nullable': [
+                "nullable": [],
+                "enum": [],
+                "validation": [
+                    "file_id",
                 ],
-                'enum': [
-                ],
-                'validation': [
-                    'file_id',
-                ]
             },
             root_map={
-                'validations': {
-                    ('file_id',): {
-
-                        'regex': {
-                            'pattern': r'^\b[0-9a-f]{8}\b-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-\b[0-9a-f]{12}\b$',  # noqa: E501
+                "validations": {
+                    ("file_id",): {
+                        "regex": {
+                            "pattern": r"^\b[0-9a-f]{8}\b-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-\b[0-9a-f]{12}\b$",  # noqa: E501
                         },
                     },
                 },
-                'allowed_values': {
+                "allowed_values": {},
+                "openapi_types": {
+                    "file_id": (str,),
+                    "id": (int,),
+                    "x_organization": (str,),
+                    "org": (str,),
+                    "org_id": (int,),
+                    "patched_project_write_request": (PatchedProjectWriteRequest,),
                 },
-                'openapi_types': {
-                    'file_id':
-                        (str,),
-                    'id':
-                        (int,),
-                    'x_organization':
-                        (str,),
-                    'org':
-                        (str,),
-                    'org_id':
-                        (int,),
-                    'patched_project_write_request':
-                        (PatchedProjectWriteRequest,),
+                "attribute_map": {
+                    "file_id": "file_id",
+                    "id": "id",
+                    "x_organization": "X-Organization",
+                    "org": "org",
+                    "org_id": "org_id",
                 },
-                'attribute_map': {
-                    'file_id': 'file_id',
-                    'id': 'id',
-                    'x_organization': 'X-Organization',
-                    'org': 'org',
-                    'org_id': 'org_id',
+                "location_map": {
+                    "file_id": "path",
+                    "id": "path",
+                    "x_organization": "header",
+                    "org": "query",
+                    "org_id": "query",
+                    "patched_project_write_request": "body",
                 },
-                'location_map': {
-                    'file_id': 'path',
-                    'id': 'path',
-                    'x_organization': 'header',
-                    'org': 'query',
-                    'org_id': 'query',
-                    'patched_project_write_request': 'body',
-                },
-                'collection_format_map': {
-                }
+                "collection_format_map": {},
             },
             headers_map={
-                'accept': [
-                    'application/vnd.cvat+json'
+                "accept": ["application/vnd.cvat+json"],
+                "content_type": [
+                    "application/json",
+                    "application/x-www-form-urlencoded",
+                    "multipart/form-data",
+                    "application/offset+octet-stream",
                 ],
-                'content_type': [
-                    'application/json',
-                    'application/x-www-form-urlencoded',
-                    'multipart/form-data',
-                    'application/offset+octet-stream'
-                ]
             },
-            api_client=api_client
+            api_client=api_client,
         )
-        self.projects_dataset_retrieve_endpoint = _Endpoint(
+        self.dataset_retrieve_endpoint = _Endpoint(
             settings={
-                'response_type': None,
-                'auth': [
-                    'SignatureAuthentication',
-                    'basicAuth',
-                    'cookieAuth',
-                    'tokenAuth'
-                ],
-                'endpoint_path': '/api/projects/{id}/dataset/',
-                'operation_id': 'projects_dataset_retrieve',
-                'http_method': 'GET',
-                'servers': None,
+                "response_type": None,
+                "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
+                "endpoint_path": "/api/projects/{id}/dataset/",
+                "operation_id": "dataset_retrieve",
+                "http_method": "GET",
+                "servers": None,
             },
             params_map={
-                'all': [
-                    'format',
-                    'id',
-                    'x_organization',
-                    'action',
-                    'cloud_storage_id',
-                    'filename',
-                    'location',
-                    'org',
-                    'org_id',
-                    'use_default_location',
+                "all": [
+                    "format",
+                    "id",
+                    "x_organization",
+                    "action",
+                    "cloud_storage_id",
+                    "filename",
+                    "location",
+                    "org",
+                    "org_id",
+                    "use_default_location",
                 ],
-                'required': [
-                    'format',
-                    'id',
+                "required": [
+                    "format",
+                    "id",
                 ],
-                'nullable': [
+                "nullable": [],
+                "enum": [
+                    "action",
+                    "location",
                 ],
-                'enum': [
-                    'action',
-                    'location',
-                ],
-                'validation': [
-                ]
+                "validation": [],
             },
             root_map={
-                'validations': {
+                "validations": {},
+                "allowed_values": {
+                    ("action",): {"DOWNLOAD": "download", "IMPORT_STATUS": "import_status"},
+                    ("location",): {"CLOUD_STORAGE": "cloud_storage", "LOCAL": "local"},
                 },
-                'allowed_values': {
-                    ('action',): {
-
-                        "DOWNLOAD": "download",
-                        "IMPORT_STATUS": "import_status"
-                    },
-                    ('location',): {
-
-                        "CLOUD_STORAGE": "cloud_storage",
-                        "LOCAL": "local"
-                    },
+                "openapi_types": {
+                    "format": (str,),
+                    "id": (int,),
+                    "x_organization": (str,),
+                    "action": (str,),
+                    "cloud_storage_id": (float,),
+                    "filename": (str,),
+                    "location": (str,),
+                    "org": (str,),
+                    "org_id": (int,),
+                    "use_default_location": (bool,),
                 },
-                'openapi_types': {
-                    'format':
-                        (str,),
-                    'id':
-                        (int,),
-                    'x_organization':
-                        (str,),
-                    'action':
-                        (str,),
-                    'cloud_storage_id':
-                        (float,),
-                    'filename':
-                        (str,),
-                    'location':
-                        (str,),
-                    'org':
-                        (str,),
-                    'org_id':
-                        (int,),
-                    'use_default_location':
-                        (bool,),
+                "attribute_map": {
+                    "format": "format",
+                    "id": "id",
+                    "x_organization": "X-Organization",
+                    "action": "action",
+                    "cloud_storage_id": "cloud_storage_id",
+                    "filename": "filename",
+                    "location": "location",
+                    "org": "org",
+                    "org_id": "org_id",
+                    "use_default_location": "use_default_location",
                 },
-                'attribute_map': {
-                    'format': 'format',
-                    'id': 'id',
-                    'x_organization': 'X-Organization',
-                    'action': 'action',
-                    'cloud_storage_id': 'cloud_storage_id',
-                    'filename': 'filename',
-                    'location': 'location',
-                    'org': 'org',
-                    'org_id': 'org_id',
-                    'use_default_location': 'use_default_location',
+                "location_map": {
+                    "format": "query",
+                    "id": "path",
+                    "x_organization": "header",
+                    "action": "query",
+                    "cloud_storage_id": "query",
+                    "filename": "query",
+                    "location": "query",
+                    "org": "query",
+                    "org_id": "query",
+                    "use_default_location": "query",
                 },
-                'location_map': {
-                    'format': 'query',
-                    'id': 'path',
-                    'x_organization': 'header',
-                    'action': 'query',
-                    'cloud_storage_id': 'query',
-                    'filename': 'query',
-                    'location': 'query',
-                    'org': 'query',
-                    'org_id': 'query',
-                    'use_default_location': 'query',
-                },
-                'collection_format_map': {
-                }
+                "collection_format_map": {},
             },
             headers_map={
-                'accept': [],
-                'content_type': [],
+                "accept": [],
+                "content_type": [],
             },
-            api_client=api_client
+            api_client=api_client,
         )
-        self.projects_destroy_endpoint = _Endpoint(
+        self.destroy_endpoint = _Endpoint(
             settings={
-                'response_type': None,
-                'auth': [
-                    'SignatureAuthentication',
-                    'basicAuth',
-                    'cookieAuth',
-                    'tokenAuth'
-                ],
-                'endpoint_path': '/api/projects/{id}',
-                'operation_id': 'projects_destroy',
-                'http_method': 'DELETE',
-                'servers': None,
+                "response_type": None,
+                "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
+                "endpoint_path": "/api/projects/{id}",
+                "operation_id": "destroy",
+                "http_method": "DELETE",
+                "servers": None,
             },
             params_map={
-                'all': [
-                    'id',
-                    'x_organization',
-                    'org',
-                    'org_id',
+                "all": [
+                    "id",
+                    "x_organization",
+                    "org",
+                    "org_id",
                 ],
-                'required': [
-                    'id',
+                "required": [
+                    "id",
                 ],
-                'nullable': [
-                ],
-                'enum': [
-                ],
-                'validation': [
-                ]
+                "nullable": [],
+                "enum": [],
+                "validation": [],
             },
             root_map={
-                'validations': {
+                "validations": {},
+                "allowed_values": {},
+                "openapi_types": {
+                    "id": (int,),
+                    "x_organization": (str,),
+                    "org": (str,),
+                    "org_id": (int,),
                 },
-                'allowed_values': {
+                "attribute_map": {
+                    "id": "id",
+                    "x_organization": "X-Organization",
+                    "org": "org",
+                    "org_id": "org_id",
                 },
-                'openapi_types': {
-                    'id':
-                        (int,),
-                    'x_organization':
-                        (str,),
-                    'org':
-                        (str,),
-                    'org_id':
-                        (int,),
+                "location_map": {
+                    "id": "path",
+                    "x_organization": "header",
+                    "org": "query",
+                    "org_id": "query",
                 },
-                'attribute_map': {
-                    'id': 'id',
-                    'x_organization': 'X-Organization',
-                    'org': 'org',
-                    'org_id': 'org_id',
-                },
-                'location_map': {
-                    'id': 'path',
-                    'x_organization': 'header',
-                    'org': 'query',
-                    'org_id': 'query',
-                },
-                'collection_format_map': {
-                }
+                "collection_format_map": {},
             },
             headers_map={
-                'accept': [],
-                'content_type': [],
+                "accept": [],
+                "content_type": [],
             },
-            api_client=api_client
+            api_client=api_client,
         )
-        self.projects_list_endpoint = _Endpoint(
+        self.list_endpoint = _Endpoint(
             settings={
-                'response_type': (PaginatedPolymorphicProjectList,),
-                'auth': [
-                    'SignatureAuthentication',
-                    'basicAuth',
-                    'cookieAuth',
-                    'tokenAuth'
-                ],
-                'endpoint_path': '/api/projects',
-                'operation_id': 'projects_list',
-                'http_method': 'GET',
-                'servers': None,
+                "response_type": (PaginatedPolymorphicProjectList,),
+                "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
+                "endpoint_path": "/api/projects",
+                "operation_id": "list",
+                "http_method": "GET",
+                "servers": None,
             },
             params_map={
-                'all': [
-                    'x_organization',
-                    'filter',
-                    'org',
-                    'org_id',
-                    'page',
-                    'page_size',
-                    'search',
-                    'sort',
+                "all": [
+                    "x_organization",
+                    "filter",
+                    "org",
+                    "org_id",
+                    "page",
+                    "page_size",
+                    "search",
+                    "sort",
                 ],
-                'required': [],
-                'nullable': [
-                ],
-                'enum': [
-                ],
-                'validation': [
-                ]
+                "required": [],
+                "nullable": [],
+                "enum": [],
+                "validation": [],
             },
             root_map={
-                'validations': {
+                "validations": {},
+                "allowed_values": {},
+                "openapi_types": {
+                    "x_organization": (str,),
+                    "filter": (str,),
+                    "org": (str,),
+                    "org_id": (int,),
+                    "page": (int,),
+                    "page_size": (int,),
+                    "search": (str,),
+                    "sort": (str,),
                 },
-                'allowed_values': {
+                "attribute_map": {
+                    "x_organization": "X-Organization",
+                    "filter": "filter",
+                    "org": "org",
+                    "org_id": "org_id",
+                    "page": "page",
+                    "page_size": "page_size",
+                    "search": "search",
+                    "sort": "sort",
                 },
-                'openapi_types': {
-                    'x_organization':
-                        (str,),
-                    'filter':
-                        (str,),
-                    'org':
-                        (str,),
-                    'org_id':
-                        (int,),
-                    'page':
-                        (int,),
-                    'page_size':
-                        (int,),
-                    'search':
-                        (str,),
-                    'sort':
-                        (str,),
+                "location_map": {
+                    "x_organization": "header",
+                    "filter": "query",
+                    "org": "query",
+                    "org_id": "query",
+                    "page": "query",
+                    "page_size": "query",
+                    "search": "query",
+                    "sort": "query",
                 },
-                'attribute_map': {
-                    'x_organization': 'X-Organization',
-                    'filter': 'filter',
-                    'org': 'org',
-                    'org_id': 'org_id',
-                    'page': 'page',
-                    'page_size': 'page_size',
-                    'search': 'search',
-                    'sort': 'sort',
-                },
-                'location_map': {
-                    'x_organization': 'header',
-                    'filter': 'query',
-                    'org': 'query',
-                    'org_id': 'query',
-                    'page': 'query',
-                    'page_size': 'query',
-                    'search': 'query',
-                    'sort': 'query',
-                },
-                'collection_format_map': {
-                }
+                "collection_format_map": {},
             },
             headers_map={
-                'accept': [
-                    'application/vnd.cvat+json'
-                ],
-                'content_type': [],
+                "accept": ["application/vnd.cvat+json"],
+                "content_type": [],
             },
-            api_client=api_client
+            api_client=api_client,
         )
-        self.projects_partial_update_endpoint = _Endpoint(
+        self.partial_update_endpoint = _Endpoint(
             settings={
-                'response_type': (ProjectWrite,),
-                'auth': [
-                    'SignatureAuthentication',
-                    'basicAuth',
-                    'cookieAuth',
-                    'tokenAuth'
-                ],
-                'endpoint_path': '/api/projects/{id}',
-                'operation_id': 'projects_partial_update',
-                'http_method': 'PATCH',
-                'servers': None,
+                "response_type": (ProjectWrite,),
+                "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
+                "endpoint_path": "/api/projects/{id}",
+                "operation_id": "partial_update",
+                "http_method": "PATCH",
+                "servers": None,
             },
             params_map={
-                'all': [
-                    'id',
-                    'x_organization',
-                    'org',
-                    'org_id',
-                    'patched_project_write_request',
+                "all": [
+                    "id",
+                    "x_organization",
+                    "org",
+                    "org_id",
+                    "patched_project_write_request",
                 ],
-                'required': [
-                    'id',
+                "required": [
+                    "id",
                 ],
-                'nullable': [
-                ],
-                'enum': [
-                ],
-                'validation': [
-                ]
+                "nullable": [],
+                "enum": [],
+                "validation": [],
             },
             root_map={
-                'validations': {
+                "validations": {},
+                "allowed_values": {},
+                "openapi_types": {
+                    "id": (int,),
+                    "x_organization": (str,),
+                    "org": (str,),
+                    "org_id": (int,),
+                    "patched_project_write_request": (PatchedProjectWriteRequest,),
                 },
-                'allowed_values': {
+                "attribute_map": {
+                    "id": "id",
+                    "x_organization": "X-Organization",
+                    "org": "org",
+                    "org_id": "org_id",
                 },
-                'openapi_types': {
-                    'id':
-                        (int,),
-                    'x_organization':
-                        (str,),
-                    'org':
-                        (str,),
-                    'org_id':
-                        (int,),
-                    'patched_project_write_request':
-                        (PatchedProjectWriteRequest,),
+                "location_map": {
+                    "id": "path",
+                    "x_organization": "header",
+                    "org": "query",
+                    "org_id": "query",
+                    "patched_project_write_request": "body",
                 },
-                'attribute_map': {
-                    'id': 'id',
-                    'x_organization': 'X-Organization',
-                    'org': 'org',
-                    'org_id': 'org_id',
-                },
-                'location_map': {
-                    'id': 'path',
-                    'x_organization': 'header',
-                    'org': 'query',
-                    'org_id': 'query',
-                    'patched_project_write_request': 'body',
-                },
-                'collection_format_map': {
-                }
+                "collection_format_map": {},
             },
             headers_map={
-                'accept': [
-                    'application/vnd.cvat+json'
+                "accept": ["application/vnd.cvat+json"],
+                "content_type": [
+                    "application/json",
+                    "application/x-www-form-urlencoded",
+                    "multipart/form-data",
+                    "application/offset+octet-stream",
                 ],
-                'content_type': [
-                    'application/json',
-                    'application/x-www-form-urlencoded',
-                    'multipart/form-data',
-                    'application/offset+octet-stream'
-                ]
             },
-            api_client=api_client
+            api_client=api_client,
         )
-        self.projects_retrieve_endpoint = _Endpoint(
+        self.retrieve_endpoint = _Endpoint(
             settings={
-                'response_type': (ProjectRead,),
-                'auth': [
-                    'SignatureAuthentication',
-                    'basicAuth',
-                    'cookieAuth',
-                    'tokenAuth'
-                ],
-                'endpoint_path': '/api/projects/{id}',
-                'operation_id': 'projects_retrieve',
-                'http_method': 'GET',
-                'servers': None,
+                "response_type": (ProjectRead,),
+                "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
+                "endpoint_path": "/api/projects/{id}",
+                "operation_id": "retrieve",
+                "http_method": "GET",
+                "servers": None,
             },
             params_map={
-                'all': [
-                    'id',
-                    'x_organization',
-                    'org',
-                    'org_id',
+                "all": [
+                    "id",
+                    "x_organization",
+                    "org",
+                    "org_id",
                 ],
-                'required': [
-                    'id',
+                "required": [
+                    "id",
                 ],
-                'nullable': [
-                ],
-                'enum': [
-                ],
-                'validation': [
-                ]
+                "nullable": [],
+                "enum": [],
+                "validation": [],
             },
             root_map={
-                'validations': {
+                "validations": {},
+                "allowed_values": {},
+                "openapi_types": {
+                    "id": (int,),
+                    "x_organization": (str,),
+                    "org": (str,),
+                    "org_id": (int,),
                 },
-                'allowed_values': {
+                "attribute_map": {
+                    "id": "id",
+                    "x_organization": "X-Organization",
+                    "org": "org",
+                    "org_id": "org_id",
                 },
-                'openapi_types': {
-                    'id':
-                        (int,),
-                    'x_organization':
-                        (str,),
-                    'org':
-                        (str,),
-                    'org_id':
-                        (int,),
+                "location_map": {
+                    "id": "path",
+                    "x_organization": "header",
+                    "org": "query",
+                    "org_id": "query",
                 },
-                'attribute_map': {
-                    'id': 'id',
-                    'x_organization': 'X-Organization',
-                    'org': 'org',
-                    'org_id': 'org_id',
-                },
-                'location_map': {
-                    'id': 'path',
-                    'x_organization': 'header',
-                    'org': 'query',
-                    'org_id': 'query',
-                },
-                'collection_format_map': {
-                }
+                "collection_format_map": {},
             },
             headers_map={
-                'accept': [
-                    'application/vnd.cvat+json'
-                ],
-                'content_type': [],
+                "accept": ["application/vnd.cvat+json"],
+                "content_type": [],
             },
-            api_client=api_client
+            api_client=api_client,
         )
-        self.projects_tasks_list_endpoint = _Endpoint(
+        self.tasks_list_endpoint = _Endpoint(
             settings={
-                'response_type': (PaginatedTaskReadList,),
-                'auth': [
-                    'SignatureAuthentication',
-                    'basicAuth',
-                    'cookieAuth',
-                    'tokenAuth'
-                ],
-                'endpoint_path': '/api/projects/{id}/tasks',
-                'operation_id': 'projects_tasks_list',
-                'http_method': 'GET',
-                'servers': None,
+                "response_type": (PaginatedTaskReadList,),
+                "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
+                "endpoint_path": "/api/projects/{id}/tasks",
+                "operation_id": "tasks_list",
+                "http_method": "GET",
+                "servers": None,
             },
             params_map={
-                'all': [
-                    'id',
-                    'x_organization',
-                    'filter',
-                    'org',
-                    'org_id',
-                    'page',
-                    'page_size',
-                    'search',
-                    'sort',
+                "all": [
+                    "id",
+                    "x_organization",
+                    "filter",
+                    "org",
+                    "org_id",
+                    "page",
+                    "page_size",
+                    "search",
+                    "sort",
                 ],
-                'required': [
-                    'id',
+                "required": [
+                    "id",
                 ],
-                'nullable': [
-                ],
-                'enum': [
-                ],
-                'validation': [
-                ]
+                "nullable": [],
+                "enum": [],
+                "validation": [],
             },
             root_map={
-                'validations': {
+                "validations": {},
+                "allowed_values": {},
+                "openapi_types": {
+                    "id": (int,),
+                    "x_organization": (str,),
+                    "filter": (str,),
+                    "org": (str,),
+                    "org_id": (int,),
+                    "page": (int,),
+                    "page_size": (int,),
+                    "search": (str,),
+                    "sort": (str,),
                 },
-                'allowed_values': {
+                "attribute_map": {
+                    "id": "id",
+                    "x_organization": "X-Organization",
+                    "filter": "filter",
+                    "org": "org",
+                    "org_id": "org_id",
+                    "page": "page",
+                    "page_size": "page_size",
+                    "search": "search",
+                    "sort": "sort",
                 },
-                'openapi_types': {
-                    'id':
-                        (int,),
-                    'x_organization':
-                        (str,),
-                    'filter':
-                        (str,),
-                    'org':
-                        (str,),
-                    'org_id':
-                        (int,),
-                    'page':
-                        (int,),
-                    'page_size':
-                        (int,),
-                    'search':
-                        (str,),
-                    'sort':
-                        (str,),
+                "location_map": {
+                    "id": "path",
+                    "x_organization": "header",
+                    "filter": "query",
+                    "org": "query",
+                    "org_id": "query",
+                    "page": "query",
+                    "page_size": "query",
+                    "search": "query",
+                    "sort": "query",
                 },
-                'attribute_map': {
-                    'id': 'id',
-                    'x_organization': 'X-Organization',
-                    'filter': 'filter',
-                    'org': 'org',
-                    'org_id': 'org_id',
-                    'page': 'page',
-                    'page_size': 'page_size',
-                    'search': 'search',
-                    'sort': 'sort',
-                },
-                'location_map': {
-                    'id': 'path',
-                    'x_organization': 'header',
-                    'filter': 'query',
-                    'org': 'query',
-                    'org_id': 'query',
-                    'page': 'query',
-                    'page_size': 'query',
-                    'search': 'query',
-                    'sort': 'query',
-                },
-                'collection_format_map': {
-                }
+                "collection_format_map": {},
             },
             headers_map={
-                'accept': [
-                    'application/vnd.cvat+json'
-                ],
-                'content_type': [],
+                "accept": ["application/vnd.cvat+json"],
+                "content_type": [],
             },
-            api_client=api_client
+            api_client=api_client,
         )
 
     @overload
-    def projects_annotations_retrieve(
+    def annotations_retrieve(
         self,
         format,
         id,
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
-        **kwargs
+        **kwargs,
     ) -> None:
         ...
 
     @overload
-    def projects_annotations_retrieve(
+    def annotations_retrieve(
         self,
         format,
         id,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def projects_annotations_retrieve(
-        self,
-        format,
-        id,
-        _return_http_data_only: typing.Literal[False],
-        **kwargs
+    def annotations_retrieve(
+        self, format, id, _return_http_data_only: typing.Literal[False], **kwargs
     ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def projects_annotations_retrieve(
-        self,
-        format,
-        id,
-        _preload_content: typing.Literal[False],
-        **kwargs
+    def annotations_retrieve(
+        self, format, id, _preload_content: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def projects_annotations_retrieve(
+    def annotations_retrieve(
         self,
         format,
         id,
         _return_http_data_only: typing.Literal[True],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def projects_annotations_retrieve(
+    def annotations_retrieve(
         self,
         format,
         id,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
-    def projects_annotations_retrieve(
-        self,
-        format,
-        id,
-        **kwargs
-    ) -> typing.Union[
-            typing.Tuple[None, int, typing.Dict[str, str]],
-            urllib3.HTTPResponse,
-            None
-    ]:
+    def annotations_retrieve(
+        self, format, id, **kwargs
+    ) -> typing.Union[typing.Tuple[None, int, typing.Dict[str, str]], urllib3.HTTPResponse, None]:
         """Method allows to download project annotations  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.projects_annotations_retrieve(format, id, async_req=True)
+        >>> thread = api.annotations_retrieve(format, id, async_req=True)
         >>> result = thread.get()
 
         Args:
@@ -1349,48 +1074,25 @@ class ProjectsApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        kwargs['async_req'] = kwargs.get(
-            'async_req', False
-        )
-        kwargs['_return_http_data_only'] = kwargs.get(
-            '_return_http_data_only', True
-        )
-        kwargs['_preload_content'] = kwargs.get(
-            '_preload_content', True
-        )
-        kwargs['_request_timeout'] = kwargs.get(
-            '_request_timeout', None
-        )
-        kwargs['_check_input_type'] = kwargs.get(
-            '_check_input_type', True
-        )
-        kwargs['_check_return_type'] = kwargs.get(
-            '_check_return_type', True
-        )
-        kwargs['_check_status'] = kwargs.get(
-            '_check_status', True
-        )
-        kwargs['_spec_property_naming'] = kwargs.get(
-            '_spec_property_naming', False
-        )
-        kwargs['_content_type'] = kwargs.get(
-            '_content_type')
-        kwargs['_host_index'] = kwargs.get('_host_index')
-        kwargs['_request_auths'] = kwargs.get('_request_auths', None)
-        kwargs['format'] = \
-            format
-        kwargs['id'] = \
-            id
-        return self.projects_annotations_retrieve_endpoint.call_with_http_info(**kwargs)
+        kwargs["async_req"] = kwargs.get("async_req", False)
+        kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
+        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
+        kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
+        kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
+        kwargs["_check_status"] = kwargs.get("_check_status", True)
+        kwargs["_spec_property_naming"] = kwargs.get("_spec_property_naming", False)
+        kwargs["_content_type"] = kwargs.get("_content_type")
+        kwargs["_host_index"] = kwargs.get("_host_index")
+        kwargs["_request_auths"] = kwargs.get("_request_auths", None)
+        kwargs["format"] = format
+        kwargs["id"] = id
+        return self.annotations_retrieve_endpoint.call_with_http_info(**kwargs)
 
-    def projects_annotations_retrieve_raw(
-        self,
-        *args,
-        **kwargs
-    ) -> urllib3.HTTPResponse:
+    def annotations_retrieve_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
         """
-        The same as projects_annotations_retrieve(), but returns the response unprocessed.
-        Equivalent to calling projects_annotations_retrieve with
+        The same as annotations_retrieve(), but returns the response unprocessed.
+        Equivalent to calling annotations_retrieve with
         _preload_content = False and _check_status=False
 
         Method allows to download project annotations  # noqa: E501
@@ -1398,7 +1100,7 @@ class ProjectsApi(object):
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.projects_annotations_retrieve(format, id, async_req=True)
+        >>> thread = api.annotations_retrieve(format, id, async_req=True)
         >>> result = thread.get()
 
         Args:
@@ -1442,82 +1144,71 @@ class ProjectsApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.projects_annotations_retrieve(*args, **kwargs,
-            _preload_content=False, _check_status=False)
+        return self.annotations_retrieve(
+            *args, **kwargs, _preload_content=False, _check_status=False
+        )
 
     @overload
-    def projects_backup_create(
+    def backup_create(
         self,
         project_file_request,
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
-        **kwargs
+        **kwargs,
     ) -> None:
         ...
 
     @overload
-    def projects_backup_create(
+    def backup_create(
         self,
         project_file_request,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def projects_backup_create(
-        self,
-        project_file_request,
-        _return_http_data_only: typing.Literal[False],
-        **kwargs
+    def backup_create(
+        self, project_file_request, _return_http_data_only: typing.Literal[False], **kwargs
     ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def projects_backup_create(
-        self,
-        project_file_request,
-        _preload_content: typing.Literal[False],
-        **kwargs
+    def backup_create(
+        self, project_file_request, _preload_content: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def projects_backup_create(
+    def backup_create(
         self,
         project_file_request,
         _return_http_data_only: typing.Literal[True],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def projects_backup_create(
+    def backup_create(
         self,
         project_file_request,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
-    def projects_backup_create(
-        self,
-        project_file_request,
-        **kwargs
-    ) -> typing.Union[
-            typing.Tuple[None, int, typing.Dict[str, str]],
-            urllib3.HTTPResponse,
-            None
-    ]:
+    def backup_create(
+        self, project_file_request, **kwargs
+    ) -> typing.Union[typing.Tuple[None, int, typing.Dict[str, str]], urllib3.HTTPResponse, None]:
         """Methods create a project from a backup  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.projects_backup_create(project_file_request, async_req=True)
+        >>> thread = api.backup_create(project_file_request, async_req=True)
         >>> result = thread.get()
 
         Args:
@@ -1570,46 +1261,24 @@ class ProjectsApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        kwargs['async_req'] = kwargs.get(
-            'async_req', False
-        )
-        kwargs['_return_http_data_only'] = kwargs.get(
-            '_return_http_data_only', True
-        )
-        kwargs['_preload_content'] = kwargs.get(
-            '_preload_content', True
-        )
-        kwargs['_request_timeout'] = kwargs.get(
-            '_request_timeout', None
-        )
-        kwargs['_check_input_type'] = kwargs.get(
-            '_check_input_type', True
-        )
-        kwargs['_check_return_type'] = kwargs.get(
-            '_check_return_type', True
-        )
-        kwargs['_check_status'] = kwargs.get(
-            '_check_status', True
-        )
-        kwargs['_spec_property_naming'] = kwargs.get(
-            '_spec_property_naming', False
-        )
-        kwargs['_content_type'] = kwargs.get(
-            '_content_type')
-        kwargs['_host_index'] = kwargs.get('_host_index')
-        kwargs['_request_auths'] = kwargs.get('_request_auths', None)
-        kwargs['project_file_request'] = \
-            project_file_request
-        return self.projects_backup_create_endpoint.call_with_http_info(**kwargs)
+        kwargs["async_req"] = kwargs.get("async_req", False)
+        kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
+        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
+        kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
+        kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
+        kwargs["_check_status"] = kwargs.get("_check_status", True)
+        kwargs["_spec_property_naming"] = kwargs.get("_spec_property_naming", False)
+        kwargs["_content_type"] = kwargs.get("_content_type")
+        kwargs["_host_index"] = kwargs.get("_host_index")
+        kwargs["_request_auths"] = kwargs.get("_request_auths", None)
+        kwargs["project_file_request"] = project_file_request
+        return self.backup_create_endpoint.call_with_http_info(**kwargs)
 
-    def projects_backup_create_raw(
-        self,
-        *args,
-        **kwargs
-    ) -> urllib3.HTTPResponse:
+    def backup_create_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
         """
-        The same as projects_backup_create(), but returns the response unprocessed.
-        Equivalent to calling projects_backup_create with
+        The same as backup_create(), but returns the response unprocessed.
+        Equivalent to calling backup_create with
         _preload_content = False and _check_status=False
 
         Methods create a project from a backup  # noqa: E501
@@ -1617,7 +1286,7 @@ class ProjectsApi(object):
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.projects_backup_create(project_file_request, async_req=True)
+        >>> thread = api.backup_create(project_file_request, async_req=True)
         >>> result = thread.get()
 
         Args:
@@ -1658,82 +1327,71 @@ class ProjectsApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.projects_backup_create(*args, **kwargs,
-            _preload_content=False, _check_status=False)
+        return self.backup_create(*args, **kwargs, _preload_content=False, _check_status=False)
 
     @overload
-    def projects_backup_partial_update(
+    def backup_partial_update(
         self,
         file_id,
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
-        **kwargs
+        **kwargs,
     ) -> object:
         ...
 
     @overload
-    def projects_backup_partial_update(
+    def backup_partial_update(
         self,
         file_id,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def projects_backup_partial_update(
-        self,
-        file_id,
-        _return_http_data_only: typing.Literal[False],
-        **kwargs
+    def backup_partial_update(
+        self, file_id, _return_http_data_only: typing.Literal[False], **kwargs
     ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def projects_backup_partial_update(
-        self,
-        file_id,
-        _preload_content: typing.Literal[False],
-        **kwargs
+    def backup_partial_update(
+        self, file_id, _preload_content: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def projects_backup_partial_update(
+    def backup_partial_update(
         self,
         file_id,
         _return_http_data_only: typing.Literal[True],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def projects_backup_partial_update(
+    def backup_partial_update(
         self,
         file_id,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
-    def projects_backup_partial_update(
-        self,
-        file_id,
-        **kwargs
+    def backup_partial_update(
+        self, file_id, **kwargs
     ) -> typing.Union[
-            typing.Tuple[object, int, typing.Dict[str, str]],
-            urllib3.HTTPResponse,
-            object
+        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
     ]:
-        """projects_backup_partial_update  # noqa: E501
+        """backup_partial_update  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.projects_backup_partial_update(file_id, async_req=True)
+        >>> thread = api.backup_partial_update(file_id, async_req=True)
         >>> result = thread.get()
 
         Args:
@@ -1784,54 +1442,32 @@ class ProjectsApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        kwargs['async_req'] = kwargs.get(
-            'async_req', False
-        )
-        kwargs['_return_http_data_only'] = kwargs.get(
-            '_return_http_data_only', True
-        )
-        kwargs['_preload_content'] = kwargs.get(
-            '_preload_content', True
-        )
-        kwargs['_request_timeout'] = kwargs.get(
-            '_request_timeout', None
-        )
-        kwargs['_check_input_type'] = kwargs.get(
-            '_check_input_type', True
-        )
-        kwargs['_check_return_type'] = kwargs.get(
-            '_check_return_type', True
-        )
-        kwargs['_check_status'] = kwargs.get(
-            '_check_status', True
-        )
-        kwargs['_spec_property_naming'] = kwargs.get(
-            '_spec_property_naming', False
-        )
-        kwargs['_content_type'] = kwargs.get(
-            '_content_type')
-        kwargs['_host_index'] = kwargs.get('_host_index')
-        kwargs['_request_auths'] = kwargs.get('_request_auths', None)
-        kwargs['file_id'] = \
-            file_id
-        return self.projects_backup_partial_update_endpoint.call_with_http_info(**kwargs)
+        kwargs["async_req"] = kwargs.get("async_req", False)
+        kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
+        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
+        kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
+        kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
+        kwargs["_check_status"] = kwargs.get("_check_status", True)
+        kwargs["_spec_property_naming"] = kwargs.get("_spec_property_naming", False)
+        kwargs["_content_type"] = kwargs.get("_content_type")
+        kwargs["_host_index"] = kwargs.get("_host_index")
+        kwargs["_request_auths"] = kwargs.get("_request_auths", None)
+        kwargs["file_id"] = file_id
+        return self.backup_partial_update_endpoint.call_with_http_info(**kwargs)
 
-    def projects_backup_partial_update_raw(
-        self,
-        *args,
-        **kwargs
-    ) -> urllib3.HTTPResponse:
+    def backup_partial_update_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
         """
-        The same as projects_backup_partial_update(), but returns the response unprocessed.
-        Equivalent to calling projects_backup_partial_update with
+        The same as backup_partial_update(), but returns the response unprocessed.
+        Equivalent to calling backup_partial_update with
         _preload_content = False and _check_status=False
 
-        projects_backup_partial_update  # noqa: E501
+        backup_partial_update  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.projects_backup_partial_update(file_id, async_req=True)
+        >>> thread = api.backup_partial_update(file_id, async_req=True)
         >>> result = thread.get()
 
         Args:
@@ -1870,82 +1506,71 @@ class ProjectsApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.projects_backup_partial_update(*args, **kwargs,
-            _preload_content=False, _check_status=False)
+        return self.backup_partial_update(
+            *args, **kwargs, _preload_content=False, _check_status=False
+        )
 
     @overload
-    def projects_backup_retrieve(
+    def backup_retrieve(
         self,
         id,
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
-        **kwargs
+        **kwargs,
     ) -> None:
         ...
 
     @overload
-    def projects_backup_retrieve(
+    def backup_retrieve(
         self,
         id,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def projects_backup_retrieve(
-        self,
-        id,
-        _return_http_data_only: typing.Literal[False],
-        **kwargs
+    def backup_retrieve(
+        self, id, _return_http_data_only: typing.Literal[False], **kwargs
     ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def projects_backup_retrieve(
-        self,
-        id,
-        _preload_content: typing.Literal[False],
-        **kwargs
+    def backup_retrieve(
+        self, id, _preload_content: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def projects_backup_retrieve(
+    def backup_retrieve(
         self,
         id,
         _return_http_data_only: typing.Literal[True],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def projects_backup_retrieve(
+    def backup_retrieve(
         self,
         id,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
-    def projects_backup_retrieve(
-        self,
-        id,
-        **kwargs
-    ) -> typing.Union[
-            typing.Tuple[None, int, typing.Dict[str, str]],
-            urllib3.HTTPResponse,
-            None
-    ]:
+    def backup_retrieve(
+        self, id, **kwargs
+    ) -> typing.Union[typing.Tuple[None, int, typing.Dict[str, str]], urllib3.HTTPResponse, None]:
         """Methods creates a backup copy of a project  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.projects_backup_retrieve(id, async_req=True)
+        >>> thread = api.backup_retrieve(id, async_req=True)
         >>> result = thread.get()
 
         Args:
@@ -2000,46 +1625,24 @@ class ProjectsApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        kwargs['async_req'] = kwargs.get(
-            'async_req', False
-        )
-        kwargs['_return_http_data_only'] = kwargs.get(
-            '_return_http_data_only', True
-        )
-        kwargs['_preload_content'] = kwargs.get(
-            '_preload_content', True
-        )
-        kwargs['_request_timeout'] = kwargs.get(
-            '_request_timeout', None
-        )
-        kwargs['_check_input_type'] = kwargs.get(
-            '_check_input_type', True
-        )
-        kwargs['_check_return_type'] = kwargs.get(
-            '_check_return_type', True
-        )
-        kwargs['_check_status'] = kwargs.get(
-            '_check_status', True
-        )
-        kwargs['_spec_property_naming'] = kwargs.get(
-            '_spec_property_naming', False
-        )
-        kwargs['_content_type'] = kwargs.get(
-            '_content_type')
-        kwargs['_host_index'] = kwargs.get('_host_index')
-        kwargs['_request_auths'] = kwargs.get('_request_auths', None)
-        kwargs['id'] = \
-            id
-        return self.projects_backup_retrieve_endpoint.call_with_http_info(**kwargs)
+        kwargs["async_req"] = kwargs.get("async_req", False)
+        kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
+        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
+        kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
+        kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
+        kwargs["_check_status"] = kwargs.get("_check_status", True)
+        kwargs["_spec_property_naming"] = kwargs.get("_spec_property_naming", False)
+        kwargs["_content_type"] = kwargs.get("_content_type")
+        kwargs["_host_index"] = kwargs.get("_host_index")
+        kwargs["_request_auths"] = kwargs.get("_request_auths", None)
+        kwargs["id"] = id
+        return self.backup_retrieve_endpoint.call_with_http_info(**kwargs)
 
-    def projects_backup_retrieve_raw(
-        self,
-        *args,
-        **kwargs
-    ) -> urllib3.HTTPResponse:
+    def backup_retrieve_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
         """
-        The same as projects_backup_retrieve(), but returns the response unprocessed.
-        Equivalent to calling projects_backup_retrieve with
+        The same as backup_retrieve(), but returns the response unprocessed.
+        Equivalent to calling backup_retrieve with
         _preload_content = False and _check_status=False
 
         Methods creates a backup copy of a project  # noqa: E501
@@ -2047,7 +1650,7 @@ class ProjectsApi(object):
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.projects_backup_retrieve(id, async_req=True)
+        >>> thread = api.backup_retrieve(id, async_req=True)
         >>> result = thread.get()
 
         Args:
@@ -2090,82 +1693,71 @@ class ProjectsApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.projects_backup_retrieve(*args, **kwargs,
-            _preload_content=False, _check_status=False)
+        return self.backup_retrieve(*args, **kwargs, _preload_content=False, _check_status=False)
 
     @overload
-    def projects_create(
+    def create(
         self,
         project_write_request,
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
-        **kwargs
+        **kwargs,
     ) -> object:
         ...
 
     @overload
-    def projects_create(
+    def create(
         self,
         project_write_request,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def projects_create(
-        self,
-        project_write_request,
-        _return_http_data_only: typing.Literal[False],
-        **kwargs
+    def create(
+        self, project_write_request, _return_http_data_only: typing.Literal[False], **kwargs
     ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def projects_create(
-        self,
-        project_write_request,
-        _preload_content: typing.Literal[False],
-        **kwargs
+    def create(
+        self, project_write_request, _preload_content: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def projects_create(
+    def create(
         self,
         project_write_request,
         _return_http_data_only: typing.Literal[True],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def projects_create(
+    def create(
         self,
         project_write_request,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
-    def projects_create(
-        self,
-        project_write_request,
-        **kwargs
+    def create(
+        self, project_write_request, **kwargs
     ) -> typing.Union[
-            typing.Tuple[object, int, typing.Dict[str, str]],
-            urllib3.HTTPResponse,
-            object
+        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
     ]:
         """Method creates a new project  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.projects_create(project_write_request, async_req=True)
+        >>> thread = api.create(project_write_request, async_req=True)
         >>> result = thread.get()
 
         Args:
@@ -2215,46 +1807,24 @@ class ProjectsApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        kwargs['async_req'] = kwargs.get(
-            'async_req', False
-        )
-        kwargs['_return_http_data_only'] = kwargs.get(
-            '_return_http_data_only', True
-        )
-        kwargs['_preload_content'] = kwargs.get(
-            '_preload_content', True
-        )
-        kwargs['_request_timeout'] = kwargs.get(
-            '_request_timeout', None
-        )
-        kwargs['_check_input_type'] = kwargs.get(
-            '_check_input_type', True
-        )
-        kwargs['_check_return_type'] = kwargs.get(
-            '_check_return_type', True
-        )
-        kwargs['_check_status'] = kwargs.get(
-            '_check_status', True
-        )
-        kwargs['_spec_property_naming'] = kwargs.get(
-            '_spec_property_naming', False
-        )
-        kwargs['_content_type'] = kwargs.get(
-            '_content_type')
-        kwargs['_host_index'] = kwargs.get('_host_index')
-        kwargs['_request_auths'] = kwargs.get('_request_auths', None)
-        kwargs['project_write_request'] = \
-            project_write_request
-        return self.projects_create_endpoint.call_with_http_info(**kwargs)
+        kwargs["async_req"] = kwargs.get("async_req", False)
+        kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
+        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
+        kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
+        kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
+        kwargs["_check_status"] = kwargs.get("_check_status", True)
+        kwargs["_spec_property_naming"] = kwargs.get("_spec_property_naming", False)
+        kwargs["_content_type"] = kwargs.get("_content_type")
+        kwargs["_host_index"] = kwargs.get("_host_index")
+        kwargs["_request_auths"] = kwargs.get("_request_auths", None)
+        kwargs["project_write_request"] = project_write_request
+        return self.create_endpoint.call_with_http_info(**kwargs)
 
-    def projects_create_raw(
-        self,
-        *args,
-        **kwargs
-    ) -> urllib3.HTTPResponse:
+    def create_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
         """
-        The same as projects_create(), but returns the response unprocessed.
-        Equivalent to calling projects_create with
+        The same as create(), but returns the response unprocessed.
+        Equivalent to calling create with
         _preload_content = False and _check_status=False
 
         Method creates a new project  # noqa: E501
@@ -2262,7 +1832,7 @@ class ProjectsApi(object):
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.projects_create(project_write_request, async_req=True)
+        >>> thread = api.create(project_write_request, async_req=True)
         >>> result = thread.get()
 
         Args:
@@ -2300,96 +1870,82 @@ class ProjectsApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.projects_create(*args, **kwargs,
-            _preload_content=False, _check_status=False)
+        return self.create(*args, **kwargs, _preload_content=False, _check_status=False)
 
     @overload
-    def projects_dataset_create(
+    def dataset_create(
         self,
         format,
         id,
         project_write_request,
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
-        **kwargs
+        **kwargs,
     ) -> None:
         ...
 
     @overload
-    def projects_dataset_create(
+    def dataset_create(
         self,
         format,
         id,
         project_write_request,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def projects_dataset_create(
+    def dataset_create(
         self,
         format,
         id,
         project_write_request,
         _return_http_data_only: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def projects_dataset_create(
-        self,
-        format,
-        id,
-        project_write_request,
-        _preload_content: typing.Literal[False],
-        **kwargs
+    def dataset_create(
+        self, format, id, project_write_request, _preload_content: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def projects_dataset_create(
+    def dataset_create(
         self,
         format,
         id,
         project_write_request,
         _return_http_data_only: typing.Literal[True],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def projects_dataset_create(
+    def dataset_create(
         self,
         format,
         id,
         project_write_request,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
-    def projects_dataset_create(
-        self,
-        format,
-        id,
-        project_write_request,
-        **kwargs
-    ) -> typing.Union[
-            typing.Tuple[None, int, typing.Dict[str, str]],
-            urllib3.HTTPResponse,
-            None
-    ]:
+    def dataset_create(
+        self, format, id, project_write_request, **kwargs
+    ) -> typing.Union[typing.Tuple[None, int, typing.Dict[str, str]], urllib3.HTTPResponse, None]:
         """Import dataset in specific format as a project  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.projects_dataset_create(format, id, project_write_request, async_req=True)
+        >>> thread = api.dataset_create(format, id, project_write_request, async_req=True)
         >>> result = thread.get()
 
         Args:
@@ -2445,50 +2001,26 @@ class ProjectsApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        kwargs['async_req'] = kwargs.get(
-            'async_req', False
-        )
-        kwargs['_return_http_data_only'] = kwargs.get(
-            '_return_http_data_only', True
-        )
-        kwargs['_preload_content'] = kwargs.get(
-            '_preload_content', True
-        )
-        kwargs['_request_timeout'] = kwargs.get(
-            '_request_timeout', None
-        )
-        kwargs['_check_input_type'] = kwargs.get(
-            '_check_input_type', True
-        )
-        kwargs['_check_return_type'] = kwargs.get(
-            '_check_return_type', True
-        )
-        kwargs['_check_status'] = kwargs.get(
-            '_check_status', True
-        )
-        kwargs['_spec_property_naming'] = kwargs.get(
-            '_spec_property_naming', False
-        )
-        kwargs['_content_type'] = kwargs.get(
-            '_content_type')
-        kwargs['_host_index'] = kwargs.get('_host_index')
-        kwargs['_request_auths'] = kwargs.get('_request_auths', None)
-        kwargs['format'] = \
-            format
-        kwargs['id'] = \
-            id
-        kwargs['project_write_request'] = \
-            project_write_request
-        return self.projects_dataset_create_endpoint.call_with_http_info(**kwargs)
+        kwargs["async_req"] = kwargs.get("async_req", False)
+        kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
+        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
+        kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
+        kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
+        kwargs["_check_status"] = kwargs.get("_check_status", True)
+        kwargs["_spec_property_naming"] = kwargs.get("_spec_property_naming", False)
+        kwargs["_content_type"] = kwargs.get("_content_type")
+        kwargs["_host_index"] = kwargs.get("_host_index")
+        kwargs["_request_auths"] = kwargs.get("_request_auths", None)
+        kwargs["format"] = format
+        kwargs["id"] = id
+        kwargs["project_write_request"] = project_write_request
+        return self.dataset_create_endpoint.call_with_http_info(**kwargs)
 
-    def projects_dataset_create_raw(
-        self,
-        *args,
-        **kwargs
-    ) -> urllib3.HTTPResponse:
+    def dataset_create_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
         """
-        The same as projects_dataset_create(), but returns the response unprocessed.
-        Equivalent to calling projects_dataset_create with
+        The same as dataset_create(), but returns the response unprocessed.
+        Equivalent to calling dataset_create with
         _preload_content = False and _check_status=False
 
         Import dataset in specific format as a project  # noqa: E501
@@ -2496,7 +2028,7 @@ class ProjectsApi(object):
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.projects_dataset_create(format, id, project_write_request, async_req=True)
+        >>> thread = api.dataset_create(format, id, project_write_request, async_req=True)
         >>> result = thread.get()
 
         Args:
@@ -2540,89 +2072,75 @@ class ProjectsApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.projects_dataset_create(*args, **kwargs,
-            _preload_content=False, _check_status=False)
+        return self.dataset_create(*args, **kwargs, _preload_content=False, _check_status=False)
 
     @overload
-    def projects_dataset_partial_update(
+    def dataset_partial_update(
         self,
         file_id,
         id,
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
-        **kwargs
+        **kwargs,
     ) -> object:
         ...
 
     @overload
-    def projects_dataset_partial_update(
+    def dataset_partial_update(
         self,
         file_id,
         id,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def projects_dataset_partial_update(
-        self,
-        file_id,
-        id,
-        _return_http_data_only: typing.Literal[False],
-        **kwargs
+    def dataset_partial_update(
+        self, file_id, id, _return_http_data_only: typing.Literal[False], **kwargs
     ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def projects_dataset_partial_update(
-        self,
-        file_id,
-        id,
-        _preload_content: typing.Literal[False],
-        **kwargs
+    def dataset_partial_update(
+        self, file_id, id, _preload_content: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def projects_dataset_partial_update(
+    def dataset_partial_update(
         self,
         file_id,
         id,
         _return_http_data_only: typing.Literal[True],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def projects_dataset_partial_update(
+    def dataset_partial_update(
         self,
         file_id,
         id,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
-    def projects_dataset_partial_update(
-        self,
-        file_id,
-        id,
-        **kwargs
+    def dataset_partial_update(
+        self, file_id, id, **kwargs
     ) -> typing.Union[
-            typing.Tuple[object, int, typing.Dict[str, str]],
-            urllib3.HTTPResponse,
-            object
+        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
     ]:
-        """projects_dataset_partial_update  # noqa: E501
+        """dataset_partial_update  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.projects_dataset_partial_update(file_id, id, async_req=True)
+        >>> thread = api.dataset_partial_update(file_id, id, async_req=True)
         >>> result = thread.get()
 
         Args:
@@ -2674,56 +2192,33 @@ class ProjectsApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        kwargs['async_req'] = kwargs.get(
-            'async_req', False
-        )
-        kwargs['_return_http_data_only'] = kwargs.get(
-            '_return_http_data_only', True
-        )
-        kwargs['_preload_content'] = kwargs.get(
-            '_preload_content', True
-        )
-        kwargs['_request_timeout'] = kwargs.get(
-            '_request_timeout', None
-        )
-        kwargs['_check_input_type'] = kwargs.get(
-            '_check_input_type', True
-        )
-        kwargs['_check_return_type'] = kwargs.get(
-            '_check_return_type', True
-        )
-        kwargs['_check_status'] = kwargs.get(
-            '_check_status', True
-        )
-        kwargs['_spec_property_naming'] = kwargs.get(
-            '_spec_property_naming', False
-        )
-        kwargs['_content_type'] = kwargs.get(
-            '_content_type')
-        kwargs['_host_index'] = kwargs.get('_host_index')
-        kwargs['_request_auths'] = kwargs.get('_request_auths', None)
-        kwargs['file_id'] = \
-            file_id
-        kwargs['id'] = \
-            id
-        return self.projects_dataset_partial_update_endpoint.call_with_http_info(**kwargs)
+        kwargs["async_req"] = kwargs.get("async_req", False)
+        kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
+        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
+        kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
+        kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
+        kwargs["_check_status"] = kwargs.get("_check_status", True)
+        kwargs["_spec_property_naming"] = kwargs.get("_spec_property_naming", False)
+        kwargs["_content_type"] = kwargs.get("_content_type")
+        kwargs["_host_index"] = kwargs.get("_host_index")
+        kwargs["_request_auths"] = kwargs.get("_request_auths", None)
+        kwargs["file_id"] = file_id
+        kwargs["id"] = id
+        return self.dataset_partial_update_endpoint.call_with_http_info(**kwargs)
 
-    def projects_dataset_partial_update_raw(
-        self,
-        *args,
-        **kwargs
-    ) -> urllib3.HTTPResponse:
+    def dataset_partial_update_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
         """
-        The same as projects_dataset_partial_update(), but returns the response unprocessed.
-        Equivalent to calling projects_dataset_partial_update with
+        The same as dataset_partial_update(), but returns the response unprocessed.
+        Equivalent to calling dataset_partial_update with
         _preload_content = False and _check_status=False
 
-        projects_dataset_partial_update  # noqa: E501
+        dataset_partial_update  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.projects_dataset_partial_update(file_id, id, async_req=True)
+        >>> thread = api.dataset_partial_update(file_id, id, async_req=True)
         >>> result = thread.get()
 
         Args:
@@ -2763,89 +2258,75 @@ class ProjectsApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.projects_dataset_partial_update(*args, **kwargs,
-            _preload_content=False, _check_status=False)
+        return self.dataset_partial_update(
+            *args, **kwargs, _preload_content=False, _check_status=False
+        )
 
     @overload
-    def projects_dataset_retrieve(
+    def dataset_retrieve(
         self,
         format,
         id,
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
-        **kwargs
+        **kwargs,
     ) -> None:
         ...
 
     @overload
-    def projects_dataset_retrieve(
+    def dataset_retrieve(
         self,
         format,
         id,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def projects_dataset_retrieve(
-        self,
-        format,
-        id,
-        _return_http_data_only: typing.Literal[False],
-        **kwargs
+    def dataset_retrieve(
+        self, format, id, _return_http_data_only: typing.Literal[False], **kwargs
     ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def projects_dataset_retrieve(
-        self,
-        format,
-        id,
-        _preload_content: typing.Literal[False],
-        **kwargs
+    def dataset_retrieve(
+        self, format, id, _preload_content: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def projects_dataset_retrieve(
+    def dataset_retrieve(
         self,
         format,
         id,
         _return_http_data_only: typing.Literal[True],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def projects_dataset_retrieve(
+    def dataset_retrieve(
         self,
         format,
         id,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
-    def projects_dataset_retrieve(
-        self,
-        format,
-        id,
-        **kwargs
-    ) -> typing.Union[
-            typing.Tuple[None, int, typing.Dict[str, str]],
-            urllib3.HTTPResponse,
-            None
-    ]:
+    def dataset_retrieve(
+        self, format, id, **kwargs
+    ) -> typing.Union[typing.Tuple[None, int, typing.Dict[str, str]], urllib3.HTTPResponse, None]:
         """Export project as a dataset in a specific format  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.projects_dataset_retrieve(format, id, async_req=True)
+        >>> thread = api.dataset_retrieve(format, id, async_req=True)
         >>> result = thread.get()
 
         Args:
@@ -2901,48 +2382,25 @@ class ProjectsApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        kwargs['async_req'] = kwargs.get(
-            'async_req', False
-        )
-        kwargs['_return_http_data_only'] = kwargs.get(
-            '_return_http_data_only', True
-        )
-        kwargs['_preload_content'] = kwargs.get(
-            '_preload_content', True
-        )
-        kwargs['_request_timeout'] = kwargs.get(
-            '_request_timeout', None
-        )
-        kwargs['_check_input_type'] = kwargs.get(
-            '_check_input_type', True
-        )
-        kwargs['_check_return_type'] = kwargs.get(
-            '_check_return_type', True
-        )
-        kwargs['_check_status'] = kwargs.get(
-            '_check_status', True
-        )
-        kwargs['_spec_property_naming'] = kwargs.get(
-            '_spec_property_naming', False
-        )
-        kwargs['_content_type'] = kwargs.get(
-            '_content_type')
-        kwargs['_host_index'] = kwargs.get('_host_index')
-        kwargs['_request_auths'] = kwargs.get('_request_auths', None)
-        kwargs['format'] = \
-            format
-        kwargs['id'] = \
-            id
-        return self.projects_dataset_retrieve_endpoint.call_with_http_info(**kwargs)
+        kwargs["async_req"] = kwargs.get("async_req", False)
+        kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
+        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
+        kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
+        kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
+        kwargs["_check_status"] = kwargs.get("_check_status", True)
+        kwargs["_spec_property_naming"] = kwargs.get("_spec_property_naming", False)
+        kwargs["_content_type"] = kwargs.get("_content_type")
+        kwargs["_host_index"] = kwargs.get("_host_index")
+        kwargs["_request_auths"] = kwargs.get("_request_auths", None)
+        kwargs["format"] = format
+        kwargs["id"] = id
+        return self.dataset_retrieve_endpoint.call_with_http_info(**kwargs)
 
-    def projects_dataset_retrieve_raw(
-        self,
-        *args,
-        **kwargs
-    ) -> urllib3.HTTPResponse:
+    def dataset_retrieve_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
         """
-        The same as projects_dataset_retrieve(), but returns the response unprocessed.
-        Equivalent to calling projects_dataset_retrieve with
+        The same as dataset_retrieve(), but returns the response unprocessed.
+        Equivalent to calling dataset_retrieve with
         _preload_content = False and _check_status=False
 
         Export project as a dataset in a specific format  # noqa: E501
@@ -2950,7 +2408,7 @@ class ProjectsApi(object):
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.projects_dataset_retrieve(format, id, async_req=True)
+        >>> thread = api.dataset_retrieve(format, id, async_req=True)
         >>> result = thread.get()
 
         Args:
@@ -2994,82 +2452,69 @@ class ProjectsApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.projects_dataset_retrieve(*args, **kwargs,
-            _preload_content=False, _check_status=False)
+        return self.dataset_retrieve(*args, **kwargs, _preload_content=False, _check_status=False)
 
     @overload
-    def projects_destroy(
+    def destroy(
         self,
         id,
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
-        **kwargs
+        **kwargs,
     ) -> None:
         ...
 
     @overload
-    def projects_destroy(
+    def destroy(
         self,
         id,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def projects_destroy(
-        self,
-        id,
-        _return_http_data_only: typing.Literal[False],
-        **kwargs
+    def destroy(
+        self, id, _return_http_data_only: typing.Literal[False], **kwargs
     ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def projects_destroy(
-        self,
-        id,
-        _preload_content: typing.Literal[False],
-        **kwargs
+    def destroy(
+        self, id, _preload_content: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def projects_destroy(
+    def destroy(
         self,
         id,
         _return_http_data_only: typing.Literal[True],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def projects_destroy(
+    def destroy(
         self,
         id,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
-    def projects_destroy(
-        self,
-        id,
-        **kwargs
-    ) -> typing.Union[
-            typing.Tuple[None, int, typing.Dict[str, str]],
-            urllib3.HTTPResponse,
-            None
-    ]:
+    def destroy(
+        self, id, **kwargs
+    ) -> typing.Union[typing.Tuple[None, int, typing.Dict[str, str]], urllib3.HTTPResponse, None]:
         """Method deletes a specific project  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.projects_destroy(id, async_req=True)
+        >>> thread = api.destroy(id, async_req=True)
         >>> result = thread.get()
 
         Args:
@@ -3119,46 +2564,24 @@ class ProjectsApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        kwargs['async_req'] = kwargs.get(
-            'async_req', False
-        )
-        kwargs['_return_http_data_only'] = kwargs.get(
-            '_return_http_data_only', True
-        )
-        kwargs['_preload_content'] = kwargs.get(
-            '_preload_content', True
-        )
-        kwargs['_request_timeout'] = kwargs.get(
-            '_request_timeout', None
-        )
-        kwargs['_check_input_type'] = kwargs.get(
-            '_check_input_type', True
-        )
-        kwargs['_check_return_type'] = kwargs.get(
-            '_check_return_type', True
-        )
-        kwargs['_check_status'] = kwargs.get(
-            '_check_status', True
-        )
-        kwargs['_spec_property_naming'] = kwargs.get(
-            '_spec_property_naming', False
-        )
-        kwargs['_content_type'] = kwargs.get(
-            '_content_type')
-        kwargs['_host_index'] = kwargs.get('_host_index')
-        kwargs['_request_auths'] = kwargs.get('_request_auths', None)
-        kwargs['id'] = \
-            id
-        return self.projects_destroy_endpoint.call_with_http_info(**kwargs)
+        kwargs["async_req"] = kwargs.get("async_req", False)
+        kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
+        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
+        kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
+        kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
+        kwargs["_check_status"] = kwargs.get("_check_status", True)
+        kwargs["_spec_property_naming"] = kwargs.get("_spec_property_naming", False)
+        kwargs["_content_type"] = kwargs.get("_content_type")
+        kwargs["_host_index"] = kwargs.get("_host_index")
+        kwargs["_request_auths"] = kwargs.get("_request_auths", None)
+        kwargs["id"] = id
+        return self.destroy_endpoint.call_with_http_info(**kwargs)
 
-    def projects_destroy_raw(
-        self,
-        *args,
-        **kwargs
-    ) -> urllib3.HTTPResponse:
+    def destroy_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
         """
-        The same as projects_destroy(), but returns the response unprocessed.
-        Equivalent to calling projects_destroy with
+        The same as destroy(), but returns the response unprocessed.
+        Equivalent to calling destroy with
         _preload_content = False and _check_status=False
 
         Method deletes a specific project  # noqa: E501
@@ -3166,7 +2589,7 @@ class ProjectsApi(object):
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.projects_destroy(id, async_req=True)
+        >>> thread = api.destroy(id, async_req=True)
         >>> result = thread.get()
 
         Args:
@@ -3204,75 +2627,65 @@ class ProjectsApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.projects_destroy(*args, **kwargs,
-            _preload_content=False, _check_status=False)
+        return self.destroy(*args, **kwargs, _preload_content=False, _check_status=False)
 
     @overload
-    def projects_list(
+    def list(
         self,
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
-        **kwargs
+        **kwargs,
     ) -> object:
         ...
 
     @overload
-    def projects_list(
+    def list(
         self,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def projects_list(
-        self,
-        _return_http_data_only: typing.Literal[False],
-        **kwargs
+    def list(
+        self, _return_http_data_only: typing.Literal[False], **kwargs
     ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def projects_list(
-        self,
-        _preload_content: typing.Literal[False],
-        **kwargs
-    ) -> urllib3.HTTPResponse:
+    def list(self, _preload_content: typing.Literal[False], **kwargs) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def projects_list(
+    def list(
         self,
         _return_http_data_only: typing.Literal[True],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def projects_list(
+    def list(
         self,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
-    def projects_list(
-        self,
-        **kwargs
+    def list(
+        self, **kwargs
     ) -> typing.Union[
-            typing.Tuple[object, int, typing.Dict[str, str]],
-            urllib3.HTTPResponse,
-            object
+        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
     ]:
         """Returns a paginated list of projects according to query parameters (12 projects per page)  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.projects_list(async_req=True)
+        >>> thread = api.list(async_req=True)
         >>> result = thread.get()
 
 
@@ -3325,44 +2738,23 @@ class ProjectsApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        kwargs['async_req'] = kwargs.get(
-            'async_req', False
-        )
-        kwargs['_return_http_data_only'] = kwargs.get(
-            '_return_http_data_only', True
-        )
-        kwargs['_preload_content'] = kwargs.get(
-            '_preload_content', True
-        )
-        kwargs['_request_timeout'] = kwargs.get(
-            '_request_timeout', None
-        )
-        kwargs['_check_input_type'] = kwargs.get(
-            '_check_input_type', True
-        )
-        kwargs['_check_return_type'] = kwargs.get(
-            '_check_return_type', True
-        )
-        kwargs['_check_status'] = kwargs.get(
-            '_check_status', True
-        )
-        kwargs['_spec_property_naming'] = kwargs.get(
-            '_spec_property_naming', False
-        )
-        kwargs['_content_type'] = kwargs.get(
-            '_content_type')
-        kwargs['_host_index'] = kwargs.get('_host_index')
-        kwargs['_request_auths'] = kwargs.get('_request_auths', None)
-        return self.projects_list_endpoint.call_with_http_info(**kwargs)
+        kwargs["async_req"] = kwargs.get("async_req", False)
+        kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
+        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
+        kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
+        kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
+        kwargs["_check_status"] = kwargs.get("_check_status", True)
+        kwargs["_spec_property_naming"] = kwargs.get("_spec_property_naming", False)
+        kwargs["_content_type"] = kwargs.get("_content_type")
+        kwargs["_host_index"] = kwargs.get("_host_index")
+        kwargs["_request_auths"] = kwargs.get("_request_auths", None)
+        return self.list_endpoint.call_with_http_info(**kwargs)
 
-    def projects_list_raw(
-        self,
-        *args,
-        **kwargs
-    ) -> urllib3.HTTPResponse:
+    def list_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
         """
-        The same as projects_list(), but returns the response unprocessed.
-        Equivalent to calling projects_list with
+        The same as list(), but returns the response unprocessed.
+        Equivalent to calling list with
         _preload_content = False and _check_status=False
 
         Returns a paginated list of projects according to query parameters (12 projects per page)  # noqa: E501
@@ -3370,7 +2762,7 @@ class ProjectsApi(object):
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.projects_list(async_req=True)
+        >>> thread = api.list(async_req=True)
         >>> result = thread.get()
 
 
@@ -3411,82 +2803,71 @@ class ProjectsApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.projects_list(*args, **kwargs,
-            _preload_content=False, _check_status=False)
+        return self.list(*args, **kwargs, _preload_content=False, _check_status=False)
 
     @overload
-    def projects_partial_update(
+    def partial_update(
         self,
         id,
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
-        **kwargs
+        **kwargs,
     ) -> object:
         ...
 
     @overload
-    def projects_partial_update(
+    def partial_update(
         self,
         id,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def projects_partial_update(
-        self,
-        id,
-        _return_http_data_only: typing.Literal[False],
-        **kwargs
+    def partial_update(
+        self, id, _return_http_data_only: typing.Literal[False], **kwargs
     ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def projects_partial_update(
-        self,
-        id,
-        _preload_content: typing.Literal[False],
-        **kwargs
+    def partial_update(
+        self, id, _preload_content: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def projects_partial_update(
+    def partial_update(
         self,
         id,
         _return_http_data_only: typing.Literal[True],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def projects_partial_update(
+    def partial_update(
         self,
         id,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
-    def projects_partial_update(
-        self,
-        id,
-        **kwargs
+    def partial_update(
+        self, id, **kwargs
     ) -> typing.Union[
-            typing.Tuple[object, int, typing.Dict[str, str]],
-            urllib3.HTTPResponse,
-            object
+        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
     ]:
         """Methods does a partial update of chosen fields in a project  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.projects_partial_update(id, async_req=True)
+        >>> thread = api.partial_update(id, async_req=True)
         >>> result = thread.get()
 
         Args:
@@ -3537,46 +2918,24 @@ class ProjectsApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        kwargs['async_req'] = kwargs.get(
-            'async_req', False
-        )
-        kwargs['_return_http_data_only'] = kwargs.get(
-            '_return_http_data_only', True
-        )
-        kwargs['_preload_content'] = kwargs.get(
-            '_preload_content', True
-        )
-        kwargs['_request_timeout'] = kwargs.get(
-            '_request_timeout', None
-        )
-        kwargs['_check_input_type'] = kwargs.get(
-            '_check_input_type', True
-        )
-        kwargs['_check_return_type'] = kwargs.get(
-            '_check_return_type', True
-        )
-        kwargs['_check_status'] = kwargs.get(
-            '_check_status', True
-        )
-        kwargs['_spec_property_naming'] = kwargs.get(
-            '_spec_property_naming', False
-        )
-        kwargs['_content_type'] = kwargs.get(
-            '_content_type')
-        kwargs['_host_index'] = kwargs.get('_host_index')
-        kwargs['_request_auths'] = kwargs.get('_request_auths', None)
-        kwargs['id'] = \
-            id
-        return self.projects_partial_update_endpoint.call_with_http_info(**kwargs)
+        kwargs["async_req"] = kwargs.get("async_req", False)
+        kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
+        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
+        kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
+        kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
+        kwargs["_check_status"] = kwargs.get("_check_status", True)
+        kwargs["_spec_property_naming"] = kwargs.get("_spec_property_naming", False)
+        kwargs["_content_type"] = kwargs.get("_content_type")
+        kwargs["_host_index"] = kwargs.get("_host_index")
+        kwargs["_request_auths"] = kwargs.get("_request_auths", None)
+        kwargs["id"] = id
+        return self.partial_update_endpoint.call_with_http_info(**kwargs)
 
-    def projects_partial_update_raw(
-        self,
-        *args,
-        **kwargs
-    ) -> urllib3.HTTPResponse:
+    def partial_update_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
         """
-        The same as projects_partial_update(), but returns the response unprocessed.
-        Equivalent to calling projects_partial_update with
+        The same as partial_update(), but returns the response unprocessed.
+        Equivalent to calling partial_update with
         _preload_content = False and _check_status=False
 
         Methods does a partial update of chosen fields in a project  # noqa: E501
@@ -3584,7 +2943,7 @@ class ProjectsApi(object):
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.projects_partial_update(id, async_req=True)
+        >>> thread = api.partial_update(id, async_req=True)
         >>> result = thread.get()
 
         Args:
@@ -3623,82 +2982,71 @@ class ProjectsApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.projects_partial_update(*args, **kwargs,
-            _preload_content=False, _check_status=False)
+        return self.partial_update(*args, **kwargs, _preload_content=False, _check_status=False)
 
     @overload
-    def projects_retrieve(
+    def retrieve(
         self,
         id,
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
-        **kwargs
+        **kwargs,
     ) -> object:
         ...
 
     @overload
-    def projects_retrieve(
+    def retrieve(
         self,
         id,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def projects_retrieve(
-        self,
-        id,
-        _return_http_data_only: typing.Literal[False],
-        **kwargs
+    def retrieve(
+        self, id, _return_http_data_only: typing.Literal[False], **kwargs
     ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def projects_retrieve(
-        self,
-        id,
-        _preload_content: typing.Literal[False],
-        **kwargs
+    def retrieve(
+        self, id, _preload_content: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def projects_retrieve(
+    def retrieve(
         self,
         id,
         _return_http_data_only: typing.Literal[True],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def projects_retrieve(
+    def retrieve(
         self,
         id,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
-    def projects_retrieve(
-        self,
-        id,
-        **kwargs
+    def retrieve(
+        self, id, **kwargs
     ) -> typing.Union[
-            typing.Tuple[object, int, typing.Dict[str, str]],
-            urllib3.HTTPResponse,
-            object
+        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
     ]:
         """Method returns details of a specific project  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.projects_retrieve(id, async_req=True)
+        >>> thread = api.retrieve(id, async_req=True)
         >>> result = thread.get()
 
         Args:
@@ -3748,46 +3096,24 @@ class ProjectsApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        kwargs['async_req'] = kwargs.get(
-            'async_req', False
-        )
-        kwargs['_return_http_data_only'] = kwargs.get(
-            '_return_http_data_only', True
-        )
-        kwargs['_preload_content'] = kwargs.get(
-            '_preload_content', True
-        )
-        kwargs['_request_timeout'] = kwargs.get(
-            '_request_timeout', None
-        )
-        kwargs['_check_input_type'] = kwargs.get(
-            '_check_input_type', True
-        )
-        kwargs['_check_return_type'] = kwargs.get(
-            '_check_return_type', True
-        )
-        kwargs['_check_status'] = kwargs.get(
-            '_check_status', True
-        )
-        kwargs['_spec_property_naming'] = kwargs.get(
-            '_spec_property_naming', False
-        )
-        kwargs['_content_type'] = kwargs.get(
-            '_content_type')
-        kwargs['_host_index'] = kwargs.get('_host_index')
-        kwargs['_request_auths'] = kwargs.get('_request_auths', None)
-        kwargs['id'] = \
-            id
-        return self.projects_retrieve_endpoint.call_with_http_info(**kwargs)
+        kwargs["async_req"] = kwargs.get("async_req", False)
+        kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
+        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
+        kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
+        kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
+        kwargs["_check_status"] = kwargs.get("_check_status", True)
+        kwargs["_spec_property_naming"] = kwargs.get("_spec_property_naming", False)
+        kwargs["_content_type"] = kwargs.get("_content_type")
+        kwargs["_host_index"] = kwargs.get("_host_index")
+        kwargs["_request_auths"] = kwargs.get("_request_auths", None)
+        kwargs["id"] = id
+        return self.retrieve_endpoint.call_with_http_info(**kwargs)
 
-    def projects_retrieve_raw(
-        self,
-        *args,
-        **kwargs
-    ) -> urllib3.HTTPResponse:
+    def retrieve_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
         """
-        The same as projects_retrieve(), but returns the response unprocessed.
-        Equivalent to calling projects_retrieve with
+        The same as retrieve(), but returns the response unprocessed.
+        Equivalent to calling retrieve with
         _preload_content = False and _check_status=False
 
         Method returns details of a specific project  # noqa: E501
@@ -3795,7 +3121,7 @@ class ProjectsApi(object):
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.projects_retrieve(id, async_req=True)
+        >>> thread = api.retrieve(id, async_req=True)
         >>> result = thread.get()
 
         Args:
@@ -3833,82 +3159,71 @@ class ProjectsApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.projects_retrieve(*args, **kwargs,
-            _preload_content=False, _check_status=False)
+        return self.retrieve(*args, **kwargs, _preload_content=False, _check_status=False)
 
     @overload
-    def projects_tasks_list(
+    def tasks_list(
         self,
         id,
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
-        **kwargs
+        **kwargs,
     ) -> object:
         ...
 
     @overload
-    def projects_tasks_list(
+    def tasks_list(
         self,
         id,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def projects_tasks_list(
-        self,
-        id,
-        _return_http_data_only: typing.Literal[False],
-        **kwargs
+    def tasks_list(
+        self, id, _return_http_data_only: typing.Literal[False], **kwargs
     ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def projects_tasks_list(
-        self,
-        id,
-        _preload_content: typing.Literal[False],
-        **kwargs
+    def tasks_list(
+        self, id, _preload_content: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def projects_tasks_list(
+    def tasks_list(
         self,
         id,
         _return_http_data_only: typing.Literal[True],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def projects_tasks_list(
+    def tasks_list(
         self,
         id,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
-    def projects_tasks_list(
-        self,
-        id,
-        **kwargs
+    def tasks_list(
+        self, id, **kwargs
     ) -> typing.Union[
-            typing.Tuple[object, int, typing.Dict[str, str]],
-            urllib3.HTTPResponse,
-            object
+        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
     ]:
         """Method returns information of the tasks of the project with the selected id  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.projects_tasks_list(id, async_req=True)
+        >>> thread = api.tasks_list(id, async_req=True)
         >>> result = thread.get()
 
         Args:
@@ -3963,46 +3278,24 @@ class ProjectsApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        kwargs['async_req'] = kwargs.get(
-            'async_req', False
-        )
-        kwargs['_return_http_data_only'] = kwargs.get(
-            '_return_http_data_only', True
-        )
-        kwargs['_preload_content'] = kwargs.get(
-            '_preload_content', True
-        )
-        kwargs['_request_timeout'] = kwargs.get(
-            '_request_timeout', None
-        )
-        kwargs['_check_input_type'] = kwargs.get(
-            '_check_input_type', True
-        )
-        kwargs['_check_return_type'] = kwargs.get(
-            '_check_return_type', True
-        )
-        kwargs['_check_status'] = kwargs.get(
-            '_check_status', True
-        )
-        kwargs['_spec_property_naming'] = kwargs.get(
-            '_spec_property_naming', False
-        )
-        kwargs['_content_type'] = kwargs.get(
-            '_content_type')
-        kwargs['_host_index'] = kwargs.get('_host_index')
-        kwargs['_request_auths'] = kwargs.get('_request_auths', None)
-        kwargs['id'] = \
-            id
-        return self.projects_tasks_list_endpoint.call_with_http_info(**kwargs)
+        kwargs["async_req"] = kwargs.get("async_req", False)
+        kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
+        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
+        kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
+        kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
+        kwargs["_check_status"] = kwargs.get("_check_status", True)
+        kwargs["_spec_property_naming"] = kwargs.get("_spec_property_naming", False)
+        kwargs["_content_type"] = kwargs.get("_content_type")
+        kwargs["_host_index"] = kwargs.get("_host_index")
+        kwargs["_request_auths"] = kwargs.get("_request_auths", None)
+        kwargs["id"] = id
+        return self.tasks_list_endpoint.call_with_http_info(**kwargs)
 
-    def projects_tasks_list_raw(
-        self,
-        *args,
-        **kwargs
-    ) -> urllib3.HTTPResponse:
+    def tasks_list_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
         """
-        The same as projects_tasks_list(), but returns the response unprocessed.
-        Equivalent to calling projects_tasks_list with
+        The same as tasks_list(), but returns the response unprocessed.
+        Equivalent to calling tasks_list with
         _preload_content = False and _check_status=False
 
         Method returns information of the tasks of the project with the selected id  # noqa: E501
@@ -4010,7 +3303,7 @@ class ProjectsApi(object):
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.projects_tasks_list(id, async_req=True)
+        >>> thread = api.tasks_list(id, async_req=True)
         >>> result = thread.get()
 
         Args:
@@ -4053,6 +3346,4 @@ class ProjectsApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.projects_tasks_list(*args, **kwargs,
-            _preload_content=False, _check_status=False)
-
+        return self.tasks_list(*args, **kwargs, _preload_content=False, _check_status=False)

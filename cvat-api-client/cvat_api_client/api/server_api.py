@@ -9,23 +9,15 @@
 """
 
 
-import typing
-from typing import overload
-import urllib3
-
 import re  # noqa: F401
 import sys  # noqa: F401
+import typing
+from typing import TYPE_CHECKING, overload
 
-from cvat_api_client.api_client import ApiClient, Endpoint as _Endpoint
-from cvat_api_client.model_utils import (  # noqa: F401
-    check_allowed_values,
-    check_validations,
-    date,
-    datetime,
-    file_type,
-    none_type,
-    validate_and_convert_types
-)
+import urllib3
+
+from cvat_api_client.api_client import ApiClient
+from cvat_api_client.api_client import Endpoint as _Endpoint
 from cvat_api_client.model.about import About
 from cvat_api_client.model.dataset_formats import DatasetFormats
 from cvat_api_client.model.exception import Exception
@@ -34,6 +26,20 @@ from cvat_api_client.model.file_info import FileInfo
 from cvat_api_client.model.log_event import LogEvent
 from cvat_api_client.model.log_event_request import LogEventRequest
 from cvat_api_client.model.plugins import Plugins
+from cvat_api_client.model_utils import (  # noqa: F401
+    check_allowed_values,
+    check_validations,
+    date,
+    datetime,
+    file_type,
+    none_type,
+    validate_and_convert_types,
+)
+
+if TYPE_CHECKING:
+    # Enable introspection. Can't work normally due to cyclic imports
+    from cvat_api_client.apis import *
+    from cvat_api_client.models import *
 
 
 class ServerApi(object):
@@ -47,472 +53,366 @@ class ServerApi(object):
         if api_client is None:
             api_client = ApiClient()
         self.api_client = api_client
-        self.server_about_retrieve_endpoint = _Endpoint(
+        self.about_retrieve_endpoint = _Endpoint(
             settings={
-                'response_type': (About,),
-                'auth': [
-                    'SignatureAuthentication',
-                    'basicAuth',
-                    'cookieAuth',
-                    'tokenAuth'
-                ],
-                'endpoint_path': '/api/server/about',
-                'operation_id': 'server_about_retrieve',
-                'http_method': 'GET',
-                'servers': None,
+                "response_type": (About,),
+                "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
+                "endpoint_path": "/api/server/about",
+                "operation_id": "about_retrieve",
+                "http_method": "GET",
+                "servers": None,
             },
             params_map={
-                'all': [
-                    'x_organization',
-                    'org',
-                    'org_id',
+                "all": [
+                    "x_organization",
+                    "org",
+                    "org_id",
                 ],
-                'required': [],
-                'nullable': [
-                ],
-                'enum': [
-                ],
-                'validation': [
-                ]
+                "required": [],
+                "nullable": [],
+                "enum": [],
+                "validation": [],
             },
             root_map={
-                'validations': {
+                "validations": {},
+                "allowed_values": {},
+                "openapi_types": {
+                    "x_organization": (str,),
+                    "org": (str,),
+                    "org_id": (int,),
                 },
-                'allowed_values': {
+                "attribute_map": {
+                    "x_organization": "X-Organization",
+                    "org": "org",
+                    "org_id": "org_id",
                 },
-                'openapi_types': {
-                    'x_organization':
-                        (str,),
-                    'org':
-                        (str,),
-                    'org_id':
-                        (int,),
+                "location_map": {
+                    "x_organization": "header",
+                    "org": "query",
+                    "org_id": "query",
                 },
-                'attribute_map': {
-                    'x_organization': 'X-Organization',
-                    'org': 'org',
-                    'org_id': 'org_id',
-                },
-                'location_map': {
-                    'x_organization': 'header',
-                    'org': 'query',
-                    'org_id': 'query',
-                },
-                'collection_format_map': {
-                }
+                "collection_format_map": {},
             },
             headers_map={
-                'accept': [
-                    'application/vnd.cvat+json'
-                ],
-                'content_type': [],
+                "accept": ["application/vnd.cvat+json"],
+                "content_type": [],
             },
-            api_client=api_client
+            api_client=api_client,
         )
-        self.server_annotation_formats_retrieve_endpoint = _Endpoint(
+        self.annotation_formats_retrieve_endpoint = _Endpoint(
             settings={
-                'response_type': (DatasetFormats,),
-                'auth': [
-                    'SignatureAuthentication',
-                    'basicAuth',
-                    'cookieAuth',
-                    'tokenAuth'
-                ],
-                'endpoint_path': '/api/server/annotation/formats',
-                'operation_id': 'server_annotation_formats_retrieve',
-                'http_method': 'GET',
-                'servers': None,
+                "response_type": (DatasetFormats,),
+                "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
+                "endpoint_path": "/api/server/annotation/formats",
+                "operation_id": "annotation_formats_retrieve",
+                "http_method": "GET",
+                "servers": None,
             },
             params_map={
-                'all': [
-                    'x_organization',
-                    'org',
-                    'org_id',
+                "all": [
+                    "x_organization",
+                    "org",
+                    "org_id",
                 ],
-                'required': [],
-                'nullable': [
-                ],
-                'enum': [
-                ],
-                'validation': [
-                ]
+                "required": [],
+                "nullable": [],
+                "enum": [],
+                "validation": [],
             },
             root_map={
-                'validations': {
+                "validations": {},
+                "allowed_values": {},
+                "openapi_types": {
+                    "x_organization": (str,),
+                    "org": (str,),
+                    "org_id": (int,),
                 },
-                'allowed_values': {
+                "attribute_map": {
+                    "x_organization": "X-Organization",
+                    "org": "org",
+                    "org_id": "org_id",
                 },
-                'openapi_types': {
-                    'x_organization':
-                        (str,),
-                    'org':
-                        (str,),
-                    'org_id':
-                        (int,),
+                "location_map": {
+                    "x_organization": "header",
+                    "org": "query",
+                    "org_id": "query",
                 },
-                'attribute_map': {
-                    'x_organization': 'X-Organization',
-                    'org': 'org',
-                    'org_id': 'org_id',
-                },
-                'location_map': {
-                    'x_organization': 'header',
-                    'org': 'query',
-                    'org_id': 'query',
-                },
-                'collection_format_map': {
-                }
+                "collection_format_map": {},
             },
             headers_map={
-                'accept': [
-                    'application/vnd.cvat+json'
-                ],
-                'content_type': [],
+                "accept": ["application/vnd.cvat+json"],
+                "content_type": [],
             },
-            api_client=api_client
+            api_client=api_client,
         )
-        self.server_exception_create_endpoint = _Endpoint(
+        self.exception_create_endpoint = _Endpoint(
             settings={
-                'response_type': (Exception,),
-                'auth': [
-                    'SignatureAuthentication',
-                    'basicAuth',
-                    'cookieAuth',
-                    'tokenAuth'
-                ],
-                'endpoint_path': '/api/server/exception',
-                'operation_id': 'server_exception_create',
-                'http_method': 'POST',
-                'servers': None,
+                "response_type": (Exception,),
+                "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
+                "endpoint_path": "/api/server/exception",
+                "operation_id": "exception_create",
+                "http_method": "POST",
+                "servers": None,
             },
             params_map={
-                'all': [
-                    'exception_request',
-                    'x_organization',
-                    'org',
-                    'org_id',
+                "all": [
+                    "exception_request",
+                    "x_organization",
+                    "org",
+                    "org_id",
                 ],
-                'required': [
-                    'exception_request',
+                "required": [
+                    "exception_request",
                 ],
-                'nullable': [
-                ],
-                'enum': [
-                ],
-                'validation': [
-                ]
+                "nullable": [],
+                "enum": [],
+                "validation": [],
             },
             root_map={
-                'validations': {
+                "validations": {},
+                "allowed_values": {},
+                "openapi_types": {
+                    "exception_request": (ExceptionRequest,),
+                    "x_organization": (str,),
+                    "org": (str,),
+                    "org_id": (int,),
                 },
-                'allowed_values': {
+                "attribute_map": {
+                    "x_organization": "X-Organization",
+                    "org": "org",
+                    "org_id": "org_id",
                 },
-                'openapi_types': {
-                    'exception_request':
-                        (ExceptionRequest,),
-                    'x_organization':
-                        (str,),
-                    'org':
-                        (str,),
-                    'org_id':
-                        (int,),
+                "location_map": {
+                    "exception_request": "body",
+                    "x_organization": "header",
+                    "org": "query",
+                    "org_id": "query",
                 },
-                'attribute_map': {
-                    'x_organization': 'X-Organization',
-                    'org': 'org',
-                    'org_id': 'org_id',
-                },
-                'location_map': {
-                    'exception_request': 'body',
-                    'x_organization': 'header',
-                    'org': 'query',
-                    'org_id': 'query',
-                },
-                'collection_format_map': {
-                }
+                "collection_format_map": {},
             },
             headers_map={
-                'accept': [
-                    'application/vnd.cvat+json'
+                "accept": ["application/vnd.cvat+json"],
+                "content_type": [
+                    "application/json",
+                    "application/x-www-form-urlencoded",
+                    "multipart/form-data",
+                    "application/offset+octet-stream",
                 ],
-                'content_type': [
-                    'application/json',
-                    'application/x-www-form-urlencoded',
-                    'multipart/form-data',
-                    'application/offset+octet-stream'
-                ]
             },
-            api_client=api_client
+            api_client=api_client,
         )
-        self.server_logs_create_endpoint = _Endpoint(
+        self.logs_create_endpoint = _Endpoint(
             settings={
-                'response_type': ([LogEvent],),
-                'auth': [
-                    'SignatureAuthentication',
-                    'basicAuth',
-                    'cookieAuth',
-                    'tokenAuth'
-                ],
-                'endpoint_path': '/api/server/logs',
-                'operation_id': 'server_logs_create',
-                'http_method': 'POST',
-                'servers': None,
+                "response_type": ([LogEvent],),
+                "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
+                "endpoint_path": "/api/server/logs",
+                "operation_id": "logs_create",
+                "http_method": "POST",
+                "servers": None,
             },
             params_map={
-                'all': [
-                    'log_event_request',
-                    'x_organization',
-                    'org',
-                    'org_id',
+                "all": [
+                    "log_event_request",
+                    "x_organization",
+                    "org",
+                    "org_id",
                 ],
-                'required': [
-                    'log_event_request',
+                "required": [
+                    "log_event_request",
                 ],
-                'nullable': [
-                ],
-                'enum': [
-                ],
-                'validation': [
-                ]
+                "nullable": [],
+                "enum": [],
+                "validation": [],
             },
             root_map={
-                'validations': {
+                "validations": {},
+                "allowed_values": {},
+                "openapi_types": {
+                    "log_event_request": ([LogEventRequest],),
+                    "x_organization": (str,),
+                    "org": (str,),
+                    "org_id": (int,),
                 },
-                'allowed_values': {
+                "attribute_map": {
+                    "x_organization": "X-Organization",
+                    "org": "org",
+                    "org_id": "org_id",
                 },
-                'openapi_types': {
-                    'log_event_request':
-                        ([LogEventRequest],),
-                    'x_organization':
-                        (str,),
-                    'org':
-                        (str,),
-                    'org_id':
-                        (int,),
+                "location_map": {
+                    "log_event_request": "body",
+                    "x_organization": "header",
+                    "org": "query",
+                    "org_id": "query",
                 },
-                'attribute_map': {
-                    'x_organization': 'X-Organization',
-                    'org': 'org',
-                    'org_id': 'org_id',
-                },
-                'location_map': {
-                    'log_event_request': 'body',
-                    'x_organization': 'header',
-                    'org': 'query',
-                    'org_id': 'query',
-                },
-                'collection_format_map': {
-                }
+                "collection_format_map": {},
             },
             headers_map={
-                'accept': [
-                    'application/vnd.cvat+json'
+                "accept": ["application/vnd.cvat+json"],
+                "content_type": [
+                    "application/json",
+                    "application/x-www-form-urlencoded",
+                    "multipart/form-data",
+                    "application/offset+octet-stream",
                 ],
-                'content_type': [
-                    'application/json',
-                    'application/x-www-form-urlencoded',
-                    'multipart/form-data',
-                    'application/offset+octet-stream'
-                ]
             },
-            api_client=api_client
+            api_client=api_client,
         )
-        self.server_plugins_retrieve_endpoint = _Endpoint(
+        self.plugins_retrieve_endpoint = _Endpoint(
             settings={
-                'response_type': (Plugins,),
-                'auth': [
-                    'SignatureAuthentication',
-                    'basicAuth',
-                    'cookieAuth',
-                    'tokenAuth'
-                ],
-                'endpoint_path': '/api/server/plugins',
-                'operation_id': 'server_plugins_retrieve',
-                'http_method': 'GET',
-                'servers': None,
+                "response_type": (Plugins,),
+                "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
+                "endpoint_path": "/api/server/plugins",
+                "operation_id": "plugins_retrieve",
+                "http_method": "GET",
+                "servers": None,
             },
             params_map={
-                'all': [
-                    'x_organization',
-                    'org',
-                    'org_id',
+                "all": [
+                    "x_organization",
+                    "org",
+                    "org_id",
                 ],
-                'required': [],
-                'nullable': [
-                ],
-                'enum': [
-                ],
-                'validation': [
-                ]
+                "required": [],
+                "nullable": [],
+                "enum": [],
+                "validation": [],
             },
             root_map={
-                'validations': {
+                "validations": {},
+                "allowed_values": {},
+                "openapi_types": {
+                    "x_organization": (str,),
+                    "org": (str,),
+                    "org_id": (int,),
                 },
-                'allowed_values': {
+                "attribute_map": {
+                    "x_organization": "X-Organization",
+                    "org": "org",
+                    "org_id": "org_id",
                 },
-                'openapi_types': {
-                    'x_organization':
-                        (str,),
-                    'org':
-                        (str,),
-                    'org_id':
-                        (int,),
+                "location_map": {
+                    "x_organization": "header",
+                    "org": "query",
+                    "org_id": "query",
                 },
-                'attribute_map': {
-                    'x_organization': 'X-Organization',
-                    'org': 'org',
-                    'org_id': 'org_id',
-                },
-                'location_map': {
-                    'x_organization': 'header',
-                    'org': 'query',
-                    'org_id': 'query',
-                },
-                'collection_format_map': {
-                }
+                "collection_format_map": {},
             },
             headers_map={
-                'accept': [
-                    'application/vnd.cvat+json'
-                ],
-                'content_type': [],
+                "accept": ["application/vnd.cvat+json"],
+                "content_type": [],
             },
-            api_client=api_client
+            api_client=api_client,
         )
-        self.server_share_list_endpoint = _Endpoint(
+        self.share_list_endpoint = _Endpoint(
             settings={
-                'response_type': ([FileInfo],),
-                'auth': [
-                    'SignatureAuthentication',
-                    'basicAuth',
-                    'cookieAuth',
-                    'tokenAuth'
-                ],
-                'endpoint_path': '/api/server/share',
-                'operation_id': 'server_share_list',
-                'http_method': 'GET',
-                'servers': None,
+                "response_type": ([FileInfo],),
+                "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
+                "endpoint_path": "/api/server/share",
+                "operation_id": "share_list",
+                "http_method": "GET",
+                "servers": None,
             },
             params_map={
-                'all': [
-                    'x_organization',
-                    'directory',
-                    'org',
-                    'org_id',
+                "all": [
+                    "x_organization",
+                    "directory",
+                    "org",
+                    "org_id",
                 ],
-                'required': [],
-                'nullable': [
-                ],
-                'enum': [
-                ],
-                'validation': [
-                ]
+                "required": [],
+                "nullable": [],
+                "enum": [],
+                "validation": [],
             },
             root_map={
-                'validations': {
+                "validations": {},
+                "allowed_values": {},
+                "openapi_types": {
+                    "x_organization": (str,),
+                    "directory": (str,),
+                    "org": (str,),
+                    "org_id": (int,),
                 },
-                'allowed_values': {
+                "attribute_map": {
+                    "x_organization": "X-Organization",
+                    "directory": "directory",
+                    "org": "org",
+                    "org_id": "org_id",
                 },
-                'openapi_types': {
-                    'x_organization':
-                        (str,),
-                    'directory':
-                        (str,),
-                    'org':
-                        (str,),
-                    'org_id':
-                        (int,),
+                "location_map": {
+                    "x_organization": "header",
+                    "directory": "query",
+                    "org": "query",
+                    "org_id": "query",
                 },
-                'attribute_map': {
-                    'x_organization': 'X-Organization',
-                    'directory': 'directory',
-                    'org': 'org',
-                    'org_id': 'org_id',
-                },
-                'location_map': {
-                    'x_organization': 'header',
-                    'directory': 'query',
-                    'org': 'query',
-                    'org_id': 'query',
-                },
-                'collection_format_map': {
-                }
+                "collection_format_map": {},
             },
             headers_map={
-                'accept': [
-                    'application/vnd.cvat+json'
-                ],
-                'content_type': [],
+                "accept": ["application/vnd.cvat+json"],
+                "content_type": [],
             },
-            api_client=api_client
+            api_client=api_client,
         )
 
     @overload
-    def server_about_retrieve(
+    def about_retrieve(
         self,
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
-        **kwargs
+        **kwargs,
     ) -> object:
         ...
 
     @overload
-    def server_about_retrieve(
+    def about_retrieve(
         self,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def server_about_retrieve(
-        self,
-        _return_http_data_only: typing.Literal[False],
-        **kwargs
+    def about_retrieve(
+        self, _return_http_data_only: typing.Literal[False], **kwargs
     ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def server_about_retrieve(
-        self,
-        _preload_content: typing.Literal[False],
-        **kwargs
+    def about_retrieve(
+        self, _preload_content: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def server_about_retrieve(
+    def about_retrieve(
         self,
         _return_http_data_only: typing.Literal[True],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def server_about_retrieve(
+    def about_retrieve(
         self,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
-    def server_about_retrieve(
-        self,
-        **kwargs
+    def about_retrieve(
+        self, **kwargs
     ) -> typing.Union[
-            typing.Tuple[object, int, typing.Dict[str, str]],
-            urllib3.HTTPResponse,
-            object
+        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
     ]:
         """Method provides basic CVAT information  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.server_about_retrieve(async_req=True)
+        >>> thread = api.about_retrieve(async_req=True)
         >>> result = thread.get()
 
 
@@ -560,44 +460,23 @@ class ServerApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        kwargs['async_req'] = kwargs.get(
-            'async_req', False
-        )
-        kwargs['_return_http_data_only'] = kwargs.get(
-            '_return_http_data_only', True
-        )
-        kwargs['_preload_content'] = kwargs.get(
-            '_preload_content', True
-        )
-        kwargs['_request_timeout'] = kwargs.get(
-            '_request_timeout', None
-        )
-        kwargs['_check_input_type'] = kwargs.get(
-            '_check_input_type', True
-        )
-        kwargs['_check_return_type'] = kwargs.get(
-            '_check_return_type', True
-        )
-        kwargs['_check_status'] = kwargs.get(
-            '_check_status', True
-        )
-        kwargs['_spec_property_naming'] = kwargs.get(
-            '_spec_property_naming', False
-        )
-        kwargs['_content_type'] = kwargs.get(
-            '_content_type')
-        kwargs['_host_index'] = kwargs.get('_host_index')
-        kwargs['_request_auths'] = kwargs.get('_request_auths', None)
-        return self.server_about_retrieve_endpoint.call_with_http_info(**kwargs)
+        kwargs["async_req"] = kwargs.get("async_req", False)
+        kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
+        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
+        kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
+        kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
+        kwargs["_check_status"] = kwargs.get("_check_status", True)
+        kwargs["_spec_property_naming"] = kwargs.get("_spec_property_naming", False)
+        kwargs["_content_type"] = kwargs.get("_content_type")
+        kwargs["_host_index"] = kwargs.get("_host_index")
+        kwargs["_request_auths"] = kwargs.get("_request_auths", None)
+        return self.about_retrieve_endpoint.call_with_http_info(**kwargs)
 
-    def server_about_retrieve_raw(
-        self,
-        *args,
-        **kwargs
-    ) -> urllib3.HTTPResponse:
+    def about_retrieve_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
         """
-        The same as server_about_retrieve(), but returns the response unprocessed.
-        Equivalent to calling server_about_retrieve with
+        The same as about_retrieve(), but returns the response unprocessed.
+        Equivalent to calling about_retrieve with
         _preload_content = False and _check_status=False
 
         Method provides basic CVAT information  # noqa: E501
@@ -605,7 +484,7 @@ class ServerApi(object):
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.server_about_retrieve(async_req=True)
+        >>> thread = api.about_retrieve(async_req=True)
         >>> result = thread.get()
 
 
@@ -641,75 +520,67 @@ class ServerApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.server_about_retrieve(*args, **kwargs,
-            _preload_content=False, _check_status=False)
+        return self.about_retrieve(*args, **kwargs, _preload_content=False, _check_status=False)
 
     @overload
-    def server_annotation_formats_retrieve(
+    def annotation_formats_retrieve(
         self,
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
-        **kwargs
+        **kwargs,
     ) -> object:
         ...
 
     @overload
-    def server_annotation_formats_retrieve(
+    def annotation_formats_retrieve(
         self,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def server_annotation_formats_retrieve(
-        self,
-        _return_http_data_only: typing.Literal[False],
-        **kwargs
+    def annotation_formats_retrieve(
+        self, _return_http_data_only: typing.Literal[False], **kwargs
     ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def server_annotation_formats_retrieve(
-        self,
-        _preload_content: typing.Literal[False],
-        **kwargs
+    def annotation_formats_retrieve(
+        self, _preload_content: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def server_annotation_formats_retrieve(
+    def annotation_formats_retrieve(
         self,
         _return_http_data_only: typing.Literal[True],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def server_annotation_formats_retrieve(
+    def annotation_formats_retrieve(
         self,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
-    def server_annotation_formats_retrieve(
-        self,
-        **kwargs
+    def annotation_formats_retrieve(
+        self, **kwargs
     ) -> typing.Union[
-            typing.Tuple[object, int, typing.Dict[str, str]],
-            urllib3.HTTPResponse,
-            object
+        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
     ]:
         """Method provides the list of supported annotations formats  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.server_annotation_formats_retrieve(async_req=True)
+        >>> thread = api.annotation_formats_retrieve(async_req=True)
         >>> result = thread.get()
 
 
@@ -757,44 +628,23 @@ class ServerApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        kwargs['async_req'] = kwargs.get(
-            'async_req', False
-        )
-        kwargs['_return_http_data_only'] = kwargs.get(
-            '_return_http_data_only', True
-        )
-        kwargs['_preload_content'] = kwargs.get(
-            '_preload_content', True
-        )
-        kwargs['_request_timeout'] = kwargs.get(
-            '_request_timeout', None
-        )
-        kwargs['_check_input_type'] = kwargs.get(
-            '_check_input_type', True
-        )
-        kwargs['_check_return_type'] = kwargs.get(
-            '_check_return_type', True
-        )
-        kwargs['_check_status'] = kwargs.get(
-            '_check_status', True
-        )
-        kwargs['_spec_property_naming'] = kwargs.get(
-            '_spec_property_naming', False
-        )
-        kwargs['_content_type'] = kwargs.get(
-            '_content_type')
-        kwargs['_host_index'] = kwargs.get('_host_index')
-        kwargs['_request_auths'] = kwargs.get('_request_auths', None)
-        return self.server_annotation_formats_retrieve_endpoint.call_with_http_info(**kwargs)
+        kwargs["async_req"] = kwargs.get("async_req", False)
+        kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
+        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
+        kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
+        kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
+        kwargs["_check_status"] = kwargs.get("_check_status", True)
+        kwargs["_spec_property_naming"] = kwargs.get("_spec_property_naming", False)
+        kwargs["_content_type"] = kwargs.get("_content_type")
+        kwargs["_host_index"] = kwargs.get("_host_index")
+        kwargs["_request_auths"] = kwargs.get("_request_auths", None)
+        return self.annotation_formats_retrieve_endpoint.call_with_http_info(**kwargs)
 
-    def server_annotation_formats_retrieve_raw(
-        self,
-        *args,
-        **kwargs
-    ) -> urllib3.HTTPResponse:
+    def annotation_formats_retrieve_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
         """
-        The same as server_annotation_formats_retrieve(), but returns the response unprocessed.
-        Equivalent to calling server_annotation_formats_retrieve with
+        The same as annotation_formats_retrieve(), but returns the response unprocessed.
+        Equivalent to calling annotation_formats_retrieve with
         _preload_content = False and _check_status=False
 
         Method provides the list of supported annotations formats  # noqa: E501
@@ -802,7 +652,7 @@ class ServerApi(object):
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.server_annotation_formats_retrieve(async_req=True)
+        >>> thread = api.annotation_formats_retrieve(async_req=True)
         >>> result = thread.get()
 
 
@@ -838,75 +688,66 @@ class ServerApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.server_annotation_formats_retrieve(*args, **kwargs,
-            _preload_content=False, _check_status=False)
+        return self.annotation_formats_retrieve(
+            *args, **kwargs, _preload_content=False, _check_status=False
+        )
 
     @overload
-    def server_exception_create(
+    def exception_create(
         self,
         exception_request,
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
-        **kwargs
+        **kwargs,
     ) -> object:
         ...
 
     @overload
-    def server_exception_create(
+    def exception_create(
         self,
         exception_request,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def server_exception_create(
-        self,
-        exception_request,
-        _return_http_data_only: typing.Literal[False],
-        **kwargs
+    def exception_create(
+        self, exception_request, _return_http_data_only: typing.Literal[False], **kwargs
     ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def server_exception_create(
-        self,
-        exception_request,
-        _preload_content: typing.Literal[False],
-        **kwargs
+    def exception_create(
+        self, exception_request, _preload_content: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def server_exception_create(
+    def exception_create(
         self,
         exception_request,
         _return_http_data_only: typing.Literal[True],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def server_exception_create(
+    def exception_create(
         self,
         exception_request,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
-    def server_exception_create(
-        self,
-        exception_request,
-        **kwargs
+    def exception_create(
+        self, exception_request, **kwargs
     ) -> typing.Union[
-            typing.Tuple[object, int, typing.Dict[str, str]],
-            urllib3.HTTPResponse,
-            object
+        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
     ]:
         """Method saves an exception from a client on the server  # noqa: E501
 
@@ -914,7 +755,7 @@ class ServerApi(object):
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.server_exception_create(exception_request, async_req=True)
+        >>> thread = api.exception_create(exception_request, async_req=True)
         >>> result = thread.get()
 
         Args:
@@ -964,46 +805,24 @@ class ServerApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        kwargs['async_req'] = kwargs.get(
-            'async_req', False
-        )
-        kwargs['_return_http_data_only'] = kwargs.get(
-            '_return_http_data_only', True
-        )
-        kwargs['_preload_content'] = kwargs.get(
-            '_preload_content', True
-        )
-        kwargs['_request_timeout'] = kwargs.get(
-            '_request_timeout', None
-        )
-        kwargs['_check_input_type'] = kwargs.get(
-            '_check_input_type', True
-        )
-        kwargs['_check_return_type'] = kwargs.get(
-            '_check_return_type', True
-        )
-        kwargs['_check_status'] = kwargs.get(
-            '_check_status', True
-        )
-        kwargs['_spec_property_naming'] = kwargs.get(
-            '_spec_property_naming', False
-        )
-        kwargs['_content_type'] = kwargs.get(
-            '_content_type')
-        kwargs['_host_index'] = kwargs.get('_host_index')
-        kwargs['_request_auths'] = kwargs.get('_request_auths', None)
-        kwargs['exception_request'] = \
-            exception_request
-        return self.server_exception_create_endpoint.call_with_http_info(**kwargs)
+        kwargs["async_req"] = kwargs.get("async_req", False)
+        kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
+        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
+        kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
+        kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
+        kwargs["_check_status"] = kwargs.get("_check_status", True)
+        kwargs["_spec_property_naming"] = kwargs.get("_spec_property_naming", False)
+        kwargs["_content_type"] = kwargs.get("_content_type")
+        kwargs["_host_index"] = kwargs.get("_host_index")
+        kwargs["_request_auths"] = kwargs.get("_request_auths", None)
+        kwargs["exception_request"] = exception_request
+        return self.exception_create_endpoint.call_with_http_info(**kwargs)
 
-    def server_exception_create_raw(
-        self,
-        *args,
-        **kwargs
-    ) -> urllib3.HTTPResponse:
+    def exception_create_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
         """
-        The same as server_exception_create(), but returns the response unprocessed.
-        Equivalent to calling server_exception_create with
+        The same as exception_create(), but returns the response unprocessed.
+        Equivalent to calling exception_create with
         _preload_content = False and _check_status=False
 
         Method saves an exception from a client on the server  # noqa: E501
@@ -1012,7 +831,7 @@ class ServerApi(object):
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.server_exception_create(exception_request, async_req=True)
+        >>> thread = api.exception_create(exception_request, async_req=True)
         >>> result = thread.get()
 
         Args:
@@ -1050,75 +869,64 @@ class ServerApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.server_exception_create(*args, **kwargs,
-            _preload_content=False, _check_status=False)
+        return self.exception_create(*args, **kwargs, _preload_content=False, _check_status=False)
 
     @overload
-    def server_logs_create(
+    def logs_create(
         self,
         log_event_request,
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
-        **kwargs
+        **kwargs,
     ) -> object:
         ...
 
     @overload
-    def server_logs_create(
+    def logs_create(
         self,
         log_event_request,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def server_logs_create(
-        self,
-        log_event_request,
-        _return_http_data_only: typing.Literal[False],
-        **kwargs
+    def logs_create(
+        self, log_event_request, _return_http_data_only: typing.Literal[False], **kwargs
     ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def server_logs_create(
-        self,
-        log_event_request,
-        _preload_content: typing.Literal[False],
-        **kwargs
+    def logs_create(
+        self, log_event_request, _preload_content: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def server_logs_create(
+    def logs_create(
         self,
         log_event_request,
         _return_http_data_only: typing.Literal[True],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def server_logs_create(
+    def logs_create(
         self,
         log_event_request,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
-    def server_logs_create(
-        self,
-        log_event_request,
-        **kwargs
+    def logs_create(
+        self, log_event_request, **kwargs
     ) -> typing.Union[
-            typing.Tuple[object, int, typing.Dict[str, str]],
-            urllib3.HTTPResponse,
-            object
+        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
     ]:
         """Method saves logs from a client on the server  # noqa: E501
 
@@ -1126,7 +934,7 @@ class ServerApi(object):
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.server_logs_create(log_event_request, async_req=True)
+        >>> thread = api.logs_create(log_event_request, async_req=True)
         >>> result = thread.get()
 
         Args:
@@ -1176,46 +984,24 @@ class ServerApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        kwargs['async_req'] = kwargs.get(
-            'async_req', False
-        )
-        kwargs['_return_http_data_only'] = kwargs.get(
-            '_return_http_data_only', True
-        )
-        kwargs['_preload_content'] = kwargs.get(
-            '_preload_content', True
-        )
-        kwargs['_request_timeout'] = kwargs.get(
-            '_request_timeout', None
-        )
-        kwargs['_check_input_type'] = kwargs.get(
-            '_check_input_type', True
-        )
-        kwargs['_check_return_type'] = kwargs.get(
-            '_check_return_type', True
-        )
-        kwargs['_check_status'] = kwargs.get(
-            '_check_status', True
-        )
-        kwargs['_spec_property_naming'] = kwargs.get(
-            '_spec_property_naming', False
-        )
-        kwargs['_content_type'] = kwargs.get(
-            '_content_type')
-        kwargs['_host_index'] = kwargs.get('_host_index')
-        kwargs['_request_auths'] = kwargs.get('_request_auths', None)
-        kwargs['log_event_request'] = \
-            log_event_request
-        return self.server_logs_create_endpoint.call_with_http_info(**kwargs)
+        kwargs["async_req"] = kwargs.get("async_req", False)
+        kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
+        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
+        kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
+        kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
+        kwargs["_check_status"] = kwargs.get("_check_status", True)
+        kwargs["_spec_property_naming"] = kwargs.get("_spec_property_naming", False)
+        kwargs["_content_type"] = kwargs.get("_content_type")
+        kwargs["_host_index"] = kwargs.get("_host_index")
+        kwargs["_request_auths"] = kwargs.get("_request_auths", None)
+        kwargs["log_event_request"] = log_event_request
+        return self.logs_create_endpoint.call_with_http_info(**kwargs)
 
-    def server_logs_create_raw(
-        self,
-        *args,
-        **kwargs
-    ) -> urllib3.HTTPResponse:
+    def logs_create_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
         """
-        The same as server_logs_create(), but returns the response unprocessed.
-        Equivalent to calling server_logs_create with
+        The same as logs_create(), but returns the response unprocessed.
+        Equivalent to calling logs_create with
         _preload_content = False and _check_status=False
 
         Method saves logs from a client on the server  # noqa: E501
@@ -1224,7 +1010,7 @@ class ServerApi(object):
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.server_logs_create(log_event_request, async_req=True)
+        >>> thread = api.logs_create(log_event_request, async_req=True)
         >>> result = thread.get()
 
         Args:
@@ -1262,75 +1048,67 @@ class ServerApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.server_logs_create(*args, **kwargs,
-            _preload_content=False, _check_status=False)
+        return self.logs_create(*args, **kwargs, _preload_content=False, _check_status=False)
 
     @overload
-    def server_plugins_retrieve(
+    def plugins_retrieve(
         self,
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
-        **kwargs
+        **kwargs,
     ) -> object:
         ...
 
     @overload
-    def server_plugins_retrieve(
+    def plugins_retrieve(
         self,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def server_plugins_retrieve(
-        self,
-        _return_http_data_only: typing.Literal[False],
-        **kwargs
+    def plugins_retrieve(
+        self, _return_http_data_only: typing.Literal[False], **kwargs
     ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def server_plugins_retrieve(
-        self,
-        _preload_content: typing.Literal[False],
-        **kwargs
+    def plugins_retrieve(
+        self, _preload_content: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def server_plugins_retrieve(
+    def plugins_retrieve(
         self,
         _return_http_data_only: typing.Literal[True],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def server_plugins_retrieve(
+    def plugins_retrieve(
         self,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
-    def server_plugins_retrieve(
-        self,
-        **kwargs
+    def plugins_retrieve(
+        self, **kwargs
     ) -> typing.Union[
-            typing.Tuple[object, int, typing.Dict[str, str]],
-            urllib3.HTTPResponse,
-            object
+        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
     ]:
         """Method provides allowed plugins  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.server_plugins_retrieve(async_req=True)
+        >>> thread = api.plugins_retrieve(async_req=True)
         >>> result = thread.get()
 
 
@@ -1378,44 +1156,23 @@ class ServerApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        kwargs['async_req'] = kwargs.get(
-            'async_req', False
-        )
-        kwargs['_return_http_data_only'] = kwargs.get(
-            '_return_http_data_only', True
-        )
-        kwargs['_preload_content'] = kwargs.get(
-            '_preload_content', True
-        )
-        kwargs['_request_timeout'] = kwargs.get(
-            '_request_timeout', None
-        )
-        kwargs['_check_input_type'] = kwargs.get(
-            '_check_input_type', True
-        )
-        kwargs['_check_return_type'] = kwargs.get(
-            '_check_return_type', True
-        )
-        kwargs['_check_status'] = kwargs.get(
-            '_check_status', True
-        )
-        kwargs['_spec_property_naming'] = kwargs.get(
-            '_spec_property_naming', False
-        )
-        kwargs['_content_type'] = kwargs.get(
-            '_content_type')
-        kwargs['_host_index'] = kwargs.get('_host_index')
-        kwargs['_request_auths'] = kwargs.get('_request_auths', None)
-        return self.server_plugins_retrieve_endpoint.call_with_http_info(**kwargs)
+        kwargs["async_req"] = kwargs.get("async_req", False)
+        kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
+        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
+        kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
+        kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
+        kwargs["_check_status"] = kwargs.get("_check_status", True)
+        kwargs["_spec_property_naming"] = kwargs.get("_spec_property_naming", False)
+        kwargs["_content_type"] = kwargs.get("_content_type")
+        kwargs["_host_index"] = kwargs.get("_host_index")
+        kwargs["_request_auths"] = kwargs.get("_request_auths", None)
+        return self.plugins_retrieve_endpoint.call_with_http_info(**kwargs)
 
-    def server_plugins_retrieve_raw(
-        self,
-        *args,
-        **kwargs
-    ) -> urllib3.HTTPResponse:
+    def plugins_retrieve_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
         """
-        The same as server_plugins_retrieve(), but returns the response unprocessed.
-        Equivalent to calling server_plugins_retrieve with
+        The same as plugins_retrieve(), but returns the response unprocessed.
+        Equivalent to calling plugins_retrieve with
         _preload_content = False and _check_status=False
 
         Method provides allowed plugins  # noqa: E501
@@ -1423,7 +1180,7 @@ class ServerApi(object):
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.server_plugins_retrieve(async_req=True)
+        >>> thread = api.plugins_retrieve(async_req=True)
         >>> result = thread.get()
 
 
@@ -1459,75 +1216,65 @@ class ServerApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.server_plugins_retrieve(*args, **kwargs,
-            _preload_content=False, _check_status=False)
+        return self.plugins_retrieve(*args, **kwargs, _preload_content=False, _check_status=False)
 
     @overload
-    def server_share_list(
+    def share_list(
         self,
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
-        **kwargs
+        **kwargs,
     ) -> object:
         ...
 
     @overload
-    def server_share_list(
+    def share_list(
         self,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def server_share_list(
-        self,
-        _return_http_data_only: typing.Literal[False],
-        **kwargs
+    def share_list(
+        self, _return_http_data_only: typing.Literal[False], **kwargs
     ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def server_share_list(
-        self,
-        _preload_content: typing.Literal[False],
-        **kwargs
-    ) -> urllib3.HTTPResponse:
+    def share_list(self, _preload_content: typing.Literal[False], **kwargs) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def server_share_list(
+    def share_list(
         self,
         _return_http_data_only: typing.Literal[True],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def server_share_list(
+    def share_list(
         self,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
-    def server_share_list(
-        self,
-        **kwargs
+    def share_list(
+        self, **kwargs
     ) -> typing.Union[
-            typing.Tuple[object, int, typing.Dict[str, str]],
-            urllib3.HTTPResponse,
-            object
+        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
     ]:
         """Returns all files and folders that are on the server along specified path  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.server_share_list(async_req=True)
+        >>> thread = api.share_list(async_req=True)
         >>> result = thread.get()
 
 
@@ -1576,44 +1323,23 @@ class ServerApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        kwargs['async_req'] = kwargs.get(
-            'async_req', False
-        )
-        kwargs['_return_http_data_only'] = kwargs.get(
-            '_return_http_data_only', True
-        )
-        kwargs['_preload_content'] = kwargs.get(
-            '_preload_content', True
-        )
-        kwargs['_request_timeout'] = kwargs.get(
-            '_request_timeout', None
-        )
-        kwargs['_check_input_type'] = kwargs.get(
-            '_check_input_type', True
-        )
-        kwargs['_check_return_type'] = kwargs.get(
-            '_check_return_type', True
-        )
-        kwargs['_check_status'] = kwargs.get(
-            '_check_status', True
-        )
-        kwargs['_spec_property_naming'] = kwargs.get(
-            '_spec_property_naming', False
-        )
-        kwargs['_content_type'] = kwargs.get(
-            '_content_type')
-        kwargs['_host_index'] = kwargs.get('_host_index')
-        kwargs['_request_auths'] = kwargs.get('_request_auths', None)
-        return self.server_share_list_endpoint.call_with_http_info(**kwargs)
+        kwargs["async_req"] = kwargs.get("async_req", False)
+        kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
+        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
+        kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
+        kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
+        kwargs["_check_status"] = kwargs.get("_check_status", True)
+        kwargs["_spec_property_naming"] = kwargs.get("_spec_property_naming", False)
+        kwargs["_content_type"] = kwargs.get("_content_type")
+        kwargs["_host_index"] = kwargs.get("_host_index")
+        kwargs["_request_auths"] = kwargs.get("_request_auths", None)
+        return self.share_list_endpoint.call_with_http_info(**kwargs)
 
-    def server_share_list_raw(
-        self,
-        *args,
-        **kwargs
-    ) -> urllib3.HTTPResponse:
+    def share_list_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
         """
-        The same as server_share_list(), but returns the response unprocessed.
-        Equivalent to calling server_share_list with
+        The same as share_list(), but returns the response unprocessed.
+        Equivalent to calling share_list with
         _preload_content = False and _check_status=False
 
         Returns all files and folders that are on the server along specified path  # noqa: E501
@@ -1621,7 +1347,7 @@ class ServerApi(object):
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.server_share_list(async_req=True)
+        >>> thread = api.share_list(async_req=True)
         >>> result = thread.get()
 
 
@@ -1658,6 +1384,4 @@ class ServerApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.server_share_list(*args, **kwargs,
-            _preload_content=False, _check_status=False)
-
+        return self.share_list(*args, **kwargs, _preload_content=False, _check_status=False)

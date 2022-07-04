@@ -11,16 +11,18 @@
 
 from __future__ import annotations
 
-import typing
-
 import re  # noqa: F401
 import sys  # noqa: F401
+import typing
+from typing import TYPE_CHECKING
 
+from cvat_api_client.exceptions import ApiAttributeError
 from cvat_api_client.model_utils import (  # noqa: F401
     ApiTypeError,
     ModelComposed,
     ModelNormal,
     ModelSimple,
+    OpenApiModel,
     cached_property,
     change_keys_js_to_python,
     convert_js_args_to_python_args,
@@ -29,9 +31,12 @@ from cvat_api_client.model_utils import (  # noqa: F401
     file_type,
     none_type,
     validate_get_composed_info,
-    OpenApiModel
 )
-from cvat_api_client.exceptions import ApiAttributeError
+
+if TYPE_CHECKING:
+    # Enable introspection. Can't work normally due to cyclic imports
+    from cvat_api_client.apis import *
+    from cvat_api_client.models import *
 
 
 def lazy_import():
@@ -39,10 +44,11 @@ def lazy_import():
     from cvat_api_client.model.credentials_type_enum import CredentialsTypeEnum
     from cvat_api_client.model.manifest import Manifest
     from cvat_api_client.model.provider_type_enum import ProviderTypeEnum
-    globals()['BasicUser'] = BasicUser
-    globals()['CredentialsTypeEnum'] = CredentialsTypeEnum
-    globals()['Manifest'] = Manifest
-    globals()['ProviderTypeEnum'] = ProviderTypeEnum
+
+    globals()["BasicUser"] = BasicUser
+    globals()["CredentialsTypeEnum"] = CredentialsTypeEnum
+    globals()["Manifest"] = Manifest
+    globals()["ProviderTypeEnum"] = ProviderTypeEnum
 
 
 class CloudStorageWrite(ModelNormal):
@@ -105,30 +111,29 @@ class CloudStorageWrite(ModelNormal):
 
     """
 
-    allowed_values = {
-    }
+    allowed_values = {}
 
     validations = {
-        ('resource',): {
-            'max_length': 222,
+        ("resource",): {
+            "max_length": 222,
         },
-        ('display_name',): {
-            'max_length': 63,
+        ("display_name",): {
+            "max_length": 63,
         },
-        ('session_token',): {
-            'max_length': 440,
+        ("session_token",): {
+            "max_length": 440,
         },
-        ('account_name',): {
-            'max_length': 24,
+        ("account_name",): {
+            "max_length": 24,
         },
-        ('key',): {
-            'max_length': 20,
+        ("key",): {
+            "max_length": 20,
         },
-        ('secret_key',): {
-            'max_length': 40,
+        ("secret_key",): {
+            "max_length": 40,
         },
-        ('specific_attributes',): {
-            'max_length': 1024,
+        ("specific_attributes",): {
+            "max_length": 1024,
         },
     }
 
@@ -139,7 +144,17 @@ class CloudStorageWrite(ModelNormal):
         of type self, this must run after the class is loaded
         """
         lazy_import()
-        return (bool, date, datetime, dict, float, int, list, str, none_type,)  # noqa: E501
+        return (
+            bool,
+            date,
+            datetime,
+            dict,
+            float,
+            int,
+            list,
+            str,
+            none_type,
+        )  # noqa: E501
 
     _nullable = False
 
@@ -155,147 +170,149 @@ class CloudStorageWrite(ModelNormal):
         """
         lazy_import()
         return {
-            'provider_type': (ProviderTypeEnum,),  # noqa: E501
-            'resource': (str,),  # noqa: E501
-            'display_name': (str,),  # noqa: E501
-            'credentials_type': (CredentialsTypeEnum,),  # noqa: E501
-            'owner': (BasicUser,),  # noqa: E501
-            'created_date': (datetime,),  # noqa: E501
-            'updated_date': (datetime,),  # noqa: E501
-            'session_token': (str,),  # noqa: E501
-            'account_name': (str,),  # noqa: E501
-            'key': (str,),  # noqa: E501
-            'secret_key': (str,),  # noqa: E501
-            'key_file': (str,),  # noqa: E501
-            'specific_attributes': (str,),  # noqa: E501
-            'description': (str,),  # noqa: E501
-            'id': (int,),  # noqa: E501
-            'manifests': ([Manifest],),  # noqa: E501
-            'organization': (int, none_type,),  # noqa: E501
+            "provider_type": (ProviderTypeEnum,),  # noqa: E501
+            "resource": (str,),  # noqa: E501
+            "display_name": (str,),  # noqa: E501
+            "credentials_type": (CredentialsTypeEnum,),  # noqa: E501
+            "owner": (BasicUser,),  # noqa: E501
+            "created_date": (datetime,),  # noqa: E501
+            "updated_date": (datetime,),  # noqa: E501
+            "session_token": (str,),  # noqa: E501
+            "account_name": (str,),  # noqa: E501
+            "key": (str,),  # noqa: E501
+            "secret_key": (str,),  # noqa: E501
+            "key_file": (str,),  # noqa: E501
+            "specific_attributes": (str,),  # noqa: E501
+            "description": (str,),  # noqa: E501
+            "id": (int,),  # noqa: E501
+            "manifests": ([Manifest],),  # noqa: E501
+            "organization": (
+                int,
+                none_type,
+            ),  # noqa: E501
         }
 
     @cached_property
     def discriminator():
         return None
 
-
     # member type declarations
-    provider_type: typing.ForwardRef("ProviderTypeEnum") # noqa: E501
+    provider_type: "ProviderTypeEnum"  # noqa: E501
     """
     """
 
-    resource: str # noqa: E501
+    resource: str  # noqa: E501
     """
     """
 
-    display_name: str # noqa: E501
+    display_name: str  # noqa: E501
     """
     """
 
-    owner: typing.ForwardRef("BasicUser") # noqa: E501
+    owner: "BasicUser"  # noqa: E501
     """
     [optional]
     """
 
-    credentials_type: typing.ForwardRef("CredentialsTypeEnum") # noqa: E501
+    credentials_type: "CredentialsTypeEnum"  # noqa: E501
     """
     """
 
-    created_date: datetime # noqa: E501
+    created_date: datetime  # noqa: E501
     """
     [optional]
     """
 
-    updated_date: datetime # noqa: E501
+    updated_date: datetime  # noqa: E501
     """
     [optional]
     """
 
-    session_token: str # noqa: E501
+    session_token: str  # noqa: E501
     """
     [optional]
     """
 
-    account_name: str # noqa: E501
+    account_name: str  # noqa: E501
     """
     [optional]
     """
 
-    key: str # noqa: E501
+    key: str  # noqa: E501
     """
     [optional]
     """
 
-    secret_key: str # noqa: E501
+    secret_key: str  # noqa: E501
     """
     [optional]
     """
 
-    key_file: str # noqa: E501
+    key_file: str  # noqa: E501
     """
     [optional]
     """
 
-    specific_attributes: str # noqa: E501
+    specific_attributes: str  # noqa: E501
     """
     [optional]
     """
 
-    description: str # noqa: E501
+    description: str  # noqa: E501
     """
     [optional]
     """
 
-    id: int # noqa: E501
+    id: int  # noqa: E501
     """
     [optional]
     """
 
-    manifests: typing.List[typing.ForwardRef("Manifest")] # noqa: E501
+    manifests: typing.List["Manifest"]  # noqa: E501
     """
     [optional, default: []]
     [Manifest]
     """
 
-    organization: typing.Optional[int] # noqa: E501
+    organization: typing.Optional[int]  # noqa: E501
     """
     [optional]
     """
 
-
-
     attribute_map = {
-        'provider_type': 'provider_type',  # noqa: E501
-        'resource': 'resource',  # noqa: E501
-        'display_name': 'display_name',  # noqa: E501
-        'credentials_type': 'credentials_type',  # noqa: E501
-        'owner': 'owner',  # noqa: E501
-        'created_date': 'created_date',  # noqa: E501
-        'updated_date': 'updated_date',  # noqa: E501
-        'session_token': 'session_token',  # noqa: E501
-        'account_name': 'account_name',  # noqa: E501
-        'key': 'key',  # noqa: E501
-        'secret_key': 'secret_key',  # noqa: E501
-        'key_file': 'key_file',  # noqa: E501
-        'specific_attributes': 'specific_attributes',  # noqa: E501
-        'description': 'description',  # noqa: E501
-        'id': 'id',  # noqa: E501
-        'manifests': 'manifests',  # noqa: E501
-        'organization': 'organization',  # noqa: E501
+        "provider_type": "provider_type",  # noqa: E501
+        "resource": "resource",  # noqa: E501
+        "display_name": "display_name",  # noqa: E501
+        "credentials_type": "credentials_type",  # noqa: E501
+        "owner": "owner",  # noqa: E501
+        "created_date": "created_date",  # noqa: E501
+        "updated_date": "updated_date",  # noqa: E501
+        "session_token": "session_token",  # noqa: E501
+        "account_name": "account_name",  # noqa: E501
+        "key": "key",  # noqa: E501
+        "secret_key": "secret_key",  # noqa: E501
+        "key_file": "key_file",  # noqa: E501
+        "specific_attributes": "specific_attributes",  # noqa: E501
+        "description": "description",  # noqa: E501
+        "id": "id",  # noqa: E501
+        "manifests": "manifests",  # noqa: E501
+        "organization": "organization",  # noqa: E501
     }
 
     read_only_vars = {
-        'created_date',  # noqa: E501
-        'updated_date',  # noqa: E501
-        'id',  # noqa: E501
-        'organization',  # noqa: E501
+        "created_date",  # noqa: E501
+        "updated_date",  # noqa: E501
+        "id",  # noqa: E501
+        "organization",  # noqa: E501
     }
 
     _composed_schemas = {}
 
     @classmethod
     @convert_js_args_to_python_args
-    def _from_openapi_data(cls, provider_type, resource, display_name, credentials_type, *args, **kwargs):  # noqa: E501
+    def _from_openapi_data(
+        cls, provider_type, resource, display_name, credentials_type, *args, **kwargs
+    ):  # noqa: E501
         """CloudStorageWrite - a model defined in OpenAPI
 
         Args:
@@ -350,11 +367,11 @@ class CloudStorageWrite(ModelNormal):
             organization (int, none_type): [optional]  # noqa: E501
         """
 
-        _check_type = kwargs.pop('_check_type', True)
-        _spec_property_naming = kwargs.pop('_spec_property_naming', True)
-        _path_to_item = kwargs.pop('_path_to_item', ())
-        _configuration = kwargs.pop('_configuration', None)
-        _visited_composed_classes = kwargs.pop('_visited_composed_classes', ())
+        _check_type = kwargs.pop("_check_type", True)
+        _spec_property_naming = kwargs.pop("_spec_property_naming", True)
+        _path_to_item = kwargs.pop("_path_to_item", ())
+        _configuration = kwargs.pop("_configuration", None)
+        _visited_composed_classes = kwargs.pop("_visited_composed_classes", ())
 
         self = super(OpenApiModel, cls).__new__(cls)
 
@@ -364,7 +381,8 @@ class CloudStorageWrite(ModelNormal):
                     kwargs.update(arg)
                 else:
                     raise ApiTypeError(
-                        "Invalid positional arguments=%s passed to %s. Remove those invalid positional arguments." % (
+                        "Invalid positional arguments=%s passed to %s. Remove those invalid positional arguments."
+                        % (
                             args,
                             self.__class__.__name__,
                         ),
@@ -384,26 +402,32 @@ class CloudStorageWrite(ModelNormal):
         self.display_name = display_name
         self.credentials_type = credentials_type
         for var_name, var_value in kwargs.items():
-            if var_name not in self.attribute_map and \
-                        self._configuration is not None and \
-                        self._configuration.discard_unknown_keys and \
-                        self.additional_properties_type is None:
+            if (
+                var_name not in self.attribute_map
+                and self._configuration is not None
+                and self._configuration.discard_unknown_keys
+                and self.additional_properties_type is None
+            ):
                 # discard variable.
                 continue
             setattr(self, var_name, var_value)
         return self
 
-    required_properties = set([
-        '_data_store',
-        '_check_type',
-        '_spec_property_naming',
-        '_path_to_item',
-        '_configuration',
-        '_visited_composed_classes',
-    ])
+    required_properties = set(
+        [
+            "_data_store",
+            "_check_type",
+            "_spec_property_naming",
+            "_path_to_item",
+            "_configuration",
+            "_visited_composed_classes",
+        ]
+    )
 
     @convert_js_args_to_python_args
-    def __init__(self, provider_type, resource, display_name, credentials_type, *args, **kwargs):  # noqa: E501
+    def __init__(
+        self, provider_type, resource, display_name, credentials_type, *args, **kwargs
+    ):  # noqa: E501
         """CloudStorageWrite - a model defined in OpenAPI
 
         Args:
@@ -458,11 +482,11 @@ class CloudStorageWrite(ModelNormal):
             organization (int, none_type): [optional]  # noqa: E501
         """
 
-        _check_type = kwargs.pop('_check_type', True)
-        _spec_property_naming = kwargs.pop('_spec_property_naming', False)
-        _path_to_item = kwargs.pop('_path_to_item', ())
-        _configuration = kwargs.pop('_configuration', None)
-        _visited_composed_classes = kwargs.pop('_visited_composed_classes', ())
+        _check_type = kwargs.pop("_check_type", True)
+        _spec_property_naming = kwargs.pop("_spec_property_naming", False)
+        _path_to_item = kwargs.pop("_path_to_item", ())
+        _configuration = kwargs.pop("_configuration", None)
+        _visited_composed_classes = kwargs.pop("_visited_composed_classes", ())
 
         if args:
             for arg in args:
@@ -470,7 +494,8 @@ class CloudStorageWrite(ModelNormal):
                     kwargs.update(arg)
                 else:
                     raise ApiTypeError(
-                        "Invalid positional arguments=%s passed to %s. Remove those invalid positional arguments." % (
+                        "Invalid positional arguments=%s passed to %s. Remove those invalid positional arguments."
+                        % (
                             args,
                             self.__class__.__name__,
                         ),
@@ -490,14 +515,17 @@ class CloudStorageWrite(ModelNormal):
         self.display_name = display_name
         self.credentials_type = credentials_type
         for var_name, var_value in kwargs.items():
-            if var_name not in self.attribute_map and \
-                        self._configuration is not None and \
-                        self._configuration.discard_unknown_keys and \
-                        self.additional_properties_type is None:
+            if (
+                var_name not in self.attribute_map
+                and self._configuration is not None
+                and self._configuration.discard_unknown_keys
+                and self.additional_properties_type is None
+            ):
                 # discard variable.
                 continue
             setattr(self, var_name, var_value)
             if var_name in self.read_only_vars:
-                raise ApiAttributeError(f"`{var_name}` is a read-only attribute. Use `from_openapi_data` to instantiate "
-                                     f"class with read only attributes.")
-
+                raise ApiAttributeError(
+                    f"`{var_name}` is a read-only attribute. Use `from_openapi_data` to instantiate "
+                    f"class with read only attributes."
+                )

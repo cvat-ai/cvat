@@ -11,8 +11,6 @@
 """
 
 
-from .version import VERSION as __version__
-
 # import ApiClient
 from cvat_api_client.api_client import ApiClient
 
@@ -20,9 +18,13 @@ from cvat_api_client.api_client import ApiClient
 from cvat_api_client.configuration import Configuration
 
 # import exceptions
-from cvat_api_client.exceptions import OpenApiException
-from cvat_api_client.exceptions import ApiAttributeError
-from cvat_api_client.exceptions import ApiTypeError
-from cvat_api_client.exceptions import ApiValueError
-from cvat_api_client.exceptions import ApiKeyError
-from cvat_api_client.exceptions import ApiException
+from cvat_api_client.exceptions import (
+    ApiAttributeError,
+    ApiException,
+    ApiKeyError,
+    ApiTypeError,
+    ApiValueError,
+    OpenApiException,
+)
+
+from .version import VERSION as __version__

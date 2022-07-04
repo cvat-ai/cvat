@@ -319,6 +319,7 @@ Class | Method | HTTP request | Description
  - [PatchedProjectWriteRequest](docs/PatchedProjectWriteRequest.md)
  - [PatchedTaskWriteRequest](docs/PatchedTaskWriteRequest.md)
  - [PatchedTaskWriteRequestTargetStorage](docs/PatchedTaskWriteRequestTargetStorage.md)
+ - [PatchedUserRequest](docs/PatchedUserRequest.md)
  - [Plugins](docs/Plugins.md)
  - [PolymorphicProject](docs/PolymorphicProject.md)
  - [ProjectFileRequest](docs/ProjectFileRequest.md)

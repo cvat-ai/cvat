@@ -11,16 +11,18 @@
 
 from __future__ import annotations
 
-import typing
-
 import re  # noqa: F401
 import sys  # noqa: F401
+import typing
+from typing import TYPE_CHECKING
 
+from cvat_api_client.exceptions import ApiAttributeError
 from cvat_api_client.model_utils import (  # noqa: F401
     ApiTypeError,
     ModelComposed,
     ModelNormal,
     ModelSimple,
+    OpenApiModel,
     cached_property,
     change_keys_js_to_python,
     convert_js_args_to_python_args,
@@ -29,18 +31,22 @@ from cvat_api_client.model_utils import (  # noqa: F401
     file_type,
     none_type,
     validate_get_composed_info,
-    OpenApiModel
 )
-from cvat_api_client.exceptions import ApiAttributeError
+
+if TYPE_CHECKING:
+    # Enable introspection. Can't work normally due to cyclic imports
+    from cvat_api_client.apis import *
+    from cvat_api_client.models import *
 
 
 def lazy_import():
     from cvat_api_client.model.labeled_image import LabeledImage
     from cvat_api_client.model.labeled_shape import LabeledShape
     from cvat_api_client.model.labeled_track import LabeledTrack
-    globals()['LabeledImage'] = LabeledImage
-    globals()['LabeledShape'] = LabeledShape
-    globals()['LabeledTrack'] = LabeledTrack
+
+    globals()["LabeledImage"] = LabeledImage
+    globals()["LabeledShape"] = LabeledShape
+    globals()["LabeledTrack"] = LabeledTrack
 
 
 class LabeledData(ModelNormal):
@@ -77,11 +83,9 @@ class LabeledData(ModelNormal):
 
     """
 
-    allowed_values = {
-    }
+    allowed_values = {}
 
-    validations = {
-    }
+    validations = {}
 
     @cached_property
     def additional_properties_type():
@@ -90,7 +94,17 @@ class LabeledData(ModelNormal):
         of type self, this must run after the class is loaded
         """
         lazy_import()
-        return (bool, date, datetime, dict, float, int, list, str, none_type,)  # noqa: E501
+        return (
+            bool,
+            date,
+            datetime,
+            dict,
+            float,
+            int,
+            list,
+            str,
+            none_type,
+        )  # noqa: E501
 
     _nullable = False
 
@@ -106,48 +120,44 @@ class LabeledData(ModelNormal):
         """
         lazy_import()
         return {
-            'version': (int,),  # noqa: E501
-            'tags': ([LabeledImage],),  # noqa: E501
-            'shapes': ([LabeledShape],),  # noqa: E501
-            'tracks': ([LabeledTrack],),  # noqa: E501
+            "version": (int,),  # noqa: E501
+            "tags": ([LabeledImage],),  # noqa: E501
+            "shapes": ([LabeledShape],),  # noqa: E501
+            "tracks": ([LabeledTrack],),  # noqa: E501
         }
 
     @cached_property
     def discriminator():
         return None
 
-
     # member type declarations
-    version: int # noqa: E501
+    version: int  # noqa: E501
     """
     """
 
-    tags: typing.List[typing.ForwardRef("LabeledImage")] # noqa: E501
+    tags: typing.List["LabeledImage"]  # noqa: E501
     """
     [LabeledImage]
     """
 
-    shapes: typing.List[typing.ForwardRef("LabeledShape")] # noqa: E501
+    shapes: typing.List["LabeledShape"]  # noqa: E501
     """
     [LabeledShape]
     """
 
-    tracks: typing.List[typing.ForwardRef("LabeledTrack")] # noqa: E501
+    tracks: typing.List["LabeledTrack"]  # noqa: E501
     """
     [LabeledTrack]
     """
 
-
-
     attribute_map = {
-        'version': 'version',  # noqa: E501
-        'tags': 'tags',  # noqa: E501
-        'shapes': 'shapes',  # noqa: E501
-        'tracks': 'tracks',  # noqa: E501
+        "version": "version",  # noqa: E501
+        "tags": "tags",  # noqa: E501
+        "shapes": "shapes",  # noqa: E501
+        "tracks": "tracks",  # noqa: E501
     }
 
-    read_only_vars = {
-    }
+    read_only_vars = {}
 
     _composed_schemas = {}
 
@@ -195,11 +205,11 @@ class LabeledData(ModelNormal):
                                 _visited_composed_classes = (Animal,)
         """
 
-        _check_type = kwargs.pop('_check_type', True)
-        _spec_property_naming = kwargs.pop('_spec_property_naming', True)
-        _path_to_item = kwargs.pop('_path_to_item', ())
-        _configuration = kwargs.pop('_configuration', None)
-        _visited_composed_classes = kwargs.pop('_visited_composed_classes', ())
+        _check_type = kwargs.pop("_check_type", True)
+        _spec_property_naming = kwargs.pop("_spec_property_naming", True)
+        _path_to_item = kwargs.pop("_path_to_item", ())
+        _configuration = kwargs.pop("_configuration", None)
+        _visited_composed_classes = kwargs.pop("_visited_composed_classes", ())
 
         self = super(OpenApiModel, cls).__new__(cls)
 
@@ -209,7 +219,8 @@ class LabeledData(ModelNormal):
                     kwargs.update(arg)
                 else:
                     raise ApiTypeError(
-                        "Invalid positional arguments=%s passed to %s. Remove those invalid positional arguments." % (
+                        "Invalid positional arguments=%s passed to %s. Remove those invalid positional arguments."
+                        % (
                             args,
                             self.__class__.__name__,
                         ),
@@ -229,23 +240,27 @@ class LabeledData(ModelNormal):
         self.shapes = shapes
         self.tracks = tracks
         for var_name, var_value in kwargs.items():
-            if var_name not in self.attribute_map and \
-                        self._configuration is not None and \
-                        self._configuration.discard_unknown_keys and \
-                        self.additional_properties_type is None:
+            if (
+                var_name not in self.attribute_map
+                and self._configuration is not None
+                and self._configuration.discard_unknown_keys
+                and self.additional_properties_type is None
+            ):
                 # discard variable.
                 continue
             setattr(self, var_name, var_value)
         return self
 
-    required_properties = set([
-        '_data_store',
-        '_check_type',
-        '_spec_property_naming',
-        '_path_to_item',
-        '_configuration',
-        '_visited_composed_classes',
-    ])
+    required_properties = set(
+        [
+            "_data_store",
+            "_check_type",
+            "_spec_property_naming",
+            "_path_to_item",
+            "_configuration",
+            "_visited_composed_classes",
+        ]
+    )
 
     @convert_js_args_to_python_args
     def __init__(self, version, tags, shapes, tracks, *args, **kwargs):  # noqa: E501
@@ -290,11 +305,11 @@ class LabeledData(ModelNormal):
                                 _visited_composed_classes = (Animal,)
         """
 
-        _check_type = kwargs.pop('_check_type', True)
-        _spec_property_naming = kwargs.pop('_spec_property_naming', False)
-        _path_to_item = kwargs.pop('_path_to_item', ())
-        _configuration = kwargs.pop('_configuration', None)
-        _visited_composed_classes = kwargs.pop('_visited_composed_classes', ())
+        _check_type = kwargs.pop("_check_type", True)
+        _spec_property_naming = kwargs.pop("_spec_property_naming", False)
+        _path_to_item = kwargs.pop("_path_to_item", ())
+        _configuration = kwargs.pop("_configuration", None)
+        _visited_composed_classes = kwargs.pop("_visited_composed_classes", ())
 
         if args:
             for arg in args:
@@ -302,7 +317,8 @@ class LabeledData(ModelNormal):
                     kwargs.update(arg)
                 else:
                     raise ApiTypeError(
-                        "Invalid positional arguments=%s passed to %s. Remove those invalid positional arguments." % (
+                        "Invalid positional arguments=%s passed to %s. Remove those invalid positional arguments."
+                        % (
                             args,
                             self.__class__.__name__,
                         ),
@@ -322,14 +338,17 @@ class LabeledData(ModelNormal):
         self.shapes = shapes
         self.tracks = tracks
         for var_name, var_value in kwargs.items():
-            if var_name not in self.attribute_map and \
-                        self._configuration is not None and \
-                        self._configuration.discard_unknown_keys and \
-                        self.additional_properties_type is None:
+            if (
+                var_name not in self.attribute_map
+                and self._configuration is not None
+                and self._configuration.discard_unknown_keys
+                and self.additional_properties_type is None
+            ):
                 # discard variable.
                 continue
             setattr(self, var_name, var_value)
             if var_name in self.read_only_vars:
-                raise ApiAttributeError(f"`{var_name}` is a read-only attribute. Use `from_openapi_data` to instantiate "
-                                     f"class with read only attributes.")
-
+                raise ApiAttributeError(
+                    f"`{var_name}` is a read-only attribute. Use `from_openapi_data` to instantiate "
+                    f"class with read only attributes."
+                )

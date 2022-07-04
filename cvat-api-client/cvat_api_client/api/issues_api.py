@@ -9,14 +9,21 @@
 """
 
 
-import typing
-from typing import overload
-import urllib3
-
 import re  # noqa: F401
 import sys  # noqa: F401
+import typing
+from typing import TYPE_CHECKING, overload
 
-from cvat_api_client.api_client import ApiClient, Endpoint as _Endpoint
+import urllib3
+
+from cvat_api_client.api_client import ApiClient
+from cvat_api_client.api_client import Endpoint as _Endpoint
+from cvat_api_client.model.issue_read import IssueRead
+from cvat_api_client.model.issue_write import IssueWrite
+from cvat_api_client.model.issue_write_request import IssueWriteRequest
+from cvat_api_client.model.paginated_comment_read_list import PaginatedCommentReadList
+from cvat_api_client.model.paginated_issue_read_list import PaginatedIssueReadList
+from cvat_api_client.model.patched_issue_write_request import PatchedIssueWriteRequest
 from cvat_api_client.model_utils import (  # noqa: F401
     check_allowed_values,
     check_validations,
@@ -24,14 +31,13 @@ from cvat_api_client.model_utils import (  # noqa: F401
     datetime,
     file_type,
     none_type,
-    validate_and_convert_types
+    validate_and_convert_types,
 )
-from cvat_api_client.model.issue_read import IssueRead
-from cvat_api_client.model.issue_write import IssueWrite
-from cvat_api_client.model.issue_write_request import IssueWriteRequest
-from cvat_api_client.model.paginated_comment_read_list import PaginatedCommentReadList
-from cvat_api_client.model.paginated_issue_read_list import PaginatedIssueReadList
-from cvat_api_client.model.patched_issue_write_request import PatchedIssueWriteRequest
+
+if TYPE_CHECKING:
+    # Enable introspection. Can't work normally due to cyclic imports
+    from cvat_api_client.apis import *
+    from cvat_api_client.models import *
 
 
 class IssuesApi(object):
@@ -45,548 +51,428 @@ class IssuesApi(object):
         if api_client is None:
             api_client = ApiClient()
         self.api_client = api_client
-        self.issues_comments_list_endpoint = _Endpoint(
+        self.comments_list_endpoint = _Endpoint(
             settings={
-                'response_type': (PaginatedCommentReadList,),
-                'auth': [
-                    'SignatureAuthentication',
-                    'basicAuth',
-                    'cookieAuth',
-                    'tokenAuth'
-                ],
-                'endpoint_path': '/api/issues/{id}/comments',
-                'operation_id': 'issues_comments_list',
-                'http_method': 'GET',
-                'servers': None,
+                "response_type": (PaginatedCommentReadList,),
+                "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
+                "endpoint_path": "/api/issues/{id}/comments",
+                "operation_id": "comments_list",
+                "http_method": "GET",
+                "servers": None,
             },
             params_map={
-                'all': [
-                    'id',
-                    'x_organization',
-                    'filter',
-                    'org',
-                    'org_id',
-                    'page',
-                    'page_size',
-                    'search',
-                    'sort',
+                "all": [
+                    "id",
+                    "x_organization",
+                    "filter",
+                    "org",
+                    "org_id",
+                    "page",
+                    "page_size",
+                    "search",
+                    "sort",
                 ],
-                'required': [
-                    'id',
+                "required": [
+                    "id",
                 ],
-                'nullable': [
-                ],
-                'enum': [
-                ],
-                'validation': [
-                ]
+                "nullable": [],
+                "enum": [],
+                "validation": [],
             },
             root_map={
-                'validations': {
+                "validations": {},
+                "allowed_values": {},
+                "openapi_types": {
+                    "id": (int,),
+                    "x_organization": (str,),
+                    "filter": (str,),
+                    "org": (str,),
+                    "org_id": (int,),
+                    "page": (int,),
+                    "page_size": (int,),
+                    "search": (str,),
+                    "sort": (str,),
                 },
-                'allowed_values': {
+                "attribute_map": {
+                    "id": "id",
+                    "x_organization": "X-Organization",
+                    "filter": "filter",
+                    "org": "org",
+                    "org_id": "org_id",
+                    "page": "page",
+                    "page_size": "page_size",
+                    "search": "search",
+                    "sort": "sort",
                 },
-                'openapi_types': {
-                    'id':
-                        (int,),
-                    'x_organization':
-                        (str,),
-                    'filter':
-                        (str,),
-                    'org':
-                        (str,),
-                    'org_id':
-                        (int,),
-                    'page':
-                        (int,),
-                    'page_size':
-                        (int,),
-                    'search':
-                        (str,),
-                    'sort':
-                        (str,),
+                "location_map": {
+                    "id": "path",
+                    "x_organization": "header",
+                    "filter": "query",
+                    "org": "query",
+                    "org_id": "query",
+                    "page": "query",
+                    "page_size": "query",
+                    "search": "query",
+                    "sort": "query",
                 },
-                'attribute_map': {
-                    'id': 'id',
-                    'x_organization': 'X-Organization',
-                    'filter': 'filter',
-                    'org': 'org',
-                    'org_id': 'org_id',
-                    'page': 'page',
-                    'page_size': 'page_size',
-                    'search': 'search',
-                    'sort': 'sort',
-                },
-                'location_map': {
-                    'id': 'path',
-                    'x_organization': 'header',
-                    'filter': 'query',
-                    'org': 'query',
-                    'org_id': 'query',
-                    'page': 'query',
-                    'page_size': 'query',
-                    'search': 'query',
-                    'sort': 'query',
-                },
-                'collection_format_map': {
-                }
+                "collection_format_map": {},
             },
             headers_map={
-                'accept': [
-                    'application/vnd.cvat+json'
-                ],
-                'content_type': [],
+                "accept": ["application/vnd.cvat+json"],
+                "content_type": [],
             },
-            api_client=api_client
+            api_client=api_client,
         )
-        self.issues_create_endpoint = _Endpoint(
+        self.create_endpoint = _Endpoint(
             settings={
-                'response_type': (IssueWrite,),
-                'auth': [
-                    'SignatureAuthentication',
-                    'basicAuth',
-                    'cookieAuth',
-                    'tokenAuth'
-                ],
-                'endpoint_path': '/api/issues',
-                'operation_id': 'issues_create',
-                'http_method': 'POST',
-                'servers': None,
+                "response_type": (IssueWrite,),
+                "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
+                "endpoint_path": "/api/issues",
+                "operation_id": "create",
+                "http_method": "POST",
+                "servers": None,
             },
             params_map={
-                'all': [
-                    'issue_write_request',
-                    'x_organization',
-                    'org',
-                    'org_id',
+                "all": [
+                    "issue_write_request",
+                    "x_organization",
+                    "org",
+                    "org_id",
                 ],
-                'required': [
-                    'issue_write_request',
+                "required": [
+                    "issue_write_request",
                 ],
-                'nullable': [
-                ],
-                'enum': [
-                ],
-                'validation': [
-                ]
+                "nullable": [],
+                "enum": [],
+                "validation": [],
             },
             root_map={
-                'validations': {
+                "validations": {},
+                "allowed_values": {},
+                "openapi_types": {
+                    "issue_write_request": (IssueWriteRequest,),
+                    "x_organization": (str,),
+                    "org": (str,),
+                    "org_id": (int,),
                 },
-                'allowed_values': {
+                "attribute_map": {
+                    "x_organization": "X-Organization",
+                    "org": "org",
+                    "org_id": "org_id",
                 },
-                'openapi_types': {
-                    'issue_write_request':
-                        (IssueWriteRequest,),
-                    'x_organization':
-                        (str,),
-                    'org':
-                        (str,),
-                    'org_id':
-                        (int,),
+                "location_map": {
+                    "issue_write_request": "body",
+                    "x_organization": "header",
+                    "org": "query",
+                    "org_id": "query",
                 },
-                'attribute_map': {
-                    'x_organization': 'X-Organization',
-                    'org': 'org',
-                    'org_id': 'org_id',
-                },
-                'location_map': {
-                    'issue_write_request': 'body',
-                    'x_organization': 'header',
-                    'org': 'query',
-                    'org_id': 'query',
-                },
-                'collection_format_map': {
-                }
+                "collection_format_map": {},
             },
             headers_map={
-                'accept': [
-                    'application/vnd.cvat+json'
+                "accept": ["application/vnd.cvat+json"],
+                "content_type": [
+                    "application/json",
+                    "application/x-www-form-urlencoded",
+                    "multipart/form-data",
+                    "application/offset+octet-stream",
                 ],
-                'content_type': [
-                    'application/json',
-                    'application/x-www-form-urlencoded',
-                    'multipart/form-data',
-                    'application/offset+octet-stream'
-                ]
             },
-            api_client=api_client
+            api_client=api_client,
         )
-        self.issues_destroy_endpoint = _Endpoint(
+        self.destroy_endpoint = _Endpoint(
             settings={
-                'response_type': None,
-                'auth': [
-                    'SignatureAuthentication',
-                    'basicAuth',
-                    'cookieAuth',
-                    'tokenAuth'
-                ],
-                'endpoint_path': '/api/issues/{id}',
-                'operation_id': 'issues_destroy',
-                'http_method': 'DELETE',
-                'servers': None,
+                "response_type": None,
+                "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
+                "endpoint_path": "/api/issues/{id}",
+                "operation_id": "destroy",
+                "http_method": "DELETE",
+                "servers": None,
             },
             params_map={
-                'all': [
-                    'id',
-                    'x_organization',
-                    'org',
-                    'org_id',
+                "all": [
+                    "id",
+                    "x_organization",
+                    "org",
+                    "org_id",
                 ],
-                'required': [
-                    'id',
+                "required": [
+                    "id",
                 ],
-                'nullable': [
-                ],
-                'enum': [
-                ],
-                'validation': [
-                ]
+                "nullable": [],
+                "enum": [],
+                "validation": [],
             },
             root_map={
-                'validations': {
+                "validations": {},
+                "allowed_values": {},
+                "openapi_types": {
+                    "id": (int,),
+                    "x_organization": (str,),
+                    "org": (str,),
+                    "org_id": (int,),
                 },
-                'allowed_values': {
+                "attribute_map": {
+                    "id": "id",
+                    "x_organization": "X-Organization",
+                    "org": "org",
+                    "org_id": "org_id",
                 },
-                'openapi_types': {
-                    'id':
-                        (int,),
-                    'x_organization':
-                        (str,),
-                    'org':
-                        (str,),
-                    'org_id':
-                        (int,),
+                "location_map": {
+                    "id": "path",
+                    "x_organization": "header",
+                    "org": "query",
+                    "org_id": "query",
                 },
-                'attribute_map': {
-                    'id': 'id',
-                    'x_organization': 'X-Organization',
-                    'org': 'org',
-                    'org_id': 'org_id',
-                },
-                'location_map': {
-                    'id': 'path',
-                    'x_organization': 'header',
-                    'org': 'query',
-                    'org_id': 'query',
-                },
-                'collection_format_map': {
-                }
+                "collection_format_map": {},
             },
             headers_map={
-                'accept': [],
-                'content_type': [],
+                "accept": [],
+                "content_type": [],
             },
-            api_client=api_client
+            api_client=api_client,
         )
-        self.issues_list_endpoint = _Endpoint(
+        self.list_endpoint = _Endpoint(
             settings={
-                'response_type': (PaginatedIssueReadList,),
-                'auth': [
-                    'SignatureAuthentication',
-                    'basicAuth',
-                    'cookieAuth',
-                    'tokenAuth'
-                ],
-                'endpoint_path': '/api/issues',
-                'operation_id': 'issues_list',
-                'http_method': 'GET',
-                'servers': None,
+                "response_type": (PaginatedIssueReadList,),
+                "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
+                "endpoint_path": "/api/issues",
+                "operation_id": "list",
+                "http_method": "GET",
+                "servers": None,
             },
             params_map={
-                'all': [
-                    'x_organization',
-                    'filter',
-                    'org',
-                    'org_id',
-                    'page',
-                    'page_size',
-                    'search',
-                    'sort',
+                "all": [
+                    "x_organization",
+                    "filter",
+                    "org",
+                    "org_id",
+                    "page",
+                    "page_size",
+                    "search",
+                    "sort",
                 ],
-                'required': [],
-                'nullable': [
-                ],
-                'enum': [
-                ],
-                'validation': [
-                ]
+                "required": [],
+                "nullable": [],
+                "enum": [],
+                "validation": [],
             },
             root_map={
-                'validations': {
+                "validations": {},
+                "allowed_values": {},
+                "openapi_types": {
+                    "x_organization": (str,),
+                    "filter": (str,),
+                    "org": (str,),
+                    "org_id": (int,),
+                    "page": (int,),
+                    "page_size": (int,),
+                    "search": (str,),
+                    "sort": (str,),
                 },
-                'allowed_values': {
+                "attribute_map": {
+                    "x_organization": "X-Organization",
+                    "filter": "filter",
+                    "org": "org",
+                    "org_id": "org_id",
+                    "page": "page",
+                    "page_size": "page_size",
+                    "search": "search",
+                    "sort": "sort",
                 },
-                'openapi_types': {
-                    'x_organization':
-                        (str,),
-                    'filter':
-                        (str,),
-                    'org':
-                        (str,),
-                    'org_id':
-                        (int,),
-                    'page':
-                        (int,),
-                    'page_size':
-                        (int,),
-                    'search':
-                        (str,),
-                    'sort':
-                        (str,),
+                "location_map": {
+                    "x_organization": "header",
+                    "filter": "query",
+                    "org": "query",
+                    "org_id": "query",
+                    "page": "query",
+                    "page_size": "query",
+                    "search": "query",
+                    "sort": "query",
                 },
-                'attribute_map': {
-                    'x_organization': 'X-Organization',
-                    'filter': 'filter',
-                    'org': 'org',
-                    'org_id': 'org_id',
-                    'page': 'page',
-                    'page_size': 'page_size',
-                    'search': 'search',
-                    'sort': 'sort',
-                },
-                'location_map': {
-                    'x_organization': 'header',
-                    'filter': 'query',
-                    'org': 'query',
-                    'org_id': 'query',
-                    'page': 'query',
-                    'page_size': 'query',
-                    'search': 'query',
-                    'sort': 'query',
-                },
-                'collection_format_map': {
-                }
+                "collection_format_map": {},
             },
             headers_map={
-                'accept': [
-                    'application/vnd.cvat+json'
-                ],
-                'content_type': [],
+                "accept": ["application/vnd.cvat+json"],
+                "content_type": [],
             },
-            api_client=api_client
+            api_client=api_client,
         )
-        self.issues_partial_update_endpoint = _Endpoint(
+        self.partial_update_endpoint = _Endpoint(
             settings={
-                'response_type': (IssueWrite,),
-                'auth': [
-                    'SignatureAuthentication',
-                    'basicAuth',
-                    'cookieAuth',
-                    'tokenAuth'
-                ],
-                'endpoint_path': '/api/issues/{id}',
-                'operation_id': 'issues_partial_update',
-                'http_method': 'PATCH',
-                'servers': None,
+                "response_type": (IssueWrite,),
+                "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
+                "endpoint_path": "/api/issues/{id}",
+                "operation_id": "partial_update",
+                "http_method": "PATCH",
+                "servers": None,
             },
             params_map={
-                'all': [
-                    'id',
-                    'x_organization',
-                    'org',
-                    'org_id',
-                    'patched_issue_write_request',
+                "all": [
+                    "id",
+                    "x_organization",
+                    "org",
+                    "org_id",
+                    "patched_issue_write_request",
                 ],
-                'required': [
-                    'id',
+                "required": [
+                    "id",
                 ],
-                'nullable': [
-                ],
-                'enum': [
-                ],
-                'validation': [
-                ]
+                "nullable": [],
+                "enum": [],
+                "validation": [],
             },
             root_map={
-                'validations': {
+                "validations": {},
+                "allowed_values": {},
+                "openapi_types": {
+                    "id": (int,),
+                    "x_organization": (str,),
+                    "org": (str,),
+                    "org_id": (int,),
+                    "patched_issue_write_request": (PatchedIssueWriteRequest,),
                 },
-                'allowed_values': {
+                "attribute_map": {
+                    "id": "id",
+                    "x_organization": "X-Organization",
+                    "org": "org",
+                    "org_id": "org_id",
                 },
-                'openapi_types': {
-                    'id':
-                        (int,),
-                    'x_organization':
-                        (str,),
-                    'org':
-                        (str,),
-                    'org_id':
-                        (int,),
-                    'patched_issue_write_request':
-                        (PatchedIssueWriteRequest,),
+                "location_map": {
+                    "id": "path",
+                    "x_organization": "header",
+                    "org": "query",
+                    "org_id": "query",
+                    "patched_issue_write_request": "body",
                 },
-                'attribute_map': {
-                    'id': 'id',
-                    'x_organization': 'X-Organization',
-                    'org': 'org',
-                    'org_id': 'org_id',
-                },
-                'location_map': {
-                    'id': 'path',
-                    'x_organization': 'header',
-                    'org': 'query',
-                    'org_id': 'query',
-                    'patched_issue_write_request': 'body',
-                },
-                'collection_format_map': {
-                }
+                "collection_format_map": {},
             },
             headers_map={
-                'accept': [
-                    'application/vnd.cvat+json'
+                "accept": ["application/vnd.cvat+json"],
+                "content_type": [
+                    "application/json",
+                    "application/x-www-form-urlencoded",
+                    "multipart/form-data",
+                    "application/offset+octet-stream",
                 ],
-                'content_type': [
-                    'application/json',
-                    'application/x-www-form-urlencoded',
-                    'multipart/form-data',
-                    'application/offset+octet-stream'
-                ]
             },
-            api_client=api_client
+            api_client=api_client,
         )
-        self.issues_retrieve_endpoint = _Endpoint(
+        self.retrieve_endpoint = _Endpoint(
             settings={
-                'response_type': (IssueRead,),
-                'auth': [
-                    'SignatureAuthentication',
-                    'basicAuth',
-                    'cookieAuth',
-                    'tokenAuth'
-                ],
-                'endpoint_path': '/api/issues/{id}',
-                'operation_id': 'issues_retrieve',
-                'http_method': 'GET',
-                'servers': None,
+                "response_type": (IssueRead,),
+                "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
+                "endpoint_path": "/api/issues/{id}",
+                "operation_id": "retrieve",
+                "http_method": "GET",
+                "servers": None,
             },
             params_map={
-                'all': [
-                    'id',
-                    'x_organization',
-                    'org',
-                    'org_id',
+                "all": [
+                    "id",
+                    "x_organization",
+                    "org",
+                    "org_id",
                 ],
-                'required': [
-                    'id',
+                "required": [
+                    "id",
                 ],
-                'nullable': [
-                ],
-                'enum': [
-                ],
-                'validation': [
-                ]
+                "nullable": [],
+                "enum": [],
+                "validation": [],
             },
             root_map={
-                'validations': {
+                "validations": {},
+                "allowed_values": {},
+                "openapi_types": {
+                    "id": (int,),
+                    "x_organization": (str,),
+                    "org": (str,),
+                    "org_id": (int,),
                 },
-                'allowed_values': {
+                "attribute_map": {
+                    "id": "id",
+                    "x_organization": "X-Organization",
+                    "org": "org",
+                    "org_id": "org_id",
                 },
-                'openapi_types': {
-                    'id':
-                        (int,),
-                    'x_organization':
-                        (str,),
-                    'org':
-                        (str,),
-                    'org_id':
-                        (int,),
+                "location_map": {
+                    "id": "path",
+                    "x_organization": "header",
+                    "org": "query",
+                    "org_id": "query",
                 },
-                'attribute_map': {
-                    'id': 'id',
-                    'x_organization': 'X-Organization',
-                    'org': 'org',
-                    'org_id': 'org_id',
-                },
-                'location_map': {
-                    'id': 'path',
-                    'x_organization': 'header',
-                    'org': 'query',
-                    'org_id': 'query',
-                },
-                'collection_format_map': {
-                }
+                "collection_format_map": {},
             },
             headers_map={
-                'accept': [
-                    'application/vnd.cvat+json'
-                ],
-                'content_type': [],
+                "accept": ["application/vnd.cvat+json"],
+                "content_type": [],
             },
-            api_client=api_client
+            api_client=api_client,
         )
 
     @overload
-    def issues_comments_list(
+    def comments_list(
         self,
         id,
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
-        **kwargs
+        **kwargs,
     ) -> object:
         ...
 
     @overload
-    def issues_comments_list(
+    def comments_list(
         self,
         id,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def issues_comments_list(
-        self,
-        id,
-        _return_http_data_only: typing.Literal[False],
-        **kwargs
+    def comments_list(
+        self, id, _return_http_data_only: typing.Literal[False], **kwargs
     ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def issues_comments_list(
-        self,
-        id,
-        _preload_content: typing.Literal[False],
-        **kwargs
+    def comments_list(
+        self, id, _preload_content: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def issues_comments_list(
+    def comments_list(
         self,
         id,
         _return_http_data_only: typing.Literal[True],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def issues_comments_list(
+    def comments_list(
         self,
         id,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
-    def issues_comments_list(
-        self,
-        id,
-        **kwargs
+    def comments_list(
+        self, id, **kwargs
     ) -> typing.Union[
-            typing.Tuple[object, int, typing.Dict[str, str]],
-            urllib3.HTTPResponse,
-            object
+        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
     ]:
         """The action returns all comments of a specific issue  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.issues_comments_list(id, async_req=True)
+        >>> thread = api.comments_list(id, async_req=True)
         >>> result = thread.get()
 
         Args:
@@ -641,46 +527,24 @@ class IssuesApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        kwargs['async_req'] = kwargs.get(
-            'async_req', False
-        )
-        kwargs['_return_http_data_only'] = kwargs.get(
-            '_return_http_data_only', True
-        )
-        kwargs['_preload_content'] = kwargs.get(
-            '_preload_content', True
-        )
-        kwargs['_request_timeout'] = kwargs.get(
-            '_request_timeout', None
-        )
-        kwargs['_check_input_type'] = kwargs.get(
-            '_check_input_type', True
-        )
-        kwargs['_check_return_type'] = kwargs.get(
-            '_check_return_type', True
-        )
-        kwargs['_check_status'] = kwargs.get(
-            '_check_status', True
-        )
-        kwargs['_spec_property_naming'] = kwargs.get(
-            '_spec_property_naming', False
-        )
-        kwargs['_content_type'] = kwargs.get(
-            '_content_type')
-        kwargs['_host_index'] = kwargs.get('_host_index')
-        kwargs['_request_auths'] = kwargs.get('_request_auths', None)
-        kwargs['id'] = \
-            id
-        return self.issues_comments_list_endpoint.call_with_http_info(**kwargs)
+        kwargs["async_req"] = kwargs.get("async_req", False)
+        kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
+        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
+        kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
+        kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
+        kwargs["_check_status"] = kwargs.get("_check_status", True)
+        kwargs["_spec_property_naming"] = kwargs.get("_spec_property_naming", False)
+        kwargs["_content_type"] = kwargs.get("_content_type")
+        kwargs["_host_index"] = kwargs.get("_host_index")
+        kwargs["_request_auths"] = kwargs.get("_request_auths", None)
+        kwargs["id"] = id
+        return self.comments_list_endpoint.call_with_http_info(**kwargs)
 
-    def issues_comments_list_raw(
-        self,
-        *args,
-        **kwargs
-    ) -> urllib3.HTTPResponse:
+    def comments_list_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
         """
-        The same as issues_comments_list(), but returns the response unprocessed.
-        Equivalent to calling issues_comments_list with
+        The same as comments_list(), but returns the response unprocessed.
+        Equivalent to calling comments_list with
         _preload_content = False and _check_status=False
 
         The action returns all comments of a specific issue  # noqa: E501
@@ -688,7 +552,7 @@ class IssuesApi(object):
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.issues_comments_list(id, async_req=True)
+        >>> thread = api.comments_list(id, async_req=True)
         >>> result = thread.get()
 
         Args:
@@ -731,82 +595,71 @@ class IssuesApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.issues_comments_list(*args, **kwargs,
-            _preload_content=False, _check_status=False)
+        return self.comments_list(*args, **kwargs, _preload_content=False, _check_status=False)
 
     @overload
-    def issues_create(
+    def create(
         self,
         issue_write_request,
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
-        **kwargs
+        **kwargs,
     ) -> object:
         ...
 
     @overload
-    def issues_create(
+    def create(
         self,
         issue_write_request,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def issues_create(
-        self,
-        issue_write_request,
-        _return_http_data_only: typing.Literal[False],
-        **kwargs
+    def create(
+        self, issue_write_request, _return_http_data_only: typing.Literal[False], **kwargs
     ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def issues_create(
-        self,
-        issue_write_request,
-        _preload_content: typing.Literal[False],
-        **kwargs
+    def create(
+        self, issue_write_request, _preload_content: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def issues_create(
+    def create(
         self,
         issue_write_request,
         _return_http_data_only: typing.Literal[True],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def issues_create(
+    def create(
         self,
         issue_write_request,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
-    def issues_create(
-        self,
-        issue_write_request,
-        **kwargs
+    def create(
+        self, issue_write_request, **kwargs
     ) -> typing.Union[
-            typing.Tuple[object, int, typing.Dict[str, str]],
-            urllib3.HTTPResponse,
-            object
+        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
     ]:
         """Method creates an issue  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.issues_create(issue_write_request, async_req=True)
+        >>> thread = api.create(issue_write_request, async_req=True)
         >>> result = thread.get()
 
         Args:
@@ -856,46 +709,24 @@ class IssuesApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        kwargs['async_req'] = kwargs.get(
-            'async_req', False
-        )
-        kwargs['_return_http_data_only'] = kwargs.get(
-            '_return_http_data_only', True
-        )
-        kwargs['_preload_content'] = kwargs.get(
-            '_preload_content', True
-        )
-        kwargs['_request_timeout'] = kwargs.get(
-            '_request_timeout', None
-        )
-        kwargs['_check_input_type'] = kwargs.get(
-            '_check_input_type', True
-        )
-        kwargs['_check_return_type'] = kwargs.get(
-            '_check_return_type', True
-        )
-        kwargs['_check_status'] = kwargs.get(
-            '_check_status', True
-        )
-        kwargs['_spec_property_naming'] = kwargs.get(
-            '_spec_property_naming', False
-        )
-        kwargs['_content_type'] = kwargs.get(
-            '_content_type')
-        kwargs['_host_index'] = kwargs.get('_host_index')
-        kwargs['_request_auths'] = kwargs.get('_request_auths', None)
-        kwargs['issue_write_request'] = \
-            issue_write_request
-        return self.issues_create_endpoint.call_with_http_info(**kwargs)
+        kwargs["async_req"] = kwargs.get("async_req", False)
+        kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
+        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
+        kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
+        kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
+        kwargs["_check_status"] = kwargs.get("_check_status", True)
+        kwargs["_spec_property_naming"] = kwargs.get("_spec_property_naming", False)
+        kwargs["_content_type"] = kwargs.get("_content_type")
+        kwargs["_host_index"] = kwargs.get("_host_index")
+        kwargs["_request_auths"] = kwargs.get("_request_auths", None)
+        kwargs["issue_write_request"] = issue_write_request
+        return self.create_endpoint.call_with_http_info(**kwargs)
 
-    def issues_create_raw(
-        self,
-        *args,
-        **kwargs
-    ) -> urllib3.HTTPResponse:
+    def create_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
         """
-        The same as issues_create(), but returns the response unprocessed.
-        Equivalent to calling issues_create with
+        The same as create(), but returns the response unprocessed.
+        Equivalent to calling create with
         _preload_content = False and _check_status=False
 
         Method creates an issue  # noqa: E501
@@ -903,7 +734,7 @@ class IssuesApi(object):
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.issues_create(issue_write_request, async_req=True)
+        >>> thread = api.create(issue_write_request, async_req=True)
         >>> result = thread.get()
 
         Args:
@@ -941,82 +772,69 @@ class IssuesApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.issues_create(*args, **kwargs,
-            _preload_content=False, _check_status=False)
+        return self.create(*args, **kwargs, _preload_content=False, _check_status=False)
 
     @overload
-    def issues_destroy(
+    def destroy(
         self,
         id,
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
-        **kwargs
+        **kwargs,
     ) -> None:
         ...
 
     @overload
-    def issues_destroy(
+    def destroy(
         self,
         id,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def issues_destroy(
-        self,
-        id,
-        _return_http_data_only: typing.Literal[False],
-        **kwargs
+    def destroy(
+        self, id, _return_http_data_only: typing.Literal[False], **kwargs
     ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def issues_destroy(
-        self,
-        id,
-        _preload_content: typing.Literal[False],
-        **kwargs
+    def destroy(
+        self, id, _preload_content: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def issues_destroy(
+    def destroy(
         self,
         id,
         _return_http_data_only: typing.Literal[True],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def issues_destroy(
+    def destroy(
         self,
         id,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
-    def issues_destroy(
-        self,
-        id,
-        **kwargs
-    ) -> typing.Union[
-            typing.Tuple[None, int, typing.Dict[str, str]],
-            urllib3.HTTPResponse,
-            None
-    ]:
+    def destroy(
+        self, id, **kwargs
+    ) -> typing.Union[typing.Tuple[None, int, typing.Dict[str, str]], urllib3.HTTPResponse, None]:
         """Method deletes an issue  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.issues_destroy(id, async_req=True)
+        >>> thread = api.destroy(id, async_req=True)
         >>> result = thread.get()
 
         Args:
@@ -1066,46 +884,24 @@ class IssuesApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        kwargs['async_req'] = kwargs.get(
-            'async_req', False
-        )
-        kwargs['_return_http_data_only'] = kwargs.get(
-            '_return_http_data_only', True
-        )
-        kwargs['_preload_content'] = kwargs.get(
-            '_preload_content', True
-        )
-        kwargs['_request_timeout'] = kwargs.get(
-            '_request_timeout', None
-        )
-        kwargs['_check_input_type'] = kwargs.get(
-            '_check_input_type', True
-        )
-        kwargs['_check_return_type'] = kwargs.get(
-            '_check_return_type', True
-        )
-        kwargs['_check_status'] = kwargs.get(
-            '_check_status', True
-        )
-        kwargs['_spec_property_naming'] = kwargs.get(
-            '_spec_property_naming', False
-        )
-        kwargs['_content_type'] = kwargs.get(
-            '_content_type')
-        kwargs['_host_index'] = kwargs.get('_host_index')
-        kwargs['_request_auths'] = kwargs.get('_request_auths', None)
-        kwargs['id'] = \
-            id
-        return self.issues_destroy_endpoint.call_with_http_info(**kwargs)
+        kwargs["async_req"] = kwargs.get("async_req", False)
+        kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
+        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
+        kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
+        kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
+        kwargs["_check_status"] = kwargs.get("_check_status", True)
+        kwargs["_spec_property_naming"] = kwargs.get("_spec_property_naming", False)
+        kwargs["_content_type"] = kwargs.get("_content_type")
+        kwargs["_host_index"] = kwargs.get("_host_index")
+        kwargs["_request_auths"] = kwargs.get("_request_auths", None)
+        kwargs["id"] = id
+        return self.destroy_endpoint.call_with_http_info(**kwargs)
 
-    def issues_destroy_raw(
-        self,
-        *args,
-        **kwargs
-    ) -> urllib3.HTTPResponse:
+    def destroy_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
         """
-        The same as issues_destroy(), but returns the response unprocessed.
-        Equivalent to calling issues_destroy with
+        The same as destroy(), but returns the response unprocessed.
+        Equivalent to calling destroy with
         _preload_content = False and _check_status=False
 
         Method deletes an issue  # noqa: E501
@@ -1113,7 +909,7 @@ class IssuesApi(object):
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.issues_destroy(id, async_req=True)
+        >>> thread = api.destroy(id, async_req=True)
         >>> result = thread.get()
 
         Args:
@@ -1151,75 +947,65 @@ class IssuesApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.issues_destroy(*args, **kwargs,
-            _preload_content=False, _check_status=False)
+        return self.destroy(*args, **kwargs, _preload_content=False, _check_status=False)
 
     @overload
-    def issues_list(
+    def list(
         self,
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
-        **kwargs
+        **kwargs,
     ) -> object:
         ...
 
     @overload
-    def issues_list(
+    def list(
         self,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def issues_list(
-        self,
-        _return_http_data_only: typing.Literal[False],
-        **kwargs
+    def list(
+        self, _return_http_data_only: typing.Literal[False], **kwargs
     ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def issues_list(
-        self,
-        _preload_content: typing.Literal[False],
-        **kwargs
-    ) -> urllib3.HTTPResponse:
+    def list(self, _preload_content: typing.Literal[False], **kwargs) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def issues_list(
+    def list(
         self,
         _return_http_data_only: typing.Literal[True],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def issues_list(
+    def list(
         self,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
-    def issues_list(
-        self,
-        **kwargs
+    def list(
+        self, **kwargs
     ) -> typing.Union[
-            typing.Tuple[object, int, typing.Dict[str, str]],
-            urllib3.HTTPResponse,
-            object
+        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
     ]:
         """Method returns a paginated list of issues according to query parameters  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.issues_list(async_req=True)
+        >>> thread = api.list(async_req=True)
         >>> result = thread.get()
 
 
@@ -1272,44 +1058,23 @@ class IssuesApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        kwargs['async_req'] = kwargs.get(
-            'async_req', False
-        )
-        kwargs['_return_http_data_only'] = kwargs.get(
-            '_return_http_data_only', True
-        )
-        kwargs['_preload_content'] = kwargs.get(
-            '_preload_content', True
-        )
-        kwargs['_request_timeout'] = kwargs.get(
-            '_request_timeout', None
-        )
-        kwargs['_check_input_type'] = kwargs.get(
-            '_check_input_type', True
-        )
-        kwargs['_check_return_type'] = kwargs.get(
-            '_check_return_type', True
-        )
-        kwargs['_check_status'] = kwargs.get(
-            '_check_status', True
-        )
-        kwargs['_spec_property_naming'] = kwargs.get(
-            '_spec_property_naming', False
-        )
-        kwargs['_content_type'] = kwargs.get(
-            '_content_type')
-        kwargs['_host_index'] = kwargs.get('_host_index')
-        kwargs['_request_auths'] = kwargs.get('_request_auths', None)
-        return self.issues_list_endpoint.call_with_http_info(**kwargs)
+        kwargs["async_req"] = kwargs.get("async_req", False)
+        kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
+        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
+        kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
+        kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
+        kwargs["_check_status"] = kwargs.get("_check_status", True)
+        kwargs["_spec_property_naming"] = kwargs.get("_spec_property_naming", False)
+        kwargs["_content_type"] = kwargs.get("_content_type")
+        kwargs["_host_index"] = kwargs.get("_host_index")
+        kwargs["_request_auths"] = kwargs.get("_request_auths", None)
+        return self.list_endpoint.call_with_http_info(**kwargs)
 
-    def issues_list_raw(
-        self,
-        *args,
-        **kwargs
-    ) -> urllib3.HTTPResponse:
+    def list_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
         """
-        The same as issues_list(), but returns the response unprocessed.
-        Equivalent to calling issues_list with
+        The same as list(), but returns the response unprocessed.
+        Equivalent to calling list with
         _preload_content = False and _check_status=False
 
         Method returns a paginated list of issues according to query parameters  # noqa: E501
@@ -1317,7 +1082,7 @@ class IssuesApi(object):
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.issues_list(async_req=True)
+        >>> thread = api.list(async_req=True)
         >>> result = thread.get()
 
 
@@ -1358,82 +1123,71 @@ class IssuesApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.issues_list(*args, **kwargs,
-            _preload_content=False, _check_status=False)
+        return self.list(*args, **kwargs, _preload_content=False, _check_status=False)
 
     @overload
-    def issues_partial_update(
+    def partial_update(
         self,
         id,
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
-        **kwargs
+        **kwargs,
     ) -> object:
         ...
 
     @overload
-    def issues_partial_update(
+    def partial_update(
         self,
         id,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def issues_partial_update(
-        self,
-        id,
-        _return_http_data_only: typing.Literal[False],
-        **kwargs
+    def partial_update(
+        self, id, _return_http_data_only: typing.Literal[False], **kwargs
     ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def issues_partial_update(
-        self,
-        id,
-        _preload_content: typing.Literal[False],
-        **kwargs
+    def partial_update(
+        self, id, _preload_content: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def issues_partial_update(
+    def partial_update(
         self,
         id,
         _return_http_data_only: typing.Literal[True],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def issues_partial_update(
+    def partial_update(
         self,
         id,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
-    def issues_partial_update(
-        self,
-        id,
-        **kwargs
+    def partial_update(
+        self, id, **kwargs
     ) -> typing.Union[
-            typing.Tuple[object, int, typing.Dict[str, str]],
-            urllib3.HTTPResponse,
-            object
+        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
     ]:
         """Methods does a partial update of chosen fields in an issue  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.issues_partial_update(id, async_req=True)
+        >>> thread = api.partial_update(id, async_req=True)
         >>> result = thread.get()
 
         Args:
@@ -1484,46 +1238,24 @@ class IssuesApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        kwargs['async_req'] = kwargs.get(
-            'async_req', False
-        )
-        kwargs['_return_http_data_only'] = kwargs.get(
-            '_return_http_data_only', True
-        )
-        kwargs['_preload_content'] = kwargs.get(
-            '_preload_content', True
-        )
-        kwargs['_request_timeout'] = kwargs.get(
-            '_request_timeout', None
-        )
-        kwargs['_check_input_type'] = kwargs.get(
-            '_check_input_type', True
-        )
-        kwargs['_check_return_type'] = kwargs.get(
-            '_check_return_type', True
-        )
-        kwargs['_check_status'] = kwargs.get(
-            '_check_status', True
-        )
-        kwargs['_spec_property_naming'] = kwargs.get(
-            '_spec_property_naming', False
-        )
-        kwargs['_content_type'] = kwargs.get(
-            '_content_type')
-        kwargs['_host_index'] = kwargs.get('_host_index')
-        kwargs['_request_auths'] = kwargs.get('_request_auths', None)
-        kwargs['id'] = \
-            id
-        return self.issues_partial_update_endpoint.call_with_http_info(**kwargs)
+        kwargs["async_req"] = kwargs.get("async_req", False)
+        kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
+        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
+        kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
+        kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
+        kwargs["_check_status"] = kwargs.get("_check_status", True)
+        kwargs["_spec_property_naming"] = kwargs.get("_spec_property_naming", False)
+        kwargs["_content_type"] = kwargs.get("_content_type")
+        kwargs["_host_index"] = kwargs.get("_host_index")
+        kwargs["_request_auths"] = kwargs.get("_request_auths", None)
+        kwargs["id"] = id
+        return self.partial_update_endpoint.call_with_http_info(**kwargs)
 
-    def issues_partial_update_raw(
-        self,
-        *args,
-        **kwargs
-    ) -> urllib3.HTTPResponse:
+    def partial_update_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
         """
-        The same as issues_partial_update(), but returns the response unprocessed.
-        Equivalent to calling issues_partial_update with
+        The same as partial_update(), but returns the response unprocessed.
+        Equivalent to calling partial_update with
         _preload_content = False and _check_status=False
 
         Methods does a partial update of chosen fields in an issue  # noqa: E501
@@ -1531,7 +1263,7 @@ class IssuesApi(object):
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.issues_partial_update(id, async_req=True)
+        >>> thread = api.partial_update(id, async_req=True)
         >>> result = thread.get()
 
         Args:
@@ -1570,82 +1302,71 @@ class IssuesApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.issues_partial_update(*args, **kwargs,
-            _preload_content=False, _check_status=False)
+        return self.partial_update(*args, **kwargs, _preload_content=False, _check_status=False)
 
     @overload
-    def issues_retrieve(
+    def retrieve(
         self,
         id,
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
-        **kwargs
+        **kwargs,
     ) -> object:
         ...
 
     @overload
-    def issues_retrieve(
+    def retrieve(
         self,
         id,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def issues_retrieve(
-        self,
-        id,
-        _return_http_data_only: typing.Literal[False],
-        **kwargs
+    def retrieve(
+        self, id, _return_http_data_only: typing.Literal[False], **kwargs
     ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def issues_retrieve(
-        self,
-        id,
-        _preload_content: typing.Literal[False],
-        **kwargs
+    def retrieve(
+        self, id, _preload_content: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def issues_retrieve(
+    def retrieve(
         self,
         id,
         _return_http_data_only: typing.Literal[True],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def issues_retrieve(
+    def retrieve(
         self,
         id,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
-    def issues_retrieve(
-        self,
-        id,
-        **kwargs
+    def retrieve(
+        self, id, **kwargs
     ) -> typing.Union[
-            typing.Tuple[object, int, typing.Dict[str, str]],
-            urllib3.HTTPResponse,
-            object
+        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
     ]:
         """Method returns details of an issue  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.issues_retrieve(id, async_req=True)
+        >>> thread = api.retrieve(id, async_req=True)
         >>> result = thread.get()
 
         Args:
@@ -1695,46 +1416,24 @@ class IssuesApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        kwargs['async_req'] = kwargs.get(
-            'async_req', False
-        )
-        kwargs['_return_http_data_only'] = kwargs.get(
-            '_return_http_data_only', True
-        )
-        kwargs['_preload_content'] = kwargs.get(
-            '_preload_content', True
-        )
-        kwargs['_request_timeout'] = kwargs.get(
-            '_request_timeout', None
-        )
-        kwargs['_check_input_type'] = kwargs.get(
-            '_check_input_type', True
-        )
-        kwargs['_check_return_type'] = kwargs.get(
-            '_check_return_type', True
-        )
-        kwargs['_check_status'] = kwargs.get(
-            '_check_status', True
-        )
-        kwargs['_spec_property_naming'] = kwargs.get(
-            '_spec_property_naming', False
-        )
-        kwargs['_content_type'] = kwargs.get(
-            '_content_type')
-        kwargs['_host_index'] = kwargs.get('_host_index')
-        kwargs['_request_auths'] = kwargs.get('_request_auths', None)
-        kwargs['id'] = \
-            id
-        return self.issues_retrieve_endpoint.call_with_http_info(**kwargs)
+        kwargs["async_req"] = kwargs.get("async_req", False)
+        kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
+        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
+        kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
+        kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
+        kwargs["_check_status"] = kwargs.get("_check_status", True)
+        kwargs["_spec_property_naming"] = kwargs.get("_spec_property_naming", False)
+        kwargs["_content_type"] = kwargs.get("_content_type")
+        kwargs["_host_index"] = kwargs.get("_host_index")
+        kwargs["_request_auths"] = kwargs.get("_request_auths", None)
+        kwargs["id"] = id
+        return self.retrieve_endpoint.call_with_http_info(**kwargs)
 
-    def issues_retrieve_raw(
-        self,
-        *args,
-        **kwargs
-    ) -> urllib3.HTTPResponse:
+    def retrieve_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
         """
-        The same as issues_retrieve(), but returns the response unprocessed.
-        Equivalent to calling issues_retrieve with
+        The same as retrieve(), but returns the response unprocessed.
+        Equivalent to calling retrieve with
         _preload_content = False and _check_status=False
 
         Method returns details of an issue  # noqa: E501
@@ -1742,7 +1441,7 @@ class IssuesApi(object):
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.issues_retrieve(id, async_req=True)
+        >>> thread = api.retrieve(id, async_req=True)
         >>> result = thread.get()
 
         Args:
@@ -1780,6 +1479,4 @@ class IssuesApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.issues_retrieve(*args, **kwargs,
-            _preload_content=False, _check_status=False)
-
+        return self.retrieve(*args, **kwargs, _preload_content=False, _check_status=False)

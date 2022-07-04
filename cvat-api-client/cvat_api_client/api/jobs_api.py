@@ -9,23 +9,15 @@
 """
 
 
-import typing
-from typing import overload
-import urllib3
-
 import re  # noqa: F401
 import sys  # noqa: F401
+import typing
+from typing import TYPE_CHECKING, overload
 
-from cvat_api_client.api_client import ApiClient, Endpoint as _Endpoint
-from cvat_api_client.model_utils import (  # noqa: F401
-    check_allowed_values,
-    check_validations,
-    date,
-    datetime,
-    file_type,
-    none_type,
-    validate_and_convert_types
-)
+import urllib3
+
+from cvat_api_client.api_client import ApiClient
+from cvat_api_client.api_client import Endpoint as _Endpoint
 from cvat_api_client.model.annotation_file_request import AnnotationFileRequest
 from cvat_api_client.model.data_meta_read import DataMetaRead
 from cvat_api_client.model.job_read import JobRead
@@ -36,6 +28,20 @@ from cvat_api_client.model.paginated_issue_read_list import PaginatedIssueReadLi
 from cvat_api_client.model.paginated_job_commit_list import PaginatedJobCommitList
 from cvat_api_client.model.paginated_job_read_list import PaginatedJobReadList
 from cvat_api_client.model.patched_job_write_request import PatchedJobWriteRequest
+from cvat_api_client.model_utils import (  # noqa: F401
+    check_allowed_values,
+    check_validations,
+    date,
+    datetime,
+    file_type,
+    none_type,
+    validate_and_convert_types,
+)
+
+if TYPE_CHECKING:
+    # Enable introspection. Can't work normally due to cyclic imports
+    from cvat_api_client.apis import *
+    from cvat_api_client.models import *
 
 
 class JobsApi(object):
@@ -49,1398 +55,1084 @@ class JobsApi(object):
         if api_client is None:
             api_client = ApiClient()
         self.api_client = api_client
-        self.jobs_annotations_create_endpoint = _Endpoint(
+        self.annotations_create_endpoint = _Endpoint(
             settings={
-                'response_type': None,
-                'auth': [
-                    'SignatureAuthentication',
-                    'basicAuth',
-                    'cookieAuth',
-                    'tokenAuth'
-                ],
-                'endpoint_path': '/api/jobs/{id}/annotations/',
-                'operation_id': 'jobs_annotations_create',
-                'http_method': 'POST',
-                'servers': None,
+                "response_type": None,
+                "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
+                "endpoint_path": "/api/jobs/{id}/annotations/",
+                "operation_id": "annotations_create",
+                "http_method": "POST",
+                "servers": None,
             },
             params_map={
-                'all': [
-                    'id',
-                    'x_organization',
-                    'cloud_storage_id',
-                    'filename',
-                    'format',
-                    'location',
-                    'org',
-                    'org_id',
-                    'use_default_location',
-                    'job_write_request',
+                "all": [
+                    "id",
+                    "x_organization",
+                    "cloud_storage_id",
+                    "filename",
+                    "format",
+                    "location",
+                    "org",
+                    "org_id",
+                    "use_default_location",
+                    "job_write_request",
                 ],
-                'required': [
-                    'id',
+                "required": [
+                    "id",
                 ],
-                'nullable': [
+                "nullable": [],
+                "enum": [
+                    "location",
                 ],
-                'enum': [
-                    'location',
-                ],
-                'validation': [
-                ]
+                "validation": [],
             },
             root_map={
-                'validations': {
+                "validations": {},
+                "allowed_values": {
+                    ("location",): {"CLOUD_STORAGE": "cloud_storage", "LOCAL": "local"},
                 },
-                'allowed_values': {
-                    ('location',): {
-
-                        "CLOUD_STORAGE": "cloud_storage",
-                        "LOCAL": "local"
-                    },
+                "openapi_types": {
+                    "id": (int,),
+                    "x_organization": (str,),
+                    "cloud_storage_id": (float,),
+                    "filename": (str,),
+                    "format": (str,),
+                    "location": (str,),
+                    "org": (str,),
+                    "org_id": (int,),
+                    "use_default_location": (bool,),
+                    "job_write_request": (JobWriteRequest,),
                 },
-                'openapi_types': {
-                    'id':
-                        (int,),
-                    'x_organization':
-                        (str,),
-                    'cloud_storage_id':
-                        (float,),
-                    'filename':
-                        (str,),
-                    'format':
-                        (str,),
-                    'location':
-                        (str,),
-                    'org':
-                        (str,),
-                    'org_id':
-                        (int,),
-                    'use_default_location':
-                        (bool,),
-                    'job_write_request':
-                        (JobWriteRequest,),
+                "attribute_map": {
+                    "id": "id",
+                    "x_organization": "X-Organization",
+                    "cloud_storage_id": "cloud_storage_id",
+                    "filename": "filename",
+                    "format": "format",
+                    "location": "location",
+                    "org": "org",
+                    "org_id": "org_id",
+                    "use_default_location": "use_default_location",
                 },
-                'attribute_map': {
-                    'id': 'id',
-                    'x_organization': 'X-Organization',
-                    'cloud_storage_id': 'cloud_storage_id',
-                    'filename': 'filename',
-                    'format': 'format',
-                    'location': 'location',
-                    'org': 'org',
-                    'org_id': 'org_id',
-                    'use_default_location': 'use_default_location',
+                "location_map": {
+                    "id": "path",
+                    "x_organization": "header",
+                    "cloud_storage_id": "query",
+                    "filename": "query",
+                    "format": "query",
+                    "location": "query",
+                    "org": "query",
+                    "org_id": "query",
+                    "use_default_location": "query",
+                    "job_write_request": "body",
                 },
-                'location_map': {
-                    'id': 'path',
-                    'x_organization': 'header',
-                    'cloud_storage_id': 'query',
-                    'filename': 'query',
-                    'format': 'query',
-                    'location': 'query',
-                    'org': 'query',
-                    'org_id': 'query',
-                    'use_default_location': 'query',
-                    'job_write_request': 'body',
-                },
-                'collection_format_map': {
-                }
+                "collection_format_map": {},
             },
             headers_map={
-                'accept': [],
-                'content_type': [
-                    'application/json',
-                    'application/x-www-form-urlencoded',
-                    'multipart/form-data',
-                    'application/offset+octet-stream'
-                ]
-            },
-            api_client=api_client
-        )
-        self.jobs_annotations_destroy_endpoint = _Endpoint(
-            settings={
-                'response_type': None,
-                'auth': [
-                    'SignatureAuthentication',
-                    'basicAuth',
-                    'cookieAuth',
-                    'tokenAuth'
+                "accept": [],
+                "content_type": [
+                    "application/json",
+                    "application/x-www-form-urlencoded",
+                    "multipart/form-data",
+                    "application/offset+octet-stream",
                 ],
-                'endpoint_path': '/api/jobs/{id}/annotations/',
-                'operation_id': 'jobs_annotations_destroy',
-                'http_method': 'DELETE',
-                'servers': None,
+            },
+            api_client=api_client,
+        )
+        self.annotations_destroy_endpoint = _Endpoint(
+            settings={
+                "response_type": None,
+                "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
+                "endpoint_path": "/api/jobs/{id}/annotations/",
+                "operation_id": "annotations_destroy",
+                "http_method": "DELETE",
+                "servers": None,
             },
             params_map={
-                'all': [
-                    'id',
-                    'x_organization',
-                    'org',
-                    'org_id',
+                "all": [
+                    "id",
+                    "x_organization",
+                    "org",
+                    "org_id",
                 ],
-                'required': [
-                    'id',
+                "required": [
+                    "id",
                 ],
-                'nullable': [
-                ],
-                'enum': [
-                ],
-                'validation': [
-                ]
+                "nullable": [],
+                "enum": [],
+                "validation": [],
             },
             root_map={
-                'validations': {
+                "validations": {},
+                "allowed_values": {},
+                "openapi_types": {
+                    "id": (int,),
+                    "x_organization": (str,),
+                    "org": (str,),
+                    "org_id": (int,),
                 },
-                'allowed_values': {
+                "attribute_map": {
+                    "id": "id",
+                    "x_organization": "X-Organization",
+                    "org": "org",
+                    "org_id": "org_id",
                 },
-                'openapi_types': {
-                    'id':
-                        (int,),
-                    'x_organization':
-                        (str,),
-                    'org':
-                        (str,),
-                    'org_id':
-                        (int,),
+                "location_map": {
+                    "id": "path",
+                    "x_organization": "header",
+                    "org": "query",
+                    "org_id": "query",
                 },
-                'attribute_map': {
-                    'id': 'id',
-                    'x_organization': 'X-Organization',
-                    'org': 'org',
-                    'org_id': 'org_id',
-                },
-                'location_map': {
-                    'id': 'path',
-                    'x_organization': 'header',
-                    'org': 'query',
-                    'org_id': 'query',
-                },
-                'collection_format_map': {
-                }
+                "collection_format_map": {},
             },
             headers_map={
-                'accept': [],
-                'content_type': [],
+                "accept": [],
+                "content_type": [],
             },
-            api_client=api_client
+            api_client=api_client,
         )
-        self.jobs_annotations_file_partial_update_endpoint = _Endpoint(
+        self.annotations_file_partial_update_endpoint = _Endpoint(
             settings={
-                'response_type': (JobWrite,),
-                'auth': [
-                    'SignatureAuthentication',
-                    'basicAuth',
-                    'cookieAuth',
-                    'tokenAuth'
-                ],
-                'endpoint_path': '/api/jobs/{id}/annotations/{file_id}',
-                'operation_id': 'jobs_annotations_file_partial_update',
-                'http_method': 'PATCH',
-                'servers': None,
+                "response_type": (JobWrite,),
+                "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
+                "endpoint_path": "/api/jobs/{id}/annotations/{file_id}",
+                "operation_id": "annotations_file_partial_update",
+                "http_method": "PATCH",
+                "servers": None,
             },
             params_map={
-                'all': [
-                    'file_id',
-                    'id',
-                    'x_organization',
-                    'org',
-                    'org_id',
-                    'patched_job_write_request',
+                "all": [
+                    "file_id",
+                    "id",
+                    "x_organization",
+                    "org",
+                    "org_id",
+                    "patched_job_write_request",
                 ],
-                'required': [
-                    'file_id',
-                    'id',
+                "required": [
+                    "file_id",
+                    "id",
                 ],
-                'nullable': [
+                "nullable": [],
+                "enum": [],
+                "validation": [
+                    "file_id",
                 ],
-                'enum': [
-                ],
-                'validation': [
-                    'file_id',
-                ]
             },
             root_map={
-                'validations': {
-                    ('file_id',): {
-
-                        'regex': {
-                            'pattern': r'^\b[0-9a-f]{8}\b-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-\b[0-9a-f]{12}\b$',  # noqa: E501
+                "validations": {
+                    ("file_id",): {
+                        "regex": {
+                            "pattern": r"^\b[0-9a-f]{8}\b-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-\b[0-9a-f]{12}\b$",  # noqa: E501
                         },
                     },
                 },
-                'allowed_values': {
+                "allowed_values": {},
+                "openapi_types": {
+                    "file_id": (str,),
+                    "id": (int,),
+                    "x_organization": (str,),
+                    "org": (str,),
+                    "org_id": (int,),
+                    "patched_job_write_request": (PatchedJobWriteRequest,),
                 },
-                'openapi_types': {
-                    'file_id':
-                        (str,),
-                    'id':
-                        (int,),
-                    'x_organization':
-                        (str,),
-                    'org':
-                        (str,),
-                    'org_id':
-                        (int,),
-                    'patched_job_write_request':
-                        (PatchedJobWriteRequest,),
+                "attribute_map": {
+                    "file_id": "file_id",
+                    "id": "id",
+                    "x_organization": "X-Organization",
+                    "org": "org",
+                    "org_id": "org_id",
                 },
-                'attribute_map': {
-                    'file_id': 'file_id',
-                    'id': 'id',
-                    'x_organization': 'X-Organization',
-                    'org': 'org',
-                    'org_id': 'org_id',
+                "location_map": {
+                    "file_id": "path",
+                    "id": "path",
+                    "x_organization": "header",
+                    "org": "query",
+                    "org_id": "query",
+                    "patched_job_write_request": "body",
                 },
-                'location_map': {
-                    'file_id': 'path',
-                    'id': 'path',
-                    'x_organization': 'header',
-                    'org': 'query',
-                    'org_id': 'query',
-                    'patched_job_write_request': 'body',
-                },
-                'collection_format_map': {
-                }
+                "collection_format_map": {},
             },
             headers_map={
-                'accept': [
-                    'application/vnd.cvat+json'
+                "accept": ["application/vnd.cvat+json"],
+                "content_type": [
+                    "application/json",
+                    "application/x-www-form-urlencoded",
+                    "multipart/form-data",
+                    "application/offset+octet-stream",
                 ],
-                'content_type': [
-                    'application/json',
-                    'application/x-www-form-urlencoded',
-                    'multipart/form-data',
-                    'application/offset+octet-stream'
-                ]
             },
-            api_client=api_client
+            api_client=api_client,
         )
-        self.jobs_annotations_partial_update_endpoint = _Endpoint(
+        self.annotations_partial_update_endpoint = _Endpoint(
             settings={
-                'response_type': None,
-                'auth': [
-                    'SignatureAuthentication',
-                    'basicAuth',
-                    'cookieAuth',
-                    'tokenAuth'
-                ],
-                'endpoint_path': '/api/jobs/{id}/annotations/',
-                'operation_id': 'jobs_annotations_partial_update',
-                'http_method': 'PATCH',
-                'servers': None,
+                "response_type": None,
+                "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
+                "endpoint_path": "/api/jobs/{id}/annotations/",
+                "operation_id": "annotations_partial_update",
+                "http_method": "PATCH",
+                "servers": None,
             },
             params_map={
-                'all': [
-                    'action',
-                    'id',
-                    'x_organization',
-                    'org',
-                    'org_id',
-                    'patched_job_write_request',
+                "all": [
+                    "action",
+                    "id",
+                    "x_organization",
+                    "org",
+                    "org_id",
+                    "patched_job_write_request",
                 ],
-                'required': [
-                    'action',
-                    'id',
+                "required": [
+                    "action",
+                    "id",
                 ],
-                'nullable': [
+                "nullable": [],
+                "enum": [
+                    "action",
                 ],
-                'enum': [
-                    'action',
-                ],
-                'validation': [
-                ]
+                "validation": [],
             },
             root_map={
-                'validations': {
+                "validations": {},
+                "allowed_values": {
+                    ("action",): {"CREATE": "create", "DELETE": "delete", "UPDATE": "update"},
                 },
-                'allowed_values': {
-                    ('action',): {
-
-                        "CREATE": "create",
-                        "DELETE": "delete",
-                        "UPDATE": "update"
-                    },
+                "openapi_types": {
+                    "action": (str,),
+                    "id": (int,),
+                    "x_organization": (str,),
+                    "org": (str,),
+                    "org_id": (int,),
+                    "patched_job_write_request": (PatchedJobWriteRequest,),
                 },
-                'openapi_types': {
-                    'action':
-                        (str,),
-                    'id':
-                        (int,),
-                    'x_organization':
-                        (str,),
-                    'org':
-                        (str,),
-                    'org_id':
-                        (int,),
-                    'patched_job_write_request':
-                        (PatchedJobWriteRequest,),
+                "attribute_map": {
+                    "action": "action",
+                    "id": "id",
+                    "x_organization": "X-Organization",
+                    "org": "org",
+                    "org_id": "org_id",
                 },
-                'attribute_map': {
-                    'action': 'action',
-                    'id': 'id',
-                    'x_organization': 'X-Organization',
-                    'org': 'org',
-                    'org_id': 'org_id',
+                "location_map": {
+                    "action": "query",
+                    "id": "path",
+                    "x_organization": "header",
+                    "org": "query",
+                    "org_id": "query",
+                    "patched_job_write_request": "body",
                 },
-                'location_map': {
-                    'action': 'query',
-                    'id': 'path',
-                    'x_organization': 'header',
-                    'org': 'query',
-                    'org_id': 'query',
-                    'patched_job_write_request': 'body',
-                },
-                'collection_format_map': {
-                }
+                "collection_format_map": {},
             },
             headers_map={
-                'accept': [],
-                'content_type': [
-                    'application/json',
-                    'application/x-www-form-urlencoded',
-                    'multipart/form-data',
-                    'application/offset+octet-stream'
-                ]
-            },
-            api_client=api_client
-        )
-        self.jobs_annotations_retrieve_endpoint = _Endpoint(
-            settings={
-                'response_type': (LabeledData,),
-                'auth': [
-                    'SignatureAuthentication',
-                    'basicAuth',
-                    'cookieAuth',
-                    'tokenAuth'
+                "accept": [],
+                "content_type": [
+                    "application/json",
+                    "application/x-www-form-urlencoded",
+                    "multipart/form-data",
+                    "application/offset+octet-stream",
                 ],
-                'endpoint_path': '/api/jobs/{id}/annotations/',
-                'operation_id': 'jobs_annotations_retrieve',
-                'http_method': 'GET',
-                'servers': None,
+            },
+            api_client=api_client,
+        )
+        self.annotations_retrieve_endpoint = _Endpoint(
+            settings={
+                "response_type": (LabeledData,),
+                "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
+                "endpoint_path": "/api/jobs/{id}/annotations/",
+                "operation_id": "annotations_retrieve",
+                "http_method": "GET",
+                "servers": None,
             },
             params_map={
-                'all': [
-                    'id',
-                    'x_organization',
-                    'action',
-                    'cloud_storage_id',
-                    'filename',
-                    'format',
-                    'location',
-                    'org',
-                    'org_id',
-                    'use_default_location',
+                "all": [
+                    "id",
+                    "x_organization",
+                    "action",
+                    "cloud_storage_id",
+                    "filename",
+                    "format",
+                    "location",
+                    "org",
+                    "org_id",
+                    "use_default_location",
                 ],
-                'required': [
-                    'id',
+                "required": [
+                    "id",
                 ],
-                'nullable': [
+                "nullable": [],
+                "enum": [
+                    "action",
+                    "location",
                 ],
-                'enum': [
-                    'action',
-                    'location',
-                ],
-                'validation': [
-                ]
+                "validation": [],
             },
             root_map={
-                'validations': {
+                "validations": {},
+                "allowed_values": {
+                    ("action",): {"DOWNLOAD": "download"},
+                    ("location",): {"CLOUD_STORAGE": "cloud_storage", "LOCAL": "local"},
                 },
-                'allowed_values': {
-                    ('action',): {
-
-                        "DOWNLOAD": "download"
-                    },
-                    ('location',): {
-
-                        "CLOUD_STORAGE": "cloud_storage",
-                        "LOCAL": "local"
-                    },
+                "openapi_types": {
+                    "id": (int,),
+                    "x_organization": (str,),
+                    "action": (str,),
+                    "cloud_storage_id": (float,),
+                    "filename": (str,),
+                    "format": (str,),
+                    "location": (str,),
+                    "org": (str,),
+                    "org_id": (int,),
+                    "use_default_location": (bool,),
                 },
-                'openapi_types': {
-                    'id':
-                        (int,),
-                    'x_organization':
-                        (str,),
-                    'action':
-                        (str,),
-                    'cloud_storage_id':
-                        (float,),
-                    'filename':
-                        (str,),
-                    'format':
-                        (str,),
-                    'location':
-                        (str,),
-                    'org':
-                        (str,),
-                    'org_id':
-                        (int,),
-                    'use_default_location':
-                        (bool,),
+                "attribute_map": {
+                    "id": "id",
+                    "x_organization": "X-Organization",
+                    "action": "action",
+                    "cloud_storage_id": "cloud_storage_id",
+                    "filename": "filename",
+                    "format": "format",
+                    "location": "location",
+                    "org": "org",
+                    "org_id": "org_id",
+                    "use_default_location": "use_default_location",
                 },
-                'attribute_map': {
-                    'id': 'id',
-                    'x_organization': 'X-Organization',
-                    'action': 'action',
-                    'cloud_storage_id': 'cloud_storage_id',
-                    'filename': 'filename',
-                    'format': 'format',
-                    'location': 'location',
-                    'org': 'org',
-                    'org_id': 'org_id',
-                    'use_default_location': 'use_default_location',
+                "location_map": {
+                    "id": "path",
+                    "x_organization": "header",
+                    "action": "query",
+                    "cloud_storage_id": "query",
+                    "filename": "query",
+                    "format": "query",
+                    "location": "query",
+                    "org": "query",
+                    "org_id": "query",
+                    "use_default_location": "query",
                 },
-                'location_map': {
-                    'id': 'path',
-                    'x_organization': 'header',
-                    'action': 'query',
-                    'cloud_storage_id': 'query',
-                    'filename': 'query',
-                    'format': 'query',
-                    'location': 'query',
-                    'org': 'query',
-                    'org_id': 'query',
-                    'use_default_location': 'query',
-                },
-                'collection_format_map': {
-                }
+                "collection_format_map": {},
             },
             headers_map={
-                'accept': [
-                    'application/vnd.cvat+json'
-                ],
-                'content_type': [],
+                "accept": ["application/vnd.cvat+json"],
+                "content_type": [],
             },
-            api_client=api_client
+            api_client=api_client,
         )
-        self.jobs_annotations_update_endpoint = _Endpoint(
+        self.annotations_update_endpoint = _Endpoint(
             settings={
-                'response_type': None,
-                'auth': [
-                    'SignatureAuthentication',
-                    'basicAuth',
-                    'cookieAuth',
-                    'tokenAuth'
-                ],
-                'endpoint_path': '/api/jobs/{id}/annotations/',
-                'operation_id': 'jobs_annotations_update',
-                'http_method': 'PUT',
-                'servers': None,
+                "response_type": None,
+                "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
+                "endpoint_path": "/api/jobs/{id}/annotations/",
+                "operation_id": "annotations_update",
+                "http_method": "PUT",
+                "servers": None,
             },
             params_map={
-                'all': [
-                    'id',
-                    'annotation_file_request',
-                    'x_organization',
-                    'org',
-                    'org_id',
+                "all": [
+                    "id",
+                    "annotation_file_request",
+                    "x_organization",
+                    "org",
+                    "org_id",
                 ],
-                'required': [
-                    'id',
-                    'annotation_file_request',
+                "required": [
+                    "id",
+                    "annotation_file_request",
                 ],
-                'nullable': [
-                ],
-                'enum': [
-                ],
-                'validation': [
-                ]
+                "nullable": [],
+                "enum": [],
+                "validation": [],
             },
             root_map={
-                'validations': {
+                "validations": {},
+                "allowed_values": {},
+                "openapi_types": {
+                    "id": (int,),
+                    "annotation_file_request": (AnnotationFileRequest,),
+                    "x_organization": (str,),
+                    "org": (str,),
+                    "org_id": (int,),
                 },
-                'allowed_values': {
+                "attribute_map": {
+                    "id": "id",
+                    "x_organization": "X-Organization",
+                    "org": "org",
+                    "org_id": "org_id",
                 },
-                'openapi_types': {
-                    'id':
-                        (int,),
-                    'annotation_file_request':
-                        (AnnotationFileRequest,),
-                    'x_organization':
-                        (str,),
-                    'org':
-                        (str,),
-                    'org_id':
-                        (int,),
+                "location_map": {
+                    "id": "path",
+                    "annotation_file_request": "body",
+                    "x_organization": "header",
+                    "org": "query",
+                    "org_id": "query",
                 },
-                'attribute_map': {
-                    'id': 'id',
-                    'x_organization': 'X-Organization',
-                    'org': 'org',
-                    'org_id': 'org_id',
-                },
-                'location_map': {
-                    'id': 'path',
-                    'annotation_file_request': 'body',
-                    'x_organization': 'header',
-                    'org': 'query',
-                    'org_id': 'query',
-                },
-                'collection_format_map': {
-                }
+                "collection_format_map": {},
             },
             headers_map={
-                'accept': [],
-                'content_type': [
-                    'application/json',
-                    'application/x-www-form-urlencoded',
-                    'multipart/form-data',
-                    'application/offset+octet-stream'
-                ]
-            },
-            api_client=api_client
-        )
-        self.jobs_commits_list_endpoint = _Endpoint(
-            settings={
-                'response_type': (PaginatedJobCommitList,),
-                'auth': [
-                    'SignatureAuthentication',
-                    'basicAuth',
-                    'cookieAuth',
-                    'tokenAuth'
+                "accept": [],
+                "content_type": [
+                    "application/json",
+                    "application/x-www-form-urlencoded",
+                    "multipart/form-data",
+                    "application/offset+octet-stream",
                 ],
-                'endpoint_path': '/api/jobs/{id}/commits',
-                'operation_id': 'jobs_commits_list',
-                'http_method': 'GET',
-                'servers': None,
+            },
+            api_client=api_client,
+        )
+        self.commits_list_endpoint = _Endpoint(
+            settings={
+                "response_type": (PaginatedJobCommitList,),
+                "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
+                "endpoint_path": "/api/jobs/{id}/commits",
+                "operation_id": "commits_list",
+                "http_method": "GET",
+                "servers": None,
             },
             params_map={
-                'all': [
-                    'id',
-                    'x_organization',
-                    'filter',
-                    'org',
-                    'org_id',
-                    'page',
-                    'page_size',
-                    'search',
-                    'sort',
+                "all": [
+                    "id",
+                    "x_organization",
+                    "filter",
+                    "org",
+                    "org_id",
+                    "page",
+                    "page_size",
+                    "search",
+                    "sort",
                 ],
-                'required': [
-                    'id',
+                "required": [
+                    "id",
                 ],
-                'nullable': [
-                ],
-                'enum': [
-                ],
-                'validation': [
-                ]
+                "nullable": [],
+                "enum": [],
+                "validation": [],
             },
             root_map={
-                'validations': {
+                "validations": {},
+                "allowed_values": {},
+                "openapi_types": {
+                    "id": (int,),
+                    "x_organization": (str,),
+                    "filter": (str,),
+                    "org": (str,),
+                    "org_id": (int,),
+                    "page": (int,),
+                    "page_size": (int,),
+                    "search": (str,),
+                    "sort": (str,),
                 },
-                'allowed_values': {
+                "attribute_map": {
+                    "id": "id",
+                    "x_organization": "X-Organization",
+                    "filter": "filter",
+                    "org": "org",
+                    "org_id": "org_id",
+                    "page": "page",
+                    "page_size": "page_size",
+                    "search": "search",
+                    "sort": "sort",
                 },
-                'openapi_types': {
-                    'id':
-                        (int,),
-                    'x_organization':
-                        (str,),
-                    'filter':
-                        (str,),
-                    'org':
-                        (str,),
-                    'org_id':
-                        (int,),
-                    'page':
-                        (int,),
-                    'page_size':
-                        (int,),
-                    'search':
-                        (str,),
-                    'sort':
-                        (str,),
+                "location_map": {
+                    "id": "path",
+                    "x_organization": "header",
+                    "filter": "query",
+                    "org": "query",
+                    "org_id": "query",
+                    "page": "query",
+                    "page_size": "query",
+                    "search": "query",
+                    "sort": "query",
                 },
-                'attribute_map': {
-                    'id': 'id',
-                    'x_organization': 'X-Organization',
-                    'filter': 'filter',
-                    'org': 'org',
-                    'org_id': 'org_id',
-                    'page': 'page',
-                    'page_size': 'page_size',
-                    'search': 'search',
-                    'sort': 'sort',
-                },
-                'location_map': {
-                    'id': 'path',
-                    'x_organization': 'header',
-                    'filter': 'query',
-                    'org': 'query',
-                    'org_id': 'query',
-                    'page': 'query',
-                    'page_size': 'query',
-                    'search': 'query',
-                    'sort': 'query',
-                },
-                'collection_format_map': {
-                }
+                "collection_format_map": {},
             },
             headers_map={
-                'accept': [
-                    'application/vnd.cvat+json'
-                ],
-                'content_type': [],
+                "accept": ["application/vnd.cvat+json"],
+                "content_type": [],
             },
-            api_client=api_client
+            api_client=api_client,
         )
-        self.jobs_data_meta_retrieve_endpoint = _Endpoint(
+        self.data_meta_retrieve_endpoint = _Endpoint(
             settings={
-                'response_type': (DataMetaRead,),
-                'auth': [
-                    'SignatureAuthentication',
-                    'basicAuth',
-                    'cookieAuth',
-                    'tokenAuth'
-                ],
-                'endpoint_path': '/api/jobs/{id}/data/meta',
-                'operation_id': 'jobs_data_meta_retrieve',
-                'http_method': 'GET',
-                'servers': None,
+                "response_type": (DataMetaRead,),
+                "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
+                "endpoint_path": "/api/jobs/{id}/data/meta",
+                "operation_id": "data_meta_retrieve",
+                "http_method": "GET",
+                "servers": None,
             },
             params_map={
-                'all': [
-                    'id',
-                    'x_organization',
-                    'org',
-                    'org_id',
+                "all": [
+                    "id",
+                    "x_organization",
+                    "org",
+                    "org_id",
                 ],
-                'required': [
-                    'id',
+                "required": [
+                    "id",
                 ],
-                'nullable': [
-                ],
-                'enum': [
-                ],
-                'validation': [
-                ]
+                "nullable": [],
+                "enum": [],
+                "validation": [],
             },
             root_map={
-                'validations': {
+                "validations": {},
+                "allowed_values": {},
+                "openapi_types": {
+                    "id": (int,),
+                    "x_organization": (str,),
+                    "org": (str,),
+                    "org_id": (int,),
                 },
-                'allowed_values': {
+                "attribute_map": {
+                    "id": "id",
+                    "x_organization": "X-Organization",
+                    "org": "org",
+                    "org_id": "org_id",
                 },
-                'openapi_types': {
-                    'id':
-                        (int,),
-                    'x_organization':
-                        (str,),
-                    'org':
-                        (str,),
-                    'org_id':
-                        (int,),
+                "location_map": {
+                    "id": "path",
+                    "x_organization": "header",
+                    "org": "query",
+                    "org_id": "query",
                 },
-                'attribute_map': {
-                    'id': 'id',
-                    'x_organization': 'X-Organization',
-                    'org': 'org',
-                    'org_id': 'org_id',
-                },
-                'location_map': {
-                    'id': 'path',
-                    'x_organization': 'header',
-                    'org': 'query',
-                    'org_id': 'query',
-                },
-                'collection_format_map': {
-                }
+                "collection_format_map": {},
             },
             headers_map={
-                'accept': [
-                    'application/vnd.cvat+json'
-                ],
-                'content_type': [],
+                "accept": ["application/vnd.cvat+json"],
+                "content_type": [],
             },
-            api_client=api_client
+            api_client=api_client,
         )
-        self.jobs_data_retrieve_endpoint = _Endpoint(
+        self.data_retrieve_endpoint = _Endpoint(
             settings={
-                'response_type': None,
-                'auth': [
-                    'SignatureAuthentication',
-                    'basicAuth',
-                    'cookieAuth',
-                    'tokenAuth'
-                ],
-                'endpoint_path': '/api/jobs/{id}/data',
-                'operation_id': 'jobs_data_retrieve',
-                'http_method': 'GET',
-                'servers': None,
+                "response_type": None,
+                "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
+                "endpoint_path": "/api/jobs/{id}/data",
+                "operation_id": "data_retrieve",
+                "http_method": "GET",
+                "servers": None,
             },
             params_map={
-                'all': [
-                    'id',
-                    'number',
-                    'quality',
-                    'type',
-                    'x_organization',
-                    'org',
-                    'org_id',
+                "all": [
+                    "id",
+                    "number",
+                    "quality",
+                    "type",
+                    "x_organization",
+                    "org",
+                    "org_id",
                 ],
-                'required': [
-                    'id',
-                    'number',
-                    'quality',
-                    'type',
+                "required": [
+                    "id",
+                    "number",
+                    "quality",
+                    "type",
                 ],
-                'nullable': [
+                "nullable": [],
+                "enum": [
+                    "quality",
+                    "type",
                 ],
-                'enum': [
-                    'quality',
-                    'type',
-                ],
-                'validation': [
-                ]
+                "validation": [],
             },
             root_map={
-                'validations': {
-                },
-                'allowed_values': {
-                    ('quality',): {
-
-                        "COMPRESSED": "compressed",
-                        "ORIGINAL": "original"
-                    },
-                    ('type',): {
-
+                "validations": {},
+                "allowed_values": {
+                    ("quality",): {"COMPRESSED": "compressed", "ORIGINAL": "original"},
+                    ("type",): {
                         "CHUNK": "chunk",
                         "CONTEXT_IMAGE": "context_image",
                         "FRAME": "frame",
-                        "PREVIEW": "preview"
+                        "PREVIEW": "preview",
                     },
                 },
-                'openapi_types': {
-                    'id':
-                        (int,),
-                    'number':
-                        (float,),
-                    'quality':
-                        (str,),
-                    'type':
-                        (str,),
-                    'x_organization':
-                        (str,),
-                    'org':
-                        (str,),
-                    'org_id':
-                        (int,),
+                "openapi_types": {
+                    "id": (int,),
+                    "number": (float,),
+                    "quality": (str,),
+                    "type": (str,),
+                    "x_organization": (str,),
+                    "org": (str,),
+                    "org_id": (int,),
                 },
-                'attribute_map': {
-                    'id': 'id',
-                    'number': 'number',
-                    'quality': 'quality',
-                    'type': 'type',
-                    'x_organization': 'X-Organization',
-                    'org': 'org',
-                    'org_id': 'org_id',
+                "attribute_map": {
+                    "id": "id",
+                    "number": "number",
+                    "quality": "quality",
+                    "type": "type",
+                    "x_organization": "X-Organization",
+                    "org": "org",
+                    "org_id": "org_id",
                 },
-                'location_map': {
-                    'id': 'path',
-                    'number': 'query',
-                    'quality': 'query',
-                    'type': 'query',
-                    'x_organization': 'header',
-                    'org': 'query',
-                    'org_id': 'query',
+                "location_map": {
+                    "id": "path",
+                    "number": "query",
+                    "quality": "query",
+                    "type": "query",
+                    "x_organization": "header",
+                    "org": "query",
+                    "org_id": "query",
                 },
-                'collection_format_map': {
-                }
+                "collection_format_map": {},
             },
             headers_map={
-                'accept': [],
-                'content_type': [],
+                "accept": [],
+                "content_type": [],
             },
-            api_client=api_client
+            api_client=api_client,
         )
-        self.jobs_dataset_retrieve_endpoint = _Endpoint(
+        self.dataset_retrieve_endpoint = _Endpoint(
             settings={
-                'response_type': None,
-                'auth': [
-                    'SignatureAuthentication',
-                    'basicAuth',
-                    'cookieAuth',
-                    'tokenAuth'
-                ],
-                'endpoint_path': '/api/jobs/{id}/dataset',
-                'operation_id': 'jobs_dataset_retrieve',
-                'http_method': 'GET',
-                'servers': None,
+                "response_type": None,
+                "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
+                "endpoint_path": "/api/jobs/{id}/dataset",
+                "operation_id": "dataset_retrieve",
+                "http_method": "GET",
+                "servers": None,
             },
             params_map={
-                'all': [
-                    'format',
-                    'id',
-                    'x_organization',
-                    'action',
-                    'cloud_storage_id',
-                    'filename',
-                    'location',
-                    'org',
-                    'org_id',
-                    'use_default_location',
+                "all": [
+                    "format",
+                    "id",
+                    "x_organization",
+                    "action",
+                    "cloud_storage_id",
+                    "filename",
+                    "location",
+                    "org",
+                    "org_id",
+                    "use_default_location",
                 ],
-                'required': [
-                    'format',
-                    'id',
+                "required": [
+                    "format",
+                    "id",
                 ],
-                'nullable': [
+                "nullable": [],
+                "enum": [
+                    "action",
+                    "location",
                 ],
-                'enum': [
-                    'action',
-                    'location',
-                ],
-                'validation': [
-                ]
+                "validation": [],
             },
             root_map={
-                'validations': {
+                "validations": {},
+                "allowed_values": {
+                    ("action",): {"DOWNLOAD": "download"},
+                    ("location",): {"CLOUD_STORAGE": "cloud_storage", "LOCAL": "local"},
                 },
-                'allowed_values': {
-                    ('action',): {
-
-                        "DOWNLOAD": "download"
-                    },
-                    ('location',): {
-
-                        "CLOUD_STORAGE": "cloud_storage",
-                        "LOCAL": "local"
-                    },
+                "openapi_types": {
+                    "format": (str,),
+                    "id": (int,),
+                    "x_organization": (str,),
+                    "action": (str,),
+                    "cloud_storage_id": (float,),
+                    "filename": (str,),
+                    "location": (str,),
+                    "org": (str,),
+                    "org_id": (int,),
+                    "use_default_location": (bool,),
                 },
-                'openapi_types': {
-                    'format':
-                        (str,),
-                    'id':
-                        (int,),
-                    'x_organization':
-                        (str,),
-                    'action':
-                        (str,),
-                    'cloud_storage_id':
-                        (float,),
-                    'filename':
-                        (str,),
-                    'location':
-                        (str,),
-                    'org':
-                        (str,),
-                    'org_id':
-                        (int,),
-                    'use_default_location':
-                        (bool,),
+                "attribute_map": {
+                    "format": "format",
+                    "id": "id",
+                    "x_organization": "X-Organization",
+                    "action": "action",
+                    "cloud_storage_id": "cloud_storage_id",
+                    "filename": "filename",
+                    "location": "location",
+                    "org": "org",
+                    "org_id": "org_id",
+                    "use_default_location": "use_default_location",
                 },
-                'attribute_map': {
-                    'format': 'format',
-                    'id': 'id',
-                    'x_organization': 'X-Organization',
-                    'action': 'action',
-                    'cloud_storage_id': 'cloud_storage_id',
-                    'filename': 'filename',
-                    'location': 'location',
-                    'org': 'org',
-                    'org_id': 'org_id',
-                    'use_default_location': 'use_default_location',
+                "location_map": {
+                    "format": "query",
+                    "id": "path",
+                    "x_organization": "header",
+                    "action": "query",
+                    "cloud_storage_id": "query",
+                    "filename": "query",
+                    "location": "query",
+                    "org": "query",
+                    "org_id": "query",
+                    "use_default_location": "query",
                 },
-                'location_map': {
-                    'format': 'query',
-                    'id': 'path',
-                    'x_organization': 'header',
-                    'action': 'query',
-                    'cloud_storage_id': 'query',
-                    'filename': 'query',
-                    'location': 'query',
-                    'org': 'query',
-                    'org_id': 'query',
-                    'use_default_location': 'query',
-                },
-                'collection_format_map': {
-                }
+                "collection_format_map": {},
             },
             headers_map={
-                'accept': [],
-                'content_type': [],
+                "accept": [],
+                "content_type": [],
             },
-            api_client=api_client
+            api_client=api_client,
         )
-        self.jobs_issues_list_endpoint = _Endpoint(
+        self.issues_list_endpoint = _Endpoint(
             settings={
-                'response_type': (PaginatedIssueReadList,),
-                'auth': [
-                    'SignatureAuthentication',
-                    'basicAuth',
-                    'cookieAuth',
-                    'tokenAuth'
-                ],
-                'endpoint_path': '/api/jobs/{id}/issues',
-                'operation_id': 'jobs_issues_list',
-                'http_method': 'GET',
-                'servers': None,
+                "response_type": (PaginatedIssueReadList,),
+                "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
+                "endpoint_path": "/api/jobs/{id}/issues",
+                "operation_id": "issues_list",
+                "http_method": "GET",
+                "servers": None,
             },
             params_map={
-                'all': [
-                    'id',
-                    'x_organization',
-                    'filter',
-                    'org',
-                    'org_id',
-                    'page',
-                    'page_size',
-                    'search',
-                    'sort',
+                "all": [
+                    "id",
+                    "x_organization",
+                    "filter",
+                    "org",
+                    "org_id",
+                    "page",
+                    "page_size",
+                    "search",
+                    "sort",
                 ],
-                'required': [
-                    'id',
+                "required": [
+                    "id",
                 ],
-                'nullable': [
-                ],
-                'enum': [
-                ],
-                'validation': [
-                ]
+                "nullable": [],
+                "enum": [],
+                "validation": [],
             },
             root_map={
-                'validations': {
+                "validations": {},
+                "allowed_values": {},
+                "openapi_types": {
+                    "id": (int,),
+                    "x_organization": (str,),
+                    "filter": (str,),
+                    "org": (str,),
+                    "org_id": (int,),
+                    "page": (int,),
+                    "page_size": (int,),
+                    "search": (str,),
+                    "sort": (str,),
                 },
-                'allowed_values': {
+                "attribute_map": {
+                    "id": "id",
+                    "x_organization": "X-Organization",
+                    "filter": "filter",
+                    "org": "org",
+                    "org_id": "org_id",
+                    "page": "page",
+                    "page_size": "page_size",
+                    "search": "search",
+                    "sort": "sort",
                 },
-                'openapi_types': {
-                    'id':
-                        (int,),
-                    'x_organization':
-                        (str,),
-                    'filter':
-                        (str,),
-                    'org':
-                        (str,),
-                    'org_id':
-                        (int,),
-                    'page':
-                        (int,),
-                    'page_size':
-                        (int,),
-                    'search':
-                        (str,),
-                    'sort':
-                        (str,),
+                "location_map": {
+                    "id": "path",
+                    "x_organization": "header",
+                    "filter": "query",
+                    "org": "query",
+                    "org_id": "query",
+                    "page": "query",
+                    "page_size": "query",
+                    "search": "query",
+                    "sort": "query",
                 },
-                'attribute_map': {
-                    'id': 'id',
-                    'x_organization': 'X-Organization',
-                    'filter': 'filter',
-                    'org': 'org',
-                    'org_id': 'org_id',
-                    'page': 'page',
-                    'page_size': 'page_size',
-                    'search': 'search',
-                    'sort': 'sort',
-                },
-                'location_map': {
-                    'id': 'path',
-                    'x_organization': 'header',
-                    'filter': 'query',
-                    'org': 'query',
-                    'org_id': 'query',
-                    'page': 'query',
-                    'page_size': 'query',
-                    'search': 'query',
-                    'sort': 'query',
-                },
-                'collection_format_map': {
-                }
+                "collection_format_map": {},
             },
             headers_map={
-                'accept': [
-                    'application/vnd.cvat+json'
-                ],
-                'content_type': [],
+                "accept": ["application/vnd.cvat+json"],
+                "content_type": [],
             },
-            api_client=api_client
+            api_client=api_client,
         )
-        self.jobs_list_endpoint = _Endpoint(
+        self.list_endpoint = _Endpoint(
             settings={
-                'response_type': (PaginatedJobReadList,),
-                'auth': [
-                    'SignatureAuthentication',
-                    'basicAuth',
-                    'cookieAuth',
-                    'tokenAuth'
-                ],
-                'endpoint_path': '/api/jobs',
-                'operation_id': 'jobs_list',
-                'http_method': 'GET',
-                'servers': None,
+                "response_type": (PaginatedJobReadList,),
+                "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
+                "endpoint_path": "/api/jobs",
+                "operation_id": "list",
+                "http_method": "GET",
+                "servers": None,
             },
             params_map={
-                'all': [
-                    'x_organization',
-                    'filter',
-                    'org',
-                    'org_id',
-                    'page',
-                    'page_size',
-                    'search',
-                    'sort',
+                "all": [
+                    "x_organization",
+                    "filter",
+                    "org",
+                    "org_id",
+                    "page",
+                    "page_size",
+                    "search",
+                    "sort",
                 ],
-                'required': [],
-                'nullable': [
-                ],
-                'enum': [
-                ],
-                'validation': [
-                ]
+                "required": [],
+                "nullable": [],
+                "enum": [],
+                "validation": [],
             },
             root_map={
-                'validations': {
+                "validations": {},
+                "allowed_values": {},
+                "openapi_types": {
+                    "x_organization": (str,),
+                    "filter": (str,),
+                    "org": (str,),
+                    "org_id": (int,),
+                    "page": (int,),
+                    "page_size": (int,),
+                    "search": (str,),
+                    "sort": (str,),
                 },
-                'allowed_values': {
+                "attribute_map": {
+                    "x_organization": "X-Organization",
+                    "filter": "filter",
+                    "org": "org",
+                    "org_id": "org_id",
+                    "page": "page",
+                    "page_size": "page_size",
+                    "search": "search",
+                    "sort": "sort",
                 },
-                'openapi_types': {
-                    'x_organization':
-                        (str,),
-                    'filter':
-                        (str,),
-                    'org':
-                        (str,),
-                    'org_id':
-                        (int,),
-                    'page':
-                        (int,),
-                    'page_size':
-                        (int,),
-                    'search':
-                        (str,),
-                    'sort':
-                        (str,),
+                "location_map": {
+                    "x_organization": "header",
+                    "filter": "query",
+                    "org": "query",
+                    "org_id": "query",
+                    "page": "query",
+                    "page_size": "query",
+                    "search": "query",
+                    "sort": "query",
                 },
-                'attribute_map': {
-                    'x_organization': 'X-Organization',
-                    'filter': 'filter',
-                    'org': 'org',
-                    'org_id': 'org_id',
-                    'page': 'page',
-                    'page_size': 'page_size',
-                    'search': 'search',
-                    'sort': 'sort',
-                },
-                'location_map': {
-                    'x_organization': 'header',
-                    'filter': 'query',
-                    'org': 'query',
-                    'org_id': 'query',
-                    'page': 'query',
-                    'page_size': 'query',
-                    'search': 'query',
-                    'sort': 'query',
-                },
-                'collection_format_map': {
-                }
+                "collection_format_map": {},
             },
             headers_map={
-                'accept': [
-                    'application/vnd.cvat+json'
-                ],
-                'content_type': [],
+                "accept": ["application/vnd.cvat+json"],
+                "content_type": [],
             },
-            api_client=api_client
+            api_client=api_client,
         )
-        self.jobs_partial_update_endpoint = _Endpoint(
+        self.partial_update_endpoint = _Endpoint(
             settings={
-                'response_type': (JobWrite,),
-                'auth': [
-                    'SignatureAuthentication',
-                    'basicAuth',
-                    'cookieAuth',
-                    'tokenAuth'
-                ],
-                'endpoint_path': '/api/jobs/{id}',
-                'operation_id': 'jobs_partial_update',
-                'http_method': 'PATCH',
-                'servers': None,
+                "response_type": (JobWrite,),
+                "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
+                "endpoint_path": "/api/jobs/{id}",
+                "operation_id": "partial_update",
+                "http_method": "PATCH",
+                "servers": None,
             },
             params_map={
-                'all': [
-                    'id',
-                    'x_organization',
-                    'org',
-                    'org_id',
-                    'patched_job_write_request',
+                "all": [
+                    "id",
+                    "x_organization",
+                    "org",
+                    "org_id",
+                    "patched_job_write_request",
                 ],
-                'required': [
-                    'id',
+                "required": [
+                    "id",
                 ],
-                'nullable': [
-                ],
-                'enum': [
-                ],
-                'validation': [
-                ]
+                "nullable": [],
+                "enum": [],
+                "validation": [],
             },
             root_map={
-                'validations': {
+                "validations": {},
+                "allowed_values": {},
+                "openapi_types": {
+                    "id": (int,),
+                    "x_organization": (str,),
+                    "org": (str,),
+                    "org_id": (int,),
+                    "patched_job_write_request": (PatchedJobWriteRequest,),
                 },
-                'allowed_values': {
+                "attribute_map": {
+                    "id": "id",
+                    "x_organization": "X-Organization",
+                    "org": "org",
+                    "org_id": "org_id",
                 },
-                'openapi_types': {
-                    'id':
-                        (int,),
-                    'x_organization':
-                        (str,),
-                    'org':
-                        (str,),
-                    'org_id':
-                        (int,),
-                    'patched_job_write_request':
-                        (PatchedJobWriteRequest,),
+                "location_map": {
+                    "id": "path",
+                    "x_organization": "header",
+                    "org": "query",
+                    "org_id": "query",
+                    "patched_job_write_request": "body",
                 },
-                'attribute_map': {
-                    'id': 'id',
-                    'x_organization': 'X-Organization',
-                    'org': 'org',
-                    'org_id': 'org_id',
-                },
-                'location_map': {
-                    'id': 'path',
-                    'x_organization': 'header',
-                    'org': 'query',
-                    'org_id': 'query',
-                    'patched_job_write_request': 'body',
-                },
-                'collection_format_map': {
-                }
+                "collection_format_map": {},
             },
             headers_map={
-                'accept': [
-                    'application/vnd.cvat+json'
+                "accept": ["application/vnd.cvat+json"],
+                "content_type": [
+                    "application/json",
+                    "application/x-www-form-urlencoded",
+                    "multipart/form-data",
+                    "application/offset+octet-stream",
                 ],
-                'content_type': [
-                    'application/json',
-                    'application/x-www-form-urlencoded',
-                    'multipart/form-data',
-                    'application/offset+octet-stream'
-                ]
             },
-            api_client=api_client
+            api_client=api_client,
         )
-        self.jobs_retrieve_endpoint = _Endpoint(
+        self.retrieve_endpoint = _Endpoint(
             settings={
-                'response_type': (JobRead,),
-                'auth': [
-                    'SignatureAuthentication',
-                    'basicAuth',
-                    'cookieAuth',
-                    'tokenAuth'
-                ],
-                'endpoint_path': '/api/jobs/{id}',
-                'operation_id': 'jobs_retrieve',
-                'http_method': 'GET',
-                'servers': None,
+                "response_type": (JobRead,),
+                "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
+                "endpoint_path": "/api/jobs/{id}",
+                "operation_id": "retrieve",
+                "http_method": "GET",
+                "servers": None,
             },
             params_map={
-                'all': [
-                    'id',
-                    'x_organization',
-                    'org',
-                    'org_id',
+                "all": [
+                    "id",
+                    "x_organization",
+                    "org",
+                    "org_id",
                 ],
-                'required': [
-                    'id',
+                "required": [
+                    "id",
                 ],
-                'nullable': [
-                ],
-                'enum': [
-                ],
-                'validation': [
-                ]
+                "nullable": [],
+                "enum": [],
+                "validation": [],
             },
             root_map={
-                'validations': {
+                "validations": {},
+                "allowed_values": {},
+                "openapi_types": {
+                    "id": (int,),
+                    "x_organization": (str,),
+                    "org": (str,),
+                    "org_id": (int,),
                 },
-                'allowed_values': {
+                "attribute_map": {
+                    "id": "id",
+                    "x_organization": "X-Organization",
+                    "org": "org",
+                    "org_id": "org_id",
                 },
-                'openapi_types': {
-                    'id':
-                        (int,),
-                    'x_organization':
-                        (str,),
-                    'org':
-                        (str,),
-                    'org_id':
-                        (int,),
+                "location_map": {
+                    "id": "path",
+                    "x_organization": "header",
+                    "org": "query",
+                    "org_id": "query",
                 },
-                'attribute_map': {
-                    'id': 'id',
-                    'x_organization': 'X-Organization',
-                    'org': 'org',
-                    'org_id': 'org_id',
-                },
-                'location_map': {
-                    'id': 'path',
-                    'x_organization': 'header',
-                    'org': 'query',
-                    'org_id': 'query',
-                },
-                'collection_format_map': {
-                }
+                "collection_format_map": {},
             },
             headers_map={
-                'accept': [
-                    'application/vnd.cvat+json'
-                ],
-                'content_type': [],
+                "accept": ["application/vnd.cvat+json"],
+                "content_type": [],
             },
-            api_client=api_client
+            api_client=api_client,
         )
-        self.jobs_update_endpoint = _Endpoint(
+        self.update_endpoint = _Endpoint(
             settings={
-                'response_type': (JobWrite,),
-                'auth': [
-                    'SignatureAuthentication',
-                    'basicAuth',
-                    'cookieAuth',
-                    'tokenAuth'
-                ],
-                'endpoint_path': '/api/jobs/{id}',
-                'operation_id': 'jobs_update',
-                'http_method': 'PUT',
-                'servers': None,
+                "response_type": (JobWrite,),
+                "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
+                "endpoint_path": "/api/jobs/{id}",
+                "operation_id": "update",
+                "http_method": "PUT",
+                "servers": None,
             },
             params_map={
-                'all': [
-                    'id',
-                    'x_organization',
-                    'org',
-                    'org_id',
-                    'job_write_request',
+                "all": [
+                    "id",
+                    "x_organization",
+                    "org",
+                    "org_id",
+                    "job_write_request",
                 ],
-                'required': [
-                    'id',
+                "required": [
+                    "id",
                 ],
-                'nullable': [
-                ],
-                'enum': [
-                ],
-                'validation': [
-                ]
+                "nullable": [],
+                "enum": [],
+                "validation": [],
             },
             root_map={
-                'validations': {
+                "validations": {},
+                "allowed_values": {},
+                "openapi_types": {
+                    "id": (int,),
+                    "x_organization": (str,),
+                    "org": (str,),
+                    "org_id": (int,),
+                    "job_write_request": (JobWriteRequest,),
                 },
-                'allowed_values': {
+                "attribute_map": {
+                    "id": "id",
+                    "x_organization": "X-Organization",
+                    "org": "org",
+                    "org_id": "org_id",
                 },
-                'openapi_types': {
-                    'id':
-                        (int,),
-                    'x_organization':
-                        (str,),
-                    'org':
-                        (str,),
-                    'org_id':
-                        (int,),
-                    'job_write_request':
-                        (JobWriteRequest,),
+                "location_map": {
+                    "id": "path",
+                    "x_organization": "header",
+                    "org": "query",
+                    "org_id": "query",
+                    "job_write_request": "body",
                 },
-                'attribute_map': {
-                    'id': 'id',
-                    'x_organization': 'X-Organization',
-                    'org': 'org',
-                    'org_id': 'org_id',
-                },
-                'location_map': {
-                    'id': 'path',
-                    'x_organization': 'header',
-                    'org': 'query',
-                    'org_id': 'query',
-                    'job_write_request': 'body',
-                },
-                'collection_format_map': {
-                }
+                "collection_format_map": {},
             },
             headers_map={
-                'accept': [
-                    'application/vnd.cvat+json'
+                "accept": ["application/vnd.cvat+json"],
+                "content_type": [
+                    "application/json",
+                    "application/x-www-form-urlencoded",
+                    "multipart/form-data",
+                    "application/offset+octet-stream",
                 ],
-                'content_type': [
-                    'application/json',
-                    'application/x-www-form-urlencoded',
-                    'multipart/form-data',
-                    'application/offset+octet-stream'
-                ]
             },
-            api_client=api_client
+            api_client=api_client,
         )
 
     @overload
-    def jobs_annotations_create(
+    def annotations_create(
         self,
         id,
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
-        **kwargs
+        **kwargs,
     ) -> None:
         ...
 
     @overload
-    def jobs_annotations_create(
+    def annotations_create(
         self,
         id,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def jobs_annotations_create(
-        self,
-        id,
-        _return_http_data_only: typing.Literal[False],
-        **kwargs
+    def annotations_create(
+        self, id, _return_http_data_only: typing.Literal[False], **kwargs
     ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def jobs_annotations_create(
-        self,
-        id,
-        _preload_content: typing.Literal[False],
-        **kwargs
+    def annotations_create(
+        self, id, _preload_content: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def jobs_annotations_create(
+    def annotations_create(
         self,
         id,
         _return_http_data_only: typing.Literal[True],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def jobs_annotations_create(
+    def annotations_create(
         self,
         id,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
-    def jobs_annotations_create(
-        self,
-        id,
-        **kwargs
-    ) -> typing.Union[
-            typing.Tuple[None, int, typing.Dict[str, str]],
-            urllib3.HTTPResponse,
-            None
-    ]:
+    def annotations_create(
+        self, id, **kwargs
+    ) -> typing.Union[typing.Tuple[None, int, typing.Dict[str, str]], urllib3.HTTPResponse, None]:
         """Method allows to upload job annotations  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.jobs_annotations_create(id, async_req=True)
+        >>> thread = api.annotations_create(id, async_req=True)
         >>> result = thread.get()
 
         Args:
@@ -1496,46 +1188,24 @@ class JobsApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        kwargs['async_req'] = kwargs.get(
-            'async_req', False
-        )
-        kwargs['_return_http_data_only'] = kwargs.get(
-            '_return_http_data_only', True
-        )
-        kwargs['_preload_content'] = kwargs.get(
-            '_preload_content', True
-        )
-        kwargs['_request_timeout'] = kwargs.get(
-            '_request_timeout', None
-        )
-        kwargs['_check_input_type'] = kwargs.get(
-            '_check_input_type', True
-        )
-        kwargs['_check_return_type'] = kwargs.get(
-            '_check_return_type', True
-        )
-        kwargs['_check_status'] = kwargs.get(
-            '_check_status', True
-        )
-        kwargs['_spec_property_naming'] = kwargs.get(
-            '_spec_property_naming', False
-        )
-        kwargs['_content_type'] = kwargs.get(
-            '_content_type')
-        kwargs['_host_index'] = kwargs.get('_host_index')
-        kwargs['_request_auths'] = kwargs.get('_request_auths', None)
-        kwargs['id'] = \
-            id
-        return self.jobs_annotations_create_endpoint.call_with_http_info(**kwargs)
+        kwargs["async_req"] = kwargs.get("async_req", False)
+        kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
+        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
+        kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
+        kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
+        kwargs["_check_status"] = kwargs.get("_check_status", True)
+        kwargs["_spec_property_naming"] = kwargs.get("_spec_property_naming", False)
+        kwargs["_content_type"] = kwargs.get("_content_type")
+        kwargs["_host_index"] = kwargs.get("_host_index")
+        kwargs["_request_auths"] = kwargs.get("_request_auths", None)
+        kwargs["id"] = id
+        return self.annotations_create_endpoint.call_with_http_info(**kwargs)
 
-    def jobs_annotations_create_raw(
-        self,
-        *args,
-        **kwargs
-    ) -> urllib3.HTTPResponse:
+    def annotations_create_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
         """
-        The same as jobs_annotations_create(), but returns the response unprocessed.
-        Equivalent to calling jobs_annotations_create with
+        The same as annotations_create(), but returns the response unprocessed.
+        Equivalent to calling annotations_create with
         _preload_content = False and _check_status=False
 
         Method allows to upload job annotations  # noqa: E501
@@ -1543,7 +1213,7 @@ class JobsApi(object):
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.jobs_annotations_create(id, async_req=True)
+        >>> thread = api.annotations_create(id, async_req=True)
         >>> result = thread.get()
 
         Args:
@@ -1587,82 +1257,69 @@ class JobsApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.jobs_annotations_create(*args, **kwargs,
-            _preload_content=False, _check_status=False)
+        return self.annotations_create(*args, **kwargs, _preload_content=False, _check_status=False)
 
     @overload
-    def jobs_annotations_destroy(
+    def annotations_destroy(
         self,
         id,
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
-        **kwargs
+        **kwargs,
     ) -> None:
         ...
 
     @overload
-    def jobs_annotations_destroy(
+    def annotations_destroy(
         self,
         id,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def jobs_annotations_destroy(
-        self,
-        id,
-        _return_http_data_only: typing.Literal[False],
-        **kwargs
+    def annotations_destroy(
+        self, id, _return_http_data_only: typing.Literal[False], **kwargs
     ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def jobs_annotations_destroy(
-        self,
-        id,
-        _preload_content: typing.Literal[False],
-        **kwargs
+    def annotations_destroy(
+        self, id, _preload_content: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def jobs_annotations_destroy(
+    def annotations_destroy(
         self,
         id,
         _return_http_data_only: typing.Literal[True],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def jobs_annotations_destroy(
+    def annotations_destroy(
         self,
         id,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
-    def jobs_annotations_destroy(
-        self,
-        id,
-        **kwargs
-    ) -> typing.Union[
-            typing.Tuple[None, int, typing.Dict[str, str]],
-            urllib3.HTTPResponse,
-            None
-    ]:
+    def annotations_destroy(
+        self, id, **kwargs
+    ) -> typing.Union[typing.Tuple[None, int, typing.Dict[str, str]], urllib3.HTTPResponse, None]:
         """Method deletes all annotations for a specific job  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.jobs_annotations_destroy(id, async_req=True)
+        >>> thread = api.annotations_destroy(id, async_req=True)
         >>> result = thread.get()
 
         Args:
@@ -1712,46 +1369,24 @@ class JobsApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        kwargs['async_req'] = kwargs.get(
-            'async_req', False
-        )
-        kwargs['_return_http_data_only'] = kwargs.get(
-            '_return_http_data_only', True
-        )
-        kwargs['_preload_content'] = kwargs.get(
-            '_preload_content', True
-        )
-        kwargs['_request_timeout'] = kwargs.get(
-            '_request_timeout', None
-        )
-        kwargs['_check_input_type'] = kwargs.get(
-            '_check_input_type', True
-        )
-        kwargs['_check_return_type'] = kwargs.get(
-            '_check_return_type', True
-        )
-        kwargs['_check_status'] = kwargs.get(
-            '_check_status', True
-        )
-        kwargs['_spec_property_naming'] = kwargs.get(
-            '_spec_property_naming', False
-        )
-        kwargs['_content_type'] = kwargs.get(
-            '_content_type')
-        kwargs['_host_index'] = kwargs.get('_host_index')
-        kwargs['_request_auths'] = kwargs.get('_request_auths', None)
-        kwargs['id'] = \
-            id
-        return self.jobs_annotations_destroy_endpoint.call_with_http_info(**kwargs)
+        kwargs["async_req"] = kwargs.get("async_req", False)
+        kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
+        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
+        kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
+        kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
+        kwargs["_check_status"] = kwargs.get("_check_status", True)
+        kwargs["_spec_property_naming"] = kwargs.get("_spec_property_naming", False)
+        kwargs["_content_type"] = kwargs.get("_content_type")
+        kwargs["_host_index"] = kwargs.get("_host_index")
+        kwargs["_request_auths"] = kwargs.get("_request_auths", None)
+        kwargs["id"] = id
+        return self.annotations_destroy_endpoint.call_with_http_info(**kwargs)
 
-    def jobs_annotations_destroy_raw(
-        self,
-        *args,
-        **kwargs
-    ) -> urllib3.HTTPResponse:
+    def annotations_destroy_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
         """
-        The same as jobs_annotations_destroy(), but returns the response unprocessed.
-        Equivalent to calling jobs_annotations_destroy with
+        The same as annotations_destroy(), but returns the response unprocessed.
+        Equivalent to calling annotations_destroy with
         _preload_content = False and _check_status=False
 
         Method deletes all annotations for a specific job  # noqa: E501
@@ -1759,7 +1394,7 @@ class JobsApi(object):
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.jobs_annotations_destroy(id, async_req=True)
+        >>> thread = api.annotations_destroy(id, async_req=True)
         >>> result = thread.get()
 
         Args:
@@ -1797,89 +1432,77 @@ class JobsApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.jobs_annotations_destroy(*args, **kwargs,
-            _preload_content=False, _check_status=False)
+        return self.annotations_destroy(
+            *args, **kwargs, _preload_content=False, _check_status=False
+        )
 
     @overload
-    def jobs_annotations_file_partial_update(
+    def annotations_file_partial_update(
         self,
         file_id,
         id,
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
-        **kwargs
+        **kwargs,
     ) -> object:
         ...
 
     @overload
-    def jobs_annotations_file_partial_update(
+    def annotations_file_partial_update(
         self,
         file_id,
         id,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def jobs_annotations_file_partial_update(
-        self,
-        file_id,
-        id,
-        _return_http_data_only: typing.Literal[False],
-        **kwargs
+    def annotations_file_partial_update(
+        self, file_id, id, _return_http_data_only: typing.Literal[False], **kwargs
     ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def jobs_annotations_file_partial_update(
-        self,
-        file_id,
-        id,
-        _preload_content: typing.Literal[False],
-        **kwargs
+    def annotations_file_partial_update(
+        self, file_id, id, _preload_content: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def jobs_annotations_file_partial_update(
+    def annotations_file_partial_update(
         self,
         file_id,
         id,
         _return_http_data_only: typing.Literal[True],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def jobs_annotations_file_partial_update(
+    def annotations_file_partial_update(
         self,
         file_id,
         id,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
-    def jobs_annotations_file_partial_update(
-        self,
-        file_id,
-        id,
-        **kwargs
+    def annotations_file_partial_update(
+        self, file_id, id, **kwargs
     ) -> typing.Union[
-            typing.Tuple[object, int, typing.Dict[str, str]],
-            urllib3.HTTPResponse,
-            object
+        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
     ]:
         """Allows to upload an annotation file chunk. Implements TUS file uploading protocol.  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.jobs_annotations_file_partial_update(file_id, id, async_req=True)
+        >>> thread = api.annotations_file_partial_update(file_id, id, async_req=True)
         >>> result = thread.get()
 
         Args:
@@ -1931,48 +1554,25 @@ class JobsApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        kwargs['async_req'] = kwargs.get(
-            'async_req', False
-        )
-        kwargs['_return_http_data_only'] = kwargs.get(
-            '_return_http_data_only', True
-        )
-        kwargs['_preload_content'] = kwargs.get(
-            '_preload_content', True
-        )
-        kwargs['_request_timeout'] = kwargs.get(
-            '_request_timeout', None
-        )
-        kwargs['_check_input_type'] = kwargs.get(
-            '_check_input_type', True
-        )
-        kwargs['_check_return_type'] = kwargs.get(
-            '_check_return_type', True
-        )
-        kwargs['_check_status'] = kwargs.get(
-            '_check_status', True
-        )
-        kwargs['_spec_property_naming'] = kwargs.get(
-            '_spec_property_naming', False
-        )
-        kwargs['_content_type'] = kwargs.get(
-            '_content_type')
-        kwargs['_host_index'] = kwargs.get('_host_index')
-        kwargs['_request_auths'] = kwargs.get('_request_auths', None)
-        kwargs['file_id'] = \
-            file_id
-        kwargs['id'] = \
-            id
-        return self.jobs_annotations_file_partial_update_endpoint.call_with_http_info(**kwargs)
+        kwargs["async_req"] = kwargs.get("async_req", False)
+        kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
+        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
+        kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
+        kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
+        kwargs["_check_status"] = kwargs.get("_check_status", True)
+        kwargs["_spec_property_naming"] = kwargs.get("_spec_property_naming", False)
+        kwargs["_content_type"] = kwargs.get("_content_type")
+        kwargs["_host_index"] = kwargs.get("_host_index")
+        kwargs["_request_auths"] = kwargs.get("_request_auths", None)
+        kwargs["file_id"] = file_id
+        kwargs["id"] = id
+        return self.annotations_file_partial_update_endpoint.call_with_http_info(**kwargs)
 
-    def jobs_annotations_file_partial_update_raw(
-        self,
-        *args,
-        **kwargs
-    ) -> urllib3.HTTPResponse:
+    def annotations_file_partial_update_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
         """
-        The same as jobs_annotations_file_partial_update(), but returns the response unprocessed.
-        Equivalent to calling jobs_annotations_file_partial_update with
+        The same as annotations_file_partial_update(), but returns the response unprocessed.
+        Equivalent to calling annotations_file_partial_update with
         _preload_content = False and _check_status=False
 
         Allows to upload an annotation file chunk. Implements TUS file uploading protocol.  # noqa: E501
@@ -1980,7 +1580,7 @@ class JobsApi(object):
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.jobs_annotations_file_partial_update(file_id, id, async_req=True)
+        >>> thread = api.annotations_file_partial_update(file_id, id, async_req=True)
         >>> result = thread.get()
 
         Args:
@@ -2020,89 +1620,75 @@ class JobsApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.jobs_annotations_file_partial_update(*args, **kwargs,
-            _preload_content=False, _check_status=False)
+        return self.annotations_file_partial_update(
+            *args, **kwargs, _preload_content=False, _check_status=False
+        )
 
     @overload
-    def jobs_annotations_partial_update(
+    def annotations_partial_update(
         self,
         action,
         id,
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
-        **kwargs
+        **kwargs,
     ) -> None:
         ...
 
     @overload
-    def jobs_annotations_partial_update(
+    def annotations_partial_update(
         self,
         action,
         id,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def jobs_annotations_partial_update(
-        self,
-        action,
-        id,
-        _return_http_data_only: typing.Literal[False],
-        **kwargs
+    def annotations_partial_update(
+        self, action, id, _return_http_data_only: typing.Literal[False], **kwargs
     ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def jobs_annotations_partial_update(
-        self,
-        action,
-        id,
-        _preload_content: typing.Literal[False],
-        **kwargs
+    def annotations_partial_update(
+        self, action, id, _preload_content: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def jobs_annotations_partial_update(
+    def annotations_partial_update(
         self,
         action,
         id,
         _return_http_data_only: typing.Literal[True],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def jobs_annotations_partial_update(
+    def annotations_partial_update(
         self,
         action,
         id,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
-    def jobs_annotations_partial_update(
-        self,
-        action,
-        id,
-        **kwargs
-    ) -> typing.Union[
-            typing.Tuple[None, int, typing.Dict[str, str]],
-            urllib3.HTTPResponse,
-            None
-    ]:
+    def annotations_partial_update(
+        self, action, id, **kwargs
+    ) -> typing.Union[typing.Tuple[None, int, typing.Dict[str, str]], urllib3.HTTPResponse, None]:
         """Method performs a partial update of annotations in a specific job  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.jobs_annotations_partial_update(action, id, async_req=True)
+        >>> thread = api.annotations_partial_update(action, id, async_req=True)
         >>> result = thread.get()
 
         Args:
@@ -2154,48 +1740,25 @@ class JobsApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        kwargs['async_req'] = kwargs.get(
-            'async_req', False
-        )
-        kwargs['_return_http_data_only'] = kwargs.get(
-            '_return_http_data_only', True
-        )
-        kwargs['_preload_content'] = kwargs.get(
-            '_preload_content', True
-        )
-        kwargs['_request_timeout'] = kwargs.get(
-            '_request_timeout', None
-        )
-        kwargs['_check_input_type'] = kwargs.get(
-            '_check_input_type', True
-        )
-        kwargs['_check_return_type'] = kwargs.get(
-            '_check_return_type', True
-        )
-        kwargs['_check_status'] = kwargs.get(
-            '_check_status', True
-        )
-        kwargs['_spec_property_naming'] = kwargs.get(
-            '_spec_property_naming', False
-        )
-        kwargs['_content_type'] = kwargs.get(
-            '_content_type')
-        kwargs['_host_index'] = kwargs.get('_host_index')
-        kwargs['_request_auths'] = kwargs.get('_request_auths', None)
-        kwargs['action'] = \
-            action
-        kwargs['id'] = \
-            id
-        return self.jobs_annotations_partial_update_endpoint.call_with_http_info(**kwargs)
+        kwargs["async_req"] = kwargs.get("async_req", False)
+        kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
+        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
+        kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
+        kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
+        kwargs["_check_status"] = kwargs.get("_check_status", True)
+        kwargs["_spec_property_naming"] = kwargs.get("_spec_property_naming", False)
+        kwargs["_content_type"] = kwargs.get("_content_type")
+        kwargs["_host_index"] = kwargs.get("_host_index")
+        kwargs["_request_auths"] = kwargs.get("_request_auths", None)
+        kwargs["action"] = action
+        kwargs["id"] = id
+        return self.annotations_partial_update_endpoint.call_with_http_info(**kwargs)
 
-    def jobs_annotations_partial_update_raw(
-        self,
-        *args,
-        **kwargs
-    ) -> urllib3.HTTPResponse:
+    def annotations_partial_update_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
         """
-        The same as jobs_annotations_partial_update(), but returns the response unprocessed.
-        Equivalent to calling jobs_annotations_partial_update with
+        The same as annotations_partial_update(), but returns the response unprocessed.
+        Equivalent to calling annotations_partial_update with
         _preload_content = False and _check_status=False
 
         Method performs a partial update of annotations in a specific job  # noqa: E501
@@ -2203,7 +1766,7 @@ class JobsApi(object):
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.jobs_annotations_partial_update(action, id, async_req=True)
+        >>> thread = api.annotations_partial_update(action, id, async_req=True)
         >>> result = thread.get()
 
         Args:
@@ -2243,82 +1806,73 @@ class JobsApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.jobs_annotations_partial_update(*args, **kwargs,
-            _preload_content=False, _check_status=False)
+        return self.annotations_partial_update(
+            *args, **kwargs, _preload_content=False, _check_status=False
+        )
 
     @overload
-    def jobs_annotations_retrieve(
+    def annotations_retrieve(
         self,
         id,
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
-        **kwargs
+        **kwargs,
     ) -> object:
         ...
 
     @overload
-    def jobs_annotations_retrieve(
+    def annotations_retrieve(
         self,
         id,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def jobs_annotations_retrieve(
-        self,
-        id,
-        _return_http_data_only: typing.Literal[False],
-        **kwargs
+    def annotations_retrieve(
+        self, id, _return_http_data_only: typing.Literal[False], **kwargs
     ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def jobs_annotations_retrieve(
-        self,
-        id,
-        _preload_content: typing.Literal[False],
-        **kwargs
+    def annotations_retrieve(
+        self, id, _preload_content: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def jobs_annotations_retrieve(
+    def annotations_retrieve(
         self,
         id,
         _return_http_data_only: typing.Literal[True],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def jobs_annotations_retrieve(
+    def annotations_retrieve(
         self,
         id,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
-    def jobs_annotations_retrieve(
-        self,
-        id,
-        **kwargs
+    def annotations_retrieve(
+        self, id, **kwargs
     ) -> typing.Union[
-            typing.Tuple[object, int, typing.Dict[str, str]],
-            urllib3.HTTPResponse,
-            object
+        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
     ]:
         """Method returns annotations for a specific job  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.jobs_annotations_retrieve(id, async_req=True)
+        >>> thread = api.annotations_retrieve(id, async_req=True)
         >>> result = thread.get()
 
         Args:
@@ -2374,46 +1928,24 @@ class JobsApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        kwargs['async_req'] = kwargs.get(
-            'async_req', False
-        )
-        kwargs['_return_http_data_only'] = kwargs.get(
-            '_return_http_data_only', True
-        )
-        kwargs['_preload_content'] = kwargs.get(
-            '_preload_content', True
-        )
-        kwargs['_request_timeout'] = kwargs.get(
-            '_request_timeout', None
-        )
-        kwargs['_check_input_type'] = kwargs.get(
-            '_check_input_type', True
-        )
-        kwargs['_check_return_type'] = kwargs.get(
-            '_check_return_type', True
-        )
-        kwargs['_check_status'] = kwargs.get(
-            '_check_status', True
-        )
-        kwargs['_spec_property_naming'] = kwargs.get(
-            '_spec_property_naming', False
-        )
-        kwargs['_content_type'] = kwargs.get(
-            '_content_type')
-        kwargs['_host_index'] = kwargs.get('_host_index')
-        kwargs['_request_auths'] = kwargs.get('_request_auths', None)
-        kwargs['id'] = \
-            id
-        return self.jobs_annotations_retrieve_endpoint.call_with_http_info(**kwargs)
+        kwargs["async_req"] = kwargs.get("async_req", False)
+        kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
+        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
+        kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
+        kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
+        kwargs["_check_status"] = kwargs.get("_check_status", True)
+        kwargs["_spec_property_naming"] = kwargs.get("_spec_property_naming", False)
+        kwargs["_content_type"] = kwargs.get("_content_type")
+        kwargs["_host_index"] = kwargs.get("_host_index")
+        kwargs["_request_auths"] = kwargs.get("_request_auths", None)
+        kwargs["id"] = id
+        return self.annotations_retrieve_endpoint.call_with_http_info(**kwargs)
 
-    def jobs_annotations_retrieve_raw(
-        self,
-        *args,
-        **kwargs
-    ) -> urllib3.HTTPResponse:
+    def annotations_retrieve_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
         """
-        The same as jobs_annotations_retrieve(), but returns the response unprocessed.
-        Equivalent to calling jobs_annotations_retrieve with
+        The same as annotations_retrieve(), but returns the response unprocessed.
+        Equivalent to calling annotations_retrieve with
         _preload_content = False and _check_status=False
 
         Method returns annotations for a specific job  # noqa: E501
@@ -2421,7 +1953,7 @@ class JobsApi(object):
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.jobs_annotations_retrieve(id, async_req=True)
+        >>> thread = api.annotations_retrieve(id, async_req=True)
         >>> result = thread.get()
 
         Args:
@@ -2465,89 +1997,75 @@ class JobsApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.jobs_annotations_retrieve(*args, **kwargs,
-            _preload_content=False, _check_status=False)
+        return self.annotations_retrieve(
+            *args, **kwargs, _preload_content=False, _check_status=False
+        )
 
     @overload
-    def jobs_annotations_update(
+    def annotations_update(
         self,
         id,
         annotation_file_request,
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
-        **kwargs
+        **kwargs,
     ) -> None:
         ...
 
     @overload
-    def jobs_annotations_update(
+    def annotations_update(
         self,
         id,
         annotation_file_request,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def jobs_annotations_update(
-        self,
-        id,
-        annotation_file_request,
-        _return_http_data_only: typing.Literal[False],
-        **kwargs
+    def annotations_update(
+        self, id, annotation_file_request, _return_http_data_only: typing.Literal[False], **kwargs
     ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def jobs_annotations_update(
-        self,
-        id,
-        annotation_file_request,
-        _preload_content: typing.Literal[False],
-        **kwargs
+    def annotations_update(
+        self, id, annotation_file_request, _preload_content: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def jobs_annotations_update(
+    def annotations_update(
         self,
         id,
         annotation_file_request,
         _return_http_data_only: typing.Literal[True],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def jobs_annotations_update(
+    def annotations_update(
         self,
         id,
         annotation_file_request,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
-    def jobs_annotations_update(
-        self,
-        id,
-        annotation_file_request,
-        **kwargs
-    ) -> typing.Union[
-            typing.Tuple[None, int, typing.Dict[str, str]],
-            urllib3.HTTPResponse,
-            None
-    ]:
+    def annotations_update(
+        self, id, annotation_file_request, **kwargs
+    ) -> typing.Union[typing.Tuple[None, int, typing.Dict[str, str]], urllib3.HTTPResponse, None]:
         """Method performs an update of all annotations in a specific job  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.jobs_annotations_update(id, annotation_file_request, async_req=True)
+        >>> thread = api.annotations_update(id, annotation_file_request, async_req=True)
         >>> result = thread.get()
 
         Args:
@@ -2598,48 +2116,25 @@ class JobsApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        kwargs['async_req'] = kwargs.get(
-            'async_req', False
-        )
-        kwargs['_return_http_data_only'] = kwargs.get(
-            '_return_http_data_only', True
-        )
-        kwargs['_preload_content'] = kwargs.get(
-            '_preload_content', True
-        )
-        kwargs['_request_timeout'] = kwargs.get(
-            '_request_timeout', None
-        )
-        kwargs['_check_input_type'] = kwargs.get(
-            '_check_input_type', True
-        )
-        kwargs['_check_return_type'] = kwargs.get(
-            '_check_return_type', True
-        )
-        kwargs['_check_status'] = kwargs.get(
-            '_check_status', True
-        )
-        kwargs['_spec_property_naming'] = kwargs.get(
-            '_spec_property_naming', False
-        )
-        kwargs['_content_type'] = kwargs.get(
-            '_content_type')
-        kwargs['_host_index'] = kwargs.get('_host_index')
-        kwargs['_request_auths'] = kwargs.get('_request_auths', None)
-        kwargs['id'] = \
-            id
-        kwargs['annotation_file_request'] = \
-            annotation_file_request
-        return self.jobs_annotations_update_endpoint.call_with_http_info(**kwargs)
+        kwargs["async_req"] = kwargs.get("async_req", False)
+        kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
+        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
+        kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
+        kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
+        kwargs["_check_status"] = kwargs.get("_check_status", True)
+        kwargs["_spec_property_naming"] = kwargs.get("_spec_property_naming", False)
+        kwargs["_content_type"] = kwargs.get("_content_type")
+        kwargs["_host_index"] = kwargs.get("_host_index")
+        kwargs["_request_auths"] = kwargs.get("_request_auths", None)
+        kwargs["id"] = id
+        kwargs["annotation_file_request"] = annotation_file_request
+        return self.annotations_update_endpoint.call_with_http_info(**kwargs)
 
-    def jobs_annotations_update_raw(
-        self,
-        *args,
-        **kwargs
-    ) -> urllib3.HTTPResponse:
+    def annotations_update_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
         """
-        The same as jobs_annotations_update(), but returns the response unprocessed.
-        Equivalent to calling jobs_annotations_update with
+        The same as annotations_update(), but returns the response unprocessed.
+        Equivalent to calling annotations_update with
         _preload_content = False and _check_status=False
 
         Method performs an update of all annotations in a specific job  # noqa: E501
@@ -2647,7 +2142,7 @@ class JobsApi(object):
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.jobs_annotations_update(id, annotation_file_request, async_req=True)
+        >>> thread = api.annotations_update(id, annotation_file_request, async_req=True)
         >>> result = thread.get()
 
         Args:
@@ -2686,82 +2181,71 @@ class JobsApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.jobs_annotations_update(*args, **kwargs,
-            _preload_content=False, _check_status=False)
+        return self.annotations_update(*args, **kwargs, _preload_content=False, _check_status=False)
 
     @overload
-    def jobs_commits_list(
+    def commits_list(
         self,
         id,
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
-        **kwargs
+        **kwargs,
     ) -> object:
         ...
 
     @overload
-    def jobs_commits_list(
+    def commits_list(
         self,
         id,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def jobs_commits_list(
-        self,
-        id,
-        _return_http_data_only: typing.Literal[False],
-        **kwargs
+    def commits_list(
+        self, id, _return_http_data_only: typing.Literal[False], **kwargs
     ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def jobs_commits_list(
-        self,
-        id,
-        _preload_content: typing.Literal[False],
-        **kwargs
+    def commits_list(
+        self, id, _preload_content: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def jobs_commits_list(
+    def commits_list(
         self,
         id,
         _return_http_data_only: typing.Literal[True],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def jobs_commits_list(
+    def commits_list(
         self,
         id,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
-    def jobs_commits_list(
-        self,
-        id,
-        **kwargs
+    def commits_list(
+        self, id, **kwargs
     ) -> typing.Union[
-            typing.Tuple[object, int, typing.Dict[str, str]],
-            urllib3.HTTPResponse,
-            object
+        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
     ]:
         """The action returns the list of tracked changes for the job  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.jobs_commits_list(id, async_req=True)
+        >>> thread = api.commits_list(id, async_req=True)
         >>> result = thread.get()
 
         Args:
@@ -2816,46 +2300,24 @@ class JobsApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        kwargs['async_req'] = kwargs.get(
-            'async_req', False
-        )
-        kwargs['_return_http_data_only'] = kwargs.get(
-            '_return_http_data_only', True
-        )
-        kwargs['_preload_content'] = kwargs.get(
-            '_preload_content', True
-        )
-        kwargs['_request_timeout'] = kwargs.get(
-            '_request_timeout', None
-        )
-        kwargs['_check_input_type'] = kwargs.get(
-            '_check_input_type', True
-        )
-        kwargs['_check_return_type'] = kwargs.get(
-            '_check_return_type', True
-        )
-        kwargs['_check_status'] = kwargs.get(
-            '_check_status', True
-        )
-        kwargs['_spec_property_naming'] = kwargs.get(
-            '_spec_property_naming', False
-        )
-        kwargs['_content_type'] = kwargs.get(
-            '_content_type')
-        kwargs['_host_index'] = kwargs.get('_host_index')
-        kwargs['_request_auths'] = kwargs.get('_request_auths', None)
-        kwargs['id'] = \
-            id
-        return self.jobs_commits_list_endpoint.call_with_http_info(**kwargs)
+        kwargs["async_req"] = kwargs.get("async_req", False)
+        kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
+        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
+        kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
+        kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
+        kwargs["_check_status"] = kwargs.get("_check_status", True)
+        kwargs["_spec_property_naming"] = kwargs.get("_spec_property_naming", False)
+        kwargs["_content_type"] = kwargs.get("_content_type")
+        kwargs["_host_index"] = kwargs.get("_host_index")
+        kwargs["_request_auths"] = kwargs.get("_request_auths", None)
+        kwargs["id"] = id
+        return self.commits_list_endpoint.call_with_http_info(**kwargs)
 
-    def jobs_commits_list_raw(
-        self,
-        *args,
-        **kwargs
-    ) -> urllib3.HTTPResponse:
+    def commits_list_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
         """
-        The same as jobs_commits_list(), but returns the response unprocessed.
-        Equivalent to calling jobs_commits_list with
+        The same as commits_list(), but returns the response unprocessed.
+        Equivalent to calling commits_list with
         _preload_content = False and _check_status=False
 
         The action returns the list of tracked changes for the job  # noqa: E501
@@ -2863,7 +2325,7 @@ class JobsApi(object):
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.jobs_commits_list(id, async_req=True)
+        >>> thread = api.commits_list(id, async_req=True)
         >>> result = thread.get()
 
         Args:
@@ -2906,82 +2368,71 @@ class JobsApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.jobs_commits_list(*args, **kwargs,
-            _preload_content=False, _check_status=False)
+        return self.commits_list(*args, **kwargs, _preload_content=False, _check_status=False)
 
     @overload
-    def jobs_data_meta_retrieve(
+    def data_meta_retrieve(
         self,
         id,
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
-        **kwargs
+        **kwargs,
     ) -> object:
         ...
 
     @overload
-    def jobs_data_meta_retrieve(
+    def data_meta_retrieve(
         self,
         id,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def jobs_data_meta_retrieve(
-        self,
-        id,
-        _return_http_data_only: typing.Literal[False],
-        **kwargs
+    def data_meta_retrieve(
+        self, id, _return_http_data_only: typing.Literal[False], **kwargs
     ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def jobs_data_meta_retrieve(
-        self,
-        id,
-        _preload_content: typing.Literal[False],
-        **kwargs
+    def data_meta_retrieve(
+        self, id, _preload_content: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def jobs_data_meta_retrieve(
+    def data_meta_retrieve(
         self,
         id,
         _return_http_data_only: typing.Literal[True],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def jobs_data_meta_retrieve(
+    def data_meta_retrieve(
         self,
         id,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
-    def jobs_data_meta_retrieve(
-        self,
-        id,
-        **kwargs
+    def data_meta_retrieve(
+        self, id, **kwargs
     ) -> typing.Union[
-            typing.Tuple[object, int, typing.Dict[str, str]],
-            urllib3.HTTPResponse,
-            object
+        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
     ]:
         """Method provides a meta information about media files which are related with the job  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.jobs_data_meta_retrieve(id, async_req=True)
+        >>> thread = api.data_meta_retrieve(id, async_req=True)
         >>> result = thread.get()
 
         Args:
@@ -3031,46 +2482,24 @@ class JobsApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        kwargs['async_req'] = kwargs.get(
-            'async_req', False
-        )
-        kwargs['_return_http_data_only'] = kwargs.get(
-            '_return_http_data_only', True
-        )
-        kwargs['_preload_content'] = kwargs.get(
-            '_preload_content', True
-        )
-        kwargs['_request_timeout'] = kwargs.get(
-            '_request_timeout', None
-        )
-        kwargs['_check_input_type'] = kwargs.get(
-            '_check_input_type', True
-        )
-        kwargs['_check_return_type'] = kwargs.get(
-            '_check_return_type', True
-        )
-        kwargs['_check_status'] = kwargs.get(
-            '_check_status', True
-        )
-        kwargs['_spec_property_naming'] = kwargs.get(
-            '_spec_property_naming', False
-        )
-        kwargs['_content_type'] = kwargs.get(
-            '_content_type')
-        kwargs['_host_index'] = kwargs.get('_host_index')
-        kwargs['_request_auths'] = kwargs.get('_request_auths', None)
-        kwargs['id'] = \
-            id
-        return self.jobs_data_meta_retrieve_endpoint.call_with_http_info(**kwargs)
+        kwargs["async_req"] = kwargs.get("async_req", False)
+        kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
+        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
+        kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
+        kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
+        kwargs["_check_status"] = kwargs.get("_check_status", True)
+        kwargs["_spec_property_naming"] = kwargs.get("_spec_property_naming", False)
+        kwargs["_content_type"] = kwargs.get("_content_type")
+        kwargs["_host_index"] = kwargs.get("_host_index")
+        kwargs["_request_auths"] = kwargs.get("_request_auths", None)
+        kwargs["id"] = id
+        return self.data_meta_retrieve_endpoint.call_with_http_info(**kwargs)
 
-    def jobs_data_meta_retrieve_raw(
-        self,
-        *args,
-        **kwargs
-    ) -> urllib3.HTTPResponse:
+    def data_meta_retrieve_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
         """
-        The same as jobs_data_meta_retrieve(), but returns the response unprocessed.
-        Equivalent to calling jobs_data_meta_retrieve with
+        The same as data_meta_retrieve(), but returns the response unprocessed.
+        Equivalent to calling data_meta_retrieve with
         _preload_content = False and _check_status=False
 
         Method provides a meta information about media files which are related with the job  # noqa: E501
@@ -3078,7 +2507,7 @@ class JobsApi(object):
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.jobs_data_meta_retrieve(id, async_req=True)
+        >>> thread = api.data_meta_retrieve(id, async_req=True)
         >>> result = thread.get()
 
         Args:
@@ -3116,11 +2545,10 @@ class JobsApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.jobs_data_meta_retrieve(*args, **kwargs,
-            _preload_content=False, _check_status=False)
+        return self.data_meta_retrieve(*args, **kwargs, _preload_content=False, _check_status=False)
 
     @overload
-    def jobs_data_retrieve(
+    def data_retrieve(
         self,
         id,
         number,
@@ -3128,12 +2556,12 @@ class JobsApi(object):
         type,
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
-        **kwargs
+        **kwargs,
     ) -> None:
         ...
 
     @overload
-    def jobs_data_retrieve(
+    def data_retrieve(
         self,
         id,
         number,
@@ -3141,36 +2569,24 @@ class JobsApi(object):
         type,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def jobs_data_retrieve(
-        self,
-        id,
-        number,
-        quality,
-        type,
-        _return_http_data_only: typing.Literal[False],
-        **kwargs
+    def data_retrieve(
+        self, id, number, quality, type, _return_http_data_only: typing.Literal[False], **kwargs
     ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def jobs_data_retrieve(
-        self,
-        id,
-        number,
-        quality,
-        type,
-        _preload_content: typing.Literal[False],
-        **kwargs
+    def data_retrieve(
+        self, id, number, quality, type, _preload_content: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def jobs_data_retrieve(
+    def data_retrieve(
         self,
         id,
         number,
@@ -3178,12 +2594,12 @@ class JobsApi(object):
         type,
         _return_http_data_only: typing.Literal[True],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def jobs_data_retrieve(
+    def data_retrieve(
         self,
         id,
         number,
@@ -3191,28 +2607,19 @@ class JobsApi(object):
         type,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
-    def jobs_data_retrieve(
-        self,
-        id,
-        number,
-        quality,
-        type,
-        **kwargs
-    ) -> typing.Union[
-            typing.Tuple[None, int, typing.Dict[str, str]],
-            urllib3.HTTPResponse,
-            None
-    ]:
+    def data_retrieve(
+        self, id, number, quality, type, **kwargs
+    ) -> typing.Union[typing.Tuple[None, int, typing.Dict[str, str]], urllib3.HTTPResponse, None]:
         """Method returns data for a specific job  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.jobs_data_retrieve(id, number, quality, type, async_req=True)
+        >>> thread = api.data_retrieve(id, number, quality, type, async_req=True)
         >>> result = thread.get()
 
         Args:
@@ -3265,52 +2672,27 @@ class JobsApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        kwargs['async_req'] = kwargs.get(
-            'async_req', False
-        )
-        kwargs['_return_http_data_only'] = kwargs.get(
-            '_return_http_data_only', True
-        )
-        kwargs['_preload_content'] = kwargs.get(
-            '_preload_content', True
-        )
-        kwargs['_request_timeout'] = kwargs.get(
-            '_request_timeout', None
-        )
-        kwargs['_check_input_type'] = kwargs.get(
-            '_check_input_type', True
-        )
-        kwargs['_check_return_type'] = kwargs.get(
-            '_check_return_type', True
-        )
-        kwargs['_check_status'] = kwargs.get(
-            '_check_status', True
-        )
-        kwargs['_spec_property_naming'] = kwargs.get(
-            '_spec_property_naming', False
-        )
-        kwargs['_content_type'] = kwargs.get(
-            '_content_type')
-        kwargs['_host_index'] = kwargs.get('_host_index')
-        kwargs['_request_auths'] = kwargs.get('_request_auths', None)
-        kwargs['id'] = \
-            id
-        kwargs['number'] = \
-            number
-        kwargs['quality'] = \
-            quality
-        kwargs['type'] = \
-            type
-        return self.jobs_data_retrieve_endpoint.call_with_http_info(**kwargs)
+        kwargs["async_req"] = kwargs.get("async_req", False)
+        kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
+        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
+        kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
+        kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
+        kwargs["_check_status"] = kwargs.get("_check_status", True)
+        kwargs["_spec_property_naming"] = kwargs.get("_spec_property_naming", False)
+        kwargs["_content_type"] = kwargs.get("_content_type")
+        kwargs["_host_index"] = kwargs.get("_host_index")
+        kwargs["_request_auths"] = kwargs.get("_request_auths", None)
+        kwargs["id"] = id
+        kwargs["number"] = number
+        kwargs["quality"] = quality
+        kwargs["type"] = type
+        return self.data_retrieve_endpoint.call_with_http_info(**kwargs)
 
-    def jobs_data_retrieve_raw(
-        self,
-        *args,
-        **kwargs
-    ) -> urllib3.HTTPResponse:
+    def data_retrieve_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
         """
-        The same as jobs_data_retrieve(), but returns the response unprocessed.
-        Equivalent to calling jobs_data_retrieve with
+        The same as data_retrieve(), but returns the response unprocessed.
+        Equivalent to calling data_retrieve with
         _preload_content = False and _check_status=False
 
         Method returns data for a specific job  # noqa: E501
@@ -3318,7 +2700,7 @@ class JobsApi(object):
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.jobs_data_retrieve(id, number, quality, type, async_req=True)
+        >>> thread = api.data_retrieve(id, number, quality, type, async_req=True)
         >>> result = thread.get()
 
         Args:
@@ -3359,89 +2741,73 @@ class JobsApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.jobs_data_retrieve(*args, **kwargs,
-            _preload_content=False, _check_status=False)
+        return self.data_retrieve(*args, **kwargs, _preload_content=False, _check_status=False)
 
     @overload
-    def jobs_dataset_retrieve(
+    def dataset_retrieve(
         self,
         format,
         id,
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
-        **kwargs
+        **kwargs,
     ) -> None:
         ...
 
     @overload
-    def jobs_dataset_retrieve(
+    def dataset_retrieve(
         self,
         format,
         id,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def jobs_dataset_retrieve(
-        self,
-        format,
-        id,
-        _return_http_data_only: typing.Literal[False],
-        **kwargs
+    def dataset_retrieve(
+        self, format, id, _return_http_data_only: typing.Literal[False], **kwargs
     ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def jobs_dataset_retrieve(
-        self,
-        format,
-        id,
-        _preload_content: typing.Literal[False],
-        **kwargs
+    def dataset_retrieve(
+        self, format, id, _preload_content: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def jobs_dataset_retrieve(
+    def dataset_retrieve(
         self,
         format,
         id,
         _return_http_data_only: typing.Literal[True],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def jobs_dataset_retrieve(
+    def dataset_retrieve(
         self,
         format,
         id,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
-    def jobs_dataset_retrieve(
-        self,
-        format,
-        id,
-        **kwargs
-    ) -> typing.Union[
-            typing.Tuple[None, int, typing.Dict[str, str]],
-            urllib3.HTTPResponse,
-            None
-    ]:
+    def dataset_retrieve(
+        self, format, id, **kwargs
+    ) -> typing.Union[typing.Tuple[None, int, typing.Dict[str, str]], urllib3.HTTPResponse, None]:
         """Export job as a dataset in a specific format  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.jobs_dataset_retrieve(format, id, async_req=True)
+        >>> thread = api.dataset_retrieve(format, id, async_req=True)
         >>> result = thread.get()
 
         Args:
@@ -3497,48 +2863,25 @@ class JobsApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        kwargs['async_req'] = kwargs.get(
-            'async_req', False
-        )
-        kwargs['_return_http_data_only'] = kwargs.get(
-            '_return_http_data_only', True
-        )
-        kwargs['_preload_content'] = kwargs.get(
-            '_preload_content', True
-        )
-        kwargs['_request_timeout'] = kwargs.get(
-            '_request_timeout', None
-        )
-        kwargs['_check_input_type'] = kwargs.get(
-            '_check_input_type', True
-        )
-        kwargs['_check_return_type'] = kwargs.get(
-            '_check_return_type', True
-        )
-        kwargs['_check_status'] = kwargs.get(
-            '_check_status', True
-        )
-        kwargs['_spec_property_naming'] = kwargs.get(
-            '_spec_property_naming', False
-        )
-        kwargs['_content_type'] = kwargs.get(
-            '_content_type')
-        kwargs['_host_index'] = kwargs.get('_host_index')
-        kwargs['_request_auths'] = kwargs.get('_request_auths', None)
-        kwargs['format'] = \
-            format
-        kwargs['id'] = \
-            id
-        return self.jobs_dataset_retrieve_endpoint.call_with_http_info(**kwargs)
+        kwargs["async_req"] = kwargs.get("async_req", False)
+        kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
+        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
+        kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
+        kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
+        kwargs["_check_status"] = kwargs.get("_check_status", True)
+        kwargs["_spec_property_naming"] = kwargs.get("_spec_property_naming", False)
+        kwargs["_content_type"] = kwargs.get("_content_type")
+        kwargs["_host_index"] = kwargs.get("_host_index")
+        kwargs["_request_auths"] = kwargs.get("_request_auths", None)
+        kwargs["format"] = format
+        kwargs["id"] = id
+        return self.dataset_retrieve_endpoint.call_with_http_info(**kwargs)
 
-    def jobs_dataset_retrieve_raw(
-        self,
-        *args,
-        **kwargs
-    ) -> urllib3.HTTPResponse:
+    def dataset_retrieve_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
         """
-        The same as jobs_dataset_retrieve(), but returns the response unprocessed.
-        Equivalent to calling jobs_dataset_retrieve with
+        The same as dataset_retrieve(), but returns the response unprocessed.
+        Equivalent to calling dataset_retrieve with
         _preload_content = False and _check_status=False
 
         Export job as a dataset in a specific format  # noqa: E501
@@ -3546,7 +2889,7 @@ class JobsApi(object):
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.jobs_dataset_retrieve(format, id, async_req=True)
+        >>> thread = api.dataset_retrieve(format, id, async_req=True)
         >>> result = thread.get()
 
         Args:
@@ -3590,82 +2933,71 @@ class JobsApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.jobs_dataset_retrieve(*args, **kwargs,
-            _preload_content=False, _check_status=False)
+        return self.dataset_retrieve(*args, **kwargs, _preload_content=False, _check_status=False)
 
     @overload
-    def jobs_issues_list(
+    def issues_list(
         self,
         id,
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
-        **kwargs
+        **kwargs,
     ) -> object:
         ...
 
     @overload
-    def jobs_issues_list(
+    def issues_list(
         self,
         id,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def jobs_issues_list(
-        self,
-        id,
-        _return_http_data_only: typing.Literal[False],
-        **kwargs
+    def issues_list(
+        self, id, _return_http_data_only: typing.Literal[False], **kwargs
     ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def jobs_issues_list(
-        self,
-        id,
-        _preload_content: typing.Literal[False],
-        **kwargs
+    def issues_list(
+        self, id, _preload_content: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def jobs_issues_list(
+    def issues_list(
         self,
         id,
         _return_http_data_only: typing.Literal[True],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def jobs_issues_list(
+    def issues_list(
         self,
         id,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
-    def jobs_issues_list(
-        self,
-        id,
-        **kwargs
+    def issues_list(
+        self, id, **kwargs
     ) -> typing.Union[
-            typing.Tuple[object, int, typing.Dict[str, str]],
-            urllib3.HTTPResponse,
-            object
+        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
     ]:
         """Method returns list of issues for the job  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.jobs_issues_list(id, async_req=True)
+        >>> thread = api.issues_list(id, async_req=True)
         >>> result = thread.get()
 
         Args:
@@ -3720,46 +3052,24 @@ class JobsApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        kwargs['async_req'] = kwargs.get(
-            'async_req', False
-        )
-        kwargs['_return_http_data_only'] = kwargs.get(
-            '_return_http_data_only', True
-        )
-        kwargs['_preload_content'] = kwargs.get(
-            '_preload_content', True
-        )
-        kwargs['_request_timeout'] = kwargs.get(
-            '_request_timeout', None
-        )
-        kwargs['_check_input_type'] = kwargs.get(
-            '_check_input_type', True
-        )
-        kwargs['_check_return_type'] = kwargs.get(
-            '_check_return_type', True
-        )
-        kwargs['_check_status'] = kwargs.get(
-            '_check_status', True
-        )
-        kwargs['_spec_property_naming'] = kwargs.get(
-            '_spec_property_naming', False
-        )
-        kwargs['_content_type'] = kwargs.get(
-            '_content_type')
-        kwargs['_host_index'] = kwargs.get('_host_index')
-        kwargs['_request_auths'] = kwargs.get('_request_auths', None)
-        kwargs['id'] = \
-            id
-        return self.jobs_issues_list_endpoint.call_with_http_info(**kwargs)
+        kwargs["async_req"] = kwargs.get("async_req", False)
+        kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
+        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
+        kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
+        kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
+        kwargs["_check_status"] = kwargs.get("_check_status", True)
+        kwargs["_spec_property_naming"] = kwargs.get("_spec_property_naming", False)
+        kwargs["_content_type"] = kwargs.get("_content_type")
+        kwargs["_host_index"] = kwargs.get("_host_index")
+        kwargs["_request_auths"] = kwargs.get("_request_auths", None)
+        kwargs["id"] = id
+        return self.issues_list_endpoint.call_with_http_info(**kwargs)
 
-    def jobs_issues_list_raw(
-        self,
-        *args,
-        **kwargs
-    ) -> urllib3.HTTPResponse:
+    def issues_list_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
         """
-        The same as jobs_issues_list(), but returns the response unprocessed.
-        Equivalent to calling jobs_issues_list with
+        The same as issues_list(), but returns the response unprocessed.
+        Equivalent to calling issues_list with
         _preload_content = False and _check_status=False
 
         Method returns list of issues for the job  # noqa: E501
@@ -3767,7 +3077,7 @@ class JobsApi(object):
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.jobs_issues_list(id, async_req=True)
+        >>> thread = api.issues_list(id, async_req=True)
         >>> result = thread.get()
 
         Args:
@@ -3810,75 +3120,65 @@ class JobsApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.jobs_issues_list(*args, **kwargs,
-            _preload_content=False, _check_status=False)
+        return self.issues_list(*args, **kwargs, _preload_content=False, _check_status=False)
 
     @overload
-    def jobs_list(
+    def list(
         self,
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
-        **kwargs
+        **kwargs,
     ) -> object:
         ...
 
     @overload
-    def jobs_list(
+    def list(
         self,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def jobs_list(
-        self,
-        _return_http_data_only: typing.Literal[False],
-        **kwargs
+    def list(
+        self, _return_http_data_only: typing.Literal[False], **kwargs
     ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def jobs_list(
-        self,
-        _preload_content: typing.Literal[False],
-        **kwargs
-    ) -> urllib3.HTTPResponse:
+    def list(self, _preload_content: typing.Literal[False], **kwargs) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def jobs_list(
+    def list(
         self,
         _return_http_data_only: typing.Literal[True],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def jobs_list(
+    def list(
         self,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
-    def jobs_list(
-        self,
-        **kwargs
+    def list(
+        self, **kwargs
     ) -> typing.Union[
-            typing.Tuple[object, int, typing.Dict[str, str]],
-            urllib3.HTTPResponse,
-            object
+        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
     ]:
         """Method returns a paginated list of jobs according to query parameters  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.jobs_list(async_req=True)
+        >>> thread = api.list(async_req=True)
         >>> result = thread.get()
 
 
@@ -3931,44 +3231,23 @@ class JobsApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        kwargs['async_req'] = kwargs.get(
-            'async_req', False
-        )
-        kwargs['_return_http_data_only'] = kwargs.get(
-            '_return_http_data_only', True
-        )
-        kwargs['_preload_content'] = kwargs.get(
-            '_preload_content', True
-        )
-        kwargs['_request_timeout'] = kwargs.get(
-            '_request_timeout', None
-        )
-        kwargs['_check_input_type'] = kwargs.get(
-            '_check_input_type', True
-        )
-        kwargs['_check_return_type'] = kwargs.get(
-            '_check_return_type', True
-        )
-        kwargs['_check_status'] = kwargs.get(
-            '_check_status', True
-        )
-        kwargs['_spec_property_naming'] = kwargs.get(
-            '_spec_property_naming', False
-        )
-        kwargs['_content_type'] = kwargs.get(
-            '_content_type')
-        kwargs['_host_index'] = kwargs.get('_host_index')
-        kwargs['_request_auths'] = kwargs.get('_request_auths', None)
-        return self.jobs_list_endpoint.call_with_http_info(**kwargs)
+        kwargs["async_req"] = kwargs.get("async_req", False)
+        kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
+        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
+        kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
+        kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
+        kwargs["_check_status"] = kwargs.get("_check_status", True)
+        kwargs["_spec_property_naming"] = kwargs.get("_spec_property_naming", False)
+        kwargs["_content_type"] = kwargs.get("_content_type")
+        kwargs["_host_index"] = kwargs.get("_host_index")
+        kwargs["_request_auths"] = kwargs.get("_request_auths", None)
+        return self.list_endpoint.call_with_http_info(**kwargs)
 
-    def jobs_list_raw(
-        self,
-        *args,
-        **kwargs
-    ) -> urllib3.HTTPResponse:
+    def list_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
         """
-        The same as jobs_list(), but returns the response unprocessed.
-        Equivalent to calling jobs_list with
+        The same as list(), but returns the response unprocessed.
+        Equivalent to calling list with
         _preload_content = False and _check_status=False
 
         Method returns a paginated list of jobs according to query parameters  # noqa: E501
@@ -3976,7 +3255,7 @@ class JobsApi(object):
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.jobs_list(async_req=True)
+        >>> thread = api.list(async_req=True)
         >>> result = thread.get()
 
 
@@ -4017,82 +3296,71 @@ class JobsApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.jobs_list(*args, **kwargs,
-            _preload_content=False, _check_status=False)
+        return self.list(*args, **kwargs, _preload_content=False, _check_status=False)
 
     @overload
-    def jobs_partial_update(
+    def partial_update(
         self,
         id,
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
-        **kwargs
+        **kwargs,
     ) -> object:
         ...
 
     @overload
-    def jobs_partial_update(
+    def partial_update(
         self,
         id,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def jobs_partial_update(
-        self,
-        id,
-        _return_http_data_only: typing.Literal[False],
-        **kwargs
+    def partial_update(
+        self, id, _return_http_data_only: typing.Literal[False], **kwargs
     ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def jobs_partial_update(
-        self,
-        id,
-        _preload_content: typing.Literal[False],
-        **kwargs
+    def partial_update(
+        self, id, _preload_content: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def jobs_partial_update(
+    def partial_update(
         self,
         id,
         _return_http_data_only: typing.Literal[True],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def jobs_partial_update(
+    def partial_update(
         self,
         id,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
-    def jobs_partial_update(
-        self,
-        id,
-        **kwargs
+    def partial_update(
+        self, id, **kwargs
     ) -> typing.Union[
-            typing.Tuple[object, int, typing.Dict[str, str]],
-            urllib3.HTTPResponse,
-            object
+        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
     ]:
         """Methods does a partial update of chosen fields in a job  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.jobs_partial_update(id, async_req=True)
+        >>> thread = api.partial_update(id, async_req=True)
         >>> result = thread.get()
 
         Args:
@@ -4143,46 +3411,24 @@ class JobsApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        kwargs['async_req'] = kwargs.get(
-            'async_req', False
-        )
-        kwargs['_return_http_data_only'] = kwargs.get(
-            '_return_http_data_only', True
-        )
-        kwargs['_preload_content'] = kwargs.get(
-            '_preload_content', True
-        )
-        kwargs['_request_timeout'] = kwargs.get(
-            '_request_timeout', None
-        )
-        kwargs['_check_input_type'] = kwargs.get(
-            '_check_input_type', True
-        )
-        kwargs['_check_return_type'] = kwargs.get(
-            '_check_return_type', True
-        )
-        kwargs['_check_status'] = kwargs.get(
-            '_check_status', True
-        )
-        kwargs['_spec_property_naming'] = kwargs.get(
-            '_spec_property_naming', False
-        )
-        kwargs['_content_type'] = kwargs.get(
-            '_content_type')
-        kwargs['_host_index'] = kwargs.get('_host_index')
-        kwargs['_request_auths'] = kwargs.get('_request_auths', None)
-        kwargs['id'] = \
-            id
-        return self.jobs_partial_update_endpoint.call_with_http_info(**kwargs)
+        kwargs["async_req"] = kwargs.get("async_req", False)
+        kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
+        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
+        kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
+        kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
+        kwargs["_check_status"] = kwargs.get("_check_status", True)
+        kwargs["_spec_property_naming"] = kwargs.get("_spec_property_naming", False)
+        kwargs["_content_type"] = kwargs.get("_content_type")
+        kwargs["_host_index"] = kwargs.get("_host_index")
+        kwargs["_request_auths"] = kwargs.get("_request_auths", None)
+        kwargs["id"] = id
+        return self.partial_update_endpoint.call_with_http_info(**kwargs)
 
-    def jobs_partial_update_raw(
-        self,
-        *args,
-        **kwargs
-    ) -> urllib3.HTTPResponse:
+    def partial_update_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
         """
-        The same as jobs_partial_update(), but returns the response unprocessed.
-        Equivalent to calling jobs_partial_update with
+        The same as partial_update(), but returns the response unprocessed.
+        Equivalent to calling partial_update with
         _preload_content = False and _check_status=False
 
         Methods does a partial update of chosen fields in a job  # noqa: E501
@@ -4190,7 +3436,7 @@ class JobsApi(object):
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.jobs_partial_update(id, async_req=True)
+        >>> thread = api.partial_update(id, async_req=True)
         >>> result = thread.get()
 
         Args:
@@ -4229,82 +3475,71 @@ class JobsApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.jobs_partial_update(*args, **kwargs,
-            _preload_content=False, _check_status=False)
+        return self.partial_update(*args, **kwargs, _preload_content=False, _check_status=False)
 
     @overload
-    def jobs_retrieve(
+    def retrieve(
         self,
         id,
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
-        **kwargs
+        **kwargs,
     ) -> object:
         ...
 
     @overload
-    def jobs_retrieve(
+    def retrieve(
         self,
         id,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def jobs_retrieve(
-        self,
-        id,
-        _return_http_data_only: typing.Literal[False],
-        **kwargs
+    def retrieve(
+        self, id, _return_http_data_only: typing.Literal[False], **kwargs
     ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def jobs_retrieve(
-        self,
-        id,
-        _preload_content: typing.Literal[False],
-        **kwargs
+    def retrieve(
+        self, id, _preload_content: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def jobs_retrieve(
+    def retrieve(
         self,
         id,
         _return_http_data_only: typing.Literal[True],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def jobs_retrieve(
+    def retrieve(
         self,
         id,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
-    def jobs_retrieve(
-        self,
-        id,
-        **kwargs
+    def retrieve(
+        self, id, **kwargs
     ) -> typing.Union[
-            typing.Tuple[object, int, typing.Dict[str, str]],
-            urllib3.HTTPResponse,
-            object
+        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
     ]:
         """Method returns details of a job  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.jobs_retrieve(id, async_req=True)
+        >>> thread = api.retrieve(id, async_req=True)
         >>> result = thread.get()
 
         Args:
@@ -4354,46 +3589,24 @@ class JobsApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        kwargs['async_req'] = kwargs.get(
-            'async_req', False
-        )
-        kwargs['_return_http_data_only'] = kwargs.get(
-            '_return_http_data_only', True
-        )
-        kwargs['_preload_content'] = kwargs.get(
-            '_preload_content', True
-        )
-        kwargs['_request_timeout'] = kwargs.get(
-            '_request_timeout', None
-        )
-        kwargs['_check_input_type'] = kwargs.get(
-            '_check_input_type', True
-        )
-        kwargs['_check_return_type'] = kwargs.get(
-            '_check_return_type', True
-        )
-        kwargs['_check_status'] = kwargs.get(
-            '_check_status', True
-        )
-        kwargs['_spec_property_naming'] = kwargs.get(
-            '_spec_property_naming', False
-        )
-        kwargs['_content_type'] = kwargs.get(
-            '_content_type')
-        kwargs['_host_index'] = kwargs.get('_host_index')
-        kwargs['_request_auths'] = kwargs.get('_request_auths', None)
-        kwargs['id'] = \
-            id
-        return self.jobs_retrieve_endpoint.call_with_http_info(**kwargs)
+        kwargs["async_req"] = kwargs.get("async_req", False)
+        kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
+        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
+        kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
+        kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
+        kwargs["_check_status"] = kwargs.get("_check_status", True)
+        kwargs["_spec_property_naming"] = kwargs.get("_spec_property_naming", False)
+        kwargs["_content_type"] = kwargs.get("_content_type")
+        kwargs["_host_index"] = kwargs.get("_host_index")
+        kwargs["_request_auths"] = kwargs.get("_request_auths", None)
+        kwargs["id"] = id
+        return self.retrieve_endpoint.call_with_http_info(**kwargs)
 
-    def jobs_retrieve_raw(
-        self,
-        *args,
-        **kwargs
-    ) -> urllib3.HTTPResponse:
+    def retrieve_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
         """
-        The same as jobs_retrieve(), but returns the response unprocessed.
-        Equivalent to calling jobs_retrieve with
+        The same as retrieve(), but returns the response unprocessed.
+        Equivalent to calling retrieve with
         _preload_content = False and _check_status=False
 
         Method returns details of a job  # noqa: E501
@@ -4401,7 +3614,7 @@ class JobsApi(object):
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.jobs_retrieve(id, async_req=True)
+        >>> thread = api.retrieve(id, async_req=True)
         >>> result = thread.get()
 
         Args:
@@ -4439,82 +3652,69 @@ class JobsApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.jobs_retrieve(*args, **kwargs,
-            _preload_content=False, _check_status=False)
+        return self.retrieve(*args, **kwargs, _preload_content=False, _check_status=False)
 
     @overload
-    def jobs_update(
+    def update(
         self,
         id,
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
-        **kwargs
+        **kwargs,
     ) -> object:
         ...
 
     @overload
-    def jobs_update(
+    def update(
         self,
         id,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def jobs_update(
-        self,
-        id,
-        _return_http_data_only: typing.Literal[False],
-        **kwargs
+    def update(
+        self, id, _return_http_data_only: typing.Literal[False], **kwargs
     ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def jobs_update(
-        self,
-        id,
-        _preload_content: typing.Literal[False],
-        **kwargs
-    ) -> urllib3.HTTPResponse:
+    def update(self, id, _preload_content: typing.Literal[False], **kwargs) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def jobs_update(
+    def update(
         self,
         id,
         _return_http_data_only: typing.Literal[True],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def jobs_update(
+    def update(
         self,
         id,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
-    def jobs_update(
-        self,
-        id,
-        **kwargs
+    def update(
+        self, id, **kwargs
     ) -> typing.Union[
-            typing.Tuple[object, int, typing.Dict[str, str]],
-            urllib3.HTTPResponse,
-            object
+        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
     ]:
         """Method updates a job by id  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.jobs_update(id, async_req=True)
+        >>> thread = api.update(id, async_req=True)
         >>> result = thread.get()
 
         Args:
@@ -4565,46 +3765,24 @@ class JobsApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        kwargs['async_req'] = kwargs.get(
-            'async_req', False
-        )
-        kwargs['_return_http_data_only'] = kwargs.get(
-            '_return_http_data_only', True
-        )
-        kwargs['_preload_content'] = kwargs.get(
-            '_preload_content', True
-        )
-        kwargs['_request_timeout'] = kwargs.get(
-            '_request_timeout', None
-        )
-        kwargs['_check_input_type'] = kwargs.get(
-            '_check_input_type', True
-        )
-        kwargs['_check_return_type'] = kwargs.get(
-            '_check_return_type', True
-        )
-        kwargs['_check_status'] = kwargs.get(
-            '_check_status', True
-        )
-        kwargs['_spec_property_naming'] = kwargs.get(
-            '_spec_property_naming', False
-        )
-        kwargs['_content_type'] = kwargs.get(
-            '_content_type')
-        kwargs['_host_index'] = kwargs.get('_host_index')
-        kwargs['_request_auths'] = kwargs.get('_request_auths', None)
-        kwargs['id'] = \
-            id
-        return self.jobs_update_endpoint.call_with_http_info(**kwargs)
+        kwargs["async_req"] = kwargs.get("async_req", False)
+        kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
+        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
+        kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
+        kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
+        kwargs["_check_status"] = kwargs.get("_check_status", True)
+        kwargs["_spec_property_naming"] = kwargs.get("_spec_property_naming", False)
+        kwargs["_content_type"] = kwargs.get("_content_type")
+        kwargs["_host_index"] = kwargs.get("_host_index")
+        kwargs["_request_auths"] = kwargs.get("_request_auths", None)
+        kwargs["id"] = id
+        return self.update_endpoint.call_with_http_info(**kwargs)
 
-    def jobs_update_raw(
-        self,
-        *args,
-        **kwargs
-    ) -> urllib3.HTTPResponse:
+    def update_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
         """
-        The same as jobs_update(), but returns the response unprocessed.
-        Equivalent to calling jobs_update with
+        The same as update(), but returns the response unprocessed.
+        Equivalent to calling update with
         _preload_content = False and _check_status=False
 
         Method updates a job by id  # noqa: E501
@@ -4612,7 +3790,7 @@ class JobsApi(object):
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.jobs_update(id, async_req=True)
+        >>> thread = api.update(id, async_req=True)
         >>> result = thread.get()
 
         Args:
@@ -4651,6 +3829,4 @@ class JobsApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.jobs_update(*args, **kwargs,
-            _preload_content=False, _check_status=False)
-
+        return self.update(*args, **kwargs, _preload_content=False, _check_status=False)

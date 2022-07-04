@@ -8,3 +8,4 @@ globalProperties:
   generateAliasAsModel: true
   apiTests: false
   modelTests: false
+enablePostProcessFile: true # requires PYTHON_POST_PROCESS_FILE env var

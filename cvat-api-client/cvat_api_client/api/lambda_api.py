@@ -9,14 +9,15 @@
 """
 
 
-import typing
-from typing import overload
-import urllib3
-
 import re  # noqa: F401
 import sys  # noqa: F401
+import typing
+from typing import TYPE_CHECKING, overload
 
-from cvat_api_client.api_client import ApiClient, Endpoint as _Endpoint
+import urllib3
+
+from cvat_api_client.api_client import ApiClient
+from cvat_api_client.api_client import Endpoint as _Endpoint
 from cvat_api_client.model_utils import (  # noqa: F401
     check_allowed_values,
     check_validations,
@@ -24,8 +25,13 @@ from cvat_api_client.model_utils import (  # noqa: F401
     datetime,
     file_type,
     none_type,
-    validate_and_convert_types
+    validate_and_convert_types,
 )
+
+if TYPE_CHECKING:
+    # Enable introspection. Can't work normally due to cyclic imports
+    from cvat_api_client.apis import *
+    from cvat_api_client.models import *
 
 
 class LambdaApi(object):
@@ -39,477 +45,380 @@ class LambdaApi(object):
         if api_client is None:
             api_client = ApiClient()
         self.api_client = api_client
-        self.lambda_functions_create_endpoint = _Endpoint(
+        self.functions_create_endpoint = _Endpoint(
             settings={
-                'response_type': None,
-                'auth': [
-                    'SignatureAuthentication',
-                    'basicAuth',
-                    'cookieAuth',
-                    'tokenAuth'
-                ],
-                'endpoint_path': '/api/lambda/functions/{func_id}',
-                'operation_id': 'lambda_functions_create',
-                'http_method': 'POST',
-                'servers': None,
+                "response_type": None,
+                "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
+                "endpoint_path": "/api/lambda/functions/{func_id}",
+                "operation_id": "functions_create",
+                "http_method": "POST",
+                "servers": None,
             },
             params_map={
-                'all': [
-                    'func_id',
-                    'x_organization',
-                    'org',
-                    'org_id',
+                "all": [
+                    "func_id",
+                    "x_organization",
+                    "org",
+                    "org_id",
                 ],
-                'required': [
-                    'func_id',
+                "required": [
+                    "func_id",
                 ],
-                'nullable': [
+                "nullable": [],
+                "enum": [],
+                "validation": [
+                    "func_id",
                 ],
-                'enum': [
-                ],
-                'validation': [
-                    'func_id',
-                ]
             },
             root_map={
-                'validations': {
-                    ('func_id',): {
-
-                        'regex': {
-                            'pattern': r'^[a-zA-Z0-9_.-]+$',  # noqa: E501
+                "validations": {
+                    ("func_id",): {
+                        "regex": {
+                            "pattern": r"^[a-zA-Z0-9_.-]+$",  # noqa: E501
                         },
                     },
                 },
-                'allowed_values': {
+                "allowed_values": {},
+                "openapi_types": {
+                    "func_id": (str,),
+                    "x_organization": (str,),
+                    "org": (str,),
+                    "org_id": (int,),
                 },
-                'openapi_types': {
-                    'func_id':
-                        (str,),
-                    'x_organization':
-                        (str,),
-                    'org':
-                        (str,),
-                    'org_id':
-                        (int,),
+                "attribute_map": {
+                    "func_id": "func_id",
+                    "x_organization": "X-Organization",
+                    "org": "org",
+                    "org_id": "org_id",
                 },
-                'attribute_map': {
-                    'func_id': 'func_id',
-                    'x_organization': 'X-Organization',
-                    'org': 'org',
-                    'org_id': 'org_id',
+                "location_map": {
+                    "func_id": "path",
+                    "x_organization": "header",
+                    "org": "query",
+                    "org_id": "query",
                 },
-                'location_map': {
-                    'func_id': 'path',
-                    'x_organization': 'header',
-                    'org': 'query',
-                    'org_id': 'query',
-                },
-                'collection_format_map': {
-                }
+                "collection_format_map": {},
             },
             headers_map={
-                'accept': [],
-                'content_type': [],
+                "accept": [],
+                "content_type": [],
             },
-            api_client=api_client
+            api_client=api_client,
         )
-        self.lambda_functions_list_endpoint = _Endpoint(
+        self.functions_list_endpoint = _Endpoint(
             settings={
-                'response_type': None,
-                'auth': [
-                    'SignatureAuthentication',
-                    'basicAuth',
-                    'cookieAuth',
-                    'tokenAuth'
-                ],
-                'endpoint_path': '/api/lambda/functions',
-                'operation_id': 'lambda_functions_list',
-                'http_method': 'GET',
-                'servers': None,
+                "response_type": None,
+                "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
+                "endpoint_path": "/api/lambda/functions",
+                "operation_id": "functions_list",
+                "http_method": "GET",
+                "servers": None,
             },
             params_map={
-                'all': [
-                    'x_organization',
-                    'org',
-                    'org_id',
+                "all": [
+                    "x_organization",
+                    "org",
+                    "org_id",
                 ],
-                'required': [],
-                'nullable': [
-                ],
-                'enum': [
-                ],
-                'validation': [
-                ]
+                "required": [],
+                "nullable": [],
+                "enum": [],
+                "validation": [],
             },
             root_map={
-                'validations': {
+                "validations": {},
+                "allowed_values": {},
+                "openapi_types": {
+                    "x_organization": (str,),
+                    "org": (str,),
+                    "org_id": (int,),
                 },
-                'allowed_values': {
+                "attribute_map": {
+                    "x_organization": "X-Organization",
+                    "org": "org",
+                    "org_id": "org_id",
                 },
-                'openapi_types': {
-                    'x_organization':
-                        (str,),
-                    'org':
-                        (str,),
-                    'org_id':
-                        (int,),
+                "location_map": {
+                    "x_organization": "header",
+                    "org": "query",
+                    "org_id": "query",
                 },
-                'attribute_map': {
-                    'x_organization': 'X-Organization',
-                    'org': 'org',
-                    'org_id': 'org_id',
-                },
-                'location_map': {
-                    'x_organization': 'header',
-                    'org': 'query',
-                    'org_id': 'query',
-                },
-                'collection_format_map': {
-                }
+                "collection_format_map": {},
             },
             headers_map={
-                'accept': [],
-                'content_type': [],
+                "accept": [],
+                "content_type": [],
             },
-            api_client=api_client
+            api_client=api_client,
         )
-        self.lambda_functions_retrieve_endpoint = _Endpoint(
+        self.functions_retrieve_endpoint = _Endpoint(
             settings={
-                'response_type': ({str: (bool, date, datetime, dict, float, int, list, str, none_type)},),
-                'auth': [
-                    'SignatureAuthentication',
-                    'basicAuth',
-                    'cookieAuth',
-                    'tokenAuth'
-                ],
-                'endpoint_path': '/api/lambda/functions/{func_id}',
-                'operation_id': 'lambda_functions_retrieve',
-                'http_method': 'GET',
-                'servers': None,
+                "response_type": (
+                    {str: (bool, date, datetime, dict, float, int, list, str, none_type)},
+                ),
+                "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
+                "endpoint_path": "/api/lambda/functions/{func_id}",
+                "operation_id": "functions_retrieve",
+                "http_method": "GET",
+                "servers": None,
             },
             params_map={
-                'all': [
-                    'func_id',
-                    'x_organization',
-                    'org',
-                    'org_id',
+                "all": [
+                    "func_id",
+                    "x_organization",
+                    "org",
+                    "org_id",
                 ],
-                'required': [
-                    'func_id',
+                "required": [
+                    "func_id",
                 ],
-                'nullable': [
+                "nullable": [],
+                "enum": [],
+                "validation": [
+                    "func_id",
                 ],
-                'enum': [
-                ],
-                'validation': [
-                    'func_id',
-                ]
             },
             root_map={
-                'validations': {
-                    ('func_id',): {
-
-                        'regex': {
-                            'pattern': r'^[a-zA-Z0-9_.-]+$',  # noqa: E501
+                "validations": {
+                    ("func_id",): {
+                        "regex": {
+                            "pattern": r"^[a-zA-Z0-9_.-]+$",  # noqa: E501
                         },
                     },
                 },
-                'allowed_values': {
+                "allowed_values": {},
+                "openapi_types": {
+                    "func_id": (str,),
+                    "x_organization": (str,),
+                    "org": (str,),
+                    "org_id": (int,),
                 },
-                'openapi_types': {
-                    'func_id':
-                        (str,),
-                    'x_organization':
-                        (str,),
-                    'org':
-                        (str,),
-                    'org_id':
-                        (int,),
+                "attribute_map": {
+                    "func_id": "func_id",
+                    "x_organization": "X-Organization",
+                    "org": "org",
+                    "org_id": "org_id",
                 },
-                'attribute_map': {
-                    'func_id': 'func_id',
-                    'x_organization': 'X-Organization',
-                    'org': 'org',
-                    'org_id': 'org_id',
+                "location_map": {
+                    "func_id": "path",
+                    "x_organization": "header",
+                    "org": "query",
+                    "org_id": "query",
                 },
-                'location_map': {
-                    'func_id': 'path',
-                    'x_organization': 'header',
-                    'org': 'query',
-                    'org_id': 'query',
-                },
-                'collection_format_map': {
-                }
+                "collection_format_map": {},
             },
             headers_map={
-                'accept': [
-                    'application/vnd.cvat+json'
-                ],
-                'content_type': [],
+                "accept": ["application/vnd.cvat+json"],
+                "content_type": [],
             },
-            api_client=api_client
+            api_client=api_client,
         )
-        self.lambda_requests_create_endpoint = _Endpoint(
+        self.requests_create_endpoint = _Endpoint(
             settings={
-                'response_type': None,
-                'auth': [
-                    'SignatureAuthentication',
-                    'basicAuth',
-                    'cookieAuth',
-                    'tokenAuth'
-                ],
-                'endpoint_path': '/api/lambda/requests',
-                'operation_id': 'lambda_requests_create',
-                'http_method': 'POST',
-                'servers': None,
+                "response_type": None,
+                "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
+                "endpoint_path": "/api/lambda/requests",
+                "operation_id": "requests_create",
+                "http_method": "POST",
+                "servers": None,
             },
             params_map={
-                'all': [
-                    'x_organization',
-                    'org',
-                    'org_id',
+                "all": [
+                    "x_organization",
+                    "org",
+                    "org_id",
                 ],
-                'required': [],
-                'nullable': [
-                ],
-                'enum': [
-                ],
-                'validation': [
-                ]
+                "required": [],
+                "nullable": [],
+                "enum": [],
+                "validation": [],
             },
             root_map={
-                'validations': {
+                "validations": {},
+                "allowed_values": {},
+                "openapi_types": {
+                    "x_organization": (str,),
+                    "org": (str,),
+                    "org_id": (int,),
                 },
-                'allowed_values': {
+                "attribute_map": {
+                    "x_organization": "X-Organization",
+                    "org": "org",
+                    "org_id": "org_id",
                 },
-                'openapi_types': {
-                    'x_organization':
-                        (str,),
-                    'org':
-                        (str,),
-                    'org_id':
-                        (int,),
+                "location_map": {
+                    "x_organization": "header",
+                    "org": "query",
+                    "org_id": "query",
                 },
-                'attribute_map': {
-                    'x_organization': 'X-Organization',
-                    'org': 'org',
-                    'org_id': 'org_id',
-                },
-                'location_map': {
-                    'x_organization': 'header',
-                    'org': 'query',
-                    'org_id': 'query',
-                },
-                'collection_format_map': {
-                }
+                "collection_format_map": {},
             },
             headers_map={
-                'accept': [],
-                'content_type': [],
+                "accept": [],
+                "content_type": [],
             },
-            api_client=api_client
+            api_client=api_client,
         )
-        self.lambda_requests_list_endpoint = _Endpoint(
+        self.requests_list_endpoint = _Endpoint(
             settings={
-                'response_type': None,
-                'auth': [
-                    'SignatureAuthentication',
-                    'basicAuth',
-                    'cookieAuth',
-                    'tokenAuth'
-                ],
-                'endpoint_path': '/api/lambda/requests',
-                'operation_id': 'lambda_requests_list',
-                'http_method': 'GET',
-                'servers': None,
+                "response_type": None,
+                "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
+                "endpoint_path": "/api/lambda/requests",
+                "operation_id": "requests_list",
+                "http_method": "GET",
+                "servers": None,
             },
             params_map={
-                'all': [
-                    'x_organization',
-                    'org',
-                    'org_id',
+                "all": [
+                    "x_organization",
+                    "org",
+                    "org_id",
                 ],
-                'required': [],
-                'nullable': [
-                ],
-                'enum': [
-                ],
-                'validation': [
-                ]
+                "required": [],
+                "nullable": [],
+                "enum": [],
+                "validation": [],
             },
             root_map={
-                'validations': {
+                "validations": {},
+                "allowed_values": {},
+                "openapi_types": {
+                    "x_organization": (str,),
+                    "org": (str,),
+                    "org_id": (int,),
                 },
-                'allowed_values': {
+                "attribute_map": {
+                    "x_organization": "X-Organization",
+                    "org": "org",
+                    "org_id": "org_id",
                 },
-                'openapi_types': {
-                    'x_organization':
-                        (str,),
-                    'org':
-                        (str,),
-                    'org_id':
-                        (int,),
+                "location_map": {
+                    "x_organization": "header",
+                    "org": "query",
+                    "org_id": "query",
                 },
-                'attribute_map': {
-                    'x_organization': 'X-Organization',
-                    'org': 'org',
-                    'org_id': 'org_id',
-                },
-                'location_map': {
-                    'x_organization': 'header',
-                    'org': 'query',
-                    'org_id': 'query',
-                },
-                'collection_format_map': {
-                }
+                "collection_format_map": {},
             },
             headers_map={
-                'accept': [],
-                'content_type': [],
+                "accept": [],
+                "content_type": [],
             },
-            api_client=api_client
+            api_client=api_client,
         )
-        self.lambda_requests_retrieve_endpoint = _Endpoint(
+        self.requests_retrieve_endpoint = _Endpoint(
             settings={
-                'response_type': None,
-                'auth': [
-                    'SignatureAuthentication',
-                    'basicAuth',
-                    'cookieAuth',
-                    'tokenAuth'
-                ],
-                'endpoint_path': '/api/lambda/requests/{id}',
-                'operation_id': 'lambda_requests_retrieve',
-                'http_method': 'GET',
-                'servers': None,
+                "response_type": None,
+                "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
+                "endpoint_path": "/api/lambda/requests/{id}",
+                "operation_id": "requests_retrieve",
+                "http_method": "GET",
+                "servers": None,
             },
             params_map={
-                'all': [
-                    'id',
-                    'x_organization',
-                    'org',
-                    'org_id',
+                "all": [
+                    "id",
+                    "x_organization",
+                    "org",
+                    "org_id",
                 ],
-                'required': [
-                    'id',
+                "required": [
+                    "id",
                 ],
-                'nullable': [
-                ],
-                'enum': [
-                ],
-                'validation': [
-                ]
+                "nullable": [],
+                "enum": [],
+                "validation": [],
             },
             root_map={
-                'validations': {
+                "validations": {},
+                "allowed_values": {},
+                "openapi_types": {
+                    "id": (int,),
+                    "x_organization": (str,),
+                    "org": (str,),
+                    "org_id": (int,),
                 },
-                'allowed_values': {
+                "attribute_map": {
+                    "id": "id",
+                    "x_organization": "X-Organization",
+                    "org": "org",
+                    "org_id": "org_id",
                 },
-                'openapi_types': {
-                    'id':
-                        (int,),
-                    'x_organization':
-                        (str,),
-                    'org':
-                        (str,),
-                    'org_id':
-                        (int,),
+                "location_map": {
+                    "id": "path",
+                    "x_organization": "header",
+                    "org": "query",
+                    "org_id": "query",
                 },
-                'attribute_map': {
-                    'id': 'id',
-                    'x_organization': 'X-Organization',
-                    'org': 'org',
-                    'org_id': 'org_id',
-                },
-                'location_map': {
-                    'id': 'path',
-                    'x_organization': 'header',
-                    'org': 'query',
-                    'org_id': 'query',
-                },
-                'collection_format_map': {
-                }
+                "collection_format_map": {},
             },
             headers_map={
-                'accept': [],
-                'content_type': [],
+                "accept": [],
+                "content_type": [],
             },
-            api_client=api_client
+            api_client=api_client,
         )
 
     @overload
-    def lambda_functions_create(
+    def functions_create(
         self,
         func_id,
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
-        **kwargs
+        **kwargs,
     ) -> None:
         ...
 
     @overload
-    def lambda_functions_create(
+    def functions_create(
         self,
         func_id,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def lambda_functions_create(
-        self,
-        func_id,
-        _return_http_data_only: typing.Literal[False],
-        **kwargs
+    def functions_create(
+        self, func_id, _return_http_data_only: typing.Literal[False], **kwargs
     ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def lambda_functions_create(
-        self,
-        func_id,
-        _preload_content: typing.Literal[False],
-        **kwargs
+    def functions_create(
+        self, func_id, _preload_content: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def lambda_functions_create(
+    def functions_create(
         self,
         func_id,
         _return_http_data_only: typing.Literal[True],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def lambda_functions_create(
+    def functions_create(
         self,
         func_id,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
-    def lambda_functions_create(
-        self,
-        func_id,
-        **kwargs
-    ) -> typing.Union[
-            typing.Tuple[None, int, typing.Dict[str, str]],
-            urllib3.HTTPResponse,
-            None
-    ]:
-        """lambda_functions_create  # noqa: E501
+    def functions_create(
+        self, func_id, **kwargs
+    ) -> typing.Union[typing.Tuple[None, int, typing.Dict[str, str]], urllib3.HTTPResponse, None]:
+        """functions_create  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.lambda_functions_create(func_id, async_req=True)
+        >>> thread = api.functions_create(func_id, async_req=True)
         >>> result = thread.get()
 
         Args:
@@ -559,54 +468,32 @@ class LambdaApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        kwargs['async_req'] = kwargs.get(
-            'async_req', False
-        )
-        kwargs['_return_http_data_only'] = kwargs.get(
-            '_return_http_data_only', True
-        )
-        kwargs['_preload_content'] = kwargs.get(
-            '_preload_content', True
-        )
-        kwargs['_request_timeout'] = kwargs.get(
-            '_request_timeout', None
-        )
-        kwargs['_check_input_type'] = kwargs.get(
-            '_check_input_type', True
-        )
-        kwargs['_check_return_type'] = kwargs.get(
-            '_check_return_type', True
-        )
-        kwargs['_check_status'] = kwargs.get(
-            '_check_status', True
-        )
-        kwargs['_spec_property_naming'] = kwargs.get(
-            '_spec_property_naming', False
-        )
-        kwargs['_content_type'] = kwargs.get(
-            '_content_type')
-        kwargs['_host_index'] = kwargs.get('_host_index')
-        kwargs['_request_auths'] = kwargs.get('_request_auths', None)
-        kwargs['func_id'] = \
-            func_id
-        return self.lambda_functions_create_endpoint.call_with_http_info(**kwargs)
+        kwargs["async_req"] = kwargs.get("async_req", False)
+        kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
+        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
+        kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
+        kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
+        kwargs["_check_status"] = kwargs.get("_check_status", True)
+        kwargs["_spec_property_naming"] = kwargs.get("_spec_property_naming", False)
+        kwargs["_content_type"] = kwargs.get("_content_type")
+        kwargs["_host_index"] = kwargs.get("_host_index")
+        kwargs["_request_auths"] = kwargs.get("_request_auths", None)
+        kwargs["func_id"] = func_id
+        return self.functions_create_endpoint.call_with_http_info(**kwargs)
 
-    def lambda_functions_create_raw(
-        self,
-        *args,
-        **kwargs
-    ) -> urllib3.HTTPResponse:
+    def functions_create_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
         """
-        The same as lambda_functions_create(), but returns the response unprocessed.
-        Equivalent to calling lambda_functions_create with
+        The same as functions_create(), but returns the response unprocessed.
+        Equivalent to calling functions_create with
         _preload_content = False and _check_status=False
 
-        lambda_functions_create  # noqa: E501
+        functions_create  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.lambda_functions_create(func_id, async_req=True)
+        >>> thread = api.functions_create(func_id, async_req=True)
         >>> result = thread.get()
 
         Args:
@@ -644,75 +531,65 @@ class LambdaApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.lambda_functions_create(*args, **kwargs,
-            _preload_content=False, _check_status=False)
+        return self.functions_create(*args, **kwargs, _preload_content=False, _check_status=False)
 
     @overload
-    def lambda_functions_list(
+    def functions_list(
         self,
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
-        **kwargs
+        **kwargs,
     ) -> None:
         ...
 
     @overload
-    def lambda_functions_list(
+    def functions_list(
         self,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def lambda_functions_list(
-        self,
-        _return_http_data_only: typing.Literal[False],
-        **kwargs
+    def functions_list(
+        self, _return_http_data_only: typing.Literal[False], **kwargs
     ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def lambda_functions_list(
-        self,
-        _preload_content: typing.Literal[False],
-        **kwargs
+    def functions_list(
+        self, _preload_content: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def lambda_functions_list(
+    def functions_list(
         self,
         _return_http_data_only: typing.Literal[True],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def lambda_functions_list(
+    def functions_list(
         self,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
-    def lambda_functions_list(
-        self,
-        **kwargs
-    ) -> typing.Union[
-            typing.Tuple[None, int, typing.Dict[str, str]],
-            urllib3.HTTPResponse,
-            None
-    ]:
+    def functions_list(
+        self, **kwargs
+    ) -> typing.Union[typing.Tuple[None, int, typing.Dict[str, str]], urllib3.HTTPResponse, None]:
         """Method returns a list of functions  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.lambda_functions_list(async_req=True)
+        >>> thread = api.functions_list(async_req=True)
         >>> result = thread.get()
 
 
@@ -760,44 +637,23 @@ class LambdaApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        kwargs['async_req'] = kwargs.get(
-            'async_req', False
-        )
-        kwargs['_return_http_data_only'] = kwargs.get(
-            '_return_http_data_only', True
-        )
-        kwargs['_preload_content'] = kwargs.get(
-            '_preload_content', True
-        )
-        kwargs['_request_timeout'] = kwargs.get(
-            '_request_timeout', None
-        )
-        kwargs['_check_input_type'] = kwargs.get(
-            '_check_input_type', True
-        )
-        kwargs['_check_return_type'] = kwargs.get(
-            '_check_return_type', True
-        )
-        kwargs['_check_status'] = kwargs.get(
-            '_check_status', True
-        )
-        kwargs['_spec_property_naming'] = kwargs.get(
-            '_spec_property_naming', False
-        )
-        kwargs['_content_type'] = kwargs.get(
-            '_content_type')
-        kwargs['_host_index'] = kwargs.get('_host_index')
-        kwargs['_request_auths'] = kwargs.get('_request_auths', None)
-        return self.lambda_functions_list_endpoint.call_with_http_info(**kwargs)
+        kwargs["async_req"] = kwargs.get("async_req", False)
+        kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
+        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
+        kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
+        kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
+        kwargs["_check_status"] = kwargs.get("_check_status", True)
+        kwargs["_spec_property_naming"] = kwargs.get("_spec_property_naming", False)
+        kwargs["_content_type"] = kwargs.get("_content_type")
+        kwargs["_host_index"] = kwargs.get("_host_index")
+        kwargs["_request_auths"] = kwargs.get("_request_auths", None)
+        return self.functions_list_endpoint.call_with_http_info(**kwargs)
 
-    def lambda_functions_list_raw(
-        self,
-        *args,
-        **kwargs
-    ) -> urllib3.HTTPResponse:
+    def functions_list_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
         """
-        The same as lambda_functions_list(), but returns the response unprocessed.
-        Equivalent to calling lambda_functions_list with
+        The same as functions_list(), but returns the response unprocessed.
+        Equivalent to calling functions_list with
         _preload_content = False and _check_status=False
 
         Method returns a list of functions  # noqa: E501
@@ -805,7 +661,7 @@ class LambdaApi(object):
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.lambda_functions_list(async_req=True)
+        >>> thread = api.functions_list(async_req=True)
         >>> result = thread.get()
 
 
@@ -841,82 +697,71 @@ class LambdaApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.lambda_functions_list(*args, **kwargs,
-            _preload_content=False, _check_status=False)
+        return self.functions_list(*args, **kwargs, _preload_content=False, _check_status=False)
 
     @overload
-    def lambda_functions_retrieve(
+    def functions_retrieve(
         self,
         func_id,
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
-        **kwargs
+        **kwargs,
     ) -> object:
         ...
 
     @overload
-    def lambda_functions_retrieve(
+    def functions_retrieve(
         self,
         func_id,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def lambda_functions_retrieve(
-        self,
-        func_id,
-        _return_http_data_only: typing.Literal[False],
-        **kwargs
+    def functions_retrieve(
+        self, func_id, _return_http_data_only: typing.Literal[False], **kwargs
     ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def lambda_functions_retrieve(
-        self,
-        func_id,
-        _preload_content: typing.Literal[False],
-        **kwargs
+    def functions_retrieve(
+        self, func_id, _preload_content: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def lambda_functions_retrieve(
+    def functions_retrieve(
         self,
         func_id,
         _return_http_data_only: typing.Literal[True],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def lambda_functions_retrieve(
+    def functions_retrieve(
         self,
         func_id,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
-    def lambda_functions_retrieve(
-        self,
-        func_id,
-        **kwargs
+    def functions_retrieve(
+        self, func_id, **kwargs
     ) -> typing.Union[
-            typing.Tuple[object, int, typing.Dict[str, str]],
-            urllib3.HTTPResponse,
-            object
+        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
     ]:
         """Method returns the information about the function  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.lambda_functions_retrieve(func_id, async_req=True)
+        >>> thread = api.functions_retrieve(func_id, async_req=True)
         >>> result = thread.get()
 
         Args:
@@ -966,46 +811,24 @@ class LambdaApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        kwargs['async_req'] = kwargs.get(
-            'async_req', False
-        )
-        kwargs['_return_http_data_only'] = kwargs.get(
-            '_return_http_data_only', True
-        )
-        kwargs['_preload_content'] = kwargs.get(
-            '_preload_content', True
-        )
-        kwargs['_request_timeout'] = kwargs.get(
-            '_request_timeout', None
-        )
-        kwargs['_check_input_type'] = kwargs.get(
-            '_check_input_type', True
-        )
-        kwargs['_check_return_type'] = kwargs.get(
-            '_check_return_type', True
-        )
-        kwargs['_check_status'] = kwargs.get(
-            '_check_status', True
-        )
-        kwargs['_spec_property_naming'] = kwargs.get(
-            '_spec_property_naming', False
-        )
-        kwargs['_content_type'] = kwargs.get(
-            '_content_type')
-        kwargs['_host_index'] = kwargs.get('_host_index')
-        kwargs['_request_auths'] = kwargs.get('_request_auths', None)
-        kwargs['func_id'] = \
-            func_id
-        return self.lambda_functions_retrieve_endpoint.call_with_http_info(**kwargs)
+        kwargs["async_req"] = kwargs.get("async_req", False)
+        kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
+        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
+        kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
+        kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
+        kwargs["_check_status"] = kwargs.get("_check_status", True)
+        kwargs["_spec_property_naming"] = kwargs.get("_spec_property_naming", False)
+        kwargs["_content_type"] = kwargs.get("_content_type")
+        kwargs["_host_index"] = kwargs.get("_host_index")
+        kwargs["_request_auths"] = kwargs.get("_request_auths", None)
+        kwargs["func_id"] = func_id
+        return self.functions_retrieve_endpoint.call_with_http_info(**kwargs)
 
-    def lambda_functions_retrieve_raw(
-        self,
-        *args,
-        **kwargs
-    ) -> urllib3.HTTPResponse:
+    def functions_retrieve_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
         """
-        The same as lambda_functions_retrieve(), but returns the response unprocessed.
-        Equivalent to calling lambda_functions_retrieve with
+        The same as functions_retrieve(), but returns the response unprocessed.
+        Equivalent to calling functions_retrieve with
         _preload_content = False and _check_status=False
 
         Method returns the information about the function  # noqa: E501
@@ -1013,7 +836,7 @@ class LambdaApi(object):
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.lambda_functions_retrieve(func_id, async_req=True)
+        >>> thread = api.functions_retrieve(func_id, async_req=True)
         >>> result = thread.get()
 
         Args:
@@ -1051,75 +874,65 @@ class LambdaApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.lambda_functions_retrieve(*args, **kwargs,
-            _preload_content=False, _check_status=False)
+        return self.functions_retrieve(*args, **kwargs, _preload_content=False, _check_status=False)
 
     @overload
-    def lambda_requests_create(
+    def requests_create(
         self,
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
-        **kwargs
+        **kwargs,
     ) -> None:
         ...
 
     @overload
-    def lambda_requests_create(
+    def requests_create(
         self,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def lambda_requests_create(
-        self,
-        _return_http_data_only: typing.Literal[False],
-        **kwargs
+    def requests_create(
+        self, _return_http_data_only: typing.Literal[False], **kwargs
     ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def lambda_requests_create(
-        self,
-        _preload_content: typing.Literal[False],
-        **kwargs
+    def requests_create(
+        self, _preload_content: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def lambda_requests_create(
+    def requests_create(
         self,
         _return_http_data_only: typing.Literal[True],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def lambda_requests_create(
+    def requests_create(
         self,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
-    def lambda_requests_create(
-        self,
-        **kwargs
-    ) -> typing.Union[
-            typing.Tuple[None, int, typing.Dict[str, str]],
-            urllib3.HTTPResponse,
-            None
-    ]:
+    def requests_create(
+        self, **kwargs
+    ) -> typing.Union[typing.Tuple[None, int, typing.Dict[str, str]], urllib3.HTTPResponse, None]:
         """Method calls the function  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.lambda_requests_create(async_req=True)
+        >>> thread = api.requests_create(async_req=True)
         >>> result = thread.get()
 
 
@@ -1167,44 +980,23 @@ class LambdaApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        kwargs['async_req'] = kwargs.get(
-            'async_req', False
-        )
-        kwargs['_return_http_data_only'] = kwargs.get(
-            '_return_http_data_only', True
-        )
-        kwargs['_preload_content'] = kwargs.get(
-            '_preload_content', True
-        )
-        kwargs['_request_timeout'] = kwargs.get(
-            '_request_timeout', None
-        )
-        kwargs['_check_input_type'] = kwargs.get(
-            '_check_input_type', True
-        )
-        kwargs['_check_return_type'] = kwargs.get(
-            '_check_return_type', True
-        )
-        kwargs['_check_status'] = kwargs.get(
-            '_check_status', True
-        )
-        kwargs['_spec_property_naming'] = kwargs.get(
-            '_spec_property_naming', False
-        )
-        kwargs['_content_type'] = kwargs.get(
-            '_content_type')
-        kwargs['_host_index'] = kwargs.get('_host_index')
-        kwargs['_request_auths'] = kwargs.get('_request_auths', None)
-        return self.lambda_requests_create_endpoint.call_with_http_info(**kwargs)
+        kwargs["async_req"] = kwargs.get("async_req", False)
+        kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
+        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
+        kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
+        kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
+        kwargs["_check_status"] = kwargs.get("_check_status", True)
+        kwargs["_spec_property_naming"] = kwargs.get("_spec_property_naming", False)
+        kwargs["_content_type"] = kwargs.get("_content_type")
+        kwargs["_host_index"] = kwargs.get("_host_index")
+        kwargs["_request_auths"] = kwargs.get("_request_auths", None)
+        return self.requests_create_endpoint.call_with_http_info(**kwargs)
 
-    def lambda_requests_create_raw(
-        self,
-        *args,
-        **kwargs
-    ) -> urllib3.HTTPResponse:
+    def requests_create_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
         """
-        The same as lambda_requests_create(), but returns the response unprocessed.
-        Equivalent to calling lambda_requests_create with
+        The same as requests_create(), but returns the response unprocessed.
+        Equivalent to calling requests_create with
         _preload_content = False and _check_status=False
 
         Method calls the function  # noqa: E501
@@ -1212,7 +1004,7 @@ class LambdaApi(object):
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.lambda_requests_create(async_req=True)
+        >>> thread = api.requests_create(async_req=True)
         >>> result = thread.get()
 
 
@@ -1248,75 +1040,65 @@ class LambdaApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.lambda_requests_create(*args, **kwargs,
-            _preload_content=False, _check_status=False)
+        return self.requests_create(*args, **kwargs, _preload_content=False, _check_status=False)
 
     @overload
-    def lambda_requests_list(
+    def requests_list(
         self,
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
-        **kwargs
+        **kwargs,
     ) -> None:
         ...
 
     @overload
-    def lambda_requests_list(
+    def requests_list(
         self,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def lambda_requests_list(
-        self,
-        _return_http_data_only: typing.Literal[False],
-        **kwargs
+    def requests_list(
+        self, _return_http_data_only: typing.Literal[False], **kwargs
     ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def lambda_requests_list(
-        self,
-        _preload_content: typing.Literal[False],
-        **kwargs
+    def requests_list(
+        self, _preload_content: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def lambda_requests_list(
+    def requests_list(
         self,
         _return_http_data_only: typing.Literal[True],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def lambda_requests_list(
+    def requests_list(
         self,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
-    def lambda_requests_list(
-        self,
-        **kwargs
-    ) -> typing.Union[
-            typing.Tuple[None, int, typing.Dict[str, str]],
-            urllib3.HTTPResponse,
-            None
-    ]:
+    def requests_list(
+        self, **kwargs
+    ) -> typing.Union[typing.Tuple[None, int, typing.Dict[str, str]], urllib3.HTTPResponse, None]:
         """Method returns a list of requests  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.lambda_requests_list(async_req=True)
+        >>> thread = api.requests_list(async_req=True)
         >>> result = thread.get()
 
 
@@ -1364,44 +1146,23 @@ class LambdaApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        kwargs['async_req'] = kwargs.get(
-            'async_req', False
-        )
-        kwargs['_return_http_data_only'] = kwargs.get(
-            '_return_http_data_only', True
-        )
-        kwargs['_preload_content'] = kwargs.get(
-            '_preload_content', True
-        )
-        kwargs['_request_timeout'] = kwargs.get(
-            '_request_timeout', None
-        )
-        kwargs['_check_input_type'] = kwargs.get(
-            '_check_input_type', True
-        )
-        kwargs['_check_return_type'] = kwargs.get(
-            '_check_return_type', True
-        )
-        kwargs['_check_status'] = kwargs.get(
-            '_check_status', True
-        )
-        kwargs['_spec_property_naming'] = kwargs.get(
-            '_spec_property_naming', False
-        )
-        kwargs['_content_type'] = kwargs.get(
-            '_content_type')
-        kwargs['_host_index'] = kwargs.get('_host_index')
-        kwargs['_request_auths'] = kwargs.get('_request_auths', None)
-        return self.lambda_requests_list_endpoint.call_with_http_info(**kwargs)
+        kwargs["async_req"] = kwargs.get("async_req", False)
+        kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
+        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
+        kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
+        kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
+        kwargs["_check_status"] = kwargs.get("_check_status", True)
+        kwargs["_spec_property_naming"] = kwargs.get("_spec_property_naming", False)
+        kwargs["_content_type"] = kwargs.get("_content_type")
+        kwargs["_host_index"] = kwargs.get("_host_index")
+        kwargs["_request_auths"] = kwargs.get("_request_auths", None)
+        return self.requests_list_endpoint.call_with_http_info(**kwargs)
 
-    def lambda_requests_list_raw(
-        self,
-        *args,
-        **kwargs
-    ) -> urllib3.HTTPResponse:
+    def requests_list_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
         """
-        The same as lambda_requests_list(), but returns the response unprocessed.
-        Equivalent to calling lambda_requests_list with
+        The same as requests_list(), but returns the response unprocessed.
+        Equivalent to calling requests_list with
         _preload_content = False and _check_status=False
 
         Method returns a list of requests  # noqa: E501
@@ -1409,7 +1170,7 @@ class LambdaApi(object):
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.lambda_requests_list(async_req=True)
+        >>> thread = api.requests_list(async_req=True)
         >>> result = thread.get()
 
 
@@ -1445,82 +1206,69 @@ class LambdaApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.lambda_requests_list(*args, **kwargs,
-            _preload_content=False, _check_status=False)
+        return self.requests_list(*args, **kwargs, _preload_content=False, _check_status=False)
 
     @overload
-    def lambda_requests_retrieve(
+    def requests_retrieve(
         self,
         id,
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
-        **kwargs
+        **kwargs,
     ) -> None:
         ...
 
     @overload
-    def lambda_requests_retrieve(
+    def requests_retrieve(
         self,
         id,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def lambda_requests_retrieve(
-        self,
-        id,
-        _return_http_data_only: typing.Literal[False],
-        **kwargs
+    def requests_retrieve(
+        self, id, _return_http_data_only: typing.Literal[False], **kwargs
     ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def lambda_requests_retrieve(
-        self,
-        id,
-        _preload_content: typing.Literal[False],
-        **kwargs
+    def requests_retrieve(
+        self, id, _preload_content: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def lambda_requests_retrieve(
+    def requests_retrieve(
         self,
         id,
         _return_http_data_only: typing.Literal[True],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def lambda_requests_retrieve(
+    def requests_retrieve(
         self,
         id,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
-    def lambda_requests_retrieve(
-        self,
-        id,
-        **kwargs
-    ) -> typing.Union[
-            typing.Tuple[None, int, typing.Dict[str, str]],
-            urllib3.HTTPResponse,
-            None
-    ]:
+    def requests_retrieve(
+        self, id, **kwargs
+    ) -> typing.Union[typing.Tuple[None, int, typing.Dict[str, str]], urllib3.HTTPResponse, None]:
         """Method returns the status of the request  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.lambda_requests_retrieve(id, async_req=True)
+        >>> thread = api.requests_retrieve(id, async_req=True)
         >>> result = thread.get()
 
         Args:
@@ -1570,46 +1318,24 @@ class LambdaApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        kwargs['async_req'] = kwargs.get(
-            'async_req', False
-        )
-        kwargs['_return_http_data_only'] = kwargs.get(
-            '_return_http_data_only', True
-        )
-        kwargs['_preload_content'] = kwargs.get(
-            '_preload_content', True
-        )
-        kwargs['_request_timeout'] = kwargs.get(
-            '_request_timeout', None
-        )
-        kwargs['_check_input_type'] = kwargs.get(
-            '_check_input_type', True
-        )
-        kwargs['_check_return_type'] = kwargs.get(
-            '_check_return_type', True
-        )
-        kwargs['_check_status'] = kwargs.get(
-            '_check_status', True
-        )
-        kwargs['_spec_property_naming'] = kwargs.get(
-            '_spec_property_naming', False
-        )
-        kwargs['_content_type'] = kwargs.get(
-            '_content_type')
-        kwargs['_host_index'] = kwargs.get('_host_index')
-        kwargs['_request_auths'] = kwargs.get('_request_auths', None)
-        kwargs['id'] = \
-            id
-        return self.lambda_requests_retrieve_endpoint.call_with_http_info(**kwargs)
+        kwargs["async_req"] = kwargs.get("async_req", False)
+        kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
+        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
+        kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
+        kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
+        kwargs["_check_status"] = kwargs.get("_check_status", True)
+        kwargs["_spec_property_naming"] = kwargs.get("_spec_property_naming", False)
+        kwargs["_content_type"] = kwargs.get("_content_type")
+        kwargs["_host_index"] = kwargs.get("_host_index")
+        kwargs["_request_auths"] = kwargs.get("_request_auths", None)
+        kwargs["id"] = id
+        return self.requests_retrieve_endpoint.call_with_http_info(**kwargs)
 
-    def lambda_requests_retrieve_raw(
-        self,
-        *args,
-        **kwargs
-    ) -> urllib3.HTTPResponse:
+    def requests_retrieve_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
         """
-        The same as lambda_requests_retrieve(), but returns the response unprocessed.
-        Equivalent to calling lambda_requests_retrieve with
+        The same as requests_retrieve(), but returns the response unprocessed.
+        Equivalent to calling requests_retrieve with
         _preload_content = False and _check_status=False
 
         Method returns the status of the request  # noqa: E501
@@ -1617,7 +1343,7 @@ class LambdaApi(object):
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.lambda_requests_retrieve(id, async_req=True)
+        >>> thread = api.requests_retrieve(id, async_req=True)
         >>> result = thread.get()
 
         Args:
@@ -1655,6 +1381,4 @@ class LambdaApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.lambda_requests_retrieve(*args, **kwargs,
-            _preload_content=False, _check_status=False)
-
+        return self.requests_retrieve(*args, **kwargs, _preload_content=False, _check_status=False)

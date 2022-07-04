@@ -9,14 +9,26 @@
 """
 
 
-import typing
-from typing import overload
-import urllib3
-
 import re  # noqa: F401
 import sys  # noqa: F401
+import typing
+from typing import TYPE_CHECKING, overload
 
-from cvat_api_client.api_client import ApiClient, Endpoint as _Endpoint
+import urllib3
+
+from cvat_api_client.api_client import ApiClient
+from cvat_api_client.api_client import Endpoint as _Endpoint
+from cvat_api_client.model.login_request import LoginRequest
+from cvat_api_client.model.password_change_request import PasswordChangeRequest
+from cvat_api_client.model.password_reset_confirm_request import PasswordResetConfirmRequest
+from cvat_api_client.model.password_reset_serializer_ex_request import (
+    PasswordResetSerializerExRequest,
+)
+from cvat_api_client.model.rest_auth_detail import RestAuthDetail
+from cvat_api_client.model.restricted_register import RestrictedRegister
+from cvat_api_client.model.restricted_register_request import RestrictedRegisterRequest
+from cvat_api_client.model.signing_request import SigningRequest
+from cvat_api_client.model.token import Token
 from cvat_api_client.model_utils import (  # noqa: F401
     check_allowed_values,
     check_validations,
@@ -24,17 +36,13 @@ from cvat_api_client.model_utils import (  # noqa: F401
     datetime,
     file_type,
     none_type,
-    validate_and_convert_types
+    validate_and_convert_types,
 )
-from cvat_api_client.model.login_request import LoginRequest
-from cvat_api_client.model.password_change_request import PasswordChangeRequest
-from cvat_api_client.model.password_reset_confirm_request import PasswordResetConfirmRequest
-from cvat_api_client.model.password_reset_serializer_ex_request import PasswordResetSerializerExRequest
-from cvat_api_client.model.rest_auth_detail import RestAuthDetail
-from cvat_api_client.model.restricted_register import RestrictedRegister
-from cvat_api_client.model.restricted_register_request import RestrictedRegisterRequest
-from cvat_api_client.model.signing_request import SigningRequest
-from cvat_api_client.model.token import Token
+
+if TYPE_CHECKING:
+    # Enable introspection. Can't work normally due to cyclic imports
+    from cvat_api_client.apis import *
+    from cvat_api_client.models import *
 
 
 class AuthApi(object):
@@ -48,581 +56,453 @@ class AuthApi(object):
         if api_client is None:
             api_client = ApiClient()
         self.api_client = api_client
-        self.auth_login_create_endpoint = _Endpoint(
+        self.login_create_endpoint = _Endpoint(
             settings={
-                'response_type': (Token,),
-                'auth': [
-                    'SignatureAuthentication',
-                    'basicAuth',
-                    'cookieAuth',
-                    'tokenAuth'
-                ],
-                'endpoint_path': '/api/auth/login',
-                'operation_id': 'auth_login_create',
-                'http_method': 'POST',
-                'servers': None,
+                "response_type": (Token,),
+                "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
+                "endpoint_path": "/api/auth/login",
+                "operation_id": "login_create",
+                "http_method": "POST",
+                "servers": None,
             },
             params_map={
-                'all': [
-                    'login_request',
-                    'x_organization',
-                    'org',
-                    'org_id',
+                "all": [
+                    "login_request",
+                    "x_organization",
+                    "org",
+                    "org_id",
                 ],
-                'required': [
-                    'login_request',
+                "required": [
+                    "login_request",
                 ],
-                'nullable': [
-                ],
-                'enum': [
-                ],
-                'validation': [
-                ]
+                "nullable": [],
+                "enum": [],
+                "validation": [],
             },
             root_map={
-                'validations': {
+                "validations": {},
+                "allowed_values": {},
+                "openapi_types": {
+                    "login_request": (LoginRequest,),
+                    "x_organization": (str,),
+                    "org": (str,),
+                    "org_id": (int,),
                 },
-                'allowed_values': {
+                "attribute_map": {
+                    "x_organization": "X-Organization",
+                    "org": "org",
+                    "org_id": "org_id",
                 },
-                'openapi_types': {
-                    'login_request':
-                        (LoginRequest,),
-                    'x_organization':
-                        (str,),
-                    'org':
-                        (str,),
-                    'org_id':
-                        (int,),
+                "location_map": {
+                    "login_request": "body",
+                    "x_organization": "header",
+                    "org": "query",
+                    "org_id": "query",
                 },
-                'attribute_map': {
-                    'x_organization': 'X-Organization',
-                    'org': 'org',
-                    'org_id': 'org_id',
-                },
-                'location_map': {
-                    'login_request': 'body',
-                    'x_organization': 'header',
-                    'org': 'query',
-                    'org_id': 'query',
-                },
-                'collection_format_map': {
-                }
+                "collection_format_map": {},
             },
             headers_map={
-                'accept': [
-                    'application/vnd.cvat+json'
+                "accept": ["application/vnd.cvat+json"],
+                "content_type": [
+                    "application/json",
+                    "application/x-www-form-urlencoded",
+                    "multipart/form-data",
+                    "application/offset+octet-stream",
                 ],
-                'content_type': [
-                    'application/json',
-                    'application/x-www-form-urlencoded',
-                    'multipart/form-data',
-                    'application/offset+octet-stream'
-                ]
             },
-            api_client=api_client
+            api_client=api_client,
         )
-        self.auth_logout_create_endpoint = _Endpoint(
+        self.logout_create_endpoint = _Endpoint(
             settings={
-                'response_type': (RestAuthDetail,),
-                'auth': [
-                    'SignatureAuthentication',
-                    'basicAuth',
-                    'cookieAuth',
-                    'tokenAuth'
-                ],
-                'endpoint_path': '/api/auth/logout',
-                'operation_id': 'auth_logout_create',
-                'http_method': 'POST',
-                'servers': None,
+                "response_type": (RestAuthDetail,),
+                "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
+                "endpoint_path": "/api/auth/logout",
+                "operation_id": "logout_create",
+                "http_method": "POST",
+                "servers": None,
             },
             params_map={
-                'all': [
-                    'x_organization',
-                    'org',
-                    'org_id',
+                "all": [
+                    "x_organization",
+                    "org",
+                    "org_id",
                 ],
-                'required': [],
-                'nullable': [
-                ],
-                'enum': [
-                ],
-                'validation': [
-                ]
+                "required": [],
+                "nullable": [],
+                "enum": [],
+                "validation": [],
             },
             root_map={
-                'validations': {
+                "validations": {},
+                "allowed_values": {},
+                "openapi_types": {
+                    "x_organization": (str,),
+                    "org": (str,),
+                    "org_id": (int,),
                 },
-                'allowed_values': {
+                "attribute_map": {
+                    "x_organization": "X-Organization",
+                    "org": "org",
+                    "org_id": "org_id",
                 },
-                'openapi_types': {
-                    'x_organization':
-                        (str,),
-                    'org':
-                        (str,),
-                    'org_id':
-                        (int,),
+                "location_map": {
+                    "x_organization": "header",
+                    "org": "query",
+                    "org_id": "query",
                 },
-                'attribute_map': {
-                    'x_organization': 'X-Organization',
-                    'org': 'org',
-                    'org_id': 'org_id',
-                },
-                'location_map': {
-                    'x_organization': 'header',
-                    'org': 'query',
-                    'org_id': 'query',
-                },
-                'collection_format_map': {
-                }
+                "collection_format_map": {},
             },
             headers_map={
-                'accept': [
-                    'application/vnd.cvat+json'
-                ],
-                'content_type': [],
+                "accept": ["application/vnd.cvat+json"],
+                "content_type": [],
             },
-            api_client=api_client
+            api_client=api_client,
         )
-        self.auth_password_change_create_endpoint = _Endpoint(
+        self.password_change_create_endpoint = _Endpoint(
             settings={
-                'response_type': (RestAuthDetail,),
-                'auth': [
-                    'SignatureAuthentication',
-                    'basicAuth',
-                    'cookieAuth',
-                    'tokenAuth'
-                ],
-                'endpoint_path': '/api/auth/password/change',
-                'operation_id': 'auth_password_change_create',
-                'http_method': 'POST',
-                'servers': None,
+                "response_type": (RestAuthDetail,),
+                "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
+                "endpoint_path": "/api/auth/password/change",
+                "operation_id": "password_change_create",
+                "http_method": "POST",
+                "servers": None,
             },
             params_map={
-                'all': [
-                    'password_change_request',
-                    'x_organization',
-                    'org',
-                    'org_id',
+                "all": [
+                    "password_change_request",
+                    "x_organization",
+                    "org",
+                    "org_id",
                 ],
-                'required': [
-                    'password_change_request',
+                "required": [
+                    "password_change_request",
                 ],
-                'nullable': [
-                ],
-                'enum': [
-                ],
-                'validation': [
-                ]
+                "nullable": [],
+                "enum": [],
+                "validation": [],
             },
             root_map={
-                'validations': {
+                "validations": {},
+                "allowed_values": {},
+                "openapi_types": {
+                    "password_change_request": (PasswordChangeRequest,),
+                    "x_organization": (str,),
+                    "org": (str,),
+                    "org_id": (int,),
                 },
-                'allowed_values': {
+                "attribute_map": {
+                    "x_organization": "X-Organization",
+                    "org": "org",
+                    "org_id": "org_id",
                 },
-                'openapi_types': {
-                    'password_change_request':
-                        (PasswordChangeRequest,),
-                    'x_organization':
-                        (str,),
-                    'org':
-                        (str,),
-                    'org_id':
-                        (int,),
+                "location_map": {
+                    "password_change_request": "body",
+                    "x_organization": "header",
+                    "org": "query",
+                    "org_id": "query",
                 },
-                'attribute_map': {
-                    'x_organization': 'X-Organization',
-                    'org': 'org',
-                    'org_id': 'org_id',
-                },
-                'location_map': {
-                    'password_change_request': 'body',
-                    'x_organization': 'header',
-                    'org': 'query',
-                    'org_id': 'query',
-                },
-                'collection_format_map': {
-                }
+                "collection_format_map": {},
             },
             headers_map={
-                'accept': [
-                    'application/vnd.cvat+json'
+                "accept": ["application/vnd.cvat+json"],
+                "content_type": [
+                    "application/json",
+                    "application/x-www-form-urlencoded",
+                    "multipart/form-data",
+                    "application/offset+octet-stream",
                 ],
-                'content_type': [
-                    'application/json',
-                    'application/x-www-form-urlencoded',
-                    'multipart/form-data',
-                    'application/offset+octet-stream'
-                ]
             },
-            api_client=api_client
+            api_client=api_client,
         )
-        self.auth_password_reset_confirm_create_endpoint = _Endpoint(
+        self.password_reset_confirm_create_endpoint = _Endpoint(
             settings={
-                'response_type': (RestAuthDetail,),
-                'auth': [
-                    'SignatureAuthentication',
-                    'basicAuth',
-                    'cookieAuth',
-                    'tokenAuth'
-                ],
-                'endpoint_path': '/api/auth/password/reset/confirm',
-                'operation_id': 'auth_password_reset_confirm_create',
-                'http_method': 'POST',
-                'servers': None,
+                "response_type": (RestAuthDetail,),
+                "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
+                "endpoint_path": "/api/auth/password/reset/confirm",
+                "operation_id": "password_reset_confirm_create",
+                "http_method": "POST",
+                "servers": None,
             },
             params_map={
-                'all': [
-                    'password_reset_confirm_request',
-                    'x_organization',
-                    'org',
-                    'org_id',
+                "all": [
+                    "password_reset_confirm_request",
+                    "x_organization",
+                    "org",
+                    "org_id",
                 ],
-                'required': [
-                    'password_reset_confirm_request',
+                "required": [
+                    "password_reset_confirm_request",
                 ],
-                'nullable': [
-                ],
-                'enum': [
-                ],
-                'validation': [
-                ]
+                "nullable": [],
+                "enum": [],
+                "validation": [],
             },
             root_map={
-                'validations': {
+                "validations": {},
+                "allowed_values": {},
+                "openapi_types": {
+                    "password_reset_confirm_request": (PasswordResetConfirmRequest,),
+                    "x_organization": (str,),
+                    "org": (str,),
+                    "org_id": (int,),
                 },
-                'allowed_values': {
+                "attribute_map": {
+                    "x_organization": "X-Organization",
+                    "org": "org",
+                    "org_id": "org_id",
                 },
-                'openapi_types': {
-                    'password_reset_confirm_request':
-                        (PasswordResetConfirmRequest,),
-                    'x_organization':
-                        (str,),
-                    'org':
-                        (str,),
-                    'org_id':
-                        (int,),
+                "location_map": {
+                    "password_reset_confirm_request": "body",
+                    "x_organization": "header",
+                    "org": "query",
+                    "org_id": "query",
                 },
-                'attribute_map': {
-                    'x_organization': 'X-Organization',
-                    'org': 'org',
-                    'org_id': 'org_id',
-                },
-                'location_map': {
-                    'password_reset_confirm_request': 'body',
-                    'x_organization': 'header',
-                    'org': 'query',
-                    'org_id': 'query',
-                },
-                'collection_format_map': {
-                }
+                "collection_format_map": {},
             },
             headers_map={
-                'accept': [
-                    'application/vnd.cvat+json'
+                "accept": ["application/vnd.cvat+json"],
+                "content_type": [
+                    "application/json",
+                    "application/x-www-form-urlencoded",
+                    "multipart/form-data",
+                    "application/offset+octet-stream",
                 ],
-                'content_type': [
-                    'application/json',
-                    'application/x-www-form-urlencoded',
-                    'multipart/form-data',
-                    'application/offset+octet-stream'
-                ]
             },
-            api_client=api_client
+            api_client=api_client,
         )
-        self.auth_password_reset_create_endpoint = _Endpoint(
+        self.password_reset_create_endpoint = _Endpoint(
             settings={
-                'response_type': (RestAuthDetail,),
-                'auth': [
-                    'SignatureAuthentication',
-                    'basicAuth',
-                    'cookieAuth',
-                    'tokenAuth'
-                ],
-                'endpoint_path': '/api/auth/password/reset',
-                'operation_id': 'auth_password_reset_create',
-                'http_method': 'POST',
-                'servers': None,
+                "response_type": (RestAuthDetail,),
+                "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
+                "endpoint_path": "/api/auth/password/reset",
+                "operation_id": "password_reset_create",
+                "http_method": "POST",
+                "servers": None,
             },
             params_map={
-                'all': [
-                    'password_reset_serializer_ex_request',
-                    'x_organization',
-                    'org',
-                    'org_id',
+                "all": [
+                    "password_reset_serializer_ex_request",
+                    "x_organization",
+                    "org",
+                    "org_id",
                 ],
-                'required': [
-                    'password_reset_serializer_ex_request',
+                "required": [
+                    "password_reset_serializer_ex_request",
                 ],
-                'nullable': [
-                ],
-                'enum': [
-                ],
-                'validation': [
-                ]
+                "nullable": [],
+                "enum": [],
+                "validation": [],
             },
             root_map={
-                'validations': {
+                "validations": {},
+                "allowed_values": {},
+                "openapi_types": {
+                    "password_reset_serializer_ex_request": (PasswordResetSerializerExRequest,),
+                    "x_organization": (str,),
+                    "org": (str,),
+                    "org_id": (int,),
                 },
-                'allowed_values': {
+                "attribute_map": {
+                    "x_organization": "X-Organization",
+                    "org": "org",
+                    "org_id": "org_id",
                 },
-                'openapi_types': {
-                    'password_reset_serializer_ex_request':
-                        (PasswordResetSerializerExRequest,),
-                    'x_organization':
-                        (str,),
-                    'org':
-                        (str,),
-                    'org_id':
-                        (int,),
+                "location_map": {
+                    "password_reset_serializer_ex_request": "body",
+                    "x_organization": "header",
+                    "org": "query",
+                    "org_id": "query",
                 },
-                'attribute_map': {
-                    'x_organization': 'X-Organization',
-                    'org': 'org',
-                    'org_id': 'org_id',
-                },
-                'location_map': {
-                    'password_reset_serializer_ex_request': 'body',
-                    'x_organization': 'header',
-                    'org': 'query',
-                    'org_id': 'query',
-                },
-                'collection_format_map': {
-                }
+                "collection_format_map": {},
             },
             headers_map={
-                'accept': [
-                    'application/vnd.cvat+json'
+                "accept": ["application/vnd.cvat+json"],
+                "content_type": [
+                    "application/json",
+                    "application/x-www-form-urlencoded",
+                    "multipart/form-data",
+                    "application/offset+octet-stream",
                 ],
-                'content_type': [
-                    'application/json',
-                    'application/x-www-form-urlencoded',
-                    'multipart/form-data',
-                    'application/offset+octet-stream'
-                ]
             },
-            api_client=api_client
+            api_client=api_client,
         )
-        self.auth_register_create_endpoint = _Endpoint(
+        self.register_create_endpoint = _Endpoint(
             settings={
-                'response_type': (RestrictedRegister,),
-                'auth': [
-                    'SignatureAuthentication',
-                    'basicAuth',
-                    'cookieAuth',
-                    'tokenAuth'
-                ],
-                'endpoint_path': '/api/auth/register',
-                'operation_id': 'auth_register_create',
-                'http_method': 'POST',
-                'servers': None,
+                "response_type": (RestrictedRegister,),
+                "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
+                "endpoint_path": "/api/auth/register",
+                "operation_id": "register_create",
+                "http_method": "POST",
+                "servers": None,
             },
             params_map={
-                'all': [
-                    'restricted_register_request',
-                    'x_organization',
-                    'org',
-                    'org_id',
+                "all": [
+                    "restricted_register_request",
+                    "x_organization",
+                    "org",
+                    "org_id",
                 ],
-                'required': [
-                    'restricted_register_request',
+                "required": [
+                    "restricted_register_request",
                 ],
-                'nullable': [
-                ],
-                'enum': [
-                ],
-                'validation': [
-                ]
+                "nullable": [],
+                "enum": [],
+                "validation": [],
             },
             root_map={
-                'validations': {
+                "validations": {},
+                "allowed_values": {},
+                "openapi_types": {
+                    "restricted_register_request": (RestrictedRegisterRequest,),
+                    "x_organization": (str,),
+                    "org": (str,),
+                    "org_id": (int,),
                 },
-                'allowed_values': {
+                "attribute_map": {
+                    "x_organization": "X-Organization",
+                    "org": "org",
+                    "org_id": "org_id",
                 },
-                'openapi_types': {
-                    'restricted_register_request':
-                        (RestrictedRegisterRequest,),
-                    'x_organization':
-                        (str,),
-                    'org':
-                        (str,),
-                    'org_id':
-                        (int,),
+                "location_map": {
+                    "restricted_register_request": "body",
+                    "x_organization": "header",
+                    "org": "query",
+                    "org_id": "query",
                 },
-                'attribute_map': {
-                    'x_organization': 'X-Organization',
-                    'org': 'org',
-                    'org_id': 'org_id',
-                },
-                'location_map': {
-                    'restricted_register_request': 'body',
-                    'x_organization': 'header',
-                    'org': 'query',
-                    'org_id': 'query',
-                },
-                'collection_format_map': {
-                }
+                "collection_format_map": {},
             },
             headers_map={
-                'accept': [
-                    'application/vnd.cvat+json'
+                "accept": ["application/vnd.cvat+json"],
+                "content_type": [
+                    "application/json",
+                    "application/x-www-form-urlencoded",
+                    "multipart/form-data",
+                    "application/offset+octet-stream",
                 ],
-                'content_type': [
-                    'application/json',
-                    'application/x-www-form-urlencoded',
-                    'multipart/form-data',
-                    'application/offset+octet-stream'
-                ]
             },
-            api_client=api_client
+            api_client=api_client,
         )
-        self.auth_signing_create_endpoint = _Endpoint(
+        self.signing_create_endpoint = _Endpoint(
             settings={
-                'response_type': (str,),
-                'auth': [
-                    'SignatureAuthentication',
-                    'basicAuth',
-                    'cookieAuth',
-                    'tokenAuth'
-                ],
-                'endpoint_path': '/api/auth/signing',
-                'operation_id': 'auth_signing_create',
-                'http_method': 'POST',
-                'servers': None,
+                "response_type": (str,),
+                "auth": ["SignatureAuthentication", "basicAuth", "cookieAuth", "tokenAuth"],
+                "endpoint_path": "/api/auth/signing",
+                "operation_id": "signing_create",
+                "http_method": "POST",
+                "servers": None,
             },
             params_map={
-                'all': [
-                    'signing_request',
-                    'x_organization',
-                    'org',
-                    'org_id',
+                "all": [
+                    "signing_request",
+                    "x_organization",
+                    "org",
+                    "org_id",
                 ],
-                'required': [
-                    'signing_request',
+                "required": [
+                    "signing_request",
                 ],
-                'nullable': [
-                ],
-                'enum': [
-                ],
-                'validation': [
-                ]
+                "nullable": [],
+                "enum": [],
+                "validation": [],
             },
             root_map={
-                'validations': {
+                "validations": {},
+                "allowed_values": {},
+                "openapi_types": {
+                    "signing_request": (SigningRequest,),
+                    "x_organization": (str,),
+                    "org": (str,),
+                    "org_id": (int,),
                 },
-                'allowed_values': {
+                "attribute_map": {
+                    "x_organization": "X-Organization",
+                    "org": "org",
+                    "org_id": "org_id",
                 },
-                'openapi_types': {
-                    'signing_request':
-                        (SigningRequest,),
-                    'x_organization':
-                        (str,),
-                    'org':
-                        (str,),
-                    'org_id':
-                        (int,),
+                "location_map": {
+                    "signing_request": "body",
+                    "x_organization": "header",
+                    "org": "query",
+                    "org_id": "query",
                 },
-                'attribute_map': {
-                    'x_organization': 'X-Organization',
-                    'org': 'org',
-                    'org_id': 'org_id',
-                },
-                'location_map': {
-                    'signing_request': 'body',
-                    'x_organization': 'header',
-                    'org': 'query',
-                    'org_id': 'query',
-                },
-                'collection_format_map': {
-                }
+                "collection_format_map": {},
             },
             headers_map={
-                'accept': [
-                    'application/vnd.cvat+json'
+                "accept": ["application/vnd.cvat+json"],
+                "content_type": [
+                    "application/json",
+                    "application/x-www-form-urlencoded",
+                    "multipart/form-data",
+                    "application/offset+octet-stream",
                 ],
-                'content_type': [
-                    'application/json',
-                    'application/x-www-form-urlencoded',
-                    'multipart/form-data',
-                    'application/offset+octet-stream'
-                ]
             },
-            api_client=api_client
+            api_client=api_client,
         )
 
     @overload
-    def auth_login_create(
+    def login_create(
         self,
         login_request,
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
-        **kwargs
+        **kwargs,
     ) -> object:
         ...
 
     @overload
-    def auth_login_create(
+    def login_create(
         self,
         login_request,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def auth_login_create(
-        self,
-        login_request,
-        _return_http_data_only: typing.Literal[False],
-        **kwargs
+    def login_create(
+        self, login_request, _return_http_data_only: typing.Literal[False], **kwargs
     ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def auth_login_create(
-        self,
-        login_request,
-        _preload_content: typing.Literal[False],
-        **kwargs
+    def login_create(
+        self, login_request, _preload_content: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def auth_login_create(
+    def login_create(
         self,
         login_request,
         _return_http_data_only: typing.Literal[True],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def auth_login_create(
+    def login_create(
         self,
         login_request,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
-    def auth_login_create(
-        self,
-        login_request,
-        **kwargs
+    def login_create(
+        self, login_request, **kwargs
     ) -> typing.Union[
-            typing.Tuple[object, int, typing.Dict[str, str]],
-            urllib3.HTTPResponse,
-            object
+        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
     ]:
-        """auth_login_create  # noqa: E501
+        """login_create  # noqa: E501
 
         Check the credentials and return the REST Token if the credentials are valid and authenticated. Calls Django Auth login method to register User ID in Django session framework  Accept the following POST parameters: username, password Return the REST Framework Token Object's key.  # noqa: E501
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.auth_login_create(login_request, async_req=True)
+        >>> thread = api.login_create(login_request, async_req=True)
         >>> result = thread.get()
 
         Args:
@@ -672,55 +552,33 @@ class AuthApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        kwargs['async_req'] = kwargs.get(
-            'async_req', False
-        )
-        kwargs['_return_http_data_only'] = kwargs.get(
-            '_return_http_data_only', True
-        )
-        kwargs['_preload_content'] = kwargs.get(
-            '_preload_content', True
-        )
-        kwargs['_request_timeout'] = kwargs.get(
-            '_request_timeout', None
-        )
-        kwargs['_check_input_type'] = kwargs.get(
-            '_check_input_type', True
-        )
-        kwargs['_check_return_type'] = kwargs.get(
-            '_check_return_type', True
-        )
-        kwargs['_check_status'] = kwargs.get(
-            '_check_status', True
-        )
-        kwargs['_spec_property_naming'] = kwargs.get(
-            '_spec_property_naming', False
-        )
-        kwargs['_content_type'] = kwargs.get(
-            '_content_type')
-        kwargs['_host_index'] = kwargs.get('_host_index')
-        kwargs['_request_auths'] = kwargs.get('_request_auths', None)
-        kwargs['login_request'] = \
-            login_request
-        return self.auth_login_create_endpoint.call_with_http_info(**kwargs)
+        kwargs["async_req"] = kwargs.get("async_req", False)
+        kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
+        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
+        kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
+        kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
+        kwargs["_check_status"] = kwargs.get("_check_status", True)
+        kwargs["_spec_property_naming"] = kwargs.get("_spec_property_naming", False)
+        kwargs["_content_type"] = kwargs.get("_content_type")
+        kwargs["_host_index"] = kwargs.get("_host_index")
+        kwargs["_request_auths"] = kwargs.get("_request_auths", None)
+        kwargs["login_request"] = login_request
+        return self.login_create_endpoint.call_with_http_info(**kwargs)
 
-    def auth_login_create_raw(
-        self,
-        *args,
-        **kwargs
-    ) -> urllib3.HTTPResponse:
+    def login_create_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
         """
-        The same as auth_login_create(), but returns the response unprocessed.
-        Equivalent to calling auth_login_create with
+        The same as login_create(), but returns the response unprocessed.
+        Equivalent to calling login_create with
         _preload_content = False and _check_status=False
 
-        auth_login_create  # noqa: E501
+        login_create  # noqa: E501
 
         Check the credentials and return the REST Token if the credentials are valid and authenticated. Calls Django Auth login method to register User ID in Django session framework  Accept the following POST parameters: username, password Return the REST Framework Token Object's key.  # noqa: E501
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.auth_login_create(login_request, async_req=True)
+        >>> thread = api.login_create(login_request, async_req=True)
         >>> result = thread.get()
 
         Args:
@@ -758,76 +616,68 @@ class AuthApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.auth_login_create(*args, **kwargs,
-            _preload_content=False, _check_status=False)
+        return self.login_create(*args, **kwargs, _preload_content=False, _check_status=False)
 
     @overload
-    def auth_logout_create(
+    def logout_create(
         self,
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
-        **kwargs
+        **kwargs,
     ) -> object:
         ...
 
     @overload
-    def auth_logout_create(
+    def logout_create(
         self,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def auth_logout_create(
-        self,
-        _return_http_data_only: typing.Literal[False],
-        **kwargs
+    def logout_create(
+        self, _return_http_data_only: typing.Literal[False], **kwargs
     ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def auth_logout_create(
-        self,
-        _preload_content: typing.Literal[False],
-        **kwargs
+    def logout_create(
+        self, _preload_content: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def auth_logout_create(
+    def logout_create(
         self,
         _return_http_data_only: typing.Literal[True],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def auth_logout_create(
+    def logout_create(
         self,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
-    def auth_logout_create(
-        self,
-        **kwargs
+    def logout_create(
+        self, **kwargs
     ) -> typing.Union[
-            typing.Tuple[object, int, typing.Dict[str, str]],
-            urllib3.HTTPResponse,
-            object
+        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
     ]:
-        """auth_logout_create  # noqa: E501
+        """logout_create  # noqa: E501
 
         Calls Django logout method and delete the Token object assigned to the current User object.  Accepts/Returns nothing.  # noqa: E501
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.auth_logout_create(async_req=True)
+        >>> thread = api.logout_create(async_req=True)
         >>> result = thread.get()
 
 
@@ -875,53 +725,32 @@ class AuthApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        kwargs['async_req'] = kwargs.get(
-            'async_req', False
-        )
-        kwargs['_return_http_data_only'] = kwargs.get(
-            '_return_http_data_only', True
-        )
-        kwargs['_preload_content'] = kwargs.get(
-            '_preload_content', True
-        )
-        kwargs['_request_timeout'] = kwargs.get(
-            '_request_timeout', None
-        )
-        kwargs['_check_input_type'] = kwargs.get(
-            '_check_input_type', True
-        )
-        kwargs['_check_return_type'] = kwargs.get(
-            '_check_return_type', True
-        )
-        kwargs['_check_status'] = kwargs.get(
-            '_check_status', True
-        )
-        kwargs['_spec_property_naming'] = kwargs.get(
-            '_spec_property_naming', False
-        )
-        kwargs['_content_type'] = kwargs.get(
-            '_content_type')
-        kwargs['_host_index'] = kwargs.get('_host_index')
-        kwargs['_request_auths'] = kwargs.get('_request_auths', None)
-        return self.auth_logout_create_endpoint.call_with_http_info(**kwargs)
+        kwargs["async_req"] = kwargs.get("async_req", False)
+        kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
+        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
+        kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
+        kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
+        kwargs["_check_status"] = kwargs.get("_check_status", True)
+        kwargs["_spec_property_naming"] = kwargs.get("_spec_property_naming", False)
+        kwargs["_content_type"] = kwargs.get("_content_type")
+        kwargs["_host_index"] = kwargs.get("_host_index")
+        kwargs["_request_auths"] = kwargs.get("_request_auths", None)
+        return self.logout_create_endpoint.call_with_http_info(**kwargs)
 
-    def auth_logout_create_raw(
-        self,
-        *args,
-        **kwargs
-    ) -> urllib3.HTTPResponse:
+    def logout_create_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
         """
-        The same as auth_logout_create(), but returns the response unprocessed.
-        Equivalent to calling auth_logout_create with
+        The same as logout_create(), but returns the response unprocessed.
+        Equivalent to calling logout_create with
         _preload_content = False and _check_status=False
 
-        auth_logout_create  # noqa: E501
+        logout_create  # noqa: E501
 
         Calls Django logout method and delete the Token object assigned to the current User object.  Accepts/Returns nothing.  # noqa: E501
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.auth_logout_create(async_req=True)
+        >>> thread = api.logout_create(async_req=True)
         >>> result = thread.get()
 
 
@@ -957,83 +786,72 @@ class AuthApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.auth_logout_create(*args, **kwargs,
-            _preload_content=False, _check_status=False)
+        return self.logout_create(*args, **kwargs, _preload_content=False, _check_status=False)
 
     @overload
-    def auth_password_change_create(
+    def password_change_create(
         self,
         password_change_request,
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
-        **kwargs
+        **kwargs,
     ) -> object:
         ...
 
     @overload
-    def auth_password_change_create(
+    def password_change_create(
         self,
         password_change_request,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def auth_password_change_create(
-        self,
-        password_change_request,
-        _return_http_data_only: typing.Literal[False],
-        **kwargs
+    def password_change_create(
+        self, password_change_request, _return_http_data_only: typing.Literal[False], **kwargs
     ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def auth_password_change_create(
-        self,
-        password_change_request,
-        _preload_content: typing.Literal[False],
-        **kwargs
+    def password_change_create(
+        self, password_change_request, _preload_content: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def auth_password_change_create(
+    def password_change_create(
         self,
         password_change_request,
         _return_http_data_only: typing.Literal[True],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def auth_password_change_create(
+    def password_change_create(
         self,
         password_change_request,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
-    def auth_password_change_create(
-        self,
-        password_change_request,
-        **kwargs
+    def password_change_create(
+        self, password_change_request, **kwargs
     ) -> typing.Union[
-            typing.Tuple[object, int, typing.Dict[str, str]],
-            urllib3.HTTPResponse,
-            object
+        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
     ]:
-        """auth_password_change_create  # noqa: E501
+        """password_change_create  # noqa: E501
 
         Calls Django Auth SetPasswordForm save method.  Accepts the following POST parameters: new_password1, new_password2 Returns the success/fail message.  # noqa: E501
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.auth_password_change_create(password_change_request, async_req=True)
+        >>> thread = api.password_change_create(password_change_request, async_req=True)
         >>> result = thread.get()
 
         Args:
@@ -1083,55 +901,33 @@ class AuthApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        kwargs['async_req'] = kwargs.get(
-            'async_req', False
-        )
-        kwargs['_return_http_data_only'] = kwargs.get(
-            '_return_http_data_only', True
-        )
-        kwargs['_preload_content'] = kwargs.get(
-            '_preload_content', True
-        )
-        kwargs['_request_timeout'] = kwargs.get(
-            '_request_timeout', None
-        )
-        kwargs['_check_input_type'] = kwargs.get(
-            '_check_input_type', True
-        )
-        kwargs['_check_return_type'] = kwargs.get(
-            '_check_return_type', True
-        )
-        kwargs['_check_status'] = kwargs.get(
-            '_check_status', True
-        )
-        kwargs['_spec_property_naming'] = kwargs.get(
-            '_spec_property_naming', False
-        )
-        kwargs['_content_type'] = kwargs.get(
-            '_content_type')
-        kwargs['_host_index'] = kwargs.get('_host_index')
-        kwargs['_request_auths'] = kwargs.get('_request_auths', None)
-        kwargs['password_change_request'] = \
-            password_change_request
-        return self.auth_password_change_create_endpoint.call_with_http_info(**kwargs)
+        kwargs["async_req"] = kwargs.get("async_req", False)
+        kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
+        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
+        kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
+        kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
+        kwargs["_check_status"] = kwargs.get("_check_status", True)
+        kwargs["_spec_property_naming"] = kwargs.get("_spec_property_naming", False)
+        kwargs["_content_type"] = kwargs.get("_content_type")
+        kwargs["_host_index"] = kwargs.get("_host_index")
+        kwargs["_request_auths"] = kwargs.get("_request_auths", None)
+        kwargs["password_change_request"] = password_change_request
+        return self.password_change_create_endpoint.call_with_http_info(**kwargs)
 
-    def auth_password_change_create_raw(
-        self,
-        *args,
-        **kwargs
-    ) -> urllib3.HTTPResponse:
+    def password_change_create_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
         """
-        The same as auth_password_change_create(), but returns the response unprocessed.
-        Equivalent to calling auth_password_change_create with
+        The same as password_change_create(), but returns the response unprocessed.
+        Equivalent to calling password_change_create with
         _preload_content = False and _check_status=False
 
-        auth_password_change_create  # noqa: E501
+        password_change_create  # noqa: E501
 
         Calls Django Auth SetPasswordForm save method.  Accepts the following POST parameters: new_password1, new_password2 Returns the success/fail message.  # noqa: E501
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.auth_password_change_create(password_change_request, async_req=True)
+        >>> thread = api.password_change_create(password_change_request, async_req=True)
         >>> result = thread.get()
 
         Args:
@@ -1169,83 +965,77 @@ class AuthApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.auth_password_change_create(*args, **kwargs,
-            _preload_content=False, _check_status=False)
+        return self.password_change_create(
+            *args, **kwargs, _preload_content=False, _check_status=False
+        )
 
     @overload
-    def auth_password_reset_confirm_create(
+    def password_reset_confirm_create(
         self,
         password_reset_confirm_request,
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
-        **kwargs
+        **kwargs,
     ) -> object:
         ...
 
     @overload
-    def auth_password_reset_confirm_create(
+    def password_reset_confirm_create(
         self,
         password_reset_confirm_request,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def auth_password_reset_confirm_create(
+    def password_reset_confirm_create(
         self,
         password_reset_confirm_request,
         _return_http_data_only: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def auth_password_reset_confirm_create(
-        self,
-        password_reset_confirm_request,
-        _preload_content: typing.Literal[False],
-        **kwargs
+    def password_reset_confirm_create(
+        self, password_reset_confirm_request, _preload_content: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def auth_password_reset_confirm_create(
+    def password_reset_confirm_create(
         self,
         password_reset_confirm_request,
         _return_http_data_only: typing.Literal[True],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def auth_password_reset_confirm_create(
+    def password_reset_confirm_create(
         self,
         password_reset_confirm_request,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
-    def auth_password_reset_confirm_create(
-        self,
-        password_reset_confirm_request,
-        **kwargs
+    def password_reset_confirm_create(
+        self, password_reset_confirm_request, **kwargs
     ) -> typing.Union[
-            typing.Tuple[object, int, typing.Dict[str, str]],
-            urllib3.HTTPResponse,
-            object
+        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
     ]:
-        """auth_password_reset_confirm_create  # noqa: E501
+        """password_reset_confirm_create  # noqa: E501
 
         Password reset e-mail link is confirmed, therefore this resets the user's password.  Accepts the following POST parameters: token, uid,     new_password1, new_password2 Returns the success/fail message.  # noqa: E501
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.auth_password_reset_confirm_create(password_reset_confirm_request, async_req=True)
+        >>> thread = api.password_reset_confirm_create(password_reset_confirm_request, async_req=True)
         >>> result = thread.get()
 
         Args:
@@ -1295,55 +1085,33 @@ class AuthApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        kwargs['async_req'] = kwargs.get(
-            'async_req', False
-        )
-        kwargs['_return_http_data_only'] = kwargs.get(
-            '_return_http_data_only', True
-        )
-        kwargs['_preload_content'] = kwargs.get(
-            '_preload_content', True
-        )
-        kwargs['_request_timeout'] = kwargs.get(
-            '_request_timeout', None
-        )
-        kwargs['_check_input_type'] = kwargs.get(
-            '_check_input_type', True
-        )
-        kwargs['_check_return_type'] = kwargs.get(
-            '_check_return_type', True
-        )
-        kwargs['_check_status'] = kwargs.get(
-            '_check_status', True
-        )
-        kwargs['_spec_property_naming'] = kwargs.get(
-            '_spec_property_naming', False
-        )
-        kwargs['_content_type'] = kwargs.get(
-            '_content_type')
-        kwargs['_host_index'] = kwargs.get('_host_index')
-        kwargs['_request_auths'] = kwargs.get('_request_auths', None)
-        kwargs['password_reset_confirm_request'] = \
-            password_reset_confirm_request
-        return self.auth_password_reset_confirm_create_endpoint.call_with_http_info(**kwargs)
+        kwargs["async_req"] = kwargs.get("async_req", False)
+        kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
+        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
+        kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
+        kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
+        kwargs["_check_status"] = kwargs.get("_check_status", True)
+        kwargs["_spec_property_naming"] = kwargs.get("_spec_property_naming", False)
+        kwargs["_content_type"] = kwargs.get("_content_type")
+        kwargs["_host_index"] = kwargs.get("_host_index")
+        kwargs["_request_auths"] = kwargs.get("_request_auths", None)
+        kwargs["password_reset_confirm_request"] = password_reset_confirm_request
+        return self.password_reset_confirm_create_endpoint.call_with_http_info(**kwargs)
 
-    def auth_password_reset_confirm_create_raw(
-        self,
-        *args,
-        **kwargs
-    ) -> urllib3.HTTPResponse:
+    def password_reset_confirm_create_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
         """
-        The same as auth_password_reset_confirm_create(), but returns the response unprocessed.
-        Equivalent to calling auth_password_reset_confirm_create with
+        The same as password_reset_confirm_create(), but returns the response unprocessed.
+        Equivalent to calling password_reset_confirm_create with
         _preload_content = False and _check_status=False
 
-        auth_password_reset_confirm_create  # noqa: E501
+        password_reset_confirm_create  # noqa: E501
 
         Password reset e-mail link is confirmed, therefore this resets the user's password.  Accepts the following POST parameters: token, uid,     new_password1, new_password2 Returns the success/fail message.  # noqa: E501
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.auth_password_reset_confirm_create(password_reset_confirm_request, async_req=True)
+        >>> thread = api.password_reset_confirm_create(password_reset_confirm_request, async_req=True)
         >>> result = thread.get()
 
         Args:
@@ -1381,83 +1149,80 @@ class AuthApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.auth_password_reset_confirm_create(*args, **kwargs,
-            _preload_content=False, _check_status=False)
+        return self.password_reset_confirm_create(
+            *args, **kwargs, _preload_content=False, _check_status=False
+        )
 
     @overload
-    def auth_password_reset_create(
+    def password_reset_create(
         self,
         password_reset_serializer_ex_request,
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
-        **kwargs
+        **kwargs,
     ) -> object:
         ...
 
     @overload
-    def auth_password_reset_create(
+    def password_reset_create(
         self,
         password_reset_serializer_ex_request,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def auth_password_reset_create(
+    def password_reset_create(
         self,
         password_reset_serializer_ex_request,
         _return_http_data_only: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def auth_password_reset_create(
+    def password_reset_create(
         self,
         password_reset_serializer_ex_request,
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def auth_password_reset_create(
+    def password_reset_create(
         self,
         password_reset_serializer_ex_request,
         _return_http_data_only: typing.Literal[True],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def auth_password_reset_create(
+    def password_reset_create(
         self,
         password_reset_serializer_ex_request,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
-    def auth_password_reset_create(
-        self,
-        password_reset_serializer_ex_request,
-        **kwargs
+    def password_reset_create(
+        self, password_reset_serializer_ex_request, **kwargs
     ) -> typing.Union[
-            typing.Tuple[object, int, typing.Dict[str, str]],
-            urllib3.HTTPResponse,
-            object
+        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
     ]:
-        """auth_password_reset_create  # noqa: E501
+        """password_reset_create  # noqa: E501
 
         Calls Django Auth PasswordResetForm save method.  Accepts the following POST parameters: email Returns the success/fail message.  # noqa: E501
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.auth_password_reset_create(password_reset_serializer_ex_request, async_req=True)
+        >>> thread = api.password_reset_create(password_reset_serializer_ex_request, async_req=True)
         >>> result = thread.get()
 
         Args:
@@ -1507,55 +1272,33 @@ class AuthApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        kwargs['async_req'] = kwargs.get(
-            'async_req', False
-        )
-        kwargs['_return_http_data_only'] = kwargs.get(
-            '_return_http_data_only', True
-        )
-        kwargs['_preload_content'] = kwargs.get(
-            '_preload_content', True
-        )
-        kwargs['_request_timeout'] = kwargs.get(
-            '_request_timeout', None
-        )
-        kwargs['_check_input_type'] = kwargs.get(
-            '_check_input_type', True
-        )
-        kwargs['_check_return_type'] = kwargs.get(
-            '_check_return_type', True
-        )
-        kwargs['_check_status'] = kwargs.get(
-            '_check_status', True
-        )
-        kwargs['_spec_property_naming'] = kwargs.get(
-            '_spec_property_naming', False
-        )
-        kwargs['_content_type'] = kwargs.get(
-            '_content_type')
-        kwargs['_host_index'] = kwargs.get('_host_index')
-        kwargs['_request_auths'] = kwargs.get('_request_auths', None)
-        kwargs['password_reset_serializer_ex_request'] = \
-            password_reset_serializer_ex_request
-        return self.auth_password_reset_create_endpoint.call_with_http_info(**kwargs)
+        kwargs["async_req"] = kwargs.get("async_req", False)
+        kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
+        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
+        kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
+        kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
+        kwargs["_check_status"] = kwargs.get("_check_status", True)
+        kwargs["_spec_property_naming"] = kwargs.get("_spec_property_naming", False)
+        kwargs["_content_type"] = kwargs.get("_content_type")
+        kwargs["_host_index"] = kwargs.get("_host_index")
+        kwargs["_request_auths"] = kwargs.get("_request_auths", None)
+        kwargs["password_reset_serializer_ex_request"] = password_reset_serializer_ex_request
+        return self.password_reset_create_endpoint.call_with_http_info(**kwargs)
 
-    def auth_password_reset_create_raw(
-        self,
-        *args,
-        **kwargs
-    ) -> urllib3.HTTPResponse:
+    def password_reset_create_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
         """
-        The same as auth_password_reset_create(), but returns the response unprocessed.
-        Equivalent to calling auth_password_reset_create with
+        The same as password_reset_create(), but returns the response unprocessed.
+        Equivalent to calling password_reset_create with
         _preload_content = False and _check_status=False
 
-        auth_password_reset_create  # noqa: E501
+        password_reset_create  # noqa: E501
 
         Calls Django Auth PasswordResetForm save method.  Accepts the following POST parameters: email Returns the success/fail message.  # noqa: E501
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.auth_password_reset_create(password_reset_serializer_ex_request, async_req=True)
+        >>> thread = api.password_reset_create(password_reset_serializer_ex_request, async_req=True)
         >>> result = thread.get()
 
         Args:
@@ -1593,82 +1336,73 @@ class AuthApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.auth_password_reset_create(*args, **kwargs,
-            _preload_content=False, _check_status=False)
+        return self.password_reset_create(
+            *args, **kwargs, _preload_content=False, _check_status=False
+        )
 
     @overload
-    def auth_register_create(
+    def register_create(
         self,
         restricted_register_request,
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
-        **kwargs
+        **kwargs,
     ) -> object:
         ...
 
     @overload
-    def auth_register_create(
+    def register_create(
         self,
         restricted_register_request,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def auth_register_create(
-        self,
-        restricted_register_request,
-        _return_http_data_only: typing.Literal[False],
-        **kwargs
+    def register_create(
+        self, restricted_register_request, _return_http_data_only: typing.Literal[False], **kwargs
     ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def auth_register_create(
-        self,
-        restricted_register_request,
-        _preload_content: typing.Literal[False],
-        **kwargs
+    def register_create(
+        self, restricted_register_request, _preload_content: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def auth_register_create(
+    def register_create(
         self,
         restricted_register_request,
         _return_http_data_only: typing.Literal[True],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def auth_register_create(
+    def register_create(
         self,
         restricted_register_request,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
-    def auth_register_create(
-        self,
-        restricted_register_request,
-        **kwargs
+    def register_create(
+        self, restricted_register_request, **kwargs
     ) -> typing.Union[
-            typing.Tuple[object, int, typing.Dict[str, str]],
-            urllib3.HTTPResponse,
-            object
+        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
     ]:
-        """auth_register_create  # noqa: E501
+        """register_create  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.auth_register_create(restricted_register_request, async_req=True)
+        >>> thread = api.register_create(restricted_register_request, async_req=True)
         >>> result = thread.get()
 
         Args:
@@ -1718,54 +1452,32 @@ class AuthApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        kwargs['async_req'] = kwargs.get(
-            'async_req', False
-        )
-        kwargs['_return_http_data_only'] = kwargs.get(
-            '_return_http_data_only', True
-        )
-        kwargs['_preload_content'] = kwargs.get(
-            '_preload_content', True
-        )
-        kwargs['_request_timeout'] = kwargs.get(
-            '_request_timeout', None
-        )
-        kwargs['_check_input_type'] = kwargs.get(
-            '_check_input_type', True
-        )
-        kwargs['_check_return_type'] = kwargs.get(
-            '_check_return_type', True
-        )
-        kwargs['_check_status'] = kwargs.get(
-            '_check_status', True
-        )
-        kwargs['_spec_property_naming'] = kwargs.get(
-            '_spec_property_naming', False
-        )
-        kwargs['_content_type'] = kwargs.get(
-            '_content_type')
-        kwargs['_host_index'] = kwargs.get('_host_index')
-        kwargs['_request_auths'] = kwargs.get('_request_auths', None)
-        kwargs['restricted_register_request'] = \
-            restricted_register_request
-        return self.auth_register_create_endpoint.call_with_http_info(**kwargs)
+        kwargs["async_req"] = kwargs.get("async_req", False)
+        kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
+        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
+        kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
+        kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
+        kwargs["_check_status"] = kwargs.get("_check_status", True)
+        kwargs["_spec_property_naming"] = kwargs.get("_spec_property_naming", False)
+        kwargs["_content_type"] = kwargs.get("_content_type")
+        kwargs["_host_index"] = kwargs.get("_host_index")
+        kwargs["_request_auths"] = kwargs.get("_request_auths", None)
+        kwargs["restricted_register_request"] = restricted_register_request
+        return self.register_create_endpoint.call_with_http_info(**kwargs)
 
-    def auth_register_create_raw(
-        self,
-        *args,
-        **kwargs
-    ) -> urllib3.HTTPResponse:
+    def register_create_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
         """
-        The same as auth_register_create(), but returns the response unprocessed.
-        Equivalent to calling auth_register_create with
+        The same as register_create(), but returns the response unprocessed.
+        Equivalent to calling register_create with
         _preload_content = False and _check_status=False
 
-        auth_register_create  # noqa: E501
+        register_create  # noqa: E501
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.auth_register_create(restricted_register_request, async_req=True)
+        >>> thread = api.register_create(restricted_register_request, async_req=True)
         >>> result = thread.get()
 
         Args:
@@ -1803,75 +1515,64 @@ class AuthApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.auth_register_create(*args, **kwargs,
-            _preload_content=False, _check_status=False)
+        return self.register_create(*args, **kwargs, _preload_content=False, _check_status=False)
 
     @overload
-    def auth_signing_create(
+    def signing_create(
         self,
         signing_request,
         _return_http_data_only: typing.Literal[True] = True,
         _preload_content: typing.Literal[True] = True,
-        **kwargs
+        **kwargs,
     ) -> object:
         ...
 
     @overload
-    def auth_signing_create(
+    def signing_create(
         self,
         signing_request,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def auth_signing_create(
-        self,
-        signing_request,
-        _return_http_data_only: typing.Literal[False],
-        **kwargs
+    def signing_create(
+        self, signing_request, _return_http_data_only: typing.Literal[False], **kwargs
     ) -> typing.Tuple[object, int, typing.Dict[str, str]]:
         ...
 
     @overload
-    def auth_signing_create(
-        self,
-        signing_request,
-        _preload_content: typing.Literal[False],
-        **kwargs
+    def signing_create(
+        self, signing_request, _preload_content: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def auth_signing_create(
+    def signing_create(
         self,
         signing_request,
         _return_http_data_only: typing.Literal[True],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
     @overload
-    def auth_signing_create(
+    def signing_create(
         self,
         signing_request,
         _return_http_data_only: typing.Literal[False],
         _preload_content: typing.Literal[False],
-        **kwargs
+        **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
 
-    def auth_signing_create(
-        self,
-        signing_request,
-        **kwargs
+    def signing_create(
+        self, signing_request, **kwargs
     ) -> typing.Union[
-            typing.Tuple[object, int, typing.Dict[str, str]],
-            urllib3.HTTPResponse,
-            object
+        typing.Tuple[object, int, typing.Dict[str, str]], urllib3.HTTPResponse, object
     ]:
         """This method signs URL for access to the server  # noqa: E501
 
@@ -1879,7 +1580,7 @@ class AuthApi(object):
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.auth_signing_create(signing_request, async_req=True)
+        >>> thread = api.signing_create(signing_request, async_req=True)
         >>> result = thread.get()
 
         Args:
@@ -1929,46 +1630,24 @@ class AuthApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        kwargs['async_req'] = kwargs.get(
-            'async_req', False
-        )
-        kwargs['_return_http_data_only'] = kwargs.get(
-            '_return_http_data_only', True
-        )
-        kwargs['_preload_content'] = kwargs.get(
-            '_preload_content', True
-        )
-        kwargs['_request_timeout'] = kwargs.get(
-            '_request_timeout', None
-        )
-        kwargs['_check_input_type'] = kwargs.get(
-            '_check_input_type', True
-        )
-        kwargs['_check_return_type'] = kwargs.get(
-            '_check_return_type', True
-        )
-        kwargs['_check_status'] = kwargs.get(
-            '_check_status', True
-        )
-        kwargs['_spec_property_naming'] = kwargs.get(
-            '_spec_property_naming', False
-        )
-        kwargs['_content_type'] = kwargs.get(
-            '_content_type')
-        kwargs['_host_index'] = kwargs.get('_host_index')
-        kwargs['_request_auths'] = kwargs.get('_request_auths', None)
-        kwargs['signing_request'] = \
-            signing_request
-        return self.auth_signing_create_endpoint.call_with_http_info(**kwargs)
+        kwargs["async_req"] = kwargs.get("async_req", False)
+        kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
+        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
+        kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
+        kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
+        kwargs["_check_status"] = kwargs.get("_check_status", True)
+        kwargs["_spec_property_naming"] = kwargs.get("_spec_property_naming", False)
+        kwargs["_content_type"] = kwargs.get("_content_type")
+        kwargs["_host_index"] = kwargs.get("_host_index")
+        kwargs["_request_auths"] = kwargs.get("_request_auths", None)
+        kwargs["signing_request"] = signing_request
+        return self.signing_create_endpoint.call_with_http_info(**kwargs)
 
-    def auth_signing_create_raw(
-        self,
-        *args,
-        **kwargs
-    ) -> urllib3.HTTPResponse:
+    def signing_create_raw(self, *args, **kwargs) -> urllib3.HTTPResponse:
         """
-        The same as auth_signing_create(), but returns the response unprocessed.
-        Equivalent to calling auth_signing_create with
+        The same as signing_create(), but returns the response unprocessed.
+        Equivalent to calling signing_create with
         _preload_content = False and _check_status=False
 
         This method signs URL for access to the server  # noqa: E501
@@ -1977,7 +1656,7 @@ class AuthApi(object):
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please pass async_req=True
 
-        >>> thread = api.auth_signing_create(signing_request, async_req=True)
+        >>> thread = api.signing_create(signing_request, async_req=True)
         >>> result = thread.get()
 
         Args:
@@ -2015,6 +1694,4 @@ class AuthApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.auth_signing_create(*args, **kwargs,
-            _preload_content=False, _check_status=False)
-
+        return self.signing_create(*args, **kwargs, _preload_content=False, _check_status=False)

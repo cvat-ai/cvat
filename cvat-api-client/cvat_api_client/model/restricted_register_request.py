@@ -11,16 +11,18 @@
 
 from __future__ import annotations
 
-import typing
-
 import re  # noqa: F401
 import sys  # noqa: F401
+import typing
+from typing import TYPE_CHECKING
 
+from cvat_api_client.exceptions import ApiAttributeError
 from cvat_api_client.model_utils import (  # noqa: F401
     ApiTypeError,
     ModelComposed,
     ModelNormal,
     ModelSimple,
+    OpenApiModel,
     cached_property,
     change_keys_js_to_python,
     convert_js_args_to_python_args,
@@ -29,14 +31,18 @@ from cvat_api_client.model_utils import (  # noqa: F401
     file_type,
     none_type,
     validate_get_composed_info,
-    OpenApiModel
 )
-from cvat_api_client.exceptions import ApiAttributeError
+
+if TYPE_CHECKING:
+    # Enable introspection. Can't work normally due to cyclic imports
+    from cvat_api_client.apis import *
+    from cvat_api_client.models import *
 
 
 def lazy_import():
     from cvat_api_client.model.user_agreement_request import UserAgreementRequest
-    globals()['UserAgreementRequest'] = UserAgreementRequest
+
+    globals()["UserAgreementRequest"] = UserAgreementRequest
 
 
 class RestrictedRegisterRequest(ModelNormal):
@@ -79,28 +85,27 @@ class RestrictedRegisterRequest(ModelNormal):
 
     """
 
-    allowed_values = {
-    }
+    allowed_values = {}
 
     validations = {
-        ('username',): {
-            'max_length': 150,
-            'min_length': 1,
+        ("username",): {
+            "max_length": 150,
+            "min_length": 1,
         },
-        ('password1',): {
-            'min_length': 1,
+        ("password1",): {
+            "min_length": 1,
         },
-        ('password2',): {
-            'min_length': 1,
+        ("password2",): {
+            "min_length": 1,
         },
-        ('email',): {
-            'min_length': 1,
+        ("email",): {
+            "min_length": 1,
         },
-        ('first_name',): {
-            'min_length': 1,
+        ("first_name",): {
+            "min_length": 1,
         },
-        ('last_name',): {
-            'min_length': 1,
+        ("last_name",): {
+            "min_length": 1,
         },
     }
 
@@ -111,7 +116,17 @@ class RestrictedRegisterRequest(ModelNormal):
         of type self, this must run after the class is loaded
         """
         lazy_import()
-        return (bool, date, datetime, dict, float, int, list, str, none_type,)  # noqa: E501
+        return (
+            bool,
+            date,
+            datetime,
+            dict,
+            float,
+            int,
+            list,
+            str,
+            none_type,
+        )  # noqa: E501
 
     _nullable = False
 
@@ -127,68 +142,64 @@ class RestrictedRegisterRequest(ModelNormal):
         """
         lazy_import()
         return {
-            'username': (str,),  # noqa: E501
-            'password1': (str,),  # noqa: E501
-            'password2': (str,),  # noqa: E501
-            'email': (str,),  # noqa: E501
-            'first_name': (str,),  # noqa: E501
-            'last_name': (str,),  # noqa: E501
-            'confirmations': ([UserAgreementRequest],),  # noqa: E501
+            "username": (str,),  # noqa: E501
+            "password1": (str,),  # noqa: E501
+            "password2": (str,),  # noqa: E501
+            "email": (str,),  # noqa: E501
+            "first_name": (str,),  # noqa: E501
+            "last_name": (str,),  # noqa: E501
+            "confirmations": ([UserAgreementRequest],),  # noqa: E501
         }
 
     @cached_property
     def discriminator():
         return None
 
-
     # member type declarations
-    username: str # noqa: E501
+    username: str  # noqa: E501
     """
     """
 
-    email: str # noqa: E501
+    email: str  # noqa: E501
     """
     [optional]
     """
 
-    password1: str # noqa: E501
+    password1: str  # noqa: E501
     """
     """
 
-    password2: str # noqa: E501
+    password2: str  # noqa: E501
     """
     """
 
-    first_name: str # noqa: E501
+    first_name: str  # noqa: E501
     """
     [optional]
     """
 
-    last_name: str # noqa: E501
+    last_name: str  # noqa: E501
     """
     [optional]
     """
 
-    confirmations: typing.List[typing.ForwardRef("UserAgreementRequest")] # noqa: E501
+    confirmations: typing.List["UserAgreementRequest"]  # noqa: E501
     """
     [optional]
     [UserAgreementRequest]
     """
 
-
-
     attribute_map = {
-        'username': 'username',  # noqa: E501
-        'password1': 'password1',  # noqa: E501
-        'password2': 'password2',  # noqa: E501
-        'email': 'email',  # noqa: E501
-        'first_name': 'first_name',  # noqa: E501
-        'last_name': 'last_name',  # noqa: E501
-        'confirmations': 'confirmations',  # noqa: E501
+        "username": "username",  # noqa: E501
+        "password1": "password1",  # noqa: E501
+        "password2": "password2",  # noqa: E501
+        "email": "email",  # noqa: E501
+        "first_name": "first_name",  # noqa: E501
+        "last_name": "last_name",  # noqa: E501
+        "confirmations": "confirmations",  # noqa: E501
     }
 
-    read_only_vars = {
-    }
+    read_only_vars = {}
 
     _composed_schemas = {}
 
@@ -239,11 +250,11 @@ class RestrictedRegisterRequest(ModelNormal):
             confirmations ([UserAgreementRequest]): [optional]  # noqa: E501
         """
 
-        _check_type = kwargs.pop('_check_type', True)
-        _spec_property_naming = kwargs.pop('_spec_property_naming', True)
-        _path_to_item = kwargs.pop('_path_to_item', ())
-        _configuration = kwargs.pop('_configuration', None)
-        _visited_composed_classes = kwargs.pop('_visited_composed_classes', ())
+        _check_type = kwargs.pop("_check_type", True)
+        _spec_property_naming = kwargs.pop("_spec_property_naming", True)
+        _path_to_item = kwargs.pop("_path_to_item", ())
+        _configuration = kwargs.pop("_configuration", None)
+        _visited_composed_classes = kwargs.pop("_visited_composed_classes", ())
 
         self = super(OpenApiModel, cls).__new__(cls)
 
@@ -253,7 +264,8 @@ class RestrictedRegisterRequest(ModelNormal):
                     kwargs.update(arg)
                 else:
                     raise ApiTypeError(
-                        "Invalid positional arguments=%s passed to %s. Remove those invalid positional arguments." % (
+                        "Invalid positional arguments=%s passed to %s. Remove those invalid positional arguments."
+                        % (
                             args,
                             self.__class__.__name__,
                         ),
@@ -272,23 +284,27 @@ class RestrictedRegisterRequest(ModelNormal):
         self.password1 = password1
         self.password2 = password2
         for var_name, var_value in kwargs.items():
-            if var_name not in self.attribute_map and \
-                        self._configuration is not None and \
-                        self._configuration.discard_unknown_keys and \
-                        self.additional_properties_type is None:
+            if (
+                var_name not in self.attribute_map
+                and self._configuration is not None
+                and self._configuration.discard_unknown_keys
+                and self.additional_properties_type is None
+            ):
                 # discard variable.
                 continue
             setattr(self, var_name, var_value)
         return self
 
-    required_properties = set([
-        '_data_store',
-        '_check_type',
-        '_spec_property_naming',
-        '_path_to_item',
-        '_configuration',
-        '_visited_composed_classes',
-    ])
+    required_properties = set(
+        [
+            "_data_store",
+            "_check_type",
+            "_spec_property_naming",
+            "_path_to_item",
+            "_configuration",
+            "_visited_composed_classes",
+        ]
+    )
 
     @convert_js_args_to_python_args
     def __init__(self, username, password1, password2, *args, **kwargs):  # noqa: E501
@@ -336,11 +352,11 @@ class RestrictedRegisterRequest(ModelNormal):
             confirmations ([UserAgreementRequest]): [optional]  # noqa: E501
         """
 
-        _check_type = kwargs.pop('_check_type', True)
-        _spec_property_naming = kwargs.pop('_spec_property_naming', False)
-        _path_to_item = kwargs.pop('_path_to_item', ())
-        _configuration = kwargs.pop('_configuration', None)
-        _visited_composed_classes = kwargs.pop('_visited_composed_classes', ())
+        _check_type = kwargs.pop("_check_type", True)
+        _spec_property_naming = kwargs.pop("_spec_property_naming", False)
+        _path_to_item = kwargs.pop("_path_to_item", ())
+        _configuration = kwargs.pop("_configuration", None)
+        _visited_composed_classes = kwargs.pop("_visited_composed_classes", ())
 
         if args:
             for arg in args:
@@ -348,7 +364,8 @@ class RestrictedRegisterRequest(ModelNormal):
                     kwargs.update(arg)
                 else:
                     raise ApiTypeError(
-                        "Invalid positional arguments=%s passed to %s. Remove those invalid positional arguments." % (
+                        "Invalid positional arguments=%s passed to %s. Remove those invalid positional arguments."
+                        % (
                             args,
                             self.__class__.__name__,
                         ),
@@ -367,14 +384,17 @@ class RestrictedRegisterRequest(ModelNormal):
         self.password1 = password1
         self.password2 = password2
         for var_name, var_value in kwargs.items():
-            if var_name not in self.attribute_map and \
-                        self._configuration is not None and \
-                        self._configuration.discard_unknown_keys and \
-                        self.additional_properties_type is None:
+            if (
+                var_name not in self.attribute_map
+                and self._configuration is not None
+                and self._configuration.discard_unknown_keys
+                and self.additional_properties_type is None
+            ):
                 # discard variable.
                 continue
             setattr(self, var_name, var_value)
             if var_name in self.read_only_vars:
-                raise ApiAttributeError(f"`{var_name}` is a read-only attribute. Use `from_openapi_data` to instantiate "
-                                     f"class with read only attributes.")
-
+                raise ApiAttributeError(
+                    f"`{var_name}` is a read-only attribute. Use `from_openapi_data` to instantiate "
+                    f"class with read only attributes."
+                )

@@ -11,16 +11,18 @@
 
 from __future__ import annotations
 
-import typing
-
 import re  # noqa: F401
 import sys  # noqa: F401
+import typing
+from typing import TYPE_CHECKING
 
+from cvat_api_client.exceptions import ApiAttributeError
 from cvat_api_client.model_utils import (  # noqa: F401
     ApiTypeError,
     ModelComposed,
     ModelNormal,
     ModelSimple,
+    OpenApiModel,
     cached_property,
     change_keys_js_to_python,
     convert_js_args_to_python_args,
@@ -29,16 +31,20 @@ from cvat_api_client.model_utils import (  # noqa: F401
     file_type,
     none_type,
     validate_get_composed_info,
-    OpenApiModel
 )
-from cvat_api_client.exceptions import ApiAttributeError
+
+if TYPE_CHECKING:
+    # Enable introspection. Can't work normally due to cyclic imports
+    from cvat_api_client.apis import *
+    from cvat_api_client.models import *
 
 
 def lazy_import():
     from cvat_api_client.model.location_enum import LocationEnum
     from cvat_api_client.model.storage import Storage
-    globals()['LocationEnum'] = LocationEnum
-    globals()['Storage'] = Storage
+
+    globals()["LocationEnum"] = LocationEnum
+    globals()["Storage"] = Storage
 
 
 class TaskReadTargetStorage(ModelComposed):
@@ -65,11 +71,9 @@ class TaskReadTargetStorage(ModelComposed):
           as additional properties values.
     """
 
-    allowed_values = {
-    }
+    allowed_values = {}
 
-    validations = {
-    }
+    validations = {}
 
     @cached_property
     def additional_properties_type():
@@ -78,7 +82,17 @@ class TaskReadTargetStorage(ModelComposed):
         of type self, this must run after the class is loaded
         """
         lazy_import()
-        return (bool, date, datetime, dict, float, int, list, str, none_type,)  # noqa: E501
+        return (
+            bool,
+            date,
+            datetime,
+            dict,
+            float,
+            int,
+            list,
+            str,
+            none_type,
+        )  # noqa: E501
 
     _nullable = True
 
@@ -94,42 +108,42 @@ class TaskReadTargetStorage(ModelComposed):
         """
         lazy_import()
         return {
-            'id': (int,),  # noqa: E501
-            'location': (LocationEnum,),  # noqa: E501
-            'cloud_storage_id': (int, none_type,),  # noqa: E501
+            "id": (int,),  # noqa: E501
+            "location": (LocationEnum,),  # noqa: E501
+            "cloud_storage_id": (
+                int,
+                none_type,
+            ),  # noqa: E501
         }
 
     @cached_property
     def discriminator():
         return None
 
-
     # member type declarations
-    id: int # noqa: E501
+    id: int  # noqa: E501
     """
     [optional]
     """
 
-    location: typing.ForwardRef("LocationEnum") # noqa: E501
+    location: "LocationEnum"  # noqa: E501
     """
     [optional]
     """
 
-    cloud_storage_id: typing.Optional[int] # noqa: E501
+    cloud_storage_id: typing.Optional[int]  # noqa: E501
     """
     [optional]
     """
-
-
 
     attribute_map = {
-        'id': 'id',  # noqa: E501
-        'location': 'location',  # noqa: E501
-        'cloud_storage_id': 'cloud_storage_id',  # noqa: E501
+        "id": "id",  # noqa: E501
+        "location": "location",  # noqa: E501
+        "cloud_storage_id": "cloud_storage_id",  # noqa: E501
     }
 
     read_only_vars = {
-        'id',  # noqa: E501
+        "id",  # noqa: E501
     }
 
     @classmethod
@@ -173,11 +187,11 @@ class TaskReadTargetStorage(ModelComposed):
             cloud_storage_id (int, none_type): [optional]  # noqa: E501
         """
 
-        _check_type = kwargs.pop('_check_type', True)
-        _spec_property_naming = kwargs.pop('_spec_property_naming', False)
-        _path_to_item = kwargs.pop('_path_to_item', ())
-        _configuration = kwargs.pop('_configuration', None)
-        _visited_composed_classes = kwargs.pop('_visited_composed_classes', ())
+        _check_type = kwargs.pop("_check_type", True)
+        _spec_property_naming = kwargs.pop("_spec_property_naming", False)
+        _path_to_item = kwargs.pop("_path_to_item", ())
+        _configuration = kwargs.pop("_configuration", None)
+        _visited_composed_classes = kwargs.pop("_visited_composed_classes", ())
 
         self = super(OpenApiModel, cls).__new__(cls)
 
@@ -187,7 +201,8 @@ class TaskReadTargetStorage(ModelComposed):
                     kwargs.update(arg)
                 else:
                     raise ApiTypeError(
-                        "Invalid positional arguments=%s passed to %s. Remove those invalid positional arguments." % (
+                        "Invalid positional arguments=%s passed to %s. Remove those invalid positional arguments."
+                        % (
                             args,
                             self.__class__.__name__,
                         ),
@@ -203,44 +218,46 @@ class TaskReadTargetStorage(ModelComposed):
         self._visited_composed_classes = _visited_composed_classes + (self.__class__,)
 
         constant_args = {
-            '_check_type': _check_type,
-            '_path_to_item': _path_to_item,
-            '_spec_property_naming': _spec_property_naming,
-            '_configuration': _configuration,
-            '_visited_composed_classes': self._visited_composed_classes,
+            "_check_type": _check_type,
+            "_path_to_item": _path_to_item,
+            "_spec_property_naming": _spec_property_naming,
+            "_configuration": _configuration,
+            "_visited_composed_classes": self._visited_composed_classes,
         }
-        required_args = {
-        }
+        required_args = {}
         kwargs.update(required_args)
-        composed_info = validate_get_composed_info(
-            constant_args, kwargs, self)
+        composed_info = validate_get_composed_info(constant_args, kwargs, self)
         self._composed_instances = composed_info[0]
         self._var_name_to_model_instances = composed_info[1]
         self._additional_properties_model_instances = composed_info[2]
         discarded_args = composed_info[3]
 
         for var_name, var_value in kwargs.items():
-            if var_name in discarded_args and \
-                        self._configuration is not None and \
-                        self._configuration.discard_unknown_keys and \
-                        self._additional_properties_model_instances:
+            if (
+                var_name in discarded_args
+                and self._configuration is not None
+                and self._configuration.discard_unknown_keys
+                and self._additional_properties_model_instances
+            ):
                 # discard variable.
                 continue
             setattr(self, var_name, var_value)
 
         return self
 
-    required_properties = set([
-        '_data_store',
-        '_check_type',
-        '_spec_property_naming',
-        '_path_to_item',
-        '_configuration',
-        '_visited_composed_classes',
-        '_composed_instances',
-        '_var_name_to_model_instances',
-        '_additional_properties_model_instances',
-    ])
+    required_properties = set(
+        [
+            "_data_store",
+            "_check_type",
+            "_spec_property_naming",
+            "_path_to_item",
+            "_configuration",
+            "_visited_composed_classes",
+            "_composed_instances",
+            "_var_name_to_model_instances",
+            "_additional_properties_model_instances",
+        ]
+    )
 
     @convert_js_args_to_python_args
     def __init__(self, *args, **kwargs):  # noqa: E501
@@ -282,11 +299,11 @@ class TaskReadTargetStorage(ModelComposed):
             cloud_storage_id (int, none_type): [optional]  # noqa: E501
         """
 
-        _check_type = kwargs.pop('_check_type', True)
-        _spec_property_naming = kwargs.pop('_spec_property_naming', False)
-        _path_to_item = kwargs.pop('_path_to_item', ())
-        _configuration = kwargs.pop('_configuration', None)
-        _visited_composed_classes = kwargs.pop('_visited_composed_classes', ())
+        _check_type = kwargs.pop("_check_type", True)
+        _spec_property_naming = kwargs.pop("_spec_property_naming", False)
+        _path_to_item = kwargs.pop("_path_to_item", ())
+        _configuration = kwargs.pop("_configuration", None)
+        _visited_composed_classes = kwargs.pop("_visited_composed_classes", ())
 
         if args:
             for arg in args:
@@ -294,7 +311,8 @@ class TaskReadTargetStorage(ModelComposed):
                     kwargs.update(arg)
                 else:
                     raise ApiTypeError(
-                        "Invalid positional arguments=%s passed to %s. Remove those invalid positional arguments." % (
+                        "Invalid positional arguments=%s passed to %s. Remove those invalid positional arguments."
+                        % (
                             args,
                             self.__class__.__name__,
                         ),
@@ -310,33 +328,35 @@ class TaskReadTargetStorage(ModelComposed):
         self._visited_composed_classes = _visited_composed_classes + (self.__class__,)
 
         constant_args = {
-            '_check_type': _check_type,
-            '_path_to_item': _path_to_item,
-            '_spec_property_naming': _spec_property_naming,
-            '_configuration': _configuration,
-            '_visited_composed_classes': self._visited_composed_classes,
+            "_check_type": _check_type,
+            "_path_to_item": _path_to_item,
+            "_spec_property_naming": _spec_property_naming,
+            "_configuration": _configuration,
+            "_visited_composed_classes": self._visited_composed_classes,
         }
-        required_args = {
-        }
+        required_args = {}
         kwargs.update(required_args)
-        composed_info = validate_get_composed_info(
-            constant_args, kwargs, self)
+        composed_info = validate_get_composed_info(constant_args, kwargs, self)
         self._composed_instances = composed_info[0]
         self._var_name_to_model_instances = composed_info[1]
         self._additional_properties_model_instances = composed_info[2]
         discarded_args = composed_info[3]
 
         for var_name, var_value in kwargs.items():
-            if var_name in discarded_args and \
-                        self._configuration is not None and \
-                        self._configuration.discard_unknown_keys and \
-                        self._additional_properties_model_instances:
+            if (
+                var_name in discarded_args
+                and self._configuration is not None
+                and self._configuration.discard_unknown_keys
+                and self._additional_properties_model_instances
+            ):
                 # discard variable.
                 continue
             setattr(self, var_name, var_value)
             if var_name in self.read_only_vars:
-                raise ApiAttributeError(f"`{var_name}` is a read-only attribute. Use `from_openapi_data` to instantiate "
-                                     f"class with read only attributes.")
+                raise ApiAttributeError(
+                    f"`{var_name}` is a read-only attribute. Use `from_openapi_data` to instantiate "
+                    f"class with read only attributes."
+                )
 
     @cached_property
     def _composed_schemas():
@@ -349,11 +369,9 @@ class TaskReadTargetStorage(ModelComposed):
         # loading
         lazy_import()
         return {
-          'anyOf': [
-          ],
-          'allOf': [
-              Storage,
-          ],
-          'oneOf': [
-          ],
+            "anyOf": [],
+            "allOf": [
+                Storage,
+            ],
+            "oneOf": [],
         }

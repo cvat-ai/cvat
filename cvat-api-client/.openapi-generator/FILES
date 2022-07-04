@@ -102,6 +102,7 @@ cvat_api_client/model/patched_organization_write_request.py
 cvat_api_client/model/patched_project_write_request.py
 cvat_api_client/model/patched_task_write_request.py
 cvat_api_client/model/patched_task_write_request_target_storage.py
+cvat_api_client/model/patched_user_request.py
 cvat_api_client/model/plugins.py
 cvat_api_client/model/polymorphic_project.py
 cvat_api_client/model/project_file_request.py
@@ -229,6 +230,7 @@ docs/PatchedOrganizationWriteRequest.md
 docs/PatchedProjectWriteRequest.md
 docs/PatchedTaskWriteRequest.md
 docs/PatchedTaskWriteRequestTargetStorage.md
+docs/PatchedUserRequest.md
 docs/Plugins.md
 docs/PolymorphicProject.md
 docs/ProjectFileRequest.md
