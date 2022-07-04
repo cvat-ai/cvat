@@ -140,6 +140,12 @@ polyline.cvat_canvas_shape_splitting {
     stroke-dasharray: 5;
 }
 
+g.cvat_canvas_shape_occluded {
+    > rect {
+        stroke-dasharray: 5;
+    }
+}
+
 .svg_select_points_rot {
     fill: white;
 }

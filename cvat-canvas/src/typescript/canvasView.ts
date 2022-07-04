@@ -2654,10 +2654,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
         setupEdges();
 
-        skeleton.cx();
-        skeleton.rotate(state.rotation, bbox.x + bbox.width / 2, bbox.y + bbox.height / 2);
-        skeleton.cx();
-
         if (state.occluded) {
             skeleton.addClass('cvat_canvas_shape_occluded');
         }
@@ -2741,14 +2737,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
                                     .find((child: SVG.Shape) => child.id() === `cvat_canvas_shape_${element.clientID}`);
 
                                 if (elementShape) {
-                                    let points = readPointsFromShape(elementShape);
-                                    const { rotation } = skeleton.transform();
-                                    if (rotation) {
-                                        points = this.translatePointsFromRotatedShape(skeleton, points, );
-                                    }
-
-                                    points = this.translateFromCanvas(points);
-                                    element.points = points;
+                                    const points = readPointsFromShape(elementShape);
+                                    element.points = this.translateFromCanvas(points);
                                 }
                             });
 
@@ -2833,43 +2823,15 @@ export class CanvasViewImpl implements CanvasView, Listener {
                             const dx2 = (p1.x - p2.x) ** 2;
                             const dy2 = (p1.y - p2.y) ** 2;
                             if (Math.sqrt(dx2 + dy2) >= delta) {
-                                // find object state
-                                // const elementState = state.elements
-                                //     .find((_element: any) => _element.clientID === clientID);
-                                // const elementShape = skeleton.children()
-                                //     .find((child: SVG.Shape) => child.id() === `cvat_canvas_shape_${clientID}`);
+                                const elementState = state.elements
+                                    .find((_element: any) => _element.clientID === clientID);
+                                const elementShape = skeleton.children()
+                                    .find((child: SVG.Shape) => child.id() === `cvat_canvas_shape_${clientID}`);
 
-                                // if (elementShape) {
-                                //     let points = readPointsFromShape(elementShape);
-                                //     const { rotation } = skeleton.transform();
-                                //     if (rotation) {
-                                //         points = this.translatePointsFromRotatedShape(
-                                //             skeleton,
-                                //             points,
-                                //             bbox.x + bbox.width / 2,
-                                //             bbox.y + bbox.height / 2,
-                                //         );
-                                //     }
-                                //     points = this.translateFromCanvas(points);
-                                //     elementState.points = points;
-                                // }
-
-                                state.elements.forEach((elementState) => {
-                                    const elementShape = skeleton.children()
-                                        .find((child: SVG.Shape) => child.id() === `cvat_canvas_shape_${elementState.clientID}`);
-                                    let points = readPointsFromShape(elementShape);
-                                    const { rotation } = skeleton.transform();
-                                    if (rotation) {
-                                        points = this.translatePointsFromRotatedShape(
-                                            skeleton,
-                                            points,
-                                            // bbox.x + bbox.width / 2,
-                                            // bbox.y + bbox.height / 2,
-                                        );
-                                    }
-                                    points = this.translateFromCanvas(points);
-                                    elementState.points = points;
-                                });
+                                if (elementShape) {
+                                    const points = readPointsFromShape(elementShape);
+                                    elementState.points = this.translateFromCanvas(points);;
+                                }
 
                                 this.canvas.dispatchEvent(
                                     new CustomEvent('canvas.resizeshape', {
@@ -2895,9 +2857,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
             let resized = false;
             if (typeof action === 'object') {
                 (wrappingRect as any).resize(action).on('resizestart', (): void => {
-                    const { rotation } = skeleton.transform();
-                    wrappingRect.attr('data-rotation', rotation);
-
                     this.mode = Mode.RESIZE;
                     resized = false;
                     hideText();
@@ -2910,17 +2869,14 @@ export class CanvasViewImpl implements CanvasView, Listener {
                         this.mode = Mode.IDLE;
                     });
                 }).on('resizing', (e: CustomEvent): void => {
-                    let { rotation } = wrappingRect.transform();
-                    const prevRotation = wrappingRect.attr('data-rotation');
-                    if (prevRotation) {
-                        rotation += prevRotation;
-                    }
+                    const { instance } = e.target as any;
 
+                    // rotate skeleton instead of wrapping bounding box
+                    const { rotation } = wrappingRect.transform();
                     skeleton.rotate(rotation);
                     wrappingRect.rotate(0);
-                    e.target.instance.remember('_selectHandler').nested.rotate(0);
+                    (e.target as any).instance.remember('_selectHandler').nested.rotate(0);
 
-                    const { instance } = e.target as any;
                     const [x, y] = [instance.x(), instance.y()];
                     const prevXtl = +wrappingRect.attr('data-xtl');
                     const prevYtl = +wrappingRect.attr('data-ytl');
@@ -2950,8 +2906,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     // be sure, that rotation in range [0; 360]
                     while (rotation < 0) rotation += 360;
                     rotation %= 360;
-
-                    wrappingRect.attr('data-rotation', rotation);
                     showText();
                     this.mode = Mode.IDLE;
                     (wrappingRect as any).off('remove.resize');
@@ -2962,12 +2916,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
                                 .find((child: SVG.Shape) => child.id() === `cvat_canvas_shape_${element.clientID}`);
 
                             if (elementShape) {
-                                let points = readPointsFromShape(elementShape);
-                                if (rotation) {
-                                    points = this.translatePointsFromRotatedShape(skeleton, points);
-                                }
-                                points = this.translateFromCanvas(points);
-                                element.points = points;
+                                const points = readPointsFromShape(elementShape);
+                                element.points = this.translateFromCanvas(points);
                             }
                         });
 

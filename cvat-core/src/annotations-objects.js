@@ -1915,6 +1915,22 @@
             };
         }
 
+        _saveRotation(rotation, frame) {
+            const skeletonPoints = this.elements.map((element) => element.points).flat();
+            const bbox = computeWrappingBox(skeletonPoints);
+            const [cx, cy] = [bbox.x + bbox.width / 2, bbox.y + bbox.height / 2];
+            for (const element of this.elements) {
+                const { points } = element;
+                const rotatedPoints = [];
+                for (let i = 0; i < points.length; i += 2) {
+                    const [x, y] = [points[i], points[i + 1]];
+                    rotatedPoints.push(...rotatePoint(x, y, rotation, cx, cy));
+                }
+
+                element.points = rotatedPoints;
+            }
+        }
+
         save(frame, data) {
             data.elements.forEach((element, idx) => {
                 const annotationContext = this.elements[idx];
@@ -2401,6 +2417,28 @@
             ));
         }
 
+        _saveRotation(rotation, frame) {
+            const elementsData = this.elements.map((element) => element.get(frame));
+            const skeletonPoints = elementsData.map((_data) => _data.points).flat();
+            const bbox = computeWrappingBox(skeletonPoints);
+            const [cx, cy] = [bbox.x + bbox.width / 2, bbox.y + bbox.height / 2];
+            for (let i = 0; i < this.elements.length; i++) {
+                const element = this.elements[i];
+                const { points } = elementsData[i];
+                const rotatedPoints = [];
+                for (let j = 0; j < points.length; j += 2) {
+                    const [x, y] = [points[j], points[j + 1]];
+                    rotatedPoints.push(...rotatePoint(x, y, rotation, cx, cy));
+                }
+                const shape = {
+                    ...copyShape(elementsData[i]),
+                    points: rotatedPoints,
+                };
+
+                element.shapes[frame] = shape;
+            }
+        }
+
         // Method is used to export data to the server
         toJSON() {
             return {
@@ -2478,68 +2516,12 @@
         }
 
         save(frame, data) {
-            const notChangedElements = data.elements.filter((el) => !el.updateFlags.points);
-            console.log('Points before: ', this.elements.map((element) => element.get(frame).points).flat());
-            let prevBBox = computeWrappingBox(this.elements.map((element) => element.get(frame).points).flat());
-            console.log('BBox before: ', prevBBox);
-            let prevCX = prevBBox.x + prevBBox.width / 2;
-            let prevCY = prevBBox.y + prevBBox.height / 2;
-
             data.elements.forEach((element, idx) => {
                 const annotationContext = this.elements[idx];
                 annotationContext.save(frame, element);
             });
 
-            console.log('Points after: ', this.elements.map((element) => element.get(frame).points).flat());
-            let bbox = computeWrappingBox(this.elements.map((element) => element.get(frame).points).flat());
-            let cx = bbox.x + bbox.width / 2;
-            let cy = bbox.x + bbox.width / 2;
-
-            console.log('BBox after: ', bbox);
-            const { rotation } = this.get(frame);
-            if (data.rotation) {
-                for (const element of data.elements) {
-                    // point must be here after rotation
-                    const [prevRotX, prevRotY] = rotatePoint(element.points[0], element.points[1], rotation, prevCX, prevCY);
-                    const angle = (rotation * Math.PI) / 180;
-
-                    // but with new center it will be another place, we need to find new position
-                    // using this position with fixed rotation angle and new center points must be the same place as previous
-                    // const newX = ((prevRotX + prevRotY) / Math.cos(angle) + (cx - cy) * Math.tan(angle) + cx + cy) / (1 + Math.tan(angle));
-                    // const newY = (prevRotY - (newX - cx) * Math.sin(angle) - cy) / (Math.cos(angle)) + cy;
-                    const tan = Math.tan(angle);
-                    const cos = Math.cos(angle);
-                    const sin = Math.sin(angle);
-                    const newX = (prevRotX - cx + (prevRotY - cy) * tan) * cos + cx;
-                    const newY = (prevRotY + cy * cos - newX * sin + cx * sin - cy) / cos;
-
-                    console.log('Point: ', element.label.name, ' with old rotated position ', rotatePoint(element.points[0], element.points[1], rotation, prevCX, prevCY), ' has new one ', rotatePoint(newX, newY, rotation, cx, cy));
-
-                    element.points = [newX, newY];
-
-                    // prevBBox = bbox;
-                    // prevCX = cx;
-                    // prevCY = cy;
-
-                    // console.log('Previous cx, cy', prevCX, prevCY);
-                    // console.log('cx, cy', cx, cy);
-                    // bbox = computeWrappingBox(data.elements.map((element) => element.points).flat());
-                    // cx = bbox.x + bbox.width / 2;
-                    // cy = bbox.x + bbox.width / 2;
-                }
-            }
-
-            data.elements.forEach((element, idx) => {
-                const annotationContext = this.elements[idx];
-                annotationContext.save(frame, element);
-            });
-
-            const finalBBox = computeWrappingBox(this.elements.map((element) => element.get(frame).points).flat());
-            console.log('Final points: ', this.elements.map((element) => element.get(frame).points).flat());
-            console.log('Final bbox: ', computeWrappingBox(this.elements.map((element) => element.get(frame).points).flat()));
-            console.log('Final cx, cy: ', finalBBox.x + finalBBox.width / 2, finalBBox.y + finalBBox.height / 2);
-
-            const result = Track.prototype.save.call(this, frame, data);
+            const result = Shape.prototype.save.call(this, frame, data);
             return result;
         }
 
