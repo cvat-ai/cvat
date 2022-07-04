@@ -205,21 +205,33 @@ const { Source, ObjectShape } = require('./enums');
                             return [];
                         },
                         set: (points) => {
-                            if (data.shapeType !== ObjectShape.SKELETON) {
-                                if (Array.isArray(points) && points.every((coord) => typeof coord === 'number')) {
-                                    data.updateFlags.points = true;
-                                    data.points = [...points];
-                                } else {
+                            if (!Array.isArray(points) || points.some((coord) => typeof coord !== 'number')) {
+                                throw new ArgumentError(
+                                    'Points are expected to be an array of numbers ' +
+                                        `but got ${
+                                            typeof points === 'object' ? points.constructor.name : typeof points
+                                        }`,
+                                );
+                            }
+
+                            if (data.shapeType === ObjectShape.SKELETON) {
+                                const { points: currentPoints } = this;
+                                if (points.length !== currentPoints.length) {
                                     throw new ArgumentError(
-                                        'Points are expected to be an array of numbers ' +
-                                            `but got ${
-                                                typeof points === 'object' ? points.constructor.name : typeof points
-                                            }`,
+                                        'Tried to set wrong number of points for a skeleton' +
+                                        `(${points.length} vs ${currentPoints.length}})`,
                                     );
+                                }
+
+                                const copy = points;
+                                for (const element of this.elements) {
+                                    element.points = copy.splice(0, element.points.length);
                                 }
                             } else {
                                 data.updateFlags.points = true;
                             }
+
+                            data.points = [...points];
                         },
                     },
                     rotation: {
@@ -234,7 +246,7 @@ const { Source, ObjectShape } = require('./enums');
                         get: () => data.rotation,
                         set: (rotation) => {
                             if (typeof rotation === 'number') {
-                                // if (rotation === data.rotation) return;
+                                if (rotation === data.rotation) return;
                                 data.updateFlags.rotation = true;
                                 data.rotation = rotation;
                             } else {
@@ -486,6 +498,12 @@ const { Source, ObjectShape } = require('./enums');
             }
 
             data.updateFlags.reset();
+
+            /* eslint-disable-next-line no-underscore-dangle */
+            if (serialized.__internal) {
+                /* eslint-disable-next-line no-underscore-dangle */
+                this.__internal = serialized.__internal;
+            }
         }
 
         /**
@@ -526,7 +544,7 @@ const { Source, ObjectShape } = require('./enums');
     // Updates element in collection which contains it
     ObjectState.prototype.save.implementation = function () {
         if (this.__internal && this.__internal.save) {
-            return this.__internal.save();
+            return this.__internal.save(this);
         }
 
         return this;

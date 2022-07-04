@@ -2786,19 +2786,17 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
                                 if (elementShape) {
                                     const points = readPointsFromShape(elementShape);
-                                    elementState.points = this.translateFromCanvas(points);;
+                                    this.canvas.dispatchEvent(
+                                        new CustomEvent('canvas.resizeshape', {
+                                            bubbles: false,
+                                            cancelable: true,
+                                            detail: {
+                                                id: elementState.clientID,
+                                            },
+                                        }),
+                                    );
+                                    this.onEditDone(elementState, this.translateFromCanvas(points));
                                 }
-
-                                this.canvas.dispatchEvent(
-                                    new CustomEvent('canvas.resizeshape', {
-                                        bubbles: false,
-                                        cancelable: true,
-                                        detail: {
-                                            id: state.clientID,
-                                        },
-                                    }),
-                                );
-                                this.onEditDone(state, state.points);
                             }
 
                             showElementText();
@@ -2866,18 +2864,24 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     this.mode = Mode.IDLE;
                     (wrappingRect as any).off('remove.resize');
                     if (resized) {
-                        state.rotation = rotation;
-                        state.elements.forEach((element: any) => {
-                            const elementShape = skeleton.children()
-                                .find((child: SVG.Shape) => child.id() === `cvat_canvas_shape_${element.clientID}`);
+                        if (rotation) {
+                            this.onEditDone(state, state.points, rotation);
+                        } else {
+                            const points: number[] = [];
 
-                            if (elementShape) {
-                                const points = readPointsFromShape(elementShape);
-                                element.points = this.translateFromCanvas(points);
-                            }
-                        });
+                            state.elements.forEach((element: any) => {
+                                const elementShape = skeleton.children()
+                                    .find((child: SVG.Shape) => child.id() === `cvat_canvas_shape_${element.clientID}`);
 
-                        this.onEditDone(state, state.points);
+                                if (elementShape) {
+                                    points.push(...this.translateFromCanvas(
+                                        readPointsFromShape(elementShape),
+                                    ));
+                                }
+                            });
+
+                            this.onEditDone(state, points, rotation);
+                        }
 
                         this.canvas.dispatchEvent(
                             new CustomEvent('canvas.resizeshape', {

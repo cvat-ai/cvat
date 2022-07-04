@@ -9,18 +9,17 @@
         Track,
         Shape,
         Tag,
-        objectStateFactory,
     } = require('./annotations-objects');
     const AnnotationsFilter = require('./annotations-filter');
     const { checkObjectType } = require('./common');
     const Statistics = require('./statistics');
     const { Label } = require('./labels');
     const { ArgumentError, ScriptingError } = require('./exceptions');
+    const ObjectState = require('./object-state');
 
     const {
         HistoryActions, ObjectShape, ObjectType, colors,
     } = require('./enums');
-    const ObjectState = require('./object-state');
 
     class Collection {
         constructor(data) {
@@ -126,10 +125,7 @@
             const tags = this.tags[frame] || [];
 
             const objects = [].concat(tracks, shapes, tags);
-            const visible = {
-                models: [],
-                data: [],
-            };
+            const visible = []
 
             for (const object of objects) {
                 if (object.removed) {
@@ -141,17 +137,15 @@
                     continue;
                 }
 
-                visible.models.push(object);
-                visible.data.push(stateData);
+                visible.push(stateData);
             }
 
             const objectStates = [];
-            const filtered = this.annotationsFilter.filter(visible.data, filters);
+            const filtered = this.annotationsFilter.filter(visible, filters);
 
-            visible.data.forEach((stateData, idx) => {
+            visible.forEach((stateData, idx) => {
                 if (!filters.length || filtered.includes(stateData.clientID)) {
-                    const model = visible.models[idx];
-                    const objectState = objectStateFactory.call(model, frame, stateData);
+                    const objectState = new ObjectState(stateData);
                     objectStates.push(objectState);
                 }
             });
