@@ -185,7 +185,17 @@
             "python": "${command:python.interpreterPath}",
             "module": "pytest",
             "args": [
-                "tests/rest_api/"
+        {
+            "name": "Postprocess generator output",
+            "type": "python",
+            "request": "launch",
+            "justMyCode": false,
+            "stopOnEntry": false,
+            "python": "${command:python.interpreterPath}",
+            "program": "${workspaceFolder}/cvat-api-client/gen/postprocess.py",
+            "args": [
+                "--schema", "${workspaceFolder}/cvat-api-client/schema/schema.yml",
+                "--input-path", "${workspaceFolder}/cvat-api-client/cvat_api_client/"
             ],
             "cwd": "${workspaceFolder}",
             "console": "integratedTerminal"
