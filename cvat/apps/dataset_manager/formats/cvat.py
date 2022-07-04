@@ -1182,7 +1182,8 @@ def load_anno(file_object, annotations):
                     value=el.text or "",
                 ))
             if el.tag in supported_shapes and shape['type'] == 'skeleton' and el.tag != 'skeleton':
-                element['frame'] = frame_id
+                if track is None:
+                    element['frame'] = frame_id
                 element['label_id'] = annotations._get_label_id(el.attrib['label'])
 
                 element['occluded'] = el.attrib['occluded'] == '1'
