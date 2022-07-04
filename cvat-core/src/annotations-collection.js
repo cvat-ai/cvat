@@ -29,6 +29,10 @@
 
             this.labels = data.labels.reduce((labelAccumulator, label) => {
                 labelAccumulator[label.id] = label;
+                (label?.structure?.sublabels || []).forEach((sublabel) => {
+                    labelAccumulator[sublabel.id] = sublabel;
+                });
+
                 return labelAccumulator;
             }, {});
 
