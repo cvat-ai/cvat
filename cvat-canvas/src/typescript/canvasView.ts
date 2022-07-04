@@ -2826,11 +2826,11 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
                                 if (elementShape) {
                                     let points = readPointsFromShape(elementShape);
-                                    points = this.translateFromCanvas(points);
                                     const { rotation } = skeleton.transform();
                                     if (rotation) {
                                         points = this.translatePointsFromRotatedShape(skeleton, points);
                                     }
+                                    points = this.translateFromCanvas(points);
                                     elementState.points = points;
                                 }
 
