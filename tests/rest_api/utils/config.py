@@ -4,8 +4,7 @@
 
 import os.path as osp
 import requests
-from cvat_api_client.api_client import ApiClient
-from cvat_api_client.configuration import Configuration
+from cvat_api_client import ApiClient, Configuration
 
 ROOT_DIR = __file__[:__file__.rfind(osp.join("utils", ""))]
 ASSETS_DIR = osp.abspath(osp.join(ROOT_DIR, 'assets'))
@@ -44,5 +43,5 @@ def post_files_method(username, endpoint, data, files, **kwargs):
 def server_get(username, endpoint, **kwargs):
     return requests.get(get_server_url(endpoint, **kwargs), auth=(username, USER_PASS))
 
-def make_api_client(user) -> ApiClient:
+def make_api_client(user: str) -> ApiClient:
     return ApiClient(configuration=Configuration(host=BASE_URL, username=user, password=USER_PASS))
