@@ -23,9 +23,9 @@ interface Props {
     rectDrawingMethod?: RectDrawingMethod;
     cuboidDrawingMethod?: CuboidDrawingMethod;
     numberOfPoints?: number;
-    selectedLabelID: number;
+    selectedLabelID: number | null;
     repeatShapeShortcut: string;
-    onChangeLabel(value: string): void;
+    onChangeLabel(value: Label | null): void;
     onChangePoints(value: number | undefined): void;
     onChangeRectDrawingMethod(event: RadioChangeEvent): void;
     onChangeCuboidDrawingMethod(event: RadioChangeEvent): void;
@@ -54,7 +54,6 @@ function DrawShapePopoverComponent(props: Props): JSX.Element {
     } = props;
 
     const is2D = jobInstance.dimension === DimensionType.DIM_2D;
-
     return (
         <div className='cvat-draw-shape-popover-content'>
             <Row justify='start'>
@@ -71,13 +70,7 @@ function DrawShapePopoverComponent(props: Props): JSX.Element {
                 <Col span={24}>
                     <LabelSelector
                         style={{ width: '100%' }}
-                        labels={labels.filter((label: Label) => {
-                            if (shapeType === ShapeType.SKELETON) {
-                                return label.type === ShapeType.SKELETON;
-                            }
-
-                            return typeof label.type !== 'string' || label.type === shapeType;
-                        })}
+                        labels={labels}
                         value={selectedLabelID}
                         onChange={onChangeLabel}
                     />
