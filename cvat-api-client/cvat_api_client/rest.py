@@ -113,7 +113,7 @@ class RESTClientObject(object):
         files=None,
         body=None,
         post_params=None,
-        _preload_content=True,
+        _parse_response=True,
         _request_timeout=None,
         _check_status=True,
     ):
@@ -129,7 +129,7 @@ class RESTClientObject(object):
                             `application/x-www-form-urlencoded`
                             and `multipart/form-data`
         :param files: file parameters for POST/PUT/PATCH requests
-        :param _preload_content: if False, the urllib3.HTTPResponse object will
+        :param _parse_response: if False, the urllib3.HTTPResponse object will
                                  be returned without reading/decoding response
                                  data. Default is True.
         :param _request_timeout: timeout setting for this request. If one
@@ -171,7 +171,7 @@ class RESTClientObject(object):
                         method,
                         url,
                         body=request_body,
-                        preload_content=_preload_content,
+                        preload_content=_parse_response,
                         timeout=timeout,
                         headers=headers,
                     )
@@ -186,7 +186,7 @@ class RESTClientObject(object):
                         url,
                         fields=post_params,
                         encode_multipart=False,
-                        preload_content=_preload_content,
+                        preload_content=_parse_response,
                         timeout=timeout,
                         headers=headers,
                     )
@@ -200,7 +200,7 @@ class RESTClientObject(object):
                         url,
                         fields=post_params,
                         encode_multipart=True,
-                        preload_content=_preload_content,
+                        preload_content=_parse_response,
                         timeout=timeout,
                         headers=headers,
                     )
@@ -213,7 +213,7 @@ class RESTClientObject(object):
                         method,
                         url,
                         body=request_body,
-                        preload_content=_preload_content,
+                        preload_content=_parse_response,
                         timeout=timeout,
                         headers=headers,
                     )
@@ -229,7 +229,7 @@ class RESTClientObject(object):
                     method,
                     url,
                     fields=query_params,
-                    preload_content=_preload_content,
+                    preload_content=_parse_response,
                     timeout=timeout,
                     headers=headers,
                 )
@@ -237,7 +237,7 @@ class RESTClientObject(object):
             msg = "{0}\n{1}".format(type(e).__name__, str(e))
             raise ApiException(status=0, reason=msg)
 
-        if _preload_content:
+        if _parse_response:
             r = RESTResponse(r)
 
             # log response body
@@ -265,7 +265,7 @@ class RESTClientObject(object):
         url,
         headers=None,
         query_params=None,
-        _preload_content=True,
+        _parse_response=True,
         _request_timeout=None,
         _check_status=True,
     ):
@@ -273,7 +273,7 @@ class RESTClientObject(object):
             "GET",
             url,
             headers=headers,
-            _preload_content=_preload_content,
+            _parse_response=_parse_response,
             _request_timeout=_request_timeout,
             _check_status=_check_status,
             query_params=query_params,
@@ -284,7 +284,7 @@ class RESTClientObject(object):
         url,
         headers=None,
         query_params=None,
-        _preload_content=True,
+        _parse_response=True,
         _request_timeout=None,
         _check_status=True,
     ):
@@ -292,7 +292,7 @@ class RESTClientObject(object):
             "HEAD",
             url,
             headers=headers,
-            _preload_content=_preload_content,
+            _parse_response=_parse_response,
             _request_timeout=_request_timeout,
             query_params=query_params,
             _check_status=_check_status,
@@ -305,7 +305,7 @@ class RESTClientObject(object):
         query_params=None,
         post_params=None,
         body=None,
-        _preload_content=True,
+        _parse_response=True,
         _request_timeout=None,
         _check_status=True,
     ):
@@ -315,7 +315,7 @@ class RESTClientObject(object):
             headers=headers,
             query_params=query_params,
             post_params=post_params,
-            _preload_content=_preload_content,
+            _parse_response=_parse_response,
             _request_timeout=_request_timeout,
             _check_status=_check_status,
             body=body,
@@ -327,7 +327,7 @@ class RESTClientObject(object):
         headers=None,
         query_params=None,
         body=None,
-        _preload_content=True,
+        _parse_response=True,
         _request_timeout=None,
         _check_status=True,
     ):
@@ -336,7 +336,7 @@ class RESTClientObject(object):
             url,
             headers=headers,
             query_params=query_params,
-            _preload_content=_preload_content,
+            _parse_response=_parse_response,
             _request_timeout=_request_timeout,
             _check_status=_check_status,
             body=body,
@@ -349,7 +349,7 @@ class RESTClientObject(object):
         query_params=None,
         post_params=None,
         body=None,
-        _preload_content=True,
+        _parse_response=True,
         _request_timeout=None,
         _check_status=True,
     ):
@@ -359,7 +359,7 @@ class RESTClientObject(object):
             headers=headers,
             query_params=query_params,
             post_params=post_params,
-            _preload_content=_preload_content,
+            _parse_response=_parse_response,
             _request_timeout=_request_timeout,
             _check_status=_check_status,
             body=body,
@@ -372,7 +372,7 @@ class RESTClientObject(object):
         query_params=None,
         post_params=None,
         body=None,
-        _preload_content=True,
+        _parse_response=True,
         _request_timeout=None,
         _check_status=True,
     ):
@@ -382,7 +382,7 @@ class RESTClientObject(object):
             headers=headers,
             query_params=query_params,
             post_params=post_params,
-            _preload_content=_preload_content,
+            _parse_response=_parse_response,
             _request_timeout=_request_timeout,
             _check_status=_check_status,
             body=body,
@@ -395,7 +395,7 @@ class RESTClientObject(object):
         query_params=None,
         post_params=None,
         body=None,
-        _preload_content=True,
+        _parse_response=True,
         _request_timeout=None,
         _check_status=True,
     ):
@@ -405,7 +405,7 @@ class RESTClientObject(object):
             headers=headers,
             query_params=query_params,
             post_params=post_params,
-            _preload_content=_preload_content,
+            _parse_response=_parse_response,
             _request_timeout=_request_timeout,
             _check_status=_check_status,
             body=body,

@@ -361,7 +361,7 @@ class ServerApi(object):
         self,
         exception_request,
         _return_http_data_only: typing.Literal[True] = True,
-        _preload_content: typing.Literal[True] = True,
+        _parse_response: typing.Literal[True] = True,
         **kwargs,
     ) -> Exception:
         ...
@@ -371,7 +371,7 @@ class ServerApi(object):
         self,
         exception_request,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> typing.Tuple[Exception, int, typing.Dict[str, str]]:
         ...
@@ -384,7 +384,7 @@ class ServerApi(object):
 
     @overload
     def create_exception(
-        self, exception_request, _preload_content: typing.Literal[False], **kwargs
+        self, exception_request, _parse_response: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
@@ -393,7 +393,7 @@ class ServerApi(object):
         self,
         exception_request,
         _return_http_data_only: typing.Literal[True],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -403,7 +403,7 @@ class ServerApi(object):
         self,
         exception_request,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -431,7 +431,7 @@ class ServerApi(object):
             org_id (int): Organization identifier. [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
-            _preload_content (bool): if False, the urllib3.HTTPResponse object
+            _parse_response (bool): if False, the urllib3.HTTPResponse object
                 will be returned without reading/decoding response data.
                 Checked before _return_http_data_only.
                 Default is True.
@@ -471,7 +471,7 @@ class ServerApi(object):
         """
         kwargs["async_req"] = kwargs.get("async_req", False)
         kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
         kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
         kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
         kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
@@ -487,7 +487,7 @@ class ServerApi(object):
         """
         The same as create_exception(), but returns the response unprocessed.
         Equivalent to calling create_exception with
-        _preload_content = False and _check_status=False
+        _parse_response = False and _check_status=False
 
         Method saves an exception from a client on the server  # noqa: E501
 
@@ -533,14 +533,14 @@ class ServerApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.create_exception(*args, **kwargs, _preload_content=False, _check_status=False)
+        return self.create_exception(*args, **kwargs, _parse_response=False, _check_status=False)
 
     @overload
     def create_logs(
         self,
         log_event_request,
         _return_http_data_only: typing.Literal[True] = True,
-        _preload_content: typing.Literal[True] = True,
+        _parse_response: typing.Literal[True] = True,
         **kwargs,
     ) -> typing.List[LogEvent]:
         ...
@@ -550,7 +550,7 @@ class ServerApi(object):
         self,
         log_event_request,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> typing.Tuple[typing.List[LogEvent], int, typing.Dict[str, str]]:
         ...
@@ -563,7 +563,7 @@ class ServerApi(object):
 
     @overload
     def create_logs(
-        self, log_event_request, _preload_content: typing.Literal[False], **kwargs
+        self, log_event_request, _parse_response: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
@@ -572,7 +572,7 @@ class ServerApi(object):
         self,
         log_event_request,
         _return_http_data_only: typing.Literal[True],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -582,7 +582,7 @@ class ServerApi(object):
         self,
         log_event_request,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -612,7 +612,7 @@ class ServerApi(object):
             org_id (int): Organization identifier. [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
-            _preload_content (bool): if False, the urllib3.HTTPResponse object
+            _parse_response (bool): if False, the urllib3.HTTPResponse object
                 will be returned without reading/decoding response data.
                 Checked before _return_http_data_only.
                 Default is True.
@@ -652,7 +652,7 @@ class ServerApi(object):
         """
         kwargs["async_req"] = kwargs.get("async_req", False)
         kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
         kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
         kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
         kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
@@ -668,7 +668,7 @@ class ServerApi(object):
         """
         The same as create_logs(), but returns the response unprocessed.
         Equivalent to calling create_logs with
-        _preload_content = False and _check_status=False
+        _parse_response = False and _check_status=False
 
         Method saves logs from a client on the server  # noqa: E501
 
@@ -714,13 +714,13 @@ class ServerApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.create_logs(*args, **kwargs, _preload_content=False, _check_status=False)
+        return self.create_logs(*args, **kwargs, _parse_response=False, _check_status=False)
 
     @overload
     def list_share(
         self,
         _return_http_data_only: typing.Literal[True] = True,
-        _preload_content: typing.Literal[True] = True,
+        _parse_response: typing.Literal[True] = True,
         **kwargs,
     ) -> typing.List[FileInfo]:
         ...
@@ -729,7 +729,7 @@ class ServerApi(object):
     def list_share(
         self,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> typing.Tuple[typing.List[FileInfo], int, typing.Dict[str, str]]:
         ...
@@ -741,14 +741,14 @@ class ServerApi(object):
         ...
 
     @overload
-    def list_share(self, _preload_content: typing.Literal[False], **kwargs) -> urllib3.HTTPResponse:
+    def list_share(self, _parse_response: typing.Literal[False], **kwargs) -> urllib3.HTTPResponse:
         ...
 
     @overload
     def list_share(
         self,
         _return_http_data_only: typing.Literal[True],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -757,7 +757,7 @@ class ServerApi(object):
     def list_share(
         self,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -785,7 +785,7 @@ class ServerApi(object):
             org_id (int): Organization identifier. [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
-            _preload_content (bool): if False, the urllib3.HTTPResponse object
+            _parse_response (bool): if False, the urllib3.HTTPResponse object
                 will be returned without reading/decoding response data.
                 Checked before _return_http_data_only.
                 Default is True.
@@ -825,7 +825,7 @@ class ServerApi(object):
         """
         kwargs["async_req"] = kwargs.get("async_req", False)
         kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
         kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
         kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
         kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
@@ -840,7 +840,7 @@ class ServerApi(object):
         """
         The same as list_share(), but returns the response unprocessed.
         Equivalent to calling list_share with
-        _preload_content = False and _check_status=False
+        _parse_response = False and _check_status=False
 
         Returns all files and folders that are on the server along specified path  # noqa: E501
 
@@ -884,13 +884,13 @@ class ServerApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.list_share(*args, **kwargs, _preload_content=False, _check_status=False)
+        return self.list_share(*args, **kwargs, _parse_response=False, _check_status=False)
 
     @overload
     def retrieve_about(
         self,
         _return_http_data_only: typing.Literal[True] = True,
-        _preload_content: typing.Literal[True] = True,
+        _parse_response: typing.Literal[True] = True,
         **kwargs,
     ) -> About:
         ...
@@ -899,7 +899,7 @@ class ServerApi(object):
     def retrieve_about(
         self,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> typing.Tuple[About, int, typing.Dict[str, str]]:
         ...
@@ -912,7 +912,7 @@ class ServerApi(object):
 
     @overload
     def retrieve_about(
-        self, _preload_content: typing.Literal[False], **kwargs
+        self, _parse_response: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
@@ -920,7 +920,7 @@ class ServerApi(object):
     def retrieve_about(
         self,
         _return_http_data_only: typing.Literal[True],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -929,7 +929,7 @@ class ServerApi(object):
     def retrieve_about(
         self,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -952,7 +952,7 @@ class ServerApi(object):
             org_id (int): Organization identifier. [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
-            _preload_content (bool): if False, the urllib3.HTTPResponse object
+            _parse_response (bool): if False, the urllib3.HTTPResponse object
                 will be returned without reading/decoding response data.
                 Checked before _return_http_data_only.
                 Default is True.
@@ -992,7 +992,7 @@ class ServerApi(object):
         """
         kwargs["async_req"] = kwargs.get("async_req", False)
         kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
         kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
         kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
         kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
@@ -1007,7 +1007,7 @@ class ServerApi(object):
         """
         The same as retrieve_about(), but returns the response unprocessed.
         Equivalent to calling retrieve_about with
-        _preload_content = False and _check_status=False
+        _parse_response = False and _check_status=False
 
         Method provides basic CVAT information  # noqa: E501
 
@@ -1050,13 +1050,13 @@ class ServerApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.retrieve_about(*args, **kwargs, _preload_content=False, _check_status=False)
+        return self.retrieve_about(*args, **kwargs, _parse_response=False, _check_status=False)
 
     @overload
     def retrieve_annotation_formats(
         self,
         _return_http_data_only: typing.Literal[True] = True,
-        _preload_content: typing.Literal[True] = True,
+        _parse_response: typing.Literal[True] = True,
         **kwargs,
     ) -> DatasetFormats:
         ...
@@ -1065,7 +1065,7 @@ class ServerApi(object):
     def retrieve_annotation_formats(
         self,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> typing.Tuple[DatasetFormats, int, typing.Dict[str, str]]:
         ...
@@ -1078,7 +1078,7 @@ class ServerApi(object):
 
     @overload
     def retrieve_annotation_formats(
-        self, _preload_content: typing.Literal[False], **kwargs
+        self, _parse_response: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
@@ -1086,7 +1086,7 @@ class ServerApi(object):
     def retrieve_annotation_formats(
         self,
         _return_http_data_only: typing.Literal[True],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -1095,7 +1095,7 @@ class ServerApi(object):
     def retrieve_annotation_formats(
         self,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -1122,7 +1122,7 @@ class ServerApi(object):
             org_id (int): Organization identifier. [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
-            _preload_content (bool): if False, the urllib3.HTTPResponse object
+            _parse_response (bool): if False, the urllib3.HTTPResponse object
                 will be returned without reading/decoding response data.
                 Checked before _return_http_data_only.
                 Default is True.
@@ -1162,7 +1162,7 @@ class ServerApi(object):
         """
         kwargs["async_req"] = kwargs.get("async_req", False)
         kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
         kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
         kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
         kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
@@ -1177,7 +1177,7 @@ class ServerApi(object):
         """
         The same as retrieve_annotation_formats(), but returns the response unprocessed.
         Equivalent to calling retrieve_annotation_formats with
-        _preload_content = False and _check_status=False
+        _parse_response = False and _check_status=False
 
         Method provides the list of supported annotations formats  # noqa: E501
 
@@ -1221,14 +1221,14 @@ class ServerApi(object):
                 thread.
         """
         return self.retrieve_annotation_formats(
-            *args, **kwargs, _preload_content=False, _check_status=False
+            *args, **kwargs, _parse_response=False, _check_status=False
         )
 
     @overload
     def retrieve_plugins(
         self,
         _return_http_data_only: typing.Literal[True] = True,
-        _preload_content: typing.Literal[True] = True,
+        _parse_response: typing.Literal[True] = True,
         **kwargs,
     ) -> Plugins:
         ...
@@ -1237,7 +1237,7 @@ class ServerApi(object):
     def retrieve_plugins(
         self,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> typing.Tuple[Plugins, int, typing.Dict[str, str]]:
         ...
@@ -1250,7 +1250,7 @@ class ServerApi(object):
 
     @overload
     def retrieve_plugins(
-        self, _preload_content: typing.Literal[False], **kwargs
+        self, _parse_response: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
@@ -1258,7 +1258,7 @@ class ServerApi(object):
     def retrieve_plugins(
         self,
         _return_http_data_only: typing.Literal[True],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -1267,7 +1267,7 @@ class ServerApi(object):
     def retrieve_plugins(
         self,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -1292,7 +1292,7 @@ class ServerApi(object):
             org_id (int): Organization identifier. [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
-            _preload_content (bool): if False, the urllib3.HTTPResponse object
+            _parse_response (bool): if False, the urllib3.HTTPResponse object
                 will be returned without reading/decoding response data.
                 Checked before _return_http_data_only.
                 Default is True.
@@ -1332,7 +1332,7 @@ class ServerApi(object):
         """
         kwargs["async_req"] = kwargs.get("async_req", False)
         kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
         kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
         kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
         kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
@@ -1347,7 +1347,7 @@ class ServerApi(object):
         """
         The same as retrieve_plugins(), but returns the response unprocessed.
         Equivalent to calling retrieve_plugins with
-        _preload_content = False and _check_status=False
+        _parse_response = False and _check_status=False
 
         Method provides allowed plugins  # noqa: E501
 
@@ -1390,4 +1390,4 @@ class ServerApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.retrieve_plugins(*args, **kwargs, _preload_content=False, _check_status=False)
+        return self.retrieve_plugins(*args, **kwargs, _parse_response=False, _check_status=False)

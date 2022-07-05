@@ -417,7 +417,7 @@ class IssuesApi(object):
         self,
         issue_write_request,
         _return_http_data_only: typing.Literal[True] = True,
-        _preload_content: typing.Literal[True] = True,
+        _parse_response: typing.Literal[True] = True,
         **kwargs,
     ) -> IssueWrite:
         ...
@@ -427,7 +427,7 @@ class IssuesApi(object):
         self,
         issue_write_request,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> typing.Tuple[IssueWrite, int, typing.Dict[str, str]]:
         ...
@@ -440,7 +440,7 @@ class IssuesApi(object):
 
     @overload
     def create(
-        self, issue_write_request, _preload_content: typing.Literal[False], **kwargs
+        self, issue_write_request, _parse_response: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
@@ -449,7 +449,7 @@ class IssuesApi(object):
         self,
         issue_write_request,
         _return_http_data_only: typing.Literal[True],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -459,7 +459,7 @@ class IssuesApi(object):
         self,
         issue_write_request,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -486,7 +486,7 @@ class IssuesApi(object):
             org_id (int): Organization identifier. [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
-            _preload_content (bool): if False, the urllib3.HTTPResponse object
+            _parse_response (bool): if False, the urllib3.HTTPResponse object
                 will be returned without reading/decoding response data.
                 Checked before _return_http_data_only.
                 Default is True.
@@ -526,7 +526,7 @@ class IssuesApi(object):
         """
         kwargs["async_req"] = kwargs.get("async_req", False)
         kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
         kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
         kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
         kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
@@ -542,7 +542,7 @@ class IssuesApi(object):
         """
         The same as create(), but returns the response unprocessed.
         Equivalent to calling create with
-        _preload_content = False and _check_status=False
+        _parse_response = False and _check_status=False
 
         Method creates an issue  # noqa: E501
 
@@ -587,14 +587,14 @@ class IssuesApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.create(*args, **kwargs, _preload_content=False, _check_status=False)
+        return self.create(*args, **kwargs, _parse_response=False, _check_status=False)
 
     @overload
     def destroy(
         self,
         id,
         _return_http_data_only: typing.Literal[True] = True,
-        _preload_content: typing.Literal[True] = True,
+        _parse_response: typing.Literal[True] = True,
         **kwargs,
     ) -> None:
         ...
@@ -604,7 +604,7 @@ class IssuesApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
         ...
@@ -616,9 +616,7 @@ class IssuesApi(object):
         ...
 
     @overload
-    def destroy(
-        self, id, _preload_content: typing.Literal[False], **kwargs
-    ) -> urllib3.HTTPResponse:
+    def destroy(self, id, _parse_response: typing.Literal[False], **kwargs) -> urllib3.HTTPResponse:
         ...
 
     @overload
@@ -626,7 +624,7 @@ class IssuesApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[True],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -636,7 +634,7 @@ class IssuesApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -661,7 +659,7 @@ class IssuesApi(object):
             org_id (int): Organization identifier. [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
-            _preload_content (bool): if False, the urllib3.HTTPResponse object
+            _parse_response (bool): if False, the urllib3.HTTPResponse object
                 will be returned without reading/decoding response data.
                 Checked before _return_http_data_only.
                 Default is True.
@@ -701,7 +699,7 @@ class IssuesApi(object):
         """
         kwargs["async_req"] = kwargs.get("async_req", False)
         kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
         kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
         kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
         kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
@@ -717,7 +715,7 @@ class IssuesApi(object):
         """
         The same as destroy(), but returns the response unprocessed.
         Equivalent to calling destroy with
-        _preload_content = False and _check_status=False
+        _parse_response = False and _check_status=False
 
         Method deletes an issue  # noqa: E501
 
@@ -762,13 +760,13 @@ class IssuesApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.destroy(*args, **kwargs, _preload_content=False, _check_status=False)
+        return self.destroy(*args, **kwargs, _parse_response=False, _check_status=False)
 
     @overload
     def list(
         self,
         _return_http_data_only: typing.Literal[True] = True,
-        _preload_content: typing.Literal[True] = True,
+        _parse_response: typing.Literal[True] = True,
         **kwargs,
     ) -> PaginatedIssueReadList:
         ...
@@ -777,7 +775,7 @@ class IssuesApi(object):
     def list(
         self,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> typing.Tuple[PaginatedIssueReadList, int, typing.Dict[str, str]]:
         ...
@@ -789,14 +787,14 @@ class IssuesApi(object):
         ...
 
     @overload
-    def list(self, _preload_content: typing.Literal[False], **kwargs) -> urllib3.HTTPResponse:
+    def list(self, _parse_response: typing.Literal[False], **kwargs) -> urllib3.HTTPResponse:
         ...
 
     @overload
     def list(
         self,
         _return_http_data_only: typing.Literal[True],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -805,7 +803,7 @@ class IssuesApi(object):
     def list(
         self,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -837,7 +835,7 @@ class IssuesApi(object):
             sort (str): Which field to use when ordering the results. Avaliable ordering_fields: ['owner', 'assignee', 'id', 'job_id', 'task_id', 'resolved']. [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
-            _preload_content (bool): if False, the urllib3.HTTPResponse object
+            _parse_response (bool): if False, the urllib3.HTTPResponse object
                 will be returned without reading/decoding response data.
                 Checked before _return_http_data_only.
                 Default is True.
@@ -877,7 +875,7 @@ class IssuesApi(object):
         """
         kwargs["async_req"] = kwargs.get("async_req", False)
         kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
         kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
         kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
         kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
@@ -892,7 +890,7 @@ class IssuesApi(object):
         """
         The same as list(), but returns the response unprocessed.
         Equivalent to calling list with
-        _preload_content = False and _check_status=False
+        _parse_response = False and _check_status=False
 
         Method returns a paginated list of issues according to query parameters  # noqa: E501
 
@@ -940,14 +938,14 @@ class IssuesApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.list(*args, **kwargs, _preload_content=False, _check_status=False)
+        return self.list(*args, **kwargs, _parse_response=False, _check_status=False)
 
     @overload
     def list_comments(
         self,
         id,
         _return_http_data_only: typing.Literal[True] = True,
-        _preload_content: typing.Literal[True] = True,
+        _parse_response: typing.Literal[True] = True,
         **kwargs,
     ) -> PaginatedCommentReadList:
         ...
@@ -957,7 +955,7 @@ class IssuesApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> typing.Tuple[PaginatedCommentReadList, int, typing.Dict[str, str]]:
         ...
@@ -970,7 +968,7 @@ class IssuesApi(object):
 
     @overload
     def list_comments(
-        self, id, _preload_content: typing.Literal[False], **kwargs
+        self, id, _parse_response: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
@@ -979,7 +977,7 @@ class IssuesApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[True],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -989,7 +987,7 @@ class IssuesApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -1023,7 +1021,7 @@ class IssuesApi(object):
             sort (str): Which field to use when ordering the results. Avaliable ordering_fields: ['owner', 'assignee', 'id', 'job_id', 'task_id', 'resolved']. [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
-            _preload_content (bool): if False, the urllib3.HTTPResponse object
+            _parse_response (bool): if False, the urllib3.HTTPResponse object
                 will be returned without reading/decoding response data.
                 Checked before _return_http_data_only.
                 Default is True.
@@ -1063,7 +1061,7 @@ class IssuesApi(object):
         """
         kwargs["async_req"] = kwargs.get("async_req", False)
         kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
         kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
         kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
         kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
@@ -1079,7 +1077,7 @@ class IssuesApi(object):
         """
         The same as list_comments(), but returns the response unprocessed.
         Equivalent to calling list_comments with
-        _preload_content = False and _check_status=False
+        _parse_response = False and _check_status=False
 
         The action returns all comments of a specific issue  # noqa: E501
 
@@ -1129,14 +1127,14 @@ class IssuesApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.list_comments(*args, **kwargs, _preload_content=False, _check_status=False)
+        return self.list_comments(*args, **kwargs, _parse_response=False, _check_status=False)
 
     @overload
     def partial_update(
         self,
         id,
         _return_http_data_only: typing.Literal[True] = True,
-        _preload_content: typing.Literal[True] = True,
+        _parse_response: typing.Literal[True] = True,
         **kwargs,
     ) -> IssueWrite:
         ...
@@ -1146,7 +1144,7 @@ class IssuesApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> typing.Tuple[IssueWrite, int, typing.Dict[str, str]]:
         ...
@@ -1159,7 +1157,7 @@ class IssuesApi(object):
 
     @overload
     def partial_update(
-        self, id, _preload_content: typing.Literal[False], **kwargs
+        self, id, _parse_response: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
@@ -1168,7 +1166,7 @@ class IssuesApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[True],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -1178,7 +1176,7 @@ class IssuesApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -1206,7 +1204,7 @@ class IssuesApi(object):
             patched_issue_write_request (PatchedIssueWriteRequest): [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
-            _preload_content (bool): if False, the urllib3.HTTPResponse object
+            _parse_response (bool): if False, the urllib3.HTTPResponse object
                 will be returned without reading/decoding response data.
                 Checked before _return_http_data_only.
                 Default is True.
@@ -1246,7 +1244,7 @@ class IssuesApi(object):
         """
         kwargs["async_req"] = kwargs.get("async_req", False)
         kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
         kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
         kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
         kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
@@ -1262,7 +1260,7 @@ class IssuesApi(object):
         """
         The same as partial_update(), but returns the response unprocessed.
         Equivalent to calling partial_update with
-        _preload_content = False and _check_status=False
+        _parse_response = False and _check_status=False
 
         Methods does a partial update of chosen fields in an issue  # noqa: E501
 
@@ -1308,14 +1306,14 @@ class IssuesApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.partial_update(*args, **kwargs, _preload_content=False, _check_status=False)
+        return self.partial_update(*args, **kwargs, _parse_response=False, _check_status=False)
 
     @overload
     def retrieve(
         self,
         id,
         _return_http_data_only: typing.Literal[True] = True,
-        _preload_content: typing.Literal[True] = True,
+        _parse_response: typing.Literal[True] = True,
         **kwargs,
     ) -> IssueRead:
         ...
@@ -1325,7 +1323,7 @@ class IssuesApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> typing.Tuple[IssueRead, int, typing.Dict[str, str]]:
         ...
@@ -1338,7 +1336,7 @@ class IssuesApi(object):
 
     @overload
     def retrieve(
-        self, id, _preload_content: typing.Literal[False], **kwargs
+        self, id, _parse_response: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
@@ -1347,7 +1345,7 @@ class IssuesApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[True],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -1357,7 +1355,7 @@ class IssuesApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -1384,7 +1382,7 @@ class IssuesApi(object):
             org_id (int): Organization identifier. [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
-            _preload_content (bool): if False, the urllib3.HTTPResponse object
+            _parse_response (bool): if False, the urllib3.HTTPResponse object
                 will be returned without reading/decoding response data.
                 Checked before _return_http_data_only.
                 Default is True.
@@ -1424,7 +1422,7 @@ class IssuesApi(object):
         """
         kwargs["async_req"] = kwargs.get("async_req", False)
         kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
         kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
         kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
         kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
@@ -1440,7 +1438,7 @@ class IssuesApi(object):
         """
         The same as retrieve(), but returns the response unprocessed.
         Equivalent to calling retrieve with
-        _preload_content = False and _check_status=False
+        _parse_response = False and _check_status=False
 
         Method returns details of an issue  # noqa: E501
 
@@ -1485,4 +1483,4 @@ class IssuesApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.retrieve(*args, **kwargs, _preload_content=False, _check_status=False)
+        return self.retrieve(*args, **kwargs, _parse_response=False, _check_status=False)

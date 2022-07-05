@@ -1658,7 +1658,7 @@ class TasksApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[True] = True,
-        _preload_content: typing.Literal[True] = True,
+        _parse_response: typing.Literal[True] = True,
         **kwargs,
     ) -> DataMetaRead:
         ...
@@ -1668,7 +1668,7 @@ class TasksApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> typing.Tuple[DataMetaRead, int, typing.Dict[str, str]]:
         ...
@@ -1681,7 +1681,7 @@ class TasksApi(object):
 
     @overload
     def jobs_partial_update_data_meta(
-        self, id, _preload_content: typing.Literal[False], **kwargs
+        self, id, _parse_response: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
@@ -1690,7 +1690,7 @@ class TasksApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[True],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -1700,7 +1700,7 @@ class TasksApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -1728,7 +1728,7 @@ class TasksApi(object):
             patched_job_write_request (PatchedJobWriteRequest): [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
-            _preload_content (bool): if False, the urllib3.HTTPResponse object
+            _parse_response (bool): if False, the urllib3.HTTPResponse object
                 will be returned without reading/decoding response data.
                 Checked before _return_http_data_only.
                 Default is True.
@@ -1768,7 +1768,7 @@ class TasksApi(object):
         """
         kwargs["async_req"] = kwargs.get("async_req", False)
         kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
         kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
         kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
         kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
@@ -1784,7 +1784,7 @@ class TasksApi(object):
         """
         The same as jobs_partial_update_data_meta(), but returns the response unprocessed.
         Equivalent to calling jobs_partial_update_data_meta with
-        _preload_content = False and _check_status=False
+        _parse_response = False and _check_status=False
 
         Method provides a meta information about media files which are related with the job  # noqa: E501
 
@@ -1831,7 +1831,7 @@ class TasksApi(object):
                 thread.
         """
         return self.jobs_partial_update_data_meta(
-            *args, **kwargs, _preload_content=False, _check_status=False
+            *args, **kwargs, _parse_response=False, _check_status=False
         )
 
     @overload
@@ -1839,7 +1839,7 @@ class TasksApi(object):
         self,
         task_write_request,
         _return_http_data_only: typing.Literal[True] = True,
-        _preload_content: typing.Literal[True] = True,
+        _parse_response: typing.Literal[True] = True,
         **kwargs,
     ) -> TaskWrite:
         ...
@@ -1849,7 +1849,7 @@ class TasksApi(object):
         self,
         task_write_request,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> typing.Tuple[TaskWrite, int, typing.Dict[str, str]]:
         ...
@@ -1862,7 +1862,7 @@ class TasksApi(object):
 
     @overload
     def create(
-        self, task_write_request, _preload_content: typing.Literal[False], **kwargs
+        self, task_write_request, _parse_response: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
@@ -1871,7 +1871,7 @@ class TasksApi(object):
         self,
         task_write_request,
         _return_http_data_only: typing.Literal[True],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -1881,7 +1881,7 @@ class TasksApi(object):
         self,
         task_write_request,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -1908,7 +1908,7 @@ class TasksApi(object):
             org_id (int): Organization identifier. [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
-            _preload_content (bool): if False, the urllib3.HTTPResponse object
+            _parse_response (bool): if False, the urllib3.HTTPResponse object
                 will be returned without reading/decoding response data.
                 Checked before _return_http_data_only.
                 Default is True.
@@ -1948,7 +1948,7 @@ class TasksApi(object):
         """
         kwargs["async_req"] = kwargs.get("async_req", False)
         kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
         kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
         kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
         kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
@@ -1964,7 +1964,7 @@ class TasksApi(object):
         """
         The same as create(), but returns the response unprocessed.
         Equivalent to calling create with
-        _preload_content = False and _check_status=False
+        _parse_response = False and _check_status=False
 
         Method creates a new task in a database without any attached images and videos  # noqa: E501
 
@@ -2009,7 +2009,7 @@ class TasksApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.create(*args, **kwargs, _preload_content=False, _check_status=False)
+        return self.create(*args, **kwargs, _parse_response=False, _check_status=False)
 
     @overload
     def create_annotations(
@@ -2017,7 +2017,7 @@ class TasksApi(object):
         id,
         task_write_request,
         _return_http_data_only: typing.Literal[True] = True,
-        _preload_content: typing.Literal[True] = True,
+        _parse_response: typing.Literal[True] = True,
         **kwargs,
     ) -> None:
         ...
@@ -2028,7 +2028,7 @@ class TasksApi(object):
         id,
         task_write_request,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
         ...
@@ -2041,7 +2041,7 @@ class TasksApi(object):
 
     @overload
     def create_annotations(
-        self, id, task_write_request, _preload_content: typing.Literal[False], **kwargs
+        self, id, task_write_request, _parse_response: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
@@ -2051,7 +2051,7 @@ class TasksApi(object):
         id,
         task_write_request,
         _return_http_data_only: typing.Literal[True],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -2062,7 +2062,7 @@ class TasksApi(object):
         id,
         task_write_request,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -2093,7 +2093,7 @@ class TasksApi(object):
             use_default_location (bool): Use the location that was configured in task to import annotations. [optional] if omitted the server will use the default value of True
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
-            _preload_content (bool): if False, the urllib3.HTTPResponse object
+            _parse_response (bool): if False, the urllib3.HTTPResponse object
                 will be returned without reading/decoding response data.
                 Checked before _return_http_data_only.
                 Default is True.
@@ -2133,7 +2133,7 @@ class TasksApi(object):
         """
         kwargs["async_req"] = kwargs.get("async_req", False)
         kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
         kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
         kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
         kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
@@ -2150,7 +2150,7 @@ class TasksApi(object):
         """
         The same as create_annotations(), but returns the response unprocessed.
         Equivalent to calling create_annotations with
-        _preload_content = False and _check_status=False
+        _parse_response = False and _check_status=False
 
         Method allows to upload task annotations from storage  # noqa: E501
 
@@ -2201,14 +2201,14 @@ class TasksApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.create_annotations(*args, **kwargs, _preload_content=False, _check_status=False)
+        return self.create_annotations(*args, **kwargs, _parse_response=False, _check_status=False)
 
     @overload
     def create_backup(
         self,
         task_file_request,
         _return_http_data_only: typing.Literal[True] = True,
-        _preload_content: typing.Literal[True] = True,
+        _parse_response: typing.Literal[True] = True,
         **kwargs,
     ) -> None:
         ...
@@ -2218,7 +2218,7 @@ class TasksApi(object):
         self,
         task_file_request,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
         ...
@@ -2231,7 +2231,7 @@ class TasksApi(object):
 
     @overload
     def create_backup(
-        self, task_file_request, _preload_content: typing.Literal[False], **kwargs
+        self, task_file_request, _parse_response: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
@@ -2240,7 +2240,7 @@ class TasksApi(object):
         self,
         task_file_request,
         _return_http_data_only: typing.Literal[True],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -2250,7 +2250,7 @@ class TasksApi(object):
         self,
         task_file_request,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -2278,7 +2278,7 @@ class TasksApi(object):
             org_id (int): Organization identifier. [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
-            _preload_content (bool): if False, the urllib3.HTTPResponse object
+            _parse_response (bool): if False, the urllib3.HTTPResponse object
                 will be returned without reading/decoding response data.
                 Checked before _return_http_data_only.
                 Default is True.
@@ -2318,7 +2318,7 @@ class TasksApi(object):
         """
         kwargs["async_req"] = kwargs.get("async_req", False)
         kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
         kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
         kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
         kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
@@ -2334,7 +2334,7 @@ class TasksApi(object):
         """
         The same as create_backup(), but returns the response unprocessed.
         Equivalent to calling create_backup with
-        _preload_content = False and _check_status=False
+        _parse_response = False and _check_status=False
 
         Method recreates a task from an attached task backup file  # noqa: E501
 
@@ -2382,7 +2382,7 @@ class TasksApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.create_backup(*args, **kwargs, _preload_content=False, _check_status=False)
+        return self.create_backup(*args, **kwargs, _parse_response=False, _check_status=False)
 
     @overload
     def create_data(
@@ -2390,7 +2390,7 @@ class TasksApi(object):
         id,
         data_request,
         _return_http_data_only: typing.Literal[True] = True,
-        _preload_content: typing.Literal[True] = True,
+        _parse_response: typing.Literal[True] = True,
         **kwargs,
     ) -> None:
         ...
@@ -2401,7 +2401,7 @@ class TasksApi(object):
         id,
         data_request,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
         ...
@@ -2414,7 +2414,7 @@ class TasksApi(object):
 
     @overload
     def create_data(
-        self, id, data_request, _preload_content: typing.Literal[False], **kwargs
+        self, id, data_request, _parse_response: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
@@ -2424,7 +2424,7 @@ class TasksApi(object):
         id,
         data_request,
         _return_http_data_only: typing.Literal[True],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -2435,7 +2435,7 @@ class TasksApi(object):
         id,
         data_request,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -2464,7 +2464,7 @@ class TasksApi(object):
             org_id (int): Organization identifier. [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
-            _preload_content (bool): if False, the urllib3.HTTPResponse object
+            _parse_response (bool): if False, the urllib3.HTTPResponse object
                 will be returned without reading/decoding response data.
                 Checked before _return_http_data_only.
                 Default is True.
@@ -2504,7 +2504,7 @@ class TasksApi(object):
         """
         kwargs["async_req"] = kwargs.get("async_req", False)
         kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
         kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
         kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
         kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
@@ -2521,7 +2521,7 @@ class TasksApi(object):
         """
         The same as create_data(), but returns the response unprocessed.
         Equivalent to calling create_data with
-        _preload_content = False and _check_status=False
+        _parse_response = False and _check_status=False
 
         Method permanently attaches images or video to a task. Supports tus uploads, see more https://tus.io/  # noqa: E501
 
@@ -2570,14 +2570,14 @@ class TasksApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.create_data(*args, **kwargs, _preload_content=False, _check_status=False)
+        return self.create_data(*args, **kwargs, _parse_response=False, _check_status=False)
 
     @overload
     def destroy(
         self,
         id,
         _return_http_data_only: typing.Literal[True] = True,
-        _preload_content: typing.Literal[True] = True,
+        _parse_response: typing.Literal[True] = True,
         **kwargs,
     ) -> None:
         ...
@@ -2587,7 +2587,7 @@ class TasksApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
         ...
@@ -2599,9 +2599,7 @@ class TasksApi(object):
         ...
 
     @overload
-    def destroy(
-        self, id, _preload_content: typing.Literal[False], **kwargs
-    ) -> urllib3.HTTPResponse:
+    def destroy(self, id, _parse_response: typing.Literal[False], **kwargs) -> urllib3.HTTPResponse:
         ...
 
     @overload
@@ -2609,7 +2607,7 @@ class TasksApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[True],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -2619,7 +2617,7 @@ class TasksApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -2644,7 +2642,7 @@ class TasksApi(object):
             org_id (int): Organization identifier. [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
-            _preload_content (bool): if False, the urllib3.HTTPResponse object
+            _parse_response (bool): if False, the urllib3.HTTPResponse object
                 will be returned without reading/decoding response data.
                 Checked before _return_http_data_only.
                 Default is True.
@@ -2684,7 +2682,7 @@ class TasksApi(object):
         """
         kwargs["async_req"] = kwargs.get("async_req", False)
         kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
         kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
         kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
         kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
@@ -2700,7 +2698,7 @@ class TasksApi(object):
         """
         The same as destroy(), but returns the response unprocessed.
         Equivalent to calling destroy with
-        _preload_content = False and _check_status=False
+        _parse_response = False and _check_status=False
 
         Method deletes a specific task, all attached jobs, annotations, and data  # noqa: E501
 
@@ -2745,14 +2743,14 @@ class TasksApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.destroy(*args, **kwargs, _preload_content=False, _check_status=False)
+        return self.destroy(*args, **kwargs, _parse_response=False, _check_status=False)
 
     @overload
     def destroy_annotations(
         self,
         id,
         _return_http_data_only: typing.Literal[True] = True,
-        _preload_content: typing.Literal[True] = True,
+        _parse_response: typing.Literal[True] = True,
         **kwargs,
     ) -> None:
         ...
@@ -2762,7 +2760,7 @@ class TasksApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
         ...
@@ -2775,7 +2773,7 @@ class TasksApi(object):
 
     @overload
     def destroy_annotations(
-        self, id, _preload_content: typing.Literal[False], **kwargs
+        self, id, _parse_response: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
@@ -2784,7 +2782,7 @@ class TasksApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[True],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -2794,7 +2792,7 @@ class TasksApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -2819,7 +2817,7 @@ class TasksApi(object):
             org_id (int): Organization identifier. [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
-            _preload_content (bool): if False, the urllib3.HTTPResponse object
+            _parse_response (bool): if False, the urllib3.HTTPResponse object
                 will be returned without reading/decoding response data.
                 Checked before _return_http_data_only.
                 Default is True.
@@ -2859,7 +2857,7 @@ class TasksApi(object):
         """
         kwargs["async_req"] = kwargs.get("async_req", False)
         kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
         kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
         kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
         kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
@@ -2875,7 +2873,7 @@ class TasksApi(object):
         """
         The same as destroy_annotations(), but returns the response unprocessed.
         Equivalent to calling destroy_annotations with
-        _preload_content = False and _check_status=False
+        _parse_response = False and _check_status=False
 
         Method deletes all annotations for a specific task  # noqa: E501
 
@@ -2920,15 +2918,13 @@ class TasksApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.destroy_annotations(
-            *args, **kwargs, _preload_content=False, _check_status=False
-        )
+        return self.destroy_annotations(*args, **kwargs, _parse_response=False, _check_status=False)
 
     @overload
     def list(
         self,
         _return_http_data_only: typing.Literal[True] = True,
-        _preload_content: typing.Literal[True] = True,
+        _parse_response: typing.Literal[True] = True,
         **kwargs,
     ) -> PaginatedTaskReadList:
         ...
@@ -2937,7 +2933,7 @@ class TasksApi(object):
     def list(
         self,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> typing.Tuple[PaginatedTaskReadList, int, typing.Dict[str, str]]:
         ...
@@ -2949,14 +2945,14 @@ class TasksApi(object):
         ...
 
     @overload
-    def list(self, _preload_content: typing.Literal[False], **kwargs) -> urllib3.HTTPResponse:
+    def list(self, _parse_response: typing.Literal[False], **kwargs) -> urllib3.HTTPResponse:
         ...
 
     @overload
     def list(
         self,
         _return_http_data_only: typing.Literal[True],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -2965,7 +2961,7 @@ class TasksApi(object):
     def list(
         self,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -2997,7 +2993,7 @@ class TasksApi(object):
             sort (str): Which field to use when ordering the results. Avaliable ordering_fields: ['project_name', 'name', 'owner', 'status', 'assignee', 'subset', 'mode', 'dimension', 'id', 'project_id', 'updated_date']. [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
-            _preload_content (bool): if False, the urllib3.HTTPResponse object
+            _parse_response (bool): if False, the urllib3.HTTPResponse object
                 will be returned without reading/decoding response data.
                 Checked before _return_http_data_only.
                 Default is True.
@@ -3037,7 +3033,7 @@ class TasksApi(object):
         """
         kwargs["async_req"] = kwargs.get("async_req", False)
         kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
         kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
         kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
         kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
@@ -3052,7 +3048,7 @@ class TasksApi(object):
         """
         The same as list(), but returns the response unprocessed.
         Equivalent to calling list with
-        _preload_content = False and _check_status=False
+        _parse_response = False and _check_status=False
 
         Returns a paginated list of tasks according to query parameters (10 tasks per page)  # noqa: E501
 
@@ -3100,14 +3096,14 @@ class TasksApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.list(*args, **kwargs, _preload_content=False, _check_status=False)
+        return self.list(*args, **kwargs, _parse_response=False, _check_status=False)
 
     @overload
     def list_jobs(
         self,
         id,
         _return_http_data_only: typing.Literal[True] = True,
-        _preload_content: typing.Literal[True] = True,
+        _parse_response: typing.Literal[True] = True,
         **kwargs,
     ) -> PaginatedJobReadList:
         ...
@@ -3117,7 +3113,7 @@ class TasksApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> typing.Tuple[PaginatedJobReadList, int, typing.Dict[str, str]]:
         ...
@@ -3130,7 +3126,7 @@ class TasksApi(object):
 
     @overload
     def list_jobs(
-        self, id, _preload_content: typing.Literal[False], **kwargs
+        self, id, _parse_response: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
@@ -3139,7 +3135,7 @@ class TasksApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[True],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -3149,7 +3145,7 @@ class TasksApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -3183,7 +3179,7 @@ class TasksApi(object):
             sort (str): Which field to use when ordering the results. Avaliable ordering_fields: ['project_name', 'name', 'owner', 'status', 'assignee', 'subset', 'mode', 'dimension', 'id', 'project_id', 'updated_date']. [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
-            _preload_content (bool): if False, the urllib3.HTTPResponse object
+            _parse_response (bool): if False, the urllib3.HTTPResponse object
                 will be returned without reading/decoding response data.
                 Checked before _return_http_data_only.
                 Default is True.
@@ -3223,7 +3219,7 @@ class TasksApi(object):
         """
         kwargs["async_req"] = kwargs.get("async_req", False)
         kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
         kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
         kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
         kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
@@ -3239,7 +3235,7 @@ class TasksApi(object):
         """
         The same as list_jobs(), but returns the response unprocessed.
         Equivalent to calling list_jobs with
-        _preload_content = False and _check_status=False
+        _parse_response = False and _check_status=False
 
         Method returns a list of jobs for a specific task  # noqa: E501
 
@@ -3289,14 +3285,14 @@ class TasksApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.list_jobs(*args, **kwargs, _preload_content=False, _check_status=False)
+        return self.list_jobs(*args, **kwargs, _parse_response=False, _check_status=False)
 
     @overload
     def partial_update(
         self,
         id,
         _return_http_data_only: typing.Literal[True] = True,
-        _preload_content: typing.Literal[True] = True,
+        _parse_response: typing.Literal[True] = True,
         **kwargs,
     ) -> TaskWrite:
         ...
@@ -3306,7 +3302,7 @@ class TasksApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> typing.Tuple[TaskWrite, int, typing.Dict[str, str]]:
         ...
@@ -3319,7 +3315,7 @@ class TasksApi(object):
 
     @overload
     def partial_update(
-        self, id, _preload_content: typing.Literal[False], **kwargs
+        self, id, _parse_response: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
@@ -3328,7 +3324,7 @@ class TasksApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[True],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -3338,7 +3334,7 @@ class TasksApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -3366,7 +3362,7 @@ class TasksApi(object):
             patched_task_write_request (PatchedTaskWriteRequest): [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
-            _preload_content (bool): if False, the urllib3.HTTPResponse object
+            _parse_response (bool): if False, the urllib3.HTTPResponse object
                 will be returned without reading/decoding response data.
                 Checked before _return_http_data_only.
                 Default is True.
@@ -3406,7 +3402,7 @@ class TasksApi(object):
         """
         kwargs["async_req"] = kwargs.get("async_req", False)
         kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
         kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
         kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
         kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
@@ -3422,7 +3418,7 @@ class TasksApi(object):
         """
         The same as partial_update(), but returns the response unprocessed.
         Equivalent to calling partial_update with
-        _preload_content = False and _check_status=False
+        _parse_response = False and _check_status=False
 
         Methods does a partial update of chosen fields in a task  # noqa: E501
 
@@ -3468,7 +3464,7 @@ class TasksApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.partial_update(*args, **kwargs, _preload_content=False, _check_status=False)
+        return self.partial_update(*args, **kwargs, _parse_response=False, _check_status=False)
 
     @overload
     def partial_update_annotations(
@@ -3476,7 +3472,7 @@ class TasksApi(object):
         action,
         id,
         _return_http_data_only: typing.Literal[True] = True,
-        _preload_content: typing.Literal[True] = True,
+        _parse_response: typing.Literal[True] = True,
         **kwargs,
     ) -> TaskWrite:
         ...
@@ -3487,7 +3483,7 @@ class TasksApi(object):
         action,
         id,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> typing.Tuple[TaskWrite, int, typing.Dict[str, str]]:
         ...
@@ -3500,7 +3496,7 @@ class TasksApi(object):
 
     @overload
     def partial_update_annotations(
-        self, action, id, _preload_content: typing.Literal[False], **kwargs
+        self, action, id, _parse_response: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
@@ -3510,7 +3506,7 @@ class TasksApi(object):
         action,
         id,
         _return_http_data_only: typing.Literal[True],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -3521,7 +3517,7 @@ class TasksApi(object):
         action,
         id,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -3550,7 +3546,7 @@ class TasksApi(object):
             patched_task_write_request (PatchedTaskWriteRequest): [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
-            _preload_content (bool): if False, the urllib3.HTTPResponse object
+            _parse_response (bool): if False, the urllib3.HTTPResponse object
                 will be returned without reading/decoding response data.
                 Checked before _return_http_data_only.
                 Default is True.
@@ -3590,7 +3586,7 @@ class TasksApi(object):
         """
         kwargs["async_req"] = kwargs.get("async_req", False)
         kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
         kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
         kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
         kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
@@ -3607,7 +3603,7 @@ class TasksApi(object):
         """
         The same as partial_update_annotations(), but returns the response unprocessed.
         Equivalent to calling partial_update_annotations with
-        _preload_content = False and _check_status=False
+        _parse_response = False and _check_status=False
 
         Method performs a partial update of annotations in a specific task  # noqa: E501
 
@@ -3655,7 +3651,7 @@ class TasksApi(object):
                 thread.
         """
         return self.partial_update_annotations(
-            *args, **kwargs, _preload_content=False, _check_status=False
+            *args, **kwargs, _parse_response=False, _check_status=False
         )
 
     @overload
@@ -3664,7 +3660,7 @@ class TasksApi(object):
         file_id,
         id,
         _return_http_data_only: typing.Literal[True] = True,
-        _preload_content: typing.Literal[True] = True,
+        _parse_response: typing.Literal[True] = True,
         **kwargs,
     ) -> TaskWrite:
         ...
@@ -3675,7 +3671,7 @@ class TasksApi(object):
         file_id,
         id,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> typing.Tuple[TaskWrite, int, typing.Dict[str, str]]:
         ...
@@ -3688,7 +3684,7 @@ class TasksApi(object):
 
     @overload
     def partial_update_annotations_file(
-        self, file_id, id, _preload_content: typing.Literal[False], **kwargs
+        self, file_id, id, _parse_response: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
@@ -3698,7 +3694,7 @@ class TasksApi(object):
         file_id,
         id,
         _return_http_data_only: typing.Literal[True],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -3709,7 +3705,7 @@ class TasksApi(object):
         file_id,
         id,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -3738,7 +3734,7 @@ class TasksApi(object):
             patched_task_write_request (PatchedTaskWriteRequest): [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
-            _preload_content (bool): if False, the urllib3.HTTPResponse object
+            _parse_response (bool): if False, the urllib3.HTTPResponse object
                 will be returned without reading/decoding response data.
                 Checked before _return_http_data_only.
                 Default is True.
@@ -3778,7 +3774,7 @@ class TasksApi(object):
         """
         kwargs["async_req"] = kwargs.get("async_req", False)
         kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
         kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
         kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
         kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
@@ -3795,7 +3791,7 @@ class TasksApi(object):
         """
         The same as partial_update_annotations_file(), but returns the response unprocessed.
         Equivalent to calling partial_update_annotations_file with
-        _preload_content = False and _check_status=False
+        _parse_response = False and _check_status=False
 
         Allows to upload an annotation file chunk. Implements TUS file uploading protocol.  # noqa: E501
 
@@ -3843,7 +3839,7 @@ class TasksApi(object):
                 thread.
         """
         return self.partial_update_annotations_file(
-            *args, **kwargs, _preload_content=False, _check_status=False
+            *args, **kwargs, _parse_response=False, _check_status=False
         )
 
     @overload
@@ -3851,7 +3847,7 @@ class TasksApi(object):
         self,
         file_id,
         _return_http_data_only: typing.Literal[True] = True,
-        _preload_content: typing.Literal[True] = True,
+        _parse_response: typing.Literal[True] = True,
         **kwargs,
     ) -> TaskWrite:
         ...
@@ -3861,7 +3857,7 @@ class TasksApi(object):
         self,
         file_id,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> typing.Tuple[TaskWrite, int, typing.Dict[str, str]]:
         ...
@@ -3874,7 +3870,7 @@ class TasksApi(object):
 
     @overload
     def partial_update_backup_file(
-        self, file_id, _preload_content: typing.Literal[False], **kwargs
+        self, file_id, _parse_response: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
@@ -3883,7 +3879,7 @@ class TasksApi(object):
         self,
         file_id,
         _return_http_data_only: typing.Literal[True],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -3893,7 +3889,7 @@ class TasksApi(object):
         self,
         file_id,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -3921,7 +3917,7 @@ class TasksApi(object):
             patched_task_write_request (PatchedTaskWriteRequest): [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
-            _preload_content (bool): if False, the urllib3.HTTPResponse object
+            _parse_response (bool): if False, the urllib3.HTTPResponse object
                 will be returned without reading/decoding response data.
                 Checked before _return_http_data_only.
                 Default is True.
@@ -3961,7 +3957,7 @@ class TasksApi(object):
         """
         kwargs["async_req"] = kwargs.get("async_req", False)
         kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
         kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
         kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
         kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
@@ -3977,7 +3973,7 @@ class TasksApi(object):
         """
         The same as partial_update_backup_file(), but returns the response unprocessed.
         Equivalent to calling partial_update_backup_file with
-        _preload_content = False and _check_status=False
+        _parse_response = False and _check_status=False
 
         Allows to upload a file chunk. Implements TUS file uploading protocol.  # noqa: E501
 
@@ -4024,7 +4020,7 @@ class TasksApi(object):
                 thread.
         """
         return self.partial_update_backup_file(
-            *args, **kwargs, _preload_content=False, _check_status=False
+            *args, **kwargs, _parse_response=False, _check_status=False
         )
 
     @overload
@@ -4033,7 +4029,7 @@ class TasksApi(object):
         file_id,
         id,
         _return_http_data_only: typing.Literal[True] = True,
-        _preload_content: typing.Literal[True] = True,
+        _parse_response: typing.Literal[True] = True,
         **kwargs,
     ) -> TaskWrite:
         ...
@@ -4044,7 +4040,7 @@ class TasksApi(object):
         file_id,
         id,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> typing.Tuple[TaskWrite, int, typing.Dict[str, str]]:
         ...
@@ -4057,7 +4053,7 @@ class TasksApi(object):
 
     @overload
     def partial_update_data_file(
-        self, file_id, id, _preload_content: typing.Literal[False], **kwargs
+        self, file_id, id, _parse_response: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
@@ -4067,7 +4063,7 @@ class TasksApi(object):
         file_id,
         id,
         _return_http_data_only: typing.Literal[True],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -4078,7 +4074,7 @@ class TasksApi(object):
         file_id,
         id,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -4107,7 +4103,7 @@ class TasksApi(object):
             patched_task_write_request (PatchedTaskWriteRequest): [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
-            _preload_content (bool): if False, the urllib3.HTTPResponse object
+            _parse_response (bool): if False, the urllib3.HTTPResponse object
                 will be returned without reading/decoding response data.
                 Checked before _return_http_data_only.
                 Default is True.
@@ -4147,7 +4143,7 @@ class TasksApi(object):
         """
         kwargs["async_req"] = kwargs.get("async_req", False)
         kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
         kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
         kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
         kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
@@ -4164,7 +4160,7 @@ class TasksApi(object):
         """
         The same as partial_update_data_file(), but returns the response unprocessed.
         Equivalent to calling partial_update_data_file with
-        _preload_content = False and _check_status=False
+        _parse_response = False and _check_status=False
 
         Allows to upload a file chunk. Implements TUS file uploading protocol.  # noqa: E501
 
@@ -4212,7 +4208,7 @@ class TasksApi(object):
                 thread.
         """
         return self.partial_update_data_file(
-            *args, **kwargs, _preload_content=False, _check_status=False
+            *args, **kwargs, _parse_response=False, _check_status=False
         )
 
     @overload
@@ -4220,7 +4216,7 @@ class TasksApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[True] = True,
-        _preload_content: typing.Literal[True] = True,
+        _parse_response: typing.Literal[True] = True,
         **kwargs,
     ) -> DataMetaRead:
         ...
@@ -4230,7 +4226,7 @@ class TasksApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> typing.Tuple[DataMetaRead, int, typing.Dict[str, str]]:
         ...
@@ -4243,7 +4239,7 @@ class TasksApi(object):
 
     @overload
     def partial_update_data_meta(
-        self, id, _preload_content: typing.Literal[False], **kwargs
+        self, id, _parse_response: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
@@ -4252,7 +4248,7 @@ class TasksApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[True],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -4262,7 +4258,7 @@ class TasksApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -4290,7 +4286,7 @@ class TasksApi(object):
             patched_task_write_request (PatchedTaskWriteRequest): [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
-            _preload_content (bool): if False, the urllib3.HTTPResponse object
+            _parse_response (bool): if False, the urllib3.HTTPResponse object
                 will be returned without reading/decoding response data.
                 Checked before _return_http_data_only.
                 Default is True.
@@ -4330,7 +4326,7 @@ class TasksApi(object):
         """
         kwargs["async_req"] = kwargs.get("async_req", False)
         kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
         kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
         kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
         kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
@@ -4346,7 +4342,7 @@ class TasksApi(object):
         """
         The same as partial_update_data_meta(), but returns the response unprocessed.
         Equivalent to calling partial_update_data_meta with
-        _preload_content = False and _check_status=False
+        _parse_response = False and _check_status=False
 
         Method provides a meta information about media files which are related with the task  # noqa: E501
 
@@ -4393,7 +4389,7 @@ class TasksApi(object):
                 thread.
         """
         return self.partial_update_data_meta(
-            *args, **kwargs, _preload_content=False, _check_status=False
+            *args, **kwargs, _parse_response=False, _check_status=False
         )
 
     @overload
@@ -4401,7 +4397,7 @@ class TasksApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[True] = True,
-        _preload_content: typing.Literal[True] = True,
+        _parse_response: typing.Literal[True] = True,
         **kwargs,
     ) -> TaskRead:
         ...
@@ -4411,7 +4407,7 @@ class TasksApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> typing.Tuple[TaskRead, int, typing.Dict[str, str]]:
         ...
@@ -4424,7 +4420,7 @@ class TasksApi(object):
 
     @overload
     def retrieve(
-        self, id, _preload_content: typing.Literal[False], **kwargs
+        self, id, _parse_response: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
@@ -4433,7 +4429,7 @@ class TasksApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[True],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -4443,7 +4439,7 @@ class TasksApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -4470,7 +4466,7 @@ class TasksApi(object):
             org_id (int): Organization identifier. [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
-            _preload_content (bool): if False, the urllib3.HTTPResponse object
+            _parse_response (bool): if False, the urllib3.HTTPResponse object
                 will be returned without reading/decoding response data.
                 Checked before _return_http_data_only.
                 Default is True.
@@ -4510,7 +4506,7 @@ class TasksApi(object):
         """
         kwargs["async_req"] = kwargs.get("async_req", False)
         kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
         kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
         kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
         kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
@@ -4526,7 +4522,7 @@ class TasksApi(object):
         """
         The same as retrieve(), but returns the response unprocessed.
         Equivalent to calling retrieve with
-        _preload_content = False and _check_status=False
+        _parse_response = False and _check_status=False
 
         Method returns details of a specific task  # noqa: E501
 
@@ -4571,14 +4567,14 @@ class TasksApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.retrieve(*args, **kwargs, _preload_content=False, _check_status=False)
+        return self.retrieve(*args, **kwargs, _parse_response=False, _check_status=False)
 
     @overload
     def retrieve_annotations(
         self,
         id,
         _return_http_data_only: typing.Literal[True] = True,
-        _preload_content: typing.Literal[True] = True,
+        _parse_response: typing.Literal[True] = True,
         **kwargs,
     ) -> None:
         ...
@@ -4588,7 +4584,7 @@ class TasksApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
         ...
@@ -4601,7 +4597,7 @@ class TasksApi(object):
 
     @overload
     def retrieve_annotations(
-        self, id, _preload_content: typing.Literal[False], **kwargs
+        self, id, _parse_response: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
@@ -4610,7 +4606,7 @@ class TasksApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[True],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -4620,7 +4616,7 @@ class TasksApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -4651,7 +4647,7 @@ class TasksApi(object):
             use_default_location (bool): Use the location that was configured in the task to export annotation. [optional] if omitted the server will use the default value of True
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
-            _preload_content (bool): if False, the urllib3.HTTPResponse object
+            _parse_response (bool): if False, the urllib3.HTTPResponse object
                 will be returned without reading/decoding response data.
                 Checked before _return_http_data_only.
                 Default is True.
@@ -4691,7 +4687,7 @@ class TasksApi(object):
         """
         kwargs["async_req"] = kwargs.get("async_req", False)
         kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
         kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
         kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
         kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
@@ -4707,7 +4703,7 @@ class TasksApi(object):
         """
         The same as retrieve_annotations(), but returns the response unprocessed.
         Equivalent to calling retrieve_annotations with
-        _preload_content = False and _check_status=False
+        _parse_response = False and _check_status=False
 
         Method allows to download task annotations  # noqa: E501
 
@@ -4759,7 +4755,7 @@ class TasksApi(object):
                 thread.
         """
         return self.retrieve_annotations(
-            *args, **kwargs, _preload_content=False, _check_status=False
+            *args, **kwargs, _parse_response=False, _check_status=False
         )
 
     @overload
@@ -4767,7 +4763,7 @@ class TasksApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[True] = True,
-        _preload_content: typing.Literal[True] = True,
+        _parse_response: typing.Literal[True] = True,
         **kwargs,
     ) -> None:
         ...
@@ -4777,7 +4773,7 @@ class TasksApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
         ...
@@ -4790,7 +4786,7 @@ class TasksApi(object):
 
     @overload
     def retrieve_backup(
-        self, id, _preload_content: typing.Literal[False], **kwargs
+        self, id, _parse_response: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
@@ -4799,7 +4795,7 @@ class TasksApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[True],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -4809,7 +4805,7 @@ class TasksApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -4839,7 +4835,7 @@ class TasksApi(object):
             use_default_location (bool): Use the location that was configured in the task to export backup. [optional] if omitted the server will use the default value of True
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
-            _preload_content (bool): if False, the urllib3.HTTPResponse object
+            _parse_response (bool): if False, the urllib3.HTTPResponse object
                 will be returned without reading/decoding response data.
                 Checked before _return_http_data_only.
                 Default is True.
@@ -4879,7 +4875,7 @@ class TasksApi(object):
         """
         kwargs["async_req"] = kwargs.get("async_req", False)
         kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
         kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
         kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
         kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
@@ -4895,7 +4891,7 @@ class TasksApi(object):
         """
         The same as retrieve_backup(), but returns the response unprocessed.
         Equivalent to calling retrieve_backup with
-        _preload_content = False and _check_status=False
+        _parse_response = False and _check_status=False
 
         Method backup a specified task  # noqa: E501
 
@@ -4945,7 +4941,7 @@ class TasksApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.retrieve_backup(*args, **kwargs, _preload_content=False, _check_status=False)
+        return self.retrieve_backup(*args, **kwargs, _parse_response=False, _check_status=False)
 
     @overload
     def retrieve_data(
@@ -4955,7 +4951,7 @@ class TasksApi(object):
         quality,
         type,
         _return_http_data_only: typing.Literal[True] = True,
-        _preload_content: typing.Literal[True] = True,
+        _parse_response: typing.Literal[True] = True,
         **kwargs,
     ) -> None:
         ...
@@ -4968,7 +4964,7 @@ class TasksApi(object):
         quality,
         type,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
         ...
@@ -4981,7 +4977,7 @@ class TasksApi(object):
 
     @overload
     def retrieve_data(
-        self, id, number, quality, type, _preload_content: typing.Literal[False], **kwargs
+        self, id, number, quality, type, _parse_response: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
@@ -4993,7 +4989,7 @@ class TasksApi(object):
         quality,
         type,
         _return_http_data_only: typing.Literal[True],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -5006,7 +5002,7 @@ class TasksApi(object):
         quality,
         type,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -5034,7 +5030,7 @@ class TasksApi(object):
             org_id (int): Organization identifier. [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
-            _preload_content (bool): if False, the urllib3.HTTPResponse object
+            _parse_response (bool): if False, the urllib3.HTTPResponse object
                 will be returned without reading/decoding response data.
                 Checked before _return_http_data_only.
                 Default is True.
@@ -5074,7 +5070,7 @@ class TasksApi(object):
         """
         kwargs["async_req"] = kwargs.get("async_req", False)
         kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
         kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
         kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
         kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
@@ -5093,7 +5089,7 @@ class TasksApi(object):
         """
         The same as retrieve_data(), but returns the response unprocessed.
         Equivalent to calling retrieve_data with
-        _preload_content = False and _check_status=False
+        _parse_response = False and _check_status=False
 
         Method returns data for a specific task  # noqa: E501
 
@@ -5141,14 +5137,14 @@ class TasksApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.retrieve_data(*args, **kwargs, _preload_content=False, _check_status=False)
+        return self.retrieve_data(*args, **kwargs, _parse_response=False, _check_status=False)
 
     @overload
     def retrieve_data_meta(
         self,
         id,
         _return_http_data_only: typing.Literal[True] = True,
-        _preload_content: typing.Literal[True] = True,
+        _parse_response: typing.Literal[True] = True,
         **kwargs,
     ) -> DataMetaRead:
         ...
@@ -5158,7 +5154,7 @@ class TasksApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> typing.Tuple[DataMetaRead, int, typing.Dict[str, str]]:
         ...
@@ -5171,7 +5167,7 @@ class TasksApi(object):
 
     @overload
     def retrieve_data_meta(
-        self, id, _preload_content: typing.Literal[False], **kwargs
+        self, id, _parse_response: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
@@ -5180,7 +5176,7 @@ class TasksApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[True],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -5190,7 +5186,7 @@ class TasksApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -5217,7 +5213,7 @@ class TasksApi(object):
             org_id (int): Organization identifier. [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
-            _preload_content (bool): if False, the urllib3.HTTPResponse object
+            _parse_response (bool): if False, the urllib3.HTTPResponse object
                 will be returned without reading/decoding response data.
                 Checked before _return_http_data_only.
                 Default is True.
@@ -5257,7 +5253,7 @@ class TasksApi(object):
         """
         kwargs["async_req"] = kwargs.get("async_req", False)
         kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
         kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
         kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
         kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
@@ -5273,7 +5269,7 @@ class TasksApi(object):
         """
         The same as retrieve_data_meta(), but returns the response unprocessed.
         Equivalent to calling retrieve_data_meta with
-        _preload_content = False and _check_status=False
+        _parse_response = False and _check_status=False
 
         Method provides a meta information about media files which are related with the task  # noqa: E501
 
@@ -5318,7 +5314,7 @@ class TasksApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.retrieve_data_meta(*args, **kwargs, _preload_content=False, _check_status=False)
+        return self.retrieve_data_meta(*args, **kwargs, _parse_response=False, _check_status=False)
 
     @overload
     def retrieve_dataset(
@@ -5326,7 +5322,7 @@ class TasksApi(object):
         format,
         id,
         _return_http_data_only: typing.Literal[True] = True,
-        _preload_content: typing.Literal[True] = True,
+        _parse_response: typing.Literal[True] = True,
         **kwargs,
     ) -> None:
         ...
@@ -5337,7 +5333,7 @@ class TasksApi(object):
         format,
         id,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
         ...
@@ -5350,7 +5346,7 @@ class TasksApi(object):
 
     @overload
     def retrieve_dataset(
-        self, format, id, _preload_content: typing.Literal[False], **kwargs
+        self, format, id, _parse_response: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
@@ -5360,7 +5356,7 @@ class TasksApi(object):
         format,
         id,
         _return_http_data_only: typing.Literal[True],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -5371,7 +5367,7 @@ class TasksApi(object):
         format,
         id,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -5402,7 +5398,7 @@ class TasksApi(object):
             use_default_location (bool): Use the location that was configured in task to export annotations. [optional] if omitted the server will use the default value of True
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
-            _preload_content (bool): if False, the urllib3.HTTPResponse object
+            _parse_response (bool): if False, the urllib3.HTTPResponse object
                 will be returned without reading/decoding response data.
                 Checked before _return_http_data_only.
                 Default is True.
@@ -5442,7 +5438,7 @@ class TasksApi(object):
         """
         kwargs["async_req"] = kwargs.get("async_req", False)
         kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
         kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
         kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
         kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
@@ -5459,7 +5455,7 @@ class TasksApi(object):
         """
         The same as retrieve_dataset(), but returns the response unprocessed.
         Equivalent to calling retrieve_dataset with
-        _preload_content = False and _check_status=False
+        _parse_response = False and _check_status=False
 
         Export task as a dataset in a specific format  # noqa: E501
 
@@ -5510,14 +5506,14 @@ class TasksApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.retrieve_dataset(*args, **kwargs, _preload_content=False, _check_status=False)
+        return self.retrieve_dataset(*args, **kwargs, _parse_response=False, _check_status=False)
 
     @overload
     def retrieve_status(
         self,
         id,
         _return_http_data_only: typing.Literal[True] = True,
-        _preload_content: typing.Literal[True] = True,
+        _parse_response: typing.Literal[True] = True,
         **kwargs,
     ) -> RqStatus:
         ...
@@ -5527,7 +5523,7 @@ class TasksApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> typing.Tuple[RqStatus, int, typing.Dict[str, str]]:
         ...
@@ -5540,7 +5536,7 @@ class TasksApi(object):
 
     @overload
     def retrieve_status(
-        self, id, _preload_content: typing.Literal[False], **kwargs
+        self, id, _parse_response: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
@@ -5549,7 +5545,7 @@ class TasksApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[True],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -5559,7 +5555,7 @@ class TasksApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -5586,7 +5582,7 @@ class TasksApi(object):
             org_id (int): Organization identifier. [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
-            _preload_content (bool): if False, the urllib3.HTTPResponse object
+            _parse_response (bool): if False, the urllib3.HTTPResponse object
                 will be returned without reading/decoding response data.
                 Checked before _return_http_data_only.
                 Default is True.
@@ -5626,7 +5622,7 @@ class TasksApi(object):
         """
         kwargs["async_req"] = kwargs.get("async_req", False)
         kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
         kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
         kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
         kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
@@ -5642,7 +5638,7 @@ class TasksApi(object):
         """
         The same as retrieve_status(), but returns the response unprocessed.
         Equivalent to calling retrieve_status with
-        _preload_content = False and _check_status=False
+        _parse_response = False and _check_status=False
 
         When task is being created the method returns information about a status of the creation process  # noqa: E501
 
@@ -5687,7 +5683,7 @@ class TasksApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.retrieve_status(*args, **kwargs, _preload_content=False, _check_status=False)
+        return self.retrieve_status(*args, **kwargs, _parse_response=False, _check_status=False)
 
     @overload
     def update(
@@ -5695,7 +5691,7 @@ class TasksApi(object):
         id,
         task_write_request,
         _return_http_data_only: typing.Literal[True] = True,
-        _preload_content: typing.Literal[True] = True,
+        _parse_response: typing.Literal[True] = True,
         **kwargs,
     ) -> TaskWrite:
         ...
@@ -5706,7 +5702,7 @@ class TasksApi(object):
         id,
         task_write_request,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> typing.Tuple[TaskWrite, int, typing.Dict[str, str]]:
         ...
@@ -5719,7 +5715,7 @@ class TasksApi(object):
 
     @overload
     def update(
-        self, id, task_write_request, _preload_content: typing.Literal[False], **kwargs
+        self, id, task_write_request, _parse_response: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
@@ -5729,7 +5725,7 @@ class TasksApi(object):
         id,
         task_write_request,
         _return_http_data_only: typing.Literal[True],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -5740,7 +5736,7 @@ class TasksApi(object):
         id,
         task_write_request,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -5768,7 +5764,7 @@ class TasksApi(object):
             org_id (int): Organization identifier. [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
-            _preload_content (bool): if False, the urllib3.HTTPResponse object
+            _parse_response (bool): if False, the urllib3.HTTPResponse object
                 will be returned without reading/decoding response data.
                 Checked before _return_http_data_only.
                 Default is True.
@@ -5808,7 +5804,7 @@ class TasksApi(object):
         """
         kwargs["async_req"] = kwargs.get("async_req", False)
         kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
         kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
         kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
         kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
@@ -5825,7 +5821,7 @@ class TasksApi(object):
         """
         The same as update(), but returns the response unprocessed.
         Equivalent to calling update with
-        _preload_content = False and _check_status=False
+        _parse_response = False and _check_status=False
 
         Method updates a task by id  # noqa: E501
 
@@ -5871,7 +5867,7 @@ class TasksApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.update(*args, **kwargs, _preload_content=False, _check_status=False)
+        return self.update(*args, **kwargs, _parse_response=False, _check_status=False)
 
     @overload
     def update_annotations(
@@ -5879,7 +5875,7 @@ class TasksApi(object):
         id,
         task_write_request,
         _return_http_data_only: typing.Literal[True] = True,
-        _preload_content: typing.Literal[True] = True,
+        _parse_response: typing.Literal[True] = True,
         **kwargs,
     ) -> None:
         ...
@@ -5890,7 +5886,7 @@ class TasksApi(object):
         id,
         task_write_request,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
         ...
@@ -5903,7 +5899,7 @@ class TasksApi(object):
 
     @overload
     def update_annotations(
-        self, id, task_write_request, _preload_content: typing.Literal[False], **kwargs
+        self, id, task_write_request, _parse_response: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
@@ -5913,7 +5909,7 @@ class TasksApi(object):
         id,
         task_write_request,
         _return_http_data_only: typing.Literal[True],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -5924,7 +5920,7 @@ class TasksApi(object):
         id,
         task_write_request,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -5951,7 +5947,7 @@ class TasksApi(object):
             org_id (int): Organization identifier. [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
-            _preload_content (bool): if False, the urllib3.HTTPResponse object
+            _parse_response (bool): if False, the urllib3.HTTPResponse object
                 will be returned without reading/decoding response data.
                 Checked before _return_http_data_only.
                 Default is True.
@@ -5991,7 +5987,7 @@ class TasksApi(object):
         """
         kwargs["async_req"] = kwargs.get("async_req", False)
         kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
         kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
         kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
         kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
@@ -6008,7 +6004,7 @@ class TasksApi(object):
         """
         The same as update_annotations(), but returns the response unprocessed.
         Equivalent to calling update_annotations with
-        _preload_content = False and _check_status=False
+        _parse_response = False and _check_status=False
 
         Method allows to upload task annotations  # noqa: E501
 
@@ -6055,4 +6051,4 @@ class TasksApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.update_annotations(*args, **kwargs, _preload_content=False, _check_status=False)
+        return self.update_annotations(*args, **kwargs, _parse_response=False, _check_status=False)

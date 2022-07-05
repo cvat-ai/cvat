@@ -19,7 +19,7 @@ def main():
 
         # tasks_api = cvat_api_client.apis.TasksApi(client)
         # tasks_api.tasks_list()
-        # tasks: HTTPResponse = tasks_api.tasks_list(_preload_content=False)
+        # tasks: HTTPResponse = tasks_api.tasks_list(_parse_response=False)
         projects_api = cvat_api_client.apis.ProjectsApi(client)
         tasks = projects_api.projects_tasks_list_raw(1)
         decoded = json.loads(tasks.data)

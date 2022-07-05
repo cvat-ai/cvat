@@ -145,7 +145,7 @@ class RestrictionsApi(object):
     def retrieve_terms_of_use(
         self,
         _return_http_data_only: typing.Literal[True] = True,
-        _preload_content: typing.Literal[True] = True,
+        _parse_response: typing.Literal[True] = True,
         **kwargs,
     ) -> None:
         ...
@@ -154,7 +154,7 @@ class RestrictionsApi(object):
     def retrieve_terms_of_use(
         self,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
         ...
@@ -167,7 +167,7 @@ class RestrictionsApi(object):
 
     @overload
     def retrieve_terms_of_use(
-        self, _preload_content: typing.Literal[False], **kwargs
+        self, _parse_response: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
@@ -175,7 +175,7 @@ class RestrictionsApi(object):
     def retrieve_terms_of_use(
         self,
         _return_http_data_only: typing.Literal[True],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -184,7 +184,7 @@ class RestrictionsApi(object):
     def retrieve_terms_of_use(
         self,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -207,7 +207,7 @@ class RestrictionsApi(object):
             org_id (int): Organization identifier. [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
-            _preload_content (bool): if False, the urllib3.HTTPResponse object
+            _parse_response (bool): if False, the urllib3.HTTPResponse object
                 will be returned without reading/decoding response data.
                 Checked before _return_http_data_only.
                 Default is True.
@@ -247,7 +247,7 @@ class RestrictionsApi(object):
         """
         kwargs["async_req"] = kwargs.get("async_req", False)
         kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
         kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
         kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
         kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
@@ -262,7 +262,7 @@ class RestrictionsApi(object):
         """
         The same as retrieve_terms_of_use(), but returns the response unprocessed.
         Equivalent to calling retrieve_terms_of_use with
-        _preload_content = False and _check_status=False
+        _parse_response = False and _check_status=False
 
         Method provides CVAT terms of use  # noqa: E501
 
@@ -306,14 +306,14 @@ class RestrictionsApi(object):
                 thread.
         """
         return self.retrieve_terms_of_use(
-            *args, **kwargs, _preload_content=False, _check_status=False
+            *args, **kwargs, _parse_response=False, _check_status=False
         )
 
     @overload
     def retrieve_user_agreements(
         self,
         _return_http_data_only: typing.Literal[True] = True,
-        _preload_content: typing.Literal[True] = True,
+        _parse_response: typing.Literal[True] = True,
         **kwargs,
     ) -> UserAgreement:
         ...
@@ -322,7 +322,7 @@ class RestrictionsApi(object):
     def retrieve_user_agreements(
         self,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> typing.Tuple[UserAgreement, int, typing.Dict[str, str]]:
         ...
@@ -335,7 +335,7 @@ class RestrictionsApi(object):
 
     @overload
     def retrieve_user_agreements(
-        self, _preload_content: typing.Literal[False], **kwargs
+        self, _parse_response: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
@@ -343,7 +343,7 @@ class RestrictionsApi(object):
     def retrieve_user_agreements(
         self,
         _return_http_data_only: typing.Literal[True],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -352,7 +352,7 @@ class RestrictionsApi(object):
     def retrieve_user_agreements(
         self,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -377,7 +377,7 @@ class RestrictionsApi(object):
             org_id (int): Organization identifier. [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
-            _preload_content (bool): if False, the urllib3.HTTPResponse object
+            _parse_response (bool): if False, the urllib3.HTTPResponse object
                 will be returned without reading/decoding response data.
                 Checked before _return_http_data_only.
                 Default is True.
@@ -417,7 +417,7 @@ class RestrictionsApi(object):
         """
         kwargs["async_req"] = kwargs.get("async_req", False)
         kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
         kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
         kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
         kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
@@ -432,7 +432,7 @@ class RestrictionsApi(object):
         """
         The same as retrieve_user_agreements(), but returns the response unprocessed.
         Equivalent to calling retrieve_user_agreements with
-        _preload_content = False and _check_status=False
+        _parse_response = False and _check_status=False
 
         Method provides user agreements that the user must accept to register  # noqa: E501
 
@@ -476,5 +476,5 @@ class RestrictionsApi(object):
                 thread.
         """
         return self.retrieve_user_agreements(
-            *args, **kwargs, _preload_content=False, _check_status=False
+            *args, **kwargs, _parse_response=False, _check_status=False
         )

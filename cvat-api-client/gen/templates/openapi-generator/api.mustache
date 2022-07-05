@@ -238,7 +238,7 @@ class {{classname}}(object):
 {{/defaultValue}}
 {{/requiredParams}}
         _return_http_data_only: typing.Literal[True] = True,
-        _preload_content: typing.Literal[True] = True,
+        _parse_response: typing.Literal[True] = True,
         **kwargs
     ) -> {{>return_type}}:
         ...
@@ -257,7 +257,7 @@ class {{classname}}(object):
 {{/defaultValue}}
 {{/requiredParams}}
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs
     ) -> typing.Tuple[{{>return_type}}, int, typing.Dict[str, str]]:
         ...
@@ -293,7 +293,7 @@ class {{classname}}(object):
         {{paramName}}={{{defaultValue}}},
 {{/defaultValue}}
 {{/requiredParams}}
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs
     ) -> urllib3.HTTPResponse:
         ...
@@ -312,7 +312,7 @@ class {{classname}}(object):
 {{/defaultValue}}
 {{/requiredParams}}
         _return_http_data_only: typing.Literal[True],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs
     ) -> urllib3.HTTPResponse:
         ...
@@ -331,7 +331,7 @@ class {{classname}}(object):
 {{/defaultValue}}
 {{/requiredParams}}
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs
     ) -> urllib3.HTTPResponse:
         ...
@@ -385,7 +385,7 @@ class {{classname}}(object):
             {{paramName}} ({{dataType}}):{{#description}} {{{.}}}.{{/description}} [optional]{{#defaultValue}} if omitted the server will use the default value of {{{.}}}{{/defaultValue}}{{/optionalParams}}
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
-            _preload_content (bool): if False, the urllib3.HTTPResponse object
+            _parse_response (bool): if False, the urllib3.HTTPResponse object
                 will be returned without reading/decoding response data.
                 Checked before _return_http_data_only.
                 Default is True.
@@ -429,8 +429,8 @@ class {{classname}}(object):
         kwargs['_return_http_data_only'] = kwargs.get(
             '_return_http_data_only', True
         )
-        kwargs['_preload_content'] = kwargs.get(
-            '_preload_content', True
+        kwargs['_parse_response'] = kwargs.get(
+            '_parse_response', True
         )
         kwargs['_request_timeout'] = kwargs.get(
             '_request_timeout', None
@@ -465,7 +465,7 @@ class {{classname}}(object):
         """
         The same as {{>operation_name}}(), but returns the response unprocessed.
         Equivalent to calling {{>operation_name}} with
-        _preload_content = False and _check_status=False
+        _parse_response = False and _check_status=False
 
         {{{summary}}}{{^summary}}{{>operation_name}}{{/summary}}  # noqa: E501
 
@@ -525,7 +525,7 @@ class {{classname}}(object):
                 thread.
         """
         return self.{{>operation_name}}(*args, **kwargs,
-            _preload_content=False, _check_status=False)
+            _parse_response=False, _check_status=False)
 
 {{/operation}}
 {{/operations}}

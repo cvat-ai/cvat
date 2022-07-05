@@ -344,7 +344,7 @@ class InvitationsApi(object):
         self,
         invitation_write_request,
         _return_http_data_only: typing.Literal[True] = True,
-        _preload_content: typing.Literal[True] = True,
+        _parse_response: typing.Literal[True] = True,
         **kwargs,
     ) -> InvitationWrite:
         ...
@@ -354,7 +354,7 @@ class InvitationsApi(object):
         self,
         invitation_write_request,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> typing.Tuple[InvitationWrite, int, typing.Dict[str, str]]:
         ...
@@ -367,7 +367,7 @@ class InvitationsApi(object):
 
     @overload
     def create(
-        self, invitation_write_request, _preload_content: typing.Literal[False], **kwargs
+        self, invitation_write_request, _parse_response: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
@@ -376,7 +376,7 @@ class InvitationsApi(object):
         self,
         invitation_write_request,
         _return_http_data_only: typing.Literal[True],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -386,7 +386,7 @@ class InvitationsApi(object):
         self,
         invitation_write_request,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -415,7 +415,7 @@ class InvitationsApi(object):
             org_id (int): Organization identifier. [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
-            _preload_content (bool): if False, the urllib3.HTTPResponse object
+            _parse_response (bool): if False, the urllib3.HTTPResponse object
                 will be returned without reading/decoding response data.
                 Checked before _return_http_data_only.
                 Default is True.
@@ -455,7 +455,7 @@ class InvitationsApi(object):
         """
         kwargs["async_req"] = kwargs.get("async_req", False)
         kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
         kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
         kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
         kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
@@ -471,7 +471,7 @@ class InvitationsApi(object):
         """
         The same as create(), but returns the response unprocessed.
         Equivalent to calling create with
-        _preload_content = False and _check_status=False
+        _parse_response = False and _check_status=False
 
         Method creates an invitation  # noqa: E501
 
@@ -516,14 +516,14 @@ class InvitationsApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.create(*args, **kwargs, _preload_content=False, _check_status=False)
+        return self.create(*args, **kwargs, _parse_response=False, _check_status=False)
 
     @overload
     def destroy(
         self,
         key,
         _return_http_data_only: typing.Literal[True] = True,
-        _preload_content: typing.Literal[True] = True,
+        _parse_response: typing.Literal[True] = True,
         **kwargs,
     ) -> None:
         ...
@@ -533,7 +533,7 @@ class InvitationsApi(object):
         self,
         key,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
         ...
@@ -546,7 +546,7 @@ class InvitationsApi(object):
 
     @overload
     def destroy(
-        self, key, _preload_content: typing.Literal[False], **kwargs
+        self, key, _parse_response: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
@@ -555,7 +555,7 @@ class InvitationsApi(object):
         self,
         key,
         _return_http_data_only: typing.Literal[True],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -565,7 +565,7 @@ class InvitationsApi(object):
         self,
         key,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -590,7 +590,7 @@ class InvitationsApi(object):
             org_id (int): Organization identifier. [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
-            _preload_content (bool): if False, the urllib3.HTTPResponse object
+            _parse_response (bool): if False, the urllib3.HTTPResponse object
                 will be returned without reading/decoding response data.
                 Checked before _return_http_data_only.
                 Default is True.
@@ -630,7 +630,7 @@ class InvitationsApi(object):
         """
         kwargs["async_req"] = kwargs.get("async_req", False)
         kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
         kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
         kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
         kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
@@ -646,7 +646,7 @@ class InvitationsApi(object):
         """
         The same as destroy(), but returns the response unprocessed.
         Equivalent to calling destroy with
-        _preload_content = False and _check_status=False
+        _parse_response = False and _check_status=False
 
         Method deletes an invitation  # noqa: E501
 
@@ -691,13 +691,13 @@ class InvitationsApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.destroy(*args, **kwargs, _preload_content=False, _check_status=False)
+        return self.destroy(*args, **kwargs, _parse_response=False, _check_status=False)
 
     @overload
     def list(
         self,
         _return_http_data_only: typing.Literal[True] = True,
-        _preload_content: typing.Literal[True] = True,
+        _parse_response: typing.Literal[True] = True,
         **kwargs,
     ) -> PaginatedInvitationReadList:
         ...
@@ -706,7 +706,7 @@ class InvitationsApi(object):
     def list(
         self,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> typing.Tuple[PaginatedInvitationReadList, int, typing.Dict[str, str]]:
         ...
@@ -718,14 +718,14 @@ class InvitationsApi(object):
         ...
 
     @overload
-    def list(self, _preload_content: typing.Literal[False], **kwargs) -> urllib3.HTTPResponse:
+    def list(self, _parse_response: typing.Literal[False], **kwargs) -> urllib3.HTTPResponse:
         ...
 
     @overload
     def list(
         self,
         _return_http_data_only: typing.Literal[True],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -734,7 +734,7 @@ class InvitationsApi(object):
     def list(
         self,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -766,7 +766,7 @@ class InvitationsApi(object):
             sort (str): Which field to use when ordering the results. Avaliable ordering_fields: ['owner', 'created_date']. [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
-            _preload_content (bool): if False, the urllib3.HTTPResponse object
+            _parse_response (bool): if False, the urllib3.HTTPResponse object
                 will be returned without reading/decoding response data.
                 Checked before _return_http_data_only.
                 Default is True.
@@ -806,7 +806,7 @@ class InvitationsApi(object):
         """
         kwargs["async_req"] = kwargs.get("async_req", False)
         kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
         kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
         kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
         kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
@@ -821,7 +821,7 @@ class InvitationsApi(object):
         """
         The same as list(), but returns the response unprocessed.
         Equivalent to calling list with
-        _preload_content = False and _check_status=False
+        _parse_response = False and _check_status=False
 
         Method returns a paginated list of invitations according to query parameters  # noqa: E501
 
@@ -869,14 +869,14 @@ class InvitationsApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.list(*args, **kwargs, _preload_content=False, _check_status=False)
+        return self.list(*args, **kwargs, _parse_response=False, _check_status=False)
 
     @overload
     def partial_update(
         self,
         key,
         _return_http_data_only: typing.Literal[True] = True,
-        _preload_content: typing.Literal[True] = True,
+        _parse_response: typing.Literal[True] = True,
         **kwargs,
     ) -> InvitationWrite:
         ...
@@ -886,7 +886,7 @@ class InvitationsApi(object):
         self,
         key,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> typing.Tuple[InvitationWrite, int, typing.Dict[str, str]]:
         ...
@@ -899,7 +899,7 @@ class InvitationsApi(object):
 
     @overload
     def partial_update(
-        self, key, _preload_content: typing.Literal[False], **kwargs
+        self, key, _parse_response: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
@@ -908,7 +908,7 @@ class InvitationsApi(object):
         self,
         key,
         _return_http_data_only: typing.Literal[True],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -918,7 +918,7 @@ class InvitationsApi(object):
         self,
         key,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -948,7 +948,7 @@ class InvitationsApi(object):
             patched_invitation_write_request (PatchedInvitationWriteRequest): [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
-            _preload_content (bool): if False, the urllib3.HTTPResponse object
+            _parse_response (bool): if False, the urllib3.HTTPResponse object
                 will be returned without reading/decoding response data.
                 Checked before _return_http_data_only.
                 Default is True.
@@ -988,7 +988,7 @@ class InvitationsApi(object):
         """
         kwargs["async_req"] = kwargs.get("async_req", False)
         kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
         kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
         kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
         kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
@@ -1004,7 +1004,7 @@ class InvitationsApi(object):
         """
         The same as partial_update(), but returns the response unprocessed.
         Equivalent to calling partial_update with
-        _preload_content = False and _check_status=False
+        _parse_response = False and _check_status=False
 
         Methods does a partial update of chosen fields in an invitation  # noqa: E501
 
@@ -1050,14 +1050,14 @@ class InvitationsApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.partial_update(*args, **kwargs, _preload_content=False, _check_status=False)
+        return self.partial_update(*args, **kwargs, _parse_response=False, _check_status=False)
 
     @overload
     def retrieve(
         self,
         key,
         _return_http_data_only: typing.Literal[True] = True,
-        _preload_content: typing.Literal[True] = True,
+        _parse_response: typing.Literal[True] = True,
         **kwargs,
     ) -> InvitationRead:
         ...
@@ -1067,7 +1067,7 @@ class InvitationsApi(object):
         self,
         key,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> typing.Tuple[InvitationRead, int, typing.Dict[str, str]]:
         ...
@@ -1080,7 +1080,7 @@ class InvitationsApi(object):
 
     @overload
     def retrieve(
-        self, key, _preload_content: typing.Literal[False], **kwargs
+        self, key, _parse_response: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
@@ -1089,7 +1089,7 @@ class InvitationsApi(object):
         self,
         key,
         _return_http_data_only: typing.Literal[True],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -1099,7 +1099,7 @@ class InvitationsApi(object):
         self,
         key,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -1128,7 +1128,7 @@ class InvitationsApi(object):
             org_id (int): Organization identifier. [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
-            _preload_content (bool): if False, the urllib3.HTTPResponse object
+            _parse_response (bool): if False, the urllib3.HTTPResponse object
                 will be returned without reading/decoding response data.
                 Checked before _return_http_data_only.
                 Default is True.
@@ -1168,7 +1168,7 @@ class InvitationsApi(object):
         """
         kwargs["async_req"] = kwargs.get("async_req", False)
         kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
         kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
         kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
         kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
@@ -1184,7 +1184,7 @@ class InvitationsApi(object):
         """
         The same as retrieve(), but returns the response unprocessed.
         Equivalent to calling retrieve with
-        _preload_content = False and _check_status=False
+        _parse_response = False and _check_status=False
 
         Method returns details of an invitation  # noqa: E501
 
@@ -1229,4 +1229,4 @@ class InvitationsApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.retrieve(*args, **kwargs, _preload_content=False, _check_status=False)
+        return self.retrieve(*args, **kwargs, _parse_response=False, _check_status=False)

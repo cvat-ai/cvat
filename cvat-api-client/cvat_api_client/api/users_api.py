@@ -332,7 +332,7 @@ class UsersApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[True] = True,
-        _preload_content: typing.Literal[True] = True,
+        _parse_response: typing.Literal[True] = True,
         **kwargs,
     ) -> None:
         ...
@@ -342,7 +342,7 @@ class UsersApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
         ...
@@ -354,9 +354,7 @@ class UsersApi(object):
         ...
 
     @overload
-    def destroy(
-        self, id, _preload_content: typing.Literal[False], **kwargs
-    ) -> urllib3.HTTPResponse:
+    def destroy(self, id, _parse_response: typing.Literal[False], **kwargs) -> urllib3.HTTPResponse:
         ...
 
     @overload
@@ -364,7 +362,7 @@ class UsersApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[True],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -374,7 +372,7 @@ class UsersApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -399,7 +397,7 @@ class UsersApi(object):
             org_id (int): Organization identifier. [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
-            _preload_content (bool): if False, the urllib3.HTTPResponse object
+            _parse_response (bool): if False, the urllib3.HTTPResponse object
                 will be returned without reading/decoding response data.
                 Checked before _return_http_data_only.
                 Default is True.
@@ -439,7 +437,7 @@ class UsersApi(object):
         """
         kwargs["async_req"] = kwargs.get("async_req", False)
         kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
         kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
         kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
         kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
@@ -455,7 +453,7 @@ class UsersApi(object):
         """
         The same as destroy(), but returns the response unprocessed.
         Equivalent to calling destroy with
-        _preload_content = False and _check_status=False
+        _parse_response = False and _check_status=False
 
         Method deletes a specific user from the server  # noqa: E501
 
@@ -500,13 +498,13 @@ class UsersApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.destroy(*args, **kwargs, _preload_content=False, _check_status=False)
+        return self.destroy(*args, **kwargs, _parse_response=False, _check_status=False)
 
     @overload
     def list(
         self,
         _return_http_data_only: typing.Literal[True] = True,
-        _preload_content: typing.Literal[True] = True,
+        _parse_response: typing.Literal[True] = True,
         **kwargs,
     ) -> PaginatedMetaUserList:
         ...
@@ -515,7 +513,7 @@ class UsersApi(object):
     def list(
         self,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> typing.Tuple[PaginatedMetaUserList, int, typing.Dict[str, str]]:
         ...
@@ -527,14 +525,14 @@ class UsersApi(object):
         ...
 
     @overload
-    def list(self, _preload_content: typing.Literal[False], **kwargs) -> urllib3.HTTPResponse:
+    def list(self, _parse_response: typing.Literal[False], **kwargs) -> urllib3.HTTPResponse:
         ...
 
     @overload
     def list(
         self,
         _return_http_data_only: typing.Literal[True],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -543,7 +541,7 @@ class UsersApi(object):
     def list(
         self,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -575,7 +573,7 @@ class UsersApi(object):
             sort (str): Which field to use when ordering the results. Avaliable ordering_fields: ('id', 'is_active', 'username'). [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
-            _preload_content (bool): if False, the urllib3.HTTPResponse object
+            _parse_response (bool): if False, the urllib3.HTTPResponse object
                 will be returned without reading/decoding response data.
                 Checked before _return_http_data_only.
                 Default is True.
@@ -615,7 +613,7 @@ class UsersApi(object):
         """
         kwargs["async_req"] = kwargs.get("async_req", False)
         kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
         kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
         kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
         kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
@@ -630,7 +628,7 @@ class UsersApi(object):
         """
         The same as list(), but returns the response unprocessed.
         Equivalent to calling list with
-        _preload_content = False and _check_status=False
+        _parse_response = False and _check_status=False
 
         Method provides a paginated list of users registered on the server  # noqa: E501
 
@@ -678,14 +676,14 @@ class UsersApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.list(*args, **kwargs, _preload_content=False, _check_status=False)
+        return self.list(*args, **kwargs, _parse_response=False, _check_status=False)
 
     @overload
     def partial_update(
         self,
         id,
         _return_http_data_only: typing.Literal[True] = True,
-        _preload_content: typing.Literal[True] = True,
+        _parse_response: typing.Literal[True] = True,
         **kwargs,
     ) -> MetaUser:
         ...
@@ -695,7 +693,7 @@ class UsersApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> typing.Tuple[MetaUser, int, typing.Dict[str, str]]:
         ...
@@ -708,7 +706,7 @@ class UsersApi(object):
 
     @overload
     def partial_update(
-        self, id, _preload_content: typing.Literal[False], **kwargs
+        self, id, _parse_response: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
@@ -717,7 +715,7 @@ class UsersApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[True],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -727,7 +725,7 @@ class UsersApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -755,7 +753,7 @@ class UsersApi(object):
             patched_user_request (PatchedUserRequest): [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
-            _preload_content (bool): if False, the urllib3.HTTPResponse object
+            _parse_response (bool): if False, the urllib3.HTTPResponse object
                 will be returned without reading/decoding response data.
                 Checked before _return_http_data_only.
                 Default is True.
@@ -795,7 +793,7 @@ class UsersApi(object):
         """
         kwargs["async_req"] = kwargs.get("async_req", False)
         kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
         kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
         kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
         kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
@@ -811,7 +809,7 @@ class UsersApi(object):
         """
         The same as partial_update(), but returns the response unprocessed.
         Equivalent to calling partial_update with
-        _preload_content = False and _check_status=False
+        _parse_response = False and _check_status=False
 
         Method updates chosen fields of a user  # noqa: E501
 
@@ -857,14 +855,14 @@ class UsersApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.partial_update(*args, **kwargs, _preload_content=False, _check_status=False)
+        return self.partial_update(*args, **kwargs, _parse_response=False, _check_status=False)
 
     @overload
     def retrieve(
         self,
         id,
         _return_http_data_only: typing.Literal[True] = True,
-        _preload_content: typing.Literal[True] = True,
+        _parse_response: typing.Literal[True] = True,
         **kwargs,
     ) -> MetaUser:
         ...
@@ -874,7 +872,7 @@ class UsersApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> typing.Tuple[MetaUser, int, typing.Dict[str, str]]:
         ...
@@ -887,7 +885,7 @@ class UsersApi(object):
 
     @overload
     def retrieve(
-        self, id, _preload_content: typing.Literal[False], **kwargs
+        self, id, _parse_response: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
@@ -896,7 +894,7 @@ class UsersApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[True],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -906,7 +904,7 @@ class UsersApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -933,7 +931,7 @@ class UsersApi(object):
             org_id (int): Organization identifier. [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
-            _preload_content (bool): if False, the urllib3.HTTPResponse object
+            _parse_response (bool): if False, the urllib3.HTTPResponse object
                 will be returned without reading/decoding response data.
                 Checked before _return_http_data_only.
                 Default is True.
@@ -973,7 +971,7 @@ class UsersApi(object):
         """
         kwargs["async_req"] = kwargs.get("async_req", False)
         kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
         kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
         kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
         kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
@@ -989,7 +987,7 @@ class UsersApi(object):
         """
         The same as retrieve(), but returns the response unprocessed.
         Equivalent to calling retrieve with
-        _preload_content = False and _check_status=False
+        _parse_response = False and _check_status=False
 
         Method provides information of a specific user  # noqa: E501
 
@@ -1034,13 +1032,13 @@ class UsersApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.retrieve(*args, **kwargs, _preload_content=False, _check_status=False)
+        return self.retrieve(*args, **kwargs, _parse_response=False, _check_status=False)
 
     @overload
     def retrieve_self(
         self,
         _return_http_data_only: typing.Literal[True] = True,
-        _preload_content: typing.Literal[True] = True,
+        _parse_response: typing.Literal[True] = True,
         **kwargs,
     ) -> MetaUser:
         ...
@@ -1049,7 +1047,7 @@ class UsersApi(object):
     def retrieve_self(
         self,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> typing.Tuple[MetaUser, int, typing.Dict[str, str]]:
         ...
@@ -1062,7 +1060,7 @@ class UsersApi(object):
 
     @overload
     def retrieve_self(
-        self, _preload_content: typing.Literal[False], **kwargs
+        self, _parse_response: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
@@ -1070,7 +1068,7 @@ class UsersApi(object):
     def retrieve_self(
         self,
         _return_http_data_only: typing.Literal[True],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -1079,7 +1077,7 @@ class UsersApi(object):
     def retrieve_self(
         self,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -1105,7 +1103,7 @@ class UsersApi(object):
             org_id (int): Organization identifier. [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
-            _preload_content (bool): if False, the urllib3.HTTPResponse object
+            _parse_response (bool): if False, the urllib3.HTTPResponse object
                 will be returned without reading/decoding response data.
                 Checked before _return_http_data_only.
                 Default is True.
@@ -1145,7 +1143,7 @@ class UsersApi(object):
         """
         kwargs["async_req"] = kwargs.get("async_req", False)
         kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
         kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
         kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
         kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
@@ -1160,7 +1158,7 @@ class UsersApi(object):
         """
         The same as retrieve_self(), but returns the response unprocessed.
         Equivalent to calling retrieve_self with
-        _preload_content = False and _check_status=False
+        _parse_response = False and _check_status=False
 
         Method returns an instance of a user who is currently authorized  # noqa: E501
 
@@ -1204,4 +1202,4 @@ class UsersApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.retrieve_self(*args, **kwargs, _preload_content=False, _check_status=False)
+        return self.retrieve_self(*args, **kwargs, _parse_response=False, _check_status=False)

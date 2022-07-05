@@ -162,7 +162,7 @@ class ApiClient(object):
         auth_settings: typing.Optional[typing.List[str]] = None,
         _return_http_data_only: typing.Optional[bool] = None,
         collection_formats: typing.Optional[typing.Dict[str, str]] = None,
-        _preload_content: bool = True,
+        _parse_response: bool = True,
         _request_timeout: typing.Optional[typing.Union[int, float, typing.Tuple]] = None,
         _host: typing.Optional[str] = None,
         _check_type: typing.Optional[bool] = None,
@@ -243,7 +243,7 @@ class ApiClient(object):
                 headers=header_params,
                 post_params=post_params,
                 body=body,
-                _preload_content=_preload_content,
+                _parse_response=_parse_response,
                 _request_timeout=_request_timeout,
                 _check_status=_check_status,
             )
@@ -255,7 +255,7 @@ class ApiClient(object):
 
         return_data = response_data
 
-        if not _preload_content:
+        if not _parse_response:
             return return_data
 
         # deserialize response data
@@ -403,7 +403,7 @@ class ApiClient(object):
         async_req: typing.Optional[bool] = None,
         _return_http_data_only: typing.Optional[bool] = None,
         collection_formats: typing.Optional[typing.Dict[str, str]] = None,
-        _preload_content: bool = True,
+        _parse_response: bool = True,
         _request_timeout: typing.Optional[typing.Union[int, float, typing.Tuple]] = None,
         _host: typing.Optional[str] = None,
         _check_type: typing.Optional[bool] = None,
@@ -445,10 +445,10 @@ class ApiClient(object):
         :param collection_formats: dict of collection formats for path, query,
             header, and post parameters.
         :type collection_formats: dict, optional
-        :param _preload_content: if False, the urllib3.HTTPResponse object will
+        :param _parse_response: if False, the urllib3.HTTPResponse object will
                                  be returned without reading/decoding response
                                  data. Default is True.
-        :type _preload_content: bool, optional
+        :type _parse_response: bool, optional
         :param _request_timeout: timeout setting for this request. If one
                                  number provided, it will be total request
                                  timeout. It can also be a pair (tuple) of
@@ -480,7 +480,7 @@ class ApiClient(object):
             "auth_settings": auth_settings,
             "_return_http_data_only": _return_http_data_only,
             "collection_formats": collection_formats,
-            "_preload_content": _preload_content,
+            "_parse_response": _parse_response,
             "_request_timeout": _request_timeout,
             "_host": _host,
             "_check_type": _check_type,
@@ -501,7 +501,7 @@ class ApiClient(object):
         headers=None,
         post_params=None,
         body=None,
-        _preload_content=True,
+        _parse_response=True,
         _request_timeout=None,
         _check_status=True,
     ):
@@ -510,7 +510,7 @@ class ApiClient(object):
             return self.rest_client.GET(
                 url,
                 query_params=query_params,
-                _preload_content=_preload_content,
+                _parse_response=_parse_response,
                 _request_timeout=_request_timeout,
                 headers=headers,
                 _check_status=_check_status,
@@ -519,7 +519,7 @@ class ApiClient(object):
             return self.rest_client.HEAD(
                 url,
                 query_params=query_params,
-                _preload_content=_preload_content,
+                _parse_response=_parse_response,
                 _request_timeout=_request_timeout,
                 headers=headers,
                 _check_status=_check_status,
@@ -530,7 +530,7 @@ class ApiClient(object):
                 query_params=query_params,
                 headers=headers,
                 post_params=post_params,
-                _preload_content=_preload_content,
+                _parse_response=_parse_response,
                 _request_timeout=_request_timeout,
                 _check_status=_check_status,
                 body=body,
@@ -541,7 +541,7 @@ class ApiClient(object):
                 query_params=query_params,
                 headers=headers,
                 post_params=post_params,
-                _preload_content=_preload_content,
+                _parse_response=_parse_response,
                 _request_timeout=_request_timeout,
                 _check_status=_check_status,
                 body=body,
@@ -552,7 +552,7 @@ class ApiClient(object):
                 query_params=query_params,
                 headers=headers,
                 post_params=post_params,
-                _preload_content=_preload_content,
+                _parse_response=_parse_response,
                 _request_timeout=_request_timeout,
                 _check_status=_check_status,
                 body=body,
@@ -563,7 +563,7 @@ class ApiClient(object):
                 query_params=query_params,
                 headers=headers,
                 post_params=post_params,
-                _preload_content=_preload_content,
+                _parse_response=_parse_response,
                 _request_timeout=_request_timeout,
                 _check_status=_check_status,
                 body=body,
@@ -573,7 +573,7 @@ class ApiClient(object):
                 url,
                 query_params=query_params,
                 headers=headers,
-                _preload_content=_preload_content,
+                _parse_response=_parse_response,
                 _request_timeout=_request_timeout,
                 _check_status=_check_status,
                 body=body,
@@ -843,7 +843,7 @@ class Endpoint(object):
             [
                 "async_req",
                 "_host_index",
-                "_preload_content",
+                "_parse_response",
                 "_request_timeout",
                 "_return_http_data_only",
                 "_check_input_type",
@@ -861,7 +861,7 @@ class Endpoint(object):
         extra_types = {
             "async_req": (bool,),
             "_host_index": (none_type, int),
-            "_preload_content": (bool,),
+            "_parse_response": (bool,),
             "_request_timeout": (none_type, float, (float,), [float], int, (int,), [int]),
             "_return_http_data_only": (bool,),
             "_check_input_type": (bool,),
@@ -1040,7 +1040,7 @@ class Endpoint(object):
             _check_type=kwargs["_check_return_type"],
             _check_status=kwargs["_check_status"],
             _return_http_data_only=kwargs["_return_http_data_only"],
-            _preload_content=kwargs["_preload_content"],
+            _parse_response=kwargs["_parse_response"],
             _request_timeout=kwargs["_request_timeout"],
             _host=_host,
             _request_auths=kwargs["_request_auths"],

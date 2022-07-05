@@ -560,7 +560,7 @@ class CloudStoragesApi(object):
         self,
         cloud_storage_write_request,
         _return_http_data_only: typing.Literal[True] = True,
-        _preload_content: typing.Literal[True] = True,
+        _parse_response: typing.Literal[True] = True,
         **kwargs,
     ) -> CloudStorageWrite:
         ...
@@ -570,7 +570,7 @@ class CloudStoragesApi(object):
         self,
         cloud_storage_write_request,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> typing.Tuple[CloudStorageWrite, int, typing.Dict[str, str]]:
         ...
@@ -583,7 +583,7 @@ class CloudStoragesApi(object):
 
     @overload
     def cloudstorages_create(
-        self, cloud_storage_write_request, _preload_content: typing.Literal[False], **kwargs
+        self, cloud_storage_write_request, _parse_response: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
@@ -592,7 +592,7 @@ class CloudStoragesApi(object):
         self,
         cloud_storage_write_request,
         _return_http_data_only: typing.Literal[True],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -602,7 +602,7 @@ class CloudStoragesApi(object):
         self,
         cloud_storage_write_request,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -631,7 +631,7 @@ class CloudStoragesApi(object):
             org_id (int): Organization identifier. [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
-            _preload_content (bool): if False, the urllib3.HTTPResponse object
+            _parse_response (bool): if False, the urllib3.HTTPResponse object
                 will be returned without reading/decoding response data.
                 Checked before _return_http_data_only.
                 Default is True.
@@ -671,7 +671,7 @@ class CloudStoragesApi(object):
         """
         kwargs["async_req"] = kwargs.get("async_req", False)
         kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
         kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
         kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
         kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
@@ -687,7 +687,7 @@ class CloudStoragesApi(object):
         """
         The same as cloudstorages_create(), but returns the response unprocessed.
         Equivalent to calling cloudstorages_create with
-        _preload_content = False and _check_status=False
+        _parse_response = False and _check_status=False
 
         Method creates a cloud storage with a specified characteristics  # noqa: E501
 
@@ -733,7 +733,7 @@ class CloudStoragesApi(object):
                 thread.
         """
         return self.cloudstorages_create(
-            *args, **kwargs, _preload_content=False, _check_status=False
+            *args, **kwargs, _parse_response=False, _check_status=False
         )
 
     @overload
@@ -741,7 +741,7 @@ class CloudStoragesApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[True] = True,
-        _preload_content: typing.Literal[True] = True,
+        _parse_response: typing.Literal[True] = True,
         **kwargs,
     ) -> None:
         ...
@@ -751,7 +751,7 @@ class CloudStoragesApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
         ...
@@ -764,7 +764,7 @@ class CloudStoragesApi(object):
 
     @overload
     def cloudstorages_destroy(
-        self, id, _preload_content: typing.Literal[False], **kwargs
+        self, id, _parse_response: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
@@ -773,7 +773,7 @@ class CloudStoragesApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[True],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -783,7 +783,7 @@ class CloudStoragesApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -808,7 +808,7 @@ class CloudStoragesApi(object):
             org_id (int): Organization identifier. [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
-            _preload_content (bool): if False, the urllib3.HTTPResponse object
+            _parse_response (bool): if False, the urllib3.HTTPResponse object
                 will be returned without reading/decoding response data.
                 Checked before _return_http_data_only.
                 Default is True.
@@ -848,7 +848,7 @@ class CloudStoragesApi(object):
         """
         kwargs["async_req"] = kwargs.get("async_req", False)
         kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
         kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
         kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
         kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
@@ -864,7 +864,7 @@ class CloudStoragesApi(object):
         """
         The same as cloudstorages_destroy(), but returns the response unprocessed.
         Equivalent to calling cloudstorages_destroy with
-        _preload_content = False and _check_status=False
+        _parse_response = False and _check_status=False
 
         Method deletes a specific cloud storage  # noqa: E501
 
@@ -910,14 +910,14 @@ class CloudStoragesApi(object):
                 thread.
         """
         return self.cloudstorages_destroy(
-            *args, **kwargs, _preload_content=False, _check_status=False
+            *args, **kwargs, _parse_response=False, _check_status=False
         )
 
     @overload
     def cloudstorages_list(
         self,
         _return_http_data_only: typing.Literal[True] = True,
-        _preload_content: typing.Literal[True] = True,
+        _parse_response: typing.Literal[True] = True,
         **kwargs,
     ) -> PaginatedCloudStorageReadList:
         ...
@@ -926,7 +926,7 @@ class CloudStoragesApi(object):
     def cloudstorages_list(
         self,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> typing.Tuple[PaginatedCloudStorageReadList, int, typing.Dict[str, str]]:
         ...
@@ -939,7 +939,7 @@ class CloudStoragesApi(object):
 
     @overload
     def cloudstorages_list(
-        self, _preload_content: typing.Literal[False], **kwargs
+        self, _parse_response: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
@@ -947,7 +947,7 @@ class CloudStoragesApi(object):
     def cloudstorages_list(
         self,
         _return_http_data_only: typing.Literal[True],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -956,7 +956,7 @@ class CloudStoragesApi(object):
     def cloudstorages_list(
         self,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -988,7 +988,7 @@ class CloudStoragesApi(object):
             sort (str): Which field to use when ordering the results. Avaliable ordering_fields: ['provider_type', 'display_name', 'resource', 'credentials_type', 'owner', 'description', 'id']. [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
-            _preload_content (bool): if False, the urllib3.HTTPResponse object
+            _parse_response (bool): if False, the urllib3.HTTPResponse object
                 will be returned without reading/decoding response data.
                 Checked before _return_http_data_only.
                 Default is True.
@@ -1028,7 +1028,7 @@ class CloudStoragesApi(object):
         """
         kwargs["async_req"] = kwargs.get("async_req", False)
         kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
         kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
         kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
         kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
@@ -1043,7 +1043,7 @@ class CloudStoragesApi(object):
         """
         The same as cloudstorages_list(), but returns the response unprocessed.
         Equivalent to calling cloudstorages_list with
-        _preload_content = False and _check_status=False
+        _parse_response = False and _check_status=False
 
         Returns a paginated list of storages according to query parameters  # noqa: E501
 
@@ -1091,14 +1091,14 @@ class CloudStoragesApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.cloudstorages_list(*args, **kwargs, _preload_content=False, _check_status=False)
+        return self.cloudstorages_list(*args, **kwargs, _parse_response=False, _check_status=False)
 
     @overload
     def cloudstorages_partial_update(
         self,
         id,
         _return_http_data_only: typing.Literal[True] = True,
-        _preload_content: typing.Literal[True] = True,
+        _parse_response: typing.Literal[True] = True,
         **kwargs,
     ) -> CloudStorageWrite:
         ...
@@ -1108,7 +1108,7 @@ class CloudStoragesApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> typing.Tuple[CloudStorageWrite, int, typing.Dict[str, str]]:
         ...
@@ -1121,7 +1121,7 @@ class CloudStoragesApi(object):
 
     @overload
     def cloudstorages_partial_update(
-        self, id, _preload_content: typing.Literal[False], **kwargs
+        self, id, _parse_response: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
@@ -1130,7 +1130,7 @@ class CloudStoragesApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[True],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -1140,7 +1140,7 @@ class CloudStoragesApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -1170,7 +1170,7 @@ class CloudStoragesApi(object):
             patched_cloud_storage_write_request (PatchedCloudStorageWriteRequest): [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
-            _preload_content (bool): if False, the urllib3.HTTPResponse object
+            _parse_response (bool): if False, the urllib3.HTTPResponse object
                 will be returned without reading/decoding response data.
                 Checked before _return_http_data_only.
                 Default is True.
@@ -1210,7 +1210,7 @@ class CloudStoragesApi(object):
         """
         kwargs["async_req"] = kwargs.get("async_req", False)
         kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
         kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
         kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
         kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
@@ -1226,7 +1226,7 @@ class CloudStoragesApi(object):
         """
         The same as cloudstorages_partial_update(), but returns the response unprocessed.
         Equivalent to calling cloudstorages_partial_update with
-        _preload_content = False and _check_status=False
+        _parse_response = False and _check_status=False
 
         Methods does a partial update of chosen fields in a cloud storage instance  # noqa: E501
 
@@ -1273,7 +1273,7 @@ class CloudStoragesApi(object):
                 thread.
         """
         return self.cloudstorages_partial_update(
-            *args, **kwargs, _preload_content=False, _check_status=False
+            *args, **kwargs, _parse_response=False, _check_status=False
         )
 
     @overload
@@ -1281,7 +1281,7 @@ class CloudStoragesApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[True] = True,
-        _preload_content: typing.Literal[True] = True,
+        _parse_response: typing.Literal[True] = True,
         **kwargs,
     ) -> CloudStorageRead:
         ...
@@ -1291,7 +1291,7 @@ class CloudStoragesApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> typing.Tuple[CloudStorageRead, int, typing.Dict[str, str]]:
         ...
@@ -1304,7 +1304,7 @@ class CloudStoragesApi(object):
 
     @overload
     def cloudstorages_retrieve(
-        self, id, _preload_content: typing.Literal[False], **kwargs
+        self, id, _parse_response: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
@@ -1313,7 +1313,7 @@ class CloudStoragesApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[True],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -1323,7 +1323,7 @@ class CloudStoragesApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -1352,7 +1352,7 @@ class CloudStoragesApi(object):
             org_id (int): Organization identifier. [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
-            _preload_content (bool): if False, the urllib3.HTTPResponse object
+            _parse_response (bool): if False, the urllib3.HTTPResponse object
                 will be returned without reading/decoding response data.
                 Checked before _return_http_data_only.
                 Default is True.
@@ -1392,7 +1392,7 @@ class CloudStoragesApi(object):
         """
         kwargs["async_req"] = kwargs.get("async_req", False)
         kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
         kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
         kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
         kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
@@ -1408,7 +1408,7 @@ class CloudStoragesApi(object):
         """
         The same as cloudstorages_retrieve(), but returns the response unprocessed.
         Equivalent to calling cloudstorages_retrieve with
-        _preload_content = False and _check_status=False
+        _parse_response = False and _check_status=False
 
         Method returns details of a specific cloud storage  # noqa: E501
 
@@ -1454,7 +1454,7 @@ class CloudStoragesApi(object):
                 thread.
         """
         return self.cloudstorages_retrieve(
-            *args, **kwargs, _preload_content=False, _check_status=False
+            *args, **kwargs, _parse_response=False, _check_status=False
         )
 
     @overload
@@ -1462,7 +1462,7 @@ class CloudStoragesApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[True] = True,
-        _preload_content: typing.Literal[True] = True,
+        _parse_response: typing.Literal[True] = True,
         **kwargs,
     ) -> str:
         ...
@@ -1472,7 +1472,7 @@ class CloudStoragesApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> typing.Tuple[str, int, typing.Dict[str, str]]:
         ...
@@ -1485,7 +1485,7 @@ class CloudStoragesApi(object):
 
     @overload
     def cloudstorages_retrieve_actions(
-        self, id, _preload_content: typing.Literal[False], **kwargs
+        self, id, _parse_response: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
@@ -1494,7 +1494,7 @@ class CloudStoragesApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[True],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -1504,7 +1504,7 @@ class CloudStoragesApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -1530,7 +1530,7 @@ class CloudStoragesApi(object):
             org_id (int): Organization identifier. [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
-            _preload_content (bool): if False, the urllib3.HTTPResponse object
+            _parse_response (bool): if False, the urllib3.HTTPResponse object
                 will be returned without reading/decoding response data.
                 Checked before _return_http_data_only.
                 Default is True.
@@ -1570,7 +1570,7 @@ class CloudStoragesApi(object):
         """
         kwargs["async_req"] = kwargs.get("async_req", False)
         kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
         kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
         kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
         kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
@@ -1586,7 +1586,7 @@ class CloudStoragesApi(object):
         """
         The same as cloudstorages_retrieve_actions(), but returns the response unprocessed.
         Equivalent to calling cloudstorages_retrieve_actions with
-        _preload_content = False and _check_status=False
+        _parse_response = False and _check_status=False
 
         Method returns allowed actions for the cloud storage  # noqa: E501
 
@@ -1633,7 +1633,7 @@ class CloudStoragesApi(object):
                 thread.
         """
         return self.cloudstorages_retrieve_actions(
-            *args, **kwargs, _preload_content=False, _check_status=False
+            *args, **kwargs, _parse_response=False, _check_status=False
         )
 
     @overload
@@ -1641,7 +1641,7 @@ class CloudStoragesApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[True] = True,
-        _preload_content: typing.Literal[True] = True,
+        _parse_response: typing.Literal[True] = True,
         **kwargs,
     ) -> typing.Union[typing.Dict[str, (typing.Any, none_type)]]:
         ...
@@ -1651,7 +1651,7 @@ class CloudStoragesApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> typing.Tuple[
         typing.Union[typing.Dict[str, (typing.Any, none_type)]], int, typing.Dict[str, str]
@@ -1668,7 +1668,7 @@ class CloudStoragesApi(object):
 
     @overload
     def cloudstorages_retrieve_content(
-        self, id, _preload_content: typing.Literal[False], **kwargs
+        self, id, _parse_response: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
@@ -1677,7 +1677,7 @@ class CloudStoragesApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[True],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -1687,7 +1687,7 @@ class CloudStoragesApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -1719,7 +1719,7 @@ class CloudStoragesApi(object):
             org_id (int): Organization identifier. [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
-            _preload_content (bool): if False, the urllib3.HTTPResponse object
+            _parse_response (bool): if False, the urllib3.HTTPResponse object
                 will be returned without reading/decoding response data.
                 Checked before _return_http_data_only.
                 Default is True.
@@ -1759,7 +1759,7 @@ class CloudStoragesApi(object):
         """
         kwargs["async_req"] = kwargs.get("async_req", False)
         kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
         kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
         kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
         kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
@@ -1775,7 +1775,7 @@ class CloudStoragesApi(object):
         """
         The same as cloudstorages_retrieve_content(), but returns the response unprocessed.
         Equivalent to calling cloudstorages_retrieve_content with
-        _preload_content = False and _check_status=False
+        _parse_response = False and _check_status=False
 
         Method returns a manifest content  # noqa: E501
 
@@ -1822,7 +1822,7 @@ class CloudStoragesApi(object):
                 thread.
         """
         return self.cloudstorages_retrieve_content(
-            *args, **kwargs, _preload_content=False, _check_status=False
+            *args, **kwargs, _parse_response=False, _check_status=False
         )
 
     @overload
@@ -1830,7 +1830,7 @@ class CloudStoragesApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[True] = True,
-        _preload_content: typing.Literal[True] = True,
+        _parse_response: typing.Literal[True] = True,
         **kwargs,
     ) -> None:
         ...
@@ -1840,7 +1840,7 @@ class CloudStoragesApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
         ...
@@ -1853,7 +1853,7 @@ class CloudStoragesApi(object):
 
     @overload
     def cloudstorages_retrieve_preview(
-        self, id, _preload_content: typing.Literal[False], **kwargs
+        self, id, _parse_response: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
@@ -1862,7 +1862,7 @@ class CloudStoragesApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[True],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -1872,7 +1872,7 @@ class CloudStoragesApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -1897,7 +1897,7 @@ class CloudStoragesApi(object):
             org_id (int): Organization identifier. [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
-            _preload_content (bool): if False, the urllib3.HTTPResponse object
+            _parse_response (bool): if False, the urllib3.HTTPResponse object
                 will be returned without reading/decoding response data.
                 Checked before _return_http_data_only.
                 Default is True.
@@ -1937,7 +1937,7 @@ class CloudStoragesApi(object):
         """
         kwargs["async_req"] = kwargs.get("async_req", False)
         kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
         kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
         kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
         kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
@@ -1953,7 +1953,7 @@ class CloudStoragesApi(object):
         """
         The same as cloudstorages_retrieve_preview(), but returns the response unprocessed.
         Equivalent to calling cloudstorages_retrieve_preview with
-        _preload_content = False and _check_status=False
+        _parse_response = False and _check_status=False
 
         Method returns a preview image from a cloud storage  # noqa: E501
 
@@ -1999,7 +1999,7 @@ class CloudStoragesApi(object):
                 thread.
         """
         return self.cloudstorages_retrieve_preview(
-            *args, **kwargs, _preload_content=False, _check_status=False
+            *args, **kwargs, _parse_response=False, _check_status=False
         )
 
     @overload
@@ -2007,7 +2007,7 @@ class CloudStoragesApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[True] = True,
-        _preload_content: typing.Literal[True] = True,
+        _parse_response: typing.Literal[True] = True,
         **kwargs,
     ) -> str:
         ...
@@ -2017,7 +2017,7 @@ class CloudStoragesApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> typing.Tuple[str, int, typing.Dict[str, str]]:
         ...
@@ -2030,7 +2030,7 @@ class CloudStoragesApi(object):
 
     @overload
     def cloudstorages_retrieve_status(
-        self, id, _preload_content: typing.Literal[False], **kwargs
+        self, id, _parse_response: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
@@ -2039,7 +2039,7 @@ class CloudStoragesApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[True],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -2049,7 +2049,7 @@ class CloudStoragesApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -2074,7 +2074,7 @@ class CloudStoragesApi(object):
             org_id (int): Organization identifier. [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
-            _preload_content (bool): if False, the urllib3.HTTPResponse object
+            _parse_response (bool): if False, the urllib3.HTTPResponse object
                 will be returned without reading/decoding response data.
                 Checked before _return_http_data_only.
                 Default is True.
@@ -2114,7 +2114,7 @@ class CloudStoragesApi(object):
         """
         kwargs["async_req"] = kwargs.get("async_req", False)
         kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
         kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
         kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
         kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
@@ -2130,7 +2130,7 @@ class CloudStoragesApi(object):
         """
         The same as cloudstorages_retrieve_status(), but returns the response unprocessed.
         Equivalent to calling cloudstorages_retrieve_status with
-        _preload_content = False and _check_status=False
+        _parse_response = False and _check_status=False
 
         Method returns a cloud storage status  # noqa: E501
 
@@ -2176,5 +2176,5 @@ class CloudStoragesApi(object):
                 thread.
         """
         return self.cloudstorages_retrieve_status(
-            *args, **kwargs, _preload_content=False, _check_status=False
+            *args, **kwargs, _parse_response=False, _check_status=False
         )

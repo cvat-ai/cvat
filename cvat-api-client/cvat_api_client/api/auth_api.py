@@ -446,7 +446,7 @@ class AuthApi(object):
         self,
         login_request,
         _return_http_data_only: typing.Literal[True] = True,
-        _preload_content: typing.Literal[True] = True,
+        _parse_response: typing.Literal[True] = True,
         **kwargs,
     ) -> Token:
         ...
@@ -456,7 +456,7 @@ class AuthApi(object):
         self,
         login_request,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> typing.Tuple[Token, int, typing.Dict[str, str]]:
         ...
@@ -469,7 +469,7 @@ class AuthApi(object):
 
     @overload
     def create_login(
-        self, login_request, _preload_content: typing.Literal[False], **kwargs
+        self, login_request, _parse_response: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
@@ -478,7 +478,7 @@ class AuthApi(object):
         self,
         login_request,
         _return_http_data_only: typing.Literal[True],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -488,7 +488,7 @@ class AuthApi(object):
         self,
         login_request,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -514,7 +514,7 @@ class AuthApi(object):
             org_id (int): Organization identifier. [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
-            _preload_content (bool): if False, the urllib3.HTTPResponse object
+            _parse_response (bool): if False, the urllib3.HTTPResponse object
                 will be returned without reading/decoding response data.
                 Checked before _return_http_data_only.
                 Default is True.
@@ -554,7 +554,7 @@ class AuthApi(object):
         """
         kwargs["async_req"] = kwargs.get("async_req", False)
         kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
         kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
         kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
         kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
@@ -570,7 +570,7 @@ class AuthApi(object):
         """
         The same as create_login(), but returns the response unprocessed.
         Equivalent to calling create_login with
-        _preload_content = False and _check_status=False
+        _parse_response = False and _check_status=False
 
         create_login  # noqa: E501
 
@@ -616,13 +616,13 @@ class AuthApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.create_login(*args, **kwargs, _preload_content=False, _check_status=False)
+        return self.create_login(*args, **kwargs, _parse_response=False, _check_status=False)
 
     @overload
     def create_logout(
         self,
         _return_http_data_only: typing.Literal[True] = True,
-        _preload_content: typing.Literal[True] = True,
+        _parse_response: typing.Literal[True] = True,
         **kwargs,
     ) -> RestAuthDetail:
         ...
@@ -631,7 +631,7 @@ class AuthApi(object):
     def create_logout(
         self,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> typing.Tuple[RestAuthDetail, int, typing.Dict[str, str]]:
         ...
@@ -644,7 +644,7 @@ class AuthApi(object):
 
     @overload
     def create_logout(
-        self, _preload_content: typing.Literal[False], **kwargs
+        self, _parse_response: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
@@ -652,7 +652,7 @@ class AuthApi(object):
     def create_logout(
         self,
         _return_http_data_only: typing.Literal[True],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -661,7 +661,7 @@ class AuthApi(object):
     def create_logout(
         self,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -689,7 +689,7 @@ class AuthApi(object):
             org_id (int): Organization identifier. [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
-            _preload_content (bool): if False, the urllib3.HTTPResponse object
+            _parse_response (bool): if False, the urllib3.HTTPResponse object
                 will be returned without reading/decoding response data.
                 Checked before _return_http_data_only.
                 Default is True.
@@ -729,7 +729,7 @@ class AuthApi(object):
         """
         kwargs["async_req"] = kwargs.get("async_req", False)
         kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
         kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
         kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
         kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
@@ -744,7 +744,7 @@ class AuthApi(object):
         """
         The same as create_logout(), but returns the response unprocessed.
         Equivalent to calling create_logout with
-        _preload_content = False and _check_status=False
+        _parse_response = False and _check_status=False
 
         create_logout  # noqa: E501
 
@@ -788,14 +788,14 @@ class AuthApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.create_logout(*args, **kwargs, _preload_content=False, _check_status=False)
+        return self.create_logout(*args, **kwargs, _parse_response=False, _check_status=False)
 
     @overload
     def create_password_change(
         self,
         password_change_request,
         _return_http_data_only: typing.Literal[True] = True,
-        _preload_content: typing.Literal[True] = True,
+        _parse_response: typing.Literal[True] = True,
         **kwargs,
     ) -> RestAuthDetail:
         ...
@@ -805,7 +805,7 @@ class AuthApi(object):
         self,
         password_change_request,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> typing.Tuple[RestAuthDetail, int, typing.Dict[str, str]]:
         ...
@@ -818,7 +818,7 @@ class AuthApi(object):
 
     @overload
     def create_password_change(
-        self, password_change_request, _preload_content: typing.Literal[False], **kwargs
+        self, password_change_request, _parse_response: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
@@ -827,7 +827,7 @@ class AuthApi(object):
         self,
         password_change_request,
         _return_http_data_only: typing.Literal[True],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -837,7 +837,7 @@ class AuthApi(object):
         self,
         password_change_request,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -867,7 +867,7 @@ class AuthApi(object):
             org_id (int): Organization identifier. [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
-            _preload_content (bool): if False, the urllib3.HTTPResponse object
+            _parse_response (bool): if False, the urllib3.HTTPResponse object
                 will be returned without reading/decoding response data.
                 Checked before _return_http_data_only.
                 Default is True.
@@ -907,7 +907,7 @@ class AuthApi(object):
         """
         kwargs["async_req"] = kwargs.get("async_req", False)
         kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
         kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
         kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
         kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
@@ -923,7 +923,7 @@ class AuthApi(object):
         """
         The same as create_password_change(), but returns the response unprocessed.
         Equivalent to calling create_password_change with
-        _preload_content = False and _check_status=False
+        _parse_response = False and _check_status=False
 
         create_password_change  # noqa: E501
 
@@ -970,7 +970,7 @@ class AuthApi(object):
                 thread.
         """
         return self.create_password_change(
-            *args, **kwargs, _preload_content=False, _check_status=False
+            *args, **kwargs, _parse_response=False, _check_status=False
         )
 
     @overload
@@ -978,7 +978,7 @@ class AuthApi(object):
         self,
         password_reset_serializer_ex_request,
         _return_http_data_only: typing.Literal[True] = True,
-        _preload_content: typing.Literal[True] = True,
+        _parse_response: typing.Literal[True] = True,
         **kwargs,
     ) -> RestAuthDetail:
         ...
@@ -988,7 +988,7 @@ class AuthApi(object):
         self,
         password_reset_serializer_ex_request,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> typing.Tuple[RestAuthDetail, int, typing.Dict[str, str]]:
         ...
@@ -1004,10 +1004,7 @@ class AuthApi(object):
 
     @overload
     def create_password_reset(
-        self,
-        password_reset_serializer_ex_request,
-        _preload_content: typing.Literal[False],
-        **kwargs,
+        self, password_reset_serializer_ex_request, _parse_response: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
@@ -1016,7 +1013,7 @@ class AuthApi(object):
         self,
         password_reset_serializer_ex_request,
         _return_http_data_only: typing.Literal[True],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -1026,7 +1023,7 @@ class AuthApi(object):
         self,
         password_reset_serializer_ex_request,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -1056,7 +1053,7 @@ class AuthApi(object):
             org_id (int): Organization identifier. [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
-            _preload_content (bool): if False, the urllib3.HTTPResponse object
+            _parse_response (bool): if False, the urllib3.HTTPResponse object
                 will be returned without reading/decoding response data.
                 Checked before _return_http_data_only.
                 Default is True.
@@ -1096,7 +1093,7 @@ class AuthApi(object):
         """
         kwargs["async_req"] = kwargs.get("async_req", False)
         kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
         kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
         kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
         kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
@@ -1112,7 +1109,7 @@ class AuthApi(object):
         """
         The same as create_password_reset(), but returns the response unprocessed.
         Equivalent to calling create_password_reset with
-        _preload_content = False and _check_status=False
+        _parse_response = False and _check_status=False
 
         create_password_reset  # noqa: E501
 
@@ -1159,7 +1156,7 @@ class AuthApi(object):
                 thread.
         """
         return self.create_password_reset(
-            *args, **kwargs, _preload_content=False, _check_status=False
+            *args, **kwargs, _parse_response=False, _check_status=False
         )
 
     @overload
@@ -1167,7 +1164,7 @@ class AuthApi(object):
         self,
         password_reset_confirm_request,
         _return_http_data_only: typing.Literal[True] = True,
-        _preload_content: typing.Literal[True] = True,
+        _parse_response: typing.Literal[True] = True,
         **kwargs,
     ) -> RestAuthDetail:
         ...
@@ -1177,7 +1174,7 @@ class AuthApi(object):
         self,
         password_reset_confirm_request,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> typing.Tuple[RestAuthDetail, int, typing.Dict[str, str]]:
         ...
@@ -1193,7 +1190,7 @@ class AuthApi(object):
 
     @overload
     def create_password_reset_confirm(
-        self, password_reset_confirm_request, _preload_content: typing.Literal[False], **kwargs
+        self, password_reset_confirm_request, _parse_response: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
@@ -1202,7 +1199,7 @@ class AuthApi(object):
         self,
         password_reset_confirm_request,
         _return_http_data_only: typing.Literal[True],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -1212,7 +1209,7 @@ class AuthApi(object):
         self,
         password_reset_confirm_request,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -1242,7 +1239,7 @@ class AuthApi(object):
             org_id (int): Organization identifier. [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
-            _preload_content (bool): if False, the urllib3.HTTPResponse object
+            _parse_response (bool): if False, the urllib3.HTTPResponse object
                 will be returned without reading/decoding response data.
                 Checked before _return_http_data_only.
                 Default is True.
@@ -1282,7 +1279,7 @@ class AuthApi(object):
         """
         kwargs["async_req"] = kwargs.get("async_req", False)
         kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
         kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
         kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
         kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
@@ -1298,7 +1295,7 @@ class AuthApi(object):
         """
         The same as create_password_reset_confirm(), but returns the response unprocessed.
         Equivalent to calling create_password_reset_confirm with
-        _preload_content = False and _check_status=False
+        _parse_response = False and _check_status=False
 
         create_password_reset_confirm  # noqa: E501
 
@@ -1345,7 +1342,7 @@ class AuthApi(object):
                 thread.
         """
         return self.create_password_reset_confirm(
-            *args, **kwargs, _preload_content=False, _check_status=False
+            *args, **kwargs, _parse_response=False, _check_status=False
         )
 
     @overload
@@ -1353,7 +1350,7 @@ class AuthApi(object):
         self,
         restricted_register_request,
         _return_http_data_only: typing.Literal[True] = True,
-        _preload_content: typing.Literal[True] = True,
+        _parse_response: typing.Literal[True] = True,
         **kwargs,
     ) -> RestrictedRegister:
         ...
@@ -1363,7 +1360,7 @@ class AuthApi(object):
         self,
         restricted_register_request,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> typing.Tuple[RestrictedRegister, int, typing.Dict[str, str]]:
         ...
@@ -1376,7 +1373,7 @@ class AuthApi(object):
 
     @overload
     def create_register(
-        self, restricted_register_request, _preload_content: typing.Literal[False], **kwargs
+        self, restricted_register_request, _parse_response: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
@@ -1385,7 +1382,7 @@ class AuthApi(object):
         self,
         restricted_register_request,
         _return_http_data_only: typing.Literal[True],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -1395,7 +1392,7 @@ class AuthApi(object):
         self,
         restricted_register_request,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -1424,7 +1421,7 @@ class AuthApi(object):
             org_id (int): Organization identifier. [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
-            _preload_content (bool): if False, the urllib3.HTTPResponse object
+            _parse_response (bool): if False, the urllib3.HTTPResponse object
                 will be returned without reading/decoding response data.
                 Checked before _return_http_data_only.
                 Default is True.
@@ -1464,7 +1461,7 @@ class AuthApi(object):
         """
         kwargs["async_req"] = kwargs.get("async_req", False)
         kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
         kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
         kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
         kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
@@ -1480,7 +1477,7 @@ class AuthApi(object):
         """
         The same as create_register(), but returns the response unprocessed.
         Equivalent to calling create_register with
-        _preload_content = False and _check_status=False
+        _parse_response = False and _check_status=False
 
         create_register  # noqa: E501
 
@@ -1525,14 +1522,14 @@ class AuthApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.create_register(*args, **kwargs, _preload_content=False, _check_status=False)
+        return self.create_register(*args, **kwargs, _parse_response=False, _check_status=False)
 
     @overload
     def create_signing(
         self,
         signing_request,
         _return_http_data_only: typing.Literal[True] = True,
-        _preload_content: typing.Literal[True] = True,
+        _parse_response: typing.Literal[True] = True,
         **kwargs,
     ) -> str:
         ...
@@ -1542,7 +1539,7 @@ class AuthApi(object):
         self,
         signing_request,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> typing.Tuple[str, int, typing.Dict[str, str]]:
         ...
@@ -1555,7 +1552,7 @@ class AuthApi(object):
 
     @overload
     def create_signing(
-        self, signing_request, _preload_content: typing.Literal[False], **kwargs
+        self, signing_request, _parse_response: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
@@ -1564,7 +1561,7 @@ class AuthApi(object):
         self,
         signing_request,
         _return_http_data_only: typing.Literal[True],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -1574,7 +1571,7 @@ class AuthApi(object):
         self,
         signing_request,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -1600,7 +1597,7 @@ class AuthApi(object):
             org_id (int): Organization identifier. [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
-            _preload_content (bool): if False, the urllib3.HTTPResponse object
+            _parse_response (bool): if False, the urllib3.HTTPResponse object
                 will be returned without reading/decoding response data.
                 Checked before _return_http_data_only.
                 Default is True.
@@ -1640,7 +1637,7 @@ class AuthApi(object):
         """
         kwargs["async_req"] = kwargs.get("async_req", False)
         kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
         kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
         kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
         kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
@@ -1656,7 +1653,7 @@ class AuthApi(object):
         """
         The same as create_signing(), but returns the response unprocessed.
         Equivalent to calling create_signing with
-        _preload_content = False and _check_status=False
+        _parse_response = False and _check_status=False
 
         This method signs URL for access to the server  # noqa: E501
 
@@ -1702,4 +1699,4 @@ class AuthApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.create_signing(*args, **kwargs, _preload_content=False, _check_status=False)
+        return self.create_signing(*args, **kwargs, _parse_response=False, _check_status=False)

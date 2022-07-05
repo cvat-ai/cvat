@@ -1079,7 +1079,7 @@ class JobsApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[True] = True,
-        _preload_content: typing.Literal[True] = True,
+        _parse_response: typing.Literal[True] = True,
         **kwargs,
     ) -> None:
         ...
@@ -1089,7 +1089,7 @@ class JobsApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
         ...
@@ -1102,7 +1102,7 @@ class JobsApi(object):
 
     @overload
     def create_annotations(
-        self, id, _preload_content: typing.Literal[False], **kwargs
+        self, id, _parse_response: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
@@ -1111,7 +1111,7 @@ class JobsApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[True],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -1121,7 +1121,7 @@ class JobsApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -1152,7 +1152,7 @@ class JobsApi(object):
             job_write_request (JobWriteRequest): [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
-            _preload_content (bool): if False, the urllib3.HTTPResponse object
+            _parse_response (bool): if False, the urllib3.HTTPResponse object
                 will be returned without reading/decoding response data.
                 Checked before _return_http_data_only.
                 Default is True.
@@ -1192,7 +1192,7 @@ class JobsApi(object):
         """
         kwargs["async_req"] = kwargs.get("async_req", False)
         kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
         kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
         kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
         kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
@@ -1208,7 +1208,7 @@ class JobsApi(object):
         """
         The same as create_annotations(), but returns the response unprocessed.
         Equivalent to calling create_annotations with
-        _preload_content = False and _check_status=False
+        _parse_response = False and _check_status=False
 
         Method allows to upload job annotations  # noqa: E501
 
@@ -1259,14 +1259,14 @@ class JobsApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.create_annotations(*args, **kwargs, _preload_content=False, _check_status=False)
+        return self.create_annotations(*args, **kwargs, _parse_response=False, _check_status=False)
 
     @overload
     def destroy_annotations(
         self,
         id,
         _return_http_data_only: typing.Literal[True] = True,
-        _preload_content: typing.Literal[True] = True,
+        _parse_response: typing.Literal[True] = True,
         **kwargs,
     ) -> None:
         ...
@@ -1276,7 +1276,7 @@ class JobsApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
         ...
@@ -1289,7 +1289,7 @@ class JobsApi(object):
 
     @overload
     def destroy_annotations(
-        self, id, _preload_content: typing.Literal[False], **kwargs
+        self, id, _parse_response: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
@@ -1298,7 +1298,7 @@ class JobsApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[True],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -1308,7 +1308,7 @@ class JobsApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -1333,7 +1333,7 @@ class JobsApi(object):
             org_id (int): Organization identifier. [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
-            _preload_content (bool): if False, the urllib3.HTTPResponse object
+            _parse_response (bool): if False, the urllib3.HTTPResponse object
                 will be returned without reading/decoding response data.
                 Checked before _return_http_data_only.
                 Default is True.
@@ -1373,7 +1373,7 @@ class JobsApi(object):
         """
         kwargs["async_req"] = kwargs.get("async_req", False)
         kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
         kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
         kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
         kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
@@ -1389,7 +1389,7 @@ class JobsApi(object):
         """
         The same as destroy_annotations(), but returns the response unprocessed.
         Equivalent to calling destroy_annotations with
-        _preload_content = False and _check_status=False
+        _parse_response = False and _check_status=False
 
         Method deletes all annotations for a specific job  # noqa: E501
 
@@ -1434,15 +1434,13 @@ class JobsApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.destroy_annotations(
-            *args, **kwargs, _preload_content=False, _check_status=False
-        )
+        return self.destroy_annotations(*args, **kwargs, _parse_response=False, _check_status=False)
 
     @overload
     def list(
         self,
         _return_http_data_only: typing.Literal[True] = True,
-        _preload_content: typing.Literal[True] = True,
+        _parse_response: typing.Literal[True] = True,
         **kwargs,
     ) -> PaginatedJobReadList:
         ...
@@ -1451,7 +1449,7 @@ class JobsApi(object):
     def list(
         self,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> typing.Tuple[PaginatedJobReadList, int, typing.Dict[str, str]]:
         ...
@@ -1463,14 +1461,14 @@ class JobsApi(object):
         ...
 
     @overload
-    def list(self, _preload_content: typing.Literal[False], **kwargs) -> urllib3.HTTPResponse:
+    def list(self, _parse_response: typing.Literal[False], **kwargs) -> urllib3.HTTPResponse:
         ...
 
     @overload
     def list(
         self,
         _return_http_data_only: typing.Literal[True],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -1479,7 +1477,7 @@ class JobsApi(object):
     def list(
         self,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -1511,7 +1509,7 @@ class JobsApi(object):
             sort (str): Which field to use when ordering the results. Avaliable ordering_fields: ['task_name', 'project_name', 'assignee', 'state', 'stage', 'id', 'task_id', 'project_id', 'updated_date']. [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
-            _preload_content (bool): if False, the urllib3.HTTPResponse object
+            _parse_response (bool): if False, the urllib3.HTTPResponse object
                 will be returned without reading/decoding response data.
                 Checked before _return_http_data_only.
                 Default is True.
@@ -1551,7 +1549,7 @@ class JobsApi(object):
         """
         kwargs["async_req"] = kwargs.get("async_req", False)
         kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
         kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
         kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
         kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
@@ -1566,7 +1564,7 @@ class JobsApi(object):
         """
         The same as list(), but returns the response unprocessed.
         Equivalent to calling list with
-        _preload_content = False and _check_status=False
+        _parse_response = False and _check_status=False
 
         Method returns a paginated list of jobs according to query parameters  # noqa: E501
 
@@ -1614,14 +1612,14 @@ class JobsApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.list(*args, **kwargs, _preload_content=False, _check_status=False)
+        return self.list(*args, **kwargs, _parse_response=False, _check_status=False)
 
     @overload
     def list_commits(
         self,
         id,
         _return_http_data_only: typing.Literal[True] = True,
-        _preload_content: typing.Literal[True] = True,
+        _parse_response: typing.Literal[True] = True,
         **kwargs,
     ) -> PaginatedJobCommitList:
         ...
@@ -1631,7 +1629,7 @@ class JobsApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> typing.Tuple[PaginatedJobCommitList, int, typing.Dict[str, str]]:
         ...
@@ -1644,7 +1642,7 @@ class JobsApi(object):
 
     @overload
     def list_commits(
-        self, id, _preload_content: typing.Literal[False], **kwargs
+        self, id, _parse_response: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
@@ -1653,7 +1651,7 @@ class JobsApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[True],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -1663,7 +1661,7 @@ class JobsApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -1697,7 +1695,7 @@ class JobsApi(object):
             sort (str): Which field to use when ordering the results. Avaliable ordering_fields: ['task_name', 'project_name', 'assignee', 'state', 'stage', 'id', 'task_id', 'project_id', 'updated_date']. [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
-            _preload_content (bool): if False, the urllib3.HTTPResponse object
+            _parse_response (bool): if False, the urllib3.HTTPResponse object
                 will be returned without reading/decoding response data.
                 Checked before _return_http_data_only.
                 Default is True.
@@ -1737,7 +1735,7 @@ class JobsApi(object):
         """
         kwargs["async_req"] = kwargs.get("async_req", False)
         kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
         kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
         kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
         kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
@@ -1753,7 +1751,7 @@ class JobsApi(object):
         """
         The same as list_commits(), but returns the response unprocessed.
         Equivalent to calling list_commits with
-        _preload_content = False and _check_status=False
+        _parse_response = False and _check_status=False
 
         The action returns the list of tracked changes for the job  # noqa: E501
 
@@ -1803,14 +1801,14 @@ class JobsApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.list_commits(*args, **kwargs, _preload_content=False, _check_status=False)
+        return self.list_commits(*args, **kwargs, _parse_response=False, _check_status=False)
 
     @overload
     def list_issues(
         self,
         id,
         _return_http_data_only: typing.Literal[True] = True,
-        _preload_content: typing.Literal[True] = True,
+        _parse_response: typing.Literal[True] = True,
         **kwargs,
     ) -> PaginatedIssueReadList:
         ...
@@ -1820,7 +1818,7 @@ class JobsApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> typing.Tuple[PaginatedIssueReadList, int, typing.Dict[str, str]]:
         ...
@@ -1833,7 +1831,7 @@ class JobsApi(object):
 
     @overload
     def list_issues(
-        self, id, _preload_content: typing.Literal[False], **kwargs
+        self, id, _parse_response: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
@@ -1842,7 +1840,7 @@ class JobsApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[True],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -1852,7 +1850,7 @@ class JobsApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -1886,7 +1884,7 @@ class JobsApi(object):
             sort (str): Which field to use when ordering the results. Avaliable ordering_fields: ['task_name', 'project_name', 'assignee', 'state', 'stage', 'id', 'task_id', 'project_id', 'updated_date']. [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
-            _preload_content (bool): if False, the urllib3.HTTPResponse object
+            _parse_response (bool): if False, the urllib3.HTTPResponse object
                 will be returned without reading/decoding response data.
                 Checked before _return_http_data_only.
                 Default is True.
@@ -1926,7 +1924,7 @@ class JobsApi(object):
         """
         kwargs["async_req"] = kwargs.get("async_req", False)
         kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
         kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
         kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
         kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
@@ -1942,7 +1940,7 @@ class JobsApi(object):
         """
         The same as list_issues(), but returns the response unprocessed.
         Equivalent to calling list_issues with
-        _preload_content = False and _check_status=False
+        _parse_response = False and _check_status=False
 
         Method returns list of issues for the job  # noqa: E501
 
@@ -1992,14 +1990,14 @@ class JobsApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.list_issues(*args, **kwargs, _preload_content=False, _check_status=False)
+        return self.list_issues(*args, **kwargs, _parse_response=False, _check_status=False)
 
     @overload
     def partial_update(
         self,
         id,
         _return_http_data_only: typing.Literal[True] = True,
-        _preload_content: typing.Literal[True] = True,
+        _parse_response: typing.Literal[True] = True,
         **kwargs,
     ) -> JobWrite:
         ...
@@ -2009,7 +2007,7 @@ class JobsApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> typing.Tuple[JobWrite, int, typing.Dict[str, str]]:
         ...
@@ -2022,7 +2020,7 @@ class JobsApi(object):
 
     @overload
     def partial_update(
-        self, id, _preload_content: typing.Literal[False], **kwargs
+        self, id, _parse_response: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
@@ -2031,7 +2029,7 @@ class JobsApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[True],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -2041,7 +2039,7 @@ class JobsApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -2069,7 +2067,7 @@ class JobsApi(object):
             patched_job_write_request (PatchedJobWriteRequest): [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
-            _preload_content (bool): if False, the urllib3.HTTPResponse object
+            _parse_response (bool): if False, the urllib3.HTTPResponse object
                 will be returned without reading/decoding response data.
                 Checked before _return_http_data_only.
                 Default is True.
@@ -2109,7 +2107,7 @@ class JobsApi(object):
         """
         kwargs["async_req"] = kwargs.get("async_req", False)
         kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
         kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
         kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
         kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
@@ -2125,7 +2123,7 @@ class JobsApi(object):
         """
         The same as partial_update(), but returns the response unprocessed.
         Equivalent to calling partial_update with
-        _preload_content = False and _check_status=False
+        _parse_response = False and _check_status=False
 
         Methods does a partial update of chosen fields in a job  # noqa: E501
 
@@ -2171,7 +2169,7 @@ class JobsApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.partial_update(*args, **kwargs, _preload_content=False, _check_status=False)
+        return self.partial_update(*args, **kwargs, _parse_response=False, _check_status=False)
 
     @overload
     def partial_update_annotations(
@@ -2179,7 +2177,7 @@ class JobsApi(object):
         action,
         id,
         _return_http_data_only: typing.Literal[True] = True,
-        _preload_content: typing.Literal[True] = True,
+        _parse_response: typing.Literal[True] = True,
         **kwargs,
     ) -> None:
         ...
@@ -2190,7 +2188,7 @@ class JobsApi(object):
         action,
         id,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
         ...
@@ -2203,7 +2201,7 @@ class JobsApi(object):
 
     @overload
     def partial_update_annotations(
-        self, action, id, _preload_content: typing.Literal[False], **kwargs
+        self, action, id, _parse_response: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
@@ -2213,7 +2211,7 @@ class JobsApi(object):
         action,
         id,
         _return_http_data_only: typing.Literal[True],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -2224,7 +2222,7 @@ class JobsApi(object):
         action,
         id,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -2251,7 +2249,7 @@ class JobsApi(object):
             patched_job_write_request (PatchedJobWriteRequest): [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
-            _preload_content (bool): if False, the urllib3.HTTPResponse object
+            _parse_response (bool): if False, the urllib3.HTTPResponse object
                 will be returned without reading/decoding response data.
                 Checked before _return_http_data_only.
                 Default is True.
@@ -2291,7 +2289,7 @@ class JobsApi(object):
         """
         kwargs["async_req"] = kwargs.get("async_req", False)
         kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
         kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
         kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
         kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
@@ -2308,7 +2306,7 @@ class JobsApi(object):
         """
         The same as partial_update_annotations(), but returns the response unprocessed.
         Equivalent to calling partial_update_annotations with
-        _preload_content = False and _check_status=False
+        _parse_response = False and _check_status=False
 
         Method performs a partial update of annotations in a specific job  # noqa: E501
 
@@ -2356,7 +2354,7 @@ class JobsApi(object):
                 thread.
         """
         return self.partial_update_annotations(
-            *args, **kwargs, _preload_content=False, _check_status=False
+            *args, **kwargs, _parse_response=False, _check_status=False
         )
 
     @overload
@@ -2365,7 +2363,7 @@ class JobsApi(object):
         file_id,
         id,
         _return_http_data_only: typing.Literal[True] = True,
-        _preload_content: typing.Literal[True] = True,
+        _parse_response: typing.Literal[True] = True,
         **kwargs,
     ) -> JobWrite:
         ...
@@ -2376,7 +2374,7 @@ class JobsApi(object):
         file_id,
         id,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> typing.Tuple[JobWrite, int, typing.Dict[str, str]]:
         ...
@@ -2389,7 +2387,7 @@ class JobsApi(object):
 
     @overload
     def partial_update_annotations_file(
-        self, file_id, id, _preload_content: typing.Literal[False], **kwargs
+        self, file_id, id, _parse_response: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
@@ -2399,7 +2397,7 @@ class JobsApi(object):
         file_id,
         id,
         _return_http_data_only: typing.Literal[True],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -2410,7 +2408,7 @@ class JobsApi(object):
         file_id,
         id,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -2439,7 +2437,7 @@ class JobsApi(object):
             patched_job_write_request (PatchedJobWriteRequest): [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
-            _preload_content (bool): if False, the urllib3.HTTPResponse object
+            _parse_response (bool): if False, the urllib3.HTTPResponse object
                 will be returned without reading/decoding response data.
                 Checked before _return_http_data_only.
                 Default is True.
@@ -2479,7 +2477,7 @@ class JobsApi(object):
         """
         kwargs["async_req"] = kwargs.get("async_req", False)
         kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
         kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
         kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
         kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
@@ -2496,7 +2494,7 @@ class JobsApi(object):
         """
         The same as partial_update_annotations_file(), but returns the response unprocessed.
         Equivalent to calling partial_update_annotations_file with
-        _preload_content = False and _check_status=False
+        _parse_response = False and _check_status=False
 
         Allows to upload an annotation file chunk. Implements TUS file uploading protocol.  # noqa: E501
 
@@ -2544,7 +2542,7 @@ class JobsApi(object):
                 thread.
         """
         return self.partial_update_annotations_file(
-            *args, **kwargs, _preload_content=False, _check_status=False
+            *args, **kwargs, _parse_response=False, _check_status=False
         )
 
     @overload
@@ -2552,7 +2550,7 @@ class JobsApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[True] = True,
-        _preload_content: typing.Literal[True] = True,
+        _parse_response: typing.Literal[True] = True,
         **kwargs,
     ) -> JobRead:
         ...
@@ -2562,7 +2560,7 @@ class JobsApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> typing.Tuple[JobRead, int, typing.Dict[str, str]]:
         ...
@@ -2575,7 +2573,7 @@ class JobsApi(object):
 
     @overload
     def retrieve(
-        self, id, _preload_content: typing.Literal[False], **kwargs
+        self, id, _parse_response: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
@@ -2584,7 +2582,7 @@ class JobsApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[True],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -2594,7 +2592,7 @@ class JobsApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -2621,7 +2619,7 @@ class JobsApi(object):
             org_id (int): Organization identifier. [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
-            _preload_content (bool): if False, the urllib3.HTTPResponse object
+            _parse_response (bool): if False, the urllib3.HTTPResponse object
                 will be returned without reading/decoding response data.
                 Checked before _return_http_data_only.
                 Default is True.
@@ -2661,7 +2659,7 @@ class JobsApi(object):
         """
         kwargs["async_req"] = kwargs.get("async_req", False)
         kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
         kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
         kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
         kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
@@ -2677,7 +2675,7 @@ class JobsApi(object):
         """
         The same as retrieve(), but returns the response unprocessed.
         Equivalent to calling retrieve with
-        _preload_content = False and _check_status=False
+        _parse_response = False and _check_status=False
 
         Method returns details of a job  # noqa: E501
 
@@ -2722,14 +2720,14 @@ class JobsApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.retrieve(*args, **kwargs, _preload_content=False, _check_status=False)
+        return self.retrieve(*args, **kwargs, _parse_response=False, _check_status=False)
 
     @overload
     def retrieve_annotations(
         self,
         id,
         _return_http_data_only: typing.Literal[True] = True,
-        _preload_content: typing.Literal[True] = True,
+        _parse_response: typing.Literal[True] = True,
         **kwargs,
     ) -> LabeledData:
         ...
@@ -2739,7 +2737,7 @@ class JobsApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> typing.Tuple[LabeledData, int, typing.Dict[str, str]]:
         ...
@@ -2752,7 +2750,7 @@ class JobsApi(object):
 
     @overload
     def retrieve_annotations(
-        self, id, _preload_content: typing.Literal[False], **kwargs
+        self, id, _parse_response: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
@@ -2761,7 +2759,7 @@ class JobsApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[True],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -2771,7 +2769,7 @@ class JobsApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -2804,7 +2802,7 @@ class JobsApi(object):
             use_default_location (bool): Use the location that was configured in the task to export annotation. [optional] if omitted the server will use the default value of True
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
-            _preload_content (bool): if False, the urllib3.HTTPResponse object
+            _parse_response (bool): if False, the urllib3.HTTPResponse object
                 will be returned without reading/decoding response data.
                 Checked before _return_http_data_only.
                 Default is True.
@@ -2844,7 +2842,7 @@ class JobsApi(object):
         """
         kwargs["async_req"] = kwargs.get("async_req", False)
         kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
         kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
         kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
         kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
@@ -2860,7 +2858,7 @@ class JobsApi(object):
         """
         The same as retrieve_annotations(), but returns the response unprocessed.
         Equivalent to calling retrieve_annotations with
-        _preload_content = False and _check_status=False
+        _parse_response = False and _check_status=False
 
         Method returns annotations for a specific job  # noqa: E501
 
@@ -2912,7 +2910,7 @@ class JobsApi(object):
                 thread.
         """
         return self.retrieve_annotations(
-            *args, **kwargs, _preload_content=False, _check_status=False
+            *args, **kwargs, _parse_response=False, _check_status=False
         )
 
     @overload
@@ -2923,7 +2921,7 @@ class JobsApi(object):
         quality,
         type,
         _return_http_data_only: typing.Literal[True] = True,
-        _preload_content: typing.Literal[True] = True,
+        _parse_response: typing.Literal[True] = True,
         **kwargs,
     ) -> None:
         ...
@@ -2936,7 +2934,7 @@ class JobsApi(object):
         quality,
         type,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
         ...
@@ -2949,7 +2947,7 @@ class JobsApi(object):
 
     @overload
     def retrieve_data(
-        self, id, number, quality, type, _preload_content: typing.Literal[False], **kwargs
+        self, id, number, quality, type, _parse_response: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
@@ -2961,7 +2959,7 @@ class JobsApi(object):
         quality,
         type,
         _return_http_data_only: typing.Literal[True],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -2974,7 +2972,7 @@ class JobsApi(object):
         quality,
         type,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -3002,7 +3000,7 @@ class JobsApi(object):
             org_id (int): Organization identifier. [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
-            _preload_content (bool): if False, the urllib3.HTTPResponse object
+            _parse_response (bool): if False, the urllib3.HTTPResponse object
                 will be returned without reading/decoding response data.
                 Checked before _return_http_data_only.
                 Default is True.
@@ -3042,7 +3040,7 @@ class JobsApi(object):
         """
         kwargs["async_req"] = kwargs.get("async_req", False)
         kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
         kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
         kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
         kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
@@ -3061,7 +3059,7 @@ class JobsApi(object):
         """
         The same as retrieve_data(), but returns the response unprocessed.
         Equivalent to calling retrieve_data with
-        _preload_content = False and _check_status=False
+        _parse_response = False and _check_status=False
 
         Method returns data for a specific job  # noqa: E501
 
@@ -3109,14 +3107,14 @@ class JobsApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.retrieve_data(*args, **kwargs, _preload_content=False, _check_status=False)
+        return self.retrieve_data(*args, **kwargs, _parse_response=False, _check_status=False)
 
     @overload
     def retrieve_data_meta(
         self,
         id,
         _return_http_data_only: typing.Literal[True] = True,
-        _preload_content: typing.Literal[True] = True,
+        _parse_response: typing.Literal[True] = True,
         **kwargs,
     ) -> DataMetaRead:
         ...
@@ -3126,7 +3124,7 @@ class JobsApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> typing.Tuple[DataMetaRead, int, typing.Dict[str, str]]:
         ...
@@ -3139,7 +3137,7 @@ class JobsApi(object):
 
     @overload
     def retrieve_data_meta(
-        self, id, _preload_content: typing.Literal[False], **kwargs
+        self, id, _parse_response: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
@@ -3148,7 +3146,7 @@ class JobsApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[True],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -3158,7 +3156,7 @@ class JobsApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -3185,7 +3183,7 @@ class JobsApi(object):
             org_id (int): Organization identifier. [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
-            _preload_content (bool): if False, the urllib3.HTTPResponse object
+            _parse_response (bool): if False, the urllib3.HTTPResponse object
                 will be returned without reading/decoding response data.
                 Checked before _return_http_data_only.
                 Default is True.
@@ -3225,7 +3223,7 @@ class JobsApi(object):
         """
         kwargs["async_req"] = kwargs.get("async_req", False)
         kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
         kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
         kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
         kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
@@ -3241,7 +3239,7 @@ class JobsApi(object):
         """
         The same as retrieve_data_meta(), but returns the response unprocessed.
         Equivalent to calling retrieve_data_meta with
-        _preload_content = False and _check_status=False
+        _parse_response = False and _check_status=False
 
         Method provides a meta information about media files which are related with the job  # noqa: E501
 
@@ -3286,7 +3284,7 @@ class JobsApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.retrieve_data_meta(*args, **kwargs, _preload_content=False, _check_status=False)
+        return self.retrieve_data_meta(*args, **kwargs, _parse_response=False, _check_status=False)
 
     @overload
     def retrieve_dataset(
@@ -3294,7 +3292,7 @@ class JobsApi(object):
         format,
         id,
         _return_http_data_only: typing.Literal[True] = True,
-        _preload_content: typing.Literal[True] = True,
+        _parse_response: typing.Literal[True] = True,
         **kwargs,
     ) -> None:
         ...
@@ -3305,7 +3303,7 @@ class JobsApi(object):
         format,
         id,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
         ...
@@ -3318,7 +3316,7 @@ class JobsApi(object):
 
     @overload
     def retrieve_dataset(
-        self, format, id, _preload_content: typing.Literal[False], **kwargs
+        self, format, id, _parse_response: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
@@ -3328,7 +3326,7 @@ class JobsApi(object):
         format,
         id,
         _return_http_data_only: typing.Literal[True],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -3339,7 +3337,7 @@ class JobsApi(object):
         format,
         id,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -3370,7 +3368,7 @@ class JobsApi(object):
             use_default_location (bool): Use the location that was configured in the task to export dataset. [optional] if omitted the server will use the default value of True
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
-            _preload_content (bool): if False, the urllib3.HTTPResponse object
+            _parse_response (bool): if False, the urllib3.HTTPResponse object
                 will be returned without reading/decoding response data.
                 Checked before _return_http_data_only.
                 Default is True.
@@ -3410,7 +3408,7 @@ class JobsApi(object):
         """
         kwargs["async_req"] = kwargs.get("async_req", False)
         kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
         kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
         kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
         kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
@@ -3427,7 +3425,7 @@ class JobsApi(object):
         """
         The same as retrieve_dataset(), but returns the response unprocessed.
         Equivalent to calling retrieve_dataset with
-        _preload_content = False and _check_status=False
+        _parse_response = False and _check_status=False
 
         Export job as a dataset in a specific format  # noqa: E501
 
@@ -3478,14 +3476,14 @@ class JobsApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.retrieve_dataset(*args, **kwargs, _preload_content=False, _check_status=False)
+        return self.retrieve_dataset(*args, **kwargs, _parse_response=False, _check_status=False)
 
     @overload
     def update(
         self,
         id,
         _return_http_data_only: typing.Literal[True] = True,
-        _preload_content: typing.Literal[True] = True,
+        _parse_response: typing.Literal[True] = True,
         **kwargs,
     ) -> JobWrite:
         ...
@@ -3495,7 +3493,7 @@ class JobsApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> typing.Tuple[JobWrite, int, typing.Dict[str, str]]:
         ...
@@ -3507,7 +3505,7 @@ class JobsApi(object):
         ...
 
     @overload
-    def update(self, id, _preload_content: typing.Literal[False], **kwargs) -> urllib3.HTTPResponse:
+    def update(self, id, _parse_response: typing.Literal[False], **kwargs) -> urllib3.HTTPResponse:
         ...
 
     @overload
@@ -3515,7 +3513,7 @@ class JobsApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[True],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -3525,7 +3523,7 @@ class JobsApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -3553,7 +3551,7 @@ class JobsApi(object):
             job_write_request (JobWriteRequest): [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
-            _preload_content (bool): if False, the urllib3.HTTPResponse object
+            _parse_response (bool): if False, the urllib3.HTTPResponse object
                 will be returned without reading/decoding response data.
                 Checked before _return_http_data_only.
                 Default is True.
@@ -3593,7 +3591,7 @@ class JobsApi(object):
         """
         kwargs["async_req"] = kwargs.get("async_req", False)
         kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
         kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
         kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
         kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
@@ -3609,7 +3607,7 @@ class JobsApi(object):
         """
         The same as update(), but returns the response unprocessed.
         Equivalent to calling update with
-        _preload_content = False and _check_status=False
+        _parse_response = False and _check_status=False
 
         Method updates a job by id  # noqa: E501
 
@@ -3655,7 +3653,7 @@ class JobsApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.update(*args, **kwargs, _preload_content=False, _check_status=False)
+        return self.update(*args, **kwargs, _parse_response=False, _check_status=False)
 
     @overload
     def update_annotations(
@@ -3663,7 +3661,7 @@ class JobsApi(object):
         id,
         annotation_file_request,
         _return_http_data_only: typing.Literal[True] = True,
-        _preload_content: typing.Literal[True] = True,
+        _parse_response: typing.Literal[True] = True,
         **kwargs,
     ) -> None:
         ...
@@ -3674,7 +3672,7 @@ class JobsApi(object):
         id,
         annotation_file_request,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
         ...
@@ -3687,7 +3685,7 @@ class JobsApi(object):
 
     @overload
     def update_annotations(
-        self, id, annotation_file_request, _preload_content: typing.Literal[False], **kwargs
+        self, id, annotation_file_request, _parse_response: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
@@ -3697,7 +3695,7 @@ class JobsApi(object):
         id,
         annotation_file_request,
         _return_http_data_only: typing.Literal[True],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -3708,7 +3706,7 @@ class JobsApi(object):
         id,
         annotation_file_request,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -3734,7 +3732,7 @@ class JobsApi(object):
             org_id (int): Organization identifier. [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
-            _preload_content (bool): if False, the urllib3.HTTPResponse object
+            _parse_response (bool): if False, the urllib3.HTTPResponse object
                 will be returned without reading/decoding response data.
                 Checked before _return_http_data_only.
                 Default is True.
@@ -3774,7 +3772,7 @@ class JobsApi(object):
         """
         kwargs["async_req"] = kwargs.get("async_req", False)
         kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
         kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
         kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
         kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
@@ -3791,7 +3789,7 @@ class JobsApi(object):
         """
         The same as update_annotations(), but returns the response unprocessed.
         Equivalent to calling update_annotations with
-        _preload_content = False and _check_status=False
+        _parse_response = False and _check_status=False
 
         Method performs an update of all annotations in a specific job  # noqa: E501
 
@@ -3837,4 +3835,4 @@ class JobsApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.update_annotations(*args, **kwargs, _preload_content=False, _check_status=False)
+        return self.update_annotations(*args, **kwargs, _parse_response=False, _check_status=False)

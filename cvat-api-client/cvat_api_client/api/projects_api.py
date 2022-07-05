@@ -961,7 +961,7 @@ class ProjectsApi(object):
         self,
         project_write_request,
         _return_http_data_only: typing.Literal[True] = True,
-        _preload_content: typing.Literal[True] = True,
+        _parse_response: typing.Literal[True] = True,
         **kwargs,
     ) -> ProjectWrite:
         ...
@@ -971,7 +971,7 @@ class ProjectsApi(object):
         self,
         project_write_request,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> typing.Tuple[ProjectWrite, int, typing.Dict[str, str]]:
         ...
@@ -984,7 +984,7 @@ class ProjectsApi(object):
 
     @overload
     def create(
-        self, project_write_request, _preload_content: typing.Literal[False], **kwargs
+        self, project_write_request, _parse_response: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
@@ -993,7 +993,7 @@ class ProjectsApi(object):
         self,
         project_write_request,
         _return_http_data_only: typing.Literal[True],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -1003,7 +1003,7 @@ class ProjectsApi(object):
         self,
         project_write_request,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -1030,7 +1030,7 @@ class ProjectsApi(object):
             org_id (int): Organization identifier. [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
-            _preload_content (bool): if False, the urllib3.HTTPResponse object
+            _parse_response (bool): if False, the urllib3.HTTPResponse object
                 will be returned without reading/decoding response data.
                 Checked before _return_http_data_only.
                 Default is True.
@@ -1070,7 +1070,7 @@ class ProjectsApi(object):
         """
         kwargs["async_req"] = kwargs.get("async_req", False)
         kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
         kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
         kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
         kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
@@ -1086,7 +1086,7 @@ class ProjectsApi(object):
         """
         The same as create(), but returns the response unprocessed.
         Equivalent to calling create with
-        _preload_content = False and _check_status=False
+        _parse_response = False and _check_status=False
 
         Method creates a new project  # noqa: E501
 
@@ -1131,14 +1131,14 @@ class ProjectsApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.create(*args, **kwargs, _preload_content=False, _check_status=False)
+        return self.create(*args, **kwargs, _parse_response=False, _check_status=False)
 
     @overload
     def create_backup(
         self,
         project_file_request,
         _return_http_data_only: typing.Literal[True] = True,
-        _preload_content: typing.Literal[True] = True,
+        _parse_response: typing.Literal[True] = True,
         **kwargs,
     ) -> None:
         ...
@@ -1148,7 +1148,7 @@ class ProjectsApi(object):
         self,
         project_file_request,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
         ...
@@ -1161,7 +1161,7 @@ class ProjectsApi(object):
 
     @overload
     def create_backup(
-        self, project_file_request, _preload_content: typing.Literal[False], **kwargs
+        self, project_file_request, _parse_response: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
@@ -1170,7 +1170,7 @@ class ProjectsApi(object):
         self,
         project_file_request,
         _return_http_data_only: typing.Literal[True],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -1180,7 +1180,7 @@ class ProjectsApi(object):
         self,
         project_file_request,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -1208,7 +1208,7 @@ class ProjectsApi(object):
             org_id (int): Organization identifier. [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
-            _preload_content (bool): if False, the urllib3.HTTPResponse object
+            _parse_response (bool): if False, the urllib3.HTTPResponse object
                 will be returned without reading/decoding response data.
                 Checked before _return_http_data_only.
                 Default is True.
@@ -1248,7 +1248,7 @@ class ProjectsApi(object):
         """
         kwargs["async_req"] = kwargs.get("async_req", False)
         kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
         kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
         kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
         kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
@@ -1264,7 +1264,7 @@ class ProjectsApi(object):
         """
         The same as create_backup(), but returns the response unprocessed.
         Equivalent to calling create_backup with
-        _preload_content = False and _check_status=False
+        _parse_response = False and _check_status=False
 
         Methods create a project from a backup  # noqa: E501
 
@@ -1312,7 +1312,7 @@ class ProjectsApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.create_backup(*args, **kwargs, _preload_content=False, _check_status=False)
+        return self.create_backup(*args, **kwargs, _parse_response=False, _check_status=False)
 
     @overload
     def create_dataset(
@@ -1321,7 +1321,7 @@ class ProjectsApi(object):
         id,
         project_write_request,
         _return_http_data_only: typing.Literal[True] = True,
-        _preload_content: typing.Literal[True] = True,
+        _parse_response: typing.Literal[True] = True,
         **kwargs,
     ) -> None:
         ...
@@ -1333,7 +1333,7 @@ class ProjectsApi(object):
         id,
         project_write_request,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
         ...
@@ -1351,7 +1351,7 @@ class ProjectsApi(object):
 
     @overload
     def create_dataset(
-        self, format, id, project_write_request, _preload_content: typing.Literal[False], **kwargs
+        self, format, id, project_write_request, _parse_response: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
@@ -1362,7 +1362,7 @@ class ProjectsApi(object):
         id,
         project_write_request,
         _return_http_data_only: typing.Literal[True],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -1374,7 +1374,7 @@ class ProjectsApi(object):
         id,
         project_write_request,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -1405,7 +1405,7 @@ class ProjectsApi(object):
             use_default_location (bool): Use the location that was configured in the project to import annotations. [optional] if omitted the server will use the default value of True
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
-            _preload_content (bool): if False, the urllib3.HTTPResponse object
+            _parse_response (bool): if False, the urllib3.HTTPResponse object
                 will be returned without reading/decoding response data.
                 Checked before _return_http_data_only.
                 Default is True.
@@ -1445,7 +1445,7 @@ class ProjectsApi(object):
         """
         kwargs["async_req"] = kwargs.get("async_req", False)
         kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
         kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
         kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
         kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
@@ -1463,7 +1463,7 @@ class ProjectsApi(object):
         """
         The same as create_dataset(), but returns the response unprocessed.
         Equivalent to calling create_dataset with
-        _preload_content = False and _check_status=False
+        _parse_response = False and _check_status=False
 
         Import dataset in specific format as a project  # noqa: E501
 
@@ -1514,14 +1514,14 @@ class ProjectsApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.create_dataset(*args, **kwargs, _preload_content=False, _check_status=False)
+        return self.create_dataset(*args, **kwargs, _parse_response=False, _check_status=False)
 
     @overload
     def destroy(
         self,
         id,
         _return_http_data_only: typing.Literal[True] = True,
-        _preload_content: typing.Literal[True] = True,
+        _parse_response: typing.Literal[True] = True,
         **kwargs,
     ) -> None:
         ...
@@ -1531,7 +1531,7 @@ class ProjectsApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
         ...
@@ -1543,9 +1543,7 @@ class ProjectsApi(object):
         ...
 
     @overload
-    def destroy(
-        self, id, _preload_content: typing.Literal[False], **kwargs
-    ) -> urllib3.HTTPResponse:
+    def destroy(self, id, _parse_response: typing.Literal[False], **kwargs) -> urllib3.HTTPResponse:
         ...
 
     @overload
@@ -1553,7 +1551,7 @@ class ProjectsApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[True],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -1563,7 +1561,7 @@ class ProjectsApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -1588,7 +1586,7 @@ class ProjectsApi(object):
             org_id (int): Organization identifier. [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
-            _preload_content (bool): if False, the urllib3.HTTPResponse object
+            _parse_response (bool): if False, the urllib3.HTTPResponse object
                 will be returned without reading/decoding response data.
                 Checked before _return_http_data_only.
                 Default is True.
@@ -1628,7 +1626,7 @@ class ProjectsApi(object):
         """
         kwargs["async_req"] = kwargs.get("async_req", False)
         kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
         kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
         kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
         kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
@@ -1644,7 +1642,7 @@ class ProjectsApi(object):
         """
         The same as destroy(), but returns the response unprocessed.
         Equivalent to calling destroy with
-        _preload_content = False and _check_status=False
+        _parse_response = False and _check_status=False
 
         Method deletes a specific project  # noqa: E501
 
@@ -1689,13 +1687,13 @@ class ProjectsApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.destroy(*args, **kwargs, _preload_content=False, _check_status=False)
+        return self.destroy(*args, **kwargs, _parse_response=False, _check_status=False)
 
     @overload
     def list(
         self,
         _return_http_data_only: typing.Literal[True] = True,
-        _preload_content: typing.Literal[True] = True,
+        _parse_response: typing.Literal[True] = True,
         **kwargs,
     ) -> PaginatedPolymorphicProjectList:
         ...
@@ -1704,7 +1702,7 @@ class ProjectsApi(object):
     def list(
         self,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> typing.Tuple[PaginatedPolymorphicProjectList, int, typing.Dict[str, str]]:
         ...
@@ -1716,14 +1714,14 @@ class ProjectsApi(object):
         ...
 
     @overload
-    def list(self, _preload_content: typing.Literal[False], **kwargs) -> urllib3.HTTPResponse:
+    def list(self, _parse_response: typing.Literal[False], **kwargs) -> urllib3.HTTPResponse:
         ...
 
     @overload
     def list(
         self,
         _return_http_data_only: typing.Literal[True],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -1732,7 +1730,7 @@ class ProjectsApi(object):
     def list(
         self,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -1764,7 +1762,7 @@ class ProjectsApi(object):
             sort (str): Which field to use when ordering the results. Avaliable ordering_fields: ['name', 'owner', 'assignee', 'status', 'id', 'updated_date']. [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
-            _preload_content (bool): if False, the urllib3.HTTPResponse object
+            _parse_response (bool): if False, the urllib3.HTTPResponse object
                 will be returned without reading/decoding response data.
                 Checked before _return_http_data_only.
                 Default is True.
@@ -1804,7 +1802,7 @@ class ProjectsApi(object):
         """
         kwargs["async_req"] = kwargs.get("async_req", False)
         kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
         kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
         kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
         kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
@@ -1819,7 +1817,7 @@ class ProjectsApi(object):
         """
         The same as list(), but returns the response unprocessed.
         Equivalent to calling list with
-        _preload_content = False and _check_status=False
+        _parse_response = False and _check_status=False
 
         Returns a paginated list of projects according to query parameters (12 projects per page)  # noqa: E501
 
@@ -1867,14 +1865,14 @@ class ProjectsApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.list(*args, **kwargs, _preload_content=False, _check_status=False)
+        return self.list(*args, **kwargs, _parse_response=False, _check_status=False)
 
     @overload
     def list_tasks(
         self,
         id,
         _return_http_data_only: typing.Literal[True] = True,
-        _preload_content: typing.Literal[True] = True,
+        _parse_response: typing.Literal[True] = True,
         **kwargs,
     ) -> PaginatedTaskReadList:
         ...
@@ -1884,7 +1882,7 @@ class ProjectsApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> typing.Tuple[PaginatedTaskReadList, int, typing.Dict[str, str]]:
         ...
@@ -1897,7 +1895,7 @@ class ProjectsApi(object):
 
     @overload
     def list_tasks(
-        self, id, _preload_content: typing.Literal[False], **kwargs
+        self, id, _parse_response: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
@@ -1906,7 +1904,7 @@ class ProjectsApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[True],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -1916,7 +1914,7 @@ class ProjectsApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -1950,7 +1948,7 @@ class ProjectsApi(object):
             sort (str): Which field to use when ordering the results. Avaliable ordering_fields: ['name', 'owner', 'assignee', 'status', 'id', 'updated_date']. [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
-            _preload_content (bool): if False, the urllib3.HTTPResponse object
+            _parse_response (bool): if False, the urllib3.HTTPResponse object
                 will be returned without reading/decoding response data.
                 Checked before _return_http_data_only.
                 Default is True.
@@ -1990,7 +1988,7 @@ class ProjectsApi(object):
         """
         kwargs["async_req"] = kwargs.get("async_req", False)
         kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
         kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
         kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
         kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
@@ -2006,7 +2004,7 @@ class ProjectsApi(object):
         """
         The same as list_tasks(), but returns the response unprocessed.
         Equivalent to calling list_tasks with
-        _preload_content = False and _check_status=False
+        _parse_response = False and _check_status=False
 
         Method returns information of the tasks of the project with the selected id  # noqa: E501
 
@@ -2056,14 +2054,14 @@ class ProjectsApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.list_tasks(*args, **kwargs, _preload_content=False, _check_status=False)
+        return self.list_tasks(*args, **kwargs, _parse_response=False, _check_status=False)
 
     @overload
     def partial_update(
         self,
         id,
         _return_http_data_only: typing.Literal[True] = True,
-        _preload_content: typing.Literal[True] = True,
+        _parse_response: typing.Literal[True] = True,
         **kwargs,
     ) -> ProjectWrite:
         ...
@@ -2073,7 +2071,7 @@ class ProjectsApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> typing.Tuple[ProjectWrite, int, typing.Dict[str, str]]:
         ...
@@ -2086,7 +2084,7 @@ class ProjectsApi(object):
 
     @overload
     def partial_update(
-        self, id, _preload_content: typing.Literal[False], **kwargs
+        self, id, _parse_response: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
@@ -2095,7 +2093,7 @@ class ProjectsApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[True],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -2105,7 +2103,7 @@ class ProjectsApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -2133,7 +2131,7 @@ class ProjectsApi(object):
             patched_project_write_request (PatchedProjectWriteRequest): [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
-            _preload_content (bool): if False, the urllib3.HTTPResponse object
+            _parse_response (bool): if False, the urllib3.HTTPResponse object
                 will be returned without reading/decoding response data.
                 Checked before _return_http_data_only.
                 Default is True.
@@ -2173,7 +2171,7 @@ class ProjectsApi(object):
         """
         kwargs["async_req"] = kwargs.get("async_req", False)
         kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
         kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
         kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
         kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
@@ -2189,7 +2187,7 @@ class ProjectsApi(object):
         """
         The same as partial_update(), but returns the response unprocessed.
         Equivalent to calling partial_update with
-        _preload_content = False and _check_status=False
+        _parse_response = False and _check_status=False
 
         Methods does a partial update of chosen fields in a project  # noqa: E501
 
@@ -2235,14 +2233,14 @@ class ProjectsApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.partial_update(*args, **kwargs, _preload_content=False, _check_status=False)
+        return self.partial_update(*args, **kwargs, _parse_response=False, _check_status=False)
 
     @overload
     def partial_update_backup(
         self,
         file_id,
         _return_http_data_only: typing.Literal[True] = True,
-        _preload_content: typing.Literal[True] = True,
+        _parse_response: typing.Literal[True] = True,
         **kwargs,
     ) -> ProjectWrite:
         ...
@@ -2252,7 +2250,7 @@ class ProjectsApi(object):
         self,
         file_id,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> typing.Tuple[ProjectWrite, int, typing.Dict[str, str]]:
         ...
@@ -2265,7 +2263,7 @@ class ProjectsApi(object):
 
     @overload
     def partial_update_backup(
-        self, file_id, _preload_content: typing.Literal[False], **kwargs
+        self, file_id, _parse_response: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
@@ -2274,7 +2272,7 @@ class ProjectsApi(object):
         self,
         file_id,
         _return_http_data_only: typing.Literal[True],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -2284,7 +2282,7 @@ class ProjectsApi(object):
         self,
         file_id,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -2312,7 +2310,7 @@ class ProjectsApi(object):
             patched_project_write_request (PatchedProjectWriteRequest): [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
-            _preload_content (bool): if False, the urllib3.HTTPResponse object
+            _parse_response (bool): if False, the urllib3.HTTPResponse object
                 will be returned without reading/decoding response data.
                 Checked before _return_http_data_only.
                 Default is True.
@@ -2352,7 +2350,7 @@ class ProjectsApi(object):
         """
         kwargs["async_req"] = kwargs.get("async_req", False)
         kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
         kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
         kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
         kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
@@ -2368,7 +2366,7 @@ class ProjectsApi(object):
         """
         The same as partial_update_backup(), but returns the response unprocessed.
         Equivalent to calling partial_update_backup with
-        _preload_content = False and _check_status=False
+        _parse_response = False and _check_status=False
 
         partial_update_backup  # noqa: E501
 
@@ -2415,7 +2413,7 @@ class ProjectsApi(object):
                 thread.
         """
         return self.partial_update_backup(
-            *args, **kwargs, _preload_content=False, _check_status=False
+            *args, **kwargs, _parse_response=False, _check_status=False
         )
 
     @overload
@@ -2424,7 +2422,7 @@ class ProjectsApi(object):
         file_id,
         id,
         _return_http_data_only: typing.Literal[True] = True,
-        _preload_content: typing.Literal[True] = True,
+        _parse_response: typing.Literal[True] = True,
         **kwargs,
     ) -> ProjectWrite:
         ...
@@ -2435,7 +2433,7 @@ class ProjectsApi(object):
         file_id,
         id,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> typing.Tuple[ProjectWrite, int, typing.Dict[str, str]]:
         ...
@@ -2448,7 +2446,7 @@ class ProjectsApi(object):
 
     @overload
     def partial_update_dataset(
-        self, file_id, id, _preload_content: typing.Literal[False], **kwargs
+        self, file_id, id, _parse_response: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
@@ -2458,7 +2456,7 @@ class ProjectsApi(object):
         file_id,
         id,
         _return_http_data_only: typing.Literal[True],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -2469,7 +2467,7 @@ class ProjectsApi(object):
         file_id,
         id,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -2498,7 +2496,7 @@ class ProjectsApi(object):
             patched_project_write_request (PatchedProjectWriteRequest): [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
-            _preload_content (bool): if False, the urllib3.HTTPResponse object
+            _parse_response (bool): if False, the urllib3.HTTPResponse object
                 will be returned without reading/decoding response data.
                 Checked before _return_http_data_only.
                 Default is True.
@@ -2538,7 +2536,7 @@ class ProjectsApi(object):
         """
         kwargs["async_req"] = kwargs.get("async_req", False)
         kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
         kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
         kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
         kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
@@ -2555,7 +2553,7 @@ class ProjectsApi(object):
         """
         The same as partial_update_dataset(), but returns the response unprocessed.
         Equivalent to calling partial_update_dataset with
-        _preload_content = False and _check_status=False
+        _parse_response = False and _check_status=False
 
         partial_update_dataset  # noqa: E501
 
@@ -2603,7 +2601,7 @@ class ProjectsApi(object):
                 thread.
         """
         return self.partial_update_dataset(
-            *args, **kwargs, _preload_content=False, _check_status=False
+            *args, **kwargs, _parse_response=False, _check_status=False
         )
 
     @overload
@@ -2611,7 +2609,7 @@ class ProjectsApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[True] = True,
-        _preload_content: typing.Literal[True] = True,
+        _parse_response: typing.Literal[True] = True,
         **kwargs,
     ) -> ProjectRead:
         ...
@@ -2621,7 +2619,7 @@ class ProjectsApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> typing.Tuple[ProjectRead, int, typing.Dict[str, str]]:
         ...
@@ -2634,7 +2632,7 @@ class ProjectsApi(object):
 
     @overload
     def retrieve(
-        self, id, _preload_content: typing.Literal[False], **kwargs
+        self, id, _parse_response: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
@@ -2643,7 +2641,7 @@ class ProjectsApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[True],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -2653,7 +2651,7 @@ class ProjectsApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -2680,7 +2678,7 @@ class ProjectsApi(object):
             org_id (int): Organization identifier. [optional]
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
-            _preload_content (bool): if False, the urllib3.HTTPResponse object
+            _parse_response (bool): if False, the urllib3.HTTPResponse object
                 will be returned without reading/decoding response data.
                 Checked before _return_http_data_only.
                 Default is True.
@@ -2720,7 +2718,7 @@ class ProjectsApi(object):
         """
         kwargs["async_req"] = kwargs.get("async_req", False)
         kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
         kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
         kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
         kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
@@ -2736,7 +2734,7 @@ class ProjectsApi(object):
         """
         The same as retrieve(), but returns the response unprocessed.
         Equivalent to calling retrieve with
-        _preload_content = False and _check_status=False
+        _parse_response = False and _check_status=False
 
         Method returns details of a specific project  # noqa: E501
 
@@ -2781,7 +2779,7 @@ class ProjectsApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.retrieve(*args, **kwargs, _preload_content=False, _check_status=False)
+        return self.retrieve(*args, **kwargs, _parse_response=False, _check_status=False)
 
     @overload
     def retrieve_annotations(
@@ -2789,7 +2787,7 @@ class ProjectsApi(object):
         format,
         id,
         _return_http_data_only: typing.Literal[True] = True,
-        _preload_content: typing.Literal[True] = True,
+        _parse_response: typing.Literal[True] = True,
         **kwargs,
     ) -> None:
         ...
@@ -2800,7 +2798,7 @@ class ProjectsApi(object):
         format,
         id,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
         ...
@@ -2813,7 +2811,7 @@ class ProjectsApi(object):
 
     @overload
     def retrieve_annotations(
-        self, format, id, _preload_content: typing.Literal[False], **kwargs
+        self, format, id, _parse_response: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
@@ -2823,7 +2821,7 @@ class ProjectsApi(object):
         format,
         id,
         _return_http_data_only: typing.Literal[True],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -2834,7 +2832,7 @@ class ProjectsApi(object):
         format,
         id,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -2865,7 +2863,7 @@ class ProjectsApi(object):
             use_default_location (bool): Use the location that was configured in project to export annotation. [optional] if omitted the server will use the default value of True
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
-            _preload_content (bool): if False, the urllib3.HTTPResponse object
+            _parse_response (bool): if False, the urllib3.HTTPResponse object
                 will be returned without reading/decoding response data.
                 Checked before _return_http_data_only.
                 Default is True.
@@ -2905,7 +2903,7 @@ class ProjectsApi(object):
         """
         kwargs["async_req"] = kwargs.get("async_req", False)
         kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
         kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
         kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
         kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
@@ -2922,7 +2920,7 @@ class ProjectsApi(object):
         """
         The same as retrieve_annotations(), but returns the response unprocessed.
         Equivalent to calling retrieve_annotations with
-        _preload_content = False and _check_status=False
+        _parse_response = False and _check_status=False
 
         Method allows to download project annotations  # noqa: E501
 
@@ -2974,7 +2972,7 @@ class ProjectsApi(object):
                 thread.
         """
         return self.retrieve_annotations(
-            *args, **kwargs, _preload_content=False, _check_status=False
+            *args, **kwargs, _parse_response=False, _check_status=False
         )
 
     @overload
@@ -2982,7 +2980,7 @@ class ProjectsApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[True] = True,
-        _preload_content: typing.Literal[True] = True,
+        _parse_response: typing.Literal[True] = True,
         **kwargs,
     ) -> None:
         ...
@@ -2992,7 +2990,7 @@ class ProjectsApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
         ...
@@ -3005,7 +3003,7 @@ class ProjectsApi(object):
 
     @overload
     def retrieve_backup(
-        self, id, _preload_content: typing.Literal[False], **kwargs
+        self, id, _parse_response: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
@@ -3014,7 +3012,7 @@ class ProjectsApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[True],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -3024,7 +3022,7 @@ class ProjectsApi(object):
         self,
         id,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -3054,7 +3052,7 @@ class ProjectsApi(object):
             use_default_location (bool): Use the location that was configured in project to export backup. [optional] if omitted the server will use the default value of True
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
-            _preload_content (bool): if False, the urllib3.HTTPResponse object
+            _parse_response (bool): if False, the urllib3.HTTPResponse object
                 will be returned without reading/decoding response data.
                 Checked before _return_http_data_only.
                 Default is True.
@@ -3094,7 +3092,7 @@ class ProjectsApi(object):
         """
         kwargs["async_req"] = kwargs.get("async_req", False)
         kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
         kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
         kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
         kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
@@ -3110,7 +3108,7 @@ class ProjectsApi(object):
         """
         The same as retrieve_backup(), but returns the response unprocessed.
         Equivalent to calling retrieve_backup with
-        _preload_content = False and _check_status=False
+        _parse_response = False and _check_status=False
 
         Methods creates a backup copy of a project  # noqa: E501
 
@@ -3160,7 +3158,7 @@ class ProjectsApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.retrieve_backup(*args, **kwargs, _preload_content=False, _check_status=False)
+        return self.retrieve_backup(*args, **kwargs, _parse_response=False, _check_status=False)
 
     @overload
     def retrieve_dataset(
@@ -3168,7 +3166,7 @@ class ProjectsApi(object):
         format,
         id,
         _return_http_data_only: typing.Literal[True] = True,
-        _preload_content: typing.Literal[True] = True,
+        _parse_response: typing.Literal[True] = True,
         **kwargs,
     ) -> None:
         ...
@@ -3179,7 +3177,7 @@ class ProjectsApi(object):
         format,
         id,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> typing.Tuple[None, int, typing.Dict[str, str]]:
         ...
@@ -3192,7 +3190,7 @@ class ProjectsApi(object):
 
     @overload
     def retrieve_dataset(
-        self, format, id, _preload_content: typing.Literal[False], **kwargs
+        self, format, id, _parse_response: typing.Literal[False], **kwargs
     ) -> urllib3.HTTPResponse:
         ...
 
@@ -3202,7 +3200,7 @@ class ProjectsApi(object):
         format,
         id,
         _return_http_data_only: typing.Literal[True],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -3213,7 +3211,7 @@ class ProjectsApi(object):
         format,
         id,
         _return_http_data_only: typing.Literal[False],
-        _preload_content: typing.Literal[False],
+        _parse_response: typing.Literal[False],
         **kwargs,
     ) -> urllib3.HTTPResponse:
         ...
@@ -3244,7 +3242,7 @@ class ProjectsApi(object):
             use_default_location (bool): Use the location that was configured in project to import dataset. [optional] if omitted the server will use the default value of True
             _return_http_data_only (bool): response data without head status
                 code and headers. Default is True.
-            _preload_content (bool): if False, the urllib3.HTTPResponse object
+            _parse_response (bool): if False, the urllib3.HTTPResponse object
                 will be returned without reading/decoding response data.
                 Checked before _return_http_data_only.
                 Default is True.
@@ -3284,7 +3282,7 @@ class ProjectsApi(object):
         """
         kwargs["async_req"] = kwargs.get("async_req", False)
         kwargs["_return_http_data_only"] = kwargs.get("_return_http_data_only", True)
-        kwargs["_preload_content"] = kwargs.get("_preload_content", True)
+        kwargs["_parse_response"] = kwargs.get("_parse_response", True)
         kwargs["_request_timeout"] = kwargs.get("_request_timeout", None)
         kwargs["_check_input_type"] = kwargs.get("_check_input_type", True)
         kwargs["_check_return_type"] = kwargs.get("_check_return_type", True)
@@ -3301,7 +3299,7 @@ class ProjectsApi(object):
         """
         The same as retrieve_dataset(), but returns the response unprocessed.
         Equivalent to calling retrieve_dataset with
-        _preload_content = False and _check_status=False
+        _parse_response = False and _check_status=False
 
         Export project as a dataset in a specific format  # noqa: E501
 
@@ -3352,4 +3350,4 @@ class ProjectsApi(object):
                 If the method is called asynchronously, returns the request
                 thread.
         """
-        return self.retrieve_dataset(*args, **kwargs, _preload_content=False, _check_status=False)
+        return self.retrieve_dataset(*args, **kwargs, _parse_response=False, _check_status=False)
