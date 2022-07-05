@@ -32,7 +32,7 @@ def _import_task(dataset, task_data):
                     type='rectangle',
                     label=label_cat.items[ann.label].name,
                     points=ann.points,
-                    occluded=ann.attributes.get('occluded') == True,
+                    occluded=ann.attributes.get('occluded') is True,
                     z_order=ann.z_order,
                     group=0,
                     frame=frame_number,
@@ -44,7 +44,7 @@ def _import_task(dataset, task_data):
             shape = task_data.TrackedShape(
                 type='rectangle',
                 points=ann.points,
-                occluded=ann.attributes.get('occluded') == True,
+                occluded=ann.attributes.get('occluded') is True,
                 outside=False,
                 keyframe=True,
                 z_order=ann.z_order,

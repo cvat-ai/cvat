@@ -213,7 +213,7 @@ def org_staff(memberships):
             return set()
         else:
             return set(m['user']['id'] for m in memberships
-                if m['role'] in ['maintainer', 'owner'] and m['user'] != None
+                if m['role'] in ['maintainer', 'owner'] and m['user'] is not None
                     and m['organization'] == org_id)
     return find
 
@@ -224,7 +224,7 @@ def is_org_member(memberships):
             return True
         else:
             return user_id in set(m['user']['id'] for m in memberships
-                if m['user'] != None and m['organization'] == org_id)
+                if m['user'] is not None and m['organization'] == org_id)
     return check
 
 @pytest.fixture(scope='session')

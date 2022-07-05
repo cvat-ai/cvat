@@ -2,4 +2,4 @@
 #
 # SPDX-License-Identifier: MIT
 
-from .schema import *
+from .schema import * # force import of extensions
